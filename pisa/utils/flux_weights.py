@@ -377,7 +377,7 @@ if __name__ == '__main__':
         plt.close()
     
 
-    def logplot(m, title, ax, clabel, cmap=plt.cm.afmhot):
+    def logplot(m, title, ax, clabel, cmap=plt.cm.afmhot, largelabels=False):
         """Simple plotting of a 2D histogram (map)"""
         hist = np.ma.masked_invalid(m['map'])
         y = m['ebins']
@@ -395,11 +395,21 @@ if __name__ == '__main__':
                                    cmap=cmap)
         cbar = plt.colorbar(mappable=pcmesh, ax=ax)
         if clabel is not None:
-            cbar.set_label(clabel,labelpad=-1)
-        cbar.ax.tick_params(labelsize='large')
-        ax.set_xlabel(r'$\cos\theta_Z$')
-        ax.set_ylabel(r'Energy (GeV)',labelpad=-3)
-        ax.set_title(title, y=1.03)
+            if largelabels:
+                cbar.set_label(clabel,labelpad=-1,fontsize=36)
+                cbar.ax.tick_params(labelsize=36)
+            else:
+                cbar.set_label(clabel,labelpad=-1)
+                cbar.ax.tick_params(labelsize='large')
+        if largelabels:
+            ax.set_xlabel(r'$\cos\theta_Z$',fontsize=36)
+            ax.set_ylabel(r'Energy (GeV)',labelpad=-3,fontsize=36)
+            ax.set_title(title, y=1.03, fontsize=36)
+            plt.tick_params(axis='both', which='major', labelsize=36)
+        else:
+            ax.set_xlabel(r'$\cos\theta_Z$')
+            ax.set_ylabel(r'Energy (GeV)',labelpad=-3)
+            ax.set_title(title, y=1.03)
         ax.set_xlim(np.min(x), np.max(x))
         ax.set_ylim(np.min(y), np.max(y))
 
@@ -525,16 +535,27 @@ if __name__ == '__main__':
             )
 
 
-    def do_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks):
+    def do_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks, oversample):
 
-        all_ens = np.logspace(-1.02475,4.02475,10100)
-        all_ens_bins = np.logspace(-1.025,4.025,10101)
-        all_czs = np.linspace(-0.9995,0.9995,2000)
-        all_czs_bins = np.linspace(-1.0,1.0,2001)
+        if oversample == 100:
+            all_ens = np.logspace(-1.02475,4.02475,10100)
+            all_ens_bins = np.logspace(-1.025,4.025,10101)
+            all_czs = np.linspace(-0.9995,0.9995,2000)
+            all_czs_bins = np.linspace(-1.0,1.0,2001)
+        elif oversample == 10:
+            all_ens = np.logspace(-1.0225,4.0225,1010)
+            all_ens_bins = np.logspace(-1.025,4.025,1011)
+            all_czs = np.linspace(-0.995,0.995,200)
+            all_czs_bins = np.linspace(-1.0,1.0,201)
+        elif oversample == 1:
+            all_ens = np.logspace(-1.0,4.0,101)
+            all_ens_bins = np.logspace(-1.025,4.025,102)
+            all_czs = np.linspace(-0.95,0.95,20)
+            all_czs_bins = np.linspace(-1.0,1.0,21)
 
         all_ens_mg, all_czs_mg = np.meshgrid(all_ens, all_czs)
 
-        for flav in primaries:
+        for flav, flavtex in zip(primaries, texprimaries):
 
             all_flux_weights = calculate_flux_weights(all_ens_mg.flatten(),
                                                       all_czs_mg.flatten(),
@@ -548,14 +569,15 @@ if __name__ == '__main__':
             all_flux_weights_map['ebins'] = all_ens_bins
             all_flux_weights_map['czbins'] = all_czs_bins
         
-            gridspec_kw = dict(left=0.03, right=0.968, wspace=0.32)
-            fig, axes = plt.subplots(nrows=1, ncols=5, gridspec_kw=gridspec_kw,
-                                     sharex=False, sharey=False, figsize=(20,5))
+            gridspec_kw = dict(left=0.15, right=0.90, wspace=0.32)
+            fig, axes = plt.subplots(nrows=1, ncols=1, gridspec_kw=gridspec_kw,
+                                     sharex=False, sharey=False, figsize=(12,10))
 
             logplot(m=all_flux_weights_map,
-                    title='Interpolated',
-                    ax=axes[0],
-                    clabel='Flux')
+                    title='Finely Interpolated %s Flux'%flavtex,
+                    ax=axes,
+                    clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,
+                    largelabels=True)
 
             fig.savefig(os.path.join(outdir,
                                      'honda_%s2dinterpolation.png'%flav))
@@ -564,7 +586,7 @@ if __name__ == '__main__':
 
                 downsampled_flux_map = {}
                 downsampled_flux_map['map'] = take_average(
-                    all_flux_weights.T, 100
+                    all_flux_weights.T, oversample
                 )
                 downsampled_flux_map['ebins'] = np.logspace(-1.025,4.025,102)
                 downsampled_flux_map['czbins'] = np.linspace(-1.0,1.0,21)
@@ -591,26 +613,28 @@ if __name__ == '__main__':
                                          figsize=(20,5))
 
                 logplot(m=all_flux_weights_map,
-                        title='Interpolated',
+                        title='Finely Interpolated',
                         ax=axes[0],
-                        clabel='Flux')
+                        clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
                 logplot(m=downsampled_flux_map,
                         title='Downsampled to Honda Binning',
                         ax=axes[1],
-                        clabel='Flux')
+                        clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
                 logplot(m=honda_tables,
                         title='Honda Tables',
                         ax=axes[2],
-                        clabel='Flux')
+                        clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
                 logplot(m=diff_map,
                         title='Difference',
                         ax=axes[3],
-                        clabel=None)
+                        clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
                 logplot(m=diff_ratio_map,
                         title='Percentage Difference',
                         ax=axes[4],
                         clabel=None)
 
+                plt.suptitle('Integral Preserving Tests for %s Honda South Pole 2015 Flux Tables'%flavtex, fontsize=36)
+                plt.subplots_adjust(top=0.8)
                 fig.savefig(os.path.join(outdir,'honda_%siptest.png'%flav))
                 plt.close(fig.number)
             
@@ -754,6 +778,9 @@ if __name__ == '__main__':
     parser.add_argument('--ip_checks', action='store_true',
                         help='''Run checks on integral-preserving nature.
                         WARNING - THESE ARE VERY SLOW.''')
+    parser.add_argument('--oversample', type=int, default=10,
+                        help='''Integer to oversample for integral-preserving
+                        checks.''')
     parser.add_argument('--outdir', metavar='DIR', type=str,
                         help='''Store all output plots to this directory.''')
 
@@ -768,7 +795,8 @@ if __name__ == '__main__':
 
         if args.twodim_checks:
             do_2D_honda_test(spline_dict, flux_dict,
-                             args.outdir, args.ip_checks)
+                             args.outdir, args.ip_checks,
+                             oversample = args.oversample)
 
     else:
 
