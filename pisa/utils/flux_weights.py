@@ -138,6 +138,13 @@ def load_Bartol_table(flux_file, enpow=1):
             for energyfluxval, energyval in zip(energyfluxlist,
                                                 flux_dict['energy']):
                 # Spline works best if you integrate flux * energy
+
+                #
+                # UNCOMMENT THIS AND COMMENT WHAT'S BELOW IF YOU WANT THE
+                # INTERPOLATION TO BREAK AT 10 GEV 
+                #tot_flux += energyfluxval*np.power(energyval,enpow)
+                #
+                
                 if energyval < 10.0:
                     tot_flux += energyfluxval*np.power(energyval,enpow)*0.05
                 else:
@@ -191,7 +198,7 @@ def load_2D_table(flux_file, enpow=1):
 
 
 def calculate_flux_weights(true_energies, true_coszens, en_splines,
-                           table_name, enpow=1):
+                           table_name='honda', enpow=1):
     """Calculate flux weights for given array of energy and cos(zenith).
     
     Arrays of true energy and zenith are expected to be for MC events, so
@@ -261,9 +268,23 @@ def calculate_flux_weights(true_energies, true_coszens, en_splines,
                                           en_splines[czkey],
                                           der=1)*0.05
             elif table_name == 'bartol':
+
+                #
+                # THIS IS ALSO PART OF BREAKING THE INTERPOLATION AT 10 GEV
+                #if true_energy < 10.0:
+                #    spval = interpolate.splev(true_log_energy,
+                #                              en_splines[czkey],
+                #                              der=1)*0.05
+                #else:
+                #    spval = interpolate.splev(true_log_energy,
+                #                              en_splines[czkey],
+                #                              der=1)*0.1
+                #
+
                 spval = interpolate.splev(true_log_energy,
                                           en_splines[czkey],
                                           der=1)
+
             spline_vals.append(spval)
         spline_vals = np.array(spline_vals)
         int_spline_vals = np.cumsum(spline_vals)
@@ -351,7 +372,6 @@ if __name__ == '__main__':
         plt.xlabel(xlabel, fontsize=20)
         plt.ylabel(ylabel, fontsize=20)
         if log:
-            
             plt.xlim(xtabbins[0],xtabbins[-1])
             plt.xscale("log")
             plt.yscale("log")
@@ -359,7 +379,10 @@ if __name__ == '__main__':
             ymax = max(np.log10(yintvals))
             ydiff = ymax - ymin
             plt.ylim(np.power(10,ymin-0.1*ydiff),np.power(10,ymax+0.1*ydiff))
-            plt.legend(loc='lower right')
+            if 'numu' in savename:
+                plt.legend(loc='lower right')
+            elif 'nue' in savename:
+                plt.legend(loc='lower left')
         else:
             ymin = min(yintvals)
             ymax = max(yintvals)
@@ -415,10 +438,16 @@ if __name__ == '__main__':
 
 
     def take_average(interp_map, oversampling):
-        return interp_map[::oversampling,::oversampling]/float(oversampling)
+        average_map = interp_map.reshape(
+            [len(interp_map)/oversampling,
+             oversampling,
+             len(interp_map[0])/oversampling,
+             oversampling]
+        ).mean(3).mean(1)
+        return average_map
 
 
-    def do_1D_honda_test(spline_dict, flux_dict, outdir):
+    def do_1D_honda_test(spline_dict, flux_dict, outdir, enpow=1):
 
         czs = np.linspace(-1,1,81)
         low_ens = 5.0119*np.ones_like(czs)
@@ -433,12 +462,14 @@ if __name__ == '__main__':
             low_en_flux_weights = calculate_flux_weights(low_ens,
                                                          czs,
                                                          spline_dict[flav],
-                                                         'honda')
+                                                         table_name='honda',
+                                                         enpow=enpow)
             
             high_en_flux_weights = calculate_flux_weights(high_ens,
                                                           czs,
                                                           spline_dict[flav],
-                                                          'honda')
+                                                          table_name='honda',
+                                                          enpow=enpow)
 
             flux5 = flux_dict[flav].T[np.where(flux_dict['energy']==5.0119)][0]
             flux50 = flux_dict[flav].T[np.where(flux_dict['energy']==50.119)][0]
@@ -482,12 +513,14 @@ if __name__ == '__main__':
             upgoing_flux_weights = calculate_flux_weights(ens,
                                                           upgoing,
                                                           spline_dict[flav],
-                                                          'honda')
+                                                          table_name='honda',
+                                                          enpow=enpow)
 
             downgoing_flux_weights = calculate_flux_weights(ens,
                                                             downgoing,
                                                             spline_dict[flav],
-                                                            'honda')
+                                                            table_name='honda',
+                                                            enpow=enpow)
 
             upgoing_flux_weights *= np.power(ens,3)
             downgoing_flux_weights *= np.power(ens,3)
@@ -498,6 +531,13 @@ if __name__ == '__main__':
             fluxupgoing *= np.power(flux_dict['energy'],3)
             fluxdowngoing *= np.power(flux_dict['energy'],3)
 
+            if 'numu' in flav:
+                xtext = 0.68
+                ytext = 0.25
+            elif 'nue' in flav:
+                xtext = 0.35
+                ytext = 0.25
+
             Plot1DSlices(
                 xintvals = ens,
                 yintvals = upgoing_flux_weights,
@@ -506,8 +546,8 @@ if __name__ == '__main__':
                 xtabbins = np.logspace(-1.025,4.025,102),
                 xlabel = 'Neutrino Energy (GeV)',
                 ylabel = r'%s Flux $\times E_{\nu}^3$ $\left([m^2\,s\,sr\,GeV]^{-1}[GeV]^3\right)$'%flavtex,
-                xtext = 0.68,
-                ytext = 0.25,
+                xtext = xtext,
+                ytext = ytext,
                 text = r'Slice at $\cos\theta_Z=-0.95$',
                 tablename = 'Honda SPL 2015',
                 savename = os.path.join(
@@ -524,8 +564,8 @@ if __name__ == '__main__':
                 xtabbins = np.logspace(-1.025,4.025,102),
                 xlabel = 'Neutrino Energy (GeV)',
                 ylabel = r'%s Flux $\times E_{\nu}^3$ $\left([m^2\,s\,sr\,GeV]^{-1}[GeV]^3\right)$'%flavtex,
-                xtext = 0.68,
-                ytext = 0.25,
+                xtext = xtext,
+                ytext = ytext,
                 text = r'Slice at $\cos\theta_Z=0.35$',
                 tablename = 'Honda SPL 2015',
                 savename = os.path.join(
@@ -535,23 +575,33 @@ if __name__ == '__main__':
             )
 
 
-    def do_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks, oversample):
+    def do_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
+                         oversample, enpow=1):
 
         if oversample == 100:
             all_ens = np.logspace(-1.02475,4.02475,10100)
             all_ens_bins = np.logspace(-1.025,4.025,10101)
             all_czs = np.linspace(-0.9995,0.9995,2000)
             all_czs_bins = np.linspace(-1.0,1.0,2001)
+            reduced_ens = np.logspace(-0.02475,4.02475,8100)
+            reduced_ens_bins = np.logspace(-0.025,4.025,8101)
+            reduced_bin = 2000
         elif oversample == 10:
             all_ens = np.logspace(-1.0225,4.0225,1010)
             all_ens_bins = np.logspace(-1.025,4.025,1011)
             all_czs = np.linspace(-0.995,0.995,200)
             all_czs_bins = np.linspace(-1.0,1.0,201)
+            reduced_ens = np.logspace(-0.0225,4.0225,810)
+            reduced_ens_bins = np.logspace(-0.025,4.025,811)
+            reduced_bin = 200
         elif oversample == 1:
             all_ens = np.logspace(-1.0,4.0,101)
             all_ens_bins = np.logspace(-1.025,4.025,102)
             all_czs = np.linspace(-0.95,0.95,20)
             all_czs_bins = np.linspace(-1.0,1.0,21)
+            reduced_ens = np.logspace(-0.0,4.0,81)
+            reduced_ens_bins = np.logspace(-0.025,4.025,82)
+            reduced_bin = 20
 
         all_ens_mg, all_czs_mg = np.meshgrid(all_ens, all_czs)
 
@@ -560,7 +610,8 @@ if __name__ == '__main__':
             all_flux_weights = calculate_flux_weights(all_ens_mg.flatten(),
                                                       all_czs_mg.flatten(),
                                                       spline_dict[flav],
-                                                      'honda')
+                                                      table_name='honda',
+                                                      enpow=enpow)
 
             all_flux_weights = np.array(np.split(all_flux_weights,
                                                  len(all_czs)))
@@ -605,7 +656,7 @@ if __name__ == '__main__':
                 diff_ratio_map['map'] = diff_map['map'] / honda_tables['map']
                 diff_ratio_map['ebins'] = np.logspace(-1.025,4.025,102)
                 diff_ratio_map['czbins'] = np.linspace(-1.0,1.0,21)
-
+                
                 gridspec_kw = dict(left=0.03, right=0.968, wspace=0.32)
                 fig, axes = plt.subplots(nrows=1, ncols=5,
                                          gridspec_kw=gridspec_kw,
@@ -627,7 +678,7 @@ if __name__ == '__main__':
                 logplot(m=diff_map,
                         title='Difference',
                         ax=axes[3],
-                        clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
+                        clabel=None)
                 logplot(m=diff_ratio_map,
                         title='Percentage Difference',
                         ax=axes[4],
@@ -635,11 +686,83 @@ if __name__ == '__main__':
 
                 plt.suptitle('Integral Preserving Tests for %s Honda South Pole 2015 Flux Tables'%flavtex, fontsize=36)
                 plt.subplots_adjust(top=0.8)
-                fig.savefig(os.path.join(outdir,'honda_%siptest.png'%flav))
+                fig.savefig(os.path.join(outdir,'honda_%siptest_fullrange.png'%flav))
+                plt.close(fig.number)
+
+                reduced_flux_weights = np.delete(
+                    all_flux_weights,
+                    np.s_[0:reduced_bin],
+                    axis=1
+                )
+
+                reduced_honda = np.delete(
+                    flux_dict[flav],
+                    np.s_[0:20],
+                    axis=1
+                )
+
+                all_flux_weights_map = {}
+                all_flux_weights_map['map'] = reduced_flux_weights.T
+                all_flux_weights_map['ebins'] = reduced_ens_bins
+                all_flux_weights_map['czbins'] = all_czs_bins
+
+                downsampled_flux_map = {}
+                downsampled_flux_map['map'] = take_average(
+                    reduced_flux_weights.T,
+                    oversample
+                )
+                downsampled_flux_map['ebins'] = np.logspace(-0.025,4.025,82)
+                downsampled_flux_map['czbins'] = np.linspace(-1.0,1.0,21)
+
+                honda_tables = {}
+                honda_tables['map'] = reduced_honda.T
+                honda_tables['ebins'] = np.logspace(-0.025,4.025,82)
+                honda_tables['czbins'] = np.linspace(-1.0,1.0,21)
+
+                diff_map = {}
+                diff_map['map'] = honda_tables['map']-downsampled_flux_map['map']
+                diff_map['ebins'] = np.logspace(-0.025,4.025,82)
+                diff_map['czbins'] = np.linspace(-1.0,1.0,21)
+
+                diff_ratio_map = {}
+                diff_ratio_map['map'] = diff_map['map'] / honda_tables['map']
+                diff_ratio_map['ebins'] = np.logspace(-0.025,4.025,82)
+                diff_ratio_map['czbins'] = np.linspace(-1.0,1.0,21)
+                
+                gridspec_kw = dict(left=0.03, right=0.968, wspace=0.32)
+                fig, axes = plt.subplots(nrows=1, ncols=5,
+                                         gridspec_kw=gridspec_kw,
+                                         sharex=False, sharey=False,
+                                         figsize=(20,5))
+
+                logplot(m=all_flux_weights_map,
+                        title='Finely Interpolated',
+                        ax=axes[0],
+                        clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
+                logplot(m=downsampled_flux_map,
+                        title='Downsampled to Honda Binning',
+                        ax=axes[1],
+                        clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
+                logplot(m=honda_tables,
+                        title='Honda Tables',
+                        ax=axes[2],
+                        clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
+                logplot(m=diff_map,
+                        title='Difference',
+                        ax=axes[3],
+                        clabel=None)
+                logplot(m=diff_ratio_map,
+                        title='Percentage Difference',
+                        ax=axes[4],
+                        clabel=None)
+
+                plt.suptitle('Integral Preserving Tests for %s Honda South Pole 2015 Flux Tables'%flavtex, fontsize=36)
+                plt.subplots_adjust(top=0.8)
+                fig.savefig(os.path.join(outdir,'honda_%siptest_reducedenrange.png'%flav))
                 plt.close(fig.number)
             
 
-    def do_1D_bartol_test(spline_dict, flux_dict, outdir):
+    def do_1D_bartol_test(spline_dict, flux_dict, outdir, enpow=1):
 
         czs = np.linspace(-1,1,81)
         low_ens = 4.732*np.ones_like(czs)
@@ -654,14 +777,14 @@ if __name__ == '__main__':
             low_en_flux_weights = calculate_flux_weights(low_ens,
                                                          czs,
                                                          spline_dict[flav],
-                                                         'bartol',
-                                                         )
+                                                         table_name='bartol',
+                                                         enpow=enpow)
             
             high_en_flux_weights = calculate_flux_weights(high_ens,
                                                           czs,
                                                           spline_dict[flav],
-                                                          'bartol',
-                                                          )
+                                                          table_name='bartol',
+                                                          enpow=enpow)
 
             flux5 = flux_dict[flav].T[np.where(flux_dict['energy']==4.732)][0]
             flux50 = flux_dict[flav].T[np.where(flux_dict['energy']==44.70)][0]
@@ -705,14 +828,14 @@ if __name__ == '__main__':
             upgoing_flux_weights = calculate_flux_weights(ens,
                                                           upgoing,
                                                           spline_dict[flav],
-                                                          'bartol',
-                                                          )
+                                                          table_name='bartol',
+                                                          enpow=enpow)
 
             downgoing_flux_weights = calculate_flux_weights(ens,
                                                             downgoing,
                                                             spline_dict[flav],
-                                                            'bartol',
-                                                            )
+                                                            table_name='bartol',
+                                                            enpow=enpow)
 
             upgoing_flux_weights *= np.power(ens,3)
             downgoing_flux_weights *= np.power(ens,3)
@@ -729,6 +852,13 @@ if __name__ == '__main__':
                 [low_log_energy,high_log_energy]
             )
 
+            if 'numu' in flav:
+                xtext = 0.68
+                ytext = 0.25
+            elif 'nue' in flav:
+                xtext = 0.35
+                ytext = 0.25
+
             Plot1DSlices(
                 xintvals = ens,
                 yintvals = upgoing_flux_weights,
@@ -737,8 +867,8 @@ if __name__ == '__main__':
                 xtabbins = xtabbins,
                 xlabel = 'Neutrino Energy (GeV)',
                 ylabel = r'%s Flux $\times E_{\nu}^3$ $\left([m^2\,s\,sr\,GeV]^{-1}[GeV]^3\right)$'%flavtex,
-                xtext = 0.68,
-                ytext = 0.25,
+                xtext = xtext,
+                ytext = ytext,
                 text = r'Slice at $\cos\theta_Z=-0.95$',
                 tablename = 'Bartol SNO 2004',
                 savename = os.path.join(
@@ -755,8 +885,8 @@ if __name__ == '__main__':
                 xtabbins = xtabbins,
                 xlabel = 'Neutrino Energy (GeV)',
                 ylabel = r'%s Flux $\times E_{\nu}^3$ $\left([m^2\,s\,sr\,GeV]^{-1}[GeV]^3\right)$'%flavtex,
-                xtext = 0.68,
-                ytext = 0.25,
+                xtext = xtext,
+                ytext = ytext,
                 text = r'Slice at $\cos\theta_Z=0.35$',
                 tablename = 'Bartol SNO 2004',
                 savename = os.path.join(
@@ -781,24 +911,31 @@ if __name__ == '__main__':
     parser.add_argument('--oversample', type=int, default=10,
                         help='''Integer to oversample for integral-preserving
                         checks.''')
+    parser.add_argument('--enpow', type=int, default=1,
+                        help='''Power of energy to use in making the energy
+                        splines i.e. flux * (energy**enpow).''')
     parser.add_argument('--outdir', metavar='DIR', type=str,
                         help='''Store all output plots to this directory.''')
 
     args = parser.parse_args()
 
-    spline_dict, flux_dict = load_2D_table(args.flux_file)
+    spline_dict, flux_dict = load_2D_table(args.flux_file,
+                                           enpow=args.enpow)
 
     if 'honda' in args.flux_file:
         
         if args.onedim_checks:
-            do_1D_honda_test(spline_dict, flux_dict, args.outdir)
+            do_1D_honda_test(spline_dict, flux_dict, args.outdir,
+                             enpow = args.enpow)
 
         if args.twodim_checks:
             do_2D_honda_test(spline_dict, flux_dict,
                              args.outdir, args.ip_checks,
-                             oversample = args.oversample)
+                             oversample = args.oversample,
+                             enpow = args.enpow)
 
     else:
 
         if args.onedim_checks:
-            do_1D_bartol_test(spline_dict, flux_dict, args.outdir)
+            do_1D_bartol_test(spline_dict, flux_dict, args.outdir,
+                              enpow = args.enpow)
