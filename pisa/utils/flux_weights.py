@@ -20,7 +20,7 @@ primaries = ['numu', 'numubar', 'nue', 'nuebar']
 texprimaries = [r'$\nu_{\mu}$', r'$\bar{\nu}_{\mu}$', r'$\nu_{e}$', r'$\bar{\nu}_{e}$']
 
 
-def load_Honda_table(flux_file, enpow=1):
+def load_Honda_table(flux_file, enpow=1, returnTable=False):
 
     logging.debug("Loading atmospheric flux table %s" % flux_file)
 
@@ -81,10 +81,16 @@ def load_Honda_table(flux_file, enpow=1):
 
         spline_dict[nutype] = splines
 
-    return spline_dict, flux_dict
+    for prim in primaries:
+        flux_dict[prim] = flux_dict[prim][::-1]
+
+    if returnTable:
+        return spline_dict, flux_dict
+    else:
+        return spline_dict
 
 
-def load_Bartol_table(flux_file, enpow=1):
+def load_Bartol_table(flux_file, enpow=1, returnTable=False):
 
     logging.debug("Loading atmospheric flux table %s" % flux_file)
 
@@ -159,10 +165,13 @@ def load_Bartol_table(flux_file, enpow=1):
 
         spline_dict[nutype] = splines
 
-    return spline_dict, flux_dict
+    if returnTable:
+        return spline_dict, flux_dict
+    else:
+        return spline_dict
 
 
-def load_2D_table(flux_file, enpow=1):
+def load_2D_table(flux_file, enpow=1, returnTable=False):
     """Manipulate 2 dimensional flux tables.
     
     2D is expected to mean energy and cosZenith, where azimuth is averaged
@@ -183,18 +192,31 @@ def load_2D_table(flux_file, enpow=1):
         if 'bartol' in flux_file:
             logging.warn('WARNING - Usage of the Bartol files in '
                          'integral-preserving mode will give WRONG results.')
-            spline_dict, flux_dict = load_Bartol_table(flux_file,
-                                                       enpow=enpow)
+            if returnTable:
+                spline_dict, flux_dict = load_Bartol_table(flux_file,
+                                                           enpow=enpow,
+                                                           returnTable=True)
+            else:
+                spline_dict = load_Bartol_table(flux_file,
+                                                enpow=enpow)
             spline_dict['name'] = 'bartol'
 
         else:
             raise ValueError('Flux file must be from the Honda group')
     else:
-        spline_dict, flux_dict = load_Honda_table(flux_file,
-                                                  enpow=enpow)
+        if returnTable:
+            spline_dict, flux_dict = load_Honda_table(flux_file,
+                                                      enpow=enpow,
+                                                      returnTable=True)
+        else:
+             spline_dict = load_Honda_table(flux_file,
+                                            enpow=enpow)
         spline_dict['name'] = 'honda'
 
-    return spline_dict, flux_dict
+    if returnTable:
+        return spline_dict, flux_dict
+    else:
+        return spline_dict
 
 
 def calculate_flux_weights(true_energies, true_coszens, en_splines,
@@ -312,7 +334,9 @@ if __name__ == '__main__':
     '''
 
     import os
-    
+
+    import matplotlib
+    maplotlib.use('Agg')
     from matplotlib import pyplot as plt
     plt.rcParams['text.usetex'] = True
     import matplotlib.colors as colors
@@ -920,7 +944,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     spline_dict, flux_dict = load_2D_table(args.flux_file,
-                                           enpow=args.enpow)
+                                           enpow=args.enpow,
+                                           returnTable=True)
 
     if 'honda' in args.flux_file:
         
