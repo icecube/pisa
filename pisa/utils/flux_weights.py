@@ -42,7 +42,7 @@ def load_Honda_table(flux_file, enpow=1, returnTable=False):
     # The energy may change, but the zenith should always be
     # 20 bins, full sky.
     flux_dict['energy'] = flux_dict['energy'][0]
-    flux_dict['coszen'] = np.linspace(0.95, -0.95, 20)
+    flux_dict['coszen'] = np.linspace(-0.95, 0.95, 20)
 
     # Now get a spline representation of the flux table.
     logging.debug('Make spline representation of flux')
@@ -70,7 +70,7 @@ def load_Honda_table(flux_file, enpow=1, returnTable=False):
             for energyfluxval, energyval in zip(energyfluxlist,
                                                 flux_dict['energy']):
                 # Spline works best if you integrate flux * energy
-                tot_flux += energyfluxval*np.power(energyval,enpow)
+                tot_flux += energyfluxval*np.power(energyval,enpow)*0.05
                 int_flux.append(tot_flux)
 
             spline = interpolate.splrep(int_flux_dict['logenergy'],
@@ -112,7 +112,7 @@ def load_Bartol_table(flux_file, enpow=1, returnTable=False):
     # The energy may change, but the zenith should always be
     # 20 bins, full sky.
     flux_dict['energy'] = flux_dict['energy'][0]
-    flux_dict['coszen'] = np.linspace(0.95, -0.95, 20)
+    flux_dict['coszen'] = np.linspace(-0.95, 0.95, 20)
 
     # Now get a spline representation of the flux table.
     logging.debug('Make spline representation of flux')
@@ -283,38 +283,18 @@ def calculate_flux_weights(true_energies, true_coszens, en_splines,
         true_log_energy = np.log10(true_energy)
         spline_vals = [0]
         for czkey in czkeys:
-            # Have to multiply by bin widths to get correct derivatives
-            if table_name == 'honda':
-                # Here the bin width is 0.05 (in log energy)
-                spval = interpolate.splev(true_log_energy,
-                                          en_splines[czkey],
-                                          der=1)*0.05
-            elif table_name == 'bartol':
-
-                #
-                # THIS IS ALSO PART OF BREAKING THE INTERPOLATION AT 10 GEV
-                #if true_energy < 10.0:
-                #    spval = interpolate.splev(true_log_energy,
-                #                              en_splines[czkey],
-                #                              der=1)*0.05
-                #else:
-                #    spval = interpolate.splev(true_log_energy,
-                #                              en_splines[czkey],
-                #                              der=1)*0.1
-                #
-
-                spval = interpolate.splev(true_log_energy,
-                                          en_splines[czkey],
-                                          der=1)
+            spval = interpolate.splev(true_log_energy,
+                                      en_splines[czkey],
+                                      der=1)
 
             spline_vals.append(spval)
         spline_vals = np.array(spline_vals)
-        int_spline_vals = np.cumsum(spline_vals)
+        int_spline_vals = np.cumsum(spline_vals)*0.1
         spline = interpolate.splrep(cz_spline_points,
                                     int_spline_vals, s=0)
         flux_weights.append(interpolate.splev(true_coszen,
                                               spline,
-                                              der=1)*(0.1/np.power(true_energy,enpow)))
+                                              der=1)/np.power(true_energy,enpow))
 
     flux_weights = np.array(flux_weights)
     return flux_weights
@@ -336,7 +316,7 @@ if __name__ == '__main__':
     import os
 
     import matplotlib
-    maplotlib.use('Agg')
+    matplotlib.use('Agg')
     from matplotlib import pyplot as plt
     plt.rcParams['text.usetex'] = True
     import matplotlib.colors as colors
@@ -549,8 +529,11 @@ if __name__ == '__main__':
             upgoing_flux_weights *= np.power(ens,3)
             downgoing_flux_weights *= np.power(ens,3)
 
-            fluxupgoing = flux_dict[flav][np.where(flux_dict['coszen']==-0.95)][0]
-            fluxdowngoing = flux_dict[flav][np.where(flux_dict['coszen']==0.35)][0]
+            coszen_strs = ['%.2f'%coszen for coszen in flux_dict['coszen']]
+            coszen_strs = np.array(coszen_strs)
+
+            fluxupgoing = flux_dict[flav][np.where(coszen_strs=='-0.95')][0]
+            fluxdowngoing = flux_dict[flav][np.where(coszen_strs=='0.35')][0]
 
             fluxupgoing *= np.power(flux_dict['energy'],3)
             fluxdowngoing *= np.power(flux_dict['energy'],3)
@@ -864,8 +847,11 @@ if __name__ == '__main__':
             upgoing_flux_weights *= np.power(ens,3)
             downgoing_flux_weights *= np.power(ens,3)
 
-            fluxupgoing = flux_dict[flav][np.where(flux_dict['coszen']==-0.95)][0]
-            fluxdowngoing = flux_dict[flav][np.where(flux_dict['coszen']==0.35)][0]
+            coszen_strs = ['%.2f'%coszen for coszen in flux_dict['coszen']]
+            coszen_strs = np.array(coszen_strs)
+
+            fluxupgoing = flux_dict[flav][np.where(coszen_strs=='-0.95')][0]
+            fluxdowngoing = flux_dict[flav][np.where(coszen_strs=='0.35')][0]
 
             fluxupgoing *= np.power(flux_dict['energy'],3)
             fluxdowngoing *= np.power(flux_dict['energy'],3)
