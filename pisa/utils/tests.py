@@ -49,8 +49,8 @@ def order_str(x):
 
 
 def check_agreement(testname, thresh_ratio, ratio, thresh_diff, diff):
-    ratio_pass = ratio <= thresh_ratio
-    diff_pass = diff <= thresh_diff
+    ratio_pass = np.abs(ratio) <= np.abs(thresh_ratio)
+    diff_pass = np.abs(diff) <= np.abs(thresh_diff)
 
     thresh_ratio_str = order_str(thresh_ratio)
     ratio_ord_str = order_str(ratio)

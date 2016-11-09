@@ -106,7 +106,7 @@ def reduceToHist(expected_values):
 
 
 # TODO: put uncertainties in
-def rebin(hist0, orig_binning, new_binning):
+def rebin(hist0, orig_binning, new_binning, normalize_values=True):
     if set(new_binning.basenames) != set(orig_binning.basenames):
         raise ValueError(
             "`new_binning` dimensions' basenames %s do not have 1:1"
@@ -128,8 +128,12 @@ def rebin(hist0, orig_binning, new_binning):
 
         orig_dim = orig_binning.dimensions[orig_dim_idx]
 
-        orig_edges = normQuant(orig_dim.bin_edges, sigfigs=HASH_SIGFIGS)
-        new_edges = normQuant(new_dim.bin_edges, sigfigs=HASH_SIGFIGS)
+        if normalize_values:
+            orig_edges = normQuant(orig_dim.bin_edges, sigfigs=HASH_SIGFIGS)
+            new_edges = normQuant(new_dim.bin_edges, sigfigs=HASH_SIGFIGS)
+        else:
+            orig_edges = orig_dim.bin_edges
+            new_edges = new_dim.bin_edges
         if not np.all(new_edges == orig_edges):
             orig_edge_idx = np.array([np.where(orig_edges == n)
                                       for n in new_edges]).ravel()
@@ -227,7 +231,7 @@ class Map(object):
 
     """
     _slots = ('name', 'hist', 'binning', 'hash', '_hash', 'tex',
-               'full_comparison', 'parent_indexer')
+               'full_comparison', 'parent_indexer', 'normalize_values')
     _state_attrs = ('name', 'hist', 'binning', 'hash', 'tex',
                     'full_comparison')
 
@@ -262,6 +266,7 @@ class Map(object):
                 np.ascontiguousarray(hist))
         if error_hist is not None:
             self.set_errors(error_hist)
+        self.normalize_values = False
 
     def __repr__(self):
         previous_precision = np.get_printoptions()['precision']
@@ -661,7 +666,9 @@ class Map(object):
                 nan_at = np.isnan(orig_hist)
                 valid_mask = ~nan_at
                 gauss = np.empty_like(orig_hist, dtype=np.float64)
-                gauss[valid_mask] = norm.rvs(loc=orig_hist[valid_mask], scale=sigma[valid_mask])
+                gauss[valid_mask] = norm.rvs(
+                    loc=orig_hist[valid_mask], scale=sigma[valid_mask]
+                )
 
                 hist_vals = np.empty_like(orig_hist, dtype=np.float64)
                 hist_vals[valid_mask] = poisson.rvs(
@@ -703,16 +710,20 @@ class Map(object):
     def _hashable_state(self):
         state = OrderedDict()
         state['name'] = self.name
-        state['hist'] = normQuant(unp.nominal_values(self.hist),
-                                  sigfigs=HASH_SIGFIGS)
+        if self.normalize_values:
+            state['hist'] = normQuant(unp.nominal_values(self.hist),
+                                      sigfigs=HASH_SIGFIGS)
+            stddevs = normQuant(unp.std_devs(self.hist), sigfigs=HASH_SIGFIGS)
+        else:
+            state['hist'] = unp.nominal_values(self.hist)
+            stddevs = unp.std_devs(self.hist)
         state['binning'] = self.binning._hashable_state
-        stddevs = normQuant(unp.std_devs(self.hist), sigfigs=HASH_SIGFIGS)
         # TODO: better check here to see if the contained datatype is unp, as
         # opposed to 0 stddev (which could be the case but the user wants for
         # uncertainties to propagate)
         if np.all(stddevs == 0):
             stddevs = None
-        else:
+        elif self.normalize_values:
             stddevs = normQuant(stddevs, sigfigs=HASH_SIGFIGS)
         state['error_hist'] = stddevs
         state['tex'] = self.tex

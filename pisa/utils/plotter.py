@@ -259,12 +259,14 @@ class Plotter(object):
             bins = [map.input_binning[name] for name in map.input_binning.names]
             bin_edges = map.input_binning.bin_edges
             bin_centers = map.input_binning.weighted_centers
+            linlog = all([(b.is_log or b.is_lin) for b in map.input_binning])
             xform_array = unp.nominal_values(map.xform_array)
             zmap = np.log10(unp.nominal_values(map.xform_array)) if self.log else unp.nominal_values(map.xform_array)
         elif isinstance(map, Map):
             bins = [map.binning[name] for name in map.binning.names]
             bin_edges = map.binning.bin_edges
             bin_centers = map.binning.weighted_centers
+            linlog = all([(b.is_log or b.is_lin) for b in map.binning])
             zmap = np.log10(unp.nominal_values(map.hist)) if self.log else unp.nominal_values(map.hist)
         if self.symmetric:
             vmax = max(np.max(np.ma.masked_invalid(zmap)), - np.min(np.ma.masked_invalid(zmap)))
@@ -275,11 +277,14 @@ class Plotter(object):
             if vmin == None:
                 vmin = np.min(zmap[np.isfinite(zmap)])
         extent = [np.min(bin_edges[0].m), np.max(bin_edges[0].m), np.min(bin_edges[1].m), np.max(bin_edges[1].m)]
-        # needs to be transposed for imshow
-        #img = plt.imshow(zmap.T,origin='lower',interpolation='nearest',extent=extent,aspect='auto',
-        #    cmap=cmap, **kwargs)
-        x,y = np.meshgrid(bin_edges[0],bin_edges[1])
-        img = plt.pcolormesh(x,y,zmap.T,vmin=vmin, vmax=vmax, cmap=cmap, **kwargs)
+        if linlog:
+            # needs to be transposed for imshow
+            img = plt.imshow(zmap.T,origin='lower',interpolation='nearest',extent=extent,aspect='auto',
+                cmap=cmap, **kwargs)
+        else:
+            # only lin or log can be handled by imshow...otherise use colormesh
+            x,y = np.meshgrid(bin_edges[0],bin_edges[1])
+            img = plt.pcolormesh(x,y,zmap.T,vmin=vmin, vmax=vmax, cmap=cmap, **kwargs)
         if self.annotate:
             #counts = img.get_array().T
             for i in range(len(bin_centers[0])):

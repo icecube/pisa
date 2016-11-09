@@ -236,6 +236,7 @@ def test_DistributionMaker():
 if __name__ == '__main__':
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
     import numpy as np
+    import os
     from pisa.utils.fileio import expandPath, from_file, to_file
     from pisa.utils.config_parser import parse_pipeline_config
     from pisa.utils.plotter import Plotter

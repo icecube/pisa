@@ -89,6 +89,12 @@ if __name__ == '__main__':
         help='''Settings related to the minimizer used in the LLR analysis.'''
     )
     parser.add_argument(
+        '--debug-mode', type=int, choices=[0, 1, 2], required=False, default=1,
+        help='''How much information to keep in the output file. 0 for only
+        essentials for a physics analysis, 1 for more minimizer history, 2 for
+        whatever can be recorded.'''
+    )
+    parser.add_argument(
         '-v', action='count', default=None,
         help='set verbosity level'
     )
@@ -113,6 +119,6 @@ if __name__ == '__main__':
                         steps=args.steps, only_points=args.only_points,
                         outer=not args.no_outer, profile=args.profile,
                         minimizer_settings=minimizer_settings,
-                        outfile=args.outfile)
+                        outfile=args.outfile, debug_mode=args.debug_mode)
     to_file(res, args.outfile)
     logging.info("Done.")

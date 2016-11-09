@@ -13,7 +13,8 @@ from pisa.core.events import Events
 from pisa.utils.resources import find_resource
 
 
-class GPUweight(object):
+
+class GPUWeight(object):
     """
     Collection of CUDA functions to calculate event weights on GPU some code is
     copied from PISA 2 and oscFit Python code and c++-izing it

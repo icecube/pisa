@@ -337,7 +337,8 @@ class vbwkde(Stage):
                              self.input_binning.hash,
                              self.params.reco_events.value,
                              self.params.transform_events_keep_criteria.value,
-                             self.transform_groups])
+                             self.transform_groups],
+                            full_hash=self.full_hash)
         logging.trace('kde_hash = %s' %kde_hash)
         if (self._kde_hash is not None and kde_hash == self._kde_hash
             and hasattr(self, 'all_kde_info')):

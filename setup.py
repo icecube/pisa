@@ -244,15 +244,16 @@ if __name__ == '__main__':
             'line_profiler',
             'matplotlib',
             'pint',
+            'kde',
             'simplejson>=3.2.0',
             'tables',
             'uncertainties'
         ],
         extras_require={
-            'cuda':  [
+            'cuda': [
                 'pycuda'
             ],
-            'numba':  [
+            'numba': [
                 'enum34',
                 'numba'
             ],

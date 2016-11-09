@@ -18,7 +18,8 @@ This is either achieved through b-spline interpolation (done in both energy and
 cosZenith dimensions simultaneously in log10(flux)) or an integral-preserving
 method that manipulates 1 dimensional splines of integrated flux.
 
-Most of the functionality will be ported from PISA with any necessary changes/improvements applied.
+Most of the functionality will be ported from PISA with any necessary
+changes/improvements applied.
 """
 
 
@@ -31,9 +32,11 @@ from pisa import ureg, Q_
 from pisa.core.map import Map, MapSet
 from pisa.core.stage import Stage
 from pisa.utils.resources import open_resource
-from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.profiler import line_profile, profile
+
+
+__all__ = ['apply_ratio_scale_2d', 'mmc2d', 'honda']
 
 
 try:

@@ -322,7 +322,7 @@ def parse_param(config, section, selector, fullname, pname, value):
         param = Param(**kwargs)
     except:
         logging.error('Failed to instantiate new Param object with kwargs %s'
-                      %param_kwargs)
+                      %kwargs)
         raise
 
     return param

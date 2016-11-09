@@ -305,9 +305,12 @@ def recursiveAllclose(x, y, *args, **kwargs):
 
 
 # TODO: add an arg and logic to round to a number of significand *bits* (as
-# opposed to digits) for more precise control, esp. if we decide to move to
-# FP32 or (even more critical) FP16?
-def normQuant(obj, sigfigs=None):
+# opposed to digits) (or even a fixed number of bits that align with special
+# floating point spec values -- like half, single, double) for more precise
+# control (and possibly faster comp), esp. if we decide to move to FP32 or
+# (even more critical) FP16?
+#@line_profile
+def normQuant(obj, sigfigs=None, full_norm=True):
     """Normalize quantities such that two things that *should* be equal are
     returned as identical objects.
 
@@ -329,6 +332,18 @@ def normQuant(obj, sigfigs=None):
     sigfigs : None or int > 0
         Number of digits to which to round numbers' significands; if None, do
         not round numbers.
+
+    full_norm : bool
+        If True, does full translation and normalization which is good across
+        independent invocations and is careful about normalizing units, etc.
+        If false, certain assumptions are made that modify the behavior
+        described below in the Notes section which help speed things up in the
+        case of e.g. a minimizer run, where we know certain things won't
+        change:
+        * Units are not normalized. They are assumed to stay the same from
+          run to run.
+        * sigfigs are not respected; full significant figures are returned
+          (since it takes time to round all values appropriately).
 
     Returns
     -------
@@ -355,7 +370,7 @@ def normQuant(obj, sigfigs=None):
       are returned unaltered (e.g. strings).
     * **Pint quantities** (numbers with units): Convert to their base units.
     * **Floating-point numbers** (including the converted pint quantities):
-      Round values to `sigfig` significant figures.
+      Round values to `sigfigs` significant figures.
     * **Numbers with uncertainties** (via the `uncertainties` module) have
       their nominal values rounded as above but their standard deviations are
       rounded to the same order of magnitude (*not* number of significant
@@ -432,19 +447,22 @@ def normQuant(obj, sigfigs=None):
     True
 
     """
+    if not full_norm:
+        return obj
+
     # Nothing to convert for strings, None, ...
     if isinstance(obj, basestring) or obj is None:
         return obj
 
     round_result = False
-    if sigfigs is not None:
+    if full_norm and sigfigs is not None:
         if not (int(sigfigs) == float(sigfigs) and sigfigs > 0):
             raise ValueError('`sigfigs` must be positive and integer.')
         round_result = True
         sigfigs = int(sigfigs)
 
     # Store kwargs for easily passing to recursive calls of this function
-    kwargs = dict(sigfigs=sigfigs)
+    kwargs = dict(sigfigs=sigfigs, full_norm=full_norm)
 
     # Recurse into dict by its (sorted) keys (or into OrderedDict using keys in
     # their defined order) and return an OrderedDict in either case.
@@ -461,9 +479,9 @@ def normQuant(obj, sigfigs=None):
     # Sequences, etc. but NOT numpy arrays (or pint quantities, which are
     # iterable) get their elements normalized and populated to a new list for
     # returning.
-    if (isinstance(obj, (Iterable, Iterator, Sequence)) and not
-        (isinstance(obj, np.ndarray)
-         or isinstance(obj, pint.quantity._Quantity))):
+    if (isinstance(obj, (Iterable, Iterator, Sequence))
+            and not (isinstance(obj, np.ndarray)
+                     or isinstance(obj, pint.quantity._Quantity))):
         return [normQuant(x, **kwargs) for x in obj]
 
     # Must be a numpy array or scalar if we got here...
@@ -481,7 +499,8 @@ def normQuant(obj, sigfigs=None):
     has_units = False
     if isinstance(obj, pint.quantity._Quantity):
         has_units = True
-        obj = obj.to_base_units()
+        if full_norm:
+            obj = obj.to_base_units()
         units = obj.units
         obj = obj.magnitude
 

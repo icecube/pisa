@@ -7,15 +7,15 @@ from itertools import product
 
 import numpy as np
 
+from pisa.core.events import Events
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
-from pisa.core.events import Events
+from pisa.utils.config_parser import split
+from pisa.utils.fileio import from_file
 from pisa.utils.flavInt import flavintGroupsFromString
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.profiler import profile
-from pisa.utils.fileio import from_file
-from pisa.utils.config_parser import split
 
 
 # TODO: the below logic does not generalize to muons, but probably should
@@ -66,19 +66,26 @@ class polyfits(Stage):
             input_binning=input_binning,
             output_binning=output_binning
         )
+        self.fit_results = None
+        self.pnames = None
 
-    def _compute_nominal_transforms(self):
+    def load_discr_sys(self, pnames):
         """Load the fit results from the file and make some check
         compatibility"""
-        self.pnames = [pname for pname in self.params.names if not
-            pname.endswith('_file')]
         self.fit_results = {}
-        for pname in self.pnames:
+        for pname in pnames:
             self.fit_results[pname] = from_file(
                 self.params[pname+'_file'].value
             )
             assert self.input_names == self.fit_results[pname]['map_names']
-            #assert self.input_binning.hash == self.fit_results[pname]['binning_hash']
+        self.pnames = pnames
+
+    def _compute_nominal_transforms(self):
+        # TODO: what is the mysterious logic here?
+        pnames = [pname for pname in self.params.names if not
+                  pname.endswith('_file')]
+        if self.fit_results is None or pnames != self.pnames:
+            self.load_discr_sys(pnames)
 
     @profile
     def _compute_transforms(self):

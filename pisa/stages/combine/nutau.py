@@ -1,22 +1,18 @@
 # authors: P.Eller (pde3@psu.edu)
 # date:   September 2016
 
-import sys, os
+
 import numpy as np
-import time
 
 from pisa import ureg, Q_
 from pisa.core.stage import Stage
-from pisa.core.param import ParamSet
-from pisa.core.events import Events
-from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.core.transform import BinnedTensorTransform, TransformSet
-from pisa.core.map import Map, MapSet
-from pisa.utils.resources import find_resource
 from pisa.utils.log import logging
-from pisa.utils.comparisons import normQuant
-from pisa.utils.hash import hash_obj
 from pisa.utils.config_parser import split
+
+
+__all__ = ['nutau']
+
 
 class nutau(Stage):
     """
@@ -39,12 +35,11 @@ class nutau(Stage):
                 global scaling factor that is applied to all *_nc maps
             nutau_norm : quantity (dimensionless)
             nutau_cc_norm : quantity (dimensionless)
-    """
 
+    """
     def __init__(self, params, input_binning, input_names, combine_groups,
                  disk_cache=None, memcache_deepcopy=True, error_method=None,
                  outputs_cache_depth=20, debug_mode=None):
-
         expected_params = (
             'nu_nc_norm',
             #'nutau_norm',
@@ -73,7 +68,6 @@ class nutau(Stage):
         )
 
     def _compute_transforms(self):
-    
         dims = self.input_binning.names
 
         transforms = []

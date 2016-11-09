@@ -96,14 +96,15 @@ class Param(object):
 
 
     """
-    _slots = ('name', 'unique_id', 'value', 'prior', 'range', 'is_fixed', 'is_discrete',
-              'nominal_value', '_rescaled_value',
-              '_nominal_value', '_tex', 'help','_value', '_range', '_units')
+    _slots = ('name', 'unique_id', 'value', 'prior', 'range', 'is_fixed',
+              'is_discrete', 'nominal_value', '_rescaled_value',
+              '_nominal_value', '_tex', 'help','_value', '_range', '_units',
+              'normalize_values')
     _state_attrs = ('name', 'unique_id', 'value', 'prior', 'range', 'is_fixed',
                      'is_discrete', 'nominal_value', 'tex', 'help')
 
-    def __init__(self, name, value, prior, range, is_fixed, unique_id=None, is_discrete=False,
-                 nominal_value=None, tex=None, help=''):
+    def __init__(self, name, value, prior, range, is_fixed, unique_id=None,
+                 is_discrete=False, nominal_value=None, tex=None, help=''):
         self._value = None
         self.value = value
         self.name = name
@@ -115,6 +116,7 @@ class Param(object):
         self.is_fixed = is_fixed
         self.is_discrete = is_discrete
         self._nominal_value = value if nominal_value is None else nominal_value
+        self.normalize_values = False
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -371,7 +373,9 @@ class Param(object):
 
     @property
     def state_hash(self):
-        return hash_obj(normQuant(self.state))
+        if self.normalize_values:
+            return hash_obj(normQuant(self.state))
+        return hash_obj(self.state)
 
 
 # TODO: temporary modification of parameters via "with" syntax?
@@ -442,6 +446,7 @@ class ParamSet(Sequence):
                 'All params must be of type "Param"'
 
         self._params = param_sequence
+        self.normalize_values = False
 
     @property
     def _serializable_state(self):
@@ -672,7 +677,8 @@ class ParamSet(Sequence):
             elif isbarenumeric(val): #isinstance(val, (Number, pint.quantity._Quantity)):
                 self._params[idx].value = val
             else:
-                raise ValueError('Cannot set param "%s" to `val`=%s' %(attr, val))
+                raise ValueError('Cannot set param "%s" to `val`=%s'
+                                 %(attr, val))
 
     def __iter__(self):
         return iter(self._params)
@@ -876,15 +882,21 @@ class ParamSet(Sequence):
 
     @property
     def values_hash(self):
-        return hash_obj(normQuant(self.values))
+        if self.normalize_values:
+            return hash_obj(normQuant(self.values))
+        return hash_obj(self.values)
 
     @property
     def nominal_values_hash(self):
-        return hash_obj(normQuant(self.nominal_values))
+        if self.normalize_values:
+            return hash_obj(normQuant(self.nominal_values))
+        return hash_obj(self.nominal_values)
 
     @property
     def state_hash(self):
-        return hash_obj(normQuant(self.state))
+        if self.normalize_values:
+            return hash_obj(normQuant(self.state))
+        return hash_obj(self.state)
 
     def to_json(self, filename, **kwargs):
         """Serialize the state to a JSON file that can be instantiated as a new

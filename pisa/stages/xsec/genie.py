@@ -7,6 +7,8 @@ in order to obtain the relavant cross-sections. Example pipeline settings file
 can be found in
 $PISA/pisa/resources/settings/pipeline/xsec.cfg
 """
+
+
 from itertools import product
 from operator import add
 
@@ -26,6 +28,9 @@ from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
+
+
+__all__ = ['genie', 'test_standard_plots', 'test_per_e_plot']
 
 
 class genie(Stage):
@@ -238,7 +243,7 @@ class genie(Stage):
     def load_xsec_splines(self):
         """Load the cross-sections splines from the ROOT file."""
         xsec_file = self.params['xsec_file'].value
-        this_hash = hash_obj(xsec_file)
+        this_hash = hash_obj(xsec_file, full_hash=self.full_hash)
         if this_hash == self.xsec_hash:
             self.xsec.reset()
             return
@@ -342,7 +347,7 @@ def test_standard_plots(xsec_file, outdir='./'):
     from pisa.utils.plotter import Plotter
     xsec = genie.get_combined_xsec(xsec_file)
 
-    e_bins = MultiDimBinning(OneDimBinning(name='true_energy', tex=r'E$_\nu$',
+    e_bins = MultiDimBinning(OneDimBinning(name='true_energy', tex=r'E_\nu',
                                            num_bins=150, domain=(1E-1, 1E3)*ureg.GeV,
                                            is_log=True))
     xsec.compute_maps(e_bins)
@@ -359,7 +364,7 @@ def test_per_e_plot(xsec_file, outdir='./'):
     from pisa.utils.plotter import Plotter
     xsec = genie.get_combined_xsec(xsec_file)
 
-    e_bins = MultiDimBinning(OneDimBinning(name='true_energy', tex=r'E$_\nu$',
+    e_bins = MultiDimBinning(OneDimBinning(name='true_energy', tex=r'E_\nu',
                                            num_bins=200, domain=(1E-1, 1E3)*ureg.GeV,
                                            is_log=True))
     xsec.compute_maps(e_bins)
@@ -371,6 +376,7 @@ def test_per_e_plot(xsec_file, outdir='./'):
                        label=r'Cross-Section / Energy ($m^{2} GeV^{-1}$)')
     maps = xsec.return_mapset()
     plot_obj.plot_xsec(maps, ylim=(3.5E-41, 3E-40))
+
 
 if __name__ == '__main__':
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter

@@ -173,6 +173,7 @@ class OneDimBinning(object):
         if domain is not None:
             assert isinstance(domain, Iterable)
             assert len(domain) == 2
+        self.normalize_values = False
         self._name = name
         self._basename = basename(name)
         if tex is None:
@@ -483,7 +484,10 @@ class OneDimBinning(object):
     def _hashable_state(self):
         state = OrderedDict()
         state['name'] = self.name
-        bin_edges = normQuant(self.bin_edges, sigfigs=HASH_SIGFIGS)
+        if self.normalize_values:
+            bin_edges = normQuant(self.bin_edges, sigfigs=HASH_SIGFIGS)
+        else:
+            bin_edges = self.bin_edges
         state['bin_edges'] = bin_edges
         state['is_log'] = self.is_log
         state['is_lin'] = self.is_lin
@@ -575,7 +579,10 @@ class OneDimBinning(object):
 
         """
         if self._edges_hash is None:
-            bin_edges = normQuant(self.bin_edges, sigfigs=HASH_SIGFIGS)
+            if self.normalize_values:
+                bin_edges = normQuant(self.bin_edges, sigfigs=HASH_SIGFIGS)
+            else:
+                bin_edges = self.bin_edges
             self._edges_hash = hash_obj(bin_edges)
         return self._edges_hash
 
@@ -593,7 +600,7 @@ class OneDimBinning(object):
         units = format(self.units, '~').strip()
         if units == '':
             return self.tex
-        return self.tex + r'\; (%s)'%units
+        return self.tex + r' \; (%s)'%units
 
     @property
     def bin_widths(self):
@@ -782,8 +789,12 @@ class OneDimBinning(object):
         if self.units.dimensionality != other.units.dimensionality:
             return False
 
-        my_normed_bin_edges = set(normQuant(self.bin_edges))
-        other_normed_bin_edges = set(normQuant(other.bin_edges))
+        if self.normalize_values:
+            my_normed_bin_edges = set(normQuant(self.bin_edges))
+            other_normed_bin_edges = set(normQuant(other.bin_edges))
+        else:
+            my_normed_bin_edges = set(self.bin_edges)
+            other_normed_bin_edges = set(other.bin_edges)
 
         if len(my_normed_bin_edges.difference(other_normed_bin_edges)) == 0:
             return True

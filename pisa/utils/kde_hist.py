@@ -4,6 +4,7 @@ from kde.cudakde import gaussian_kde
 import numpy as np
 from uncertainties import unumpy as unp
 
+from pisa.utils.profiler import profile, line_profile
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.profiler import profile
 
@@ -11,12 +12,13 @@ from pisa.utils.profiler import profile
 __all__ = ['kde_histogramdd']
 
 
-@profile
+#@line_profile
 def kde_histogramdd(sample, binning, weights=[], bw_method='scott',
                     adaptive=True, alpha=0.3, use_cuda=False,
-                    coszen_reflection=0.25, coszen_name = 'coszen',
+                    coszen_reflection=0.25, coszen_name='coszen',
                     oversample=1):
-    """Run kernel density estimation (KDE) for an array of data points, and
+    """
+    Run kernel density estimation (KDE) for an array of data points, and
     then evaluate the on a histogram like grid, to effectively produce a
     histogram-like output
 
@@ -49,17 +51,23 @@ def kde_histogramdd(sample, binning, weights=[], bw_method='scott',
     #else:
     #    raw_hist, e = np.histogramdd(sample, bins=bins, weights=weights)
     #norm = np.sum(raw_hist)
+
     if len(weights) == 0:
         norm = sample.shape[0]
     else:
         norm = np.sum(weights)
+
     # Oversample
-    binning = binning.oversample(oversample)
+    if not oversample == 1:
+        binning = binning.oversample(oversample)
+
     # Flip around to satisfy the kde implementation
     x = sample.T
+
     # Must have same amount of dimensions as binning dimensions
     assert x.shape[0] == len(binning)
     cz_bin = binning.names.index(coszen_name)
+
     # Normal hist
 
     # Swap out cz bin to first place (index 0)
@@ -75,11 +83,10 @@ def kde_histogramdd(sample, binning, weights=[], bw_method='scott',
     # Check if edge needs to be reflected
     reflect_lower = binning[coszen_name].bin_edges[0] == -1
     reflect_upper = binning[coszen_name].bin_edges[-1] == 1
-
     # Get the kernel weights
     kernel_weights_adaptive = gaussian_kde(
         x, weights=weights, bw_method=bw_method, adaptive=adaptive,
-        alpha=alpha, use_cuda=True
+        alpha=alpha, use_cuda=use_cuda
     )
 
     # Get the bin centers, where we're going to evaluate the kdes at, en extend
@@ -106,15 +113,20 @@ def kde_histogramdd(sample, binning, weights=[], bw_method='scott',
         binning.shape[0] + int(reflect_upper)+int(reflect_lower)*l,
         binning.shape[1]
     )
+
     # Shape of the reflection edges alone
     minishape = (binning.shape[0] - l, binning.shape[1])
+
     # Create a set of points
     grid = np.meshgrid(*bin_points, indexing='ij')
     points = np.array([g.ravel() for g in grid])
+
     # Evaluate KDEs at given points
     hist = kernel_weights_adaptive(points)
+
     # Reshape 1d array into nd
     hist = hist.reshape(megashape)
+
     # Cut off the reflection edges, mirror then, fill up remaining space with
     # zeros and add to histo
     if reflect_lower:
@@ -124,6 +136,7 @@ def kde_histogramdd(sample, binning, weights=[], bw_method='scott',
         hist = hist[l:,:]
     else:
         hist0 = 0
+
     if reflect_upper:
         hist1 = hist[-l:,:]
         hist1_0 = np.zeros(minishape)
@@ -131,18 +144,26 @@ def kde_histogramdd(sample, binning, weights=[], bw_method='scott',
         hist = hist[:-l,:]
     else:
         hist1 = 0
+
     hist = hist + hist1 + hist0
+
     # Bin volumes
-    volume = binning.bin_volumes()
-    hist *= volume
+    volume = binning.bin_volumes(attach_units=False)
+    hist = hist*volume
+
     # Downsample
-    for i, b in enumerate(binning):
-        hist = np.add.reduceat(
-            hist, np.arange(0, len(b.bin_edges)-1, oversample), axis=i
-        )
+    if not oversample==1:
+        for i,b in enumerate(binning):
+            hist = np.add.reduceat(
+                hist,
+                np.arange(0, len(b.bin_edges)-1, oversample),
+                axis=i
+            )
+
     # Swap back the axes
     if not cz_bin == 0:
         hist = np.swapaxes(hist, 0, cz_bin)
+
     #hist = hist/np.sum(hist)*norm
     return hist*norm
 

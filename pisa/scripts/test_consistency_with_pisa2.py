@@ -25,9 +25,10 @@ from pisa.utils.config_parser import parse_pipeline_config
 from pisa.utils.tests import has_cuda, check_agreement, plot_comparisons
 
 
-# TODO: names shouldn't indicate that this is PISA 3; it is whatever the
-# current PISA is. The only version that is fixed is PISA 2, against which
-# we're comparing the current PISA version.
+__all__ = ['compare_flux', 'compare_osc', 'compare_aeff', 'compare_reco',
+           'compare_pid', 'compare_flux_full', 'compare_osc_full',
+           'compare_aeff_full', 'compare_reco_full', 'compare_pid_full']
+
 
 def compare_flux(config, servicename, pisa2file, systname,
                  outdir, ratio_test_threshold, diff_test_threshold):
@@ -788,7 +789,7 @@ def compare_pid_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
 
 if __name__ == '__main__':
     if FTYPE == np.float32:
-        dflt_ratio_threshold = 1e-4
+        dflt_ratio_threshold = 5e-4
     elif FTYPE == np.float64:
         dflt_ratio_threshold = 1e-8
     else:
@@ -1125,7 +1126,7 @@ if __name__ == '__main__':
         )
         pisa2file = find_resource(pisa2file)
         pisa2_comparisons = from_file(pisa2file)
-        # Up to flux stage comparisons
+        # Through flux stage comparisons
         compare_flux_full(
             pisa_maps=pisa2_comparisons[0],
             cake_maps=pipeline['flux'].outputs,
@@ -1133,7 +1134,7 @@ if __name__ == '__main__':
             ratio_test_threshold=args.ratio_threshold,
             diff_test_threshold=args.diff_threshold
         )
-        # Up to osc stage comparisons
+        # Through osc stage comparisons
         compare_osc_full(
             pisa_maps=pisa2_comparisons[1],
             cake_maps=pipeline['osc'].outputs,
@@ -1141,7 +1142,7 @@ if __name__ == '__main__':
             ratio_test_threshold=args.ratio_threshold,
             diff_test_threshold=args.diff_threshold
         )
-        # Up to aeff stage comparisons
+        # Through aeff stage comparisons
         compare_aeff_full(
             pisa_maps=pisa2_comparisons[2],
             cake_maps=pipeline['aeff'].outputs,
@@ -1149,7 +1150,7 @@ if __name__ == '__main__':
             ratio_test_threshold=args.ratio_threshold,
             diff_test_threshold=args.diff_threshold
         )
-        # Up to reco stage comparisons
+        # Through reco stage comparisons
         compare_reco_full(
             pisa_maps=pisa2_comparisons[3],
             cake_maps=pipeline['reco'].outputs,
@@ -1157,7 +1158,7 @@ if __name__ == '__main__':
             ratio_test_threshold=args.ratio_threshold,
             diff_test_threshold=args.diff_threshold
         )
-        # Up to PID stage comparisons
+        # Through PID stage comparisons
         compare_pid_full(
             pisa_maps=pisa2_comparisons[4],
             cake_maps=pipeline['pid'].outputs, # use reco here
