@@ -918,18 +918,30 @@ if __name__ == '__main__':
                          oversample, enpow=1):
 
         if oversample == 100:
-            all_ens = np.concatenate((np.logspace(-0.99975,0.99975,4000),np.logspace(1.0005,3.9995,3000)))
-            all_ens_bins = np.concatenate((np.logspace(-1.0,1.0,4001),np.logspace(1.01,4.0,3000)))
+            all_ens = [np.logspace(-0.99975,0.99975,4000),
+                       np.logspace(1.0005,3.9995,3000)]
+            all_en_bins = [np.logspace(-1.0,1.0,4001),
+                            np.logspace(1.0,4.0,3001)]
+            all_all_ens_bins = np.concatenate((np.logspace(-1.0,1.0,4001),
+                                               np.logspace(1.001,4.0,3000)))
             all_czs = np.linspace(-0.9995,0.9995,2000)
             all_czs_bins = np.linspace(-1.0,1.0,2001)
         elif oversample == 10:
-            all_ens = np.concatenate((np.logspace(-0.9975,0.9975,400),np.logspace(1.005,3.995,300)))
-            all_ens_bins = np.concatenate((np.logspace(-1.0,1.0,401),np.logspace(1.01,4.0,300)))
+            all_ens = [np.logspace(-0.9975,0.9975,400),
+                       np.logspace(1.005,3.995,300)]
+            all_en_bins = [np.logspace(-1.0,1.0,401),
+                            np.logspace(1.0,4.0,301)]
+            all_all_ens_bins = np.concatenate((np.logspace(-1.0,1.0,401),
+                                               np.logspace(1.01,4.0,300)))
             all_czs = np.linspace(-0.995,0.995,200)
             all_czs_bins = np.linspace(-1.0,1.0,201)
         elif oversample == 1:
-            all_ens = np.concatenate((np.logspace(-0.975,0.975,40),np.logspace(1.05,3.95,30)))
-            all_ens_bins = np.concatenate((np.logspace(-1.0,1.0,41),np.logspace(1.1,4.0,30)))
+            all_ens = [np.logspace(-0.975,0.975,40),
+                       np.logspace(1.05,3.95,30)]
+            all_en_bins = [np.logspace(-1.0,1.0,41),
+                            np.logspace(1.0,4.0,31)]
+            all_all_ens_bins = np.concatenate((np.logspace(-1.0,1.0,41),
+                                               np.logspace(1.1,4.0,30)))
             all_czs = np.linspace(-0.95,0.95,20)
             all_czs_bins = np.linspace(-1.0,1.0,21)
         else:
@@ -938,23 +950,120 @@ if __name__ == '__main__':
                              'implement this please be careful with defining '
                              'the binning objects as above'%oversample)
 
-        all_ens_mg, all_czs_mg = np.meshgrid(all_ens, all_czs)
+        en_labels = ['3DCalc', '1DCalc']
+
+        all_fluxes = {}
+        for flav in primaries:
+            all_fluxes[flav] = []
+
+        for all_en, all_ens_bins, en_label in zip(all_ens,
+                                                  all_en_bins,
+                                                  en_labels):
+            all_ens_mg, all_czs_mg = np.meshgrid(all_en, all_czs)
+
+            for flav, flavtex in zip(primaries, texprimaries):
+
+                all_flux_weights = calculate_flux_weights(all_ens_mg.flatten(),
+                                                          all_czs_mg.flatten(),
+                                                          spline_dict[flav],
+                                                          table_name='bartol',
+                                                          enpow=enpow)
+
+                all_flux_weights = np.array(np.split(all_flux_weights,
+                                                     len(all_czs)))
+
+                if len(all_fluxes[flav]) == 0:
+                    all_fluxes[flav] = all_flux_weights.T
+                else:
+                    all_fluxes[flav] = np.concatenate((all_fluxes[flav],
+                                                       all_flux_weights.T))
+
+                
+                all_flux_weights_map = {}
+                all_flux_weights_map['map'] = all_flux_weights.T
+                all_flux_weights_map['ebins'] = all_ens_bins
+                all_flux_weights_map['czbins'] = all_czs_bins
+        
+                gridspec_kw = dict(left=0.15, right=0.90, wspace=0.32)
+                fig, axes = plt.subplots(nrows=1, ncols=1, gridspec_kw=gridspec_kw,
+                                         sharex=False, sharey=False, figsize=(12,10))
+
+                logplot(m=all_flux_weights_map,
+                        title='Finely Interpolated %s Flux'%flavtex,
+                        ax=axes,
+                        clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,
+                        largelabels=True)
+
+                fig.savefig(os.path.join(outdir,
+                                         'bartol_%s_%s2dinterpolation.png'%(en_label,flav)))
+
+                if ip_checks:
+
+                    bartol_tables = {}
+                    if en_label == '3DCalc':
+                        bartol_tables['map'] = flux_dict[flav].T[:40]
+                        bartol_tables['ebins'] = np.logspace(-1.0,1.0,41)
+                    elif en_label == '1DCalc':
+                        bartol_tables['map'] = flux_dict[flav].T[40:]
+                        bartol_tables['ebins'] = np.logspace(1.0,4.0,31)
+                    bartol_tables['czbins'] = np.linspace(-1.0,1.0,21)
+
+                    downsampled_flux_map = {}
+                    downsampled_flux_map['map'] = take_average(
+                        all_flux_weights.T, oversample
+                    )
+                    downsampled_flux_map['ebins'] = bartol_tables['ebins']
+                    downsampled_flux_map['czbins'] = np.linspace(-1.0,1.0,21)
+
+                    diff_map = {}
+                    diff_map['map'] = bartol_tables['map']-downsampled_flux_map['map']
+                    diff_map['ebins'] = bartol_tables['ebins']
+                    diff_map['czbins'] = np.linspace(-1.0,1.0,21)
+
+                    diff_ratio_map = {}
+                    diff_ratio_map['map'] = diff_map['map'] / bartol_tables['map']
+                    diff_ratio_map['ebins'] = bartol_tables['ebins']
+                    diff_ratio_map['czbins'] = np.linspace(-1.0,1.0,21)
+                
+                    gridspec_kw = dict(left=0.03, right=0.968, wspace=0.32)
+                    fig, axes = plt.subplots(nrows=1, ncols=5,
+                                             gridspec_kw=gridspec_kw,
+                                             sharex=False, sharey=False,
+                                             figsize=(20,5))
+
+                    logplot(m=all_flux_weights_map,
+                            title='Finely Interpolated',
+                            ax=axes[0],
+                            clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
+                    logplot(m=downsampled_flux_map,
+                            title='Downsampled to Bartol Binning',
+                            ax=axes[1],
+                            clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
+                    logplot(m=bartol_tables,
+                            title='Bartol Tables',
+                            ax=axes[2],
+                            clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
+                    logplot(m=diff_map,
+                            title='Difference',
+                            ax=axes[3],
+                            clabel=None)
+                    logplot(m=diff_ratio_map,
+                            title='Percentage Difference',
+                            ax=axes[4],
+                            clabel=None)
+
+                    plt.suptitle('Integral Preserving Tests for %s Bartol South Pole 2015 Flux Tables'%flavtex, fontsize=36)
+                    plt.subplots_adjust(top=0.8)
+                    fig.savefig(os.path.join(outdir,'bartol_%s_%siptest_fullrange.png'%(en_label,flav)))
+                    plt.close(fig.number)
 
         for flav, flavtex in zip(primaries, texprimaries):
-
-            all_flux_weights = calculate_flux_weights(all_ens_mg.flatten(),
-                                                      all_czs_mg.flatten(),
-                                                      spline_dict[flav],
-                                                      table_name='bartol',
-                                                      enpow=enpow)
-
-            all_flux_weights = np.array(np.split(all_flux_weights,
-                                                 len(all_czs)))
+                
             all_flux_weights_map = {}
-            all_flux_weights_map['map'] = all_flux_weights.T
-            all_flux_weights_map['ebins'] = all_ens_bins
+            all_flux_weights_map['map'] = all_fluxes[flav]
+            all_flux_weights_map['ebins'] = all_all_ens_bins
             all_flux_weights_map['czbins'] = all_czs_bins
-        
+            
             gridspec_kw = dict(left=0.15, right=0.90, wspace=0.32)
             fig, axes = plt.subplots(nrows=1, ncols=1, gridspec_kw=gridspec_kw,
                                      sharex=False, sharey=False, figsize=(12,10))
@@ -967,62 +1076,6 @@ if __name__ == '__main__':
 
             fig.savefig(os.path.join(outdir,
                                      'bartol_%s2dinterpolation.png'%flav))
-
-            if ip_checks:
-
-                downsampled_flux_map = {}
-                downsampled_flux_map['map'] = take_average(
-                    all_flux_weights.T, oversample
-                )
-                downsampled_flux_map['ebins'] = np.concatenate((np.logspace(-1.0,1.0,41),np.logspace(1.1,4.0,30)))
-                downsampled_flux_map['czbins'] = np.linspace(-1.0,1.0,21)
-
-                bartol_tables = {}
-                bartol_tables['map'] = flux_dict[flav].T
-                bartol_tables['ebins'] = np.concatenate((np.logspace(-1.0,1.0,41),np.logspace(1.1,4.0,30)))
-                bartol_tables['czbins'] = np.linspace(-1.0,1.0,21)
-
-                diff_map = {}
-                diff_map['map'] = bartol_tables['map']-downsampled_flux_map['map']
-                diff_map['ebins'] = np.concatenate((np.logspace(-1.0,1.0,41),np.logspace(1.1,4.0,30)))
-                diff_map['czbins'] = np.linspace(-1.0,1.0,21)
-
-                diff_ratio_map = {}
-                diff_ratio_map['map'] = diff_map['map'] / bartol_tables['map']
-                diff_ratio_map['ebins'] = np.concatenate((np.logspace(-1.0,1.0,41),np.logspace(1.1,4.0,30)))
-                diff_ratio_map['czbins'] = np.linspace(-1.0,1.0,21)
-                
-                gridspec_kw = dict(left=0.03, right=0.968, wspace=0.32)
-                fig, axes = plt.subplots(nrows=1, ncols=5,
-                                         gridspec_kw=gridspec_kw,
-                                         sharex=False, sharey=False,
-                                         figsize=(20,5))
-
-                logplot(m=all_flux_weights_map,
-                        title='Finely Interpolated',
-                        ax=axes[0],
-                        clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
-                logplot(m=downsampled_flux_map,
-                        title='Downsampled to Bartol Binning',
-                        ax=axes[1],
-                        clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
-                logplot(m=bartol_tables,
-                        title='Bartol Tables',
-                        ax=axes[2],
-                        clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
-                logplot(m=diff_map,
-                        title='Difference',
-                        ax=axes[3],
-                        clabel=None)
-                logplot(m=diff_ratio_map,
-                        title='Percentage Difference',
-                        ax=axes[4],
-                        clabel=None)
-
-                plt.suptitle('Integral Preserving Tests for %s Bartol South Pole 2015 Flux Tables'%flavtex, fontsize=36)
-                plt.subplots_adjust(top=0.8)
-                fig.savefig(os.path.join(outdir,'bartol_%siptest_fullrange.png'%flav))
-                plt.close(fig.number)
         
 
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
