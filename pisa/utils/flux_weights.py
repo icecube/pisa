@@ -454,7 +454,8 @@ if __name__ == '__main__':
         return average_map
 
 
-    def do_1D_honda_test(spline_dict, flux_dict, outdir, enpow=1):
+    def do_1D_honda_test(spline_dict, flux_dict, LegendFileName,
+                         SaveName, outdir, enpow=1):
 
         czs = np.linspace(-1,1,81)
         low_ens = 5.0119*np.ones_like(czs)
@@ -492,9 +493,9 @@ if __name__ == '__main__':
                 xtext = 0.75,
                 ytext = 0.7,
                 text = 'Slice at \n 5.0119 GeV',
-                tablename = 'Honda SPL 2015',
+                tablename = LegendFileName,
                 savename = os.path.join(
-                    outdir,'honda_%sfluxweightstest5GeV.png'%flav
+                    outdir,'%s_%sfluxweightstest5GeV.png'%(SaveName,flav)
                 ),
                 log = False
             )
@@ -510,9 +511,9 @@ if __name__ == '__main__':
                 xtext = 0.75,
                 ytext = 0.7,
                 text = 'Slice at \n 50.119 GeV',
-                tablename = 'Honda SPL 2015',
+                tablename = LegendFileName,
                 savename = os.path.join(
-                    outdir,'honda_%sfluxweightstest50GeV.png'%flav
+                    outdir,'%s_%sfluxweightstest50GeV.png'%(SaveName,flav)
                 ),
                 log = False
             )
@@ -559,9 +560,9 @@ if __name__ == '__main__':
                 xtext = xtext,
                 ytext = ytext,
                 text = r'Slice at $\cos\theta_Z=-0.95$',
-                tablename = 'Honda SPL 2015',
+                tablename = LegendFileName,
                 savename = os.path.join(
-                    outdir,'honda_%sfluxweightstest-0.95cz.png'%flav
+                    outdir,'%s_%sfluxweightstest-0.95cz.png'%(SaveName,flav)
                 ),
                 log = True
             )
@@ -577,16 +578,16 @@ if __name__ == '__main__':
                 xtext = xtext,
                 ytext = ytext,
                 text = r'Slice at $\cos\theta_Z=0.35$',
-                tablename = 'Honda SPL 2015',
+                tablename = LegendFileName,
                 savename = os.path.join(
-                    outdir,'honda_%sfluxweightstest0.35cz.png'%flav
+                    outdir,'%s_%sfluxweightstest0.35cz.png'%(SaveName,flav)
                 ),
                 log = True
             )
 
 
     def do_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
-                         oversample, enpow=1):
+                         oversample, SaveName, TitleFileName, enpow=1):
 
         if oversample == 100:
             all_ens = np.logspace(-1.02475,4.02475,10100)
@@ -645,8 +646,12 @@ if __name__ == '__main__':
                     clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,
                     largelabels=True)
 
-            fig.savefig(os.path.join(outdir,
-                                     'honda_%s2dinterpolation.png'%flav))
+            fig.savefig(
+                os.path.join(
+                    outdir,
+                    '%s_%s2dinterpolation.png'%(SaveName,flav)
+                )
+            )
 
             if ip_checks:
 
@@ -699,9 +704,17 @@ if __name__ == '__main__':
                         ax=axes[4],
                         clabel=None)
 
-                plt.suptitle('Integral Preserving Tests for %s Honda South Pole 2015 Flux Tables'%flavtex, fontsize=36)
+                plt.suptitle(
+                    'Integral Preserving Tests for %s %s Flux Tables'
+                    %(flavtex,TitleFileName), fontsize=36
+                )
                 plt.subplots_adjust(top=0.8)
-                fig.savefig(os.path.join(outdir,'honda_%siptest_fullrange.png'%flav))
+                fig.savefig(
+                    os.path.join(
+                        outdir,
+                        '%s_%siptest_fullrange.png'%(SaveName,flav)
+                    )
+                )
                 plt.close(fig.number)
 
                 reduced_flux_weights = np.delete(
@@ -771,9 +784,17 @@ if __name__ == '__main__':
                         ax=axes[4],
                         clabel=None)
 
-                plt.suptitle('Integral Preserving Tests for %s Honda South Pole 2015 Flux Tables'%flavtex, fontsize=36)
+                plt.suptitle(
+                    'Integral Preserving Tests for %s %s Flux Tables'
+                    %(flavtex,TitleFileName), fontsize=36
+                )
                 plt.subplots_adjust(top=0.8)
-                fig.savefig(os.path.join(outdir,'honda_%siptest_reducedenrange.png'%flav))
+                fig.savefig(
+                    os.path.join(
+                        outdir,
+                        '%s_%siptest_reducedrange.png'%(SaveName,flav)
+                    )
+                )
                 plt.close(fig.number)
             
 
@@ -915,7 +936,7 @@ if __name__ == '__main__':
             
 
     def do_2D_bartol_test(spline_dict, flux_dict, outdir, ip_checks,
-                         oversample, enpow=1):
+                          oversample, enpow=1):
 
         if oversample == 100:
             all_ens = [np.logspace(-0.99975,0.99975,4000),
@@ -1052,7 +1073,7 @@ if __name__ == '__main__':
                             ax=axes[4],
                             clabel=None)
 
-                    plt.suptitle('Integral Preserving Tests for %s Bartol South Pole 2015 Flux Tables'%flavtex, fontsize=36)
+                    plt.suptitle('Integral Preserving Tests for %s Bartol Sudbury 2015 Flux Tables'%flavtex, fontsize=36)
                     plt.subplots_adjust(top=0.8)
                     fig.savefig(os.path.join(outdir,'bartol_%s_%siptest_fullrange.png'%(en_label,flav)))
                     plt.close(fig.number)
@@ -1076,6 +1097,95 @@ if __name__ == '__main__':
 
             fig.savefig(os.path.join(outdir,
                                      'bartol_%s2dinterpolation.png'%flav))
+
+            
+    def do_2D_comparisons(honda_spline_dict, bartol_spline_dict,
+                          outdir, oversample, enpow=1):
+        
+        all_ens_bins = np.logspace(-1.0,4.0,100*oversample+1)
+        all_czs_bins = np.linspace(-1.0,1.0,20*oversample+1)
+        # need log energy bin width for defining evaluation points
+        log_en_bin_width = np.linspace(-1.0,4.0,100*oversample+1)[1]-np.linspace(-1.0,4.0,100*oversample+1)[0]
+        cz_bin_width = all_czs_bins[1]-all_czs_bins[0]
+        all_ens = np.logspace(-1.0+log_en_bin_width/2.0,
+                              4.0-log_en_bin_width/2.0,
+                              100*oversample)
+        all_czs = np.linspace(-1.0+cz_bin_width/2.0,
+                              1.0-cz_bin_width/2.0,
+                              20*oversample)
+
+        all_ens_mg, all_czs_mg = np.meshgrid(all_ens, all_czs)
+
+        for flav, flavtex in zip(primaries, texprimaries):
+
+            honda_flux_weights = calculate_flux_weights(
+                all_ens_mg.flatten(),
+                all_czs_mg.flatten(),
+                honda_spline_dict[flav],
+                table_name='honda',
+                enpow=enpow
+            )
+            bartol_flux_weights = calculate_flux_weights(
+                all_ens_mg.flatten(),
+                all_czs_mg.flatten(),
+                bartol_spline_dict[flav],
+                table_name='bartol',
+                enpow=enpow
+            )
+
+            honda_flux_weights = np.array(np.split(honda_flux_weights,
+                                                   len(all_czs)))
+            bartol_flux_weights = np.array(np.split(bartol_flux_weights,
+                                                    len(all_czs)))
+            
+            honda_flux_weights_map = {}
+            honda_flux_weights_map['map'] = honda_flux_weights.T
+            honda_flux_weights_map['ebins'] = all_ens_bins
+            honda_flux_weights_map['czbins'] = all_czs_bins
+
+            bartol_flux_weights_map = {}
+            bartol_flux_weights_map['map'] = bartol_flux_weights.T
+            bartol_flux_weights_map['ebins'] = all_ens_bins
+            bartol_flux_weights_map['czbins'] = all_czs_bins
+
+            diff_map = {}
+            diff_map['map'] = honda_flux_weights_map['map']-bartol_flux_weights_map['map']
+            diff_map['ebins'] = all_ens_bins
+            diff_map['czbins'] = all_czs_bins
+
+            diff_ratio_map = {}
+            diff_ratio_map['map'] = diff_map['map'] / honda_flux_weights_map['map']
+            diff_ratio_map['ebins'] = all_ens_bins
+            diff_ratio_map['czbins'] = all_czs_bins
+
+            gridspec_kw = dict(left=0.03, right=0.968, wspace=0.32)
+            fig, axes = plt.subplots(nrows=1, ncols=4,
+                                     gridspec_kw=gridspec_kw,
+                                     sharex=False, sharey=False,
+                                     figsize=(16,5))
+
+            logplot(m=honda_flux_weights_map,
+                    title='Honda SNO 2015 %s Flux'%flavtex,
+                    ax=axes[0],
+                    clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex)
+            logplot(m=bartol_flux_weights_map,
+                    title='Bartol SNO 2004 %s Flux'%flavtex,
+                    ax=axes[1],
+                    clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex)
+            logplot(m=diff_map,
+                    title='Difference',
+                    ax=axes[2],
+                    clabel=None)
+            logplot(m=diff_ratio_map,
+                    title='Percentage Difference to Honda',
+                    ax=axes[3],
+                    clabel=None)
+
+            plt.suptitle('Comparisons for %s Honda 2015 and Bartol 2004 Sudbury Flux Tables'%flavtex, fontsize=36)
+            plt.subplots_adjust(top=0.8)
+
+            fig.savefig(os.path.join(outdir,
+                                     'honda_bartol_%s2dcomparisons.png'%flav))
         
 
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
@@ -1090,41 +1200,117 @@ if __name__ == '__main__':
     parser.add_argument('--ip_checks', action='store_true',
                         help='''Run checks on integral-preserving nature.
                         WARNING - THESE ARE VERY SLOW.''')
+    parser.add_argument('--comparisons', action='store_true',
+                        help='''Run comparisons between a Bartol and Honda 
+                        flux file.''')
     parser.add_argument('--oversample', type=int, default=10,
                         help='''Integer to oversample for integral-preserving
-                        checks.''')
+                        checks and comparisons between flux files.''')
     parser.add_argument('--enpow', type=int, default=1,
                         help='''Power of energy to use in making the energy
                         splines i.e. flux * (energy**enpow).''')
-    parser.add_argument('--outdir', metavar='DIR', type=str,
+    parser.add_argument('--outdir', metavar='DIR', type=str, required=True,
                         help='''Store all output plots to this directory.''')
 
     args = parser.parse_args()
 
-    spline_dict, flux_dict = load_2D_table(args.flux_file,
-                                           enpow=args.enpow,
-                                           returnTable=True)
+    if ('honda' not in args.flux_file) and ('bartol' not in args.flux_file):
+        raise ValueError('Type of flux file not recognised.')
+
+    if args.comparisons:
+        logging.warning('Comparisons will be of Honda 2015 SNO and '
+                        'Bartol 2004 SNO tables regardless of what you set '
+                        'in the flux_file argument.')
+
+    spline_dict, flux_dict = load_2D_table(
+        args.flux_file,
+        enpow=args.enpow,
+        returnTable=True
+    )
 
     if 'honda' in args.flux_file:
+
+        flux_file_name = args.flux_file.split('/')[-1]
+        flux_file_bits = flux_file_name.split('-')
+        year = flux_file_bits[1]
+        site = flux_file_bits[2]
+
+        TitleFileName = 'Honda'
+        LegendFileName = 'Honda'
+
+        if site == 'spl':
+            TitleFileName += ' South Pole'
+            LegendFileName += ' SPL'
+        elif site == 'sno':
+            TitleFileName += ' Sudbury'
+            LegendFileName += ' SNO'
+        else:
+            logging.warn('Don\'t know what to do with site %s. Omitting from titles'%site)
+
+        TitleFileName += ' %s'%year
+        LegendFileName += ' %s'%year
+        SaveName = 'honda_%s_%s'%(site,year)
         
         if args.onedim_checks:
-            do_1D_honda_test(spline_dict, flux_dict, args.outdir,
-                             enpow = args.enpow)
+            do_1D_honda_test(
+                spline_dict = spline_dict,
+                flux_dict = flux_dict,
+                LegendFileName = LegendFileName,
+                SaveName = SaveName,
+                outdir = args.outdir,
+                enpow = args.enpow
+            )
 
         if args.twodim_checks:
-            do_2D_honda_test(spline_dict, flux_dict,
-                             args.outdir, args.ip_checks,
-                             oversample = args.oversample,
-                             enpow = args.enpow)
+            do_2D_honda_test(
+                spline_dict = spline_dict,
+                flux_dict = flux_dict,
+                outdir = args.outdir,
+                ip_checks = args.ip_checks,
+                oversample = args.oversample,
+                SaveName = SaveName,
+                TitleFileName = TitleFileName,
+                enpow = args.enpow
+            )
 
     else:
 
         if args.onedim_checks:
-            do_1D_bartol_test(spline_dict, flux_dict, args.outdir,
-                              enpow = args.enpow)
+            do_1D_bartol_test(
+                spline_dict = spline_dict,
+                flux_dict = flux_dict,
+                outdir = args.outdir,
+                enpow = args.enpow
+            )
 
         if args.twodim_checks:
-            do_2D_bartol_test(spline_dict, flux_dict,
-                              args.outdir, args.ip_checks,
-                              oversample = args.oversample,
-                              enpow = args.enpow)
+            do_2D_bartol_test(
+                spline_dict = spline_dict,
+                flux_dict = flux_dict,
+                outdir = args.outdir,
+                ip_checks = args.ip_checks,
+                oversample = args.oversample,
+                enpow = args.enpow
+            )
+
+    if args.comparisons:
+
+        honda_spline_dict, honda_flux_dict = load_2D_table(
+            'flux/honda-2015-sno-solmax-aa.d',
+            enpow=args.enpow,
+            returnTable=True
+        )
+
+        bartol_spline_dict, bartol_flux_dict = load_2D_table(
+            'flux/bartol-2004-sno-solmax-aa.d',
+            enpow=args.enpow,
+            returnTable=True
+        )
+        
+        do_2D_comparisons(
+            honda_spline_dict = honda_spline_dict,
+            bartol_spline_dict = bartol_spline_dict,
+            outdir = args.outdir,
+            oversample = args.oversample,
+            enpow = args.enpow
+        )
