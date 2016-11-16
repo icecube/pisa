@@ -15,7 +15,7 @@ import matplotlib.colors as colors
 from argparse import ArgumentParser,ArgumentDefaultsHelpFormatter
 
 from pisa.utils.log import logging
-from pisa.utils.flux_weights import load_2D_table, calculate_flux_weights
+from pisa.utils.flux_weights import load_2D_table, calculate_flux_weights, primaries, texprimaries
 
 def Plot1DSlices(xintvals, yintvals, xtabvals, ytabvals, xtabbins,
                  xlabel, ylabel, xtext, ytext, text, tablename,
@@ -281,35 +281,17 @@ def do_1D_honda_test(spline_dict, flux_dict, LegendFileName,
 def do_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
                      oversample, SaveName, TitleFileName, enpow=1):
 
-    if oversample == 100:
-        all_ens = np.logspace(-1.02475,4.02475,10100)
-        all_ens_bins = np.logspace(-1.025,4.025,10101)
-        all_czs = np.linspace(-0.9995,0.9995,2000)
-        all_czs_bins = np.linspace(-1.0,1.0,2001)
-        reduced_ens = np.logspace(-0.02475,4.02475,8100)
-        reduced_ens_bins = np.logspace(-0.025,4.025,8101)
-        reduced_bin = 2000
-    elif oversample == 10:
-        all_ens = np.logspace(-1.0225,4.0225,1010)
-        all_ens_bins = np.logspace(-1.025,4.025,1011)
-        all_czs = np.linspace(-0.995,0.995,200)
-        all_czs_bins = np.linspace(-1.0,1.0,201)
-        reduced_ens = np.logspace(-0.0225,4.0225,810)
-        reduced_ens_bins = np.logspace(-0.025,4.025,811)
-        reduced_bin = 200
-    elif oversample == 1:
-        all_ens = np.logspace(-1.0,4.0,101)
-        all_ens_bins = np.logspace(-1.025,4.025,102)
-        all_czs = np.linspace(-0.95,0.95,20)
-        all_czs_bins = np.linspace(-1.0,1.0,21)
-        reduced_ens = np.logspace(-0.0,4.0,81)
-        reduced_ens_bins = np.logspace(-0.025,4.025,82)
-        reduced_bin = 20
-    else:
-        raise ValueError('Oversampling by %s currently not supported for '
-                         'the 2D integral-preserving tests. If you try to '
-                         'implement this please be careful with defining '
-                         'the binning objects as above'%oversample)
+    all_ens_bins = np.logspace(-1.025,4.025,101*oversample+1)
+    all_log_ens_bins = np.linspace(-1.025,4.025,101*oversample+1)
+    log_en_bin_width = all_log_ens_bins[1] - all_log_ens_bins[0]
+    all_ens = np.logspace(all_log_ens_bins[0] + log_en_bin_width/2.0,
+                          all_log_ens_bins[-1] - log_en_bin_width/2.0,
+                          101*oversample)
+    all_czs_bins = np.linspace(-1.0,1.0,20*oversample+1)
+    cz_bin_width = all_czs_bins[1] - all_czs_bins[0]
+    all_czs = np.linspace(all_czs_bins[0] + cz_bin_width/2.0,
+                          all_czs_bins[-1] - cz_bin_width/2.0,
+                          20*oversample)
 
     all_ens_mg, all_czs_mg = np.meshgrid(all_ens, all_czs)
     
@@ -376,7 +358,7 @@ def do_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
                                      figsize=(20,5))
 
             logplot(m=all_flux_weights_map,
-                    title='Finely Interpolated',
+                    title='Oversampled by %i'%oversample,
                     ax=axes[0],
                     clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
             logplot(m=downsampled_flux_map,
@@ -405,86 +387,6 @@ def do_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
                 os.path.join(
                     outdir,
                     '%s_%siptest_fullrange.png'%(SaveName,flav)
-                )
-            )
-            plt.close(fig.number)
-            
-            reduced_flux_weights = np.delete(
-                all_flux_weights,
-                np.s_[0:reduced_bin],
-                axis=1
-            )
-
-            reduced_honda = np.delete(
-                flux_dict[flav],
-                np.s_[0:20],
-                axis=1
-            )
-
-            all_flux_weights_map = {}
-            all_flux_weights_map['map'] = reduced_flux_weights.T
-            all_flux_weights_map['ebins'] = reduced_ens_bins
-            all_flux_weights_map['czbins'] = all_czs_bins
-
-            downsampled_flux_map = {}
-            downsampled_flux_map['map'] = take_average(
-                reduced_flux_weights.T,
-                oversample
-            )
-            downsampled_flux_map['ebins'] = np.logspace(-0.025,4.025,82)
-            downsampled_flux_map['czbins'] = np.linspace(-1.0,1.0,21)
-
-            honda_tables = {}
-            honda_tables['map'] = reduced_honda.T
-            honda_tables['ebins'] = np.logspace(-0.025,4.025,82)
-            honda_tables['czbins'] = np.linspace(-1.0,1.0,21)
-
-            diff_map = {}
-            diff_map['map'] = honda_tables['map']-downsampled_flux_map['map']
-            diff_map['ebins'] = np.logspace(-0.025,4.025,82)
-            diff_map['czbins'] = np.linspace(-1.0,1.0,21)
-
-            diff_ratio_map = {}
-            diff_ratio_map['map'] = diff_map['map'] / honda_tables['map']
-            diff_ratio_map['ebins'] = np.logspace(-0.025,4.025,82)
-            diff_ratio_map['czbins'] = np.linspace(-1.0,1.0,21)
-                
-            gridspec_kw = dict(left=0.03, right=0.968, wspace=0.32)
-            fig, axes = plt.subplots(nrows=1, ncols=5,
-                                     gridspec_kw=gridspec_kw,
-                                     sharex=False, sharey=False,
-                                     figsize=(20,5))
-            
-            logplot(m=all_flux_weights_map,
-                    title='Finely Interpolated',
-                    ax=axes[0],
-                    clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
-            logplot(m=downsampled_flux_map,
-                    title='Downsampled to Honda Binning',
-                    ax=axes[1],
-                    clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
-            logplot(m=honda_tables,
-                    title='Honda Tables',
-                    ax=axes[2],
-                    clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
-            logplot(m=diff_map,
-                    title='Difference',
-                    ax=axes[3],
-                    clabel=None)
-            logplot(m=diff_ratio_map,
-                    title='Percentage Difference',
-                    ax=axes[4],
-                    clabel=None)
-
-            plt.suptitle(
-                'Integral Preserving Tests for %s %s Flux Tables'
-                %(flavtex,TitleFileName), fontsize=36
-            )
-            plt.subplots_adjust(top=0.8)
-            fig.savefig(
-                os.path.join(
-                    outdir,
-                    '%s_%siptest_reducedrange.png'%(SaveName,flav)
                 )
             )
             plt.close(fig.number)
@@ -630,38 +532,41 @@ def do_1D_bartol_test(spline_dict, flux_dict, outdir, enpow=1):
 def do_2D_bartol_test(spline_dict, flux_dict, outdir, ip_checks,
                       oversample, enpow=1):
 
-    if oversample == 100:
-        all_ens = [np.logspace(-0.99975,0.99975,4000),
-                   np.logspace(1.0005,3.9995,3000)]
-        all_en_bins = [np.logspace(-1.0,1.0,4001),
-                       np.logspace(1.0,4.0,3001)]
-        all_all_ens_bins = np.concatenate((np.logspace(-1.0,1.0,4001),
-                                           np.logspace(1.001,4.0,3000)))
-        all_czs = np.linspace(-0.9995,0.9995,2000)
-        all_czs_bins = np.linspace(-1.0,1.0,2001)
-    elif oversample == 10:
-        all_ens = [np.logspace(-0.9975,0.9975,400),
-                   np.logspace(1.005,3.995,300)]
-        all_en_bins = [np.logspace(-1.0,1.0,401),
-                       np.logspace(1.0,4.0,301)]
-        all_all_ens_bins = np.concatenate((np.logspace(-1.0,1.0,401),
-                                           np.logspace(1.01,4.0,300)))
-        all_czs = np.linspace(-0.995,0.995,200)
-        all_czs_bins = np.linspace(-1.0,1.0,201)
-    elif oversample == 1:
-        all_ens = [np.logspace(-0.975,0.975,40),
-                   np.logspace(1.05,3.95,30)]
-        all_en_bins = [np.logspace(-1.0,1.0,41),
-                       np.logspace(1.0,4.0,31)]
-        all_all_ens_bins = np.concatenate((np.logspace(-1.0,1.0,41),
-                                           np.logspace(1.1,4.0,30)))
-        all_czs = np.linspace(-0.95,0.95,20)
-        all_czs_bins = np.linspace(-1.0,1.0,21)
-    else:
-        raise ValueError('Oversampling by %s currently not supported for '
-                         'the 2D integral-preserving tests. If you try to '
-                         'implement this please be careful with defining '
-                         'the binning objects as above'%oversample)
+    all_en_bins_low = np.logspace(-1.0,1.0,40*oversample+1)
+    all_log_en_bins_low = np.linspace(-1.0,1.0,40*oversample+1)
+    log_en_bin_width_low = all_log_en_bins_low[1] - all_log_en_bins_low[0]
+    all_ens_low = np.logspace(
+        all_log_en_bins_low[0]+log_en_bin_width_low/2.0,
+        all_log_en_bins_low[-1]-log_en_bin_width_low/2.0,
+        40*oversample
+    )
+
+    all_en_bins_high = np.logspace(1.0,4.0,30*oversample+1)
+    all_log_en_bins_high = np.linspace(1.0,4.0,30*oversample+1)
+    log_en_bin_width_high = all_log_en_bins_high[1] - all_log_en_bins_high[0]
+    all_ens_high = np.logspace(
+        all_log_en_bins_high[0]+log_en_bin_width_high/2.0,
+        all_log_en_bins_high[-1]-log_en_bin_width_high/2.0,
+        30*oversample
+    )
+
+    all_en_bins = [all_en_bins_low, all_en_bins_high]
+    all_ens = [all_ens_low, all_ens_high]
+
+    all_all_ens_bins = np.concatenate(
+        (
+            np.logspace(-1.0,1.0,40*oversample+1),
+            np.logspace(1.0+log_en_bin_width_high,4.0,30*oversample)
+        )
+    )
+
+    all_czs_bins = np.linspace(-1.0,1.0,20*oversample+1)
+    cz_bin_width = all_czs_bins[1] - all_czs_bins[0]
+    all_czs = np.linspace(
+        all_czs_bins[0] + cz_bin_width/2.0,
+        all_czs_bins[-1] - cz_bin_width/2.0,
+        20*oversample
+    )
 
     en_labels = ['3DCalc', '1DCalc']
 
@@ -745,7 +650,7 @@ def do_2D_bartol_test(spline_dict, flux_dict, outdir, ip_checks,
                                          figsize=(20,5))
                 
                 logplot(m=all_flux_weights_map,
-                        title='Finely Interpolated',
+                        title='Oversampled by %i'%oversample,
                         ax=axes[0],
                         clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
                 logplot(m=downsampled_flux_map,
