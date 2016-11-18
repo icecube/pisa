@@ -143,11 +143,19 @@ class Param(object):
     def validate_value(self, value):
         if self.range is not None:
             if self.is_discrete:
-                assert value in self.range, 'value=%s ; range=%s' \
-                        %(value, self.range)
+                if value not in self.range:
+                    raise ValueError(
+                        'Param %s has a value %s which is not in the range of '
+                        '%s'%(self.name, value, self.range)
+                    )
             else:
-                assert value >= min(self.range) and value <= max(self.range), \
-                        'value=%s ; range=%s' %(value, self.range)
+                value_big_enough = value >= min(self.range)
+                value_small_enough = value <= max(self.range)
+                if (not value_big_enough) and (not value_small_enough):
+                    raise ValueError(
+                        'Param %s has a value %s which is not in the range of '
+                        '%s'%(self.name, value, self.range)
+                    )
 
     @property
     def value(self):

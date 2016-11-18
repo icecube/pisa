@@ -36,12 +36,13 @@ logging.RootLogger.trace = trace
 logging.trace = logging.root.trace
 
 # Don't move these up, as "trace" might be used in them
-from pisa.utils.jsons import from_json
-from pisa.utils.resources import find_resource
+import simplejson as json
+from pkg_resources import resource_stream #pisa.utils.resources as resources
 
 # Get the logging configuration
-# Will search in local dir, $PISA and finally package resources
-logconfig = from_json(find_resource('settings/logging/logging.json'))
+logconfig = json.load(
+    resource_stream('pisa', 'resources/settings/logging/logging.json'),
+)
 
 # Setup the logging system with this config
 logging.config.dictConfig(logconfig)

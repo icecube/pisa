@@ -17,12 +17,12 @@ from collections import OrderedDict
 import os
 
 import numpy as np
+import pint
 import simplejson as json
 
-import pint
 from pisa import ureg, Q_
-from pisa.utils.resources import open_resource
-from pisa.utils.log import logging
+import resources
+import log
 
 
 __all__ = ['json_string', 'from_json', 'to_json']
@@ -65,17 +65,19 @@ def from_json(filename):
     assert ext == 'json' or ext in ZIP_EXTS
     if ext == 'bz2':
         content = json.loads(
-            bz2.decompress(open_resource(filename).read()),
+            bz2.decompress(resources.open_resource(filename).read()),
             cls=NumpyDecoder,
             object_pairs_hook=OrderedDict
         )
     else:
-        content = json.load(open_resource(filename), cls=NumpyDecoder,
+        content = json.load(resources.open_resource(filename),
+                            cls=NumpyDecoder,
                             object_pairs_hook=OrderedDict)
     return content
 
 
-def to_json(content, filename, indent=2, overwrite=True, sort_keys=False):
+def to_json(content, filename, indent=2, overwrite=True, warn=True,
+            sort_keys=False):
     """Write content to a JSON file using a custom parser that automatically
     converts numpy arrays to lists. If the filename has a ".bz2" extension
     appended, the contents will be compressed (using bz2 and highest-level of
@@ -83,9 +85,23 @@ def to_json(content, filename, indent=2, overwrite=True, sort_keys=False):
 
     Parameters
     ----------
+    content : obj
+        Object to be written to file. Tries making use of the object's own
+        `to_json` method if it exists.
     filename : str
+        Name of the file to be written to. Extension has to be 'json' or 'bz2'.
     indent : int
+        Pretty-printing. Cf. documentation of json.dump() or json.dumps()
     overwrite : bool
+        Set to `True` (default) to allow overwriting existing file. Raise
+        exception and quit otherwise.
+    warn : bool
+        Issue a warning message if a file is being overwritten (`True`, default).
+        Suppress warning by setting to `False` (e.g. when overwriting is the
+        desired behaviour).
+    sort_keys : bool
+        Output of dictionaries will be sorted by key if set to `True`.
+        Default is `False`. Cf. json.dump() or json.dumps().
 
     """
     if hasattr(content, 'to_json'):
@@ -93,7 +109,8 @@ def to_json(content, filename, indent=2, overwrite=True, sort_keys=False):
     fpath = os.path.expandvars(os.path.expanduser(filename))
     if os.path.exists(fpath):
         if overwrite:
-            logging.warn('Overwriting file at ' + fpath)
+            if warn:
+                log.logging.warn('Overwriting file at ' + fpath)
         else:
             raise Exception('Refusing to overwrite path ' + fpath)
 
@@ -116,7 +133,8 @@ def to_json(content, filename, indent=2, overwrite=True, sort_keys=False):
                 content, outfile, indent=indent, cls=NumpyEncoder,
                 sort_keys=sort_keys, allow_nan=True, ignore_nan=False
             )
-        logging.debug('Wrote %.2f kB to %s' % (outfile.tell()/1024., filename))
+        log.logging.debug('Wrote %.2f kB to %s'
+                          % (outfile.tell()/1024., filename))
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -173,8 +191,7 @@ class NumpyDecoder(json.JSONDecoder):
 def test_NumpyEncoderDecoder():
     import tempfile
     from pisa.utils.comparisons import recursiveEquality
-    from pisa.utils.log import logging, set_verbosity
-    set_verbosity(3)
+    log.set_verbosity(3)
     nda1 = np.array([-np.inf, np.nan, np.inf, -1, 0, 1, ])
     testdir = tempfile.mkdtemp()
     fname = os.path.join(testdir, 'nda1.json')
@@ -194,7 +211,7 @@ def test_NumpyEncoderDecoder():
         d2 = from_json(fn)
         assert recursiveEquality(d2, d1), \
                 'd1=\n%s\nd2=\n%s\nsee file: %s' %(d1, d2, fn)
-    logging.info('<< PASSED : test_NumpyEncoderDecoder >>')
+    log.logging.info('<< PASSED : test_NumpyEncoderDecoder >>')
 
 
 if __name__ == '__main__':

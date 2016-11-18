@@ -96,7 +96,7 @@ def from_hdf(val, return_node=None, return_attrs=False):
     return data
 
 
-def to_hdf(data_dict, tgt, attrs=None, overwrite=True):
+def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
     """Store a (possibly nested) dictionary to an HDF5 file or branch node
     within an HDF5 file (an h5py Group).
 
@@ -121,6 +121,14 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True):
     attrs : dict
         Attributes to apply to the top-level entity being written. See
         http://docs.h5py.org/en/latest/high/attr.html
+    overwrite : bool
+        Set to `True` (default) to allow overwriting existing file. Raise
+        exception and quit otherwise.
+    warn : bool
+        Issue a warning message if a file is being overwritten (`True`, default).
+        Suppress warning by setting to `False` (e.g. when overwriting is the
+        desired behaviour).
+
     """
     if not isinstance(data_dict, dict):
         errmsg = 'to_hdf: `data_dict` only accepts top-level dict.'
@@ -222,7 +230,8 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True):
         fpath = os.path.expandvars(os.path.expanduser(tgt))
         if os.path.exists(fpath):
             if overwrite:
-                logging.warn('Overwriting file at ' + fpath)
+                if warn:
+                    logging.warn('Overwriting file at ' + fpath)
             else:
                 raise Exception('Refusing to overwrite path ' + fpath)
         h5file = h5py.File(fpath, 'w')

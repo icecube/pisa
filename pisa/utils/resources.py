@@ -8,9 +8,9 @@
 #
 # date:   2014-06-10
 
-import os, sys
-from pisa.utils.log import logging
+import os
 from pkg_resources import resource_filename
+import sys
 
 
 __all__ = ['find_resource', 'open_resource']
@@ -46,42 +46,44 @@ def find_resource(resourcename, fail=True):
     IOError if `resource` is not found and `fail` is True.
 
     """
-    logging.trace('Attempting to locate `resourcename` "%s"' %resourcename)
+    import pisa.utils.log as log
+
+    log.logging.trace('Attempting to locate `resourcename` "%s"' %resourcename)
     # 1) Check for absolute path or path relative to current working
     #    directory
-    logging.trace('Checking absolute or path relative to cwd...')
+    log.logging.trace('Checking absolute or path relative to cwd...')
     rsrc_path = os.path.expandvars(os.path.expanduser(resourcename))
     if os.path.isfile(rsrc_path) or os.path.isdir(rsrc_path):
-        logging.debug('Found %s at %s' % (resourcename, rsrc_path))
+        log.logging.debug('Found %s at %s' % (resourcename, rsrc_path))
         return rsrc_path
 
     # 2) Check if $PISA is set in environment, and look relative to that
-    logging.trace('Checking environment for $PISA...')
+    log.logging.trace('Checking environment for $PISA...')
     if 'PISA' in os.environ:
         rpath = os.path.expandvars(os.path.expanduser(os.environ['PISA']))
-        logging.trace('Searching resource path PISA=%s' % rpath)
+        log.logging.trace('Searching resource path PISA=%s' % rpath)
 
         rsrc_path = os.path.join(rpath, resourcename)
         if os.path.isfile(rsrc_path) or os.path.isdir(rsrc_path):
-            logging.debug('Found %s at %s' % (resourcename, rsrc_path))
+            log.logging.debug('Found %s at %s' % (resourcename, rsrc_path))
             return rsrc_path
 
     # TODO: use resource_string or resource_stream instead, so that this work
     # swith egg distributions
 
     # 3) Look inside the installed pisa package
-    logging.trace('Searching package resources...')
+    log.logging.trace('Searching package resources...')
     rsrc_path = resource_filename('pisa', 'resources/' + resourcename)
     if os.path.isfile(rsrc_path) or os.path.isdir(rsrc_path):
         rsrc_path = os.path.relpath(rsrc_path)
-        logging.debug('Found %s at %s' % (resourcename, rsrc_path))
+        log.logging.debug('Found %s at %s' % (resourcename, rsrc_path))
         return rsrc_path
 
     # Nowhere to be found
     msg = 'Could not find resource "%s"' % resourcename
     if fail:
         raise IOError(msg)
-    logging.debug(msg)
+    log.logging.debug(msg)
     return None
 
 

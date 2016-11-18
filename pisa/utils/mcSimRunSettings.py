@@ -97,7 +97,7 @@ class MCSimRunSettings(dict):
           # Simulated spectral inde gamma; value of 1 => E*{-1}
           "sim_spectral_index": 1,
 
-          # Version of neutrion/ice cross sections used for the simulation
+          # Version of neutrino/ice cross sections used for the simulation
           "xsec_version": "genie_2.6.4",
 
           # Max and min zenith angle simulated (rad)
@@ -123,7 +123,7 @@ class MCSimRunSettings(dict):
         #        rsd = rsd[detector]
         #    except:
         #        pass
-        rsd = self.translateSourceDict(rsd) #{run:self.translateSourceDict(rs) for run,rs in rsd.iteritems()}
+        rsd = self.translateSourceDict(rsd)
         if not detector is None:
             detector = str(detector).strip()
         self.detector = detector
@@ -133,21 +133,28 @@ class MCSimRunSettings(dict):
     @staticmethod
     def translateSourceDict(d):
         d['tot_gen'] = d['num_events_per_file'] * d['num_i3_files']
-        d['flavints'] = flavInt.NuFlavIntGroup(d['flavints'])
+
+        # NOTE: the ',' --> '+' mapping is necessary since some data files
+        # were saved prior to the convention that commas exclusively separate
+        # groups while plus signs indicate flav/ints grouped together
+
+        d['flavints'] = flavInt.NuFlavIntGroup(d['flavints'].replace(',', '+'))
 
         # Numeric fields are allowed to be expressions that get evaluated
-        numeric_fields = ['azimuth_max',
-                          'azimuth_min',
-                          'energy_max',
-                          'energy_min',
-                          'physical_events_fract',
-                          'genie_prescale_factor',
-                          'nu_to_total_fract',
-                          'num_events_per_file',
-                          'num_i3_files',
-                          'sim_spectral_index',
-                          'zenith_max',
-                          'zenith_min',]
+        numeric_fields = [
+            'azimuth_max',
+            'azimuth_min',
+            'energy_max',
+            'energy_min',
+            'physical_events_fract',
+            'genie_prescale_factor',
+            'nu_to_total_fract',
+            'num_events_per_file',
+            'num_i3_files',
+            'sim_spectral_index',
+            'zenith_max',
+            'zenith_min',
+        ]
         for f in numeric_fields:
             if isinstance(d[f], basestring):
                 d[f] = eval(d[f])
@@ -214,6 +221,10 @@ class MCSimRunSettings(dict):
         nargs = sum([(not barnobar is None),
                      (not is_particle is None),
                      (not flav_or_flavint is None)])
+        if flav_or_flavint is not None:
+            if (flav_or_flavint not in self.get_flavs()
+                    and flav_or_flavint not in self.get_flavints()):
+                return 0
         barnobarfract = 1
         if nargs > 0:
             barnobarfract = self.barnobarfract(
@@ -226,10 +237,10 @@ class MCSimRunSettings(dict):
         return self['tot_gen'] * barnobarfract * physical_fract
 
     def get_flavints(self):
-        return self['flavints'].get_flavints()
+        return self['flavints'].flavints()
 
     def get_flavs(self):
-        return self['flavints'].get_flavs()
+        return self['flavints'].flavs()
 
     def get_energy_range(self):
         """(min, max) energy in GeV"""
