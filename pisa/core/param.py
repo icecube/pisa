@@ -151,7 +151,7 @@ class Param(object):
             else:
                 value_big_enough = value >= min(self.range)
                 value_small_enough = value <= max(self.range)
-                if (not value_big_enough) and (not value_small_enough):
+                if not (value_big_enough and value_small_enough):
                     raise ValueError(
                         'Param %s has a value %s which is not in the range of '
                         '%s'%(self.name, value, self.range)
