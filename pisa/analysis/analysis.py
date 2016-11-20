@@ -311,7 +311,7 @@ class Analysis(object):
         hypo_maker._set_rescaled_free_params(rescaled_pvals)
 
         # Record the Asimov distribution with the optimal param values
-        hypo_asimov_dist = hypo_maker.get_outputs(sum=True)
+        hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
 
         # Get the best-fit metric value
         metric_val = sign * optimize_result.pop('fun')
@@ -459,7 +459,7 @@ class Analysis(object):
 
         # Get the Asimov map set
         try:
-            hypo_asimov_dist = hypo_maker.get_outputs(sum=True)
+            hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
         except:
             if not blind:
                 logging.error(
@@ -722,7 +722,7 @@ class Analysis(object):
                     data_dist=data_dist,
                     hypo_maker=hypo_maker,
                     hypo_param_selections=hypo_param_selections,
-                    hypo_asimov_dist=hypo_maker.get_outputs(sum=True),
+                    hypo_asimov_dist=hypo_maker.get_outputs(return_sum=True),
                     metric=metric,
                     **kwargs
                 )

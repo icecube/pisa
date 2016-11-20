@@ -472,7 +472,7 @@ class gpu(Stage):
         # Get hash to decide whether expensive stuff needs to be recalculated
         osc_param_vals = [self.params[name].value for name in self.osc_params]
         gpu_weight_vals = [self.params[name].value
-                           for name in self.gpu_weight_params]
+                           for name in self.weight_params]
         if self.full_hash:
             osc_param_vals = normQuant(osc_param_vals)
             gpu_weight_vals = normQuant(gpu_weight_vals)

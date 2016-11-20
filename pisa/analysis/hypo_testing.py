@@ -573,7 +573,7 @@ class HypoTesting(Analysis):
         if self.data_is_data:
             if self.data_dist is None:
                 self.data_maker.select_params(self.data_param_selections)
-                self.data_dist = self.data_maker.get_outputs()
+                self.data_dist = self.data_maker.get_outputs(return_sum=True)
                 self.h0_fit_to_data = None
                 self.h1_fit_to_data = None
             return self.data_dist
@@ -583,7 +583,7 @@ class HypoTesting(Analysis):
         # Produce Asimov dist if we don't already have it
         if self.toy_data_asimov_dist is None:
             self.data_maker.select_params(self.data_param_selections)
-            self.toy_data_asimov_dist = self.data_maker.get_outputs()
+            self.toy_data_asimov_dist = self.data_maker.get_outputs(return_sum=True)
             self.h0_fit_to_data = None
             self.h1_fit_to_data = None
 
