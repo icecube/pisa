@@ -15,7 +15,7 @@ import matplotlib.colors as colors
 from argparse import ArgumentParser,ArgumentDefaultsHelpFormatter
 
 from pisa.utils.log import logging
-from pisa.utils.flux_weights import load_2D_table, calculate_flux_weights, primaries, texprimaries
+from pisa.utils.flux_weights import load_2D_table, calculate_2D_flux_weights, primaries, texprimaries, load_3D_table, calculate_3D_flux_weights
 
 def Plot1DSlices(xintvals, yintvals, xtabvals, ytabvals, xtabbins,
                  xlabel, ylabel, xtext, ytext, text, tablename,
@@ -74,19 +74,24 @@ def Plot1DSlices(xintvals, yintvals, xtabvals, ytabvals, xtabbins,
         plt.xlim(xtabbins[0],xtabbins[-1])
         plt.xscale("log")
         plt.yscale("log")
-        ymin = min(np.log10(yintvals))
-        ymax = max(np.log10(yintvals))
+        ymin = min(min(np.log10(yintvals)),min(np.log10(ytabvals)))
+        ymax = max(max(np.log10(yintvals)),max(np.log10(ytabvals)))
         ydiff = ymax - ymin
+        plt.xlim(min(xtabbins),max(xtabbins))
         plt.ylim(np.power(10,ymin-0.1*ydiff),np.power(10,ymax+0.1*ydiff))
         if 'numu' in savename:
             plt.legend(loc='lower right')
         elif 'nue' in savename:
             plt.legend(loc='lower left')
     else:
-        ymin = min(yintvals)
-        ymax = max(yintvals)
+        ymin = min(min(yintvals),min(ytabvals))
+        ymax = max(max(yintvals),max(ytabvals))
         ydiff = ymax-ymin
-        plt.ylim(ymin-0.1*ydiff,ymax+0.1*ydiff)
+        plt.xlim(min(xtabbins),max(xtabbins))
+        if min(xtabbins) == 0.0 and max(xtabbins) == 360.0:
+            plt.ylim(ymin-0.1*ydiff,ymax+0.8*ydiff)
+        else:
+            plt.ylim(ymin-0.1*ydiff,ymax+0.1*ydiff)
         plt.legend(loc='upper right')
     plt.figtext(xtext,
                 ytext,
@@ -146,8 +151,8 @@ def take_average(interp_map, oversampling):
     return average_map
 
 
-def do_1D_honda_test(spline_dict, flux_dict, LegendFileName,
-                     SaveName, outdir, enpow=1):
+def do_1D_2D_honda_test(spline_dict, flux_dict, LegendFileName,
+                        SaveName, outdir, enpow=1):
 
     czs = np.linspace(-1,1,81)
     low_ens = 5.0119*np.ones_like(czs)
@@ -159,17 +164,15 @@ def do_1D_honda_test(spline_dict, flux_dict, LegendFileName,
 
     for flav, flavtex in zip(primaries, texprimaries):
     
-        low_en_flux_weights = calculate_flux_weights(low_ens,
-                                                     czs,
-                                                     spline_dict[flav],
-                                                     table_name='honda',
-                                                     enpow=enpow)
+        low_en_flux_weights = calculate_2D_flux_weights(low_ens,
+                                                        czs,
+                                                        spline_dict[flav],
+                                                        enpow=enpow)
             
-        high_en_flux_weights = calculate_flux_weights(high_ens,
-                                                      czs,
-                                                      spline_dict[flav],
-                                                      table_name='honda',
-                                                      enpow=enpow)
+        high_en_flux_weights = calculate_2D_flux_weights(high_ens,
+                                                         czs,
+                                                         spline_dict[flav],
+                                                         enpow=enpow)
 
         flux5 = flux_dict[flav].T[np.where(flux_dict['energy']==5.0119)][0]
         flux50 = flux_dict[flav].T[np.where(flux_dict['energy']==50.119)][0]
@@ -210,17 +213,15 @@ def do_1D_honda_test(spline_dict, flux_dict, LegendFileName,
             log = False
         )
 
-        upgoing_flux_weights = calculate_flux_weights(ens,
-                                                      upgoing,
-                                                      spline_dict[flav],
-                                                      table_name='honda',
-                                                      enpow=enpow)
+        upgoing_flux_weights = calculate_2D_flux_weights(ens,
+                                                         upgoing,
+                                                         spline_dict[flav],
+                                                         enpow=enpow)
 
-        downgoing_flux_weights = calculate_flux_weights(ens,
-                                                        downgoing,
-                                                        spline_dict[flav],
-                                                        table_name='honda',
-                                                        enpow=enpow)
+        downgoing_flux_weights = calculate_2D_flux_weights(ens,
+                                                           downgoing,
+                                                           spline_dict[flav],
+                                                           enpow=enpow)
 
         upgoing_flux_weights *= np.power(ens,3)
         downgoing_flux_weights *= np.power(ens,3)
@@ -278,7 +279,7 @@ def do_1D_honda_test(spline_dict, flux_dict, LegendFileName,
         )
 
 
-def do_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
+def do_2D_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
                      oversample, SaveName, TitleFileName, enpow=1):
 
     all_ens_bins = np.logspace(-1.025,4.025,101*oversample+1)
@@ -297,11 +298,10 @@ def do_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
     
     for flav, flavtex in zip(primaries, texprimaries):
 
-        all_flux_weights = calculate_flux_weights(all_ens_mg.flatten(),
-                                                  all_czs_mg.flatten(),
-                                                  spline_dict[flav],
-                                                  table_name='honda',
-                                                  enpow=enpow)
+        all_flux_weights = calculate_2D_flux_weights(all_ens_mg.flatten(),
+                                                     all_czs_mg.flatten(),
+                                                     spline_dict[flav],
+                                                     enpow=enpow)
 
         all_flux_weights = np.array(np.split(all_flux_weights,
                                              len(all_czs)))
@@ -392,7 +392,7 @@ def do_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
             plt.close(fig.number)
             
 
-def do_1D_bartol_test(spline_dict, flux_dict, outdir, enpow=1):
+def do_1D_2D_bartol_test(spline_dict, flux_dict, outdir, enpow=1):
 
     czs = np.linspace(-1,1,81)
     low_ens = 4.732*np.ones_like(czs)
@@ -404,17 +404,15 @@ def do_1D_bartol_test(spline_dict, flux_dict, outdir, enpow=1):
 
     for flav, flavtex in zip(primaries, texprimaries):
         
-        low_en_flux_weights = calculate_flux_weights(low_ens,
-                                                     czs,
-                                                     spline_dict[flav],
-                                                     table_name='bartol',
-                                                     enpow=enpow)
+        low_en_flux_weights = calculate_2D_flux_weights(low_ens,
+                                                        czs,
+                                                        spline_dict[flav],
+                                                        enpow=enpow)
             
-        high_en_flux_weights = calculate_flux_weights(high_ens,
-                                                      czs,
-                                                      spline_dict[flav],
-                                                      table_name='bartol',
-                                                      enpow=enpow)
+        high_en_flux_weights = calculate_2D_flux_weights(high_ens,
+                                                         czs,
+                                                         spline_dict[flav],
+                                                         enpow=enpow)
 
         flux5 = flux_dict[flav].T[np.where(flux_dict['energy']==4.732)][0]
         flux50 = flux_dict[flav].T[np.where(flux_dict['energy']==44.70)][0]
@@ -455,17 +453,15 @@ def do_1D_bartol_test(spline_dict, flux_dict, outdir, enpow=1):
             log = False
         )
 
-        upgoing_flux_weights = calculate_flux_weights(ens,
-                                                      upgoing,
-                                                      spline_dict[flav],
-                                                      table_name='bartol',
-                                                      enpow=enpow)
+        upgoing_flux_weights = calculate_2D_flux_weights(ens,
+                                                         upgoing,
+                                                         spline_dict[flav],
+                                                         enpow=enpow)
 
-        downgoing_flux_weights = calculate_flux_weights(ens,
-                                                        downgoing,
-                                                        spline_dict[flav],
-                                                        table_name='bartol',
-                                                        enpow=enpow)
+        downgoing_flux_weights = calculate_2D_flux_weights(ens,
+                                                           downgoing,
+                                                           spline_dict[flav],
+                                                           enpow=enpow)
 
         upgoing_flux_weights *= np.power(ens,3)
         downgoing_flux_weights *= np.power(ens,3)
@@ -529,7 +525,7 @@ def do_1D_bartol_test(spline_dict, flux_dict, outdir, enpow=1):
         )
             
 
-def do_2D_bartol_test(spline_dict, flux_dict, outdir, ip_checks,
+def do_2D_2D_bartol_test(spline_dict, flux_dict, outdir, ip_checks,
                       oversample, enpow=1):
 
     all_en_bins_low = np.logspace(-1.0,1.0,40*oversample+1)
@@ -581,11 +577,10 @@ def do_2D_bartol_test(spline_dict, flux_dict, outdir, ip_checks,
         
         for flav, flavtex in zip(primaries, texprimaries):
 
-            all_flux_weights = calculate_flux_weights(all_ens_mg.flatten(),
-                                                      all_czs_mg.flatten(),
-                                                      spline_dict[flav],
-                                                      table_name='bartol',
-                                                      enpow=enpow)
+            all_flux_weights = calculate_2D_flux_weights(all_ens_mg.flatten(),
+                                                         all_czs_mg.flatten(),
+                                                         spline_dict[flav],
+                                                         enpow=enpow)
 
             all_flux_weights = np.array(np.split(all_flux_weights,
                                                  len(all_czs)))
@@ -696,7 +691,7 @@ def do_2D_bartol_test(spline_dict, flux_dict, outdir, ip_checks,
                                  'bartol_%s2dinterpolation.png'%flav))
 
             
-def do_2D_comparisons(honda_spline_dict, bartol_spline_dict,
+def do_2D_2D_comparisons(honda_spline_dict, bartol_spline_dict,
                       outdir, oversample, enpow=1):
         
     all_ens_bins = np.logspace(-1.0,4.0,100*oversample+1)
@@ -715,18 +710,16 @@ def do_2D_comparisons(honda_spline_dict, bartol_spline_dict,
     
     for flav, flavtex in zip(primaries, texprimaries):
 
-        honda_flux_weights = calculate_flux_weights(
+        honda_flux_weights = calculate_2D_flux_weights(
             all_ens_mg.flatten(),
             all_czs_mg.flatten(),
             honda_spline_dict[flav],
-            table_name='honda',
             enpow=enpow
         )
-        bartol_flux_weights = calculate_flux_weights(
+        bartol_flux_weights = calculate_2D_flux_weights(
             all_ens_mg.flatten(),
             all_czs_mg.flatten(),
             bartol_spline_dict[flav],
-            table_name='bartol',
             enpow=enpow
         )
 
@@ -783,14 +776,449 @@ def do_2D_comparisons(honda_spline_dict, bartol_spline_dict,
         
         fig.savefig(os.path.join(outdir,
                                  'honda_bartol_%s2dcomparisons.png'%flav))
+
+
+def do_1D_3D_honda_test(spline_dict, flux_dict, LegendFileName,
+                        SaveName, outdir, enpow=1, az_linear=True):
+
+    czs = np.linspace(-1,1,81)
+    low_ens = 5.0119*np.ones_like(czs)
+    high_ens = 50.119*np.ones_like(czs)
+    low_azs = 75.0*np.ones_like(czs)*np.pi/180.0
+    high_azs = 285.0*np.ones_like(czs)*np.pi/180.0
+    
+    ens = np.logspace(-1.025,4.025,1020)
+    upgoing = -0.95*np.ones_like(ens)
+    downgoing = 0.35*np.ones_like(ens)
+    low_azs_two = 75.0*np.ones_like(ens)*np.pi/180.0
+    high_azs_two = 285.0*np.ones_like(ens)*np.pi/180.0
+
+    azs = np.linspace(0.0,360.0,121)*np.pi/180.0
+    low_ens_two = 5.0119*np.ones_like(azs)
+    high_ens_two = 50.119*np.ones_like(azs)
+    upgoing_two = -0.95*np.ones_like(azs)
+    downgoing_two  = 0.35*np.ones_like(azs)
+
+    lin_azs = [True, False]
+    name_additions = ['lin_az', 'ip_az']
+
+    for lin_az, name_addition in zip(lin_azs, name_additions):
+
+        NewSaveName = SaveName + '_%s'%name_addition
+
+        for flav, flavtex in zip(primaries, texprimaries):
+    
+            low_en_low_az_flux_weights = calculate_3D_flux_weights(
+                low_ens,
+                czs,
+                low_azs,
+                spline_dict[flav],
+                enpow=enpow,
+                az_linear=lin_az
+            )
+            
+            high_en_low_az_flux_weights = calculate_3D_flux_weights(
+                high_ens,
+                czs,
+                low_azs,
+                spline_dict[flav],
+                enpow=enpow,
+                az_linear=lin_az
+            )
+
+            low_en_high_az_flux_weights = calculate_3D_flux_weights(
+                low_ens,
+                czs,
+                high_azs,
+                spline_dict[flav],
+                enpow=enpow,
+                az_linear=lin_az
+            )
+            
+            high_en_high_az_flux_weights = calculate_3D_flux_weights(
+                high_ens,
+                czs,
+                high_azs,
+                spline_dict[flav],
+                enpow=enpow,
+                az_linear=lin_az
+            )
+
+            flux5lowaz = flux_dict[flav][
+                np.where(flux_dict['azimuth']==75.0)][0][
+                    np.where(flux_dict['energy']==5.0119)][0]
+            flux50lowaz = flux_dict[flav][
+                np.where(flux_dict['azimuth']==75.0)][0][
+                    np.where(flux_dict['energy']==50.119)][0]
+            
+            flux5highaz = flux_dict[flav][
+                np.where(flux_dict['azimuth']==285.0)][0][
+                    np.where(flux_dict['energy']==5.0119)][0]
+            flux50highaz = flux_dict[flav][
+                np.where(flux_dict['azimuth']==285.0)][0][
+                    np.where(flux_dict['energy']==50.119)][0]
+
+            Plot1DSlices(
+                xintvals = czs,
+                yintvals = low_en_low_az_flux_weights,
+                xtabvals = flux_dict['coszen'],
+                ytabvals = flux5lowaz,
+                xtabbins = np.linspace(-1,1,21),
+                xlabel = r'$\cos\theta_Z$',
+                ylabel = r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,
+                xtext = 0.75,
+                ytext = 0.68,
+                text = 'Slice at \n 5.0119 GeV \n $\phi_{Az}=75^{\circ}$',
+                tablename = LegendFileName,
+                savename = os.path.join(
+                    outdir,'%s_%sfluxweightstest5GeV75Az.png'%(NewSaveName,flav)
+                ),
+                log = False
+            )
+        
+            Plot1DSlices(
+                xintvals = czs,
+                yintvals = high_en_low_az_flux_weights,
+                xtabvals = flux_dict['coszen'],
+                ytabvals = flux50lowaz,
+                xtabbins = np.linspace(-1,1,21),
+                xlabel = r'$\cos\theta_Z$',
+                ylabel = r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,
+                xtext = 0.75,
+                ytext = 0.68,
+                text = 'Slice at \n 50.119 GeV \n $\phi_{Az}=75^{\circ}$',
+                tablename = LegendFileName,
+                savename = os.path.join(
+                    outdir,'%s_%sfluxweightstest50GeV75Az.png'%(NewSaveName,flav)
+                ),
+                log = False
+            )
+
+            Plot1DSlices(
+                xintvals = czs,
+                yintvals = low_en_high_az_flux_weights,
+                xtabvals = flux_dict['coszen'],
+                ytabvals = flux5highaz,
+                xtabbins = np.linspace(-1,1,21),
+                xlabel = r'$\cos\theta_Z$',
+                ylabel = r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,
+                xtext = 0.75,
+                ytext = 0.68,
+                text = 'Slice at \n 5.0119 GeV \n $\phi_{Az}=285^{\circ}$',
+                tablename = LegendFileName,
+                savename = os.path.join(
+                    outdir,'%s_%sfluxweightstest5GeV285Az.png'%(NewSaveName,flav)
+                ),
+                log = False
+            )
+        
+            Plot1DSlices(
+                xintvals = czs,
+                yintvals = high_en_high_az_flux_weights,
+                xtabvals = flux_dict['coszen'],
+                ytabvals = flux50highaz,
+                xtabbins = np.linspace(-1,1,21),
+                xlabel = r'$\cos\theta_Z$',
+                ylabel = r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,
+                xtext = 0.75,
+                ytext = 0.68,
+                text = 'Slice at \n 50.119 GeV \n $\phi_{Az}=285^{\circ}$',
+                tablename = LegendFileName,
+                savename = os.path.join(
+                    outdir,'%s_%sfluxweightstest50GeV285Az.png'%(NewSaveName,flav)
+                ),
+                log = False
+            )
+
+            upgoing_flux_weights_low_azs = calculate_3D_flux_weights(
+                ens,
+                upgoing,
+                low_azs_two,
+                spline_dict[flav],
+                enpow=enpow,
+                az_linear=lin_az
+            )
+            
+            downgoing_flux_weights_low_azs = calculate_3D_flux_weights(
+                ens,
+                downgoing,
+                low_azs_two,
+                spline_dict[flav],
+                enpow=enpow,
+                az_linear=lin_az
+            )
+            
+            upgoing_flux_weights_high_azs = calculate_3D_flux_weights(
+                ens,
+                upgoing,
+                high_azs_two,
+                spline_dict[flav],
+                enpow=enpow,
+                az_linear=lin_az
+            )
+            
+            downgoing_flux_weights_high_azs = calculate_3D_flux_weights(
+                ens,
+                downgoing,
+                high_azs_two,
+                spline_dict[flav],
+                enpow=enpow,
+                az_linear=lin_az
+            )
+            
+            upgoing_flux_weights_low_azs *= np.power(ens,3)
+            downgoing_flux_weights_low_azs *= np.power(ens,3)
+            upgoing_flux_weights_high_azs *= np.power(ens,3)
+            downgoing_flux_weights_high_azs *= np.power(ens,3)
+            
+            coszen_strs = ['%.2f'%coszen for coszen in flux_dict['coszen']]
+            coszen_strs = np.array(coszen_strs)
+            
+            flux5lowaz = flux_dict[flav][
+                np.where(flux_dict['azimuth']==75.0)][0][
+                    np.where(flux_dict['energy']==5.0119)][0]
+            flux50lowaz = flux_dict[flav][
+                np.where(flux_dict['azimuth']==75.0)][0][
+                    np.where(flux_dict['energy']==50.119)][0]
+            
+            flux5highaz = flux_dict[flav][
+                np.where(flux_dict['azimuth']==285.0)][0][
+                    np.where(flux_dict['energy']==5.0119)][0]
+            flux50highaz = flux_dict[flav][
+                np.where(flux_dict['azimuth']==285.0)][0][
+                    np.where(flux_dict['energy']==50.119)][0]
+            
+            fluxupgoinglowaz = flux_dict[flav][
+                np.where(flux_dict['azimuth']==75.0)][0].T[
+                    np.where(coszen_strs=='-0.95')][0]
+            fluxdowngoinglowaz = flux_dict[flav][
+                np.where(flux_dict['azimuth']==75.0)][0].T[
+                    np.where(coszen_strs=='0.35')][0]
+            fluxupgoinghighaz = flux_dict[flav][
+                np.where(flux_dict['azimuth']==285.0)][0].T[
+                    np.where(coszen_strs=='-0.95')][0]
+            fluxdowngoinghighaz = flux_dict[flav][
+                np.where(flux_dict['azimuth']==285.0)][0].T[
+                    np.where(coszen_strs=='0.35')][0]
+            
+            fluxupgoinglowaz *= np.power(flux_dict['energy'],3)
+            fluxdowngoinglowaz *= np.power(flux_dict['energy'],3)
+            fluxupgoinghighaz *= np.power(flux_dict['energy'],3)
+            fluxdowngoinghighaz *= np.power(flux_dict['energy'],3)
+            
+            if 'numu' in flav:
+                xtext = 0.68
+                ytext = 0.28
+            elif 'nue' in flav:
+                xtext = 0.35
+                ytext = 0.28
+                
+            Plot1DSlices(
+                xintvals = ens,
+                yintvals = upgoing_flux_weights_low_azs,
+                xtabvals = flux_dict['energy'],
+                ytabvals = fluxupgoinglowaz,
+                xtabbins = np.logspace(-1.025,4.025,102),
+                xlabel = 'Neutrino Energy (GeV)',
+                ylabel = r'%s Flux $\times E_{\nu}^3$ $\left([m^2\,s\,sr\,GeV]^{-1}[GeV]^3\right)$'%flavtex,
+                xtext = xtext,
+                ytext = ytext,
+                text = r'Slice at $\cos\theta_Z=-0.95$'+'\n'+r'$\phi_{Az}=75^{\circ}$',
+                tablename = LegendFileName,
+                savename = os.path.join(
+                    outdir,'%s_%sfluxweightstest-0.95cz75Az.png'%(NewSaveName,flav)
+                ),
+                log = True
+            )
+            
+            Plot1DSlices(
+                xintvals = ens,
+                yintvals = downgoing_flux_weights_low_azs,
+                xtabvals = flux_dict['energy'],
+                ytabvals = fluxdowngoinglowaz,
+                xtabbins = np.logspace(-1.025,4.025,102),
+                xlabel = 'Neutrino Energy (GeV)',
+                ylabel = r'%s Flux $\times E_{\nu}^3$ $\left([m^2\,s\,sr\,GeV]^{-1}[GeV]^3\right)$'%flavtex,
+                xtext = xtext,
+                ytext = ytext,
+                text = r'Slice at $\cos\theta_Z=0.35$'+'\n'+r'$\phi_{Az}=75^{\circ}$',
+                tablename = LegendFileName,
+                savename = os.path.join(
+                    outdir,'%s_%sfluxweightstest0.35cz75Az.png'%(NewSaveName,flav)
+                ),
+                log = True
+            )
+
+            Plot1DSlices(
+                xintvals = ens,
+                yintvals = upgoing_flux_weights_high_azs,
+                xtabvals = flux_dict['energy'],
+                ytabvals = fluxupgoinghighaz,
+                xtabbins = np.logspace(-1.025,4.025,102),
+                xlabel = 'Neutrino Energy (GeV)',
+                ylabel = r'%s Flux $\times E_{\nu}^3$ $\left([m^2\,s\,sr\,GeV]^{-1}[GeV]^3\right)$'%flavtex,
+                xtext = xtext,
+                ytext = ytext,
+                text = r'Slice at $\cos\theta_Z=-0.95$'+'\n'+r'$\phi_{Az}=285^{\circ}$',
+                tablename = LegendFileName,
+                savename = os.path.join(
+                    outdir,'%s_%sfluxweightstest-0.95cz285Az.png'%(NewSaveName,flav)
+                ),
+                log = True
+            )
+            
+            Plot1DSlices(
+                xintvals = ens,
+                yintvals = downgoing_flux_weights_high_azs,
+                xtabvals = flux_dict['energy'],
+                ytabvals = fluxdowngoinghighaz,
+                xtabbins = np.logspace(-1.025,4.025,102),
+                xlabel = 'Neutrino Energy (GeV)',
+                ylabel = r'%s Flux $\times E_{\nu}^3$ $\left([m^2\,s\,sr\,GeV]^{-1}[GeV]^3\right)$'%flavtex,
+                xtext = xtext,
+                ytext = ytext,
+                text = r'Slice at $\cos\theta_Z=0.35$'+'\n'+r'$\phi_{Az}=285^{\circ}$',
+                tablename = LegendFileName,
+                savename = os.path.join(
+                    outdir,'%s_%sfluxweightstest0.35cz285Az.png'%(NewSaveName,flav)
+                ),
+                log = True
+            )
+            
+            low_en_upgoing_flux_weights = calculate_3D_flux_weights(
+                low_ens_two,
+                upgoing_two,
+                azs,
+                spline_dict[flav],
+                enpow=enpow,
+                az_linear=lin_az
+            )
+            
+            high_en_upgoing_flux_weights = calculate_3D_flux_weights(
+                high_ens_two,
+                upgoing_two,
+                azs,
+                spline_dict[flav],
+                enpow=enpow,
+                az_linear=lin_az
+            )
+            
+            low_en_downgoing_flux_weights = calculate_3D_flux_weights(
+                low_ens_two,
+                downgoing_two,
+                azs,
+                spline_dict[flav],
+                enpow=enpow,
+                az_linear=lin_az
+            )
+            
+            high_en_downgoing_flux_weights = calculate_3D_flux_weights(
+                high_ens_two,
+                downgoing_two,
+                azs,
+                spline_dict[flav],
+                enpow=enpow,
+                az_linear=lin_az
+            )
+            
+            flux5downgoing = flux_dict[flav].T[
+                np.where(flux_dict['coszen']==0.35)][0][
+                    np.where(flux_dict['energy']==5.0119)][0]
+            flux50downgoing = flux_dict[flav].T[
+                np.where(flux_dict['coszen']==0.35)][0][
+                    np.where(flux_dict['energy']==50.119)][0]
+            
+            flux5upgoing = flux_dict[flav].T[
+                np.where(flux_dict['coszen']==-0.95)][0][
+                    np.where(flux_dict['energy']==5.0119)][0]
+            flux50upgoing = flux_dict[flav].T[
+                np.where(flux_dict['coszen']==-0.95)][0][
+                    np.where(flux_dict['energy']==50.119)][0]
+
+            Plot1DSlices(
+                xintvals = np.linspace(0.0,360.0,121),
+                yintvals = low_en_upgoing_flux_weights,
+                xtabvals = flux_dict['azimuth'],
+                ytabvals = flux5upgoing,
+                xtabbins = np.linspace(0.0,360.0,13),
+                xlabel = r'$\phi_{Az}$',
+                ylabel = r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,
+                xtext = 0.75,
+                ytext = 0.68,
+                text = "Slice at \n 5.0119 GeV \n"+r" $\cos\theta_Z=-0.95$",
+                tablename = LegendFileName,
+                savename = os.path.join(
+                    outdir,'%s_%sfluxweightstest5GeV-0.95cz.png'%(NewSaveName,flav)
+                ),
+                log = False
+            )
+
+            Plot1DSlices(
+                xintvals = np.linspace(0.0,360.0,121),
+                yintvals = high_en_upgoing_flux_weights,
+                xtabvals = flux_dict['azimuth'],
+                ytabvals = flux50upgoing,
+                xtabbins = np.linspace(0.0,360.0,13),
+                xlabel = r'$\phi_{Az}$',
+                ylabel = r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,
+                xtext = 0.75,
+                ytext = 0.68,
+                text = "Slice at \n 50.119 GeV \n"+r"$\cos\theta_Z=-0.95$",
+                tablename = LegendFileName,
+                savename = os.path.join(
+                    outdir,'%s_%sfluxweightstest50GeV-0.95cz.png'%(NewSaveName,flav)
+                ),
+                log = False
+            )
+
+            Plot1DSlices(
+                xintvals = np.linspace(0.0,360.0,121),
+                yintvals = low_en_downgoing_flux_weights,
+                xtabvals = flux_dict['azimuth'],
+                ytabvals = flux5downgoing,
+                xtabbins = np.linspace(0.0,360.0,13),
+                xlabel = r'$\phi_{Az}$',
+                ylabel = r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,
+                xtext = 0.75,
+                ytext = 0.68,
+                text = "Slice at \n 5.0119 GeV \n"+r"$\cos\theta_Z=0.35$",
+                tablename = LegendFileName,
+                savename = os.path.join(
+                    outdir,'%s_%sfluxweightstest5GeV0.35cz.png'%(NewSaveName,flav)
+                ),
+                log = False
+            )
+
+            Plot1DSlices(
+                xintvals = np.linspace(0.0,360.0,121),
+                yintvals = high_en_downgoing_flux_weights,
+                xtabvals = flux_dict['azimuth'],
+                ytabvals = flux50downgoing,
+                xtabbins = np.linspace(0.0,360.0,13),
+                xlabel = r'$\phi_{Az}$',
+                ylabel = r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,
+                xtext = 0.75,
+                ytext = 0.68,
+                text = "Slice at \n 50.119 GeV \n"+r"$\cos\theta_Z=0.35$",
+                tablename = LegendFileName,
+                savename = os.path.join(
+                    outdir,'%s_%sfluxweightstest50GeV0.35cz.png'%(NewSaveName,flav)
+                ),
+                log = False
+            )
         
 
 if __name__ == '__main__':
         
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--flux_file',type=str,
-                        default='flux/honda-2015-spl-solmax-aa.d',
-                        help="Flux file you want to run tests on")
+    parser.add_argument('--flux_file_2D',type=str,
+                        default=None,
+                        help='''2D flux file you want to run tests on. If one 
+                        is not specified then no 2D tests will be done.''')
+    parser.add_argument('--flux_file_3D',type=str,
+                        default=None,
+                        help='''3D flux file you want to run tests on. If one 
+                        is not specified then no 3D tests will be done.''')
     parser.add_argument('--onedim_checks', action='store_true',
                         help='''Run verifications on 1D slices.''')
     parser.add_argument('--twodim_checks', action='store_true',
@@ -801,7 +1229,7 @@ if __name__ == '__main__':
                         WARNING - THESE ARE VERY SLOW.''')
     parser.add_argument('--comparisons', action='store_true',
                         help='''Run comparisons between a Bartol and Honda 
-                        flux file.''')
+                        flux file. WARNING - ALSO VERY SLOW.''')
     parser.add_argument('--oversample', type=int, default=10,
                         help='''Integer to oversample for integral-preserving
                         checks and comparisons between flux files.''')
@@ -813,26 +1241,95 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if ('honda' not in args.flux_file) and ('bartol' not in args.flux_file):
-        raise ValueError('Type of flux file not recognised.')
+    if args.flux_file_2D is not None:
 
-    if args.comparisons:
-        logging.warning('Comparisons will be of Honda 2015 SNO and '
-                        'Bartol 2004 SNO tables regardless of what you set '
-                        'in the flux_file argument.')
+        if ('honda' not in args.flux_file_2D) and ('bartol' not in args.flux_file_2D):
+            raise ValueError('Type of flux file not recognised.')
 
-    spline_dict, flux_dict = load_2D_table(
-        args.flux_file,
-        enpow=args.enpow,
-        returnTable=True
-    )
+        spline_dict_2D, flux_dict_2D = load_2D_table(
+            args.flux_file_2D,
+            enpow=args.enpow,
+            returnTable=True
+        )
+        
+        if 'honda' in args.flux_file_2D:
 
-    if 'honda' in args.flux_file:
+            flux_file_2D_name = args.flux_file_2D.split('/')[-1]
+            flux_file_2D_bits = flux_file_2D_name.split('-')
+            year = flux_file_2D_bits[1]
+            site = flux_file_2D_bits[2]
 
-        flux_file_name = args.flux_file.split('/')[-1]
-        flux_file_bits = flux_file_name.split('-')
-        year = flux_file_bits[1]
-        site = flux_file_bits[2]
+            TitleFileName = 'Honda'
+            LegendFileName = 'Honda'
+
+            if site == 'spl':
+                TitleFileName += ' South Pole'
+                LegendFileName += ' SPL'
+            elif site == 'sno':
+                TitleFileName += ' Sudbury'
+                LegendFileName += ' SNO'
+            else:
+                logging.warn('Don\'t know what to do with site %s.'
+                             'Omitting from titles'%site)
+
+            TitleFileName += ' %s'%year
+            LegendFileName += ' %s'%year
+            SaveName = 'honda_2D_%s_%s'%(site,year)
+        
+            if args.onedim_checks:
+                do_1D_2D_honda_test(
+                    spline_dict = spline_dict_2D,
+                    flux_dict = flux_dict_2D,
+                    LegendFileName = LegendFileName,
+                    SaveName = SaveName,
+                    outdir = args.outdir,
+                    enpow = args.enpow
+                )
+
+            if args.twodim_checks:
+                do_2D_2D_honda_test(
+                    spline_dict = spline_dict_2D,
+                    flux_dict = flux_dict_2D,
+                    outdir = args.outdir,
+                    ip_checks = args.ip_checks,
+                    oversample = args.oversample,
+                    SaveName = SaveName,
+                    TitleFileName = TitleFileName,
+                    enpow = args.enpow
+                )
+
+        else:
+
+            if args.onedim_checks:
+                do_1D_2D_bartol_test(
+                    spline_dict = spline_dict_2D,
+                    flux_dict = flux_dict_2D,
+                    outdir = args.outdir,
+                    enpow = args.enpow
+                )
+
+            if args.twodim_checks:
+                do_2D_2D_bartol_test(
+                    spline_dict = spline_dict_2D,
+                    flux_dict = flux_dict_2D,
+                    outdir = args.outdir,
+                    ip_checks = args.ip_checks,
+                    oversample = args.oversample,
+                    enpow = args.enpow
+                )
+
+    if args.flux_file_3D is not None:
+
+        spline_dict_3D, flux_dict_3D = load_3D_table(
+            args.flux_file_3D,
+            enpow=args.enpow,
+            returnTable=True
+        )
+
+        flux_file_3D_name = args.flux_file_3D.split('/')[-1]
+        flux_file_3D_bits = flux_file_3D_name.split('-')
+        year = flux_file_3D_bits[1]
+        site = flux_file_3D_bits[2]
 
         TitleFileName = 'Honda'
         LegendFileName = 'Honda'
@@ -844,71 +1341,42 @@ if __name__ == '__main__':
             TitleFileName += ' Sudbury'
             LegendFileName += ' SNO'
         else:
-            logging.warn('Don\'t know what to do with site %s. Omitting from titles'%site)
+            logging.warn('Don\'t know what to do with site %s.'
+                         'Omitting from titles'%site)
 
         TitleFileName += ' %s'%year
         LegendFileName += ' %s'%year
-        SaveName = 'honda_%s_%s'%(site,year)
-        
+        SaveName = 'honda_3D_%s_%s'%(site,year)
+
         if args.onedim_checks:
-            do_1D_honda_test(
-                spline_dict = spline_dict,
-                flux_dict = flux_dict,
+            do_1D_3D_honda_test(
+                spline_dict = spline_dict_3D,
+                flux_dict = flux_dict_3D,
                 LegendFileName = LegendFileName,
                 SaveName = SaveName,
                 outdir = args.outdir,
                 enpow = args.enpow
             )
 
-        if args.twodim_checks:
-            do_2D_honda_test(
-                spline_dict = spline_dict,
-                flux_dict = flux_dict,
-                outdir = args.outdir,
-                ip_checks = args.ip_checks,
-                oversample = args.oversample,
-                SaveName = SaveName,
-                TitleFileName = TitleFileName,
-                enpow = args.enpow
-            )
-
-    else:
-
-        if args.onedim_checks:
-            do_1D_bartol_test(
-                spline_dict = spline_dict,
-                flux_dict = flux_dict,
-                outdir = args.outdir,
-                enpow = args.enpow
-            )
-
-        if args.twodim_checks:
-            do_2D_bartol_test(
-                spline_dict = spline_dict,
-                flux_dict = flux_dict,
-                outdir = args.outdir,
-                ip_checks = args.ip_checks,
-                oversample = args.oversample,
-                enpow = args.enpow
-            )
-
     if args.comparisons:
 
-        honda_spline_dict, honda_flux_dict = load_2D_table(
+        logging.warning('Comparisons will be of Honda 2015 SNO and '
+                        'Bartol 2004 SNO 2D tables regardless of what you set '
+                        'in the flux_file argument(s).')
+
+        honda_spline_dict_2D = load_2D_table(
             'flux/honda-2015-sno-solmax-aa.d',
-            enpow=args.enpow,
-            returnTable=True
+            enpow=args.enpow
         )
 
-        bartol_spline_dict, bartol_flux_dict = load_2D_table(
+        bartol_spline_dict_2D = load_2D_table(
             'flux/bartol-2004-sno-solmax-aa.d',
-            enpow=args.enpow,
-            returnTable=True
+            enpow=args.enpow
         )
         
-        do_2D_comparisons(
-            honda_spline_dict = honda_spline_dict,
-            bartol_spline_dict = bartol_spline_dict,
+        do_2D_2D_comparisons(
+            honda_spline_dict = honda_spline_dict_2D,
+            bartol_spline_dict = bartol_spline_dict_2D,
             outdir = args.outdir,
             oversample = args.oversample,
             enpow = args.enpow
