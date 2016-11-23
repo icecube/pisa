@@ -29,7 +29,6 @@ from pisa.utils.fileio import to_file
 
 __all__ = ['Analysis', 'Counter']
 
-
 # TODO: move this to a central location prob. in utils
 class Counter(object):
     def __init__(self, i=0):
@@ -64,6 +63,7 @@ class Analysis(object):
 
     """
     def __init__(self):
+        self._nit = 0
         pass
 
     def fit_hypo(self, data_dist, hypo_maker, hypo_param_selections, metric,
@@ -255,12 +255,12 @@ class Analysis(object):
         fit_history = []
         start_t = time.time()
 
-        if pprint:
+        if pprint and not blind:
             free_p = hypo_maker.params.free
 
             # Display any units on top
             r = re.compile(r'(^[+0-9.eE-]* )|(^[+0-9.eE-]*$)')
-            hdr = ' '*(6+1+12+3)
+            hdr = ' '*(6+1+10+1+12+3)
             unt = []
             for p in free_p:
                 u = r.sub('', format(p.value, '~')).replace(' ','')[0:10]
@@ -271,16 +271,19 @@ class Analysis(object):
             hdr += '\n'
 
             # Header names
-            hdr += 'iter'.center(6) + ' ' + metric[0:12].center(12) + ' | '
+            hdr += ('iter'.center(6) + ' ' + 'funcalls'.center(10) + ' ' +
+                    metric[0:12].center(12) + ' | ')
             hdr += ' '.join([p.name[0:12].center(12) for p in free_p])
             hdr += '\n'
 
             # Underscores
-            hdr += ' '.join(['-'*6, '-'*12, '+'] + ['-'*12]*len(free_p))
+            hdr += ' '.join(['-'*6, '-'*10, '-'*12, '+'] + ['-'*12]*len(free_p))
             hdr += '\n'
 
             sys.stdout.write(hdr)
 
+        # reset number of iterations before each minimization
+        self._nit = 0
         optimize_result = optimize.minimize(
             fun=self._minimizer_callable,
             x0=x0,
@@ -288,7 +291,8 @@ class Analysis(object):
                   blind),
             bounds=bounds,
             method=minimizer_settings['method']['value'],
-            options=minimizer_settings['options']['value']
+            options=minimizer_settings['options']['value'],
+            callback=self._minimizer_callback
         )
         end_t = time.time()
         if pprint:
@@ -485,10 +489,12 @@ class Analysis(object):
 
         # Report status of metric & params (except if blinded)
         if blind:
-            msg = 'minimizer iteration #%6d' %counter.count
+            msg = ('minimizer iteration: #%6d | function call: #%6d'
+		   %(self._nit, counter.count))
         else:
             #msg = '%s=%.6e | %s' %(metric, metric_val, hypo_maker.params.free)
-            msg = '%s %s | ' %(('%d'%counter.count).center(6),
+            msg = '%s %s %s | ' %(('%d'%self._nit).center(6),
+                                ('%d'%counter.count).center(10),
                                 format(metric_val, '0.5e').rjust(12))
             msg += ' '.join([('%0.5e'%p.value.m).rjust(12)
                              for p in hypo_maker.params.free])
@@ -508,6 +514,17 @@ class Analysis(object):
             )
 
         return sign*metric_val
+
+    def _minimizer_callback(self, xk):
+        """Passed as `callback` parameter to `optimize.minimize`, and is called
+        after each iteration. Keeps track of number of iterations.
+
+        Parameters
+        ----------
+        xk : list
+	    Parameter vector
+        """
+        self._nit+=1
 
     # TODO: move the complexity of defining a scan into a class with various
     # factory methods, and just pass that class to the scan method; we will

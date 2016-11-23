@@ -34,17 +34,19 @@ from uncertainties import ufloat
 from uncertainties import unumpy as unp
 import pint
 
-from pisa import ureg, Q_
+from pisa import ureg, Q_, FTYPE
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.profiler import line_profile, profile
 
 
-__all__ = ['isvalidname', 'isscalar', 'isbarenumeric',
+__all__ = ['PREC', 'LOG10_2', 'NP_TYPES', 'SEQ_TYPES', 'MAP_TYPES',
+           'COMPLEX_TYPES',
+           'isvalidname', 'isscalar', 'isbarenumeric',
            'recursiveEquality', 'recursiveAllclose', 'normQuant']
 
 
-PREC = np.finfo(float).eps
-"""Machine precision ("eps") for `float` datatype"""
+PREC = np.finfo(FTYPE).eps
+"""Machine precision ("eps") for PISA's FLOAT datatype"""
 
 # Derive the following number via
 # from sympy import *
@@ -455,9 +457,9 @@ def normQuant(obj, sigfigs=None, full_norm=True):
         return obj
 
     round_result = False
-    if full_norm and sigfigs is not None:
+    if sigfigs is not None:
         if not (int(sigfigs) == float(sigfigs) and sigfigs > 0):
-            raise ValueError('`sigfigs` must be positive and integer.')
+            raise ValueError('`sigfigs` must be an integer > 0.')
         round_result = True
         sigfigs = int(sigfigs)
 

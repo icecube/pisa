@@ -293,7 +293,7 @@ def plot_comparisons(ref_map, new_map, ref_abv, new_abv, outdir, subdir, name,
     diff_map = make_delta_map(new_map, ref_map)
     diff_ratio_map = make_ratio_map(diff_map, ref_map)
 
-    max_diff_ratio = np.nanmax(diff_ratio_map['map'])
+    max_diff_ratio = np.nanmax(np.abs(diff_ratio_map['map']))
 
     # Handle cases where ratio returns infinite
     # This isn't necessarily a fail, since all it means is the referene was
@@ -304,11 +304,11 @@ def plot_comparisons(ref_map, new_map, ref_abv, new_abv, outdir, subdir, name,
         # First find all the finite elements
         FiniteMap = np.isfinite(diff_ratio_map['map'])
         # Then find the nanmax of this, will be our new test value
-        max_diff_ratio = np.nanmax(diff_ratio_map['map'][FiniteMap])
+        max_diff_ratio = np.nanmax(np.abs(diff_ratio_map['map'][FiniteMap]))
         # Also find all the infinite elements
         InfiniteMap = np.logical_not(FiniteMap)
         # This will be a second test value
-        max_diff = np.nanmax(diff_map['map'][InfiniteMap])
+        max_diff = np.nanmax(np.abs(diff_map['map'][InfiniteMap]))
     else:
         # Without any infinite elements we can ignore this second test
         max_diff = 0.0

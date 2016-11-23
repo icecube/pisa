@@ -7,6 +7,7 @@ from collections import OrderedDict, Sequence
 import importlib
 import inspect
 from itertools import product
+import sys
 
 from pisa import ureg
 from pisa.core.pipeline import Pipeline
@@ -70,7 +71,7 @@ class DistributionMaker(object):
     def get_outputs(self, return_sum=False, **kwargs):
         outputs = [pipeline.get_outputs(**kwargs) for pipeline in self]
         if return_sum:
-            outputs = reduce(lambda x,y: x + y, outputs)
+            outputs = reduce(lambda x,y: sum(x) + sum(y), outputs)
         return outputs
 
     def update_params(self, params):
@@ -232,8 +233,7 @@ def test_DistributionMaker():
         current_mat = new_mat
 
 
-
-if __name__ == '__main__':
+def main():
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
     import numpy as np
     import os
@@ -274,3 +274,7 @@ if __name__ == '__main__':
         )
         my_plotter.ratio = True
         my_plotter.plot_2d_array(outputs, fname='dist_output', cmap='OrRd')
+
+
+if __name__ == '__main__':
+    main()

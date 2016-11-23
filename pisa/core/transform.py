@@ -232,6 +232,7 @@ class TransformSet(object):
                and output_name == transform.output_name:
                 return transform
 
+    @profile
     def apply(self, inputs):
         """Apply each transform to `inputs`; return computed outputs.
 
@@ -574,6 +575,7 @@ class BinnedTensorTransform(Transform):
                                          sigfigs=HASH_SIGFIGS)
         return state
 
+    @profile
     def set_errors(self, error_array):
         """Manually define the error with an array the same shape as the
         contained histogram. Can also remove errors by passing None.
@@ -694,6 +696,7 @@ class BinnedTensorTransform(Transform):
         return dict(xform_array=self.xform_array - other)
 
     # TODO: validate transform...
+    @profile
     def validate_transform(self, input_binning, output_binning, xform_array):
         """Superficial validation that the transform being set is reasonable.
 
@@ -716,6 +719,7 @@ class BinnedTensorTransform(Transform):
         #                                  list(output_binning.shape) + out_dim)
         pass
 
+    @profile
     def validate_input(self, inputs):
         for input_name in self.input_names:
             assert input_name in inputs, \
@@ -728,6 +732,7 @@ class BinnedTensorTransform(Transform):
     # given the (concatenated) input dimension and the dimension of the
     # transform kernel
 
+    @line_profile
     def _apply(self, inputs):
         """Apply transforms to input maps to compute output maps.
 

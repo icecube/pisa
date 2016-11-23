@@ -5,7 +5,7 @@ from copy import deepcopy
 import inspect
 import os
 
-from pisa.core.events import Events
+from pisa.core.events import Events, Data
 from pisa.core.map import MapSet
 from pisa.core.param import Param, ParamSelector, ParamSet
 from pisa.core.transform import TransformSet
@@ -513,7 +513,7 @@ class Stage(object):
         # usually be so)
 
         # Keep inputs for internal use and for inspection later
-        self.inputs = {} if inputs is None else inputs
+        self.inputs = inputs
 
         outputs_hash, transforms_hash, nominal_transforms_hash = \
                 self._derive_outputs_hash()
@@ -556,7 +556,8 @@ class Stage(object):
 
         # Attach sideband objects (i.e., inputs not specified in
         # `self.input_names`) to the "augmented" output object
-        names_in_inputs = set([i.name for i in self.inputs])
+        if self.inputs is None: names_in_inputs = set([])
+        else: names_in_inputs = set(self.inputs.names)
         unused_input_names = names_in_inputs.difference(self.input_names)
 
         if len(unused_input_names) == 0:
@@ -950,6 +951,7 @@ class Stage(object):
     def _compute_nominal_outputs(self):
         return None
 
+    @profile
     def _compute_outputs(self, inputs):
         """Override this method for no-input stages which do not use transforms.
         Input stages that compute a TransformSet needn't override this, as the

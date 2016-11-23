@@ -184,7 +184,8 @@ class Prior(object):
         self.llh = llh
         self.max_at = np.nan
         self.max_at_str = 'no maximum'
-        self.valid_range = (-np.inf, np.inf)
+        self.valid_range = (-np.inf * ureg(self.units),
+                            np.inf * ureg(self.units))
         self._str = lambda s: 'uniform prior, llh_offset=%s' %self.llh_offset
 
     def __init_jeffreys(self, A, B, m):
@@ -215,7 +216,8 @@ class Prior(object):
         self.llh = llh
         self.max_at = self.A
         self.max_at_str = self.__stringify(self.max_at)
-        self.valid_range = (self.A, self.B)
+        self.valid_range = (self.A * ureg(self.units),
+                            self.B * ureg(self.units))
         self._str = lambda s: "jeffreys' prior, range [%s,%s]"%(self.A, self.B)
 
     def __init_gaussian(self, mean, stddev):
@@ -241,7 +243,8 @@ class Prior(object):
         self.llh = llh
         self.max_at = self.mean
         self.max_at_str = self.__stringify(self.max_at)
-        self.valid_range = (-np.inf, np.inf)
+        self.valid_range = (-np.inf * ureg(self.units),
+                            np.inf * ureg(self.units))
         self._str = lambda s: 'gaussian prior: stddev=%s%s, maximum at %s%s' %(self.__stringify(self.stddev), self.units_str, self.__stringify(self.mean), self.units_str)
 
     def __init_linterp(self, param_vals, llh_vals):
@@ -261,8 +264,8 @@ class Prior(object):
         self.llh = llh
         self.max_at = self.param_vals[self.llh_vals == np.max(self.llh_vals)]
         self.max_at_str = ', '.join([self.__stringify(v) for v in self.max_at])
-        self.valid_range = \
-                (np.min(self.param_vals), np.max(self.param_vals)) * self.units
+        self.valid_range = (np.min(self.param_vals) * ureg(self.units),
+                            np.max(self.param_vals) * ureg(self.units))
         self._str = lambda s: 'linearly-interpolated prior: valid in [%s, %s]%s, maxima at (%s)%s' %(self.__stringify(np.min(self.param_vals)), self.__stringify(np.max(self.param_vals)), self.units_str, self.max_at_str, self.units_str)
 
     def __init_spline(self, knots, coeffs, deg, units=None):
@@ -290,7 +293,8 @@ class Prior(object):
         if self.units is not None:
             self.max_at = self.max_at * ureg(self.units)
         self.max_at_str = self.__stringify(self.max_at)
-        self.valid_range = (np.min(self.knots), np.max(self.knots))
+        self.valid_range = (np.min(self.knots) * ureg(self.units),
+                            np.max(self.knots) * ureg(self.units))
         self._str = lambda s: 'spline prior: deg=%d, valid in [%s, %s]%s; max at %s%s' %(self.deg, self.__stringify(np.min(self.knots)), self.__stringify(np.max(self.knots)), self.units_str, self.max_at_str, self.units_str)
 
     def __check_units(self, param_val):

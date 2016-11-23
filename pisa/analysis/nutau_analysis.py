@@ -70,7 +70,7 @@ class Analysis(object):
         self.blind = blind
 
         # DOF as n_bins - n_free_params + n_gauss_priors
-        n_bins = sum(map.binning.tot_num_bins for map in self.template_maker.get_outputs(sum=True))
+        n_bins = sum(map.binning.tot_num_bins for map in self.template_maker.get_outputs(return_sum=True))
         self.n_free_params = len(self.template_maker.params.free)
         n_gauss_priors = 0
         for param in self.template_maker.params.free:
@@ -78,7 +78,7 @@ class Analysis(object):
         self.dof = n_bins - self.n_free_params + n_gauss_priors
 
         # Generate distribution
-        self.data = self.data_maker.get_outputs(sum=True)
+        self.data = self.data_maker.get_outputs(return_sum=True)
         self.pseudodata_method = None
         self.pseudodata = None
         self.n_minimizer_calls = 0
@@ -441,7 +441,7 @@ if __name__ == '__main__':
     parser.add_argument('-pd', '--pseudo-data', type=str, default='poisson',
                         choices=['poisson', 'gauss+poisson', 'asimov', 'data'], 
                         help='''Mode for pseudo data sampling''')
-    parser.add_argument('--var', type=str, default='args.var',
+    parser.add_argument('--var', type=str, default='nutau_norm',
                         help='''param to be profiled''')
     parser.add_argument('--metric', type=str,
                         choices=['llh', 'chi2', 'conv_llh', 'mod_chi2', 'barlow_llh'], required=True,

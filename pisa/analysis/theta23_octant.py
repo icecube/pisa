@@ -219,7 +219,7 @@ if __name__ == '__main__':
         data_maker.params.theta23.value = t23
 
         # generate the data distributions
-        data_dist = data_maker.get_outputs(sum=True)
+        data_dist = data_maker.get_outputs(return_sum=True)
 
         # loop over fit parameter selections
         for hypo_param_selection in hypo_param_selections:
@@ -292,7 +292,7 @@ if __name__ == '__main__':
                 bf_max_mix = analysis.nofit_hypo(data_dist=data_dist,
                                hypo_maker=hypo_maker,
                                hypo_param_selections=hypo_param_selection,
-                               hypo_asimov_dist=hypo_maker.get_outputs(sum=True),
+                               hypo_asimov_dist=hypo_maker.get_outputs(return_sum=True),
                                metric=args.metric
                                )
 

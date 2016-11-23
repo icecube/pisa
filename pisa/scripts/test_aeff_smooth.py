@@ -9,17 +9,11 @@ A set of plots will be output in your output directory for you to check.
 """
 
 from argparse import ArgumentParser
-from copy import deepcopy
-import os
 
-from pisa import ureg, Q_
-from pisa.core.map import MapSet
 from pisa.core.pipeline import Pipeline
-from pisa.utils.config_parser import parse_pipeline_config
-from pisa.utils.fileio import from_file, mkdir
+from pisa.utils.fileio import mkdir
 from pisa.utils.log import logging, set_verbosity
-from pisa.utils.resources import find_resource
-from pisa.utils.tests import has_cuda, print_agreement, check_agreement, plot_comparisons, plot_cmp
+from pisa.utils.tests import plot_cmp
 
 FMT = 'png'
 

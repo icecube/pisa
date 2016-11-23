@@ -13,6 +13,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
 from copy import deepcopy
 import os
+import sys
 
 import numpy as np
 
@@ -669,7 +670,7 @@ def parse_args():
     return args
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
     set_verbosity(args.verbose)
 
@@ -737,3 +738,7 @@ if __name__ == "__main__":
             extract_fields=None, #extract_fields,
             output_fields=None, #output_fields,
         )
+
+
+if __name__ == "__main__":
+    main()

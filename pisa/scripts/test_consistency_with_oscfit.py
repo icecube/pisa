@@ -12,6 +12,7 @@ A set of plots will be output in your output directory for you to check.
 from argparse import ArgumentParser
 from copy import deepcopy
 import os
+import sys
 
 from pisa import ureg, Q_
 from pisa.core.map import MapSet
@@ -175,7 +176,7 @@ def compare_systematics(baseline_oscfit, config, testname, outdir, oscfitfile):
     return pipeline
 
 
-if __name__ == '__main__':
+def main():
     parser = ArgumentParser(
         description='''Run a set of tests on the PISA 3 pipeline against
         the output from OscFit. If no test flags are specified, *all* tests will
@@ -328,3 +329,6 @@ if __name__ == '__main__':
                 outdir=args.outdir,
                 testname='%s'%texnames[sys]
             )
+
+if __name__ == '__main__':
+    main()

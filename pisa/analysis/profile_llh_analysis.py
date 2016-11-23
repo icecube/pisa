@@ -48,7 +48,7 @@ class ProfileLLHAnalysis(Analysis):
         self.blind = blind
 
         # Generate distribution
-        self.asimov = self.data_maker.get_outputs()
+        self.asimov = self.data_maker.get_outputs(return_sum=True)
         self.pseudodata_method = None
         self.pseudodata = None
         self.n_minimizer_calls = 0
@@ -77,7 +77,7 @@ class ProfileLLHAnalysis(Analysis):
         self._minimizer_settings = None
 
         # Generate distribution
-        self.asimov = self.data_maker.get_outputs()
+        self.asimov = self.data_maker.get_outputs(return_sum=True)
         self.pseudodata = None
         self.n_minimizer_calls = 0
 
@@ -154,7 +154,7 @@ class ProfileLLHAnalysis(Analysis):
         self._metric = metric
 
 
-if __name__ == '__main__':
+def parse_args():
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
     import numpy as np
@@ -164,7 +164,8 @@ if __name__ == '__main__':
     from pisa.utils.config_parser import parse_pipeline_config
     from pisa.utils.format import append_results, ravel_results
 
-    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
+    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter,
+                            description=__doc__)
     parser.add_argument(
         '-d', '--data-settings', type=str,
         metavar='configfile', default=None,
@@ -204,7 +205,11 @@ if __name__ == '__main__':
         help='set verbosity level'
     )
     args = parser.parse_args()
+    return args
 
+
+def main():
+    args = parse_args()
     set_verbosity(args.v)
 
     if args.data_settings is None:
@@ -245,92 +250,9 @@ if __name__ == '__main__':
     to_file(results, args.outfile)
     logging.info('Done.')
 
+
+main.__doc__ = __doc__
+
+
 if __name__ == '__main__':
-    from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-
-    import numpy as np
-    from pisa import ureg, Q_
-
-    from pisa.utils.fileio import from_file, to_file
-    from pisa.utils.parse_config import parse_config
-    from pisa.utils.format import append_results, ravel_results
-
-    parser = ArgumentParser()
-    parser.add_argument('-d', '--data-settings', type=str,
-                        metavar='configfile', default=None,
-                        help='settings for the generation of "data"')
-    parser.add_argument('-t', '--template-settings',
-                        metavar='configfile', required=True,
-                        action='append',
-                        help='''settings for the template generation''')
-    parser.add_argument('-o', '--outfile', metavar='FILE',
-                        type=str, action='store', default='out.json',
-                        help='file to store the output')
-    parser.add_argument('-v', action='count', default=None,
-                        help='set verbosity level')
-    parser.add_argument('-n', '--num-trials', type=int, default=1,
-                        help='number of trials')
-    parser.add_argument('-b', '--blind', action='store_true',
-                        help='''run blindly i.e. only reporting goodness of
-                        fit, no parameter values''')
-    parser.add_argument('-m', '--minimizer-settings', type=str,
-                        metavar='JSONFILE', required=True,
-                        help='''Settings related to the optimizer used in the
-                        LLR analysis.''')
-    parser.add_argument('-fp', '--fix-param', type=str, default='',
-                        help='''fix parameter''')
-    parser.add_argument('-pd', '--pseudo-data', type=str, default='poisson',
-                        choices=['poisson', 'asimov'], 
-                        help='''Mode for pseudo data sampling''')
-    parser.add_argument('--metric', type=str, required=True,
-                        choices=['llh', 'chi2', 'conv_llh', 'mod_chi2'],
-                        help='''Settings related to the optimizer used in the
-                        LLR analysis.''')
-    parser.add_argument('--mode', type=str,
-                        choices=['H0', 'scan11', 'scan21'], default='H0',
-                        help='''just run significance or whole scan''')
-    args = parser.parse_args()
-
-    set_verbosity(args.v)
-
-    if args.data_settings is None:
-        data_settings = args.template_settings
-    else:
-        data_settings = args.data_settings
-
-    data_maker = DistributionMaker(data_settings)
-    template_maker = DistributionMaker(args.template_settings)
-
-    if not args.fix_param == '':
-        template_maker.params.fix(args.fix_param)
-
-    profile_llh = profile_llh(data_maker=data_maker,
-                        template_maker=template_maker,
-                        metric=args.metric,
-                        blind=args.blind)
-
-    profile_llh.minimizer_settings = from_file(args.minimizer_settings)
-    profile_llh.pseudodata_method = args.pseudo_data
-
-    results = []
-
-    for i in range(args.num_trials):
-        logging.info('Running trial %i'%i)
-        np.random.seed()
-        profile_llh.generate_psudodata()
-
-        if args.mode == 'H0':
-            results.append(profile_llh.profile(
-                'nutau_cc_norm', [0.]*ureg.dimensionless
-            ))
-        elif args.mode == 'scan11':
-            results.append(profile_llh.profile(
-                'nutau_cc_norm', np.linspace(0,2,11)*ureg.dimensionless
-            ))
-        elif args.mode == 'scan21':
-            results.append(profile_llh.profile(
-                'nutau_cc_norm', np.linspace(0,2,21)*ureg.dimensionless
-            ))
-
-    to_file(results, args.outfile)
-    logging.info('Done.')
+    main()

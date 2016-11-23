@@ -173,7 +173,7 @@ class OneDimBinning(object):
         if domain is not None:
             assert isinstance(domain, Iterable)
             assert len(domain) == 2
-        self.normalize_values = False
+        self._normalize_values = True
         self._name = name
         self._basename = basename(name)
         if tex is None:
@@ -566,6 +566,21 @@ class OneDimBinning(object):
             s = self._hashable_state
             self._hash = hash_obj(s)
         return self._hash
+
+    @property
+    def normalize_values(self):
+        """Normalize quantities' units prior to hashing"""
+        return self._normalize_values
+
+    @normalize_values.setter
+    def normalize_values(self, b):
+        assert isinstance(b, bool)
+        if b == self._normalize_values:
+            return
+        self._normalize_values = b
+        # Invalidate the hash, since the hasing behavior has changed
+        self._hash = None
+        self._edges_hash = None
 
     @property
     def edges_hash(self):
@@ -1714,6 +1729,8 @@ def test_OneDimBinning():
                        domain=[0.1, 10]*ureg.m)
     b4 = OneDimBinning(name='distance', num_bins=10, is_log=True,
                        domain=[1e5, 1e7]*ureg.um)
+    b3.normalize_values = True
+    b4.normalize_values = True
 
     # Without rounding, converting bin edges to base units yields different
     # results due to finite precision effects
@@ -1786,6 +1803,9 @@ def test_MultiDimBinning():
         dict(name='energy', is_log=True, domain=[1, 80]*ureg.GeV, num_bins=40),
         dict(name='coszen', is_lin=True, domain=[-1, 0], num_bins=20)
     ])
+
+    assert binning.num_bins == [40, 20]
+    assert binning.tot_num_bins == 40 * 20
 
     assert binning.oversample(10).shape == (400, 200)
 

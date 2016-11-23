@@ -97,7 +97,7 @@ def reduceToHist(expected_values):
 
     # If iterable, must be iterable of MapSets
     elif isinstance(expected_values, Iterable):
-        expected_values = reduce(lambda x,y: sum(x) + sum(y),
+        expected_values = reduce(lambda x,y: x+y,
                                  expected_values).hist
     else:
         raise ValueError('Unhandled type for `expected_values`: %s'
@@ -243,6 +243,8 @@ class Map(object):
         if tex is None:
             fg = NuFlavIntGroup(name)
             tex = fg.tex()
+            # TODO: handle automatically assigning tex names when it's
+            # unassigned in other code, such as in plotting code
             if tex == '':
                 tex = (r'\rm{%s}' % name).replace('_', r'\_')
         super(Map, self).__setattr__('_tex', tex)
@@ -263,10 +265,10 @@ class Map(object):
         super(Map, self).__setattr__('_binning', binning)
         binning.assert_array_fits(hist)
         super(Map, self).__setattr__('_hist',
-                np.ascontiguousarray(hist))
+                                     np.ascontiguousarray(hist))
         if error_hist is not None:
             self.set_errors(error_hist)
-        self.normalize_values = False
+        self.normalize_values = True
 
     def __repr__(self):
         previous_precision = np.get_printoptions()['precision']
@@ -316,8 +318,11 @@ class Map(object):
 
     def set_poisson_errors(self):
         """Approximate poisson errors using sqrt(n)."""
-        super(Map, self).__setattr__('_hist', unp.uarray(self._hist,
-                                                         np.sqrt(self._hist)))
+        nom_values = self.nominal_values
+        super(Map, self).__setattr__(
+            '_hist',
+            unp.uarray(nom_values, np.sqrt(nom_values))
+        )
 
     def set_errors(self, error_hist):
         """Manually define the error with an array the same shape as the
@@ -332,12 +337,13 @@ class Map(object):
 
         """
         if error_hist is None:
-            super(Map, self).__setattr__('_hist',
-                                         unp.nominal_values(self._hist))
+            super(Map, self).__setattr__('_hist', self.nominal_values)
             return
         self.assert_compat(error_hist)
-        super(Map, self).__setattr__('_hist', unp.uarray(self._hist,
-                                        np.ascontiguousarray(error_hist)))
+        super(Map, self).__setattr__(
+            '_hist',
+            unp.uarray(self._hist, np.ascontiguousarray(error_hist))
+        )
 
     def compare(self, ref):
         """Compare this map with another.
@@ -642,7 +648,7 @@ class Map(object):
         if method == 'poisson':
             random_state = get_random_state(random_state, jumpahead=jumpahead)
             with np.errstate(invalid='ignore'):
-                orig_hist = unp.nominal_values(self.hist)
+                orig_hist = self.nominal_values
                 nan_at = np.isnan(orig_hist)
                 valid_mask = ~nan_at
 
@@ -661,8 +667,8 @@ class Map(object):
         elif method == 'gauss+poisson':
             random_state = get_random_state(random_state, jumpahead=jumpahead)
             with np.errstate(invalid='ignore'):
-                orig_hist = unp.nominal_values(self.hist)
-                sigma = unp.std_devs(self.hist)
+                orig_hist = self.nominal_values
+                sigma = self.std_devs
                 nan_at = np.isnan(orig_hist)
                 valid_mask = ~nan_at
                 gauss = np.empty_like(orig_hist, dtype=np.float64)
@@ -696,9 +702,9 @@ class Map(object):
     def _serializable_state(self):
         state = OrderedDict()
         state['name'] = self.name
-        state['hist'] = unp.nominal_values(self.hist)
+        state['hist'] = self.nominal_values
         state['binning'] = self.binning._serializable_state
-        stddevs = unp.std_devs(self.hist)
+        stddevs = self.std_devs
         stddevs = None if np.all(stddevs == 0) else stddevs
         state['error_hist'] = stddevs
         state['hash'] = self.hash
@@ -711,12 +717,12 @@ class Map(object):
         state = OrderedDict()
         state['name'] = self.name
         if self.normalize_values:
-            state['hist'] = normQuant(unp.nominal_values(self.hist),
+            state['hist'] = normQuant(self.nominal_values,
                                       sigfigs=HASH_SIGFIGS)
-            stddevs = normQuant(unp.std_devs(self.hist), sigfigs=HASH_SIGFIGS)
+            stddevs = normQuant(self.std_devs, sigfigs=HASH_SIGFIGS)
         else:
-            state['hist'] = unp.nominal_values(self.hist)
-            stddevs = unp.std_devs(self.hist)
+            state['hist'] = self.nominal_values
+            stddevs = self.std_devs
         state['binning'] = self.binning._hashable_state
         # TODO: better check here to see if the contained datatype is unp, as
         # opposed to 0 stddev (which could be the case but the user wants for
@@ -1076,6 +1082,16 @@ class Map(object):
         return np.sum(chi2(actual_values=self.hist,
                            expected_values=expected_values))
 
+    def metric_total(self, expected_values, metric):
+        if metric in VALID_METRICS:
+            return getattr(self, metric)(expected_values)
+        else:
+            raise ValueError('`metric` "%s" not recognized; use one of %s.'
+                             %(metric, VALID_METRICS))
+
+    def metric_per_map(self, expected_values, metric):
+        return self.metric_total(expected_values, metric)
+
     def __setitem__(self, idx, val):
         return setitem(self.hist, idx, val)
 
@@ -1191,7 +1207,6 @@ class Map(object):
             state_updates = {
                 #'name': "(%s / %s)" % (self.name, other.name),
                 #'tex': r"{(%s / %s)}" % (self.tex, other.tex),
-                #'hist': np.divide(unp.nominal_values(self.hist), unp.nominal_values(other.hist)),
                 'hist': self.hist / other.hist,
                 'full_comparison': (self.full_comparison or
                                     other.full_comparison),
@@ -1218,24 +1233,26 @@ class Map(object):
         hash, performs a full comparison of the contents of each map.
 
         Otherwise, simply checks that the hashes are equal.
+
         """
         if np.isscalar(other):
-            # in case comparing with just with a scalar ignore the errors:
-            return np.all(unp.nominal_values(self.hist) == other)
+            return np.all(self.nominal_values == other)
+
         if type(other) is uncertainties.core.Variable \
                 or isinstance(other, np.ndarray):
-            return (np.all(unp.nominal_values(self.hist)
+            return (np.all(self.nominal_values
                            == unp.nominal_values(other))
-                    and np.all(unp.std_devs(self.hist)
+                    and np.all(self.std_devs
                                == unp.std_devs(other)))
-        elif isinstance(other, Map):
+
+        if isinstance(other, Map):
             if (self.full_comparison or other.full_comparison
                 or self.hash is None or other.hash is None):
                 return recursiveEquality(self._hashable_state,
                                          other._hashable_state)
             return self.hash == other.hash
-        else:
-            type_error(other)
+
+        type_error(other)
 
     @_new_obj
     def log(self):
@@ -1454,7 +1471,9 @@ class MapSet(object):
                 maps_.append(m)
             else:
                 maps_.append(Map(**m))
-        tex = (r'{\rm %s}' %name) if tex is None else tex
+        # TODO: handle automatically assigning tex names when it's unassigned
+        # in other code, such as in plotting code
+        tex = (r'{\rm %s}' %name).replace('_', r'\_') if tex is None else tex
         super(MapSet, self).__setattr__('maps', maps_)
         super(MapSet, self).__setattr__('name', name)
         super(MapSet, self).__setattr__('tex', tex)
@@ -2219,7 +2238,7 @@ def test_Map():
     m3 = Map(name='z', hist=4*np.ones((n_ebins, n_czbins, n_azbins)),
              binning=(e_binning, cz_binning, az_binning))
 
-    print 'm3[0,0,0] =', m3[0,0,0]
+    assert m3[0,0,0] == 4, 'm3[0,0,0] = %s' %m3[0,0,0]
     testdir = tempfile.mkdtemp()
     try:
         for m in [m1, m2, m1+m2, m1-m2, m1/m2, m1*m2]:
@@ -2247,10 +2266,11 @@ def test_Map():
     assert r == ufloat(3,1)
     print 'm2+m1=3:', r, r[0,0]
     r = 2*m1
-    assert r == ufloat(2,2)
+    assert r == ufloat(2,2), str(r.hist)
     print '2*m1=2:', r, r[0,0]
     r = (2*m1 + 8) / m2
-    assert r == ufloat(5,1)
+    print '(2*(1+/-1) + 8) / 2:', r, r[0,0]
+    assert r == ufloat(5,1), str(r.hist)
     print '(2*m1 + 8) / m2=5:', r, r.hist[0,0]
     #r[:,1] = 1
     #r[2,:] = 2
@@ -2390,8 +2410,8 @@ def test_MapSet():
     assert ms1.names == ['ones', 'twos']
     assert ms1.tex == r'{\rm map set 1}'
     # Check the Poisson errors
-    assert np.all(unp.nominal_values(ms1[0].hist) == np.ones(binning.shape))
-    assert np.all(unp.std_devs(ms1[0].hist) == np.ones(binning.shape))
+    assert np.all(ms1[0].nominal_values == np.ones(binning.shape))
+    assert np.all(ms1[0].std_devs == np.ones(binning.shape))
     assert np.all(ms1[1].hist == 2*np.ones(binning.shape))
     print 'ms1[0:2].hist:', ms1[0:2].hist
     print 'ms1[0:2,0:2].hist:', ms1[0:2,0:2].hist

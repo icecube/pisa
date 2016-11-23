@@ -75,7 +75,11 @@ def set_verbosity(verbosity):
               2: logging.DEBUG,
               3: logging.TRACE}
 
-    assert(verbosity in levels)
+    if verbosity not in levels:
+        raise ValueError(
+            '`verbosity` specified is %s but must be one of %s.'
+            %(verbosity, levels.keys())
+        )
 
     # Overwrite the root logger with the verbosity level
     logging.root.setLevel(levels[verbosity])

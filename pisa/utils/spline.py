@@ -342,8 +342,7 @@ class CombinedSpline(flavInt.FlavIntData):
 
 def test_Spline():
     # TODO(shivesh): tests
-    spl = Spline('numu')
-    print spl
+    pass
 
 
 if __name__ == '__main__':

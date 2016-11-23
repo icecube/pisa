@@ -208,11 +208,11 @@ if __name__ == '__main__':
 
     h0_maker =  hypo_testing.h0_maker
     h0_maker.select_params(init_args_d['h0_param_selections'])
-    h0_maps = h0_maker.get_outputs(sum=True)
+    h0_maps = h0_maker.get_outputs(return_sum=True)
 
     h1_maker = hypo_testing.h1_maker
     h1_maker.select_params(init_args_d['h1_param_selections'])
-    h1_maps = h1_maker.get_outputs(sum=True)
+    h1_maps = h1_maker.get_outputs(return_sum=True)
 
     if 'trck' in ''.join(h0_maps.names):
 

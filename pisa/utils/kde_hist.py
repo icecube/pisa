@@ -12,45 +12,11 @@ from pisa.utils.profiler import profile
 __all__ = ['kde_histogramdd']
 
 
-#@line_profile
-def kde_histogramdd(sample, binning, weights=[], bw_method='scott',
-                    adaptive=True, alpha=0.3, use_cuda=False,
-                    coszen_reflection=0.25, coszen_name='coszen',
-                    oversample=1):
-    """
-    Run kernel density estimation (KDE) for an array of data points, and
-    then evaluate the on a histogram like grid, to effectively produce a
-    histogram-like output
 
-    Based on Sebastian Schoenen's KDE implementation:
-    http://code.icecube.wisc.edu/svn/sandbox/schoenen/kde/
-
-    Parameters
-    ----------
-        sample : nd-array of shape (N_evts, vars), with vars in the
-                    right order corresponding to the binning order
-        binning : pisa MultiDimBinning
-        weights : array
-        bw_method: scott or silverman
-        adaptive : bool
-        alpha : some parameter for the KDEs
-        use_cuda : run on GPU (only allowing <= 2d)
-        coszen_reflection : part (number between 0 and 1) of binning that is reflect at the coszen -1 and 1 egdes
-        coszen_name : binning name to identify the coszen bin that needs to undergo special treatment for reflection
-        oversample : int, evaluate KDE at more points per bin, takes longer, but is more accurate
-
-    Returns
-    -------
-    histogram : numpy.ndarray
-
-    """
-    # Compute raw histo for norm
-    #bins = [unp.nominal_values(b.bin_edges) for b in binning]
-    #if len(weights) == 0:
-    #    raw_hist, e = np.histogramdd(sample, bins=bins)
-    #else:
-    #    raw_hist, e = np.histogramdd(sample, bins=bins, weights=weights)
-    #norm = np.sum(raw_hist)
+def get_hist(sample, binning, weights=[], bw_method='scott',
+            adaptive=True, alpha=0.3, use_cuda=False,
+            coszen_reflection=0.25, coszen_name='coszen',
+            oversample=1):
 
     if len(weights) == 0:
         norm = sample.shape[0]
@@ -110,7 +76,7 @@ def kde_histogramdd(sample, binning, weights=[], bw_method='scott',
 
     # Shape including reflection edges
     megashape = (
-        binning.shape[0] + int(reflect_upper)+int(reflect_lower)*l,
+        binning.shape[0] + (int(reflect_upper)+int(reflect_lower))*l,
         binning.shape[1]
     )
 
@@ -167,6 +133,102 @@ def kde_histogramdd(sample, binning, weights=[], bw_method='scott',
     #hist = hist/np.sum(hist)*norm
     return hist*norm
 
+def kde_histogramdd(sample, binning, weights=[], bw_method='scott',
+                    adaptive=True, alpha=0.3, use_cuda=False,
+                    coszen_reflection=0.25, coszen_name='coszen',
+                    oversample=1, stack_pid=True):
+    """
+    Run kernel density estimation (KDE) for an array of data points, and
+    then evaluate the on a histogram like grid, to effectively produce a
+    histogram-like output
+
+    Based on Sebastian Schoenen's KDE implementation:
+    http://code.icecube.wisc.edu/svn/sandbox/schoenen/kde/
+
+    Parameters
+    ----------
+    sample : nd-array
+        of shape (N_evts, vars), with vars in the right order corresponding to the binning order
+    binning : MultiDimBinning
+    weights : array
+    bw_method: string
+        scott or silverman
+    adaptive : bool
+    alpha : float
+        some parameter for the KDEs
+    use_cuda : bool
+        run on GPU (only allowing <= 2d)
+    coszen_reflection : float
+        part (number between 0 and 1) of binning that is reflect at the coszen -1 and 1 egdes
+    coszen_name : string
+        binning name to identify the coszen bin that needs to undergo special treatment for reflection
+    oversample : int
+        evaluate KDE at more points per bin, takes longer, but is more accurate
+    stack_pid : bool
+        treat pid binning demension separate, not as KDEs
+
+    Returns
+    -------
+    histogram : numpy.ndarray
+
+    """
+    if not stack_pid:
+        return get_hist(sample, binning, weights, bw_method,
+                        adaptive, alpha, use_cuda,
+                        coszen_reflection, coszen_name,
+                        oversample)
+    else:
+        bin_names = binning.names
+        bin_edges = []
+        for i,name in enumerate(bin_names):
+            if 'energy' in  name:
+                bin_edge = binning[name].bin_edges.to('GeV').magnitude
+            else:
+                bin_edge = binning[name].bin_edges.magnitude
+            bin_edges.append(bin_edge)
+        pid_bin = bin_names.index('pid')
+        other_bins = [0,1,2]
+        other_bins.pop(pid_bin)
+        bin_names.pop(pid_bin)
+        assert len(bin_names) == 2
+        pid_bin_edges = bin_edges.pop(pid_bin)
+        d2d_binning = []
+        for b in binning:
+            if not b.name == 'pid':
+                d2d_binning.append(b)
+        d2d_binning = MultiDimBinning(d2d_binning)
+        pid_stack = []
+        for pid in range(len(pid_bin_edges)-1):
+            mask_pid = (
+                (sample.T[pid_bin] >= pid_bin_edges[pid])
+                & (sample.T[pid_bin] < pid_bin_edges[pid+1])
+                )
+            data = np.array([
+                sample.T[other_bins[0]][mask_pid],
+                sample.T[other_bins[1]][mask_pid]
+                ])
+            if len(weights) > 0:
+                weights = weights[mask_pid]
+            pid_stack.append(
+                get_hist(
+                    data.T,
+                    weights=weights,
+                    binning=d2d_binning,
+                    coszen_name='reco_coszen',
+                    use_cuda=True,
+                    bw_method='silverman',
+                    alpha=1.0,
+                    oversample=1,
+                    coszen_reflection=0.5,
+                    adaptive=True
+                    )
+                )
+        hist = np.dstack(pid_stack)
+        if not pid_bin == 2:
+            hist = np.swapaxes(hist, pid_bin, 2)
+        return hist
+
+
 
 if __name__ == '__main__':
     from pisa.core.map import Map, MapSet
@@ -188,7 +250,7 @@ if __name__ == '__main__':
     b2 = OneDimBinning(name='energy', num_bins=10, is_log=True,
                        domain=[0.1, 10], tex=r'$E$')
     binning = MultiDimBinning([b2, b1])
-    x = np.random.normal(1, 1, (2, 100000))
+    x = np.random.normal(1, 1, (2, 1000))
     x = np.array([np.abs(x[0])-1, x[1]])
     # cut away outside csozen
     x = x.T[(x[0]<=1) & (x[0] >= -1),:].T

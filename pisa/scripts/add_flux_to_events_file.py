@@ -4,6 +4,7 @@ Add nominal flux values to PISA style hdf5 files
 """
 
 import os
+import sys
 import numpy as np
 
 import pisa.core.events as events
@@ -14,11 +15,12 @@ from pisa.utils.flux_weights import load_2D_table, calculate_flux_weights
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
+
 def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name, outdir):
     data_file, attrs = from_file(resources.find_resource(data_file_path), return_attrs = True)
     data_file_name = os.path.basename(data_file_path)
     mkdir(args.outdir)
-    output_file_name = outdir + '/' + data_file_name.split('.hdf5')[0]+'_with_fluxes.hdf5' 
+    output_file_name = outdir + '/' + data_file_name.split('.hdf5')[0]+'_with_fluxes.hdf5'
     if not os.path.isfile(output_file_name):
 	for prim in data_file.keys():
 	    for int_type in data_file[prim].keys():
@@ -30,7 +32,7 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name, outdir)
 		# the opposite flavor fluxes( used only in the nu_nubar_ratio systematic)
 		oppo_isbar = '' if 'bar' in prim else 'bar'
 		oppo_nue_flux = calculate_flux_weights(true_e, true_cz, flux_table['nue'+isbar])
-		oppo_numu_flux = calculate_flux_weights(true_e, true_cz, flux_table['numu'+isbar]) 
+		oppo_numu_flux = calculate_flux_weights(true_e, true_cz, flux_table['numu'+isbar])
 		data_file[prim][int_type][neutrino_weight_name+'_nue_flux'] = nue_flux
 		data_file[prim][int_type][neutrino_weight_name+'_numu_flux'] = numu_flux
 		data_file[prim][int_type][neutrino_weight_name+'_oppo_nue_flux'] = oppo_nue_flux
@@ -40,8 +42,8 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name, outdir)
     else:
 	print 'File %s already exists, skipped. Please delete it or rename it.' % output_file_name
 
-if __name__ == '__main__':
 
+def main():
     parser = ArgumentParser(description='''Add neutrino fluxes (and neutrino weights(osc*flux*sim_weight) if needed) for each event. ''')
     parser_file = parser.add_mutually_exclusive_group(required=True)
     parser_file.add_argument( '-f', '--file', metavar='H5_FILE', type=str, help='input HDF5 file')
@@ -52,9 +54,10 @@ if __name__ == '__main__':
                         help='set verbosity level')
     args = parser.parse_args()
     set_verbosity(args.v)
-
     # flux and osc service
     flux_table = load_2D_table(args.flux_file)
-
     add_fluxes_to_file(args.file, flux_table, neutrino_weight_name='neutrino', outdir=args.outdir)
 
+
+if __name__ == '__main__':
+    main()

@@ -347,9 +347,10 @@ def test_standard_plots(xsec_file, outdir='./'):
     from pisa.utils.plotter import Plotter
     xsec = genie.get_combined_xsec(xsec_file)
 
-    e_bins = MultiDimBinning(OneDimBinning(name='true_energy', tex=r'E_\nu',
-                                           num_bins=150, domain=(1E-1, 1E3)*ureg.GeV,
-                                           is_log=True))
+    e_bins = MultiDimBinning(
+        [OneDimBinning(name='true_energy', tex=r'E_\nu', num_bins=150,
+                       domain=(1E-1, 1E3)*ureg.GeV, is_log=True)]
+    )
     xsec.compute_maps(e_bins)
 
     logging.info('Making plots for genie xsec_maps')
@@ -364,9 +365,10 @@ def test_per_e_plot(xsec_file, outdir='./'):
     from pisa.utils.plotter import Plotter
     xsec = genie.get_combined_xsec(xsec_file)
 
-    e_bins = MultiDimBinning(OneDimBinning(name='true_energy', tex=r'E_\nu',
-                                           num_bins=200, domain=(1E-1, 1E3)*ureg.GeV,
-                                           is_log=True))
+    e_bins = MultiDimBinning(
+        [OneDimBinning(name='true_energy', tex=r'E_\nu', num_bins=200,
+                       domain=(1E-1, 1E3)*ureg.GeV, is_log=True)]
+    )
     xsec.compute_maps(e_bins)
     xsec.scale_maps(1./e_bins.true_energy.bin_widths)
 

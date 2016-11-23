@@ -21,6 +21,7 @@ from pisa.utils.config_parser import split
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.resources import find_resource
+from copy import deepcopy
 
 
 __all__ = ['gpu']
@@ -68,6 +69,8 @@ class gpu(Stage):
             bdt_cut : quantity (dimensionless)
             kde : bool
                 apply KDE smoothing to outputs (d2d)
+            hist_e_scale : quantity (dimensionless)
+                scale factor for energy bin edges, as a reco E systematic
 
     Notes
     -----
@@ -124,31 +127,32 @@ class gpu(Stage):
             'no_nc_osc'
         )
 
-        self.weight_params = (
+        self.flux_params = (
             'nu_nubar_ratio',
             'nue_numu_ratio',
-            'livetime',
-            'aeff_scale',
             'delta_index',
             'Barr_uphor_ratio',
             'Barr_nu_nubar_ratio',
-            'Genie_Ma_QE',
-            'Genie_Ma_RES'
         )
 
         self.other_params = (
+            'livetime',
+            'aeff_scale',
+            'Genie_Ma_QE',
+            'Genie_Ma_RES',
             'events_file',
             'nutau_cc_norm',
             'nutau_norm',
             'reco_e_res_raw',
             'reco_e_scale_raw',
             'reco_cz_res_raw',
+            'hist_e_scale',
             'bdt_cut',
             'kde',
             'cut_outer',
         )
 
-        expected_params = (self.osc_params + self.weight_params +
+        expected_params = (self.osc_params + self.flux_params +
                            self.other_params)
 
         output_names = split(output_names)
@@ -173,18 +177,19 @@ class gpu(Stage):
             from pisa.utils.gpu_hist import GPUHist
             self.GPUHist = GPUHist
 
-        self.is_initialized = False
-
     def validate_params(self, params):
         # Not a good idea to scale nutau norm, without the NC events being
         # oscillated
         if params.nutau_norm.value != 1.0 or not params.nutau_norm.is_fixed:
             assert (params.no_nc_osc.value == False), 'If you want NC tau events scaled, you should oscillate them -> set no_nc_osc to False!!!'
+        if params.hist_e_scale.is_fixed == False or params.hist_e_scale.value != 1.0:
+            assert (params.kde.value == False), 'The hist_e_scale can only be used with histograms, not KDEs!'
 
-    def initialize(self):
+
+    def _compute_nominal_outputs(self):
         # Store hashes for caching that is done inside the stage
         self.osc_hash = None
-        self.gpu_weight_hash = None
+        self.flux_hash = None
 
         # Reset fixed errors
         self.fixed_error = None
@@ -220,38 +225,25 @@ class gpu(Stage):
         self.bin_names = self.output_binning.names
         self.bin_edges = []
 
-        for name in self.bin_names:
+        for i,name in enumerate(self.bin_names):
             if 'energy' in  name:
                 bin_edges = self.output_binning[name].bin_edges.to('GeV').magnitude.astype(FTYPE)
+                self.e_bin_number = i
             else:
                 bin_edges = self.output_binning[name].bin_edges.magnitude.astype(FTYPE)
             self.bin_edges.append(bin_edges)
 
         if self.params.kde.value:
-            # Right now we have to do pid 'by hand', this is ugly and needs to
-            # be generalized
-            self.pid_bin = self.bin_names.index('pid')
-            self.bin_names.pop(self.pid_bin)
-            self.pid_bin_edges = self.bin_edges.pop(self.pid_bin)
-            d2d_binning = []
-            for b in self.output_binning:
-                if not b.name == 'pid':
-                    d2d_binning.append(b)
-            self.d2d_binning = MultiDimBinning(d2d_binning)
             assert self.error_method == None
 
         else:
             # GPU histogramer
-            self.histogrammer = self.GPUHist(*self.bin_edges)
+            bin_edges = deepcopy(self.bin_edges)
+            bin_edges[self.e_bin_number] *= FTYPE(self.params.hist_e_scale.value.m_as('dimensionless'))
+            self.histogrammer = self.GPUHist(*bin_edges)
 
         # load events
         self.load_events()
-
-        self.is_initialized = True
-
-    def _compute_nominal_outputs(self):
-        if not self.is_initialized:
-            self.initialize()
 
     def load_events(self):
         # --- Load events
@@ -471,27 +463,28 @@ class gpu(Stage):
 
         # Get hash to decide whether expensive stuff needs to be recalculated
         osc_param_vals = [self.params[name].value for name in self.osc_params]
-        gpu_weight_vals = [self.params[name].value
-                           for name in self.weight_params]
+        gpu_flux_vals = [self.params[name].value
+                         for name in self.flux_params]
         if self.full_hash:
             osc_param_vals = normQuant(osc_param_vals)
-            gpu_weight_vals = normQuant(gpu_weight_vals)
+            gpu_flux_vals = normQuant(gpu_flux_vals)
         osc_hash = hash_obj(osc_param_vals, full_hash=self.full_hash)
-        gpu_weight_hash = hash_obj(gpu_weight_vals, full_hash=self.full_hash)
+        flux_hash = hash_obj(gpu_flux_vals, full_hash=self.full_hash)
 
         recalc_osc = not (osc_hash == self.osc_hash)
-        recalc_weight = True
+        recalc_flux = not (flux_hash == self.flux_hash)
 
-        if recalc_weight:
-            livetime = self.params.livetime.value.m_as('seconds')
-            aeff_scale = self.params.aeff_scale.value.m_as('dimensionless')
+        livetime = self.params.livetime.value.m_as('seconds')
+        aeff_scale = self.params.aeff_scale.value.m_as('dimensionless')
+        Genie_Ma_QE = self.params.Genie_Ma_QE.value.m_as('dimensionless')
+        Genie_Ma_RES = self.params.Genie_Ma_RES.value.m_as('dimensionless')
+
+        if recalc_flux:
             nue_numu_ratio = self.params.nue_numu_ratio.value.m_as('dimensionless')
             nu_nubar_ratio = self.params.nu_nubar_ratio.value.m_as('dimensionless')
             delta_index = self.params.delta_index.value.m_as('dimensionless')
             Barr_uphor_ratio = self.params.Barr_uphor_ratio.value.m_as('dimensionless')
             Barr_nu_nubar_ratio = self.params.Barr_nu_nubar_ratio.value.m_as('dimensionless')
-            Genie_Ma_QE = self.params.Genie_Ma_QE.value.m_as('dimensionless')
-            Genie_Ma_RES = self.params.Genie_Ma_RES.value.m_as('dimensionless')
 
         if recalc_osc:
             theta12 = self.params.theta12.value.m_as('rad')
@@ -517,7 +510,7 @@ class gpu(Stage):
                     )
 
             # Calculate weights
-            if recalc_weight:
+            if recalc_flux:
                 # Calcukate the flux weights
                 self.gpu_weight.calc_flux(
                     self.events_dict[flav]['n_evts'],
@@ -530,131 +523,129 @@ class gpu(Stage):
                     **self.events_dict[flav]['device']
                 )
 
-                # Calculate global scales for flux normalizations
-                #nue_flux_norm_n = self.sum_array(self.events_dict[flav]['device']['scaled_nue_flux'], self.events_dict[flav]['n_evts'])
-                #nue_flux_norm_d = self.sum_array(self.events_dict[flav]['device']['scaled_nue_flux_shape'], self.events_dict[flav]['n_evts'])
-                #nue_flux_norm = nue_flux_norm_n / nue_flux_norm_d
-                nue_flux_norm = 1.
-                #numu_flux_norm_n = self.sum_array(self.events_dict[flav]['device']['scaled_numu_flux'], self.events_dict[flav]['n_evts'])
-                #numu_flux_norm_d = self.sum_array(self.events_dict[flav]['device']['scaled_numu_flux_shape'], self.events_dict[flav]['n_evts'])
-                #numu_flux_norm = numu_flux_norm_n / numu_flux_norm_d
-                numu_flux_norm = 1.
+            # Calculate global scales for flux normalizations
+            #nue_flux_norm_n = self.sum_array(self.events_dict[flav]['device']['scaled_nue_flux'], self.events_dict[flav]['n_evts'])
+            #nue_flux_norm_d = self.sum_array(self.events_dict[flav]['device']['scaled_nue_flux_shape'], self.events_dict[flav]['n_evts'])
+            #nue_flux_norm = nue_flux_norm_n / nue_flux_norm_d
+            nue_flux_norm = 1.
+            #numu_flux_norm_n = self.sum_array(self.events_dict[flav]['device']['scaled_numu_flux'], self.events_dict[flav]['n_evts'])
+            #numu_flux_norm_d = self.sum_array(self.events_dict[flav]['device']['scaled_numu_flux_shape'], self.events_dict[flav]['n_evts'])
+            #numu_flux_norm = numu_flux_norm_n / numu_flux_norm_d
+            numu_flux_norm = 1.
 
-                # Calculate the event weights, from osc. probs and flux weights
-                # global scaling factors for the nue and numu flux can be
-                # given, for normalization purposes
-                self.gpu_weight.calc_weight(
-                    self.events_dict[flav]['n_evts'],
-                    livetime=livetime,
-                    nue_flux_norm=nue_flux_norm,
-                    numu_flux_norm=numu_flux_norm,
-                    aeff_scale=aeff_scale,
-                    kNuBar=self.events_dict[flav]['kNuBar'],
-                    Genie_Ma_QE=Genie_Ma_QE,
-                    Genie_Ma_RES=Genie_Ma_RES,
-                    **self.events_dict[flav]['device']
-                )
+            # Calculate the event weights, from osc. probs and flux weights
+            # global scaling factors for the nue and numu flux can be
+            # given, for normalization purposes
+            self.gpu_weight.calc_weight(
+                self.events_dict[flav]['n_evts'],
+                livetime=livetime,
+                nue_flux_norm=nue_flux_norm,
+                numu_flux_norm=numu_flux_norm,
+                aeff_scale=aeff_scale,
+                kNuBar=self.events_dict[flav]['kNuBar'],
+                Genie_Ma_QE=Genie_Ma_QE,
+                Genie_Ma_RES=Genie_Ma_RES,
+                **self.events_dict[flav]['device']
+            )
 
-                # Calculate weights squared, for error propagation
-                if self.error_method in ['sumw2', 'fixed_sumw2']:
-                    self.gpu_weight.calc_sumw2(self.events_dict[flav]['n_evts'], **self.events_dict[flav]['device'])
+            # Calculate weights squared, for error propagation
+            if self.error_method in ['sumw2', 'fixed_sumw2']:
+                self.gpu_weight.calc_sumw2(self.events_dict[flav]['n_evts'], **self.events_dict[flav]['device'])
 
             tot += self.events_dict[flav]['n_evts']
         end_t = time.time()
         logging.debug('GPU calc done in %.4f ms for %s events'%(((end_t - start_t) * 1000), tot))
 
         if self.params.kde.value:
-            if recalc_osc or recalc_weight:
-                start_t = time.time()
-                #copy back weights
-                self.get_device_arrays(variables=['weight'])
+            start_t = time.time()
+            #copy back weights
+            self.get_device_arrays(variables=['weight'])
 
-                for flav in self.flavs:
-                    # loop over pid bins and for every bin evaluate the KDEs
-                    # and put them together into a 3d array
-                    pid_stack = []
-                    for pid in range(len(self.pid_bin_edges)-1):
-                        mask_pid = (
-                            (self.events_dict[flav]['host']['pid'] >= self.pid_bin_edges[pid])
-                            & (self.events_dict[flav]['host']['pid'] < self.pid_bin_edges[pid+1])
-                        )
-                        data = np.array([
-                            self.events_dict[flav]['host'][self.bin_names[0]][mask_pid],
-                            self.events_dict[flav]['host'][self.bin_names[1]][mask_pid]
-                        ])
-                        weights = self.events_dict[flav]['host']['weight'][mask_pid]
-                        pid_stack.append(
-                            self.kde_histogramdd(
-                                data.T,
-                                weights=weights,
-                                binning=self.d2d_binning,
-                                coszen_name='reco_coszen',
-                                use_cuda=True,
-                                bw_method='silverman',
-                                alpha=1.0,
-                                oversample=1,
-                                coszen_reflection=0.5,
-                                adaptive=True
-                            )
-                        )
-                    hist = np.dstack(pid_stack)
-                    if not self.pid_bin == 2:
-                        hist = np.swapaxes(hist, self.pid_bin, 2)
-                    self.events_dict[flav]['hist'] = hist
-                end_t = time.time()
-                logging.debug('KDE done in %.4f ms for %s events'
-                              %(((end_t - start_t) * 1000), tot))
+            for flav in self.flavs:
+                # loop over pid bins and for every bin evaluate the KDEs
+                # and put them together into a 3d array
+                data = np.array([
+                    self.events_dict[flav]['host'][self.bin_names[0]],
+                    self.events_dict[flav]['host'][self.bin_names[1]],
+                    self.events_dict[flav]['host'][self.bin_names[2]]
+                ])
+                weights = self.events_dict[flav]['host']['weight']
+                hist = self.kde_histogramdd(
+                        data.T,
+                        weights=weights,
+                        binning=self.output_binning,
+                        coszen_name='reco_coszen',
+                        use_cuda=True,
+                        bw_method='silverman',
+                        alpha=1.0,
+                        oversample=1,
+                        coszen_reflection=0.5,
+                        adaptive=True
+                    )
+                self.events_dict[flav]['hist'] = hist
+            end_t = time.time()
+            logging.debug('KDE done in %.4f ms for %s events'
+                          %(((end_t - start_t) * 1000), tot))
         else:
-            if recalc_osc or recalc_weight:
-                start_t = time.time()
-                # Histogram events and download fromm GPU, if either weights or
-                # osc changed
-                if len(self.bin_names) == 2:
-                    for flav in self.flavs:
-                        hist = self.histogrammer.get_hist(
-                            self.events_dict[flav]['n_evts'],
-                            d_x = self.events_dict[flav]['device'][self.bin_names[0]],
-                            d_y = self.events_dict[flav]['device'][self.bin_names[1]],
-                            d_w = self.events_dict[flav]['device']['weight']
-                        )
-                        self.events_dict[flav]['hist'] = hist
+            # hist_e_scale:
+            bin_edges = deepcopy(self.bin_edges)
+            bin_edges[self.e_bin_number] *= FTYPE(self.params.hist_e_scale.value.m_as('dimensionless'))
+            #print self.params.hist_e_scale.value.m_as('dimensionless')
+            #bin_edges[self.e_bin_number] *= 0.99
+            #if self.params.hist_e_scale.value.m_as('dimensionless') != 1.0:
+            #    print bin_edges[self.e_bin_number]
+            #    print self.params.hist_e_scale.value.m_as('dimensionless')
+            self.histogrammer.update_bin_edges(*bin_edges)
 
-                        if self.error_method in ['sumw2', 'fixed_sumw2']:
-                            sumw2 = self.histogrammer.get_hist(
-                                self.events_dict[flav]['n_evts'],
-                                d_x=self.events_dict[flav]['device'][self.bin_names[0]],
-                                d_y=self.events_dict[flav]['device'][self.bin_names[1]],
-                                d_w=self.events_dict[flav]['device']['sumw2']
-                            )
-                            self.events_dict[flav]['sumw2'] = sumw2
-                else:
-                    for flav in self.flavs:
-                        hist = self.histogrammer.get_hist(
+            start_t = time.time()
+            # Histogram events and download fromm GPU, if either weights or
+            # osc changed
+            if len(self.bin_names) == 2:
+                for flav in self.flavs:
+                    hist = self.histogrammer.get_hist(
+                        self.events_dict[flav]['n_evts'],
+                        d_x = self.events_dict[flav]['device'][self.bin_names[0]],
+                        d_y = self.events_dict[flav]['device'][self.bin_names[1]],
+                        d_w = self.events_dict[flav]['device']['weight']
+                    )
+                    self.events_dict[flav]['hist'] = hist
+
+                    if self.error_method in ['sumw2', 'fixed_sumw2']:
+                        sumw2 = self.histogrammer.get_hist(
+                            self.events_dict[flav]['n_evts'],
+                            d_x=self.events_dict[flav]['device'][self.bin_names[0]],
+                            d_y=self.events_dict[flav]['device'][self.bin_names[1]],
+                            d_w=self.events_dict[flav]['device']['sumw2']
+                        )
+                        self.events_dict[flav]['sumw2'] = sumw2
+            else:
+                for flav in self.flavs:
+                    hist = self.histogrammer.get_hist(
+                        self.events_dict[flav]['n_evts'],
+                        d_x=self.events_dict[flav]['device'][self.bin_names[0]],
+                        d_y=self.events_dict[flav]['device'][self.bin_names[1]],
+                        d_z=self.events_dict[flav]['device'][self.bin_names[2]],
+                        d_w=self.events_dict[flav]['device']['weight']
+                    )
+                    self.events_dict[flav]['hist'] = hist
+
+                    if self.error_method in ['sumw2', 'fixed_sumw2']:
+                        sumw2 = self.histogrammer.get_hist(
                             self.events_dict[flav]['n_evts'],
                             d_x=self.events_dict[flav]['device'][self.bin_names[0]],
                             d_y=self.events_dict[flav]['device'][self.bin_names[1]],
                             d_z=self.events_dict[flav]['device'][self.bin_names[2]],
-                            d_w=self.events_dict[flav]['device']['weight']
+                            d_w=self.events_dict[flav]['device']['sumw2']
                         )
-                        self.events_dict[flav]['hist'] = hist
+                        self.events_dict[flav]['sumw2'] = sumw2
 
-                        if self.error_method in ['sumw2', 'fixed_sumw2']:
-                            sumw2 = self.histogrammer.get_hist(
-                                self.events_dict[flav]['n_evts'],
-                                d_x=self.events_dict[flav]['device'][self.bin_names[0]],
-                                d_y=self.events_dict[flav]['device'][self.bin_names[1]],
-                                d_z=self.events_dict[flav]['device'][self.bin_names[2]],
-                                d_w=self.events_dict[flav]['device']['sumw2']
-                            )
-                            self.events_dict[flav]['sumw2'] = sumw2
-
-                end_t = time.time()
-                logging.debug('GPU hist done in %.4f ms for %s events'
-                              %(((end_t - start_t) * 1000), tot))
+            end_t = time.time()
+            logging.debug('GPU hist done in %.4f ms for %s events'
+                          %(((end_t - start_t) * 1000), tot))
 
         # Set new hash
         self.osc_hash = osc_hash
-        self.gpu_weight_hash = gpu_weight_hash
+        self.flux_hash = flux_hash
 
         # Add histos together into output names, and apply nutau normalizations
         # errors (sumw2) are also added, while scales are applied in quadrature

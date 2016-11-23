@@ -5,9 +5,10 @@
 A set of functions for calculating flux weights given an array of energy and
 cos(zenith) values based on the Honda atmospheric flux tables. A lot of this
 functionality will be copied from honda.py but since I don't want to initialise
-this as a stage it makes sense to copy it in to here so somebody can't 
+this as a stage it makes sense to copy it in to here so somebody can't
 accidentally do the wrong thing with that script.
 """
+
 
 import numpy as np
 import scipy.interpolate as interpolate
@@ -15,11 +16,16 @@ import scipy.interpolate as interpolate
 from pisa.utils.log import logging
 from pisa.utils.resources import open_resource
 
-primaries = ['numu', 'numubar', 'nue', 'nuebar']
+
+__all__ = ['load_2D_table', 'calculate_flux_weights']
+
+
+PRIMARIES = ['numu', 'numubar', 'nue', 'nuebar']
+
 
 def load_2D_table(flux_file):
     """Manipulate 2 dimensional flux tables.
-    
+
     2D is expected to mean energy and cosZenith, where azimuth is averaged
     over (before being stored in the table) and the zenith range should
     include both hemispheres.
@@ -37,11 +43,11 @@ def load_2D_table(flux_file):
     logging.debug("Loading atmospheric flux table %s" % flux_file)
 
     # columns in Honda files are in the same order
-    cols = ['energy'] + primaries
-    
+    cols = ['energy'] + PRIMARIES
+
     # Load the data table
     table = np.genfromtxt(open_resource(flux_file),
-                              usecols=range(len(cols)))
+                          usecols=range(len(cols)))
     mask = np.all(np.isnan(table) | np.equal(table, 0), axis=1)
     table = table[~mask].T
 
@@ -49,7 +55,7 @@ def load_2D_table(flux_file):
     for key in flux_dict.iterkeys():
         # There are 20 lines per zenith range
         flux_dict[key] = np.array(np.split(flux_dict[key], 20))
-        
+
     # Set the zenith and energy range as they are in the tables
     # The energy may change, but the zenith should always be
     # 20 bins, full sky.
@@ -70,7 +76,7 @@ def load_2D_table(flux_file):
     # method must be the edges of those of the normal tables
     int_flux_dict['logenergy'] = np.linspace(-1.025, 4.025, 102)
     int_flux_dict['coszen'] = np.linspace(-1, 1, 21)
-    for nutype in primaries:
+    for nutype in PRIMARIES:
         # spline_dict now wants to be a set of splines for
         # every table cosZenith value.
         splines = {}
@@ -98,10 +104,10 @@ def load_2D_table(flux_file):
 
 def calculate_flux_weights(true_energies, true_coszens, en_splines):
     """Calculate flux weights for given array of energy and cos(zenith).
-    
+
     Arrays of true energy and zenith are expected to be for MC events, so
     they are tested to be of the same length.
-    En_splines should be the spline for the primary of interest. The entire 
+    En_splines should be the spline for the primary of interest. The entire
     dictionary is calculated in the previous function.
 
     Parameters
@@ -117,7 +123,7 @@ def calculate_flux_weights(true_energies, true_coszens, en_splines):
     Example
     -------
     Use the previous function to calculate the spline dict for the South Pole.
-    
+
         spline_dict = load_2D_table('flux/honda-2015-spl-solmax-aa.d')
 
     Then you must have some equal length arrays of energy and zenith.
@@ -125,15 +131,14 @@ def calculate_flux_weights(true_energies, true_coszens, en_splines):
         ens = [3.0, 4.0, 5.0]
         czs = [-0.4, 0.7, 0.3]
 
-    These are used in this function, along with whatever primary you are 
-    interested in calculating the flux weights for. 
+    These are used in this function, along with whatever primary you are
+    interested in calculating the flux weights for.
 
         flux_weights = calculate_flux_weights(ens, czs, spline_dict['numu'])
 
     Done!
 
     """
-    
     if not isinstance(true_energies, np.ndarray):
         if not isinstance(true_energies, list):
             raise TypeError('true_energies must be a list or numpy array')
@@ -148,7 +153,7 @@ def calculate_flux_weights(true_energies, true_coszens, en_splines):
         raise ValueError('Not all coszens found between -1 and 1')
     if not len(true_energies) == len(true_coszens):
         raise ValueError('length of energy and coszen arrays must match')
-    
+
     czkeys = ['%.2f'%x for x in np.linspace(-0.95, 0.95, 20)]
     cz_spline_points = np.linspace(-1, 1, 21)
 
@@ -174,13 +179,14 @@ def calculate_flux_weights(true_energies, true_coszens, en_splines):
     flux_weights = np.array(flux_weights)
     return flux_weights
 
+
 if __name__ == '__main__':
-    '''
+    """
     This is a slightly longer example than that given in the docstring of the
     calculate_flux_weights function. This will make a quick plot of the flux
-    at 5.0 GeV and 20.0 GeV across all of cos(zenith) for NuMu just to make 
+    at 5.0 GeV and 20.0 GeV across all of cos(zenith) for NuMu just to make
     sure everything looks sensible.
-    '''
+    """
 
     from matplotlib import pyplot as plt
 
@@ -188,7 +194,7 @@ if __name__ == '__main__':
     czs = np.linspace(-1,1,81)
     low_ens = 5.0*np.ones_like(czs)
     high_ens = 20.0*np.ones_like(czs)
-    
+
     low_en_flux_weights = calculate_flux_weights(low_ens,
                                                  czs,
                                                  spline_dict['numu'])

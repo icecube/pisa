@@ -27,16 +27,17 @@ from scipy.interpolate import splrep, splev
 
 from pisa.core.events import Events
 from pisa.utils.log import logging, set_verbosity
-from pisa.utils import flavInt
+from pisa.utils.flavInt import ALL_NUFLAVINTS, FlavIntData, NuFlavIntGroup, tex
+from pisa.utils.format import list2hrlist
 from pisa.utils import jsons
-from pisa.utils import utils
+# TODO: this no longer exists; fix up for PISA 3
 from pisa.aeff.AeffServiceMC import AeffServiceMC
 
 
 __all__ = []
 
 
-if __name__ = '__main__':
+if __name__ == '__main__':
     parser = ArgumentParser(
         '''Generate smoothed effective areas at energy bin centers. NOTE: at
         present, uses *ONLY* the MC-true-upgoing events.''',
@@ -141,10 +142,10 @@ if __name__ = '__main__':
     assert len(single_czbin)-1 == 1
 
     # Verify flavints joined in the file are those expected
-    grouped = sorted([flavInt.NuFlavIntGroup(fi)
+    grouped = sorted([NuFlavIntGroup(fi)
                       for fi in esmooth_events.metadata['flavints_joined']])
-    should_be_grouped = sorted([flavInt.NuFlavIntGroup('nuall_nc'),
-                                flavInt.NuFlavIntGroup('nuallbar_nc')])
+    should_be_grouped = sorted([NuFlavIntGroup('nuall_nc'),
+                                NuFlavIntGroup('nuallbar_nc')])
     if grouped != should_be_grouped:
         if len(grouped) == 0:
             grouped = None
@@ -152,10 +153,10 @@ if __name__ = '__main__':
                          ' groupings (%s).' % (should_be_grouped, grouped))
 
     # Get *un*joined flavints
-    individual_flavints = flavInt.NuFlavIntGroup(flavInt.ALL_NUFLAVINTS)
+    individual_flavints = NuFlavIntGroup(ALL_NUFLAVINTS)
     for group in grouped:
         individual_flavints -= group
-    ungrouped = sorted([flavInt.NuFlavIntGroup(fi) for fi in individual_flavints])
+    ungrouped = sorted([NuFlavIntGroup(fi) for fi in individual_flavints])
 
     logging.debug("Groupings: %s" % grouped)
     logging.debug("Ungrouped: %s" % ungrouped)
@@ -179,7 +180,7 @@ if __name__ = '__main__':
             'effective areas [m$^2$], %s geometry %s, MC runs %s with ver'
             ' %s processing' % (esmooth_events.metadata['detector'],
                                 esmooth_events.metadata['geom'],
-                                utils.list2hrlist(esmooth_events.metadata['runs']),
+                                list2hrlist(esmooth_events.metadata['runs']),
                                 esmooth_events.metadata['proc_ver'])
         )
         fig_part.suptitle('Particle ' + basetitle, fontsize=12)
@@ -189,8 +190,8 @@ if __name__ = '__main__':
                              compute_error=True)
     aeff_data, aeff_err = aeff_svc.get_aeff_with_error()
 
-    spline_fit = flavInt.FlavIntData()
-    smoothed_aeff = flavInt.FlavIntData()
+    spline_fit = FlavIntData()
+    smoothed_aeff = FlavIntData()
     esmooth_store = {'ebin_midpoints': ebin_midpoints}
     for group in ungrouped + grouped:
         # Only need to do computations for a single flavint from the group, since
@@ -236,11 +237,11 @@ if __name__ = '__main__':
 
             # Determine axis by flavor
             axnum = 3
-            if rep_flavint in flavInt.NuFlavIntGroup('nuecc+nuebarcc'):
+            if rep_flavint in NuFlavIntGroup('nuecc+nuebarcc'):
                 axnum = 0
-            elif rep_flavint in flavInt.NuFlavIntGroup('numucc+numubarcc'):
+            elif rep_flavint in NuFlavIntGroup('numucc+numubarcc'):
                 axnum = 1
-            elif rep_flavint in flavInt.NuFlavIntGroup('nutaucc+nutaubarcc'):
+            elif rep_flavint in NuFlavIntGroup('nutaucc+nutaubarcc'):
                 axnum = 2
             ax = axgrp[axnum]
 
@@ -263,7 +264,7 @@ if __name__ = '__main__':
 
             ax.grid(b=True, which='both', ls='-', alpha=0.5, color=[0.7]*3, lw=0.5)
 
-            leg = ax.legend(loc='lower right', title=flavInt.tex(group, d=True),
+            leg = ax.legend(loc='lower right', title=tex(group, d=True),
                             frameon=False)
             leg.get_title().set_fontsize(18)
 
@@ -272,7 +273,7 @@ if __name__ = '__main__':
         'aeff_energy_smooth__%s_%s__runs_%s__proc_%s.json' % (
             esmooth_events.metadata['detector'],
             esmooth_events.metadata['geom'],
-            utils.list2hrlist(esmooth_events.metadata['runs']),
+            list2hrlist(esmooth_events.metadata['runs']),
             esmooth_events.metadata['proc_ver']
         )
     )
@@ -286,7 +287,7 @@ if __name__ = '__main__':
         basefname = (
             'aeff_energy_smooth__%s_%s__runs_%s__proc_%s__'
             % (esmooth_events.metadata['detector'], esmooth_events.metadata['geom'],
-               utils.list2hrlist(esmooth_events.metadata['runs']),
+               list2hrlist(esmooth_events.metadata['runs']),
                esmooth_events.metadata['proc_ver'])
         )
         fig_part.savefig(os.path.join(outdir, basefname + 'particles.pdf'))
@@ -299,13 +300,13 @@ if __name__ = '__main__':
     # COSZEN
     #===============================================================================
     # Verify flavints joined in the file are those expected
-    grouped = sorted([flavInt.NuFlavIntGroup(fi)
+    grouped = sorted([NuFlavIntGroup(fi)
                       for fi in czsmooth_events.metadata['flavints_joined']])
     should_be_grouped = sorted([
-        flavInt.NuFlavIntGroup('nue_cc+nuebar_cc'),
-        flavInt.NuFlavIntGroup('numu_cc+numubar_cc'),
-        flavInt.NuFlavIntGroup('nutau_cc+nutaubar_cc'),
-        flavInt.NuFlavIntGroup('nuall_nc+nuallbar_nc'),
+        NuFlavIntGroup('nue_cc+nuebar_cc'),
+        NuFlavIntGroup('numu_cc+numubar_cc'),
+        NuFlavIntGroup('nutau_cc+nutaubar_cc'),
+        NuFlavIntGroup('nuall_nc+nuallbar_nc'),
     ])
     if set(grouped) != set(should_be_grouped):
         if len(grouped) == 0:
@@ -315,10 +316,10 @@ if __name__ = '__main__':
                                                grouped))
 
     # Get *un*joined flavints
-    individual_flavints = flavInt.NuFlavIntGroup(flavInt.ALL_NUFLAVINTS)
+    individual_flavints = NuFlavIntGroup(ALL_NUFLAVINTS)
     for group in grouped:
         individual_flavints -= group
-    ungrouped = sorted([flavInt.NuFlavIntGroup(fi) for fi in individual_flavints])
+    ungrouped = sorted([NuFlavIntGroup(fi) for fi in individual_flavints])
 
     logging.debug("Groupings: %s" % grouped)
     logging.debug("Ungrouped: %s" % ungrouped)
@@ -350,8 +351,8 @@ if __name__ = '__main__':
                              compute_error=True)
     aeff_data, aeff_err = aeff_svc.get_aeff_with_error()
 
-    spline_fit = flavInt.FlavIntData()
-    smoothed_aeff = flavInt.FlavIntData()
+    spline_fit = FlavIntData()
+    smoothed_aeff = FlavIntData()
     czsmooth_store = {'czbin_midpoints': czbin_midpoints}
     for group in ungrouped + grouped:
         rep_flavint = group.flavints()[0]
@@ -384,11 +385,11 @@ if __name__ = '__main__':
         if make_plots:
             # Determine axis by flavor
             axnum = 3
-            if rep_flavint in flavInt.NuFlavIntGroup('nuecc+nuebarcc'):
+            if rep_flavint in NuFlavIntGroup('nuecc+nuebarcc'):
                 axnum = 0
-            elif rep_flavint in flavInt.NuFlavIntGroup('numucc+numubarcc'):
+            elif rep_flavint in NuFlavIntGroup('numucc+numubarcc'):
                 axnum = 1
-            elif rep_flavint in flavInt.NuFlavIntGroup('nutaucc+nutaubarcc'):
+            elif rep_flavint in NuFlavIntGroup('nutaucc+nutaubarcc'):
                 axnum = 2
             ax = axgrp[axnum]
 
@@ -404,7 +405,7 @@ if __name__ = '__main__':
             if axnum in [2,3]:
                 ax.set_xlabel(r'$\cos\,\theta_z$')
 
-            legparams = dict(title=flavInt.tex(group, d=True), frameon=False)
+            legparams = dict(title=tex(group, d=True), frameon=False)
             if axnum in [0,1]:
                 ax.set_ylim(4.0e-5, 8.5e-5)
                 leg = ax.legend(loc='lower center', **legparams)
@@ -426,7 +427,7 @@ if __name__ = '__main__':
         'aeff_coszen_smooth__%s_%s__runs_%s__proc_%s.json' % (
             czsmooth_events.metadata['detector'],
             czsmooth_events.metadata['geom'],
-            utils.list2hrlist(czsmooth_events.metadata['runs']),
+            list2hrlist(czsmooth_events.metadata['runs']),
             czsmooth_events.metadata['proc_ver']
         )
     )
@@ -439,7 +440,7 @@ if __name__ = '__main__':
         basefname = (
             'aeff_coszen_smooth__%s_%s__runs_%s__proc_%s'
             % (czsmooth_events.metadata['detector'], czsmooth_events.metadata['geom'],
-               utils.list2hrlist(czsmooth_events.metadata['runs']),
+               list2hrlist(czsmooth_events.metadata['runs']),
                czsmooth_events.metadata['proc_ver'])
         )
         fig.savefig(os.path.join(outdir, basefname + '.pdf'))

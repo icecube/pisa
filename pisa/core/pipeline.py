@@ -345,7 +345,7 @@ def test_Pipeline():
         current_mat = new_mat
 
 
-if __name__ == '__main__':
+def main():
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
     import numpy as np
     from pisa.core.map import Map, MapSet
@@ -493,3 +493,7 @@ if __name__ == '__main__':
             my_plotter.ratio = True
             my_plotter.plot_2d_array(stage.outputs, fname=stg_svc+'__output',
                                      cmap='OrRd')
+
+
+if __name__ == '__main__':
+    main()

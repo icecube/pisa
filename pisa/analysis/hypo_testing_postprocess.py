@@ -74,7 +74,7 @@ def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
         raise ValueError('Analysis was performed on data, so `fluctuate_data`'
                          ' is not supported.')
 
-    # Get naming scheme 
+    # Get naming scheme
     labels = Labels(
         h0_name=cfg['h0_name'], h1_name=cfg['h1_name'],
         data_name=cfg['data_name'], data_is_data=data_is_data,
@@ -182,7 +182,7 @@ def parse_args():
     return parser.parse_args()
 
 
-if __name__ == '__main__':
+def main():
     args = parse_args()
     init_args_d = vars(args)
 
@@ -201,3 +201,6 @@ if __name__ == '__main__':
     else:
         raise NotImplementedError('llr-analysis')
 
+
+if __name__ == '__main__':
+    main()

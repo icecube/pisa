@@ -44,7 +44,9 @@ import sys
 import traceback
 
 import numpy as np
+import pint
 
+from pisa import ureg, Q_
 from pisa.utils import fileio
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.comparisons import recursiveAllclose, recursiveEquality
@@ -1015,7 +1017,7 @@ class FlavIntData(dict):
         self.validate(d)
         self.update(d)
 
-    def __interpret_index(self, idx):
+    def _interpret_index(self, idx):
         if not isinstance(idx, basestring) and hasattr(idx, '__len__') \
                 and len(idx) == 1:
             idx = idx[0]
@@ -1031,7 +1033,7 @@ class FlavIntData(dict):
 
     def __getitem__(self, *args):
         assert len(args) <= 2
-        key_list = self.__interpret_index(args)
+        key_list = self._interpret_index(args)
         tgt_obj = super(FlavIntData, self).__getitem__(key_list[0])
         if len(key_list) == 2:
             tgt_obj = tgt_obj[key_list[1]]
@@ -1040,7 +1042,7 @@ class FlavIntData(dict):
     def __setitem__(self, *args):
         assert len(args) > 1
         item, value = args[:-1], args[-1]
-        key_list = self.__interpret_index(item)
+        key_list = self._interpret_index(item)
         if len(key_list) == 1:
             self.__validate_inttype_dict(value)
             value = self.__translate_inttype_dict(value)
@@ -1210,8 +1212,7 @@ class FlavIntDataGroup(dict):
 
         if val is None:
             # Instantiate empty FlavIntDataGroup
-            with BarSep('_'):
-                d = {str(group):None for group in self.flavint_groups}
+            d = {str(group):None for group in self.flavint_groups}
         else:
             if isinstance(val, basestring):
                 d = self.__load(val)
@@ -1219,8 +1220,9 @@ class FlavIntDataGroup(dict):
                 d = val
             else:
                 raise TypeError('Unrecognized `val` type %s' % type(val))
-            with BarSep('_'):
-                d = {str(NuFlavIntGroup(key)): d[key] for key in d.iterkeys()}
+            d = {str(NuFlavIntGroup(key)): d[key] for key in d.iterkeys()}
+            if d.keys() == ['']:
+                raise AssertionError('NuFlavIntGroups not found in data keys')
 
             fig = [NuFlavIntGroup(fig) for fig in d.iterkeys()]
             if flavint_groups is None:
@@ -1242,6 +1244,7 @@ class FlavIntDataGroup(dict):
 
     @flavint_groups.setter
     def flavint_groups(self, value):
+        assert 'muons' not in value
         fig = self._parse_flavint_groups(value)
         all_flavints = reduce(add, [f.flavints() for f in fig])
         for fi in set(all_flavints):
@@ -1322,6 +1325,8 @@ class FlavIntDataGroup(dict):
         elif isinstance(flavint_groups, Sequence):
             if all(isinstance(f, NuFlavIntGroup) for f in flavint_groups):
                 return flavint_groups
+            elif all(isinstance(f, NuFlavInt) for f in flavint_groups):
+                return [NuFlavIntGroup(f) for f in flavint_groups]
             elif all(isinstance(f, basestring) for f in flavint_groups):
                 return [NuFlavIntGroup(f) for f in flavint_groups]
             else:
@@ -1339,8 +1344,6 @@ class FlavIntDataGroup(dict):
         arrays are found, after which the appropriate sub-element is
         made equal to the concatenation of the two arrays.
         """
-        logging.trace('Merging {0} with keys {1} '
-                      '{2}'.format(type(a), a.keys(), b.keys()))
         if path is None: path = []
         for key in b:
             if key in a:
@@ -1349,24 +1352,31 @@ class FlavIntDataGroup(dict):
                 elif isinstance(a[key], np.ndarray) and \
                         isinstance(b[key], np.ndarray):
                     a[key] = np.concatenate((a[key], b[key]))
+                elif isinstance(a[key], pint.quantity._Quantity) and \
+                        isinstance(b[key], pint.quantity._Quantity):
+                    if isinstance(a[key].m, np.ndarray) and \
+                       isinstance(b[key].m, np.ndarray):
+                        units = a[key].units
+                        a[key] = np.concatenate((a[key].m, b[key].m_as(units)))
+                        a[key] = a[key] * units
+                    else:
+                        raise Exception('Conflict at %s' % '.'.join(path + [str(key)]))
                 else:
                     raise Exception('Conflict at %s' % '.'.join(path + [str(key)]))
             else:
                 a[key] = b[key]
         return a
 
-    def __interpret_index(self, idx):
-        with BarSep('_'):
-            try:
-                nfi = NuFlavIntGroup(idx)
-                return str(nfi)
-            except:
-                raise ValueError('Invalid index: %s' %str(idx))
+    def _interpret_index(self, idx):
+        try:
+            nfi = NuFlavIntGroup(idx)
+            return str(nfi)
+        except:
+            raise ValueError('Invalid index: %s' %str(idx))
 
     def __basic_validate(self, fi_container):
         for group in self.flavint_groups:
-            with BarSep('_'):
-                f = str(group)
+            f = str(group)
             assert isinstance(fi_container, dict), "container must be of" \
                     " type 'dict'; instead got %s" % type(fi_container)
             assert fi_container.has_key(f), \
@@ -1385,12 +1395,14 @@ class FlavIntDataGroup(dict):
         return FlavIntDataGroup(val=d, flavint_groups=combined_flavint_groups)
 
     def __getitem__(self, arg):
-        key = self.__interpret_index(arg)
+        key = self._interpret_index(arg)
         tgt_obj = super(FlavIntDataGroup, self).__getitem__(key)
         return tgt_obj
 
     def __setitem__(self, arg, value):
-        key = self.__interpret_index(arg)
+        key = self._interpret_index(arg)
+        if NuFlavIntGroup(key) not in self.flavint_groups:
+            self.flavint_groups += [NuFlavIntGroup(key)]
         super(FlavIntDataGroup, self).__setitem__(key, value)
 
     def __eq__(self, other):
@@ -2108,7 +2120,7 @@ def test_FlavIntDataGroup():
     for k in cfidat.flavint_groups:
         cfidat[k] = np.arange(10)
 
-    cfidat[NuFlavIntGroup('nuecc+numucc')] = np.arange(10)
+    cfidat[NuFlavIntGroup('nuecc+nuebarcc')] = np.arange(10)
 
     print fidg1 + fidg2
     assert fidg1 == fidg2

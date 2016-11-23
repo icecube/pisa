@@ -9,6 +9,7 @@ from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.log import logging
 from pisa.utils.config_parser import split
+from pisa.utils.profiler import profile
 
 
 __all__ = ['nutau']
@@ -67,6 +68,7 @@ class nutau(Stage):
             debug_mode=debug_mode
         )
 
+    @profile
     def _compute_transforms(self):
         dims = self.input_binning.names
 
@@ -77,7 +79,7 @@ class nutau(Stage):
             xform = np.ones(xform_shape)
             input_names = self.input_names
             for i,name in enumerate(in_names):
-                scale = 1
+                scale = 1.
                 if '_nc' in name:
                     scale *= self.params.nu_nc_norm.value.m_as('dimensionless')
                 #if 'nutau' in name:

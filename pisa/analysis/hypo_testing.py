@@ -1498,7 +1498,7 @@ def normcheckpath(path, checkdir=False):
     return normpath
 
 
-if __name__ == '__main__':
+def main():
     args = parse_args()
     init_args_d = vars(args)
 
@@ -1550,3 +1550,7 @@ if __name__ == '__main__':
 
     # Run the analysis
     hypo_testing.run_analysis()
+
+
+if __name__ == '__main__':
+    main()
