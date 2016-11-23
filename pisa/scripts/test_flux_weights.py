@@ -104,38 +104,63 @@ def Plot1DSlices(xintvals, yintvals, xtabvals, ytabvals, xtabbins,
     plt.close()
     
 
-def logplot(m, title, ax, clabel, cmap=plt.cm.afmhot, largelabels=False):
+def logplot(m, title, ax, clabel, cmap=plt.cm.afmhot, logz=True,
+            largelabels=False, medlabels=False):
     """Simple plotting of a 2D histogram (map)"""
     hist = np.ma.masked_invalid(m['map'])
-    y = m['ebins']
-    x = m['czbins']
+    if 'ebins' in m.keys():
+        y = m['ebins']
+        ylabel = r'Energy (GeV)'
+        logy = True
+        if 'czbins' in m.keys():
+            x = m['czbins']
+            xlabel = r'$\cos\theta_Z$'
+        else:
+            x = m['azbins']
+            xlabel = r'$\phi_{Az}$ (${}^{\circ}$)'
+    else:
+        x = m['czbins']
+        xlabel = r'$\cos\theta_Z$'
+        y = m['azbins']
+        ylabel = r'$\phi_{Az}$ (${}^{\circ}$)'
+        logy = False
     X, Y = np.meshgrid(x, y)
-    ax.set_yscale('log')
+    if logy:
+        ax.set_yscale('log')
     vmin = hist.min()
     vmax = hist.max()
-    if clabel is not None:
+    if logz:
         pcmesh = ax.pcolormesh(X, Y, hist,
                                norm=colors.LogNorm(vmin=vmin,vmax=vmax),
                                cmap=cmap)
     else:
         pcmesh = ax.pcolormesh(X, Y, hist,
+                               norm=colors.Normalize(vmin=vmin,vmax=vmax),
                                cmap=cmap)
     cbar = plt.colorbar(mappable=pcmesh, ax=ax)
     if clabel is not None:
         if largelabels:
             cbar.set_label(clabel,labelpad=-1,fontsize=36)
             cbar.ax.tick_params(labelsize=36)
+        elif medlabels:
+            cbar.set_label(clabel,labelpad=-1,fontsize=36)
+            cbar.ax.tick_params(labelsize=36)
         else:
             cbar.set_label(clabel,labelpad=-1)
             cbar.ax.tick_params(labelsize='large')
     if largelabels:
-        ax.set_xlabel(r'$\cos\theta_Z$',fontsize=36)
-        ax.set_ylabel(r'Energy (GeV)',labelpad=-3,fontsize=36)
+        ax.set_xlabel(xlabel,fontsize=36)
+        ax.set_ylabel(ylabel,labelpad=-3,fontsize=36)
         ax.set_title(title, y=1.03, fontsize=36)
         plt.tick_params(axis='both', which='major', labelsize=36)
+    elif medlabels:
+        ax.set_xlabel(xlabel,fontsize=36)
+        ax.set_ylabel(ylabel,labelpad=-3,fontsize=36)
+        ax.set_title(title, y=1.03, fontsize=24)
+        plt.tick_params(axis='both', which='major', labelsize=36)
     else:
-        ax.set_xlabel(r'$\cos\theta_Z$')
-        ax.set_ylabel(r'Energy (GeV)',labelpad=-3)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel,labelpad=-3)
         ax.set_title(title, y=1.03)
     ax.set_xlim(np.min(x), np.max(x))
     ax.set_ylim(np.min(y), np.max(y))
@@ -280,7 +305,7 @@ def do_1D_2D_honda_test(spline_dict, flux_dict, LegendFileName,
 
 
 def do_2D_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
-                     oversample, SaveName, TitleFileName, enpow=1):
+                        oversample, SaveName, TitleFileName, enpow=1):
 
     all_ens_bins = np.logspace(-1.025,4.025,101*oversample+1)
     all_log_ens_bins = np.linspace(-1.025,4.025,101*oversample+1)
@@ -372,11 +397,13 @@ def do_2D_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
             logplot(m=diff_map,
                     title='Difference',
                     ax=axes[3],
-                    clabel=None)
+                    clabel=None,
+                    logz=False)
             logplot(m=diff_ratio_map,
                     title='Percentage Difference',
                     ax=axes[4],
-                    clabel=None)
+                    clabel=None,
+                    logz=False)
 
             plt.suptitle(
                 'Integral Preserving Tests for %s %s Flux Tables'
@@ -526,7 +553,7 @@ def do_1D_2D_bartol_test(spline_dict, flux_dict, outdir, enpow=1):
             
 
 def do_2D_2D_bartol_test(spline_dict, flux_dict, outdir, ip_checks,
-                      oversample, enpow=1):
+                         oversample, enpow=1):
 
     all_en_bins_low = np.logspace(-1.0,1.0,40*oversample+1)
     all_log_en_bins_low = np.linspace(-1.0,1.0,40*oversample+1)
@@ -659,11 +686,13 @@ def do_2D_2D_bartol_test(spline_dict, flux_dict, outdir, ip_checks,
                 logplot(m=diff_map,
                         title='Difference',
                         ax=axes[3],
-                        clabel=None)
+                        clabel=None,
+                        logz=False)
                 logplot(m=diff_ratio_map,
                         title='Percentage Difference',
                         ax=axes[4],
-                        clabel=None)
+                        clabel=None,
+                        logz=False)
 
                 plt.suptitle('Integral Preserving Tests for %s Bartol Sudbury 2015 Flux Tables'%flavtex, fontsize=36)
                 plt.subplots_adjust(top=0.8)
@@ -692,7 +721,7 @@ def do_2D_2D_bartol_test(spline_dict, flux_dict, outdir, ip_checks,
 
             
 def do_2D_2D_comparisons(honda_spline_dict, bartol_spline_dict,
-                      outdir, oversample, enpow=1):
+                         outdir, oversample, enpow=1):
         
     all_ens_bins = np.logspace(-1.0,4.0,100*oversample+1)
     all_czs_bins = np.linspace(-1.0,1.0,20*oversample+1)
@@ -765,11 +794,13 @@ def do_2D_2D_comparisons(honda_spline_dict, bartol_spline_dict,
         logplot(m=diff_map,
                 title='Difference',
                 ax=axes[2],
-                clabel=None)
+                clabel=None,
+                logz=False)
         logplot(m=diff_ratio_map,
                 title='Percentage Difference to Honda',
                 ax=axes[3],
-                clabel=None)
+                clabel=None,
+                logz=False)
 
         plt.suptitle('Comparisons for %s Honda 2015 and Bartol 2004 Sudbury Flux Tables'%flavtex, fontsize=36)
         plt.subplots_adjust(top=0.8)
@@ -1206,6 +1237,216 @@ def do_1D_3D_honda_test(spline_dict, flux_dict, LegendFileName,
                 ),
                 log = False
             )
+
+
+def do_2D_3D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
+                        oversample, SaveName, TitleFileName, enpow=1):
+
+    all_ens_bins = np.logspace(-1.025,4.025,101*oversample+1)
+    all_log_ens_bins = np.linspace(-1.025,4.025,101*oversample+1)
+    log_en_bin_width = all_log_ens_bins[1] - all_log_ens_bins[0]
+    all_ens = np.logspace(all_log_ens_bins[0] + log_en_bin_width/2.0,
+                          all_log_ens_bins[-1] - log_en_bin_width/2.0,
+                          101*oversample)
+    all_czs_bins = np.linspace(-1.0,1.0,20*oversample+1)
+    cz_bin_width = all_czs_bins[1] - all_czs_bins[0]
+    all_czs = np.linspace(all_czs_bins[0] + cz_bin_width/2.0,
+                          all_czs_bins[-1] - cz_bin_width/2.0,
+                          20*oversample)
+    all_azs_bins = np.linspace(0.0,360.0,12*oversample+1)
+    az_bin_width = all_azs_bins[1] - all_azs_bins[0]
+    all_azs = np.linspace(all_azs_bins[0] + az_bin_width/2.0,
+                          all_azs_bins[-1] - az_bin_width/2.0,
+                          12*oversample)*np.pi/180.0
+
+    all_ens_czs_mg, all_czs_ens_mg = np.meshgrid(all_ens, all_czs)
+    az_slice = (45.0*np.pi/180.0)*np.ones_like(all_ens_czs_mg)
+    all_ens_azs_mg, all_azs_ens_mg = np.meshgrid(all_ens, all_azs)
+    cz_slice = -0.15*np.ones_like(all_ens_azs_mg)
+    all_czs_azs_mg, all_azs_czs_mg = np.meshgrid(all_czs, all_azs)
+    en_slice = 5.0119*np.ones_like(all_czs_azs_mg)
+    
+    for flav, flavtex in zip(primaries, texprimaries):
+
+        ens_czs_az45_flux_weights = calculate_3D_flux_weights(
+            all_ens_czs_mg.flatten(),
+            all_czs_ens_mg.flatten(),
+            az_slice.flatten(),
+            spline_dict[flav],
+            enpow=enpow
+        )
+
+        ens_czs_az45_flux_weights = np.array(
+            np.split(
+                ens_czs_az45_flux_weights,
+                len(all_czs)
+            )
+        )
+        ens_czs_az45_flux_weights_map = {}
+        ens_czs_az45_flux_weights_map['map'] = ens_czs_az45_flux_weights.T
+        ens_czs_az45_flux_weights_map['ebins'] = all_ens_bins
+        ens_czs_az45_flux_weights_map['czbins'] = all_czs_bins
+        
+        gridspec_kw = dict(left=0.15, right=0.90, wspace=0.32)
+        fig, axes = plt.subplots(nrows=1, ncols=1, gridspec_kw=gridspec_kw,
+                                 sharex=False, sharey=False, figsize=(12,10))
+
+        logplot(m=ens_czs_az45_flux_weights_map,
+                title='Finely Interpolated %s Flux '%flavtex
+                      +r'(slice at $\phi_{Az}=45^{\circ}$)',
+                ax=axes,
+                clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,
+                medlabels=True)
+
+        fig.savefig(
+            os.path.join(
+                outdir,
+                '%s_az45_%s2dinterpolation.png'%(SaveName,flav)
+            )
+        )
+
+        ens_czm015_azs_flux_weights = calculate_3D_flux_weights(
+            all_ens_azs_mg.flatten(),
+            cz_slice.flatten(),
+            all_azs_ens_mg.flatten(),
+            spline_dict[flav],
+            enpow=enpow
+        )
+
+        ens_czm015_azs_flux_weights = np.array(
+            np.split(
+                ens_czm015_azs_flux_weights,
+                len(all_azs)
+            )
+        )
+        ens_czm015_azs_flux_weights_map = {}
+        ens_czm015_azs_flux_weights_map['map'] = ens_czm015_azs_flux_weights.T
+        ens_czm015_azs_flux_weights_map['ebins'] = all_ens_bins
+        ens_czm015_azs_flux_weights_map['azbins'] = all_azs_bins
+        
+        gridspec_kw = dict(left=0.15, right=0.90, wspace=0.32)
+        fig, axes = plt.subplots(nrows=1, ncols=1, gridspec_kw=gridspec_kw,
+                                 sharex=False, sharey=False, figsize=(12,10))
+
+        logplot(m=ens_czm015_azs_flux_weights_map,
+                title='Finely Interpolated %s Flux '%flavtex
+                      +r'(slice at $\cos\theta_Z=-0.15$)',
+                ax=axes,
+                clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,
+                medlabels=True)
+
+        fig.savefig(
+            os.path.join(
+                outdir,
+                '%s_cz-0.15_%s2dinterpolation.png'%(SaveName,flav)
+            )
+        )
+
+        en5_czs_azs_flux_weights = calculate_3D_flux_weights(
+            en_slice.flatten(),
+            all_czs_azs_mg.flatten(),
+            all_azs_czs_mg.flatten(),
+            spline_dict[flav],
+            enpow=enpow
+        )
+
+        en5_czs_azs_flux_weights = np.array(
+            np.split(
+                en5_czs_azs_flux_weights,
+                len(all_azs)
+            )
+        )
+        en5_czs_azs_flux_weights_map = {}
+        en5_czs_azs_flux_weights_map['map'] = en5_czs_azs_flux_weights
+        en5_czs_azs_flux_weights_map['czbins'] = all_czs_bins
+        en5_czs_azs_flux_weights_map['azbins'] = all_azs_bins
+        
+        gridspec_kw = dict(left=0.15, right=0.90, wspace=0.32)
+        fig, axes = plt.subplots(nrows=1, ncols=1, gridspec_kw=gridspec_kw,
+                                 sharex=False, sharey=False, figsize=(12,10))
+
+        logplot(m=en5_czs_azs_flux_weights_map,
+                title='Finely Interpolated %s Flux '%flavtex
+                      +r'(slice at $E_{\nu}=5.0119$ GeV)',
+                ax=axes,
+                clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,
+                medlabels=True,
+                logz=False)
+
+        fig.savefig(
+            os.path.join(
+                outdir,
+                '%s_en5_%s2dinterpolation.png'%(SaveName,flav)
+            )
+        )
+        
+
+        if ip_checks:
+
+            downsampled_flux_map = {}
+            downsampled_flux_map['map'] = take_average(
+                ens_czs_az45_flux_weights.T, oversample
+            )
+            downsampled_flux_map['ebins'] = np.logspace(-1.025,4.025,102)
+            downsampled_flux_map['czbins'] = np.linspace(-1.0,1.0,21)
+
+            honda_tables = {}
+            honda_tables['map'] = flux_dict[flav].T
+            honda_tables['ebins'] = np.logspace(-1.025,4.025,102)
+            honda_tables['czbins'] = np.linspace(-1.0,1.0,21)
+
+            diff_map = {}
+            diff_map['map'] = honda_tables['map']-downsampled_flux_map['map']
+            diff_map['ebins'] = np.logspace(-1.025,4.025,102)
+            diff_map['czbins'] = np.linspace(-1.0,1.0,21)
+
+            diff_ratio_map = {}
+            diff_ratio_map['map'] = diff_map['map'] / honda_tables['map']
+            diff_ratio_map['ebins'] = np.logspace(-1.025,4.025,102)
+            diff_ratio_map['czbins'] = np.linspace(-1.0,1.0,21)
+                
+            gridspec_kw = dict(left=0.03, right=0.968, wspace=0.32)
+            fig, axes = plt.subplots(nrows=1, ncols=5,
+                                     gridspec_kw=gridspec_kw,
+                                     sharex=False, sharey=False,
+                                     figsize=(20,5))
+
+            logplot(m=ens_czs_az45_flux_weights_map,
+                    title='Oversampled by %i'%oversample,
+                    ax=axes[0],
+                    clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
+            logplot(m=downsampled_flux_map,
+                    title='Downsampled to Honda Binning',
+                    ax=axes[1],
+                    clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
+            logplot(m=honda_tables,
+                    title='Honda Tables',
+                    ax=axes[2],
+                    clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
+            logplot(m=diff_map,
+                    title='Difference',
+                    ax=axes[3],
+                    clabel=None,
+                    logz=False)
+            logplot(m=diff_ratio_map,
+                    title='Percentage Difference',
+                    ax=axes[4],
+                    clabel=None,
+                    logz=False)
+
+            plt.suptitle(
+                r'Integral Preserving Tests for %s %s Flux Tables '
+                +'(slice at $\phi_{Az}=45^{\circ}$'
+                %(flavtex,TitleFileName), fontsize=36
+            )
+            plt.subplots_adjust(top=0.8)
+            fig.savefig(
+                os.path.join(
+                    outdir,
+                    '%s_az45_%siptest_fullrange.png'%(SaveName,flav)
+                )
+            )
+            plt.close(fig.number)
         
 
 if __name__ == '__main__':
@@ -1358,6 +1599,18 @@ if __name__ == '__main__':
                 enpow = args.enpow
             )
 
+        if args.twodim_checks:
+            do_2D_3D_honda_test(
+                spline_dict = spline_dict_3D,
+                flux_dict = flux_dict_3D,
+                outdir = args.outdir,
+                ip_checks = args.ip_checks,
+                oversample = args.oversample,
+                SaveName = SaveName,
+                TitleFileName = TitleFileName,
+                enpow = args.enpow
+            )
+            
     if args.comparisons:
 
         logging.warning('Comparisons will be of Honda 2015 SNO and '
