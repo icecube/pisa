@@ -810,7 +810,7 @@ def do_2D_2D_comparisons(honda_spline_dict, bartol_spline_dict,
 
 
 def do_1D_3D_honda_test(spline_dict, flux_dict, LegendFileName,
-                        SaveName, outdir, enpow=1, az_linear=True):
+                        SaveName, outdir, enpow=1):
 
     czs = np.linspace(-1,1,81)
     low_ens = 5.0119*np.ones_like(czs)
@@ -1239,7 +1239,7 @@ def do_1D_3D_honda_test(spline_dict, flux_dict, LegendFileName,
             )
 
 
-def do_2D_3D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
+def do_2D_3D_honda_test(spline_dict, flux_dict, outdir,
                         oversample, SaveName, TitleFileName, enpow=1):
 
     all_ens_bins = np.logspace(-1.025,4.025,101*oversample+1)
@@ -1381,17 +1381,96 @@ def do_2D_3D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
         )
         
 
-        if ip_checks:
+def do_ip_3D_honda_test(spline_dict, flux_dict, outdir, oversample,
+                        SaveName, TitleFileName, enpow=1, az_linear=True):
+
+    all_ens_bins = np.logspace(-1.025,4.025,101*oversample+1)
+    all_log_ens_bins = np.linspace(-1.025,4.025,101*oversample+1)
+    log_en_bin_width = all_log_ens_bins[1] - all_log_ens_bins[0]
+    all_ens = np.logspace(all_log_ens_bins[0] + log_en_bin_width/2.0,
+                          all_log_ens_bins[-1] - log_en_bin_width/2.0,
+                          101*oversample)
+    all_czs_bins = np.linspace(-1.0,1.0,20*oversample+1)
+    cz_bin_width = all_czs_bins[1] - all_czs_bins[0]
+    all_czs = np.linspace(all_czs_bins[0] + cz_bin_width/2.0,
+                          all_czs_bins[-1] - cz_bin_width/2.0,
+                          20*oversample)
+
+    base_az_bins = np.linspace(0.0,360.0,13)*np.pi/180.0
+    all_azs_bins = []
+    all_azs = []
+    for i in range(0,len(base_az_bins)-1):
+        azs_bins = np.linspace(base_az_bins[i],
+                               base_az_bins[i+1],
+                               oversample+1)
+        az_bin_width = azs_bins[1] - azs_bins[0]
+        azs = np.linspace(azs_bins[0] + az_bin_width/2.0,
+                          azs_bins[-1] - az_bin_width/2.0,
+                          oversample)
+
+        all_azs_bins.append(azs_bins)
+        all_azs.append(np.array(azs))
+
+    base_az_bins = np.linspace(0.0,360.0,13)
+
+    all_azs = np.array(all_azs)
+    
+    for flav, flavtex in zip(primaries, texprimaries):
+
+        for i, azs in enumerate(all_azs):
+
+            all_ens_mg, all_czs_mg, azs_mg = np.meshgrid(all_ens,
+                                                         all_czs,
+                                                         azs)
+
+            all_flux_weights = calculate_3D_flux_weights(
+                all_ens_mg.flatten(),
+                all_czs_mg.flatten(),
+                azs_mg.flatten(),
+                spline_dict[flav],
+                enpow=enpow,
+                az_linear=az_linear
+            )
+
+            all_flux_weights = np.array(
+                np.split(
+                    np.array(
+                        np.split(
+                            all_flux_weights,
+                            len(azs)
+                        )
+                    ).T,
+                    len(all_czs)
+                )
+            )
+
+            all_flux_weights = np.mean(all_flux_weights, axis=-1)
+            
+            all_flux_weights_map = {}
+            all_flux_weights_map['map'] = all_flux_weights.T
+            all_flux_weights_map['ebins'] = all_ens_bins
+            all_flux_weights_map['czbins'] = all_czs_bins
+            
+            gridspec_kw = dict(left=0.15, right=0.90, wspace=0.32)
+            fig, axes = plt.subplots(nrows=1, ncols=1, gridspec_kw=gridspec_kw,
+                                     sharex=False, sharey=False,
+                                     figsize=(12,10))
+
+            logplot(m=all_flux_weights_map,
+                    title='Finely Interpolated %s Flux'%flavtex,
+                    ax=axes,
+                    clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,
+                    largelabels=True)
 
             downsampled_flux_map = {}
             downsampled_flux_map['map'] = take_average(
-                ens_czs_az45_flux_weights.T, oversample
+                all_flux_weights.T, oversample
             )
             downsampled_flux_map['ebins'] = np.logspace(-1.025,4.025,102)
             downsampled_flux_map['czbins'] = np.linspace(-1.0,1.0,21)
 
             honda_tables = {}
-            honda_tables['map'] = flux_dict[flav].T
+            honda_tables['map'] = flux_dict[flav][i].T[::-1].T
             honda_tables['ebins'] = np.logspace(-1.025,4.025,102)
             honda_tables['czbins'] = np.linspace(-1.0,1.0,21)
 
@@ -1411,7 +1490,7 @@ def do_2D_3D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
                                      sharex=False, sharey=False,
                                      figsize=(20,5))
 
-            logplot(m=ens_czs_az45_flux_weights_map,
+            logplot(m=all_flux_weights_map,
                     title='Oversampled by %i'%oversample,
                     ax=axes[0],
                     clabel=r'%s Flux $\left([m^2\,s\,sr\,GeV]^{-1}\right)$'%flavtex,)
@@ -1435,18 +1514,19 @@ def do_2D_3D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
                     logz=False)
 
             plt.suptitle(
-                r'Integral Preserving Tests for %s %s Flux Tables '
-                +'(slice at $\phi_{Az}=45^{\circ}$'
-                %(flavtex,TitleFileName), fontsize=36
+                'Integral Preserving Tests for %s %s 3D Flux Tables '
+                %(flavtex,TitleFileName)
+                +r'($%i^{\circ}\leq\phi_{Az}\leq%i^{\circ}$)'
+                %(base_az_bins[i],base_az_bins[i+1]), fontsize=30
             )
             plt.subplots_adjust(top=0.8)
             fig.savefig(
                 os.path.join(
                     outdir,
-                    '%s_az45_%siptest_fullrange.png'%(SaveName,flav)
+                    '%s_azbin_%i_%siptest_fullrange.png'%(SaveName,i,flav)
                 )
             )
-            plt.close(fig.number)
+            plt.close("all")
         
 
 if __name__ == '__main__':
@@ -1477,6 +1557,10 @@ if __name__ == '__main__':
     parser.add_argument('--enpow', type=int, default=1,
                         help='''Power of energy to use in making the energy
                         splines i.e. flux * (energy**enpow).''')
+    parser.add_argument('--ip_az', action='store_true',
+                        help='''Perform the interpolation in the azimuthal
+                        dimension with the integral-preserving algorithm. 
+                        NOTE - THIS IS NOT RECOMMENDED.''')
     parser.add_argument('--outdir', metavar='DIR', type=str, required=True,
                         help='''Store all output plots to this directory.''')
 
@@ -1604,11 +1688,23 @@ if __name__ == '__main__':
                 spline_dict = spline_dict_3D,
                 flux_dict = flux_dict_3D,
                 outdir = args.outdir,
-                ip_checks = args.ip_checks,
                 oversample = args.oversample,
                 SaveName = SaveName,
                 TitleFileName = TitleFileName,
                 enpow = args.enpow
+            )
+
+        if args.ip_checks:
+            do_ip_3D_honda_test(
+                spline_dict = spline_dict_3D,
+                flux_dict = flux_dict_3D,
+                outdir = args.outdir,
+                oversample = args.oversample,
+                SaveName = SaveName,
+                TitleFileName = TitleFileName,
+                enpow = args.enpow,
+                az_linear = not args.ip_az
+                
             )
             
     if args.comparisons:
