@@ -1410,9 +1410,13 @@ def do_ip_3D_honda_test(spline_dict, flux_dict, outdir, oversample, SaveName,
                           20*oversample)
 
     base_az_bins = np.linspace(0.0,360.0,13)*np.pi/180.0
-    all_azs_bins = []
-    all_azs = []
+
+    logging.info('Doing ip verification of %s 3D Honda tables'%flav)
+    
     for i in range(0,len(base_az_bins)-1):
+
+        logging.info('Doing azimuth bin %i'%i)
+        
         azs_bins = np.linspace(base_az_bins[i],
                                base_az_bins[i+1],
                                oversample+1)
@@ -1420,19 +1424,6 @@ def do_ip_3D_honda_test(spline_dict, flux_dict, outdir, oversample, SaveName,
         azs = np.linspace(azs_bins[0] + az_bin_width/2.0,
                           azs_bins[-1] - az_bin_width/2.0,
                           oversample)
-
-        all_azs_bins.append(azs_bins)
-        all_azs.append(np.array(azs))
-
-    base_az_bins = np.linspace(0.0,360.0,13)
-
-    all_azs = np.array(all_azs)
-
-    logging.info('Doing ip verification of %s 3D Honda tables'%flav)
-
-    for i, azs in enumerate(all_azs):
-
-        logging.info('Doing azimuth bin %i'%i)
 
         all_ens_mg, all_czs_mg, azs_mg = np.meshgrid(all_ens,
                                                      all_czs,
