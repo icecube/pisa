@@ -195,6 +195,7 @@ class icc(Stage):
                     )
         else:
             self.icc_bg_hist,_ = np.histogramdd(sample = np.array([cut_events[bin_name] for bin_name in self.bin_names]).T, bins=self.bin_edges)
+	    self.icc_bg_hist = self.icc_bg_hist.astype(FTYPE)
         if alt_icc_bg_file is not None:
             if self.params.kde_hist.value:
 		self.alt_icc_bg_hist = self.kde_histogramdd(
@@ -210,6 +211,7 @@ class icc(Stage):
                         )
             else:
                 self.alt_icc_bg_hist,_ = np.histogramdd(sample = np.array([alt_cut_events[bin_name] for bin_name in self.bin_names]).T, bins=self.bin_edges)
+	        self.alt_icc_bg_hist = self.alt_icc_bg_hist.astype(FTYPE)
             # only interested in shape difference, not rate
             scale = self.icc_bg_hist.sum()/self.alt_icc_bg_hist.sum()
             self.alt_icc_bg_hist *= scale
