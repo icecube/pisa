@@ -290,7 +290,7 @@ def main():
                 # Reset everything
                 init_args_d['h0_name'] = nominal_h0_name
                 init_args_d['h1_name'] = nominal_h1_name
-                param.value = nominal_param_value
+                param.value = nominal_value
                 param.is_fixed = False
             # Or just to the baseline
             else:
