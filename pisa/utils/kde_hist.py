@@ -235,6 +235,7 @@ if __name__ == '__main__':
     from pisa.utils.plotter import Plotter
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
     from pisa.utils.log import logging, set_verbosity
+    from pisa import ureg
 
     parser = ArgumentParser()
     parser.add_argument('-v', action='count', default=None,
@@ -248,7 +249,7 @@ if __name__ == '__main__':
     b1 = OneDimBinning(name='coszen', num_bins=100, is_lin=True,
                        domain=[-1, 1], tex= r'$\cos(\theta)$')
     b2 = OneDimBinning(name='energy', num_bins=10, is_log=True,
-                       domain=[0.1, 10], tex=r'$E$')
+                       domain=[0.1, 10]*ureg.GeV, tex=r'$E$')
     binning = MultiDimBinning([b2, b1])
     x = np.random.normal(1, 1, (2, 1000))
     x = np.array([np.abs(x[0])-1, x[1]])
@@ -260,7 +261,7 @@ if __name__ == '__main__':
     raw_hist, e = np.histogramdd(x.T, bins=bins)
 
     hist = kde_histogramdd(x.T, binning, bw_method='silverman',
-                           coszen_name='coszen', oversample=10)
+                           coszen_name='coszen', oversample=10, stack_pid=False)
     #hist = hist/np.sum(hist)*np.sum(raw_hist)
     m1 = Map(name='KDE', hist=hist, binning=binning)
     m2 = Map(name='raw', hist=raw_hist, binning=binning)

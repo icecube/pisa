@@ -732,7 +732,7 @@ class BinnedTensorTransform(Transform):
     # given the (concatenated) input dimension and the dimension of the
     # transform kernel
 
-    @line_profile
+    @profile
     def _apply(self, inputs):
         """Apply transforms to input maps to compute output maps.
 

@@ -1089,9 +1089,6 @@ class Map(object):
             raise ValueError('`metric` "%s" not recognized; use one of %s.'
                              %(metric, VALID_METRICS))
 
-    def metric_per_map(self, expected_values, metric):
-        return self.metric_total(expected_values, metric)
-
     def __setitem__(self, idx, val):
         return setitem(self.hist, idx, val)
 
@@ -1465,12 +1462,18 @@ class MapSet(object):
     __state_attrs = ('name', 'maps', 'tex', 'hash', 'collate_by_name')
     def __init__(self, maps, name=None, tex=None, hash=None,
                  collate_by_name=True):
+        if isinstance(maps, Map):
+            maps = [maps]
+
         maps_ = []
         for m in maps:
             if isinstance(m, Map):
                 maps_.append(m)
+            elif isinstance(m, MapSet):
+                maps_.extend(m)
             else:
                 maps_.append(Map(**m))
+
         # TODO: handle automatically assigning tex names when it's unassigned
         # in other code, such as in plotting code
         tex = (r'{\rm %s}' %name).replace('_', r'\_') if tex is None else tex

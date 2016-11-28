@@ -494,6 +494,8 @@ def main():
             my_plotter.plot_2d_array(stage.outputs, fname=stg_svc+'__output',
                                      cmap='OrRd')
 
+    return pipeline, outputs
+
 
 if __name__ == '__main__':
-    main()
+    pipeline, outputs = main()

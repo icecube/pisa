@@ -10,6 +10,7 @@ from itertools import product
 import sys
 
 from pisa import ureg
+from pisa.core.map import MapSet
 from pisa.core.pipeline import Pipeline
 from pisa.core.param import ParamSet
 from pisa.utils.betterConfigParser import BetterConfigParser
@@ -69,9 +70,31 @@ class DistributionMaker(object):
         return iter(self._pipelines)
 
     def get_outputs(self, return_sum=False, **kwargs):
+        """Compute and return the outputs.
+
+        Parameters
+        ----------
+        return_sum : bool
+            If True, add up all Maps in all MapSets returned by all pipelines.
+            The result will be a single Map contained in a MapSet.
+            If False, return a list where each element is the full MapSet
+            returned by each pipeline in the DistributionMaker.
+
+        **kwargs
+            Passed on to each pipeline's `get_outputs1` method.
+
+        Returns
+        -------
+        MapSet if `return_sum=True` or list of MapSets if `return_sum=False`
+
+        """
         outputs = [pipeline.get_outputs(**kwargs) for pipeline in self]
         if return_sum:
-            outputs = reduce(lambda x,y: sum(x) + sum(y), outputs)
+            if len(outputs) > 1:
+                outputs = reduce(lambda x,y: sum(x) + sum(y), outputs)
+            else:
+                outputs = sum(sum(outputs))
+            outputs = MapSet(outputs)
         return outputs
 
     def update_params(self, params):
@@ -260,7 +283,7 @@ def main():
     set_verbosity(args.v)
 
     distribution_maker = DistributionMaker(pipelines=args.pipeline)
-    outputs = distribution_maker.get_outputs()
+    outputs = distribution_maker.get_outputs(return_sum=True)
     if args.outdir:
         # TODO: unique filename: append hash (or hash per pipeline config)
         fname = 'distribution_maker_outputs.json.bz2'
@@ -274,7 +297,8 @@ def main():
         )
         my_plotter.ratio = True
         my_plotter.plot_2d_array(outputs, fname='dist_output', cmap='OrRd')
+    return distribution_maker, outputs
 
 
 if __name__ == '__main__':
-    main()
+    distribution_maker, outputs = main()
