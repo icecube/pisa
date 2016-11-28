@@ -133,7 +133,7 @@ def parse_args():
         '--fix_wrong',
         action='store_true',
         help='''When the systematic is fixed, fix it to some systematically 
-        wrong value. This will be either +/- 1 sigma or +/- 10% if such a 
+        wrong value. This will be either +/- 1 sigma or +/- 10%% if such a 
         definition is impossible.'''
     )
     parser.add_argument(
