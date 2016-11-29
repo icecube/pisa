@@ -74,16 +74,6 @@ def parse_args():
         hypothesis.'''
     )
     parser.add_argument(
-        '--h1-pipeline',
-        type=str, action='append', default=None, metavar='PIPELINE_CFG',
-        help='''Settings for the generation of hypothesis h1 distributions;
-        repeat this argument to specify multiple pipelines. If omitted, the
-        same settings as specified for --h0-pipeline are used to generate
-        hypothesis h1 distributions (and so you have to use the
-        --h1-param-selections argument to generate a hypotheses distinct
-        from hypothesis h0 but still use h0's distribution maker).'''
-    )
-    parser.add_argument(
         '--h1-param-selections',
         type=str, default=None, metavar='PARAM_SELECTOR_LIST',
         help='''Comma-separated (no spaces) list of param selectors to apply to
@@ -224,7 +214,9 @@ def main():
     init_args_d['fluctuate_fid'] = False
 
     init_args_d['h0_maker'] = DistributionMaker(init_args_d['h0_maker'])
-    init_args_d['h1_maker'] = DistributionMaker(init_args_d['h1_maker'])
+    init_args_d['h1_maker'] = init_args_d['h0_maker'].select_params(
+        init_args_d['h1_param_selections']
+    )
 
     fix_wrong = init_args_d.pop('fix_wrong')
 
@@ -260,7 +252,9 @@ def main():
                 # Fix it in both makers
                 for alt_param in init_args_d['h1_maker'].params:
                     if alt_param.name == param.name:
+                        alt_nominal_value = alt_param.value
                         alt_param.is_fixed = True
+                        alt_param = param.value
                 # Instantiate the analysis object
                 hypo_testing = HypoTesting(**init_args_d)
                 # Run the analysis
@@ -273,6 +267,7 @@ def main():
                 param.is_fixed = False
                 for alt_param in init_args_d['h1_maker'].params:
                     if alt_param.name == param.name:
+                        alt_param.value = alt_nominal_value
                         alt_param.is_fixed = False
 
                 if hasattr(param, 'prior'):
@@ -293,7 +288,9 @@ def main():
                 # Fix it in both makers
                 for alt_param in init_args_d['h1_maker'].params:
                     if alt_param.name == param.name:
+                        alt_nominal_value = alt_param.value
                         alt_param.is_fixed = True
+                        alt_param = param.value
                 # Instantiate the analysis object
                 hypo_testing = HypoTesting(**init_args_d)
                 # Run the analysis
@@ -306,6 +303,7 @@ def main():
                 param.is_fixed = False
                 for alt_param in init_args_d['h1_maker'].params:
                     if alt_param.name == param.name:
+                        alt_param.value = alt_nominal_value
                         alt_param.is_fixed = False
                 
             # Or just to the baseline
@@ -320,7 +318,9 @@ def main():
                 # Fix it in both makers
                 for alt_param in init_args_d['h1_maker'].params:
                     if alt_param.name == param.name:
+                        alt_nominal_value = alt_param.value
                         alt_param.is_fixed = True
+                        alt_param = param.value
                 # Instantiate the analysis object
                 hypo_testing = HypoTesting(**init_args_d)
                 # Run the analysis
@@ -332,8 +332,8 @@ def main():
                 param.is_fixed = False
                 for alt_param in init_args_d['h1_maker'].params:
                     if alt_param.name == param.name:
+                        alt_param.value = alt_nominal_value
                         alt_param.is_fixed = False
-                
 
 
 if __name__ == '__main__':
