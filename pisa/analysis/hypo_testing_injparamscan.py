@@ -257,16 +257,30 @@ def main():
             if param.name == test_name:
                 if hasattr(param, 'range'):
                     if param.range is not None:
-                        param.range = (rangemin * param.units,
-                                       rangemax * param.units)
+                        if param_name=='sin2theta23' and param.units=='degree':
+                            param.range = (rangemin * 180/np.pi * param.units,
+                                           rangemax * 180/np.pi * param.units)
+                            inj_val *= 180/np.pi
+                        else:
+                            param.range = (rangemin * param.units,
+                                           rangemax * param.units)
                 param.value = inj_val * param.units
 
                 for alt_param in init_args_d['h1_maker'].params:
                     if alt_param.name == test_name:
                         if hasattr(alt_param, 'range'):
                             if alt_param.range is not None:
-                                alt_param.range = (rangemin * alt_param.units,
-                                                   rangemax * alt_param.units)
+                                if param_name=='sin2theta23' \
+                                   and alt_param.units=='degree':
+                                    alt_param.range = (rangemin * 180/np.pi \
+                                                   * alt_param.units,
+                                                   rangemax * 180/np.pi \
+                                                   * alt_param.units)
+                                else:
+                                    alt_param.range = (rangemin \
+                                                       * alt_param.units,
+                                                       rangemax \
+                                                       * alt_param.units)
                                 alt_param.value = inj_val * alt_param.units
                         
 
