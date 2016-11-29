@@ -77,16 +77,6 @@ def parse_args():
         hypothesis.'''
     )
     parser.add_argument(
-        '--h1-pipeline',
-        type=str, action='append', default=None, metavar='PIPELINE_CFG',
-        help='''Settings for the generation of hypothesis h1 distributions;
-        repeat this argument to specify multiple pipelines. If omitted, the
-        same settings as specified for --h0-pipeline are used to generate
-        hypothesis h1 distributions (and so you have to use the
-        --h1-param-selections argument to generate a hypotheses distinct
-        from hypothesis h0 but still use h0's distribution maker).'''
-    )
-    parser.add_argument(
         '--h1-param-selections',
         type=str, default=None, metavar='PARAM_SELECTOR_LIST',
         help='''Comma-separated (no spaces) list of param selectors to apply to
@@ -236,6 +226,8 @@ def main():
     init_args_d['fluctuate_fid'] = False
 
     init_args_d['h0_maker'] = DistributionMaker(init_args_d['h0_maker'])
+    init_args_d['h1_maker'] = DistributionMaker(init_args_d['h0_maker'])
+    init_args_d['h1_maker'].select_params(init_args_d['h1_param_selections'])
 
     param_name = init_args_d.pop('param_name')
     inj_vals = eval(init_args_d.pop('inj_vals'))
@@ -263,14 +255,20 @@ def main():
     for inj_val, requested_val in zip(inj_vals, requested_vals):
         for param in init_args_d['h0_maker'].params:
             if param.name == test_name:
-                print param
                 if hasattr(param, 'range'):
                     if param.range is not None:
                         param.range = (rangemin * param.units,
                                        rangemax * param.units)
-                print param.range
                 param.value = inj_val * param.units
-                print param.value
+
+                for alt_param in init_args_d['h1_maker'].params:
+                    if alt_param.name == test_name:
+                        if hasattr(alt_param, 'range'):
+                            if alt_param.range is not None:
+                                alt_param.range = (rangemin * alt_param.units,
+                                                   rangemax * alt_param.units)
+                                alt_param.value = inj_val * alt_param.units
+                        
 
         nominal_h0_name = init_args_d['h0_name']
         nominal_h1_name = init_args_d['h1_name']
