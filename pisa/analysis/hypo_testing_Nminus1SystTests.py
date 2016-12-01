@@ -217,7 +217,7 @@ def main():
     init_args_d['h1_maker'] = DistributionMaker(init_args_d['h0_maker'])
     init_args_d['h1_maker'].select_params(init_args_d['h1_param_selections'])
     init_args_d['data_maker'] = DistributionMaker(init_args_d['h0_maker'])
-    if 'data_param_selections' not in init_args_d.keys():
+    if init_args_d['data_param_selections'] is None:
         init_args_d['data_param_selections'] = \
             init_args_d['h0_param_selections']
     else:
