@@ -2,8 +2,8 @@
 # author: S.Wren
 # date:   October 18, 2016
 """
-Creates splines to the NuFit delta-chi2 surfaces for theta23 and puts them in
-to a format that can be read by PISA to use as a prior on this parameter.
+Create splines to the NuFit delta-chi2 surfaces for theta23 and output them in
+a format that can be read by PISA to use as a prior on this parameter.
 """
 
 
@@ -18,7 +18,7 @@ import scipy.interpolate
 from pisa.utils.fileio import to_file
 
 
-__all__ = ['extract_vals', 'make_prior_dict']
+__all__ = ['extract_vals', 'make_prior_dict', 'main']
 
 
 def extract_vals(infile, string_of_interest):
@@ -74,7 +74,8 @@ def make_prior_dict(f_io=None, f_no=None, f=None):
 
 
 def main():
-    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
+    parser = ArgumentParser(description=__doc__,
+                            formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument('-io','--io_chi2_file',type=str,required=True,
                         help="Inverted Ordering Chi2 file from NuFit")
     parser.add_argument('-no','--no_chi2_file',type=str,required=True,
@@ -179,6 +180,8 @@ def main():
         to_file(minimisedprior,
                 os.path.join(args.outdir,
                              'nufit%sminimisedtheta23spline.json'%NuFitVersion))
+
+main.__doc__ = __doc__
 
 
 if __name__ == '__main__':

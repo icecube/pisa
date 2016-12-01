@@ -9,8 +9,8 @@ file (fit settings).
 n-dimensional MapSets are supported to be fitted with m-dimesnional
 polynomials, that can either be forced to go through the nominal data point or
 not
-
 """
+
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import copy
@@ -36,7 +36,7 @@ __all__ = ['parse_args', 'main']
 
 
 def parse_args():
-    parser = ArgumentParser(description=__doc__)
+    parser = ArgumentParser(description=main.__doc__)
     parser.add_argument(
         '-t', '--template-settings', type=str,
         metavar='configfile', required=True,
@@ -250,9 +250,6 @@ def main():
                 fname='%s_%s_%s_%s'%(sys, args.tag, d, smooth),
                 split_axis='pid', cmap='RdBu'
             )
-
-
-main.__doc__ = __doc__
 
 
 if __name__ == '__main__':

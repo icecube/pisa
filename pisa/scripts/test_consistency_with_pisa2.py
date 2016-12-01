@@ -2,10 +2,18 @@
 # author: S.Wren
 # date:   March 20, 2016
 """
-Runs the pipeline multiple times to test everything still agrees with PISA 2.
-Test data for comparing against should be in the tests/data directory.
-A set of plots will be output in your output directory for you to check.
-Agreement is expected to order 10^{-14} in the far right plots.
+Run a set of tests on the PISA pipeline against benchmark PISA 2 data. If no
+test flags are specified, *all* tests will be run.
+
+This script should always be run when you make any major modifications (and
+prior to submitting a pull request) to be sure nothing has broken.
+
+If you find this script does not work, please either fix it or report it! In
+general, this will signify you have "changed" something, somehow in the basic
+functionality which you should understand!
+
+If an output directory is specified, a set of plots will be output for you to
+visually inspect.
 """
 
 
@@ -26,9 +34,11 @@ from pisa.utils.config_parser import parse_pipeline_config
 from pisa.utils.tests import has_cuda, check_agreement, plot_comparisons
 
 
-__all__ = ['compare_flux', 'compare_osc', 'compare_aeff', 'compare_reco',
+__all__ = ['PID_FAIL_MESSAGE', 'PID_PASS_MESSAGE',
+           'compare_flux', 'compare_osc', 'compare_aeff', 'compare_reco',
            'compare_pid', 'compare_flux_full', 'compare_osc_full',
-           'compare_aeff_full', 'compare_reco_full', 'compare_pid_full']
+           'compare_aeff_full', 'compare_reco_full', 'compare_pid_full',
+           'parse_args', 'main']
 
 
 PID_FAIL_MESSAGE = (
@@ -802,7 +812,7 @@ def compare_pid_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
     )
 
 
-def main():
+def parse_args():
     if FTYPE == np.float32:
         dflt_ratio_threshold = 5e-4
     elif FTYPE == np.float64:
@@ -810,18 +820,7 @@ def main():
     else:
         raise ValueError('FTYPE=%s from const.py not handled' % FTYPE)
 
-    parser = ArgumentParser(
-        description='''Run a set of tests on the PISA pipeline against
-        benchmark PISA 2 data. If no test flags are specified, *all* tests will
-        be run.
-
-        This script should always be run when you make any major modifications
-        to be sure nothing has broken.
-
-        If you find this script does not work, please either fix it or report
-        it! In general, this will signify you have "changed" something, somehow
-        in the basic functionality which you should understand!'''
-    )
+    parser = ArgumentParser(description=__doc__)
     parser.add_argument('--flux', action='store_true',
                         help='''Run flux tests i.e. the interpolation methods
                         and the flux systematics.''')
@@ -847,8 +846,8 @@ def main():
     parser.add_argument('--outdir', metavar='DIR', type=str,
                         help='''Store all output plots to this directory. If
                         they don't exist, the script will make them, including
-                        all subdirectories. If none is supplied no plots will
-                        be saved.''')
+                        all subdirectories. If --outdir is not supplied, no
+                        plots will be saved.''')
     parser.add_argument('--ratio_threshold', type=float,
                         default=dflt_ratio_threshold,
                         help='''Sets the agreement threshold on the ratio test
@@ -864,6 +863,11 @@ def main():
     parser.add_argument('-v', action='count', default=None,
                         help='set verbosity level')
     args = parser.parse_args()
+    return args
+
+
+def main():
+    args = parse_args()
     set_verbosity(args.v)
 
     # Figure out which tests to do

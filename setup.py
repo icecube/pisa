@@ -283,19 +283,25 @@ if __name__ == '__main__':
         zip_safe=False,
         entry_points={
             'console_scripts': [
+                # Scripts in analysis dir
                 'hypo_testing.py = pisa.analysis.hypo_testing:main',
                 'hypo_testing_postprocess.py = pisa.analysis.hypo_testing_postprocess:main',
                 'profile_llh_analysis.py = pisa.analysis.profile_llh_analysis:main',
                 'profile_llh_postprocess.py = pisa.analysis.profile_llh_postprocess:main',
+
+                # Scripts in core dir
                 'distribution_maker.py = pisa.core.distribution_maker:main',
                 'pipeline.py = pisa.core.pipeline:main',
+
+                # Scripts in scripts dir
                 'add_flux_to_events_file.py = pisa.scripts.add_flux_to_events_file:main',
                 'compare.py = pisa.scripts.compare:main',
                 'fit_discrete_sys.py = pisa.scripts.fit_discrete_sys:main',
+                'make_akhmedov_plots.py = pisa.scripts.make_akhmedov_plots:main',
                 'make_events_file.py = pisa.scripts.make_events_file:main',
                 'make_nufit_theta23_spline_priors.py = pisa.scripts.make_nufit_theta23_spline_priors:main',
-                'test_consistency_with_pisa2.py = pisa.scripts.test_consistency_with_pisa2:main',
                 'test_consistency_with_osfit.py = pisa.scripts.test_consistency_with_oscfit:main',
+                'test_consistency_with_pisa2.py = pisa.scripts.test_consistency_with_pisa2:main',
                 'test_example_pipelines.py = pisa.scripts.test_example_pipelines:main'
             ]
         }

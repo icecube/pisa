@@ -5,9 +5,11 @@
 #
 # date:   October 24, 2015
 """
-Generate a PISA-standard-format events HDF5 file from HDF5 file(s) generated
-from I3 files by the icecube.hdfwriter.I3HDFTableService
+Take simulated (and reconstructed) HDF5 file(s) (as converted from I3 by
+icecube.hdfwriter.I3HDFTableService) as input and writes out a simplified HDF5
+file for use with PISA.
 """
+
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
@@ -28,7 +30,23 @@ from pisa.utils.mcSimRunSettings import DetMCSimRunsSettings
 from pisa.utils.resources import find_resource
 
 
-__all__ = ['makeEventsFile', 'powerLawIntegral']
+__all__ = ['EXAMPLE', 'CMSQ_TO_MSQ', 'EXTRACT_FIELDS', 'OUTPUT_FIELDS',
+           'powerLawIntegral', 'makeEventsFile',
+           'parse_args', 'main']
+
+
+EXAMPLE = """
+Example command-line usage:
+
+make_events_file.py
+    --det "PINGU"
+    --proc "V5.1"
+    --run 390 ~/data/390/icetray_hdf5/*.hdf5
+    --run 389 ~/data/389/icetray_hdf5/*.hdf5
+    --run 388 ~/data/388/icetray_hdf5/*.hdf5
+    -vv
+    --outdir /tmp/events/
+"""
 
 
 CMSQ_TO_MSQ = 1.0e-4
@@ -505,22 +523,8 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
 
 def parse_args():
     """Get command line arguments"""
-
     parser = ArgumentParser(
-        description='''Takes the simulated (and reconstructed) HDF5 file(s) (as
-        converted from I3 by icecube.hdfwriter.I3HDFTableService) as input and
-        writes out a simplified HDF5 file for use in the aeff and reco stages
-        of the template maker.
-
-        Example:
-            $PISA/pisa/i3utils/make_events_file.py \
-                --det "PINGU" \
-                --proc "V5.1" \
-                --run 390 ~/data/390/source_hdf5/*.hdf5 \
-                --run 389 ~/data/389/source_hdf5/*.hdf5 \
-                --run 388 ~/data/388/source_hdf5/*.hdf5 \
-                -vv \
-                --outdir /tmp/events/''',
+        description=__doc__ + EXAMPLE,
         formatter_class=ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(

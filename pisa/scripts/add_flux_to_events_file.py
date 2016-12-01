@@ -1,7 +1,9 @@
 #! /usr/bin/env python
 """
-Add nominal flux values to PISA style hdf5 files
+Add neutrino fluxes (and neutrino weights(osc*flux*sim_weight) if needed) for
+each event.
 """
+
 
 import os
 import sys
@@ -14,6 +16,9 @@ import pisa.utils.resources as resources
 from pisa.utils.flux_weights import load_2D_table, calculate_flux_weights
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+
+
+__all__ = ['add_fluxes_to_file', 'main']
 
 
 def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name, outdir):
@@ -44,7 +49,7 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name, outdir)
 
 
 def main():
-    parser = ArgumentParser(description='''Add neutrino fluxes (and neutrino weights(osc*flux*sim_weight) if needed) for each event. ''')
+    parser = ArgumentParser(description=__doc__)
     parser_file = parser.add_mutually_exclusive_group(required=True)
     parser_file.add_argument( '-f', '--file', metavar='H5_FILE', type=str, help='input HDF5 file')
     parser_file.add_argument( '--flux-file', metavar='FLUX_FILE', type=str, help='input flux file',default='flux/honda-2015-spl-solmin-aa.d')

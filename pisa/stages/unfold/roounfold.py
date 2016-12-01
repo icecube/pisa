@@ -60,11 +60,12 @@ class roounfold(Stage):
             elif 'noise' in name:
                 clean_innames.append(name)
             elif 'all_nu' in name:
-                clean_innames = [str(NuFlavIntGroup(f)) for f in ALL_NUFLAVINTS]
+                clean_innames = [str(NuFlavIntGroup(f))
+                                 for f in ALL_NUFLAVINTS]
             else:
                 clean_innames.append(str(NuFlavIntGroup(name)))
 
-        signal = output_names.replace(' ','').split(',')
+        signal = output_names.replace(' ', '').split(',')
         self._output_nu_group = []
         for name in signal:
             if 'muons' in name or 'noise' in name:
@@ -113,7 +114,8 @@ class roounfold(Stage):
         self.sample_hash = inputs.hash
         self._data = deepcopy(inputs)
 
-        if not self.params['create_response'].value and disk_cache is None:
+        if not self.params['create_response'].value \
+           and self.disk_cache is None:
             raise AssertionError('No disk_cache specified from which to load '
                                  'response object.')
 
@@ -133,7 +135,8 @@ class roounfold(Stage):
 
         background_str = [fig for fig in trans_data
                           if fig != self._output_nu_group]
-        if trans_data.are_muons: background_str.append('muons')
+        if trans_data.are_muons:
+            background_str.append('muons')
 
         signal_data = trans_data[self._output_nu_group]
         background_data = [trans_data[bg] for bg in background_str]
@@ -154,7 +157,8 @@ class roounfold(Stage):
             if self.random_state is None:
                 self.random_state = get_random_state(self.seed)
             all_hist = all_hist.fluctuate('poisson', self.random_state)
-        else: self.random_state = None
+        else:
+            self.random_state = None
         all_hist.set_poisson_errors()
 
         bg_hist = self._histogram(
@@ -193,7 +197,8 @@ class roounfold(Stage):
                 )
                 unfold.SetVerbose(0)
                 idx_chisq = unfold.Chi2(self.sig_t_th1d, 1)
-                if chisq is None: pass
+                if chisq is None:
+                    pass
                 elif idx_chisq > chisq:
                     regularisation = r_idx
                     break
@@ -230,7 +235,8 @@ class roounfold(Stage):
             try:
                 del self.sig_t_th1d
                 del self._response
-            except: pass
+            except:
+                pass
             response, self.sig_t_th1d = self._create_response(
                 signal_data, self.reco_binning, self.true_binning
             )
@@ -252,7 +258,7 @@ class roounfold(Stage):
             cache_params = [self.reco_binning, self.true_binning,
                             self.output_names, self._data.hash]
             this_cache_hash = hash_obj(cache_params)
-            if not this_cache_hash in self.disk_cache:
+            if this_cache_hash not in self.disk_cache:
                 logging.info('Caching response object to disk.')
                 self.disk_cache[this_cache_hash] = response
 
@@ -310,7 +316,7 @@ class roounfold(Stage):
         bin_names = binning.names
         bin_edges = [edges.m for edges in binning.bin_edges]
         for name in bin_names:
-            if not name in events:
+            if name not in events:
                 raise AssertionError('Input events object does not have '
                                      'key {0}'.format(name))
 
@@ -410,7 +416,6 @@ class roounfold(Stage):
     def validate_params(self, params):
         pq = pint.quantity._Quantity
         assert isinstance(params['create_response'].value, bool)
-        assert params['stat_fluctuations'].value is None \
-                or isinstance(params['stat_fluctuations'].value, pq)
+        assert isinstance(params['stat_fluctuations'].value, pq)
         assert isinstance(params['regularisation'].value, pq)
         assert isinstance(params['optimize_reg'].value, bool)

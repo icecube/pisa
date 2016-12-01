@@ -24,7 +24,8 @@ from pisa.utils.profiler import profile
 from pisa.utils.random_numbers import get_random_state
 
 
-__all__ = ['Param', 'ParamSet', 'ParamSelector']
+__all__ = ['Param', 'ParamSet', 'ParamSelector',
+           'test_Param', 'test_ParamSet', 'test_ParamSelector']
 
 
 # TODO: Make property "frozen" or "read_only" so params in param set e.g.

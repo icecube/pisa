@@ -1,25 +1,33 @@
 #! /usr/bin/env python
 # authors: J.Lanfranchi/P.Eller
 # date:   March 20, 2016
+"""
+DistributionMaker class definition and a simple script to generate, save, and
+plot a distribution from pipeline config file(s).
 
+"""
 
-from collections import OrderedDict, Sequence
-import importlib
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from collections import OrderedDict
 import inspect
 from itertools import product
-import sys
+import os
+
+import numpy as np
 
 from pisa import ureg
 from pisa.core.map import MapSet
 from pisa.core.pipeline import Pipeline
 from pisa.core.param import ParamSet
 from pisa.utils.betterConfigParser import BetterConfigParser
+from pisa.utils.fileio import expandPath, to_file
 from pisa.utils.hash import hash_obj
-from pisa.utils.log import logging, set_verbosity
+from pisa.utils.log import set_verbosity
 from pisa.utils.random_numbers import get_random_state
 
 
-__all__ = ['DistributionMaker']
+__all__ = ['DistributionMaker',
+           'test_DistributionMaker', 'parse_args', 'main']
 
 
 class DistributionMaker(object):
@@ -28,7 +36,7 @@ class DistributionMaker(object):
 
     Parameters
     ----------
-    pipelines : Pipeline or convertible thereto, or sequence thereof
+    pipelines : Pipeline or convertible thereto, or iterable thereof
         A new pipline is instantiated with each object passed. Legal objects
         are already-instantiated Pipelines and anything interpret-able by the
         Pipeline init method.
@@ -256,15 +264,12 @@ def test_DistributionMaker():
         current_mat = new_mat
 
 
-def main():
-    from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-    import numpy as np
-    import os
-    from pisa.utils.fileio import expandPath, from_file, to_file
-    from pisa.utils.config_parser import parse_pipeline_config
-    from pisa.utils.plotter import Plotter
-
-    parser = ArgumentParser()
+def parse_args():
+    parser = ArgumentParser(
+        description='''Generate, store, and plot a distribution from pipeline
+        configuration file(s).''',
+        formatter_class=ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument(
         '-p', '--pipeline', type=str, required=True,
         metavar='CONFIGFILE', action='append',
@@ -279,7 +284,12 @@ def main():
         help='Set verbosity level'
     )
     args = parser.parse_args()
+    return args
 
+
+def main():
+    from pisa.utils.plotter import Plotter
+    args = parse_args()
     set_verbosity(args.v)
 
     distribution_maker = DistributionMaker(pipelines=args.pipeline)
@@ -297,6 +307,7 @@ def main():
         )
         my_plotter.ratio = True
         my_plotter.plot_2d_array(outputs, fname='dist_output', cmap='OrRd')
+
     return distribution_maker, outputs
 
 

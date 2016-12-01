@@ -29,7 +29,7 @@ import uncertainties
 from uncertainties import ufloat
 from uncertainties import unumpy as unp
 
-from pisa import ureg
+from pisa import ureg, FTYPE
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.comparisons import isbarenumeric, normQuant, recursiveEquality
 from pisa.utils.hash import hash_obj
@@ -41,11 +41,17 @@ from pisa.utils.random_numbers import get_random_state
 from pisa.utils.stats import chi2, llh, conv_llh, mod_chi2, barlow_llh
 from pisa.utils.profiler import line_profile, profile
 
-HASH_SIGFIGS = 12
+
+__all__ = ['HASH_SIGFIGS', 'VALID_METRICS', 'METRICS_TO_MAXIMIZE',
+           'type_error', 'strip_outer_parens', 'strip_outer_dollars',
+           'sanitize_name', 'reduceToHist', 'rebin',
+           'Map', 'MapSet',
+           'test_Map', 'test_MapSet']
+
+
+HASH_SIGFIGS = 12 if FTYPE == np.float64 else 4
 VALID_METRICS = ('chi2', 'llh', 'conv_llh', 'mod_chi2', 'barlow_llh')
 METRICS_TO_MAXIMIZE = ['llh', 'conv_llh']
-
-__all__ = ['Map', 'MapSet', 'rebin', 'reduceToHist']
 
 
 # TODO: CUDA and numba implementations of rebin if these libs are available

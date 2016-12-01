@@ -168,8 +168,8 @@ class weight(Stage):
         )
 
         expected_params = self.weight_params + self.xsec_params + \
-                self.flux_params + self.osc_params + self.atmmu_params + \
-                self.noise_params
+            self.flux_params + self.osc_params + self.atmmu_params + \
+            self.noise_params
 
         self.neutrino = False
         self.muons = False
@@ -187,7 +187,8 @@ class weight(Stage):
             elif 'noise' in name:
                 clean_innames.append(name)
             elif 'all_nu' in name:
-                clean_innames = [str(NuFlavIntGroup(f)) for f in ALL_NUFLAVINTS]
+                clean_innames = [str(NuFlavIntGroup(f))
+                                 for f in ALL_NUFLAVINTS]
             else:
                 clean_innames.append(str(NuFlavIntGroup(name)))
 
@@ -377,7 +378,7 @@ class weight(Stage):
             )
 
         if self.params['cache_flux'].value:
-            if not this_cache_hash in self.disk_cache:
+            if this_cache_hash not in self.disk_cache:
                 logging.info('Caching flux values to disk.')
                 self.disk_cache[this_cache_hash] = flux_weights
 
@@ -544,9 +545,12 @@ class weight(Stage):
             pdg = abs(flavint.flavCode())
             kNuBar = 1 if flavint.isParticle() else -1
             p = '' if flavint.isParticle() else 'bar'
-            if pdg == 12: kFlav = 0
-            elif pdg == 14: kFlav = 1
-            elif pdg == 16: kFlav = 2
+            if pdg == 12:
+                kFlav = 0
+            elif pdg == 14:
+                kFlav = 1
+            elif pdg == 16:
+                kFlav = 2
 
             if 'nc' in fig and params['no_nc_osc'].value:
                 if kFlav == 0:
@@ -569,7 +573,7 @@ class weight(Stage):
                 osc_data[fig]['device'][key].free()
 
             osc_weights[fig] = flux_weights[fig]['nue'+p+'_flux']*prob_e + \
-                    flux_weights[fig]['numu'+p+'_flux']*prob_mu
+                flux_weights[fig]['numu'+p+'_flux']*prob_mu
 
         return osc_weights
 

@@ -3,7 +3,7 @@
 # date:   October 19, 2016
 """
 Run a set of tests on the PISA 3 pipeline to check the effect of combining Reco
-and PID in to a single stage. Output is tested against both the standard PISA 
+and PID in to a single stage. Output is tested against both the standard PISA
 and a full event-by-event treatment from OscFit in various configurations.
 """
 
@@ -21,12 +21,17 @@ from pisa.utils.resources import find_resource
 from pisa.utils.tests import print_event_rates, plot_comparisons
 
 
+__all__ = ['FMT',
+           'compare_pisa_self', 'compare_5stage', 'compare_4stage',
+           'do_comparisons', 'oversample_config',
+           'main']
+
+
 FMT = 'png'
 
+
 def compare_pisa_self(config1, config2, testname1, testname2, outdir):
-    """
-    Compare baseline output of PISA 3 with a different version of itself
-    """
+    """Compare baseline output of PISA 3 with a different version of itself"""
     logging.debug('>> Comparing %s with %s (both PISA)'%(testname1,testname2))
 
     pipeline1 = Pipeline(config1)
@@ -179,9 +184,7 @@ def compare_pisa_self(config1, config2, testname1, testname2, outdir):
 
 
 def compare_5stage(config, testname, outdir, oscfitfile):
-    """
-    Compare 5 stage output of PISA 3 with OscFit.
-    """
+    """Compare 5 stage output of PISA 3 with OscFit."""
     logging.debug('>> Working on baseline comparisons between both fitters.')
     logging.debug('>>> Doing %s test.'%testname)
     baseline_comparisons = from_file(oscfitfile)
@@ -334,18 +337,18 @@ def do_comparisons(config1, config2, oscfitfile,
         config2=config2,
         testname1=testname1,
         testname2=testname2,
-        outdir=args.outdir
+        outdir=outdir
     )
     pisa_standard_pipeline = compare_5stage(
         config=config1,
         testname=testname1,
-        outdir=args.outdir,
+        outdir=outdir,
         oscfitfile=oscfitfile
     )
     pisa_recopid_pipeline = compare_4stage(
         config=config2,
         testname=testname2,
-        outdir=args.outdir,
+        outdir=outdir,
         oscfitfile=oscfitfile
     )
 
@@ -357,17 +360,11 @@ def oversample_config(base_config, oversample):
                 if 'true' in base_config[stage][obj].names[0]:
                     base_config[stage][obj] = \
                             base_config[stage][obj].oversample(oversample)
-
     return base_config
 
 
-if __name__ == '__main__':
-    parser = ArgumentParser(
-        description='''Run a set of tests on the PISA 3 pipeline to check the
-        effect of combining Reco and PID in to a single stage. Output is tested
-        against both the standard PISA and a full event-by-event treatment
-        from OscFit in various configurations.'''
-    )
+def main():
+    parser = ArgumentParser(description=__doc__)
     parser.add_argument('--oversampling', action='store_true', default=False,
                         help='''Run oversampling tests i.e. use a finer binning
                         through the truth stages in addition to the standard
@@ -400,7 +397,7 @@ if __name__ == '__main__':
         'tests', 'settings', 'recopid_full_pipeline_4stage_test.cfg'
     )
     pisa_recopid_config = parse_pipeline_config(pisa_recopid_settings)
-    
+
     # Add weighting to pipeline according to user input
     # Need to add it to both reco and PID for standard config
     reco_k = [k for k in pisa_standard_config.keys() \
@@ -464,3 +461,9 @@ if __name__ == '__main__':
                                                       oversample),
                 outdir=args.outdir
             )
+
+main.__doc__ = __doc__
+
+
+if __name__ == '__main__':
+    main()

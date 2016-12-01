@@ -2,29 +2,35 @@
 # authors: J.Lanfranchi/P.Eller
 # date:   March 20, 2016
 """
-Implementation of the Pipeline object, and a __main__ script to instantiate and
-run a pipeline.
+Implementation of the Pipeline object, and a simple script to instantiate and
+run a pipeline (the outputs of which can be plotted and stored to disk).
+
 """
 
 
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
-import importlib
-import itertools
-import inspect
+from importlib import import_module
+from itertools import product
+from inspect import getsource
 import os
-import sys
 
-from pisa import ureg, Q_
+import numpy as np
+
+from pisa import ureg
+from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.config_parser import parse_pipeline_config
 from pisa.utils.betterConfigParser import BetterConfigParser
+from pisa.utils.fileio import mkdir
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.profiler import profile
 
 
-__all__ = ['Pipeline']
+__all__ = ['Pipeline',
+           'test_Pipeline', 'parse_args', 'main']
 
 
 # TODO: should we check that the output binning of a previous stage produces
@@ -133,7 +139,7 @@ class Pipeline(object):
                 # Import service's module
                 logging.trace('Importing: pisa.stages.%s.%s' %(stage_name,
                                                                service_name))
-                module = importlib.import_module(
+                module = import_module(
                     'pisa.stages.%s.%s' %(stage_name, service_name)
                 )
 
@@ -276,9 +282,7 @@ class Pipeline(object):
 
         """
         if self._source_code_hash is None:
-            self._source_code_hash = hash_obj(inspect.getsource(
-                self.__class__
-            ))
+            self._source_code_hash = hash_obj(getsource(self.__class__))
         return self._source_code_hash
 
     @property
@@ -310,7 +314,7 @@ def test_Pipeline():
     current_mat = 'iron'
     current_hier = 'nh'
 
-    for new_hier, new_mat in itertools.product(hierarchies, materials):
+    for new_hier, new_mat in product(hierarchies, materials):
         new_YeO = YeO[new_mat]
 
         assert pipeline.param_selections == sorted([current_hier, current_mat]), str(pipeline.params.param_selections)
@@ -345,14 +349,12 @@ def test_Pipeline():
         current_mat = new_mat
 
 
-def main():
-    from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-    import numpy as np
-    from pisa.core.map import Map, MapSet
-    from pisa.utils.fileio import mkdir, to_file
-    from pisa.utils.plotter import Plotter
-
-    parser = ArgumentParser()
+def parse_args():
+    parser = ArgumentParser(
+        formatter_class=ArgumentDefaultsHelpFormatter,
+        description='''Instantiate and run a pipeline from a config file.
+        Optionally store the resulting distribution(s) and plot(s) to disk.'''
+    )
     parser.add_argument(
         '--settings', metavar='CONFIGFILE', type=str,
         required=True,
@@ -419,8 +421,14 @@ def main():
         '-v', action='count', default=None,
         help='set verbosity level'
     )
-
     args = parser.parse_args()
+    return args
+
+
+def main():
+    from pisa.utils.plotter import Plotter
+
+    args = parse_args()
     set_verbosity(args.v)
 
     try:

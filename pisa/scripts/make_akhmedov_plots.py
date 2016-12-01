@@ -1,15 +1,17 @@
 #!/usr/bin/env python
-
 # authors: J.L. Lanfranchi, P.Eller, and S. Wren
 # email:   jll1062+pisa@phys.psu.edu
 # date:    October 16, 2016
 """
-Create an Akhmedov-style metric plot for showing significance between
-two hypotheses. Will be plotted in the style of h1-h0 / sqrt(h0).
-
+Create Akhmedov-style plots showing the significance to distinguish the two
+hypotheses specified by h0 and h1. Current output will be a plot in the style
+of (h1-h0) / sqrt(h0)
 """
 
+
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import os
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -19,12 +21,13 @@ except:
     print "Could not use tex"
 import numpy as np
 
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-
 from pisa.analysis.hypo_testing import HypoTesting
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
 from pisa.utils.tests import baseplot
+
+
+__all__ = ['do_akhmedov', 'parse_args', 'normcheckpath', 'main']
 
 
 def do_akhmedov(h0_map, h0_name, h1_map, h1_name, fulltitle,
@@ -33,7 +36,7 @@ def do_akhmedov(h0_map, h0_name, h1_map, h1_name, fulltitle,
     gridspec_kw = dict(left=0.04, right=0.966, wspace=0.32)
     fig, axes = plt.subplots(nrows=1, ncols=3, gridspec_kw=gridspec_kw,
                              sharex=False, sharey=False, figsize=(15,5))
-    
+
     akhmedov_to_plot = {}
     akhmedov_to_plot['ebins'] = h0_map['ebins']
     akhmedov_to_plot['czbins'] = h0_map['czbins']
@@ -62,12 +65,11 @@ def do_akhmedov(h0_map, h0_name, h1_map, h1_name, fulltitle,
     fig.savefig(outdir+'/%s_%s_%s_Akhmedov.png'%(savename,h0_name,h1_name))
     plt.close(fig.number)
 
+
 def parse_args():
     parser = ArgumentParser(
         formatter_class=ArgumentDefaultsHelpFormatter,
-        description='''Create Akhmedov-style plots showing the significance
-        to distinguish the two hypotheses specified by h0 and h1. Current 
-        output will be a plot in the style of (h1-h0) / sqrt(h0)'''
+        description=__doc__
     )
     parser.add_argument(
         '-d', '--logdir', required=True,
@@ -89,11 +91,10 @@ def parse_args():
     parser.add_argument(
         '--h0-name',
         type=str, metavar='NAME', default=None,
-        help='''Name for hypothesis h0. E.g., "NO" for normal
-        ordering in the neutrino mass ordering analysis. Note that the name
-        here has no bearing on the actual process, so it's important that you
-        be careful to use a name that appropriately identifies the
-        hypothesis.'''
+        help='''Name for hypothesis h0. E.g., "NO" for normal ordering in the
+        neutrino mass ordering analysis. Note that the name here has no bearing
+        on the actual process, so it's important that you be careful to use a
+        name that appropriately identifies the hypothesis.'''
     )
     parser.add_argument(
         '--h1-pipeline',
@@ -102,8 +103,8 @@ def parse_args():
         repeat this argument to specify multiple pipelines. If omitted, the
         same settings as specified for --h0-pipeline are used to generate
         hypothesis h1 distributions (and so you have to use the
-        --h1-param-selections argument to generate a hypotheses distinct
-        from hypothesis h0 but still use h0's distribution maker).'''
+        --h1-param-selections argument to generate a hypotheses distinct from
+        hypothesis h0 but still use h0's distribution maker).'''
     )
     parser.add_argument(
         '--h1-param-selections',
@@ -114,11 +115,10 @@ def parse_args():
     parser.add_argument(
         '--h1-name',
         type=str, metavar='NAME', default=None,
-        help='''Name for hypothesis h1. E.g., "IO" for inverted
-        ordering in the neutrino mass ordering analysis. Note that the name
-        here has no bearing on the actual process, so it's important that you
-        be careful to use a name that appropriately identifies the
-        hypothesis.'''
+        help='''Name for hypothesis h1. E.g., "IO" for inverted ordering in the
+        neutrino mass ordering analysis. Note that the name here has no bearing
+        on the actual process, so it's important that you be careful to use a
+        name that appropriately identifies the hypothesis.'''
     )
     parser.add_argument(
         '--detector',
@@ -166,7 +166,7 @@ def normcheckpath(path, checkdir=False):
     return normpath
 
 
-if __name__ == '__main__':
+def main():
     args = parse_args()
     init_args_d = vars(args)
 
@@ -301,6 +301,6 @@ if __name__ == '__main__':
                 savename='cscd',
                 outdir=args.logdir)
 
-    
 
-    
+if __name__ == '__main__':
+    main()

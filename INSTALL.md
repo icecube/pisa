@@ -24,15 +24,19 @@ git clone https://github.com/jllanfranchi/pisa.git --branch cake \
 pip install -e my_virtual_env/src/pisa/[cuda,numba,develop] \
     -r my_virtual_env/src/pisa/requirements.txt
 
+# Define the precision you want GPU code to run in (single or double)
+export PISA_FTYPE=single
+
 # Run the physics tests (append --ignore-cuda-errors if no CUDA support)
 test_consistency_with_pisa2.py -v
 
-# Run a Monte Carlo pipeline to produce, store, and plot its expected
+# EXAMPLE: Run a Monte Carlo pipeline to produce, store, and plot its expected
 # distributions at the output of each stage
 pipeline.py --settings settings/pipeline/example.cfg \
     --dir /tmp/pipeline_output --intermediate --pdf -v
 
-# Run the Asimov NMO analysis; leave off "_gpu" to run CPU-only version
+# EXAMPLE: Run the Asimov NMO analysis; leave off "_gpu" to run CPU-only
+# version
 hypo_testing.py --logdir /tmp/test \
     --h0-pipeline settings/pipeline/example_gpu.cfg \
     --h0-param-selections="ih" \
@@ -40,8 +44,11 @@ hypo_testing.py --logdir /tmp/test \
     --data-param-selections="nh" \
     --data-is-mc \
     --minimizer-settings settings/minimizer/bfgs_settings_fac1e11_eps1e-4_mi20.json \
-    --metric="chi2" \
+    --metric=chi2 \
     --pprint -v
+
+# Display the significance for distinguishing hypothesis h1 from h0
+hypo_testing_postprocess.py --asimov --dir /tmp/test/*
 
 # Leave the virtual environment (run the `source...` command above to re-enter
 # the virtual environment at a later time)

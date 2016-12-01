@@ -216,11 +216,12 @@ def main():
     init_args_d['h0_maker'] = DistributionMaker(init_args_d['h0_maker'])
     init_args_d['h1_maker'] = DistributionMaker(init_args_d['h0_maker'])
     init_args_d['h1_maker'].select_params(init_args_d['h1_param_selections'])
+    init_args_d['data_maker'] = DistributionMaker(init_args_d['h0_maker'])
 
     fix_wrong = init_args_d.pop('fix_wrong')
 
     # Go through the parameters
-    for param in init_args_d['h0_maker'].params:
+    for param in init_args_d['data_maker'].params:
         # Look for those that are nuisance parameters
         if not param.is_fixed:
             # Take the nominal values of this parameter and the hypotheses
@@ -248,12 +249,18 @@ def main():
                                     'param %s'%param.name)
                 
                 param.is_fixed = True
-                # Fix it in both makers
-                for alt_param in init_args_d['h1_maker'].params:
-                    if alt_param.name == param.name:
-                        alt_nominal_value = alt_param.value
-                        alt_param.is_fixed = True
-                        alt_param = param.value
+                # Fix it in both hypothesis makers
+                for h0_param in init_args_d['h0_maker'].params:
+                    if h0_param.name == param.name:
+                        h0_nominal_value = h0_param.value
+                        h0_param.is_fixed = True
+                        h0_param = param.value
+                for h1_param in init_args_d['h1_maker'].params:
+                    if h1_param.name == param.name:
+                        h1_nominal_value = h1_param.value
+                        h1_param.is_fixed = True
+                        h1_param = param.value
+                    
                 # Instantiate the analysis object
                 hypo_testing = HypoTesting(**init_args_d)
                 # Run the analysis
@@ -264,10 +271,14 @@ def main():
                 init_args_d['h1_name'] = nominal_h1_name
                 param.value = nominal_value
                 param.is_fixed = False
-                for alt_param in init_args_d['h1_maker'].params:
-                    if alt_param.name == param.name:
-                        alt_param.value = alt_nominal_value
-                        alt_param.is_fixed = False
+                for h0_param in init_args_d['h0_maker'].params:
+                    if h0_param.name == param.name:
+                        h0_param.value = h0_nominal_value
+                        h0_param.is_fixed = False
+                for h1_param in init_args_d['h1_maker'].params:
+                    if h1_param.name == param.name:
+                        h1_param.value = h1_nominal_value
+                        h1_param.is_fixed = False
 
                 if hasattr(param, 'prior'):
                     if param.prior.kind == 'gaussian':
@@ -285,11 +296,16 @@ def main():
                 
                 param.is_fixed = True
                 # Fix it in both makers
-                for alt_param in init_args_d['h1_maker'].params:
-                    if alt_param.name == param.name:
-                        alt_nominal_value = alt_param.value
-                        alt_param.is_fixed = True
-                        alt_param = param.value
+                for h0_param in init_args_d['h0_maker'].params:
+                    if h0_param.name == param.name:
+                        h0_nominal_value = h0_param.value
+                        h0_param.is_fixed = True
+                        h0_param = param.value
+                for h1_param in init_args_d['h1_maker'].params:
+                    if h1_param.name == param.name:
+                        h1_nominal_value = h1_param.value
+                        h1_param.is_fixed = True
+                        h1_param = param.value
                 # Instantiate the analysis object
                 hypo_testing = HypoTesting(**init_args_d)
                 # Run the analysis
@@ -300,10 +316,14 @@ def main():
                 init_args_d['h1_name'] = nominal_h1_name
                 param.value = nominal_value
                 param.is_fixed = False
-                for alt_param in init_args_d['h1_maker'].params:
-                    if alt_param.name == param.name:
-                        alt_param.value = alt_nominal_value
-                        alt_param.is_fixed = False
+                for h0_param in init_args_d['h0_maker'].params:
+                    if h0_param.name == param.name:
+                        h0_param.value = h0_nominal_value
+                        h0_param.is_fixed = False
+                for h1_param in init_args_d['h1_maker'].params:
+                    if h1_param.name == param.name:
+                        h1_param.value = h1_nominal_value
+                        h1_param.is_fixed = False
                 
             # Or just to the baseline
             else:
@@ -315,11 +335,16 @@ def main():
 
                 param.is_fixed = True
                 # Fix it in both makers
-                for alt_param in init_args_d['h1_maker'].params:
-                    if alt_param.name == param.name:
-                        alt_nominal_value = alt_param.value
-                        alt_param.is_fixed = True
-                        alt_param = param.value
+                for h0_param in init_args_d['h0_maker'].params:
+                    if h0_param.name == param.name:
+                        h0_nominal_value = h0_param.value
+                        h0_param.is_fixed = True
+                        h0_param = param.value
+                for h1_param in init_args_d['h1_maker'].params:
+                    if h1_param.name == param.name:
+                        h1_nominal_value = h1_param.value
+                        h1_param.is_fixed = True
+                        h1_param = param.value
                 # Instantiate the analysis object
                 hypo_testing = HypoTesting(**init_args_d)
                 # Run the analysis
@@ -329,10 +354,14 @@ def main():
                 init_args_d['h0_name'] = nominal_h0_name
                 init_args_d['h1_name'] = nominal_h1_name
                 param.is_fixed = False
-                for alt_param in init_args_d['h1_maker'].params:
-                    if alt_param.name == param.name:
-                        alt_param.value = alt_nominal_value
-                        alt_param.is_fixed = False
+                for h0_param in init_args_d['h0_maker'].params:
+                    if h0_param.name == param.name:
+                        h0_param.value = h0_nominal_value
+                        h0_param.is_fixed = False
+                for h1_param in init_args_d['h1_maker'].params:
+                    if h1_param.name == param.name:
+                        h1_param.value = h1_nominal_value
+                        h1_param.is_fixed = False
 
 
 if __name__ == '__main__':

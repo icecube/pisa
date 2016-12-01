@@ -14,31 +14,19 @@ the `hypo_testing.py` script.
 
 from __future__ import division
 
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-from collections import Mapping, OrderedDict, Sequence
-from copy import copy, deepcopy
-import getpass
+from argparse import ArgumentParser
+from collections import OrderedDict
 import os
-import random
-import socket
-import string
-import sys
-import time
-from traceback import format_exc
 
 import numpy as np
-import pandas
-import pint
 
-from pisa import ureg, _version, __version__
+from pisa import ureg
 from pisa.analysis.hypo_testing import Labels
-from pisa.utils.fileio import from_file, get_valid_filename, mkdir, to_file, nsort
-from pisa.utils.log import logging, set_verbosity
-from pisa.utils.resources import find_resource
-from pisa.utils.timing import timediffstamp, timestamp
+from pisa.utils.fileio import from_file, nsort
+from pisa.utils.log import set_verbosity
 
 
-__all__ = ['extract_trials', 'extract_fit']
+__all__ = ['extract_trials', 'extract_fit', 'parse_args', 'main']
 
 
 def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
@@ -138,7 +126,7 @@ def extract_fit(fpath, keys=None):
     fpath : string
         Path to the file
 
-    keys : None, string, or sequence of strings
+    keys : None, string, or iterable of strings
         Keys to extract. If None, all keys are extracted.
 
     """
@@ -154,11 +142,7 @@ def extract_fit(fpath, keys=None):
 
 
 def parse_args():
-    parser = ArgumentParser(
-        formatter_class=ArgumentDefaultsHelpFormatter,
-        description='''Postprocess logfiles produced by hypo_testing.py
-        script.'''
-    )
+    parser = ArgumentParser(description=__doc__)
     parser.add_argument(
         '-d', '--dir', required=True,
         metavar='DIR', type=str,

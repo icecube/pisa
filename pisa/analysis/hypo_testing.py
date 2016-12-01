@@ -44,7 +44,8 @@ from pisa.utils.resources import find_resource
 from pisa.utils.timing import timediffstamp, timestamp
 
 
-__all__ = ['HypoTesting', 'Labels']
+__all__ = ['Labels', 'HypoTesting',
+           'parse_args', 'normcheckpath', 'main']
 
 
 class Labels(object):
@@ -120,7 +121,6 @@ class Labels(object):
             # There're *always* fits performed to fid asimov
             #self.
 
-
         # Directory naming pattern
         if self.fluctuate_data:
             self.subdir_re = re.compile(self.data + '_(?P<data_ind>[0-9]+)')
@@ -147,12 +147,6 @@ class Labels(object):
 class HypoTesting(Analysis):
     """Tools for testing two hypotheses against one another.
 
-    to determine the significance for data to
-    have come from
-    physics described by hypothesis h0 versus physics described by hypothesis
-        label =
-    h1
-
     Note that duplicated `*_maker` specifications are _not_ instantiated
     separately, but instead are re-used for all duplicate definitions.
     `*_param_selections` allows for this reuse, whereby sets of parameters
@@ -164,54 +158,117 @@ class HypoTesting(Analysis):
     Parameters
     ----------
     logdir : string
+        Base directory in which to create the directory that stores all
+        results. Note that `logdir` will be (recursively) generated if it does
+        not exist.
 
     minimizer_settings : string
+        Minimizer settings file or resource path.
 
     data_maker : None, DistributionMaker or instantiable thereto
+        Data maker specification, or None (specify an already-generated data
+        distribution with `data_dist`).
 
     data_param_selections : None, string, or sequence of strings
+        Param selections to use for data, or None to accept any param
+        selections already made in `data_maker`.
 
-    data_name : string
+    data_name : None or string
+        Name for data distribution. If None, a name is auto-generated.
 
     data_dist : None, MapSet or instantiable thereto
+        Specify an existing distribution as the data distribution instead of a
+        generating a new one. Use this instead of `data_maker`.
 
-    h0_name : string
+    h0_name : None or string
+        Name for hypothesis 0. If None, a name is auto-generated.
 
-    h0_maker : None, DistributionMaker or instantiable thereto
+    h0_maker : DistributionMaker or instantiable thereto
+        Hypothesis-0-maker specification.
 
     h0_param_selections : None, string, or sequence of strings
+        Param selections to use for hypothesis 0, or None to accept any param
+        selections already made in `h0_maker`.
 
     h0_fid_asimov_dist : None, MapSet or instantiable thereto
+        TODO: this parameter is NOT currently used, but is intended to remove
+        requirement to re-generate this distribution if it's already been
+        generated in a previous run
 
-    h1_name : string
+    h1_name : None or string
+        Name for hypothesis 1. If None, a name is auto-generated.
 
     h1_maker : None, DistributionMaker or instantiable thereto
+        Hypothesis-1-maker specification. If None, `h0_maker` is used also for
+        hypothesis 1 (but in this case, be sure to specify
+        `h1_param_selections` so that h0 and h1 come out to be different).
 
     h1_param_selections : None, string, or sequence of strings
+        Param selections to use for hypothesis 1, or None to accept any param
+        selections already made in `h1_maker`.
 
     h1_fid_asimov_dist : None, MapSet or instantiable thereto
+        TODO: this parameter is NOT currently used, but is intended to remove
+        requirement to re-generate this distribution if it's already been
+        generated in a previous run
 
-    num_data_trials : int > 0
+    num_data_trials : int >= 1
+        Number of (pseudo)data trials to run. For each trial, a new pseudodata
+        distribution is generated, and then all subsequent fits are preformed.
+        Note that data trials recorded to disk are not duplicated in subsequent
+        runs (assuming the same `logdir` is specified for each run).
 
-    num_fid_trials : int > 0
+    num_fid_trials : int >= 1
+        Number of fiducial-fit trials to run. For each trial, a new fluctuated
+        fiducial distribution is generated, and then fits are preformed to
+        that. Note that fiducial trials recorded to disk are not duplicated in
+        subsequent runs (assuming the same `logdir` is specified for each run).
 
-    data_start_ind : int >= 0
+    data_start_ind : int >= 0 but < 2**(?)
+        Start data trials at this index. Valid indexes begin with 0. The final
+        data trial index is (data_start_ind + num_data_trials - 1). Any data
+        trials already recorded to disk will be skipped.
 
-    fid_start_ind : int >= 0
+    fid_start_ind : int >= 0 but < 2**(?)
+        Start fiducial trials at this index. Valid indexes begin with 0. The
+        final fiducial trial index is (fid_start_ind + num_fid_trials - 1). Any
+        fiducial trials already recorded to disk will be skipped.
 
     check_octant : bool
+        If True and theta23 is a free parameter, minimization is performed once
+        starting wtih theta23 = theta23.nominal_value and then a second time
+        starting with theta23 = (180 deg - theta23.nominal_value). The best fit
+        found from each of these two fits is taken to be the best overall fit.
 
     metric : string
+        Metric for minimizer to use for comparing distributions. Valid metrics
+        are defined by `pisa.core.map.VALID_METRICS`.
 
     other_metrics : None, string, or sequence of strings
+        Other metric to record to compare distributions. These are not used by
+        the minimizer. Valid metrics are defined by
+        `pisa.core.map.VALID_METRICS`.
 
     blind : bool
+        Set to True to run a blind analysis, whereby free parameter values are
+        hidden from terminal display and are removed before storing to log files.
 
     allow_dirty : bool
+        !USE WITH CAUTION! Allow for running code despite a "dirty" git
+        repository (i.e., files in the repository have been changed but not
+        committed). Setting to True is dangerous since this might result in
+        irreproducible results.
 
     allow_no_git_info : bool
+        !USE WITH CAUTION! Allow for running without knowing git version
+        information. Setting to True is dangerous since this might result in
+        irreproducible results.
+
 
     pprint : bool
+        If True, display fit information as a single line on the terminal that
+        updates in-place as the fit proceeds. If False, this information is
+        output as a separate line for each iteration.
 
 
     Notes
@@ -230,7 +287,7 @@ class HypoTesting(Analysis):
     should be as large as is computationally feasible.
 
     Likewise, if the fiducial-fit data is to be pseudodata (i.e.,
-    `fluctuate_fid` is True--whether or not `data_maker` is uses Monte
+    `fluctuate_fid` is True and regardless if `data_maker` uses Monte
     Carlo), `num_fid_trials` should be as large as computationally
     feasible.
 
@@ -254,6 +311,7 @@ class HypoTesting(Analysis):
 
     Examples
     --------
+    TODO
 
     """
     def __init__(self, logdir, minimizer_settings,
@@ -275,6 +333,12 @@ class HypoTesting(Analysis):
         assert data_start_ind >= 0
         assert fid_start_ind >= 0
         assert metric in VALID_METRICS
+
+        # Instantiate h0 distribution maker to ensure it is a valid spec
+        if h0_maker is None:
+            raise ValueError('`h0_maker` must be specified (and not None)')
+        if not isinstance(h0_maker, DistributionMaker):
+            h0_maker = DistributionMaker(h0_maker)
 
         if isinstance(h0_param_selections, basestring):
             h0_param_selections = h0_param_selections.strip().lower()
@@ -373,17 +437,14 @@ class HypoTesting(Analysis):
                              ' is invalid.')
 
         # Instantiate distribution makers only where necessary (otherwise copy)
-        if not isinstance(h0_maker, DistributionMaker):
-            h0_maker = DistributionMaker(h0_maker)
-
         if not isinstance(h1_maker, DistributionMaker):
             if self.h1_maker_is_h0_maker:
                 h1_maker = h0_maker
             else:
                 h1_maker = DistributionMaker(h1_maker)
 
-        # Cannot know if data came from same dist maker if we're just handed
-        # the data
+        # Cannot know if data came from same dist maker if we're given the data
+        # distribution directly
         if data_dist is not None:
             self.data_maker_is_h0_maker = False
             self.data_maker_is_h1_maker = False
@@ -1277,13 +1338,8 @@ class HypoTesting(Analysis):
 
 def parse_args():
     parser = ArgumentParser(
+        description=__doc__,
         formatter_class=ArgumentDefaultsHelpFormatter,
-        description='''Perform the LLR analysis for calculating the NMO
-        sensitivity of the distribution made from data-settings compared with
-        hypotheses generated from template-settings.
-
-        Currently the output should be a json file containing the dictionary
-        of best fit and likelihood values.'''
     )
     parser.add_argument(
         '-d', '--logdir', required=True,
@@ -1405,15 +1461,16 @@ def parse_args():
     parser.add_argument(
         '--metric',
         type=str, default=None, metavar='METRIC',
-        help='''Name of metric to use for optimizing the fit.'''
+        help='''Name of metric to use for optimizing the fit. Must be one of
+        %s.''' % (VALID_METRICS,)
     )
     parser.add_argument(
         '--other-metric',
         type=str, default=None, metavar='METRIC', action='append',
         choices=['all'] + sorted(VALID_METRICS),
         help='''Name of another metric to evaluate at the best-fit point. Must
-        be either "all" or a metric specified in VALID_METRICS. Repeat this
-        argument (or use "all") to specify multiple metrics.'''
+        be either 'all' or one of %s. Repeat this argument (or use 'all') to
+        specify multiple metrics.''' % (VALID_METRICS,)
     )
     parser.add_argument(
         '--num-data-trials',

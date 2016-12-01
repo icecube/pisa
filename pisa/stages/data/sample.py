@@ -20,7 +20,6 @@ from pisa.core.events import Data
 from pisa.core.map import MapSet
 from pisa.utils.flavInt import ALL_NUFLAVINTS, NuFlavIntGroup, FlavIntDataGroup
 from pisa.utils.fileio import from_file
-from pisa.utils.comparisons import normQuant
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
@@ -229,7 +228,8 @@ class sample(Stage):
         weight_units = config.get('neutrino', 'weight_units')
         sys_list = parse(config.get('neutrino', 'sys_list'))
         base_suffix = config.get('neutrino', 'basesuffix')
-        if base_suffix == 'None': base_suffix = ''
+        if base_suffix == 'None':
+            base_suffix = ''
 
         nu_data = []
         for idx, flav in enumerate(flavours):
@@ -256,7 +256,7 @@ class sample(Stage):
             else:
                 file_prefix = flav + config.get(dataset, 'file_prefix')
             events_file = config.get('general', 'datadir') + \
-                    base_suffix + file_prefix
+                base_suffix + file_prefix
 
             events = from_file(events_file)
             nu_mask = events['ptype'] > 0
@@ -266,7 +266,7 @@ class sample(Stage):
 
             if weights[idx] == 'None' or weights[idx] == '1':
                 events['pisa_weight'] = \
-                    np.ones(events['ptype'].shape) *  ureg.dimensionless
+                    np.ones(events['ptype'].shape) * ureg.dimensionless
             elif weights[idx] == '0':
                 events['pisa_weight'] = \
                     np.zeros(events['ptype'].shape) * ureg.dimensionless
@@ -301,7 +301,8 @@ class sample(Stage):
         sys_list = parse(config.get('muons', 'sys_list'))
         weight = config.get('muons', 'weight')
         base_suffix = config.get('muons', 'basesuffix')
-        if base_suffix == 'None': base_suffix = ''
+        if base_suffix == 'None':
+            base_suffix = ''
 
         if dataset == 'nominal':
             paths = []
@@ -344,5 +345,5 @@ class sample(Stage):
         assert isinstance(params['data_sample_config'].value, basestring)
         assert isinstance(params['dataset'].value, basestring)
         assert params['keep_criteria'].value is None or \
-                isinstance(params['keep_criteria'].value, basestring)
+            isinstance(params['keep_criteria'].value, basestring)
         assert isinstance(params['output_events_data'].value, bool)

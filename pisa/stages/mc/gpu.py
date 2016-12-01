@@ -152,8 +152,9 @@ class gpu(Stage):
             'cut_outer',
         )
 
-        expected_params = (self.osc_params + self.flux_params +
-                           self.other_params)
+        expected_params = (self.osc_params
+                           + self.flux_params
+                           + self.other_params)
 
         output_names = split(output_names)
 
@@ -173,7 +174,6 @@ class gpu(Stage):
             from pisa.utils.kde_hist import kde_histogramdd
             self.kde_histogramdd = kde_histogramdd
         else:
-            #otherwise that
             from pisa.utils.gpu_hist import GPUHist
             self.GPUHist = GPUHist
 
@@ -342,7 +342,7 @@ class gpu(Stage):
                         evts[flav][var].astype(FTYPE)
                     )
                 except KeyError:
-                    # if variable doesn't exist (e.g. axial mass coeffs, just
+                    # If variable doesn't exist (e.g. axial mass coeffs, just
                     # fill in ones) only warn first time
                     if flav == self.flavs[0]:
                         logging.warning('replacing variable %s by ones'%var)
@@ -366,20 +366,27 @@ class gpu(Stage):
                         ((flav in ['nue_nc', 'nuebar_nc'] and var == 'prob_e')
                          or (flav in ['numu_nc', 'numubar_nc']
                              and var == 'prob_mu'))):
-                    # in case of not oscillating NC events, we can set the
+                    # In case of not oscillating NC events, we can set the
                     # probabilities of nue->nue and numu->numu at 1, and
                     # nutau->nutau at 0
                     self.events_dict[flav]['host'][var] = np.ones(
                         self.events_dict[flav]['n_evts'], dtype=FTYPE
                     )
                 else:
-                    self.events_dict[flav]['host'][var] = np.zeros(self.events_dict[flav]['n_evts'], dtype=FTYPE)
-            # Calulate layers (every particle crosses a number of layers in the earth with different densities, and for a given length
-            # these depend only on the earth model (PREM) and the true coszen of an event. Therefore we can calculate these for once and are done
-            self.events_dict[flav]['host']['numLayers'], \
-                self.events_dict[flav]['host']['densityInLayer'], \
-                self.events_dict[flav]['host']['distanceInLayer'] = \
-                self.osc.calc_layers(self.events_dict[flav]['host']['true_coszen'])
+                    self.events_dict[flav]['host'][var] = np.zeros(
+                        self.events_dict[flav]['n_evts'], dtype=FTYPE
+                    )
+            # Calulate layers (every particle crosses a number of layers in the
+            # earth with different densities, and for a given length these
+            # depend only on the earth model (PREM) and the true coszen of an
+            # event. Therefore we can calculate these for once and are done
+            nlayers, dens, dist = self.osc.calc_Layers(
+                self.events_dict[flav]['host']['true_coszen']
+            )
+            self.events_dict[flav]['host']['numLayers'] = nlayers
+            self.events_dict[flav]['host']['densityInLayer'] = dens
+            self.events_dict[flav]['host']['distanceInLayer'] = dist
+
         end_t = time.time()
         logging.debug('layers done in %.4f ms'%((end_t - start_t) * 1000))
 
@@ -445,8 +452,10 @@ class gpu(Stage):
         """Copy back event by event information into the host dict"""
         for flav in self.flavs:
             for var in variables:
-                buff = np.ones(self.events_dict[flav]['n_evts'], dtype=FTYPE)
+                buff = np.full(self.events_dict[flav]['n_evts'],
+                               fill_value=np.nan, dtype=FTYPE)
                 cuda.memcpy_dtoh(buff, self.events_dict[flav]['device'][var])
+                assert np.all(np.isvalid(buff))
                 self.events_dict[flav]['host'][var] = buff
 
     def sum_array(self, x, n_evts):
@@ -550,11 +559,16 @@ class gpu(Stage):
 
             # Calculate weights squared, for error propagation
             if self.error_method in ['sumw2', 'fixed_sumw2']:
-                self.gpu_weight.calc_sumw2(self.events_dict[flav]['n_evts'], **self.events_dict[flav]['device'])
+                self.gpu_weight.calc_sumw2(
+                    self.events_dict[flav]['n_evts'],
+                    **self.events_dict[flav]['device']
+                )
 
             tot += self.events_dict[flav]['n_evts']
+
         end_t = time.time()
-        logging.debug('GPU calc done in %.4f ms for %s events'%(((end_t - start_t) * 1000), tot))
+        logging.debug('GPU calc done in %.4f ms for %s events'
+                      %(((end_t - start_t) * 1000), tot))
 
         if self.params.kde.value:
             start_t = time.time()

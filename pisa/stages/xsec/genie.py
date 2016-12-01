@@ -207,8 +207,10 @@ class genie(Stage):
                 )
 
                 def x(idx):
-                    if idx == e_idx: return xsec_map.hist
-                    else: return range(input_binning.shape[idx])
+                    if idx == e_idx:
+                        return xsec_map.hist
+                    else:
+                        return range(input_binning.shape[idx])
                 num_dims = input_binning.num_dims
                 xsec_trns = np.meshgrid(*map(x, range(num_dims)),
                                         indexing='ij')[e_idx]
@@ -305,7 +307,6 @@ class genie(Stage):
             nu_xsec_hist = nu_xsec.to(out_units).magnitude
             return Map(hist=nu_xsec_hist, binning=binning, **kwargs)
 
-
         def validate_spl(binning):
             if np.all(binning.true_energy.midpoints.m > 1E3):
                 raise ValueError('Energy value {0} out of range in array '
@@ -332,7 +333,8 @@ class genie(Stage):
     def _ev_param(parameter):
         if isinstance(parameter, basestring):
             return eval(parameter)
-        else: return parameter
+        else:
+            return parameter
 
     def validate_params(self, params):
         assert isinstance(params['xsec_file'].value, basestring)
