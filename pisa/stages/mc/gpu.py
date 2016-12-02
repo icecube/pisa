@@ -380,7 +380,7 @@ class gpu(Stage):
             # earth with different densities, and for a given length these
             # depend only on the earth model (PREM) and the true coszen of an
             # event. Therefore we can calculate these for once and are done
-            nlayers, dens, dist = self.osc.calc_Layers(
+            nlayers, dens, dist = self.osc.calc_layers(
                 self.events_dict[flav]['host']['true_coszen']
             )
             self.events_dict[flav]['host']['numLayers'] = nlayers
