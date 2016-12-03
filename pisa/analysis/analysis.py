@@ -18,6 +18,7 @@ import sys
 import time
 
 import numpy as np
+import pint
 import scipy.optimize as optimize
 
 from pisa import ureg, Q_
@@ -727,7 +728,14 @@ class Analysis(object):
             for (pname, val) in pos:
                 params[pname].value = val
                 results['steps'][pname].append(val)
-                msg += '%s = %.2f '%(pname, val)
+                if isinstance(val, float):
+                    msg += '%s = %.2f '%(pname, val)
+                if isinstance(val, pint.quantity._Quantity):
+                    msg += '%s = %.2f '%(pname, val.magnitude)
+                else:
+                    raise TypeError("val is of type %s which I don't know "
+                                    "how to deal with in the output "
+                                    "messages."% type(val))
             logging.info('Working on point ' + msg)
             hypo_maker.update_params(params)
 
