@@ -1,7 +1,10 @@
-# author : P.Eller, J.L.Lanfranchi
+# author : P.Eller, T.Ehrhardt, J.L.Lanfranchi
 #
 # date   : March 25, 2016
+"""
+Statistical functions
 
+"""
 
 import numpy as np
 from scipy.special import gammaln
@@ -12,15 +15,34 @@ from pisa.utils.comparisons import isbarenumeric
 from pisa.utils.log import logging
 
 
-__all__ = ['chi2', 'llh', 'log_poisson', 'log_smear', 'conv_poisson',
+__all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
+           'maperror_logmsg',
+           'chi2', 'llh', 'log_poisson', 'log_smear', 'conv_poisson',
            'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2']
 
 
-# A small positive number with which to replace numbers smaller than it
 SMALL_POS = 1e-10
+"""A small positive number with which to replace numbers smaller than it"""
+
+CHI2_METRICS = ['chi2', 'mod_chi2']
+"""Metrics defined that result in measures of chi squared"""
+
+LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh']
+"""Metrics defined that result in measures of log likelihood"""
+
+ALL_METRICS = LLH_METRICS + CHI2_METRICS
+"""All metrics defined"""
+
+METRICS_TO_MAXIMIZE = LLH_METRICS
+"""Metrics that must be maximized to obtain a better fit"""
+
+
+# TODO(philippeller):
+# * unit tests to ensure these don't break
 
 
 def maperror_logmsg(m):
+    """Create message with thorough info about a map for logging purposes"""
     with np.errstate(invalid='ignore'):
         msg = ''
         msg += '    min val : %s\n' %np.nanmin(m)
@@ -145,37 +167,96 @@ def llh(actual_values, expected_values):
                     + maperror_logmsg(expected_values)
             raise ValueError(msg)
 
-        # replace 0's with small positive numbers to avoid inf in log
+        # Replace 0's with small positive numbers to avoid inf in log
         np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
                 out=expected_values)
 
-    llh = actual_values*np.log(expected_values) - expected_values
-    # to center around 0
-    llh -= actual_values*np.log(actual_values) - actual_values
-    #return (actual_values*np.log(expected_values) - expected_values - gammaln(actual_values + 1))
-    return llh
+    llh_val = actual_values*np.log(expected_values) - expected_values
+
+    # Do following to center around 0
+    llh_val -= actual_values*np.log(actual_values) - actual_values
+
+    return llh_val
 
 
-def log_poisson(k,l):
+def log_poisson(k, l):
+    """
+    calculates the log of a poisson pdf
+
+    - poisson pdf as p(k,l) := l^k*exp(-l)/k!
+
+    Parameters
+    ----------
+    k : float
+    l : float
+
+    Returns
+    -------
+
+    log of poisson
+
+    """
     return k*np.log(l) -l - gammaln(k+1)
 
 
-def log_smear(x,sigma):
-    return-np.log(sigma)-0.5*np.log(2*np.pi)-np.square(x)/(2*np.square(sigma))
+def log_smear(x, sigma):
+    """
+
+    Calculates the log of a normal pdf
+
+    - normal pdf as p(x,sigma) := (sigma*sqrt(2*pi))^-1*exp(-x^2/(2*sigma^2))
+
+    Parameters
+    ----------
+    x : float
+    sigma : float
+
+    Returns
+    -------
+    log of gaussian
+
+    """
+    return (
+        -np.log(sigma) - 0.5*np.log(2*np.pi)
+        - x**2 / (2*sigma**2)
+    )
 
 
-def conv_poisson(k,l,s,nsigma=3,steps=50.):
-    # replace 0's with small positive numbers to avoid inf in log
+def conv_poisson(k, l, s, nsigma=3, steps=50):
+    """
+
+    poisson pdf as p(k,l) := l^k*exp(-l)/k!
+
+    Parameters
+    ----------
+    k : float
+    l : float
+    s : float
+        sigma for smearing term (= the uncertainty to be accounted for)
+    nsigma : int
+        the range in sigmas over which to do the convolution, 3 sigmas is > 99%, so should be enough
+    steps : int
+        number of steps to do the intergration in (actual steps are 2*steps + 1,
+                so this is the steps to each side of the gaussian smearing term)
+
+    Returns
+    -------
+    
+    float
+        convoluted poissson likelihood
+
+    """
+    # Replace 0's with small positive numbers to avoid inf in log
     l = max(SMALL_POS, l)
-    st = 2*(steps+1)
-    conv_x = np.linspace(-nsigma*s,+nsigma*s,st)[:-1]+nsigma*s/(st-1.)
-    conv_y = log_smear(conv_x,s)
+    st = 2*(steps + 1)
+    conv_x = np.linspace(-nsigma*s, +nsigma*s, st)[:-1]+nsigma*s/(st-1.)
+    conv_y = log_smear(conv_x, s)
     f_x = conv_x + l
     #f_x = conv_x + k
-    # avoid zero values for lambda
-    idx = np.argmax(f_x>0)
-    f_y = log_poisson(k,f_x[idx:])
-    #f_y = log_poisson(f_x[idx:],l)
+    # Avoid zero values for lambda
+    idx = np.argmax(f_x > 0)
+    f_y = log_poisson(k, f_x[idx:])
+    #f_y = log_poisson(f_x[idx:], l)
     if np.isnan(f_y).any():
         logging.error('`NaN values`:')
         logging.error('idx = ', idx)
@@ -189,16 +270,43 @@ def conv_poisson(k,l,s,nsigma=3,steps=50.):
     return conv.sum()/norm
 
 
-def norm_conv_poisson(k,l,s,nsigma=3,steps=50.):
-    cp = conv_poisson(k,l,s,nsigma=nsigma,steps=steps)
-    n1 = np.exp(log_poisson(l,l))
-    n2 = conv_poisson(l,l,s,nsigma=nsigma,steps=steps)
+def norm_conv_poisson(k, l, s, nsigma=3, steps=50):
+    """
+    Parameters
+    ----------
+    k : float
+    l : float
+    s : float
+        sigma for smearing term (= the uncertainty to be accounted for)
+    nsigma : int
+        the range in sigmas over which to do the convolution, 3 sigmas is > 99%, so should be enough
+    steps : int
+        number of steps to do the intergration in (actual steps are 2*steps + 1,
+                so this is the steps to each side of the gaussian smearing term)
+
+    Returns
+    -------
+
+    convoluted poisson likelihood normalized so that the value at k=l (asimov) does not change
+
+    """
+    cp = conv_poisson(k, l, s, nsigma=nsigma, steps=steps)
+    n1 = np.exp(log_poisson(l, l))
+    n2 = conv_poisson(l, l, s, nsigma=nsigma, steps=steps)
     return cp*n1/n2
 
 
 def conv_llh(actual_values, expected_values):
     """Compute the convolution llh using the uncertainty on the expected values
-    to smear out the poisson PDFs.
+    to smear out the poisson PDFs
+
+    Parameters
+    ----------
+    actual_values, expected_values : numpy.ndarrays of same shape
+
+    Returns
+    -------
+    total log of convoluted poisson likelihood
 
     """
     actual_values = unp.nominal_values(actual_values).ravel()
@@ -206,42 +314,57 @@ def conv_llh(actual_values, expected_values):
     expected_values = unp.nominal_values(expected_values).ravel()
     triplets = np.array([actual_values, expected_values, sigma]).T
     norm_triplets = np.array([actual_values, actual_values, sigma]).T
-    sum = 0
+    total = 0
     for i in xrange(len(triplets)):
-        sum += np.log(max(SMALL_POS,norm_conv_poisson(*triplets[i])))
-        sum -= np.log(max(SMALL_POS,norm_conv_poisson(*norm_triplets[i])))
-    return sum
+        total += np.log(max(SMALL_POS, norm_conv_poisson(*triplets[i])))
+        total -= np.log(max(SMALL_POS, norm_conv_poisson(*norm_triplets[i])))
+    return total
 
 
 def barlow_llh(actual_values, expected_values):
-    """Compute the barlow LLH taking into account finite stats"""
+    """Compute the barlow LLH taking into account finite stats
+
+    Parameters
+    ----------
+    actual_values, expected_values : numpy.ndarrays of same shape
+
+    Returns
+    -------
+    barlow_llh
+
+    """
     l = likelihoods()
     actual_values = unp.nominal_values(actual_values).ravel()
     sigmas = [unp.std_devs(ev.ravel()) for ev in expected_values]
     expected_values = [unp.nominal_values(ev).ravel() for ev in expected_values]
-    uws = [np.square(ev)/np.square(s) for ev, s in zip(expected_values, sigmas)]
-    ws = [np.square(s)/ev for ev, s in zip(expected_values, sigmas)]
+    uws = [(ev/s)**2 for ev, s in zip(expected_values, sigmas)]
+    ws = [s**2/ev for ev, s in zip(expected_values, sigmas)]
     l.SetData(actual_values)
     l.SetMC(np.array(ws))
     l.SetUnweighted(np.array(uws))
-    llh = l.GetLLH('barlow')
-    del l
-    return -llh
+    return -l.GetLLH('barlow')
 
 
 def mod_chi2(actual_values, expected_values):
     """Compute the chi-square value taking into account uncertainty terms
     (incl. e.g. finite stats)
 
+    Parameters
+    ----------
+    actual_values, expected_values : numpy.ndarrays of same shape
+
+    Returns
+    -------
+    sum(mod_chi2)
+
     """
-    # replace 0's with small positive numbers to avoid inf in log
+    # Replace 0's with small positive numbers to avoid inf in log
     np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
             out=expected_values)
     actual_values = unp.nominal_values(actual_values).ravel()
     sigma = unp.std_devs(expected_values).ravel()
     expected_values = unp.nominal_values(expected_values).ravel()
-    chi2 = np.square(actual_values -
-                     expected_values)/(np.square(sigma)+expected_values)
-    # wrong def.
-    #chi2 = np.square(actual_values - expected_values)/(np.square(sigma)+actual_values)
-    return np.sum(chi2)
+    m_chi2 = (
+        (actual_values - expected_values)**2 / (sigma**2 + expected_values)
+    )
+    return np.sum(m_chi2)

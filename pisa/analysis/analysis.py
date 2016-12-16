@@ -21,11 +21,11 @@ import numpy as np
 import pint
 import scipy.optimize as optimize
 
-from pisa import ureg, Q_
-from pisa.core.map import METRICS_TO_MAXIMIZE, VALID_METRICS
+from pisa import ureg
 from pisa.core.param import ParamSet
 from pisa.utils.log import logging
 from pisa.utils.fileio import to_file
+from pisa.utils.stats import METRICS_TO_MAXIMIZE
 
 
 __all__ = ['Analysis', 'Counter']
@@ -65,7 +65,6 @@ class Analysis(object):
     """
     def __init__(self):
         self._nit = 0
-        pass
 
     def fit_hypo(self, data_dist, hypo_maker, hypo_param_selections, metric,
                  minimizer_settings, reset_free=True, check_octant=True,
@@ -264,7 +263,7 @@ class Analysis(object):
             hdr = ' '*(6+1+10+1+12+3)
             unt = []
             for p in free_p:
-                u = r.sub('', format(p.value, '~')).replace(' ','')[0:10]
+                u = r.sub('', format(p.value, '~')).replace(' ', '')[0:10]
                 if len(u) > 0:
                     u = '(' + u + ')'
                 unt.append(u.center(12))
@@ -491,12 +490,12 @@ class Analysis(object):
         # Report status of metric & params (except if blinded)
         if blind:
             msg = ('minimizer iteration: #%6d | function call: #%6d'
-		   %(self._nit, counter.count))
+                   %(self._nit, counter.count))
         else:
             #msg = '%s=%.6e | %s' %(metric, metric_val, hypo_maker.params.free)
             msg = '%s %s %s | ' %(('%d'%self._nit).center(6),
-                                ('%d'%counter.count).center(10),
-                                format(metric_val, '0.5e').rjust(12))
+                                  ('%d'%counter.count).center(10),
+                                  format(metric_val, '0.5e').rjust(12))
             msg += ' '.join([('%0.5e'%p.value.m).rjust(12)
                              for p in hypo_maker.params.free])
 
@@ -523,9 +522,9 @@ class Analysis(object):
         Parameters
         ----------
         xk : list
-	    Parameter vector
+            Parameter vector
         """
-        self._nit+=1
+        self._nit += 1
 
     # TODO: move the complexity of defining a scan into a class with various
     # factory methods, and just pass that class to the scan method; we will
@@ -561,7 +560,7 @@ class Analysis(object):
             free parameters which will be modified by the minimizer to optimize
             the `metric` in case `profile` is set to True.
 
-        hypo_param_selections : string, or sequence of strings
+        hypo_param_selections : None, string, or sequence of strings
             A pipeline configuration can have param selectors that allow
             switching a parameter among two or more values by specifying the
             corresponding param selector(s) here. This also allows for a single
@@ -582,11 +581,12 @@ class Analysis(object):
             (or parameters). Value(s) specified for `steps` must be >= 2. Note
             that the endpoints of the range are always included, and numbers of
             steps higher than 2 fill in between the endpoints.
+
             * If integer...
-                Take this many steps for each specified parameter.
+                  Take this many steps for each specified parameter.
             * If sequence of integers...
-                Take the coresponding number of steps within the allowed range
-                for each specified parameter.
+                  Take the coresponding number of steps within the allowed range
+                  for each specified parameter.
 
         values : None, scalar, sequence of scalars, or sequence-of-sequences
           * If scalar...
@@ -613,7 +613,7 @@ class Analysis(object):
                 for each value of the first param's inner sequence, an Asimov
                 distribution is produced for every value of the second param's
                 inner sequence. In total, there will be
-                  len(inner seq0) * len(inner seq1) * ...
+                ``len(inner seq0) * len(inner seq1) * ...``
                 Asimov distributions produced.
 
         only_points : None, integer, or even-length sequence of integers
@@ -650,7 +650,7 @@ class Analysis(object):
             `debug_mode` will be set to 2.
 
         """
-        if not debug_mode in (0, 1, 2):
+        if debug_mode not in (0, 1, 2):
             debug_mode = 2
 
         # Either `steps` or `values` must be specified, but not both (xor)
@@ -666,14 +666,14 @@ class Analysis(object):
             if np.isscalar(values):
                 values = np.array([values])
                 assert nparams == 1
-            for i,val in enumerate(values):
+            for i, val in enumerate(values):
                 if not np.isscalar(val):
                     # no scalar here, need a corresponding parameter name
                     assert nparams >= i+1
                 else:
                     # a scalar, can either have only one parameter or at least
                     # this many
-                    assert (nparams == 1 or nparams >= i+1)
+                    assert nparams == 1 or nparams >= i+1
                     if nparams > 1:
                         values[i] = np.array([val])
 
@@ -685,19 +685,19 @@ class Analysis(object):
                           for r in ranges]
             else:
                 assert len(steps) == nparams
-                assert np.all(np.array(steps)>=2)
+                assert np.all(np.array(steps) >= 2)
                 values = [np.linspace(r[0], r[1], steps[i])*r[0].units
-                          for i,r in enumerate(ranges)]
+                          for i, r in enumerate(ranges)]
 
         if nparams > 1:
-            steplist = [[(pname, val) for val in values[i]] for (i, pname) in
-                            enumerate(param_names)]
+            steplist = [[(pname, val) for val in values[i]]
+                        for (i, pname) in enumerate(param_names)]
         else:
             steplist = [[(param_names[0], val) for val in values[0]]]
 
         points_acc = []
         if not only_points is None:
-            assert (len(only_points) == 1 or len(only_points) % 2 == 0)
+            assert len(only_points) == 1 or len(only_points) % 2 == 0
             if len(only_points) == 1:
                 points_acc = only_points
             for i in xrange(0, len(only_points)-1, 2):
@@ -720,7 +720,7 @@ class Analysis(object):
 
         results = {'steps': {}, 'results': []}
         results['steps'] = {pname: [] for pname in param_names}
-        for i,pos in enumerate(loopfunc(*steplist)):
+        for i, pos in enumerate(loopfunc(*steplist)):
             if len(points_acc) > 0 and i not in points_acc:
                 continue
 
@@ -730,7 +730,7 @@ class Analysis(object):
                 results['steps'][pname].append(val)
                 if isinstance(val, float):
                     msg += '%s = %.2f '%(pname, val)
-                if isinstance(val, pint.quantity._Quantity):
+                elif isinstance(val, pint.quantity._Quantity):
                     msg += '%s = %.2f '%(pname, val.magnitude)
                 else:
                     raise TypeError("val is of type %s which I don't know "
@@ -777,7 +777,7 @@ class Analysis(object):
                 try:
                     del best_fit['fit_history']
                     del best_fit['hypo_asimov_dist']
-                except:
+                except KeyError:
                     pass
 
             if debug_mode == 0:
@@ -785,7 +785,7 @@ class Analysis(object):
                 try:
                     del best_fit['minimizer_metadata']
                     del best_fit['minimizer_time']
-                except:
+                except KeyError:
                     pass
 
             results['results'].append(best_fit)

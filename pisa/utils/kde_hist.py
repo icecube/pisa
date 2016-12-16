@@ -1,5 +1,4 @@
 
-
 from kde.cudakde import gaussian_kde
 import numpy as np
 from uncertainties import unumpy as unp
@@ -60,6 +59,7 @@ def get_hist(sample, binning, weights=[], bw_method='scott',
     bin_points = []
     for b in binning:
         c = unp.nominal_values(b.weighted_centers)
+        #c = unp.nominal_values(b.midpoints)
         if b.name == coszen_name:
             # how many bins to add for reflection
             l = int(len(c)*coszen_reflection)
@@ -134,7 +134,7 @@ def get_hist(sample, binning, weights=[], bw_method='scott',
     return hist*norm
 
 def kde_histogramdd(sample, binning, weights=[], bw_method='scott',
-                    adaptive=True, alpha=0.3, use_cuda=False,
+                    adaptive=True, alpha=0.3, use_cuda=True,
                     coszen_reflection=0.25, coszen_name='coszen',
                     oversample=1, stack_pid=True):
     """
@@ -172,6 +172,9 @@ def kde_histogramdd(sample, binning, weights=[], bw_method='scott',
     histogram : numpy.ndarray
 
     """
+    if len(weights) > 0:
+        assert len(weights) == sample.shape[0], 'Length of sample (%s) and weights (%s) incompatible'%(sample.shape[0], len(weights))
+
     if not stack_pid:
         return get_hist(sample, binning, weights, bw_method,
                         adaptive, alpha, use_cuda,
@@ -208,19 +211,21 @@ def kde_histogramdd(sample, binning, weights=[], bw_method='scott',
                 sample.T[other_bins[1]][mask_pid]
                 ])
             if len(weights) > 0:
-                weights = weights[mask_pid]
+                weights_pid = weights[mask_pid]
+            else:
+                weights_pid = []
             pid_stack.append(
                 get_hist(
                     data.T,
-                    weights=weights,
+                    weights=weights_pid,
                     binning=d2d_binning,
-                    coszen_name='reco_coszen',
-                    use_cuda=True,
-                    bw_method='silverman',
-                    alpha=1.0,
-                    oversample=1,
-                    coszen_reflection=0.5,
-                    adaptive=True
+                    coszen_name=coszen_name,
+                    use_cuda=use_cuda,
+                    bw_method=bw_method,
+                    alpha=alpha,
+                    oversample=oversample,
+                    coszen_reflection=coszen_reflection,
+                    adaptive=adaptive
                     )
                 )
         hist = np.dstack(pid_stack)
@@ -246,13 +251,16 @@ if __name__ == '__main__':
     my_plotter = Plotter(stamp='', outdir='.', fmt='pdf', log=False,
                          annotate=False, symmetric=False, ratio=True)
 
-    b1 = OneDimBinning(name='coszen', num_bins=100, is_lin=True,
+    b1 = OneDimBinning(name='coszen', num_bins=20, is_lin=True,
                        domain=[-1, 1], tex= r'$\cos(\theta)$')
-    b2 = OneDimBinning(name='energy', num_bins=10, is_log=True,
+    b2 = OneDimBinning(name='energy', num_bins=20, is_log=True,
                        domain=[0.1, 10]*ureg.GeV, tex=r'$E$')
-    binning = MultiDimBinning([b2, b1])
-    x = np.random.normal(1, 1, (2, 1000))
-    x = np.array([np.abs(x[0])-1, x[1]])
+    b3 = OneDimBinning(name='pid', num_bins=2, 
+                       bin_edges=[0, 1, 3], tex=r'$pid$')
+    binning = MultiDimBinning([b2, b1, b3])
+    x = np.random.normal(1, 1, (2, 10000))
+    p = np.random.uniform(0, 3, 10000)
+    x = np.array([np.abs(x[0])-1, x[1],p])
     # cut away outside csozen
     x = x.T[(x[0]<=1) & (x[0] >= -1),:].T
     # Swap
@@ -261,9 +269,15 @@ if __name__ == '__main__':
     raw_hist, e = np.histogramdd(x.T, bins=bins)
 
     hist = kde_histogramdd(x.T, binning, bw_method='silverman',
-                           coszen_name='coszen', oversample=10, stack_pid=False)
+                           coszen_name='coszen', oversample=10, stack_pid=True)
     #hist = hist/np.sum(hist)*np.sum(raw_hist)
     m1 = Map(name='KDE', hist=hist, binning=binning)
     m2 = Map(name='raw', hist=raw_hist, binning=binning)
-    m = MapSet([m1, m2, m1/m2, m1-m2])
+    m3 = m2/m1
+    m3.name = 'hist/KDE'
+    m3.tex = m3.name
+    m4 = m1 - m2
+    m4.name = 'KDE - hist'
+    m4.tex = m4.name
+    m = MapSet([m1, m2, m3, m4])
     my_plotter.plot_2d_array(m, fname='test_kde', cmap='summer')

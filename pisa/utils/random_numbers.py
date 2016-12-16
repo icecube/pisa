@@ -2,14 +2,22 @@
 # author:  J.L. Lanfranchi
 # email:   jll1062+pisa@phys.psu.edu
 # date:    Sept 3, 2016
+"""
+Utilities to handle random numbers needed by PISA in a consistent and
+reproducible manner.
+
+"""
 
 
 from collections import Sequence
 
 import numpy as np
 
+from pisa.utils.log import set_verbosity
 
-__all__ = ['get_random_state']
+
+__all__ = ['get_random_state',
+           'test_get_random_state']
 
 
 def get_random_state(random_state, jumpahead=0):
@@ -18,7 +26,7 @@ def get_random_state(random_state, jumpahead=0):
 
     Parameters
     ----------
-    random_state : None, RandomState, string, int, state vector, or sequence of int
+    random_state : None, RandomState, string, int, state vector, or seq of int
         Note for all of the below cases, `jumpahead` is applied _after_ the
         RansomState is initialized using the `random_state` (except for
         `random_state` indicating a truly-random number, in which case
@@ -120,10 +128,10 @@ def get_random_state(random_state, jumpahead=0):
 
 
 def test_get_random_state():
+    """Unit tests for get_random_state function"""
     raise NotImplementedError()
 
 
 if __name__ == '__main__':
-    from pisa.utils.log import logging, set_verbosity
     set_verbosity(3)
     test_get_random_state()

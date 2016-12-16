@@ -25,9 +25,74 @@ __all__ = ['Plotter']
 
 
 class Plotter(object):
-    def __init__(self, outdir='.', stamp='PISA cake test', size=(8,8), fmt='pdf', log=True, label='# events', grid=True, ratio=False, annotate=False, symmetric=False):
+    """
+
+    Plotting library for PISA to plot Maps and MapSets
+
+    Params:
+    ------
+
+    outdir : str
+        output directory path
+    stamp : str
+        stamp to be put on every subplot, e.g. 'Preliminary' or 'DeepCore nutau' or ...
+    fmt : str or iterable of str
+        formats to be plotted, e.g. ['pdf', 'png']
+    size : (int, int)
+        canvas size
+    log : bool
+        logarithmic z-axis
+    label : str
+        z-axis label
+    grid : bool
+        plot grid
+    ratio : bool
+        add ratio plots in 1-d histos
+    annotate : bool
+        annotate counts per bin in 2-d histos
+    symmetric : bool
+        force symmetric extent of z-axis
+    loc : str
+        either 'inside' or 'outside', defining where to put axis titles
+
+
+    Methods:
+    -------
+
+    2-d plots:
+
+    plot_2d_single(mapset, **kwargs)
+        plot all maps in individual plots
+    plot_2d_array(mapset, n_rows=None, n_cols=None, fname=None, **kwrags)
+        plot all maps or transforms in a single plot
+
+    1-d plots
+    plot_1d_single(mapset, plot_axis, **kwargs)
+        plot all maps in individual plots
+    plot_1d_array(mapset, plot_axis, n_rows=None, n_cols=None, fname=None, **kwargs)
+        plot 1d projections as an array
+    plot_1d_slices_array(mapsets, plot_axis, fname=None, **kwargs)
+        plot 1d slices as an array
+    plot_1d_all(mapset, plot_axis, **kwargs)
+        all one a single plot
+    plot_1d_stack(mapset, plot_axis, **kwargs)
+        all maps stacked on top of each other
+    plot_1d_cmp(mapsets, plot_axis, fname=None, **kwargs)
+        1d comparisons for two mapsets as projections
+
+
+    Notes:
+    -----
+
+    as **kwargs any matplotlib kwrags can be passed, for example cmap='RdBu' for a 2d plot
+
+    """
+
+    def __init__(self, outdir='.', stamp='PISA cake test', size=(8,8), fmt='pdf', log=True, label='# events', grid=True, ratio=False, annotate=False, symmetric=False,loc='inside'):
         self.outdir = outdir
         self.stamp = stamp
+        if isinstance(fmt,basestring):
+            fmt = [fmt]
         self.fmt = fmt
         self.size = size
         self.fig = None
@@ -40,6 +105,7 @@ class Plotter(object):
         self.symmetric = symmetric
         self.reset_colors()
         self.color = 'b'
+        self.loc = loc
         
     def reset_colors(self):
         self.colors = itertools.cycle(["r", "b", "g"])
@@ -65,11 +131,18 @@ class Plotter(object):
         # NOTE add_stamp cannot be used on a subplot that has been
         # de-selected and then re-selected. It will write over existing text.
         ''' ad common stamp with text '''
-        if text is not None:
-            a_text = AnchoredText(self.stamp + '\n' + r'$%s$'%text, loc=2, frameon=False, **kwargs)
-        else:
-            a_text = AnchoredText(self.stamp, loc=2, frameon=False, **kwargs)
-        plt.gca().add_artist(a_text)
+        if self.loc == 'inside':
+            if text is not None:
+                a_text = AnchoredText(self.stamp + '\n' + r'$%s$'%text, loc=2, frameon=False, **kwargs)
+            else:
+                a_text = AnchoredText(self.stamp, loc=2, frameon=False, **kwargs)
+            plt.gca().add_artist(a_text)
+        elif self.loc == 'outside':
+            if text is not None:
+                a_text = self.stamp + ' ' + r'$%s$'%text
+            else:
+                a_text = self.stamp
+            plt.gca().set_title(a_text)
 
     def add_leg(self):
         ''' initialize legend '''
@@ -77,7 +150,8 @@ class Plotter(object):
 
     def dump(self,fname):
         ''' dump figure to file'''
-        plt.savefig(self.outdir+'/'+fname+'.'+self.fmt, dpi=150, edgecolor='none',facecolor=self.fig.get_facecolor())
+        for fmt in self.fmt:
+            plt.savefig(self.outdir+'/'+fname+'.'+fmt, dpi=150, edgecolor='none',facecolor=self.fig.get_facecolor())
 
     # --- 2d plots ---
 
@@ -118,12 +192,12 @@ class Plotter(object):
         self.dump(fname)
 
     def plot_1d_slices_array(self, mapsets, plot_axis, fname=None, **kwargs):
-        ''' plot 1d projections as an array '''
+        ''' plot 1d slices as an array '''
         self.slices_array(mapsets, plot_axis, **kwargs)
         self.dump(fname)
 
     def plot_1d_all(self, mapset, plot_axis, **kwargs):
-        ''' all one one canvas '''
+        ''' all one a single plot '''
         self.init_fig()
         for map in mapset:
             self.plot_1d_projection(map, plot_axis, **kwargs)
@@ -174,20 +248,38 @@ class Plotter(object):
         if isinstance(mapset, Map):
             mapset = MapSet([mapset])
 
-        if split_axis is not None:
-            new_maps = []
-            for map in mapset:
-                split_idx = map.binning.names.index(split_axis)
-                new_binning = MultiDimBinning([binning for binning in map.binning if binning.name != split_axis])
-                for i in range(map.binning[split_axis].num_bins):
-                    newmap = Map(name=map.name+'_%s_%i'%(split_axis,i),tex=map.tex+' %s %i'%(split_axis,i), hist = np.rollaxis(map.hist, split_idx, 0)[i], binning=new_binning)
+
+
+        # if dimensionality is 3, then still define a spli_axis automatically
+        new_maps = []
+        for map in mapset:
+            if len(map.binning) == 3:
+                if split_axis is None:
+                    # shortest dimension
+                    l = [binning.num_bins for binning in map.binning]
+                    idx = l.index(min(l))
+                    s_axis = map.binning.names[idx]
+                    logging.warning('automatically splitting along %s axis'%s_axis)
+                else:
+                    s_axis = split_axis
+                split_idx = map.binning.names.index(s_axis)
+                new_binning = MultiDimBinning([binning for binning in map.binning if binning.name != s_axis])
+                for i in range(map.binning[s_axis].num_bins):
+                    newmap = Map(name=map.name+'_%s_%i'%(s_axis,i),tex=map.tex+'\ %s\ bin\ %i'%(s_axis,i), hist = np.rollaxis(map.hist, split_idx, 0)[i], binning=new_binning)
                     new_maps.append(newmap)
-            mapset = MapSet(new_maps)
+            elif len(map.binning) == 2:
+                new_maps.append(map)
+            else:
+                raise Exception('Cannot plot %i dimensional map in 2d'%len(map))
+        mapset = MapSet(new_maps)
 
         if isinstance(mapset, MapSet):
             n = len(mapset)
         elif isinstance(mapset, TransformSet):
             n = len([x for x in mapset])
+        else:
+            raise TypeError('Expecting to plot a MapSet or TransformSet but '
+                            'got %s'%type(mapset))
         if n_rows is None and n_cols is None:
             # TODO: auto row/cols
             n_rows = math.floor(math.sqrt(n))
@@ -280,7 +372,7 @@ class Plotter(object):
         if linlog:
             # needs to be transposed for imshow
             img = plt.imshow(zmap.T,origin='lower',interpolation='nearest',extent=extent,aspect='auto',
-                cmap=cmap, **kwargs)
+                cmap=cmap, vmin=vmin, vmax=vmax,**kwargs)
         else:
             # only lin or log can be handled by imshow...otherise use colormesh
             x,y = np.meshgrid(bin_edges[0],bin_edges[1])

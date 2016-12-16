@@ -1,4 +1,10 @@
+# Author: Philipp Eller
+# Email:  pde3@psu.edu
+"""
+Configuration parser class that subclasses ConfigParser.SafeConfigParser to
+handle PISA's specific config-file-parsing needs...
 
+"""
 
 import ConfigParser
 import re
@@ -20,7 +26,9 @@ class BetterConfigParser(ConfigParser.SafeConfigParser):
             processed_fnames.extend(new_fnames)
             new_fnames = self.recursive_fnames(new_fnames)
             rec_incs = set(new_fnames).intersection(processed_fnames)
-            assert not any(rec_incs), 'recursive include statements found for %s'%', '.join(rec_incs)
+            if any(rec_incs):
+                raise ValueError('Recursive include statements found for %s'
+                                 % ', '.join(rec_incs))
             if len(new_fnames) == 0:
                 break
         # call read with complete files list
@@ -37,7 +45,7 @@ class BetterConfigParser(ConfigParser.SafeConfigParser):
         with open(fname) as f:
             for line in f.readlines():
                 if line.startswith('#include '):
-                    inc_file = line[9:].rstrip('\nr')
+                    inc_file = line[9:].rstrip()
                     inc_file = resources.find_resource(inc_file)
                     processed_fnames.append(inc_file)
                 else:
@@ -55,21 +63,21 @@ class BetterConfigParser(ConfigParser.SafeConfigParser):
             self, section=section, raw=True
         )
         result = [(key, self.__replaceSectionwideTemplates(value)) for
-                  key,value in config_list]
+                  key, value in config_list]
         return result
 
     def optionxform(self, optionstr):
-        """Enable case sensitive options in .ini files."""
+        """Enable case sensitive options in .ini/.cfg files."""
         return optionstr
 
     def __replaceSectionwideTemplates(self, data):
-        """Replace <section|option> with get(section,option) recursivly."""
+        """Replace <section|option> with get(section, option) recursivly."""
         result = data
         findExpression = re.compile(r"((.*)\<!(.*)\|(.*)\!>(.*))*")
         groups = findExpression.search(data).groups()
 
         # If expression not matched
-        if not groups == (None, None, None, None, None):
+        if groups != (None, None, None, None, None):
             result = self.__replaceSectionwideTemplates(groups[1])
             result += self.get(groups[2], groups[3])
             result += self.__replaceSectionwideTemplates(groups[4])

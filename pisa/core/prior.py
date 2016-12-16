@@ -189,30 +189,27 @@ class Prior(object):
         self._str = lambda s: 'uniform prior, llh_offset=%s' %self.llh_offset
 
     def __init_jeffreys(self, A, B, m):
+        '''
+        Calculates jeffreys prior as defined in Sivia p.125
+        '''
         self.kind = 'jeffreys'
         if isinstance(A, Number):
             A = A * ureg.dimensionless
         if isinstance(B, Number):
             B = B * ureg.dimensionless
-        if isinstance(m, Number):
-            m = m * ureg.dimensionless
         assert A.dimensionality == B.dimensionality
-        assert A.dimensionality == m.dimensionality
-        self._state_attrs.extend(['A', 'B', 'm'])
+        self._state_attrs.extend(['A', 'B'])
         if isinstance(A, pint.quantity._Quantity):
             self.units = str(A.units)
             assert isinstance(B, pint.quantity._Quantity), '%s' %type(B)
             B = B.to(self.units)
-            m = m.to(self.units)
         self.A = A
         self.B = B
-        self.m = m
         def llh(x):
             x = self.__strip(self.__convert(x))
             A = self.__strip(self.A)
             B = self.__strip(self.B)
-            m = self.__strip(self.m)
-            return - np.log(x) + np.log(m)
+            return - np.log(x) + np.log(np.log(B)-np.log(A))
         self.llh = llh
         self.max_at = self.A
         self.max_at_str = self.__stringify(self.max_at)

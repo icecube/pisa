@@ -2,13 +2,15 @@
 #         jll1062+pisa@phys.psu.edu
 #
 # date:   2015-06-13
-"""Generic file I/O, dispatching specific file readers/writers as necessary"""
+"""
+Generic file I/O, dispatching specific file readers/writers as necessary
+
+"""
 
 
 import cPickle
 import os
 import re
-import unicodedata
 
 import dill
 
@@ -20,17 +22,21 @@ from pisa.utils import resources
 
 import numpy as np
 
-__all__ = ['expandPath', 'mkdir', 'get_valid_filename', 'nsort', 'findFiles',
-            'from_cfg', 'from_pickle', 'to_pickle', 'from_dill', 'to_dill',
-            'from_file', 'to_file']
 
-JSON_EXTS = ['json', 'json.bz2']
-HDF5_EXTS = ['hdf', 'h5', 'hdf5']
+__all__ = ['PKL_EXTS', 'DILL_EXTS', 'CFG_EXTS', 'ZIP_EXTS', 'TXT_EXTS',
+           'NSORT_RE',
+           'expandPath', 'mkdir', 'get_valid_filename', 'nsort', 'findFiles',
+           'from_cfg', 'from_pickle', 'to_pickle', 'from_dill', 'to_dill',
+           'from_file', 'to_file']
+
+
 PKL_EXTS = ['pickle', 'pckl', 'pkl', 'p']
 DILL_EXTS = ['dill']
 CFG_EXTS = ['ini', 'cfg']
 ZIP_EXTS = ['bz2']
-TXT_EXTS = ['txt','dat']
+TXT_EXTS = ['txt', 'dat']
+
+NSORT_RE = re.compile(r'(\d+)')
 
 
 def expandPath(path, exp_user=True, exp_vars=True, absolute=False):
@@ -89,15 +95,17 @@ def get_valid_filename(s):
     return re.sub(r'(?u)[^-\w.]', '', s)
 
 
-NSORT_RE = re.compile(r'(\d+)')
 def nsort(l):
     """Numbers sorted by value, not by alpha order.
 
     Code from
     nedbatchelder.com/blog/200712/human_sorting.html#comments
     """
-    return sorted(l, key=lambda a: zip(NSORT_RE.split(a)[0::2],
-                                       map(int, NSORT_RE.split(a)[1::2])))
+    return sorted(
+        l,
+        key=lambda a: zip(NSORT_RE.split(a)[0::2],
+                          [int(i) for i in NSORT_RE.split(a)[1::2]])
+    )
 
 
 def findFiles(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
@@ -195,6 +203,7 @@ def to_pickle(obj, fname, overwrite=True, warn=True):
     return cPickle.dump(obj, file(fname, 'wb'),
                         protocol=cPickle.HIGHEST_PROTOCOL)
 
+
 def from_txt(fname, as_array=False):
     if as_array:
         with open(fname, 'r') as f:
@@ -206,9 +215,11 @@ def from_txt(fname, as_array=False):
             a = f.read()
     return a
 
+
 def to_txt(obj, fname):
     with open(fname, 'w') as f:
         f.write(obj)
+
 
 def from_dill(fname):
     return dill.load(file(fname, 'rb'))
@@ -257,12 +268,12 @@ def from_file(fname, fmt=None, **kwargs):
         rootname, inner_ext = os.path.splitext(rootname)
         inner_ext = inner_ext.replace('.', '').lower()
         zip_ext = ext
-        ext = inner_ext + '.' + zip_ext
+        ext = inner_ext
 
     fname = resources.find_resource(fname)
-    if ext in JSON_EXTS:
+    if ext in jsons.JSON_EXTS:
         return jsons.from_json(fname, **kwargs)
-    if ext in HDF5_EXTS:
+    if ext in hdf.HDF5_EXTS:
         return hdf.from_hdf(fname, **kwargs)
     if ext in PKL_EXTS:
         return from_pickle(fname, **kwargs)
@@ -274,7 +285,7 @@ def from_file(fname, fmt=None, **kwargs):
         return from_txt(fname, **kwargs)
     errmsg = 'File "%s": unrecognized extension "%s"' % (fname, ext)
     log.logging.error(errmsg)
-    raise TypeError(errmsg)
+    raise ValueError(errmsg)
 
 
 def to_file(obj, fname, fmt=None, overwrite=True, warn=True, **kwargs):
@@ -292,12 +303,12 @@ def to_file(obj, fname, fmt=None, overwrite=True, warn=True, **kwargs):
         rootname, inner_ext = os.path.splitext(rootname)
         inner_ext = inner_ext.replace('.', '').lower()
         zip_ext = ext
-        ext = inner_ext + '.' + zip_ext
+        ext = inner_ext
 
-    if ext in JSON_EXTS:
+    if ext in jsons.JSON_EXTS:
         return jsons.to_json(obj, fname, overwrite=overwrite, warn=warn,
                              **kwargs)
-    elif ext in HDF5_EXTS:
+    elif ext in hdf.HDF5_EXTS:
         return hdf.to_hdf(obj, fname, overwrite=overwrite, warn=warn, **kwargs)
     elif ext in PKL_EXTS:
         return to_pickle(obj, fname, overwrite=overwrite, warn=warn, **kwargs)

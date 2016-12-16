@@ -14,6 +14,7 @@ from argparse import ArgumentParser
 import glob
 import os
 import sys
+from traceback import format_exception
 
 from pisa.core.pipeline import Pipeline
 from pisa.utils.log import logging, set_verbosity
@@ -55,51 +56,76 @@ def main():
     example_directory = find_resource(example_directory)
     settings_files = glob.glob(example_directory + '/*example*.cfg')
 
+    num_configs = len(settings_files)
+    failure_count = 0
+    skip_count = 0
     for settings_file in settings_files:
         # aeff smooth stage is currently broken. So ignore for now.
-        if 'smooth' in settings_file:
+        if 'aeffsmooth' in settings_file:
+            skip_count += 1
+            logging.warn('Skipping "%s" as it is currently expected to be'
+                         ' broken.' % settings_file)
             settings_files.remove(settings_file)
 
     for settings_file in settings_files:
+        allow_error = False
+        msg = ''
         try:
-            logging.info('Testing %s'%settings_file)
-            logging.info('Instantiating pipeline...')
+            logging.info('Instantiating pipeline from file "%s" ...'
+                         %settings_file)
             pipeline = Pipeline(settings_file)
-            logging.info('Retrieving outputs...')
-            outputs = pipeline.get_outputs()
-            logging.info('Seems fine!')
+            logging.info('    retrieving outputs...')
+            _ = pipeline.get_outputs()
+
         except ImportError as err:
-            if 'ROOT' in err.message:
-                if args.ignore_root:
-                    logging.info('Skipping pipeline as it has ROOT '
-                                 'dependencies')
-                else:
-                    logging.error(sys.exc_info())
-                    logging.error('%s does not work. Error trying to import '
-                                  'ROOT - use the flag "--ignore-root" to '
-                                  'skip ROOT dependent pipelines.'
-                                  %settings_file)
-                    raise
-            elif 'cuda' in err.message:
-                if args.ignore_gpu:
-                    logging.info('Skipping pipeline as it has GPU '
-                                 'dependencies')
-                else:
-                    logging.error(sys.exc_info())
-                    logging.error('%s does not work. Error trying to import '
-                                  'CUDA - use the flag "--ignore-gpu" to skip '
-                                  'GPU dependent pipelines.' % settings_file)
-                    raise
+            exc = sys.exc_info()
+            if 'ROOT' in err.message and args.ignore_root:
+                skip_count += 1
+                allow_error = True
+                msg = ('    Skipping pipeline as it has ROOT dependencies'
+                       ' (ROOT cannot be imported)')
+            elif 'cuda' in err.message and args.ignore_gpu:
+                skip_count += 1
+                allow_error = True
+                msg = ('    Skipping pipeline as it has cuda dependencies'
+                       ' (pycuda cannot be imported)')
             else:
-                logging.error(sys.exc_info())
-                raise ValueError('%s does not work. Please review the error '
-                                 'message above and fix the problem.'
-                                 %settings_file)
+                failure_count += 1
+
         except:
-            logging.error(sys.exc_info())
-            raise ValueError('%s does not work. Please review the error '
-                             'message above and fix the problem.'
-                             %settings_file)
+            exc = sys.exc_info()
+            failure_count += 1
+
+        else:
+            exc = None
+
+        finally:
+            if exc is not None:
+                if allow_error:
+                    logging.warn(msg)
+                else:
+                    logging.error(
+                        '    FAILURE! %s failed to run. Please review the'
+                        ' error message below and fix the problem. Continuing'
+                        ' with any other configs now...' % settings_file
+                    )
+                    for line in format_exception(*exc):
+                        for sub_line in line.splitlines():
+                            logging.error(' '*4 + sub_line)
+            else:
+                logging.info('    Seems fine!')
+
+    if skip_count > 0:
+        logging.warn('%d of %d example pipeline config files were skipped'
+                     % (skip_count, num_configs))
+
+    if failure_count > 0:
+        msg = ('<< FAIL : test_example_pipelines : (%d of %d EXAMPLE PIPELINE'
+               ' CONFIG FILES FAILED) >>' % (failure_count, num_configs))
+        logging.error(msg)
+        raise Exception(msg)
+
+    logging.info('<< PASS : test_example_pipelines >>')
 
 
 if __name__ == '__main__':

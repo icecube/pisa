@@ -1,8 +1,15 @@
 # Authors: J.L.Lanfranchi/P.Eller
 # Date   : 2016-05-13
+"""
+Transform as base class for transformations, TransformSet for sets of Transform
+objects, and BinnedTensorTransform as an implementation of Transform for
+defining and applying linear transforms.
+
+"""
+
 
 from collections import OrderedDict, Sequence
-from copy import copy, deepcopy
+from copy import deepcopy
 from functools import wraps
 import importlib
 import inspect
@@ -11,16 +18,12 @@ import sys
 import numpy as np
 from uncertainties import unumpy as unp
 
+from pisa import ureg, HASH_SIGFIGS
 from pisa.core.binning import MultiDimBinning
 from pisa.core.map import Map, MapSet, rebin
 from pisa.utils.comparisons import normQuant, recursiveEquality
 from pisa.utils.hash import hash_obj
 from pisa.utils import jsons
-from pisa.utils.log import logging, set_verbosity
-from pisa.utils.profiler import line_profile, profile
-
-
-HASH_SIGFIGS = 12
 
 
 __all__ = ['TransformSet', 'Transform', 'BinnedTensorTransform']
@@ -39,9 +42,6 @@ __all__ = ['TransformSet', 'Transform', 'BinnedTensorTransform']
 # so we can trnsparently handle e.g. events alongside maps where one is a
 # sideband object for the other in a given stage, but which is which should be
 # irrelevant).
-
-# TODO: dtype arg to BinnedTensorTransform (or a global def like HASH_SIGFIGS?)
-# to allow for single precision and hence any associated speedups
 
 ## TODO: numba implementation of BinnedTensorTransform faster or not?
 #import numba
@@ -156,11 +156,11 @@ class TransformSet(object):
             classes = [c[1] for c in clsmembers if c[0] == classname]
             if len(classes) > 0:
                 class_ = classes[0]
+            # Otherwise try to import the module recorded in the JSON file
             else:
-                # Otherwise try to import the module recorded in the JSON file
                 module = importlib.import_module(module)
-                # And then get the class
-                class_ = getattr(module, classsname)
+                # and then get the class
+                class_ = getattr(module, classname)
             transforms.append(class_(**transform_state))
         state['transforms'] = transforms
         # State is a dict, so instantiate with double-asterisk syntax
@@ -232,7 +232,6 @@ class TransformSet(object):
                and output_name == transform.output_name:
                 return transform
 
-    @profile
     def apply(self, inputs):
         """Apply each transform to `inputs`; return computed outputs.
 
@@ -332,10 +331,10 @@ class Transform(object):
 
         self._tex = tex if tex is not None else output_name
         self._hash = hash
-        if bool(error_method) == False:
-            self._error_method = None
-        else:
+        if bool(error_method):
             self._error_method = error_method
+        else:
+            self._error_method = None
 
     @property
     def _serializable_state(self):
@@ -449,7 +448,7 @@ class Transform(object):
         """Override this method in subclasses"""
         raise NotImplementedError('Override this method in subclasses')
 
-    def validate_transform(xform):
+    def validate_transform(self, xform):
         """Override this method in subclasses"""
         raise NotImplementedError('Override this method in subclasses')
 
@@ -554,6 +553,7 @@ class BinnedTensorTransform(Transform):
             input_binning=input_binning, output_binning=output_binning,
             tex=tex, hash=hash, error_method=error_method
         )
+        self._xform_array = None
         self.xform_array = xform_array
         self.sum_inputs = sum_inputs
         if error_array is not None:
@@ -575,7 +575,6 @@ class BinnedTensorTransform(Transform):
                                          sigfigs=HASH_SIGFIGS)
         return state
 
-    @profile
     def set_errors(self, error_array):
         """Manually define the error with an array the same shape as the
         contained histogram. Can also remove errors by passing None.
@@ -589,14 +588,14 @@ class BinnedTensorTransform(Transform):
 
         """
         if error_array is None:
-            super(Transform, self).__setattr__(
+            super(self.__class__, self).__setattr__(
                 '_xform_array', unp.nominal_values(self._xform_array)
             )
             return
         assert error_array.shape == self.xform_array.shape
         super(BinnedTensorTransform, self).__setattr__(
-            '_xform_array', unp.uarray(self._xform_array, 
-                    np.ascontiguousarray(error_array))
+            '_xform_array',
+            unp.uarray(self._xform_array, np.ascontiguousarray(error_array))
         )
 
     @property
@@ -654,7 +653,7 @@ class BinnedTensorTransform(Transform):
         return not self == other
 
     @_new_obj
-    def __neg__(self, other):
+    def __neg__(self):
         return dict(xform_array=-self.xform_array)
 
     @_new_obj
@@ -695,8 +694,8 @@ class BinnedTensorTransform(Transform):
             return dict(xform_array=self.xform_array - other.xform_array)
         return dict(xform_array=self.xform_array - other)
 
-    # TODO: validate transform...
-    @profile
+    # TODO: validate transform...; also, this def changes number of arguments,
+    # which should be avoided if possible
     def validate_transform(self, input_binning, output_binning, xform_array):
         """Superficial validation that the transform being set is reasonable.
 
@@ -719,7 +718,6 @@ class BinnedTensorTransform(Transform):
         #                                  list(output_binning.shape) + out_dim)
         pass
 
-    @profile
     def validate_input(self, inputs):
         for input_name in self.input_names:
             assert input_name in inputs, \
@@ -732,7 +730,6 @@ class BinnedTensorTransform(Transform):
     # given the (concatenated) input dimension and the dimension of the
     # transform kernel
 
-    @profile
     def _apply(self, inputs):
         """Apply transforms to input maps to compute output maps.
 
@@ -840,7 +837,7 @@ class BinnedTensorTransform(Transform):
 
         elif len(self.xform_array.shape) == 2*len(input_array.shape):
             output = np.tensordot(input_array, self.xform_array,
-                                  axes=([0,1], [0,1]))
+                                  axes=([0, 1], [0, 1]))
 
         elif (input_array.shape ==
               self.xform_array.shape[0:len(input_array.shape)]):
@@ -870,22 +867,23 @@ def test_BinnedTensorTransform():
     import os
     import shutil
     import tempfile
-    from pisa import ureg, Q_
-    from pisa.core.map import Map, MapSet
-    from pisa.core.binning import MultiDimBinning
 
     binning = MultiDimBinning([
-        dict(name='energy', is_log=True, domain=(1,80)*ureg.GeV, num_bins=10),
-        dict(name='coszen', is_lin=True, domain=(-1,0), num_bins=5)
+        dict(name='energy', is_log=True, domain=(1, 80)*ureg.GeV, num_bins=10),
+        dict(name='coszen', is_lin=True, domain=(-1, 0), num_bins=5)
     ])
 
-    nue_map = Map(name='nue',
-                  binning=binning,
-                  hist=np.random.random(binning.shape))
+    nue_map = Map(
+        name='nue',
+        binning=binning,
+        hist=np.random.random(binning.shape)
+    )
     nue_map.set_poisson_errors()
-    numu_map = Map(name='numu',
-                  binning=binning,
-                  hist=np.random.random(binning.shape))
+    numu_map = Map(
+        name='numu',
+        binning=binning,
+        hist=np.random.random(binning.shape)
+    )
     numu_map.set_poisson_errors()
     inputs = MapSet(
         name='inputs',

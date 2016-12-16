@@ -272,7 +272,8 @@ if __name__ == '__main__':
             'develop': [
                 'sphinx>1.3',
                 'recommonmark',
-                'versioneer'
+                'versioneer',
+                'sphinx_rtd_theme'
             ]
         },
         packages=find_packages(),
@@ -297,7 +298,7 @@ if __name__ == '__main__':
                 'add_flux_to_events_file.py = pisa.scripts.add_flux_to_events_file:main',
                 'compare.py = pisa.scripts.compare:main',
                 'fit_discrete_sys.py = pisa.scripts.fit_discrete_sys:main',
-                'make_akhmedov_plots.py = pisa.scripts.make_akhmedov_plots:main',
+                'make_asymmetry_plots.py = pisa.scripts.make_asymmetry_plots:main',
                 'make_events_file.py = pisa.scripts.make_events_file:main',
                 'make_nufit_theta23_spline_priors.py = pisa.scripts.make_nufit_theta23_spline_priors:main',
                 'test_consistency_with_osfit.py = pisa.scripts.test_consistency_with_oscfit:main',

@@ -27,6 +27,7 @@ in turn is essential for caching to work correctly.
 from itertools import izip
 from collections import Iterable, Iterator, Mapping, OrderedDict, Sequence
 from numbers import Number
+import re
 
 import numpy as np
 from uncertainties.core import AffineScalarFunc
@@ -34,23 +35,32 @@ from uncertainties import ufloat
 from uncertainties import unumpy as unp
 import pint
 
-from pisa import ureg, Q_, FTYPE
+from pisa import ureg, FTYPE, HASH_SIGFIGS
 from pisa.utils.log import logging, set_verbosity
-from pisa.utils.profiler import line_profile, profile
 
 
-__all__ = ['PREC', 'LOG10_2', 'NP_TYPES', 'SEQ_TYPES', 'MAP_TYPES',
-           'COMPLEX_TYPES',
+__all__ = ['FTYPE_PREC', 'EQUALITY_SIGFIGS', 'EQUALITY_PREC', 'ALLCLOSE_KW',
+           'LOG10_2', 'NP_TYPES', 'SEQ_TYPES', 'MAP_TYPES', 'COMPLEX_TYPES',
            'isvalidname', 'isscalar', 'isbarenumeric',
            'recursiveEquality', 'recursiveAllclose', 'normQuant']
 
 
-PREC = np.finfo(FTYPE).eps
+FTYPE_PREC = np.finfo(FTYPE).eps
 """Machine precision ("eps") for PISA's FLOAT datatype"""
 
-# Derive the following number via
-# from sympy import *
-# print str(N(log(2, 10), 40))
+#EQ_SIGFIGS = int(np.ceil(np.log10(FTYPE_PREC)))
+EQUALITY_SIGFIGS = HASH_SIGFIGS
+"""Significant figures for performing equality comparisons"""
+
+EQUALITY_PREC = 10**-EQUALITY_SIGFIGS
+"""Precision ("rtol") for performing equality comparisons"""
+
+ALLCLOSE_KW = dict(rtol=EQUALITY_PREC, atol=0, equal_nan=True)
+"""Keyword args to pass to all calls to numpy.allclose"""
+
+# Derive the following number via:
+# >>> from sympy import log, N
+# >>> str(N(log(2, 10), 40))
 LOG10_2 = np.float64('0.3010299956639811952137388947244930267682')
 
 NP_TYPES = (np.ndarray, np.matrix)
@@ -60,6 +70,7 @@ COMPLEX_TYPES = tuple(list(NP_TYPES) + list(SEQ_TYPES) + list(MAP_TYPES))
 
 
 def isvalidname(x):
+    """Name that is valid to use for a Python variable"""
     return re.compile(r'\W|^(?=\d)').match(x) is None
 
 
@@ -152,6 +163,7 @@ def recursiveEquality(x, y):
     elif isinstance(x, pint.quantity._Quantity):
         if not isinstance(y, pint.quantity._Quantity):
             logging.trace('type(x)=%s but type(y)=%s' %(type(x), type(y)))
+            return False
         xunit = str(x.units)
         try:
             converted_y = y.to(xunit)
@@ -159,25 +171,24 @@ def recursiveEquality(x, y):
             logging.trace('Incompatible units: x.units=%s, y.units=%s'
                           %(x.units, y.units))
             return False
-        # Check for equality to double precision
-        if not np.allclose(x.magnitude, converted_y.magnitude,
-                           rtol=1e-15, atol=0):
+        # Check for equality to HASH_SIGFIGS significant figures
+        if not np.allclose(x.magnitude, converted_y.magnitude, **ALLCLOSE_KW):
             logging.trace('x.magnitude: %s' %x.magnitude)
             logging.trace('y.magnitude: %s' %y.magnitude)
             return False
 
-    # simple things can be compared directly
-    elif isinstance(x, basestring) or isinstance(y, basestring) or \
-            (not (isinstance(x, COMPLEX_TYPES) or
-                  isinstance(y, COMPLEX_TYPES))):
+    # Simple things can be compared directly
+    elif (isinstance(x, basestring) or isinstance(y, basestring) or
+          not (isinstance(x, COMPLEX_TYPES)
+               or isinstance(y, COMPLEX_TYPES))):
         if x != y:
-            iseq = False
+            is_eq = False
             try:
-                if np.isnan(x) and np.isnan(y):
-                    iseq = True
+                if np.allclose(x, y, **ALLCLOSE_KW):
+                    is_eq = True
             except TypeError:
                 pass
-            if not iseq:
+            if not is_eq:
                 logging.trace('Simple types (type(x)=%s, type(y)=%s) not equal.'
                               %(type(x), type(y)))
                 logging.trace('x: %s' %x)
@@ -190,15 +201,15 @@ def recursiveEquality(x, y):
             logging.trace('shape(x): %s' %np.shape(x))
             logging.trace('shape(y): %s' %np.shape(y))
             return False
-        if not np.all(np.allclose(x, y, atol=0, rtol=0, equal_nan=True)):
+        if not np.allclose(x, y, **ALLCLOSE_KW):
             logging.trace('x: %s' %x)
             logging.trace('y: %s' %y)
             return False
 
-    # Dict
+    # dict
     elif isinstance(x, Mapping):
         xkeys = sorted(x.keys())
-        if not xkeys == sorted(y.keys()):
+        if xkeys != sorted(y.keys()):
             logging.trace('xkeys: %s' %(xkeys,))
             logging.trace('ykeys: %s' %(sorted(y.keys()),))
             return False
@@ -210,7 +221,7 @@ def recursiveEquality(x, y):
 
     # Non-numpy sequence
     elif isinstance(x, Sequence):
-        if not len(x) == len(y):
+        if len(x) != len(y):
             logging.trace('len(x): %s' %len(x))
             logging.trace('len(y): %s' %len(y))
             return False
@@ -245,7 +256,7 @@ def recursiveAllclose(x, y, *args, **kwargs):
     args and kwargs are passed into numpy.allclose() function
     """
     # TODO: until the below has been verified, refuse to run
-    raise NotImplementedError()
+    raise NotImplementedError('recursiveAllclose not implemented yet')
     # None
     if x is None:
         if y is not None:
@@ -266,14 +277,14 @@ def recursiveAllclose(x, y, *args, **kwargs):
         if not isinstance(y, dict):
             return False
         xkeys = sorted(x.keys())
-        if not xkeys == sorted(y.keys()):
+        if xkeys != sorted(y.keys()):
             return False
         for k in xkeys:
             if not recursiveAllclose(x[k], y[k], *args, **kwargs):
                 return False
     # Sequence
     elif hasattr(x, '__len__'):
-        if not len(x) == len(y):
+        if len(x) != len(y):
             return False
         if isinstance(x, list) or isinstance(x, tuple):
             # NOTE: A list is allowed to be allclose to a tuple so long
@@ -311,7 +322,6 @@ def recursiveAllclose(x, y, *args, **kwargs):
 # floating point spec values -- like half, single, double) for more precise
 # control (and possibly faster comp), esp. if we decide to move to FP32 or
 # (even more critical) FP16?
-#@line_profile
 def normQuant(obj, sigfigs=None, full_norm=True):
     """Normalize quantities such that two things that *should* be equal are
     returned as identical objects.
@@ -594,7 +604,7 @@ def test_isscalar():
     p_u_fl = ufloat(1, 1) * ureg.GeV
     for x in [u_fl, p_fl, p_u_fl]:
         assert isscalar(x), str(x) + ' should evaluate to scalar'
-    print ('<< PASSED : test_isscalar >>')
+    logging.info('<< PASSED : test_isscalar >>')
 
 
 def test_recursiveEquality():
@@ -654,11 +664,10 @@ def test_recursiveEquality():
     assert recursiveEquality(-np.inf, -np.inf)
     assert not recursiveEquality(np.inf, -np.inf)
     assert not recursiveEquality(np.inf, np.nan)
-    print '<< PASSED >> recursiveEquality'
+    logging.info('<< PASSED : test_recursiveEquality >>')
 
 
 def test_normQuant():
-    from pisa.utils.log import logging, set_verbosity
     # TODO: test:
     # * non-numerical
     #   * single non-numerical
@@ -700,15 +709,15 @@ def test_normQuant():
     assert np.all(normQuant(q0, 16) == normQuant(q1, 16))
     assert np.all(normQuant(q0, 15) == normQuant(q1, 15))
     assert np.all(normQuant(q0, 1) == normQuant(q1, 1))
-    assert (normQuant(np.inf, sigfigs=15) == normQuant(np.inf, sigfigs=15))
-    assert (normQuant(-np.inf, sigfigs=15) == normQuant(-np.inf, sigfigs=15))
-    assert (normQuant(np.inf, sigfigs=15) != normQuant(-np.inf, sigfigs=15))
-    assert (normQuant(np.nan, sigfigs=15) != normQuant(np.nan, sigfigs=15))
-    print ('<< PASSED : test_normQuant >>')
+    assert normQuant(np.inf, sigfigs=15) == normQuant(np.inf, sigfigs=15)
+    assert normQuant(-np.inf, sigfigs=15) == normQuant(-np.inf, sigfigs=15)
+    assert normQuant(np.inf, sigfigs=15) != normQuant(-np.inf, sigfigs=15)
+    assert normQuant(np.nan, sigfigs=15) != normQuant(np.nan, sigfigs=15)
+    logging.info('<< PASSED : test_normQuant >>')
 
 
 if __name__ == '__main__':
-    set_verbosity(3)
+    set_verbosity(1)
     test_isscalar()
     test_recursiveEquality()
     test_normQuant()

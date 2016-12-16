@@ -32,15 +32,15 @@ class Layers(object):
             return self.rDetector * np.sqrt(np.square(coszen) - 1 + np.square(1 + kappa)) - self.rDetector * coszen
 
     def ComputeMinLengthToLayers(self):
-	self.coszen_limit = OrderedDict()
-    	#first element of self.Radii is largest radius!
+        self.coszen_limit = OrderedDict()
+        #first element of self.Radii is largest radius!
         for i,rad in enumerate(self.Radii):
-	    # Using a cosine threshold instead!
-	    if i == 0:
-		x = 0
+            # Using a cosine threshold instead!
+            if i == 0:
+                x = 0
             else:
                 x = - np.sqrt(1 - (np.square(rad) / np.square(self.rDetector)))
-	    self.coszen_limit[rad] = x
+            self.coszen_limit[rad] = x
 
     def SetDensityProfile(self, coszen, PathLength):
 
@@ -49,99 +49,99 @@ class Layers(object):
         self.TraverseRhos = np.zeros(self.max_layers)
         self.TraverseDistance = np.zeros(self.max_layers)
         self.TraverseElectronFrac = np.zeros(self.max_layers)
-        
-	if coszen >= 0:
-	    #Path through the air:
-	    kappa = self.DetectorDepth/self.rDetector
-	    lam = coszen + np.sqrt(np.square(coszen) - 1 + (1 + kappa) * (1 + kappa))
-	    lam *= self.rDetector
-	    pathThroughAtm = (self.prop_height * (self.prop_height + 2. * self.DetectorDepth +
-				    2.0*self.rDetector))/(PathLength + lam)
-	    pathThroughOuterLayer = PathLength - pathThroughAtm
-	    self.TraverseRhos[0] = 0.0
-	    self.TraverseDistance[0] = pathThroughAtm
-	    self.TraverseElectronFrac[0] = self.default_elec_frac
-	    self.Layers = 1
 
-	    if self.DetectorDepth > self.MinDetectorDepth:
-		self.TraverseRhos[1] = self.Rhos[0]
-		self.TraverseDistance[1] = pathThroughOuterLayer
-		self.TraverseElectronFrac[1] = self.YeFrac[-1]
-		self.Layers+=1
+        if coszen >= 0:
+            #Path through the air:
+            kappa = self.DetectorDepth/self.rDetector
+            lam = coszen + np.sqrt(np.square(coszen) - 1 + (1 + kappa) * (1 + kappa))
+            lam *= self.rDetector
+            pathThroughAtm = (self.prop_height * (self.prop_height + 2. * self.DetectorDepth +
+                                    2.0*self.rDetector))/(PathLength + lam)
+            pathThroughOuterLayer = PathLength - pathThroughAtm
+            self.TraverseRhos[0] = 0.0
+            self.TraverseDistance[0] = pathThroughAtm
+            self.TraverseElectronFrac[0] = self.default_elec_frac
+            self.Layers = 1
 
-	else:
-	    # path through air
-	    self.TraverseRhos[0] = 0.
-	    self.TraverseDistance[0] = self.prop_height * (self.prop_height + self.DetectorDepth +
-						     2. * self.rDetector) / PathLength
-	    self.TraverseElectronFrac[0] = self.default_elec_frac
-	    iTrav = 1
+            if self.DetectorDepth > self.MinDetectorDepth:
+                self.TraverseRhos[1] = self.Rhos[0]
+                self.TraverseDistance[1] = pathThroughOuterLayer
+                self.TraverseElectronFrac[1] = self.YeFrac[-1]
+                self.Layers+=1
 
-	    # path through the final layer above the detector (if necessary)
-	    # Note: outer top layer is assumed to be the same as the next layer inward.
-	    if (self.DetectorDepth > self.MinDetectorDepth):
-		self.TraverseRhos[1] = self.Rhos[0]
-		self.TraverseDistance[1] = PathLength - TotalEarthLength - self.TraverseDistance[0]
-		self.TraverseElectronFrac[1] = self.YeFrac[-1]
-		iTrav += 1
+        else:
+            # path through air
+            self.TraverseRhos[0] = 0.
+            self.TraverseDistance[0] = self.prop_height * (self.prop_height + self.DetectorDepth +
+                                                     2. * self.rDetector) / PathLength
+            self.TraverseElectronFrac[0] = self.default_elec_frac
+            iTrav = 1
 
-	    self.Layers = 0
-	    for val in self.coszen_limit.values():
+            # path through the final layer above the detector (if necessary)
+            # Note: outer top layer is assumed to be the same as the next layer inward.
+            if (self.DetectorDepth > self.MinDetectorDepth):
+                self.TraverseRhos[1] = self.Rhos[0]
+                self.TraverseDistance[1] = PathLength - TotalEarthLength - self.TraverseDistance[0]
+                self.TraverseElectronFrac[1] = self.YeFrac[-1]
+                iTrav += 1
+
+            self.Layers = 0
+            for val in self.coszen_limit.values():
                 if coszen < val:
-		    self.Layers += 1
+                    self.Layers += 1
 
-	    MaxLayer = self.Layers
+            MaxLayer = self.Layers
 
-	    # the zeroth layer is the air!
-	    # and the first layer is the top layer (if detector is not on surface)
+            # the zeroth layer is the air!
+            # and the first layer is the top layer (if detector is not on surface)
             for i in range(MaxLayer):
-		self.TraverseRhos[i+iTrav] = self.Rhos[i]
+                self.TraverseRhos[i+iTrav] = self.Rhos[i]
                 # ToDo why default?
-		self.TraverseElectronFrac[i+iTrav] = self.default_elec_frac
+                self.TraverseElectronFrac[i+iTrav] = self.default_elec_frac
                 for iRad in range(len(self.YeOuterRadius)):
                     # why 1.001?
-		    if self.Radii[i] < (self.YeOuterRadius[iRad] * 1.001):
-			self.TraverseElectronFrac[i+iTrav] = self.YeFrac[iRad]
-			break
-                
+                    if self.Radii[i] < (self.YeOuterRadius[iRad] * 1.001):
+                        self.TraverseElectronFrac[i+iTrav] = self.YeFrac[iRad]
+                        break
+
                 c2 = np.square(coszen)
                 R2 = np.square(self.rDetector)
                 s1 = np.square(self.Radii[i]) - R2*(1 -c2)
                 s2 = np.square(self.Radii[i+1]) - R2*(1 -c2)
-		CrossThis = 2. * np.sqrt(s1)
-		if i < MaxLayer - 1:
-		    CrossNext = 2. * np.sqrt(s2)
-		    self.TraverseDistance[i+iTrav]  =  0.5 * (CrossThis - CrossNext)
-		else:
-		    self.TraverseDistance[i+iTrav]  =  CrossThis
+                CrossThis = 2. * np.sqrt(s1)
+                if i < MaxLayer - 1:
+                    CrossNext = 2. * np.sqrt(s2)
+                    self.TraverseDistance[i+iTrav]  =  0.5 * (CrossThis - CrossNext)
+                else:
+                    self.TraverseDistance[i+iTrav]  =  CrossThis
 
-		#assumes azimuthal symmetry
-		if 0 < i and i < MaxLayer:
-		    index = 2 * MaxLayer - i + iTrav - 1
-		    self.TraverseRhos[index] = self.TraverseRhos[i+iTrav-1]
-		    self.TraverseDistance[index] = self.TraverseDistance[i+iTrav-1]
-		    self.TraverseElectronFrac[index] = self.TraverseElectronFrac[i+iTrav-1]
+                #assumes azimuthal symmetry
+                if 0 < i and i < MaxLayer:
+                    index = 2 * MaxLayer - i + iTrav - 1
+                    self.TraverseRhos[index] = self.TraverseRhos[i+iTrav-1]
+                    self.TraverseDistance[index] = self.TraverseDistance[i+iTrav-1]
+                    self.TraverseElectronFrac[index] = self.TraverseElectronFrac[i+iTrav-1]
 
-	    self.Layers = 2 * MaxLayer + iTrav - 1
+            self.Layers = 2 * MaxLayer + iTrav - 1
 
 class OscParams(object):
     def __init__(self, dm_solar, dm_atm, x12, x13, x23, deltacp):
-	"""
-	  Expects dm_solar and dm_atm to be in [eV^2], and x_{ij} to be
-	  sin^2(theta_{ij})
+        """
+          Expects dm_solar and dm_atm to be in [eV^2], and x_{ij} to be
+          sin^2(theta_{ij})
 
-	  params:
-	    * xij - sin^2(theta_{ij}) values to use in oscillation calc.
-	    * dm_solar - delta M_{21}^2 value [eV^2]
-	    * dm_atm - delta M_{32}^2 value [eV^2] if Normal hierarchy, or
-		      delta M_{31}^2 value if Inverted Hierarchy (following
-		      BargerPropagator class).
-	    * deltacp - \delta_{cp} value to use.
-	"""
+          params:
+            * xij - sin^2(theta_{ij}) values to use in oscillation calc.
+            * dm_solar - delta M_{21}^2 value [eV^2]
+            * dm_atm - delta M_{32}^2 value [eV^2] if Normal hierarchy, or
+                      delta M_{31}^2 value if Inverted Hierarchy (following
+                      BargerPropagator class).
+            * deltacp - \delta_{cp} value to use.
+        """
         assert x12 <= 1
         assert x13 <= 1
         assert x23 <= 1
-	self.sin12 = np.sqrt(x12)
+        self.sin12 = np.sqrt(x12)
         self.sin13 = np.sqrt(x13)
         self.sin23 = np.sqrt(x23)
 
@@ -156,7 +156,7 @@ class OscParams(object):
             self.dm_atm = dm_atm - dm_solar
         else:
             self.dm_atm = dm_atm
-        
+
     @property
     def M_pmns(self):
 

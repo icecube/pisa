@@ -10,13 +10,12 @@ import pycuda.compiler
 import pycuda.driver as cuda
 import pycuda.autoinit
 
-from pisa import ureg, Q_, FTYPE, C_FTYPE, C_PRECISION_DEF
+from pisa import FTYPE, C_FTYPE, C_PRECISION_DEF
 from pisa.core.binning import MultiDimBinning
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.log import logging
-from pisa.utils.comparisons import normQuant
-from pisa.utils.profiler import line_profile, profile
+from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.osc_params import OscParams
@@ -104,7 +103,6 @@ class prob3gpu(Stage):
       // ensure we don't access memory outside of bounds!
       if (thread_2D_pos.x >= nczbins_fine || thread_2D_pos.y >= nebins_fine)
         return;
-      const int thread_1D_pos = thread_2D_pos.y*nczbins_fine + thread_2D_pos.x;
 
       int eidx = thread_2D_pos.y;
       int czidx = thread_2D_pos.x;
@@ -199,6 +197,7 @@ class prob3gpu(Stage):
         }
       }
     }
+
     __global__ void propagateArray(fType* d_prob_e,
                                    fType* d_prob_mu,
                                    fType d_dm[3][3],
@@ -207,6 +206,7 @@ class prob3gpu(Stage):
                                    const int kNuBar,
                                    const int kFlav,
                                    const int maxLayers,
+                                   fType true_e_scale,
                                    const fType* const d_energy,
                                    const int* const d_numberOfLayers,
                                    const fType* const d_densityInLayer,
@@ -227,7 +227,7 @@ class prob3gpu(Stage):
       clear_complex_matrix( TransitionTemp );
       clear_probabilities( Probability );
       int layers = *(d_numberOfLayers + idx);
-      fType energy = d_energy[idx];
+      fType energy = d_energy[idx] * true_e_scale;
       for( int i=0; i<layers; i++) {
         fType density = *(d_densityInLayer + idx*maxLayers + i);
         fType distance = *(d_distanceInLayer + idx*maxLayers + i);
@@ -257,7 +257,7 @@ class prob3gpu(Stage):
         }
 
         if( kUseMassEstates )
-          convert_from_mass_eigenstate(i+1,kNuBar,RawInputPsi,d_mix);
+          convert_from_mass_eigenstate(i+1, kNuBar, RawInputPsi, d_mix);
         else
           RawInputPsi[i][0] = 1.0;
 
@@ -282,8 +282,9 @@ class prob3gpu(Stage):
         # probabilities for events instead of transforms for maps.
         # Set up this self.calc_transforms to use as an assert on the
         # appropriate functions.
-        self.calc_transforms = input_binning != None and output_binning != None
-        if input_binning == None or output_binning == None:
+        self.calc_transforms = (input_binning is not None
+                                and output_binning is not None)
+        if input_binning is None or output_binning is None:
             if input_binning != output_binning:
                 raise ValueError('Input and output binning must either both be'
                                  ' defined or both be none, but not a mixture.'
@@ -297,7 +298,8 @@ class prob3gpu(Stage):
                 'theta12', 'theta13', 'theta23', 'nutau_norm',
             )
         else:
-            logging.debug('Using prob3gpu to calculate probabilities for events')
+            logging.debug('Using prob3gpu to calculate probabilities for'
+                          ' events')
             # To save time, this has an extra argument where we don't oscillate
             # neutral current events since their rate should be conserved.
             expected_params = (
@@ -305,7 +307,7 @@ class prob3gpu(Stage):
                 'detector_depth', 'prop_height',
                 'deltacp', 'deltam21', 'deltam31',
                 'theta12', 'theta13', 'theta23',
-                'no_nc_osc'
+                'no_nc_osc', 'true_e_scale',
             )
 
         # Define the names of objects that are required by this stage (objects
@@ -402,9 +404,12 @@ class prob3gpu(Stage):
 
         mAtm = deltam31 if deltam31 < 0.0 else (deltam31 - deltam21)
 
-        self.layers = Layers(self.params.earth_model.value, self.params.detector_depth.m_as('km'), prop_height)
+        self.layers = Layers(self.params.earth_model.value,
+                             self.params.detector_depth.m_as('km'),
+                             prop_height)
         self.layers.setElecFrac(YeI, YeO, YeM)
-        self.osc = OscParams(deltam21, mAtm, sin2th12Sq, sin2th13Sq, sin2th23Sq, deltacp)
+        self.osc = OscParams(deltam21, mAtm, sin2th12Sq, sin2th13Sq,
+                             sin2th23Sq, deltacp)
 
         self.prepare_device_arrays()
 
@@ -433,7 +438,7 @@ class prob3gpu(Stage):
         d_smooth_maps = cuda.mem_alloc(smooth_maps.nbytes)
         cuda.memcpy_htod(d_smooth_maps, smooth_maps)
 
-        block_size = (16,16,1)
+        block_size = (16, 16, 1)
         grid_size = (nczbins_fine/block_size[0] + 1, nebins_fine/block_size[1] + 1, 2)
         self.propGrid(d_smooth_maps,
                       d_dm_mat, d_mix_mat,
@@ -486,9 +491,6 @@ class prob3gpu(Stage):
 
         return TransformSet(transforms=transforms)
 
-    def validate_params(self, params):
-        pass
-
     def initialize_kernel(self):
         """Initialize 1) the grid_propagator class, 2) the device arrays that
         will be passed to the `propagateGrid()` kernel, and 3) the kernel
@@ -520,7 +522,7 @@ class prob3gpu(Stage):
 
         numLayers = self.layers.n_layers
         densityInLayer = self.layers.density
-        distanceInLayer =self.layers.distance
+        distanceInLayer = self.layers.distance
 
         numLayers = numLayers.astype(np.int32)
         densityInLayer = densityInLayer.astype(FTYPE)
@@ -570,12 +572,11 @@ class prob3gpu(Stage):
 
         numLayers = self.layers.n_layers
         densityInLayer = self.layers.density
-        distanceInLayer =self.layers.distance
+        distanceInLayer = self.layers.distance
 
         numLayers = numLayers.astype(np.int32)
         densityInLayer = densityInLayer.astype(FTYPE)
         distanceInLayer = distanceInLayer.astype(FTYPE)
-
 
         return numLayers, densityInLayer, distanceInLayer
 
@@ -584,8 +585,8 @@ class prob3gpu(Stage):
         """
         Returns an oscillation probability map dictionary calculated
         at the values of the input parameters:
-          deltam21,deltam31,theta12,theta13,theta23,deltacp
-          * theta12,theta13,theta23 - in [rad]
+          deltam21, deltam31, theta12, theta13, theta23, deltacp
+          * theta12, theta13, theta23 - in [rad]
           * deltam21, deltam31 - in [eV^2]
         """
 
@@ -612,31 +613,35 @@ class prob3gpu(Stage):
 
         self.d_dm_mat = cuda.mem_alloc(FTYPE(dm_mat).nbytes)
         self.d_mix_mat = cuda.mem_alloc(FTYPE(mix_mat).nbytes)
-        cuda.memcpy_htod(self.d_dm_mat,FTYPE(dm_mat))
-        cuda.memcpy_htod(self.d_mix_mat,FTYPE(mix_mat))
+        cuda.memcpy_htod(self.d_dm_mat, FTYPE(dm_mat))
+        cuda.memcpy_htod(self.d_mix_mat, FTYPE(mix_mat))
 
-    def calc_probs(self, kNuBar, kFlav, n_evts, true_energy, numLayers,
+    def calc_probs(self, kNuBar, kFlav, n_evts, true_e_scale, true_energy, numLayers,
                    densityInLayer, distanceInLayer, prob_e, prob_mu, **kwargs):
 
         assert(not self.calc_transforms)
 
-        bdim = (32,1,1)
+        bdim = (32, 1, 1)
         dx, mx = divmod(n_evts, bdim[0])
-        gdim = ((dx + (mx>0)) * bdim[0], 1)
+        gdim = ((dx + (mx > 0)) * bdim[0], 1)
 
-        self.propArray(prob_e,
-                       prob_mu,
-                       self.d_dm_mat,
-                       self.d_mix_mat,
-                       n_evts,
-                       np.int32(kNuBar),
-                       np.int32(kFlav),
-                       np.int32(self.maxLayers),
-                       true_energy,
-                       numLayers,
-                       densityInLayer,
-                       distanceInLayer,
-                       block=bdim, grid=gdim)
+        self.propArray(
+            prob_e,
+            prob_mu,
+            self.d_dm_mat,
+            self.d_mix_mat,
+            n_evts,
+            np.int32(kNuBar),
+            np.int32(kFlav),
+            np.int32(self.maxLayers),
+            FTYPE(true_e_scale),
+            true_energy,
+            numLayers,
+            densityInLayer,
+            distanceInLayer,
+            block=bdim,
+            grid=gdim
+        )
 
     def validate_params(self, params):
         pass

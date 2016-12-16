@@ -28,12 +28,12 @@ from collections import Mapping
 import numpy as np
 import scipy.interpolate as interpolate
 
-from pisa import ureg, Q_
+from pisa import ureg
 from pisa.core.map import Map, MapSet
 from pisa.core.stage import Stage
 from pisa.utils.resources import open_resource
 from pisa.utils.log import logging
-from pisa.utils.profiler import line_profile, profile
+from pisa.utils.profiler import profile
 
 
 __all__ = ['apply_ratio_scale_2d', 'mmc2d', 'honda']
@@ -53,7 +53,7 @@ try:
                 out2[i,j] = orig_map_sum / (1 + ratio_scale * orig_map_ratio)
                 out1[i,j] = ratio_scale * orig_map_ratio * out2[i,j]
         return out1, out2
-except:
+except Exception:
     apply_ratio_scale_2d = None
 
 
@@ -451,7 +451,7 @@ class honda(Stage):
                 # Get the logarithmic flux
                 log_flux = np.log10(flux_dict[nutype]).T
                 # Get a spline representation
-                spline =  interpolate.bisplrep(logE, C, log_flux, s=smooth)
+                spline = interpolate.bisplrep(logE, C, log_flux, s=smooth)
                 # and store
                 self.spline_dict[nutype] = spline
 
@@ -594,7 +594,7 @@ class honda(Stage):
                             int_flux.append(tot_flux)
 
                         spline = interpolate.splrep(int_flux_dict['logenergy'],
-                                        int_flux, s=0)
+                                                    int_flux, s=0)
                         CZvalue = '%.2f'%(1.05-CZiter*0.1)
                         splines[CZvalue] = spline
                         CZiter += 1
@@ -1177,25 +1177,25 @@ class honda(Stage):
                                               'bisplrep'])
 
         # This is the Honda service after all...
-        assert ('honda' in params.flux_file.value)
+        assert 'honda' in params.flux_file.value
 
         # Flux file should have aa (for azimuth-averaged) if binning
         # is energy and cosZenith
         if set(self.output_binning.names) == set(['true_energy',
                                                   'true_coszen']):
-            assert ('aa' in params.flux_file.value )
+            assert 'aa' in params.flux_file.value
 
         # Flux file should not have aa (for azimuth-averaged) if binning
         # is energy, cosZenith and azimuth
         elif set(self.output_binning.names) == set(['true_energy',
                                                     'true_coszen',
                                                     'true_azimuth']):
-            assert ('aa' not in params.flux_file.value)
+            assert 'aa' not in params.flux_file.value
 
         # Ratio systematics should not be negative.
         # This makes no sense after all
-        assert (params.nue_numu_ratio.value > 0.0)
-        assert (params.nu_nubar_ratio.value > 0.0)
+        assert params.nue_numu_ratio.value > 0.0
+        assert params.nu_nubar_ratio.value > 0.0
 
         # Neither should energy scale for that matter
-        assert (params.energy_scale.value > 0.0)
+        assert params.energy_scale.value > 0.0

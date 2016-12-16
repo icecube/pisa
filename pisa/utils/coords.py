@@ -1,3 +1,8 @@
+"""
+Utilities for working wtih coordinates (e.g. coord-system transformations).
+
+"""
+
 
 from __future__ import division
 
@@ -6,7 +11,8 @@ import numpy as np
 from pisa.utils.log import logging, set_verbosity
 
 
-__all__ = ['abs2rel', 'rel2abs']
+__all__ = ['abs2rel', 'rel2abs',
+           'test_abs2rel', 'test_rel2abs']
 
 
 # NOTE: If we want to scale the resolutions about some reference point
@@ -44,6 +50,7 @@ def rel2abs(rel_coords, abs_bin_midpoint, rel_scale_ref, scale, abs_obj_shift):
 
 
 def test_abs2rel():
+    """Unit tests for abs2rel function"""
     xabs = np.array([-2, -1, 0, 1, 2])
 
     # The identity transform
@@ -90,6 +97,7 @@ def test_abs2rel():
 
 
 def test_rel2abs():
+    """Unit tests for rel2abs function"""
     xabs = np.array([-2, -1, 0, 1, 2])
     kwargs = dict(abs_bin_midpoint=12, rel_scale_ref=-3.3, scale=5.4,
                   abs_obj_shift=19)

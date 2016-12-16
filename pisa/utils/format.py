@@ -6,6 +6,7 @@
 Utilities for interpreting and returning formatted strings.
 """
 
+
 from itertools import imap
 import numbers
 import re
@@ -13,11 +14,38 @@ import re
 import numpy as np
 import pint
 
-from pisa import ureg, Q_
+from pisa import ureg
+from pisa.utils.log import logging, set_verbosity
 
 
-__all__ = ['list2hrlist', 'hrlist2list', 'hrlol2lol', 'hrbool2bool', 'engfmt',
+__all__ = ['WHITESPACE_RE', 'NUMBER_RESTR', 'NUMBER_RE',
+           'HRGROUP_RESTR', 'HRGROUP_RE', 'IGNORE_CHARS_RE',
+           'list2hrlist', 'hrlist2list', 'hrlol2lol', 'hrbool2bool', 'engfmt',
            'text2tex', 'int2hex', 'hash2hex']
+
+
+WHITESPACE_RE = re.compile(r'\s')
+NUMBER_RESTR = r'((?:-|\+){0,1}[0-9.]+(?:e(?:-|\+)[0-9.]+){0,1})'
+"""RE str for matching signed, unsigned, and sci.-not. ("1e10") numbers."""
+
+NUMBER_RE = re.compile(NUMBER_RESTR, re.IGNORECASE)
+"""Regex for matching signed, unsigned, and sci.-not. ("1e10") numbers."""
+
+# Optional range, e.g., --10 (which means "to negative 10"); in my
+# interpretation, the "to" number should be *INCLUDED* in the list
+# If there's a range, optional stepsize, e.g., --10 (which means
+# "to negative 10")
+HRGROUP_RESTR = (
+    NUMBER_RESTR
+    + r'(?:-' + NUMBER_RESTR
+    + r'(?:\:' + NUMBER_RESTR + r'){0,1}'
+    + r'){0,1}'
+)
+HRGROUP_RE = re.compile(HRGROUP_RESTR, re.IGNORECASE)
+
+# Characters to ignore are anything EXCEPT the characters we use
+# (the caret ^ inverts the set in the character class)
+IGNORE_CHARS_RE = re.compile(r'[^0-9e:.,;+-]', re.IGNORECASE)
 
 
 # TODO: allow for scientific notation input to hr*2list, etc.
@@ -126,26 +154,6 @@ def list2hrlist(lst):
     return ','.join(result)
 
 
-# This regex matches signed, unsigned, and scientific-notation (e.g.
-# "1e10") numbers.
-number_restr = r'((?:-|\+){0,1}[0-9.]+(?:e(?:-|\+)[0-9.]+){0,1})'
-number_re = re.compile(number_restr, re.IGNORECASE)
-
-# Optional range, e.g., --10 (which means "to negative 10"); in my
-# interpretation, the "to" number should be *INCLUDED* in the list
-# If there's a range, optional stepsize, e.g., --10 (which means "to negative 10")
-hrgroup_restr = (
-        number_restr +
-        r'(?:-' + number_restr +
-        r'(?:\:' + number_restr + r'){0,1}' +
-        r'){0,1}'
-)
-hrgroup_re = re.compile(hrgroup_restr, re.IGNORECASE)
-
-# Characters to ignore are anything EXCEPT the characters we use
-# (the caret ^ inverts the set in the character class)
-ignore_chars_re =  re.compile(r'[^0-9e:.,;+-]', re.IGNORECASE)
-
 def hrgroup2list(hrgroup):
     def isint(num):
         """Test whether a number is *functionally* an integer"""
@@ -164,10 +172,10 @@ def hrgroup2list(hrgroup):
 
     # Strip all whitespace, brackets, parens, and other ignored characters from
     # the group string
-    hrgroup = ignore_chars_re.sub('', hrgroup)
+    hrgroup = IGNORE_CHARS_RE.sub('', hrgroup)
     if (hrgroup is None) or (hrgroup == ''):
         return []
-    numstrs = hrgroup_re.match(hrgroup).groups()
+    numstrs = HRGROUP_RE.match(hrgroup).groups()
     range_start = num2floatOrInt(numstrs[0])
 
     # If no range is specified, just return the number
@@ -198,7 +206,6 @@ def hrgroup2list(hrgroup):
     return lst.tolist()
 
 
-ws_re = re.compile(r'\s')
 def hrlist2list(hrlst):
     """Convert human-readable string specifying a list of numbers to a Python
     list of numbers.
@@ -212,7 +219,7 @@ def hrlist2list(hrlst):
     lst : list of numbers
 
     """
-    groups = re.split(r'[,; _]+', ws_re.sub('', hrlst))
+    groups = re.split(r'[,; _]+', WHITESPACE_RE.sub('', hrlst))
     lst = []
     if len(groups) == 0:
         return lst
@@ -362,7 +369,7 @@ def append_results(results_dict, result_dict):
 
 def ravel_results(results):
     for key, val in results.items():
-        if hasattr(val[0],'m'):
+        if hasattr(val[0], 'm'):
             results[key] = np.array([v.m for v in val]) * val[0].u
 
 
@@ -414,11 +421,22 @@ def hash2hex(hash, bits=64):
     return hex_hash
 
 
+def test_hrlist_formatter():
+    logging.debug(str((hrlist_formatter(start=0, end=10, step=1))))
+    logging.debug(str((hrlist_formatter(start=0, end=10, step=2))))
+    logging.debug(str((hrlist_formatter(start=0, end=3, step=8))))
+    logging.debug(str((hrlist_formatter(start=0.1, end=3.1, step=1.0))))
+    logging.info('<< PASSED : test_hrlist_formatter >>')
+
+
+def test_list2hrlist():
+    logging.debug(str((list2hrlist([0, 1]))))
+    logging.debug(str((list2hrlist([0, 1, 2]))))
+    logging.debug(str((list2hrlist([0.1, 1.1, 2.1, 3.1]))))
+    logging.info('<< PASSED : test_list2hrlist >>')
+
+
 if __name__ == '__main__':
-    print hrlist_formatter(start=0, end=10, step=1)
-    print hrlist_formatter(start=0, end=10, step=2)
-    print hrlist_formatter(start=0, end=3, step=8)
-    print hrlist_formatter(start=0.1, end=3.1, step=1.0)
-    print list2hrlist([0, 1])
-    print list2hrlist([0, 1, 2])
-    print list2hrlist([0.1, 1.1, 2.1, 3.1])
+    set_verbosity(1)
+    test_hrlist_formatter()
+    test_list2hrlist()

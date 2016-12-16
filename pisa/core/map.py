@@ -18,10 +18,12 @@ from collections import OrderedDict, Iterable, Mapping, Sequence
 from copy import deepcopy, copy
 from fnmatch import fnmatch
 from functools import wraps
-from itertools import izip
+from itertools import izip, permutations
 from operator import add, getitem, setitem
 import os
 import re
+import shutil
+import tempfile
 
 import numpy as np
 from scipy.stats import poisson, norm
@@ -29,29 +31,22 @@ import uncertainties
 from uncertainties import ufloat
 from uncertainties import unumpy as unp
 
-from pisa import ureg, FTYPE
+from pisa import ureg, FTYPE, HASH_SIGFIGS
 from pisa.core.binning import OneDimBinning, MultiDimBinning
-from pisa.utils.comparisons import isbarenumeric, normQuant, recursiveEquality
+from pisa.utils.comparisons import normQuant, recursiveEquality
 from pisa.utils.hash import hash_obj
 from pisa.utils import jsons
 from pisa.utils.fileio import get_valid_filename, mkdir
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.flavInt import NuFlavIntGroup
 from pisa.utils.random_numbers import get_random_state
-from pisa.utils.stats import chi2, llh, conv_llh, mod_chi2, barlow_llh
-from pisa.utils.profiler import line_profile, profile
+from pisa.utils import stats
 
 
-__all__ = ['HASH_SIGFIGS', 'VALID_METRICS', 'METRICS_TO_MAXIMIZE',
-           'type_error', 'strip_outer_parens', 'strip_outer_dollars',
+__all__ = ['type_error', 'strip_outer_parens', 'strip_outer_dollars',
            'sanitize_name', 'reduceToHist', 'rebin',
            'Map', 'MapSet',
            'test_Map', 'test_MapSet']
-
-
-HASH_SIGFIGS = 12 if FTYPE == np.float64 else 4
-VALID_METRICS = ('chi2', 'llh', 'conv_llh', 'mod_chi2', 'barlow_llh')
-METRICS_TO_MAXIMIZE = ['llh', 'conv_llh']
 
 
 # TODO: CUDA and numba implementations of rebin if these libs are available
@@ -103,7 +98,7 @@ def reduceToHist(expected_values):
 
     # If iterable, must be iterable of MapSets
     elif isinstance(expected_values, Iterable):
-        expected_values = reduce(lambda x,y: x+y,
+        expected_values = reduce(lambda x, y: x+y,
                                  expected_values).hist
     else:
         raise ValueError('Unhandled type for `expected_values`: %s'
@@ -118,7 +113,7 @@ def rebin(hist0, orig_binning, new_binning, normalize_values=True):
             "`new_binning` dimensions' basenames %s do not have 1:1"
             " correspondence (modulo pre/suffixes) to original binning"
             " dimensions' basenames %s"
-            %(new_binning.basenames, self.binning.basenames)
+            %(new_binning.basenames, orig_binning.binning.basenames)
         )
 
     if orig_binning.edges_hash == new_binning.edges_hash:
@@ -150,6 +145,21 @@ def rebin(hist0, orig_binning, new_binning, normalize_values=True):
                            destination=new_dim_indices)
 
     return new_hist
+
+
+def _new_obj(original_function):
+    """Decorator to deepcopy unaltered states into new Map object."""
+    @wraps(original_function)
+    def new_function(self, *args, **kwargs):
+        new_state = OrderedDict()
+        state_updates = original_function(self, *args, **kwargs)
+        for slot in self._state_attrs:
+            if state_updates is not None and state_updates.has_key(slot):
+                new_state[slot] = state_updates[slot]
+            else:
+                new_state[slot] = deepcopy(self.__getattr__(slot))
+        return Map(**new_state)
+    return new_function
 
 
 # TODO: implement strategies for decreasing dimensionality (i.e.
@@ -197,9 +207,9 @@ class Map(object):
     >>> import pint; ureg = pint.UnitRegistry()
     >>> from pisa.core.binning import MultiDimBinning
     >>> binning = MultiDimBinning([dict(name='energy', is_log=True, num_bins=4,
-    ...                                 domain=[1,80]*ureg.GeV),
+    ...                                 domain=[1, 80]*ureg.GeV),
     ...                            dict(name='coszen', is_lin=True, num_bins=5,
-    ...                                 domain=[-1,0])])
+    ...                                 domain=[-1, 0])])
     >>> m0 = Map(name='x', binning=binning, hist=np.zeros(binning.shape))
     >>> m0
     array([[ 0.,  0.,  0.,  0.,  0.],
@@ -227,7 +237,7 @@ class Map(object):
     ...     print '({0:~.2f}, {1:~.2f}): {2:0.1f}'.format(
     ...             bin.binning.energy.midpoints[0],
     ...             bin.binning.coszen.midpoints[0],
-    ...             bin.hist[0,0])
+    ...             bin.hist[0, 0])
     (2.00 GeV, -0.90 ): 1.0
     (2.00 GeV, -0.70 ): 0.0
     (5.97 GeV, -0.90 ): 1.0
@@ -237,7 +247,7 @@ class Map(object):
 
     """
     _slots = ('name', 'hist', 'binning', 'hash', '_hash', 'tex',
-               'full_comparison', 'parent_indexer', 'normalize_values')
+              'full_comparison', 'parent_indexer', 'normalize_values')
     _state_attrs = ('name', 'hist', 'binning', 'hash', 'tex',
                     'full_comparison')
 
@@ -419,10 +429,10 @@ class Map(object):
 
     def plot(self, evtrate=True, symm=False, logz=False, fig=None, ax=None,
              title=None, outdir=None, fname=None, backend='pdf', fmt='pdf',
-             cmap=None, fig_kw=None, plt_kw=None):
+             cmap=None, fig_kw=None, plt_kw=None, vmax=None):
         import matplotlib as mpl
         if (backend is not None
-            and mpl.get_backend().lower() != backend.lower()):
+                and mpl.get_backend().lower() != backend.lower()):
             mpl.use(backend)
         import matplotlib.pyplot as plt
 
@@ -454,18 +464,18 @@ class Map(object):
             if cmap is None:
                 cmap = plt.cm.seismic
             extr = np.nanmax(np.abs(hist))
-            vmax = extr
-            vmin = -extr
+            vmax_ = extr
+            vmin_ = -extr
         else:
             if cmap is None:
                 #cmap = plt.cm.afmhot
                 cmap = plt.cm.bone
             if evtrate:
-                vmin = 0
+                vmin_ = 0
             else:
-                vmin = np.nanmin(hist)
-            vmax = np.nanmax(hist)
-        cmap.set_bad(color=(0,1,0), alpha=1)
+                vmin_ = np.nanmin(hist)
+            vmax_ = np.nanmax(hist)
+        cmap.set_bad(color=(0, 1, 0), alpha=1)
 
         x = self.binning.dims[0].bin_edges.magnitude
         y = self.binning.dims[1].bin_edges.magnitude
@@ -479,10 +489,13 @@ class Map(object):
                                    np.floor(np.log2(max(y)))+1))
             y = np.log10(y)
 
+        if vmax is not None:
+            vmax_ = vmax
+
         X, Y = np.meshgrid(x, y)
         pcmesh = ax.pcolormesh(
             X, Y, hist.T,
-            vmin=vmin, vmax=vmax, cmap=cmap,
+            vmin=vmin_, vmax=vmax_, cmap=cmap,
             shading='flat', edgecolors='face'
         )
         cbar = plt.colorbar(mappable=pcmesh, ax=ax)
@@ -517,26 +530,12 @@ class Map(object):
 
         if outdir is not None:
             if fname is None:
-                fname = label
+                fname = self.name
             path = os.path.join([outdir, get_valid_filename(fname+'.'+fmt)])
             logging.debug('>>>> Plot for inspection saved at %s' %path)
             fig.savefig(os.path.join(*path))
 
         return ax, pcmesh, cbar
-
-    def _new_obj(original_function):
-        """Decorator to deepcopy unaltered states into new object."""
-        @wraps(original_function)
-        def new_function(self, *args, **kwargs):
-            new_state = OrderedDict()
-            state_updates = original_function(self, *args, **kwargs)
-            for slot in self._state_attrs:
-                if state_updates is not None and state_updates.has_key(slot):
-                    new_state[slot] = state_updates[slot]
-                else:
-                    new_state[slot] = deepcopy(self.__getattr__(slot))
-            return Map(**new_state)
-        return new_function
 
     @_new_obj
     def reorder_dimensions(self, order):
@@ -1005,8 +1004,8 @@ class Map(object):
 
         """
         expected_values = reduceToHist(expected_values)
-        return np.sum(llh(actual_values=self.hist,
-                          expected_values=expected_values))
+        return np.sum(stats.llh(actual_values=self.hist,
+                                expected_values=expected_values))
 
     def conv_llh(self, expected_values):
         """Calculate the total convoluted log-likelihood value between this map
@@ -1024,8 +1023,8 @@ class Map(object):
 
         """
         expected_values = reduceToHist(expected_values)
-        return np.sum(conv_llh(actual_values=self.hist,
-                               expected_values=expected_values))
+        return np.sum(stats.conv_llh(actual_values=self.hist,
+                                     expected_values=expected_values))
 
     def barlow_llh(self, expected_values):
         """Calculate the total barlow log-likelihood value between this map and
@@ -1047,8 +1046,8 @@ class Map(object):
             expected_values = reduceToHist(expected_values)
         elif isinstance(expected_values, Iterable):
             expected_values = [reduceToHist(x) for x in expected_values]
-        return np.sum(barlow_llh(actual_values=self.hist,
-                          expected_values=expected_values))
+        return np.sum(stats.barlow_llh(actual_values=self.hist,
+                                       expected_values=expected_values))
 
     def mod_chi2(self, expected_values):
         """Calculate the total modified chi2 value between this map and the map
@@ -1066,8 +1065,8 @@ class Map(object):
 
         """
         expected_values = reduceToHist(expected_values)
-        return np.sum(mod_chi2(actual_values=self.hist,
-                          expected_values=expected_values))
+        return np.sum(stats.mod_chi2(actual_values=self.hist,
+                                     expected_values=expected_values))
 
     def chi2(self, expected_values):
         """Calculate the total chi-squared value between this map and the map
@@ -1085,15 +1084,15 @@ class Map(object):
 
         """
         expected_values = reduceToHist(expected_values)
-        return np.sum(chi2(actual_values=self.hist,
-                           expected_values=expected_values))
+        return np.sum(stats.chi2(actual_values=self.hist,
+                                 expected_values=expected_values))
 
     def metric_total(self, expected_values, metric):
-        if metric in VALID_METRICS:
+        if metric in stats.ALL_METRICS:
             return getattr(self, metric)(expected_values)
         else:
             raise ValueError('`metric` "%s" not recognized; use one of %s.'
-                             %(metric, VALID_METRICS))
+                             %(metric, stats.ALL_METRICS))
 
     def __setitem__(self, idx, val):
         return setitem(self.hist, idx, val)
@@ -1250,7 +1249,7 @@ class Map(object):
 
         if isinstance(other, Map):
             if (self.full_comparison or other.full_comparison
-                or self.hash is None or other.hash is None):
+                    or self.hash is None or other.hash is None):
                 return recursiveEquality(self._hashable_state,
                                          other._hashable_state)
             return self.hash == other.hash
@@ -1302,7 +1301,7 @@ class Map(object):
         return state_updates
 
     def __ne__(self, other):
-        return not self == other
+        return not self.__eq__(other)
 
     @_new_obj
     def __neg__(self):
@@ -1329,7 +1328,8 @@ class Map(object):
             }
         elif isinstance(other, Map):
             state_updates = {
-                #'name': "%s**(%s)" % (self.name, strip_outer_parens(other.name)),
+                #'name': "%s**(%s)" % (self.name,
+                #                      strip_outer_parens(other.name)),
                 #'tex': r"%s^{%s}" % (self.tex, strip_outer_parens(other.tex)),
                 'hist': np.power(self.hist, other.hist),
                 'full_comparison': (self.full_comparison or
@@ -1806,7 +1806,7 @@ class MapSet(object):
     def compare(self, ref):
         assert isinstance(ref, MapSet) and len(self) == len(ref)
         rslt = OrderedDict()
-        for m, r in zip(self, ref):
+        for m, r in izip(self, ref):
             out = m.compare(r)
             rslt[m.name] = out
         return rslt
@@ -1865,7 +1865,7 @@ class MapSet(object):
 
     def collate_with_names(self, vals):
         ret_dict = OrderedDict()
-        [setitem(ret_dict, name, val) for name, val in zip(self.names, vals)]
+        [setitem(ret_dict, name, val) for name, val in izip(self.names, vals)]
         return ret_dict
 
     def find_map(self, value):
@@ -1953,7 +1953,7 @@ class MapSet(object):
 
         # Make the method calls and collect returned values
         returned_vals = [meth(*args)
-                         for meth, args in zip(method_per_map, args_per_map)]
+                         for meth, args in izip(method_per_map, args_per_map)]
 
         # If all results are maps, put them into a new map set & return
         if all([isinstance(r, Map) for r in returned_vals]):
@@ -1996,7 +1996,7 @@ class MapSet(object):
         or slice.
 
         If `item` is a string, retrieve map by name.
-        If `item is an integer or one-dim slice, retrieve maps by sequence
+        If `item is an integer or one-dim slice, retrieve maps by index/slice
         If `item` is length-2 tuple or two-dim slice, retrieve value(s) of all
             contained maps, each indexed by map[`item`]. The output is returned
             in an ordered dict with format {<map name>: <values>, ...}
@@ -2004,24 +2004,27 @@ class MapSet(object):
         """
         if isinstance(item, basestring):
             return self.find_map(item)
-        elif isinstance(item, (int, slice)):
+
+        if isinstance(item, (int, slice)):
             rslt = self.maps[item]
             if hasattr(rslt, '__len__') and len(rslt) > 1:
                 return MapSet(rslt)
             return rslt
-        elif isinstance(item, Sequence):
+
+        if isinstance(item, Iterable):
+            if not isinstance(item, Sequence):
+                item = list(item)
+
             if len(item) == 1:
                 return self.maps[item]
-            elif len(item) == 2:
+
+            if len(item) == 2:
                 return MapSet([getitem(m, item) for m in self])
-            else:
-                raise IndexError('too many indices for 2D hist')
-        #elif isinstance(item, Sequence):
-        #    assert len(item) == 2, 'Maps are 2D, and so must be indexed as such'
-        #    return self.collate_with_names([getitem(m, item) for m in self])
-        else:
-            raise TypeError('getitem does not support `item` of type %s'
-                            % type(item))
+
+            raise IndexError('too many indices for 2D hist')
+
+        raise TypeError('getitem does not support `item` of type %s'
+                        % type(item))
 
     def __abs__(self):
         return self.apply_to_maps('__abs__')
@@ -2120,11 +2123,11 @@ class MapSet(object):
 
     def metric_per_map(self, expected_values, metric):
         metric = metric.lower() if isinstance(metric, basestring) else metric
-        if metric in VALID_METRICS:
+        if metric in stats.ALL_METRICS:
             return self.apply_to_maps(metric, expected_values)
         else:
             raise ValueError('`metric` "%s" not recognized; use one of %s.'
-                             %(metric, VALID_METRICS))
+                             %(metric, stats.ALL_METRICS))
 
     def metric_total(self, expected_values, metric):
         return np.sum(self.metric_per_map(expected_values, metric).values())
@@ -2175,8 +2178,9 @@ class MapSet(object):
 #        continue
 #    print 'adding method "%s" to MapSet as an apply func' % method_name
 #    arg_str = ', *args' # if len(args) > 0 else ''
-#    eval('def {method_name}(self{arg_str}):\n'
-#         '    return self.apply_to_maps({method_name}{arg_str})'.format(method_name=method_name, arg_str=arg_str))
+#    eval(('def {method_name}(self{arg_str}):\n'
+#          '    return self.apply_to_maps({method_name}{arg_str})')
+#          .format(method_name=method_name, arg_str=arg_str))
 #    #f.__doc__ = 'Apply method %s to all contained maps' % method_name
 #    #method = getattr(Map, method_name)
 #    #if method.__doc__:
@@ -2186,23 +2190,21 @@ class MapSet(object):
 
 # TODO: add tests for llh, chi2 methods
 def test_Map():
-    import os
-    import shutil
-    import tempfile
-    from pisa.utils.jsons import to_json
-    from pisa import ureg, Q_
-
     n_ebins = 10
     n_czbins = 5
     n_azbins = 2
     e_binning = OneDimBinning(name='energy', tex=r'E_\nu', num_bins=n_ebins,
-                              domain=(1,80)*ureg.GeV, is_log=True)
+                              domain=(1, 80)*ureg.GeV, is_log=True)
     cz_binning = OneDimBinning(name='coszen', tex=r'\cos\,\theta',
-                               num_bins=n_czbins, domain=(-1,0), is_lin=True)
+                               num_bins=n_czbins, domain=(-1, 0), is_lin=True)
     az_binning = OneDimBinning(name='azimuth', tex=r'\phi',
-                               num_bins=n_azbins, domain=(0,2*np.pi), is_lin=True)
+                               num_bins=n_azbins, domain=(0, 2*np.pi),
+                               is_lin=True)
     # set directly unumpy array with errors
-    #m1 = Map(name='x', hist=unp.uarray(np.ones((40,20)),np.sqrt(np.ones((40,20)))), binning=(e_binning, cz_binning))
+    shape = (e_binning * cz_binning).shape
+    m1 = Map(name='x',
+             hist=unp.uarray(np.ones(shape), np.sqrt(np.ones(shape))),
+             binning=(e_binning, cz_binning))
     # or call init poisson error afterwards
     m1 = Map(name='x', hist=np.ones((n_ebins, n_czbins)), hash=23,
              binning=(e_binning, cz_binning))
@@ -2226,16 +2228,16 @@ def test_Map():
 
     m1 = Map(name='x', hist=np.ones((n_ebins, n_czbins)), hash=23,
              binning=(e_binning, cz_binning))
-    print "downsampling ====================="
+    logging.debug(str(("downsampling =====================")))
     m2 = m1 * 2
-    print m2.downsample(1)
-    print m2.downsample(5)
-    print m2.downsample(1, 1)
-    print m2.downsample(1, 5)
-    print m2.downsample(5, 5)
-    print m2.downsample(10, 5)
-    print m2.downsample(10, 5).binning
-    print "===================== downsampling"
+    logging.debug(str((m2.downsample(1))))
+    logging.debug(str((m2.downsample(5))))
+    logging.debug(str((m2.downsample(1, 1))))
+    logging.debug(str((m2.downsample(1, 5))))
+    logging.debug(str((m2.downsample(5, 5))))
+    logging.debug(str((m2.downsample(10, 5))))
+    logging.debug(str((m2.downsample(10, 5).binning)))
+    logging.debug(str(("===================== downsampling")))
 
     assert m1.hash == 23
     m1.hash = 42
@@ -2247,48 +2249,49 @@ def test_Map():
     m3 = Map(name='z', hist=4*np.ones((n_ebins, n_czbins, n_azbins)),
              binning=(e_binning, cz_binning, az_binning))
 
-    assert m3[0,0,0] == 4, 'm3[0,0,0] = %s' %m3[0,0,0]
+    assert m3[0, 0, 0] == 4, 'm3[0, 0, 0] = %s' %m3[0, 0, 0]
     testdir = tempfile.mkdtemp()
     try:
         for m in [m1, m2, m1+m2, m1-m2, m1/m2, m1*m2]:
             m_file = os.path.join(testdir, m.name + '.json')
-            m.to_json(m_file)
+            m.to_json(m_file, warn=False)
             m_ = Map.from_json(m_file)
             assert m_ == m, 'm=\n%s\nm_=\n%s' %(m, m_)
-            to_json(m, m_file)
+            jsons.to_json(m, m_file, warn=False)
             m_ = Map.from_json(m_file)
             assert m_ == m, 'm=\n%s\nm_=\n%s' %(m, m_)
     finally:
         shutil.rmtree(testdir, ignore_errors=True)
 
-    print m1, m1.binning
-    print m2, m2.binning
-    print m1.nominal_values
-    print m1.std_devs
+    logging.debug(str((m1, m1.binning)))
+    logging.debug(str((m2, m2.binning)))
+    logging.debug(str((m1.nominal_values)))
+    logging.debug(str((m1.std_devs)))
     r = m1 + m2
     # compare only nominal val
     assert r == 3
-    print r
-    print 'm1+m2=3:', r, r[0,0]
+    logging.debug(str((r)))
+    logging.debug(str(('m1+m2=3:', r, r[0, 0])))
     r = m2 + m1
     # or compare including errors
-    assert r == ufloat(3,1)
-    print 'm2+m1=3:', r, r[0,0]
+    assert r == ufloat(3, 1)
+    logging.debug(str(('m2+m1=3:', r, r[0, 0])))
     r = 2*m1
-    assert r == ufloat(2,2), str(r.hist)
-    print '2*m1=2:', r, r[0,0]
+    assert r == ufloat(2, 2), str(r.hist)
+    logging.debug(str(('2*m1=2:', r, r[0, 0])))
     r = (2*m1 + 8) / m2
-    print '(2*(1+/-1) + 8) / 2:', r, r[0,0]
-    assert r == ufloat(5,1), str(r.hist)
-    print '(2*m1 + 8) / m2=5:', r, r.hist[0,0]
-    #r[:,1] = 1
-    #r[2,:] = 2
-    print 'r[0:2,0:5].hist:', r[0:2,0:5].hist
-    print 'r[0:2,0:5].binning:', r[0:2,0:5].binning
+    logging.debug(str(('(2*(1+/-1) + 8) / 2:', r, r[0, 0])))
+    assert r == ufloat(5, 1), str(r.hist)
+    logging.debug(str(('(2*m1 + 8) / m2=5:', r, r.hist[0, 0])))
+    #r[:, 1] = 1
+    #r[2, :] = 2
+    logging.debug(str(('r[0:2, 0:5].hist:', r[0:2, 0:5].hist)))
+    logging.debug(str(('r[0:2, 0:5].binning:', r[0:2, 0:5].binning)))
     r = m1 / m2
-    assert r == ufloat(0.5,0.5)
-    print r, '=', r[0,0]
-    print [b.binning.energy.midpoints[0] for b in m1.iterbins()][0:2]
+    assert r == ufloat(0.5, 0.5)
+    logging.debug(str((r, '=', r[0, 0])))
+    logging.debug(str(([b.binning.energy.midpoints[0]
+                        for b in m1.iterbins()][0:2])))
 
     # Test reorder_dimensions
     e_binning = OneDimBinning(
@@ -2315,39 +2318,32 @@ def test_Map():
                  binning=[e_binning, cz_binning, az_binning])
     m_new = m_orig.reorder_dimensions(['azimuth', 'energy', 'coszen'])
 
-    assert np.alltrue(m_orig[:,0,0].hist.flatten() ==
-                      m_new[0,:,0].hist.flatten())
-    assert np.alltrue(m_orig[0,:,0].hist.flatten() ==
-                      m_new[0,0,:].hist.flatten())
-    assert np.alltrue(m_orig[0,0,:].hist.flatten() ==
-                      m_new[:,0,0].hist.flatten())
+    assert np.alltrue(m_orig[:, 0, 0].hist.flatten() ==
+                      m_new[0, :, 0].hist.flatten())
+    assert np.alltrue(m_orig[0, :, 0].hist.flatten() ==
+                      m_new[0, 0, :].hist.flatten())
+    assert np.alltrue(m_orig[0, 0, :].hist.flatten() ==
+                      m_new[:, 0, 0].hist.flatten())
 
     for dim in m_orig.binning.names:
-        assert m_orig[:,0,0].binning[dim] == m_new[0,:,0].binning[dim]
-        assert m_orig[0,:,0].binning[dim] == m_new[0,0,:].binning[dim]
-        assert m_orig[0,0,:].binning[dim] == m_new[:,0,0].binning[dim]
+        assert m_orig[:, 0, 0].binning[dim] == m_new[0, :, 0].binning[dim]
+        assert m_orig[0, :, 0].binning[dim] == m_new[0, 0, :].binning[dim]
+        assert m_orig[0, 0, :].binning[dim] == m_new[:, 0, 0].binning[dim]
 
     deepcopy(m_orig)
 
-    print '<< PASSED : test_Map >>'
+    logging.info(str(('<< PASSED : test_Map >>')))
 
 
 # TODO: add tests for llh, chi2 methods
-# TODO: make tests use assert rather than rely on printouts!
+# TODO: make tests use assert rather than rely on logging.debug(str((!)))
 def test_MapSet():
-    from itertools import permutations
-    import os
-    import shutil
-    import tempfile
-    from pisa.utils.jsons import to_json
-    from pisa import ureg, Q_
-
     n_ebins = 6
     n_czbins = 3
     e_binning = OneDimBinning(name='energy', tex=r'E_\nu', num_bins=n_ebins,
-                              domain=(1,80)*ureg.GeV, is_log=True)
+                              domain=(1, 80)*ureg.GeV, is_log=True)
     cz_binning = OneDimBinning(name='coszen', tex=r'\cos\,\theta',
-                               num_bins=n_czbins, domain=(-1,0), is_lin=True)
+                               num_bins=n_czbins, domain=(-1, 0), is_lin=True)
     binning = MultiDimBinning([e_binning, cz_binning])
     m1 = Map(name='ones', hist=np.ones(binning.shape), binning=binning,
              hash='xyz')
@@ -2355,9 +2351,9 @@ def test_MapSet():
     m2 = Map(name='twos', hist=2*np.ones(binning.shape), binning=binning,
              hash='xyz')
     ms01 = MapSet([m1, m2])
-    print "downsampling ====================="
-    print ms01.downsample(3)
-    print "===================== downsampling"
+    logging.debug(str(("downsampling =====================")))
+    logging.debug(str((ms01.downsample(3))))
+    logging.debug(str(("===================== downsampling")))
     ms01 = MapSet((m1, m2), name='ms01')
     ms02 = MapSet((m1, m2), name='map set 1')
     ms1 = MapSet(maps=(m1, m2), name='map set 1', collate_by_name=True,
@@ -2368,18 +2364,20 @@ def test_MapSet():
                   ms1.combine_wildcard('*s').hist)
     assert np.all(ms1.combine_re(r'^(one|two)s.*$').hist == (ms1.ones +
                                                              ms1.twos).hist)
-    print ms1.combine_re(r'^o').hist
-    print ms1.combine_wildcard(r'o*').hist
-    print ms1.combine_re(r'^o').hist - ms1.combine_wildcard(r'o*').hist
-    print 'map sets equal after combining?', \
-            ms1.combine_re(r'^o') == ms1.combine_wildcard(r'o*')
-    print 'hist equal after combining?', \
-            np.all(ms1.combine_re(r'^o').hist == \
-                   ms1.combine_wildcard(r'o*').hist)
-    assert np.all(ms1.combine_re(r'^o').hist == ms1.combine_wildcard('o*').hist)
-    print '5', ms1.names
+    logging.debug(str((ms1.combine_re(r'^o').hist)))
+    logging.debug(str((ms1.combine_wildcard(r'o*').hist)))
+    logging.debug(str((ms1.combine_re(r'^o').hist
+                       - ms1.combine_wildcard(r'o*').hist)))
+    logging.debug(str(('map sets equal after combining?',
+                       ms1.combine_re(r'^o') == ms1.combine_wildcard(r'o*'))))
+    logging.debug(str(('hist equal after combining?',
+                       np.all(ms1.combine_re(r'^o').hist ==
+                              ms1.combine_wildcard(r'o*').hist))))
+    assert np.all(ms1.combine_re(r'^o').hist
+                  == ms1.combine_wildcard('o*').hist)
+    logging.debug(str(('5', ms1.names)))
     assert np.all(ms1.combine_re(r'^o').hist == ms1.ones.hist)
-    print '6', ms1.names
+    logging.debug(str(('6', ms1.names)))
     try:
         ms1.combine_re('three')
     except ValueError:
@@ -2422,57 +2420,63 @@ def test_MapSet():
     assert np.all(ms1[0].nominal_values == np.ones(binning.shape))
     assert np.all(ms1[0].std_devs == np.ones(binning.shape))
     assert np.all(ms1[1].hist == 2*np.ones(binning.shape))
-    print 'ms1[0:2].hist:', ms1[0:2].hist
-    print 'ms1[0:2,0:2].hist:', ms1[0:2,0:2].hist
+    logging.debug(str(('ms1[0:2].hist:', ms1[0:2].hist)))
+    logging.debug(str(('ms1[0:2, 0:2].hist:', ms1[0:2, 0:2].hist)))
     assert np.all(ms1.apply_to_maps('__add__', 1).ones == 2)
 
-    m1 = Map(name='threes', hist=3*np.ones((n_ebins,n_czbins)), binning=binning)
-    m2 = Map(name='fours', hist=4*np.ones((n_ebins,n_czbins)), binning=binning)
+    m1 = Map(name='threes', hist=3*np.ones((n_ebins, n_czbins)),
+             binning=binning)
+    m2 = Map(name='fours', hist=4*np.ones((n_ebins, n_czbins)), binning=binning)
     ms2 = MapSet(maps=(m1, m2), name='map set 2', collate_by_name=False)
 
     try:
-        print ms1.__add__(ms2)
+        logging.debug(str((ms1.__add__(ms2))))
     except ValueError:
         pass
     else:
         raise Exception('Should have errored out!')
 
-    m1 = Map(name='fives', hist=5*np.ones((n_ebins,n_czbins)), binning=binning)
-    m2 = Map(name='sixes', hist=6*np.ones((n_ebins,n_czbins)), binning=binning)
+    m1 = Map(name='fives', hist=5*np.ones((n_ebins, n_czbins)),
+             binning=binning)
+    m2 = Map(name='sixes', hist=6*np.ones((n_ebins, n_czbins)),
+             binning=binning)
     ms3 = MapSet(maps=(m1, m2), name='map set 3', collate_by_name=False)
     ms4 = MapSet(maps=(m1, m2), name='map set 3', collate_by_name=False)
     assert ms3 == ms4
 
-    print 'ms2.maps:', ms2.maps
-    print "(ms2 + ms3).names", (ms2 + ms3).names
-    print "(ms2 + ms3)[0,0].hist", (ms2 + ms3)[0,0].hist
-    print "ms1['ones'][0,0]:", ms1['ones'][0,0]
-    print 'ms1.__mul__(2)[0,0]:', ms1.__mul__(2)[0,0]
-    print '(ms1 * 2)[0,0]:', (ms1 * 2)[0,0]
-    print 'ms1.__add__(ms1)[0,0]:', ms1.__add__(ms1)[0,0]
-    print '(ms1 + ms1)[0,0]:', (ms1 + ms1)[0,0]
-    print ms1.names
-    print '(ms1/ ms1)[0,0]:', (ms1 / ms1)[0,0]
-    print '(ms1/ms1 - 1)[0,0]:', (ms1/ms1 - 1)[0,0]
-    #print "ms1.log10()['ones']:", ms1.log10()['ones']
-    #print "ms1.log10()[0,0]['ones']:", ms1.log10()[0,0]['ones']
-    #print 'np.log10(ms1):', np.log10(ms1)
-    print '(ms1 * np.e).binning:', (ms1 * np.e).binning
-    #print 'np.log(ms1 * np.e)[0][0,0]:', (np.log(ms1 * np.e))[0][0,0]
-    #print 'np.sqrt(ms1)[0][0:4,0:2].hist:', np.sqrt(ms1)[0][0:4,0:2].hist
-    print 'str(ms1)', str(ms1)
-    print 'str(ms4)', str(ms4)
-    print 'ms3', ms3
-    print 'ms4', ms4
+    logging.debug(str(('ms2.maps:', ms2.maps)))
+    logging.debug(str(("(ms2 + ms3).names", (ms2 + ms3).names)))
+    logging.debug(str(("(ms2 + ms3)[0, 0].hist", (ms2 + ms3)[0, 0].hist)))
+    logging.debug(str(("ms1['ones'][0, 0]:", ms1['ones'][0, 0])))
+    logging.debug(str(('ms1.__mul__(2)[0, 0]:', ms1.__mul__(2)[0, 0])))
+    logging.debug(str(('(ms1 * 2)[0, 0]:', (ms1 * 2)[0, 0])))
+    logging.debug(str(('ms1.__add__(ms1)[0, 0]:', ms1.__add__(ms1)[0, 0])))
+    logging.debug(str(('(ms1 + ms1)[0, 0]:', (ms1 + ms1)[0, 0])))
+    logging.debug(str((ms1.names)))
+    logging.debug(str(('(ms1/ ms1)[0, 0]:', (ms1 / ms1)[0, 0])))
+    logging.debug(str(('(ms1/ms1 - 1)[0, 0]:', (ms1/ms1 - 1)[0, 0])))
+    #logging.debug(str(("ms1.log10()['ones']:", ms1.log10()['ones'])))
+    #logging.debug(str(("ms1.log10()[0, 0]['ones']:",
+    #                   ms1.log10()[0, 0]['ones'])))
+    #logging.debug(str(('np.log10(ms1):', np.log10(ms1))))
+    logging.debug(str(('(ms1 * np.e).binning:', (ms1 * np.e).binning)))
+    #logging.debug(str(('np.log(ms1 * np.e)[0][0, 0]:',
+    #                   (np.log(ms1 * np.e))[0][0, 0])))
+    #logging.debug(str(('np.sqrt(ms1)[0][0:4, 0:2].hist:',
+    #                   np.sqrt(ms1)[0][0:4, 0:2].hist)))
+    logging.debug(str(('str(ms1)', str(ms1))))
+    logging.debug(str(('str(ms4)', str(ms4))))
+    logging.debug(str(('ms3', ms3)))
+    logging.debug(str(('ms4', ms4)))
 
     testdir = tempfile.mkdtemp()
     try:
         for ms in [ms01, ms02, ms1, ms2, ms3, ms4]:
             ms_file = os.path.join(testdir, ms.name + '.json')
-            ms.to_json(ms_file)
+            ms.to_json(ms_file, warn=False)
             ms_ = MapSet.from_json(ms_file)
             assert ms_ == ms, 'ms=\n%s\nms_=\n%s' %(ms, ms_)
-            to_json(ms, ms_file)
+            jsons.to_json(ms, ms_file, warn=False)
             ms_ = MapSet.from_json(ms_file)
             assert ms_ == ms, 'ms=\n%s\nms_=\n%s' %(ms, ms_)
     finally:
@@ -2486,9 +2490,10 @@ def test_MapSet():
         for p in permutations(ms[0].binning.dimensions):
             ms.reorder_dimensions(p)
 
-    print '<< PASSED : test_MapSet >>'
+    logging.info(str(('<< PASSED : test_MapSet >>')))
 
 
 if __name__ == "__main__":
+    set_verbosity(1)
     test_Map()
     test_MapSet()

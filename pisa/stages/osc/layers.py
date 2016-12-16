@@ -14,7 +14,6 @@ except ImportError:
 from pisa import FTYPE
 from pisa.utils.fileio import from_file
 from pisa.utils.log import logging, set_verbosity
-from pisa.utils.profiler import profile
 
 
 __all__ = ['extCalcLayers', 'Layers']
@@ -22,6 +21,7 @@ __all__ = ['extCalcLayers', 'Layers']
 
 if numba is None:
     class jit(object):
+        """Decorator class to mimic Numba's `jit` when Numba is missing"""
         def __init__(self, *args, **kwargs):
             pass
         def __call__(self, *args):
@@ -156,7 +156,7 @@ def extCalcLayers(
             # Path through the final layer above the detector (if necessary)
             # NOTE: outer top layer is assumed to be the same as the next layer
             # inward.
-            if (detector_depth > min_detector_depth):
+            if detector_depth > min_detector_depth:
                 traverse_rhos[1] = rhos[0]
                 traverse_dist[1] = path_len - tot_earth_len - traverse_dist[0]
                 traverse_electron_frac[1] = YeFrac[-1]
@@ -183,7 +183,7 @@ def extCalcLayers(
                         traverse_electron_frac[i+i_trav] = YeFrac[rad_i]
                         break
 
-                # now calculate the distance travele in layer
+                # Now calculate the distance travele in layer
                 c2 = coszen**2
                 R2 = r_detector**2
                 s1 = radii[i]**2 - R2*(1 -c2)
@@ -191,16 +191,18 @@ def extCalcLayers(
                 cross_this = 2. * np.sqrt(s1)
                 if i < layers - 1:
                     cross_next = 2. * np.sqrt(s2)
-                    traverse_dist[i+i_trav]  =  0.5 * (cross_this - cross_next)
+                    traverse_dist[i+i_trav] = 0.5 * (cross_this - cross_next)
                 else:
-                    traverse_dist[i+i_trav]  =  cross_this
+                    traverse_dist[i+i_trav] = cross_this
 
-                #assumes azimuthal symmetry
-                if 0 < i and i < layers:
+                # Assumes azimuthal symmetry
+                if i > 0 and i < layers:
                     index = 2 * layers - i + i_trav - 1
                     traverse_rhos[index] = traverse_rhos[i+i_trav-1]
                     traverse_dist[index] = traverse_dist[i+i_trav-1]
-                    traverse_electron_frac[index] = traverse_electron_frac[i+i_trav-1]
+                    traverse_electron_frac[index] = (
+                        traverse_electron_frac[i+i_trav-1]
+                    )
 
             # That is now the total
             layers = 2 * layers + i_trav - 1
@@ -287,7 +289,7 @@ class Layers(object):
         # Compute which layer is tangeted at which angle
         coszen_limit = []
         # First element of self.radii is largest radius!
-        for i,rad in enumerate(self.radii):
+        for i, rad in enumerate(self.radii):
             # Using a cosine threshold instead!
             if i == 0:
                 x = 0
@@ -336,9 +338,9 @@ class Layers(object):
 
 def test_Layers():
     layer = Layers('osc/PREM_4layer.dat')
-    layer.setElecFrac( 0.4656, 0.4656, 0.4957)
+    layer.setElecFrac(0.4656, 0.4656, 0.4957)
     cz = np.linspace(-1, 1, 1e5, dtype=FTYPE)
-    layer.calcLayers(cz);
+    layer.calcLayers(cz)
     logging.info('n_layers = %s' %layer.n_layers)
     logging.info('density  = %s' %layer.density)
     logging.info('distance = %s' %layer.distance)

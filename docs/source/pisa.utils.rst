@@ -12,6 +12,14 @@ pisa.utils.PIDSpec module
     :undoc-members:
     :show-inheritance:
 
+pisa.utils.barlow module
+------------------------
+
+.. automodule:: pisa.utils.barlow
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.utils.betterConfigParser module
 ------------------------------------
 
@@ -52,10 +60,10 @@ pisa.utils.config_parser module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.const module
------------------------
+pisa.utils.coords module
+------------------------
 
-.. automodule:: pisa.utils.const
+.. automodule:: pisa.utils.coords
     :members:
     :undoc-members:
     :show-inheritance:
@@ -84,18 +92,18 @@ pisa.utils.fileio module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.fit_discrete_sys module
-----------------------------------
-
-.. automodule:: pisa.utils.fit_discrete_sys
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pisa.utils.flavInt module
 -------------------------
 
 .. automodule:: pisa.utils.flavInt
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.utils.flux_weights module
+------------------------------
+
+.. automodule:: pisa.utils.flux_weights
     :members:
     :undoc-members:
     :show-inheritance:
@@ -156,10 +164,10 @@ pisa.utils.jsons module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.kde module
----------------------
+pisa.utils.kde_hist module
+--------------------------
 
-.. automodule:: pisa.utils.kde
+.. automodule:: pisa.utils.kde_hist
     :members:
     :undoc-members:
     :show-inheritance:
@@ -188,34 +196,10 @@ pisa.utils.miscFunctions module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.physics module
--------------------------
-
-.. automodule:: pisa.utils.physics
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.utils.plot_brazil_new module
----------------------------------
-
-.. automodule:: pisa.utils.plot_brazil_new
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pisa.utils.plotter module
 -------------------------
 
 .. automodule:: pisa.utils.plotter
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.utils.proc module
-----------------------
-
-.. automodule:: pisa.utils.proc
     :members:
     :undoc-members:
     :show-inheritance:
@@ -240,14 +224,6 @@ pisa.utils.resources module
 ---------------------------
 
 .. automodule:: pisa.utils.resources
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.utils.seed module
-----------------------
-
-.. automodule:: pisa.utils.seed
     :members:
     :undoc-members:
     :show-inheritance:
@@ -320,6 +296,14 @@ pisa.utils.timing module
 ------------------------
 
 .. automodule:: pisa.utils.timing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.utils.vbwkde module
+------------------------
+
+.. automodule:: pisa.utils.vbwkde
     :members:
     :undoc-members:
     :show-inheritance:

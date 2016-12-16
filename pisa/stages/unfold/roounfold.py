@@ -135,7 +135,7 @@ class roounfold(Stage):
 
         background_str = [fig for fig in trans_data
                           if fig != self._output_nu_group]
-        if trans_data.are_muons:
+        if trans_data.contains_muons:
             background_str.append('muons')
 
         signal_data = trans_data[self._output_nu_group]

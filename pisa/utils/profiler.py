@@ -1,14 +1,20 @@
+"""
+Profiling decorators
+"""
+
 import time
 
 from line_profiler import LineProfiler
 
+# Note this relative import (might be) necessary to avoid circular imports
 import log
 
 
-__all__ = ['line_profile', 'profile']
+__all__ = ['line_profile', 'profile',
+           'test_profile', 'test_line_profile']
 
 
-class Log():
+class Log(object):
     """Class to redirect output into our logging stream."""
     def write(self, string):
         string = string.rstrip('\n')
@@ -57,40 +63,40 @@ def profile(func):
 def test_profile():
     @profile
     def get_number():
-        log.logging.debug('hello, i am get_number')
+        log.logging.trace('hello, i am get_number')
         for x in xrange(500000):
             yield x
 
     @profile
     def expensive_function():
-        log.logging.debug('hello, i am expensive fun')
+        log.logging.trace('hello, i am expensive fun')
         for x in get_number():
-            i = x ^ x ^ x
+            _ = x ^ x ^ x
         return 'some result!'
 
-    result = expensive_function()
-    log.logging.info('<< PASSED : test_profile >>')
+    _ = expensive_function()
+    log.logging.info('<< ??? : test_profile >> inspect above outputs')
 
 
 def test_line_profile():
     @line_profile
     def get_number():
-        log.logging.debug('hello, i am get_number')
+        log.logging.trace('hello, i am get_number')
         for x in xrange(500000):
             yield x
 
     @line_profile
     def expensive_function():
-        log.logging.debug('hello, i am expensive fun')
+        log.logging.trace('hello, i am expensive fun')
         for x in get_number():
             i = x ^ x ^ x
         return 'some result!'
 
-    result = expensive_function()
-    log.logging.info('<< PASSED : test_line_profile >>')
+    _ = expensive_function()
+    log.logging.info('<< ??? : test_line_profile >> Inspect above outputs')
 
 
 if __name__ == '__main__':
-    log.set_verbosity(3)
+    log.set_verbosity(2)
     test_profile()
     test_line_profile()

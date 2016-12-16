@@ -1,10 +1,4 @@
 # -*- coding: <encoding name> -*-
-#
-# confInterval.py
-#
-# Class implementing numerical routines for finding confidence intervals given
-# a PDF.
-#
 # author:  J.L. Lanfanchi
 #          jll1062@phys.psu.edu
 #
@@ -15,7 +9,12 @@
 #   Handy utility for finding simplistic only-single-mode-aware
 #   maximum-likelihood confidence intervals for arbitrarily-shaped PDF's
 #   using linear interpolation (i.e., trapezoidal numerical integration).
-#
+"""
+Class implementing numerical routines for finding maximum-likelihood confidence
+intervals given a PDF.
+
+"""
+
 
 from __future__ import division
 
@@ -26,20 +25,24 @@ import scipy.optimize as optimize
 __all__ = ['MLConfInterval']
 
 
-class MLConfInterval:
+class MLConfInterval(object):
+    """Maximum-likelihood confidence interval of a PDF.
+
+    Parameters
+    ----------
+    x : sequence of floats
+        Sample locations of the random variable at which the PDF is sampled
+
+    y : sequence of floats
+        Density values corresponding to the sample locations, hence
+        defining a linearly-interpolated approximation to the PDF y =
+        PDF(x)
+
+    epsilon : float
+        Numerical tolerance for checking numerics
+
+    """
     def __init__(self, x, y, epsilon=1e-10):
-        '''
-        Arguments
-        ---------
-        x        Sample locations of the random variable at which the PDF is
-                 sampled
-
-        y        Density values corresponding to the sample locations, hence
-                 defining a linearly-interpolated approximation to the PDF
-                 y = PDF(x)
-
-        epsilon  Numerical tolerance for checking numerics
-        '''
         self.epsilon = epsilon
 
         # Sort all data in ascending-X order
@@ -87,7 +90,8 @@ class MLConfInterval:
 
         self.right_dx = np.diff(self.right_x)
         self.right_dy = np.diff(self.right_y)
-        self.right_areas = self.right_dx * (self.right_dy/2.0 + self.right_y[:-1])
+        self.right_areas = (self.right_dx * (self.right_dy/2.0
+                                             + self.right_y[:-1]))
 
         self.total_area = np.sum(self.left_areas) + np.sum(self.right_areas)
 
@@ -102,31 +106,54 @@ class MLConfInterval:
         self.ci_upper_bound = np.inf
         self.ci_prob = 1.0
 
-    def findCI_lin(self, conf, maxiter=100):
-        '''
-        Perform a search in Y to find that Y whose outermost-in-X intersection
-        points with the PDF define an X-interval enclosing the fraction
-        conf of the total area under that curve. "Outermost" is defined as
-        being furthest left and right (i.e., in X) of the location of the
-        curve's maximum, so e.g. a multi-modal distribution will "hop" to
-        right or left to another mode and *overshoot* the confidence level
+    # TODO: make this more succinct
+    def find_ci_lin(self, conf, maxiter=100):
+        """Perform a search in Y to find that Y whose outermost-in-X
+        intersection points with the PDF define an X-interval enclosing the
+        fraction conf of the total area under that curve. "Outermost" is
+        defined as being furthest left and right (i.e., in X) of the location
+        of the curve's maximum, so e.g. a multi-modal distribution will "hop"
+        to right or left to another mode and *overshoot* the confidence level
         desired. This is a conservative approach to dealing with multi-modal
         distributions but is not the most accurate (most accurate would be to
         draw multiple confidence intervals and only combine them when they
         overlap).
-        '''
-        target_area = self.total_area * conf
 
-        y, r = optimize.brentq(self.area, 1e-5,
-                                  self.max_y, args=(target_area,),
-                                  maxiter=maxiter, full_output=True)
+        Parameters
+        ----------
+        conf : float in [0, 1]
+        maxiter : int > 0
+
+        Returns
+        -------
+        ci_lower_bound, ci_upper_bound, ci_prob, r
+
+        """
+        target_area = self.total_area * conf
+        y, r = optimize.brentq(
+            self.area,
+            1e-5,
+            self.max_y,
+            args=(target_area,),
+            maxiter=maxiter,
+            full_output=True
+        )
         return self.ci_lower_bound, self.ci_upper_bound, self.ci_prob, r
 
     def area(self, y, area_ref=0):
-        '''
-        For a given y in the range [0, max(PDF)), compute the total area under
-        the PDF between the outermost x-intersection points at that y.
-        '''
+        """For a given y in the range [0, max(PDF)), compute the total area
+        under the PDF between the outermost x-intersection points at that y.
+
+        Parameters
+        ----------
+        y : float
+        area_ref : float
+
+        Returns
+        -------
+        area
+
+        """
         left_ind, left_x, right_ind, right_x = self.furthestRoots(y)
 
         # Areas up to but excluding the bin within which the Y-value lies
@@ -134,8 +161,14 @@ class MLConfInterval:
         right_area = np.sum(self.right_areas[0:right_ind])
 
         # Add in the areas of the partial bins
-        left_area  += -(left_x  - self.left_x[left_ind])   * ((y - self.left_y[left_ind])/2.0   + self.left_y[left_ind])
-        right_area +=  (right_x - self.right_x[right_ind]) * ((y - self.right_y[right_ind])/2.0 + self.right_y[right_ind])
+        left_area += (
+            -(left_x - self.left_x[left_ind])
+            * ((y - self.left_y[left_ind])/2.0 + self.left_y[left_ind])
+        )
+        right_area += (
+            (right_x - self.right_x[right_ind])
+            * ((y - self.right_y[right_ind])/2.0 + self.right_y[right_ind])
+        )
 
         # Store the interval values
         self.ci_lower_bound = left_x
@@ -145,7 +178,17 @@ class MLConfInterval:
         return left_area + right_area - area_ref
 
     def furthestRoots(self, y):
-        '''Find the outermost x-intersection points, i.e., PDF(x) = y'''
+        """Find the outermost x-intersection points, i.e., PDF(x) = y
+
+        Parameters
+        ----------
+        y : float
+
+        Returns
+        -------
+        left_ind, left_x, right_ind, right_x
+
+        """
         # This indexes the edge closest to the ML value of the bin containing
         # the furthest root left of the ML value
         left_inds = list(np.where(np.diff(np.sign(self.left_y - y)) != 0)[0])
@@ -161,7 +204,17 @@ class MLConfInterval:
         # Linear interpolation: $ x_i = x_0 + (dx_0)/(dy_0) * (y_i - y_0) $
 
         # Linear interp to find X coordinates corresponding to Y value
-        left_x  = self.left_x[left_ind]   + float(self.left_dx[left_ind])/float(self.left_dy[left_ind])     * (y - self.left_y[left_ind])
-        right_x = self.right_x[right_ind] + float(self.right_dx[right_ind])/float(self.right_dy[right_ind]) * (y - self.right_y[right_ind])
+        left_x = (
+            self.left_x[left_ind]
+            + float(self.left_dx[left_ind])
+            / float(self.left_dy[left_ind])
+            * (y - self.left_y[left_ind])
+        )
+        right_x = (
+            self.right_x[right_ind]
+            + float(self.right_dx[right_ind])
+            / float(self.right_dy[right_ind])
+            * (y - self.right_y[right_ind])
+        )
 
         return left_ind, left_x, right_ind, right_x
