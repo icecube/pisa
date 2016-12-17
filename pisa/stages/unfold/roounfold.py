@@ -86,6 +86,7 @@ class roounfold(Stage):
             raise NotImplementedError('Bin dimensions != 2 not implemented')
 
         self.data_hash = None
+        self.hist_hash = None
 
         super(self.__class__, self).__init__(
             use_transforms=False,
@@ -137,38 +138,26 @@ class roounfold(Stage):
 
         response = self.create_response(self.signal_data, self.all_data)
 
-        all_hist = self._histogram(
-            events=self.all_data,
-            binning=self.reco_binning,
-            weights=self.all_data['pisa_weight'],
-            errors=False,
-            name='all',
-            tex=r'\rm{all}'
-        )
+        self.bg_hist, self.all_hist = self.compute_hists()
 
+        all_hist_poisson = deepcopy(self.all_hist)
         seed = int(self.params['stat_fluctuations'].m)
         if seed != 0:
             if self.random_state is None or seed != self.seed:
                 self.seed = seed
                 self.random_state = get_random_state(seed)
-            all_hist = all_hist.fluctuate('poisson', self.random_state)
+            all_hist_poisson = all_hist_poisson.fluctuate(
+                'poisson', self.random_state
+            )
         else:
             self.seed = None
             self.random_state = None
-        all_hist.set_poisson_errors()
+        all_hist_poisson.set_poisson_errors()
 
         if self.params['unfold_bg'].value:
-            sig_reco = deepcopy(all_hist)
+            sig_reco = deepcopy(all_hist_poisson)
         else:
-            bg_hist = self._histogram(
-                events=self.background_data,
-                binning=self.reco_binning,
-                weights=self.background_data['pisa_weight'],
-                errors=True,
-                name='background',
-                tex=r'\rm{background}'
-            )
-            sig_reco = all_hist - bg_hist
+            sig_reco = all_hist_poisson - self.bg_hist
         sig_reco.name = 'reco_signal'
         sig_reco.tex = r'\rm{reco_signal}'
 
@@ -222,7 +211,8 @@ class roounfold(Stage):
         return MapSet([sig_unfold])
 
     def transform_data(self, data):
-        this_hash = self.sample_hash
+        this_hash = hash_obj(self.sample_hash, self._output_nu_group,
+                             data.contains_muons)
         if self.data_hash == this_hash:
             return self.signal_data, self.background_data, self.all_data
         trans_data = self._data.transform_groups(
@@ -241,8 +231,30 @@ class roounfold(Stage):
             deepcopy(background_data), signal_data
         )
 
-        self.data_hash = self.sample_hash
+        self.data_hash = this_hash
         return signal_data, background_data, all_data
+
+    def compute_hists():
+        this_hash = hash_obj(self.background_data.hash, self.all_data.hash)
+        if self.hist_hash == this_hash:
+            return self.all_hist, self.bg_hist
+        bg_hist = self._histogram(
+            events=self.background_data,
+            binning=self.reco_binning,
+            weights=self.background_data['pisa_weight'],
+            errors=True,
+            name='background',
+            tex=r'\rm{background}'
+        )
+        all_hist = self._histogram(
+            events=self.all_data,
+            binning=self.reco_binning,
+            weights=self.all_data['pisa_weight'],
+            errors=False,
+            name='all',
+            tex=r'\rm{all}'
+        )
+        return self.bg_hist, self.all_hist
 
     def create_response(self, signal_data, all_data):
         """Create the response object from the signal data."""
