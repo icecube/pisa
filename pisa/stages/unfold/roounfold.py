@@ -211,8 +211,9 @@ class roounfold(Stage):
         return MapSet([sig_unfold])
 
     def transform_data(self, data):
-        this_hash = hash_obj(self.sample_hash, self._output_nu_group,
-                             data.contains_muons)
+        this_hash = hash_obj(
+            [self.sample_hash, self._output_nu_group, data.contains_muons]
+        )
         if self.data_hash == this_hash:
             return self.signal_data, self.background_data, self.all_data
         trans_data = self._data.transform_groups(
@@ -234,10 +235,11 @@ class roounfold(Stage):
         self.data_hash = this_hash
         return signal_data, background_data, all_data
 
-    def compute_hists():
-        this_hash = hash_obj(self.background_data.hash, self.all_data.hash)
+    def compute_hists(self):
+        this_hash = hash_obj([self.sample_hash, self._output_nu_group,
+                              self._data.contains_muons])
         if self.hist_hash == this_hash:
-            return self.all_hist, self.bg_hist
+            return self.bg_hist, self.all_hist
         bg_hist = self._histogram(
             events=self.background_data,
             binning=self.reco_binning,
@@ -254,7 +256,8 @@ class roounfold(Stage):
             name='all',
             tex=r'\rm{all}'
         )
-        return self.bg_hist, self.all_hist
+        self.hist_hash = this_hash
+        return bg_hist, all_hist
 
     def create_response(self, signal_data, all_data):
         """Create the response object from the signal data."""
