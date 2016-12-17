@@ -85,6 +85,8 @@ class roounfold(Stage):
         if len(reco_binning.names) != 2:
             raise NotImplementedError('Bin dimensions != 2 not implemented')
 
+        self.data_hash = None
+
         super(self.__class__, self).__init__(
             use_transforms=False,
             params=params,
@@ -124,31 +126,21 @@ class roounfold(Stage):
             raise AssertionError('`create_response` must be set to True if '
                                  'the flag `optimize_reg` is set to True.')
 
+        # TODO(shivesh): [   TRACE] None of the selections ['iron', 'nh'] found in this pipeline.
         # TODO(shivesh): Fix "smearing_matrix" memory leak
         # TODO(shivesh): Fix unweighted unfolding
         # TODO(shivesh): real data
         # TODO(shivesh): different algorithms
         # TODO(shivesh): efficiency correction in unfolding
-        trans_data = self._data.transform_groups(
-            self._output_nu_group
-        )
+        self.signal_data, self.background_data, self.all_data = \
+            self.transform_data(self._data)
 
-        background_str = [fig for fig in trans_data
-                          if fig != self._output_nu_group]
-        if trans_data.contains_muons:
-            background_str.append('muons')
-
-        signal_data = trans_data[self._output_nu_group]
-        background_data = [trans_data[bg] for bg in background_str]
-        background_data = reduce(Data._merge, background_data)
-        all_data = Data._merge(deepcopy(background_data), signal_data)
-
-        response = self.create_response(signal_data, all_data)
+        response = self.create_response(self.signal_data, self.all_data)
 
         all_hist = self._histogram(
-            events=all_data,
+            events=self.all_data,
             binning=self.reco_binning,
-            weights=all_data['pisa_weight'],
+            weights=self.all_data['pisa_weight'],
             errors=False,
             name='all',
             tex=r'\rm{all}'
@@ -169,9 +161,9 @@ class roounfold(Stage):
             sig_reco = deepcopy(all_hist)
         else:
             bg_hist = self._histogram(
-                events=background_data,
+                events=self.background_data,
                 binning=self.reco_binning,
-                weights=background_data['pisa_weight'],
+                weights=self.background_data['pisa_weight'],
                 errors=True,
                 name='background',
                 tex=r'\rm{background}'
@@ -186,9 +178,9 @@ class roounfold(Stage):
         regularisation = int(self.params['regularisation'].m)
         if regularisation == 0:
             sig_true = roounfold._histogram(
-                events=signal_data,
+                events=self.signal_data,
                 binning=self.true_binning,
-                weights=signal_data['pisa_weight'],
+                weights=self.signal_data['pisa_weight'],
                 errors=True,
                 name=self._output_nu_group
             )
@@ -228,6 +220,29 @@ class roounfold(Stage):
             np.sum(unp.nominal_values(sig_unfold.hist))
         ))
         return MapSet([sig_unfold])
+
+    def transform_data(self, data):
+        this_hash = self.sample_hash
+        if self.data_hash == this_hash:
+            return self.signal_data, self.background_data, self.all_data
+        trans_data = self._data.transform_groups(
+            self._output_nu_group
+        )
+
+        background_str = [fig for fig in trans_data
+                          if fig != self._output_nu_group]
+        if trans_data.contains_muons:
+            background_str.append('muons')
+
+        signal_data = trans_data[self._output_nu_group]
+        background_data = [trans_data[bg] for bg in background_str]
+        background_data = reduce(Data._merge, background_data)
+        all_data = Data._merge(
+            deepcopy(background_data), signal_data
+        )
+
+        self.data_hash = self.sample_hash
+        return signal_data, background_data, all_data
 
     def create_response(self, signal_data, all_data):
         """Create the response object from the signal data."""

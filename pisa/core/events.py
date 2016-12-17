@@ -907,8 +907,8 @@ def test_Events():
 def test_Data():
     """Unit tests for Data class"""
     # Instantiate from LEESARD file - located in $PISA_RESOURCES
-    file_loc = '12550.pckl'
-    file_loc2 = '14550.pckl'
+    file_loc = 'LEESARD/PRD_extend_finalLevel/12550.pckl'
+    file_loc2 = 'LEESARD/PRD_extend_finalLevel/14550.pckl'
     f = from_file(file_loc)
     f2 = from_file(file_loc2)
     d = {'nue+nuebar': f}
