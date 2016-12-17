@@ -779,15 +779,36 @@ class Data(FlavIntDataGroup):
         muons = None
         assert isinstance(other, Data)
 
+        metadata = {}
         for key in self.metadata:
-            if (key != 'flavints_joined' and
-                    self.metadata[key] != other.metadata[key]):
-                raise AssertionError(
-                    'Metadata mismatch, key {0}, {1} != '
-                    '{2}'.format(key, self.metadata[key],
-                                 other.metadata[key])
-                )
-        metadata = deepcopy(self.metadata)
+            if key == 'flavints_joined':
+                continue
+            if key in other.metadata:
+                if self.metadata[key] != other.metadata[key]:
+                    raise AssertionError(
+                        'Metadata mismatch, key {0}, {1} != '
+                        '{2}'.format(key, self.metadata[key],
+                                     other.metadata[key])
+                    )
+                else:
+                    metadata[key] = deepcopy(self.metadata[key])
+            else:
+                metadata[key] = deepcopy(self.metadata[key])
+
+        for key in other.metadata:
+            if key == 'flavints_joined':
+                continue
+            if key in self.metadata:
+                if other.metadata[key] != self.metadata[key]:
+                    raise AssertionError(
+                        'Metadata mismatch, key {0}, {1} != '
+                        '{2}'.format(key, other.metadata[key],
+                                     self.metadata[key])
+                    )
+                else:
+                    metadata[key] = deepcopy(other.metadata[key])
+            else:
+                metadata[key] = deepcopy(other.metadata[key])
 
         if self.contains_muons:
             if other.contains_muons:
@@ -899,9 +920,9 @@ def test_Data():
     muon_file = 'Level7_muongun.12370_15.pckl'
     m = {'muons': from_file(muon_file)}
     m = Data(val=m)
+    print 'here', m.metadata['cuts']
     assert m.contains_muons
     assert not m.contains_neutrinos
-    print m
     data = data + m
     assert data.contains_neutrinos
     print data

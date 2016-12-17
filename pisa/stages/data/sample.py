@@ -294,13 +294,12 @@ class sample(Stage):
 
     @staticmethod
     def load_muon_events(config, dataset):
-        name = config.get('general', 'name')
-
         def parse(string):
             return string.replace(' ', '').split(',')
-        sys_list = parse(config.get('muons', 'sys_list'))
+        name = config.get('general', 'name')
         weight = config.get('muons', 'weight')
         weight_units = config.get('muons', 'weight_units')
+        sys_list = parse(config.get('muons', 'sys_list'))
         base_suffix = config.get('muons', 'basesuffix')
         if base_suffix == 'None':
             base_suffix = ''
@@ -326,15 +325,13 @@ class sample(Stage):
         muons = from_file(file_path)
 
         if weight == 'None' or weight == '1':
-            muons['pisa_weight'] = \
-                    np.ones(muons['weights'].shape)
+            muons['pisa_weight'] = np.ones(muons['weights'].shape)
         elif weight == '0':
-            muons['pisa_weight'] = \
-                    np.zeros(muons['weights'].shape)
+            muons['pisa_weight'] = np.zeros(muons['weights'].shape)
         else:
-            muons['pisa_weight'] = muons[weight] * \
-                        ureg(weight_units)
+            muons['pisa_weight'] = muons[weight] * ureg(weight_units)
 
+        # TODO(shivesh): implement alias feature in cfg file
         if 'zenith' in muons and 'coszen' not in muons:
             muons['coszen'] = np.cos(muons['zenith'])
         if 'reco_zenith' in muons and 'reco_coszen' not in muons:

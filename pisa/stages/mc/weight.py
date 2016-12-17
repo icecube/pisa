@@ -62,6 +62,8 @@ class weight(Stage):
 
             * Flux related parameters:
                 For more information see `$PISA/pisa/stages/flux/honda.py`
+                - flux_reweight : bool
+                    Flag to specifiy whether to reweight the flux.
                 - flux_file
                 - atm_delta_index
                 - nue_numu_ratio
@@ -78,7 +80,8 @@ class weight(Stage):
                 For more information see `$PISA/pisa/stage/osc/prob3gpu.py`
                 - oscillate : bool
                     Flag to specifiy whether to include the effects of neutrino
-                    oscillation.
+                    oscillation. `flux_reweight` option must be set to "True"
+                    for oscillations reweighting.
                 - earth_model
                 - YeI
                 - YeM
@@ -134,6 +137,7 @@ class weight(Stage):
 
         self.nu_params = (
             'oscillate',
+            'flux_reweight',
             'cache_flux'
         )
 
@@ -289,29 +293,36 @@ class weight(Stage):
                 self._data[fig]['pisa_weight'] *= xsec_weights[fig]
 
             # Flux reweighting
-            flux_weights = self.compute_flux_weights(attach_units=True)
-            if not self.params['oscillate'].value:
-
-                # No oscillations
-                for fig in self._data.iterkeys():
-                    flav_pdg = NuFlavInt(fig).flavCode()
-                    pisa_weight = self._data[fig]['pisa_weight']
-                    if flav_pdg == 12:
-                        pisa_weight *= flux_weights[fig]['nue_flux']
-                    elif flav_pdg == 14:
-                        pisa_weight *= flux_weights[fig]['numu_flux']
-                    elif flav_pdg == -12:
-                        pisa_weight *= flux_weights[fig]['nuebar_flux']
-                    elif flav_pdg == -14:
-                        pisa_weight *= flux_weights[fig]['numubar_flux']
-                    elif abs(flav_pdg) == 16:
-                        # attach units of flux from nue
-                        pisa_weight *= 0. * flux_weights[fig]['nue_flux'].u
-            else:
-                # Oscillations
-                osc_weights = self.compute_osc_weights(flux_weights)
-                for fig in self._data.iterkeys():
-                    self._data[fig]['pisa_weight'] *= osc_weights[fig]
+            if not self.params['flux_reweight'].value and \
+               self.params['oscillate'].value:
+                raise AssertionError(
+                    '`oscillate` flag is set to "True" when `flux_reweight` '
+                    'flag is set to "False". Oscillations reweighting requires '
+                    'the `flux_reweight` flag to be set to "True".'
+                )
+            if self.params['flux_reweight'].value:
+                flux_weights = self.compute_flux_weights(attach_units=True)
+                if not self.params['oscillate'].value:
+                    # No oscillations
+                    for fig in self._data.iterkeys():
+                        flav_pdg = NuFlavInt(fig).flavCode()
+                        pisa_weight = self._data[fig]['pisa_weight']
+                        if flav_pdg == 12:
+                            pisa_weight *= flux_weights[fig]['nue_flux']
+                        elif flav_pdg == 14:
+                            pisa_weight *= flux_weights[fig]['numu_flux']
+                        elif flav_pdg == -12:
+                            pisa_weight *= flux_weights[fig]['nuebar_flux']
+                        elif flav_pdg == -14:
+                            pisa_weight *= flux_weights[fig]['numubar_flux']
+                        elif abs(flav_pdg) == 16:
+                            # attach units of flux from nue
+                            pisa_weight *= 0. * flux_weights[fig]['nue_flux'].u
+                else:
+                    # Oscillations
+                    osc_weights = self.compute_osc_weights(flux_weights)
+                    for fig in self._data.iterkeys():
+                        self._data[fig]['pisa_weight'] *= osc_weights[fig]
 
             # Livetime reweighting
             livetime = self.params['livetime'].value
@@ -324,13 +335,16 @@ class weight(Stage):
             livetime = self.params['livetime'].value
             self._data.muons['pisa_weight'] *= livetime
             self._data.muons['pisa_weight'].ito('dimensionless')
+
             # Scaling
             atm_muon_scale = self.params['atm_muon_scale'].value
             self._data.muons['pisa_weight'] *= atm_muon_scale
+
             # Primary CR systematic
             cr_rw_scale = self.params['delta_gamma_mu'].value
             rw_variable = self.params['delta_gamma_mu_variable'].value
             rw_array = self.prim_unc_spline(self._data.muons[rw_variable])
+
             # Reweighting term is positive-only by construction, so normalise
             # it by shifting the whole array down by a normalisation factor
             norm = sum(rw_array)/len(rw_array)
@@ -750,12 +764,12 @@ class weight(Stage):
         you should check both if it seems reasonable and it is still negligible
         if you use it with a different event sample.
         """
-        if 'true' not in self.params['delta_gamma_mu_variable'].value:
-            raise ValueError(
-                'Variable to construct spline should be a truth variable. '
-                'You have put %s in your configuration file.'
-                % self.params['delta_gamma_mu_variable'].value
-            )
+        # if 'true' not in self.params['delta_gamma_mu_variable'].value:
+        #     raise ValueError(
+        #         'Variable to construct spline should be a truth variable. '
+        #         'You have put %s in your configuration file.'
+        #         % self.params['delta_gamma_mu_variable'].value
+        #     )
 
         bare_variable = self.params['delta_gamma_mu_variable']\
                             .value.split('true_')[-1]
@@ -810,6 +824,7 @@ class weight(Stage):
         ]
         if self.neutrinos:
             param_types.extend([
+                ('flux_reweight', bool),
                 ('oscillate', bool),
                 ('cache_flux', bool),
                 ('nu_diff_DIS', pq),
