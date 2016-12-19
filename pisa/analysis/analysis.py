@@ -137,7 +137,11 @@ class Analysis(object):
 
         # Reset free parameters to nominal values
         if reset_free:
+            logging.info('Resetting hypo_maker values to those defined in '
+                         'the configuration file')
             hypo_maker.reset_free()
+        else:
+            minimiser_start_params = hypo_maker.params
 
         alternate_fits = []
 
@@ -152,9 +156,13 @@ class Analysis(object):
         )
 
         # Decide whether fit for other octant is necessary
-        if check_octant and 'theta23' in hypo_maker.params.free:
+        if check_octant and 'theta23' in hypo_maker.params.free.names:
             logging.debug('checking other octant of theta23')
-            hypo_maker.reset_free()
+            if reset_free:
+                hypo_maker.reset_free()
+            else:
+		for param in minimiser_start_params:
+		    hypo_maker.params[param.name].value = param.value
 
             # Hop to other octant by reflecting about 45 deg
             theta23 = hypo_maker.params.theta23

@@ -13,6 +13,10 @@ set the range of values. For example, one could scan over the space of theta23
 by using a string such as `numpy.linspace(0.35,0.65,31)` which will then be 
 evaluated to figure out a space of theta23 to inject and run Asimov tests.
 
+TODO:
+
+1) Make sure this actually works...
+
 """
 
 
@@ -240,8 +244,10 @@ def main():
         requested_vals = inj_vals
         inj_vals = np.arcsin(np.sqrt(inj_vals))
         logging.info(
-            'Converting to theta23 values. Equivalent range is %.4f to %.4f'
-            %(min(inj_vals), max(inj_vals))
+            'Converting to theta23 values. Equivalent range is %.4f to %.4f '
+            'radians, or %.4f to %.4f degrees'
+            %(min(inj_vals), max(inj_vals),
+              min(inj_vals)*180/np.pi, max(inj_vals)*180/np.pi)
         )
         test_name = 'theta23'
     else:
@@ -283,7 +289,6 @@ def main():
                                                        * alt_param.units)
                                 alt_param.value = inj_val * alt_param.units
                         
-
         nominal_h0_name = init_args_d['h0_name']
         nominal_h1_name = init_args_d['h1_name']
             

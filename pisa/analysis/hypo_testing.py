@@ -328,19 +328,22 @@ class HypoTesting(Analysis):
                  data_start_ind=0, fid_start_ind=0,
                  check_octant=True,
                  allow_dirty=False, allow_no_git_info=False,
-                 blind=False, store_minimizer_history=True, pprint=False):
+                 blind=False, store_minimizer_history=True, pprint=False,
+                 reset_free=True):
         assert num_data_trials >= 1
         assert num_fid_trials >= 1
         assert data_start_ind >= 0
         assert fid_start_ind >= 0
         assert metric in ALL_METRICS
 
+        # Make it possible to seed minimiser off truth
+        self.reset_free = reset_free
+
         # Instantiate h0 distribution maker to ensure it is a valid spec
         if h0_maker is None:
             raise ValueError('`h0_maker` must be specified (and not None)')
         if not isinstance(h0_maker, DistributionMaker):
             h0_maker = DistributionMaker(h0_maker)
-
         if isinstance(h0_param_selections, basestring):
             h0_param_selections = h0_param_selections.strip().lower()
             if h0_param_selections == '':
@@ -548,6 +551,7 @@ class HypoTesting(Analysis):
             fluctuate_data=self.fluctuate_data,
             fluctuate_fid=self.fluctuate_fid
         )
+        
 
     def run_analysis(self):
         """Run the defined analysis.
@@ -739,7 +743,8 @@ class HypoTesting(Analysis):
                 minimizer_settings=self.minimizer_settings,
                 check_octant=self.check_octant,
                 pprint=self.pprint,
-                blind=self.blind
+                blind=self.blind,
+                reset_free=self.reset_free
             )
         self.h0_fid_asimov_dist = self.h0_fit_to_data['hypo_asimov_dist']
 
@@ -780,7 +785,8 @@ class HypoTesting(Analysis):
                 minimizer_settings=self.minimizer_settings,
                 check_octant=self.check_octant,
                 pprint=self.pprint,
-                blind=self.blind
+                blind=self.blind,
+                reset_free=self.reset_free
             )
         self.h1_fid_asimov_dist = self.h1_fit_to_data['hypo_asimov_dist']
 
@@ -860,7 +866,8 @@ class HypoTesting(Analysis):
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
                     pprint=self.pprint,
-                    blind=self.blind
+                    blind=self.blind,
+                    reset_free=self.reset_free
                 )
 
             self.log_fit(fit_info=self.h0_fit_to_h0_fid,
@@ -899,7 +906,8 @@ class HypoTesting(Analysis):
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
                     pprint=self.pprint,
-                    blind=self.blind
+                    blind=self.blind,
+                    reset_free=self.reset_free
                 )
 
             self.log_fit(fit_info=self.h1_fit_to_h1_fid,
@@ -942,7 +950,8 @@ class HypoTesting(Analysis):
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
                     pprint=self.pprint,
-                    blind=self.blind
+                    blind=self.blind,
+                    reset_free=self.reset_free
                 )
 
             self.log_fit(fit_info=self.h1_fit_to_h0_fid,
@@ -978,7 +987,8 @@ class HypoTesting(Analysis):
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
                     pprint=self.pprint,
-                    blind=self.blind
+                    blind=self.blind,
+                    reset_free=self.reset_free
                 )
 
             self.log_fit(fit_info=self.h0_fit_to_h1_fid,
