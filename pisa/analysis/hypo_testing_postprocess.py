@@ -9,8 +9,16 @@ Hypothesis testing: How do two hypotheses compare for describing MC or data?
 This script/module computes significances, etc. from the logfiles recorded by
 the `hypo_testing.py` script.
 
-"""
+TODO:
 
+1) Some of the "combined" plots currently make it impossible to read the axis 
+   labels. Come up with a better way of doing this. Could involve making 
+   legends and just labelling the axes alphabetically.
+
+2) The important one - Figure out if this script generalises to the case of 
+   analysing data. My gut says it doesn't...
+
+"""
 
 from __future__ import division
 
@@ -26,44 +34,13 @@ from scipy.stats import norm, spearmanr
 
 from pisa.analysis.hypo_testing import Labels
 from pisa.core.param import Param, ParamSet
-from pisa.utils.fileio import from_file, nsort
+from pisa.utils.fileio import from_file, to_file, nsort
 from pisa.utils.log import set_verbosity, logging
+from pisa.utils.plotter import tex_axis_label
 
 
 __all__ = ['extract_trials', 'extract_fit', 'parse_args', 'main']
 
-
-def make_pretty(label):
-    '''
-    Takes the labels used in the objects and turns them in to something nice
-    for plotting. This can never truly be exhaustive, but it definitely does 
-    the trick. If something looks ugly add it to this function!
-    '''
-    pretty_labels = {}
-    pretty_labels["atm_muon_scale"] = r"Muon Background Scale"
-    pretty_labels["nue_numu_ratio"] = r"$\nu_e/\nu_{\mu}$ Ratio"
-    pretty_labels["Barr_uphor_ratio"] = r"Barr Up/Horizontal Ratio"
-    pretty_labels["Barr_nu_nubar_ratio"] = r"Barr $\nu/\bar{\nu}$ Ratio"
-    pretty_labels["delta_index"] = r"Atmospheric Index Change"
-    pretty_labels["theta13"] = r"$\theta_{13}$"
-    pretty_labels["theta23"] = r"$\theta_{23}$"
-    pretty_labels["deltam31"] = r"$\Delta m^2_{31}$"
-    pretty_labels["aeff_scale"] = r"$A_{\mathrm{eff}}$ Scale"
-    pretty_labels["Genie_Ma_QE"] = r"GENIE $M_{A}^{QE}$"
-    pretty_labels["Genie_Ma_RES"] = r"GENIE $M_{A}^{Res}$"
-    pretty_labels["dom_eff"] = r"DOM Efficiency"
-    pretty_labels["hole_ice"] = r"Hole Ice"
-    pretty_labels["hole_ice_fwd"] = r"Hole Ice Forward"
-    pretty_labels["degree"] = r"$^\circ$"
-    pretty_labels["radians"] = r"rads"
-    pretty_labels["electron_volt ** 2"] = r"$\mathrm{eV}^2$"
-    pretty_labels["llh"] = r"Likelihood"
-    pretty_labels["chi2"] = r"$\chi^2$"
-    pretty_labels["mod_chi2"] = r"Modified $\chi^2$"
-    if label not in pretty_labels.keys():
-        logging.warn("I don't know what to do with %s. Returning as is."%label)
-        return label
-    return pretty_labels[label]
 
 def get_num_rows(data, omit_metric=False):
     '''
@@ -158,137 +135,168 @@ def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
 
     """
     logdir = os.path.expanduser(os.path.expandvars(logdir))
-    config_summary_fpath = os.path.join(logdir, 'config_summary.json')
-    cfg = from_file(config_summary_fpath)
+    logdir_content = os.listdir(logdir)
+    if 'data_sets.pckl' in logdir_content:
+        logging.info('Found files I assume to be from a previous run of this '
+                     'processing script. If this is incorrect please delete '
+                     'the files: data_sets.pckl, all_params.pckl and '
+                     'labels.pckl from the logdir you have provided.')
+        data_sets = from_file(os.path.join(logdir, 'data_sets.pckl'))
+        all_params = from_file(os.path.join(logdir, 'all_params.pckl'))
+        labels = from_file(os.path.join(logdir, 'labels.pckl'))
+        minimiser_info = from_file(os.path.join(logdir, 'minimiser_info.pckl'))
+    elif 'config_summary.json' in logdir_content:
+        config_summary_fpath = os.path.join(logdir, 'config_summary.json')
+        cfg = from_file(config_summary_fpath)
 
-    data_is_data = cfg['data_is_data']
-    if data_is_data and fluctuate_data:
-        raise ValueError('Analysis was performed on data, so `fluctuate_data`'
-                         ' is not supported.')
+        data_is_data = cfg['data_is_data']
+        if data_is_data and fluctuate_data:
+            raise ValueError('Analysis was performed on data, so '
+                             '`fluctuate_data` is not supported.')
 
-    # Get naming scheme
-    labels = Labels(
-        h0_name=cfg['h0_name'], h1_name=cfg['h1_name'],
-        data_name=cfg['data_name'], data_is_data=data_is_data,
-        fluctuate_data=fluctuate_data, fluctuate_fid=fluctuate_fid
-    )
+        # Get naming scheme
+        labels = Labels(
+            h0_name=cfg['h0_name'], h1_name=cfg['h1_name'],
+            data_name=cfg['data_name'], data_is_data=data_is_data,
+            fluctuate_data=fluctuate_data, fluctuate_fid=fluctuate_fid
+        )
 
-    all_params = {}
-    all_params['h0_params'] = {}
-    all_params['h1_params'] = {}
-    parse_string = ('(.*)=(.*); prior=(.*),'
-                    ' range=(.*), is_fixed=(.*),'
-                    ' is_discrete=(.*); help="(.*)"')
-    for param_string in cfg['h0_params']:
-        bits = re.match(parse_string, param_string, re.M|re.I)
-        if bits.group(5) == 'False':
-            all_params['h0_params'][bits.group(1)] = {}
-            all_params['h0_params'][bits.group(1)]['value'] = bits.group(2)
-            all_params['h0_params'][bits.group(1)]['prior'] = bits.group(3)
-            all_params['h0_params'][bits.group(1)]['range'] = bits.group(4)
-    for param_string in cfg['h1_params']:
-        bits = re.match(parse_string, param_string, re.M|re.I)
-        if bits.group(5) == 'False':
-            all_params['h1_params'][bits.group(1)] = {}
-            all_params['h1_params'][bits.group(1)]['value'] = bits.group(2)
-            all_params['h1_params'][bits.group(1)]['prior'] = bits.group(3)
-            all_params['h1_params'][bits.group(1)]['range'] = bits.group(4)
+        all_params = {}
+        all_params['h0_params'] = {}
+        all_params['h1_params'] = {}
+        parse_string = ('(.*)=(.*); prior=(.*),'
+                        ' range=(.*), is_fixed=(.*),'
+                        ' is_discrete=(.*); help="(.*)"')
+        for param_string in cfg['h0_params']:
+            bits = re.match(parse_string, param_string, re.M|re.I)
+            if bits.group(5) == 'False':
+                all_params['h0_params'][bits.group(1)] = {}
+                all_params['h0_params'][bits.group(1)]['value'] = bits.group(2)
+                all_params['h0_params'][bits.group(1)]['prior'] = bits.group(3)
+                all_params['h0_params'][bits.group(1)]['range'] = bits.group(4)
+        for param_string in cfg['h1_params']:
+            bits = re.match(parse_string, param_string, re.M|re.I)
+            if bits.group(5) == 'False':
+                all_params['h1_params'][bits.group(1)] = {}
+                all_params['h1_params'][bits.group(1)]['value'] = bits.group(2)
+                all_params['h1_params'][bits.group(1)]['prior'] = bits.group(3)
+                all_params['h1_params'][bits.group(1)]['range'] = bits.group(4)
 
-    #for key in labels.dict.keys():
-    #    print key
+        # Find all relevant data dirs, and from each extract the fiducial fit(s)
+        # information contained
+        data_sets = OrderedDict()
+        minimiser_info = OrderedDict()
+        for basename in nsort(os.listdir(logdir)):
+            m = labels.subdir_re.match(basename)
+            if m is None:
+                continue
 
-    # Find all relevant data dirs, and from each extract the fiducial fit(s)
-    # information contained
-    data_sets = OrderedDict()
-    for basename in nsort(os.listdir(logdir)):
-        m = labels.subdir_re.match(basename)
-        if m is None:
-            continue
-
-        if fluctuate_data:
-            data_ind = int(m.groupdict()['data_ind'])
-            dset_label = data_ind
-        else:
-            dset_label = labels.data_prefix
-            if not labels.data_name in [None, '']:
-                dset_label += '_' + labels.data_name
-            if not labels.data_suffix in [None, '']:
-                dset_label += '_' + labels.data_suffix
-
-        lvl2_fits = OrderedDict()
-        lvl2_fits['h0_fit_to_data'] = None
-        lvl2_fits['h1_fit_to_data'] = None
-
-        # Account for failed jobs. Get the set of file numbers that exist
-        # for all h0 an h1 combinations
-        file_nums = OrderedDict()
-        subdir = os.path.join(logdir, basename)
-        for fnum, fname in enumerate(nsort(os.listdir(subdir))):
-            fpath = os.path.join(subdir, fname)
-            for x in ['0', '1']:
-                for y in ['0','1']:
-                    k = 'h{x}_fit_to_h{y}_fid'.format(x=x, y=y)
-                    r = labels.dict[k + '_re']
-                    m = r.match(fname)
-                    if m is None:
-                        continue
-                    if fluctuate_fid:
-                        fid_label = int(m.groupdict()['fid_ind'])
-                    else:
-                        fid_label = labels.fid
-                    if k not in file_nums:
-                        file_nums[k] = []
-                    file_nums[k].append(fid_label)
-                    break
-
-        set_file_nums = []
-        for hypokey in file_nums.keys():
-            if len(set_file_nums) == 0:
-                set_file_nums = set(file_nums[hypokey])
+            if fluctuate_data:
+                data_ind = int(m.groupdict()['data_ind'])
+                dset_label = data_ind
             else:
-                set_file_nums = set_file_nums.intersection(file_nums[hypokey])
+                dset_label = labels.data_prefix
+                if not labels.data_name in [None, '']:
+                    dset_label += '_' + labels.data_name
+                if not labels.data_suffix in [None, '']:
+                    dset_label += '_' + labels.data_suffix
 
-        for fnum, fname in enumerate(nsort(os.listdir(subdir))):
-            fpath = os.path.join(subdir, fname)
-            for x in ['0', '1']:
-                k = 'h{x}_fit_to_data'.format(x=x)
-                if fname == labels.dict[k]:
-                    lvl2_fits[k] = extract_fit(fpath, 'metric_val')
-                    break
-                # Also extract fiducial fits if needed
-                if 'toy' in dset_label:
-                    ftest = ('hypo_%s_fit_to_%s.json'
-                             %(labels.dict['h{x}_name'.format(x=x)],
-                               dset_label))
-                    if fname == ftest:
-                        k = 'h{x}_fit_to_{y}'.format(x=x,y=dset_label)
-                        lvl2_fits[k] = extract_fit(
-                            fpath,
-                            ['metric_val', 'params']
-                        )
+            lvl2_fits = OrderedDict()
+            lvl2_fits['h0_fit_to_data'] = None
+            lvl2_fits['h1_fit_to_data'] = None
+            minim_info = OrderedDict()
+            minim_info['h0_fit_to_data'] = None
+            minim_info['h1_fit_to_data'] = None
+
+            # Account for failed jobs. Get the set of file numbers that exist
+            # for all h0 an h1 combinations
+            file_nums = OrderedDict()
+            subdir = os.path.join(logdir, basename)
+            for fnum, fname in enumerate(nsort(os.listdir(subdir))):
+                fpath = os.path.join(subdir, fname)
+                for x in ['0', '1']:
+                    for y in ['0','1']:
+                        k = 'h{x}_fit_to_h{y}_fid'.format(x=x, y=y)
+                        r = labels.dict[k + '_re']
+                        m = r.match(fname)
+                        if m is None:
+                            continue
+                        if fluctuate_fid:
+                            fid_label = int(m.groupdict()['fid_ind'])
+                        else:
+                            fid_label = labels.fid
+                        if k not in file_nums:
+                            file_nums[k] = []
+                        file_nums[k].append(fid_label)
                         break
-                k = 'h{x}_fit_to_{y}'.format(x=x, y=dset_label)
-                for y in ['0', '1']:
-                    k = 'h{x}_fit_to_h{y}_fid'.format(x=x, y=y)
-                    r = labels.dict[k + '_re']
-                    m = r.match(fname)
-                    if m is None:
-                        continue
-                    if fluctuate_fid:
-                        fid_label = int(m.groupdict()['fid_ind'])
-                    else:
-                        fid_label = labels.fid
-                    if k not in lvl2_fits:
-                        lvl2_fits[k] = OrderedDict()
-                    if fid_label in set_file_nums:
-                        lvl2_fits[k][fid_label] = \
-                            extract_fit(fpath,
-                                        ['metric', 'metric_val','params'])
-                    break
-        data_sets[dset_label] = lvl2_fits
-        data_sets[dset_label]['params'] = \
-            extract_fit(fpath, ['params'])['params']
-    return data_sets, all_params, labels
+
+            set_file_nums = []
+            for hypokey in file_nums.keys():
+                if len(set_file_nums) == 0:
+                    set_file_nums = set(file_nums[hypokey])
+                else:
+                    set_file_nums = set_file_nums.intersection(file_nums[hypokey])
+
+            for fnum, fname in enumerate(nsort(os.listdir(subdir))):
+                fpath = os.path.join(subdir, fname)
+                for x in ['0', '1']:
+                    k = 'h{x}_fit_to_data'.format(x=x)
+                    if fname == labels.dict[k]:
+                        lvl2_fits[k] = extract_fit(fpath, 'metric_val')
+                        break
+                    # Also extract fiducial fits if needed
+                    if 'toy' in dset_label:
+                        ftest = ('hypo_%s_fit_to_%s.json'
+                                 %(labels.dict['h{x}_name'.format(x=x)],
+                                   dset_label))
+                        if fname == ftest:
+                            k = 'h{x}_fit_to_{y}'.format(x=x,y=dset_label)
+                            lvl2_fits[k] = extract_fit(
+                                fpath,
+                                ['metric_val', 'params']
+                            )
+                            break
+                    k = 'h{x}_fit_to_{y}'.format(x=x, y=dset_label)
+                    for y in ['0','1']:
+                        k = 'h{x}_fit_to_h{y}_fid'.format(x=x, y=y)
+                        r = labels.dict[k + '_re']
+                        m = r.match(fname)
+                        if m is None:
+                            continue
+                        if fluctuate_fid:
+                            fid_label = int(m.groupdict()['fid_ind'])
+                        else:
+                            fid_label = labels.fid
+                        if k not in lvl2_fits:
+                            lvl2_fits[k] = OrderedDict()
+                            minim_info[k] = OrderedDict()
+                        if fid_label in set_file_nums:
+                            lvl2_fits[k][fid_label] = extract_fit(
+                                fpath,
+                                ['metric', 'metric_val','params']
+                            )
+                            minim_info[k][fid_label] = extract_fit(
+                                fpath,
+                                ['minimizer_metadata', 'minimizer_time']
+                            )
+                        break
+            data_sets[dset_label] = lvl2_fits
+            minimiser_info[dset_label] = minim_info
+            data_sets[dset_label]['params'] = extract_fit(
+                fpath,
+                ['params']
+            )['params']
+        to_file(data_sets, os.path.join(logdir, 'data_sets.pckl'))
+        to_file(all_params, os.path.join(logdir, 'all_params.pckl'))
+        to_file(labels, os.path.join(logdir, 'labels.pckl'))
+        to_file(minimiser_info, os.path.join(logdir, 'minimiser_info.pckl'))
+    else:
+        raise ValueError('config_summary.json cannot be found in the specified'
+                         ' logdir. It should have been created as part of the '
+                         'output of hypo_testing.py and so this postprocessing'
+                         ' cannot be performed.')
+    return data_sets, all_params, labels, minimiser_info
+>>>>>>> 2c6f329be2390ab3c79d196591aed487e52c278a
 
 
 def extract_fit(fpath, keys=None):
@@ -303,7 +311,11 @@ def extract_fit(fpath, keys=None):
         Keys to extract. If None, all keys are extracted.
 
     """
-    info = from_file(fpath)
+    try:
+        info = from_file(fpath)
+    except:
+        raise RuntimeError("Cannot read from file located at %s. Something is"
+                           " potentially wrong with it. Please check."%fpath)
     if keys is None:
         return info
     if isinstance(keys, basestring):
@@ -342,7 +354,7 @@ def extract_data(data):
         alldata = data[injkey]
         paramkeys = alldata['params'].keys()
         for datakey in alldata.keys():
-            if datakey is not 'params':
+            if not datakey == 'params':
                 values[injkey][datakey] = {}
                 values[injkey][datakey]['metric_val'] = {}
                 values[injkey][datakey]['metric_val']['vals'] = []
@@ -370,75 +382,463 @@ def extract_data(data):
     return values
 
 
-def make_llr_plots(data, labels, detector, selection, outdir):
+def purge_failed_jobs(data, trial_nums, thresh=5.0):
+    '''
+    This function looks at the values of the metric and finds any it deems to 
+    be from a failed job. That is, the value of the metric fell very far 
+    outside of the rest of the values.
+
+    References:
+    ----------
+        Taken from stack overflow:
+        
+            http://stackoverflow.com/questions/22354094/pythonic-way-\
+            of-detecting-outliers-in-one-dimensional-observation-data
+
+        which references:
+
+            Boris Iglewicz and David Hoaglin (1993), "Volume 16: How to Detect 
+            and Handle Outliers", The ASQC Basic References in Quality Control:
+            Statistical Techniques, Edward F. Mykytka, Ph.D., Editor. 
+
+    Interestingly, I only saw a need for this with my true NO jobs, where I 
+    attempted to run some jobs in fp32 mode. No jobs were needed to be removed 
+    for true IO, where everything was run in fp64 mode.
+    '''
+    
+    for fit_key in data.keys():
+        points = np.array(data[fit_key]['metric_val']['vals'])
+        if len(points.shape) == 1:
+            points = points[:,None]
+        median = np.median(points, axis=0)
+        diff = np.sum((points - median)**2, axis=-1)
+        diff = np.sqrt(diff)
+        med_abs_deviation = np.median(diff)
+        modified_z_score = 0.6745 * diff / med_abs_deviation
+        good_trials = modified_z_score < thresh
+        if not np.all(good_trials):
+            bad_trials = np.where(good_trials==False)[0]
+            if len(bad_trials) == 1:
+                logging.warning(
+                    "Outlier detected for %s in trial %s. This will be "
+                    "removed. If you think this should not happen, please "
+                    "change the value of the threshold used for this decision "
+                    "(currently set to %.2f)."
+                    %(fit_key,trial_nums[bad_trials],thresh)
+                )
+            else:
+                logging.warning(
+                    "Outlier detected for %s in trials %s. These will be "
+                    "removed. If you think this should not happen, please "
+                    "change the value of the threshold used for this decision "
+                    "(currently set to %.2f)."
+                    %(fit_key,trial_nums[bad_trials],thresh)
+                )
+            for fitkey in data.keys():
+                for param in data[fitkey].keys():
+                    new_vals = np.delete(
+                        np.array(data[fitkey][param]['vals']),
+                        bad_trials
+                    )
+                    data[fitkey][param]['vals'] = new_vals
+
+
+def plot_fit_information(minimiser_info, labels, detector, selection, outdir):
+    '''Makes plots of the number of iterations and time taken with the 
+    minimiser. This is a good cross-check that the minimiser did not end 
+    abruptly since you would see significant pile-up if it did.'''
+    outdir = os.path.join(outdir,'MinimiserPlots')
+    if not os.path.exists(outdir):
+        logging.info('Making output directory %s'%outdir)
+        os.makedirs(outdir)
+    MainTitle = '%s %s Event Selection Minimiser Information'%(detector,
+                                                               selection)
+    for fhkey in minimiser_info.keys():
+        if minimiser_info[fhkey] is not None:
+            hypo = fhkey.split('_')[0]
+            fid = fhkey.split('_')[-2]
+            minimiser_times = []
+            minimiser_iterations = []
+            minimiser_funcevals = []
+            minimiser_status = []
+            for trial in minimiser_info[fhkey].keys():
+                bits = minimiser_info[fhkey][trial]['minimizer_time'].split(' ')
+                minimiser_times.append(
+                    float(bits[0])
+                )
+                minimiser_iterations.append(
+                    int(minimiser_info[fhkey][trial][
+                        'minimizer_metadata']['nit'])
+                )
+                minimiser_funcevals.append(
+                    int(minimiser_info[fhkey][trial][
+                        'minimizer_metadata']['nfev'])
+                )
+                minimiser_status.append(
+                    int(minimiser_info[fhkey][trial][
+                        'minimizer_metadata']['status'])
+                )
+                minimiser_units = bits[1]
+            FitTitle = ("True %s, Fiducial Fit %s, Hypothesis %s (%i Trials)"
+                        %(labels['data_name'],
+                          labels['%s_name'%fid],
+                          labels['%s_name'%hypo],
+                          len(minimiser_times)))
+            plt.hist(minimiser_times, bins=10)
+            plt.xlabel('Minimiser Time (seconds)')
+            plt.ylabel('Number of Trials')
+            plt.title(MainTitle+r'\\'+FitTitle, fontsize=16)
+            SaveName = ("true_%s_%s_%s_fid_%s_hypo_%s_minimiser_times.png"
+                        %(labels['data_name'],
+                          detector,
+                          selection,
+                          labels['%s_name'%fid],
+                          labels['%s_name'%hypo]))
+            plt.savefig(os.path.join(outdir,SaveName))
+            plt.close()
+            plt.hist(minimiser_iterations, bins=10)
+            plt.xlabel('Minimiser Iterations')
+            plt.ylabel('Number of Trials')
+            plt.title(MainTitle+r'\\'+FitTitle, fontsize=16)
+            SaveName = ("true_%s_%s_%s_fid_%s_hypo_%s_minimiser_iterations.png"
+                        %(labels['data_name'],
+                          detector,
+                          selection,
+                          labels['%s_name'%fid],
+                          labels['%s_name'%hypo]))
+            plt.savefig(os.path.join(outdir,SaveName))
+            plt.close()
+            plt.hist(minimiser_funcevals, bins=10)
+            plt.xlabel('Minimiser Function Evaluations')
+            plt.ylabel('Number of Trials')
+            plt.title(MainTitle+r'\\'+FitTitle, fontsize=16)
+            SaveName = ("true_%s_%s_%s_fid_%s_hypo_%s_minimiser_funcevals.png"
+                        %(labels['data_name'],
+                          detector,
+                          selection,
+                          labels['%s_name'%fid],
+                          labels['%s_name'%hypo]))
+            plt.savefig(os.path.join(outdir,SaveName))
+            plt.close()
+            plt.hist(minimiser_status, bins=10)
+            plt.xlabel('Minimiser Status')
+            plt.ylabel('Number of Trials')
+            plt.title(MainTitle+r'\\'+FitTitle, fontsize=16)
+            SaveName = ("true_%s_%s_%s_fid_%s_hypo_%s_minimiser_status.png"
+                        %(labels['data_name'],
+                          detector,
+                          selection,
+                          labels['%s_name'%fid],
+                          labels['%s_name'%hypo]))
+            plt.savefig(os.path.join(outdir,SaveName))
+            plt.close()
+    print L
+                    
+
+def make_llr_plots(data, fid_data, labels, detector, selection, outdir):
     '''
     Does what you think. Takes the data and makes LLR distributions. These are 
     then saved to the requested outdir within a folder labelled 
     "LLRDistributions".
 
-    TODO - Significance calculation. This means calculating p-values and then 
-    appending the value to the plot. Probably should come up with a good way 
-    of storing this information rather than just printing it to terminal.
+    TODO:
+
+    1) Currently the p-value is put on the LLR distributions as an annotation.
+       This is probably fine, since the significances can just be calculated 
+       from this after the fact.
+
+    2) A method of quantifying the uncertainty due to finite statistics in the 
+       pseudo-trials should be added. Possible ways are:
+        a) Fitting the distributions and then drawing X new instances of Y 
+           trials (where X and Y are large) and looking at the spread in the 
+           p-values. This would require a good fit to the distributions, which
+           is fine if they end up gaussian...
+        b) Quantifying the uncertainty on the critical value used to determine 
+           the significance. In the case of the median this could be achieved 
+           by drawing subsets of the data and creating a distribution of 
+           medians. Though, efforts to do this in the past have given results 
+           that seemed to underestimate the true uncertainty.
     '''
     outdir = os.path.join(outdir,'LLRDistributions')
     if not os.path.exists(outdir):
         logging.info('Making output directory %s'%outdir)
         os.makedirs(outdir)
 
-    h0_fit_to_h0_fid_metrics = np.array(data['h0_fit_to_h0_fid']['metric_val'])
-    h1_fit_to_h0_fid_metrics = np.array(data['h1_fit_to_h0_fid']['metric_val'])
-    h0_fit_to_h1_fid_metrics = np.array(data['h0_fit_to_h1_fid']['metric_val'])
-    h1_fit_to_h1_fid_metrics = np.array(data['h1_fit_to_h1_fid']['metric_val'])
+    h0_fid_metric = fid_data[
+        'h0_fit_to_toy_%s_asimov'%labels['data_name']
+    ][
+        'metric_val'
+    ]
+    h1_fid_metric = fid_data[
+        'h1_fit_to_toy_%s_asimov'%labels['data_name']
+    ][
+        'metric_val'
+    ]
+
+    if h1_fid_metric > h0_fid_metric:
+        bestfit = 'h0'
+        altfit = 'h1'
+        critical_value = h0_fid_metric-h1_fid_metric
+    else:
+        bestfit = 'h1'
+        altfit = 'h0'
+        critical_value = h1_fid_metric-h0_fid_metric
+
+    h0_fit_to_h0_fid_metrics = np.array(
+        data['h0_fit_to_h0_fid']['metric_val']['vals']
+    )
+    h1_fit_to_h0_fid_metrics = np.array(
+        data['h1_fit_to_h0_fid']['metric_val']['vals']
+    )
+    h0_fit_to_h1_fid_metrics = np.array(
+        data['h0_fit_to_h1_fid']['metric_val']['vals']
+    )
+    h1_fit_to_h1_fid_metrics = np.array(
+        data['h1_fit_to_h1_fid']['metric_val']['vals']
+    )
 
     num_trials = len(h0_fit_to_h0_fid_metrics)
-    
-    LLRh0 = h0_fit_to_h0_fid_metrics - h1_fit_to_h0_fid_metrics
-    LLRh1 = h0_fit_to_h1_fid_metrics - h1_fit_to_h1_fid_metrics
+    metric_type = data['h0_fit_to_h0_fid']['metric_val']['type']
+    metric_type_pretty = tex_axis_label(metric_type)
 
-    minLLR = min(min(LLRh0), min(LLRh1))
-    maxLLR = max(max(LLRh0), max(LLRh1))
+    # In the case of likelihood, the maximum metric is the better fit.
+    # With chi2 metrics the opposite is true, and so we must multiply
+    # everything by -1 in order to apply the same treatment.
+    if 'chi2' in metric_type:
+        logging.info("Converting chi2 metric to likelihood equivalent.")
+        h0_fit_to_h0_fid_metrics *= -1
+        h1_fit_to_h0_fid_metrics *= -1
+        h0_fit_to_h1_fid_metrics *= -1
+        h1_fit_to_h1_fid_metrics *= -1
+        critical_value *= -1
+
+    if bestfit == 'h0':
+        LLRbest = h0_fit_to_h0_fid_metrics - h1_fit_to_h0_fid_metrics
+        LLRalt = h0_fit_to_h1_fid_metrics - h1_fit_to_h1_fid_metrics
+    else:
+        LLRbest = h1_fit_to_h1_fid_metrics - h0_fit_to_h1_fid_metrics
+        LLRalt = h1_fit_to_h0_fid_metrics - h0_fit_to_h0_fid_metrics
+
+    minLLR = min(min(LLRbest), min(LLRalt))
+    maxLLR = max(max(LLRbest), max(LLRalt))
     rangeLLR = maxLLR - minLLR
     binning = np.linspace(minLLR - 0.1*rangeLLR,
                           maxLLR + 0.1*rangeLLR,
-                          num_trials/3)
+                          int(num_trials/40))
     binwidth = binning[1]-binning[0]
+    bincens = np.linspace(binning[0]+binwidth/2.0,
+                          binning[-1]-binwidth/2.0,
+                          len(binning)-1)
 
-    LLRh0hist, LLRh0binedges = np.histogram(LLRh0,bins=binning)
-    LLRh1hist, LLRh1binedges = np.histogram(LLRh1,bins=binning)
+    LLRbesthist, LLRbestbinedges = np.histogram(LLRbest,bins=binning)
+    LLRalthist, LLRaltbinedges = np.histogram(LLRalt,bins=binning)
 
-    LLRhistmax = max(max(LLRh0hist),max(LLRh1hist))
+    LLRhistmax = max(max(LLRbesthist),max(LLRalthist))
+
+    best_median = np.median(LLRbest)
+    alt_median = np.median(LLRalt)
 
     inj_name = labels['data_name']
-    h0_name = labels['h0_name']
-    h1_name = labels['h1_name']
+    best_name = labels['%s_name'%bestfit]
+    alt_name = labels['%s_name'%altfit]
 
-    plot_labels = []
-    plot_labels.append(
+    # p value quantified by asking how much of the time the ALT hypothesis ends
+    # up more convincing than the fiducial experiment.
+    # The p value is simply this as the fraction of the total number of trials.
+    misid_c_trials = float(np.sum(LLRalt > critical_value))
+    crit_p_value = misid_c_trials/num_trials
+    unc_crit_p_value = np.sqrt(misid_c_trials*(1-crit_p_value))/num_trials
+    # For the case of toy data we also look at the MEDIAN in order to quantify
+    # the MEDIAN SENSITIVITY. THAT IS, THE CASE OF A MEDIAN EXPERIMENT.
+    misid_m_trials = float(np.sum(LLRalt > best_median))
+    med_p_value = misid_m_trials/num_trials
+    # Quantify the uncertainty on the median by bootstrapping
+    sampled_medians = []
+    for i in range(0,1000):
+        sampled_medians.append(
+            np.median(
+                np.random.choice(
+                    LLRbest,
+                    size=len(LLRbest),
+                    replace=True
+                )
+            )
+        )
+    sampled_medians = np.array(sampled_medians)
+    median_error = np.std(sampled_medians)/np.sqrt(num_trials)
+    # Add relative errors in quadrature
+    wdenom = misid_m_trials+median_error*median_error
+    wterm = wdenom/(misid_m_trials*misid_m_trials)
+    Nterm = 1.0/num_trials
+    unc_med_p_value = med_p_value * np.sqrt(wterm + Nterm)
+
+    med_plot_labels = []
+    med_plot_labels.append((r"Hypo %s median = %.4f"%(best_name,best_median)))
+    med_plot_labels.append(
         (r"%s best fit - $\log\left[\mathcal{L}\left(\mathcal{H}_{%s}\right)/"
          r"\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"
-         %(h0_name, h0_name, h1_name))
+         %(best_name, best_name, alt_name))
     )
-    plot_labels.append(
+    med_plot_labels.append(
         (r"%s best fit - $\log\left[\mathcal{L}\left(\mathcal{H}_{%s}\right)/"
          r"\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"
-         %(h1_name, h0_name, h1_name))
+         %(alt_name, best_name, alt_name))
     )
-    plot_title = ('%s %s Event Selection LLR Distributions for true '
-                  '%s (%i trials)'
-                  %(detector,selection,inj_name,num_trials))
+
+    crit_plot_labels = []
+    crit_plot_labels.append((r"Critical value = %.4f"%(critical_value)))
+    crit_plot_labels.append(
+        (r"%s best fit - $\log\left[\mathcal{L}\left(\mathcal{H}_{%s}\right)/"
+         r"\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"
+         %(alt_name, best_name, alt_name))
+    )
+    
+    if metric_type == 'llh':
+        plot_title = ("%s %s Event Selection "%(detector,selection)\
+                      +r"\\"+" LLR Distributions for true %s (%i trials)"
+                      %(inj_name,num_trials))
+    else:
+        plot_title = ("%s %s Event Selection "%(detector,selection)\
+                      +r"\\"+" %s \"LLR\" Distributions for "
+                      %(metric_type_pretty)\
+                      +"true %s (%i trials)"%(inj_name,num_trials))
 
     # Factor with which to make everything visible
     plot_scaling_factor = 1.55
 
-    plt.hist(LLRh0,bins=binning,color='r',histtype='step')
-    plt.hist(LLRh1,bins=binning,color='b',histtype='step')
+    # In case of median plot, draw both best and alt histograms
+    plt.hist(LLRbest,bins=binning,color='r',histtype='step',lw=2)
+    plt.hist(LLRalt,bins=binning,color='b',histtype='step',lw=2)
     plt.xlabel(r'Log-Likelihood Ratio')
     plt.ylabel(r'Number of Trials (per %.2f)'%binwidth)
+    # Nicely scale the plot
     plt.ylim(0,plot_scaling_factor*LLRhistmax)
-    plt.legend(plot_labels, loc='upper left')
+    # Add labels to show which side means what...
+    xlim = plt.gca().get_xlim()
+    plt.text(
+        xlim[0]-0.05*(xlim[1]-xlim[0]),
+        -0.11*plot_scaling_factor*LLRhistmax,
+        r"$\leftarrow$ \\ prefers %s"%(alt_name),
+        color='k',
+        size='large'
+    )
+    plt.text(
+        xlim[1]-0.05*(xlim[1]-xlim[0]),
+        -0.11*plot_scaling_factor*LLRhistmax,
+        r"$\rightarrow$ \\ prefers %s"%(best_name),
+        color='k',
+        size='large'
+    )
+    # Add the best hist median, since it is the "critical" value so that it
+    # goes to the height of the best histogram
+    plt.axvline(
+        best_median,
+        color='k',
+        ymax=float(max(LLRbesthist))/float(plot_scaling_factor*LLRhistmax),
+        lw=2
+    )
+    # Create an object so that a hatch can be drawn over the region of
+    # interest to the p-value.
+    finehist = np.repeat(LLRalthist,100)
+    finebinning = np.linspace(binning[0],binning[-1],(len(binning)-1)*100+1)
+    finebinwidth = finebinning[1]-finebinning[0]
+    finebincens = np.linspace(finebinning[0]+finebinwidth/2.0,
+                              finebinning[-1]-finebinwidth/2.0,
+                              len(finebinning)-1)
+    # Draw the hatch. This is between the x-axis (0) and the finehist object
+    # made above. The "where" tells is to only draw above the critical value.
+    # To make it just the hatch, color is set to none and hatch is set to X.
+    # Also, so that it doesn't have a border we set linewidth to zero.
+    plt.fill_between(
+        finebincens,
+        0,
+        finehist,
+        where=(finebincens>best_median),
+        color='none',
+        hatch='X',
+        edgecolor="k",
+        lw=0
+    )
+    plt.legend(med_plot_labels, loc='upper left')
     plt.title(plot_title)
-    filename = 'true_%s_%s_%s_LLRDistribution_%i_Trials.png'%(
-        inj_name, detector, selection, num_trials
+    # Write the p-value on the plot
+    plt.figtext(
+        0.15,
+        0.65,
+        r"p-value = $%.4f\pm%.4f$"%(med_p_value,unc_med_p_value),
+        color='k',
+        size='xx-large'
+    )
+    filename = 'true_%s_%s_%s_%s_LLRDistribution_median_%i_Trials.png'%(
+        inj_name, detector, selection, metric_type, num_trials
+    )
+    plt.savefig(os.path.join(outdir,filename))
+    plt.close()
+
+    # In case of critical plot, draw just alt histograms
+    plt.hist(LLRalt,bins=binning,color='b',histtype='step',lw=2)
+    plt.xlabel(r'Log-Likelihood Ratio')
+    plt.ylabel(r'Number of Trials (per %.2f)'%binwidth)
+    # Nicely scale the plot
+    plt.ylim(0,plot_scaling_factor*LLRhistmax)
+    # Add labels to show which side means what...
+    xlim = plt.gca().get_xlim()
+    plt.text(
+        xlim[0]-0.05*(xlim[1]-xlim[0]),
+        -0.11*plot_scaling_factor*LLRhistmax,
+        r"$\leftarrow$ \\ prefers %s"%(alt_name),
+        color='k',
+        size='large'
+    )
+    plt.text(
+        xlim[1]-0.05*(xlim[1]-xlim[0]),
+        -0.11*plot_scaling_factor*LLRhistmax,
+        r"$\rightarrow$ \\ prefers %s"%(best_name),
+        color='k',
+        size='large'
+    )
+    # Draw the critical value line on the plot so that it goes just
+    # above the histogram
+    plt.axvline(
+        critical_value,
+        color='k',
+        ymax=float((max(LLRalthist)*1.1)/(plot_scaling_factor*LLRhistmax)),
+        lw=2
+    )
+    # Create an object so that a hatch can be drawn over the region of
+    # interest to the p-value.
+    finehist = np.repeat(LLRalthist,100)
+    finebinning = np.linspace(binning[0],binning[-1],(len(binning)-1)*100+1)
+    finebinwidth = finebinning[1]-finebinning[0]
+    finebincens = np.linspace(finebinning[0]+finebinwidth/2.0,
+                              finebinning[-1]-finebinwidth/2.0,
+                              len(finebinning)-1)
+    # Draw the hatch. This is between the x-axis (0) and the finehist object
+    # made above. The "where" tells is to only draw above the critical value.
+    # To make it just the hatch, color is set to none and hatch is set to X.
+    # Also, so that it doesn't have a border we set linewidth to zero.
+    plt.fill_between(
+        finebincens,
+        0,
+        finehist,
+        where=(finebincens>critical_value),
+        color='none',
+        hatch='X',
+        edgecolor="k",
+        lw=0
+    )
+    plt.legend(crit_plot_labels, loc='upper left')
+    plt.title(plot_title)
+    # Write the p-value on the plot
+    plt.figtext(
+        0.15,
+        0.70,
+        r"p-value = $%.4f\pm%.4f$"%(crit_p_value,unc_crit_p_value),
+        color='k',
+        size='xx-large'
+    )
+    filename = 'true_%s_%s_%s_%s_LLRDistribution_critical_%i_Trials.png'%(
+        inj_name, detector, selection, metric_type, num_trials
     )
     plt.savefig(os.path.join(outdir,filename))
     plt.close()
@@ -529,11 +929,11 @@ def plot_individual_posterior(data, injparams, altparams, all_params, labels,
 
     # Make axis labels look nice
     if systkey == 'metric_val':
-        systname = make_pretty(metric_type)
+        systname = tex_axis_label(metric_type)
     else:
-        systname = make_pretty(systkey)
+        systname = tex_axis_label(systkey)
     if not units == 'dimensionless':
-        systname += r' (%s)'%make_pretty(units)
+        systname += r' (%s)'%tex_axis_label(units)
                 
     plt.xlabel(systname)
     if subplotnum is not None:
@@ -755,12 +1155,12 @@ def plot_individual_scatter(xdata, ydata, labels, xsystkey, ysystkey,
                  yvals.max()+0.3*Yrange)
     
     # Make axis labels look nice
-    xsystname = make_pretty(xsystkey)
+    xsystname = tex_axis_label(xsystkey)
     if not xunits == 'dimensionless':
-        xsystname += r' (%s)'%make_pretty(xunits)
-    ysystname = make_pretty(ysystkey)
+        xsystname += r' (%s)'%tex_axis_label(xunits)
+    ysystname = tex_axis_label(ysystkey)
     if not yunits == 'dimensionless':
-        ysystname += r' (%s)'%make_pretty(yunits)
+        ysystname += r' (%s)'%tex_axis_label(yunits)
 
     plt.xlabel(xsystname)
     plt.ylabel(ysystname)
@@ -980,8 +1380,8 @@ def plot_correlation_matrices(data, labels, detector, selection, outdir):
         for xsystkey in data[fhkey].keys():
             all_corr_values = []
             if not xsystkey == 'metric_val':
-                if make_pretty(xsystkey) not in Systs:
-                    Systs.append(make_pretty(xsystkey))
+                if tex_axis_label(xsystkey) not in Systs:
+                    Systs.append(tex_axis_label(xsystkey))
                 for ysystkey in data[fhkey].keys():
                     if (ysystkey != 'metric_val'):
                         hypo = fhkey.split('_')[0]
@@ -1130,6 +1530,13 @@ def parse_args():
         combination."""
     )
     parser.add_argument(
+        '--threshold', metavar='DIR', type=float, default=5.0,
+        help="""Sets the threshold for which to remove 'outlier' trials. 
+        Ideally this will not be needed at all, but it is there in case of
+        e.g. failed minimiser. The higher this value, the more outliers will 
+        be included. Set it to 0 if you want to include ALL trials."""
+    )
+    parser.add_argument(
         '--outdir', metavar='DIR', type=str, required=True,
         help="""Store all output plots to this directory. This will make
         further subdirectories, if needed, to organise the output plots."""
@@ -1158,10 +1565,11 @@ def main():
     ciscatter = init_args_d.pop('combined_individual_scatter')
     cscatter = init_args_d.pop('combined_scatter')
     cmatrix = init_args_d.pop('correlation_matrix')
+    threshold = init_args_d.pop('threshold')
     outdir = init_args_d.pop('outdir')
 
     if args.asimov:
-        data_sets, all_params, labels = extract_trials(
+        data_sets, all_params, labels, minimiser_info = extract_trials(
             logdir=args.dir,
             fluctuate_fid=False,
             fluctuate_data=False
@@ -1171,26 +1579,50 @@ def main():
         print np.sqrt(np.abs(od['h1_fit_to_h0_fid']['fid_asimov']['metric_val'] - od['h0_fit_to_h1_fid']['fid_asimov']['metric_val']))
 
     else:
-        data_sets, all_params, labels = extract_trials(
+        data_sets, all_params, labels, minimiser_info = extract_trials(
             logdir=args.dir,
             fluctuate_fid=True,
             fluctuate_data=False
         )
+
+        trial_nums = data_sets[
+            'toy_%s_asimov'%labels.dict['data_name']
+        ][
+            'h0_fit_to_h1_fid'
+        ].keys()
         
         fid_values = extract_fid_data(data_sets)
         values = extract_data(data_sets)
 
         for injkey in values.keys():
 
-            '''
+            if threshold != 0.0:
+                logging.info("Outlying trials will be removed with a "
+                             "threshold of %.2f"%threshold)
+                purge_failed_jobs(
+                    data = values[injkey],
+                    trial_nums = np.array(trial_nums),
+                    thresh = threshold
+                )
+            else:
+                logging.info("All trials will be included in the analysis.")
+
+            plot_fit_information(
+                minimiser_info=minimiser_info[injkey],
+                labels = labels.dict,
+                detector = detector,
+                selection = selection,
+                outdir=outdir
+            )
+            
             make_llr_plots(
                 data = values[injkey],
+                fid_data = fid_values[injkey],
                 labels = labels.dict,
                 detector = detector,
                 selection = selection,
                 outdir = outdir
             )
-            '''
 
             if iposteriors:
 
