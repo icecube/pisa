@@ -13,10 +13,9 @@ from itertools import product
 from operator import add
 
 import numpy as np
-import pint; ureg = pint.UnitRegistry()
+import pint
 
-import ROOT
-
+from pisa import ureg
 from pisa.core.stage import Stage
 from pisa.core.map import Map
 from pisa.core.transform import BinnedTensorTransform, TransformSet
@@ -25,7 +24,7 @@ from pisa.utils.flavInt import flavintGroupsFromString, ALL_NUINT_TYPES
 from pisa.utils.flavInt import NuFlavInt, NuFlavIntGroup, FlavIntData
 from pisa.utils.spline import Spline, CombinedSpline
 from pisa.utils.hash import hash_obj
-from pisa.utils.log import logging
+from pisa.utils.log import logging, set_verbosity
 from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
 
@@ -259,6 +258,10 @@ class genie(Stage):
     def get_combined_xsec(fpath, ver=None):
         """Load the cross-section values from a ROOT file and instantiate a
         CombinedSpline object."""
+        # NOTE: ROOT import here as it is optional but still want to import
+        # module for e.g. building docs
+        import ROOT
+
         fpath = find_resource(fpath)
         logging.info('Loading GENIE ROOT cross-section file {0}'.format(fpath))
 
@@ -384,7 +387,6 @@ def test_per_e_plot(xsec_file, outdir='./'):
 
 if __name__ == '__main__':
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-    from pisa.utils.log import set_verbosity
     set_verbosity(3)
 
     parser = ArgumentParser(description='Test genie xsec service',

@@ -1,12 +1,17 @@
-#
-# resources.py
-#
-# Tools to obtain one of the input resources files needed for PISA.
-#
 # author: Sebastian Boeser
 #         sboeser@physik.uni-bonn.de
-#
 # date:   2014-06-10
+#
+# author: J.L. Lanfranchi
+#         jll1062+pisa@phys.psu.edu
+# date:   2016-10-xx
+#
+"""
+Tools to obtain resource files needed for PISA, whether the resource is located
+in the filesystem or with the installed PISA package.
+
+"""
+
 
 import os
 import pkg_resources
@@ -64,6 +69,8 @@ def find_resource(resource, fail=True):
     IOError if `resource` is not found and `fail` is True.
 
     """
+    # NOTE: this import needs to be here -- and not at top -- to avoid circular
+    # imports
     import pisa.utils.log as log
 
     log.logging.trace('Attempting to find resource "%s"' % resource)
@@ -102,11 +109,11 @@ def find_resource(resource, fail=True):
             return resource_path
 
     # 3) If you get here, the resource is nowhere to be found
-    msg = 'Could not find resource "%s" in filesystem OR ' % resource
+    msg = ('Could not find resource "%s" in filesystem OR in PISA package.'
+           % resource)
     if fail:
         raise IOError(msg)
     log.logging.debug(msg)
-    return None
 
 
 def open_resource(resource, mode='r'):
@@ -152,6 +159,8 @@ def open_resource(resource, mode='r'):
     on handling of package resources.
 
     """
+    # NOTE: this import needs to be here -- and not at top -- to avoid circular
+    # imports
     import pisa.utils.log as log
 
     log.logging.trace('Attempting to open resource "%s"' % resource)
@@ -218,6 +227,8 @@ def find_path(pathspec, fail=True):
     None (if not found) or string (absolute path to file or dir if found)
 
     """
+    # NOTE: this import needs to be here -- and not at top -- to avoid circular
+    # imports
     import pisa.utils.log as log
 
     # 1) Check for absolute path or path relative to current working

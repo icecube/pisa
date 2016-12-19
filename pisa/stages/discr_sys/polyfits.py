@@ -2,19 +2,12 @@
 # date:   March 20, 2016
 
 
-import copy
-from itertools import product
-
 import numpy as np
 
-from pisa.core.events import Events
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.config_parser import split
 from pisa.utils.fileio import from_file
-from pisa.utils.flavInt import flavintGroupsFromString
-from pisa.utils.hash import hash_obj
-from pisa.utils.log import logging, set_verbosity
 from pisa.utils.profiler import profile
 
 
@@ -22,6 +15,7 @@ from pisa.utils.profiler import profile
 # (rather than requiring an almost-identical version just for muons). For
 # example, an input arg can dictate neutrino or muon, which then sets the
 # input_names and output_names.
+
 
 class polyfits(Stage):
     """
@@ -98,15 +92,14 @@ class polyfits(Stage):
             for pname in self.pnames:
                 p_value = (self.params[pname].magnitude -
                            self.fit_results[pname]['nominal'])
-                exec(self.fit_results[pname]['function'])
+                fit_fun = eval(self.fit_results[pname]['function'])
                 fit_params = self.fit_results[pname][name]
                 shape = fit_params.shape[:-1]
                 if transform is None:
                     transform = np.ones(shape)
                 for idx in np.ndindex(*shape):
                     # At every point evaluate the function
-                    transform[idx] *= fit_fun(p_value,
-                            *fit_params[idx])
+                    transform[idx] *= fit_fun(p_value, *fit_params[idx])
 
             xform = BinnedTensorTransform(
                 input_names=(name),

@@ -46,7 +46,7 @@ class roounfold(Stage):
 
         expected_params = (
             'create_response', 'stat_fluctuations', 'regularisation',
-            'optimize_reg'
+            'optimize_reg', 'unfold_bg', 'unfold_unweighted'
         )
 
         self.reco_binning = reco_binning
@@ -125,7 +125,7 @@ class roounfold(Stage):
                                  'the flag `optimize_reg` is set to True.')
 
         # TODO(shivesh): Fix "smearing_matrix" memory leak
-        # TODO(shivesh): include bg subtraction in unfolding
+        # TODO(shivesh): Fix unweighted unfolding
         # TODO(shivesh): real data
         # TODO(shivesh): different algorithms
         # TODO(shivesh): efficiency correction in unfolding
@@ -135,13 +135,15 @@ class roounfold(Stage):
 
         background_str = [fig for fig in trans_data
                           if fig != self._output_nu_group]
-        if trans_data.are_muons:
+        if trans_data.contains_muons:
             background_str.append('muons')
 
         signal_data = trans_data[self._output_nu_group]
         background_data = [trans_data[bg] for bg in background_str]
         background_data = reduce(Data._merge, background_data)
         all_data = Data._merge(deepcopy(background_data), signal_data)
+
+        response = self.create_response(signal_data, all_data)
 
         all_hist = self._histogram(
             events=all_data,
@@ -152,28 +154,31 @@ class roounfold(Stage):
             tex=r'\rm{all}'
         )
 
-        self.seed = int(self.params['stat_fluctuations'].m)
-        if self.seed != 0:
-            if self.random_state is None:
-                self.random_state = get_random_state(self.seed)
+        seed = int(self.params['stat_fluctuations'].m)
+        if seed != 0:
+            if self.random_state is None or seed != self.seed:
+                self.seed = seed
+                self.random_state = get_random_state(seed)
             all_hist = all_hist.fluctuate('poisson', self.random_state)
         else:
+            self.seed = None
             self.random_state = None
         all_hist.set_poisson_errors()
 
-        bg_hist = self._histogram(
-            events=background_data,
-            binning=self.reco_binning,
-            weights=background_data['pisa_weight'],
-            errors=True,
-            name='background',
-            tex=r'\rm{background}'
-        )
-        sig_reco = all_hist - bg_hist
+        if self.params['unfold_bg'].value:
+            sig_reco = deepcopy(all_hist)
+        else:
+            bg_hist = self._histogram(
+                events=background_data,
+                binning=self.reco_binning,
+                weights=background_data['pisa_weight'],
+                errors=True,
+                name='background',
+                tex=r'\rm{background}'
+            )
+            sig_reco = all_hist - bg_hist
         sig_reco.name = 'reco_signal'
         sig_reco.tex = r'\rm{reco_signal}'
-
-        response = self.create_response(signal_data)
 
         sig_r_flat = roounfold._flatten_to_1d(sig_reco)
         sig_r_th1d = roounfold._convert_to_th1d(sig_r_flat, errors=True)
@@ -224,26 +229,30 @@ class roounfold(Stage):
         ))
         return MapSet([sig_unfold])
 
-    def create_response(self, signal_data):
+    def create_response(self, signal_data, all_data):
         """Create the response object from the signal data."""
         this_hash = hash_obj(normQuant(self.params))
         if self.response_hash == this_hash:
             return self._response
-
-        if self.params['create_response'].value:
-            # Truth histogram gets returned if response matrix is created
+        else:
             try:
-                del self.sig_t_th1d
                 del self._response
+                del self.sig_t_th1d
             except:
                 pass
+
+        unfold_bg = self.params['unfold_bg'].value
+        unfold_unweighted = self.params['unfold_unweighted'].value
+        if self.params['create_response'].value:
+            # Truth histogram gets returned if response matrix is created
             response, self.sig_t_th1d = self._create_response(
-                signal_data, self.reco_binning, self.true_binning
+                signal_data, all_data, self.reco_binning, self.true_binning,
+                unfold_bg, unfold_unweighted
             )
         else:
             # Cache based on binning, output names and event sample hash
             cache_params = [self.reco_binning, self.true_binning,
-                            self.output_names, self._data.hash]
+                            self.output_names, self._data.hash, unfold_bg]
             this_cache_hash = hash_obj(cache_params)
 
             if this_cache_hash in self.disk_cache:
@@ -267,13 +276,27 @@ class roounfold(Stage):
         return response
 
     @staticmethod
-    def _create_response(signal_data, reco_binning, true_binning):
+    def _create_response(signal_data, all_data, reco_binning, true_binning,
+                         unfold_bg, unfold_unweighted):
         """Create the response object from the signal data."""
         logging.debug('Creating response object.')
+
+        if unfold_bg:
+            reco_data = all_data
+        else:
+            reco_data = signal_data
+
+        if unfold_unweighted:
+            sig_weights = np.ones(signal_data['pisa_weight'].shape)
+            reco_weights = np.ones(reco_data['pisa_weight'].shape)
+        else:
+            sig_weights = signal_data['pisa_weight']
+            reco_weights = reco_data['pisa_weight']
+
         sig_reco = roounfold._histogram(
-            events=signal_data,
+            events=reco_data,
             binning=reco_binning,
-            weights=signal_data['pisa_weight'],
+            weights=reco_weights,
             errors=True,
             name='reco_signal',
             tex=r'\rm{reco_signal}'
@@ -281,7 +304,7 @@ class roounfold(Stage):
         sig_true = roounfold._histogram(
             events=signal_data,
             binning=true_binning,
-            weights=signal_data['pisa_weight'],
+            weights=sig_weights,
             errors=True,
             name='true_signal',
             tex=r'\rm{true_signal}'
@@ -292,7 +315,7 @@ class roounfold(Stage):
         smear_matrix = roounfold._histogram(
             events=signal_data,
             binning=reco_binning+true_binning,
-            weights=signal_data['pisa_weight'],
+            weights=sig_weights,
             errors=True,
             name='smearing_matrix',
             tex=r'\rm{smearing_matrix}'
@@ -419,3 +442,5 @@ class roounfold(Stage):
         assert isinstance(params['stat_fluctuations'].value, pq)
         assert isinstance(params['regularisation'].value, pq)
         assert isinstance(params['optimize_reg'].value, bool)
+        assert isinstance(params['unfold_bg'].value, bool)
+        assert isinstance(params['unfold_unweighted'].value, bool)

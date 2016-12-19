@@ -10,19 +10,18 @@
 Create the transforms that map from true energy and coszen
 to the reconstructed parameters. Provides reco event rate maps using these
 transforms.
+
 """
 
 
 from __future__ import division
-
-from copy import deepcopy
 
 import numpy as np
 
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
-from pisa.utils.log import logging, set_verbosity
+from pisa.utils.log import logging
 
 
 __all__ = ['hist']
@@ -304,7 +303,9 @@ class hist(Stage):
             # Apply the normalization to the kernels
             reco_kernel *= norm_factors
 
-            assert np.all(reco_kernel >= 0), 'number of elements less than 0 = %d' % np.sum(reco_kernel < 0)
+            assert np.all(reco_kernel >= 0), \
+                    'number of elements less than 0 = %d' \
+                    % np.sum(reco_kernel < 0)
             sum_over_axes = tuple(range(-len(self.output_binning), 0))
             totals = np.sum(reco_kernel, axis=sum_over_axes)
             assert np.all(totals <= 1+1e-14), 'max = ' + str(np.max(totals)-1)

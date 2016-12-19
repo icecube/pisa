@@ -1,20 +1,47 @@
 #!/usr/bin/env python
+"""
+Utilities for simple timing and displaying time/date and time-deltas.
+
+See Also: pisa.utils.profile module, which contains decorators for timing
+functions and methods.
+
+"""
 
 import time
 
 import numpy as np
 
 from pisa.utils.format import engfmt
+from pisa.utils.log import logging, set_verbosity
 
 
-__all__ = ['Timer', 'timediffstamp', 'timestamp']
+__all__ = ['Timer',
+           'timediffstamp', 'timestamp',
+           'test_timestamp', 'test_timediffstamp', 'test_Timer']
 
 
 # TODO: add unit tests!
 
 class Timer(object):
-    def __init__(self, verbose=False):
+    """Simple timer designed to be used via `with` sematics.
+
+    Parameters
+    ----------
+    label
+    verbose
+    fmt_args : None or Mapping
+        Passed to `timediffstamp` via **fmt_args as optional format parameters.
+        See that function for details of valid arguments
+
+    """
+    def __init__(self, label=None, verbose=False, fmt_args=None):
+        self.label = label
         self.verbose = verbose
+        self.fmt_args = fmt_args if fmt_args is not None else {}
+        self.start = np.nan
+        self.end = np.nan
+        self.secs = np.nan
+        self.msecs = np.nan
 
     def __enter__(self):
         self.start = time.time()
@@ -23,9 +50,10 @@ class Timer(object):
     def __exit__(self, *args):
         self.end = time.time()
         self.secs = self.end - self.start
-        self.msecs = self.secs * 1000  # millisecs
+        self.msecs = self.secs * 1000
         if self.verbose:
-            print 'elapsed time: %f ms' % self.msecs
+            formatted = timediffstamp(dt_sec=self.secs, **self.fmt_args)
+            logging.info('Elapsed time: ' + formatted)
 
 
 def timediffstamp(dt_sec, hms_always=False, sec_decimals=3):
@@ -58,6 +86,7 @@ def timediffstamp(dt_sec, hms_always=False, sec_decimals=3):
     If colon notation (e.g. HH:MM:SS.xxx, MM:SS.xxx, etc.) is not used, the
     number is only seconds, and is appended by a space ' ' followed by units
     of 's' (possibly with a metric prefix).
+
     """
     sign_str = ''
     sgn = 1
@@ -118,6 +147,7 @@ def timestamp(d=True, t=True, tz=True, utc=False, winsafe=False):
         Include UTC time/date (as opposed to local time/date) (default: False)
     winsafe : bool
         Omit colons between hours/minutes (default: False)
+
     """
     if utc:
         time_tuple = time.gmtime()
@@ -150,19 +180,23 @@ def timestamp(d=True, t=True, tz=True, utc=False, winsafe=False):
 
 
 def test_timestamp():
+    """Unit tests for timestamp function"""
     print timestamp()
 
 
 def test_timediffstamp():
+    """Unit tests for timediffstamp function"""
     print timediffstamp(1234)
 
 
 def test_Timer():
-    with Timer() as t:
-        pass
+    """Unit tests for Timer class"""
+    with Timer(verbose=True):
+        time.sleep(0.1)
 
 
 if __name__ == '__main__':
+    set_verbosity(3)
     test_timestamp()
     test_timediffstamp()
     test_Timer()

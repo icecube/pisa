@@ -1,24 +1,31 @@
 # Authors
+"""
+Stage base class designed to be inherited by PISA services, such that all basic
+functionality is built-in.
+
+"""
+
 
 from collections import Iterable, Mapping, Sequence
 from copy import deepcopy
 import inspect
 import os
 
-from pisa.core.events import Events, Data
+from pisa import CACHE_DIR
+from pisa.core.events import Events
 from pisa.core.map import MapSet
-from pisa.core.param import Param, ParamSelector, ParamSet
+from pisa.core.param import Param, ParamSelector
 from pisa.core.transform import TransformSet
 from pisa.utils.cache import DiskCache, MemoryCache
 from pisa.utils.comparisons import normQuant
 from pisa.utils.fileio import mkdir
 from pisa.utils.hash import hash_obj
-from pisa.utils.log import logging, set_verbosity
-from pisa.utils.profiler import line_profile, profile
+from pisa.utils.log import logging
+from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
 
 
-__all__ = ['Stage']
+__all__ = ['arg_str_seq_none', 'Stage']
 
 
 # TODO: mode for not propagating errors. Probably needs hooks here, but meat of
@@ -29,7 +36,7 @@ def arg_str_seq_none(inputs, name):
 
     Parameters
     ----------
-    inputs : None, string, or sequence of strings
+    inputs : None, string, or iterable of strings
         Input value(s) provided by caller
     name : string
         Name of input, used for producing a meaningful error message
@@ -46,7 +53,7 @@ def arg_str_seq_none(inputs, name):
     if isinstance(inputs, basestring):
         inputs = [inputs]
     elif isinstance(inputs, (Iterable, Sequence)):
-        inputs = [i for i in inputs]
+        inputs = list(inputs)
     elif inputs is None:
         pass
     else:
@@ -77,12 +84,26 @@ class Stage(object):
 
     output_names : None or list of strings
 
-    disk_cache : None, str, or DiskCache
-        If None, no disk cache is available.
-        If str, represents a path with which to instantiate a utils.DiskCache
-        object. Must be concurrent-access-safe (across threads and processes).
+    disk_cache : None, bool, string, or DiskCache
+      * If None or False, no disk cache is available.
+      * If True, a disk cache is generated at the path
+        `CACHE_DIR/<stage_name>/<service_name>.sqlite` where CACHE_DIR is
+        defined in pisa.__init__
+      * If string, this is interpreted as a path. If an absolute path is
+        provided (e.g. "/home/myuser/mycache.sqlite'), this locates the disk
+        cache file exactly, while a relative path (e.g.,
+        "relative/dir/mycache.sqlite") is taken relative to the CACHE_DIR; the
+        aforementioned example will be turned into
+        `CACHE_DIR/relative/dir/mycache.sqlite`.
+      * If a DiskCache object is passed, it will be used directly
 
     memcache_deepcopy : bool
+        Whether to deepcopy objects prior to storing to the memory cache and
+        upon loading these objects from the memory cache. Setting to True
+        ensures no modification of mutable objects stored to a memory cache
+        will affect other logic relying on that object remaining unchanged.
+        However, this comes at the cost of more memory used and slower
+        operations.
 
     outputs_cache_depth : int >= 0
 
@@ -149,7 +170,6 @@ class Stage(object):
                  memcache_deepcopy=True, transforms_cache_depth=10,
                  outputs_cache_depth=0, input_binning=None,
                  output_binning=None, debug_mode=None):
-
         # Allow for string inputs, but have to populate into lists for
         # consistent interfacing to one or multiple of these things
         expected_params = arg_str_seq_none(expected_params, 'expected_params')
@@ -230,7 +250,7 @@ class Stage(object):
         """Disk cache object"""
 
         self.disk_cache_path = None
-        """Path to disk cache file for this stage/service."""
+        """Path to disk cache file for this stage/service (or None)."""
 
         param_selector_keys = set([
             'regular_params', 'selector_param_sets', 'selections'
@@ -250,15 +270,15 @@ class Stage(object):
         self.validate_params(p)
         self._params = p
 
-        if bool(debug_mode) == False:
-            self._debug_mode = None
-        else:
+        if bool(debug_mode):
             self._debug_mode = debug_mode
-
-        if bool(error_method) == False:
-            self._error_method = None
         else:
+            self._debug_mode = None
+
+        if bool(error_method):
             self._error_method = error_method
+        else:
+            self._error_method = None
 
         # Include each attribute here for hashing if it is defined and its
         # value is not None
@@ -303,6 +323,7 @@ class Stage(object):
         self.transforms_hash = None
         self.nominal_outputs_hash = None
         self.outputs_hash = None
+        self.instantiate_disk_cache()
 
     @profile
     def get_nominal_transforms(self, nominal_transforms_hash):
@@ -556,8 +577,10 @@ class Stage(object):
 
         # Attach sideband objects (i.e., inputs not specified in
         # `self.input_names`) to the "augmented" output object
-        if self.inputs is None: names_in_inputs = set([])
-        else: names_in_inputs = set(self.inputs.names)
+        if self.inputs is None:
+            names_in_inputs = set()
+        else:
+            names_in_inputs = set(self.inputs.names)
         unused_input_names = names_in_inputs.difference(self.input_names)
 
         if len(unused_input_names) == 0:
@@ -660,22 +683,39 @@ class Stage(object):
 
     def instantiate_disk_cache(self):
         if isinstance(self.disk_cache, DiskCache):
+            self.disk_cache_path = self.disk_cache.path
             return
+
+        if self.disk_cache is False or self.disk_cache is None:
+            self.disk_cache = None
+            self.disk_cache_path = None
+            return
+
         if isinstance(self.disk_cache, basestring):
-            self.disk_cache_path = self.disk_cache
-        elif self.disk_cache is None:
-            cache_root_dir = find_resource('cache')
-            dirs = [cache_root_dir, self.stage_name]
-            dirpath = os.path.join(*dirs)
+            dirpath, filename = os.path.split(
+                os.path.expandvars(os.path.expanduser(self.disk_cache))
+            )
+            if os.path.isabs(dirpath):
+                self.disk_cache_path = os.path.join(dirpath, filename)
+            else:
+                self.disk_cache_path = os.path.join(
+                    CACHE_DIR, dirpath, filename
+                )
+        elif self.disk_cache is True:
+            dirs = [CACHE_DIR, self.stage_name]
+            dirpath = os.path.expandvars(os.path.expanduser(
+                os.path.join(*dirs)
+            ))
             if self.service_name is not None and self.service_name != '':
                 filename = self.service_name + '.sqlite'
             else:
-                filename = 'geeric.sqlite'
-            mkdir(dirpath)
+                filename = 'generic.sqlite'
+            mkdir(dirpath, warn=False)
             self.disk_cache_path = os.path.join(dirpath, filename)
         else:
             raise ValueError("Don't know what to do with a %s."
-                             %type(self.disk_cache))
+                             % type(self.disk_cache))
+
         self.disk_cache = DiskCache(self.disk_cache_path, max_depth=10,
                                     is_lru=False)
 
@@ -818,7 +858,7 @@ class Stage(object):
                     id_subobjects.append(attr_hash)
 
                 # Generate the "sub-hash"
-                if any([(h == None) for h in id_subobjects]):
+                if any([(h is None) for h in id_subobjects]):
                     sub_hash = None
                 else:
                     sub_hash = hash_obj(id_subobjects,
@@ -865,7 +905,7 @@ class Stage(object):
             id_objects.append(attr_hash)
 
         # If any hashes are missing (i.e, None), invalidate the entire hash
-        if any([(h == None) for h in id_objects]):
+        if any([(h is None) for h in id_objects]):
             transforms_hash = None
         else:
             transforms_hash = hash_obj(id_objects, full_hash=self.full_hash)
@@ -924,7 +964,7 @@ class Stage(object):
         id_objects.append(self.source_code_hash)
 
         # If any hashes are missing (i.e, None), invalidate the entire hash
-        if any([(h == None) for h in id_objects]):
+        if any([(h is None) for h in id_objects]):
             nominal_transforms_hash = None
         else:
             nominal_transforms_hash = hash_obj(id_objects,

@@ -1,5 +1,7 @@
 # author: Sebastian Boeser
 #         sboeser@physik.uni-bonn.de
+# author: J.L. Lanfranchi
+#         jll1062+pisa@phys.psu.edu
 #
 # date:   2014-01-27
 """
@@ -21,14 +23,18 @@ import pint
 import simplejson as json
 
 from pisa import ureg, Q_
+from pisa.utils.comparisons import isbarenumeric
 import resources
 import log
 
 
-__all__ = ['json_string', 'from_json', 'to_json']
+__all__ = ['JSON_EXTS', 'ZIP_EXTS',
+           'json_string', 'from_json', 'to_json']
 
 
+JSON_EXTS = ['json']
 ZIP_EXTS = ['bz2']
+
 
 def json_string(string):
     """Decode a json string"""
@@ -36,12 +42,14 @@ def json_string(string):
 
 
 def dumps(content, indent=2):
-     return json.dumps(content, cls=NumpyEncoder, indent=indent,
-                       sort_keys=False)
+    """Dump object to JSON-encoded string"""
+    return json.dumps(content, cls=NumpyEncoder, indent=indent,
+                      sort_keys=False)
 
 
 def loads(s):
-     return json.loads(s, cls=NumpyDecoder)
+    """Load (create) object from JSON-encoded string"""
+    return json.loads(s, cls=NumpyDecoder)
 
 
 def from_json(filename):
@@ -60,9 +68,9 @@ def from_json(filename):
     content: OrderedDict with contents of JSON file
 
     """
-    rootname, ext = os.path.splitext(filename)
+    _, ext = os.path.splitext(filename)
     ext = ext.replace('.', '').lower()
-    assert ext == 'json' or ext in ZIP_EXTS
+    assert ext in JSON_EXTS or ext in ZIP_EXTS
     if ext == 'bz2':
         content = json.loads(
             bz2.decompress(resources.open_resource(filename).read()),
@@ -96,16 +104,17 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
         Set to `True` (default) to allow overwriting existing file. Raise
         exception and quit otherwise.
     warn : bool
-        Issue a warning message if a file is being overwritten (`True`, default).
-        Suppress warning by setting to `False` (e.g. when overwriting is the
-        desired behaviour).
+        Issue a warning message if a file is being overwritten (`True`,
+        default). Suppress warning by setting to `False` (e.g. when overwriting
+        is the desired behaviour).
     sort_keys : bool
         Output of dictionaries will be sorted by key if set to `True`.
         Default is `False`. Cf. json.dump() or json.dumps().
 
     """
     if hasattr(content, 'to_json'):
-        return content.to_json(filename, indent=indent, overwrite=overwrite)
+        return content.to_json(filename, indent=indent, overwrite=overwrite,
+                               warn=warn, sort_keys=sort_keys)
     fpath = os.path.expandvars(os.path.expanduser(filename))
     if os.path.exists(fpath):
         if overwrite:
@@ -114,7 +123,7 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
         else:
             raise Exception('Refusing to overwrite path ' + fpath)
 
-    rootname, ext = os.path.splitext(filename)
+    _, ext = os.path.splitext(filename)
     ext = ext.replace('.', '').lower()
     assert ext == 'json' or ext in ZIP_EXTS
 
@@ -176,10 +185,20 @@ class NumpyDecoder(json.JSONDecoder):
 
     def json_array_numpy(self, s_and_end, scan_once, **kwargs):
         values, end = json.decoder.JSONArray(s_and_end, scan_once, **kwargs)
-        try:
-            values = np.array(values, dtype=float)
-        except:
-            pass
+        if len(values) == 0:
+            return values, end
+
+        # TODO: is it faster to convert to numpy array and check if the
+        # resulting dtype is pure numeric?
+        if len(values) <= 1000:
+            check_values = values
+        else:
+            check_values = values[::max([len(values)//1000, 1])]
+
+        if not all([isbarenumeric(v) for v in check_values]):
+            return values, end
+
+        values = np.array(values)
         return values, end
 
     def json_python_string(self, s, end, encoding, strict):
@@ -189,30 +208,36 @@ class NumpyDecoder(json.JSONDecoder):
 
 # TODO: finish this little bit
 def test_NumpyEncoderDecoder():
-    import tempfile
+    from shutil import rmtree
+    from tempfile import mkdtemp
     from pisa.utils.comparisons import recursiveEquality
-    log.set_verbosity(3)
+
     nda1 = np.array([-np.inf, np.nan, np.inf, -1, 0, 1, ])
-    testdir = tempfile.mkdtemp()
-    fname = os.path.join(testdir, 'nda1.json')
-    to_json(nda1, fname)
-    fname2 = os.path.join(testdir, 'nda1.json.bz2')
-    to_json(nda1, fname2)
-    for fn in [fname, fname2]:
-        nda2 = from_json(fn)
-        assert np.allclose(nda2, nda1, rtol=1e-12, atol=0, equal_nan=True), \
-                'nda1=\n%s\nnda2=\n%s\nsee file: %s' %(nda1, nda2, fn)
-    d1 = {'nda1': nda1}
-    fname = os.path.join(testdir, 'd1.json')
-    fname2 = os.path.join(testdir, 'd1.json.bz2')
-    to_json(d1, fname)
-    to_json(d1, fname2)
-    for fn in [fname, fname2]:
-        d2 = from_json(fn)
-        assert recursiveEquality(d2, d1), \
-                'd1=\n%s\nd2=\n%s\nsee file: %s' %(d1, d2, fn)
+    temp_dir = mkdtemp()
+    try:
+        fname = os.path.join(temp_dir, 'nda1.json')
+        to_json(nda1, fname)
+        fname2 = os.path.join(temp_dir, 'nda1.json.bz2')
+        to_json(nda1, fname2)
+        for fn in [fname, fname2]:
+            nda2 = from_json(fn)
+            assert np.allclose(nda2, nda1, rtol=1e-12, atol=0, equal_nan=True), \
+                    'nda1=\n%s\nnda2=\n%s\nsee file: %s' %(nda1, nda2, fn)
+        d1 = {'nda1': nda1}
+        fname = os.path.join(temp_dir, 'd1.json')
+        fname2 = os.path.join(temp_dir, 'd1.json.bz2')
+        to_json(d1, fname)
+        to_json(d1, fname2)
+        for fn in [fname, fname2]:
+            d2 = from_json(fn)
+            assert recursiveEquality(d2, d1), \
+                    'd1=\n%s\nd2=\n%s\nsee file: %s' %(d1, d2, fn)
+    finally:
+        rmtree(temp_dir)
+
     log.logging.info('<< PASSED : test_NumpyEncoderDecoder >>')
 
 
 if __name__ == '__main__':
+    log.set_verbosity(1)
     test_NumpyEncoderDecoder()

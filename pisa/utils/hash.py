@@ -1,14 +1,29 @@
+"""
+Utilities for hashing objects.
+
+"""
+
+
+import base64
 import cPickle as pickle
 import hashlib
-import numpy as np
 import struct
+
+import numpy as np
 
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
-from pisa.utils.profiler import line_profile, profile
 
 
-__all__ = ['hash_obj', 'hash_file']
+__all__ = ['FAST_HASH_FILESIZE_BYTES', 'FAST_HASH_NDARRAY_ELEMENTS',
+           'FAST_HASH_STR_BYTES',
+           'hash_obj', 'hash_file',
+           'test_hash_obj', 'test_hash_file']
+
+
+FAST_HASH_FILESIZE_BYTES = int(1e4)
+FAST_HASH_NDARRAY_ELEMENTS = int(1e3)
+FAST_HASH_STR_BYTES = int(1e3)
 
 
 # NOTE: adding @line_profile decorator slows down function to order of 10s of
@@ -31,7 +46,7 @@ def hash_obj(obj, hash_to='int', full_hash=True):
     hash_to : string
         'i', 'int', or 'integer': First 8 bytes of the MD5 sum are interpreted
             as an integer.
-        'b', 'bin', or 'binary': MD5 sum digest; returns an 8-character string 
+        'b', 'bin', or 'binary': MD5 sum digest; returns an 8-character string
         'h', 'x', 'hex': MD5 sum hexdigest, (string of 16 characters)
         'b64', 'base64': first 8 bytes of MD5 sum are base64 encoded (with '+'
             and '-' as final two characters of encoding). Returns string of 11
@@ -54,10 +69,6 @@ def hash_obj(obj, hash_to='int', full_hash=True):
     hash_file : hash a file on disk by filename/path
 
     """
-    FAST_HASH_FILESIZE_BYTES = int(1e4)
-    FAST_HASH_NDARRAY_ELEMENTS = int(1e3)
-    FAST_HASH_STR_BYTES = int(1e3)
-
     if hash_to is None:
         hash_to = 'int'
     hash_to = hash_to.lower()
@@ -163,9 +174,9 @@ def test_hash_obj():
 # TODO: test_hash_file function requires a "standard" file to test on
 def test_hash_file():
     file_hash = hash_file('../utils/hash.py')
-    logging.info(file_hash)
+    logging.debug(file_hash)
     file_hash = hash_file('../utils/hash.py', full_hash=False)
-    logging.info(file_hash)
+    logging.debug(file_hash)
     logging.info('<< PASSED : test_hash_file >>')
 
 

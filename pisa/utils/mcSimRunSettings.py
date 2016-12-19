@@ -314,7 +314,7 @@ class DetMCSimRunsSettings(dict):
         # a key, so it is a string upon import, and it's safest to keep it as
         # a string considering how non-standardized naming is in IceCube) and
         # convert actual run settings dict to MCSimRunSettings instances
-        runs_d = {str(k): MCSimRunSettings(v) for k,v in runs_d.iteritems()}
+        runs_d = {str(k): MCSimRunSettings(v) for k, v in runs_d.iteritems()}
 
         # Save the runs_d to this object instance, which behaves like a dict
         self.update(runs_d)

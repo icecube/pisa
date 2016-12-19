@@ -10,6 +10,7 @@ run a pipeline (the outputs of which can be plotted and stored to disk).
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
+from copy import deepcopy
 from importlib import import_module
 from itertools import product
 from inspect import getsource
@@ -18,9 +19,11 @@ import os
 import numpy as np
 
 from pisa import ureg
+from pisa.core.events import Data
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
 from pisa.core.stage import Stage
+from pisa.core.transform import TransformSet
 from pisa.utils.config_parser import parse_pipeline_config
 from pisa.utils.betterConfigParser import BetterConfigParser
 from pisa.utils.fileio import mkdir
@@ -57,16 +60,22 @@ class Pipeline(object):
     ----------
     config : string, OrderedDict, or BetterConfigParser
         If string, interpret as resource location; send to the
-          config_parser.parse_pipeline_config() function to get a config
-          OrderedDict.
-        If OrderedDict, use directly as pipeline configuration.
+        `config_parser.parse_pipeline_config()` method to get a config
+        OrderedDict. If `OrderedDict`, use directly as pipeline configuration.
 
     """
     def __init__(self, config):
-        self._stages = []
         if isinstance(config, (basestring, BetterConfigParser)):
             config = parse_pipeline_config(config=config)
-        assert isinstance(config, OrderedDict)
+        elif isinstance(config, OrderedDict):
+            pass
+        else:
+            raise TypeError(
+                '`config` passed is of type %s but must be string,'
+                ' BetterConfigParser, or OrderedDict' % type(config).__name__
+            )
+
+        self._stages = []
         self._config = config
         self._init_stages()
         self._source_code_hash = None
@@ -89,11 +98,10 @@ class Pipeline(object):
 
         """
         assert isinstance(stage_id, (int, basestring))
-        idx = None
         for stage_num, stage in enumerate(self):
             if stage_id in [stage_num, stage.stage_name]:
                 return stage_num
-        raise ValueError('No stage named "%s".' %stage_name)
+        raise ValueError('No stage named "%s" in the pipeline.' % stage.name)
 
     def __len__(self):
         return len(self._stages)
@@ -170,6 +178,7 @@ class Pipeline(object):
         for stage in self:
             stage.select_params(self.param_selections, error_on_missing=False)
 
+    # TODO: handle other container(s)
     @profile
     def get_outputs(self, inputs=None, idx=None,
                     return_intermediate=False):
@@ -177,7 +186,7 @@ class Pipeline(object):
 
         Parameters
         ----------
-        inputs : None or MapSet # TODO: other container(s)
+        inputs : None or MapSet
             Optional inputs to send to the first stage of the pipeline.
         idx : None, string, or int
             Specification of which stage(s) to run. If None is passed, all
@@ -190,14 +199,13 @@ class Pipeline(object):
 
         Returns
         -------
-        outputs : list or MapSet
-            MapSet output by final stage if `return_intermediate` is False, or
-            list of MapSets output by each stage if `return_intermediate` is
-            True.
+        outputs : list or pisa.core.map.MapSet
+            If `return_intermediate` is `False`, returns `MapSet` output by
+            final stage. If `return_intermediate` is `True`, returns `list` of
+            `MapSet`s output by each stage.
 
         """
         intermediate = []
-        i = 0
         if isinstance(idx, basestring):
             idx = self.stage_names.index(idx) + 1
         if idx is not None:
@@ -231,9 +239,33 @@ class Pipeline(object):
         return outputs
 
     def update_params(self, params):
+        """Update params for the pipeline.
+
+        Note that any param in `params` in excess of those that already exist
+        in the pipeline's stages will have no effect.
+
+        Parameters
+        ----------
+        params : ParamSet
+            Parameters to be updated
+
+        """
         [stage.params.update_existing(params) for stage in self]
 
     def select_params(self, selections, error_on_missing=False):
+        """Select a set of alternate param values/specifications.
+
+        Parameters
+        -----------
+        selections : string or iterable of strings
+        error_on_missing : bool
+
+        Raises
+        ------
+        KeyError if `error_on_missing` is `True` and any of `selections` does
+            not exist in any stage in the pipeline.
+
+        """
         successes = 0
         for stage in self:
             try:
@@ -251,27 +283,32 @@ class Pipeline(object):
 
     @property
     def params(self):
+        """pisa.core.param.ParamSet : pipeline's parameters"""
         params = ParamSet()
         [params.extend(stage.params) for stage in self]
         return params
 
     @property
     def param_selections(self):
+        """list of strings : param selections collected from all stages"""
         selections = set()
         [selections.update(stage.param_selections) for stage in self]
         return sorted(selections)
 
     @property
     def stages(self):
+        """list of Stage : stages in the pipeline"""
         return [s for s in self]
 
     @property
     def stage_names(self):
+        """list of strings : names of stages in the pipeline"""
         return [s.stage_name for s in self]
 
     @property
     def config(self):
-        return self._config
+        """Deepcopy of the OrderedDict used to instantiate the pipeline"""
+        return deepcopy(self._config)
 
     @property
     def source_code_hash(self):
@@ -287,10 +324,14 @@ class Pipeline(object):
 
     @property
     def state_hash(self):
+        """int : Hash of the state of the pipeline. This hashes together a hash
+        of the Pipeline class's source code and a hash per contained stage on
+        the state of the corresponding stage."""
         return hash_obj([self.source_code_hash] + [s.state_hash for s in self])
 
 
 def test_Pipeline():
+    """Unit tests for Pipeline class"""
     #
     # Test: select_params and param_selections
     #
@@ -350,15 +391,21 @@ def test_Pipeline():
 
 
 def parse_args():
+    """Parse command line arguments if `pipeline.py` is called as a script."""
     parser = ArgumentParser(
         formatter_class=ArgumentDefaultsHelpFormatter,
         description='''Instantiate and run a pipeline from a config file.
         Optionally store the resulting distribution(s) and plot(s) to disk.'''
     )
     parser.add_argument(
-        '--settings', metavar='CONFIGFILE', type=str,
+        '-p', '--pipeline', metavar='CONFIGFILE', type=str,
         required=True,
         help='File containing settings for the pipeline.'
+    )
+    parser.add_argument(
+        '--select', metavar='PARAM_SELECTIONS', type=str, required=False,
+        help='''Comma-separated list of param selectors to use (overriding any
+        defaults in the config file).'''
     )
     parser.add_argument(
         '--only-stage', metavar='STAGE', type=str,
@@ -382,11 +429,6 @@ def parse_args():
         does not exist already. If no dir is provided, no outputs will be
         saved.'''
     )
-    #parser.add_argument(
-    #    '-o', '--outname', metavar='FILENAME', type=str,
-    #    default='out.json',
-    #    help='''Filename for storing output data.'''
-    #)
     parser.add_argument(
         '--intermediate', action='store_true',
         help='''Store all intermediate outputs, not just the final stage's
@@ -425,16 +467,24 @@ def parse_args():
     return args
 
 
-def main():
+def main(return_outputs=False):
+    """Run unit tests if `pipeline.py` is called as a script."""
     from pisa.utils.plotter import Plotter
 
     args = parse_args()
     set_verbosity(args.v)
 
+    # Even if user specifies an integer on command line, it comes in as a
+    # string. Try to convert to int (e.g. if `'1'` is passed to indicate the
+    # second stage), and -- if successful -- use this as `args.only_stage`.
+    # Otherwise, the string value passed will be used (e.g. `'osc'` could be
+    # passed).
     try:
-        args.only_stage = int(args.only_stage)
-    except (TypeError, ValueError):
+        only_stage_int = int(args.only_stage)
+    except (ValueError, TypeError):
         pass
+    else:
+        args.only_stage = only_stage_int
 
     if args.dir:
         mkdir(args.dir)
@@ -443,67 +493,91 @@ def main():
             raise ValueError('No --dir provided, so cannot save images.')
 
     # Instantiate the pipeline
-    pipeline = Pipeline(args.settings)
+    pipeline = Pipeline(args.pipeline)
+    if args.select is not None:
+        pipeline.select_params([s.strip() for s in ','.split(args.select)])
 
-    for run in xrange(1):
-        logging.info('')
-        logging.info('## STARTING RUN %d ............' % run)
-        logging.info('')
-        #pipeline.params.free.values = [p.value*1.01 for p in pipeline.params.free]
-        if args.only_stage is None:
-            stop_idx = args.stop_after_stage
-            if isinstance(stop_idx, basestring):
-                stop_idx = pipeline.index(stop_idx)
-            if stop_idx is not None:
-                stop_idx += 1
-            indices = slice(0, stop_idx)
-            outputs = pipeline.get_outputs(idx=args.stop_after_stage)
+    if args.only_stage is None:
+        stop_idx = args.stop_after_stage
+        if isinstance(stop_idx, basestring):
+            stop_idx = pipeline.index(stop_idx)
+        if stop_idx is not None:
+            stop_idx += 1
+        indices = slice(0, stop_idx)
+        outputs = pipeline.get_outputs(idx=args.stop_after_stage)
+    else:
+        assert args.stop_after_stage is None
+        idx = pipeline.index(args.only_stage)
+        stage = pipeline[idx]
+        indices = slice(idx, idx+1)
+        # Create dummy inputs
+        if hasattr(stage, 'input_binning'):
+            logging.warn(
+                'Stage requires input, so building dummy'
+                ' inputs of random numbers, with random state set to the input'
+                ' index according to alphabetical ordering of input names and'
+                ' filled in alphabetical ordering of dimension names.'
+            )
+            input_maps = []
+            tmp = deepcopy(stage.input_binning)
+            alphabetical_binning = tmp.reorder_dimensions(sorted(tmp.names))
+            for input_num, input_name in enumerate(sorted(stage.input_names)):
+                # Create a new map with all 3's; name according to the input
+                hist = np.full(shape=alphabetical_binning.shape,
+                               fill_value=3.0)
+                input_map = Map(name=input_name, binning=alphabetical_binning,
+                                hist=hist)
+
+                # Apply Poisson fluctuations to randomize the values in the map
+                input_map.fluctuate(method='poisson', random_state=input_num)
+
+                # Reorder dimensions according to user's original binning spec
+                input_map.reorder_dimensions(stage.input_binning)
+                input_maps.append(input_map)
+            inputs = MapSet(maps=input_maps, name='ones', hash=1)
         else:
-            assert args.stop_after_stage is None
-            idx = pipeline.index(args.only_stage)
-            stage = pipeline[idx]
-            indices = slice(idx, idx+1)
-            # create dummy inputs
-            if hasattr(stage, 'input_binning'):
-                logging.info('building dummy input')
-                input_maps = []
-                for name in stage.input_names:
-                    hist = np.ones(stage.input_binning.shape)
-                    input_maps.append(
-                        Map(name=name, hist=hist, binning=stage.input_binning)
-                    )
-                inputs = MapSet(maps=input_maps, name='ones', hash=1)
-            else:
-                inputs = None
-            outputs = stage.get_outputs(inputs=inputs)
-        logging.info('')
-        logging.info('## ............ finished RUN %d' % run)
-        logging.info('')
+            inputs = None
+        outputs = stage.get_outputs(inputs=inputs)
 
     for stage in pipeline[indices]:
         if not args.dir:
             break
         stg_svc = stage.stage_name + '__' + stage.service_name
         fbase = os.path.join(args.dir, stg_svc)
-        if args.intermediate or stage == pipeline[-1]:
+        if args.intermediate or stage == pipeline[indices][-1]:
             stage.outputs.to_json(fbase + '__output.json.bz2')
         if args.transforms and stage.use_transforms:
             stage.transforms.to_json(fbase + '__transforms.json.bz2')
 
         formats = OrderedDict(png=args.png, pdf=args.pdf)
+        if isinstance(stage.outputs, Data):
+            outputs = stage.outputs.histogram_set(
+                binning=stage.output_binning,
+                nu_weights_col='pisa_weight',
+                mu_weights_col='pisa_weight',
+                mapset_name=stg_svc,
+                errors=True
+            )
+        elif isinstance(stage.outputs, (MapSet, TransformSet)):
+            outputs = stage.outputs
+
         for fmt, enabled in formats.items():
             if not enabled:
                 continue
-            my_plotter = Plotter(stamp='event rate',
-                                 outdir=args.dir,
-                                 fmt=fmt, log=False,
-                                 annotate=args.annotate)
+            my_plotter = Plotter(
+                stamp='Event rate',
+                outdir=args.dir,
+                fmt=fmt, log=False,
+                annotate=args.annotate
+            )
             my_plotter.ratio = True
-            my_plotter.plot_2d_array(stage.outputs, fname=stg_svc+'__output',
-                                     cmap='OrRd')
+            my_plotter.plot_2d_array(
+                outputs, fname=stg_svc+'__output', cmap='OrRd'
+            )
 
-    return pipeline, outputs
+    if return_outputs:
+        return pipeline, outputs
 
 
 if __name__ == '__main__':
-    pipeline, outputs = main()
+    pipeline, outputs = main(return_outputs=True)

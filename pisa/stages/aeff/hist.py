@@ -2,6 +2,8 @@
 # date:   March 20, 2016
 
 
+import os
+
 import numpy as np
 
 from pisa.core.stage import Stage
@@ -13,6 +15,7 @@ from pisa.utils.fileio import mkdir, to_file
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.profiler import profile
+from pisa.utils.resources import find_resource
 
 
 __all__ = ['hist']
@@ -180,7 +183,6 @@ class hist(Stage):
 
         # These will be in the computational units
         input_binning = self.input_binning.to(**in_units)
-        output_binning = self.output_binning.to(**out_units)
 
         # Account for "missing" dimension(s) (dimensions OneWeight expects for
         # computation of bin volume), and accommodate with a factor equal to
@@ -292,7 +294,6 @@ class hist(Stage):
 
         new_transforms = []
         for xform_flavints in self.transform_groups:
-            repr_flav_int = xform_flavints[0]
             flav_names = [str(flav) for flav in xform_flavints.flavs()]
             aeff_transform = None
             for transform in self.nominal_transforms:
@@ -300,9 +301,9 @@ class hist(Stage):
                         and transform.output_name in xform_flavints):
                     if aeff_transform is None:
                         scale = aeff_scale * livetime_s
-                        if (self.particles == 'neutrinos'
-                                and ('nutau_cc' in transform.output_name
-                                or 'nutaubar_cc' in transform.output_name)):
+                        if (self.particles == 'neutrinos' and
+                                ('nutau_cc' in transform.output_name
+                                 or 'nutaubar_cc' in transform.output_name)):
                             scale *= nutau_cc_norm
                         aeff_transform = transform.xform_array * scale
                     new_xform = BinnedTensorTransform(

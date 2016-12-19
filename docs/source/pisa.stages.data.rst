@@ -20,6 +20,14 @@ pisa.stages.data.icc module
     :undoc-members:
     :show-inheritance:
 
+pisa.stages.data.sample module
+------------------------------
+
+.. automodule:: pisa.stages.data.sample
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

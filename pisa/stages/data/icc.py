@@ -199,19 +199,24 @@ class icc(Stage):
         else:
             self.icc_bg_hist,_ = np.histogramdd(sample = np.array([cut_events[bin_name] for bin_name in self.bin_names]).T, bins=self.bin_edges)
 	    self.icc_bg_hist = self.icc_bg_hist.astype(FTYPE)
+
+
+        conversion = self.params.atm_muon_scale.value.m_as('dimensionless') / ureg('common_year').to('seconds').m
+        logging.info('nominal ICC rate at %.6E Hz'%(self.icc_bg_hist.sum()*conversion))
+
         if alt_icc_bg_file is not None:
             if self.params.kde_hist.value:
-		self.alt_icc_bg_hist = self.kde_histogramdd(
-                            np.array([alt_cut_events[bin_name] for bin_name in self.bin_names]).T,
-                            binning=self.output_binning,
-                            coszen_name='reco_coszen',
-                            use_cuda=True,
-                            bw_method='silverman',
-                            alpha=0.3,
-                            oversample=10,
-                            coszen_reflection=0.5,
-                            adaptive=True
-                        )
+                self.alt_icc_bg_hist = self.kde_histogramdd(
+                    np.array([alt_cut_events[bin_name] for bin_name in self.bin_names]).T,
+                    binning=self.output_binning,
+                    coszen_name='reco_coszen',
+                    use_cuda=True,
+                    bw_method='silverman',
+                    alpha=0.3,
+                    oversample=10,
+                    coszen_reflection=0.5,
+                    adaptive=True
+                )
             else:
                 self.alt_icc_bg_hist,_ = np.histogramdd(sample = np.array([alt_cut_events[bin_name] for bin_name in self.bin_names]).T, bins=self.bin_edges)
 	        self.alt_icc_bg_hist = self.alt_icc_bg_hist.astype(FTYPE)

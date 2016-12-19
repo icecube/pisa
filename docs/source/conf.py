@@ -116,7 +116,7 @@ pygments_style = 'sphinx'
 #keep_warnings = False
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = True
+#todo_include_todos = True
 
 
 # -- Options for HTML output ----------------------------------------------
@@ -299,7 +299,7 @@ texinfo_documents = [
 #texinfo_no_detailmenu = False
 
 # At the bottom of conf.py
-github_doc_root = 'https://github.com/jllanfranchi/pisa/blob/cake/'
+github_doc_root = 'https://github.com/jllanfranchi/pisa/tree/cake/pisa'
 def setup(app):
     app.add_config_value('recommonmark_config', {
             'url_resolver': lambda url: github_doc_root + url,

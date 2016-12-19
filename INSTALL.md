@@ -19,8 +19,15 @@ mkdir my_virtual_env/src
 git clone https://github.com/jllanfranchi/pisa.git --branch cake \
     --single-branch my_virtual_env/src/pisa
 
+# If you want to install numba to accelerate certain pieces of code (highly
+# recommended!), you have to manually install enum34 first
+# (see Issue 253: https://github.com/jllanfranchi/pisa/issues/253)
+pip install enum34
+
 # Install PISA and its python package dependencies (optional dependency
-# categories are in brackets)
+# categories are in brackets). Note that sometimes an install issue with the
+# below command can be overcome by simply re-running a second time; also, add
+# -vvv to any pip command that fails for verbose output for debugging issues
 pip install -e my_virtual_env/src/pisa/[cuda,numba,develop] \
     -r my_virtual_env/src/pisa/requirements.txt
 
@@ -162,7 +169,7 @@ Load this variable into your *current* environment by sourcing your `.bashrc` fi
 ### Github setup
 
 1. Create your own [github account](https://github.com/)
-1. Obtain access to the `jllanfranchi/pisa` repository by emailing (as a verifiable IceCube member) your **Github username** to Sebastian Böeser (sboeser@uni-mainz.de), cc: John Kelley (jkelley@icecube.wisc.edu)
+1. Obtain access to the `jllanfranchi/pisa` repository by emailing (as a verifiable IceCube member) your **Github username** to Justin Lanfranchi (jll1062+pisa@phys.psu.edu) and copy John Kelley (jkelley@icecube.wisc.edu)
 
 
 #### SSH vs. HTTPS access to repository

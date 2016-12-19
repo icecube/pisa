@@ -20,8 +20,10 @@ The config file is expected to contain the following sections::
 
     [binning]
     binning1.order = axis1, axis2
-    binning1.axis1 = {'num_bins':40, 'is_log':True, 'domain':[1,80] * units.GeV, 'tex': r'$A_1$'}
-    binning1.axis2 = {'num_bins':10, 'is_lin':True, 'domain':[1,5], 'tex': r'$A_2$'}
+    binning1.axis1 = {'num_bins':40, 'is_log':True,
+                      'domain':[1,80] * units.GeV, 'tex': r'$A_1$'}
+    binning1.axis2 = {'num_bins':10, 'is_lin':True,
+                      'domain':[1,5], 'tex': r'$A_2$'}
 
     [stage:stageA]
     input_binning = bining1
@@ -94,15 +96,12 @@ This is imply done by setting `.unique_id`
 # re-raise the exception)
 
 from collections import OrderedDict
-import ConfigParser
 import re
 
 import numpy as np
-import uncertainties
 from uncertainties import ufloat, ufloat_fromstr
-from uncertainties import unumpy as unp
 
-from pisa import ureg, Q_
+from pisa import ureg
 from pisa.core.binning import MultiDimBinning, OneDimBinning
 from pisa.core.param import Param, ParamSelector
 from pisa.core.prior import Prior
@@ -111,8 +110,17 @@ from pisa.utils.fileio import from_file
 from pisa.utils.log import logging
 
 
-__all__ = ['parse_quantity', 'parse_string_literal', 'split',
+__all__ = ['PARAM_RE', 'PARAM_ATTRS', 'units',
+           'parse_quantity', 'parse_string_literal', 'split',
            'interpret_param_subfields', 'parse_param', 'parse_pipeline_config']
+
+
+PARAM_RE = re.compile(
+    r'^param\.(?P<subfields>(([^.\s]+)(\.|$))+)',
+    re.IGNORECASE
+)
+
+PARAM_ATTRS = ['range', 'prior', 'fixed']
 
 
 # Config files use "units.xyz" to denote that "xyz" is a unit; therefore,
@@ -216,14 +224,6 @@ def split(string, sep=','):
     return [x.strip().lower() for x in str.split(string, sep)]
 
 
-PARAM_RE = re.compile(
-    r'^param\.(?P<subfields>(([^.\s]+)(\.|$))+)',
-    re.IGNORECASE
-)
-
-PARAM_ATTRS = ['range', 'prior', 'fixed']
-
-
 def interpret_param_subfields(subfields, selector=None, pname=None, attr=None):
     """
     """
@@ -245,14 +245,18 @@ def interpret_param_subfields(subfields, selector=None, pname=None, attr=None):
         if field in PARAM_ATTRS:
             attr_indices.append(n)
 
+    # TODO: not clear what's being done here; also, would slicing be more clear
+    # than iterating & calling pop()?
     if len(attr_indices) == 1:
         attr_idx = attr_indices[0]
-        infodict['attr'] = [infodict['subfields'].pop(attr_idx)
-                            for i in range(attr_idx, len(infodict['subfields']))]
+        infodict['attr'] = [
+            infodict['subfields'].pop(attr_idx)
+            for i in range(attr_idx, len(infodict['subfields']))
+        ]
         return interpret_param_subfields(**infodict)
 
     elif len(attr_indices) > 1:
-        raise ValueError('Found multiple attrs in config name "%s"' %name)
+        raise ValueError('Found multiple attrs in config name "%s"' %pname)
 
     if len(infodict['subfields']) == 2:
         infodict['pname'] = infodict['subfields'].pop()
@@ -310,6 +314,7 @@ def parse_param(config, section, selector, fullname, pname, value):
 
     if config.has_option(section, fullname + '.range'):
         range_ = config.get(section, fullname + '.range')
+        # TODO: unused vars `nominal` and `sigma`...?
         if 'nominal' in range_:
             nominal = value.n * value.units
         if 'sigma' in range_:
@@ -341,8 +346,8 @@ def parse_pipeline_config(config):
 
     """
     # TODO: Why do we have to make sure it isn't a BetterConfigParser?
-    if isinstance(config, basestring) \
-            and not isinstance(config, BetterConfigParser):
+    if (isinstance(config, basestring)
+            and not isinstance(config, BetterConfigParser)):
         config = from_file(config)
 
     # Create binning objects
@@ -424,7 +429,7 @@ def parse_pipeline_config(config):
 
                     break
 
-                # Param *not* found in a previous stage (i.e., no explicit     
+                # Param *not* found in a previous stage (i.e., no explicit
                 # `break` encountered in `for` loop above); therefore must
                 # instantiate it.
                 else:

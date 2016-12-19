@@ -98,12 +98,12 @@ sqrtpi = np.sqrt(pi)
 sqrt2pi = np.sqrt(2*pi)
 pisq = pi**2
 
-omp_num_threads = 1
+OMP_NUM_THREADS = 1
 """Number of threads OpenMP is allocated"""
 
 try:
     import pisa.utils.gaussians as GAUS
-except:
+except Exception:
     def gaussian(outbuf, x, mu, sigma):
         xlessmu = x-mu
         outbuf += 1./(sqrt2pi*sigma) * \
@@ -114,7 +114,7 @@ else:
     gaussian = GAUS.gaussian
     gaussians = GAUS.gaussians
     if os.environ.has_key('OMP_NUM_THREADS'):
-        omp_num_threads = os.environ['OMP_NUM_THREADS']
+        OMP_NUM_THREADS = int(os.environ['OMP_NUM_THREADS'])
 
 
 def fbw_kde(data, N=None, MIN=None, MAX=None, overfit_factor=1.0):
@@ -260,7 +260,7 @@ def vbw_kde(data, N=None, MIN=None, MAX=None, evaluate_dens=True,
         Range = maximum - minimum
         if Range == 0:
             logging.warn('Range of data is 0; there are ' + str(len(data)) +
-                          ' data points.')
+                         ' data points.')
         MIN = minimum - Range/10 if MIN is None else MIN
         MAX = maximum + Range/10 if MAX is None else MAX
 
@@ -340,7 +340,7 @@ def vbw_kde(data, N=None, MIN=None, MAX=None, evaluate_dens=True,
               x=evaluate_at.astype(np.double),
               mu=data.astype(np.double),
               sigma=kernel_bandwidths.astype(np.double),
-              threads=int(omp_num_threads))
+              threads=OMP_NUM_THREADS)
 
     # TODO: simply divide by number of points (since using normalized
     # gaussians, each point will contribute an area of 1--or area of the
@@ -370,7 +370,6 @@ def fixed_point(t, M, I, a2):
 
 # TODO: use the "toy" events file instead
 def speedTest():
-    import os
     import cPickle
     import time
     with file('kde_testdata.pkl', 'rb') as F:
@@ -386,5 +385,5 @@ def speedTest():
 
 
 if __name__ == "__main__":
-    print 'OMP_NUM_THREADS =', omp_num_threads
+    print 'OMP_NUM_THREADS =', OMP_NUM_THREADS
     speedTest()

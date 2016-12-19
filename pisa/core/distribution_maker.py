@@ -10,7 +10,7 @@ plot a distribution from pipeline config file(s).
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
 import inspect
-from itertools import product
+from itertools import izip, product
 import os
 
 import numpy as np
@@ -20,14 +20,15 @@ from pisa.core.map import MapSet
 from pisa.core.pipeline import Pipeline
 from pisa.core.param import ParamSet
 from pisa.utils.betterConfigParser import BetterConfigParser
-from pisa.utils.fileio import expandPath, to_file
+from pisa.utils.fileio import expandPath, mkdir, to_file
 from pisa.utils.hash import hash_obj
-from pisa.utils.log import set_verbosity
+from pisa.utils.log import set_verbosity, logging
 from pisa.utils.random_numbers import get_random_state
 
 
 __all__ = ['DistributionMaker',
-           'test_DistributionMaker', 'parse_args', 'main']
+           'test_DistributionMaker',
+           'parse_args', 'main']
 
 
 class DistributionMaker(object):
@@ -77,7 +78,8 @@ class DistributionMaker(object):
     def __iter__(self):
         return iter(self._pipelines)
 
-    def get_outputs(self, return_sum=False, **kwargs):
+    def get_outputs(self, return_sum=False, sum_map_name='total',
+                    sum_map_tex_name='Total', **kwargs):
         """Compute and return the outputs.
 
         Parameters
@@ -99,9 +101,11 @@ class DistributionMaker(object):
         outputs = [pipeline.get_outputs(**kwargs) for pipeline in self]
         if return_sum:
             if len(outputs) > 1:
-                outputs = reduce(lambda x,y: sum(x) + sum(y), outputs)
+                outputs = reduce(lambda x, y: sum(x) + sum(y), outputs)
             else:
                 outputs = sum(sum(outputs))
+            outputs.name = sum_map_name
+            outputs.tex = sum_map_tex_name
             outputs = MapSet(outputs)
         return outputs
 
@@ -110,19 +114,28 @@ class DistributionMaker(object):
 
     def select_params(self, selections, error_on_missing=True):
         successes = 0
-        for pipeline in self:
-            try:
-                pipeline.select_params(selections, error_on_missing=True)
-            except KeyError:
-                pass
-            else:
-                successes += 1
+        if selections is not None:
+            for pipeline in self:
+                try:
+                    pipeline.select_params(selections, error_on_missing=True)
+                except KeyError:
+                    pass
+                else:
+                    successes += 1
 
-        if error_on_missing and successes == 0:
-            raise KeyError(
-                'None of the selections %s found in any pipeline in this'
-                ' distribution maker' %(selections,)
-            )
+            if error_on_missing and successes == 0:
+                raise KeyError(
+                    'None of the selections %s found in any pipeline in this'
+                    ' distribution maker' %(selections,)
+                )
+        else:
+            for pipeline in self:
+                possible_selections = pipeline.param_selections
+                if not len(possible_selections) == 0:
+                    logging.warn("Although you didn't make a parameter "
+                                 "selection, the following were available: %s."
+                                 " This may cause issues."
+                                 %(possible_selections))
 
     @property
     def pipelines(self):
@@ -131,7 +144,7 @@ class DistributionMaker(object):
     @property
     def params(self):
         params = ParamSet()
-        [params.extend(pipeline.params) for pipeline in self.pipelines]
+        [params.extend(pipeline.params) for pipeline in self]
         return params
 
     @property
@@ -153,7 +166,7 @@ class DistributionMaker(object):
 
     @property
     def state_hash(self):
-        return hash_obj([self.source_code_hash] + [s.state_hash for s in self])
+        return hash_obj([self.source_code_hash] + [p.state_hash for p in self])
 
     def set_free_params(self, values):
         """Set free parameters' values.
@@ -163,10 +176,15 @@ class DistributionMaker(object):
         values : list of quantities
 
         """
-        for name, value in zip(self.params.free.names, values):
-            for pipeline in self.pipeline:
-                if name in [p.name for p in pipeline.params.free]:
-                    pipeline.params.free.value = value
+        for name, value in izip(self.params.free.names, values):
+            for pipeline in self:
+                if name in pipeline.params.free.names:
+                    pipeline.params[name] = value
+                elif name in pipeline.params.names:
+                    raise AttributeError(
+                        'Trying to set value for "%s", a parameter that is'
+                        ' fixed in at least one pipeline' %name
+                    )
 
     def randomize_free_params(self, random_state=None):
         if random_state is None:
@@ -190,18 +208,20 @@ class DistributionMaker(object):
         [p.params.set_nominal_by_current_values() for p in self]
 
     def _set_rescaled_free_params(self, rvalues):
-        """Set free param values given a simple list of (0,1) rescaled,
+        """Set free param values given a simple list of [0,1]-rescaled,
         dimensionless values
 
         """
         names = self.params.free.names
-        for pipeline in self.pipelines:
-            fp = pipeline.params.free
-            fp_names = fp.names
-            for name, rvalue in zip(names, rvalues):
-                if name in fp_names:
+        for pipeline in self:
+            for name, rvalue in izip(names, rvalues):
+                if name in pipeline.params.free.names:
                     pipeline.params[name]._rescaled_value = rvalue
-            #pipeline.update_params(fp)
+                elif name in pipeline.params.names:
+                    raise AttributeError(
+                        'Trying to set value for "%s", a parameter that is'
+                        ' fixed in at least one pipeline' %name
+                    )
 
 
 def test_DistributionMaker():
@@ -232,33 +252,47 @@ def test_DistributionMaker():
     for new_hier, new_mat in product(hierarchies, materials):
         new_YeO = YeO[new_mat]
 
-        assert dm.param_selections == sorted([current_hier, current_mat]), str(dm.params.param_selections)
-        assert dm.params.theta23.value == t23[current_hier], str(dm.params.theta23)
+        assert dm.param_selections == sorted([current_hier, current_mat]), \
+                str(dm.params.param_selections)
+        assert dm.params.theta23.value == t23[current_hier], \
+                str(dm.params.theta23)
         assert dm.params.YeO.value == YeO[current_mat], str(dm.params.YeO)
 
         # Select just the hierarchy
         dm.select_params(new_hier)
-        assert dm.param_selections == sorted([new_hier, current_mat]), str(dm.param_selections)
-        assert dm.params.theta23.value == t23[new_hier], str(dm.params.theta23)
-        assert dm.params.YeO.value == YeO[current_mat], str(dm.params.YeO)
+        assert dm.param_selections == sorted([new_hier, current_mat]), \
+                str(dm.param_selections)
+        assert dm.params.theta23.value == t23[new_hier], \
+                str(dm.params.theta23)
+        assert dm.params.YeO.value == YeO[current_mat], \
+                str(dm.params.YeO)
 
         # Select just the material
         dm.select_params(new_mat)
-        assert dm.param_selections == sorted([new_hier, new_mat]), str(dm.param_selections)
-        assert dm.params.theta23.value == t23[new_hier], str(dm.params.theta23)
-        assert dm.params.YeO.value == YeO[new_mat], str(dm.params.YeO)
+        assert dm.param_selections == sorted([new_hier, new_mat]), \
+                str(dm.param_selections)
+        assert dm.params.theta23.value == t23[new_hier], \
+                str(dm.params.theta23)
+        assert dm.params.YeO.value == YeO[new_mat], \
+                str(dm.params.YeO)
 
         # Reset both to "current"
         dm.select_params([current_mat, current_hier])
-        assert dm.param_selections == sorted([current_hier, current_mat]), str(dm.param_selections)
-        assert dm.params.theta23.value == t23[current_hier], str(dm.params.theta23)
-        assert dm.params.YeO.value == YeO[current_mat], str(dm.params.YeO)
+        assert dm.param_selections == sorted([current_hier, current_mat]), \
+                str(dm.param_selections)
+        assert dm.params.theta23.value == t23[current_hier], \
+                str(dm.params.theta23)
+        assert dm.params.YeO.value == YeO[current_mat], \
+                str(dm.params.YeO)
 
         # Select both hierarchy and material
         dm.select_params([new_mat, new_hier])
-        assert dm.param_selections == sorted([new_hier, new_mat]), str(dm.param_selections)
-        assert dm.params.theta23.value == t23[new_hier], str(dm.params.theta23)
-        assert dm.params.YeO.value == YeO[new_mat], str(dm.params.YeO)
+        assert dm.param_selections == sorted([new_hier, new_mat]), \
+                str(dm.param_selections)
+        assert dm.params.theta23.value == t23[new_hier], \
+                str(dm.params.theta23)
+        assert dm.params.YeO.value == YeO[new_mat], \
+                str(dm.params.YeO)
 
         current_hier = new_hier
         current_mat = new_mat
@@ -276,8 +310,27 @@ def parse_args():
         help='''Settings file for each pipeline (repeat for multiple).'''
     )
     parser.add_argument(
-        '--outdir', type=str, action='store',
+        '--select', metavar='PARAM_SELECTIONS', type=str, required=False,
+        help='''Comma-separated list of param selectors to use (overriding any
+        defaults in the config file).'''
+    )
+    parser.add_argument(
+        '--return-sum', action='store_true',
+        help='''Return a sum of the MapSets output by the distribution maker's
+        pipelines as a single map (as opposed to a list of MapSets, one per
+        pipeline)'''
+    )
+    parser.add_argument(
+        '-d', '--dir', type=str, action='store',
         help='Directory into which to store the output'
+    )
+    parser.add_argument(
+        '--pdf', action='store_true',
+        help='''Produce pdf plot(s).'''
+    )
+    parser.add_argument(
+        '--png', action='store_true',
+        help='''Produce png plot(s).'''
     )
     parser.add_argument(
         '-v', action='count', default=None,
@@ -287,29 +340,41 @@ def parse_args():
     return args
 
 
-def main():
+def main(return_outputs=False):
     from pisa.utils.plotter import Plotter
     args = parse_args()
     set_verbosity(args.v)
+    plot_formats = []
+    if args.pdf:
+        plot_formats.append('pdf')
+    if args.png:
+        plot_formats.append('png')
 
     distribution_maker = DistributionMaker(pipelines=args.pipeline)
-    outputs = distribution_maker.get_outputs(return_sum=True)
-    if args.outdir:
+    if args.select is not None:
+        selectors = [s.strip() for s in args.select.split(',')]
+        distribution_maker.select_params(selectors)
+
+    outputs = distribution_maker.get_outputs(return_sum=args.return_sum)
+    if args.dir:
         # TODO: unique filename: append hash (or hash per pipeline config)
         fname = 'distribution_maker_outputs.json.bz2'
-        fpath = expandPath(os.path.join(args.outdir, fname))
+        mkdir(args.dir)
+        fpath = expandPath(os.path.join(args.dir, fname))
         to_file(outputs, fpath)
+
+    if args.dir and len(plot_formats) > 0:
         my_plotter = Plotter(
-            stamp='PISA cake test',
-            outdir=args.outdir,
-            fmt='pdf', log=False,
+            outdir=args.dir,
+            fmt=plot_formats, log=False,
             annotate=False
         )
-        my_plotter.ratio = True
+        #my_plotter.ratio = True
         my_plotter.plot_2d_array(outputs, fname='dist_output', cmap='OrRd')
 
-    return distribution_maker, outputs
+    if return_outputs:
+        return distribution_maker, outputs
 
 
 if __name__ == '__main__':
-    distribution_maker, outputs = main()
+    distribution_maker, outputs = main(return_outputs=True)
