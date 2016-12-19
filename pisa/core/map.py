@@ -9,6 +9,7 @@ MapSet class to contain a set of maps.
 
 Also provide basic mathematical operations that user applies directly to the
 containers but that get passed down to operate on the contained data.
+
 """
 
 
@@ -31,83 +32,105 @@ import uncertainties
 from uncertainties import ufloat
 from uncertainties import unumpy as unp
 
-from pisa import ureg, FTYPE, HASH_SIGFIGS
+from pisa import ureg, HASH_SIGFIGS
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.comparisons import normQuant, recursiveEquality
 from pisa.utils.hash import hash_obj
 from pisa.utils import jsons
 from pisa.utils.fileio import get_valid_filename, mkdir
+from pisa.utils.format import (make_valid_python_name, strip_outer_dollars,
+                               text2tex)
 from pisa.utils.log import logging, set_verbosity
-from pisa.utils.flavInt import NuFlavIntGroup
 from pisa.utils.random_numbers import get_random_state
 from pisa.utils import stats
 
 
-__all__ = ['type_error', 'strip_outer_parens', 'strip_outer_dollars',
-           'sanitize_name', 'reduceToHist', 'rebin',
+__all__ = ['type_error',
+           'reduceToHist', 'rebin',
            'Map', 'MapSet',
            'test_Map', 'test_MapSet']
 
 
+# TODO: inconsistent treatment of metrics in *chi2*, *llh*, and metric* methods
+# (Issue #264: https://github.com/jllanfranchi/pisa/issues/264)
+
+# TODO: make sure logic works for PID-separated-maps as well as
+# PID-as-binning-dimension maps
+
 # TODO: CUDA and numba implementations of rebin if these libs are available
 
-# TODO: move these functions to a generic utils.py module?
+# TODO: move these utilities functions to a generic utils module?
 
 def type_error(value):
-    raise TypeError('Type of argument not supported: "%s"' % type(value))
+    """Generic formulation of a TypeError that can be called throughout the
+    code"""
+    raise TypeError('Type of argument not supported: "%s"'
+                    % value.__class__.__name__)
 
 
-def strip_outer_parens(value):
-    value = value.strip()
-    m = re.match(r'^\{\((.*)\)\}$', value)
-    if m is not None:
-        value = m.groups()[0]
-    m = re.match(r'^\((.*)\)$', value)
-    if m is not None:
-        value = m.groups()[0]
-    return value
+def reduceToHist(obj):
+    """Recursively sum to reduce an object to a single histogram.
 
+    Parameters
+    ----------
+    obj : numpy.ndarray, Map, MapSet, or iterable of MapSets
 
-def strip_outer_dollars(value):
-    value = value.strip()
-    m = re.match(r'^\$(.*)\$$', value)
-    if m is not None:
-        value = m.groups()[0]
-    return value
+    Returns
+    -------
+    hist : numpy.ndarray
+        Single histogram version of `obj`
 
+    Raises
+    ------
+    TypeError if `obj` is an unhandled type
 
-def sanitize_name(name):
-    """Make a name a valid Python identifier.
-
-    From Triptych at http://stackoverflow.com/questions/3303312
     """
-    # Remove invalid characters
-    name = re.sub('[^0-9a-zA-Z_]', '', name)
-    # Remove leading characters until we find a letter or underscore
-    name = re.sub('^[^a-zA-Z_]+', '', name)
-    return name
-
-
-def reduceToHist(expected_values):
-    if isinstance(expected_values, np.ndarray):
-        pass
-    elif isinstance(expected_values, Map):
-        expected_values = expected_values.hist
-    elif isinstance(expected_values, MapSet):
-        expected_values = sum(expected_values).hist
-
-    # If iterable, must be iterable of MapSets
-    elif isinstance(expected_values, Iterable):
-        expected_values = reduce(lambda x, y: x+y,
-                                 expected_values).hist
+    if isinstance(obj, np.ndarray):
+        hist = obj
+    elif isinstance(obj, Map):
+        hist = obj.hist
+    elif isinstance(obj, MapSet):
+        hist = sum(obj).hist
+    elif isinstance(obj, Iterable):
+        hist = sum([reduceToHist(x) for x in obj])
     else:
-        raise ValueError('Unhandled type for `expected_values`: %s'
-                         %type(expected_values))
-    return expected_values
+        raise TypeError('Unhandled type for `obj`: %s' %type(obj))
+    return hist
 
 
-# TODO: put uncertainties in
-def rebin(hist0, orig_binning, new_binning, normalize_values=True):
+def rebin(hist, orig_binning, new_binning, normalize_values=True):
+    """Rebin a histogram.
+
+    Note that the new binning's edges must be a subset of the original
+    binning's edges (i.e. no sub-division or extrapolation of bins is
+    implemented).
+
+    Parameters
+    ----------
+    hist : numpy.ndarray
+        Array containing the (original) histogram's entries
+
+    orig_binning : MultiDimBinning
+        Original binning
+
+    new_binning : MultiDimBinning
+        Desired binning, where `new_binning.bin_edges` must be a subset of
+        `orig_binning.bin_edges`.
+
+    normalize_values : bool
+        Whether to apply `pisa.utils.comparisons.normQuant` to the bin edges
+        prior to comparing `new_binning` to `orig_binning`. This is
+        computationally expensive but ensures similar binnings and eqivalent
+        units do not cause erroneous results. It is recommended to set
+        `normalize_values=True` unless you know the two binning specs are
+        consistently defined.
+
+    Returns
+    -------
+    new_hist : numpy.ndarray
+        New histogram rebinned from `hist`
+
+    """
     if set(new_binning.basenames) != set(orig_binning.basenames):
         raise ValueError(
             "`new_binning` dimensions' basenames %s do not have 1:1"
@@ -117,7 +140,7 @@ def rebin(hist0, orig_binning, new_binning, normalize_values=True):
         )
 
     if orig_binning.edges_hash == new_binning.edges_hash:
-        return hist0
+        return hist
 
     orig_dim_indices = []
     new_dim_indices = []
@@ -138,10 +161,10 @@ def rebin(hist0, orig_binning, new_binning, normalize_values=True):
         if not np.all(new_edges == orig_edges):
             orig_edge_idx = np.array([np.where(orig_edges == n)
                                       for n in new_edges]).ravel()
-            hist0 = np.add.reduceat(hist0, orig_edge_idx[:-1],
-                                    axis=orig_dim_idx)
+            hist = np.add.reduceat(hist, orig_edge_idx[:-1],
+                                   axis=orig_dim_idx)
 
-    new_hist = np.moveaxis(hist0, source=orig_dim_indices,
+    new_hist = np.moveaxis(hist, source=orig_dim_indices,
                            destination=new_dim_indices)
 
     return new_hist
@@ -252,20 +275,13 @@ class Map(object):
                     'full_comparison')
 
     def __init__(self, name, hist, binning, error_hist=None, hash=None,
-                 tex=None, full_comparison=True):
+                 tex=None, full_comparison=False):
         # Set Read/write attributes via their defined setters
-        super(Map, self).__setattr__('_name', name)
-        # TeX dict for some common map names
-        if tex is None:
-            fg = NuFlavIntGroup(name)
-            tex = fg.tex()
-            # TODO: handle automatically assigning tex names when it's
-            # unassigned in other code, such as in plotting code
-            if tex == '':
-                tex = (r'\rm{%s}' % name).replace('_', r'\_')
-        super(Map, self).__setattr__('_tex', tex)
-        super(Map, self).__setattr__('_hash', hash)
-        super(Map, self).__setattr__('_full_comparison', full_comparison)
+        super(self.__class__, self).__setattr__('_name', name)
+        super(self.__class__, self).__setattr__('_tex', tex)
+        super(self.__class__, self).__setattr__('_hash', hash)
+        super(self.__class__, self).__setattr__('_full_comparison',
+                                                full_comparison)
 
         if not isinstance(binning, MultiDimBinning):
             if isinstance(binning, Sequence):
@@ -278,10 +294,11 @@ class Map(object):
         self.parent_indexer = None
 
         # Do the work here to set read-only attributes
-        super(Map, self).__setattr__('_binning', binning)
+        super(self.__class__, self).__setattr__('_binning', binning)
         binning.assert_array_fits(hist)
-        super(Map, self).__setattr__('_hist',
-                                     np.ascontiguousarray(hist))
+        super(self.__class__, self).__setattr__(
+            '_hist', np.ascontiguousarray(hist)
+        )
         if error_hist is not None:
             self.set_errors(error_hist)
         self.normalize_values = True
@@ -303,7 +320,7 @@ class Map(object):
 
     def __str__(self):
         attrs = ['name', 'tex', 'binning', 'full_comparison', 'hash', 'hist']
-        state = {a:getattr(self, a) for a in attrs}
+        state = {a: getattr(self, a) for a in attrs}
         state['name'] = repr(state['name'])
         state['tex'] = repr(state['tex'])
         state['hist'] = np.array_repr(state['hist'])
@@ -335,7 +352,7 @@ class Map(object):
     def set_poisson_errors(self):
         """Approximate poisson errors using sqrt(n)."""
         nom_values = self.nominal_values
-        super(Map, self).__setattr__(
+        super(self.__class__, self).__setattr__(
             '_hist',
             unp.uarray(nom_values, np.sqrt(nom_values))
         )
@@ -353,83 +370,93 @@ class Map(object):
 
         """
         if error_hist is None:
-            super(Map, self).__setattr__('_hist', self.nominal_values)
+            super(self.__class__, self).__setattr__(
+                '_hist', self.nominal_values
+            )
             return
         self.assert_compat(error_hist)
-        super(Map, self).__setattr__(
+        super(self.__class__, self).__setattr__(
             '_hist',
             unp.uarray(self._hist, np.ascontiguousarray(error_hist))
         )
 
+    # TODO: make this return an OrderedDict to organize all of the returned
+    # objects
     def compare(self, ref):
-        """Compare this map with another.
+        """Compare this map with another, where the other map is taken to be
+        the "reference" against which this is compared.
 
         Parameters
         ----------
         ref : Map
-            Map against with to compare. Taken as reference. Must have same
-            binning as this map.
+            Map against with to compare this one. `ref is taken as reference.
+            Each dimension in `ref.binning` must have the same name and
+            bin edges as this map, but the order of the dimensions does not
+            matter.
 
         Returns
         -------
-        ratio, diff, fract : Maps for self/ref, sef-ref, and (self-ref)/ref
-        max_diff_ratio, max_diff : float
-        nanmatch, infmatch : bool, whether nan elements and +/- inf elements
-            align (+inf is not equal to -inf)
+        comparisons : OrderedDict containing the following key/value pairs:
+          * 'diff' : Map, `self - ref`
+          * 'fractdiff' : Map, `(self - ref) / ref`
+          * 'max_abs_diff' : float, `max(abs(diff))`
+          * 'max_abs_fractdiff' : float, `max(abs(fractdiff))`
+          * 'nanmatch' : bool, whether nan elements match
+          * 'infmatch' : bool, whether +inf (and separately -inf) entries match
 
         """
         assert isinstance(ref, Map)
         assert ref.binning == self.binning
         diff = self - ref
         with np.errstate(divide='ignore', invalid='ignore'):
-            ratio = self / ref
-            fract_diff = diff / ref
+            fractdiff = diff / ref
 
-        #diff.name = self.name + '-' + ref.name
-        #diff.tex = self.tex + ' - ' + ref.tex
-
-        #ratio.name = self.name + '/' + ref.name
-        #ratio.tex = self.tex + '/' + ref.tex
-
-        #fract_diff.name = '(' + self.name + '-' + ref.name + ')/' + ref.name
-        #fract_diff.tex = '(' + self.tex + '-' + ref.tex + ')/' + ref.tex
-
-        max_diff_ratio = np.nanmax(np.abs(fract_diff.hist))
+        max_abs_fractdiff = np.nanmax(np.abs(fractdiff.nominal_values))
 
         # Handle cases where ratio returns infinite
         # This isn't necessarily a fail, since all it means is the referene was
         # zero; if the new value is sufficiently close to zero then it's still
         # fine.
-        if np.isinf(max_diff_ratio):
+        if np.isinf(max_abs_fractdiff):
             # First find all the finite elements
-            finite_mask = np.isfinite(fract_diff.hist)
+            finite_mask = np.isfinite(fractdiff.nominal_values)
             # Then find the nanmax of this, will be our new test value
-            max_diff_ratio = np.nanmax(np.abs(fract_diff.hist[finite_mask]))
+            max_abs_fractdiff = np.nanmax(np.abs(
+                fractdiff.nominal_values[finite_mask]
+            ))
+
+            # TODO(bug): Why is ~finite_mask used to select elements here?
+            # Shouldn't all elements be considered, regardless if fractdiff is
+            # inf somewhere?
+
             # Also find all the infinite elements; compute a second test value
-            max_diff = np.nanmax(np.abs(diff.hist[~finite_mask]))
+            max_abs_diff = np.nanmax(np.abs(diff.nominal_values[~finite_mask]))
         else:
             # Without any infinite elements we can ignore this second test
-            max_diff = np.nanmax(np.abs(diff.hist))
+            max_abs_diff = np.nanmax(np.abs(diff.nominal_values))
 
-        nanmatch = bool(np.all(np.isnan(self.hist) == np.isnan(ref.hist)))
+        nanmatch = bool(np.all(np.isnan(self.nominal_values)
+                               == np.isnan(ref.nominal_values)))
         infmatch = bool(np.all(
-            self.hist[np.isinf(self.hist)] == ref.hist[np.isinf(ref.hist)]
+            self.nominal_values[np.isinf(self.nominal_values)]
+            == ref.nominal_values[np.isinf(ref.nominal_values)]
         ))
 
         comparisons = OrderedDict([
             ('diff', diff),
-            ('ratio', ratio),
-            ('fract_diff', fract_diff),
-            ('max_diff_ratio', max_diff_ratio),
-            ('max_diff', max_diff),
+            ('fractdiff', fractdiff),
+            ('max_abs_fractdiff', max_abs_fractdiff),
+            ('max_abs_diff', max_abs_diff),
             ('nanmatch', nanmatch),
             ('infmatch', infmatch)
         ])
+
         return comparisons
 
     def plot(self, evtrate=True, symm=False, logz=False, fig=None, ax=None,
              title=None, outdir=None, fname=None, backend='pdf', fmt='pdf',
              cmap=None, fig_kw=None, plt_kw=None, vmax=None):
+        """Simple plot of a map"""
         import matplotlib as mpl
         if (backend is not None
                 and mpl.get_backend().lower() != backend.lower()):
@@ -622,6 +649,9 @@ class Map(object):
         """Rebin the map with bin edge lodations and names according to those
         specified in `new_binning`.
 
+        Calls the `rebin` function in the pisa.core.map.rebin module to do the
+        actual work.
+
         Parameters
         ----------
         new_binning : MultiDimBinning
@@ -632,15 +662,21 @@ class Map(object):
         -------
         Map binned according to `new_binning`.
 
+        See Also
+        ---------
+        `pisa.core.map.rebin` : function called to do the work
+
         """
         # TODO: put uncertainties in
-        new_hist = rebin(self.hist, self.binning, new_binning)
+        new_hist = rebin(hist=self.hist, orig_binning=self.binning,
+                         new_binning=new_binning)
         return {'hist': new_hist, 'binning': new_binning}
 
     def downsample(self, *args, **kwargs):
         """Downsample by integer factors.
 
-        See pisa.utils.binning.downsample for args/kwargs details.
+        See pisa.utils.binning.MultiDimBinning.downsample for args/kwargs
+        details.
 
         """
         new_binning = self.binning.downsample(*args, **kwargs)
@@ -648,8 +684,28 @@ class Map(object):
 
     @_new_obj
     def fluctuate(self, method, random_state=None, jumpahead=0):
+        """Apply fluctuations to the map's values.
+
+        Parameters
+        ----------
+        method : None or string
+            Valid strings are '', 'none', 'poisson', or 'gauss+poisson'.
+            Strings are case-insensitive and whitespace is removed.
+
+        random_state : None or type accepted by utils.random_numbers.get_random_state
+
+        jumpahead : int >= 0
+            After instantiating the random_state object, move `jumpahead`
+            positions forward in the Mersenne twister's finite state machine
+
+        Returns
+        -------
+        fluctuated_map : Map
+            New map with entries fluctuated as compared to this map
+
+        """
         orig = method
-        method = str(method).lower()
+        method = str(method).strip().lower().replace(' ', '')
         if method == 'poisson':
             random_state = get_random_state(random_state, jumpahead=jumpahead)
             with np.errstate(invalid='ignore'):
@@ -693,11 +749,11 @@ class Map(object):
                 error_vals[nan_at] = np.nan
             return {'hist': unp.uarray(hist_vals, error_vals)}
 
-        elif method in ['', 'none', 'false']:
+        elif method in ['', 'none']:
             return {}
 
         else:
-            raise Exception('fluctuation method %s not implemented' %orig)
+            raise ValueError('unhandled `method` = %s' %orig)
 
     @property
     def shape(self):
@@ -844,10 +900,10 @@ class Map(object):
         """Only allow setting attributes defined in slots"""
         if attr not in self._slots:
             raise ValueError('Attribute "%s" not allowed to be set.' % attr)
-        super(Map, self).__setattr__(attr, value)
+        super(self.__class__, self).__setattr__(attr, value)
 
     def __getattr__(self, attr):
-        return super(Map, self).__getattribute__(attr)
+        return super(self.__class__, self).__getattribute__(attr)
 
     @_new_obj
     def _slice_or_index(self, idx):
@@ -952,19 +1008,18 @@ class Map(object):
             new_hist = rearranged_hist[bin_index, ...]
             if bin.bin_names is not None:
                 bin_name = bin.bin_names[0]
+                bin_tex = '=' + text2tex(bin_name)
             else:
-                bin_name = str(bin_index)
+                bin_name = 'bin_%d' % bin_index
+                bin_tex = r'{\;}bin{\;}%d' % bin_index
 
-            if len(self.name) > 0:
-                new_name = '%s__%s' %(self.name, bin_name)
-            else:
-                new_name = '%s' %bin_name
+            name_elements = []
+            for s in [self.name, spliton_dim.name, bin_name]:
+                if s is not None and len(s) > 0:
+                    name_elements.append(s)
+            new_name = '_'.join(name_elements)
 
-            if len(self.tex) > 0:
-                new_tex = r'%s, \; %s = {\rm %s}' %(self.tex, spliton_dim.tex,
-                                                    bin_name)
-            else:
-                new_tex = r'%s = {\rm %s}' %(spliton_dim.tex, bin_name)
+            new_tex = self.tex + ',' + r'{\;}' + spliton_dim.tex + bin_tex
 
             maps.append(
                 Map(name=new_name, hist=new_hist, binning=new_binning,
@@ -981,7 +1036,7 @@ class Map(object):
         else:
             mapset_name = 'split_on__%s' % spliton_dim.name
 
-        if len(self.tex) > 0:
+        if self.tex is not None and len(self.tex) > 0:
             mapset_tex = r'%s, \; %s' %(self.tex, spliton_dim.tex)
         else:
             mapset_tex = r'%s' %spliton_dim.tex
@@ -989,10 +1044,10 @@ class Map(object):
         return MapSet(maps=maps, name=mapset_name, tex=mapset_tex)
 
     def llh(self, expected_values):
-        """Calculate the total log-likelihood value between this map and the map
-        described by `expected_values`; self is taken to be the "actual values"
-        (or (pseudo)data), and `expected_values` are the expectation values for
-        each bin.
+        """Calculate the total log-likelihood value between this map and the
+        map described by `expected_values`; self is taken to be the "actual
+        values" (or (pseudo)data), and `expected_values` are the expectation
+        values for each bin.
 
         Parameters
         ----------
@@ -1042,6 +1097,8 @@ class Map(object):
         total_barlow_llh : float
 
         """
+        # TODO: should this handle reduceToHist / expected_values as other
+        # methods do, or should they handle these the way this method does?
         if isinstance(expected_values, (np.ndarray, Map, MapSet)):
             expected_values = reduceToHist(expected_values)
         elif isinstance(expected_values, Iterable):
@@ -1088,6 +1145,7 @@ class Map(object):
                                  expected_values=expected_values))
 
     def metric_total(self, expected_values, metric):
+        # TODO: should this use reduceToHist as in chi2 and llh above?
         if metric in stats.ALL_METRICS:
             return getattr(self, metric)(expected_values)
         else:
@@ -1099,21 +1157,28 @@ class Map(object):
 
     @property
     def name(self):
+        """string : Map's name"""
         return self._name
 
     @name.setter
     def name(self, value):
+        """map name"""
         assert isinstance(value, basestring)
-        return super(Map, self).__setattr__('_name', value)
+        return super(self.__class__, self).__setattr__('_name', value)
 
     @property
     def tex(self):
+        """string : TeX label"""
+        if self._tex is None or len(self._tex) == 0:
+            super(self.__class__, self).__setattr__(
+                '_tex', text2tex(self.name)
+            )
         return self._tex
 
     @tex.setter
     def tex(self, value):
         assert isinstance(value, basestring)
-        return super(Map, self).__setattr__('_tex', value)
+        return super(self.__class__, self).__setattr__('_tex', value)
 
     @property
     def hash(self):
@@ -1123,7 +1188,7 @@ class Map(object):
     def hash(self, value):
         """Hash must be an immutable type (i.e., have a __hash__ method)"""
         assert hasattr(value, '__hash__')
-        super(Map, self).__setattr__('_hash', value)
+        super(self.__class__, self).__setattr__('_hash', value)
 
     @property
     def hist(self):
@@ -1149,7 +1214,7 @@ class Map(object):
     @full_comparison.setter
     def full_comparison(self, value):
         assert isinstance(value, bool)
-        super(Map, self).__setattr__('_full_comparison', value)
+        super(self.__class__, self).__setattr__('_full_comparison', value)
 
     # Common mathematical operators
 
@@ -1231,7 +1296,7 @@ class Map(object):
         equality as for a numpy array. Call this.hist == other.hist for the
         element-by-element nominal value and the error.
 
-        If `full_comparison` is true for *both* maps, or if either map lacks a
+        If `full_comparison` is true for either map, or if either map lacks a
         hash, performs a full comparison of the contents of each map.
 
         Otherwise, simply checks that the hashes are equal.
@@ -1480,14 +1545,15 @@ class MapSet(object):
             else:
                 maps_.append(Map(**m))
 
-        # TODO: handle automatically assigning tex names when it's unassigned
-        # in other code, such as in plotting code
-        tex = (r'{\rm %s}' %name).replace('_', r'\_') if tex is None else tex
-        super(MapSet, self).__setattr__('maps', maps_)
-        super(MapSet, self).__setattr__('name', name)
-        super(MapSet, self).__setattr__('tex', tex)
-        super(MapSet, self).__setattr__('collate_by_name', collate_by_name)
-        super(MapSet, self).__setattr__('collate_by_num', not collate_by_name)
+        super(self.__class__, self).__setattr__('maps', maps_)
+        super(self.__class__, self).__setattr__('name', name)
+        super(self.__class__, self).__setattr__('tex', tex)
+        super(self.__class__, self).__setattr__(
+            'collate_by_name', collate_by_name
+        )
+        super(self.__class__, self).__setattr__(
+            'collate_by_num', not collate_by_name
+        )
         self.hash = hash
 
     def __repr__(self):
@@ -1673,7 +1739,7 @@ class MapSet(object):
         -----
         If special characters are used in the regex, like a backslash, be sure
         to use a Python raw string (which does not interpret such special
-        characters), by prefixing the string with an "r". E.g., the regex to
+        characters) by prefixing the string with an "r". E.g., the regex to
         match a period requires passing
             `regex=r'\.'`
 
@@ -1736,7 +1802,7 @@ class MapSet(object):
             # Attach a "reasonable" name to the map; the caller can do better,
             # but this at least gives the user an idea of what the map
             # represents
-            m.name = sanitize_name(pattern)
+            m.name = make_valid_python_name(pattern)
             resulting_maps.append(m)
         if len(resulting_maps) == 1:
             return resulting_maps[0]
@@ -1797,13 +1863,32 @@ class MapSet(object):
                 m = copy(maps_to_combine[0])
             # Reasonable name for giving user an idea of what the map
             # represents
-            m.name = sanitize_name(expr)
+            m.name = make_valid_python_name(expr)
             resulting_maps.append(m)
         if len(resulting_maps) == 1:
             return resulting_maps[0]
         return MapSet(resulting_maps)
 
     def compare(self, ref):
+        """Compare maps in this MapSet against a reference MapSet.
+
+        Parameters
+        ----------
+        ref : MapSet
+            Maps taken as the reference against which to compare maps
+            contained within this MapSet.
+
+        Returns
+        -------
+        stats : OrderedDict
+            Each key is the name of a map, and each value is istelf an
+            OrderedDict as returned by the `Map.compare` method
+
+        Examples
+        --------
+        >>> stats = map_set_test.compare(map_set_ref)
+
+        """
         assert isinstance(ref, MapSet) and len(self) == len(ref)
         rslt = OrderedDict()
         for m, r in izip(self, ref):
@@ -1816,11 +1901,11 @@ class MapSet(object):
 
     @property
     def name(self):
-        return super(MapSet, self).__getattribute__('_name')
+        return super(self.__class__, self).__getattribute__('_name')
 
     @name.setter
     def name(self, name):
-        return super(MapSet, self).__setattr__('_name', name)
+        return super(self.__class__, self).__setattr__('_name', name)
 
     @property
     def hash(self):
@@ -2190,6 +2275,7 @@ class MapSet(object):
 
 # TODO: add tests for llh, chi2 methods
 def test_Map():
+    """Unit tests for Map class"""
     n_ebins = 10
     n_czbins = 5
     n_azbins = 2
@@ -2338,6 +2424,7 @@ def test_Map():
 # TODO: add tests for llh, chi2 methods
 # TODO: make tests use assert rather than rely on logging.debug(str((!)))
 def test_MapSet():
+    """Unit tests for MapSet class"""
     n_ebins = 6
     n_czbins = 3
     e_binning = OneDimBinning(name='energy', tex=r'E_\nu', num_bins=n_ebins,
@@ -2415,7 +2502,7 @@ def test_MapSet():
 
     assert ms1.maps == [m1, m2]
     assert ms1.names == ['ones', 'twos']
-    assert ms1.tex == r'{\rm map set 1}'
+    assert ms1.tex is None
     # Check the Poisson errors
     assert np.all(ms1[0].nominal_values == np.ones(binning.shape))
     assert np.all(ms1[0].std_devs == np.ones(binning.shape))

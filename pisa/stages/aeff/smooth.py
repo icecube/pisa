@@ -1,23 +1,22 @@
 # authors: J.Lanfranchi/P.Eller/M.Weiss
 # date:   March 20, 2016
+"""
+Smoothed-histogram effective areas stage
 
-import matplotlib as mpl
-# TODO: use backend
-import matplotlib.pyplot as plt
+"""
+
 import numpy as np
 from scipy.interpolate import interp2d, splrep, splev
 import uncertainties as unc
 from uncertainties import unumpy as unp
 
-from pisa import ureg, Q_
-from pisa.core.binning import OneDimBinning, MultiDimBinning
-from pisa.core.events import Events
+from pisa import ureg
+from pisa.core.binning import OneDimBinning
 from pisa.core.map import Map
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
-from pisa.utils.hash import hash_obj
-from pisa.utils.log import logging, set_verbosity
+from pisa.utils.log import logging
 from pisa.utils.plotter import Plotter
 from pisa.utils.profiler import profile
 
@@ -243,9 +242,9 @@ class smooth(Stage):
         smoothed_cz_slices = []
         for index in xrange(len(czbins)):
             # Get slice and slice error
-            cz_slice = hist[index,:]
+            cz_slice = hist[index, :]
             if error is not None:
-                cz_slice_err = error[index,:]
+                cz_slice_err = error[index, :]
 
             # Remove extra dimensions
             s_cz_slice = np.squeeze(cz_slice)
@@ -284,7 +283,7 @@ class smooth(Stage):
         # Iterate through e-slices
         smoothed_e_slices = []
         for e_slice_num in xrange(smoothed_cz_slices.shape[1]):
-            e_slice = smoothed_cz_slices[:,e_slice_num]
+            e_slice = smoothed_cz_slices[:, e_slice_num]
 
             # Fit spline to e-slice
             e_slice_spline = splrep(
@@ -435,15 +434,18 @@ class smooth(Stage):
 
         smoothing_e_binning = OneDimBinning(
             name='true_energy', tex=r'E_\nu',
-            is_log=True, num_bins=39, domain=[1,80]*ureg.GeV
+            is_log=True, num_bins=39, domain=[1, 80]*ureg.GeV
         )
         smoothing_cz_binning = OneDimBinning(
             name='true_coszen', tex=r'\cos\theta_\nu', is_lin=True,
-            num_bins=40, domain=[-1,1]*ureg(None)
+            num_bins=40, domain=[-1, 1]*ureg(None)
         )
         smoothing_binning = smoothing_e_binning * smoothing_cz_binning
-        smoothing_binning = smoothing_binning.reorder_dimensions(self.input_binning)
+        smoothing_binning = smoothing_binning.reorder_dimensions(
+            self.input_binning
+        )
 
+        nominal_transforms = []
         raw_transforms = []
         smooth_transforms = []
         interp_transforms = []
@@ -556,6 +558,9 @@ class smooth(Stage):
         # DEBUG MODE
         #
         if self.debug_mode:
+            import matplotlib as mpl
+            mpl.use('pdf')
+            import matplotlib.pyplot as plt
             self.raw_transforms = raw_transforms
             self.smooth_transforms = smooth_transforms
             self.interp_transforms = interp_transforms
@@ -668,7 +673,7 @@ class smooth(Stage):
                 assert raw_xform.input_binning == smooth_xform.input_binning
                 ebins = raw_xform.input_binning.true_energy
                 czbin = raw_xform.input_binning.true_coszen[i_cz]
-                binning = MultiDimBinning([czbin, ebins])
+                binning = czbin * ebins
 
                 nom_cz_slice = raw_xform.xform_array[i_cz]
                 nom_cz_slice = nom_cz_slice.reshape((1, -1))
@@ -720,11 +725,12 @@ class smooth(Stage):
                         and transform.output_name in xform_flavints):
                     if aeff_transform is None:
                         scale = aeff_scale * livetime_s
-                        if (self.particles == 'neutrinos'
-                            and ('nutau_cc' in transform.output_name
+                        if (self.particles == 'neutrinos' and
+                                ('nutau_cc' in transform.output_name
                                  or 'nutaubar_cc' in transform.output_name)):
                             scale *= nutau_cc_norm
                         aeff_transform = transform.xform_array * scale
+
                     new_xform = BinnedTensorTransform(
                         input_names=transform.input_names,
                         output_name=transform.output_name,

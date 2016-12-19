@@ -25,16 +25,12 @@ import numpy as np
 from pisa.analysis.hypo_testing import HypoTesting
 from pisa.core.map import Map
 from pisa.utils.fileio import mkdir
+from pisa.utils.format import text2tex
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
 
 
-__all__ = ['fmt_tex', 'plot_asymmetry', 'parse_args', 'normcheckpath', 'main']
-
-
-def fmt_tex(s):
-    """Convert common characters so they show up the same as TeX"""
-    return r'{\rm ' + s.replace('_', r'\_').replace(' ', r'\;') + '}'
+__all__ = ['plot_asymmetry', 'parse_args', 'normcheckpath', 'main']
 
 
 def plot_asymmetry(h0_map, h0_name, h1_map, h1_name, fulltitle, savename,
@@ -53,16 +49,17 @@ def plot_asymmetry(h0_map, h0_name, h1_map, h1_name, fulltitle, savename,
         binning=h0_map.binning
     )
 
-    asymmetrylabel = (r'$\left(N_{\mathrm{%s}}-N_{\mathrm{%s}}\right)'
-                      r'/\sqrt{N_{\mathrm{%s}}}$'
-                      % (fmt_tex(h1_name), fmt_tex(h0_name), fmt_tex(h0_name)))
+    asymmetrylabel = (r'$\left(N_{%s}-N_{%s}\right)'
+                      r'/\sqrt{N_{%s}}$'
+                      % (text2tex(h1_name), text2tex(h0_name),
+                         text2tex(h0_name)))
 
     vmax = max(np.nanmax(h0_map.hist), np.nanmax(h1_map.hist))
 
     h0_map.plot(
         fig=fig,
         ax=axes[0],
-        title='Hypothesis 0: $%s$' % fmt_tex(h0_name),
+        title='Hypothesis 0: $%s$' % text2tex(h0_name),
         cmap=plt.cm.afmhot,
         vmax=vmax
     )
@@ -70,7 +67,7 @@ def plot_asymmetry(h0_map, h0_name, h1_map, h1_name, fulltitle, savename,
     h1_map.plot(
         fig=fig,
         ax=axes[1],
-        title='Hypothesis 1: $%s$' % fmt_tex(h1_name),
+        title='Hypothesis 1: $%s$' % text2tex(h1_name),
         cmap=plt.cm.afmhot,
         vmax=vmax
     )

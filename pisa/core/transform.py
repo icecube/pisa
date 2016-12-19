@@ -13,7 +13,10 @@ from copy import deepcopy
 from functools import wraps
 import importlib
 import inspect
+import os
+import shutil
 import sys
+import tempfile
 
 import numpy as np
 from uncertainties import unumpy as unp
@@ -24,6 +27,7 @@ from pisa.core.map import Map, MapSet, rebin
 from pisa.utils.comparisons import normQuant, recursiveEquality
 from pisa.utils.hash import hash_obj
 from pisa.utils import jsons
+from pisa.utils.log import logging, set_verbosity
 
 
 __all__ = ['TransformSet', 'Transform', 'BinnedTensorTransform']
@@ -59,6 +63,7 @@ __all__ = ['TransformSet', 'Transform', 'BinnedTensorTransform']
 #                    out[i1,j1] += x[i1,j1] * xform[i0,j0,i1,j1]
 #    return out
 
+# TODO: add tex attr to TransformSet
 
 # TODO: Add Sequence capabilities to TransformSet (e.g. it'd be nice to have at
 # least append, extend, ...)
@@ -168,6 +173,7 @@ class TransformSet(object):
 
     @property
     def hash(self):
+        """Hash for entire set of transforms"""
         hashes = self.hashes
         if len(hashes) > 0:
             if all([(h is not None and h == hashes[0]) for h in hashes]):
@@ -183,6 +189,7 @@ class TransformSet(object):
 
     @property
     def hashes(self):
+        """List of hashes, one per transform in the set"""
         return [t.hash for t in self]
 
     # TODO: implement a non-volatile hash that includes source code hash in
@@ -193,6 +200,7 @@ class TransformSet(object):
 
     @property
     def input_names(self):
+        """Inputs to the transform must include inputs with these names"""
         input_names = set()
         [input_names.update(x.input_names) for x in self]
         return sorted(input_names)
@@ -263,12 +271,12 @@ class TransformSet(object):
         # Automatically attach a sensible hash (this may be overwritten, but
         # the below should be a reasonable hash in most cases)
         if inputs.hash is None or self.hash is None:
-            hash = None
+            hash_ = None
         else:
-            hash = hash_obj((inputs.hash, self.hash))
+            hash_ = hash_obj((inputs.hash, self.hash))
 
         # TODO: what to set for map set's name, tex, etc. ?
-        return MapSet(maps=outputs, hash=hash)
+        return MapSet(maps=outputs, hash=hash_)
 
     def __getattr__(self, attr):
         if attr in TRANS_SET_SLOTS:
@@ -329,7 +337,7 @@ class Transform(object):
         else:
             self._output_binning = None
 
-        self._tex = tex if tex is not None else output_name
+        self._tex = tex
         self._hash = hash
         if bool(error_method):
             self._error_method = error_method
@@ -434,6 +442,11 @@ class Transform(object):
     def tex(self):
         return self._tex
 
+    @tex.setter
+    def tex(self, val):
+        assert val is None or isinstance(val, basestring)
+        self._tex = val
+
     @property
     def error_method(self):
         return self._error_method
@@ -455,6 +468,46 @@ class Transform(object):
     def validate_input(self, inputs):
         """Override this method in subclasses"""
         raise NotImplementedError('Override this method in subclasses')
+
+
+def _new_obj(original_function):
+    """Decorator to deepcopy unaltered states into new object
+
+    Parameters
+    ----------
+    original_function : callable
+        Callable must return None or a Mapping with some or all of
+        _state_attrs defined.
+
+    Returns
+    -------
+    new_function : callable
+        New function that wraps `original_function`. `new_function` returns
+        an instantiated object with _state_attrs from the current object
+        but updated with any _state_attrs defined in the output from the
+        call to `original_function`.
+
+    """
+    @wraps(original_function)
+    def new_function(self, *args, **kwargs):
+        """Wrapper function for returning an instantiated object based on
+        current state of an object but with updates to those states based
+        on the output from calling the original function.
+
+        (Note that this docstring is here for reference within the
+        sourcecode, but is overwritten at run-time by the @wraps
+        decorator.)
+
+        """
+        new_state = OrderedDict()
+        state_updates = original_function(self, *args, **kwargs)
+        for slot in self._state_attrs:
+            if state_updates.has_key(slot):
+                new_state[slot] = state_updates[slot]
+            else:
+                new_state[slot] = deepcopy(getattr(self, slot))
+        return BinnedTensorTransform(**new_state)
+    return new_function
 
 
 # TODO: integrate uncertainties module in with this so that a transform can
@@ -562,17 +615,16 @@ class BinnedTensorTransform(Transform):
     @property
     def _serializable_state(self):
         state = super(BinnedTensorTransform, self)._serializable_state
-        state['xform_array'] = unp.nominal_values(self.xform_array)
-        state['error_array'] = unp.std_devs(self.xform_array)
+        state['xform_array'] = self.nominal_values
+        state['error_array'] = self.std_devs
         return state
 
     @property
     def _hashable_state(self):
         state = super(BinnedTensorTransform, self)._hashable_state
-        state['xform_array'] = normQuant(unp.nominal_values(self.xform_array),
+        state['xform_array'] = normQuant(self.nominal_values,
                                          sigfigs=HASH_SIGFIGS)
-        state['error_array'] = normQuant(unp.std_devs(self.xform_array),
-                                         sigfigs=HASH_SIGFIGS)
+        state['error_array'] = normQuant(self.std_devs, sigfigs=HASH_SIGFIGS)
         return state
 
     def set_errors(self, error_array):
@@ -589,17 +641,18 @@ class BinnedTensorTransform(Transform):
         """
         if error_array is None:
             super(self.__class__, self).__setattr__(
-                '_xform_array', unp.nominal_values(self._xform_array)
+                '_xform_array', self.nominal_values
             )
             return
         assert error_array.shape == self.xform_array.shape
         super(BinnedTensorTransform, self).__setattr__(
             '_xform_array',
-            unp.uarray(self._xform_array, np.ascontiguousarray(error_array))
+            unp.uarray(self.xform_array, np.ascontiguousarray(error_array))
         )
 
     @property
     def xform_array(self):
+        """Numpy ndarray containing raw transform"""
         return self._xform_array
 
     @xform_array.setter
@@ -607,19 +660,13 @@ class BinnedTensorTransform(Transform):
         self.validate_transform(self.input_binning, self.output_binning, x)
         self._xform_array = np.ascontiguousarray(x)
 
-    def _new_obj(original_function):
-        """Decorator to deepcopy unaltered states into new object"""
-        @wraps(original_function)
-        def new_function(self, *args, **kwargs):
-            new_state = OrderedDict()
-            state_updates = original_function(self, *args, **kwargs)
-            for slot in self._state_attrs:
-                if state_updates.has_key(slot):
-                    new_state[slot] = state_updates[slot]
-                else:
-                    new_state[slot] = deepcopy(getattr(self, slot))
-            return self.__class__(**new_state)
-        return new_function
+    @property
+    def nominal_values(self):
+        return unp.nominal_values(self.xform_array)
+
+    @property
+    def std_devs(self):
+        return unp.std_devs(self.xform_array)
 
     @_new_obj
     def __abs__(self):
@@ -650,7 +697,7 @@ class BinnedTensorTransform(Transform):
 
     @_new_obj
     def __ne__(self, other):
-        return not self == other
+        return not self.__eq__(other)
 
     @_new_obj
     def __neg__(self):
@@ -686,6 +733,7 @@ class BinnedTensorTransform(Transform):
 
     @_new_obj
     def sqrt(self):
+        """Square root of the transform"""
         return dict(xform_array=np.sqrt(self.xform_array))
 
     @_new_obj
@@ -803,6 +851,8 @@ class BinnedTensorTransform(Transform):
                            for n in names]
             input_array = np.stack(input_array, axis=0)
 
+        # TODO: is logic kosher here?
+
         # Transform same shape: element-by-element multiplication
         if self.xform_array.shape == input_array.shape:
             if (isinstance(self.error_method, basestring) and
@@ -864,10 +914,7 @@ class BinnedTensorTransform(Transform):
 
 
 def test_BinnedTensorTransform():
-    import os
-    import shutil
-    import tempfile
-
+    """Unit tests for BinnedTensorTransform class"""
     binning = MultiDimBinning([
         dict(name='energy', is_log=True, domain=(1, 80)*ureg.GeV, num_bins=10),
         dict(name='coszen', is_lin=True, domain=(-1, 0), num_bins=5)
@@ -926,7 +973,7 @@ def test_BinnedTensorTransform():
     finally:
         shutil.rmtree(testdir, ignore_errors=True)
 
-    print '<< PASSED : test_BinnedTensorTransform >>'
+    logging.info('<< PASSED : test_BinnedTensorTransform >>')
 
     xforms = TransformSet(
         name='scaling',
@@ -938,7 +985,7 @@ def test_BinnedTensorTransform():
     xforms.hash = -20
     assert xforms.hash == -20
 
-    outputs = xforms.apply(inputs)
+    _ = xforms.apply(inputs)
 
     # TODO: get this working above, then test here!
     #xforms2 = xforms * 2
@@ -953,8 +1000,9 @@ def test_BinnedTensorTransform():
     finally:
         shutil.rmtree(testdir, ignore_errors=True)
 
-    print '<< PASSED : test_TransformSet >>'
+    logging.info('<< PASSED : test_TransformSet >>')
 
 
 if __name__ == "__main__":
+    set_verbosity(1)
     test_BinnedTensorTransform()

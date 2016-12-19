@@ -293,9 +293,9 @@ class GPUWeight(object):
                 true_e_scale,
                 **kwargs):
         # block and grid dimensions
-        bdim = (256,1,1)
+        bdim = (256, 1, 1)
         dx, mx = divmod(n_evts, bdim[0])
-        gdim = ((dx + (mx>0)) * bdim[0], 1)
+        gdim = ((dx + (mx > 0)) * bdim[0], 1)
         self.flux_fun(
             n_evts, weighted_aeff, true_energy, true_coszen,
             neutrino_nue_flux, neutrino_numu_flux,

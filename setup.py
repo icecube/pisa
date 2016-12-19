@@ -301,9 +301,6 @@ if __name__ == '__main__':
                 'make_asymmetry_plots.py = pisa.scripts.make_asymmetry_plots:main',
                 'make_events_file.py = pisa.scripts.make_events_file:main',
                 'make_nufit_theta23_spline_priors.py = pisa.scripts.make_nufit_theta23_spline_priors:main',
-                'test_consistency_with_osfit.py = pisa.scripts.test_consistency_with_oscfit:main',
-                'test_consistency_with_pisa2.py = pisa.scripts.test_consistency_with_pisa2:main',
-                'test_example_pipelines.py = pisa.scripts.test_example_pipelines:main'
             ]
         }
     )

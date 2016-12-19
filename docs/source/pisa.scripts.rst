@@ -52,34 +52,26 @@ pisa.scripts.make_nufit_theta23_spline_priors module
     :undoc-members:
     :show-inheritance:
 
-pisa.scripts.test_changes_with_combined_pidreco module
-------------------------------------------------------
+pisa.scripts.slice_smooth_aeff module
+-------------------------------------
 
-.. automodule:: pisa.scripts.test_changes_with_combined_pidreco
+.. automodule:: pisa.scripts.slice_smooth_aeff
     :members:
     :undoc-members:
     :show-inheritance:
 
-pisa.scripts.test_consistency_with_oscfit module
-------------------------------------------------
+pisa.scripts.smooth_aeff module
+-------------------------------
 
-.. automodule:: pisa.scripts.test_consistency_with_oscfit
+.. automodule:: pisa.scripts.smooth_aeff
     :members:
     :undoc-members:
     :show-inheritance:
 
-pisa.scripts.test_consistency_with_pisa2 module
------------------------------------------------
+pisa.scripts.smooth_pid module
+------------------------------
 
-.. automodule:: pisa.scripts.test_consistency_with_pisa2
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.scripts.test_example_pipelines module
-------------------------------------------
-
-.. automodule:: pisa.scripts.test_example_pipelines
+.. automodule:: pisa.scripts.smooth_pid
     :members:
     :undoc-members:
     :show-inheritance:

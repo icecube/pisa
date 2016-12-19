@@ -1,6 +1,10 @@
-from pisa.utils.fileio import from_file
-import numpy as np
 from collections import Iterable, Iterator, Mapping, OrderedDict, Sequence
+
+import numpy as np
+
+from pisa.utils.fileio import from_file
+from pisa.utils.log import logging, set_verbosity
+
 
 class Layers(object):
     def __init__(self, prem_file, DetectorDepth=1., prop_height=2.):
@@ -124,6 +128,7 @@ class Layers(object):
 
             self.Layers = 2 * MaxLayer + iTrav - 1
 
+
 class OscParams(object):
     def __init__(self, dm_solar, dm_atm, x12, x13, x23, deltacp):
         """
@@ -220,6 +225,7 @@ class OscParams(object):
 
         return dmVacVac
 
+
 if __name__ == '__main__':
     layer = Layers('osc/PREM_4layer.dat')
     layer.SetElecFrac( 0.4656, 0.4656, 0.4957)
@@ -234,6 +240,6 @@ if __name__ == '__main__':
         n_layers.append(layer.Layers)
         density.append(layer.TraverseRhos * layer.TraverseElectronFrac)
         distance.append(layer.TraverseDistance)
-    print np.array(n_layers)
-    print np.vstack(density)
-    print np.vstack(distance)
+    logging.debug(str(np.array(n_layers)))
+    logging.debug(str(np.vstack(density)))
+    logging.debug(str(np.vstack(distance)))

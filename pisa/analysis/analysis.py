@@ -523,6 +523,7 @@ class Analysis(object):
         ----------
         xk : list
             Parameter vector
+
         """
         self._nit += 1
 
