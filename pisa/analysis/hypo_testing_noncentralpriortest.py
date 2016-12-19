@@ -7,8 +7,10 @@
 Hypothesis testing: How do two hypotheses compare for describing MC or data?
 
 This script/module will load the HypoTesting class from hypo_testing.py and
-use it to do a minimiser study in Asimov. A data distribution will be made at 
-the injected values of the parameters and a hypothesis test will be run for both ordering hypothesis in Asimov with seeded values randomly off truth.
+use it to do a study on non-central priors in Asimov. For each systematic in 
+the pipeline which has a Gaussian prior, the data will be injected with a value
+central + 0.5 * standard deviation to see what the result is on the returned 
+values of the fit metric and the systematics.
 
 """
 
@@ -90,9 +92,9 @@ def parse_args():
         '--data-param-selections',
         type=str, default=None, metavar='PARAM_SELECTOR_LIST',
         help='''Comma-separated list of param selectors to apply to the data
-        distribution maker's pipelines. Pipeline always assumed to be 
-        --h0-pipeline for this test. If --data-param-selections is not 
-        specified it is copied from --h0-param-selections.'''
+        distribution maker's pipelines. Data pipeline taken from --h0-pipeline.
+        If --data-param-selections are not specified it iscopied from
+        --h0-param-selections.'''
     )
     parser.add_argument(
         '--data-name',
@@ -114,13 +116,6 @@ def parse_args():
         help='''Name of another metric to evaluate at the best-fit point. Must
         be either "all" or a metric specified in ALL_METRICS. Repeat this
         argument (or use "all") to specify multiple metrics.'''
-    )
-    parser.add_argument(
-        '--num-trials',
-        type=int, default=1,
-        help='''Number of Asimov tests to run. The minimiser start point is 
-        randomised in every case, and so running multiple is NOT the same 
-        operation.'''
     )
     parser.add_argument(
         '--allow-dirty',
@@ -179,7 +174,6 @@ def main():
     # HypoTesting object via dictionary's `pop()` method.
 
     set_verbosity(init_args_d.pop('v'))
-    num_trials = init_args_d.pop('num_trials')
     init_args_d['check_octant'] = not init_args_d.pop('no_octant_check')
 
     init_args_d['data_is_data'] = False
@@ -187,8 +181,6 @@ def main():
     init_args_d['store_minimizer_history'] = (
         not init_args_d.pop('no_minimizer_history')
     )
-
-    init_args_d['reset_free'] = False
 
     other_metrics = init_args_d.pop('other_metric')
     if other_metrics is not None:
@@ -242,8 +234,8 @@ def main():
     init_args_d['data_maker'].select_params(
         init_args_d['data_param_selections']
     )
-    if init_args_d['data_name'] is None:
-        init_args_d['data_name'] = init_args_d['h0_name']
+
+    init_args_d['data_name'] = init_args_d['h0_name']
 
     # Instantiate the analysis object
     hypo_testing = HypoTesting(**init_args_d)
@@ -251,26 +243,44 @@ def main():
     hypo_testing.write_config_summary()
     hypo_testing.write_minimizer_settings()
     hypo_testing.write_run_info()
+    logging.info('Running first fits with everything as injected')
+    hypo_testing.generate_data()
+    hypo_testing.fit_hypos_to_data()
 
-    for i in range(0,num_trials):
-        # Randomise seeded parameters for hypotheses
-        hypo_testing.h0_maker.randomize_free_params()
-        hypo_testing.h1_maker.randomize_free_params()
-        # Create Labels dict to distnguish each of these Asimov "trials"
-        hypo_testing.labels = Labels(
-            h0_name=init_args_d['h0_name'],
-            h1_name=init_args_d['h1_name'],
-            data_name=init_args_d['data_name']+'_fit_%i'%i,
-            data_is_data=init_args_d['data_is_data'],
-            fluctuate_data=init_args_d['fluctuate_data'],
-            fluctuate_fid=init_args_d['fluctuate_fid']
-        )
-        # Run the fits
-        hypo_testing.generate_data()
-        hypo_testing.fit_hypos_to_data()
-        # Reset everything
-        hypo_testing.h0_maker.reset_free()
-        hypo_testing.h1_maker.reset_free()
+    # Go through the parameters
+    for param in init_args_d['data_maker'].params:
+        # Look for those that are nuisance parameters
+        if not param.is_fixed:
+            # Look for those with gaussian priors
+            if hasattr(param, 'prior'):
+                if param.prior.kind == 'gaussian':
+                    # Inject parameter half a sigma wrong
+                    hypo_testing.data_maker.params[param.name].value = \
+                        param.value + 0.5 * param.prior.stddev
+                    logging.info(
+                        'Injecting %s with gaussian prior of %.2f +/- %.2f '
+                        'at non-central value of %.2f'
+                        %(param.name,
+                          param.prior.mean,
+                          param.prior.stddev,
+                          param.value)
+                    )
+                    # Create Labels dict to distnguish each of these
+                    # non-central prior injections
+                    hypo_testing.labels = Labels(
+                        h0_name=init_args_d['h0_name'],
+                        h1_name=init_args_d['h1_name'],
+                        data_name=init_args_d['data_name']+'_%s_inj_%.2f'
+                        %(param.name,param.value),
+                        data_is_data=init_args_d['data_is_data'],
+                        fluctuate_data=init_args_d['fluctuate_data'],
+                        fluctuate_fid=init_args_d['fluctuate_fid']
+                    )
+                    # Run the fits
+                    hypo_testing.generate_data()
+                    hypo_testing.fit_hypos_to_data()
+                    # Reset everything
+                    param.value = nominal_value
 
 
 if __name__ == '__main__':
