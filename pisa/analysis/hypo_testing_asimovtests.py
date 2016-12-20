@@ -123,6 +123,13 @@ def parse_args():
         operation.'''
     )
     parser.add_argument(
+        '--start-index',
+        type=int, default=0,
+        help='''Trial start index. Set this if you are saving files from 
+        multiple runs in to the same log directory otherwise files may end up 
+        being overwritten!'''
+    )
+    parser.add_argument(
         '--allow-dirty',
         action='store_true',
         help='''Warning: Use with caution. (Allow for run despite dirty
@@ -180,6 +187,7 @@ def main():
 
     set_verbosity(init_args_d.pop('v'))
     num_trials = init_args_d.pop('num_trials')
+    start_index = init_args_d.pop('start-index')
     init_args_d['check_octant'] = not init_args_d.pop('no_octant_check')
 
     init_args_d['data_is_data'] = False
@@ -252,7 +260,7 @@ def main():
     hypo_testing.write_minimizer_settings()
     hypo_testing.write_run_info()
 
-    for i in range(0,num_trials):
+    for i in range(start_index,(start_index+num_trials)):
         # Randomise seeded parameters for hypotheses
         hypo_testing.h0_maker.randomize_free_params()
         hypo_testing.h1_maker.randomize_free_params()
