@@ -187,7 +187,7 @@ def main():
 
     set_verbosity(init_args_d.pop('v'))
     num_trials = init_args_d.pop('num_trials')
-    start_index = init_args_d.pop('start-index')
+    start_index = init_args_d.pop('start_index')
     init_args_d['check_octant'] = not init_args_d.pop('no_octant_check')
 
     init_args_d['data_is_data'] = False
