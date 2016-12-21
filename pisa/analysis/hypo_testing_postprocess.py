@@ -296,7 +296,6 @@ def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
                          'output of hypo_testing.py and so this postprocessing'
                          ' cannot be performed.')
     return data_sets, all_params, labels, minimiser_info
->>>>>>> 2c6f329be2390ab3c79d196591aed487e52c278a
 
 
 def extract_fit(fpath, keys=None):
@@ -532,7 +531,6 @@ def plot_fit_information(minimiser_info, labels, detector, selection, outdir):
                           labels['%s_name'%hypo]))
             plt.savefig(os.path.join(outdir,SaveName))
             plt.close()
-    print L
                     
 
 def make_llr_plots(data, fid_data, labels, detector, selection, outdir):
