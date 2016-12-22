@@ -130,11 +130,12 @@ class sample(Stage):
     def _compute_nominal_outputs(self):
         """Load the baseline events specified by the config file."""
         self.config = from_file(self.params['data_sample_config'].value)
-        self.load_sample_events()
 
     @profile
     def _compute_outputs(self, inputs=None):
         """Apply basic cuts and compute histograms for output channels."""
+        self.load_sample_events()
+
         if self.params['keep_criteria'].value is not None:
             # TODO(shivesh)
             raise NotImplementedError(
@@ -177,7 +178,8 @@ class sample(Stage):
         """Load the event sample given the configuration file and output
         groups. Hash this object using both the configuration file and
         the output types."""
-        hash_property = [self.config, self.neutrinos, self.muons]
+        hash_property = [self.config, self.neutrinos, self.muons,
+                         self.params['dataset'].value]
         this_hash = hash_obj(hash_property, full_hash=self.full_hash)
         if this_hash == self.sample_hash:
             return

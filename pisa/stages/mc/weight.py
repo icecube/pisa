@@ -450,8 +450,10 @@ class weight(Stage):
 
     def compute_xsec_weights(self):
         """Reweight to take into account xsec systematics."""
-        this_hash = normQuant([self.params[name].value
-                               for name in self.xsec_params])
+        this_hash = normQuant(
+            [self.params[name].value for name in self.xsec_params] +
+            [self._data.hash]
+        )
         if self.xsec_hash == this_hash:
             return self._xsec_weights
 
@@ -466,8 +468,10 @@ class weight(Stage):
 
     def compute_flux_weights(self, attach_units=False):
         """Neutrino fluxes via `honda` service."""
-        this_hash = normQuant([self.params[name].value
-                               for name in self.flux_params])
+        this_hash = normQuant(
+            [self.params[name].value for name in self.flux_params] +
+            [self._data.hash]
+        )
         out_units = ureg('1 / (GeV s m**2 sr)')
         if self.flux_hash == this_hash:
             if attach_units:
@@ -567,8 +571,10 @@ class weight(Stage):
 
     def compute_osc_weights(self, flux_weights):
         """Neutrino oscillations calculation via Prob3."""
-        this_hash = normQuant([self.params[name].value
-                               for name in self.flux_params + self.osc_params])
+        this_hash = normQuant(
+            [self.params[name].value for name in self.flux_params +
+             self.osc_params] + [self._data.hash]
+        )
         if self.osc_hash == this_hash:
             return self._osc_weights
         osc_weights = self._compute_osc_weights(
