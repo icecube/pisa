@@ -137,10 +137,9 @@ class Analysis(object):
 
         # Reset free parameters to nominal values
         if reset_free:
-            logging.info('Resetting hypo_maker values to those defined in '
-                         'the configuration file')
             hypo_maker.reset_free()
         else:
+            # Saves the current minimiser start values for the octant check
             minimiser_start_params = hypo_maker.params
 
         alternate_fits = []
