@@ -184,9 +184,10 @@ class sample(Stage):
         if this_hash == self.sample_hash:
             return
 
+        name = self.config.get('general', 'name')
         logging.info(
-            'Extracting events using configuration file {0} and output names '
-            '{1}'.format(hash_property[0], hash_property[1])
+            'Extracting events using configuration sample "{0}" and output '
+            'names {1}'.format(name, hash_property[1])
         )
 
         def parse(string):
@@ -237,9 +238,7 @@ class sample(Stage):
         for idx, flav in enumerate(flavours):
             f = int(flav)
             all_flavints = NuFlavIntGroup(f, -f).flavints()
-            flav_fidg = FlavIntDataGroup(
-                flavint_groups=all_flavints
-            )
+            flav_fidg = FlavIntDataGroup(flavint_groups=all_flavints)
             if dataset == 'nominal':
                 prefixes = []
                 for sys in sys_list:
