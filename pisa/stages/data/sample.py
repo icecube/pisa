@@ -186,8 +186,7 @@ class sample(Stage):
 
         name = self.config.get('general', 'name')
         logging.info(
-            'Extracting events using configuration sample "{0}" and output '
-            'names {1}'.format(name, hash_property[1])
+            'Extracting events using configuration sample "{0}"'.format(name)
         )
 
         def parse(string):
@@ -240,11 +239,10 @@ class sample(Stage):
             for idx, flav in enumerate(event_types):
                 fig = NuFlavIntGroup(flav)
                 all_flavints = fig.flavints()
-                flav_fidg = FlavIntDataGroup(flavint_groups=fig)
-                events_file = datadir + config.get(flav, 'filename')
+                events_file = datadir + gen_cfg.get(flav, 'filename')
 
                 flav_fidg = sample.load_from_nu_file(
-                    events_file, all_flavints, weights[idx], weight_units[idx]
+                    events_file, all_flavints, weights[idx], weight_units
                 )
                 nu_data.append(flav_fidg)
         else:
@@ -281,7 +279,7 @@ class sample(Stage):
                     base_suffix + file_prefix
 
                 flav_fidg = sample.load_from_nu_file(
-                    events_file, all_flavints, weights[idx], weight_units[idx]
+                    events_file, all_flavints, weights[idx], weight_units
                 )
                 nu_data.append(flav_fidg)
         nu_data = Data(
@@ -340,7 +338,7 @@ class sample(Stage):
         return Data(muon_dict, metadata={'name': name, 'mu_sample': dataset})
 
     @staticmethod
-    def load_from_nu_file(events_file, all_flavints, weight, weight_unit):
+    def load_from_nu_file(events_file, all_flavints, weight, weight_units):
         flav_fidg = FlavIntDataGroup(flavint_groups=all_flavints)
 
         events = from_file(events_file)
@@ -357,7 +355,7 @@ class sample(Stage):
                 np.zeros(events['ptype'].shape) * ureg.dimensionless
         else:
             events['pisa_weight'] = events[weight] * \
-                    ureg(weight_unit)
+                ureg(weight_units)
 
         if 'zenith' in events and 'coszen' not in events:
             events['coszen'] = np.cos(events['zenith'])
