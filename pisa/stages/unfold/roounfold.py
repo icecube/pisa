@@ -19,11 +19,12 @@ TH1.SetDefaultSumw2(False)
 from pisa import ureg, Q_
 from pisa.core.stage import Stage
 from pisa.core.events import Data
+from pisa.core.pipeline import Pipeline
 from pisa.core.map import Map, MapSet
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.rooutils import convert_to_th1d, convert_to_th2d
 from pisa.utils.rooutils import unflatten_thist
-from pisa.utils.flavInt import ALL_NUFLAVINTS, NuFlavIntGroup, FlavIntDataGroup
+from pisa.utils.flavInt import ALL_NUFLAVINTS, NuFlavIntGroup
 from pisa.utils.fileio import from_file
 from pisa.utils.random_numbers import get_random_state
 from pisa.utils.comparisons import normQuant
@@ -56,9 +57,9 @@ class roounfold(Stage):
         """Hash of calculated flux values for generator level events."""
 
         expected_params = (
-            'real_data', 'gen_cfg_file', 'flux_file',
-            'stat_fluctuations', 'regularisation', 'optimize_reg',
-            'unfold_eff', 'unfold_bg', 'unfold_unweighted'
+            'real_data', 'unfold_pipeline_cfg', 'unfold_sample_cfg',
+            'stop_after_stage', 'stat_fluctuations', 'regularisation',
+            'optimize_reg', 'unfold_eff', 'unfold_bg', 'unfold_unweighted'
         )
 
         self.reco_binning = reco_binning
@@ -145,7 +146,8 @@ class roounfold(Stage):
         # TODO(shivesh): more logging
         signal_data, bg_data, all_data = self.split_data()
 
-        # Load generator level data
+        # Load generator level data for signal
+        # gen_data = self.load_gen_data()
 
         # Return true map is regularisation is set to 0
         regularisation = int(self.params['regularisation'].m)
@@ -279,16 +281,33 @@ class roounfold(Stage):
         self.split_data_hash = this_hash
         return signal_data, bg_data, all_data
 
-    # TODO(shivesh): load this here, or in sample.py??
     def load_gen_data(self):
-        config = from_file(self.params['gen_cfg_file'].value)
-        flux_file = self.params['flux_file'].value
-        this_hash = hash_obj([config, flux_file])
+        dataset = 'neutrinos:gen_lvl'
+        pipeline_cfg = from_file(self.params['unfold_pipeline_cfg'].value)
+        sample_cfg = from_file(self.params['unfold_sample_cfg'].value)
+        gen_lvl_cfg = from_file(sample_cfg.get(dataset, 'gen_cfg_file'))
+        this_hash = hash_obj([pipeline_cfg, gen_lvl_cfg, self.output_str])
         if self.gen_data_hash == this_hash:
             return self._gen_data
 
-        gen_data = roounfold._load_gen_data(config)
+        template_maker = Pipeline(self.params['pipeline_config'].value)
+        dataset_param = template_maker.params['dataset']
+        dataset_param.value = dataset
+        template_maker.update_params(dataset_param)
+        full_gen_data = template_maker.get_outputs(
+            idx=int(self.params['stop_after_stage'].m)
+        )
+        if not isinstance(full_gen_data, Data):
+            raise AssertionError(
+                'Output of pipeline is not a Data object, instead is type '
+                '{0}'.format(type(full_gen_data))
+            )
+        trans_data = full_gen_data.transform_groups(self.output_str)
+        gen_data = trans_data[self.output_str]
 
+        self._gen_data = gen_data
+        self.gen_data_hash = this_hash
+        return gen_data
 
     def create_response(self, reco_data, true_data):
         """Create the response object from the signal data."""
@@ -361,61 +380,6 @@ class roounfold(Stage):
         self.bg_hist_hash = this_hash
         self._bg_hist = bg_hist
         return bg_hist
-
-    @staticmethod
-    def _load_gen_data(config):
-        name = config.get('general', 'name')
-        logging.info('Extracting events from generator level sample '
-                     '"{0}"'.format(name))
-        def parse(string):
-            return string.replace(' ', '').split(',')
-        datadir = config.get('general', 'datadir')
-        event_types = parse(config.get('general', 'event_type'))
-        weights = parse(config.get('general', 'weights'))
-        weight_units = config.get('general', 'weight_units')
-
-        nu_data = []
-        for idx, flav in enumerate(event_types):
-            fig = NuFlavIntGroup(flav)
-            all_flavints = fig.flavints()
-            flav_fidg = FlavIntDataGroup(flavint_groups=fig)
-            filepath = datadir + config.get(flav, 'filename')
-
-            events = from_file(filepath)
-            nu_mask = events['ptype'] > 0
-            nubar_mask = events['ptype'] < 0
-            cc_mask = events['interaction'] == 1
-            nc_mask = events['interaction'] == 2
-
-            if weights[idx] == 'None' or weights[idx] == '1':
-                events['pisa_weight'] = \
-                    np.ones(events['ptype'].shape) * ureg.dimensionless
-            elif weights[idx] == '0':
-                events['pisa_weight'] = \
-                    np.zeros(events['ptype'].shape) * ureg.dimensionless
-            else:
-                events['pisa_weight'] = events[weights[idx]] * \
-                        ureg(weight_units)
-
-            if 'zenith' in events and 'coszen' not in events:
-                events['coszen'] = np.cos(events['zenith'])
-            if 'reco_zenith' in events and 'reco_coszen' not in events:
-                events['reco_coszen'] = np.cos(events['reco_zenith'])
-
-            for flavint in all_flavints:
-                i_mask = cc_mask if flavint.isCC() else nc_mask
-                t_mask = nu_mask if flavint.isParticle() else nubar_mask
-
-                flav_fidg[flavint] = {var: events[var][i_mask & t_mask]
-                                      for var in events.iterkeys()}
-            nu_data.append(flav_fidg)
-        nu_data = Data(
-            reduce(add, nu_data),
-            metadata={'name': name, 'sample': 'generator level'}
-        )
-
-        return nu_data
-
 
     @staticmethod
     def _create_response(reco_data, true_data, reco_binning, true_binning):
@@ -524,12 +488,22 @@ class roounfold(Stage):
 
     def validate_params(self, params):
         pq = pint.quantity._Quantity
-        assert isinstance(params['real_data'].value, bool)
-        assert isinstance(params['gen_cfg_file'].value, basestring)
-        assert isinstance(params['flux_file'].value, basestring)
-        assert isinstance(params['stat_fluctuations'].value, pq)
-        assert isinstance(params['regularisation'].value, pq)
-        assert isinstance(params['optimize_reg'].value, bool)
-        assert isinstance(params['unfold_eff'].value, bool)
-        assert isinstance(params['unfold_bg'].value, bool)
-        assert isinstance(params['unfold_unweighted'].value, bool)
+        param_types = [
+            ('real_data', bool),
+            ('unfold_pipeline_cfg', basestring),
+            ('unfold_sample_cfg', basestring),
+            ('stop_after_stage', 1),
+            ('stat_fluctuations', pq),
+            ('regularisation', pq),
+            ('optimize_reg', bool),
+            ('unfold_eff', bool),
+            ('unfold_bg', bool),
+            ('unfold_unweighted', bool)
+        ]
+        for p, t in param_types:
+            val = params[p].value
+            if not isinstance(val, t):
+                raise TypeError(
+                    'Param "%s" must be type %s but is %s instead'
+                    % (p, type(t), type(val))
+                )
