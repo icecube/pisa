@@ -52,7 +52,7 @@ class sample(Stage):
 
             * output_events_data : bool
                 Flag to specify whether the service output returns a MapSet
-                or the Events
+                or the full information about each event
 
     output_binning : MultiDimBinning or convertible thereto
         The binning desired for the output maps.
@@ -82,7 +82,8 @@ class sample(Stage):
         """Hash of event sample"""
 
         expected_params = (
-            'data_sample_config', 'dataset', 'keep_criteria', 'output_events_data'
+            'data_sample_config', 'dataset', 'keep_criteria',
+            'output_events_data'
         )
 
         self.neutrinos = False
@@ -205,6 +206,7 @@ class sample(Stage):
                 config=self.config, dataset=dataset
             )
             events.append(nu_data)
+
         if self.muons:
             if 'muons' not in event_types:
                 raise AssertionError('`muons` field not found in '
@@ -233,6 +235,7 @@ class sample(Stage):
             event_types  = parse(gen_cfg.get('general', 'event_type'))
             weights      = parse(gen_cfg.get('general', 'weights'))
             weight_units = gen_cfg.get('general', 'weight_units')
+            keep_keys    = parse(gen_cfg.get('general', 'keep_keys'))
             logging.info('Extracting events from generator level sample '
                          '"{0}"'.format(name))
 
@@ -242,7 +245,8 @@ class sample(Stage):
                 events_file = datadir + gen_cfg.get(flav, 'filename')
 
                 flav_fidg = sample.load_from_nu_file(
-                    events_file, all_flavints, weights[idx], weight_units
+                    events_file, all_flavints, weights[idx], weight_units,
+                    keep_keys
                 )
                 nu_data.append(flav_fidg)
         else:
@@ -252,6 +256,7 @@ class sample(Stage):
             weight_units = config.get('neutrinos', 'weight_units')
             sys_list     = parse(config.get('neutrinos', 'sys_list'))
             base_suffix  = config.get('neutrinos', 'basesuffix')
+            keep_keys    = parse(config.get('neutrinos', 'keep_keys'))
             if base_suffix == 'None':
                 base_suffix = ''
 
@@ -279,7 +284,8 @@ class sample(Stage):
                     base_suffix + file_prefix
 
                 flav_fidg = sample.load_from_nu_file(
-                    events_file, all_flavints, weights[idx], weight_units
+                    events_file, all_flavints, weights[idx], weight_units,
+                    keep_keys
                 )
                 nu_data.append(flav_fidg)
         nu_data = Data(
@@ -338,10 +344,29 @@ class sample(Stage):
         return Data(muon_dict, metadata={'name': name, 'mu_sample': dataset})
 
     @staticmethod
-    def load_from_nu_file(events_file, all_flavints, weight, weight_units):
+    def load_from_nu_file(events_file, all_flavints, weight, weight_units,
+                          keep_keys):
         flav_fidg = FlavIntDataGroup(flavint_groups=all_flavints)
 
         events = from_file(events_file)
+        if keep_keys == 'all':
+            pass
+        else:
+            remove_keys = []
+            for k_key in keep_keys:
+                if k_key not in events:
+                    raise AssertionError(
+                        'Key "{0}" not found in the {1} file, which '
+                        'contains keys {2}'.format(
+                            k_key, events_file, events.keys()
+                        )
+                    )
+            for d_key in events.iterkeys():
+                if d_key not in keep_keys:
+                    remove_keys.append(d_key)
+            for r_k in remove_keys:
+                del events[r_k]
+
         nu_mask = events['ptype'] > 0
         nubar_mask = events['ptype'] < 0
         cc_mask = events['interaction'] == 1
