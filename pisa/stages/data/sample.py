@@ -52,7 +52,7 @@ class sample(Stage):
 
             * output_events_data : bool
                 Flag to specify whether the service output returns a MapSet
-                or the Events
+                or the full information about each event
 
     output_binning : MultiDimBinning or convertible thereto
         The binning desired for the output maps.
@@ -82,7 +82,8 @@ class sample(Stage):
         """Hash of event sample"""
 
         expected_params = (
-            'data_sample_config', 'dataset', 'keep_criteria', 'output_events_data'
+            'data_sample_config', 'dataset', 'keep_criteria',
+            'output_events_data'
         )
 
         self.neutrinos = False
@@ -126,14 +127,15 @@ class sample(Stage):
 
         self.include_attrs_for_hashes('sample_hash')
 
-    @profile
-    def _compute_nominal_outputs(self):
-        """Load the baseline events specified by the config file."""
-        self.config = from_file(self.params['data_sample_config'].value)
+        self._compute_outputs()
 
     @profile
     def _compute_outputs(self, inputs=None):
         """Apply basic cuts and compute histograms for output channels."""
+        self.config = from_file(self.params['data_sample_config'].value)
+        name = self.config.get('general', 'name')
+        logging.trace('{0} sample sample_hash = '
+                      '{1}'.format(name, self.sample_hash))
         self.load_sample_events()
 
         if self.params['keep_criteria'].value is not None:
@@ -184,9 +186,9 @@ class sample(Stage):
         if this_hash == self.sample_hash:
             return
 
+        name = self.config.get('general', 'name')
         logging.info(
-            'Extracting events using configuration file {0} and output names '
-            '{1}'.format(hash_property[0], hash_property[1])
+            'Extracting events using configuration sample "{0}"'.format(name)
         )
 
         def parse(string):
@@ -205,6 +207,7 @@ class sample(Stage):
                 config=self.config, dataset=dataset
             )
             events.append(nu_data)
+
         if self.muons:
             if 'muons' not in event_types:
                 raise AssertionError('`muons` field not found in '
@@ -224,72 +227,71 @@ class sample(Stage):
     def load_neutrino_events(config, dataset):
         def parse(string):
             return string.replace(' ', '').split(',')
-        name = config.get('general', 'name')
-        flavours = parse(config.get('neutrinos', 'flavours'))
-        weights = parse(config.get('neutrinos', 'weights'))
-        weight_units = config.get('neutrinos', 'weight_units')
-        sys_list = parse(config.get('neutrinos', 'sys_list'))
-        base_suffix = config.get('neutrinos', 'basesuffix')
-        if base_suffix == 'None':
-            base_suffix = ''
 
         nu_data = []
-        for idx, flav in enumerate(flavours):
-            f = int(flav)
-            all_flavints = NuFlavIntGroup(f, -f).flavints()
-            flav_fidg = FlavIntDataGroup(
-                flavint_groups=all_flavints
-            )
-            if dataset == 'nominal':
-                prefixes = []
-                for sys in sys_list:
-                    ev_sys = 'neutrinos:' + sys
-                    nominal = config.get(ev_sys, 'nominal')
-                    ev_sys_nom = ev_sys + ':' + nominal
-                    prefixes.append(config.get(ev_sys_nom, 'file_prefix'))
-                if len(set(prefixes)) > 1:
-                    raise AssertionError(
-                        'Choice of nominal file is ambigous. Nominal '
-                        'choice of systematic parameters must coincide '
-                        'with one and only one file. Options found are: '
-                        '{0}'.format(prefixes)
-                    )
-                file_prefix = flav + prefixes[0]
-            else:
-                file_prefix = flav + config.get(dataset, 'file_prefix')
-            events_file = config.get('general', 'datadir') + \
-                base_suffix + file_prefix
+        if dataset == 'neutrinos:gen_lvl':
+            gen_cfg      = from_file(config.get(dataset, 'gen_cfg_file'))
+            name         = gen_cfg.get('general', 'name')
+            datadir      = gen_cfg.get('general', 'datadir')
+            event_types  = parse(gen_cfg.get('general', 'event_type'))
+            weights      = parse(gen_cfg.get('general', 'weights'))
+            weight_units = gen_cfg.get('general', 'weight_units')
+            keep_keys    = parse(gen_cfg.get('general', 'keep_keys'))
+            logging.info('Extracting events from generator level sample '
+                         '"{0}"'.format(name))
 
-            events = from_file(events_file)
-            nu_mask = events['ptype'] > 0
-            nubar_mask = events['ptype'] < 0
-            cc_mask = events['interaction'] == 1
-            nc_mask = events['interaction'] == 2
+            for idx, flav in enumerate(event_types):
+                fig = NuFlavIntGroup(flav)
+                all_flavints = fig.flavints()
+                events_file = datadir + gen_cfg.get(flav, 'filename')
 
-            if weights[idx] == 'None' or weights[idx] == '1':
-                events['pisa_weight'] = \
-                    np.ones(events['ptype'].shape) * ureg.dimensionless
-            elif weights[idx] == '0':
-                events['pisa_weight'] = \
-                    np.zeros(events['ptype'].shape) * ureg.dimensionless
-            else:
-                events['pisa_weight'] = events[weights[idx]] * \
-                        ureg(weight_units)
+                flav_fidg = sample.load_from_nu_file(
+                    events_file, all_flavints, weights[idx], weight_units,
+                    keep_keys
+                )
+                nu_data.append(flav_fidg)
+        else:
+            name         = config.get('general', 'name')
+            flavours     = parse(config.get('neutrinos', 'flavours'))
+            weights      = parse(config.get('neutrinos', 'weights'))
+            weight_units = config.get('neutrinos', 'weight_units')
+            sys_list     = parse(config.get('neutrinos', 'sys_list'))
+            base_suffix  = config.get('neutrinos', 'basesuffix')
+            keep_keys    = parse(config.get('neutrinos', 'keep_keys'))
+            if base_suffix == 'None':
+                base_suffix = ''
 
-            if 'zenith' in events and 'coszen' not in events:
-                events['coszen'] = np.cos(events['zenith'])
-            if 'reco_zenith' in events and 'reco_coszen' not in events:
-                events['reco_coszen'] = np.cos(events['reco_zenith'])
+            for idx, flav in enumerate(flavours):
+                f = int(flav)
+                all_flavints = NuFlavIntGroup(f, -f).flavints()
+                if dataset == 'nominal':
+                    prefixes = []
+                    for sys in sys_list:
+                        ev_sys = 'neutrinos:' + sys
+                        nominal = config.get(ev_sys, 'nominal')
+                        ev_sys_nom = ev_sys + ':' + nominal
+                        prefixes.append(config.get(ev_sys_nom, 'file_prefix'))
+                    if len(set(prefixes)) > 1:
+                        raise AssertionError(
+                            'Choice of nominal file is ambigous. Nominal '
+                            'choice of systematic parameters must coincide '
+                            'with one and only one file. Options found are: '
+                            '{0}'.format(prefixes)
+                        )
+                    file_prefix = flav + prefixes[0]
+                else:
+                    file_prefix = flav + config.get(dataset, 'file_prefix')
+                events_file = config.get('general', 'datadir') + \
+                    base_suffix + file_prefix
 
-            for flavint in all_flavints:
-                i_mask = cc_mask if flavint.isCC() else nc_mask
-                t_mask = nu_mask if flavint.isParticle() else nubar_mask
-
-                flav_fidg[flavint] = {var: events[var][i_mask & t_mask]
-                                      for var in events.iterkeys()}
-            nu_data.append(flav_fidg)
+                flav_fidg = sample.load_from_nu_file(
+                    events_file, all_flavints, weights[idx], weight_units,
+                    keep_keys
+                )
+                nu_data.append(flav_fidg)
         nu_data = Data(
-            reduce(add, nu_data), metadata={'name': name, 'sample': dataset}
+            reduce(add, nu_data),
+            metadata={'name': name, 'sample': dataset}
         )
 
         return nu_data
@@ -298,11 +300,11 @@ class sample(Stage):
     def load_muon_events(config, dataset):
         def parse(string):
             return string.replace(' ', '').split(',')
-        name = config.get('general', 'name')
-        weight = config.get('muons', 'weight')
+        name         = config.get('general', 'name')
+        weight       = config.get('muons', 'weight')
         weight_units = config.get('muons', 'weight_units')
-        sys_list = parse(config.get('muons', 'sys_list'))
-        base_suffix = config.get('muons', 'basesuffix')
+        sys_list     = parse(config.get('muons', 'sys_list'))
+        base_suffix  = config.get('muons', 'basesuffix')
         if base_suffix == 'None':
             base_suffix = ''
 
@@ -341,6 +343,58 @@ class sample(Stage):
 
         muon_dict = {'muons': muons}
         return Data(muon_dict, metadata={'name': name, 'mu_sample': dataset})
+
+    @staticmethod
+    def load_from_nu_file(events_file, all_flavints, weight, weight_units,
+                          keep_keys):
+        flav_fidg = FlavIntDataGroup(flavint_groups=all_flavints)
+
+        events = from_file(events_file)
+        if keep_keys == 'all':
+            pass
+        else:
+            remove_keys = []
+            for k_key in keep_keys:
+                if k_key not in events:
+                    raise AssertionError(
+                        'Key "{0}" not found in the {1} file, which '
+                        'contains keys {2}'.format(
+                            k_key, events_file, events.keys()
+                        )
+                    )
+            for d_key in events.iterkeys():
+                if d_key not in keep_keys:
+                    remove_keys.append(d_key)
+            for r_k in remove_keys:
+                del events[r_k]
+
+        nu_mask = events['ptype'] > 0
+        nubar_mask = events['ptype'] < 0
+        cc_mask = events['interaction'] == 1
+        nc_mask = events['interaction'] == 2
+
+        if weight == 'None' or weight == '1':
+            events['pisa_weight'] = \
+                np.ones(events['ptype'].shape) * ureg.dimensionless
+        elif weight == '0':
+            events['pisa_weight'] = \
+                np.zeros(events['ptype'].shape) * ureg.dimensionless
+        else:
+            events['pisa_weight'] = events[weight] * \
+                ureg(weight_units)
+
+        if 'zenith' in events and 'coszen' not in events:
+            events['coszen'] = np.cos(events['zenith'])
+        if 'reco_zenith' in events and 'reco_coszen' not in events:
+            events['reco_coszen'] = np.cos(events['reco_zenith'])
+
+        for flavint in all_flavints:
+            i_mask = cc_mask if flavint.isCC() else nc_mask
+            t_mask = nu_mask if flavint.isParticle() else nubar_mask
+
+            flav_fidg[flavint] = {var: events[var][i_mask & t_mask]
+                                  for var in events.iterkeys()}
+        return flav_fidg
 
     def validate_params(self, params):
         assert isinstance(params['data_sample_config'].value, basestring)

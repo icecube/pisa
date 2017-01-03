@@ -19,11 +19,13 @@ TH1.SetDefaultSumw2(False)
 from pisa import ureg, Q_
 from pisa.core.stage import Stage
 from pisa.core.events import Data
+from pisa.core.pipeline import Pipeline
 from pisa.core.map import Map, MapSet
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.rooutils import convert_to_th1d, convert_to_th2d
 from pisa.utils.rooutils import unflatten_thist
-from pisa.utils.flavInt import NuFlavIntGroup, ALL_NUFLAVINTS
+from pisa.utils.flavInt import ALL_NUFLAVINTS, NuFlavIntGroup
+from pisa.utils.fileio import from_file
 from pisa.utils.random_numbers import get_random_state
 from pisa.utils.comparisons import normQuant
 from pisa.utils.hash import hash_obj
@@ -43,9 +45,20 @@ class roounfold(Stage):
         """Hash of random state."""
         self.response_hash = None
         """Hash of response object."""
+        self.split_data_hash = None
+        """Hash of data after it has been separated."""
+        self.hist_hash = None
+        """Hash of histogrammed objects."""
+        self.gen_data_hash = None
+        """Hash of generator level events."""
+        self.inv_eff_hash = None
+        """Hash of inverse efficiency histogram."""
+        self.bg_hist_hash = None
+        """Hash of background histogram for subtraction."""
 
         expected_params = (
-            'create_response', 'stat_fluctuations', 'regularisation',
+            'real_data', 'unfold_pipeline_cfg', 'unfold_sample_cfg',
+            'stop_after_stage', 'stat_fluctuations', 'regularisation',
             'optimize_reg', 'unfold_eff', 'unfold_bg', 'unfold_unweighted'
         )
 
@@ -66,17 +79,17 @@ class roounfold(Stage):
                 clean_innames.append(str(NuFlavIntGroup(name)))
 
         signal = output_names.replace(' ', '').split(',')
-        self._output_nu_group = []
+        self.output_str = []
         for name in signal:
             if 'muons' in name or 'noise' in name:
                 raise AssertionError('Are you trying to unfold muons/noise?')
             else:
-                self._output_nu_group.append(NuFlavIntGroup(name))
+                self.output_str.append(NuFlavIntGroup(name))
 
-        if len(self._output_nu_group) > 1:
+        if len(self.output_str) > 1:
             raise AssertionError('Specified more than one NuFlavIntGroup as '
-                                 'signal, {0}'.format(self._output_nu_group))
-        self._output_nu_group = str(self._output_nu_group[0])
+                                 'signal, {0}'.format(self.output_str))
+        self.output_str = str(self.output_str[0])
 
         if len(reco_binning.names) != len(true_binning.names):
             raise AssertionError('Number of dimensions in reco binning '
@@ -85,15 +98,12 @@ class roounfold(Stage):
         if len(reco_binning.names) != 2:
             raise NotImplementedError('Bin dimensions != 2 not implemented')
 
-        self.data_hash = None
-        self.hist_hash = None
-
         super(self.__class__, self).__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
             input_names=clean_innames,
-            output_names=self._output_nu_group,
+            output_names=self.output_str,
             error_method=error_method,
             disk_cache=disk_cache,
             outputs_cache_depth=outputs_cache_depth,
@@ -111,61 +121,106 @@ class roounfold(Stage):
     @profile
     def _compute_outputs(self, inputs=None):
         """Compute histograms for output channels."""
+        logging.trace('Entering roounfold._compute_outputs')
+        self.sample_hash = deepcopy(inputs.hash)
+        logging.trace('{0} roounfold sample_hash = '
+                      '{1}'.format(inputs.metadata['name'], self.sample_hash))
+        if self.random_state is not None:
+            logging.trace(
+                '{0} roounfold random_state = '
+                '{1}'.format(inputs.metadata['name'],
+                             hash_obj(self.random_state.get_state()))
+            )
         if not isinstance(inputs, Data):
             raise AssertionError('inputs is not a Data object, instead is '
                                  'type {0}'.format(type(inputs)))
-        self.sample_hash = inputs.hash
-        self._data = deepcopy(inputs)
+        self._data = inputs
 
-        if not self.params['create_response'].value \
-           and self.disk_cache is None:
-            raise AssertionError('No disk_cache specified from which to load '
-                                 'response object.')
+        real_data = self.params['real_data'].value
+        if real_data:
+            logging.debug('Using real data')
+            if 'nuall' not in self._data:
+                raise AssertionError(
+                    'When using real data, input Data object must contain '
+                    'only one element "nuall" containing the data, instead it '
+                    'contains elements {0}'.format(self._data.keys())
+                )
+            if self.disk_cache is None:
+                raise AssertionError(
+                    'No disk_cache specified from which to load - using real '
+                    'data requires object such as the response object to be '
+                    'cached to disk.'
+                )
 
-        if self.params['optimize_reg'].value and \
-           not self.params['create_response'].value:
-            raise AssertionError('`create_response` must be set to True if '
-                                 'the flag `optimize_reg` is set to True.')
+        if self.params['optimize_reg'].value and real_data:
+            raise AssertionError(
+                'Cannot optimize the regularation if using real data.'
+            )
+        if int(self.params['stat_fluctuations'].m) != 0 and real_data:
+            raise AssertionError(
+                'Cannot do poisson fluctuations if using real data.'
+            )
 
         # TODO(shivesh): [   TRACE] None of the selections ['iron', 'nh'] found in this pipeline.
         # TODO(shivesh): Fix "smearing_matrix" memory leak
         # TODO(shivesh): Fix unweighted unfolding
-        # TODO(shivesh): real data
         # TODO(shivesh): different algorithms
-        # TODO(shivesh): efficiency correction in unfolding
+        # TODO(shivesh): implement handling of 0 division inside Map objects
+        if real_data:
+            unfold_map = self.unfold_real_data()
+        else:
+            unfold_map = self.unfold_mc()
+
+        return MapSet([unfold_map])
+
+    def unfold_mc(self):
+        logging.debug('Unfolding monte carlo sample')
+        regularisation = int(self.params['regularisation'].m)
+        unfold_bg = self.params['unfold_bg'].value
+        unfold_eff = self.params['unfold_eff'].value
+        unfold_unweighted = self.params['unfold_unweighted'].value
+
+        # Split data into signal, bg and all (signal+bg)
         signal_data, bg_data, all_data = self.split_data()
 
+        # Load generator level data for signal
+        gen_data = self.load_gen_data()
+
         # Return true map is regularisation is set to 0
-        regularisation = int(self.params['regularisation'].m)
         if regularisation == 0:
             true = roounfold._histogram(
-                events=signal_data,
+                events=gen_data,
                 binning=self.true_binning,
-                weights=signal_data['pisa_weight'],
+                weights=gen_data['pisa_weight'],
                 errors=True,
-                name=self._output_nu_group
+                name=self.output_str
             )
             return MapSet([true])
 
+        # Get the inversed efficiency histogram
+        if not unfold_eff:
+            inv_eff = self.get_inv_eff(signal_data, gen_data)
+
         # Set the reco and true data based on cfg file settings
-        unfold_eff = self.params['unfold_eff'].value
-        unfold_bg = self.params['unfold_bg'].value
-        unfold_unweighted = self.params['unfold_unweighted'].value
-        reco_data = signal_data
-        true_data = signal_data
+        reco_data = None
+        true_data = None
         if unfold_bg:
             reco_data = all_data
         if unfold_eff:
-            # TODO(shivesh)
-            raise NotImplementedError
+            true_data = gen_data
+        if reco_data is None:
+            reco_data = signal_data
+        if true_data is None:
+            true_data = signal_data
         if unfold_unweighted:
             reco_data = deepcopy(reco_data)
             true_data = deepcopy(true_data)
-            reco_data['pisa_weight'] = np.ones(reco_data['pisa_weight'].shape)
-            true_data['pisa_weight'] = np.ones(true_data['pisa_weight'].shape)
+            ones = np.ones(reco_data['pisa_weight'].shape)
+            reco_data['pisa_weight'] = ones
+            true_data['pisa_weight'] = ones
 
         # Create response object
-        self.create_response(reco_data, true_data)
+        response = self.create_response(reco_data, true_data)
 
         # Make pseduodata
         all_hist = self._histogram(
@@ -176,44 +231,35 @@ class roounfold(Stage):
             name='all',
             tex=r'\rm{all}'
         )
-        all_hist_poisson = deepcopy(all_hist)
         seed = int(self.params['stat_fluctuations'].m)
         if seed != 0:
             if self.random_state is None or seed != self.seed:
                 self.seed = seed
                 self.random_state = get_random_state(seed)
-            all_hist_poisson = all_hist_poisson.fluctuate(
-                'poisson', self.random_state
-            )
+            all_hist = all_hist.fluctuate('poisson', self.random_state)
         else:
             self.seed = None
             self.random_state = None
-        all_hist_poisson.set_poisson_errors()
+        all_hist.set_poisson_errors()
 
         # Background Subtraction
         if unfold_bg:
-            reco = deepcopy(all_hist_poisson)
+            reco = all_hist
         else:
-            bg_hist = self._histogram(
-                events=bg_data,
-                binning=self.reco_binning,
-                weights=bg_data['pisa_weight'],
-                errors=True,
-                name='background',
-                tex=r'\rm{background}'
-            )
-            reco = all_hist_poisson - bg_hist
+            bg_hist = self.get_bg_hist(bg_data)
+            reco = all_hist - bg_hist
         reco.name = 'reco_signal'
         reco.tex = r'\rm{reco_signal}'
 
         r_flat = roounfold._flatten_to_1d(reco)
         r_th1d = convert_to_th1d(r_flat, errors=True)
 
+        # Find optimum value for regularisation parameter
         if self.params['optimize_reg'].value:
             chisq = None
             for r_idx in xrange(regularisation):
                 unfold = RooUnfoldBayes(
-                    self.response, r_th1d, r_idx+1
+                    response, r_th1d, r_idx+1
                 )
                 unfold.SetVerbose(0)
                 idx_chisq = unfold.Chi2(self.t_th1d, 1)
@@ -224,8 +270,9 @@ class roounfold(Stage):
                     break
                 chisq = idx_chisq
 
+        # Unfold
         unfold = RooUnfoldBayes(
-            self.response, r_th1d, regularisation
+            response, r_th1d, regularisation
         )
         unfold.SetVerbose(0)
 
@@ -233,34 +280,89 @@ class roounfold(Stage):
         unfold_map = unflatten_thist(
             in_th1d=unfolded_flat,
             binning=self.true_binning,
-            name=self._output_nu_group,
+            name=self.output_str,
             errors=True
         )
+
+        # Efficiency correction
+        if not unfold_eff:
+            unfold_map *= inv_eff
 
         del r_th1d
         del unfold
         logging.info('Unfolded reco sum {0}'.format(
             np.sum(unp.nominal_values(unfold_map.hist))
         ))
-        return MapSet([unfold_map])
+        return unfold_map
+
+    def unfold_real_data(self):
+        logging.info('Unfolding real data')
+        regularisation = int(self.params['regularisation'].m)
+        unfold_bg = self.params['unfold_bg'].value
+        unfold_eff = self.params['unfold_eff'].value
+
+        raw_data_0 = self._data['nuall']
+        if regularisation == 0:
+            raise AssertionError('Regularisation is set to 0')
+
+        # Get the inversed efficiency histogram
+        if not unfold_eff:
+            inv_eff = self.get_inv_eff()
+
+        # Load response object from disk cache
+        response = self.create_response()
+
+        # Background Subtraction
+        if unfold_bg:
+            raw_data_1 = raw_data_0
+        else:
+            bg_hist = self.get_bg_hist()
+            raw_data_1 = raw_data_0 - bg_hist
+
+        r_flat = roounfold._flatten_to_1d(raw_data_1)
+        r_th1d = convert_to_th1d(r_flat, errors=True)
+
+        # Unfold
+        unfold = RooUnfoldBayes(
+            response, r_th1d, regularisation
+        )
+        unfold.SetVerbose(0)
+
+        unfolded_flat = unfold.Hreco(1)
+        unfold_map = unflatten_thist(
+            in_th1d=unfolded_flat,
+            binning=self.true_binning,
+            name=self.output_str,
+            errors=True
+        )
+
+        # Efficiency correction
+        if not unfold_eff:
+            unfold_map *= inv_eff
+
+        del r_th1d
+        del unfold
+        logging.info('Unfolded reco sum {0}'.format(
+            np.sum(unp.nominal_values(unfold_map.hist))
+        ))
+        return unfold_map
 
     def split_data(self):
         this_hash = hash_obj(
-            [self.sample_hash, self._output_nu_group,
-             self._data.contains_muons]
+            [self.sample_hash, self.output_str, self._data.contains_muons]
         )
-        if self.data_hash == this_hash:
+        if self.split_data_hash == this_hash:
             return self._signal_data, self._bg_data, self._all_data
 
-        trans_data = self._data.transform_groups(
-            self._output_nu_group
-        )
-        bg_str = [fig for fig in trans_data
-                          if fig != self._output_nu_group]
+        if self.params['real_data'].value:
+            return self._data, None, self._data
+
+        trans_data = self._data.transform_groups(self.output_str)
+        bg_str = [fig for fig in trans_data if fig != self.output_str]
         if trans_data.contains_muons:
             bg_str.append('muons')
 
-        signal_data = trans_data[self._output_nu_group]
+        signal_data = trans_data[self.output_str]
         bg_data = [trans_data[bg] for bg in bg_str]
         bg_data = reduce(Data._merge, bg_data)
         all_data = Data._merge(deepcopy(bg_data), signal_data)
@@ -268,50 +370,182 @@ class roounfold(Stage):
         self._signal_data = signal_data
         self._bg_data = bg_data
         self._all_data = all_data
-        self.data_hash = this_hash
+        self.split_data_hash = this_hash
         return signal_data, bg_data, all_data
 
-    def create_response(self, reco_data, true_data):
-        """Create the response object from the signal data."""
-        this_hash = hash_obj(normQuant(self.params))
-        if self.response_hash == this_hash:
-            return self.response
-        else:
-            try:
-                del self.response
-                del self.t_th1d
-            except:
-                pass
+    def load_gen_data(self):
+        logging.debug('Loading generator level sample')
+        dataset = 'neutrinos:gen_lvl'
+        pipeline_cfg = from_file(self.params['unfold_pipeline_cfg'].value)
+        sample_cfg = from_file(self.params['unfold_sample_cfg'].value)
+        gen_lvl_cfg = from_file(sample_cfg.get(dataset, 'gen_cfg_file'))
+        this_hash = hash_obj([pipeline_cfg, gen_lvl_cfg, self.output_str])
+        if self.gen_data_hash == this_hash:
+            return self._gen_data
 
-        if self.params['create_response'].value:
-            # Truth histogram gets returned if response matrix is created
+        template_maker = Pipeline(self.params['unfold_pipeline_cfg'].value)
+        dataset_param = template_maker.params['dataset']
+        dataset_param.value = dataset
+        template_maker.update_params(dataset_param)
+        full_gen_data = template_maker.get_outputs(
+            idx=int(self.params['stop_after_stage'].m)
+        )
+        if not isinstance(full_gen_data, Data):
+            raise AssertionError(
+                'Output of pipeline is not a Data object, instead is type '
+                '{0}'.format(type(full_gen_data))
+            )
+        trans_data = full_gen_data.transform_groups(self.output_str)
+        gen_data = trans_data[self.output_str]
+
+        self._gen_data = gen_data
+        self.gen_data_hash = this_hash
+        return gen_data
+
+    def get_inv_eff(self, signal_data=None, gen_data=None):
+        this_hash = hash_obj(
+            [self.true_binning.hash, self.output_str, 'inv_eff']
+        )
+        assert len(set([signal_data is None, gen_data is None])) == 1
+        if signal_data is None and gen_data is None:
+            if self.inv_eff_hash == this_hash:
+                logging.trace('Loading inv eff from mem cache')
+                return self._inv_eff
+            if this_hash in self.disk_cache:
+                logging.debug('Loading inv eff histogram from disk cache.')
+                inv_eff = self.disk_cache[this_hash]
+            else:
+                raise ValueError(
+                    'inverse efficiency histogram with correct hash not found '
+                    'in disk_cache'
+                )
+        else:
+            this_hash = hash_obj([this_hash, self.sample_hash])
+            if self.inv_eff_hash == this_hash:
+                logging.trace('Loading inv eff from mem cache')
+                return self._inv_eff
+            signal_map = roounfold._histogram(
+                events=signal_data,
+                binning=self.true_binning,
+                weights=signal_data['pisa_weight'],
+                errors=True,
+                name=self.output_str
+            )
+            gen_map = self._histogram(
+                events=gen_data,
+                binning=self.true_binning,
+                weights=gen_data['pisa_weight'],
+                errors=True,
+                name='generator_lvl',
+                tex=r'\rm{generator_lvl}'
+            )
+            i_mask = ~(signal_map.hist == 0.)
+            inv_eff = unp.uarray(np.zeros(signal_map.hist.shape),
+                                 np.zeros(signal_map.hist.shape))
+            inv_eff[i_mask] = gen_map.hist[i_mask] / signal_map.hist[i_mask]
+
+            if self.disk_cache is not None:
+                if this_hash not in self.disk_cache:
+                    logging.debug('Caching inv eff histogram to disk.')
+                    self.disk_cache[this_hash] = inv_eff
+
+        self.inv_eff_hash = this_hash
+        self._inv_eff = inv_eff
+        return inv_eff
+
+    def create_response(self, reco_data=None, true_data=None):
+        """Create the response object from the signal data."""
+        unfold_bg = self.params['unfold_bg'].value
+        unfold_eff = self.params['unfold_eff'].value
+        unfold_unweighted = self.params['unfold_unweighted'].value
+        this_hash = hash_obj(
+            [self.reco_binning.hash, self.true_binning.hash, unfold_bg,
+             unfold_eff, unfold_unweighted, self.output_str, 'response']
+        )
+        assert len(set([reco_data is None, true_data is None])) == 1
+        if reco_data is None and true_data is None:
+            if self.response_hash == this_hash:
+                logging.trace('Loading response from mem cache')
+                return self._response
+            else:
+                try:
+                    del self._response
+                except:
+                    pass
+            if this_hash in self.disk_cache:
+                logging.debug('Loading response from disk cache.')
+                response = self.disk_cache[this_hash]
+            else:
+                raise ValueError(
+                    'response object with correct hash not found in disk_cache'
+                )
+        else:
+            this_hash = hash_obj(
+                [this_hash, self.sample_hash, normQuant(self.params)]
+            )
+            if self.response_hash == this_hash:
+                logging.debug('Loading response from mem cache')
+                return self._response
+            else:
+                try:
+                    del self._response
+                    del self.t_th1d
+                except:
+                    pass
+
+            # Truth histogram also gets returned if response matrix is created
             response, self.t_th1d = self._create_response(
                 reco_data, true_data, self.reco_binning, self.true_binning
             )
-        else:
-            # Cache based on binning, output names and event sample hash
-            cache_params = [self.reco_binning, self.true_binning,
-                            self.output_names, self._data.hash]
-            this_cache_hash = hash_obj(cache_params)
 
-            if this_cache_hash in self.disk_cache:
-                logging.info('Loading response object from cache.')
-                response = self.disk_cache[this_cache_hash]
-            else:
-                raise ValueError('response object with correct hash not found '
-                                 'in disk_cache')
-
-        if self.disk_cache is not None:
-            # Cache based on binning, output names and event sample hash
-            cache_params = [self.reco_binning, self.true_binning,
-                            self.output_names, self._data.hash]
-            this_cache_hash = hash_obj(cache_params)
-            if this_cache_hash not in self.disk_cache:
-                logging.info('Caching response object to disk.')
-                self.disk_cache[this_cache_hash] = response
+            if self.disk_cache is not None:
+                if this_hash not in self.disk_cache:
+                    logging.debug('Caching response object to disk.')
+                    self.disk_cache[this_hash] = response
 
         self.response_hash = this_hash
-        self.response = response
+        self._response = response
+        return response
+
+    def get_bg_hist(self, bg_data=None):
+        """Histogram the bg data unless using real data, in which case load
+        the bg hist from disk cache."""
+        this_hash = hash_obj(
+            [self.reco_binning.hash, self.output_str, 'bg_hist']
+        )
+        if bg_data is None:
+            if self.bg_hist_hash == this_hash:
+                logging.trace('Loading bg hist from mem cache')
+                return self._bg_hist
+            if this_hash in self.disk_cache:
+                logging.debug('Loading bg hist from disk cache.')
+                bg_hist = self.disk_cache[this_hash]
+            else:
+                raise ValueError(
+                    'bg hist object with correct hash not found in disk_cache'
+                )
+        else:
+            this_hash = hash_obj([this_hash, self.sample_hash])
+            if self.bg_hist_hash == this_hash:
+                logging.trace('Loading bg hist from mem cache')
+                return self._bg_hist
+            bg_hist = self._histogram(
+                events=bg_data,
+                binning=self.reco_binning,
+                weights=bg_data['pisa_weight'],
+                errors=True,
+                name='background',
+                tex=r'\rm{background}'
+            )
+
+            if self.disk_cache is not None:
+                if this_hash not in self.disk_cache:
+                    logging.debug('Caching bg hist to disk.')
+                    self.disk_cache[this_hash] = bg_hist
+
+        self.bg_hist_hash = this_hash
+        self._bg_hist = bg_hist
+        return bg_hist
 
     @staticmethod
     def _create_response(reco_data, true_data, reco_binning, true_binning):
@@ -359,7 +593,7 @@ class roounfold(Stage):
     @staticmethod
     def _histogram(events, binning, weights=None, errors=False, **kwargs):
         """Histogram the events given the input binning."""
-        logging.debug('Histogramming')
+        logging.trace('Histogramming')
 
         bin_names = binning.names
         bin_edges = [edges.m for edges in binning.bin_edges]
@@ -420,10 +654,22 @@ class roounfold(Stage):
 
     def validate_params(self, params):
         pq = pint.quantity._Quantity
-        assert isinstance(params['create_response'].value, bool)
-        assert isinstance(params['stat_fluctuations'].value, pq)
-        assert isinstance(params['regularisation'].value, pq)
-        assert isinstance(params['optimize_reg'].value, bool)
-        assert isinstance(params['unfold_eff'].value, bool)
-        assert isinstance(params['unfold_bg'].value, bool)
-        assert isinstance(params['unfold_unweighted'].value, bool)
+        param_types = [
+            ('real_data', bool),
+            ('unfold_pipeline_cfg', basestring),
+            ('unfold_sample_cfg', basestring),
+            ('stop_after_stage', pq),
+            ('stat_fluctuations', pq),
+            ('regularisation', pq),
+            ('optimize_reg', bool),
+            ('unfold_eff', bool),
+            ('unfold_bg', bool),
+            ('unfold_unweighted', bool)
+        ]
+        for p, t in param_types:
+            val = params[p].value
+            if not isinstance(val, t):
+                raise TypeError(
+                    'Param "%s" must be type %s but is %s instead'
+                    % (p, type(t), type(val))
+                )
