@@ -121,12 +121,20 @@ class roounfold(Stage):
     @profile
     def _compute_outputs(self, inputs=None):
         """Compute histograms for output channels."""
+        logging.trace('Entering roounfold._compute_outputs')
+        self.sample_hash = deepcopy(inputs.hash)
+        logging.trace('{0} roounfold sample_hash = '
+                      '{1}'.format(inputs.metadata['name'], self.sample_hash))
+        if self.random_state is not None:
+            logging.trace(
+                '{0} roounfold random_state = '
+                '{1}'.format(inputs.metadata['name'],
+                             hash_obj(self.random_state.get_state()))
+            )
         if not isinstance(inputs, Data):
             raise AssertionError('inputs is not a Data object, instead is '
                                  'type {0}'.format(type(inputs)))
-        self.sample_hash = inputs.hash
-        logging.trace('sample_hash = {0}'.format(self.sample_hash))
-        self._data = deepcopy(inputs)
+        self._data = inputs
 
         real_data = self.params['real_data'].value
         if real_data:
@@ -166,7 +174,7 @@ class roounfold(Stage):
         return MapSet([unfold_map])
 
     def unfold_mc(self):
-        logging.info('Unfolding monte carlo sample')
+        logging.debug('Unfolding monte carlo sample')
         regularisation = int(self.params['regularisation'].m)
         unfold_bg = self.params['unfold_bg'].value
         unfold_eff = self.params['unfold_eff'].value
@@ -476,7 +484,7 @@ class roounfold(Stage):
                 [this_hash, self.sample_hash, normQuant(self.params)]
             )
             if self.response_hash == this_hash:
-                logging.trace('Loading response from mem cache')
+                logging.info('Loading response from mem cache')
                 return self._response
             else:
                 try:
@@ -542,7 +550,7 @@ class roounfold(Stage):
     @staticmethod
     def _create_response(reco_data, true_data, reco_binning, true_binning):
         """Create the response object from the signal data."""
-        logging.debug('Creating response object.')
+        logging.info('Creating response object.')
 
         reco_hist = roounfold._histogram(
             events=reco_data,

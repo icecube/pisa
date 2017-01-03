@@ -127,14 +127,15 @@ class sample(Stage):
 
         self.include_attrs_for_hashes('sample_hash')
 
-    @profile
-    def _compute_nominal_outputs(self):
-        """Load the baseline events specified by the config file."""
-        self.config = from_file(self.params['data_sample_config'].value)
+        self._compute_outputs()
 
     @profile
     def _compute_outputs(self, inputs=None):
         """Apply basic cuts and compute histograms for output channels."""
+        self.config = from_file(self.params['data_sample_config'].value)
+        name = self.config.get('general', 'name')
+        logging.trace('{0} sample sample_hash = '
+                      '{1}'.format(name, self.sample_hash))
         self.load_sample_events()
 
         if self.params['keep_criteria'].value is not None:
