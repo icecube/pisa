@@ -484,7 +484,7 @@ class roounfold(Stage):
                 [this_hash, self.sample_hash, normQuant(self.params)]
             )
             if self.response_hash == this_hash:
-                logging.info('Loading response from mem cache')
+                logging.debug('Loading response from mem cache')
                 return self._response
             else:
                 try:
@@ -550,7 +550,7 @@ class roounfold(Stage):
     @staticmethod
     def _create_response(reco_data, true_data, reco_binning, true_binning):
         """Create the response object from the signal data."""
-        logging.info('Creating response object.')
+        logging.debug('Creating response object.')
 
         reco_hist = roounfold._histogram(
             events=reco_data,
