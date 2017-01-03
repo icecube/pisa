@@ -1,4 +1,4 @@
-# Stage 6: Discrete Systematics
+# Stage: Discrete Systematics
 
 This stage applies parameterized systematics to the templates. 
 

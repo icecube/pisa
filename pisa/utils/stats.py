@@ -33,12 +33,11 @@ LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh']
 ALL_METRICS = LLH_METRICS + CHI2_METRICS
 """All metrics defined"""
 
+METRICS_TO_MAXIMIZE = LLH_METRICS
+"""Metrics that must be maximized to obtain a better fit"""
+
 
 # TODO(philippeller):
-# * why `nsigma` in some places but `sigma` in others? make conventions
-#   consistent (particularly within same module)
-# * fill in docstrings and references for all below functions, but especially
-#   the statistical functions
 # * unit tests to ensure these don't break
 
 
@@ -182,13 +181,19 @@ def llh(actual_values, expected_values):
 
 def log_poisson(k, l):
     """
+    calculates the log of a poisson pdf
+
+    - poisson pdf as p(k,l) := l^k*exp(-l)/k!
+
     Parameters
     ----------
-    k
-    l
+    k : float
+    l : float
 
     Returns
     -------
+
+    log of poisson
 
     """
     return k*np.log(l) -l - gammaln(k+1)
@@ -196,13 +201,19 @@ def log_poisson(k, l):
 
 def log_smear(x, sigma):
     """
+
+    Calculates the log of a normal pdf
+
+    - normal pdf as p(x,sigma) := (sigma*sqrt(2*pi))^-1*exp(-x^2/(2*sigma^2))
+
     Parameters
     ----------
-    x
-    sigma
+    x : float
+    sigma : float
 
     Returns
     -------
+    log of gaussian
 
     """
     return (
@@ -211,21 +222,28 @@ def log_smear(x, sigma):
     )
 
 
-# TODO(philippeller): why 50. and not 50? is there a difference in behavior?
-# if so, then this should be enforced by more than a default; if not, the
-# default doesn't make sense as a floating point value
-def conv_poisson(k, l, s, nsigma=3, steps=50.):
+def conv_poisson(k, l, s, nsigma=3, steps=50):
     """
+
+    poisson pdf as p(k,l) := l^k*exp(-l)/k!
+
     Parameters
     ----------
-    k
-    l
-    s
-    nsigma
-    steps
+    k : float
+    l : float
+    s : float
+        sigma for smearing term (= the uncertainty to be accounted for)
+    nsigma : int
+        the range in sigmas over which to do the convolution, 3 sigmas is > 99%, so should be enough
+    steps : int
+        number of steps to do the intergration in (actual steps are 2*steps + 1,
+                so this is the steps to each side of the gaussian smearing term)
 
     Returns
     -------
+    
+    float
+        convoluted poissson likelihood
 
     """
     # Replace 0's with small positive numbers to avoid inf in log
@@ -252,19 +270,24 @@ def conv_poisson(k, l, s, nsigma=3, steps=50.):
     return conv.sum()/norm
 
 
-# TODO(philippeller): same as above
-def norm_conv_poisson(k, l, s, nsigma=3, steps=50.):
+def norm_conv_poisson(k, l, s, nsigma=3, steps=50):
     """
     Parameters
     ----------
-    k
-    l
-    s
-    nsigma
-    steps
+    k : float
+    l : float
+    s : float
+        sigma for smearing term (= the uncertainty to be accounted for)
+    nsigma : int
+        the range in sigmas over which to do the convolution, 3 sigmas is > 99%, so should be enough
+    steps : int
+        number of steps to do the intergration in (actual steps are 2*steps + 1,
+                so this is the steps to each side of the gaussian smearing term)
 
     Returns
     -------
+
+    convoluted poisson likelihood normalized so that the value at k=l (asimov) does not change
 
     """
     cp = conv_poisson(k, l, s, nsigma=nsigma, steps=steps)
@@ -279,12 +302,11 @@ def conv_llh(actual_values, expected_values):
 
     Parameters
     ----------
-    actual_values
-    expected_values
+    actual_values, expected_values : numpy.ndarrays of same shape
 
     Returns
     -------
-    total_llh
+    total log of convoluted poisson likelihood
 
     """
     actual_values = unp.nominal_values(actual_values).ravel()
@@ -304,8 +326,7 @@ def barlow_llh(actual_values, expected_values):
 
     Parameters
     ----------
-    actual_values
-    expected_values
+    actual_values, expected_values : numpy.ndarrays of same shape
 
     Returns
     -------
@@ -330,12 +351,11 @@ def mod_chi2(actual_values, expected_values):
 
     Parameters
     ----------
-    actual_values
-    expected_values
+    actual_values, expected_values : numpy.ndarrays of same shape
 
     Returns
     -------
-    sum(chi2)
+    sum(mod_chi2)
 
     """
     # Replace 0's with small positive numbers to avoid inf in log

@@ -571,60 +571,69 @@ class CrossSections(flavInt.FlavIntData):
 
 
 def test_CrossSections(outdir=None):
-    import tempfile
-    set_verbosity(2)
+    from shutil import rmtree
+    from tempfile import mkdtemp
+
+    remove_dir = False
     if outdir is None:
-        outdir = tempfile.mkdtemp()
+        remove_dir = True
+        outdir = mkdtemp()
 
-    # "Standard" location of cross sections file in PISA; retrieve 2.6.4 for
-    # testing purposes
-    pisa_xs_file = 'cross_sections/cross_sections.json'
-    xs = CrossSections(ver='genie_2.6.4', xsec=pisa_xs_file)
-
-    # Location of the root file to use (not included in PISA at the moment)
-    test_dir = expandPath(os.path.join('$PISA', 'tests', 'cross_sections'))
-    #ROOT_xs_file = os.path.join(test_dir, 'genie_2.6.4_simplified.root')
-    ROOT_xs_file = find_resource(os.path.join(
-        'tests', 'data', 'xsec', 'genie_2.6.4_simplified.root'
-    ))
-
-    # Make sure that the XS newly-imported from ROOT match those stored in PISA
-    if os.path.isfile(ROOT_xs_file):
-        xs_from_root = CrossSections.newFromROOT(ROOT_xs_file,
-                                                 ver='genie_2.6.4')
-        logging.info('Found and loaded ROOT source cross sections file %s'
-                     % ROOT_xs_file)
-        #assert xs_from_root.allclose(xs, rtol=1e-7)
-
-    # Check XS ratio for numu_cc to numu_cc + numu_nc (user must inspect)
-    kg0 = flavInt.NuFlavIntGroup('numu_cc')
-    kg1 = flavInt.NuFlavIntGroup('numu_nc')
-    logging.info('\\int_1^80 xs(numu_cc) E^{-1} dE = %e' %
-                 xs.get_xs_ratio_integral(kg0, None, e_range=[1, 80], gamma=1))
-    logging.info('(int E^{-gamma} * (sigma_numu_cc)/'
-                 'int(sigma_(numu_cc+numu_nc)) dE) /'
-                 ' (int E^{-gamma} dE) = %e' %
-                 xs.get_xs_ratio_integral(kg0, kg0+kg1, e_range=[1, 80],
-                                          gamma=1, average=True))
-    # Check that XS ratio for numu_cc+numu_nc to the same is 1.0
-    assert xs.get_xs_ratio_integral(kg0+kg1, kg0+kg1, e_range=[1, 80], gamma=1,
-                                    average=True) == 1.0
-
-    # Check via plot that the
-
-    # Plot all cross sections stored in PISA xs file
     try:
-        alldata = from_file(pisa_xs_file)
-        xs_versions = alldata.keys()
-        for ver in xs_versions:
-            xs = CrossSections(ver=ver, xsec=pisa_xs_file)
-            xs.plot(save=os.path.join(
-                outdir, 'pisa_' + ver + '_nuxCCNC_H2O_cross_sections.pdf'
-            ))
-    except ImportError as exc:
-        logging.debug('Could not plot; possible that matplotlib not'
-                      'installed. ImportError: %s' % exc)
+        # "Standard" location of cross sections file in PISA; retrieve 2.6.4 for
+        # testing purposes
+        pisa_xs_file = 'cross_sections/cross_sections.json'
+        xs = CrossSections(ver='genie_2.6.4', xsec=pisa_xs_file)
+
+        # Location of the root file to use (not included in PISA at the moment)
+        test_dir = expandPath(os.path.join('$PISA', 'tests', 'cross_sections'))
+        #ROOT_xs_file = os.path.join(test_dir, 'genie_2.6.4_simplified.root')
+        ROOT_xs_file = find_resource(os.path.join(
+            'tests', 'data', 'xsec', 'genie_2.6.4_simplified.root'
+        ))
+
+        # Make sure that the XS newly-imported from ROOT match those stored in PISA
+        if os.path.isfile(ROOT_xs_file):
+            xs_from_root = CrossSections.newFromROOT(ROOT_xs_file,
+                                                     ver='genie_2.6.4')
+            logging.info('Found and loaded ROOT source cross sections file %s'
+                         % ROOT_xs_file)
+            #assert xs_from_root.allclose(xs, rtol=1e-7)
+
+        # Check XS ratio for numu_cc to numu_cc + numu_nc (user must inspect)
+        kg0 = flavInt.NuFlavIntGroup('numu_cc')
+        kg1 = flavInt.NuFlavIntGroup('numu_nc')
+        logging.info('\\int_1^80 xs(numu_cc) E^{-1} dE = %e' %
+                     xs.get_xs_ratio_integral(kg0, None, e_range=[1, 80], gamma=1))
+        logging.info('(int E^{-gamma} * (sigma_numu_cc)/'
+                     'int(sigma_(numu_cc+numu_nc)) dE) /'
+                     ' (int E^{-gamma} dE) = %e' %
+                     xs.get_xs_ratio_integral(kg0, kg0+kg1, e_range=[1, 80],
+                                              gamma=1, average=True))
+        # Check that XS ratio for numu_cc+numu_nc to the same is 1.0
+        assert xs.get_xs_ratio_integral(kg0+kg1, kg0+kg1, e_range=[1, 80], gamma=1,
+                                        average=True) == 1.0
+
+        # Check via plot that the
+
+        # Plot all cross sections stored in PISA xs file
+        try:
+            alldata = from_file(pisa_xs_file)
+            xs_versions = alldata.keys()
+            for ver in xs_versions:
+                xs = CrossSections(ver=ver, xsec=pisa_xs_file)
+                xs.plot(save=os.path.join(
+                    outdir, 'pisa_' + ver + '_nuxCCNC_H2O_cross_sections.pdf'
+                ))
+        except ImportError as exc:
+            logging.debug('Could not plot; possible that matplotlib not'
+                          'installed. ImportError: %s' % exc)
+
+    finally:
+        if remove_dir:
+            rmtree(outdir)
 
 
 if __name__ == "__main__":
+    set_verbosity(1)
     test_CrossSections()

@@ -15,12 +15,18 @@ import numpy as np
 import pint
 
 from pisa import ureg
+from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
+from pisa.utils.log import logging, set_verbosity
 
 
 __all__ = ['WHITESPACE_RE', 'NUMBER_RESTR', 'NUMBER_RE',
            'HRGROUP_RESTR', 'HRGROUP_RE', 'IGNORE_CHARS_RE',
+           'TEX_BACKSLASH_CHARS', 'TEX_SPECIAL_CHARS_MAPPING',
            'list2hrlist', 'hrlist2list', 'hrlol2lol', 'hrbool2bool', 'engfmt',
-           'text2tex', 'int2hex', 'hash2hex']
+           'text2tex', 'tex_join', 'tex_rm', 'default_map_tex', 'is_tex',
+           'int2hex', 'hash2hex',
+           'strip_outer_dollars', 'strip_outer_parens',
+           'make_valid_python_name']
 
 
 WHITESPACE_RE = re.compile(r'\s')
@@ -46,6 +52,17 @@ HRGROUP_RE = re.compile(HRGROUP_RESTR, re.IGNORECASE)
 # (the caret ^ inverts the set in the character class)
 IGNORE_CHARS_RE = re.compile(r'[^0-9e:.,;+-]', re.IGNORECASE)
 
+TEX_BACKSLASH_CHARS = '%$#_{}'
+TEX_SPECIAL_CHARS_MAPPING = {
+    '~': r'\textasciitilde',
+    '^': r'\textasciicircum',
+    ' ': r'\;',
+    'sin': r'\sin',
+    'cos': r'\cos',
+    'tan': r'\tan',
+    #'sqrt': r'\sqrt{\,}'
+    #'sqrt': r'\surd'
+}
 
 # TODO: allow for scientific notation input to hr*2list, etc.
 
@@ -197,7 +214,6 @@ def hrgroup2list(hrgroup):
         )),
         a_min=0, a_max=np.inf
     )
-    print n_steps, range_start, range_stop, step_size
     lst = np.linspace(range_start, range_start + n_steps*step_size, n_steps+1)
     if all_ints:
         lst = lst.astype(np.int)
@@ -371,9 +387,77 @@ def ravel_results(results):
         if hasattr(val[0], 'm'):
             results[key] = np.array([v.m for v in val]) * val[0].u
 
-
+# TODO: mathrm vs. rm?
 def text2tex(txt):
-    return txt.replace('_', r'\_')
+    """Convert common characters so they show up the same as TeX"""
+    if txt is None:
+        return ''
+
+    if is_tex(txt):
+        return strip_outer_dollars(txt)
+
+    nfig = NuFlavIntGroup(txt)
+    if len(nfig) > 0:
+        return nfig.tex()
+
+    for c in TEX_BACKSLASH_CHARS:
+        txt = txt.replace(c, r'\%s'%c)
+
+    for c, v in TEX_SPECIAL_CHARS_MAPPING.iteritems():
+        txt = txt.replace(c, '{%s}'%v)
+
+    # A single character is taken to be a variable name, and so do not make
+    # roman, just wrap in braces (to avoid interference with other characters)
+    # and return
+    if len(txt) == 1:
+        return '%s' % txt
+
+    return r'{\rm %s}' % txt
+
+
+def tex_join(sep, *args):
+    strs = [strip_outer_dollars(text2tex(a))
+            for a in args if a is not None and a != '']
+    if len(strs) == 0:
+        return ''
+    else:
+        return str.join(sep, strs)
+
+
+def tex_rm(s):
+    return r'{\rm %s}' % strip_outer_dollars(s)
+
+
+def dollars(s):
+    stripped = strip_outer_dollars(s)
+    out_lines = []
+    for line in stripped.split('\n'):
+        stripped_line = strip_outer_dollars(line)
+        out_lines.append('$%s$' % stripped_line)
+    return '\n'.join(out_lines)
+
+
+def is_tex(s):
+    if s is None:
+        return False
+    for c in TEX_BACKSLASH_CHARS:
+        if '\\'+c in s:
+            return True
+    for seq in TEX_SPECIAL_CHARS_MAPPING.values():
+        if seq in s:
+            return True
+    for seq in [r'\rm', r'\mathrm', r'\theta', r'\phi']:
+        if seq in s:
+            return True
+    if strip_outer_dollars(s) != s:
+        return True
+    return False
+
+
+def default_map_tex(map):
+    if map.tex is None or map.tex == '':
+        return r'{\rm %s}' % text2tex(map.name)
+    return strip_outer_dollars(map.tex)
 
 
 def int2hex(i, bits, signed):
@@ -416,15 +500,60 @@ def hash2hex(hash, bits=64):
     elif isinstance(hash, int):
         hex_hash = int2hex(hash, bits=bits, signed=True)
     else:
-        raise ValueError('Unhandled `hash` type %s' %type(hash))
+        raise TypeError('Unhandled `hash` type %s' %type(hash))
     return hex_hash
 
 
+def strip_outer_dollars(value):
+    value = value.strip()
+    m = re.match(r'^\$(.*)\$$', value)
+    if m is not None:
+        value = m.groups()[0]
+    return value
+
+
+def strip_outer_parens(value):
+    value = value.strip()
+    m = re.match(r'^\{\((.*)\)\}$', value)
+    if m is not None:
+        value = m.groups()[0]
+    m = re.match(r'^\((.*)\)$', value)
+    if m is not None:
+        value = m.groups()[0]
+    return value
+
+
+def make_valid_python_name(name):
+    """Make a name a valid Python identifier.
+
+    From user Triptych at http://stackoverflow.com/questions/3303312
+
+    """
+    # Remove invalid characters
+    name = re.sub('[^0-9a-zA-Z_]', '', name)
+    # Remove leading characters until we find a letter or underscore
+    name = re.sub('^[^a-zA-Z_]+', '', name)
+    return name
+
+
+def test_hrlist_formatter():
+    """Unit tests for hrlist_formatter"""
+    logging.debug(str((hrlist_formatter(start=0, end=10, step=1))))
+    logging.debug(str((hrlist_formatter(start=0, end=10, step=2))))
+    logging.debug(str((hrlist_formatter(start=0, end=3, step=8))))
+    logging.debug(str((hrlist_formatter(start=0.1, end=3.1, step=1.0))))
+    logging.info('<< PASSED : test_hrlist_formatter >>')
+
+
+def test_list2hrlist():
+    """Unit tests for list2hrlist"""
+    logging.debug(str((list2hrlist([0, 1]))))
+    logging.debug(str((list2hrlist([0, 1, 2]))))
+    logging.debug(str((list2hrlist([0.1, 1.1, 2.1, 3.1]))))
+    logging.info('<< PASSED : test_list2hrlist >>')
+
+
 if __name__ == '__main__':
-    print hrlist_formatter(start=0, end=10, step=1)
-    print hrlist_formatter(start=0, end=10, step=2)
-    print hrlist_formatter(start=0, end=3, step=8)
-    print hrlist_formatter(start=0.1, end=3.1, step=1.0)
-    print list2hrlist([0, 1])
-    print list2hrlist([0, 1, 2])
-    print list2hrlist([0.1, 1.1, 2.1, 3.1])
+    set_verbosity(1)
+    test_hrlist_formatter()
+    test_list2hrlist()

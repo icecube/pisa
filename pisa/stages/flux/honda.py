@@ -525,7 +525,7 @@ class honda(Stage):
             for coszenith_list in coszenith_lists:
                 azimuth_lists.append(np.array(np.split(coszenith_list, 12)).T)
             flux_dict[key] = np.array(azimuth_lists)
-            if not key == 'energy':
+            if key != 'energy':
                 flux_dict[key] = flux_dict[key].T
 
         # Set the zenith and energy range
@@ -1002,8 +1002,8 @@ class honda(Stage):
         return scaled_map1, scaled_map2
 
     def apply_nue_numu_ratio(self, flux_maps):
-        """
-        Method for applying the nue/numu ratio systematic.
+        """Apply the nue/numu ratio systematic.
+
         The actual calculation is done by apply_ratio_scale.
 
         Parameters
@@ -1044,10 +1044,10 @@ class honda(Stage):
                                  binning=self.output_binning)
 
         scaled_flux_maps = []
-        scaled_flux_maps.append(scaled_numu_flux)
-        scaled_flux_maps.append(scaled_numubar_flux)
         scaled_flux_maps.append(scaled_nue_flux)
+        scaled_flux_maps.append(scaled_numu_flux)
         scaled_flux_maps.append(scaled_nuebar_flux)
+        scaled_flux_maps.append(scaled_numubar_flux)
 
         return MapSet(maps=scaled_flux_maps, name='flux maps')
 
@@ -1094,10 +1094,10 @@ class honda(Stage):
                                  binning=self.output_binning)
 
         scaled_flux_maps = []
-        scaled_flux_maps.append(scaled_numu_flux)
-        scaled_flux_maps.append(scaled_numubar_flux)
         scaled_flux_maps.append(scaled_nue_flux)
+        scaled_flux_maps.append(scaled_numu_flux)
         scaled_flux_maps.append(scaled_nuebar_flux)
+        scaled_flux_maps.append(scaled_numubar_flux)
 
         return MapSet(maps=scaled_flux_maps, name='flux maps')
 
@@ -1119,11 +1119,9 @@ class honda(Stage):
             The set of maps returned by the Honda interpolation.
 
         """
-
         scaled_flux_maps = []
 
         for flav in ['numu', 'numubar']:
-
             if len(self.output_binning.names) == 2:
                 all_binning = self.output_binning.to(true_energy='GeV',
                                                      true_coszen=None)
@@ -1164,17 +1162,17 @@ class honda(Stage):
 
             scaled_flux_maps.append(scaled_flux)
 
-        scaled_flux_maps.append(flux_maps['nue'])
-        scaled_flux_maps.append(flux_maps['nuebar'])
+        scaled_flux_maps.insert(0, flux_maps['nue'])
+        scaled_flux_maps.insert(2, flux_maps['nuebar'])
 
         return MapSet(maps=scaled_flux_maps, name='flux maps')
 
     def validate_params(self, params):
-        # do some checks on the parameters
+        """Do some checks on the parameters"""
 
         # Currently, these are the only interpolation methods supported
         assert (params.flux_mode.value in ['integral-preserving',
-                                              'bisplrep'])
+                                           'bisplrep'])
 
         # This is the Honda service after all...
         assert 'honda' in params.flux_file.value

@@ -22,10 +22,10 @@ import pint
 import scipy.optimize as optimize
 
 from pisa import ureg
-from pisa.core.map import METRICS_TO_MAXIMIZE
 from pisa.core.param import ParamSet
 from pisa.utils.log import logging
 from pisa.utils.fileio import to_file
+from pisa.utils.stats import METRICS_TO_MAXIMIZE
 
 
 __all__ = ['Analysis', 'Counter']
@@ -152,7 +152,7 @@ class Analysis(object):
         )
 
         # Decide whether fit for other octant is necessary
-        if check_octant and 'theta23' in hypo_maker.params.free:
+        if check_octant and 'theta23' in hypo_maker.params.free.names:
             logging.debug('checking other octant of theta23')
             hypo_maker.reset_free()
 
@@ -522,7 +522,8 @@ class Analysis(object):
         Parameters
         ----------
         xk : list
-	    Parameter vector
+            Parameter vector
+
         """
         self._nit += 1
 

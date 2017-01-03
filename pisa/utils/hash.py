@@ -174,9 +174,9 @@ def test_hash_obj():
 # TODO: test_hash_file function requires a "standard" file to test on
 def test_hash_file():
     file_hash = hash_file('../utils/hash.py')
-    logging.info(file_hash)
+    logging.debug(file_hash)
     file_hash = hash_file('../utils/hash.py', full_hash=False)
-    logging.info(file_hash)
+    logging.debug(file_hash)
     logging.info('<< PASSED : test_hash_file >>')
 
 

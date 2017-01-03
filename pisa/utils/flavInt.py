@@ -1705,24 +1705,24 @@ class CombinedFlavIntData(FlavIntData):
         """
         #with BarSep('_'):
         all_keys = list(args)
-        print 'all_keys:', all_keys
+        #print 'all_keys:', all_keys
         tgt_grp = NuFlavIntGroup(all_keys[0])
-        print 'tgt_grp0:', tgt_grp
-        print 'flavints_to_keys:', self.flavints_to_keys
+        #print 'tgt_grp0:', tgt_grp
+        #print 'flavints_to_keys:', self.flavints_to_keys
         for (flavints, key) in self.flavints_to_keys:
-            print 'flavints:', flavints, 'type:', type(flavints)
-            print 'key:', key, 'type:', type(key)
+            #print 'flavints:', flavints, 'type:', type(flavints)
+            #print 'key:', key, 'type:', type(key)
             match = False
             # Identical
             if tgt_grp == flavints:
                 all_keys[0] = key
                 match = True
-                print 'found exact match:', tgt_grp, '==', flavints
+                #print 'found exact match:', tgt_grp, '==', flavints
             # Requested flavints are strict subset
             elif len(tgt_grp - flavints) == 0:
                 all_keys[0] = key
                 match = True
-                print 'found subset match:', tgt_grp, 'in', flavints
+                #print 'found subset match:', tgt_grp, 'in', flavints
                 logging.debug('Requesting data for subset (%s) of'
                               ' grouping %s' % (str(tgt_grp), str(flavints)))
             # Get it
@@ -1732,7 +1732,7 @@ class CombinedFlavIntData(FlavIntData):
                 lvl = self
                 for k in branch_keys:
                     lvl = dict.__getitem__(lvl, k)
-                print 'node_key:', node_key, 'type:', type(node_key)
+                #print 'node_key:', node_key, 'type:', type(node_key)
                 return deepcopy(dict.__getitem__(lvl, node_key))
         # If you get this far, no match was found
         raise ValueError('Could not locate data for group %s' % str(tgt_grp))
@@ -1796,7 +1796,7 @@ def test_IntType():
     for i in all_i_codes:
         IntType(i)
         IntType(float(i))
-    logging.info('<< PASS >> : IntType checks')
+    logging.info('<< PASS : test_IntType >>')
 
 
 def test_NuFlav():
@@ -1830,7 +1830,7 @@ def test_NuFlav():
     for (f, bnb) in product(['e', 'mu', 'tau'], ['', 'bar']):
         NuFlav('nu_' + f + '_' + bnb)
 
-    logging.info('<< PASS >> : NuFlav checks')
+    logging.info('<< PASS : test_NuFlav >>')
 
 
 def test_NuFlavInt():
@@ -1892,7 +1892,7 @@ def test_NuFlavInt():
     nk = NuFlavInt('numucc')
     assert -nk == NuFlavInt('numubarcc')
 
-    logging.info('<< PASS >> : NuFlavInt checks')
+    logging.info('<< PASS : test_NuFlavInt >>')
 
 
 def test_NuFlavIntGroup():
@@ -1987,8 +1987,8 @@ def test_NuFlavIntGroup():
     logging.info(nkg.simpleTex())
     logging.info(nkg.uniqueFlavsTex())
 
-    logging.info('<< ???? >> : NuFlavIntGroup checks pass upon inspection of'
-                 ' above outputs and generated file(s).')
+    logging.info('<< ???? : test_NuFlavIntGroup >> checks pass upon inspection'
+                 ' of above outputs and generated file(s).')
 
 
 def test_FlavIntData():
@@ -2086,12 +2086,12 @@ def test_FlavIntData():
     fi_cont[NuFlavInt('nutaubar_cc')]
     fname = '/tmp/test_FlavIntData.json'
     logging.info('Writing FlavIntData to file %s; inspect.' %fname)
-    fileio.to_file(fi_cont, fname)
+    fileio.to_file(fi_cont, fname, warn=False)
     fi_cont2 = fileio.from_file(fname)
     assert recursiveEquality(fi_cont2, fi_cont), \
             'fi_cont=%s\nfi_cont2=%s' %(fi_cont, fi_cont2)
 
-    logging.info('<< ???? >> : FlavIntData checks pass upon inspection of'
+    logging.info('<< ???? : test_FlavIntData >> checks pass upon inspection of'
                  ' above outputs and generated file(s).')
 
 
@@ -2131,8 +2131,8 @@ def test_FlavIntDataGroup():
         raise Exception
 
     assert set(fidg1.keys()) == set(('nuall', 'nuallbar_cc', 'nuallbar_nc'))
-    fidg1.save('/tmp/test_FlavIntDataGroup.json')
-    fidg1.save('/tmp/test_FlavIntDataGroup.hdf5')
+    fidg1.save('/tmp/test_FlavIntDataGroup.json', warn=False)
+    fidg1.save('/tmp/test_FlavIntDataGroup.hdf5', warn=False)
     fidg3 = FlavIntDataGroup(val='/tmp/test_FlavIntDataGroup.json')
     fidg4 = FlavIntDataGroup(val='/tmp/test_FlavIntDataGroup.hdf5')
     assert fidg3 == fidg1
@@ -2147,10 +2147,10 @@ def test_FlavIntDataGroup():
 
     cfidat[NuFlavIntGroup('nuecc+nuebarcc')] = np.arange(10)
 
-    print fidg1 + fidg2
+    logging.debug(str((fidg1 + fidg2)))
     assert fidg1 == fidg2
     try:
-        print fidg1 + cfidat
+        logging.debug(str((fidg1 + cfidat)))
     except AssertionError:
         pass
     else:
@@ -2175,15 +2175,15 @@ def test_FlavIntDataGroup():
     d1 = FlavIntDataGroup(val=d1)
     d2 = FlavIntDataGroup(val=d2)
     d3 = d1 + d2
-    print d3
+    logging.debug(str((d3)))
 
     tr_d1 = d1.transform_groups(['numu+numubar+nutau+nutaubar'])
-    print tr_d1
+    logging.debug(str((tr_d1)))
     tr_d3 = d3.transform_groups('nue+nuebar+numu+numubar, nutau+nutaubar')
     tr_d3_1 = d3.transform_groups(['nue+nuebar+numu+numubar', 'nutau+nutaubar'])
     tr_d3_2 = d3.transform_groups([NuFlavIntGroup('nue+nuebar+numu+numubar'),
                                    NuFlavIntGroup('nutau+nutaubar')])
-    print tr_d3
+    logging.debug(str((tr_d3)))
     assert tr_d3 == tr_d3_1 and tr_d3 == tr_d3_2
 
     try:
@@ -2214,17 +2214,17 @@ def test_CombinedFlavIntData():
     gp1, ug1 = xlateGroupsStr(
         'nuall_nc, nuallbar_nc, nue, numu_cc+numubar_cc, nutau_cc'
     )
-    logging.info(str(([kg.simpleStr() for kg in gp1], ug1)))
+    logging.debug(str(([kg.simpleStr() for kg in gp1], ug1)))
     gp2, ug2 = xlateGroupsStr('nue,numu')
-    logging.info(str(([kg.simpleStr() for kg in gp2], ug2)))
+    logging.debug(str(([kg.simpleStr() for kg in gp2], ug2)))
     gp3, ug3 = xlateGroupsStr('nuall_nc')
-    logging.info(str(([kg.simpleStr() for kg in gp3], ug3)))
+    logging.debug(str(([kg.simpleStr() for kg in gp3], ug3)))
     gp4, ug4 = xlateGroupsStr(
         'nuall_nc+nuallbar_nc,nuall_cc+nuallbar_cc'
     )
-    logging.info(str(([kg.simpleStr() for kg in gp4], ug4)))
+    logging.debug(str(([kg.simpleStr() for kg in gp4], ug4)))
 
-    logging.info('<< PASS >> : xlateGroupsStr')
+    logging.info('<< PASS : test_CombinedFlavIntData/xlateGroupsStr >>')
 
     #==========================================================================
     # Test CombinedFlavIntData class
@@ -2240,8 +2240,8 @@ def test_CombinedFlavIntData():
              'nuallbarnc': np.arange(200, 300)}
     )
     assert set(cfid.keys()) == set(('nuall', 'nuallbar_cc', 'nuallbar_nc'))
-    cfid.save('/tmp/test_CombinedFlavIntData.json')
-    cfid.save('/tmp/test_CombinedFlavIntData.hdf5')
+    cfid.save('/tmp/test_CombinedFlavIntData.json', warn=False)
+    cfid.save('/tmp/test_CombinedFlavIntData.hdf5', warn=False)
     cfid2 = CombinedFlavIntData('/tmp/test_CombinedFlavIntData.json')
     cfid3 = CombinedFlavIntData('/tmp/test_CombinedFlavIntData.hdf5')
     assert cfid2 == cfid
@@ -2342,11 +2342,11 @@ def test_CombinedFlavIntData():
     assert cfidat.flavints_to_keys[0][0] == NuFlavIntGroup('nuall+nuallbar')
 
     logging.info(str([NuFlavIntGroup(k) for k in cfid1.keys()]))
-    logging.info('<< ???? >> : CombinedFlavIntData')
+    logging.info('<< ???? : CombinedFlavIntData >>')
 
 
 if __name__ == "__main__":
-    set_verbosity(3)
+    set_verbosity(1)
     test_IntType()
     test_NuFlav()
     test_NuFlavInt()

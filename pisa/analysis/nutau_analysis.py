@@ -78,7 +78,7 @@ class Analysis(object):
         self.dof = n_bins - self.n_free_params + n_gauss_priors
 
         # Generate distribution
-        self.data = self.data_maker.get_outputs(return_sum=True)
+        self.data = self.data_maker.get_outputs(return_sum=True, sum_map_name='evts', sum_map_tex_name='evts')
         self.pseudodata_method = None
         self.pseudodata = None
         self.n_minimizer_calls = 0
@@ -414,6 +414,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('-d', '--data-settings', type=str,
                         metavar='configfile', default=None,
+                        action='append',
                         help='settings for the generation of "data"')
     parser.add_argument('-t', '--template-settings',
                         metavar='configfile', required=True,

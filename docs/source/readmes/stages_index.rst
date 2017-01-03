@@ -1,7 +1,9 @@
 Stages
 ======
 
-Description of the different PISA stages and their physics
+Description of the different PISA stages and their physics.
+
+There is the 'classic' PISA pipeline with stages 1-5:
 
 .. toctree::
    :maxdepth: 2
@@ -11,4 +13,13 @@ Description of the different PISA stages and their physics
    aeff
    reco
    pid
-   sys
+
+And other stages mainly used for the MC reweighting style of analysis:
+
+.. toctree::
+   :maxdepth: 2
+    
+   mc
+   data
+   discr_sys
+   combine

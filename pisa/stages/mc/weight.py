@@ -392,7 +392,7 @@ class weight(Stage):
                             hist=kde_hist,
                             error_hist=np.sqrt(kde_hist),
                             binning=self.output_binning,
-                            tex=r'{\rm '+text2tex(fig)+r'}'
+                            tex=text2tex(fig)
                         )
                     )
                 else:
@@ -431,7 +431,7 @@ class weight(Stage):
                         hist=kde_hist,
                         error_hist=np.sqrt(kde_hist),
                         binning=self.output_binning,
-                        tex=r'{\rm '+text2tex('muons')+r'}'
+                        tex=text2tex('muons')
                     )
                 )
             else:
@@ -442,7 +442,7 @@ class weight(Stage):
                         weights_col='pisa_weight',
                         errors=True,
                         name='muons',
-                        tex=r'\rm{muons}'
+                        tex=text2tex('muons')
                     )
                 )
 

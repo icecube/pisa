@@ -187,7 +187,8 @@ if __name__ == '__main__':
     at 5.0 GeV and 20.0 GeV across all of cos(zenith) for NuMu just to make
     sure everything looks sensible.
     """
-
+    import matplotlib
+    matplotlib.use('pdf')
     from matplotlib import pyplot as plt
 
     spline_dict = load_2D_table('flux/honda-2015-spl-solmax-aa.d')
@@ -206,11 +207,11 @@ if __name__ == '__main__':
     plt.plot(czs, low_en_flux_weights)
     plt.xlabel('cos(zenith)')
     plt.ylabel('NuMu Flux at 5.0 GeV')
-    plt.savefig('fluxweightstest5GeV.png')
+    plt.savefig('fluxweightstest5GeV.pdf')
     plt.close()
 
     plt.plot(czs, high_en_flux_weights)
     plt.xlabel('cos(zenith)')
     plt.ylabel('NuMu Flux at 20.0 GeV')
-    plt.savefig('fluxweightstest20GeV.png')
+    plt.savefig('fluxweightstest20GeV.pdf')
     plt.close()
