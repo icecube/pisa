@@ -8,6 +8,8 @@ import base64
 import cPickle as pickle
 import hashlib
 import struct
+from collections import Sequence
+from copy import deepcopy
 
 import numpy as np
 
@@ -104,9 +106,28 @@ def hash_obj(obj, hash_to='int', full_hash=True):
         try:
             pkl = pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
         except:
-            logging.error('Failed to pickle `obj` "%s" of type "%s"'
-                          %(obj, type(obj)))
-            raise
+            if isinstance(obj, Sequence):
+                obj_2 = []
+                for el in obj:
+                    try:
+                        a = pickle.dumps(el, pickle.HIGHEST_PROTOCOL)
+                        obj_2.append(el)
+                    except:
+                        try:
+                            obj_2.append(el.state_hash)
+                        except:
+                            pass
+                        pass
+                try:
+                    pkl = pickle.dumps(obj_2, pickle.HIGHEST_PROTOCOL)
+                except:
+                    logging.error('Failed to pickle `obj` "%s" of type "%s"'
+                                  %(obj, type(obj)))
+                    raise
+            else:
+                logging.error('Failed to pickle `obj` "%s" of type "%s"'
+                              %(obj, type(obj)))
+                raise
         obj = pkl
 
     if full_hash:

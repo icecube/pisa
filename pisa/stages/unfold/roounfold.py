@@ -57,9 +57,9 @@ class roounfold(Stage):
         """Hash of background histogram for subtraction."""
 
         expected_params = (
-            'real_data', 'unfold_pipeline_cfg', 'unfold_sample_cfg',
-            'stop_after_stage', 'stat_fluctuations', 'regularisation',
-            'optimize_reg', 'unfold_eff', 'unfold_bg', 'unfold_unweighted'
+            'real_data', 'unfold_pipeline_cfg', 'stat_fluctuations',
+            'regularisation', 'optimize_reg', 'unfold_eff', 'unfold_bg',
+            'unfold_unweighted'
         )
 
         self.reco_binning = reco_binning
@@ -378,41 +378,26 @@ class roounfold(Stage):
 
     def load_gen_data(self):
         logging.debug('Loading generator level sample')
-        dataset = 'neutrinos:gen_lvl'
-        pipeline_cfg = from_file(self.params['unfold_pipeline_cfg'].value)
-        sample_cfg = from_file(self.params['unfold_sample_cfg'].value)
-        gen_lvl_cfg = from_file(sample_cfg.get(dataset, 'gen_cfg_file'))
-        this_hash = hash_obj([pipeline_cfg, gen_lvl_cfg, self.output_str])
+        unfold_pipeline_cfg = self.params['unfold_pipeline_cfg'].value
+        if isinstance(unfold_pipeline_cfg, basestring):
+            pipeline_cfg = from_file(unfold_pipeline_cfg)
+            pipeline_hash = pipeline_cfg
+            sa_cfg = from_file(
+                pipeline_cfg.get('stage:data', 'param.data_sample_config')
+            )
+            template_maker = Pipeline(pipeline_cfg)
+        elif isinstance(unfold_pipeline_cfg, Pipeline):
+            pipeline_hash = unfold_pipeline_cfg.state_hash
+            sa_cfg = from_file(
+                unfold_pipeline_cfg.params['data_sample_config'].value
+            )
+            template_maker = unfold_pipeline_cfg
+        gen_cfg = from_file(sa_cfg.get('neutrinos:gen_lvl', 'gen_cfg_file'))
+        this_hash = hash_obj([gen_cfg, pipeline_hash, self.output_str])
         if self.gen_data_hash == this_hash:
             return self._gen_data
 
-        u_cfg = from_file(self.params['unfold_pipeline_cfg'].value)
-        u_cfg.set('stage:data', 'output_names', 'all_nu')
-        u_cfg.set('stage:mc', 'output_names', 'all_nu')
-        muon_params = (
-            'param.atm_muon_scale',
-            'param.atm_muon_scale.fixed',
-            'param.atm_muon_scale.range',
-            'param.delta_gamma_mu_file',
-            'param.delta_gamma_mu_spline_kind',
-            'param.delta_gamma_mu_variable',
-            'param.delta_gamma_mu',
-            'param.delta_gamma_mu.fixed',
-            'param.delta_gamma_mu.range'
-        )
-        for m_p in muon_params:
-            if u_cfg.has_option('stage:mc', m_p):
-                u_cfg.remove_option('stage:mc', m_p)
-        # TODO(shivesh): remove after greco oneweight bug is fixed
-        u_cfg.set('stage:mc', 'param.flux_reweight', 'True')
-
-        template_maker = Pipeline(u_cfg)
-        dataset_param = template_maker.params['dataset']
-        dataset_param.value = dataset
-        template_maker.update_params(dataset_param)
-        full_gen_data = template_maker.get_outputs(
-            idx=int(self.params['stop_after_stage'].m)
-        )
+        full_gen_data = template_maker.get_outputs()
         if not isinstance(full_gen_data, Data):
             raise AssertionError(
                 'Output of pipeline is not a Data object, instead is type '
@@ -683,9 +668,6 @@ class roounfold(Stage):
         pq = pint.quantity._Quantity
         param_types = [
             ('real_data', bool),
-            ('unfold_pipeline_cfg', basestring),
-            ('unfold_sample_cfg', basestring),
-            ('stop_after_stage', pq),
             ('stat_fluctuations', pq),
             ('regularisation', pq),
             ('optimize_reg', bool),
@@ -700,3 +682,5 @@ class roounfold(Stage):
                     'Param "%s" must be type %s but is %s instead'
                     % (p, type(t), type(val))
                 )
+        assert isinstance(params['unfold_pipeline_cfg'].value, basestring) or \
+                isinstance(params['unfold_pipeline_cfg'].value, Pipeline)

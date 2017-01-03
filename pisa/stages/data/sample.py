@@ -187,10 +187,6 @@ class sample(Stage):
             return
 
         name = self.config.get('general', 'name')
-        logging.info(
-            'Extracting events using configuration sample "{0}"'.format(name)
-        )
-
         def parse(string):
             return string.replace(' ', '').split(',')
         event_types = parse(self.config.get('general', 'event_type'))
@@ -237,8 +233,8 @@ class sample(Stage):
             weights      = parse(gen_cfg.get('general', 'weights'))
             weight_units = gen_cfg.get('general', 'weight_units')
             keep_keys    = parse(gen_cfg.get('general', 'keep_keys'))
-            logging.info('Extracting events from generator level sample '
-                         '"{0}"'.format(name))
+            logging.info('Extracting dataset "{0}" from generator level '
+                         'sample "{1}"'.format(dataset, name))
 
             for idx, flav in enumerate(event_types):
                 fig = NuFlavIntGroup(flav)
@@ -258,6 +254,8 @@ class sample(Stage):
             sys_list     = parse(config.get('neutrinos', 'sys_list'))
             base_suffix  = config.get('neutrinos', 'basesuffix')
             keep_keys    = parse(config.get('neutrinos', 'keep_keys'))
+            logging.info('Extracting dataset "{0}" from generator level '
+                         'sample "{1}"'.format(dataset, name))
             if base_suffix == 'None':
                 base_suffix = ''
 
