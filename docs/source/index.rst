@@ -16,7 +16,6 @@ Contents
    readmes/install
    readmes/stages_index
    readmes/devel_guide
-   readmes/scripts
    readmes/utils_index
    Docstrings <modules>
 

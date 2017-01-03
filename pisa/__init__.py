@@ -14,7 +14,7 @@ from ._version import get_versions
 
 __all__ = ['__version__',
            'ureg', 'Q_',
-           'FTYPE', 'C_FTYPE', 'C_PRECISION_DEF', 'CACHE_DIR']
+           'FTYPE', 'HASH_SIGFIGS', 'C_FTYPE', 'C_PRECISION_DEF', 'CACHE_DIR']
 
 
 __version__ = get_versions()['version']
@@ -50,6 +50,17 @@ if 'PISA_FTYPE' in os.environ:
         sys.stderr.write('\n')
         raise ValueError(msg)
 del float32_strings, float64_strings, msg
+
+
+# Define HASH_SIGFIGS to set hashing precision based on FTYPE above; value here
+# is default (i.e. for FTYPE == np.float64)
+HASH_SIGFIGS = 12
+"""Round to this many significant figures for hashing numbers, such that
+machine precision doesn't cause effectively equivalent numbers to hash
+differently."""
+
+if FTYPE == np.float32:
+    HASH_SIGFIGS = 6
 
 
 # Derive #define consts for dynamically-compiled C (and also C++ and CUDA) code

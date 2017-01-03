@@ -228,30 +228,6 @@ pisa.utils.resources module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.slice_smooth_aeff module
------------------------------------
-
-.. automodule:: pisa.utils.slice_smooth_aeff
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.utils.smooth_aeff module
------------------------------
-
-.. automodule:: pisa.utils.smooth_aeff
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.utils.smooth_pid module
-----------------------------
-
-.. automodule:: pisa.utils.smooth_pid
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pisa.utils.spline module
 ------------------------
 

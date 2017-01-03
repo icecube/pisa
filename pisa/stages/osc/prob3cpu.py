@@ -237,14 +237,14 @@ class prob3cpu(Stage):
             if out_idx < 3:
                 # Neutrinos
                 xform[0] = np.array([
-                    prob_list[out_idx + i*18*self.num_czbins
+                    prob_list[out_idx + 18*i*self.num_czbins
                               : out_idx + 18*(i+1)*self.num_czbins
                               : 18]
                     for i in range(0, self.num_ebins)
                 ])
                 xform[1] = np.array([
-                    prob_list[out_idx+3 + i*18*self.num_czbins
-                              : out_idx + 18*(i+1)*self.num_czbins
+                    prob_list[out_idx+3 + 18*i*self.num_czbins
+                              : out_idx+3 + 18*(i+1)*self.num_czbins
                               : 18]
                     for i in range(0, self.num_ebins)
                 ])
@@ -253,13 +253,13 @@ class prob3cpu(Stage):
             else:
                 # Antineutrinos
                 xform[0] = np.array([
-                    prob_list[out_idx+6 + i*18*self.num_czbins
+                    prob_list[out_idx+6 + 18*i*self.num_czbins
                               : out_idx+6 + 18*(i+1)*self.num_czbins
                               : 18]
                     for i in range(0, self.num_ebins)
                 ])
                 xform[1] = np.array([
-                    prob_list[out_idx+9 + i*18*self.num_czbins
+                    prob_list[out_idx+9 + 18*i*self.num_czbins
                               : out_idx+9 + 18*(i+1)*self.num_czbins
                               : 18]
                     for i in range(0, self.num_ebins)

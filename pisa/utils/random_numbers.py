@@ -59,7 +59,10 @@ def get_random_state(random_state, jumpahead=0):
 
     Returns
     -------
-    numpy.random.RandomState
+    random_state : numpy.random.RandomState
+        Object callable like `numpy.random` (e.g. `random_state.rand((10,10))`),
+        but with __exclusively local__ state (whereas `numpy.random` has global
+        state).
 
     """
     if random_state is None:

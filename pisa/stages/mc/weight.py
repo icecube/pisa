@@ -280,10 +280,14 @@ class weight(Stage):
     @profile
     def _compute_outputs(self, inputs=None):
         """Compute histograms for output channels."""
+        logging.info('Entering weight._compute_outputs')
+        self.sample_hash = deepcopy(inputs.hash)
+        logging.trace('{0} weight sample_hash = '
+                      '{1}'.format(inputs.metadata['name'], self.sample_hash))
         if not isinstance(inputs, Data):
             raise AssertionError('inputs is not a Data object, instead is '
                                  'type {0}'.format(type(inputs)))
-        self._data = deepcopy(inputs)
+        self._data = inputs
 
         # TODO(shivesh): muons + noise reweighting
         if self.neutrinos:
@@ -353,7 +357,6 @@ class weight(Stage):
 
         self._data.metadata['params_hash'] = self.params.values_hash
         self._data.update_hash()
-        self.sample_hash = self._data.hash
 
         if self.params['output_events_mc'].value:
             return self._data
@@ -392,7 +395,7 @@ class weight(Stage):
                             hist=kde_hist,
                             error_hist=np.sqrt(kde_hist),
                             binning=self.output_binning,
-                            tex=r'{\rm '+text2tex(fig)+r'}'
+                            tex=text2tex(fig)
                         )
                     )
                 else:
@@ -431,7 +434,7 @@ class weight(Stage):
                         hist=kde_hist,
                         error_hist=np.sqrt(kde_hist),
                         binning=self.output_binning,
-                        tex=r'{\rm '+text2tex('muons')+r'}'
+                        tex=text2tex('muons')
                     )
                 )
             else:
@@ -442,7 +445,7 @@ class weight(Stage):
                         weights_col='pisa_weight',
                         errors=True,
                         name='muons',
-                        tex=r'\rm{muons}'
+                        tex=text2tex('muons')
                     )
                 )
 

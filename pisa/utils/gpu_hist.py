@@ -1,6 +1,9 @@
 # authors: P.Eller (pde3@psu.edu)
 # date:   September 2016
+"""
+Histogramming on the GPU
 
+"""
 
 import os
 
@@ -10,11 +13,10 @@ import pycuda.driver as cuda
 
 from pisa import FTYPE, C_FTYPE, C_PRECISION_DEF
 from pisa.utils.log import logging, set_verbosity
-from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
 
 
-__all__ = ['GPUHist']
+__all__ = ['GPUHist', 'test_GPUHist']
 
 
 ITYPE = np.int64
@@ -349,28 +351,31 @@ def test_GPUHist():
                 n_events=n_events, d_x=d_e, d_y=d_cz, d_w=d_w
             )
 
-        np_hist2d,_,_ = np.histogram2d(
+        np_hist2d, _, _ = np.histogram2d(
             e, cz,
             bins=(bin_edges_e, bin_edges_cz),
             weights=w
         )
 
-        fract_err = (hist2d/np_hist2d) - 1
-        logging.debug(
-            '2D hist ftype=%s, weighted=%s, n_events=%s: max abs fract'
-            ' err=%s, mean fract err=%s, mean abs fract err=%s'
-            %(ftype, weight, n_events,
-              np.nanmax(np.abs(fract_err)),
-              np.nanmean(fract_err),
-              np.nanmean(np.abs(fract_err)))
-        )
-        if not np.allclose(hist2d, np_hist2d, atol=0, rtol=rtol):
-            logging.error('Numpy hist:\n%s' %repr(np_hist2d))
-            logging.error('GPUHist hist:\n%s' %repr(hist2d))
-            raise ValueError(
-                '2D histogram ftype=%s, weighted=%s, n_events=%s worst fractional error is %s'
-                %(ftype, weight, n_events, np.max(np.abs((hist2d-np_hist2d)/np_hist2d)))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            fract_err = (hist2d/np_hist2d) - 1
+            logging.debug(
+                '2D hist ftype=%s, weighted=%s, n_events=%s: max abs fract'
+                ' err=%s, mean fract err=%s, mean abs fract err=%s'
+                %(ftype, weight, n_events,
+                  np.nanmax(np.abs(fract_err)),
+                  np.nanmean(fract_err),
+                  np.nanmean(np.abs(fract_err)))
             )
+            if not np.allclose(hist2d, np_hist2d, atol=0, rtol=rtol):
+                logging.error('Numpy hist:\n%s' %repr(np_hist2d))
+                logging.error('GPUHist hist:\n%s' %repr(hist2d))
+                raise ValueError(
+                    '2D histogram ftype=%s, weighted=%s, n_events=%s worst'
+                    ' fractional error is %s'
+                    %(ftype, weight, n_events,
+                      np.max(np.abs((hist2d-np_hist2d)/np_hist2d)))
+                )
 
         del histogrammer
 
@@ -394,22 +399,25 @@ def test_GPUHist():
             weights=w
         )
 
-        fract_err = (hist3d/np_hist3d) - 1
-        logging.debug(
-            '3D hist ftype=%s, weighted=%s, n_events=%s: max abs fract'
-            ' err=%s, mean fract err=%s, mean abs fract err=%s'
-            %(ftype, weight, n_events,
-              np.nanmax(np.abs(fract_err)),
-              np.nanmean(fract_err),
-              np.nanmean(np.abs(fract_err)))
-        )
-        if not np.allclose(hist3d, np_hist3d, atol=0, rtol=rtol):
-            logging.error('Numpy hist:\n%s' %repr(np_hist3d))
-            logging.error('GPUHist hist:\n%s' %repr(hist3d))
-            raise ValueError(
-                '3D histogram ftype=%s, weighted=%s, n_events=%s worst fractional error is %s'
-                %(ftype, weight, n_events, np.max(np.abs((hist3d-np_hist3d)/np_hist3d)))
+        with np.errstate(divide='ignore', invalid='ignore'):
+            fract_err = (hist3d/np_hist3d) - 1
+            logging.debug(
+                '3D hist ftype=%s, weighted=%s, n_events=%s: max abs fract'
+                ' err=%s, mean fract err=%s, mean abs fract err=%s'
+                %(ftype, weight, n_events,
+                  np.nanmax(np.abs(fract_err)),
+                  np.nanmean(fract_err),
+                  np.nanmean(np.abs(fract_err)))
             )
+            if not np.allclose(hist3d, np_hist3d, atol=0, rtol=rtol):
+                logging.error('Numpy hist:\n%s' %repr(np_hist3d))
+                logging.error('GPUHist hist:\n%s' %repr(hist3d))
+                raise ValueError(
+                    '3D histogram ftype=%s, weighted=%s, n_events=%s worst'
+                    ' fractional error is %s'
+                    %(ftype, weight, n_events,
+                      np.max(np.abs((hist3d-np_hist3d)/np_hist3d)))
+                )
 
         del histogrammer
 
@@ -417,5 +425,5 @@ def test_GPUHist():
 
 
 if __name__ == '__main__':
-    set_verbosity(2)
+    set_verbosity(1)
     test_GPUHist()

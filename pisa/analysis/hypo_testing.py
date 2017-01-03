@@ -34,13 +34,14 @@ import pint
 from pisa import _version, __version__
 from pisa.analysis.analysis import Analysis
 from pisa.core.distribution_maker import DistributionMaker
-from pisa.core.map import VALID_METRICS, MapSet
+from pisa.core.map import MapSet
 from pisa.utils.comparisons import normQuant
 from pisa.utils.fileio import from_file, get_valid_filename, mkdir, to_file
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.random_numbers import get_random_state
 from pisa.utils.resources import find_resource
+from pisa.utils.stats import ALL_METRICS
 from pisa.utils.timing import timediffstamp, timestamp
 
 
@@ -242,12 +243,12 @@ class HypoTesting(Analysis):
 
     metric : string
         Metric for minimizer to use for comparing distributions. Valid metrics
-        are defined by `pisa.core.map.VALID_METRICS`.
+        are defined by `pisa.utils.stats.ALL_METRICS`.
 
     other_metrics : None, string, or sequence of strings
         Other metric to record to compare distributions. These are not used by
         the minimizer. Valid metrics are defined by
-        `pisa.core.map.VALID_METRICS`.
+        `pisa.utils.stats.ALL_METRICS`.
 
     blind : bool
         Set to True to run a blind analysis, whereby free parameter values are
@@ -332,7 +333,7 @@ class HypoTesting(Analysis):
         assert num_fid_trials >= 1
         assert data_start_ind >= 0
         assert fid_start_ind >= 0
-        assert metric in VALID_METRICS
+        assert metric in ALL_METRICS
 
         # Instantiate h0 distribution maker to ensure it is a valid spec
         if h0_maker is None:
@@ -1492,15 +1493,15 @@ def parse_args():
         '--metric',
         type=str, default=None, metavar='METRIC',
         help='''Name of metric to use for optimizing the fit. Must be one of
-        %s.''' % (VALID_METRICS,)
+        %s.''' % (ALL_METRICS,)
     )
     parser.add_argument(
         '--other-metric',
         type=str, default=None, metavar='METRIC', action='append',
-        choices=['all'] + sorted(VALID_METRICS),
+        choices=['all'] + sorted(ALL_METRICS),
         help='''Name of another metric to evaluate at the best-fit point. Must
         be either 'all' or one of %s. Repeat this argument (or use 'all') to
-        specify multiple metrics.''' % (VALID_METRICS,)
+        specify multiple metrics.''' % (ALL_METRICS,)
     )
     parser.add_argument(
         '--num-data-trials',
@@ -1605,7 +1606,7 @@ def main():
     if other_metrics is not None:
         other_metrics = [s.strip().lower() for s in other_metrics]
         if 'all' in other_metrics:
-            other_metrics = sorted(VALID_METRICS)
+            other_metrics = sorted(ALL_METRICS)
         if init_args_d['metric'] in other_metrics:
             other_metrics.remove(init_args_d['metric'])
         if len(other_metrics) == 0:

@@ -71,6 +71,8 @@ class gpu(Stage):
                 apply KDE smoothing to outputs (d2d)
             hist_e_scale : quantity (dimensionless)
                 scale factor for energy bin edges, as a reco E systematic
+            true_e_scale : quantity (dimensionless)
+                scale factor for true energy
 
     Notes
     -----
@@ -124,7 +126,11 @@ class gpu(Stage):
             'deltam21',
             'deltam31',
             'deltacp',
-            'no_nc_osc'
+            'no_nc_osc',
+        )
+
+        self.true_params = (
+            'true_e_scale',
         )
 
         self.flux_params = (
@@ -147,14 +153,14 @@ class gpu(Stage):
             'reco_e_scale_raw',
             'reco_cz_res_raw',
             'hist_e_scale',
+            'hist_pid_scale',
             'bdt_cut',
             'kde',
             'cut_outer',
         )
 
-        expected_params = (self.osc_params
-                           + self.flux_params
-                           + self.other_params)
+        expected_params = (self.osc_params + self.flux_params +
+                           self.other_params + self.true_params)
 
         output_names = split(output_names)
 
@@ -184,6 +190,8 @@ class gpu(Stage):
             assert (params.no_nc_osc.value == False), 'If you want NC tau events scaled, you should oscillate them -> set no_nc_osc to False!!!'
         if params.hist_e_scale.is_fixed == False or params.hist_e_scale.value != 1.0:
             assert (params.kde.value == False), 'The hist_e_scale can only be used with histograms, not KDEs!'
+        if params.hist_pid_scale.is_fixed == False or params.hist_pid_scale.value != 1.0:
+            assert (params.kde.value == False), 'The hist_epid_scale can only be used with histograms, not KDEs!'
 
 
     def _compute_nominal_outputs(self):
@@ -205,7 +213,7 @@ class gpu(Stage):
         # Prob3 GPU oscillations
         osc_params_subset = []
         for param in self.params:
-            if param.name in self.osc_params:
+            if param.name in self.osc_params or param.name in self.true_params:
                 osc_params_subset.append(param)
         osc_params_subset = ParamSet(osc_params_subset)
 
@@ -226,11 +234,13 @@ class gpu(Stage):
         self.bin_edges = []
 
         for i,name in enumerate(self.bin_names):
-            if 'energy' in  name:
+            if 'energy' in name:
                 bin_edges = self.output_binning[name].bin_edges.to('GeV').magnitude.astype(FTYPE)
                 self.e_bin_number = i
             else:
                 bin_edges = self.output_binning[name].bin_edges.magnitude.astype(FTYPE)
+            if 'pid' in name:
+                self.pid_bin_number = i
             self.bin_edges.append(bin_edges)
 
         if self.params.kde.value:
@@ -240,6 +250,7 @@ class gpu(Stage):
             # GPU histogramer
             bin_edges = deepcopy(self.bin_edges)
             bin_edges[self.e_bin_number] *= FTYPE(self.params.hist_e_scale.value.m_as('dimensionless'))
+            bin_edges[self.pid_bin_number][1] *= FTYPE(self.params.hist_pid_scale.value.m_as('dimensionless'))
             self.histogrammer = self.GPUHist(*bin_edges)
 
         # load events
@@ -249,7 +260,10 @@ class gpu(Stage):
         # --- Load events
         # open Events file
         evts = Events(self.params.events_file.value)
-        bdt_cut = self.params.bdt_cut.value.m_as('dimensionless')
+        if self.params.bdt_cut.value == None:
+            bdt_cut = None
+        else:
+            bdt_cut = self.params.bdt_cut.value.m_as('dimensionless')
 
         # Load and copy events
         variables = [
@@ -474,6 +488,12 @@ class gpu(Stage):
         osc_param_vals = [self.params[name].value for name in self.osc_params]
         gpu_flux_vals = [self.params[name].value
                            for name in self.flux_params]
+        
+        true_params_vals = [self.params[name].value for name in self.true_params]
+
+        osc_param_vals += true_params_vals
+        gpu_flux_vals += true_params_vals
+
         if self.full_hash:
             osc_param_vals = normQuant(osc_param_vals)
             gpu_flux_vals = normQuant(gpu_flux_vals)
@@ -487,6 +507,7 @@ class gpu(Stage):
         aeff_scale = self.params.aeff_scale.value.m_as('dimensionless')
         Genie_Ma_QE = self.params.Genie_Ma_QE.value.m_as('dimensionless')
         Genie_Ma_RES = self.params.Genie_Ma_RES.value.m_as('dimensionless')
+        true_e_scale = self.params.true_e_scale.value.m_as('dimensionless')
 
         if recalc_flux:
             nue_numu_ratio = self.params.nue_numu_ratio.value.m_as('dimensionless')
@@ -515,6 +536,7 @@ class gpu(Stage):
                         self.events_dict[flav]['kNuBar'],
                         self.events_dict[flav]['kFlav'],
                         self.events_dict[flav]['n_evts'],
+                        true_e_scale=true_e_scale,
                         **self.events_dict[flav]['device']
                     )
 
@@ -529,6 +551,7 @@ class gpu(Stage):
                     delta_index=delta_index,
                     Barr_uphor_ratio=Barr_uphor_ratio,
                     Barr_nu_nubar_ratio=Barr_nu_nubar_ratio,
+                    true_e_scale=true_e_scale,
                     **self.events_dict[flav]['device']
                 )
 
@@ -554,6 +577,7 @@ class gpu(Stage):
                 kNuBar=self.events_dict[flav]['kNuBar'],
                 Genie_Ma_QE=Genie_Ma_QE,
                 Genie_Ma_RES=Genie_Ma_RES,
+                true_e_scale=true_e_scale,
                 **self.events_dict[flav]['device']
             )
 
@@ -604,11 +628,7 @@ class gpu(Stage):
             # hist_e_scale:
             bin_edges = deepcopy(self.bin_edges)
             bin_edges[self.e_bin_number] *= FTYPE(self.params.hist_e_scale.value.m_as('dimensionless'))
-            #print self.params.hist_e_scale.value.m_as('dimensionless')
-            #bin_edges[self.e_bin_number] *= 0.99
-            #if self.params.hist_e_scale.value.m_as('dimensionless') != 1.0:
-            #    print bin_edges[self.e_bin_number]
-            #    print self.params.hist_e_scale.value.m_as('dimensionless')
+            bin_edges[self.pid_bin_number][1] *= FTYPE(self.params.hist_pid_scale.value.m_as('dimensionless'))
             self.histogrammer.update_bin_edges(*bin_edges)
 
             start_t = time.time()

@@ -75,7 +75,7 @@ class Events(FlavIntData):
       ('proc_ver', '5.1'),
       ('runs', [620, 621, 622])]
 
-	"""
+    """
     def __init__(self, val=None):
         self.metadata = OrderedDict([
             ('detector', ''),
@@ -156,7 +156,8 @@ class Events(FlavIntData):
             `kinds` and `weights_col`.
         tex : None or string
             TeX label to give to the resulting Map. If None, default is
-            dereived from the `name` specified or the derived default.
+            dereived from the `name` specified (or its value derived from
+            `kinds` and `weights_col`).
 
         Returns
         -------
@@ -232,7 +233,7 @@ class Events(FlavIntData):
                 name += ', weights=' + weights_col
 
         if tex is None:
-            tex = r'{\rm ' + text2tex(name) + r'}'
+            tex = text2tex(name)
 
         return Map(name=name, hist=hist, binning=binning, tex=tex)
 
@@ -288,10 +289,10 @@ class Events(FlavIntData):
                         field_name, 'self["%s"]["%s"]' %(flav_int, field_name)
                     )
                 mask = eval(crit_str)
-                new_data[flav_int] = {k:v[mask]
+                new_data[flav_int] = {k: v[mask]
                                       for k, v in self[flav_int].iteritems()}
                 flavints_processed.append(flav_int)
-        except:
+        except Exception:
             if (len(flavints_processed) > 0
                     and flavints_processed != flavints_to_process):
                 logging.error('Events object is in an inconsistent state.'
@@ -522,7 +523,7 @@ class Data(FlavIntDataGroup):
                 new_data[fig] = {k: v[mask] for k, v in self[fig].iteritems()}
                 fig_processed.append(fig)
         except:
-            if (len(fig_processed) > 0 and fig_processed != fig_to_process):
+            if len(fig_processed) > 0 and fig_processed != fig_to_process:
                 logging.error('Data object is in an inconsistent state.'
                               ' Reverting cut for all flavInts.')
             raise
@@ -674,14 +675,14 @@ class Data(FlavIntDataGroup):
                 except:
                     tex = r'{0}'.format(kinds)
                 if weights_col is not None:
-                    tex += r', \; {\rm weights=' + text2tex(weights_col) + r'}'
+                    tex += r', \; {\rm weights} =' + text2tex(weights_col)
 
             name = str(kinds)
             if weights_col is not None:
                 name += ', weights=' + weights_col
 
         if tex is None:
-            tex = r'{\rm ' + text2tex(name) + r'}'
+            tex = text2tex(name)
 
         return Map(name=name, hist=hist, binning=binning, tex=tex, **kwargs)
 
@@ -901,7 +902,10 @@ def test_Events():
             continue
         assert np.min(events[fi]['true_energy']) < 30
 
-    logging.info('<< PASSED : test_Events >>')
+    logging.info(
+        '<< PASSED : test_Events >> (note:'
+        ' "[   ERROR] Events object is in an inconsistent state. Reverting cut'
+        ' for all flavInts." message above **is expected**.)')
 
 
 def test_Data():
@@ -915,20 +919,20 @@ def test_Data():
     d2 = {'numu+numubar': f2}
     data = Data(d)
     data2 = Data(d2)
-    print data.keys()
+    logging.debug(str((data.keys())))
 
     muon_file = 'Level7_muongun.12370_15.pckl'
     m = {'muons': from_file(muon_file)}
     m = Data(val=m)
-    print 'here', m.metadata['cuts']
     assert m.contains_muons
     assert not m.contains_neutrinos
+    logging.debug(str((m)))
     data = data + m
     assert data.contains_neutrinos
-    print data
+    logging.debug(str((data)))
     if not data.contains_muons:
         raise Exception("data doesn't contain muons.")
-    print data.neutrinos.keys()
+    logging.debug(str((data.neutrinos.keys())))
 
     # Apply a simple cut
     data.applyCut('(zenith <= 1.1) & (energy <= 200)')
@@ -983,14 +987,14 @@ def test_Data():
     data = Data(val='/tmp/test_FlavIntDataGroup.hdf5')
 
     d3 = data + data2 + m
-    print d3
+    logging.debug(str((d3)))
     d3_com = d3.transform_groups(['nue+nuebar+numu+numubar'])
-    print d3_com
+    logging.debug(str((d3_com)))
 
     logging.info('<< PASSED : test_Data >>')
 
 
 if __name__ == "__main__":
-    set_verbosity(3)
+    set_verbosity(1)
     test_Events()
     test_Data()

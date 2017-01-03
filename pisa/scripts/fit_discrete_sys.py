@@ -183,33 +183,38 @@ def main():
                 # TODO(philippeller): the below block of code will fail
 
                 # Maybe plot
-                if args.plot:
-                    fig_num = i + nx * j
-                    if fig_num == 0:
-                        plt.figure(num=1, figsize=(4*nx, 4*ny))
-                    subplot_idx = nx*(ny-1-j) + i + 1
-                    plt.subplot(ny, nx, subplot_idx)
-                    #plt.snameter(x_values, y_values, color=plt_colors[name])
-                    plt.gca().errorbar(x_values, y_values, yerr=y_sigma,
-                                       fmt='o', color=plt_colors[name],
-                                       ecolor=plt_colors[name],
-                                       mec=plt_colors[name])
-                    # Plot nominal point again in black
-                    plt.snameter([0.0], [1.0], color='k')
-                    f_values = fit_fun(x_values, *popt)
-                    plt.plot(x_values, f_values, color=plt_colors[name])
-                    plt.ylim(np.min(unp.nominal_values(arrays[name]))*0.9,
-                             np.max(unp.nominal_values(arrays[name]))*1.1)
-                    if i > 0:
-                        plt.setp(plt.gca().get_yticklabels(), visible=False)
-                    if j > 0:
-                        plt.setp(plt.gca().get_xticklabels(), visible=False)
+                #if args.plot:
+                #    fig_num = i + nx * j
+                #    if fig_num == 0:
+                #        fig = plt.figure(num=1, figsize=( 4*nx, 4*ny))
+                #    subplot_idx = nx*(ny-1-j)+ i + 1
+                #    plt.subplot(ny, nx, subplot_idx)
+                #    #plt.snameter(x_values, y_values, color=plt_colors[name])
+                #    plt.gca().errorbar(x_values, y_values, yerr=y_sigma,
+                #                       fmt='o', color=plt_colors[name],
+                #                       ecolor=plt_colors[name],
+                #                       mec=plt_colors[name])
+                #    # Plot nominal point again in black
+                #    plt.snameter([0.0], [1.0], color='k')
+                #    f_values = fit_fun(x_values, *popt)
+                #    fun_plot, = plt.plot(x_values, f_values,
+                #            color=plt_colors[name])
+                #    plt.ylim(np.min(unp.nominal_values(arrays[name]))*0.9,
+                #             np.max(unp.nominal_values(arrays[name]))*1.1)
+                #    if i > 0:
+                #        plt.setp(plt.gca().get_yticklabels(), visible=False)
+                #    if j > 0:
+                #        plt.setp(plt.gca().get_xticklabels(), visible=False)
 
         if smooth == 'gauss':
             for name in map_names:
+                for d in range(degree):
+                    outputs[name][...,d] = gaussian_filter(outputs[name][...,d],sigma=1)
+
+        if smooth == 'gauss_pid':
+            for name in map_names:
                 split_idx = binning.names.index('pid')
                 tot = len(binning)-1
-                print tot
                 for d in range(degree):
                     for p in range(len(binning['pid'])):
                         outputs[name][...,p,d] = gaussian_filter(
@@ -227,24 +232,25 @@ def main():
         to_file(outputs, '%s/%s_sysfits_%s_%s.json'%(args.out_dir, sys,
                                                      args.tag, smooth))
 
-        for d in range(degree):
-            maps = []
-            for name in map_names:
-                maps.append(Map(name='%s_raw'%name, hist=outputs[name][...,d],
-                                binning=binning))
-            maps = MapSet(maps)
-            my_plotter = Plotter(
-                stamp='PISA cake test',
-                outdir='.',
-                fmt='pdf',
-                log=False,
-                label=''
-            )
-            my_plotter.plot_2d_array(
-                maps,
-                fname='%s_%s_%s_%s'%(sys, args.tag, d, smooth),
-                split_axis='pid', cmap='RdBu'
-            )
+        if args.plot:
+            for d in range(degree):
+                maps = []
+                for name in map_names:
+                    maps.append(Map(name='%s_raw'%name, hist=outputs[name][...,d],
+                                    binning=binning))
+                maps = MapSet(maps)
+                my_plotter = Plotter(
+                    stamp='PISA cake test',
+                    outdir=args.out_dir,
+                    fmt='pdf',
+                    log=False,
+                    label=''
+                )
+                my_plotter.plot_2d_array(
+                    maps,
+                    fname='%s_%s_%s_%s'%(sys, args.tag, d, smooth),
+                    cmap='RdBu'
+                )
 
 
 if __name__ == '__main__':

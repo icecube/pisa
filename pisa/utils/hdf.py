@@ -16,8 +16,12 @@ from pisa.utils.resources import find_resource
 from pisa.utils.comparisons import recursiveEquality
 
 
-__all__ = ['from_hdf', 'to_hdf',
+__all__ = ['HDF5_EXTS',
+           'from_hdf', 'to_hdf',
            'test_hdf']
+
+
+HDF5_EXTS = ['hdf', 'h5', 'hdf5']
 
 
 # TODO: convert to use OrderedDict to preserve ordering
@@ -255,7 +259,9 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
 
 
 def test_hdf():
-    set_verbosity(3)
+    from shutil import rmtree
+    from tempfile import mkdtemp
+
     data = {
         'top': {
             'secondlvl1':{
@@ -284,29 +290,39 @@ def test_hdf():
             },
         }
     }
-    to_hdf(data, '/tmp/to_hdf_noattrs.hdf5', overwrite=True)
-    loaded_data1 = from_hdf('/tmp/to_hdf_noattrs.hdf5')
-    assert recursiveEquality(data, loaded_data1)
 
-    attrs = {
-        'float1': 9.98237,
-        'float2': 1.,
-        'pi': np.pi,
-        'string': "string attribute!",
-        'int': 1
-    }
-    to_hdf(data, '/tmp/to_hdf_withattrs.hdf5', attrs=attrs, overwrite=True)
-    loaded_data2, loaded_attrs = from_hdf('/tmp/to_hdf_withattrs.hdf5',
-                                          return_attrs=True)
-    assert recursiveEquality(data, loaded_data2)
-    assert recursiveEquality(attrs, loaded_attrs)
+    temp_dir = mkdtemp()
+    try:
+        fpath = os.path.join(temp_dir, 'to_hdf_noattrs.hdf5')
+        to_hdf(data, fpath,
+               overwrite=True, warn=False)
+        loaded_data1 = from_hdf(fpath)
+        assert recursiveEquality(data, loaded_data1)
 
-    for k, v in attrs.iteritems():
-        tgt_type = type(attrs[k])
-        assert isinstance(loaded_attrs[k], tgt_type), \
-                "key %s: val '%s' is type '%s' but should be '%s'" % \
-                (k, v, type(loaded_attrs[k]), tgt_type)
+        attrs = {
+            'float1': 9.98237,
+            'float2': 1.,
+            'pi': np.pi,
+            'string': "string attribute!",
+            'int': 1
+        }
+        fpath = os.path.join(temp_dir, 'to_hdf_withattrs.hdf5')
+        to_hdf(data, fpath, attrs=attrs, overwrite=True, warn=False)
+        loaded_data2, loaded_attrs = from_hdf(fpath, return_attrs=True)
+        assert recursiveEquality(data, loaded_data2)
+        assert recursiveEquality(attrs, loaded_attrs)
+
+        for k, v in attrs.iteritems():
+            tgt_type = type(attrs[k])
+            assert isinstance(loaded_attrs[k], tgt_type), \
+                    "key %s: val '%s' is type '%s' but should be '%s'" % \
+                    (k, v, type(loaded_attrs[k]), tgt_type)
+    finally:
+        rmtree(temp_dir)
+
+    logging.info('<< PASSED : test_hdf >>')
 
 
 if __name__ == "__main__":
+    set_verbosity(1)
     test_hdf()
