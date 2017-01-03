@@ -194,25 +194,28 @@ class roounfold(Stage):
             inv_eff = self.get_inv_eff(signal_data, gen_data)
 
         # Set the reco and true data based on cfg file settings
-        reco_data = None
-        true_data = None
+        reco_norm_data = None
+        true_norm_data = None
+        data = signal_data
         if unfold_bg:
-            reco_data = all_data
+            reco_norm_data = all_data
         if unfold_eff:
-            true_data = gen_data
-        if reco_data is None:
-            reco_data = signal_data
-        if true_data is None:
-            true_data = signal_data
+            true_norm_data = gen_data
+        if reco_norm_data is None:
+            reco_norm_data = signal_data
+        if true_norm_data is None:
+            true_norm_data = signal_data
         if unfold_unweighted:
-            reco_data = deepcopy(reco_data)
-            true_data = deepcopy(true_data)
-            ones = np.ones(reco_data['pisa_weight'].shape)
-            reco_data['pisa_weight'] = ones
-            true_data['pisa_weight'] = ones
+            # reco_norm_data = deepcopy(reco_norm_data)
+            # true_norm_data = deepcopy(true_norm_data)
+            # data = deepcopy(data)
+            ones = np.ones(reco_norm_data['pisa_weight'].shape)
+            reco_norm_data['pisa_weight'] = ones
+            true_norm_data['pisa_weight'] = ones
+            data['pisa_weight'] = ones
 
         # Create response object
-        response = self.create_response(reco_data, true_data)
+        response = self.create_response(reco_norm_data, true_norm_data, data)
 
         # Make pseduodata
         all_hist = self._histogram(
@@ -375,7 +378,27 @@ class roounfold(Stage):
         if self.gen_data_hash == this_hash:
             return self._gen_data
 
-        template_maker = Pipeline(self.params['unfold_pipeline_cfg'].value)
+        u_cfg = from_file(self.params['unfold_pipeline_cfg'].value)
+        u_cfg.set('stage:data', 'output_names', 'all_nu')
+        u_cfg.set('stage:mc', 'output_names', 'all_nu')
+        muon_params = (
+            'param.atm_muon_scale',
+            'param.atm_muon_scale.fixed',
+            'param.atm_muon_scale.range',
+            'param.delta_gamma_mu_file',
+            'param.delta_gamma_mu_spline_kind',
+            'param.delta_gamma_mu_variable',
+            'param.delta_gamma_mu',
+            'param.delta_gamma_mu.fixed',
+            'param.delta_gamma_mu.range'
+        )
+        for m_p in muon_params:
+            if u_cfg.has_option('stage:mc', m_p):
+                u_cfg.remove_option('stage:mc', m_p)
+        # TODO(shivesh): remove after greco oneweight bug is fixed
+        u_cfg.set('stage:mc', 'param.flux_reweight', 'True')
+
+        template_maker = Pipeline(u_cfg)
         dataset_param = template_maker.params['dataset']
         dataset_param.value = dataset
         template_maker.update_params(dataset_param)
@@ -445,7 +468,7 @@ class roounfold(Stage):
         self._inv_eff = inv_eff
         return inv_eff
 
-    def create_response(self, reco_data=None, true_data=None):
+    def create_response(self, reco_norm_data=None, true_norm_data=None, data=None):
         """Create the response object from the signal data."""
         unfold_bg = self.params['unfold_bg'].value
         unfold_eff = self.params['unfold_eff'].value
@@ -454,8 +477,10 @@ class roounfold(Stage):
             [self.reco_binning.hash, self.true_binning.hash, unfold_bg,
              unfold_eff, unfold_unweighted, self.output_str, 'response']
         )
-        assert len(set([reco_data is None, true_data is None])) == 1
-        if reco_data is None and true_data is None:
+        assert len(set([reco_norm_data is None,
+                        true_norm_data is None,
+                        data is None])) == 1
+        if reco_norm_data is None and true_norm_data is None and data is None:
             if self.response_hash == this_hash:
                 logging.trace('Loading response from mem cache')
                 return self._response
@@ -487,7 +512,8 @@ class roounfold(Stage):
 
             # Truth histogram also gets returned if response matrix is created
             response, self.t_th1d = self._create_response(
-                reco_data, true_data, self.reco_binning, self.true_binning
+                reco_norm_data, true_norm_data, data, self.reco_binning,
+                self.true_binning
             )
 
             if self.disk_cache is not None:
@@ -540,22 +566,23 @@ class roounfold(Stage):
         return bg_hist
 
     @staticmethod
-    def _create_response(reco_data, true_data, reco_binning, true_binning):
+    def _create_response(reco_norm_data, true_norm_data, data, reco_binning,
+                         true_binning):
         """Create the response object from the signal data."""
         logging.debug('Creating response object.')
 
         reco_hist = roounfold._histogram(
-            events=reco_data,
+            events=reco_norm_data,
             binning=reco_binning,
-            weights=reco_data['pisa_weight'],
+            weights=reco_norm_data['pisa_weight'],
             errors=True,
             name='reco_signal',
             tex=r'\rm{reco_signal}'
         )
         true_hist = roounfold._histogram(
-            events=true_data,
+            events=true_norm_data,
             binning=true_binning,
-            weights=true_data['pisa_weight'],
+            weights=true_norm_data['pisa_weight'],
             errors=True,
             name='true_signal',
             tex=r'\rm{true_signal}'
@@ -564,9 +591,9 @@ class roounfold(Stage):
         t_flat = roounfold._flatten_to_1d(true_hist)
 
         smear_matrix = roounfold._histogram(
-            events=true_data,
+            events=data,
             binning=reco_binning+true_binning,
-            weights=true_data['pisa_weight'],
+            weights=data['pisa_weight'],
             errors=True,
             name='smearing_matrix',
             tex=r'\rm{smearing_matrix}'
