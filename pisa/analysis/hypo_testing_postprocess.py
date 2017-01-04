@@ -371,14 +371,25 @@ def extract_data(data):
                         = 'dimensionless'
                     param_vals = trial['params']
                     for param_name in param_vals.keys():
-                        val = param_vals[param_name].split(' ')[0]
-                        units = param_vals[param_name] \
-                            .split(val+' ')[-1]
+                        val, units = parse_pint_string(
+                            pint_string=param_vals[param_name]
+                        )
                         values[injkey][datakey][param_name]['vals'] \
                             .append(float(val))
                         values[injkey][datakey][param_name]['units'] \
                             = units
     return values
+
+
+def parse_pint_string(pint_string):
+    '''
+    Will return the value and units from a string with attached pint-style 
+    units. i.e. the string "0.97 dimensionless" would return a value of 0.97 
+    and units of dimensionless. Both will return as strings.
+    '''
+    val = pint_string.split(' ')[0]
+    units = pint_string.split(val+' ')[-1]
+    return val, units
 
 
 def purge_failed_jobs(data, trial_nums, thresh=5.0):
@@ -407,7 +418,7 @@ def purge_failed_jobs(data, trial_nums, thresh=5.0):
     
     for fit_key in data.keys():
         points = np.array(data[fit_key]['metric_val']['vals'])
-        if len(points.shape) == 1:
+        if len(points.shape) == 1:a
             points = points[:,None]
         median = np.median(points, axis=0)
         diff = np.sum((points - median)**2, axis=-1)
@@ -545,17 +556,6 @@ def make_llr_plots(data, fid_data, labels, detector, selection, outdir):
        This is probably fine, since the significances can just be calculated 
        from this after the fact.
 
-    2) A method of quantifying the uncertainty due to finite statistics in the 
-       pseudo-trials should be added. Possible ways are:
-        a) Fitting the distributions and then drawing X new instances of Y 
-           trials (where X and Y are large) and looking at the spread in the 
-           p-values. This would require a good fit to the distributions, which
-           is fine if they end up gaussian...
-        b) Quantifying the uncertainty on the critical value used to determine 
-           the significance. In the case of the median this could be achieved 
-           by drawing subsets of the data and creating a distribution of 
-           medians. Though, efforts to do this in the past have given results 
-           that seemed to underestimate the true uncertainty.
     '''
     outdir = os.path.join(outdir,'LLRDistributions')
     if not os.path.exists(outdir):
@@ -671,7 +671,7 @@ def make_llr_plots(data, fid_data, labels, detector, selection, outdir):
     unc_med_p_value = med_p_value * np.sqrt(wterm + Nterm)
 
     med_plot_labels = []
-    med_plot_labels.append((r"Hypo %s median = %.4f"%(best_name,best_median)))
+    med_plot_labels.append((r"Hypo %s median = $%.4f\pm%.4f$"%(best_name,best_median,median_error)))
     med_plot_labels.append(
         (r"%s best fit - $\log\left[\mathcal{L}\left(\mathcal{H}_{%s}\right)/"
          r"\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"
@@ -1479,7 +1479,7 @@ def parse_args():
     parser.add_argument(
         '-d', '--dir', required=True,
         metavar='DIR', type=str,
-        help='Directory into which to store results and metadata.'
+        help='''Directory containing output of hypo_testing.py.'''
     )
 
     group = parser.add_mutually_exclusive_group(required=True)
@@ -1492,56 +1492,62 @@ def parse_args():
         help='''Analyze the LLR trials in the specified directories.'''
     )
     parser.add_argument(
-        '--detector',type=str,default='',
-        help="Name of detector to put in histogram titles."
+        '--detector', type=str, default='',
+        help='''Name of detector to put in histogram titles.'''
     )
     parser.add_argument(
-        '--selection',type=str,default='',
-        help="Name of selection to put in histogram titles."
+        '--selection', type=str, default='',
+        help='''Name of selection to put in histogram titles.'''
     )
     parser.add_argument(
-        '-IP','--individual_posteriors',action='store_true',default=False,
-        help="Flag to plot individual posteriors."
+        '-FM', '--fit_information', action='store_true', default=False,
+        help='''Flag to make plots of the minimiser information i.e. status, 
+        number of iterations, time taken etc.'''
     )
     parser.add_argument(
-        '-CP','--combined_posteriors',action='store_true',default=False,
-        help="Flag to plot combined posteriors for each h0 and h1 combination."
+        '-IP', '--individual_posteriors', action='store_true', default=False,
+        help='''Flag to plot individual posteriors.'''
     )
     parser.add_argument(
-        '-IS','--individual_scatter',action='store_true',default=False,
-        help="Flag to plot individual 2D scatter plots of posteriors."
+        '-CP', '--combined_posteriors', action='store_true', default=False,
+        help='''Flag to plot combined posteriors for each h0 and h1 
+        combination.'''
     )
     parser.add_argument(
-        '-CIS','--combined_individual_scatter',
-        action='store_true',default=False,
-        help="""Flag to plot all 2D scatter plots of one systematic with every 
-        other systematic on one plot for each h0 and h1 combination."""
+        '-IS', '--individual_scatter', action='store_true', default=False,
+        help='''Flag to plot individual 2D scatter plots of posteriors.'''
     )
     parser.add_argument(
-        '-CS','--combined_scatter', action='store_true',default=False,
-        help="""Flag to plot all 2D scatter plots on one plot for each 
-        h0 and h1 combination."""
+        '-CIS', '--combined_individual_scatter',
+        action='store_true', default=False,
+        help='''Flag to plot all 2D scatter plots of one systematic with every 
+        other systematic on one plot for each h0 and h1 combination.'''
     )
     parser.add_argument(
-        '-CM', '--correlation_matrix', action='store_true',default=False,
-        help="""Flag to plot the correlation matrices for each h0 and h1 
-        combination."""
+        '-CS', '--combined_scatter', action='store_true', default=False,
+        help='''Flag to plot all 2D scatter plots on one plot for each 
+        h0 and h1 combination.'''
     )
     parser.add_argument(
-        '--threshold', metavar='DIR', type=float, default=5.0,
-        help="""Sets the threshold for which to remove 'outlier' trials. 
+        '-CM', '--correlation_matrix', action='store_true', default=False,
+        help='''Flag to plot the correlation matrices for each h0 and h1 
+        combination.'''
+    )
+    parser.add_argument(
+        '--threshold', type=float, default=5.0,
+        help='''Sets the threshold for which to remove 'outlier' trials. 
         Ideally this will not be needed at all, but it is there in case of
         e.g. failed minimiser. The higher this value, the more outliers will 
-        be included. Set it to 0 if you want to include ALL trials."""
+        be included. Set it to 0 if you want to include ALL trials.'''
     )
     parser.add_argument(
         '--outdir', metavar='DIR', type=str, required=True,
-        help="""Store all output plots to this directory. This will make
-        further subdirectories, if needed, to organise the output plots."""
+        help='''Store all output plots to this directory. This will make
+        further subdirectories, if needed, to organise the output plots.'''
     )
     parser.add_argument(
         '-v', action='count', default=None,
-        help='set verbosity level'
+        help='''set verbosity level'''
     )
     return parser.parse_args()
 
@@ -1557,6 +1563,7 @@ def main():
 
     detector = init_args_d.pop('detector')
     selection = init_args_d.pop('selection')
+    fitinfo = init_args_d.pop('fit_information')
     iposteriors = init_args_d.pop('individual_posteriors')
     cposteriors = init_args_d.pop('combined_posteriors')
     iscatter = init_args_d.pop('individual_scatter')
@@ -1604,14 +1611,6 @@ def main():
                 )
             else:
                 logging.info("All trials will be included in the analysis.")
-
-            plot_fit_information(
-                minimiser_info=minimiser_info[injkey],
-                labels = labels.dict,
-                detector = detector,
-                selection = selection,
-                outdir=outdir
-            )
             
             make_llr_plots(
                 data = values[injkey],
@@ -1621,6 +1620,16 @@ def main():
                 selection = selection,
                 outdir = outdir
             )
+
+            if fitinfo:
+                
+                plot_fit_information(
+                    minimiser_info=minimiser_info[injkey],
+                    labels = labels.dict,
+                    detector = detector,
+                    selection = selection,
+                    outdir=outdir
+                )
 
             if iposteriors:
 
