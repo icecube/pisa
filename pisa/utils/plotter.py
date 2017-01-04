@@ -574,6 +574,7 @@ def tex_axis_label(label):
     pretty_labels = {}
     pretty_labels["atm_muon_scale"] = r"Muon Background Scale"
     pretty_labels["nue_numu_ratio"] = r"$\nu_e/\nu_{\mu}$ Ratio"
+    pretty_labels["nu_nubar_ratio"] = r"$\nu/\bar{\nu}$ Ratio"
     pretty_labels["Barr_uphor_ratio"] = r"Barr Up/Horizontal Ratio"
     pretty_labels["Barr_nu_nubar_ratio"] = r"Barr $\nu/\bar{\nu}$ Ratio"
     pretty_labels["delta_index"] = r"Atmospheric Index Change"
