@@ -97,6 +97,7 @@ class weight(Stage):
                 - no_nc_osc : bool
                     Flag to turn off oscillations for the neutral current
                     interactions.
+                - true_e_scale
 
     input_names : string
         Specifies the string representation of the NuFlavIntGroup(s) that
@@ -172,7 +173,8 @@ class weight(Stage):
             'deltam21',
             'deltam31',
             'deltacp',
-            'no_nc_osc'
+            'no_nc_osc',
+            'true_e_scale'
         )
 
         self.atm_muon_params = (
@@ -668,6 +670,7 @@ class weight(Stage):
         deltam21 = params['deltam21'].m_as('eV**2')
         deltam31 = params['deltam31'].m_as('eV**2')
         deltacp = params['deltacp'].m_as('rad')
+        true_e_scale = params['true_e_scale'].m_as('dimensionless')
 
         osc = prob3gpu(
             params=params,
@@ -729,7 +732,7 @@ class weight(Stage):
                 continue
 
             osc.calc_probs(
-                kNuBar, kFlav, osc_data[fig]['n_evts'],
+                kNuBar, kFlav, osc_data[fig]['n_evts'], true_e_scale,
                 **osc_data[fig]['device']
             )
 
@@ -860,7 +863,8 @@ class weight(Stage):
                 ('deltam21', pq),
                 ('deltam31', pq),
                 ('deltacp', pq),
-                ('no_nc_osc', bool)
+                ('no_nc_osc', bool),
+                ('true_e_scale', pq)
             ])
         if self.muons:
             param_types.extend([
