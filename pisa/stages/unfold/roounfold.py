@@ -39,8 +39,8 @@ class roounfold(Stage):
                  true_binning, error_method=None, disk_cache=None,
                  outputs_cache_depth=20, memcache_deepcopy=True,
                  debug_mode=None):
-        self.sample_hash = None
-        """Hash of input event sample."""
+        self.weight_hash = None
+        """Hash of reweighted event sample."""
         self.random_state = None
         """Hash of random state."""
         self.response_hash = None
@@ -115,16 +115,15 @@ class roounfold(Stage):
         if disk_cache is not None:
             self.instantiate_disk_cache()
 
-        self.include_attrs_for_hashes('sample_hash')
         self.include_attrs_for_hashes('random_state')
 
     @profile
     def _compute_outputs(self, inputs=None):
         """Compute histograms for output channels."""
-        logging.trace('Entering roounfold._compute_outputs')
-        self.sample_hash = deepcopy(inputs.hash)
-        logging.trace('{0} roounfold sample_hash = '
-                      '{1}'.format(inputs.metadata['name'], self.sample_hash))
+        logging.debug('Entering roounfold._compute_outputs')
+        self.weight_hash = deepcopy(inputs.metadata['weight_hash'])
+        logging.trace('{0} roounfold weight_hash = '
+                      '{1}'.format(inputs.metadata['name'], self.weight_hash))
         if self.random_state is not None:
             logging.trace(
                 '{0} roounfold random_state = '
@@ -188,10 +187,11 @@ class roounfold(Stage):
 
         # Return true map is regularisation is set to 0
         if regularisation == 0:
+            logging.info('Returning baseline MapSet')
             true = roounfold._histogram(
                 events=gen_data,
                 binning=self.true_binning,
-                weights=gen_data['pisa_weight'],
+                weights=gen_data['pisa_reweight'],
                 errors=True,
                 name=self.output_str
             )
@@ -217,10 +217,10 @@ class roounfold(Stage):
             # reco_norm_data = deepcopy(reco_norm_data)
             # true_norm_data = deepcopy(true_norm_data)
             # data = deepcopy(data)
-            ones = np.ones(reco_norm_data['pisa_weight'].shape)
-            reco_norm_data['pisa_weight'] = ones
-            true_norm_data['pisa_weight'] = ones
-            data['pisa_weight'] = ones
+            ones = np.ones(reco_norm_data['pisa_reweight'].shape)
+            reco_norm_data['pisa_reweight'] = ones
+            true_norm_data['pisa_reweight'] = ones
+            data['pisa_reweight'] = ones
 
         # Create response object
         response = self.create_response(reco_norm_data, true_norm_data, data)
@@ -229,7 +229,7 @@ class roounfold(Stage):
         all_hist = self._histogram(
             events=all_data,
             binning=self.reco_binning,
-            weights=all_data['pisa_weight'],
+            weights=all_data['pisa_reweight'],
             errors=False,
             name='all',
             tex=r'\rm{all}'
@@ -352,7 +352,7 @@ class roounfold(Stage):
 
     def split_data(self):
         this_hash = hash_obj(
-            [self.sample_hash, self.output_str, self._data.contains_muons]
+            [self.weight_hash, self.output_str, self._data.contains_muons]
         )
         if self.split_data_hash == this_hash:
             return self._signal_data, self._bg_data, self._all_data
@@ -428,21 +428,21 @@ class roounfold(Stage):
                     'in disk_cache'
                 )
         else:
-            this_hash = hash_obj([this_hash, self.sample_hash])
+            this_hash = hash_obj([this_hash, self.weight_hash])
             if self.inv_eff_hash == this_hash:
                 logging.trace('Loading inv eff from mem cache')
                 return self._inv_eff
             signal_map = roounfold._histogram(
                 events=signal_data,
                 binning=self.true_binning,
-                weights=signal_data['pisa_weight'],
+                weights=signal_data['pisa_reweight'],
                 errors=True,
                 name=self.output_str
             )
             gen_map = self._histogram(
                 events=gen_data,
                 binning=self.true_binning,
-                weights=gen_data['pisa_weight'],
+                weights=gen_data['pisa_reweight'],
                 errors=True,
                 name='generator_lvl',
                 tex=r'\rm{generator_lvl}'
@@ -491,7 +491,7 @@ class roounfold(Stage):
                 )
         else:
             this_hash = hash_obj(
-                [this_hash, self.sample_hash, normQuant(self.params)]
+                [this_hash, self.weight_hash, normQuant(self.params)]
             )
             if self.response_hash == this_hash:
                 logging.debug('Loading response from mem cache')
@@ -536,14 +536,14 @@ class roounfold(Stage):
                     'bg hist object with correct hash not found in disk_cache'
                 )
         else:
-            this_hash = hash_obj([this_hash, self.sample_hash])
+            this_hash = hash_obj([this_hash, self.weight_hash])
             if self.bg_hist_hash == this_hash:
                 logging.trace('Loading bg hist from mem cache')
                 return self._bg_hist
             bg_hist = self._histogram(
                 events=bg_data,
                 binning=self.reco_binning,
-                weights=bg_data['pisa_weight'],
+                weights=bg_data['pisa_reweight'],
                 errors=True,
                 name='background',
                 tex=r'\rm{background}'
@@ -567,7 +567,7 @@ class roounfold(Stage):
         reco_hist = roounfold._histogram(
             events=reco_norm_data,
             binning=reco_binning,
-            weights=reco_norm_data['pisa_weight'],
+            weights=reco_norm_data['pisa_reweight'],
             errors=True,
             name='reco_signal',
             tex=r'\rm{reco_signal}'
@@ -575,7 +575,7 @@ class roounfold(Stage):
         true_hist = roounfold._histogram(
             events=true_norm_data,
             binning=true_binning,
-            weights=true_norm_data['pisa_weight'],
+            weights=true_norm_data['pisa_reweight'],
             errors=True,
             name='true_signal',
             tex=r'\rm{true_signal}'
@@ -586,7 +586,7 @@ class roounfold(Stage):
         smear_matrix = roounfold._histogram(
             events=data,
             binning=reco_binning+true_binning,
-            weights=data['pisa_weight'],
+            weights=data['pisa_reweight'],
             errors=True,
             name='smearing_matrix',
             tex=r'\rm{smearing_matrix}'

@@ -125,13 +125,12 @@ class sample(Stage):
             output_binning=output_binning
         )
 
-        self.include_attrs_for_hashes('sample_hash')
-
         self._compute_outputs()
 
     @profile
     def _compute_outputs(self, inputs=None):
         """Apply basic cuts and compute histograms for output channels."""
+        logging.debug('Entering sample._compute_outputs')
         self.config = from_file(self.params['data_sample_config'].value)
         name = self.config.get('general', 'name')
         logging.trace('{0} sample sample_hash = '
@@ -216,8 +215,10 @@ class sample(Stage):
             )
             events.append(muon_events)
         self._data = reduce(add, events)
-        self._data.update_hash()
+
         self.sample_hash = this_hash
+        self._data.metadata['sample_hash'] = this_hash
+        self._data.update_hash()
 
     @staticmethod
     def load_neutrino_events(config, dataset):
