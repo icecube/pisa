@@ -253,12 +253,12 @@ class sample(Stage):
             weights      = parse(config.get('neutrinos', 'weights'))
             weight_units = config.get('neutrinos', 'weight_units')
             sys_list     = parse(config.get('neutrinos', 'sys_list'))
-            base_suffix  = config.get('neutrinos', 'basesuffix')
+            base_prefix  = config.get('neutrinos', 'baseprefix')
             keep_keys    = parse(config.get('neutrinos', 'keep_keys'))
             logging.info('Extracting dataset "{0}" from generator level '
                          'sample "{1}"'.format(dataset, name))
-            if base_suffix == 'None':
-                base_suffix = ''
+            if base_prefix == 'None':
+                base_prefix = ''
 
             for idx, flav in enumerate(flavours):
                 f = int(flav)
@@ -281,7 +281,7 @@ class sample(Stage):
                 else:
                     file_prefix = flav + config.get(dataset, 'file_prefix')
                 events_file = config.get('general', 'datadir') + \
-                    base_suffix + file_prefix
+                    base_prefix + file_prefix
 
                 flav_fidg = sample.load_from_nu_file(
                     events_file, all_flavints, weights[idx], weight_units,
@@ -303,9 +303,9 @@ class sample(Stage):
         weight       = config.get('muons', 'weight')
         weight_units = config.get('muons', 'weight_units')
         sys_list     = parse(config.get('muons', 'sys_list'))
-        base_suffix  = config.get('muons', 'basesuffix')
-        if base_suffix == 'None':
-            base_suffix = ''
+        base_prefix  = config.get('muons', 'baseprefix')
+        if base_prefix == 'None':
+            base_prefix = ''
 
         if dataset == 'nominal':
             paths = []
