@@ -515,6 +515,12 @@ class HypoTesting(Analysis):
         self.h0_fid_dist = None
         self.h1_fid_dist = None
 
+        # Storage for most recent fiducial fit parameters
+        self.h0_fit_to_h0_fid = None
+        self.h0_fit_to_h1_fid = None
+        self.h1_fit_to_h0_fid = None
+        self.h1_fit_to_h1_fid = None
+
         # Populate names with user-specified strings or try to make intelligent
         # guesses based on configuration
         if h0_name is None:
@@ -869,7 +875,6 @@ class HypoTesting(Analysis):
                     blind=self.blind,
                     reset_free=self.reset_free
                 )
-
             self.log_fit(fit_info=self.h0_fit_to_h0_fid,
                          dirpath=self.thisdata_dirpath,
                          label=self.labels.h0_fit_to_h0_fid)

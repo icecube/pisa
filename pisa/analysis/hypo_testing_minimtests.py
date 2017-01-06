@@ -110,7 +110,7 @@ def parse_args():
         argument (or use "all") to specify multiple metrics.'''
     )
     parser.add_argument(
-        '--num-trials',
+        '--num-fid-trials',
         type=int, default=1,
         help='''Number of pseudo trials to run. Each one will be a minimisation
         on a different pseudo-experiment and a resulting scan to ensure the 
@@ -118,7 +118,7 @@ def parse_args():
         process, so you probably don't want to set this very high.'''
     )
     parser.add_argument(
-        '--start-index',
+        '--fid-start-ind',
         type=int, default=0,
         help='''Trial start index. Set this if you are saving files from 
         multiple runs in to the same log directory otherwise files may end up 
@@ -181,8 +181,8 @@ def main():
     # HypoTesting object via dictionary's `pop()` method.
 
     set_verbosity(init_args_d.pop('v'))
-    num_trials = init_args_d.pop('num_trials')
-    start_index = init_args_d.pop('start_index')
+    num_trials = init_args_d['num_fid_trials']
+    start_index = init_args_d['fid_start_ind']
     init_args_d['check_octant'] = not init_args_d.pop('no_octant_check')
 
     init_args_d['data_is_data'] = False
@@ -272,6 +272,11 @@ def main():
             logging.info('Making output directory for scans %s'%scanoutdir)
             os.makedirs(scanoutdir)
         for param in hypo_testing.h0_maker.params.free:
+            # Set the values of the parameters to those found in the
+            # appropriate fiducial fit
+            hypo_testing.h0_maker.params.free.set_values(
+                new_params=hypo_testing.h0_fit_to_h0_fid['params'].free
+            )
             h0_fid_h0_hypo_scan = hypo_testing.scan(
                 data_dist=hypo_testing.h0_fid_dist,
                 hypo_maker=hypo_testing.h0_maker,
@@ -286,6 +291,12 @@ def main():
                 outfile=os.path.join(scanoutdir,
                                      'h0_fid_h0_hypo_%s_scan_%i.json'
                                      %(param.name,i))
+            )
+            # Parameter is fixed in the scan without being unfixed, so do that
+            # here now.
+            hypo_testing.h0_maker.params.unfix(param)
+            hypo_testing.h0_maker.params.free.set_values(
+                new_params=hypo_testing.h0_fit_to_h1_fid['params'].free
             )
             h1_fid_h0_scan = hypo_testing.scan(
                 data_dist=hypo_testing.h1_fid_dist,
@@ -302,7 +313,11 @@ def main():
                                      'h1_fid_h0_hypo_%s_scan_%i.json'
                                      %(param.name,i))
             )
+            hypo_testing.h0_maker.params.unfix(param)
         for param in hypo_testing.h1_maker.params.free:
+            hypo_testing.h1_maker.params.free.set_values(
+                new_params=hypo_testing.h1_fit_to_h0_fid['params'].free
+            )
             h0_fid_h1_scan = hypo_testing.scan(
                 data_dist=hypo_testing.h0_fid_dist,
                 hypo_maker=hypo_testing.h1_maker,
@@ -317,6 +332,10 @@ def main():
                 outfile=os.path.join(scanoutdir,
                                      'h0_fid_h1_hypo_%s_scan_%i.json'
                                      %(param.name,i))
+            )
+            hypo_testing.h1_maker.params.unfix(param)
+            hypo_testing.h1_maker.params.free.set_values(
+                new_params=hypo_testing.h1_fit_to_h1_fid['params'].free
             )
             h1_fid_h1_scan = hypo_testing.scan(
                 data_dist=hypo_testing.h1_fid_dist,
@@ -333,8 +352,10 @@ def main():
                                      'h1_fid_h1_hypo_%s_scan_%i.json'
                                      %(param.name,i))
             )
-                
-
+            hypo_testing.h1_maker.params.unfix(param)
+        # Need to advance the fid_ind by 1 here since I'm doing the
+        # loop over the trials outside of the hypo_testing object
+        hypo_testing.fid_ind += 1
         
 
 if __name__ == '__main__':

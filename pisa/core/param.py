@@ -524,6 +524,22 @@ class ParamSet(Sequence):
         idx = self.index(new.name)
         self._params[idx] = new
 
+    def set_values(self, new_params):
+        """Set values in current ParamSet to those defined in new ParamSet
+
+        Parameters
+        ----------
+        new_params : ParamSet
+            ParamSet containing set of values to change current ParamSet to.
+        """
+        if self.names != new_params.names:
+            raise ValueError("ParamSet names do not match. Currently have %s "
+                             "and want to change to a set containing %s."%(
+                                 self.names,new_params.names))
+        for new_param in new_params:
+            idx = self.index(new_param.name)
+            self._params[idx].value = new_param.value
+
     def fix(self, x):
         """Set param(s) to be fixed in value (and hence not modifiable by e.g.
         a minimizer).

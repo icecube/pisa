@@ -418,7 +418,7 @@ def purge_failed_jobs(data, trial_nums, thresh=5.0):
     
     for fit_key in data.keys():
         points = np.array(data[fit_key]['metric_val']['vals'])
-        if len(points.shape) == 1:a
+        if len(points.shape) == 1:
             points = points[:,None]
         median = np.median(points, axis=0)
         diff = np.sum((points - median)**2, axis=-1)
