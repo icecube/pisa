@@ -562,6 +562,11 @@ class weight(Stage):
                 nuebar_flux, numubar_flux, self.params['nue_numu_ratio'].m
             )
 
+            flux_weights[fig]['nue_flux'] = nue_flux
+            flux_weights[fig]['numu_flux'] = numu_flux
+            flux_weights[fig]['nuebar_flux'] = nuebar_flux
+            flux_weights[fig]['numubar_flux'] = numubar_flux
+
         self.flux_hash = this_hash
         self._flux_weights = flux_weights
         if attach_units:
@@ -609,10 +614,13 @@ class weight(Stage):
             else:
                 nu_diff_DIS = params['nubar_diff_DIS'].m
                 nu_diff_norm = params['nubar_diff_norm'].m
-            xsec_weights[fig] = (
-                (1 - nu_diff_norm * nu_diff_DIS) *
-                np.power(nu_data[fig]['GENIE_x'], -nu_diff_DIS)
-            )
+
+            with np.errstate(divide='ignore', invalid='ignore'):
+                xsec_weights[fig] = (
+                    (1 - nu_diff_norm * nu_diff_DIS) *
+                    np.power(nu_data[fig]['GENIE_x'], -nu_diff_DIS)
+                )
+            xsec_weights[fig][~np.isfinite(xsec_weights[fig])] = 0.
 
             # High W hadronization systematic
             hadron_DIS = params['hadron_DIS'].m
