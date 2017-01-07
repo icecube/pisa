@@ -354,6 +354,7 @@ class Data(FlavIntDataGroup):
         ])
         self.contains_neutrinos = False
         self.contains_muons = False
+        self.contains_noise = False
 
         # Get data and metadata from val
         meta = {}
@@ -391,6 +392,20 @@ class Data(FlavIntDataGroup):
             raise AssertionError('Found muons in data but not found in '
                                  'metadata key `flavints_joined`')
 
+        # Find and deal with any noise data if it exists
+        if self.metadata['flavints_joined'] == list([]):
+            if 'noise' in data:
+                self.noise = data.pop('noise')
+        elif 'noise' in self.metadata['flavints_joined']:
+            if 'noise' not in data:
+                raise AssertionError('Metadata has noise specified but '
+                                     'they are not found in the data')
+            else:
+                self.noise = data.pop('noise')
+        elif 'noise' in data:
+            raise AssertionError('Found noise in data but not found in '
+                                 'metadata key `flavints_joined`')
+
         # Instantiate a FlavIntDataGroup
         if data == dict():
             self._flavint_groups = []
@@ -407,6 +422,8 @@ class Data(FlavIntDataGroup):
                 combined_types += [str(f) for f in self.flavint_groups]
             if self.contains_muons:
                 combined_types += ['muons']
+            if self.contains_noise:
+                combined_types += ['noise']
             if set(self.metadata['flavints_joined']) != \
                set(combined_types):
                 raise AssertionError(
@@ -420,6 +437,8 @@ class Data(FlavIntDataGroup):
                                                 for f in self.flavint_groups]
             if self.contains_muons:
                 self.metadata['flavints_joined'] += ['muons']
+            if self.contains_noise:
+                self.metadata['flavints_joined'] += ['noise']
 
         self.update_hash()
 
@@ -445,6 +464,18 @@ class Data(FlavIntDataGroup):
         assert isinstance(val, dict)
         self.contains_muons = True
         self._muons = val
+
+    @property
+    def noise(self):
+        if not self.contains_noise:
+            raise AttributeError('No noise loaded in Data')
+        return self._noise
+
+    @noise.setter
+    def noise(self, val):
+        assert isinstance(val, dict)
+        self.contains_noise = True
+        self._noise = val
 
     @property
     def neutrinos(self):
@@ -499,6 +530,8 @@ class Data(FlavIntDataGroup):
             fig_to_process += deepcopy(self.flavint_groups)
         if self.contains_muons:
             fig_to_process += ['muons']
+        if self.contains_noise:
+            fig_to_process += ['noise']
         fig_processed = []
         new_data = {}
         try:
@@ -573,6 +606,11 @@ class Data(FlavIntDataGroup):
             t_dict = dict(t_fidg)
             t_dict['muons'] = self['muons']
             t_fidg = t_dict
+        if self.contains_noise:
+            metadata['flavints_joined'] += ['noise']
+            t_dict = dict(t_fidg)
+            t_dict['noise'] = self['noise']
+            t_fidg = t_dict
         ret_obj = Data(t_fidg, metadata=metadata)
         ret_obj.update_hash()
         return ret_obj
@@ -613,7 +651,7 @@ class Data(FlavIntDataGroup):
 
         if isinstance(kinds, basestring):
             kinds = [kinds]
-        if 'muons' not in kinds:
+        if 'muons' not in kinds and 'noise' not in kinds:
             kinds = self._parse_flavint_groups(kinds)
         kinds = kinds[0]
 
@@ -687,7 +725,7 @@ class Data(FlavIntDataGroup):
         return Map(name=name, hist=hist, binning=binning, tex=tex, **kwargs)
 
     def histogram_set(self, binning, nu_weights_col, mu_weights_col,
-                      mapset_name, errors=False):
+                      no_weights_col, mapset_name, errors=False):
         """Uses the above histogram function but returns the set of all of them
         for everything in the Data object.
 
@@ -700,6 +738,9 @@ class Data(FlavIntDataGroup):
             histograms. Specify None for unweighted histograms.
         mu_weights_col : None or string
             The column in the Data object by which to weight the muon
+            histograms. Specify None for unweighted histograms.
+        no_weights_col : None or string
+            The column in the Data object by which to weight the noise
             histograms. Specify None for unweighted histograms.
         mapset_name : string
             The name by which the resulting MapSet will be identified.
@@ -754,6 +795,17 @@ class Data(FlavIntDataGroup):
                     tex=r'\rm{muons}'
                 )
             )
+        if self.contains_noise:
+            outputs.append(
+                self.histogram(
+                    kinds='noise',
+                    binning=binning,
+                    weights_col=mu_weights_col,
+                    errors=errors,
+                    name='noise',
+                    tex=r'\rm{noise}'
+                )
+            )
         return MapSet(maps=outputs, name=mapset_name)
 
     def __load(self, fname):
@@ -767,6 +819,8 @@ class Data(FlavIntDataGroup):
     def __getitem__(self, arg):
         if arg == 'muons':
             return self.muons
+        if arg == 'noise':
+            return self.noise
         tgt_obj = super(Data, self).__getitem__(arg)
         return tgt_obj
 
@@ -774,10 +828,14 @@ class Data(FlavIntDataGroup):
         if arg == 'muons':
             self.muons = value
             return
+        if arg == 'noise':
+            self.noise = value
+            return
         super(Data, self).__setitem__(arg, value)
 
     def __add__(self, other):
         muons = None
+        noise = None
         assert isinstance(other, Data)
 
         metadata = {}
@@ -819,6 +877,14 @@ class Data(FlavIntDataGroup):
         elif other.contains_muons:
             muons = deepcopy(other['muons'])
 
+        if self.contains_noise:
+            if other.contains_noise:
+                noise = self._merge(deepcopy(self['noise']), other['noise'])
+            else:
+                noise = deepcopy(self['noise'])
+        elif other.contains_noise:
+            noise = deepcopy(other['noise'])
+
         if len(self.flavint_groups) == 0:
             if len(other.flavint_groups) == 0:
                 a_fidg = FlavIntDataGroup(other)
@@ -832,6 +898,11 @@ class Data(FlavIntDataGroup):
             a_dict = dict(a_fidg)
             metadata['flavints_joined'] += ['muons']
             a_dict['muons'] = muons
+            a_fidg = a_dict
+        if noise is not None:
+            a_dict = dict(a_fidg)
+            metadata['flavints_joined'] += ['noise']
+            a_dict['noise'] = noise
             a_fidg = a_dict
         return Data(a_fidg, metadata=metadata)
 
@@ -921,7 +992,7 @@ def test_Data():
     data2 = Data(d2)
     logging.debug(str((data.keys())))
 
-    muon_file = 'Level7_muongun.12370_15.pckl'
+    muon_file = 'GRECO/new_style_files/Level7_muongun.12370_15.pckl'
     m = {'muons': from_file(muon_file)}
     m = Data(val=m)
     assert m.contains_muons
@@ -932,6 +1003,19 @@ def test_Data():
     logging.debug(str((data)))
     if not data.contains_muons:
         raise Exception("data doesn't contain muons.")
+    logging.debug(str((data.neutrinos.keys())))
+
+    noise_file = 'GRECO/new_style_files/Level7_VuvuzelaPureNoise_V2.990015.pckl'
+    n = {'noise': from_file(muon_file)}
+    n = Data(val=n)
+    assert n.contains_noise
+    assert not n.contains_neutrinos
+    logging.debug(str((n)))
+    data = data + n
+    assert data.contains_neutrinos
+    logging.debug(str((data)))
+    if not data.contains_noise:
+        raise Exception("data doesn't contain noise.")
     logging.debug(str((data.neutrinos.keys())))
 
     # Apply a simple cut

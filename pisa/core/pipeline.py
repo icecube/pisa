@@ -555,6 +555,7 @@ def main(return_outputs=False):
                 binning=stage.output_binning,
                 nu_weights_col='pisa_weight',
                 mu_weights_col='pisa_weight',
+                no_weights_col='pisa_weight',
                 mapset_name=stg_svc,
                 errors=True
             )

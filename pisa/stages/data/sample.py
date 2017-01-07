@@ -11,6 +11,7 @@ https://wiki.icecube.wisc.edu/index.php/IC86_oscillations_event_selection
 
 
 from operator import add
+from copy import deepcopy
 
 import numpy as np
 
@@ -172,6 +173,16 @@ class sample(Stage):
                 tex         = r'\rm{muons}'
             ))
 
+        if self.noise:
+            outputs.append(self._data.histogram(
+                kinds       = 'noise',
+                binning     = self.output_binning,
+                weights_col = 'pisa_weight',
+                errors      = True,
+                name        = 'noise',
+                tex         = r'\rm{noise}'
+            ))
+
         name = self.config.get('general', 'name')
         return MapSet(maps=outputs, name=name)
 
@@ -179,7 +190,7 @@ class sample(Stage):
         """Load the event sample given the configuration file and output
         groups. Hash this object using both the configuration file and
         the output types."""
-        hash_property = [self.config, self.neutrinos, self.muons,
+        hash_property = [self.config, self.neutrinos, self.muons, self.noise,
                          self.params['dataset'].value]
         this_hash = hash_obj(hash_property, full_hash=self.full_hash)
         if this_hash == self.sample_hash:
@@ -214,6 +225,18 @@ class sample(Stage):
                 config=self.config, dataset=dataset
             )
             events.append(muon_events)
+
+        if self.noise:
+            if 'noise' not in event_types:
+                raise AssertionError('`noise` field not found in '
+                                     'configuration file.')
+            dataset = self.params['dataset'].value
+            if 'noise' not in dataset:
+                dataset = 'nominal'
+            noise_events = self.load_noise_events(
+                config=self.config, dataset=dataset
+            )
+            events.append(noise_events)
         self._data = reduce(add, events)
 
         self.sample_hash = this_hash
@@ -328,11 +351,12 @@ class sample(Stage):
         muons = from_file(file_path)
 
         if weight == 'None' or weight == '1':
-            muons['pisa_weight'] = np.ones(muons['weights'].shape)
+            muons['sample_weight'] = np.ones(muons['weights'].shape)
         elif weight == '0':
-            muons['pisa_weight'] = np.zeros(muons['weights'].shape)
+            muons['sample_weight'] = np.zeros(muons['weights'].shape)
         else:
-            muons['pisa_weight'] = muons[weight] * ureg(weight_units)
+            muons['sample_weight'] = muons[weight] * ureg(weight_units)
+        muons['pisa_weight'] = deepcopy(muons['sample_weight'])
 
         # TODO(shivesh): implement alias feature in cfg file
         if 'zenith' in muons and 'coszen' not in muons:
@@ -342,6 +366,56 @@ class sample(Stage):
 
         muon_dict = {'muons': muons}
         return Data(muon_dict, metadata={'name': name, 'mu_sample': dataset})
+
+    @staticmethod
+    def load_noise_events(config, dataset):
+        def parse(string):
+            return string.replace(' ', '').split(',')
+        name         = config.get('general', 'name')
+        weight       = config.get('noise', 'weight')
+        weight_units = config.get('noise', 'weight_units')
+        sys_list     = parse(config.get('noise', 'sys_list'))
+        base_prefix  = config.get('noise', 'baseprefix')
+        if base_prefix == 'None':
+            base_prefix = ''
+
+        if dataset == 'nominal':
+            paths = []
+            for sys in sys_list:
+                ev_sys = 'noise:' + sys
+                nominal = config.get(ev_sys, 'nominal')
+                ev_sys_nom = ev_sys + ':' + nominal
+                paths.append(config.get(ev_sys_nom, 'file_path'))
+            if len(set(paths)) > 1:
+                raise AssertionError(
+                    'Choice of nominal file is ambigous. Nominal '
+                    'choice of systematic parameters must coincide '
+                    'with one and only one file. Options found are: '
+                    '{0}'.format(paths)
+                )
+            file_path = paths[0]
+        else:
+            file_path = config.get(dataset, 'file_path')
+
+        noise = from_file(file_path)
+
+        if weight == 'None' or weight == '1':
+            noise['sample_weight'] = np.ones(noise['weights'].shape)
+        elif weight == '0':
+            noise['sample_weight'] = np.zeros(noise['weights'].shape)
+        else:
+            noise['sample_weight'] = noise[weight] * ureg(weight_units)
+        noise['pisa_weight'] = deepcopy(noise['sample_weight'])
+
+        # TODO(shivesh): implement alias feature in cfg file
+        if 'zenith' in noise and 'coszen' not in noise:
+            noise['coszen'] = np.cos(noise['zenith'])
+        if 'reco_zenith' in noise and 'reco_coszen' not in noise:
+            noise['reco_coszen'] = np.cos(noise['reco_zenith'])
+
+        noise_dict = {'noise': noise}
+        return Data(noise_dict, metadata={'name': name,
+                                          'noise_sample': dataset})
 
     @staticmethod
     def load_from_nu_file(events_file, all_flavints, weight, weight_units,
@@ -373,14 +447,15 @@ class sample(Stage):
         nc_mask = events['interaction'] == 2
 
         if weight == 'None' or weight == '1':
-            events['pisa_weight'] = \
+            events['sample_weight'] = \
                 np.ones(events['ptype'].shape) * ureg.dimensionless
         elif weight == '0':
-            events['pisa_weight'] = \
+            events['sample_weight'] = \
                 np.zeros(events['ptype'].shape) * ureg.dimensionless
         else:
-            events['pisa_weight'] = events[weight] * \
+            events['sample_weight'] = events[weight] * \
                 ureg(weight_units)
+        events['pisa_weight'] = deepcopy(events['sample_weight'])
 
         if 'zenith' in events and 'coszen' not in events:
             events['coszen'] = np.cos(events['zenith'])

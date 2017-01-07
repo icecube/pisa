@@ -317,7 +317,7 @@ class weight(Stage):
                             trans_nu_data[bin_name] for bin_name in
                             self.output_binning.names]).T,
                         binning=self.output_binning,
-                        weights=trans_nu_data['pisa_reweight'],
+                        weights=trans_nu_data['pisa_weight'],
                         coszen_name=coszen_name,
                         use_cuda=False,
                         bw_method='silverman',
@@ -340,7 +340,7 @@ class weight(Stage):
                         trans_nu_data.histogram(
                             kinds=fig,
                             binning=self.output_binning,
-                            weights_col='pisa_reweight',
+                            weights_col='pisa_weight',
                             errors=True,
                             name=str(NuFlavIntGroup(fig)),
                         )
@@ -356,7 +356,7 @@ class weight(Stage):
                         self._data['muons'][bin_name] for bin_name in \
                         self.output_binning.names]).T,
                     binning=self.output_binning,
-                    weights=self._data['muons']['pisa_reweight'],
+                    weights=self._data['muons']['pisa_weight'],
                     coszen_name=coszen_name,
                     use_cuda=False,
                     bw_method='silverman',
@@ -379,10 +379,50 @@ class weight(Stage):
                     self._data.histogram(
                         kinds='muons',
                         binning=self.output_binning,
-                        weights_col='pisa_reweight',
+                        weights_col='pisa_weight',
                         errors=True,
                         name='muons',
                         tex=text2tex('muons')
+                    )
+                )
+
+        if self.noise:
+            if self.params['kde_hist'].value:
+                for bin_name in self.output_binning.names:
+                    if 'coszen' in bin_name:
+                        coszen_name = bin_name
+                kde_hist = self.kde_histogramdd(
+                    sample=np.array([
+                        self._data['noise'][bin_name] for bin_name in \
+                        self.output_binning.names]).T,
+                    binning=self.output_binning,
+                    weights=self._data['noise']['pisa_weight'],
+                    coszen_name=coszen_name,
+                    use_cuda=False,
+                    bw_method='silverman',
+                    alpha=0.3,
+                    oversample=10,
+                    coszen_reflection=0.5,
+                    adaptive=True
+                )
+                outputs.append(
+                    Map(
+                        name='noise',
+                        hist=kde_hist,
+                        error_hist=np.sqrt(kde_hist),
+                        binning=self.output_binning,
+                        tex=text2tex('noise')
+                    )
+                )
+            else:
+                outputs.append(
+                    self._data.histogram(
+                        kinds='noise',
+                        binning=self.output_binning,
+                        weights_col='pisa_weight',
+                        errors=True,
+                        name='noise',
+                        tex=text2tex('noise')
                     )
                 )
 
@@ -397,16 +437,15 @@ class weight(Stage):
         if this_hash == self.weight_hash:
             return
 
-        # TODO(shivesh): muons + noise reweighting
         if self.neutrinos:
             for fig in self._data.iterkeys():
-                self._data[fig]['pisa_reweight'] = \
-                    deepcopy(self._data[fig]['pisa_weight'])
+                self._data[fig]['weight_weight'] = \
+                    deepcopy(self._data[fig]['sample_weight'])
 
             # XSec reweighting
             xsec_weights = self.compute_xsec_weights()
             for fig in self._data.iterkeys():
-                self._data[fig]['pisa_reweight'] *= xsec_weights[fig]
+                self._data[fig]['weight_weight'] *= xsec_weights[fig]
 
             # Flux reweighting
             if not self.params['flux_reweight'].value and \
@@ -422,7 +461,7 @@ class weight(Stage):
                     # No oscillations
                     for fig in self._data.iterkeys():
                         flav_pdg = NuFlavInt(fig).flavCode()
-                        p_reweight = self._data[fig]['pisa_reweight']
+                        p_reweight = self._data[fig]['weight_weight']
                         if flav_pdg == 12:
                             p_reweight *= flux_weights[fig]['nue_flux']
                         elif flav_pdg == 14:
@@ -438,25 +477,30 @@ class weight(Stage):
                     # Oscillations
                     osc_weights = self.compute_osc_weights(flux_weights)
                     for fig in self._data.iterkeys():
-                        self._data[fig]['pisa_reweight'] *= osc_weights[fig]
+                        self._data[fig]['weight_weight'] *= osc_weights[fig]
 
             # Livetime reweighting
             livetime = self.params['livetime'].value
             for fig in self._data.iterkeys():
-                self._data[fig]['pisa_reweight'] *= livetime
-                self._data[fig]['pisa_reweight'].ito('dimensionless')
+                self._data[fig]['weight_weight'] *= livetime
+                self._data[fig]['weight_weight'].ito('dimensionless')
+
+            for fig in self._data.iterkeys():
+                self._data[fig]['pisa_weight'] = \
+                    deepcopy(self._data[fig]['weight_weight'])
 
         if self.muons:
+            self._data.muons['weight_weight'] = \
+                deepcopy(self._data.muons['sample_weight'])
+
             # Livetime reweighting
-            self._data.muons['pisa_reweight'] = \
-                deepcopy(self._data.muons['pisa_weight'])
             livetime = self.params['livetime'].value
-            self._data.muons['pisa_reweight'] *= livetime
-            self._data.muons['pisa_reweight'].ito('dimensionless')
+            self._data.muons['weight_weight'] *= livetime
+            self._data.muons['weight_weight'].ito('dimensionless')
 
             # Scaling
             atm_muon_scale = self.params['atm_muon_scale'].value
-            self._data.muons['pisa_reweight'] *= atm_muon_scale
+            self._data.muons['weight_weight'] *= atm_muon_scale
 
             # Primary CR systematic
             cr_rw_scale = self.params['delta_gamma_mu'].value
@@ -467,7 +511,26 @@ class weight(Stage):
             # it by shifting the whole array down by a normalisation factor
             norm = sum(rw_array)/len(rw_array)
             cr_rw_array = rw_array-norm
-            self._data.muons['pisa_reweight'] *= (1+cr_rw_scale*cr_rw_array)
+            self._data.muons['weight_weight'] *= (1+cr_rw_scale*cr_rw_array)
+
+            self._data.muons['pisa_weight'] = \
+                deepcopy(self._data.muons['weight_weight'])
+
+        if self.noise:
+            self._data.noise['weight_weight'] = \
+                deepcopy(self._data.noise['sample_weight'])
+
+            # Livetime reweighting
+            livetime = self.params['livetime'].value
+            self._data.noise['weight_weight'] *= livetime
+            self._data.noise['weight_weight'].ito('dimensionless')
+
+            # Scaling
+            norm_noise = self.params['norm_noise'].value
+            self._data.noise['weight_weight'] *= norm_noise
+
+            self._data.noise['pisa_weight'] = \
+                deepcopy(self._data.noise['weight_weight'])
 
         self.weight_hash = this_hash
         self._data.metadata['weight_hash'] = self.weight_hash

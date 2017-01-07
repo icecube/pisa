@@ -191,7 +191,7 @@ class roounfold(Stage):
             true = roounfold._histogram(
                 events=gen_data,
                 binning=self.true_binning,
-                weights=gen_data['pisa_reweight'],
+                weights=gen_data['pisa_weight'],
                 errors=True,
                 name=self.output_str
             )
@@ -217,10 +217,10 @@ class roounfold(Stage):
             # reco_norm_data = deepcopy(reco_norm_data)
             # true_norm_data = deepcopy(true_norm_data)
             # data = deepcopy(data)
-            ones = np.ones(reco_norm_data['pisa_reweight'].shape)
-            reco_norm_data['pisa_reweight'] = ones
-            true_norm_data['pisa_reweight'] = ones
-            data['pisa_reweight'] = ones
+            ones = np.ones(reco_norm_data['pisa_weight'].shape)
+            reco_norm_data['pisa_weight'] = ones
+            true_norm_data['pisa_weight'] = ones
+            data['pisa_weight'] = ones
 
         # Create response object
         response = self.create_response(reco_norm_data, true_norm_data, data)
@@ -229,7 +229,7 @@ class roounfold(Stage):
         all_hist = self._histogram(
             events=all_data,
             binning=self.reco_binning,
-            weights=all_data['pisa_reweight'],
+            weights=all_data['pisa_weight'],
             errors=False,
             name='all',
             tex=r'\rm{all}'
@@ -352,7 +352,8 @@ class roounfold(Stage):
 
     def split_data(self):
         this_hash = hash_obj(
-            [self.weight_hash, self.output_str, self._data.contains_muons]
+            [self.weight_hash, self.output_str, self._data.contains_muons,
+             self._data.contains_noise]
         )
         if self.split_data_hash == this_hash:
             return self._signal_data, self._bg_data, self._all_data
@@ -361,9 +362,14 @@ class roounfold(Stage):
             return self._data, None, self._data
 
         trans_data = self._data.transform_groups(self.output_str)
+        [trans_data[fig].pop('sample_weight') for fig in trans_data]
         bg_str = [fig for fig in trans_data if fig != self.output_str]
         if trans_data.contains_muons:
+            trans_data['muons'].pop('sample_weight')
             bg_str.append('muons')
+        if trans_data.contains_noise:
+            trans_data['noise'].pop('sample_weight')
+            bg_str.append('noise')
 
         signal_data = trans_data[self.output_str]
         bg_data = [trans_data[bg] for bg in bg_str]
@@ -435,14 +441,14 @@ class roounfold(Stage):
             signal_map = roounfold._histogram(
                 events=signal_data,
                 binning=self.true_binning,
-                weights=signal_data['pisa_reweight'],
+                weights=signal_data['pisa_weight'],
                 errors=True,
                 name=self.output_str
             )
             gen_map = self._histogram(
                 events=gen_data,
                 binning=self.true_binning,
-                weights=gen_data['pisa_reweight'],
+                weights=gen_data['pisa_weight'],
                 errors=True,
                 name='generator_lvl',
                 tex=r'\rm{generator_lvl}'
@@ -543,7 +549,7 @@ class roounfold(Stage):
             bg_hist = self._histogram(
                 events=bg_data,
                 binning=self.reco_binning,
-                weights=bg_data['pisa_reweight'],
+                weights=bg_data['pisa_weight'],
                 errors=True,
                 name='background',
                 tex=r'\rm{background}'
@@ -567,7 +573,7 @@ class roounfold(Stage):
         reco_hist = roounfold._histogram(
             events=reco_norm_data,
             binning=reco_binning,
-            weights=reco_norm_data['pisa_reweight'],
+            weights=reco_norm_data['pisa_weight'],
             errors=True,
             name='reco_signal',
             tex=r'\rm{reco_signal}'
@@ -575,7 +581,7 @@ class roounfold(Stage):
         true_hist = roounfold._histogram(
             events=true_norm_data,
             binning=true_binning,
-            weights=true_norm_data['pisa_reweight'],
+            weights=true_norm_data['pisa_weight'],
             errors=True,
             name='true_signal',
             tex=r'\rm{true_signal}'
@@ -586,7 +592,7 @@ class roounfold(Stage):
         smear_matrix = roounfold._histogram(
             events=data,
             binning=reco_binning+true_binning,
-            weights=data['pisa_reweight'],
+            weights=data['pisa_weight'],
             errors=True,
             name='smearing_matrix',
             tex=r'\rm{smearing_matrix}'
