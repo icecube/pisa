@@ -517,6 +517,7 @@ class weight(Stage):
                 deepcopy(self._data.muons['weight_weight'])
 
         if self.noise:
+            # TODO(shivesh): not working properly
             self._data.noise['weight_weight'] = \
                 deepcopy(self._data.noise['sample_weight'])
 

@@ -365,9 +365,12 @@ class roounfold(Stage):
         [trans_data[fig].pop('sample_weight') for fig in trans_data]
         bg_str = [fig for fig in trans_data if fig != self.output_str]
         if trans_data.contains_muons:
+            # TODO(shivesh): deepcopy inside Data object
+            trans_data['muons'] = deepcopy(trans_data['muons'])
             trans_data['muons'].pop('sample_weight')
             bg_str.append('muons')
         if trans_data.contains_noise:
+            trans_data['noise'] = deepcopy(trans_data['noise'])
             trans_data['noise'].pop('sample_weight')
             bg_str.append('noise')
 
