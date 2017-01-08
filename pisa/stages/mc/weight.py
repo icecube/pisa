@@ -846,8 +846,8 @@ class weight(Stage):
         orig_ratio = flux_a / flux_b
         orig_sum = flux_a + flux_b
 
-        scaled_a = orig_sum / (1 + ratio_scale*orig_ratio)
-        scaled_b = ratio_scale*orig_ratio * scaled_a
+        scaled_b = orig_sum / (1 + ratio_scale*orig_ratio)
+        scaled_a = ratio_scale*orig_ratio * scaled_b
         return scaled_a, scaled_b
 
     def make_prim_unc_spline(self):
