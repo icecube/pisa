@@ -214,9 +214,6 @@ class roounfold(Stage):
         if true_norm_data is None:
             true_norm_data = signal_data
         if unfold_unweighted:
-            # reco_norm_data = deepcopy(reco_norm_data)
-            # true_norm_data = deepcopy(true_norm_data)
-            # data = deepcopy(data)
             ones = np.ones(reco_norm_data['pisa_weight'].shape)
             reco_norm_data['pisa_weight'] = ones
             true_norm_data['pisa_weight'] = ones
@@ -353,7 +350,7 @@ class roounfold(Stage):
     def split_data(self):
         this_hash = hash_obj(
             [self.weight_hash, self.output_str, self._data.contains_muons,
-             self._data.contains_noise]
+             self._data.contains_noise], full_hash = self.full_hash
         )
         if self.split_data_hash == this_hash:
             return self._signal_data, self._bg_data, self._all_data
@@ -365,12 +362,9 @@ class roounfold(Stage):
         [trans_data[fig].pop('sample_weight') for fig in trans_data]
         bg_str = [fig for fig in trans_data if fig != self.output_str]
         if trans_data.contains_muons:
-            # TODO(shivesh): deepcopy inside Data object
-            trans_data['muons'] = deepcopy(trans_data['muons'])
             trans_data['muons'].pop('sample_weight')
             bg_str.append('muons')
         if trans_data.contains_noise:
-            trans_data['noise'] = deepcopy(trans_data['noise'])
             trans_data['noise'].pop('sample_weight')
             bg_str.append('noise')
 
@@ -402,7 +396,8 @@ class roounfold(Stage):
             )
             template_maker = unfold_pipeline_cfg
         gen_cfg = from_file(sa_cfg.get('neutrinos:gen_lvl', 'gen_cfg_file'))
-        this_hash = hash_obj([gen_cfg, pipeline_hash, self.output_str])
+        this_hash = hash_obj([gen_cfg, pipeline_hash, self.output_str],
+                             full_hash = self.full_hash)
         if self.gen_data_hash == this_hash:
             return self._gen_data
 
@@ -421,7 +416,8 @@ class roounfold(Stage):
 
     def get_inv_eff(self, signal_data=None, gen_data=None):
         this_hash = hash_obj(
-            [self.true_binning.hash, self.output_str, 'inv_eff']
+            [self.true_binning.hash, self.output_str, 'inv_eff'],
+            full_hash = self.full_hash
         )
         assert len(set([signal_data is None, gen_data is None])) == 1
         if signal_data is None and gen_data is None:
@@ -437,7 +433,9 @@ class roounfold(Stage):
                     'in disk_cache'
                 )
         else:
-            this_hash = hash_obj([this_hash, self.weight_hash])
+            this_hash = hash_obj(
+                [this_hash, self.weight_hash], full_hash = self.full_hash
+            )
             if self.inv_eff_hash == this_hash:
                 logging.trace('Loading inv eff from mem cache')
                 return self._inv_eff
@@ -477,7 +475,8 @@ class roounfold(Stage):
         unfold_unweighted = self.params['unfold_unweighted'].value
         this_hash = hash_obj(
             [self.reco_binning.hash, self.true_binning.hash, unfold_bg,
-             unfold_eff, unfold_unweighted, self.output_str, 'response']
+             unfold_eff, unfold_unweighted, self.output_str, 'response'],
+            full_hash = self.full_hash
         )
         assert len(set([reco_norm_data is None,
                         true_norm_data is None,
@@ -500,7 +499,8 @@ class roounfold(Stage):
                 )
         else:
             this_hash = hash_obj(
-                [this_hash, self.weight_hash, normQuant(self.params)]
+                [this_hash, self.weight_hash, normQuant(self.params)],
+                full_hash = self.full_hash
             )
             if self.response_hash == this_hash:
                 logging.debug('Loading response from mem cache')
@@ -531,7 +531,8 @@ class roounfold(Stage):
         """Histogram the bg data unless using real data, in which case load
         the bg hist from disk cache."""
         this_hash = hash_obj(
-            [self.reco_binning.hash, self.output_str, 'bg_hist']
+            [self.reco_binning.hash, self.output_str, 'bg_hist'],
+            full_hash = self.full_hash
         )
         if bg_data is None:
             if self.bg_hist_hash == this_hash:
@@ -545,7 +546,9 @@ class roounfold(Stage):
                     'bg hist object with correct hash not found in disk_cache'
                 )
         else:
-            this_hash = hash_obj([this_hash, self.weight_hash])
+            this_hash = hash_obj(
+                [this_hash, self.weight_hash], full_hash = self.full_hash
+            )
             if self.bg_hist_hash == this_hash:
                 logging.trace('Loading bg hist from mem cache')
                 return self._bg_hist

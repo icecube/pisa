@@ -130,6 +130,14 @@ class weight(Stage):
         """Hash of input event sample."""
         self.weight_hash = None
         """Hash of reweighted event sample."""
+        self.xsec_hash = None
+        """Hash of reweighted xsec values."""
+        self.flux_cache_hash = None
+        """Hash of cached flux values."""
+        self.flux_hash = None
+        """Hash of reweighted flux values."""
+        self.osc_hash = None
+        """Hash of reweighted osc flux values."""
 
         self.weight_params = (
             'output_events_mc',
@@ -205,10 +213,6 @@ class weight(Stage):
         self.neutrinos = False
         self.muons = False
         self.noise = False
-
-        self.xsec_hash = None
-        self.flux_hash = None
-        self.osc_hash = None
 
         input_names = input_names.replace(' ', '').split(',')
         clean_innames = []
@@ -595,9 +599,13 @@ class weight(Stage):
                 full_hash=self.full_hash
             )
 
-            if this_cache_hash in self.disk_cache:
+            if self.flux_cache_hash == this_cache_hash:
+                flux_weights = deepcopy(self._cached_fw)
+            elif this_cache_hash in self.disk_cache:
                 logging.info('Loading flux values from cache.')
-                flux_weights = self.disk_cache[this_cache_hash]
+                self._cached_fw = self.disk_cache[this_cache_hash]
+                flux_weights = deepcopy(self._cached_fw)
+                self.flux_cache_hash = this_cache_hash
             else:
                 flux_weights = self._compute_flux_weights(
                     self._data, ParamSet(p for p in self.params
@@ -868,6 +876,8 @@ class weight(Stage):
         you should check both if it seems reasonable and it is still negligible
         if you use it with a different event sample.
         """
+        # TODO(shivesh): "energy"/"coszen" on its own is taken to be the truth
+        # TODO(shivesh): what does "true" muon correspond to - the deposited muon?
         # if 'true' not in self.params['delta_gamma_mu_variable'].value:
         #     raise ValueError(
         #         'Variable to construct spline should be a truth variable. '

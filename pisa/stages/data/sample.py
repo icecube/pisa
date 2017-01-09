@@ -327,6 +327,7 @@ class sample(Stage):
         weight_units = config.get('muons', 'weight_units')
         sys_list     = parse(config.get('muons', 'sys_list'))
         base_prefix  = config.get('muons', 'baseprefix')
+        keep_keys    = parse(config.get('muons', 'keep_keys'))
         if base_prefix == 'None':
             base_prefix = ''
 
@@ -349,6 +350,7 @@ class sample(Stage):
             file_path = config.get(dataset, 'file_path')
 
         muons = from_file(file_path)
+        sample.strip_keys(keep_keys, muons)
 
         if weight == 'None' or weight == '1':
             muons['sample_weight'] = np.ones(muons['weights'].shape)
@@ -376,6 +378,7 @@ class sample(Stage):
         weight_units = config.get('noise', 'weight_units')
         sys_list     = parse(config.get('noise', 'sys_list'))
         base_prefix  = config.get('noise', 'baseprefix')
+        keep_keys    = parse(config.get('noise', 'keep_keys'))
         if base_prefix == 'None':
             base_prefix = ''
 
@@ -398,6 +401,7 @@ class sample(Stage):
             file_path = config.get(dataset, 'file_path')
 
         noise = from_file(file_path)
+        sample.strip_keys(keep_keys, noise)
 
         if weight == 'None' or weight == '1':
             noise['sample_weight'] = np.ones(noise['weights'].shape)
@@ -414,8 +418,8 @@ class sample(Stage):
             noise['reco_coszen'] = np.cos(noise['reco_zenith'])
 
         noise_dict = {'noise': noise}
-        return Data(noise_dict, metadata={'name': name,
-                                          'noise_sample': dataset})
+        return Data(noise_dict,
+                    metadata={'name': name, 'noise_sample': dataset})
 
     @staticmethod
     def load_from_nu_file(events_file, all_flavints, weight, weight_units,
@@ -423,23 +427,7 @@ class sample(Stage):
         flav_fidg = FlavIntDataGroup(flavint_groups=all_flavints)
 
         events = from_file(events_file)
-        if keep_keys == 'all':
-            pass
-        else:
-            remove_keys = []
-            for k_key in keep_keys:
-                if k_key not in events:
-                    raise AssertionError(
-                        'Key "{0}" not found in the {1} file, which '
-                        'contains keys {2}'.format(
-                            k_key, events_file, events.keys()
-                        )
-                    )
-            for d_key in events.iterkeys():
-                if d_key not in keep_keys:
-                    remove_keys.append(d_key)
-            for r_k in remove_keys:
-                del events[r_k]
+        sample.strip_keys(keep_keys, events)
 
         nu_mask = events['ptype'] > 0
         nubar_mask = events['ptype'] < 0
@@ -469,6 +457,24 @@ class sample(Stage):
             flav_fidg[flavint] = {var: events[var][i_mask & t_mask]
                                   for var in events.iterkeys()}
         return flav_fidg
+
+    @staticmethod
+    def strip_keys(keep_keys, events):
+        if keep_keys == 'all':
+            pass
+        else:
+            remove_keys = []
+            for k_key in keep_keys:
+                if k_key not in events:
+                    raise AssertionError(
+                        'Key "{0}" not found in file, which contains keys '
+                        '{1}'.format(k_key, events.keys())
+                    )
+            for d_key in events.iterkeys():
+                if d_key not in keep_keys:
+                    remove_keys.append(d_key)
+            for r_k in remove_keys:
+                del events[r_k]
 
     def validate_params(self, params):
         assert isinstance(params['data_sample_config'].value, basestring)

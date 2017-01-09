@@ -601,16 +601,14 @@ class Data(FlavIntDataGroup):
         t_fidg = super(Data, self).transform_groups(flavint_groups)
         metadata = deepcopy(self.metadata)
         metadata['flavints_joined'] = [str(f) for f in t_fidg.flavint_groups]
+        t_dict = dict(t_fidg)
         if self.contains_muons:
             metadata['flavints_joined'] += ['muons']
-            t_dict = dict(t_fidg)
-            t_dict['muons'] = self['muons']
-            t_fidg = t_dict
+            t_dict['muons'] = deepcopy(self['muons'])
         if self.contains_noise:
             metadata['flavints_joined'] += ['noise']
-            t_dict = dict(t_fidg)
-            t_dict['noise'] = self['noise']
-            t_fidg = t_dict
+            t_dict['noise'] = deepcopy(self['noise'])
+        t_fidg = t_dict
         ret_obj = Data(t_fidg, metadata=metadata)
         ret_obj.update_hash()
         return ret_obj
@@ -771,10 +769,7 @@ class Data(FlavIntDataGroup):
                             'should be a boolean. Got %s.' % type(errors))
         outputs = []
         if self.contains_neutrinos:
-            trans_nu_data = self.transform_groups(
-                self.flavint_groups
-            )
-            for fig in trans_nu_data.iterkeys():
+            for fig in self.iterkeys():
                 outputs.append(
                     self.histogram(
                         kinds=fig,
