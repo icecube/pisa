@@ -12,6 +12,7 @@ https://wiki.icecube.wisc.edu/index.php/IC86_oscillations_event_selection
 
 from operator import add
 from copy import deepcopy
+import re
 
 import numpy as np
 
@@ -257,6 +258,7 @@ class sample(Stage):
             weights      = parse(gen_cfg.get('general', 'weights'))
             weight_units = gen_cfg.get('general', 'weight_units')
             keep_keys    = parse(gen_cfg.get('general', 'keep_keys'))
+            aliases      = gen_cfg.items('aliases')
             logging.info('Extracting dataset "{0}" from generator level '
                          'sample "{1}"'.format(dataset, name))
 
@@ -267,7 +269,7 @@ class sample(Stage):
 
                 flav_fidg = sample.load_from_nu_file(
                     events_file, all_flavints, weights[idx], weight_units,
-                    keep_keys
+                    keep_keys, aliases
                 )
                 nu_data.append(flav_fidg)
         else:
@@ -278,6 +280,7 @@ class sample(Stage):
             sys_list     = parse(config.get('neutrinos', 'sys_list'))
             base_prefix  = config.get('neutrinos', 'baseprefix')
             keep_keys    = parse(config.get('neutrinos', 'keep_keys'))
+            aliases      = config.items('neutrinos:aliases')
             logging.info('Extracting dataset "{0}" from generator level '
                          'sample "{1}"'.format(dataset, name))
             if base_prefix == 'None':
@@ -308,7 +311,7 @@ class sample(Stage):
 
                 flav_fidg = sample.load_from_nu_file(
                     events_file, all_flavints, weights[idx], weight_units,
-                    keep_keys
+                    keep_keys, aliases
                 )
                 nu_data.append(flav_fidg)
         nu_data = Data(
@@ -328,6 +331,7 @@ class sample(Stage):
         sys_list     = parse(config.get('muons', 'sys_list'))
         base_prefix  = config.get('muons', 'baseprefix')
         keep_keys    = parse(config.get('muons', 'keep_keys'))
+        aliases      = config.items('muons:aliases')
         if base_prefix == 'None':
             base_prefix = ''
 
@@ -360,11 +364,13 @@ class sample(Stage):
             muons['sample_weight'] = muons[weight] * ureg(weight_units)
         muons['pisa_weight'] = deepcopy(muons['sample_weight'])
 
-        # TODO(shivesh): implement alias feature in cfg file
-        if 'zenith' in muons and 'coszen' not in muons:
-            muons['coszen'] = np.cos(muons['zenith'])
-        if 'reco_zenith' in muons and 'reco_coszen' not in muons:
-            muons['reco_coszen'] = np.cos(muons['reco_zenith'])
+        for alias, expr in aliases:
+            if alias in events:
+                logging.warning(
+                    'Overwriting Data key {0} with aliased expression '
+                    '{1}'.format(alias, expr)
+                )
+            events[alias] = eval(re.sub(r'\<(.*?)\>', r"muons['\1']", expr))
 
         muon_dict = {'muons': muons}
         return Data(muon_dict, metadata={'name': name, 'mu_sample': dataset})
@@ -379,6 +385,7 @@ class sample(Stage):
         sys_list     = parse(config.get('noise', 'sys_list'))
         base_prefix  = config.get('noise', 'baseprefix')
         keep_keys    = parse(config.get('noise', 'keep_keys'))
+        aliases      = config.items('noise:aliases')
         if base_prefix == 'None':
             base_prefix = ''
 
@@ -411,11 +418,13 @@ class sample(Stage):
             noise['sample_weight'] = noise[weight] * ureg(weight_units)
         noise['pisa_weight'] = deepcopy(noise['sample_weight'])
 
-        # TODO(shivesh): implement alias feature in cfg file
-        if 'zenith' in noise and 'coszen' not in noise:
-            noise['coszen'] = np.cos(noise['zenith'])
-        if 'reco_zenith' in noise and 'reco_coszen' not in noise:
-            noise['reco_coszen'] = np.cos(noise['reco_zenith'])
+        for alias, expr in aliases:
+            if alias in events:
+                logging.warning(
+                    'Overwriting Data key {0} with aliased expression '
+                    '{1}'.format(alias, expr)
+                )
+            events[alias] = eval(re.sub(r'\<(.*?)\>', r"noise['\1']", expr))
 
         noise_dict = {'noise': noise}
         return Data(noise_dict,
@@ -423,7 +432,7 @@ class sample(Stage):
 
     @staticmethod
     def load_from_nu_file(events_file, all_flavints, weight, weight_units,
-                          keep_keys):
+                          keep_keys, aliases):
         flav_fidg = FlavIntDataGroup(flavint_groups=all_flavints)
 
         events = from_file(events_file)
@@ -445,10 +454,13 @@ class sample(Stage):
                 ureg(weight_units)
         events['pisa_weight'] = deepcopy(events['sample_weight'])
 
-        if 'zenith' in events and 'coszen' not in events:
-            events['coszen'] = np.cos(events['zenith'])
-        if 'reco_zenith' in events and 'reco_coszen' not in events:
-            events['reco_coszen'] = np.cos(events['reco_zenith'])
+        for alias, expr in aliases:
+            if alias in events:
+                logging.warning(
+                    'Overwriting Data key {0} with aliased expression '
+                    '{1}'.format(alias, expr)
+                )
+            events[alias] = eval(re.sub(r'\<(.*?)\>', r"events['\1']", expr))
 
         for flavint in all_flavints:
             i_mask = cc_mask if flavint.isCC() else nc_mask
