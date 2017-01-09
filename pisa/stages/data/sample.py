@@ -365,12 +365,12 @@ class sample(Stage):
         muons['pisa_weight'] = deepcopy(muons['sample_weight'])
 
         for alias, expr in aliases:
-            if alias in events:
+            if alias in muons:
                 logging.warning(
                     'Overwriting Data key {0} with aliased expression '
                     '{1}'.format(alias, expr)
                 )
-            events[alias] = eval(re.sub(r'\<(.*?)\>', r"muons['\1']", expr))
+            muons[alias] = eval(re.sub(r'\<(.*?)\>', r"muons['\1']", expr))
 
         muon_dict = {'muons': muons}
         return Data(muon_dict, metadata={'name': name, 'mu_sample': dataset})
@@ -419,12 +419,12 @@ class sample(Stage):
         noise['pisa_weight'] = deepcopy(noise['sample_weight'])
 
         for alias, expr in aliases:
-            if alias in events:
+            if alias in noise:
                 logging.warning(
                     'Overwriting Data key {0} with aliased expression '
                     '{1}'.format(alias, expr)
                 )
-            events[alias] = eval(re.sub(r'\<(.*?)\>', r"noise['\1']", expr))
+            noise[alias] = eval(re.sub(r'\<(.*?)\>', r"noise['\1']", expr))
 
         noise_dict = {'noise': noise}
         return Data(noise_dict,

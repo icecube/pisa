@@ -486,10 +486,13 @@ class weight(Stage):
             # Livetime reweighting
             livetime = self.params['livetime'].value
             for fig in self._data.iterkeys():
-                logging.debug('Rate for {0} = {1}{2:~}'.format(
-                    fig, np.sum(self._data[fig]['weight_weight'].m_as('mHz')),
-                    ureg('mHz')
-                ))
+                logging.debug(
+                    'Rate for {0} = '.format(fig).ljust(25) +
+                    r'{0:.3f}{1:~}'.format(
+                        np.sum(self._data[fig]['weight_weight'].m_as('mHz')),
+                        ureg('mHz')
+                    ).rjust(6)
+                )
                 self._data[fig]['weight_weight'] *= livetime
                 self._data[fig]['weight_weight'].ito('dimensionless')
 
