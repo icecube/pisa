@@ -413,7 +413,9 @@ def purge_failed_jobs(data, trial_nums, thresh=5.0):
 
     Interestingly, I only saw a need for this with my true NO jobs, where I 
     attempted to run some jobs in fp32 mode. No jobs were needed to be removed 
-    for true IO, where everything was run in fp64 mode.
+    for true IO, where everything was run in fp64 mode. So if there's a need
+    for this function in your analysis it probably points at some more serious
+    underlying problem.
     '''
     
     for fit_key in data.keys():
