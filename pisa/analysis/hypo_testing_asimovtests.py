@@ -8,7 +8,12 @@ Hypothesis testing: How do two hypotheses compare for describing MC or data?
 
 This script/module will load the HypoTesting class from hypo_testing.py and
 use it to do a minimiser study in Asimov. A data distribution will be made at 
-the injected values of the parameters and a hypothesis test will be run for both ordering hypothesis in Asimov with seeded values randomly off truth.
+the injected values of the parameters and a hypothesis test will be run for 
+both ordering hypothesis with seeded values randomly off truth.
+
+The "data" can be Asimov (default) or can be set to a pseudo-experiment. In 
+either case, the idea is that the fit is repeated to the same dataset multiple 
+times to check the stability of the minimisation.
 
 """
 
@@ -20,6 +25,7 @@ from pisa import ureg
 from pisa.analysis.hypo_testing import HypoTesting, Labels
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.utils.log import logging, set_verbosity
+from pisa.utils.random_numbers import get_random_state
 from pisa.utils.resources import find_resource
 from pisa.utils.stats import ALL_METRICS
 
@@ -118,7 +124,7 @@ def parse_args():
     parser.add_argument(
         '--num-trials',
         type=int, default=1,
-        help='''Number of Asimov tests to run. The minimiser start point is 
+        help='''Number of fits to run. The minimiser start point is 
         randomised in every case, and so running multiple is NOT the same 
         operation.'''
     )
@@ -128,6 +134,19 @@ def parse_args():
         help='''Trial start index. Set this if you are saving files from 
         multiple runs in to the same log directory otherwise files may end up 
         being overwritten!'''
+    )
+    parser.add_argument(
+        '--data-is-pseudo',
+        action='store_true', default=False,
+        help='''Set this to fluctuate the "data" distribution used in all of 
+        the fits. If this is set to true you must also specify an index which 
+        defines this random state with the --data-index argument.'''
+    )
+    parser.add_argument(
+        '--data-index',
+        type=int, default=0,
+        help='''If --data-is-pseudo is set then this will be the index by 
+        which the random state is defined.'''
     )
     parser.add_argument(
         '--allow-dirty',
@@ -188,16 +207,29 @@ def main():
     set_verbosity(init_args_d.pop('v'))
     num_trials = init_args_d.pop('num_trials')
     start_index = init_args_d.pop('start_index')
+    data_is_pseudo = init_args_d.pop('data_is_pseudo')
+    print 
+    data_index = init_args_d.pop('data_index')
+    if data_is_pseudo:
+        if data_index == 0:
+            logging.warning('You have requested the data be a pseudo-experiment'
+                            ' but the data index by which the random state is'
+                            ' defined has been left as the default value. '
+                            'Please ensure you definitely wanted to do this.')
+    else:
+        if data_index != 0:
+            logging.warning('You have not requested the data be a '
+                            'pseudo-experiment but you have specified a value '
+                            'for the data index by which the random state is '
+                            'defined has been changed from the default value. '
+                            'Please ensure you definitely wanted to do this.')
+            
     init_args_d['check_octant'] = not init_args_d.pop('no_octant_check')
-
     init_args_d['data_is_data'] = False
-
     init_args_d['store_minimizer_history'] = (
         not init_args_d.pop('no_minimizer_history')
     )
-
     init_args_d['reset_free'] = False
-
     other_metrics = init_args_d.pop('other_metric')
     if other_metrics is not None:
         other_metrics = [s.strip().lower() for s in other_metrics]
@@ -269,16 +301,32 @@ def main():
         hypo_testing.h0_maker.randomize_free_params()
         hypo_testing.h1_maker.randomize_free_params()
         # Create Labels dict to distnguish each of these Asimov "trials"
-        hypo_testing.labels = Labels(
-            h0_name=init_args_d['h0_name'],
-            h1_name=init_args_d['h1_name'],
-            data_name=init_args_d['data_name']+'_fit_%i'%i,
-            data_is_data=init_args_d['data_is_data'],
-            fluctuate_data=init_args_d['fluctuate_data'],
-            fluctuate_fid=init_args_d['fluctuate_fid']
-        )
+        if data_is_pseudo:
+            hypo_testing.labels = Labels(
+                h0_name=init_args_d['h0_name'],
+                h1_name=init_args_d['h1_name'],
+                data_name=init_args_d['data_name']+'_fit_%i_pseudo_%i'%(
+                    i,data_index),
+                data_is_data=init_args_d['data_is_data'],
+                fluctuate_data=init_args_d['fluctuate_data'],
+                fluctuate_fid=init_args_d['fluctuate_fid']
+            )
+        else:
+            hypo_testing.labels = Labels(
+                h0_name=init_args_d['h0_name'],
+                h1_name=init_args_d['h1_name'],
+                data_name=init_args_d['data_name']+'_fit_%i'%i,
+                data_is_data=init_args_d['data_is_data'],
+                fluctuate_data=init_args_d['fluctuate_data'],
+                fluctuate_fid=init_args_d['fluctuate_fid']
+            )
         # Run the fits
         hypo_testing.generate_data()
+        if data_is_pseudo:
+            data_random_state = get_random_state([0, data_index, 0])
+            hypo_testing.data_dist = hypo_testing.data_dist.fluctuate(
+                method='poisson', random_state=data_random_state
+            )
         hypo_testing.fit_hypos_to_data()
         # Reset everything
         hypo_testing.h0_maker.reset_free()

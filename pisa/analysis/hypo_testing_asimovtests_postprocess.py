@@ -29,6 +29,7 @@ import re
 from scipy.stats import norm, spearmanr
 
 from pisa.analysis.hypo_testing import Labels
+from pisa.analysis.hypo_testing_postprocess import parse_pint_string
 from pisa.core.param import Param, ParamSet
 from pisa.utils.fileio import from_file, to_file, nsort
 from pisa.utils.log import set_verbosity, logging
@@ -184,7 +185,8 @@ def extract_fit(fpath, keys=None):
     return info
 
 
-def plot_fit_information(minimiser_info, labels, detector, selection, outdir):
+def plot_fit_information(minimiser_info, labels, detector,
+                         selection, minimiser, outdir):
     '''Makes plots of the number of iterations and time taken with the 
     minimiser. This is a good cross-check that the minimiser did not end 
     abruptly since you would see significant pile-up if it did.'''
@@ -192,8 +194,9 @@ def plot_fit_information(minimiser_info, labels, detector, selection, outdir):
     if not os.path.exists(outdir):
         logging.info('Making output directory %s'%outdir)
         os.makedirs(outdir)
-    MainTitle = '%s %s Event Selection Minimiser Information'%(detector,
-                                                               selection)
+    MainTitle = '%s %s Event Selection %s Minimiser Information'%(detector,
+                                                                  selection,
+                                                                  minimiser)
     for fhkey in minimiser_info.keys():
         if minimiser_info[fhkey] is not None:
             hypo = fhkey.split('_')[1]
@@ -269,15 +272,17 @@ def plot_fit_information(minimiser_info, labels, detector, selection, outdir):
             plt.close()
 
 
-def plot_fit_results(fit_results, labels, detector, selection, outdir):
+def plot_fit_results(fit_results, labels, detector,
+                     selection, minimiser, outdir):
     '''Makes histograms of the Asimov fit results. These should have basically 
     no variation if everything was fine.'''
     outdir = os.path.join(outdir,'FitResults')
     if not os.path.exists(outdir):
         logging.info('Making output directory %s'%outdir)
         os.makedirs(outdir)
-    MainTitle = '%s %s Event Selection Fit Results'%(detector,
-                                                     selection)
+    MainTitle = '%s %s Event Selection Fit Results (%s Minimiser)'%(detector,
+                                                                    selection,
+                                                                    minimiser)
     for fhkey in fit_results.keys():
         hypo = fhkey.split('_')[1]
         metric = []
@@ -289,12 +294,15 @@ def plot_fit_results(fit_results, labels, detector, selection, outdir):
                 for param in fit_results[fhkey][fit]['params'].keys():
                     params[param] = {}
                     params[param]['values'] = []
-                    params[param]['units'] = \
-                        fit_results[fhkey][fit]['params'][param].split(' ')[-1]
+                    val, units = parse_pint_string(
+                        pint_string=fit_results[fhkey][fit]['params'][param]
+                    )
+                    params[param]['units'] = units
             for param in fit_results[fhkey][fit]['params'].keys():
                 params[param]['values'].append(
                     float(
-                        fit_results[fhkey][fit]['params'][param].split(' ')[0])
+                        fit_results[fhkey][fit]['params'][param].split(' ')[0]
+                    )
                 )
         FitTitle = ("True %s, Hypothesis %s (%i Asimov Fits)"
                     %(labels['data_name'],
@@ -332,7 +340,7 @@ def plot_fit_results(fit_results, labels, detector, selection, outdir):
 
 
 def plot_starting_params(starting_params, fit_results, labels,
-                         detector, selection, outdir):
+                         detector, selection, minimiser, outdir):
     '''Makes histograms of the starting points for the minimiser.
 
     TODO - Make the plots actually line up. This is coming from the fit_history,
@@ -342,11 +350,12 @@ def plot_starting_params(starting_params, fit_results, labels,
     if not os.path.exists(outdir):
         logging.info('Making output directory %s'%outdir)
         os.makedirs(outdir)
-    MainTitle = '%s %s Event Selection Minimiser Start Params'%(detector,
-                                                                selection)
+    MainTitle = '%s %s Event Selection %s Minimiser Start Params'%(detector,
+                                                                   selection,
+                                                                   minimiser)
     for fhkey in starting_params.keys():
         hypo = fhkey.split('_')[1]
-        params = {}
+        params = OrderedDict()
         num_trials = len(starting_params[fhkey].keys())
         for fit in starting_params[fhkey].keys():
             metric_name = fit_results[fhkey][fit]['metric']
@@ -357,8 +366,10 @@ def plot_starting_params(starting_params, fit_results, labels,
                 for param in fit_results[fhkey][fit]['params'].keys():
                     params[param] = {}
                     params[param]['values'] = []
-                    params[param]['units'] = \
-                        fit_results[fhkey][fit]['params'][param].split(' ')[-1]
+                    val, units = parse_pint_string(
+                        pint_string=fit_results[fhkey][fit]['params'][param]
+                    )
+                    params[param]['units'] = units
             for param,val in zip(params.keys(),
                                  starting_params[fhkey][fit]['fit_history']):
                 params[param]['values'].append(float(val))
@@ -390,15 +401,20 @@ def parse_args():
     parser.add_argument(
         '-d', '--dir', required=True,
         metavar='DIR', type=str,
-        help='Directory into which to store results and metadata.'
+        help='''Directory into which the results of hypo_testing_asimovtests.py
+        was stored'''
     )
     parser.add_argument(
         '--detector',type=str,default='',
-        help="Name of detector to put in histogram titles."
+        help='''Name of detector to put in histogram titles.'''
     )
     parser.add_argument(
         '--selection',type=str,default='',
-        help="Name of selection to put in histogram titles."
+        help='''Name of selection to put in histogram titles.'''
+    )
+    parser.add_argument(
+        '--minimiser',type=str,default='',
+        help='''Name of minimiser to put in histogram titles.'''
     )
     parser.add_argument(
         '--outdir', metavar='DIR', type=str, required=True,
@@ -423,6 +439,7 @@ def main():
 
     detector = init_args_d.pop('detector')
     selection = init_args_d.pop('selection')
+    minimiser = init_args_d.pop('minimiser')
     outdir = init_args_d.pop('outdir')
 
     data_sets, minimiser_info, starting_params, labels = extract_trials(
@@ -439,6 +456,7 @@ def main():
             labels=labels.dict,
             detector=detector,
             selection=selection,
+            minimiser=minimiser,
             outdir=outdir
         )
 
@@ -447,6 +465,7 @@ def main():
             labels=labels.dict,
             detector=detector,
             selection=selection,
+            minimiser=minimiser,
             outdir=outdir
         )
 
@@ -455,6 +474,7 @@ def main():
             labels=labels.dict,
             detector=detector,
             selection=selection,
+            minimiser=minimiser,
             outdir=outdir
         )
                 
