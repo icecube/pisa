@@ -57,9 +57,9 @@ class roounfold(Stage):
         """Hash of background histogram for subtraction."""
 
         expected_params = (
-            'real_data', 'unfold_pipeline_cfg', 'stat_fluctuations',
-            'regularisation', 'optimize_reg', 'unfold_eff', 'unfold_bg',
-            'unfold_unweighted'
+            'real_data', 'unfold_pipeline_cfg', 'return_eff',
+            'stat_fluctuations', 'regularisation', 'optimize_reg',
+            'unfold_eff', 'unfold_bg', 'unfold_unweighted'
         )
 
         self.reco_binning = reco_binning
@@ -78,19 +78,6 @@ class roounfold(Stage):
             else:
                 clean_innames.append(str(NuFlavIntGroup(name)))
 
-        signal = output_names.replace(' ', '').split(',')
-        self.output_str = []
-        for name in signal:
-            if 'muons' in name or 'noise' in name:
-                raise AssertionError('Are you trying to unfold muons/noise?')
-            else:
-                self.output_str.append(NuFlavIntGroup(name))
-
-        if len(self.output_str) > 1:
-            raise AssertionError('Specified more than one NuFlavIntGroup as '
-                                 'signal, {0}'.format(self.output_str))
-        self.output_str = str(self.output_str[0])
-
         if len(reco_binning.names) != len(true_binning.names):
             raise AssertionError('Number of dimensions in reco binning '
                                  'doesn'+"'"+'t match number of dimensions in '
@@ -98,12 +85,23 @@ class roounfold(Stage):
         if len(reco_binning.names) != 2:
             raise NotImplementedError('Bin dimensions != 2 not implemented')
 
+        signal = output_names.replace(' ', '').split(',')
+        output_str = []
+        for name in signal:
+            if 'muons' in name or 'noise' in name:
+                raise AssertionError('Are you trying to unfold muons/noise?')
+            elif 'all_nu' in name:
+                output_str = [str(NuFlavIntGroup(f)) for f in ALL_NUFLAVINTS]
+            else:
+                output_str.append(NuFlavIntGroup(name))
+        output_str = [str(f) for f in output_str]
+
         super(self.__class__, self).__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
             input_names=clean_innames,
-            output_names=self.output_str,
+            output_names=output_str,
             error_method=error_method,
             disk_cache=disk_cache,
             outputs_cache_depth=outputs_cache_depth,
@@ -135,6 +133,12 @@ class roounfold(Stage):
                                  'type {0}'.format(type(inputs)))
         self._data = inputs
 
+        if not self.params['return_eff'].value:
+            if len(self.output_names) > 1:
+                raise AssertionError('Specified more than one NuFlavIntGroup as '
+                                     'signal, {0}'.format(self.output_names))
+            self.output_str = str(self.output_names[0])
+
         real_data = self.params['real_data'].value
         if real_data:
             logging.debug('Using real data')
@@ -159,6 +163,39 @@ class roounfold(Stage):
             raise AssertionError(
                 'Cannot do poisson fluctuations if using real data.'
             )
+        if self.params['return_eff'].value and real_data:
+            raise AssertionError(
+                'Not implemented return of efficiency maps if using real data.'
+            )
+
+        if self.params['return_eff'].value:
+            fin_data = self._data
+            # Load generator level data for signal
+            unfold_pipeline_cfg = self.params['unfold_pipeline_cfg'].value
+            pipeline_cfg = from_file(unfold_pipeline_cfg)
+            template_maker = Pipeline(pipeline_cfg)
+            gen_data = template_maker.get_outputs()
+
+            fin_data = fin_data.transform_groups(self.output_names)
+            gen_data = gen_data.transform_groups(self.output_names)
+
+            efficiencies = []
+            assert set(fin_data.keys()) == set(gen_data.keys())
+            for fig in fin_data.iterkeys():
+                figd_f = fin_data[fig]
+                figd_g = gen_data[fig]
+                inv_eff = self._get_inv_eff(
+                    figd_f, figd_g, self.true_binning, fig
+                )
+
+                i_mask = ~(inv_eff == 0.)
+                eff = unp.uarray(np.zeros(self.true_binning.shape),
+                                 np.zeros(self.true_binning.shape))
+                eff[i_mask] = 1. / inv_eff[i_mask]
+                efficiencies.append(
+                    Map(name=fig, hist=eff, binning=self.true_binning)
+                )
+            return MapSet(efficiencies)
 
         # TODO(shivesh): [   TRACE] None of the selections ['iron', 'nh'] found in this pipeline.
         # TODO(shivesh): Fix "smearing_matrix" memory leak
@@ -439,25 +476,9 @@ class roounfold(Stage):
             if self.inv_eff_hash == this_hash:
                 logging.trace('Loading inv eff from mem cache')
                 return self._inv_eff
-            signal_map = roounfold._histogram(
-                events=signal_data,
-                binning=self.true_binning,
-                weights=signal_data['pisa_weight'],
-                errors=True,
-                name=self.output_str
+            inv_eff = self._get_inv_eff(
+                signal_data, gen_data, self.true_binning, self.output_str
             )
-            gen_map = self._histogram(
-                events=gen_data,
-                binning=self.true_binning,
-                weights=gen_data['pisa_weight'],
-                errors=True,
-                name='generator_lvl',
-                tex=r'\rm{generator_lvl}'
-            )
-            i_mask = ~(signal_map.hist == 0.)
-            inv_eff = unp.uarray(np.zeros(signal_map.hist.shape),
-                                 np.zeros(signal_map.hist.shape))
-            inv_eff[i_mask] = gen_map.hist[i_mask] / signal_map.hist[i_mask]
 
             if self.disk_cache is not None:
                 if this_hash not in self.disk_cache:
@@ -571,6 +592,30 @@ class roounfold(Stage):
         return bg_hist
 
     @staticmethod
+    def _get_inv_eff(signal_data, gen_data, binning, name):
+        signal_map = roounfold._histogram(
+            events=signal_data,
+            binning=binning,
+            weights=signal_data['pisa_weight'],
+            errors=True,
+            name=name
+        )
+        gen_map = roounfold._histogram(
+            events=gen_data,
+            binning=binning,
+            weights=gen_data['pisa_weight'],
+            errors=True,
+            name='generator_lvl',
+            tex=r'\rm{generator_lvl}'
+        )
+        i_mask = ~(signal_map.hist == 0.)
+        inv_eff = unp.uarray(np.zeros(signal_map.hist.shape),
+                             np.zeros(signal_map.hist.shape))
+        inv_eff[i_mask] = gen_map.hist[i_mask] / signal_map.hist[i_mask]
+
+        return inv_eff
+
+    @staticmethod
     def _create_response(reco_norm_data, true_norm_data, data, reco_binning,
                          true_binning):
         """Create the response object from the signal data."""
@@ -680,6 +725,7 @@ class roounfold(Stage):
         pq = pint.quantity._Quantity
         param_types = [
             ('real_data', bool),
+            ('return_eff', bool),
             ('stat_fluctuations', pq),
             ('regularisation', pq),
             ('optimize_reg', bool),
