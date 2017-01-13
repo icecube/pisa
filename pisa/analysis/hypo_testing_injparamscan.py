@@ -96,6 +96,25 @@ def parse_args():
         hypothesis.'''
     )
     parser.add_argument(
+        '--data-param-selections',
+        type=str, default=None, metavar='PARAM_SELECTOR_LIST',
+        help='''Comma-separated list of param selectors to apply to the data
+        distribution maker's pipelines. If neither --data-pipeline nor
+        --data-param-selections are specified, *both* are copied from
+        --h0-pipeline and --h0-param-selections, respectively. However,
+        if --data-pipeline is specified while --data-param-selections is not,
+        then the param selections in the pipeline config file(s) specified are
+        used to produce data distributions.'''
+    )
+    parser.add_argument(
+        '--data-name',
+        type=str, metavar='NAME', default=None,
+        help='''Name for the data. E.g., "NO" for normal ordering in the
+        neutrino mass ordering analysis. Note that the name here has no bearing
+        on the actual process, so it's important that you be careful to use a
+        name that appropriately identifies the hypothesis.'''
+    )
+    parser.add_argument(
         '--metric',
         type=str, default=None, metavar='METRIC',
         help='''Name of metric to use for optimizing the fit.'''
