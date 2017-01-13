@@ -1000,7 +1000,7 @@ class HypoTesting(Analysis):
                          dirpath=self.thisdata_dirpath,
                          label=self.labels.h0_fit_to_h1_fid)
 
-    def setup_logging(self):
+    def setup_logging(self, reset_params=True):
         """
         Should store enough information for the following two purposes:
             1. Be able to completely reproduce the results, assuming access to
@@ -1109,17 +1109,28 @@ class HypoTesting(Analysis):
 
         run_id comes from (??? hostname and microsecond timestamp??? settings???)
 
+        Notes
+        -----
+        I have added an optional reset_params option here since I want to be 
+        able to use this function when doing systematic tests. Here, the 
+        parameters in the makers may be temporarily changed and this should be 
+        reflected in the logging. Thus, this option allows the parameters to 
+        NOT be reset here. This option should be used with caution.
+
         """
         self.h0_maker.select_params(self.h0_param_selections)
-        self.h0_maker.reset_free()
+        if reset_params:
+            self.h0_maker.reset_free()
         self.h0_hash = self.h0_maker.state_hash
 
         self.h1_maker.select_params(self.h1_param_selections)
-        self.h1_maker.reset_free()
+        if reset_params:
+            self.h1_maker.reset_free()
         self.h1_hash = self.h1_maker.state_hash
 
         self.data_maker.select_params(self.data_param_selections)
-        self.data_maker.reset_free()
+        if reset_params:
+            self.data_maker.reset_free()
         self.data_hash = self.data_maker.state_hash
 
         # Single unique hash for hypotheses and data configurations
@@ -1189,7 +1200,7 @@ class HypoTesting(Analysis):
         )
         self.run_info_fpath = os.path.join(self.logroot, self.run_info_fname)
 
-    def write_config_summary(self):
+    def write_config_summary(self, reset_params=True):
         if os.path.isfile(self.config_summary_fpath):
             return
         summary = OrderedDict()
@@ -1210,7 +1221,8 @@ class HypoTesting(Analysis):
         summary['data_is_data'] = self.data_is_data
 
         self.data_maker.select_params(self.data_param_selections)
-        self.data_maker.reset_free()
+        if reset_params:
+            self.data_maker.reset_free()
         summary['data_name'] = self.labels.data_name
         summary['data_is_data'] = self.data_is_data
         summary['data_hash'] = self.data_hash
@@ -1220,7 +1232,8 @@ class HypoTesting(Analysis):
         summary['data_pipelines'] = self.summarize_dist_maker(self.data_maker)
 
         self.h0_maker.select_params(self.h0_param_selections)
-        self.h0_maker.reset_free()
+        if reset_params:
+            self.h0_maker.reset_free()
         summary['h0_name'] = self.labels.h0_name
         summary['h0_hash'] = self.h0_hash
         summary['h0_param_selections'] = ','.join(self.h0_param_selections)
@@ -1229,7 +1242,8 @@ class HypoTesting(Analysis):
         summary['h0_pipelines'] = self.summarize_dist_maker(self.h0_maker)
 
         self.h1_maker.select_params(self.h1_param_selections)
-        self.h1_maker.reset_free()
+        if reset_params:
+            self.h1_maker.reset_free()
         summary['h1_name'] = self.labels.h1_name
         summary['h1_hash'] = self.h1_hash
         summary['h1_param_selections'] = ','.join(self.h1_param_selections)

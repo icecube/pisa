@@ -51,33 +51,6 @@ def systematic_wrong_analysis(data_param, hypo_testing, fit_wrong, direction,
             raise ValueError('Direction to shift systematic value must be '
                              'specified either as "pve" or "nve" for positive '
                              'and negative respectively')
-    # Set up labels so that each file comes out unique
-    if fit_wrong:
-        hypo_testing.labels = Labels(
-            h0_name=h0_name,
-            h1_name=h1_name,
-            data_name=data_name + '_inj_%s_%s_wrong'%(
-                data_param.name,direction),
-            data_is_data=False,
-            fluctuate_data=False,
-            fluctuate_fid=False
-        )
-    else:
-        hypo_testing.labels = Labels(
-            h0_name=h0_name + '_fixed_%s_baseline'%data_param.name,
-            h1_name=h1_name + '_fixed_%s_baseline'%data_param.name,
-            data_name=data_name + '_inj_%s_%s_wrong'%(
-                data_param.name,direction),
-            data_is_data=False,
-            fluctuate_data=False,
-            fluctuate_fid=False
-        )
-    # Setup logging and things.
-    # This must be done FIRST because the parameters are reset in this step...
-    hypo_testing.setup_logging()
-    hypo_testing.write_config_summary()
-    hypo_testing.write_minimizer_settings()
-    hypo_testing.write_run_info()
     # Calculate this wrong value based on the prior
     if hasattr(data_param, 'prior'):
         # Gaussian priors are easy - just do 1 sigma
@@ -103,7 +76,32 @@ def systematic_wrong_analysis(data_param, hypo_testing, fit_wrong, direction,
         for h1_param in hypo_testing.h1_maker.params.free:
             if h1_param.name == data_param.name:
                 h1_param.is_fixed = True
-
+    # Set up labels so that each file comes out unique
+    if fit_wrong:
+        hypo_testing.labels = Labels(
+            h0_name=h0_name,
+            h1_name=h1_name,
+            data_name=data_name + '_inj_%s_%s_wrong'%(
+                data_param.name,direction),
+            data_is_data=False,
+            fluctuate_data=False,
+            fluctuate_fid=False
+        )
+    else:
+        hypo_testing.labels = Labels(
+            h0_name=h0_name + '_fixed_%s_baseline'%data_param.name,
+            h1_name=h1_name + '_fixed_%s_baseline'%data_param.name,
+            data_name=data_name + '_inj_%s_%s_wrong'%(
+                data_param.name,direction),
+            data_is_data=False,
+            fluctuate_data=False,
+            fluctuate_fid=False
+        )
+    # Setup logging and things.
+    hypo_testing.setup_logging(reset_params=False)
+    hypo_testing.write_config_summary(reset_params=False)
+    hypo_testing.write_minimizer_settings()
+    hypo_testing.write_run_info()
     # Now do the fits
     hypo_testing.generate_data()
     hypo_testing.fit_hypos_to_data()
@@ -129,12 +127,6 @@ def nminusone_test(data_param, hypo_testing, h0_name, h1_name, data_name):
         fluctuate_data=False,
         fluctuate_fid=False
     )
-    # Setup logging and things.
-    # This must be done FIRST because the parameters are reset in this step...
-    hypo_testing.setup_logging()
-    hypo_testing.write_config_summary()
-    hypo_testing.write_minimizer_settings()
-    hypo_testing.write_run_info()
     # This is a standard N-1 test, so fix the parameter in the hypo makers.
     for h0_param in hypo_testing.h0_maker.params.free:
         if h0_param.name == data_param.name:
@@ -142,6 +134,16 @@ def nminusone_test(data_param, hypo_testing, h0_name, h1_name, data_name):
     for h1_param in hypo_testing.h1_maker.params.free:
         if h1_param.name == data_param.name:
             h1_param.is_fixed = True
+    # Setup logging and things.
+    hypo_testing.setup_logging(reset_params=False)
+    hypo_testing.write_config_summary(reset_params=False)
+    hypo_testing.write_minimizer_settings()
+    hypo_testing.write_run_info()
+    # Now do the fits
+    hypo_testing.generate_data()
+    hypo_testing.fit_hypos_to_data()
+    hypo_testing.produce_fid_data()
+    hypo_testing.fit_hypos_to_fid()
 
 
 def parse_args():
@@ -413,8 +415,10 @@ def main():
                 data_name=init_args_d['data_name']
             )
 
-        # At the end, reset the parameters in the data maker
+        # At the end, reset the parameters in the maker
         hypo_testing.data_maker.params.reset_free()
+        hypo_testing.h0_maker.params.reset_free()
+        hypo_testing.h1_maker.params.reset_free()
         # Also unfix the hypo maker parameters
         for h0_param in hypo_testing.h0_maker.params:
             if h0_param.name == data_param.name:
