@@ -26,11 +26,11 @@ import os
 import numpy as np
 
 from pisa import ureg
-from pisa.analysis.hypo_testing import HypoTesting
+from pisa.analysis.hypo_testing import HypoTesting, Labels
 from pisa.core.distribution_maker import DistributionMaker
-from pisa.core.map import VALID_METRICS
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
+from pisa.utils.stats import ALL_METRICS
 
 
 def parse_args():
@@ -103,9 +103,9 @@ def parse_args():
     parser.add_argument(
         '--other-metric',
         type=str, default=None, metavar='METRIC', action='append',
-        choices=['all'] + sorted(VALID_METRICS),
+        choices=['all'] + sorted(ALL_METRICS),
         help='''Name of another metric to evaluate at the best-fit point. Must
-        be either "all" or a metric specified in VALID_METRICS. Repeat this
+        be either "all" or a metric specified in ALL_METRICS. Repeat this
         argument (or use "all") to specify multiple metrics.'''
     )
     parser.add_argument(
@@ -141,6 +141,13 @@ def parse_args():
         defined above. Must be something that numpy can interpret. In this 
         script, numpy is imported as np so please use np in your string. An 
         example would be np.linspace(0.35,0.65,31).'''
+    )
+    parser.add_argument(
+        '--inj_units',
+        type=str, required=True,
+        help='''A string to be able to deal with the units in the parameter 
+        scan and make sure that they match those in the config files. Even if 
+        the parameter is dimensionless this must be stated.'''
     )
     parser.add_argument(
         '--pprint',
@@ -193,7 +200,7 @@ def main():
     if other_metrics is not None:
         other_metrics = [s.strip().lower() for s in other_metrics]
         if 'all' in other_metrics:
-            other_metrics = sorted(VALID_METRICS)
+            other_metrics = sorted(ALL_METRICS)
         if init_args_d['metric'] in other_metrics:
             other_metrics.remove(init_args_d['metric'])
         if len(other_metrics) == 0:
@@ -229,13 +236,25 @@ def main():
     init_args_d['fluctuate_data'] = False
     init_args_d['fluctuate_fid'] = False
 
+    init_args_d['data_maker'] = init_args_d['h0_maker']
+    init_args_d['h1_maker'] = init_args_d['h0_maker']
+
     init_args_d['h0_maker'] = DistributionMaker(init_args_d['h0_maker'])
-    init_args_d['h1_maker'] = DistributionMaker(init_args_d['h0_maker'])
+    init_args_d['h1_maker'] = DistributionMaker(init_args_d['h1_maker'])
     init_args_d['h1_maker'].select_params(init_args_d['h1_param_selections'])
+    init_args_d['data_maker'] = DistributionMaker(init_args_d['data_maker'])
+    if init_args_d['data_param_selections'] is None:
+        init_args_d['data_param_selections'] = \
+            init_args_d['h0_param_selections']
+        init_args_d['data_name'] = init_args_d['h0_name']
+    init_args_d['data_maker'].select_params(
+        init_args_d['data_param_selections']
+    )
 
     param_name = init_args_d.pop('param_name')
     inj_vals = eval(init_args_d.pop('inj_vals'))
-
+    inj_units = init_args_d.pop('inj_units')
+    
     logging.info(
         'Scanning over %s between %.4f and %.4f with %i vals'
         %(param_name, min(inj_vals), max(inj_vals), len(inj_vals))
@@ -250,64 +269,70 @@ def main():
               min(inj_vals)*180/np.pi, max(inj_vals)*180/np.pi)
         )
         test_name = 'theta23'
+        inj_units = 'radians'
     else:
         test_name = param_name
         requested_vals = inj_vals
 
+    unit_inj_vals = []
+    for inj_val in inj_vals:
+        unit_inj_vals.append(inj_val*ureg(inj_units))
+    inj_vals = unit_inj_vals
+    
     rangediff = max(inj_vals) - min(inj_vals)
-    rangemin = min(inj_vals) - 0.5*rangediff
-    rangemax = max(inj_vals) + 0.5*rangediff
+    rangetuple = (min(inj_vals) - 0.5*rangediff,
+                  max(inj_vals) + 0.5*rangediff)
 
+    # Instantiate the analysis object
+    hypo_testing = HypoTesting(**init_args_d)
+    # Extend the ranges of the hypothesis makers so that they reflect the
+    # range of the scan.
+    # Ensure that the units match, if not change them
+    if hypo_testing.h0_maker.params[test_name].units != inj_units:
+        minrangeval = rangetuple[0].to(
+            hypo_testing.h0_maker.params[test_name].units
+        )
+        maxrangeval = rangetuple[1].to(
+            hypo_testing.h0_maker.params[test_name].units
+        )
+        rangetuple = (minrangeval, maxrangeval)
+    hypo_testing.h0_maker.params[test_name].range\
+        = rangetuple
+    hypo_testing.h1_maker.params[test_name].range\
+        = rangetuple
+    # Scan over the injected values. We also loop over the requested vals here
+    # in case they are different so that value can be put in the labels
     for inj_val, requested_val in zip(inj_vals, requested_vals):
-        for param in init_args_d['h0_maker'].params:
-            if param.name == test_name:
-                if hasattr(param, 'range'):
-                    if param.range is not None:
-                        if param_name=='sin2theta23' and param.units=='degree':
-                            param.range = (rangemin * 180/np.pi * param.units,
-                                           rangemax * 180/np.pi * param.units)
-                            inj_val *= 180/np.pi
-                        else:
-                            param.range = (rangemin * param.units,
-                                           rangemax * param.units)
-                param.value = inj_val * param.units
-
-                for alt_param in init_args_d['h1_maker'].params:
-                    if alt_param.name == test_name:
-                        if hasattr(alt_param, 'range'):
-                            if alt_param.range is not None:
-                                if param_name=='sin2theta23' \
-                                   and alt_param.units=='degree':
-                                    alt_param.range = (rangemin * 180/np.pi \
-                                                   * alt_param.units,
-                                                   rangemax * 180/np.pi \
-                                                   * alt_param.units)
-                                else:
-                                    alt_param.range = (rangemin \
-                                                       * alt_param.units,
-                                                       rangemax \
-                                                       * alt_param.units)
-                                alt_param.value = inj_val * alt_param.units
-                        
-        nominal_h0_name = init_args_d['h0_name']
-        nominal_h1_name = init_args_d['h1_name']
-            
+        # Make sure the units are right
+        inj_val = inj_val.to(hypo_testing.h0_maker.params[test_name].units)
+        # Then set the value in all of the makers
+        hypo_testing.h0_maker.params[test_name].value = inj_val
+        hypo_testing.h1_maker.params[test_name].value = inj_val
+        hypo_testing.data_maker.params[test_name].value = inj_val
         # Make names reflect parameter value
-        init_args_d['h0_name'] = init_args_d['h0_name'] + \
-                                 '_%s_%.4f'%(param_name,
-                                             requested_val)
-        init_args_d['h1_name'] = init_args_d['h1_name'] + \
-                                 '_%s_%.4f'%(param_name,
-                                             requested_val)
-                
-        # Instantiate the analysis object
-        hypo_testing = HypoTesting(**init_args_d)
-        # Run the analysis
-        hypo_testing.run_analysis()
-
-        # Reset names
-        init_args_d['h0_name'] = nominal_h0_name
-        init_args_d['h1_name'] = nominal_h1_name
+        hypo_testing.labels = Labels(
+            h0_name=init_args_d['h0_name'],
+            h1_name=init_args_d['h1_name'],
+            data_name=init_args_d['data_name']+'_%s_%.4f'
+            %(param_name,requested_val),
+            data_is_data=init_args_d['data_is_data'],
+            fluctuate_data=init_args_d['fluctuate_data'],
+            fluctuate_fid=init_args_d['fluctuate_fid']
+        )
+        # Setup logging and things.
+        hypo_testing.setup_logging(reset_params=False)
+        hypo_testing.write_config_summary(reset_params=False)
+        hypo_testing.write_minimizer_settings()
+        hypo_testing.write_run_info()
+        # Now do the fits
+        hypo_testing.generate_data()
+        hypo_testing.fit_hypos_to_data()
+        hypo_testing.produce_fid_data()
+        hypo_testing.fit_hypos_to_fid()
+        # At the end, reset the parameters in the maker
+        hypo_testing.data_maker.params.reset_free()
+        hypo_testing.h0_maker.params.reset_free()
+        hypo_testing.h1_maker.params.reset_free()
 
 
 if __name__ == '__main__':
