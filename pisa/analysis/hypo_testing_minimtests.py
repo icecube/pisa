@@ -69,7 +69,8 @@ def parse_args():
         '--h1-param-selections',
         type=str, default=None, metavar='PARAM_SELECTOR_LIST',
         help='''Comma-separated (no spaces) list of param selectors to apply to
-        hypothesis h1 distribution maker's pipelines.'''
+        hypothesis h1 distribution maker's pipelines. The h1 pipeline is forced
+        to be the h0 pipeline in these tests.'''
     )
     parser.add_argument(
         '--h1-name',
@@ -84,9 +85,9 @@ def parse_args():
         '--data-param-selections',
         type=str, default=None, metavar='PARAM_SELECTOR_LIST',
         help='''Comma-separated list of param selectors to apply to the data
-        distribution maker's pipelines. Pipeline always assumed to be 
-        --h0-pipeline for this test. If --data-param-selections is not 
-        specified it is copied from --h0-param-selections.'''
+        distribution maker's pipelines. If --data-param-selections are not
+        specified then they are copied from --h0-param-selections. The data 
+        pipeline is forced to be the h0 pipeline in these tests.'''
     )
     parser.add_argument(
         '--data-name',
