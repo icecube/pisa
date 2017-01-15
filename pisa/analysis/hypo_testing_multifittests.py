@@ -296,11 +296,18 @@ def main():
     hypo_testing.write_minimizer_settings()
     hypo_testing.write_run_info()
 
+    hypo_testing.generate_data()
+    if data_is_pseudo:
+        data_random_state = get_random_state([0, data_index, 0])
+        hypo_testing.data_dist = hypo_testing.data_dist.fluctuate(
+            method='poisson', random_state=data_random_state
+        )
+
     for i in range(start_index,(start_index+num_trials)):
         # Randomise seeded parameters for hypotheses
         hypo_testing.h0_maker.randomize_free_params()
         hypo_testing.h1_maker.randomize_free_params()
-        # Create Labels dict to distnguish each of these Asimov "trials"
+        # Create Labels dict to distinguish each of these Asimov "trials"
         if data_is_pseudo:
             hypo_testing.labels = Labels(
                 h0_name=init_args_d['h0_name'],
@@ -321,12 +328,7 @@ def main():
                 fluctuate_fid=init_args_d['fluctuate_fid']
             )
         # Run the fits
-        hypo_testing.generate_data()
-        if data_is_pseudo:
-            data_random_state = get_random_state([0, data_index, 0])
-            hypo_testing.data_dist = hypo_testing.data_dist.fluctuate(
-                method='poisson', random_state=data_random_state
-            )
+        print hypo_testing.data_dist.hist['total'][0].T[0]
         hypo_testing.fit_hypos_to_data()
         # Reset everything
         hypo_testing.h0_maker.reset_free()

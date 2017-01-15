@@ -6,13 +6,8 @@
 """
 Hypothesis testing: How do two hypotheses compare for describing MC or data?
 
-This script/module plots the ouput of Asimov-Asimov tests run by the 
-hypo_testing_asimovtests.py script.
-
-TODO:
-
-1) Sort out units on parameters when it's eV^2. It's extracting this from the 
-   file completely wrong.
+This script/module plots the ouput of the multiple fits performed to the "data" 
+in hypo_testing_multifittests.py
 
 """
 
@@ -36,7 +31,8 @@ from pisa.utils.log import set_verbosity, logging
 from pisa.utils.plotter import tex_axis_label
 
 
-__all__ = ['extract_trials', 'extract_fit', 'parse_args', 'main']
+__all__ = ['extract_asimov_fits', 'extract_pseudo_fits',
+           'extract_fit', 'parse_args', 'main']
 
 
 def get_num_rows(data, omit_metric=False):
@@ -53,7 +49,7 @@ def get_num_rows(data, omit_metric=False):
     return num_rows
     
 
-def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
+def extract_asimov_fits(logdir, fluctuate_fid, fluctuate_data=False):
     """Extract and aggregate analysis results.
 
     Parameters
@@ -124,28 +120,143 @@ def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
             minimiser_info[data_name] = {}
             starting_params[data_name] = {}
             for fnum, fname in enumerate(nsort(os.listdir(subdir))):
-                k = fname.split('_')[-2]
+                fit_num = fname.split('_')[-2]
                 hypo = fname.split('_')[1]
                 if 'hypo_%s'%hypo not in data_sets[data_name]:
                     data_sets[data_name]['hypo_%s'%hypo] = {}
                     minimiser_info[data_name]['hypo_%s'%hypo] = {}
                     starting_params[data_name]['hypo_%s'%hypo] = {}
                 fpath = os.path.join(subdir, fname)
-                data_sets[data_name]['hypo_%s'%hypo][k] = extract_fit(
+                data_sets[data_name]['hypo_%s'%hypo][fit_num] = extract_fit(
                     fpath,
                     ['metric', 'metric_val','params']
                 )
-                minimiser_info[data_name]['hypo_%s'%hypo][k] = extract_fit(
-                    fpath,
-                    ['minimizer_time', 'minimizer_metadata']
-                )
-                starting_params[data_name]['hypo_%s'%hypo][k] = extract_fit(
-                    fpath,
-                    ['fit_history']
-                )
-                starting_params[data_name]['hypo_%s'%hypo][k]['fit_history'] = \
-                    starting_params[data_name]['hypo_%s'%hypo][
-                        k]['fit_history'][0]
+                minimiser_info[data_name]['hypo_%s'%hypo][fit_num] = \
+                    extract_fit(
+                        fpath,
+                        ['minimizer_time', 'minimizer_metadata']
+                    )
+                starting_params[data_name]['hypo_%s'%hypo][fit_num] = \
+                    extract_fit(
+                        fpath,
+                        ['fit_history']
+                    )
+                starting_params[data_name]['hypo_%s'%hypo][fit_num][
+                    'fit_history'] = starting_params[data_name][
+                        'hypo_%s'%hypo][fit_num]['fit_history'][0]
+        to_file(data_sets, os.path.join(logdir,'data_sets.pckl'))
+        to_file(minimiser_info, os.path.join(logdir,'minimiser_info.pckl'))
+        to_file(starting_params, os.path.join(logdir,'starting_params.pckl'))
+        to_file(labels, os.path.join(logdir, 'labels.pckl'))
+    else:
+        raise ValueError('config_summary.json cannot be found in the specified'
+                         ' logdir. It should have been created as part of the '
+                         'output of hypo_testing.py and so this postprocessing'
+                         ' cannot be performed.')
+    return data_sets, minimiser_info, starting_params, labels
+
+
+def extract_pseudo_fits(logdir, fluctuate_fid, fluctuate_data=False):
+    """Extract and aggregate analysis results.
+
+    Parameters
+    ----------
+    logdir : string
+        Path to logging directory where files are stored. This should contain
+        e.g. the "config_summary.json" file.
+
+    fluctuate_fid : bool
+        Whether the trials you're interested in applied fluctuations to the
+        fiducial-fit Asimov distributions. `fluctuate_fid` False is equivalent
+        to specifying an Asimov analysis (so long as the metric used was
+        chi-squared).
+
+    fluctuate_data : bool
+        Whether the trials you're interested in applied fluctuations to the
+        (toy) data. This is invalid if actual data was processed.
+
+    Note that a single `logdir` can have different kinds of analyses run and
+    results be logged within, so `fluctuate_fid` and `fluctuate_data` allows
+    these to be separated from one another.
+
+    """
+    logdir = os.path.expanduser(os.path.expandvars(logdir))
+    logdir_content = os.listdir(logdir)
+    if 'data_sets.pckl' in logdir_content:
+        logging.info('Found files I assume to be from a previous run of this '
+                     'processing script. If this is incorrect please delete '
+                     'the files: data_sets.pckl, minimiser_info.pckl and '
+                     'starting_params.pckl from the logdir you have provided.')
+        data_sets = from_file(os.path.join(logdir,
+                                           'data_sets.pckl'))
+        minimiser_info = from_file(os.path.join(logdir,
+                                                'minimiser_info.pckl'))
+        starting_params = from_file(os.path.join(logdir,
+                                                 'starting_params.pckl'))
+        labels = from_file(os.path.join(logdir,
+                                        'labels.pckl'))
+    elif 'config_summary.json' in logdir_content:
+        config_summary_fpath = os.path.join(logdir, 'config_summary.json')
+        cfg = from_file(config_summary_fpath)
+
+        data_is_data = cfg['data_is_data']
+        if data_is_data and fluctuate_data:
+            raise ValueError('Analysis was performed on data, so '
+                             '`fluctuate_data` is not supported.')
+
+        # Get naming scheme
+        labels = Labels(
+            h0_name=cfg['h0_name'], h1_name=cfg['h1_name'],
+            data_name=cfg['data_name'], data_is_data=data_is_data,
+            fluctuate_data=fluctuate_data, fluctuate_fid=fluctuate_fid
+        )
+
+        # Find all relevant data dirs, and from each extract the fiducial fit(s)
+        # information contained
+        data_sets = OrderedDict()
+        minimiser_info = OrderedDict()
+        starting_params = OrderedDict()
+        for basename in nsort(os.listdir(logdir)):
+            m = labels.subdir_re.match(basename)
+            if m is None:
+                continue
+
+            subdir = os.path.join(logdir, basename)
+            data_name = 'toy_%s_asimov'%labels.dict['data_name'] 
+            data_sets[data_name] = {}
+            minimiser_info[data_name] = {}
+            starting_params[data_name] = {}
+            for fnum, fname in enumerate(nsort(os.listdir(subdir))):
+                pseudo = fname.split('_')[-2]
+                fit_num = fname.split('_')[-4]
+                hypo = fname.split('_')[1]
+                if pseudo not in data_sets[data_name]:
+                    data_sets[data_name][pseudo] = {}
+                    minimiser_info[data_name][pseudo] = {}
+                    starting_params[data_name][pseudo] = {}
+                if 'hypo_%s'%hypo not in data_sets[data_name][pseudo]:
+                    data_sets[data_name][pseudo]['hypo_%s'%hypo] = {}
+                    minimiser_info[data_name][pseudo]['hypo_%s'%hypo] = {}
+                    starting_params[data_name][pseudo]['hypo_%s'%hypo] = {}
+                fpath = os.path.join(subdir, fname)
+                data_sets[data_name][pseudo]['hypo_%s'%hypo][fit_num] = \
+                    extract_fit(
+                        fpath,
+                        ['metric', 'metric_val','params']
+                    )
+                minimiser_info[data_name][pseudo]['hypo_%s'%hypo][fit_num] = \
+                    extract_fit(
+                        fpath,
+                        ['minimizer_time', 'minimizer_metadata']
+                    )
+                starting_params[data_name][pseudo]['hypo_%s'%hypo][fit_num] = \
+                    extract_fit(
+                        fpath,
+                        ['fit_history']
+                    )
+                starting_params[data_name][pseudo]['hypo_%s'%hypo][fit_num][
+                    'fit_history'] = starting_params[data_name][pseudo][
+                        'hypo_%s'%hypo][fit_num]['fit_history'][0]
         to_file(data_sets, os.path.join(logdir,'data_sets.pckl'))
         to_file(minimiser_info, os.path.join(logdir,'minimiser_info.pckl'))
         to_file(starting_params, os.path.join(logdir,'starting_params.pckl'))
@@ -186,10 +297,12 @@ def extract_fit(fpath, keys=None):
 
 
 def plot_fit_information(minimiser_info, labels, detector,
-                         selection, minimiser, outdir):
-    '''Makes plots of the number of iterations and time taken with the 
+                         selection, minimiser, outdir, pseudokey=None):
+    '''
+    Makes plots of the number of iterations and time taken with the 
     minimiser. This is a good cross-check that the minimiser did not end 
-    abruptly since you would see significant pile-up if it did.'''
+    abruptly since you would see significant pile-up if it did.
+    '''
     outdir = os.path.join(outdir,'MinimiserPlots')
     if not os.path.exists(outdir):
         logging.info('Making output directory %s'%outdir)
@@ -197,6 +310,8 @@ def plot_fit_information(minimiser_info, labels, detector,
     MainTitle = '%s %s Event Selection %s Minimiser Information'%(detector,
                                                                   selection,
                                                                   minimiser)
+    if pseudokey is not None:
+        MainTitle += ' (Trial %s)'%pseudokey
     for fhkey in minimiser_info.keys():
         if minimiser_info[fhkey] is not None:
             hypo = fhkey.split('_')[1]
@@ -230,50 +345,86 @@ def plot_fit_information(minimiser_info, labels, detector,
             plt.xlabel('Minimiser Time (seconds)')
             plt.ylabel('Number of Trials')
             plt.title(MainTitle+r'\\'+FitTitle, fontsize=16)
-            SaveName = ("true_%s_%s_%s_hypo_%s_minimiser_times.png"
-                        %(labels['data_name'],
-                          detector,
-                          selection,
-                          hypo))
+            if pseudokey is not None:
+                SaveName = (
+                    "true_%s_%s_%s_trial_%s_hypo_%s_minimiser_times.png"
+                    %(labels['data_name'],
+                      detector,
+                      selection,
+                      pseudokey,
+                      hypo))
+            else:
+                SaveName = ("true_%s_%s_%s_hypo_%s_minimiser_times.png"
+                            %(labels['data_name'],
+                              detector,
+                              selection,
+                              hypo))
             plt.savefig(os.path.join(outdir,SaveName))
             plt.close()
             plt.hist(minimiser_iterations, bins=10)
             plt.xlabel('Minimiser Iterations')
             plt.ylabel('Number of Trials')
             plt.title(MainTitle+r'\\'+FitTitle, fontsize=16)
-            SaveName = ("true_%s_%s_%s_hypo_%s_minimiser_iterations.png"
-                        %(labels['data_name'],
-                          detector,
-                          selection,
-                          hypo))
+            if pseudokey is not None:
+                SaveName = (
+                    "true_%s_%s_%s_trial_%s_hypo_%s_minimiser_iterations.png"
+                    %(labels['data_name'],
+                      detector,
+                      selection,
+                      pseudokey,
+                      hypo))
+            else:
+                SaveName = ("true_%s_%s_%s_hypo_%s_minimiser_iterations.png"
+                            %(labels['data_name'],
+                              detector,
+                              selection,
+                              hypo))
             plt.savefig(os.path.join(outdir,SaveName))
             plt.close()
             plt.hist(minimiser_funcevals, bins=10)
             plt.xlabel('Minimiser Function Evaluations')
             plt.ylabel('Number of Trials')
             plt.title(MainTitle+r'\\'+FitTitle, fontsize=16)
-            SaveName = ("true_%s_%s_%s_hypo_%s_minimiser_funcevals.png"
-                        %(labels['data_name'],
-                          detector,
-                          selection,
-                          hypo))
+            if pseudokey is not None:
+                SaveName = (
+                    "true_%s_%s_%s_trial_%s_hypo_%s_minimiser_funcevals.png"
+                    %(labels['data_name'],
+                      detector,
+                      selection,
+                      pseudokey,
+                      hypo))
+            else:
+                SaveName = ("true_%s_%s_%s_hypo_%s_minimiser_funcevals.png"
+                            %(labels['data_name'],
+                              detector,
+                              selection,
+                              hypo))
             plt.savefig(os.path.join(outdir,SaveName))
             plt.close()
             plt.hist(minimiser_status, bins=10)
             plt.xlabel('Minimiser Status')
             plt.ylabel('Number of Trials')
             plt.title(MainTitle+r'\\'+FitTitle, fontsize=16)
-            SaveName = ("true_%s_%s_%s_hypo_%s_minimiser_status.png"
-                        %(labels['data_name'],
-                          detector,
-                          selection,
-                          hypo))
+            if pseudokey is not None:
+                SaveName = (
+                    "true_%s_%s_%s_trial_%s_hypo_%s_minimiser_status.png"
+                    %(labels['data_name'],
+                      detector,
+                      selection,
+                      pseudokey,
+                      hypo))
+            else:
+                SaveName = ("true_%s_%s_%s_hypo_%s_minimiser_status.png"
+                            %(labels['data_name'],
+                              detector,
+                              selection,
+                              hypo))
             plt.savefig(os.path.join(outdir,SaveName))
             plt.close()
 
 
 def plot_fit_results(fit_results, labels, detector,
-                     selection, minimiser, outdir):
+                     selection, minimiser, outdir, pseudokey=None):
     '''Makes histograms of the Asimov fit results. These should have basically 
     no variation if everything was fine.'''
     outdir = os.path.join(outdir,'FitResults')
@@ -283,6 +434,8 @@ def plot_fit_results(fit_results, labels, detector,
     MainTitle = '%s %s Event Selection Fit Results (%s Minimiser)'%(detector,
                                                                     selection,
                                                                     minimiser)
+    if pseudokey is not None:
+        MainTitle += ' (Trial %s)'%pseudokey
     for fhkey in fit_results.keys():
         hypo = fhkey.split('_')[1]
         metric = []
@@ -308,16 +461,26 @@ def plot_fit_results(fit_results, labels, detector,
                     %(labels['data_name'],
                       hypo,
                       len(metric)))
+        print metric
         plt.hist(metric, bins=10)
         plt.xlabel(tex_axis_label(metric_name))
         plt.ylabel('Number of Trials')
         plt.title(MainTitle+r'\\'+FitTitle, fontsize=16)
-        SaveName = ("true_%s_%s_%s_hypo_%s_%s_vals.png"
-                    %(labels['data_name'],
-                      detector,
-                      selection,
-                      hypo,
-                      metric_name))
+        if pseudokey is not None:
+            SaveName = ("true_%s_%s_%s_trial_%s_hypo_%s_%s_vals.png"
+                        %(labels['data_name'],
+                          detector,
+                          selection,
+                          pseudokey,
+                          hypo,
+                          metric_name))
+        else:
+            SaveName = ("true_%s_%s_%s_hypo_%s_%s_vals.png"
+                        %(labels['data_name'],
+                          detector,
+                          selection,
+                          hypo,
+                          metric_name))
         plt.savefig(os.path.join(outdir,SaveName))
         plt.close()
         for param in params.keys():
@@ -329,23 +492,31 @@ def plot_fit_results(fit_results, labels, detector,
                 plt.xlabel(tex_axis_label(param))
             plt.ylabel('Number of Trials')
             plt.title(MainTitle+r'\\'+FitTitle, fontsize=16)
-            SaveName = ("true_%s_%s_%s_hypo_%s_%s_vals.png"
-                        %(labels['data_name'],
-                          detector,
-                          selection,
-                          hypo,
-                          param))
+            if pseudokey is not None:
+                SaveName = ("true_%s_%s_%s_trial_%s_hypo_%s_%s_vals.png"
+                            %(labels['data_name'],
+                              detector,
+                              selection,
+                              pseudokey,
+                              hypo,
+                              param))
+            else:
+                SaveName = ("true_%s_%s_%s_hypo_%s_%s_vals.png"
+                            %(labels['data_name'],
+                              detector,
+                              selection,
+                              hypo,
+                              param))
             plt.savefig(os.path.join(outdir,SaveName))
             plt.close()
 
 
 def plot_starting_params(starting_params, fit_results, labels,
-                         detector, selection, minimiser, outdir):
-    '''Makes histograms of the starting points for the minimiser.
-
-    TODO - Make the plots actually line up. This is coming from the fit_history,
-    which is just stored as list rather than a dictionary. Thus, the parameters
-    currently don't line up with their labels...'''
+                         detector, selection, minimiser, outdir,
+                         pseudokey=None):
+    '''
+    Makes histograms of the starting points for the minimiser.
+    '''
     outdir = os.path.join(outdir,'StartingParams')
     if not os.path.exists(outdir):
         logging.info('Making output directory %s'%outdir)
@@ -353,6 +524,8 @@ def plot_starting_params(starting_params, fit_results, labels,
     MainTitle = '%s %s Event Selection %s Minimiser Start Params'%(detector,
                                                                    selection,
                                                                    minimiser)
+    if pseudokey is not None:
+        MainTitle += ' (Trial %s)'%pseudokey
     for fhkey in starting_params.keys():
         hypo = fhkey.split('_')[1]
         params = OrderedDict()
@@ -386,12 +559,23 @@ def plot_starting_params(starting_params, fit_results, labels,
                 plt.xlabel(tex_axis_label(param))
             plt.ylabel('Number of Trials')
             plt.title(MainTitle+r'\\'+FitTitle, fontsize=16)
-            SaveName = ("true_%s_%s_%s_hypo_%s_%s_starting_vals.png"
-                        %(labels['data_name'],
-                          detector,
-                          selection,
-                          hypo,
-                          param))
+            if pseudokey is not None:
+                SaveName = (
+                    "true_%s_%s_%s_trial_%s_hypo_%s_%s_starting_vals.png"
+                    %(labels['data_name'],
+                      detector,
+                      selection,
+                      pseudokey,
+                      hypo,
+                      param)
+                )
+            else:
+                SaveName = ("true_%s_%s_%s_hypo_%s_%s_starting_vals.png"
+                            %(labels['data_name'],
+                              detector,
+                              selection,
+                              hypo,
+                              param))
             plt.savefig(os.path.join(outdir,SaveName))
             plt.close()
 
@@ -415,6 +599,15 @@ def parse_args():
     parser.add_argument(
         '--minimiser',type=str,default='',
         help='''Name of minimiser to put in histogram titles.'''
+    )
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        '--data-is-asimov', action='store_true',
+        help='''The multiple fits were performed on Asimov data.'''
+    )
+    group.add_argument(
+        '--data-is-pseudo', action='store_true',
+        help='''The multiple fits were performed on pseudo-data.'''
     )
     parser.add_argument(
         '--outdir', metavar='DIR', type=str, required=True,
@@ -442,41 +635,96 @@ def main():
     minimiser = init_args_d.pop('minimiser')
     outdir = init_args_d.pop('outdir')
 
-    data_sets, minimiser_info, starting_params, labels = extract_trials(
-        logdir=args.dir,
-        fluctuate_fid=True,
-        fluctuate_data=False
-    )
+    data_is_asimov = init_args_d.pop('data_is_asimov')
+    data_is_pseudo = init_args_d.pop('data_is_pseudo')
 
-    for injkey in data_sets.keys():
+    if data_is_asimov:
 
-        plot_starting_params(
-            starting_params=starting_params[injkey],
-            fit_results=data_sets[injkey],
-            labels=labels.dict,
-            detector=detector,
-            selection=selection,
-            minimiser=minimiser,
-            outdir=outdir
-        )
+        data_sets, minimiser_info, starting_params, labels = \
+            extract_asimov_fits(
+                logdir=args.dir,
+                fluctuate_fid=True,
+                fluctuate_data=False
+            )
 
-        plot_fit_results(
-            fit_results=data_sets[injkey],
-            labels=labels.dict,
-            detector=detector,
-            selection=selection,
-            minimiser=minimiser,
-            outdir=outdir
-        )
+        for injkey in data_sets.keys():
 
-        plot_fit_information(
-            minimiser_info=minimiser_info[injkey],
-            labels=labels.dict,
-            detector=detector,
-            selection=selection,
-            minimiser=minimiser,
-            outdir=outdir
-        )
+            plot_starting_params(
+                starting_params=starting_params[injkey],
+                fit_results=data_sets[injkey],
+                labels=labels.dict,
+                detector=detector,
+                selection=selection,
+                minimiser=minimiser,
+                outdir=outdir
+            )
+
+            plot_fit_results(
+                fit_results=data_sets[injkey],
+                labels=labels.dict,
+                detector=detector,
+                selection=selection,
+                minimiser=minimiser,
+                outdir=outdir
+            )
+
+            plot_fit_information(
+                minimiser_info=minimiser_info[injkey],
+                labels=labels.dict,
+                detector=detector,
+                selection=selection,
+                minimiser=minimiser,
+                outdir=outdir
+            )
+
+    elif data_is_pseudo:
+
+        data_sets, minimiser_info, starting_params, labels = \
+            extract_pseudo_fits(
+                logdir=args.dir,
+                fluctuate_fid=True,
+                fluctuate_data=False
+            )
+
+        for injkey in data_sets.keys():
+            for pseudokey in data_sets[injkey].keys():
+
+                plot_starting_params(
+                    starting_params=starting_params[injkey][pseudokey],
+                    fit_results=data_sets[injkey][pseudokey],
+                    labels=labels.dict,
+                    detector=detector,
+                    selection=selection,
+                    minimiser=minimiser,
+                    outdir=outdir,
+                    pseudokey=pseudokey
+                )
+
+                plot_fit_results(
+                    fit_results=data_sets[injkey][pseudokey],
+                    labels=labels.dict,
+                    detector=detector,
+                    selection=selection,
+                    minimiser=minimiser,
+                    outdir=outdir,
+                    pseudokey=pseudokey
+                )
+
+                plot_fit_information(
+                    minimiser_info=minimiser_info[injkey][pseudokey],
+                    labels=labels.dict,
+                    detector=detector,
+                    selection=selection,
+                    minimiser=minimiser,
+                    outdir=outdir,
+                    pseudokey=pseudokey
+                )
+
+    else:
+
+        raise ValueError('Data should be either Asimov or pseudo. Though, if '
+                         'the argument parser is working correctly you should '
+                         'never see this error')
                 
         
 if __name__ == '__main__':
