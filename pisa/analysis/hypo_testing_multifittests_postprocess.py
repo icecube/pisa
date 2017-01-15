@@ -461,7 +461,6 @@ def plot_fit_results(fit_results, labels, detector,
                     %(labels['data_name'],
                       hypo,
                       len(metric)))
-        print metric
         plt.hist(metric, bins=10)
         plt.xlabel(tex_axis_label(metric_name))
         plt.ylabel('Number of Trials')

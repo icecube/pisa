@@ -350,6 +350,10 @@ def main():
         hypo_testing.data_maker.params.reset_free()
         hypo_testing.h0_maker.params.reset_free()
         hypo_testing.h1_maker.params.reset_free()
+        # Also be sure to remove the data_dist and tor_data_asimov_dist
+        # so that it is regenerated next time
+        hypo_testing.data_dist = None
+        hypo_testing.toy_data_asimov_dist = None
 
 
 if __name__ == '__main__':
