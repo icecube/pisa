@@ -9,11 +9,6 @@ Hypothesis testing: How do two hypotheses compare for describing MC or data?
 This script/module plots the ouput of Asimov-Asimov tests run by the 
 hypo_testing_asimovtests.py script.
 
-TODO:
-
-1) Sort out units on parameters when it's eV^2. It's extracting this from the 
-   file completely wrong.
-
 """
 
 from __future__ import division
