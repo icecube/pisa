@@ -30,30 +30,15 @@ plt.rcParams['text.usetex'] = True
 import numpy as np
 import re
 
-from scipy.stats import norm, spearmanr
+from scipy.stats import spearmanr
 
 from pisa.analysis.hypo_testing import Labels
-from pisa.core.param import Param, ParamSet
 from pisa.utils.fileio import from_file, to_file, nsort
 from pisa.utils.log import set_verbosity, logging
-from pisa.utils.plotter import tex_axis_label
+from pisa.utils.postprocess import tex_axis_label, parse_pint_string, get_num_rows, extract_gaussian
 
 
 __all__ = ['extract_trials', 'extract_fit', 'parse_args', 'main']
-
-
-def get_num_rows(data, omit_metric=False):
-    '''
-    Calculates the number of rows for multiplots based on the number of 
-    systematics.
-    '''
-    if omit_metric:
-        num_rows = int((len(data.keys())-1)/4)
-    else:
-        num_rows = int(len(data.keys())/4)
-    if len(data.keys())%4 != 0:
-        num_rows += 1
-    return num_rows
 
 
 def extract_injval(injparams, systkey, data_label, hypo_label, injlabel):
@@ -78,36 +63,6 @@ def extract_injval(injparams, systkey, data_label, hypo_label, injlabel):
         injlabel += ' = %.3g'%injval
 
     return injval, injlabel
-
-
-def extract_gaussian(prior_string, units):
-    '''
-    Parses the string for the Gaussian priors that comes from the config 
-    summary file in the logdir. This should account for dimensions though is 
-    only tested with degrees.
-    '''
-    if units == 'dimensionless':
-        parse_string = ('gaussian prior: stddev=(.*)'
-                        ' , maximum at (.*)')
-        bits = re.match(
-            parse_string,
-            prior_string,
-            re.M|re.I
-        )
-        stddev = float(bits.group(1))
-        maximum = float(bits.group(2))
-    else:
-        parse_string = ('gaussian prior: stddev=(.*) (.*)'
-                        ', maximum at (.*) (.*)')
-        bits = re.match(
-            parse_string,
-            prior_string,
-            re.M|re.I
-        )
-        stddev = float(bits.group(1))
-        maximum = float(bits.group(3))
-
-    return stddev, maximum
     
 
 def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
@@ -379,17 +334,6 @@ def extract_data(data):
                         values[injkey][datakey][param_name]['units'] \
                             = units
     return values
-
-
-def parse_pint_string(pint_string):
-    '''
-    Will return the value and units from a string with attached pint-style 
-    units. i.e. the string "0.97 dimensionless" would return a value of 0.97 
-    and units of dimensionless. Both will return as strings.
-    '''
-    val = pint_string.split(' ')[0]
-    units = pint_string.split(val+' ')[-1]
-    return val, units
 
 
 def purge_failed_jobs(data, trial_nums, thresh=5.0):

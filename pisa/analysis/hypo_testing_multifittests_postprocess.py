@@ -21,32 +21,14 @@ plt.rcParams['text.usetex'] = True
 import numpy as np
 import re
 
-from scipy.stats import norm, spearmanr
-
 from pisa.analysis.hypo_testing import Labels
-from pisa.analysis.hypo_testing_postprocess import parse_pint_string
-from pisa.core.param import Param, ParamSet
 from pisa.utils.fileio import from_file, to_file, nsort
 from pisa.utils.log import set_verbosity, logging
-from pisa.utils.plotter import tex_axis_label
+from pisa.utils.postprocess import tex_axis_label, parse_pint_string
 
 
 __all__ = ['extract_asimov_fits', 'extract_pseudo_fits',
            'extract_fit', 'parse_args', 'main']
-
-
-def get_num_rows(data, omit_metric=False):
-    '''
-    Calculates the number of rows for multiplots based on the number of 
-    systematics.
-    '''
-    if omit_metric:
-        num_rows = int((len(data.keys())-1)/4)
-    else:
-        num_rows = int(len(data.keys())/4)
-    if len(data.keys())%4 != 0:
-        num_rows += 1
-    return num_rows
     
 
 def extract_asimov_fits(logdir, fluctuate_fid, fluctuate_data=False):

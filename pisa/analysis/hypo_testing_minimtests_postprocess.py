@@ -9,12 +9,6 @@ Hypothesis testing: How do two hypotheses compare for describing MC or data?
 This script/module plots the ouput of the minimiser tests run on pseudo-trials 
 by hypo_testing_minimtests.py
 
-TODO:
-
-1) Add units to plots
-
-2) Add prior contribution to likelihood surface. Maybe as separate plots?
-
 """
 
 from __future__ import division
@@ -28,31 +22,13 @@ from matplotlib import gridspec
 import numpy as np
 import re
 
-from scipy.stats import norm, spearmanr
-
 from pisa.analysis.hypo_testing import Labels
-from pisa.analysis.hypo_testing_postprocess import parse_pint_string, extract_gaussian
-from pisa.core.param import Param, ParamSet
 from pisa.utils.fileio import from_file, to_file, nsort
 from pisa.utils.log import set_verbosity, logging
-from pisa.utils.plotter import tex_axis_label
+from pisa.utils.postprocess import tex_axis_label, parse_pint_string, get_num_rows, extract_gaussian
 
 
 __all__ = ['extract_trials', 'extract_fit', 'parse_args', 'main']
-
-
-def get_num_rows(data, omit_metric=False):
-    '''
-    Calculates the number of rows for multiplots based on the number of 
-    systematics.
-    '''
-    if omit_metric:
-        num_rows = int((len(data.keys())-1)/4)
-    else:
-        num_rows = int(len(data.keys())/4)
-    if len(data.keys())%4 != 0:
-        num_rows += 1
-    return num_rows
     
 
 def extract_output(logdir, fluctuate_fid, fluctuate_data=False):
