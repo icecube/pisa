@@ -10,9 +10,6 @@ This script/module computes significances, etc. from the logfiles recorded by
 the `hypo_testing_injparamscan.py` script. That is, give an Asimov sensitivity 
 curve as a function of whichever injected parameter was scanned over.
 
-TODO:
-
-1) Once hypo_testing_injparamscan.py actually works, verify that this works.
 
 """
 
@@ -29,6 +26,7 @@ import re
 from scipy.special import erfc, erfcinv
 
 from pisa.analysis.hypo_testing import Labels
+from pisa.analysis.hypo_testing_postprocess import parse_pint_string
 from pisa.utils.fileio import from_file, to_file, nsort
 from pisa.utils.log import set_verbosity, logging
 from pisa.utils.plotter import tex_axis_label
@@ -80,7 +78,7 @@ def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
     toy_names = []
     scan_variables = []
     for folder in logdir_content:
-        if '.pckl' not in folder:
+        if '.pckl' not in folder and 'Plots' not in folder:
             toy_names.append(folder.split('toy')[1].split('_')[1])
             scan_variables.append(folder.split('toy')[1].split('_')[2])
     toy_names = np.array(toy_names)
@@ -130,16 +128,9 @@ def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
                     data_name=cfg['data_name'], data_is_data=data_is_data,
                     fluctuate_data=fluctuate_data, fluctuate_fid=fluctuate_fid
                 )
-                h0_injparam = '%s_%s'%(labels.dict['h0_name'].split('_')[-2],
-                                       labels.dict['h0_name'].split('_')[-1])
-                h1_injparam = '%s_%s'%(labels.dict['h1_name'].split('_')[-2],
-                                       labels.dict['h1_name'].split('_')[-1])
-                if not h0_injparam == h1_injparam:
-                    raise ValueError('The same truth parameter should be '
-                                     'injected regardles of hypothesis. Got '
-                                     '%s and %s'
-                                     %(h0_injparam, h1_injparam))
-                all_labels[h0_injparam] = labels
+                injparam = '%s_%s'%(labels.dict['data_name'].split('_')[-2],
+                                    labels.dict['data_name'].split('_')[-1])
+                all_labels[injparam] = labels
 
                 # Get injected parameters
                 these_params = {}
@@ -169,7 +160,7 @@ def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
                         these_params['h1_params'][bits.group(1)]['range'] \
                             = bits.group(4)
 
-                all_params[h0_injparam] = these_params
+                all_params[injparam] = these_params
 
                 # Find all relevant data dirs, and from each extract the
                 # fiducial fit(s) information contained
@@ -236,7 +227,7 @@ def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
                         fpath,
                         ['params']
                     )['params']
-                all_data[h0_injparam] = this_data
+                all_data[injparam] = this_data
         to_file(all_data, os.path.join(logdir, 'data_sets.pckl'))
         to_file(all_params, os.path.join(logdir, 'all_params.pckl'))
         to_file(all_labels, os.path.join(logdir, 'labels.pckl'))
@@ -317,235 +308,252 @@ def extract_asimov_data(data_sets, labels):
                 TO_to_WO_params[systkey].append(
                     TO_to_WO_fit['params'][systkey]
                 )
-                
+
     return WO_to_TO_metrics, TO_to_WO_metrics, WO_to_TO_params, TO_to_WO_params
 
 
 def calculate_deltachi2_signifiances(WO_to_TO_metrics, TO_to_WO_metrics):
     '''
     Takes the true and wrong ordering fit metrics and combines them in to the 
-    Asimov significance according to Blennow et al.
-
-    References:
-    ----------
-
-        1. M. Blennow et al, JHEP 03, 028 (2014)
+    Asimov significance.
     '''
     significances = []
     num = WO_to_TO_metrics + TO_to_WO_metrics
-    denom = np.sqrt(8 * TO_to_WO_metrics)
-    alpha = 0.5 * erfc(num/denom)
-    significances = np.sqrt(2.0) * erfcinv(alpha)
+    denom = 2 * np.sqrt(WO_to_TO_metrics)
+    significances = num/denom
     return significances
-                    
 
-def make_llr_plots(data, fid_data, labels, detector, selection, outdir):
+
+def plot_significances(WO_to_TO_metrics, TO_to_WO_metrics, inj_param_vals,
+                       inj_param_name, labels, detector, selection, outdir):
     '''
-    Does what you think. Takes the data and makes LLR distributions. These are 
-    then saved to the requested outdir within a folder labelled 
-    "LLRDistributions".
-
-    TODO:
-
-    1) Currently the p-value is put on the LLR distributions as an annotation.
-       This is probably fine, since the significances can just be calculated 
-       from this after the fact.
-
-    2) A method of quantifying the uncertainty due to finite statistics in the 
-       pseudo-trials should be added. Possible ways are:
-        a) Fitting the distributions and then drawing X new instances of Y 
-           trials (where X and Y are large) and looking at the spread in the 
-           p-values. This would require a good fit to the distributions, which
-           is fine if they end up gaussian...
-        b) Quantifying the uncertainty on the critical value used to determine 
-           the significance. In the case of the median this could be achieved 
-           by drawing subsets of the data and creating a distribution of 
-           medians. Though, efforts to do this in the past have given results 
-           that seemed to underestimate the true uncertainty.
+    Takes the two sets of metrics relevant to the Asimov-based analysis and 
+    makes a plot of the significance as a function of the injected parameter.
     '''
-    outdir = os.path.join(outdir,'LLRDistributions')
+    outdir = os.path.join(outdir, 'Significances')
     if not os.path.exists(outdir):
         logging.info('Making output directory %s'%outdir)
         os.makedirs(outdir)
 
-    h0_fid_metric = fid_data[
-        'h0_fit_to_toy_%s_asimov'%labels['data_name']
-    ][
-        'metric_val'
-    ]
-    h1_fid_metric = fid_data[
-        'h1_fit_to_toy_%s_asimov'%labels['data_name']
-    ][
-        'metric_val'
-    ]
+    MainTitle = '%s %s Event Selection Asimov Analysis Significances'%(
+        detector, selection)
 
-    if h1_fid_metric > h0_fid_metric:
-        bestfit = 'h0'
-        altfit = 'h1'
-        critical_value = h0_fid_metric-h1_fid_metric
+    significances = calculate_deltachi2_signifiances(
+        WO_to_TO_metrics=WO_to_TO_metrics,
+        TO_to_WO_metrics=TO_to_WO_metrics
+    )
+    injlabels = labels['%s_%.4f'%(inj_param_name,inj_param_vals[0])].dict
+    truth = injlabels['data_name'].split('_')[0]
+    plt.plot(
+        inj_param_vals,
+        significances,
+        linewidth=2,
+        marker='o',
+        color='r',
+        label='True %s'%truth
+    )
+    yrange = max(significances)-min(significances)
+    plt.ylim(min(significances)-0.1*yrange,max(significances)+0.1*yrange)
+    plt.xlabel(tex_axis_label(inj_param_name))
+    plt.ylabel(r'Significance ($\sigma$)')
+    plt.title(MainTitle,fontsize=16)
+    plt.legend(loc='best')
+    SaveName = "true_%s_%s_%s_%s_asimov_significances.png"%(
+        truth,
+        detector,
+        selection,
+        inj_param_name
+    )
+    plt.savefig(os.path.join(outdir,SaveName))
+    plt.close()
+
+
+def plot_fit(inj_param_vals, inj_param_name, fit_param,
+             TO_to_WO_param_vals, TO_to_WO_label,
+             WO_to_TO_param_vals, WO_to_TO_label):
+    '''
+    This is the function which does the actual plotting of the best fit results.
+    The rest just use it and change when the plot is saved.
+    '''
+    plt.plot(
+        inj_param_vals,
+        TO_to_WO_param_vals,
+        linewidth=2,
+        marker='o',
+        color='darkviolet',
+        label=TO_to_WO_label
+    )
+    plt.plot(
+        inj_param_vals,
+        WO_to_TO_param_vals,
+        linewidth=2,
+        marker='o',
+        color='deepskyblue',
+        label=WO_to_TO_label
+    )
+    ymax = max(max(TO_to_WO_param_vals),max(WO_to_TO_param_vals))
+    ymin = min(min(TO_to_WO_param_vals),min(WO_to_TO_param_vals))
+    yrange = ymax-ymin
+    plt.ylim(ymin-0.1*yrange,ymax+0.1*yrange)
+    plt.xlabel(tex_axis_label(inj_param_name))
+    if fit_param == 'deltam31':
+        plt.ylabel(r'$|$'+tex_axis_label(fit_param)+r'$|$')
     else:
-        bestfit = 'h1'
-        altfit = 'h0'
-        critical_value = h1_fid_metric-h0_fid_metric
+        plt.ylabel(tex_axis_label(fit_param))
+    plt.legend(loc='best')
 
-    h0_fit_to_h0_fid_metrics = np.array(
-        data['h0_fit_to_h0_fid']['metric_val']['vals']
-    )
-    h1_fit_to_h0_fid_metrics = np.array(
-        data['h1_fit_to_h0_fid']['metric_val']['vals']
-    )
-    h0_fit_to_h1_fid_metrics = np.array(
-        data['h0_fit_to_h1_fid']['metric_val']['vals']
-    )
-    h1_fit_to_h1_fid_metrics = np.array(
-        data['h1_fit_to_h1_fid']['metric_val']['vals']
-    )
 
-    num_trials = len(h0_fit_to_h0_fid_metrics)
-    metric_type = data['h0_fit_to_h0_fid']['metric_val']['type']
-    metric_type_pretty = tex_axis_label(metric_type)
+def plot_individual_fits(WO_to_TO_params, TO_to_WO_params, inj_param_vals,
+                         inj_param_name, labels, detector, selection, outdir):
+    '''
+    Takes the two sets of best fit parameters relevant to the Asimov-based 
+    analysis and makes plots of them as a function of the injected parameter.
+    This will use plot_fit and save each individual plot
+    '''
+    outdir = os.path.join(outdir, 'IndividualBestFits')
+    if not os.path.exists(outdir):
+        logging.info('Making output directory %s'%outdir)
+        os.makedirs(outdir)
 
-    # In the case of likelihood, the maximum metric is the better fit.
-    # With chi2 metrics the opposite is true, and so we must multiply
-    # everything by -1 in order to apply the same treatment.
-    if 'chi2' in metric_type:
-        logging.info("Converting chi2 metric to likelihood equivalent.")
-        h0_fit_to_h0_fid_metrics *= -1
-        h1_fit_to_h0_fid_metrics *= -1
-        h0_fit_to_h1_fid_metrics *= -1
-        h1_fit_to_h1_fid_metrics *= -1
-        critical_value *= -1
-
-    if bestfit == 'h0':
-        LLRbest = h0_fit_to_h0_fid_metrics - h1_fit_to_h0_fid_metrics
-        LLRalt = h0_fit_to_h1_fid_metrics - h1_fit_to_h1_fid_metrics
+    injlabels = labels['%s_%.4f'%(inj_param_name,inj_param_vals[0])].dict
+    truth = injlabels['data_name'].split('_')[0]
+    h0 = injlabels['h0'].split('hypo_')[-1]
+    h1 = injlabels['h1'].split('hypo_')[-1]
+    if h0 == truth:
+        TO = h0
+        WO = h1
     else:
-        LLRbest = h1_fit_to_h1_fid_metrics - h0_fit_to_h1_fid_metrics
-        LLRalt = h1_fit_to_h0_fid_metrics - h0_fit_to_h0_fid_metrics
+        TO = h1
+        WO = h0
 
-    minLLR = min(min(LLRbest), min(LLRalt))
-    maxLLR = max(max(LLRbest), max(LLRalt))
-    rangeLLR = maxLLR - minLLR
-    binning = np.linspace(minLLR - 0.1*rangeLLR,
-                          maxLLR + 0.1*rangeLLR,
-                          int(num_trials/20))
-    binwidth = binning[1]-binning[0]
+    MainTitle = '%s %s Event Selection Asimov Analysis'%(detector, selection)
+    SubTitle = 'True %s Best Fit Parameters'%(truth)
 
-    LLRbesthist, LLRbestbinedges = np.histogram(LLRbest,bins=binning)
-    LLRalthist, LLRaltbinedges = np.histogram(LLRalt,bins=binning)
+    TO_to_WO_label = '%s fit to %s fid'%(TO,WO)
+    WO_to_TO_label = '%s fit to %s fid'%(WO,TO)
 
-    LLRhistmax = max(max(LLRbesthist),max(LLRalthist))
+    for param in WO_to_TO_params.keys():
+        WO_to_TO_param_vals = []
+        for param_val in WO_to_TO_params[param]:
+            val, units = parse_pint_string(
+                pint_string=param_val
+            )
+            WO_to_TO_param_units = units
+            if param == 'deltam31':
+                WO_to_TO_param_vals.append(np.abs(float(val)))
+            else:
+                WO_to_TO_param_vals.append(float(val))
+        TO_to_WO_param_vals = []
+        for param_val in TO_to_WO_params[param]:
+            val, units = parse_pint_string(
+                pint_string=param_val
+            )
+            TO_to_WO_param_units = units
+            if param == 'deltam31':
+                TO_to_WO_param_vals.append(np.abs(float(val)))
+            else:
+                TO_to_WO_param_vals.append(float(val))
+        plot_fit(
+            inj_param_vals=inj_param_vals,
+            inj_param_name=inj_param_name,
+            fit_param=param,
+            TO_to_WO_param_vals=TO_to_WO_param_vals,
+            TO_to_WO_label=TO_to_WO_label,
+            WO_to_TO_param_vals=WO_to_TO_param_vals,
+            WO_to_TO_label=WO_to_TO_label
+        )
+        plt.title(MainTitle+r'\\'+SubTitle,fontsize=16)
+        SaveName = "true_%s_%s_%s_%s_%s_best_fit_values.png"%(
+            truth,
+            detector,
+            selection,
+            inj_param_name,
+            param
+        )
+        plt.savefig(os.path.join(outdir,SaveName))
+        plt.close()
 
-    best_median = np.median(LLRbest)
-    alt_median = np.median(LLRalt)
 
-    inj_name = labels['data_name']
-    best_name = labels['%s_name'%bestfit]
-    alt_name = labels['%s_name'%altfit]
+def plot_combined_fits(WO_to_TO_params, TO_to_WO_params, inj_param_vals,
+                       inj_param_name, labels, detector, selection, outdir):
+    '''
+    Takes the two sets of best fit parameters relevant to the Asimov-based 
+    analysis and makes plots of them as a function of the injected parameter.
+    This will use plot_fit and save once one for each parameter is on the 
+    canvas.
+    '''
+    outdir = os.path.join(outdir, 'CombinedBestFits')
+    if not os.path.exists(outdir):
+        logging.info('Making output directory %s'%outdir)
+        os.makedirs(outdir)
 
-    # p value quantified by asking how much of the time the ALT hypothesis ends
-    # up more convincing than the fiducial experiment.
-    # The p value is simply this as the fraction of the total number of trials.
-    crit_p_value = float(np.sum(LLRalt > critical_value))/len(LLRalt)
-    # For the case of toy data we also look at the MEDIAN in order to quantify
-    # the MEDIAN SENSITIVITY. THAT IS, THE CASE OF A MEDIAN EXPERIMENT.
-    med_p_value = float(np.sum(LLRalt > best_median))/len(LLRalt)
+    injlabels = labels['%s_%.4f'%(inj_param_name,inj_param_vals[0])].dict
+    truth = injlabels['data_name'].split('_')[0]
+    h0 = injlabels['h0'].split('hypo_')[-1]
+    h1 = injlabels['h1'].split('hypo_')[-1]
+    if h0 == truth:
+        TO = h0
+        WO = h1
+    else:
+        TO = h1
+        WO = h0
 
-    med_plot_labels = []
-    med_plot_labels.append((r"Hypo %s median = %.4f"%(best_name,best_median)))
-    med_plot_labels.append((r"Hypo %s median = %.4f"%(alt_name,alt_median)))
-    med_plot_labels.append(
-        (r"%s best fit - $\log\left[\mathcal{L}\left(\mathcal{H}_{%s}\right)/"
-         r"\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"
-         %(best_name, best_name, alt_name))
-    )
-    med_plot_labels.append(
-        (r"%s best fit - $\log\left[\mathcal{L}\left(\mathcal{H}_{%s}\right)/"
-         r"\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"
-         %(alt_name, best_name, alt_name))
-    )
+    MainTitle = '%s %s Event Selection Asimov Analysis'%(detector, selection)
+    SubTitle = 'True %s Best Fit Parameters'%(truth)
 
-    crit_plot_labels = []
-    crit_plot_labels.append((r"Critical value = %.4f"%(critical_value)))
-    crit_plot_labels.append(
-        (r"%s best fit - $\log\left[\mathcal{L}\left(\mathcal{H}_{%s}\right)/"
-         r"\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"
-         %(best_name, best_name, alt_name))
-    )
-    crit_plot_labels.append(
-        (r"%s best fit - $\log\left[\mathcal{L}\left(\mathcal{H}_{%s}\right)/"
-         r"\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"
-         %(alt_name, best_name, alt_name))
-    )
+    TO_to_WO_label = '%s fit to %s fid'%(TO,WO)
+    WO_to_TO_label = '%s fit to %s fid'%(WO,TO)
+
     
-    if metric_type == 'llh':
-        plot_title = ("%s %s Event Selection "%(detector,selection)\
-                      +r"\\"+" LLR Distributions for true %s (%i trials)"
-                      %(inj_name,num_trials))
-    else:
-        plot_title = ("%s %s Event Selection "%(detector,selection)\
-                      +r"\\"+" %s \"LLR\" Distributions for "
-                      %(metric_type_pretty)\
-                      +"true %s (%i trials)"%(inj_name,num_trials))
+    # Set up multi-plot
+    num_rows = get_num_rows(WO_to_TO_params, omit_metric=False)
+    plt.figure(figsize=(20,5*num_rows+2))
+    subplotnum=1
 
-    # Factor with which to make everything visible
-    plot_scaling_factor = 1.55
-
-    plt.hist(LLRbest,bins=binning,color='r',histtype='step')
-    plt.hist(LLRalt,bins=binning,color='b',histtype='step')
-    plt.xlabel(r'Log-Likelihood Ratio')
-    plt.ylabel(r'Number of Trials (per %.2f)'%binwidth)
-    plt.ylim(0,plot_scaling_factor*LLRhistmax)
-    plt.axvline(
-        best_median,
-        color='k',
-        ymax=float(max(LLRbesthist))/float(plot_scaling_factor*LLRhistmax)
+    for param in WO_to_TO_params.keys():
+        WO_to_TO_param_vals = []
+        for param_val in WO_to_TO_params[param]:
+            val, units = parse_pint_string(
+                pint_string=param_val
+            )
+            WO_to_TO_param_units = units
+            if param == 'deltam31':
+                WO_to_TO_param_vals.append(np.abs(float(val)))
+            else:
+                WO_to_TO_param_vals.append(float(val))
+        TO_to_WO_param_vals = []
+        for param_val in TO_to_WO_params[param]:
+            val, units = parse_pint_string(
+                pint_string=param_val
+            )
+            TO_to_WO_param_units = units
+            if param == 'deltam31':
+                TO_to_WO_param_vals.append(np.abs(float(val)))
+            else:
+                TO_to_WO_param_vals.append(float(val))
+        plt.subplot(num_rows,4,subplotnum)
+        plot_fit(
+            inj_param_vals=inj_param_vals,
+            inj_param_name=inj_param_name,
+            fit_param=param,
+            TO_to_WO_param_vals=TO_to_WO_param_vals,
+            TO_to_WO_label=TO_to_WO_label,
+            WO_to_TO_param_vals=WO_to_TO_param_vals,
+            WO_to_TO_label=WO_to_TO_label
+        )
+        subplotnum += 1
+    plt.suptitle(MainTitle+r'\\'+SubTitle,fontsize=36)
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.9)
+    SaveName = "true_%s_%s_%s_%s_all_best_fit_values.png"%(
+        truth,
+        detector,
+        selection,
+        inj_param_name
     )
-    plt.axvline(
-        alt_median,
-        color='g',
-        ymax=float(max(LLRalthist))/float(plot_scaling_factor*LLRhistmax)
-    )
-    plt.legend(med_plot_labels, loc='upper left')
-    plt.title(plot_title)
-    plt.figtext(
-        0.15,
-        0.60,
-        r"p-value = $%.4f$"%(med_p_value),
-        color='k',
-        size='xx-large'
-    )
-    filename = 'true_%s_%s_%s_%s_LLRDistribution_median_%i_Trials.png'%(
-        inj_name, detector, selection, metric_type, num_trials
-    )
-    plt.savefig(os.path.join(outdir,filename))
+    plt.savefig(os.path.join(outdir,SaveName))
     plt.close()
-
-    plt.hist(LLRbest,bins=binning,color='r',histtype='step')
-    plt.hist(LLRalt,bins=binning,color='b',histtype='step')
-    plt.xlabel(r'Log-Likelihood Ratio')
-    plt.ylabel(r'Number of Trials (per %.2f)'%binwidth)
-    plt.ylim(0,plot_scaling_factor*LLRhistmax)
-    plt.axvline(
-        critical_value,
-        color='k',
-        ymax=float(max(LLRbesthist))/float(plot_scaling_factor*LLRhistmax)
-    )
-    plt.legend(crit_plot_labels, loc='upper left')
-    plt.title(plot_title)
-    plt.figtext(
-        0.15,
-        0.60,
-        r"p-value = $%.4f$"%(crit_p_value),
-        color='k',
-        size='xx-large'
-    )
-    filename = 'true_%s_%s_%s_%s_LLRDistribution_critical_%i_Trials.png'%(
-        inj_name, detector, selection, metric_type, num_trials
-    )
-    plt.savefig(os.path.join(outdir,filename))
-    plt.close()
-
+    
     
 def parse_args():
     parser = ArgumentParser(description=__doc__)
@@ -562,6 +570,16 @@ def parse_args():
     parser.add_argument(
         '--selection',type=str,default='',
         help="""Name of selection to put in histogram titles."""
+    )
+    parser.add_argument(
+        '-IF', '--individual_fits', action='store_true', default=False,
+        help='''Flag to make plots of all of the best fit parameters separated 
+        by the fitted parameter.'''
+    )
+    parser.add_argument(
+        '-CF', '--combined_fits', action='store_true', default=False,
+        help='''Flag to make plots of all of the best fit parameters joined
+        together.'''
     )
     parser.add_argument(
         '--outdir', metavar='DIR', type=str, required=True,
@@ -586,6 +604,8 @@ def main():
 
     detector = init_args_d.pop('detector')
     selection = init_args_d.pop('selection')
+    ifits = init_args_d.pop('individual_fits')
+    cfits = init_args_d.pop('combined_fits')
     outdir = init_args_d.pop('outdir')
     
     data_sets, all_params, labels = extract_trials(
@@ -594,17 +614,52 @@ def main():
         fluctuate_data=False
     )
 
+    inj_params = data_sets.keys()
+    inj_param_vals = []
+    for inj_param in inj_params:
+        inj_param_vals.append(float(inj_param.split('_')[-1]))
+    inj_param_name = inj_params[0].split('_%.4f'%inj_param_vals[0])[0]
+    inj_param_vals = sorted(inj_param_vals)
+
     WO_to_TO_metrics, TO_to_WO_metrics, WO_to_TO_params, TO_to_WO_params = \
         extract_asimov_data(data_sets, labels)
 
-    print TO_to_WO_params['theta23']
-
-    significances = calculate_deltachi2_signifiances(
-        np.array(WO_to_TO_metrics),
-        np.array(TO_to_WO_metrics)
+    plot_significances(
+        WO_to_TO_metrics=np.array(WO_to_TO_metrics),
+        TO_to_WO_metrics=np.array(TO_to_WO_metrics),
+        inj_param_vals=inj_param_vals,
+        inj_param_name=inj_param_name,
+        labels=labels, 
+        detector=detector,
+        selection=selection,
+        outdir=outdir
     )
 
-    print significances
+    if cfits:
+
+        plot_combined_fits(
+            WO_to_TO_params=WO_to_TO_params,
+            TO_to_WO_params=TO_to_WO_params,
+            inj_param_vals=inj_param_vals,
+            inj_param_name=inj_param_name,
+            labels=labels, 
+            detector=detector,
+            selection=selection,
+            outdir=outdir
+        )
+
+    if ifits:
+
+        plot_individual_fits(
+            WO_to_TO_params=WO_to_TO_params,
+            TO_to_WO_params=TO_to_WO_params,
+            inj_param_vals=inj_param_vals,
+            inj_param_name=inj_param_name,
+            labels=labels, 
+            detector=detector,
+            selection=selection,
+            outdir=outdir
+        )
                 
         
 if __name__ == '__main__':
