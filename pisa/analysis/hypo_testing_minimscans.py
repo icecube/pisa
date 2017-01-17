@@ -310,55 +310,81 @@ def main():
         for param in hypo_testing.h0_maker.params.free:
             # Set the values of the parameters to those found in the
             # appropriate fiducial fit
-            hypo_testing.h0_maker.params.free.set_values(
-                new_params=hypo_testing.h0_fit_to_h0_fid['params'].free
-            )
-            if zoom_scan:
-                fit_value = hypo_testing.h0_fit_to_h0_fid[
-                    'params'].free[param.name].value.magnitude
-                values = np.linspace(
-                    0.9*fit_value,
-                    1.1*fit_value,
-                    num_scan_points
+            if data_is_pseudo:
+                # The like-hypothesis fits are ignored in Asimov-based analyses
+                # since they are not used. Hence they will be only be scanned
+                # here if the data is a pseudo-experiment.
+                hypo_testing.h0_maker.params.free.set_values(
+                    new_params=hypo_testing.h0_fit_to_h0_fid['params'].free
                 )
-                steps=None
-            else:
-                steps=num_scan_points
-                values=None
-            h0_fid_h0_hypo_scan = hypo_testing.scan(
-                data_dist=hypo_testing.h0_fid_dist,
-                hypo_maker=hypo_testing.h0_maker,
-                hypo_param_selections=init_args_d['h0_param_selections'],
-                metric=init_args_d['metric'],
-                param_names=param.name,
-                steps=steps,
-                values=[values],
-                only_points=None,
-                outer=True,
-                profile=False,
-                minimizer_settings=init_args_d['minimizer_settings'],
-                outfile=os.path.join(scanoutdir,
-                                     'h0_fid_h0_hypo_%s_scan_%s.json'
-                                     %(param.name,str(i)))
-            )
-            # Parameter is fixed in the scan without being unfixed, so do
-            # that here now.
-            hypo_testing.h0_maker.params.unfix(param)
+                if zoom_scan:
+                    fit_value = hypo_testing.h0_fit_to_h0_fid[
+                        'params'].free[param.name].value.magnitude
+                    values = [np.linspace(
+                        0.9*fit_value,
+                        1.1*fit_value,
+                        num_scan_points
+                    )]
+                    steps=None
+                else:
+                    steps=num_scan_points
+                    values=None
+                logging.info('Performing scan of %s around the minimum found in'
+                             ' the h0 fit to the h0 fiducial '
+                             'distribution.'%param.name)
+                if steps is not None:
+                    logging.info('Scanned range will be %i steps over the '
+                                 'parameter range defined in the configuration'
+                                 ' file.'%steps)
+                else:
+                    logging.info('Scanned range will be %i steps in the range '
+                                 'of %.4f to %.4f (+/- 10% around the supposed'
+                                 ' minimum)'%(len(values),values[0],values[-1]))
+                h0_fid_h0_hypo_scan = hypo_testing.scan(
+                    data_dist=hypo_testing.h0_fid_dist,
+                    hypo_maker=hypo_testing.h0_maker,
+                    hypo_param_selections=init_args_d['h0_param_selections'],
+                    metric=init_args_d['metric'],
+                    param_names=param.name,
+                    steps=steps,
+                    values=values,
+                    only_points=None,
+                    outer=True,
+                    profile=False,
+                    minimizer_settings=init_args_d['minimizer_settings'],
+                    outfile=os.path.join(scanoutdir,
+                                         'h0_fid_h0_hypo_%s_scan_%s.json'
+                                         %(param.name,str(i)))
+                )
+                # Parameter is fixed in the scan without being unfixed, so do
+                # that here now.
+                hypo_testing.h0_maker.params.unfix(param)
             hypo_testing.h0_maker.params.free.set_values(
                 new_params=hypo_testing.h0_fit_to_h1_fid['params'].free
             )
             if zoom_scan:
                 fit_value = hypo_testing.h0_fit_to_h1_fid[
                     'params'].free[param.name].value.magnitude
-                values = np.linspace(
+                values = [np.linspace(
                     0.9*fit_value,
                     1.1*fit_value,
                     num_scan_points
-                )
+                )]
                 steps=None
             else:
                 steps=num_scan_points
                 values=None
+            logging.info('Performing scan of %s around the minimum found in'
+                         ' the h0 fit to the h1 fiducial '
+                         'distribution.'%param.name)
+            if steps is not None:
+                logging.info('Scanned range will be %i steps over the '
+                             'parameter range defined in the configuration'
+                             ' file.'%steps)
+            else:
+                logging.info('Scanned range will be %i steps in the range '
+                             'of %.4f to %.4f (+/- 10% around the supposed'
+                             ' minimum)'%(len(values),values[0],values[-1]))
             h1_fid_h0_hypo_scan = hypo_testing.scan(
                 data_dist=hypo_testing.h1_fid_dist,
                 hypo_maker=hypo_testing.h0_maker,
@@ -366,7 +392,7 @@ def main():
                 metric=init_args_d['metric'],
                 param_names=param.name,
                 steps=steps,
-                values=[values],
+                values=values,
                 only_points=None,
                 outer=True,
                 profile=False,
@@ -383,15 +409,26 @@ def main():
             if zoom_scan:
                 fit_value = hypo_testing.h1_fit_to_h0_fid[
                     'params'].free[param.name].value.magnitude
-                values = np.linspace(
+                values = [np.linspace(
                     0.9*fit_value,
                     1.1*fit_value,
                     num_scan_points
-                )
+                )]
                 steps=None
             else:
                 steps=num_scan_points
                 values=None
+            logging.info('Performing scan of %s around the minimum found in'
+                         ' the h1 fit to the h0 fiducial '
+                         'distribution.'%param.name)
+            if steps is not None:
+                logging.info('Scanned range will be %i steps over the '
+                             'parameter range defined in the configuration'
+                             ' file.'%steps)
+            else:
+                logging.info('Scanned range will be %i steps in the range '
+                             'of %.4f to %.4f (+/- 10% around the supposed'
+                             ' minimum)'%(len(values),values[0],values[-1]))
             h0_fid_h1_hypo_scan = hypo_testing.scan(
                 data_dist=hypo_testing.h0_fid_dist,
                 hypo_maker=hypo_testing.h1_maker,
@@ -399,7 +436,7 @@ def main():
                 metric=init_args_d['metric'],
                 param_names=param.name,
                 steps=steps,
-                values=[values],
+                values=values,
                 only_points=None,
                 outer=True,
                 profile=False,
@@ -409,38 +446,50 @@ def main():
                                      %(param.name,str(i)))
             )
             hypo_testing.h1_maker.params.unfix(param)
-            hypo_testing.h1_maker.params.free.set_values(
-                new_params=hypo_testing.h1_fit_to_h1_fid['params'].free
-            )
-            if zoom_scan:
-                fit_value = hypo_testing.h1_fit_to_h1_fid[
-                    'params'].free[param.name].value.magnitude
-                values = np.linspace(
-                    0.9*fit_value,
-                    1.1*fit_value,
-                    num_scan_points
+            if data_is_pseudo:
+                hypo_testing.h1_maker.params.free.set_values(
+                    new_params=hypo_testing.h1_fit_to_h1_fid['params'].free
                 )
-                steps=None
-            else:
-                steps=num_scan_points
-                values=None
-            h1_fid_h1_hypo_scan = hypo_testing.scan(
-                data_dist=hypo_testing.h1_fid_dist,
-                hypo_maker=hypo_testing.h1_maker,
-                hypo_param_selections=init_args_d['h1_param_selections'],
-                metric=init_args_d['metric'],
-                param_names=param.name,
-                steps=steps,
-                values=[values],
-                only_points=None,
-                outer=True,
-                profile=False,
-                minimizer_settings=init_args_d['minimizer_settings'],
-                outfile=os.path.join(scanoutdir,
-                                     'h1_fid_h1_hypo_%s_scan_%s.json'
-                                     %(param.name,str(i)))
-            )
-            hypo_testing.h1_maker.params.unfix(param)
+                if zoom_scan:
+                    fit_value = hypo_testing.h1_fit_to_h1_fid[
+                        'params'].free[param.name].value.magnitude
+                    values = [np.linspace(
+                        0.9*fit_value,
+                        1.1*fit_value,
+                        num_scan_points
+                    )]
+                    steps=None
+                else:
+                    steps=num_scan_points
+                    values=None
+                logging.info('Performing scan of %s around the minimum found in'
+                             ' the h1 fit to the h1 fiducial '
+                             'distribution.'%param.name)
+                if steps is not None:
+                    logging.info('Scanned range will be %i steps over the '
+                                 'parameter range defined in the configuration'
+                                 ' file.'%steps)
+                else:
+                    logging.info('Scanned range will be %i steps in the range '
+                                 'of %.4f to %.4f (+/- 10% around the supposed'
+                                 ' minimum)'%(len(values),values[0],values[-1]))
+                h1_fid_h1_hypo_scan = hypo_testing.scan(
+                    data_dist=hypo_testing.h1_fid_dist,
+                    hypo_maker=hypo_testing.h1_maker,
+                    hypo_param_selections=init_args_d['h1_param_selections'],
+                    metric=init_args_d['metric'],
+                    param_names=param.name,
+                    steps=steps,
+                    values=values,
+                    only_points=None,
+                    outer=True,
+                    profile=False,
+                    minimizer_settings=init_args_d['minimizer_settings'],
+                    outfile=os.path.join(scanoutdir,
+                                         'h1_fid_h1_hypo_%s_scan_%s.json'
+                                         %(param.name,str(i)))
+                )
+                hypo_testing.h1_maker.params.unfix(param)
         # Need to advance the fid_ind by 1 here since I'm doing the
         # loop over the trials outside of the hypo_testing object
         hypo_testing.fid_ind += 1
