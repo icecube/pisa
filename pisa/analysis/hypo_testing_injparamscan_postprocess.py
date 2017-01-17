@@ -308,6 +308,45 @@ def calculate_deltachi2_signifiances(WO_to_TO_metrics, TO_to_WO_metrics):
     return significances
 
 
+def plot_significance(inj_param_vals, significances, truth, inj_param_name):
+    '''
+    This function will do the actual plotting of the significances.
+    '''
+    # Use the NMO colouring scheme
+    if truth == 'no':
+        plt.plot(
+            inj_param_vals,
+            significances,
+            linewidth=2,
+            marker='o',
+            color='r',
+            label='True %s'%truth
+        )
+    elif truth == 'io':
+        plt.plot(
+            inj_param_vals,
+            significances,
+            linewidth=2,
+            marker='o',
+            color='b',
+            label='True %s'%truth
+        )
+    # Else just make them black
+    else:
+        plt.plot(
+            inj_param_vals,
+            significances,
+            linewidth=2,
+            marker='o',
+            color='k',
+            label='True %s'%truth
+        )
+    yrange = max(significances)-min(significances)
+    plt.ylim(min(significances)-0.1*yrange,max(significances)+0.1*yrange)
+    plt.xlabel(tex_axis_label(inj_param_name))
+    plt.ylabel(r'Significance ($\sigma$)')
+
+
 def plot_significances(WO_to_TO_metrics, TO_to_WO_metrics, inj_param_vals,
                        inj_param_name, labels, detector, selection, outdir):
     '''
@@ -328,22 +367,76 @@ def plot_significances(WO_to_TO_metrics, TO_to_WO_metrics, inj_param_vals,
     )
     injlabels = labels['%s_%.4f'%(inj_param_name,inj_param_vals[0])].dict
     truth = injlabels['data_name'].split('_')[0]
-    plt.plot(
-        inj_param_vals,
-        significances,
-        linewidth=2,
-        marker='o',
-        color='r',
-        label='True %s'%truth
+    plot_significance(
+        inj_param_vals=inj_param_vals,
+        significances=significances,
+        truth=truth,
+        inj_param_name=inj_param_name
     )
-    yrange = max(significances)-min(significances)
-    plt.ylim(min(significances)-0.1*yrange,max(significances)+0.1*yrange)
-    plt.xlabel(tex_axis_label(inj_param_name))
-    plt.ylabel(r'Significance ($\sigma$)')
     plt.title(MainTitle,fontsize=16)
     plt.legend(loc='best')
     SaveName = "true_%s_%s_%s_%s_asimov_significances.png"%(
         truth,
+        detector,
+        selection,
+        inj_param_name
+    )
+    plt.savefig(os.path.join(outdir,SaveName))
+    plt.close()
+
+
+def plot_significances_two_truths(WO_to_TO_metrics, TO_to_WO_metrics,
+                                  alt_WO_to_TO_metrics, alt_TO_to_WO_metrics,
+                                  inj_param_vals, inj_param_name, labels,
+                                  alt_labels, detector, selection, outdir):
+    '''
+    Takes the two sets of metrics relevant to the Asimov-based analysis and
+    makes a plot of the significance as a function of the injected parameter.
+    This also takes a second set of "alternative" metrics for a different
+    injected truth and plots them on the same canvas.
+    '''
+    outdir = os.path.join(outdir, 'Significances')
+    if not os.path.exists(outdir):
+        logging.info('Making output directory %s'%outdir)
+        os.makedirs(outdir)
+
+    MainTitle = '%s %s Event Selection Asimov Analysis Significances'%(
+        detector, selection)
+
+    significances = calculate_deltachi2_signifiances(
+        WO_to_TO_metrics=WO_to_TO_metrics,
+        TO_to_WO_metrics=TO_to_WO_metrics
+    )
+    alt_significances = calculate_deltachi2_signifiances(
+        WO_to_TO_metrics=alt_WO_to_TO_metrics,
+        TO_to_WO_metrics=alt_TO_to_WO_metrics
+    )
+    injlabels = labels['%s_%.4f'%(inj_param_name,inj_param_vals[0])].dict
+    alt_injlabels = alt_labels['%s_%.4f'%(
+        inj_param_name,inj_param_vals[0])].dict
+    truth = injlabels['data_name'].split('_')[0]
+    alt_truth = alt_injlabels['data_name'].split('_')[0]
+    plot_significance(
+        inj_param_vals=inj_param_vals,
+        significances=significances,
+        truth=truth,
+        inj_param_name=inj_param_name
+    )
+    plot_significance(
+        inj_param_vals=inj_param_vals,
+        significances=alt_significances,
+        truth=alt_truth,
+        inj_param_name=inj_param_name
+    )
+    plt.title(MainTitle,fontsize=16)
+    plt.legend(loc='best')
+    ymax = max(max(significances), max(alt_significances))
+    ymin = min(min(significances), min(alt_significances))
+    yrange = ymax-ymin
+    plt.ylim(ymin-0.1*yrange,ymax+0.1*yrange)
+    SaveName = "true_%s_and_%s_%s_%s_%s_asimov_significances.png"%(
+        truth,
+        alt_truth,
         detector,
         selection,
         inj_param_name
@@ -566,6 +659,15 @@ def parse_args():
         together.'''
     )
     parser.add_argument(
+        '-ad', '--altdir', required=False, default=None,
+        metavar='DIR', type=str,
+        help="""Directory into which a second lot of output from
+        hypo_testing_injparamscan.py was stored. This is useful for plotting
+        the case of both injecting both the hypotheses and plotting them on the
+        same canvas. Note, this will argument will overwrite all other plotting
+        and only this combined plot of significance will be made."""
+    )
+    parser.add_argument(
         '--outdir', metavar='DIR', type=str, required=True,
         help="""Store all output plots to this directory. This will make
         further subdirectories, if needed, to organise the output plots."""
@@ -608,43 +710,88 @@ def main():
     WO_to_TO_metrics, TO_to_WO_metrics, WO_to_TO_params, TO_to_WO_params = \
         extract_asimov_data(data_sets, labels)
 
-    plot_significances(
-        WO_to_TO_metrics=np.array(WO_to_TO_metrics),
-        TO_to_WO_metrics=np.array(TO_to_WO_metrics),
-        inj_param_vals=inj_param_vals,
-        inj_param_name=inj_param_name,
-        labels=labels, 
-        detector=detector,
-        selection=selection,
-        outdir=outdir
-    )
+    if args.altdir is not None:
 
-    if cfits:
+        logging.info('Altdir was provided, so the combined significance plot '
+                     'is the only one which will be made')
 
-        plot_combined_fits(
-            WO_to_TO_params=WO_to_TO_params,
-            TO_to_WO_params=TO_to_WO_params,
+        alt_data_sets, alt_all_params, alt_labels = extract_trials(
+            logdir=args.altdir,
+            fluctuate_fid=False,
+            fluctuate_data=False
+        )
+
+        alt_inj_params = data_sets.keys()
+        alt_inj_param_vals = []
+        for alt_inj_param in alt_inj_params:
+            alt_inj_param_vals.append(float(alt_inj_param.split('_')[-1]))
+        alt_inj_param_name = alt_inj_params[0].split(
+            '_%.4f'%alt_inj_param_vals[0])[0]
+        alt_inj_param_vals = sorted(alt_inj_param_vals)
+
+        if alt_inj_param_vals != inj_param_vals:
+            raise ValueError('Injected parameter values do not match those for'
+                             ' the alternative directory, so results cannot be'
+                             ' plotted on the same canvas.')
+
+        alt_WO_to_TO_metrics, alt_TO_to_WO_metrics, \
+        alt_WO_to_TO_params, alt_TO_to_WO_params = \
+                extract_asimov_data(alt_data_sets, alt_labels)
+
+
+        plot_significances_two_truths(
+            WO_to_TO_metrics=np.array(WO_to_TO_metrics),
+            TO_to_WO_metrics=np.array(TO_to_WO_metrics),
+            alt_WO_to_TO_metrics=np.array(alt_WO_to_TO_metrics),
+            alt_TO_to_WO_metrics=np.array(alt_TO_to_WO_metrics),
             inj_param_vals=inj_param_vals,
             inj_param_name=inj_param_name,
-            labels=labels, 
+            labels=labels,
+            alt_labels=alt_labels,
             detector=detector,
             selection=selection,
             outdir=outdir
         )
 
-    if ifits:
+    else:
 
-        plot_individual_fits(
-            WO_to_TO_params=WO_to_TO_params,
-            TO_to_WO_params=TO_to_WO_params,
+        plot_significances(
+            WO_to_TO_metrics=np.array(WO_to_TO_metrics),
+            TO_to_WO_metrics=np.array(TO_to_WO_metrics),
             inj_param_vals=inj_param_vals,
             inj_param_name=inj_param_name,
-            labels=labels, 
+            labels=labels,
             detector=detector,
             selection=selection,
             outdir=outdir
         )
-                
+
+        if cfits:
+
+            plot_combined_fits(
+                WO_to_TO_params=WO_to_TO_params,
+                TO_to_WO_params=TO_to_WO_params,
+                inj_param_vals=inj_param_vals,
+                inj_param_name=inj_param_name,
+                labels=labels,
+                detector=detector,
+                selection=selection,
+                outdir=outdir
+            )
+
+        if ifits:
+            
+            plot_individual_fits(
+                WO_to_TO_params=WO_to_TO_params,
+                TO_to_WO_params=TO_to_WO_params,
+                inj_param_vals=inj_param_vals,
+                inj_param_name=inj_param_name,
+                labels=labels,
+                detector=detector,
+                selection=selection,
+                outdir=outdir
+            )
+
         
 if __name__ == '__main__':
     main()

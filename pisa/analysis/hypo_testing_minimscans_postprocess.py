@@ -6,8 +6,8 @@
 """
 Hypothesis testing: How do two hypotheses compare for describing MC or data?
 
-This script/module plots the ouput of the minimiser tests run on pseudo-trials 
-by hypo_testing_minimtests.py
+This script/module plots the ouput of the minimiser tests run on MC data
+(Asimov or pseudo) by hypo_testing_minimscans.py
 
 """
 
@@ -130,7 +130,10 @@ def extract_output(logdir, fluctuate_fid, fluctuate_data=False):
                     best_fits[trials_dir_name][trial_num] = OrderedDict()
                     minimiser_info[trials_dir_name][trial_num] = OrderedDict()
                     scans[trials_dir_name][trial_num] = OrderedDict()
-                trial_type = trials_file.split('_pseudodata')[0]
+                if 'pseudodata' in trials_file:
+                    trial_type = trials_file.split('_pseudodata')[0]
+                else:
+                    trial_type = trials_file.split('_asimov')[0]
                 fpath = os.path.join(trials_dir, trials_file)
                 best_fits[trials_dir_name][trial_num][trial_type] \
                     = extract_fit(

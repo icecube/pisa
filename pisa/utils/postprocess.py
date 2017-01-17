@@ -3,6 +3,8 @@ A bunch of functions useful for postprocessing scripts
 
 """
 
+import re
+
 from pisa.utils.log import logging
 
 
@@ -86,3 +88,17 @@ def extract_gaussian(prior_string, units):
         maximum = float(bits.group(3))
 
     return stddev, maximum
+
+
+def get_num_rows(data, omit_metric=False):
+    '''
+    Calculates the number of rows for multiplots based on the number of 
+    systematics.
+    '''
+    if omit_metric:
+        num_rows = int((len(data.keys())-1)/4)
+    else:
+        num_rows = int(len(data.keys())/4)
+    if len(data.keys())%4 != 0:
+        num_rows += 1
+    return num_rows

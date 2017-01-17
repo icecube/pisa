@@ -113,6 +113,28 @@ def extract_asimov_fits(logdir, fluctuate_fid, fluctuate_data=False):
                     fpath,
                     ['metric', 'metric_val','params']
                 )
+                dmi = extract_fit(
+                    fpath,
+                    ['detailed_metric_info']
+                )
+                if len(dmi['detailed_metric_info'].keys()) != 1:
+                    data_sets[data_name]['hypo_%s'%hypo][
+                        fit_num]['alt_metrics'] = {}
+                    for other_metric in dmi['detailed_metric_info'].keys():
+                        if other_metric != data_sets[data_name][
+                                'hypo_%s'%hypo][fit_num]['metric']:
+                            data_sets[data_name]['hypo_%s'%hypo][
+                            fit_num]['alt_metrics'][other_metric] = {}
+                            data_sets[data_name]['hypo_%s'%hypo][fit_num][
+                                'alt_metrics'][other_metric]['metric'] = \
+                                    other_metric
+                            mc = dmi['detailed_metric_info'][other_metric][
+                                'maps']['total']
+                            pc = sum(dmi['detailed_metric_info'][other_metric][
+                                'priors'])
+                            am = mc+pc
+                            data_sets[data_name]['hypo_%s'%hypo][fit_num][
+                                'alt_metrics'][other_metric]['metric_val'] = am
                 minimiser_info[data_name]['hypo_%s'%hypo][fit_num] = \
                     extract_fit(
                         fpath,
@@ -422,9 +444,18 @@ def plot_fit_results(fit_results, labels, detector,
         hypo = fhkey.split('_')[1]
         metric = []
         params = {}
+        alt_metrics = None
         for fit in fit_results[fhkey].keys():
             metric_name = fit_results[fhkey][fit]['metric']
             metric.append(fit_results[fhkey][fit]['metric_val'])
+            if 'alt_metrics' in fit_results[fhkey][fit].keys():
+                if alt_metrics is None:
+                    alt_metrics = {}
+                for alt_metric in fit_results[fhkey][fit]['alt_metrics'].keys():
+                    if alt_metric not in alt_metrics.keys():
+                        alt_metrics[alt_metric] = []
+                    alt_metrics[alt_metric].append(fit_results[fhkey][fit][
+                        'alt_metrics'][alt_metric]['metric_val'])
             if len(params.keys()) == 0:
                 for param in fit_results[fhkey][fit]['params'].keys():
                     params[param] = {}
@@ -464,6 +495,29 @@ def plot_fit_results(fit_results, labels, detector,
                           metric_name))
         plt.savefig(os.path.join(outdir,SaveName))
         plt.close()
+        if alt_metrics is not None:
+            for alt_metric in alt_metrics.keys():
+                plt.hist(alt_metrics[alt_metric], bins=10)
+                plt.xlabel(tex_axis_label(alt_metric))
+                plt.ylabel('Number of Trials')
+                plt.title(MainTitle+r'\\'+FitTitle, fontsize=16)
+                if pseudokey is not None:
+                    SaveName = ("true_%s_%s_%s_trial_%s_hypo_%s_%s_vals.png"
+                                %(labels['data_name'],
+                                  detector,
+                                  selection,
+                                  pseudokey,
+                                  hypo,
+                                  alt_metric))
+                else:
+                    SaveName = ("true_%s_%s_%s_hypo_%s_%s_vals.png"
+                                %(labels['data_name'],
+                                  detector,
+                                  selection,
+                                  hypo,
+                                  alt_metric))
+                plt.savefig(os.path.join(outdir,SaveName))
+                plt.close()
         for param in params.keys():
             plt.hist(params[param]['values'], bins=10)
             if not params[param]['units'] == 'dimensionless':
