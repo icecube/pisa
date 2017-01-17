@@ -7,7 +7,7 @@
 Hypothesis testing: How do two hypotheses compare for describing MC or data?
 
 This script/module will load the HypoTesting class from hypo_testing.py and
-use it to do a minimiser study in pseudo-data. A pseudo-data trial will be 
+use it to do a minimiser study. A data trial (either Asimov of pseudo) will be 
 created based on some set of injected parameters and it will be fit with both 
 hypotheses. 1D scans will then be performed along all of the parameters to 
 ensure that the true minimum was actually found.
@@ -17,6 +17,7 @@ ensure that the true minimum was actually found.
 
 from argparse import ArgumentParser
 import os
+import numpy as np
 
 from pisa import ureg
 from pisa.analysis.hypo_testing import HypoTesting, Labels
@@ -111,6 +112,21 @@ def parse_args():
         argument (or use "all") to specify multiple metrics.'''
     )
     parser.add_argument(
+        '--num-scan-points',
+        type=int, default=50,
+        help='''Number of points to have in the scans.'''
+    )
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        '--data-is-asimov', action='store_true',
+        help='''The "data" distribution here should remain unfluctuated.'''
+    )
+    group.add_argument(
+        '--data-is-pseudo', action='store_true',
+        help='''The "data" distribution should be a proper pseudo-experiment
+        with poissonian fluctuations.'''
+    )
+    parser.add_argument(
         '--num-fid-trials',
         type=int, default=1,
         help='''Number of pseudo trials to run. Each one will be a minimisation
@@ -124,6 +140,12 @@ def parse_args():
         help='''Trial start index. Set this if you are saving files from 
         multiple runs in to the same log directory otherwise files may end up 
         being overwritten!'''
+    )
+    parser.add_argument(
+        '--zoom_scan', action='store_true', default=False,
+        help='''Flag to perform a fine scan around the minimum. Rather than 
+        scanning 50 steps over the full parameter range, 50 steps will be 
+        scanned for +/- 10%% around the supposed minimum.'''
     )
     parser.add_argument(
         '--allow-dirty',
@@ -232,7 +254,15 @@ def main():
         init_args_d[ps_name] = ps_list
 
     init_args_d['fluctuate_data'] = False
-    init_args_d['fluctuate_fid'] = True
+    data_is_asimov = init_args_d.pop('data_is_asimov')
+    data_is_pseudo = init_args_d.pop('data_is_pseudo')
+    init_args_d['fluctuate_fid'] = data_is_pseudo
+    if data_is_asimov:
+        if num_trials != 1:
+            raise ValueError('You have requested that the "data" distribution'
+                             ' be unfluctuated (Asimov) yet have requested to'
+                             ' do more than one data trial. You must choose'
+                             ' only one.')
 
     init_args_d['data_maker'] = init_args_d['h0_maker']
     init_args_d['h1_maker'] = init_args_d['h0_maker']
@@ -250,6 +280,9 @@ def main():
     if init_args_d['data_name'] is None:
         init_args_d['data_name'] = init_args_d['h0_name']
 
+    zoom_scan = init_args_d.pop('zoom_scan')
+    num_scan_points = init_args_d.pop('num_scan_points')
+
     # Instantiate the analysis object
     hypo_testing = HypoTesting(**init_args_d)
     hypo_testing.setup_logging()
@@ -261,6 +294,8 @@ def main():
     hypo_testing.fit_hypos_to_data()
 
     for i in range(start_index,(start_index+num_trials)):
+        if data_is_asimov:
+            i = 'asimov'
         # Run the fiducial fit
         hypo_testing.produce_fid_data()
         hypo_testing.fit_hypos_to_fid()
@@ -278,80 +313,132 @@ def main():
             hypo_testing.h0_maker.params.free.set_values(
                 new_params=hypo_testing.h0_fit_to_h0_fid['params'].free
             )
+            if zoom_scan:
+                fit_value = hypo_testing.h0_fit_to_h0_fid[
+                    'params'].free[param.name].value.magnitude
+                values = np.linspace(
+                    0.9*fit_value,
+                    1.1*fit_value,
+                    num_scan_points
+                )
+                steps=None
+            else:
+                steps=num_scan_points
+                values=None
             h0_fid_h0_hypo_scan = hypo_testing.scan(
                 data_dist=hypo_testing.h0_fid_dist,
                 hypo_maker=hypo_testing.h0_maker,
                 hypo_param_selections=init_args_d['h0_param_selections'],
                 metric=init_args_d['metric'],
                 param_names=param.name,
-                steps=50,
+                steps=steps,
+                values=[values],
                 only_points=None,
                 outer=True,
                 profile=False,
                 minimizer_settings=init_args_d['minimizer_settings'],
                 outfile=os.path.join(scanoutdir,
-                                     'h0_fid_h0_hypo_%s_scan_%i.json'
-                                     %(param.name,i))
+                                     'h0_fid_h0_hypo_%s_scan_%s.json'
+                                     %(param.name,str(i)))
             )
-            # Parameter is fixed in the scan without being unfixed, so do that
-            # here now.
+            # Parameter is fixed in the scan without being unfixed, so do
+            # that here now.
             hypo_testing.h0_maker.params.unfix(param)
             hypo_testing.h0_maker.params.free.set_values(
                 new_params=hypo_testing.h0_fit_to_h1_fid['params'].free
             )
-            h1_fid_h0_scan = hypo_testing.scan(
+            if zoom_scan:
+                fit_value = hypo_testing.h0_fit_to_h1_fid[
+                    'params'].free[param.name].value.magnitude
+                values = np.linspace(
+                    0.9*fit_value,
+                    1.1*fit_value,
+                    num_scan_points
+                )
+                steps=None
+            else:
+                steps=num_scan_points
+                values=None
+            h1_fid_h0_hypo_scan = hypo_testing.scan(
                 data_dist=hypo_testing.h1_fid_dist,
                 hypo_maker=hypo_testing.h0_maker,
                 hypo_param_selections=init_args_d['h0_param_selections'],
                 metric=init_args_d['metric'],
                 param_names=param.name,
-                steps=50,
+                steps=steps,
+                values=[values],
                 only_points=None,
                 outer=True,
                 profile=False,
                 minimizer_settings=init_args_d['minimizer_settings'],
                 outfile=os.path.join(scanoutdir,
-                                     'h1_fid_h0_hypo_%s_scan_%i.json'
-                                     %(param.name,i))
+                                     'h1_fid_h0_hypo_%s_scan_%s.json'
+                                     %(param.name,str(i)))
             )
             hypo_testing.h0_maker.params.unfix(param)
         for param in hypo_testing.h1_maker.params.free:
             hypo_testing.h1_maker.params.free.set_values(
                 new_params=hypo_testing.h1_fit_to_h0_fid['params'].free
             )
-            h0_fid_h1_scan = hypo_testing.scan(
+            if zoom_scan:
+                fit_value = hypo_testing.h1_fit_to_h0_fid[
+                    'params'].free[param.name].value.magnitude
+                values = np.linspace(
+                    0.9*fit_value,
+                    1.1*fit_value,
+                    num_scan_points
+                )
+                steps=None
+            else:
+                steps=num_scan_points
+                values=None
+            h0_fid_h1_hypo_scan = hypo_testing.scan(
                 data_dist=hypo_testing.h0_fid_dist,
                 hypo_maker=hypo_testing.h1_maker,
                 hypo_param_selections=init_args_d['h1_param_selections'],
                 metric=init_args_d['metric'],
                 param_names=param.name,
-                steps=50,
+                steps=steps,
+                values=[values],
                 only_points=None,
                 outer=True,
                 profile=False,
                 minimizer_settings=init_args_d['minimizer_settings'],
                 outfile=os.path.join(scanoutdir,
-                                     'h0_fid_h1_hypo_%s_scan_%i.json'
-                                     %(param.name,i))
+                                     'h0_fid_h1_hypo_%s_scan_%s.json'
+                                     %(param.name,str(i)))
             )
             hypo_testing.h1_maker.params.unfix(param)
             hypo_testing.h1_maker.params.free.set_values(
                 new_params=hypo_testing.h1_fit_to_h1_fid['params'].free
             )
-            h1_fid_h1_scan = hypo_testing.scan(
+            if zoom_scan:
+                fit_value = hypo_testing.h1_fit_to_h1_fid[
+                    'params'].free[param.name].value.magnitude
+                values = np.linspace(
+                    0.9*fit_value,
+                    1.1*fit_value,
+                    num_scan_points
+                )
+                steps=None
+            else:
+                steps=num_scan_points
+                values=None
+            h1_fid_h1_hypo_scan = hypo_testing.scan(
                 data_dist=hypo_testing.h1_fid_dist,
                 hypo_maker=hypo_testing.h1_maker,
                 hypo_param_selections=init_args_d['h1_param_selections'],
                 metric=init_args_d['metric'],
                 param_names=param.name,
-                steps=50,
+                steps=steps,
+                values=[values],
                 only_points=None,
                 outer=True,
                 profile=False,
                 minimizer_settings=init_args_d['minimizer_settings'],
                 outfile=os.path.join(scanoutdir,
-                                     'h1_fid_h1_hypo_%s_scan_%i.json'
-                                     %(param.name,i))
+                                     'h1_fid_h1_hypo_%s_scan_%s.json'
+                                     %(param.name,str(i)))
             )
             hypo_testing.h1_maker.params.unfix(param)
         # Need to advance the fid_ind by 1 here since I'm doing the

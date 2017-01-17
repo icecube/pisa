@@ -208,7 +208,6 @@ def main():
     num_trials = init_args_d.pop('num_trials')
     start_index = init_args_d.pop('start_index')
     data_is_pseudo = init_args_d.pop('data_is_pseudo')
-    print 
     data_index = init_args_d.pop('data_index')
     if data_is_pseudo:
         if data_index == 0:
@@ -328,7 +327,6 @@ def main():
                 fluctuate_fid=init_args_d['fluctuate_fid']
             )
         # Run the fits
-        print hypo_testing.data_dist.hist['total'][0].T[0]
         hypo_testing.fit_hypos_to_data()
         # Reset everything
         hypo_testing.h0_maker.reset_free()

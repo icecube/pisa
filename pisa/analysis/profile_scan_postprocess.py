@@ -18,7 +18,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 from pisa.utils.fileio import from_file
 from pisa.utils.log import logging, set_verbosity
-from pisa.utils.plotter import tex_axis_label
+from pisa.utils.postprocess import tex_axis_label
 
 
 def make_label(label, units):
