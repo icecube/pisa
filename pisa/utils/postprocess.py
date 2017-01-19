@@ -41,6 +41,7 @@ def tex_axis_label(label):
     pretty_labels["electron_volt ** 2"] = r"$\mathrm{eV}^2$"
     pretty_labels["electron_volt"] = r"$\mathrm{eV}^2$"
     pretty_labels["llh"] = r"Likelihood"
+    pretty_labels["conv_llh"] = r"Convoluted Likelihood"
     pretty_labels["chi2"] = r"$\chi^2$"
     pretty_labels["mod_chi2"] = r"Modified $\chi^2$"
     if label not in pretty_labels.keys():

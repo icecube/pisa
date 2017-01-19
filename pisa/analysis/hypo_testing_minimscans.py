@@ -19,7 +19,6 @@ from argparse import ArgumentParser
 import os
 import numpy as np
 
-from pisa import ureg
 from pisa.analysis.hypo_testing import HypoTesting, Labels
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.utils.log import logging, set_verbosity
@@ -144,8 +143,8 @@ def parse_args():
     parser.add_argument(
         '--zoom_scan', action='store_true', default=False,
         help='''Flag to perform a fine scan around the minimum. Rather than 
-        scanning 50 steps over the full parameter range, 50 steps will be 
-        scanned for +/- 10%% around the supposed minimum.'''
+        scanning over the full parameter range, a +/- 1%% range around the 
+        supposed minimum will be scaned.'''
     )
     parser.add_argument(
         '--allow-dirty',
@@ -320,15 +319,36 @@ def main():
                 if zoom_scan:
                     fit_value = hypo_testing.h0_fit_to_h0_fid[
                         'params'].free[param.name].value.magnitude
-                    values = [np.linspace(
-                        0.9*fit_value,
-                        1.1*fit_value,
+                    fit_value_units = hypo_testing.h0_fit_to_h0_fid[
+                        'params'].free[param.name].value.units
+                    bare_values = np.linspace(
+                        0.99*fit_value,
+                        1.01*fit_value,
                         num_scan_points
-                    )]
-                    steps=None
+                    )
+                    values = []
+                    for bare_value in bare_values:
+                        values.append(bare_value * fit_value_units)
+                    if values[0] < hypo_testing.h0_fit_to_h0_fid[
+                        'params'].free[param.name].range[0]:
+                        logging.info('Zoomed scan would be outside of the '
+                                     'parameter range, so defaulting to '
+                                     'scanning just the parameter range')
+                        steps = num_scan_points
+                        values = None
+                    elif values[-1] > hypo_testing.h0_fit_to_h0_fid[
+                        'params'].free[param.name].range[-1]:
+                        logging.info('Zoomed scan would be outside of the '
+                                     'parameter range, so defaulting to '
+                                     'scanning just the parameter range')
+                        steps = num_scan_points
+                        values = None
+                    else:
+                        values = [values]
+                        steps = None
                 else:
-                    steps=num_scan_points
-                    values=None
+                    steps = num_scan_points
+                    values = None
                 logging.info('Performing scan of %s around the minimum found in'
                              ' the h0 fit to the h0 fiducial '
                              'distribution.'%param.name)
@@ -338,8 +358,11 @@ def main():
                                  ' file.'%steps)
                 else:
                     logging.info('Scanned range will be %i steps in the range '
-                                 'of %.4f to %.4f (+/- 10% around the supposed'
-                                 ' minimum)'%(len(values),values[0],values[-1]))
+                                 'of %.4f to %.4f (+/- 1%% around the supposed'
+                                 ' minimum)'%(len(values[0]),
+                                              values[0][0].magnitude,
+                                              values[0][-1].magnitude))
+                    
                 h0_fid_h0_hypo_scan = hypo_testing.scan(
                     data_dist=hypo_testing.h0_fid_dist,
                     hypo_maker=hypo_testing.h0_maker,
@@ -364,16 +387,37 @@ def main():
             )
             if zoom_scan:
                 fit_value = hypo_testing.h0_fit_to_h1_fid[
-                    'params'].free[param.name].value.magnitude
-                values = [np.linspace(
-                    0.9*fit_value,
-                    1.1*fit_value,
+                        'params'].free[param.name].value.magnitude
+                fit_value_units = hypo_testing.h0_fit_to_h1_fid[
+                        'params'].free[param.name].value.units
+                bare_values = np.linspace(
+                    0.99*fit_value,
+                    1.01*fit_value,
                     num_scan_points
-                )]
-                steps=None
+                )
+                values = []
+                for bare_value in bare_values:
+                    values.append(bare_value * fit_value_units)
+                if values[0] < hypo_testing.h0_fit_to_h1_fid[
+                    'params'].free[param.name].range[0]:
+                    logging.info('Zoomed scan would be outside of the '
+                                 'parameter range, so defaulting to '
+                                 'scanning just the parameter range')
+                    steps = num_scan_points
+                    values = None
+                elif values[-1] > hypo_testing.h0_fit_to_h1_fid[
+                    'params'].free[param.name].range[-1]:
+                    logging.info('Zoomed scan would be outside of the '
+                                 'parameter range, so defaulting to '
+                                 'scanning just the parameter range')
+                    steps = num_scan_points
+                    values = None
+                else:
+                    values = [values]
+                    steps = None
             else:
-                steps=num_scan_points
-                values=None
+                steps = num_scan_points
+                values = None
             logging.info('Performing scan of %s around the minimum found in'
                          ' the h0 fit to the h1 fiducial '
                          'distribution.'%param.name)
@@ -383,8 +427,10 @@ def main():
                              ' file.'%steps)
             else:
                 logging.info('Scanned range will be %i steps in the range '
-                             'of %.4f to %.4f (+/- 10% around the supposed'
-                             ' minimum)'%(len(values),values[0],values[-1]))
+                             'of %.4f to %.4f (+/- 10%% around the supposed'
+                             ' minimum)'%(len(values[0]),
+                                          values[0][0].magnitude,
+                                          values[0][-1].magnitude))
             h1_fid_h0_hypo_scan = hypo_testing.scan(
                 data_dist=hypo_testing.h1_fid_dist,
                 hypo_maker=hypo_testing.h0_maker,
@@ -409,15 +455,36 @@ def main():
             if zoom_scan:
                 fit_value = hypo_testing.h1_fit_to_h0_fid[
                     'params'].free[param.name].value.magnitude
-                values = [np.linspace(
-                    0.9*fit_value,
-                    1.1*fit_value,
+                fit_value_units = hypo_testing.h1_fit_to_h0_fid[
+                    'params'].free[param.name].value.units
+                bare_values = np.linspace(
+                    0.99*fit_value,
+                    1.01*fit_value,
                     num_scan_points
-                )]
-                steps=None
+                )
+                values = []
+                for bare_value in bare_values:
+                    values.append(bare_value * fit_value_units)
+                if values[0] < hypo_testing.h1_fit_to_h0_fid[
+                    'params'].free[param.name].range[0]:
+                    logging.info('Zoomed scan would be outside of the '
+                                 'parameter range, so defaulting to '
+                                 'scanning just the parameter range')
+                    steps = num_scan_points
+                    values = None
+                elif values[-1] > hypo_testing.h1_fit_to_h0_fid[
+                    'params'].free[param.name].range[-1]:
+                    logging.info('Zoomed scan would be outside of the '
+                                 'parameter range, so defaulting to '
+                                 'scanning just the parameter range')
+                    steps = num_scan_points
+                    values = None
+                else:
+                    values = [values]
+                    steps = None
             else:
-                steps=num_scan_points
-                values=None
+                steps = num_scan_points
+                values = None
             logging.info('Performing scan of %s around the minimum found in'
                          ' the h1 fit to the h0 fiducial '
                          'distribution.'%param.name)
@@ -427,8 +494,10 @@ def main():
                              ' file.'%steps)
             else:
                 logging.info('Scanned range will be %i steps in the range '
-                             'of %.4f to %.4f (+/- 10% around the supposed'
-                             ' minimum)'%(len(values),values[0],values[-1]))
+                             'of %.4f to %.4f (+/- 1%% around the supposed'
+                             ' minimum)'%(len(values[0]),
+                                          values[0][0].magnitude,
+                                          values[0][-1].magnitude))
             h0_fid_h1_hypo_scan = hypo_testing.scan(
                 data_dist=hypo_testing.h0_fid_dist,
                 hypo_maker=hypo_testing.h1_maker,
@@ -453,15 +522,36 @@ def main():
                 if zoom_scan:
                     fit_value = hypo_testing.h1_fit_to_h1_fid[
                         'params'].free[param.name].value.magnitude
-                    values = [np.linspace(
-                        0.9*fit_value,
-                        1.1*fit_value,
+                    fit_value_units = hypo_testing.h0_fit_to_h0_fid[
+                        'params'].free[param.name].value.units
+                    bare_values = np.linspace(
+                        0.99*fit_value,
+                        1.01*fit_value,
                         num_scan_points
-                    )]
-                    steps=None
+                    )
+                    values = []
+                    for bare_value in bare_values:
+                        values.append(bare_value * fit_value_units)
+                    if values[0] < hypo_testing.h1_fit_to_h1_fid[
+                        'params'].free[param.name].range[0]:
+                        logging.info('Zoomed scan would be outside of the '
+                                     'parameter range, so defaulting to '
+                                     'scanning just the parameter range')
+                        steps = num_scan_points
+                        values = None
+                    elif values[-1] > hypo_testing.h1_fit_to_h1_fid[
+                        'params'].free[param.name].range[-1]:
+                        logging.info('Zoomed scan would be outside of the '
+                                     'parameter range, so defaulting to '
+                                     'scanning just the parameter range')
+                        steps = num_scan_points
+                        values = None
+                    else:
+                        values = [values]
+                        steps = None
                 else:
-                    steps=num_scan_points
-                    values=None
+                    steps = num_scan_points
+                    values = None
                 logging.info('Performing scan of %s around the minimum found in'
                              ' the h1 fit to the h1 fiducial '
                              'distribution.'%param.name)
@@ -471,8 +561,10 @@ def main():
                                  ' file.'%steps)
                 else:
                     logging.info('Scanned range will be %i steps in the range '
-                                 'of %.4f to %.4f (+/- 10% around the supposed'
-                                 ' minimum)'%(len(values),values[0],values[-1]))
+                                 'of %.4f to %.4f (+/- 1%% around the supposed'
+                                 ' minimum)'%(len(values[0]),
+                                              values[0][0].magnitude,
+                                              values[0][-1].magnitude))
                 h1_fid_h1_hypo_scan = hypo_testing.scan(
                     data_dist=hypo_testing.h1_fid_dist,
                     hypo_maker=hypo_testing.h1_maker,

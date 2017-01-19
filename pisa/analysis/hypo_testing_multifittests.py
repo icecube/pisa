@@ -129,6 +129,12 @@ def parse_args():
         operation.'''
     )
     parser.add_argument(
+        '--start-hypo-nominal',
+        action='store_true', default=False,
+        help='''Set this to fix the hypothesis maker to always start at the 
+        same (nominal) values.'''
+    )
+    parser.add_argument(
         '--start-index',
         type=int, default=0,
         help='''Trial start index. Set this if you are saving files from 
@@ -147,6 +153,13 @@ def parse_args():
         type=int, default=0,
         help='''If --data-is-pseudo is set then this will be the index by 
         which the random state is defined.'''
+    )
+    parser.add_argument(
+        '--print-metric-contributions',
+        action='store_true', default=False,
+        help='''Set this to print out some more details on the various 
+        contributions to the final fit metric. Note that this is very crude so 
+        is only meant for quick debugging.'''
     )
     parser.add_argument(
         '--allow-dirty',
@@ -209,6 +222,11 @@ def main():
     start_index = init_args_d.pop('start_index')
     data_is_pseudo = init_args_d.pop('data_is_pseudo')
     data_index = init_args_d.pop('data_index')
+    randomise_params = not init_args_d.pop('start_hypo_nominal')
+    print_metric_contributions = init_args_d.pop('print_metric_contributions')
+    if print_metric_contributions:
+        from uncertainties import unumpy as unp
+        import numpy as np
     if data_is_pseudo:
         if data_index == 0:
             logging.warning('You have requested the data be a pseudo-experiment'
@@ -302,10 +320,22 @@ def main():
             method='poisson', random_state=data_random_state
         )
 
+    h0_nominal_free_params = hypo_testing.h0_maker.params.free
+    h1_nominal_free_params = hypo_testing.h1_maker.params.free
+
     for i in range(start_index,(start_index+num_trials)):
-        # Randomise seeded parameters for hypotheses
-        hypo_testing.h0_maker.randomize_free_params()
-        hypo_testing.h1_maker.randomize_free_params()
+        if randomise_params:
+            # Randomise seeded parameters for hypotheses
+            hypo_testing.h0_maker.randomize_free_params()
+            hypo_testing.h1_maker.randomize_free_params()
+        else:
+            # Ensure at nominal
+            hypo_testing.h0_maker.params.free.set_values(
+                new_params=h0_nominal_free_params
+            )
+            hypo_testing.h1_maker.params.free.set_values(
+                new_params=h1_nominal_free_params
+            )
         # Create Labels dict to distinguish each of these Asimov "trials"
         if data_is_pseudo:
             hypo_testing.labels = Labels(
@@ -328,6 +358,34 @@ def main():
             )
         # Run the fits
         hypo_testing.fit_hypos_to_data()
+        hypo_asimov_dist = hypo_testing.h1_maker.get_outputs(
+            return_sum=True
+        )
+        if print_metric_contributions:
+            print "Evaluation %i"%i
+            print "Map metric = %.11f"%hypo_testing.data_dist.metric_total(
+                expected_values=hypo_asimov_dist,
+                metric=init_args_d['metric']
+            )
+            print "Prior metric = %.11f"% \
+                hypo_testing.h1_maker.params.priors_penalty(
+                    metric=init_args_d['metric']
+                )
+            if init_args_d['metric'] == 'mod_chi2':
+                print "Bare chi2 = %.11f"% \
+                    np.sum(
+                        (unp.nominal_values(
+                            np.clip(
+                                hypo_testing.data_dist.hist['total'],
+                                a_min=1e-10,
+                                a_max=np.inf,
+                                out=hypo_testing.data_dist.hist['total']
+                            )
+                        ).ravel() - unp.nominal_values(
+                            hypo_asimov_dist.hist['total']
+                        ).ravel())**2)
+                print "Sigma term = %.11f"% \
+                    np.sum(unp.std_devs(hypo_asimov_dist.hist['total']).ravel())
         # Reset everything
         hypo_testing.h0_maker.reset_free()
         hypo_testing.h1_maker.reset_free()

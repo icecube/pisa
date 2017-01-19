@@ -22,6 +22,7 @@ import numpy as np
 import re
 
 from pisa.analysis.hypo_testing import Labels
+from pisa.analysis.hypo_testing_postprocess import plot_individual_scatter
 from pisa.utils.fileio import from_file, to_file, nsort
 from pisa.utils.log import set_verbosity, logging
 from pisa.utils.postprocess import tex_axis_label, parse_pint_string
@@ -588,8 +589,8 @@ def plot_starting_params(starting_params, fit_results, labels,
         for param in params.keys():
             plt.hist(params[param]['values'], bins=10)
             if not params[param]['units'] == 'dimensionless':
-                plt.xlabel(tex_axis_label(param) + ' ' +
-                           tex_axis_label(params[param]['units']))
+                plt.xlabel(tex_axis_label(param) + ' (' +
+                           tex_axis_label(params[param]['units']) + ')')
             else:
                 plt.xlabel(tex_axis_label(param))
             plt.ylabel('Number of Trials')
@@ -613,6 +614,174 @@ def plot_starting_params(starting_params, fit_results, labels,
                               param))
             plt.savefig(os.path.join(outdir,SaveName))
             plt.close()
+
+
+def plot_fit_metric_correlations(fit_results, starting_params, labels,
+                                 detector, selection, minimiser,
+                                 outdir, pseudokey=None):
+    '''
+    Takes the fit metric values in fit_results and plots the scatter of 
+    this with the starting point of the minimiser.
+    '''
+    outdir = os.path.join(outdir,'FitScatterPlots')
+    if not os.path.exists(outdir):
+        logging.info('Making output directory %s'%outdir)
+        os.makedirs(outdir)
+    MainTitle = '%s %s Event Selection %s Fit Metric Correlations'%(
+        detector, selection, minimiser)
+    if pseudokey is not None:
+        MainTitle += ' (Trial %s)'%pseudokey
+    for fhkey in starting_params.keys():
+        hypo = fhkey.split('_')[1]
+        params = OrderedDict()
+        num_trials = len(starting_params[fhkey].keys())
+        final_metric_vals = []
+        for fit in starting_params[fhkey].keys():
+            metric_name = fit_results[fhkey][fit]['metric']
+            final_metric_vals.append(fit_results[fhkey][fit]['metric_val'])
+            if len(params.keys()) == 0:
+                params[metric_name] = {}
+                params[metric_name]['values'] = []
+                params[metric_name]['units'] = 'dimensionless'
+                for param in fit_results[fhkey][fit]['params'].keys():
+                    params[param] = {}
+                    params[param]['values'] = []
+                    val, units = parse_pint_string(
+                        pint_string=fit_results[fhkey][fit]['params'][param]
+                    )
+                    params[param]['units'] = units
+            for param,val in zip(params.keys(),
+                                 starting_params[fhkey][fit]['fit_history']):
+                params[param]['values'].append(float(val))
+        FitTitle = ("True %s, Hypothesis %s (%i Asimov Fits)"
+                    %(labels['data_name'],
+                      hypo,
+                      num_trials))
+        for param in params.keys():
+            plt.scatter(params[param]['values'], final_metric_vals)
+            if not params[param]['units'] == 'dimensionless':
+                plt.xlabel('Minimiser Starting '+tex_axis_label(param)+' ('+
+                           tex_axis_label(params[param]['units'])+')')
+            else:
+                plt.xlabel('Minimiser Starting '+tex_axis_label(param))
+            plt.ylabel('Final '+tex_axis_label(metric_name))
+            min_fit_val = min(final_metric_vals)
+            max_fit_val = max(final_metric_vals)
+            range_fit_val = max_fit_val - min_fit_val
+            plt.ylim(min_fit_val-0.1*range_fit_val,
+                     max_fit_val+0.1*range_fit_val)
+            plt.title(MainTitle+r'\\'+FitTitle, fontsize=16)
+            if pseudokey is not None:
+                SaveName = (
+                    "true_%s_%s_%s_trial_%s_hypo_%s_%s_starting_"
+                    "vals_correlation_with_fit_%s.png"
+                    %(labels['data_name'],
+                      detector,
+                      selection,
+                      pseudokey,
+                      hypo,
+                      param,
+                      metric_name)
+                )
+            else:
+                SaveName = ("true_%s_%s_%s_hypo_%s_%s_starting_"
+                            "vals_correlation_with_fit_%s.png"
+                            %(labels['data_name'],
+                              detector,
+                              selection,
+                              hypo,
+                              param,
+                              metric_name)
+                )
+            plt.savefig(os.path.join(outdir,SaveName))
+            plt.close()
+
+
+def plot_starting_param_correlations(fit_results, starting_params, labels,
+                                     detector, selection, minimiser,
+                                     outdir, pseudokey=None):
+    '''
+    Plots scatter graphs of the starting parameters of the minimiser.
+    '''
+    outdir = os.path.join(outdir,'StartingParamScatterPlots')
+    if not os.path.exists(outdir):
+        logging.info('Making output directory %s'%outdir)
+        os.makedirs(outdir)
+    MainTitle = '%s %s Event Selection %s Starting Param Correlations'%(
+        detector, selection, minimiser)
+    if pseudokey is not None:
+        MainTitle += ' (Trial %s)'%pseudokey
+    for fhkey in starting_params.keys():
+        hypo = fhkey.split('_')[1]
+        params = OrderedDict()
+        num_trials = len(starting_params[fhkey].keys())
+        for fit in starting_params[fhkey].keys():
+            metric_name = fit_results[fhkey][fit]['metric']
+            if len(params.keys()) == 0:
+                params[metric_name] = {}
+                params[metric_name]['values'] = []
+                params[metric_name]['units'] = 'dimensionless'
+                for param in fit_results[fhkey][fit]['params'].keys():
+                    params[param] = {}
+                    params[param]['values'] = []
+                    val, units = parse_pint_string(
+                        pint_string=fit_results[fhkey][fit]['params'][param]
+                    )
+                    params[param]['units'] = units
+            for param,val in zip(params.keys(),
+                                 starting_params[fhkey][fit]['fit_history']):
+                params[param]['values'].append(float(val))
+        FitTitle = ("True %s, Hypothesis %s (%i Asimov Fits)"
+                    %(labels['data_name'],
+                      hypo,
+                      num_trials))
+        for x_param in params.keys():
+            for y_param in params.keys():
+                if x_param != y_param:
+                    plt.scatter(params[x_param]['values'],
+                                params[y_param]['values'])
+                    if not params[x_param]['units'] == 'dimensionless':
+                        plt.xlabel('Minimiser Starting '
+                                   +tex_axis_label(x_param)+' ('+
+                                   tex_axis_label(params[x_param]['units'])
+                                   +')')
+                    else:
+                        plt.xlabel('Minimiser Starting '
+                                   +tex_axis_label(x_param))
+                    if not params[y_param]['units'] == 'dimensionless':
+                        plt.ylabel('Minimiser Starting '
+                                   +tex_axis_label(y_param)+' ('+
+                                   tex_axis_label(params[y_param]['units'])
+                                   +')')
+                    else:
+                        plt.ylabel('Minimiser Starting '
+                                   +tex_axis_label(y_param))
+                    plt.title(MainTitle+r'\\'+FitTitle, fontsize=16)
+                    if pseudokey is not None:
+                        SaveName = (
+                            "true_%s_%s_%s_trial_%s_hypo_%s_%s_starting_"
+                            "vals_correlation_with_%s_starting_vals.png"
+                            %(labels['data_name'],
+                              detector,
+                              selection,
+                              pseudokey,
+                              hypo,
+                              x_param,
+                              y_param)
+                        )
+                    else:
+                        SaveName = (
+                            "true_%s_%s_%s_hypo_%s_%s_starting_vals_"
+                            "correlation_with_%s_starting_vals.png"
+                            %(labels['data_name'],
+                              detector,
+                              selection,
+                              hypo,
+                              x_param,
+                              y_param)
+                        )
+                    plt.savefig(os.path.join(outdir,SaveName))
+                    plt.close()
 
     
 def parse_args():
@@ -684,6 +853,26 @@ def main():
 
         for injkey in data_sets.keys():
 
+            plot_starting_param_correlations(
+                fit_results=data_sets[injkey],
+                starting_params=starting_params[injkey],
+                labels=labels.dict,
+                detector=detector,
+                selection=selection,
+                minimiser=minimiser,
+                outdir=outdir
+            )
+
+            plot_fit_metric_correlations(
+                fit_results=data_sets[injkey],
+                starting_params=starting_params[injkey],
+                labels=labels.dict,
+                detector=detector,
+                selection=selection,
+                minimiser=minimiser,
+                outdir=outdir
+            )
+
             plot_starting_params(
                 starting_params=starting_params[injkey],
                 fit_results=data_sets[injkey],
@@ -723,6 +912,28 @@ def main():
 
         for injkey in data_sets.keys():
             for pseudokey in data_sets[injkey].keys():
+
+                plot_starting_param_correlations(
+                    fit_results=data_sets[injkey][pseudokey],
+                    starting_params=starting_params[injkey][pseudokey],
+                    labels=labels.dict,
+                    detector=detector,
+                    selection=selection,
+                    minimiser=minimiser,
+                    outdir=outdir,
+                    pseudokey=pseudokey
+                )
+                
+                plot_fit_metric_correlations(
+                    fit_results=data_sets[injkey][pseudokey],
+                    starting_params=starting_params[injkey][pseudokey],
+                    labels=labels.dict,
+                    detector=detector,
+                    selection=selection,
+                    minimiser=minimiser,
+                    outdir=outdir,
+                    pseudokey=pseudokey
+                )
 
                 plot_starting_params(
                     starting_params=starting_params[injkey][pseudokey],
