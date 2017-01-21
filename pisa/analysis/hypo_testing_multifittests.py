@@ -135,6 +135,13 @@ def parse_args():
         same (nominal) values.'''
     )
     parser.add_argument(
+        '--fix-muon-scale',
+        action='store_true', default=False,
+        help='''Set this to fix the muon scale to the nominal value. Use this 
+        when wanting to evaluate "fixed" error for the muons so the final 
+        returned chi2 doesn't inherently vary just because of this.'''
+    )
+    parser.add_argument(
         '--start-index',
         type=int, default=0,
         help='''Trial start index. Set this if you are saving files from 
@@ -304,6 +311,8 @@ def main():
     init_args_d['data_maker'].select_params(
         init_args_d['data_param_selections']
     )
+
+    fix_muon_scale = init_args_d.pop('fix_muon_scale')
     
 
     # Instantiate the analysis object
@@ -312,6 +321,15 @@ def main():
     hypo_testing.write_config_summary()
     hypo_testing.write_minimizer_settings()
     hypo_testing.write_run_info()
+
+    if fix_muon_scale:
+        if 'atm_muon_scale' in hypo_testing.h0_maker.params.names:
+            nominal_muon_scale = hypo_testing.h0_maker.params[
+                'atm_muon_scale'].value
+        else:
+            raise ValueError("You have requested to fix the atmospheric muon "
+                             "scale but there doesn't appear to be atmospheric"
+                             " muons in the files. Aborting.")
 
     hypo_testing.generate_data()
     if data_is_pseudo:
@@ -328,6 +346,11 @@ def main():
             # Randomise seeded parameters for hypotheses
             hypo_testing.h0_maker.randomize_free_params()
             hypo_testing.h1_maker.randomize_free_params()
+            if fix_muon_scale:
+                hypo_testing.h0_maker.params[
+                    'atm_muon_scale'].value = nominal_muon_scale
+                hypo_testing.h1_maker.params[
+                    'atm_muon_scale'].value = nominal_muon_scale
         else:
             # Ensure at nominal
             hypo_testing.h0_maker.params.free.set_values(
