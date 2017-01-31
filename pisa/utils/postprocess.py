@@ -64,8 +64,8 @@ def parse_pint_string(pint_string):
 def extract_gaussian(prior_string, units):
     '''
     Parses the string for the Gaussian priors that comes from the config 
-    summary file in the logdir. This should account for dimensions though is 
-    only tested with degrees.
+    summary file in the logdir. This should account for dimensions though has 
+    only been proven with "deg" and "ev ** 2".
     '''
     if units == 'dimensionless':
         parse_string = ('gaussian prior: stddev=(.*)'
@@ -78,15 +78,28 @@ def extract_gaussian(prior_string, units):
         stddev = float(bits.group(1))
         maximum = float(bits.group(2))
     else:
-        parse_string = ('gaussian prior: stddev=(.*) (.*)'
-                        ', maximum at (.*) (.*)')
-        bits = re.match(
-            parse_string,
-            prior_string,
-            re.M|re.I
-        )
-        stddev = float(bits.group(1))
-        maximum = float(bits.group(3))
+        try:
+            # This one works for deg and other single string units
+            parse_string = ('gaussian prior: stddev=(.*) (.*)'
+                            ', maximum at (.*) (.*)')
+            bits = re.match(
+                parse_string,
+                prior_string,
+                re.M|re.I
+            )
+            stddev = float(bits.group(1))
+            maximum = float(bits.group(3))
+        except:
+            # This one works for ev ** 2 and other triple string units
+            parse_string = ('gaussian prior: stddev=(.*) (.*) (.*) (.*)'
+                            ', maximum at (.*) (.*) (.*) (.*)')
+            bits = re.match(
+                parse_string,
+                prior_string,
+                re.M|re.I
+            )
+            stddev = float(bits.group(1))
+            maximum = float(bits.group(5))
 
     return stddev, maximum
 
@@ -103,3 +116,86 @@ def get_num_rows(data, omit_metric=False):
     if len(data.keys())%4 != 0:
         num_rows += 1
     return num_rows
+
+
+def parse_binning_string(binning_string):
+    '''
+    Returns a dictionary that can be used to instantiate a binning object from
+    the output of having run str on the original binning object.
+    '''
+    if 'MultiDimBinning' in binning_string:
+        raise ValueError('This function is designed to work with OneDimBinning'
+                         ' objects. You should separate the MultiDimBinning '
+                         'string in to the separate OneDimBinning strings '
+                         'before calling this function and then reconnect them'
+                         ' in to the MultiDimBinning object after.')
+    if 'OneDimBinning' not in binning_string:
+        raise ValueError('String expected to have OneDimBinning in it. Got %s'
+                         %binning_string)
+    binning_dict = {}
+    if '1 bin ' in binning_string:
+        raise ValueError('Singular bin case not dealt with yet')
+    elif 'irregularly' in binning_string:
+        parse_string = ('OneDimBinning\((.*), (.*) irregularly-sized ' + \
+                        'bins with edges at \[(.*)\] (.*)\)')
+        a = re.match(parse_string, binning_string, re.M|re.I)
+        # Match should come out None is the bins don't have units
+        if a is None:
+            parse_string = ('OneDimBinning\((.*), (.*) irregularly-sized ' + \
+                            'bins with edges at \[(.*)\]\)')
+            a = re.match(parse_string, binning_string, re.M|re.I)
+        else:
+            binning_dict['units'] = a.group(4)
+        binning_dict['name'] = a.group(1).strip('\'')
+        binning_dict['num_bins'] = int(a.group(2))
+        binning_dict['bin_edges'] = [float(i) for i in a.group(3).split(', ')]
+    elif 'logarithmically' in binning_string:
+        parse_string = ('OneDimBinning\((.*), (.*) logarithmically-uniform ' + \
+                        'bins spanning \[(.*), (.*)\] (.*)\)')
+        a = re.match(parse_string, binning_string, re.M|re.I)
+        # Match should come out None is the bins don't have units
+        if a is None:
+            parse_string = ('OneDimBinning\((.*), (.*) logarithmically' + \
+                            '-uniform bins spanning \[(.*), (.*)\]\)')
+            a = re.match(parse_string, binning_string, re.M|re.I)
+        else:
+            binning_dict['units'] = a.group(5)
+        binning_dict['name'] = a.group(1).strip('\'')
+        binning_dict['num_bins'] = int(a.group(2))
+        binning_dict['domain'] = [float(a.group(3)), float(a.group(4))]
+        binning_dict['is_log'] = True
+    elif 'equally-sized' in binning_string:
+        parse_string = ('OneDimBinning\((.*), (.*) equally-sized ' + \
+                        'bins spanning \[(.*) (.*)\] (.*)\)')
+        a = re.match(parse_string, binning_string, re.M|re.I)
+        # Match should come out None is the bins don't have units
+        if a is None:
+            parse_string = ('OneDimBinning\((.*), (.*) equally-sized ' + \
+                            'bins spanning \[(.*), (.*)\]\)')
+            a = re.match(parse_string, binning_string, re.M|re.I)
+        else:
+            binning_dict['units'] = a.group(5)
+        binning_dict['name'] = a.group(1).strip('\'')
+        binning_dict['num_bins'] = int(a.group(2))
+        binning_dict['domain'] = [float(a.group(3)), float(a.group(4))]
+        binning_dict['is_lin'] = True
+
+    add_tex_to_binning(binning_dict)
+    return binning_dict
+
+
+def add_tex_to_binning(binning_dict):
+    '''
+    Will add a tex to binning dictionaries parsed with the above function.
+    '''
+    if 'reco' in binning_dict['name']:
+        sub_string = 'reco'
+    elif 'true' in binning_dict['name']:
+        sub_string = 'true'
+    else:
+        sub_string = None
+    if 'energy' in binning_dict['name']:
+        binning_dict['tex'] = r'$E_{%s}$'%sub_string
+    elif 'coszen' in binning_dict['name']:
+        binning_dict['tex'] = r'$\cos\theta_{Z,%s}$'%sub_string
+    

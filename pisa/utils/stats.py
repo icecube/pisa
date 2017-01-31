@@ -355,7 +355,9 @@ def mod_chi2(actual_values, expected_values):
 
     Returns
     -------
-    sum(mod_chi2)
+    m_chi2 : numpy.ndarray of same shape as inputs
+        modified chi-squared values corresponding to each pair of elements in 
+        the inputs
 
     """
     # Replace 0's with small positive numbers to avoid inf in log
@@ -367,4 +369,4 @@ def mod_chi2(actual_values, expected_values):
     m_chi2 = (
         (actual_values - expected_values)**2 / (sigma**2 + expected_values)
     )
-    return np.sum(m_chi2)
+    return m_chi2
