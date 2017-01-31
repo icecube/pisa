@@ -1125,6 +1125,25 @@ class Map(object):
         return np.sum(stats.mod_chi2(actual_values=self.hist,
                                      expected_values=expected_values))
 
+    def binned_mod_chi2(self, expected_values):
+        """Calculate the binned modified chi2 value between this map and the map
+        described by `expected_values`; self is taken to be the "actual values"
+        (or (pseudo)data), and `expected_values` are the expectation values for
+        each bin.
+
+        Parameters
+        ----------
+        expected_values : numpy.ndarray or Map of same dimension as this
+
+        Returns
+        -------
+        binned mod_chi2 : numpy.ndarray of same shape as inputs
+
+        """
+        expected_values = reduceToHist(expected_values)
+        return stats.mod_chi2(actual_values=self.hist,
+                              expected_values=expected_values)
+    
     def chi2(self, expected_values):
         """Calculate the total chi-squared value between this map and the map
         described by `expected_values`; self is taken to be the "actual values"
@@ -2211,6 +2230,12 @@ class MapSet(object):
         if metric in stats.ALL_METRICS:
             return self.apply_to_maps(metric, expected_values)
         else:
+            if 'binned_' in metric:
+                if metric.split('binned_')[-1] in stats.ALL_METRICS:
+                    return self.apply_to_maps(metric, expected_values)
+                else:
+                    raise ValueError('`metric` "%s" not recognized; use one of' 
+                                     ' %s.'%(metric, stats.ALL_METRICS))
             raise ValueError('`metric` "%s" not recognized; use one of %s.'
                              %(metric, stats.ALL_METRICS))
 
