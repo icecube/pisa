@@ -60,6 +60,12 @@ def parse_args():
         octant.'''
     )
     parser.add_argument(
+        '--ordering-check',
+        action='store_true',
+        help='''Fit both ordering hypotheses. This should only be flagged if 
+        the ordering is NOT the discrete hypothesis being tested'''
+    )
+    parser.add_argument(
         '--h0-pipeline', required=True,
         type=str, action='append', metavar='PIPELINE_CFG',
         help='''Settings for the generation of hypothesis h0
@@ -206,6 +212,7 @@ def main():
 
     set_verbosity(init_args_d.pop('v'))
     init_args_d['check_octant'] = not init_args_d.pop('no_octant_check')
+    init_args_d['check_ordering'] = init_args_d.pop('ordering_check')
 
     init_args_d['data_is_data'] = False
 

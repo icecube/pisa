@@ -85,6 +85,33 @@ def parse_args():
         argument (or use "all") to specify multiple metrics.'''
     )
     parser.add_argument(
+        '--num-trials',
+        type=int, default=1,
+        help='''Number of fits to run. The minimiser start point is 
+        randomised in every case, and so running multiple is NOT the same 
+        operation.'''
+    )
+    parser.add_argument(
+        '--start-hypo-nominal',
+        action='store_true', default=False,
+        help='''Set this to fix the hypothesis maker to always start at the 
+        same (nominal) values.'''
+    )
+    parser.add_argument(
+        '--fix-muon-scale',
+        action='store_true', default=False,
+        help='''Set this to fix the muon scale to the nominal value. Use this 
+        when wanting to evaluate "fixed" error for the muons so the final 
+        returned chi2 doesn't inherently vary just because of this.'''
+    )
+    parser.add_argument(
+        '--start-index',
+        type=int, default=0,
+        help='''Trial start index. Set this if you are saving files from 
+        multiple runs in to the same log directory otherwise files may end up 
+        being overwritten!'''
+    )
+    parser.add_argument(
         '--pprint',
         action='store_true',
         help='''Live-updating one-line vew of metric and parameter values. (The
@@ -123,6 +150,10 @@ def main():
     # HypoTesting object via dictionary's `pop()` method.
 
     set_verbosity(init_args_d.pop('v'))
+    num_trials = init_args_d.pop('num_trials')
+    start_index = init_args_d.pop('start_index')
+    randomise_params = not init_args_d.pop('start_hypo_nominal')
+    fix_muon_scale = init_args_d.pop('fix_muon_scale')
     
     init_args_d['check_octant'] = True
     init_args_d['data_is_data'] = True
@@ -181,55 +212,129 @@ def main():
     # Instantiate the analysis object
     analysis = Analysis()
 
-    best_fit_no_hypo, alt_fit_no_hypo = analysis.fit_hypo(
-        data_dist = data_maker.get_outputs(return_sum=True),
-        hypo_maker = mc_maker,
-        hypo_param_selections = 'nh',
-        metric = init_args_d['metric'],
-        minimizer_settings = init_args_d['minimizer_settings'],
-        check_octant = True,
-        other_metrics = init_args_d['other_metrics'],
-        blind = True,
-        pprint = init_args_d['pprint']
-    )
-    # Immediately overwrite the alt_fit object just so as not to do
-    # anything wrong...
-    alt_fit_no_hypo = None
+    if fix_muon_scale:
+        if 'atm_muon_scale' in mc_maker.params.names:
+            nominal_muon_scale = mc_maker.params['atm_muon_scale'].value
+        else:
+            raise ValueError("You have requested to fix the atmospheric muon "
+                             "scale but there doesn't appear to be atmospheric"
+                             " muons in the files. Aborting.")
 
-    if not os.path.exists(init_args_d['logdir']):
-        logging.info('Making output directory %s'%init_args_d['logdir'])
-        os.makedirs(init_args_d['logdir'])
+    if num_trials == 0:
 
-    # Stealing log_fit function from hypo_testing
-    serialize = ['metric', 'metric_val', 'params', 'minimizer_time',
-                 'detailed_metric_info', 'minimizer_metadata']
-    info = OrderedDict()
-    for k, v in best_fit_no_hypo.iteritems():
-        if k not in serialize:
-            continue
-        if k == 'params':
-            d = OrderedDict()
-            for param in v.free:
-                d[param.name] = str(param.value)
-            v = d
-        if k == 'minimizer_metadata':
-            if 'hess_inv' in v:
-                try:
-                    v['hess_inv'] = v['hess_inv'].todense()
-                except AttributeError:
-                    v['hess_inv'] = v['hess_inv']
-        if isinstance(v, pint.quantity._Quantity):
-            v = str(v)
-        info[k] = v
-    info['params'] = mc_maker.params.free.names
-    to_file(
-        info,
-        os.path.join(
-            init_args_d['logdir'],
-            'nmo_blind_fit_result.json'
+        best_fit_no_hypo, alt_fit_no_hypo = analysis.fit_hypo(
+            data_dist = data_maker.get_outputs(return_sum=True),
+            hypo_maker = mc_maker,
+            hypo_param_selections = 'nh',
+            metric = init_args_d['metric'],
+            minimizer_settings = init_args_d['minimizer_settings'],
+            check_octant = True,
+            other_metrics = init_args_d['other_metrics'],
+            blind = True,
+            pprint = init_args_d['pprint']
         )
-    )
+        # Immediately overwrite the alt_fit object just so as not to do
+        # anything wrong...
+        alt_fit_no_hypo = None
 
+        if not os.path.exists(init_args_d['logdir']):
+            logging.info('Making output directory %s'%init_args_d['logdir'])
+            os.makedirs(init_args_d['logdir'])
+
+        # Stealing log_fit function from hypo_testing
+        serialize = ['metric', 'metric_val', 'params', 'minimizer_time',
+                     'detailed_metric_info', 'minimizer_metadata']
+        info = OrderedDict()
+        for k, v in best_fit_no_hypo.iteritems():
+            if k not in serialize:
+                continue
+            if k == 'params':
+                d = OrderedDict()
+                for param in v.free:
+                    d[param.name] = str(param.value)
+                v = d
+            if k == 'minimizer_metadata':
+                if 'hess_inv' in v:
+                    try:
+                        v['hess_inv'] = v['hess_inv'].todense()
+                    except AttributeError:
+                        v['hess_inv'] = v['hess_inv']
+            if isinstance(v, pint.quantity._Quantity):
+                v = str(v)
+            info[k] = v
+        info['params'] = mc_maker.params.free.names
+        to_file(
+            info,
+            os.path.join(
+                init_args_d['logdir'],
+                'nmo_blind_fit_result.json'
+            )
+        )
+
+    else:
+
+        mc_nominal_free_params = mc_maker.params.free
+
+        for i in range(start_index, (start_index+num_trials)):
+            if randomise_params:
+                # Randomise seeded parameters for hypotheses
+                mc_maker.randomize_free_params()
+                if fix_muon_scale:
+                    mc_maker.params['atm_muon_scale'].value = nominal_muon_scale
+            else:
+                # Ensure at nominal
+                mc_maker.params.free.set_values(
+                    new_params=mc_nominal_free_params
+                )
+            best_fit_no_hypo, alt_fit_no_hypo = analysis.fit_hypo(
+                data_dist = data_maker.get_outputs(return_sum=True),
+                hypo_maker = mc_maker,
+                hypo_param_selections = 'nh',
+                metric = init_args_d['metric'],
+                minimizer_settings = init_args_d['minimizer_settings'],
+                check_octant = True,
+                other_metrics = init_args_d['other_metrics'],
+                blind = True,
+                pprint = init_args_d['pprint']
+            )
+            # Immediately overwrite the alt_fit object just so as not to do
+            # anything wrong...
+            alt_fit_no_hypo = None
+
+            if not os.path.exists(init_args_d['logdir']):
+                logging.info('Making output directory %s'%init_args_d['logdir'])
+                os.makedirs(init_args_d['logdir'])
+
+            # Stealing log_fit function from hypo_testing
+            serialize = ['metric', 'metric_val', 'params', 'minimizer_time',
+                         'detailed_metric_info', 'minimizer_metadata']
+            info = OrderedDict()
+            for k, v in best_fit_no_hypo.iteritems():
+                if k not in serialize:
+                    continue
+                if k == 'params':
+                    d = OrderedDict()
+                    for param in v.free:
+                        d[param.name] = str(param.value)
+                    v = d
+                if k == 'minimizer_metadata':
+                    if 'hess_inv' in v:
+                        try:
+                            v['hess_inv'] = v['hess_inv'].todense()
+                        except AttributeError:
+                            v['hess_inv'] = v['hess_inv']
+                if isinstance(v, pint.quantity._Quantity):
+                    v = str(v)
+                info[k] = v
+            info['params'] = mc_maker.params.free.names
+            to_file(
+                info,
+                os.path.join(
+                    init_args_d['logdir'],
+                    'nmo_blind_fit_result_%i.json'%i
+                )
+            )
+            mc_maker.reset_free()
 
 if __name__ == '__main__':
     main()

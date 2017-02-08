@@ -69,7 +69,8 @@ class Analysis(object):
 
     def fit_hypo(self, data_dist, hypo_maker, hypo_param_selections, metric,
                  minimizer_settings, reset_free=True, check_octant=True,
-                 other_metrics=None, blind=False, pprint=True):
+                 check_ordering=False, other_metrics=None,
+                 blind=False, pprint=True):
         """Fitter "outer" loop: If `check_octant` is True, run
         `fit_hypo_inner` starting in each octant of theta23 (assuming that
         is a param in the `hypo_maker`). Otherwise, just run the inner
@@ -110,6 +111,10 @@ class Analysis(object):
             free), the fit will be re-run in the second (first) octant if
             theta23 is initialized in the first (second) octant.
 
+        check_ordering : bool
+            If the ordering is not in the hypotheses already being tested, the
+            fit will be run in both orderings.
+
         other_metrics : None, string, or list of strings
             After finding the best fit, these other metrics will be evaluated
             for each output that contributes to the overall fit. All strings
@@ -133,45 +138,41 @@ class Analysis(object):
         alternate_fits : list of `fit_info` from other fits run
 
         """
-        # Select the version of the parameters used for this hypothesis
-        hypo_maker.select_params(hypo_param_selections)
 
-        # Reset free parameters to nominal values
-        if reset_free:
-            hypo_maker.reset_free()
+        if check_ordering:
+            if 'nh' in hypo_param_selections or 'ih' in hypo_param_selections:
+                raise ValueError('One of the orderings has already been '
+                                 'specified as one of the hypotheses but the '
+                                 'fit has been requested to check both. These '
+                                 'are incompatible.')
+
+            logging.info('Performing fits in both orderings.')
+            extra_param_selections = ['nh','ih']
         else:
-            # Saves the current minimiser start values for the octant check
-            minimiser_start_params = hypo_maker.params
+            extra_param_selections = [None]
 
         alternate_fits = []
 
-        best_fit_info = self.fit_hypo_inner(
-            hypo_maker=hypo_maker,
-            data_dist=data_dist,
-            metric=metric,
-            minimizer_settings=minimizer_settings,
-            other_metrics=other_metrics,
-            pprint=pprint,
-            blind=blind
-        )
+        print hypo_param_selections
 
-        # Decide whether fit for other octant is necessary
-        if check_octant and 'theta23' in hypo_maker.params.free.names:
-            logging.debug('checking other octant of theta23')
+        for extra_param_selection in extra_param_selections:
+
+            if extra_param_selection is not None:
+                full_param_selections = hypo_param_selections
+                full_param_selections.append(extra_param_selection)
+            else:
+                full_param_selections = hypo_param_selections
+            # Select the version of the parameters used for this hypothesis
+            hypo_maker.select_params(full_param_selections)
+
+            # Reset free parameters to nominal values
             if reset_free:
                 hypo_maker.reset_free()
             else:
-		for param in minimiser_start_params:
-		    hypo_maker.params[param.name].value = param.value
+                # Saves the current minimiser start values for the octant check
+                minimiser_start_params = hypo_maker.params
 
-            # Hop to other octant by reflecting about 45 deg
-            theta23 = hypo_maker.params.theta23
-            inflection_point = (45*ureg.deg).to(theta23.units)
-            theta23.value = 2*inflection_point - theta23.value
-            hypo_maker.update_params(theta23)
-
-            # Re-run minimizer starting at new point
-            new_fit_info = self.fit_hypo_inner(
+            best_fit_info = self.fit_hypo_inner(
                 hypo_maker=hypo_maker,
                 data_dist=data_dist,
                 metric=metric,
@@ -181,23 +182,49 @@ class Analysis(object):
                 blind=blind
             )
 
-            # Take the one with the best fit
-            if metric in METRICS_TO_MAXIMIZE:
-                it_got_better = new_fit_info['metric_val'] > \
+            # Decide whether fit for other octant is necessary
+            if check_octant and 'theta23' in hypo_maker.params.free.names:
+                logging.debug('checking other octant of theta23')
+                if reset_free:
+                    hypo_maker.reset_free()
+                else:
+                    for param in minimiser_start_params:
+                        hypo_maker.params[param.name].value = param.value
+
+                # Hop to other octant by reflecting about 45 deg
+                theta23 = hypo_maker.params.theta23
+                inflection_point = (45*ureg.deg).to(theta23.units)
+                theta23.value = 2*inflection_point - theta23.value
+                hypo_maker.update_params(theta23)
+
+                # Re-run minimizer starting at new point
+                new_fit_info = self.fit_hypo_inner(
+                    hypo_maker=hypo_maker,
+                    data_dist=data_dist,
+                    metric=metric,
+                    minimizer_settings=minimizer_settings,
+                    other_metrics=other_metrics,
+                    pprint=pprint,
+                    blind=blind
+                )
+
+                # Take the one with the best fit
+                if metric in METRICS_TO_MAXIMIZE:
+                    it_got_better = new_fit_info['metric_val'] > \
                         best_fit_info['metric_val']
-            else:
-                it_got_better = new_fit_info['metric_val'] < \
+                else:
+                    it_got_better = new_fit_info['metric_val'] < \
                         best_fit_info['metric_val']
 
-            if it_got_better:
-                alternate_fits.append(best_fit_info)
-                best_fit_info = new_fit_info
-                if not blind:
-                    logging.debug('Accepting other-octant fit')
-            else:
-                alternate_fits.append(new_fit_info)
-                if not blind:
-                    logging.debug('Accepting initial-octant fit')
+                if it_got_better:
+                    alternate_fits.append(best_fit_info)
+                    best_fit_info = new_fit_info
+                    if not blind:
+                        logging.debug('Accepting other-octant fit')
+                else:
+                    alternate_fits.append(new_fit_info)
+                    if not blind:
+                        logging.debug('Accepting initial-octant fit')
 
         return best_fit_info, alternate_fits
 
