@@ -327,6 +327,7 @@ class HypoTesting(Analysis):
                  num_data_trials=1, num_fid_trials=1,
                  data_start_ind=0, fid_start_ind=0,
                  check_octant=True,
+                 check_ordering=False,
                  allow_dirty=False, allow_no_git_info=False,
                  blind=False, store_minimizer_history=True, pprint=False,
                  reset_free=True):
@@ -472,6 +473,7 @@ class HypoTesting(Analysis):
         self.logdir = logdir
         self.minimizer_settings = minimizer_settings
         self.check_octant = check_octant
+        self.check_ordering = check_ordering
 
         self.h0_maker = h0_maker
         self.h0_param_selections = h0_param_selections
@@ -748,6 +750,7 @@ class HypoTesting(Analysis):
                 other_metrics=self.other_metrics,
                 minimizer_settings=self.minimizer_settings,
                 check_octant=self.check_octant,
+                check_ordering=self.check_ordering,
                 pprint=self.pprint,
                 blind=self.blind,
                 reset_free=self.reset_free
@@ -790,6 +793,7 @@ class HypoTesting(Analysis):
                 other_metrics=self.other_metrics,
                 minimizer_settings=self.minimizer_settings,
                 check_octant=self.check_octant,
+                check_ordering=self.check_ordering,
                 pprint=self.pprint,
                 blind=self.blind,
                 reset_free=self.reset_free
@@ -871,6 +875,7 @@ class HypoTesting(Analysis):
                     other_metrics=self.other_metrics,
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
+                    check_ordering=self.check_ordering,
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free
@@ -910,6 +915,7 @@ class HypoTesting(Analysis):
                     other_metrics=self.other_metrics,
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
+                    check_ordering=self.check_ordering,
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free
@@ -954,6 +960,7 @@ class HypoTesting(Analysis):
                     other_metrics=self.other_metrics,
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
+                    check_ordering=self.check_ordering,
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free
@@ -991,6 +998,7 @@ class HypoTesting(Analysis):
                     other_metrics=self.other_metrics,
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
+                    check_ordering=self.check_ordering,
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free
@@ -1215,6 +1223,7 @@ class HypoTesting(Analysis):
         d['minimizer_name'] = self.minimizer_settings['method']['value']
         d['minimizer_settings_hash'] = self.minimizer_settings_hash
         d['check_octant'] = self.check_octant
+        d['check_ordering'] = self.check_ordering
         d['metric_optimized'] = self.metric
         summary['minimizer_info'] = d
 
@@ -1416,6 +1425,12 @@ def parse_args():
         action='store_true',
         help='''Disable fitting hypotheses in theta23 octant opposite initial
         octant.'''
+    )
+    parser.add_argument(
+        '--ordering-check',
+        action='store_true',
+        help='''Fit both ordering hypotheses. This should only be flagged if 
+        the ordering is NOT the discrete hypothesis being tested'''
     )
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
@@ -1624,6 +1639,7 @@ def main():
 
     set_verbosity(init_args_d.pop('v'))
     init_args_d['check_octant'] = not init_args_d.pop('no_octant_check')
+    init_args_d['check_ordering'] = init_args_d.pop('ordering_check')
 
     init_args_d['data_is_data'] = not init_args_d.pop('data_is_mc')
 
