@@ -293,6 +293,11 @@ def extract_asimov_data(data_sets, labels):
                     TO_to_WO_fit['params'][systkey]
                 )
 
+    WO_to_TO_params['bestfit'] = bestfit
+    WO_to_TO_params['altfit'] = altfit
+    TO_to_WO_params['bestfit'] = bestfit
+    TO_to_WO_params['altfit'] = altfit
+
     return WO_to_TO_metrics, TO_to_WO_metrics, WO_to_TO_params, TO_to_WO_params
 
 
@@ -308,28 +313,29 @@ def calculate_deltachi2_signifiances(WO_to_TO_metrics, TO_to_WO_metrics):
     return significances
 
 
-def plot_significance(inj_param_vals, significances, truth, inj_param_name):
+def plot_significance(inj_param_vals, significances, truth, inj_param_name,
+                      testlabel=None):
     '''
     This function will do the actual plotting of the significances.
     '''
     # Use the NMO colouring scheme
-    if truth == 'no':
+    if 'no' in truth:
         plt.plot(
             inj_param_vals,
             significances,
             linewidth=2,
             marker='o',
             color='r',
-            label='True %s'%truth
+            label='True %s'%(tex_axis_label(truth))
         )
-    elif truth == 'io':
+    elif 'io' in truth:
         plt.plot(
             inj_param_vals,
             significances,
             linewidth=2,
             marker='o',
             color='b',
-            label='True %s'%truth
+            label='True %s'%(tex_axis_label(truth))
         )
     # Else just make them black
     else:
@@ -339,16 +345,20 @@ def plot_significance(inj_param_vals, significances, truth, inj_param_name):
             linewidth=2,
             marker='o',
             color='k',
-            label='True %s'%truth
+            label='True %s'%(tex_axis_label(truth))
         )
     yrange = max(significances)-min(significances)
     plt.ylim(min(significances)-0.1*yrange,max(significances)+0.1*yrange)
     plt.xlabel(tex_axis_label(inj_param_name))
-    plt.ylabel(r'Significance ($\sigma$)')
+    if testlabel is not None:
+        plt.ylabel(r'%s Significance ($\sigma$)'%testlabel)
+    else:
+        plt.ylabel(r'Significance ($\sigma$)')
 
 
 def plot_significances(WO_to_TO_metrics, TO_to_WO_metrics, inj_param_vals,
-                       inj_param_name, labels, detector, selection, outdir):
+                       bestfit, altfit, inj_param_name, labels, detector,
+                       selection, outdir):
     '''
     Takes the two sets of metrics relevant to the Asimov-based analysis and 
     makes a plot of the significance as a function of the injected parameter.
@@ -357,6 +367,8 @@ def plot_significances(WO_to_TO_metrics, TO_to_WO_metrics, inj_param_vals,
     if not os.path.exists(outdir):
         logging.info('Making output directory %s'%outdir)
         os.makedirs(outdir)
+
+    
 
     MainTitle = '%s %s Event Selection Asimov Analysis Significances'%(
         detector, selection)
@@ -367,11 +379,18 @@ def plot_significances(WO_to_TO_metrics, TO_to_WO_metrics, inj_param_vals,
     )
     injlabels = labels['%s_%.4f'%(inj_param_name,inj_param_vals[0])].dict
     truth = injlabels['data_name'].split('_')[0]
+    h1 = injlabels['h1_name']
+    h0 = injlabels['h0_name']
+    if bestfit == 'h0':
+        testlabel = '%s from %s'%(tex_axis_label(h0),tex_axis_label(h1))
+    else:
+        testlabel = '%s from %s'%(tex_axis_label(h1),tex_axis_label(h0))
     plot_significance(
         inj_param_vals=inj_param_vals,
         significances=significances,
         truth=truth,
-        inj_param_name=inj_param_name
+        inj_param_name=inj_param_name,
+        testlabel=testlabel
     )
     plt.title(MainTitle,fontsize=16)
     plt.legend(loc='best')
@@ -385,8 +404,9 @@ def plot_significances(WO_to_TO_metrics, TO_to_WO_metrics, inj_param_vals,
     plt.close()
 
 
-def plot_significances_two_truths(WO_to_TO_metrics, TO_to_WO_metrics,
-                                  alt_WO_to_TO_metrics, alt_TO_to_WO_metrics,
+def plot_significances_two_truths(WO_to_TO_metrics, TO_to_WO_metrics, bestfit,
+                                  altfit, alt_WO_to_TO_metrics,
+                                  alt_TO_to_WO_metrics, alt_bestfit, alt_altfit,
                                   inj_param_vals, inj_param_name, labels,
                                   alt_labels, detector, selection, outdir):
     '''
@@ -415,18 +435,51 @@ def plot_significances_two_truths(WO_to_TO_metrics, TO_to_WO_metrics,
     alt_injlabels = alt_labels['%s_%.4f'%(
         inj_param_name,inj_param_vals[0])].dict
     truth = injlabels['data_name'].split('_')[0]
+    h1 = injlabels['h1_name']
+    h0 = injlabels['h0_name']
+    if bestfit == 'h0':
+        testlabel = '%s from %s'%(tex_axis_label(h0),tex_axis_label(h1))
+    else:
+        testlabel = '%s from %s'%(tex_axis_label(h1),tex_axis_label(h0))
     alt_truth = alt_injlabels['data_name'].split('_')[0]
+    alt_h1 = alt_injlabels['h1_name']
+    alt_h0 = alt_injlabels['h0_name']
+    if alt_bestfit == 'h0':
+        alt_testlabel = '%s from %s'%(
+            tex_axis_label(alt_h0),tex_axis_label(alt_h1)
+        )
+    else:
+        alt_testlabel = '%s from %s'%(
+            tex_axis_label(alt_h1),tex_axis_label(alt_h0)
+        )
+    if alt_testlabel != testlabel:
+        # Special case for labelling my NMO plots nicely
+        if testlabel == 'Normal Ordering from Inverted Ordering':
+            if alt_testlabel == 'Inverted Ordering from Normal Ordering':
+                testlabel = 'NMO'
+            else:
+                testlabel = None
+        elif testlabel == 'Inverted Ordering from Inverted Ordering':
+            if alt_testlabel == 'Normal Ordering from Inverted Ordering':
+                testlabel = 'NMO'
+            else:
+                testlabel = None
+        # Add another one if you could benefit from a more descriptive label
+        else:
+            testlabel = None
     plot_significance(
         inj_param_vals=inj_param_vals,
         significances=significances,
         truth=truth,
-        inj_param_name=inj_param_name
+        inj_param_name=inj_param_name,
+        testlabel=testlabel
     )
     plot_significance(
         inj_param_vals=inj_param_vals,
         significances=alt_significances,
         truth=alt_truth,
-        inj_param_name=inj_param_name
+        inj_param_name=inj_param_name,
+        testlabel=testlabel
     )
     plt.title(MainTitle,fontsize=16)
     plt.legend(loc='best')
@@ -496,7 +549,19 @@ def plot_individual_fits(WO_to_TO_params, TO_to_WO_params, inj_param_vals,
     truth = injlabels['data_name'].split('_')[0]
     h0 = injlabels['h0'].split('hypo_')[-1]
     h1 = injlabels['h1'].split('hypo_')[-1]
-    if h0 == truth:
+    bestfit = WO_to_TO_params.pop('bestfit')
+    altfit = WO_to_TO_params.pop('altfit')
+    if TO_to_WO_params['bestfit'] == bestfit:
+        bestfit = TO_to_WO_params.pop('bestfit')
+    else:
+        # This should absolutely not happen, is just there in case
+        raise ValueError('Best fits do not match in the two sets of params')
+    if TO_to_WO_params['altfit'] == altfit:
+        altfit = TO_to_WO_params.pop('altfit')
+    else:
+        # This should absolutely not happen, is just there in case
+        raise ValueError('Alt fits do not match in the two sets of params')
+    if (h0 in truth) or (truth in h0):
         TO = h0
         WO = h1
     else:
@@ -504,7 +569,7 @@ def plot_individual_fits(WO_to_TO_params, TO_to_WO_params, inj_param_vals,
         WO = h0
 
     MainTitle = '%s %s Event Selection Asimov Analysis'%(detector, selection)
-    SubTitle = 'True %s Best Fit Parameters'%(truth)
+    SubTitle = 'True %s Best Fit Parameters'%(tex_axis_label(truth))
 
     TO_to_WO_label = '%s fit to %s fid'%(TO,WO)
     WO_to_TO_label = '%s fit to %s fid'%(WO,TO)
@@ -550,6 +615,12 @@ def plot_individual_fits(WO_to_TO_params, TO_to_WO_params, inj_param_vals,
         plt.savefig(os.path.join(outdir,SaveName))
         plt.close()
 
+    # Add the best fits back so they can be accessed by future functions
+    WO_to_TO_params['bestfit'] = bestfit
+    WO_to_TO_params['altfit'] = altfit
+    TO_to_WO_params['bestfit'] = bestfit
+    TO_to_WO_params['altfit'] = altfit
+
 
 def plot_combined_fits(WO_to_TO_params, TO_to_WO_params, inj_param_vals,
                        inj_param_name, labels, detector, selection, outdir):
@@ -568,7 +639,19 @@ def plot_combined_fits(WO_to_TO_params, TO_to_WO_params, inj_param_vals,
     truth = injlabels['data_name'].split('_')[0]
     h0 = injlabels['h0'].split('hypo_')[-1]
     h1 = injlabels['h1'].split('hypo_')[-1]
-    if h0 == truth:
+    bestfit = WO_to_TO_params.pop('bestfit')
+    altfit = WO_to_TO_params.pop('altfit')
+    if TO_to_WO_params['bestfit'] == bestfit:
+        bestfit = TO_to_WO_params.pop('bestfit')
+    else:
+        # This should absolutely not happen, is just there in case
+        raise ValueError('Best fits do not match in the two sets of params')
+    if TO_to_WO_params['altfit'] == altfit:
+        altfit = TO_to_WO_params.pop('altfit')
+    else:
+        # This should absolutely not happen, is just there in case
+        raise ValueError('Alt fits do not match in the two sets of params')
+    if bestfit == 'h0':
         TO = h0
         WO = h1
     else:
@@ -576,7 +659,7 @@ def plot_combined_fits(WO_to_TO_params, TO_to_WO_params, inj_param_vals,
         WO = h0
 
     MainTitle = '%s %s Event Selection Asimov Analysis'%(detector, selection)
-    SubTitle = 'True %s Best Fit Parameters'%(truth)
+    SubTitle = 'True %s Best Fit Parameters'%(tex_axis_label(truth))
 
     TO_to_WO_label = '%s fit to %s fid'%(TO,WO)
     WO_to_TO_label = '%s fit to %s fid'%(WO,TO)
@@ -630,6 +713,12 @@ def plot_combined_fits(WO_to_TO_params, TO_to_WO_params, inj_param_vals,
     )
     plt.savefig(os.path.join(outdir,SaveName))
     plt.close()
+
+    # Add the best fits back so they can be accessed by future functions
+    WO_to_TO_params['bestfit'] = bestfit
+    WO_to_TO_params['altfit'] = altfit
+    TO_to_WO_params['bestfit'] = bestfit
+    TO_to_WO_params['altfit'] = altfit
     
     
 def parse_args():
@@ -710,6 +799,16 @@ def main():
     WO_to_TO_metrics, TO_to_WO_metrics, WO_to_TO_params, TO_to_WO_params = \
         extract_asimov_data(data_sets, labels)
 
+    if WO_to_TO_params.keys() == ['bestfit','altfit']:
+        if cfits or ifits:
+            logging.warning('You have requested to make plots of the best fit '
+                            'points of the systematic parameters but this is '
+                            'not possible since there are none included in '
+                            'this analysis. So no output plots of this kind '
+                            'will be made.')
+        cfits = False
+        ifits = False
+
     if args.altdir is not None:
 
         logging.info('Altdir was provided, so the combined significance plot '
@@ -742,8 +841,12 @@ def main():
         plot_significances_two_truths(
             WO_to_TO_metrics=np.array(WO_to_TO_metrics),
             TO_to_WO_metrics=np.array(TO_to_WO_metrics),
+            bestfit=WO_to_TO_params['bestfit'],
+            altfit=WO_to_TO_params['altfit'],
             alt_WO_to_TO_metrics=np.array(alt_WO_to_TO_metrics),
             alt_TO_to_WO_metrics=np.array(alt_TO_to_WO_metrics),
+            alt_bestfit=alt_WO_to_TO_params['bestfit'],
+            alt_altfit=alt_WO_to_TO_params['altfit'],
             inj_param_vals=inj_param_vals,
             inj_param_name=inj_param_name,
             labels=labels,
@@ -760,6 +863,8 @@ def main():
             TO_to_WO_metrics=np.array(TO_to_WO_metrics),
             inj_param_vals=inj_param_vals,
             inj_param_name=inj_param_name,
+            bestfit=WO_to_TO_params['bestfit'],
+            altfit=WO_to_TO_params['altfit'],
             labels=labels,
             detector=detector,
             selection=selection,

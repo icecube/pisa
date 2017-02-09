@@ -742,19 +742,32 @@ class HypoTesting(Analysis):
         else:
             logging.info('Fitting hypo %s to %s distributions.'
                          %(self.labels.h0_name, self.labels.data_disp))
-            self.h0_fit_to_data, alternate_fits = self.fit_hypo(
-                data_dist=self.data_dist,
-                hypo_maker=self.h0_maker,
-                hypo_param_selections=self.h0_param_selections,
-                metric=self.metric,
-                other_metrics=self.other_metrics,
-                minimizer_settings=self.minimizer_settings,
-                check_octant=self.check_octant,
-                check_ordering=self.check_ordering,
-                pprint=self.pprint,
-                blind=self.blind,
-                reset_free=self.reset_free
-            )
+            # Except in the case of no free params
+            if len(self.h0_maker.params.free) == 0:
+                logging.info('No free params found. Returning fit value only')
+                h0_asimov_data = self.h0_maker.get_outputs(return_sum=True)
+                self.h0_fit_to_data = self.nofit_hypo(
+                    data_dist=self.data_dist,
+                    hypo_maker=self.h0_maker,
+                    hypo_param_selections=self.h0_param_selections,
+                    hypo_asimov_dist=h0_asimov_data,
+                    metric=self.metric, other_metrics=self.other_metrics,
+                    blind=self.blind
+                )
+            else:
+                self.h0_fit_to_data, alternate_fits = self.fit_hypo(
+                    data_dist=self.data_dist,
+                    hypo_maker=self.h0_maker,
+                    hypo_param_selections=self.h0_param_selections,
+                    metric=self.metric,
+                    other_metrics=self.other_metrics,
+                    minimizer_settings=self.minimizer_settings,
+                    check_octant=self.check_octant,
+                    check_ordering=self.check_ordering,
+                    pprint=self.pprint,
+                    blind=self.blind,
+                    reset_free=self.reset_free
+                )
         self.h0_fid_asimov_dist = self.h0_fit_to_data['hypo_asimov_dist']
 
         self.log_fit(fit_info=self.h0_fit_to_data,
@@ -785,19 +798,32 @@ class HypoTesting(Analysis):
         else:
             logging.info('Fitting hypo %s to %s distributions.'
                          %(self.labels.h1_name, self.labels.data_disp))
-            self.h1_fit_to_data, alternate_fits = self.fit_hypo(
-                data_dist=self.data_dist,
-                hypo_maker=self.h1_maker,
-                hypo_param_selections=self.h1_param_selections,
-                metric=self.metric,
-                other_metrics=self.other_metrics,
-                minimizer_settings=self.minimizer_settings,
-                check_octant=self.check_octant,
-                check_ordering=self.check_ordering,
-                pprint=self.pprint,
-                blind=self.blind,
-                reset_free=self.reset_free
-            )
+            # Except in the case of no free params
+            if len(self.h1_maker.params.free) == 0:
+                logging.info('No free params found. Returning fit value only')
+                h1_asimov_data = self.h1_maker.get_outputs(return_sum=True)
+                self.h1_fit_to_data = self.nofit_hypo(
+                    data_dist=self.data_dist,
+                    hypo_maker=self.h1_maker,
+                    hypo_param_selections=self.h1_param_selections,
+                    hypo_asimov_dist=h1_asimov_data,
+                    metric=self.metric, other_metrics=self.other_metrics,
+                    blind=self.blind
+                )
+            else:
+                self.h1_fit_to_data, alternate_fits = self.fit_hypo(
+                    data_dist=self.data_dist,
+                    hypo_maker=self.h1_maker,
+                    hypo_param_selections=self.h1_param_selections,
+                    metric=self.metric,
+                    other_metrics=self.other_metrics,
+                    minimizer_settings=self.minimizer_settings,
+                    check_octant=self.check_octant,
+                    check_ordering=self.check_ordering,
+                    pprint=self.pprint,
+                    blind=self.blind,
+                    reset_free=self.reset_free
+                )
         self.h1_fid_asimov_dist = self.h1_fit_to_data['hypo_asimov_dist']
 
         self.log_fit(fit_info=self.h1_fit_to_data,
@@ -867,19 +893,32 @@ class HypoTesting(Analysis):
             else:
                 logging.info('Fitting hypo %s to its own %s distributions.'
                              %(self.labels.h0_name, self.labels.fid_disp))
-                self.h0_fit_to_h0_fid, alternate_fits = self.fit_hypo(
-                    data_dist=self.h0_fid_dist,
-                    hypo_maker=self.h0_maker,
-                    hypo_param_selections=self.h0_param_selections,
-                    metric=self.metric,
-                    other_metrics=self.other_metrics,
-                    minimizer_settings=self.minimizer_settings,
-                    check_octant=self.check_octant,
-                    check_ordering=self.check_ordering,
-                    pprint=self.pprint,
-                    blind=self.blind,
-                    reset_free=self.reset_free
-                )
+                # Except in the case of no free params
+                if len(self.h0_maker.params.free) == 0:
+                    logging.info('No free params found. '
+                                 'Returning fit value only')
+                    self.h0_fit_to_h0_fid = self.nofit_hypo(
+                        data_dist=self.h0_fid_dist,
+                        hypo_maker=self.h0_maker,
+                        hypo_param_selections=self.h0_param_selections,
+                        hypo_asimov_dist=self.h0_fid_asimov_dist,
+                        metric=self.metric, other_metrics=self.other_metrics,
+                        blind=self.blind
+                    )
+                else:
+                    self.h0_fit_to_h0_fid, alternate_fits = self.fit_hypo(
+                        data_dist=self.h0_fid_dist,
+                        hypo_maker=self.h0_maker,
+                        hypo_param_selections=self.h0_param_selections,
+                        metric=self.metric,
+                        other_metrics=self.other_metrics,
+                        minimizer_settings=self.minimizer_settings,
+                        check_octant=self.check_octant,
+                        check_ordering=self.check_ordering,
+                        pprint=self.pprint,
+                        blind=self.blind,
+                        reset_free=self.reset_free
+                    )
             self.log_fit(fit_info=self.h0_fit_to_h0_fid,
                          dirpath=self.thisdata_dirpath,
                          label=self.labels.h0_fit_to_h0_fid)
@@ -907,19 +946,32 @@ class HypoTesting(Analysis):
             else:
                 logging.info('Fitting hypo %s to its own %s distributions.'
                              %(self.labels.h1_name, self.labels.fid_disp))
-                self.h1_fit_to_h1_fid, alternate_fits = self.fit_hypo(
-                    data_dist=self.h1_fid_dist,
-                    hypo_maker=self.h1_maker,
-                    hypo_param_selections=self.h1_param_selections,
-                    metric=self.metric,
-                    other_metrics=self.other_metrics,
-                    minimizer_settings=self.minimizer_settings,
-                    check_octant=self.check_octant,
-                    check_ordering=self.check_ordering,
-                    pprint=self.pprint,
-                    blind=self.blind,
-                    reset_free=self.reset_free
-                )
+                # Except in the case of no free params
+                if len(self.h0_maker.params.free) == 0:
+                    logging.info('No free params found. '
+                                 'Returning fit value only')
+                    self.h1_fit_to_h1_fid = self.nofit_hypo(
+                        data_dist=self.h1_fid_dist,
+                        hypo_maker=self.h1_maker,
+                        hypo_param_selections=self.h1_param_selections,
+                        hypo_asimov_dist=self.h1_fid_asimov_dist,
+                        metric=self.metric, other_metrics=self.other_metrics,
+                        blind=self.blind
+                    )
+                else:
+                    self.h1_fit_to_h1_fid, alternate_fits = self.fit_hypo(
+                        data_dist=self.h1_fid_dist,
+                        hypo_maker=self.h1_maker,
+                        hypo_param_selections=self.h1_param_selections,
+                        metric=self.metric,
+                        other_metrics=self.other_metrics,
+                        minimizer_settings=self.minimizer_settings,
+                        check_octant=self.check_octant,
+                        check_ordering=self.check_ordering,
+                        pprint=self.pprint,
+                        blind=self.blind,
+                        reset_free=self.reset_free
+                    )
 
             self.log_fit(fit_info=self.h1_fit_to_h1_fid,
                          dirpath=self.thisdata_dirpath,
@@ -952,19 +1004,32 @@ class HypoTesting(Analysis):
                                self.labels.fid_disp))
                 self.h1_maker.select_params(self.h1_param_selections)
                 self.h1_maker.reset_free()
-                self.h1_fit_to_h0_fid, alternate_fits = self.fit_hypo(
-                    data_dist=self.h0_fid_dist,
-                    hypo_maker=self.h1_maker,
-                    hypo_param_selections=self.h1_param_selections,
-                    metric=self.metric,
-                    other_metrics=self.other_metrics,
-                    minimizer_settings=self.minimizer_settings,
-                    check_octant=self.check_octant,
-                    check_ordering=self.check_ordering,
-                    pprint=self.pprint,
-                    blind=self.blind,
-                    reset_free=self.reset_free
-                )
+                # Except in the case of no free params
+                if len(self.h1_maker.params.free) == 0:
+                    logging.info('No free params found. '
+                                 'Returning fit value only')
+                    self.h1_fit_to_h0_fid = self.nofit_hypo(
+                        data_dist=self.h0_fid_dist,
+                        hypo_maker=self.h1_maker,
+                        hypo_param_selections=self.h1_param_selections,
+                        hypo_asimov_dist=self.h1_fid_asimov_dist,
+                        metric=self.metric, other_metrics=self.other_metrics,
+                        blind=self.blind
+                    )
+                else:
+                    self.h1_fit_to_h0_fid, alternate_fits = self.fit_hypo(
+                        data_dist=self.h0_fid_dist,
+                        hypo_maker=self.h1_maker,
+                        hypo_param_selections=self.h1_param_selections,
+                        metric=self.metric,
+                        other_metrics=self.other_metrics,
+                        minimizer_settings=self.minimizer_settings,
+                        check_octant=self.check_octant,
+                        check_ordering=self.check_ordering,
+                        pprint=self.pprint,
+                        blind=self.blind,
+                        reset_free=self.reset_free
+                    )
 
             self.log_fit(fit_info=self.h1_fit_to_h0_fid,
                          dirpath=self.thisdata_dirpath,
@@ -990,20 +1055,33 @@ class HypoTesting(Analysis):
                                self.labels.fid_disp))
                 self.h0_maker.select_params(self.h0_param_selections)
                 self.h0_maker.reset_free()
-                self.h0_fit_to_h1_fid, alternate_fits = self.fit_hypo(
-                    data_dist=self.h1_fid_dist,
-                    hypo_maker=self.h0_maker,
-                    hypo_param_selections=self.h0_param_selections,
-                    metric=self.metric,
-                    other_metrics=self.other_metrics,
-                    minimizer_settings=self.minimizer_settings,
-                    check_octant=self.check_octant,
-                    check_ordering=self.check_ordering,
-                    pprint=self.pprint,
-                    blind=self.blind,
-                    reset_free=self.reset_free
-                )
-
+                # Except in the case of no free params
+                if len(self.h0_maker.params.free) == 0:
+                    logging.info('No free params found. '
+                                 'Returning fit value only')
+                    self.h0_fit_to_h1_fid = self.nofit_hypo(
+                        data_dist=self.h1_fid_dist,
+                        hypo_maker=self.h0_maker,
+                        hypo_param_selections=self.h0_param_selections,
+                        hypo_asimov_dist=self.h0_fid_asimov_dist,
+                        metric=self.metric, other_metrics=self.other_metrics,
+                        blind=self.blind
+                    )
+                else:
+                    self.h0_fit_to_h1_fid, alternate_fits = self.fit_hypo(
+                        data_dist=self.h1_fid_dist,
+                        hypo_maker=self.h0_maker,
+                        hypo_param_selections=self.h0_param_selections,
+                        metric=self.metric,
+                        other_metrics=self.other_metrics,
+                        minimizer_settings=self.minimizer_settings,
+                        check_octant=self.check_octant,
+                        check_ordering=self.check_ordering,
+                        pprint=self.pprint,
+                        blind=self.blind,
+                        reset_free=self.reset_free
+                    )
+                    
             self.log_fit(fit_info=self.h0_fit_to_h1_fid,
                          dirpath=self.thisdata_dirpath,
                          label=self.labels.h0_fit_to_h1_fid)

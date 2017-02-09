@@ -44,6 +44,14 @@ def tex_axis_label(label):
     pretty_labels["conv_llh"] = r"Convoluted Likelihood"
     pretty_labels["chi2"] = r"$\chi^2$"
     pretty_labels["mod_chi2"] = r"Modified $\chi^2$"
+    pretty_labels["no"] = r"Normal Ordering"
+    pretty_labels["io"] = r"Inverted Ordering"
+    pretty_labels["nomsw"] = r"Normal Ordering, Matter Oscillations"
+    pretty_labels["iomsw"] = r"Inverted Ordering, Matter Oscillations"
+    pretty_labels["novacuum"] = r"Normal Ordering, Vacuum Oscillations"
+    pretty_labels["iovacuum"] = r"Inverted Ordering, Vacuum Oscillations"
+    pretty_labels["msw"] = r"Matter Oscillations"
+    pretty_labels["vacuum"] = r"Vacuum Oscillations"
     if label not in pretty_labels.keys():
         logging.warn("I don't know what to do with %s. Returning as is."%label)
         return label
