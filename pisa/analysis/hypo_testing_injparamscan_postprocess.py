@@ -356,19 +356,143 @@ def plot_significance(inj_param_vals, significances, truth, inj_param_name,
         plt.ylabel(r'Significance ($\sigma$)')
 
 
+def add_extra_points(points, labels):
+    '''
+    Adds the extra points specified in points and labels them with the labels 
+    specified in labels.
+    '''
+    miny = None
+    maxy = None
+    for pointset, label in zip(points,labels):
+        if isinstance(pointset, basestring):
+            if os.path.isfile(pointset):
+                pointset = np.genfromtxt(pointset)
+            else:
+                try:
+                    pointset = eval(pointset)
+                except:
+                    raise ValueError("Provided pointset, %s, was not either a "
+                                     "path to a file or a string which could "
+                                     "be parsed by eval()"%pointset)
+        x = []
+        y = []
+        yerr = []
+        for point in pointset:
+            x.append(point[0])
+            y.append(point[1])
+            # For no errors
+            if len(point) == 2:
+                yerr.append(0.0)
+            # For symmetric errors
+            if len(point) == 3:
+                yerr.append(point[2])
+            # For asymmetric errors
+            elif len(point) == 4:
+                if len(yerr) == 0:
+                    yerr.append([])
+                    yerr.append([])
+                yerr[0].append(point[2])
+                yerr[1].append(point[3])
+            else:
+                raise ValueError("Number of entries found for each point was "
+                                 "not what was expected. Should be at least "
+                                 "(x,y) but may also be (x,y,yerr) or "
+                                 "(x,y,yuperr,ydownerr). Got a set with %i "
+                                 "numbers."%len(point))
+
+        x = np.array(x)
+        y = np.array(y)
+        yerr = np.array(yerr)
+
+        # Use the NMO colouring scheme
+        if miny is not None:
+            if len(yerr) == 2:
+                miny = min(miny, min(y-yerr[0]))
+                maxy = max(maxy, max(y+yerr[1]))
+            else:
+                miny = min(miny, min(y-yerr))
+                maxy = max(maxy, max(y+yerr))
+        else:
+            if len(yerr) == 2:
+                miny = min(y-yerr[0])
+                maxy = max(y+yerr[1])
+            else:
+                miny = min(y-yerr)
+                maxy = max(y+yerr)
+        if ('no' in label) or ('NO' in label):
+            if "NuFit" in label:
+                plt.errorbar(
+                    x,
+                    y,
+                    yerr=yerr,
+                    linestyle='None',
+                    marker='D',
+                    markersize=10,
+                    color='r',
+                    label='%s'%(tex_axis_label(label))
+                )
+            else:
+                plt.errorbar(
+                    x,
+                    y,
+                    yerr=yerr,
+                    linestyle='None',
+                    marker='s',
+                    markersize=10,
+                    color='r',
+                    label='%s'%(tex_axis_label(label))
+                )
+        elif ('io' in label) or ('IO' in label):
+            if "NuFit" in label:
+                plt.errorbar(
+                    x,
+                    y,
+                    yerr=yerr,
+                    linestyle='None',
+                    marker='D',
+                    markersize=10,
+                    color='b',
+                    label='%s'%(tex_axis_label(label))
+                )
+            else:
+                plt.errorbar(
+                    x,
+                    y,
+                    yerr=yerr,
+                    linestyle='None',
+                    marker='s',
+                    markersize=10,
+                    color='b',
+                    label='%s'%(tex_axis_label(label))
+                )
+        # Else just make them black
+        else:
+            plt.errorbar(
+                x,
+                y,
+                yerr=yerr,
+                linestyle='None',
+                marker='o',
+                color='k',
+                label='True %s'%(tex_axis_label(label))
+            )
+    return miny, maxy
+
+
 def plot_significances(WO_to_TO_metrics, TO_to_WO_metrics, inj_param_vals,
                        bestfit, altfit, inj_param_name, labels, detector,
-                       selection, outdir):
+                       selection, outdir, extra_points=None,
+                       extra_points_labels=None):
     '''
     Takes the two sets of metrics relevant to the Asimov-based analysis and 
-    makes a plot of the significance as a function of the injected parameter.
+    makes a plot of the significance as a function of the injected parameter. 
+    The extra_points and extra_points_labels arguments can be used to specify ]
+    extra points to be added to the plot for e.g. LLR results.
     '''
     outdir = os.path.join(outdir, 'Significances')
     if not os.path.exists(outdir):
         logging.info('Making output directory %s'%outdir)
         os.makedirs(outdir)
-
-    
 
     MainTitle = '%s %s Event Selection Asimov Analysis Significances'%(
         detector, selection)
@@ -392,6 +516,17 @@ def plot_significances(WO_to_TO_metrics, TO_to_WO_metrics, inj_param_vals,
         inj_param_name=inj_param_name,
         testlabel=testlabel
     )
+    minx = min(inj_param_vals)
+    maxx = max(inj_param_vals)
+    rangex = maxx - minx
+    plt.xlim(minx-0.1*rangex,maxx+0.1*rangex)
+    miny = min(significances)
+    maxy = max(significances)
+    yrange = maxy - miny
+    if miny == 0:
+        plt.ylim(miny,maxy+0.1*yrange)
+    else:
+        plt.ylim(miny-0.1*yrange,maxy+0.1*yrange)
     plt.title(MainTitle,fontsize=16)
     plt.legend(loc='best')
     SaveName = "true_%s_%s_%s_%s_asimov_significances.png"%(
@@ -401,6 +536,26 @@ def plot_significances(WO_to_TO_metrics, TO_to_WO_metrics, inj_param_vals,
         inj_param_name
     )
     plt.savefig(os.path.join(outdir,SaveName))
+    if extra_points is not None:
+        minextra, maxextra = add_extra_points(
+            points=extra_points,
+            labels=extra_points_labels
+        )
+        miny = min(minextra, min(significances))
+        maxy = max(maxextra, max(significances))
+        yrange = maxy - miny
+        if miny == 0:
+            plt.ylim(miny,maxy+0.1*yrange)
+        else:
+            plt.ylim(miny-0.1*yrange,maxy+0.1*yrange)
+        plt.legend(loc='best')
+        SaveName = "true_%s_%s_%s_%s_w_extra_points_"%(
+            truth,
+            detector,
+            selection,
+            inj_param_name
+        ) + "asimov_significances.png"
+        plt.savefig(os.path.join(outdir,SaveName))
     plt.close()
 
 
@@ -408,7 +563,8 @@ def plot_significances_two_truths(WO_to_TO_metrics, TO_to_WO_metrics, bestfit,
                                   altfit, alt_WO_to_TO_metrics,
                                   alt_TO_to_WO_metrics, alt_bestfit, alt_altfit,
                                   inj_param_vals, inj_param_name, labels,
-                                  alt_labels, detector, selection, outdir):
+                                  alt_labels, detector, selection, outdir,
+                                  extra_points=None, extra_points_labels=None):
     '''
     Takes the two sets of metrics relevant to the Asimov-based analysis and
     makes a plot of the significance as a function of the injected parameter.
@@ -481,12 +637,19 @@ def plot_significances_two_truths(WO_to_TO_metrics, TO_to_WO_metrics, bestfit,
         inj_param_name=inj_param_name,
         testlabel=testlabel
     )
+    minx = min(inj_param_vals)
+    maxx = max(inj_param_vals)
+    rangex = maxx - minx
+    plt.xlim(minx-0.1*rangex,maxx+0.1*rangex)
+    miny = min(min(significances), min(alt_significances))
+    maxy = max(max(significances), max(alt_significances))
+    yrange = maxy - miny
+    if miny == 0:
+        plt.ylim(miny,maxy+0.1*yrange)
+    else:
+        plt.ylim(miny-0.1*yrange,maxy+0.1*yrange)
     plt.title(MainTitle,fontsize=16)
     plt.legend(loc='best')
-    ymax = max(max(significances), max(alt_significances))
-    ymin = min(min(significances), min(alt_significances))
-    yrange = ymax-ymin
-    plt.ylim(ymin-0.1*yrange,ymax+0.1*yrange)
     SaveName = "true_%s_and_%s_%s_%s_%s_asimov_significances.png"%(
         truth,
         alt_truth,
@@ -495,6 +658,27 @@ def plot_significances_two_truths(WO_to_TO_metrics, TO_to_WO_metrics, bestfit,
         inj_param_name
     )
     plt.savefig(os.path.join(outdir,SaveName))
+    if extra_points is not None:
+        minextra, maxextra = add_extra_points(
+            points=extra_points,
+            labels=extra_points_labels
+        )
+        miny = min(minextra, min(significances), min(alt_significances))
+        maxy = max(maxextra, max(significances), max(alt_significances))
+        yrange = maxy - miny
+        if miny == 0:
+            plt.ylim(miny,maxy+0.1*yrange)
+        else:
+            plt.ylim(miny-0.1*yrange,maxy+0.1*yrange)
+        plt.legend(loc='best')
+        SaveName = "true_%s_and_%s_%s_%s_%s_w_extra_points_"%(
+            truth,
+            alt_truth,
+            detector,
+            selection,
+            inj_param_name
+        ) + "asimov_significances.png"
+        plt.savefig(os.path.join(outdir,SaveName))
     plt.close()
 
 
@@ -757,6 +941,22 @@ def parse_args():
         and only this combined plot of significance will be made."""
     )
     parser.add_argument(
+        '--extra-points', type=str, action='append', metavar='LIST',
+        help='''Extra points to be added to the plots. This is useful, for 
+        example, when you wish to add LLR results to the plot. These should be 
+        supplied as a list of tuples e.g. "[(x1,y1),(x2,y2)]" or 
+        "[(x1,y1,y1err),(x2,y2,y2err)]" or 
+        "[(x1,y1,y1uperr,y1downerr),(x2,y2,y2uperr,y2downerr)]" or as a list to
+        a file with the values provided in columns that can be intepreted by 
+        numpy genfromtxt. Repeat this argument in conjunction with the extra 
+        points label below to specify multiple (and uniquely identifiable) sets
+        of extra points.'''
+    )
+    parser.add_argument(
+        '--extra-points-label', type=str, action='append',
+        help='''The label(s) for the extra points above.'''
+    )
+    parser.add_argument(
         '--outdir', metavar='DIR', type=str, required=True,
         help="""Store all output plots to this directory. This will make
         further subdirectories, if needed, to organise the output plots."""
@@ -782,6 +982,9 @@ def main():
     ifits = init_args_d.pop('individual_fits')
     cfits = init_args_d.pop('combined_fits')
     outdir = init_args_d.pop('outdir')
+
+    extra_points = init_args_d.pop('extra_points')
+    extra_points_labels = init_args_d.pop('extra_points_label')
     
     data_sets, all_params, labels = extract_trials(
         logdir=args.dir,
@@ -853,6 +1056,8 @@ def main():
             alt_labels=alt_labels,
             detector=detector,
             selection=selection,
+            extra_points=extra_points,
+            extra_points_labels=extra_points_labels,
             outdir=outdir
         )
 
@@ -868,6 +1073,8 @@ def main():
             labels=labels,
             detector=detector,
             selection=selection,
+            extra_points=extra_points,
+            extra_points_labels=extra_points_labels,
             outdir=outdir
         )
 
