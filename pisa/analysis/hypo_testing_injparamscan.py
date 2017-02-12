@@ -28,6 +28,7 @@ import numpy as np
 from pisa import ureg
 from pisa.analysis.hypo_testing import HypoTesting, Labels
 from pisa.core.distribution_maker import DistributionMaker
+from pisa.core.prior import Prior
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
 from pisa.utils.stats import ALL_METRICS
@@ -60,8 +61,7 @@ def parse_args():
         octant.'''
     )
     parser.add_argument(
-        '--ordering-check',
-        action='store_true',
+        '--ordering-check', action='store_true',
         help='''Fit both ordering hypotheses. This should only be flagged if 
         the ordering is NOT the discrete hypothesis being tested'''
     )
@@ -173,6 +173,13 @@ def parse_args():
         the parameter is dimensionless this must be stated.'''
     )
     parser.add_argument(
+        '--use-inj-prior', action='store_true',
+        help='''Generally, one should not use a prior on the parameter of 
+        interest here since the Asimov analysis breaks down with the use of 
+        non-central prior i.e. injecting a truth that differs from the centre 
+        of the prior. Flag this to force the prior to be left on.'''
+    )
+    parser.add_argument(
         '--pprint',
         action='store_true',
         help='''Live-updating one-line vew of metric and parameter values. (The
@@ -279,6 +286,7 @@ def main():
     param_name = init_args_d.pop('param_name')
     inj_vals = eval(init_args_d.pop('inj_vals'))
     inj_units = init_args_d.pop('inj_units')
+    force_prior = init_args_d.pop('use_inj_prior')
 
     # Instantiate the analysis object
     hypo_testing = HypoTesting(**init_args_d)
@@ -469,6 +477,33 @@ def main():
             = rangetuple
         hypo_testing.data_maker.params[test_name].range\
             = rangetuple
+
+    if hypo_testing.data_maker.params[test_name].prior is not None:
+        if hypo_testing.data_maker.params[test_name].prior.kind != 'uniform':
+            if force_prior:
+                logging.warn("Parameter to be scanned, %s, has a %s prior that"
+                             " you have requested to be left on. This will "
+                             "likely make the results wrong."%(test_name,
+                                hypo_testing.data_maker.params[
+                                   test_name].prior.kind))
+            else:
+                logging.info("Parameter to be scanned, %s, has a %s prior. "
+                             "This will be changed to a uniform prior (i.e. "
+                             "no prior) for this test."%(test_name,
+                                hypo_testing.data_maker.params[
+                                   test_name].prior.kind))
+                uniformprior = Prior(kind='uniform')
+                hypo_testing.h0_maker.params[test_name].prior = uniformprior
+                hypo_testing.h1_maker.params[test_name].prior = uniformprior
+    else:
+        if force_prior:
+            raise ValueError("Parameter to be scanned, %s, does not have a "
+                             "prior but you have requested to force one to be"
+                             " left on. Something is potentially wrong."
+                             %test_name)
+        else:
+            logging.info("Parameter to be scanned, %s, does not have a prior. "
+                         "So nothing needs to be done."%test_name)
 
     # Scan over the injected values. We also loop over the requested vals here
     # in case they are different so that value can be put in the labels
