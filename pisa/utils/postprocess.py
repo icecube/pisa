@@ -14,24 +14,22 @@ def tex_axis_label(label):
     for plotting. This can never truly be exhaustive, but it definitely does 
     the trick. If something looks ugly add it to this function!
     '''
+    label = label.lower()
     pretty_labels = {}
     pretty_labels["atm_muon_scale"] = r"Muon Background Scale"
     pretty_labels["nue_numu_ratio"] = r"$\nu_e/\nu_{\mu}$ Ratio"
     pretty_labels["nu_nubar_ratio"] = r"$\nu/\bar{\nu}$ Ratio"
-    pretty_labels["Barr_uphor_ratio"] = r"Barr Up/Horizontal Ratio"
     pretty_labels["barr_uphor_ratio"] = r"Barr Up/Horizontal Ratio"
-    pretty_labels["Barr_nu_nubar_ratio"] = r"Barr $\nu/\bar{\nu}$ Ratio"
     pretty_labels["barr_nu_nubar_ratio"] = r"Barr $\nu/\bar{\nu}$ Ratio"
     pretty_labels["delta_index"] = r"Atmospheric Index Change"
     pretty_labels["theta13"] = r"$\theta_{13}$"
     pretty_labels["theta23"] = r"$\theta_{23}$"
     pretty_labels["sin2theta23"] = r"$\sin^2\theta_{23}$"
     pretty_labels["deltam31"] = r"$\Delta m^2_{31}$"
+    pretty_labels["deltam3l"] = r"$\Delta m^2_{3l}$"
     pretty_labels["aeff_scale"] = r"$A_{\mathrm{eff}}$ Scale"
     pretty_labels["energy_scale"] = r"Energy Scale"
-    pretty_labels["Genie_Ma_QE"] = r"GENIE $M_{A}^{QE}$"
     pretty_labels["genie_ma_qe"] = r"GENIE $M_{A}^{QE}$"
-    pretty_labels["Genie_Ma_RES"] = r"GENIE $M_{A}^{Res}$"
     pretty_labels["genie_ma_res"] = r"GENIE $M_{A}^{Res}$"
     pretty_labels["dom_eff"] = r"DOM Efficiency"
     pretty_labels["hole_ice"] = r"Hole Ice"
@@ -44,6 +42,18 @@ def tex_axis_label(label):
     pretty_labels["conv_llh"] = r"Convoluted Likelihood"
     pretty_labels["chi2"] = r"$\chi^2$"
     pretty_labels["mod_chi2"] = r"Modified $\chi^2$"
+    pretty_labels["no"] = r"Normal Ordering"
+    pretty_labels["io"] = r"Inverted Ordering"
+    pretty_labels["nomsw"] = r"Normal Ordering, Matter Oscillations"
+    pretty_labels["iomsw"] = r"Inverted Ordering, Matter Oscillations"
+    pretty_labels["novacuum"] = r"Normal Ordering, Vacuum Oscillations"
+    pretty_labels["iovacuum"] = r"Inverted Ordering, Vacuum Oscillations"
+    pretty_labels["msw"] = r"Matter Oscillations"
+    pretty_labels["vacuum"] = r"Vacuum Oscillations"
+    pretty_labels["no,llr"] = r"LLR Method"
+    pretty_labels["no,llr,nufitpriors"] = r"LLR Method, Nu-Fit Priors"
+    pretty_labels["io,llr"] = r"LLR Method"
+    pretty_labels["io,llr,nufitpriors"] = r"LLR Method, Nu-Fit Priors"
     if label not in pretty_labels.keys():
         logging.warn("I don't know what to do with %s. Returning as is."%label)
         return label

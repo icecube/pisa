@@ -33,7 +33,7 @@ __all__ = ['extract_trials', 'extract_fit', 'parse_args', 'main']
 
 def make_binned_chi2_plots(maps_binned, metric_name, total_metric,
                            num_fit_params, num_bound_params,
-                           outdir, detector, selection):
+                           outdir, detector, selection, fitnum=None):
     '''
     Takes the binned chi2 maps and plots them for inspection. Tests to see if 
     PathEffects can be imported and, if so, writes the values on the bins. A 
@@ -138,12 +138,21 @@ def make_binned_chi2_plots(maps_binned, metric_name, total_metric,
         )
         plt.tight_layout()
         plt.subplots_adjust(top=0.75)
-        SaveName = '%s_%s_map_%s_binned_%s_maps.png'%(
-            detector,
-            selection,
-            total_map.name,
-            metric_name
-        )
+        if fitnum is not None:
+            SaveName = '%s_%s_map_%s_binned_%s_maps_fit_%i.png'%(
+                detector,
+                selection,
+                total_map.name,
+                metric_name,
+                fitnum
+            )
+        else:
+            SaveName = '%s_%s_map_%s_binned_%s_maps.png'%(
+                detector,
+                selection,
+                total_map.name,
+                metric_name
+            )
         fig.savefig(os.path.join(outdir,SaveName))
         plt.close()
 
@@ -186,13 +195,45 @@ def make_binned_chi2_plots(maps_binned, metric_name, total_metric,
         color='k',
         size='xx-large'
     )
-    SaveName = '%s_%s_binned_%s_total_hist.png'%(
-        detector,
-        selection,
-        metric_name
-    )
+    if fitnum is not None:
+        SaveName = '%s_%s_binned_%s_total_hist_fit_%i.png'%(
+            detector,
+            selection,
+            metric_name,
+            fitnum
+        )
+    else:
+        SaveName = '%s_%s_binned_%s_total_hist.png'%(
+            detector,
+            selection,
+            metric_name
+        )
     plt.savefig(os.path.join(outdir,SaveName))
     plt.close()
+
+
+def single_file_process(outputfile, num_bound_params, outdir,
+                        detector, selection, fitnum=None):
+    '''
+    Processes a single output file and makes the binned chi2 plot
+    '''
+    blind_fit_result = from_file(outputfile)
+    metric_name = blind_fit_result['metric']
+    total_metric = blind_fit_result['metric_val']
+    num_fit_params = len(blind_fit_result['params'])
+    make_binned_chi2_plots(
+        maps_binned = blind_fit_result['detailed_metric_info'][metric_name][
+            'maps_binned'],
+        metric_name=metric_name,
+        total_metric=total_metric,
+        num_fit_params=num_fit_params,
+        num_bound_params=num_bound_params,
+        outdir=outdir,
+        detector=detector,
+        selection=selection,
+        fitnum=fitnum
+    )
+    return total_metric, metric_name
 
     
 def parse_args():
@@ -243,25 +284,47 @@ def main():
     detector = init_args_d.pop('detector')
     selection = init_args_d.pop('selection')
     outdir = init_args_d.pop('outdir')
-
-    logdir_content = os.listdir(args.dir)
-    blind_fit_result = from_file(os.path.join(args.dir,logdir_content[0]))
-    metric_name = blind_fit_result['metric']
-    total_metric = blind_fit_result['metric_val']
-    num_fit_params = len(blind_fit_result['params'])
     num_bound_params = init_args_d.pop('bound_params')
 
-    make_binned_chi2_plots(
-        maps_binned = blind_fit_result['detailed_metric_info'][metric_name][
-            'maps_binned'],
-        metric_name=metric_name,
-        total_metric=total_metric,
-        num_fit_params=num_fit_params,
-        num_bound_params=num_bound_params,
-        outdir=outdir,
-        detector=detector,
-        selection=selection
-    )
+    logdir_content = os.listdir(args.dir)
+    logdir_content = np.array(logdir_content)
+    jsonfiles = ['json' in logdir_conten for logdir_conten in logdir_content]
+    jsonfiles = np.array(jsonfiles)
+    outputfiles = logdir_content[jsonfiles]
+    if len(outputfiles) == 1:
+        chi2, metric_name = single_file_process(
+            outputfile=os.path.join(args.dir,outputfiles[0]),
+            num_bound_params=num_bound_params,
+            outdir=outdir,
+            detector=detector,
+            selection=selection
+        )
+    else:
+        metric_values = []
+        for outputfile in outputfiles:
+            fitnum = int(outputfile.split('.json')[0].split('_')[-1])
+            chi2, metric_name = single_file_process(
+                outputfile=os.path.join(args.dir,outputfile),
+                num_bound_params=num_bound_params,
+                outdir=outdir,
+                fitnum=fitnum,
+                detector=detector,
+                selection=selection
+            )
+            metric_values.append(chi2)
+        plt.hist(metric_values, bins=10)
+        plt.xlabel(tex_axis_label(metric_name))
+        plt.ylabel('Number of Instances')
+        MainTitle = '%s %s Blind Fits'%(detector, selection)
+        SubTitle = 'Multiple Fits Total %s'%tex_axis_label(metric_name)
+        plt.title(MainTitle + ' ' + SubTitle, fontsize=16)
+        SaveName = '%s_%s_multi_%s_fits.png'%(
+            detector,
+            selection,
+            metric_name
+        )
+        plt.savefig(os.path.join(outdir,SaveName))
+        plt.close()
                 
         
 if __name__ == '__main__':
