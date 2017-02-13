@@ -37,14 +37,20 @@ DM31   = 2.35e-3 + DM21
 
 # Akhemdov is implicitely assuming an electron-to-neutron ratio of 0.5; 
 # he is also using the approximation DM31 = DM32;
-# if you want to reproduce his numbers exactly, switch the lines below
-# AkhmedovOsci = NuCraft((1., DM21, DM31-DM21), [(1,2,theta12),(1,3,theta13,0),(2,3,theta23)], earthModel=EarthModel("prem", y=(0.5,0.5,0.5)))
+# if you want to reproduce his numbers exactly, switch the lines below, and turn
+# atmosphereMode to 0 (no handling of the atmosphere because of )
+# AkhmedovOsci = NuCraft((1., DM21, DM31-DM21), [(1,2,theta12),(1,3,theta13,0),(2,3,theta23)],
+#                        earthModel=EarthModel("prem", y=(0.5,0.5,0.5))
+#                        detectorDepth=0., atmHeight=0.)
 AkhmedovOsci = NuCraft((1., DM21, DM31), [(1,2,theta12),(1,3,theta13,0),(2,3,theta23)])
 
 # To compute weights with a non-zero CP-violating phase, replace     ^  this zero
 # by the corresponding angle (in degrees); this will add the phase to the theta13 mixing matrix,
 # as it is done in the standard parametrization; alternatively, you can also add CP-violating
 # phases to the other matrices, but in the 3-flavor case more than one phase are redundant.
+
+# atmosphereMode = 0   # use fixed atmsopheric depth (set to 0 km if line 42 is not commented out)
+atmosphereMode = 3   # default: efficiently calculate eight path lenghts per neutrino and take the average
 
 # This parameter governs the precision with which nuCraft computes the weights; it is the upper
 # limit for the deviation of the sum of the resulting probabilities from unitarity.
@@ -66,7 +72,7 @@ print("Calculating...")
 # saving the current time to measure the time needed for the execution of the following code
 t = time()
 
-# using particles
+### using particles
 """
 from collections import namedtuple
 DatPart = namedtuple("DatPart", ("zen", "eTrunc", "eMuex", "eMill", "eTrumi"))
@@ -80,17 +86,21 @@ for index, zenith in enumerate(zList):
       p = SimPart(0.,0.,0.,0.,0.,0.,
                   zenith,energy,0.,pType, -1.)
       
-      pList = AkhmedovOsci.CalcWeights([p])
+      # one call to nuCraft per particle; could also pass all particles in a list
+      pList = AkhmedovOsci.CalcWeights([p], numPrec=numPrec, atmMode=atmosphereMode)
       prob[index][:, eIndex] = pList[0].oscProb
 """
 
-# using lists (arrays, actually)
+### using lists (arrays, actually)
 zListLong, eListLong = meshgrid(zList, eList)
 zListLong = zListLong.flatten()
 eListLong = eListLong.flatten()
 tListLong = ones_like(eListLong)*pType
 
-prob = rollaxis( array(AkhmedovOsci.CalcWeights((tListLong, eListLong, zListLong), numPrec=numPrec)).reshape(len(eList), len(zList),-1), 0,3)
+# actual call to nuCraft for weight calculations:
+prob = AkhmedovOsci.CalcWeights((tListLong, eListLong, zListLong), numPrec=numPrec, atmMode=atmosphereMode)
+
+prob = rollaxis( array(prob).reshape(len(eList), len(zList),-1), 0,3)
      # rollaxis is only needed to get the same shape as prob from above,
      # i.e., four elements for the different zenith angles, of which each is an
      # array of 3 x eBins (three oscillation probabilities for every energy bin)
@@ -100,13 +110,12 @@ print("Calculating the probabilities took %f seconds." % (time()-t))
 
 
 print("Plotting...")
-import matplotlib as mpl
-mpl.use('pdf')
-mpl.rc('axes', grid=True, titlesize=14, labelsize=14, color_cycle=['b','r','k'])   # only available in recent versions
-mpl.rc('xtick', labelsize=12)
-mpl.rc('ytick', labelsize=12)
-mpl.rc('lines', linewidth=2)
-mpl.rc('text', usetex=True)
+
+from matplotlib import rc
+rc('axes', grid=True, titlesize=14, labelsize=14, color_cycle=['b','r','k'])   # only available in recent versions
+rc('xtick', labelsize=12)
+rc('ytick', labelsize=12)
+rc('lines', linewidth=2)
 from pylab import *
 
 

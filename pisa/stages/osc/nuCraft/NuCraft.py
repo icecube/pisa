@@ -60,12 +60,10 @@ from __future__ import print_function, division
 from math import sqrt as ssqrt
 from math import cos as scos
 from math import fabs as fabs     # more restrictive than abs() (in a good way)
-# from math import pow as spower   # slower than **
 from numpy import *
-import scipy.interpolate as interpolate
-import scipy.integrate as integrate
-# from scipy.linalg.matfuncs import expm2 as expm2
+from scipy import interpolate, integrate
 from scipy.stats import lognorm
+from ast import literal_eval
 import warnings
 def CustomWarning(message, category, filename, lineno):
    print("%s:%s: %s:%s" % (filename, lineno, category.__name__, message))
@@ -140,43 +138,49 @@ class EarthModel:
          profFile = file(name, 'r')
          profLines = profFile.readlines()
          profFile.close()
-         # slightly unsafe, so don't accept nuCraft Earth profiles from untrusted sources ;)
-         self.y = eval(profLines[1])
-         self.rE = eval(profLines[2])
-         self.rOCore = eval(profLines[3])
-         self.rICore = eval(profLines[4])
+         # previous verions of nuCraft used the eval function which can be unsafe;
+         # there are no known security risks in ast.literal_eval, but the check for underscores
+         # in the file has been kept in place to warn the user of files that were possibly intended
+         # to exploit security holes of the eval function
+         for l in profLines:
+            if "_" in l:
+               raise Exception("Underscore detected in EarthModel file '%s'; possibly malicious code, see README!" % name)
+         self.y = literal_eval(profLines[1])
+         self.rE = literal_eval(profLines[2])
+         self.rOCore = literal_eval(profLines[3])
+         self.rICore = literal_eval(profLines[4])
          profX = [float(prof.split()[0]) for prof in profLines[6:-1]]
          profY = [float(prof.split()[1]) for prof in profLines[6:-1]]
       else:
          raise NotImplementedError("The Earth model name '%s' can not be found!" % name)
       
-      assert(len(profX) == len(profY))
-      # self.profInt = interpolate.interp1d(profX, profY)   # same interface, but much slower
+      assert len(profX) == len(profY), "Density profile must have exactly one density per radius."
       self.profInt = interpolate.InterpolatedUnivariateSpline(profX, profY, k=1)
       
-      # self.mod indicates whether this is the profile indicated by its name, or if it has
-      # been modified
+      # self.mod indicates whether this is the profile indicated by its name, or if it has been modified
       self.mod = False
       
       if not y == None:
          if not self.y == y:
             self.mod = True
          self.y = y
-      assert(len(self.y) == 3 and logical_and(0 <= array(self.y), array(self.y) <= 1).all())
+      assert len(self.y) == 3 and logical_and(0 <= array(self.y), array(self.y) <= 1).all(), \
+             "Electron number tumple must be (y_mantle, y_oCore, y_iCore), with 0 <= y <= 1."
       
       if not rE == None:
          if not self.rE == rE:
             self.mod = True
-         self.rE == rE
+         self.rE = rE
       if not rOCore == None:
          if not self.rOCore == rOCore:
             self.mod = True
-         self.rOCore == rOCore
+         self.rOCore = rOCore
       if not rICore == None:
          if not self.rICore == rICore:
             self.mod = True
-         self.rICore == rICore
-      assert(0. <= self.rICore <= self.rOCore <= self.rE)
+         self.rICore = rICore
+      assert 0. <= self.rICore <= self.rOCore <= self.rE, \
+             "Radii of Earth's inner and outer core and surface must be positive and monotonically increasing."
       
       # compute induced mass potentials for three flavors of neutrinos; see SetDim() below
       self.SetDim(3)
@@ -191,7 +195,7 @@ class EarthModel:
       
       Calling this manually should not be needed because it is called by nuCraft automatically.
       """
-      assert(isinstance(dim, int) and dim >= 3)
+      assert isinstance(dim, int) and dim >= 3, "Dimension must be an integer larger than two."
       self._dim = dim
       
       # A and AxCore are constants of the squared mass potentials induced by matter
@@ -238,7 +242,14 @@ class NuCraft:
    
    An instance of the class is created by calling NuCraft(deltaMi1List, angleList),
    where deltaMi1List is a list like described in ConstructMassMatrix, and angleList like
-   described in ConstructMixingMatrix.
+   described in ConstructMixingMatrix. The constructor also accepts keyword arguments that
+   can be used to change default values:
+       earthModel: an instance of EarthModel class for the computation of matter effects
+    detectorDepth: depth of the detector relative to the surface of the Earth in km (>= 0)
+        atmHeight: height of the atmosphere relative to the surface of the Earth in km,
+                   only used for atmMode 0 (see CalcWeights documentation)
+   The last two can also be changed after initialization by modifying self.detectorDepth
+   (default 2. km) and self.atmHeight (default 20. km).
    
    The recommended method to calculate the oscillation probabilites is CalcWeights;
    it solves the Schroedinger equation in the interaction basis (i.e., where vacuum
@@ -257,7 +268,8 @@ class NuCraft:
    are unproblematic if the inequalities thereafter are not off by much (e.g., 50%).
    """
    
-   def __init__(self, deltaMi1List, angleList, earthModel=EarthModel("prem")):
+   def __init__(self, deltaMi1List, angleList, earthModel=EarthModel("prem"),
+                detectorDepth=2., atmHeight=20.):
       if len(deltaMi1List) == 2 and len(angleList) == 1 and angleList[0][1] == 2:
          deltaMi1List = list(deltaMi1List)
          deltaMi1List.append(0.)
@@ -270,7 +282,7 @@ class NuCraft:
       self.U = self.ConstructMixingMatrix(angleList)
       
       dim = len(self.M)
-      assert(self.M.shape == self.U.shape == eye(dim).shape)
+      assert self.M.shape == self.U.shape == eye(dim).shape, "Shape mismatch between M and U."
       
       if isinstance(earthModel, EarthModel):
          earthModel.SetDim(dim)
@@ -278,24 +290,28 @@ class NuCraft:
       else:
          raise ValueError("The provided earth model '%s' is not of the EarthModel class." % earthModel)
       
-      # tuple entry 0 became redundant because of the transition from Geant-style particle IDs to
-      # PDG-style particle IDs; kept it for now because of performance reasons (prob. negligible)
+      # tuple entry 0 is 1 for particles and -1 for antiparticles; it became redundant because of the
+      # transition from Geant-style particle IDs to PDG-style particle IDs, where IDs < 0 signify
+      # antiparticles; kept it because of readability
       self.mcTypeDict = {}
-      self.mcTypeDict[ 12] = ( 1, array([1.]        +[0.j]*(dim-1)))
-      self.mcTypeDict[-12] = (-1, array([1.]        +[0.j]*(dim-1)))
-      self.mcTypeDict[ 14] = ( 1, array([0.j,1.]    +[0.j]*(dim-2)))
-      self.mcTypeDict[-14] = (-1, array([0.j,1.]    +[0.j]*(dim-2)))
-      self.mcTypeDict[ 16] = ( 1, array([0.j,0.j,1.]+[0.j]*(dim-3)))
-      self.mcTypeDict[-16] = (-1, array([0.j,0.j,1.]+[0.j]*(dim-3)))
+      self.mcTypeDict[ 12] = ( 1, array([1.]        +[0.j]*(dim-1)))   # NuE
+      self.mcTypeDict[-12] = (-1, array([1.]        +[0.j]*(dim-1)))   # NuEBar
+      self.mcTypeDict[ 14] = ( 1, array([0.j,1.]    +[0.j]*(dim-2)))   # NuMu
+      self.mcTypeDict[-14] = (-1, array([0.j,1.]    +[0.j]*(dim-2)))   # NuMuBar
+      self.mcTypeDict[ 16] = ( 1, array([0.j,0.j,1.]+[0.j]*(dim-3)))   # NuTau
+      self.mcTypeDict[-16] = (-1, array([0.j,0.j,1.]+[0.j]*(dim-3)))   # NuTauBar
       for i in range(1,dim-2):
-         self.mcTypeDict[ 80+i] = ( 1, array([0.j]*(2+i)+[1.]+[0.j]*(dim-3-i)))
-         self.mcTypeDict[-80-i] = (-1, array([0.j]*(2+i)+[1.]+[0.j]*(dim-3-i)))
+         self.mcTypeDict[ 80+i] = ( 1, array([0.j]*(2+i)+[1.]+[0.j]*(dim-3-i)))   # NuSterile_i
+         self.mcTypeDict[-80-i] = (-1, array([0.j]*(2+i)+[1.]+[0.j]*(dim-3-i)))   # NuSterileBar_i
       
       # depth of the (center of the) detector below the surface of the Earth sphere, in km
-      self.detectorDepth = 2.
+      self.detectorDepth = detectorDepth
+      if detectorDepth < 0:
+         warnings.warn("detectorDepth was set to a value smaller 0; your detector is %.3f km above ground!"
+                       % abs(detectorDepth))
       # extension of the atmosphere above the surface of the Earth sphere, in km; ignored in default
       # atmosphere handling mode (uses Gaisser/Stanev model instead, see InteractionAlt method below)
-      self.atmHeight = 20.
+      self.atmHeight = atmHeight
    
    
    def __repr__(self):
@@ -323,7 +339,7 @@ class NuCraft:
       parList = [1., 7.50e-5, 7.50e-5+2.32e-3]
       """
       # ensure that all masses are positive
-      assert(-parList[0]**2 <= min(parList[1:]))
+      assert -parList[0]**2 <= min(parList[1:]), "All masses have to be positive!"
       
       return diag([parList[0]**2] + [parList[0]**2 + m for m in parList[1:]])
    
@@ -384,32 +400,56 @@ class NuCraft:
       mode 2 and mode 3:
          returns eight equally probable altitudes from the whole range of values allowed
          by the parametrization also used in mode 1
+      
+      The interaction height distributions in the paper quoted above are only given
+      implicitely as differential equations without closed-form solutions.
+      The parametrization was obtained by solving those equations numerically at a fixed
+      energy of 2 GeV, as the energy depedence is weak and 2 GeV is the energy where
+      oscillation effects start to become significant at the horizon, where the relative
+      impact of the atmosphere is large. These numerical solutions were then parameterized
+      by log-normal distributions as described in the nuCraft publication.
+      As the equations in the paper are only given for six discrete zenith angles down to
+      cos(zen) = 0.05, the solutions had to be inter- and extrapolated to other zenith
+      angles. The interpolation was done by fitting the two parameters mu and sigma of the
+      log-normal distributions as function of cos(zen), using a polynomial for mu and and
+      a power function plus linear polynomial for sigma.
+      The extrapolation was done by adding a cubically suppressed constant term to cos(zen)
+      (see formula below), such that cos(zen) never falls below 0.05, thereby possibly
+      underestimating the path length for very horizontal events, but achieving a realistic
+      smooth transition between particles above and below the horizon.
       """
       
       if mode == 0:
          return [(1., self.earthModel.rE + self.atmHeight)]
       
+      # extrapolation formula described above:
       # get the cosine of the zenith angle, and compensate for not having a parametrization
       # for the effective zenith angle (i.e., the zenith angle relative to the Earth's curvature
-      # averaged through the atmosphere) at cos(zen) < 0.05
+      # averaged through the atmosphere) at cos(zen) < 0.05;   0.000125 == 0.05**3
       cosZen = (fabs(scos(mcZen))**3 + 0.000125)**0.333333333
       
-      if mcType in (12, -12):   # electron neutrinos
+      # interpolation part described above, with numbers gained from the parametrizations
+      if mcType in (12, -12):   # electron neutrinos, mostly from muon decay
          mu = 1.285e-9*(cosZen-4.677)**14. + 2.581
          sigma = 0.6048*cosZen**0.7667 - 0.5308*cosZen + 0.1823
-      else:
+      else:   # muon neutrinos, from muon and pion/kaon decay
          mu = 1.546e-9*(cosZen-4.618)**14. + 2.553
          sigma = 1.729*cosZen**0.8938 - 1.634*cosZen + 0.1844
       
+      # log-normal distribution, shifted 12 km upwards as required by the parametrization
       logn = lognorm(sigma, scale=2*exp(mu), loc=-12)
       
       if mode == 1:
+         # draw a random non-negative production height from the parametrization
          z = logn.rvs()*cosZen
          while z < 0:
             z = logn.rvs()*cosZen
          return [(1., z+self.earthModel.rE)]
       elif mode in [2, 3]:
+         # get eight equally probable altitudes, using the cumulative distribution
          cdf0 = logn.cdf(0)
+         # the array contains the central values of the partition of [0,1] into eight equally-sized
+         # intervals, in ascending order
          qList = cdf0 + array([0.0625,0.1875,0.3125,0.4375,0.5625,0.6875,0.8125,0.9375])*(1.-cdf0)
          return list(zip(ones(8)/8., logn.ppf(qList)*cosZen + self.earthModel.rE))
       else:
@@ -461,16 +501,18 @@ class NuCraft:
       1. is larger than numPrec.
       """
       # for the input format checks, assume that inList is homogeneous
-      assert(type(vacuum) is bool)
-      assert(atmMode in range(4))
+      assert type(vacuum) is bool, "Argument vacuum has to be a Boolean."
+      assert atmMode in range(4), "Only atmModes 0, 1, 2, and 3 are supported."
       partMode = False
       if not len(inList):   # empty input
          return []
       elif type(inList) is tuple and not type(inList[0]) is tuple:   # input case 1
-         assert(len(inList[0]) == len(inList[1]) == len(inList[2]))
+         assert len(inList[0]) == len(inList[1]) == len(inList[2]), \
+                "The lists for type, energy and zenith have to be of the same length!"
          inList = zip(*inList)
       elif not type(inList) is tuple and type(inList[0]) is tuple:   # input case 2
-         assert(len(inList[0]) == 3)
+         assert len(inList[0]) == 3, \
+                "Input tuples need to have three attributes: type, energy, and zenith angle."
       elif type(inList[0]).__base__ is tuple:   # input case 3
          try:
             if not set(("zenMC", "eMC", "mcType", "oscProb")).issubset(inList[0]._fields):
@@ -494,7 +536,6 @@ class NuCraft:
       rOCore = self.earthModel.rOCore
       rICore = self.earthModel.rICore
       rDet = self.earthModel.rE - self.detectorDepth
-      rAtm = self.earthModel.rE + self.atmHeight
       profInt = self.earthModel.profInt   # matter density profile interpolation
       
       global lCache
@@ -505,6 +546,11 @@ class NuCraft:
       def calcProb(inTuple):
          """
          Calculate the oscillation probabilities of an individual nu.
+         
+         The constant -2.533866j that appears throughout this function is -2*j*1.266933,
+         where j is the imaginary unit and the other factor is GeV*fm/(4*hbar*c), which
+         is the factor required to transition from natural units to SI units.
+         It is hard-coded as it is not a free parameter and will never change.
          """
          # python 3 does not support tuple parameter unpacking anymore
          mcType, mcEn, mcZen = inTuple
@@ -520,9 +566,9 @@ class NuCraft:
             if l == lCache:
                return
             
-            # modVAC is the time-dependent state-transition matrix that brings a
-            # state vector to the interaction basis, i.e., to the basis where
-            # the vacuum oscillations are flat
+            # modVAC is the time-dependent state-transition matrix that brings a state
+            # vector to the interaction basis, i.e., to the basis where the vacuum
+            # oscillations are flat; see calcProb docstring for magic-number explanation
             if isAnti:
                modVAC = dot(svdVAC0a * exp(-2.533866j/en*svdVAC1*(L-l)), svdVAC2a)
             else:
@@ -577,9 +623,8 @@ class NuCraft:
             L = ssqrt( rAtm*rAtm + rDet*rDet - 2*rAtm*rDet*scos( mcZen - arcsin(sin(pi-mcZen)/rAtm*rDet) ) )
             dscM(L, mcEn, mcZen)
             
-            solver = integrate.ode(f, jac).set_integrator('zvode', method='adams', order=4, with_jacobian=True,
-                                                                   nsteps=120000, min_step=0.0002, max_step=500.,
-                                                                   atol=numPrec*2e-3, rtol=numPrec*2e-3)
+            solver = integrate.ode(f, jac).set_integrator('zvode', method='adams', order=5, with_jacobian=True,
+                                                                   nsteps=1200000, atol=numPrec*2e-3, rtol=numPrec*2e-3)
             solver.set_initial_value(dot(modVAC, mcType[1]), L).set_f_params(mcEn, mcZen).set_jac_params(mcEn, mcZen)
             solver.integrate(0.)
             
@@ -610,9 +655,8 @@ class NuCraft:
                L = ssqrt( rAtm*rAtm + rDet*rDet - 2*rAtm*rDet*scos( mcZen - arcsin(sin(pi-mcZen)/rAtm*rDet) ) )
                dscM(L, mcEn, mcZen)
                
-               solver = integrate.ode(f, jac).set_integrator('zvode', method='adams', order=4, with_jacobian=True,
-                                                                      nsteps=120000, min_step=0.0002, max_step=500.,
-                                                                      atol=numPrec*2e-3, rtol=numPrec*2e-3)
+               solver = integrate.ode(f, jac).set_integrator('zvode', method='adams', order=5, with_jacobian=True,
+                                                                      nsteps=1200000, atol=numPrec*2e-3, rtol=numPrec*2e-3)
                solver.set_initial_value(dot(modVAC, mcType[1]), L).set_f_params(mcEn, mcZen).set_jac_params(mcEn, mcZen)
                solver.integrate(0.)
                
@@ -622,6 +666,8 @@ class NuCraft:
                   endVAC = dot(svdVAC0n * exp(-2.533866j/mcEn*svdVAC1*L), svdVAC2n)
                # <==> endVAC = dot(dot(svdVAC0, diag(exp(-2.533866j/mcEn*svdVAC1*L))), svdVAC2)
                results.append( rAtmWeight * square(absolute( dot(conj(endVAC).T, solver.y) )) )
+         if not solver.successful():
+               raise ArithmeticError("ODE solver was not successful, check for warnings about 'excess work done'!")
          prob = sum(results, 0)
          if abs(1-sum(prob)) > numPrec:
             warnings.warn("The computed unitarity does not meet the specified precision: %.2e > %.2e" % (abs(1-sum(prob)), numPrec))
@@ -635,7 +681,7 @@ class NuCraft:
          return [calcProb(t) for t in inList]
    
    
-   def CalcWeightsLegacy(self, inList, vacuum=False):
+   def CalcWeightsLegacy(self, inList, vacuum=False, numPrec=5e-3):
       """
       Calculate neutrino oscillation probabilities in the flavor basis.
       
@@ -668,21 +714,27 @@ class NuCraft:
       in input format cases 1 and 2, the return format is a list of [P_E, P_Mu, P_Tau, ...];
       in case 3, the list of particles is returned with updated oscProb fields
       
-      Does not properly take into account the atmosphere (only atmMode 0 is available),
-      and does not support the numPrec keyword argument.
+      numPrec governs the numerical precision with which the Schroedinger equation is solved;
+      the unitarity condition (i.e., the fact that the sum of the resulting probabilities
+      should be 1.) is used as a simple cross-check, a warning is issued if the deviation from
+      1. is larger than numPrec.
+      
+      Does not properly take into account the atmosphere (only atmMode 0 is available).
       """
       warnings.warn("Legacy mode methods are often slower and less precise, use at your own risk")
       
       # for the input format checks, assume that inList is homogeneous
-      assert(type(vacuum) is bool)
+      assert type(vacuum) is bool, "Argument vacuum has to be a Boolean."
       partMode = False
       if not len(inList):   # empty input
          return []
       elif type(inList) is tuple and not type(inList[0]) is tuple:   # input case 1
-         assert(len(inList[0]) == len(inList[1]) == len(inList[2]))
+         assert len(inList[0]) == len(inList[1]) == len(inList[2]), \
+                "The lists for type, energy and zenith have to be of the same length!"
          inList = zip(*inList)
       elif not type(inList) is tuple and type(inList[0]) is tuple:   # input case 2
-         assert(len(inList[0]) == 3)
+         assert len(inList[0]) == 3, \
+                "Input tuples need to have three attributes: type, energy, and zenith angle."
       elif type(inList[0]).__base__ is tuple:   # input case 3
          try:
             if not set(("zenMC", "eMC", "mcType", "oscProb")).issubset(inList[0]._fields):
@@ -709,6 +761,11 @@ class NuCraft:
       def calcProb(inTuple):
          """
          Calculate the oscillation probabilities of an individual nu.
+         
+         The constant -2.533866j that appears throughout this function is -j*1.266933,
+         where j is the imaginary unit and the other factor is GeV*fm/(4*hbar*c), which
+         is the factor required to transition from natural units to SI units.
+         It is hard-coded as it is not a free parameter and will never change.
          """
          # python 3 does not support tuple parameter unpacking anymore
          mcType, mcEn, mcZen = inTuple
@@ -736,6 +793,7 @@ class NuCraft:
          
          def f(l, psi, en, zen):
             dscM(l, zen)
+            # see calcProb docstring for magic-number explanation
             if isAnti:
                return -2.533866j/en * dot((VACa + aMSW), psi)
             else:
@@ -767,13 +825,17 @@ class NuCraft:
          L = ssqrt( rAtm*rAtm + rDet*rDet - 2*rAtm*rDet*scos( mcZen - arcsin(sin(pi-mcZen)/rAtm*rDet) ) )
          dscM(L, mcZen)
          
-         solver = integrate.ode(f, jac).set_integrator('zvode', method='adams', order=4, with_jacobian=True,
-                                                                nsteps=1200000, min_step=0.0002, max_step=500.,
-                                                                atol=.1e-6, rtol=.1e-6)
+         solver = integrate.ode(f, jac).set_integrator('zvode', method='adams', order=5, with_jacobian=True,
+                                                                nsteps=12000000, atol=numPrec*2e-2, rtol=numPrec*2e-2)
          solver.set_initial_value(mcType[1], L).set_f_params(mcEn, mcZen).set_jac_params(mcEn, mcZen)
          solver.integrate(0.)
+         if not solver.successful():
+            raise ArithmeticError("ODE solver was not successful, check for warnings about 'excess work done'!")
          
-         return square(absolute(solver.y))
+         prob = square(absolute(solver.y))
+         if abs(1-sum(prob)) > numPrec:
+            warnings.warn("The computed unitarity does not meet the specified precision: %.2e > %.2e" % (abs(1-sum(prob)), numPrec))
+         return prob
       
       if partMode:
          # return the list of input particles with updated oscProb fields
@@ -782,6 +844,3 @@ class NuCraft:
          # return a list with one oscillation probability array per input tuple
          return [calcProb(t) for t in inList]
 
-
-
-# print( " \n Completed without fatal errors! \n " )

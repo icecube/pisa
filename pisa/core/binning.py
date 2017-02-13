@@ -115,7 +115,7 @@ class OneDimBinning(object):
     ----------
     name : str, of length > 0
         Name for this dimension. Must be valid Python name (since it will be
-        accessed with the dot operator). If not, name will be convert to a
+        accessed with the dot operator). If not, name will be converted to a
         valid Python name.
 
     tex : str or None
@@ -475,7 +475,7 @@ class OneDimBinning(object):
         See Also
         --------
         from_json : Instantiate new OneDimBinning object from the file written
-            by this method pisa.utils.jsons.to_json
+            by this method
 
         """
         jsons.to_json(self._serializable_state, filename=filename, **kwargs)
@@ -1791,7 +1791,7 @@ class MultiDimBinning(object):
         """
         if map_kw is None:
             map_kw = {}
-        hist = hist=np.empty(self.shape, **kwargs)
+        hist = np.empty(self.shape, **kwargs)
         return self.__Map(name=name, hist=hist, binning=self, **map_kw)
 
     def zeros(self, name, map_kw=None, **kwargs):
@@ -1818,7 +1818,7 @@ class MultiDimBinning(object):
         """
         if map_kw is None:
             map_kw = {}
-        hist = hist=np.zeros(self.shape, **kwargs)
+        hist = np.zeros(self.shape, **kwargs)
         return self.__Map(name=name, hist=hist, binning=self, **map_kw)
 
     def ones(self, name, map_kw=None, **kwargs):
@@ -1845,7 +1845,7 @@ class MultiDimBinning(object):
         """
         if map_kw is None:
             map_kw = {}
-        hist = hist=np.ones(self.shape, **kwargs)
+        hist = np.ones(self.shape, **kwargs)
         return self.__Map(name=name, hist=hist, binning=self, **map_kw)
 
     def full(self, fill_value, name, map_kw=None, **kwargs):
