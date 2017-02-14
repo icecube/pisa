@@ -301,6 +301,35 @@ def extract_asimov_data(data_sets, labels):
     return WO_to_TO_metrics, TO_to_WO_metrics, WO_to_TO_params, TO_to_WO_params
 
 
+def get_inj_param_units(inj_param_name, fit_params):
+    '''
+    Gets the appropriate units for the injected parameter based on its name and
+    the units that that parameter has in the rest of the fit parameters. This 
+    is not guaranteed to work out perfectly since you may have specified some 
+    completely different units from those typically in the config files. In 
+    this case, you must specify the units in the arguments to the script.
+    '''
+    if inj_param_name == 'sin2theta23':
+        inj_param_units = 'dimensionless'
+    elif inj_param_name == 'deltam3l':
+        inj_param_units = 'electron_volt ** 2'
+    else:
+        if inj_param_name not in fit_params.keys():
+            raise ValueError('The injected parameter %s could not be found in '
+                             'the fitted parameters: %s. Please use the script'
+                             ' argument to set the injected parameter units '
+                             'manually'%(inj_param_name, fit_params.keys()))
+        else:
+            val, units = parse_pint_string(
+                pint_string=fit_params[inj_param_name][0]
+            )
+            inj_param_units = units
+    logging.info('Found %s as the units for the injected parameter'
+                 %inj_param_units)
+    return inj_param_units
+        
+
+
 def calculate_deltachi2_signifiances(WO_to_TO_metrics, TO_to_WO_metrics):
     '''
     Takes the true and wrong ordering fit metrics and combines them in to the 
@@ -314,7 +343,7 @@ def calculate_deltachi2_signifiances(WO_to_TO_metrics, TO_to_WO_metrics):
 
 
 def plot_significance(inj_param_vals, significances, truth, inj_param_name,
-                      testlabel=None):
+                      inj_param_units, testlabel=None):
     '''
     This function will do the actual plotting of the significances.
     '''
@@ -349,7 +378,15 @@ def plot_significance(inj_param_vals, significances, truth, inj_param_name,
         )
     yrange = max(significances)-min(significances)
     plt.ylim(min(significances)-0.1*yrange,max(significances)+0.1*yrange)
-    plt.xlabel(tex_axis_label(inj_param_name))
+    if inj_param_name == 'deltam3l':
+        plt.xlabel(r'$|$' + tex_axis_label(inj_param_name) + \
+                   r'$|$ $/$ $10^{-3}$ (%s)'%tex_axis_label(inj_param_units))
+    else:
+        if not inj_param_units == 'dimensionless':
+            plt.xlabel(tex_axis_label(inj_param_name) + \
+                       r' (%s)'%tex_axis_label(inj_param_units))
+        else:
+            plt.xlabel(tex_axis_label(inj_param_name))
     if testlabel is not None:
         plt.ylabel(r'%s Significance ($\sigma$)'%testlabel)
     else:
@@ -480,8 +517,8 @@ def add_extra_points(points, labels):
 
 
 def plot_significances(WO_to_TO_metrics, TO_to_WO_metrics, inj_param_vals,
-                       bestfit, altfit, inj_param_name, labels, detector,
-                       selection, outdir, extra_points=None,
+                       bestfit, altfit, inj_param_name, inj_param_units,
+                       labels, detector, selection, outdir, extra_points=None,
                        extra_points_labels=None):
     '''
     Takes the two sets of metrics relevant to the Asimov-based analysis and 
@@ -514,6 +551,7 @@ def plot_significances(WO_to_TO_metrics, TO_to_WO_metrics, inj_param_vals,
         significances=significances,
         truth=truth,
         inj_param_name=inj_param_name,
+        inj_param_units=inj_param_units,
         testlabel=testlabel
     )
     minx = min(inj_param_vals)
@@ -562,8 +600,9 @@ def plot_significances(WO_to_TO_metrics, TO_to_WO_metrics, inj_param_vals,
 def plot_significances_two_truths(WO_to_TO_metrics, TO_to_WO_metrics, bestfit,
                                   altfit, alt_WO_to_TO_metrics,
                                   alt_TO_to_WO_metrics, alt_bestfit, alt_altfit,
-                                  inj_param_vals, inj_param_name, labels,
-                                  alt_labels, detector, selection, outdir,
+                                  inj_param_vals, inj_param_name,
+                                  inj_param_units, labels, alt_labels,
+                                  detector, selection, outdir,
                                   extra_points=None, extra_points_labels=None):
     '''
     Takes the two sets of metrics relevant to the Asimov-based analysis and
@@ -628,6 +667,7 @@ def plot_significances_two_truths(WO_to_TO_metrics, TO_to_WO_metrics, bestfit,
         significances=significances,
         truth=truth,
         inj_param_name=inj_param_name,
+        inj_param_units=inj_param_units,
         testlabel=testlabel
     )
     plot_significance(
@@ -635,6 +675,7 @@ def plot_significances_two_truths(WO_to_TO_metrics, TO_to_WO_metrics, bestfit,
         significances=alt_significances,
         truth=alt_truth,
         inj_param_name=inj_param_name,
+        inj_param_units=inj_param_units,
         testlabel=testlabel
     )
     minx = min(inj_param_vals)
@@ -682,8 +723,8 @@ def plot_significances_two_truths(WO_to_TO_metrics, TO_to_WO_metrics, bestfit,
     plt.close()
 
 
-def plot_fit(inj_param_vals, inj_param_name, fit_param,
-             TO_to_WO_param_vals, TO_to_WO_label,
+def plot_fit(inj_param_vals, inj_param_name, inj_param_units, fit_param,
+             fit_param_units, TO_to_WO_param_vals, TO_to_WO_label,
              WO_to_TO_param_vals, WO_to_TO_label):
     '''
     This is the function which does the actual plotting of the best fit results.
@@ -709,16 +750,29 @@ def plot_fit(inj_param_vals, inj_param_name, fit_param,
     ymin = min(min(TO_to_WO_param_vals),min(WO_to_TO_param_vals))
     yrange = ymax-ymin
     plt.ylim(ymin-0.1*yrange,ymax+0.1*yrange)
-    plt.xlabel(tex_axis_label(inj_param_name))
-    if fit_param == 'deltam31':
-        plt.ylabel(r'$|$'+tex_axis_label(fit_param)+r'$|$')
+    if not inj_param_units == 'dimensionless':
+        plt.xlabel(tex_axis_label(inj_param_name) + \
+                   r' (%s)'%tex_axis_label(inj_param_units))
     else:
-        plt.ylabel(tex_axis_label(fit_param))
+        plt.xlabel(tex_axis_label(inj_param_name))
+    if fit_param == 'deltam31':
+        if not fit_param_units == 'dimensionless':
+            plt.ylabel(r'$|$'+tex_axis_label(fit_param) + \
+                       r'$|$ (%s)'%tex_axis_label(fit_param_units))
+        else:
+            plt.ylabel(r'$|$'+tex_axis_label(fit_param)+r'$|$')
+    else:
+        if not fit_param_units == 'dimensionless':
+            plt.ylabel(tex_axis_label(fit_param) + \
+                       r' (%s)'%tex_axis_label(fit_param_units))
+        else:
+            plt.ylabel(tex_axis_label(fit_param))
     plt.legend(loc='best')
 
 
 def plot_individual_fits(WO_to_TO_params, TO_to_WO_params, inj_param_vals,
-                         inj_param_name, labels, detector, selection, outdir):
+                         inj_param_name, inj_param_units, labels, detector,
+                         selection, outdir):
     '''
     Takes the two sets of best fit parameters relevant to the Asimov-based 
     analysis and makes plots of them as a function of the injected parameter.
@@ -782,7 +836,9 @@ def plot_individual_fits(WO_to_TO_params, TO_to_WO_params, inj_param_vals,
         plot_fit(
             inj_param_vals=inj_param_vals,
             inj_param_name=inj_param_name,
+            inj_param_units=inj_param_units,
             fit_param=param,
+            fit_param_units=units,
             TO_to_WO_param_vals=TO_to_WO_param_vals,
             TO_to_WO_label=TO_to_WO_label,
             WO_to_TO_param_vals=WO_to_TO_param_vals,
@@ -807,7 +863,8 @@ def plot_individual_fits(WO_to_TO_params, TO_to_WO_params, inj_param_vals,
 
 
 def plot_combined_fits(WO_to_TO_params, TO_to_WO_params, inj_param_vals,
-                       inj_param_name, labels, detector, selection, outdir):
+                       inj_param_name, inj_param_units, labels, detector,
+                       selection, outdir):
     '''
     Takes the two sets of best fit parameters relevant to the Asimov-based 
     analysis and makes plots of them as a function of the injected parameter.
@@ -879,7 +936,9 @@ def plot_combined_fits(WO_to_TO_params, TO_to_WO_params, inj_param_vals,
         plot_fit(
             inj_param_vals=inj_param_vals,
             inj_param_name=inj_param_name,
+            inj_param_units=inj_param_units,
             fit_param=param,
+            fit_param_units=units,
             TO_to_WO_param_vals=TO_to_WO_param_vals,
             TO_to_WO_label=TO_to_WO_label,
             WO_to_TO_param_vals=WO_to_TO_param_vals,
@@ -920,6 +979,14 @@ def parse_args():
     parser.add_argument(
         '--selection',type=str,default='',
         help="""Name of selection to put in histogram titles."""
+    )
+    parser.add_argument(
+        '--inj-param-units',type=str,default=None,
+        help="""If you know the units that you injected the parameter with and 
+        you expect that the script will not be able to find this by looking at 
+        the fit parameters in the config file (i.e. theta13 may be defined in 
+        degrees in the config file but you injected it in radians) then use 
+        this argument to explicitly set it for use in the plot labels."""
     )
     parser.add_argument(
         '-IF', '--individual_fits', action='store_true', default=False,
@@ -1002,6 +1069,13 @@ def main():
     WO_to_TO_metrics, TO_to_WO_metrics, WO_to_TO_params, TO_to_WO_params = \
         extract_asimov_data(data_sets, labels)
 
+    inj_param_units = init_args_d.pop('inj_param_units')
+    if inj_param_units is None:
+        inj_param_units = get_inj_param_units(
+            inj_param_name=inj_param_name,
+            fit_params=WO_to_TO_params
+        )
+
     if WO_to_TO_params.keys() == ['bestfit','altfit']:
         if cfits or ifits:
             logging.warning('You have requested to make plots of the best fit '
@@ -1052,6 +1126,7 @@ def main():
             alt_altfit=alt_WO_to_TO_params['altfit'],
             inj_param_vals=inj_param_vals,
             inj_param_name=inj_param_name,
+            inj_param_units=inj_param_units,
             labels=labels,
             alt_labels=alt_labels,
             detector=detector,
@@ -1068,6 +1143,7 @@ def main():
             TO_to_WO_metrics=np.array(TO_to_WO_metrics),
             inj_param_vals=inj_param_vals,
             inj_param_name=inj_param_name,
+            inj_param_units=inj_param_units,
             bestfit=WO_to_TO_params['bestfit'],
             altfit=WO_to_TO_params['altfit'],
             labels=labels,
@@ -1085,6 +1161,7 @@ def main():
                 TO_to_WO_params=TO_to_WO_params,
                 inj_param_vals=inj_param_vals,
                 inj_param_name=inj_param_name,
+                inj_param_units=inj_param_units,
                 labels=labels,
                 detector=detector,
                 selection=selection,
@@ -1098,6 +1175,7 @@ def main():
                 TO_to_WO_params=TO_to_WO_params,
                 inj_param_vals=inj_param_vals,
                 inj_param_name=inj_param_name,
+                inj_param_units=inj_param_units,
                 labels=labels,
                 detector=detector,
                 selection=selection,

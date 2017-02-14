@@ -5,6 +5,7 @@ Histogramming on the GPU
 
 """
 
+
 import os
 
 import numpy as np
@@ -225,20 +226,32 @@ class GPUHist(object):
         cuda.memcpy_htod(self.d_hist, self.hist)
 
     def update_bin_edges(self, bin_edges_x, bin_edges_y, bin_edges_z=None):
-        # ensure compatibility
+        """Update the bin edge locations to use. Note that the number of bins
+        cannot change.
+
+        Parameters
+        ----------
+        bin_edges_x, bin_edges_y : arrays
+            X and Y bin edges
+
+        bin_edges_z : array or None
+            Optionally specify Z bin edges
+
+        """
+        # Ensure compatibility
         assert self.h3d == bool(bin_edges_z is not None)
-        assert self.n_bins_x == np.int32(len(bin_edges_x)-1)
-        assert self.n_bins_y == np.int32(len(bin_edges_y)-1)
+        assert self.n_bins_x == ITYPE(len(bin_edges_x)-1)
+        assert self.n_bins_y == ITYPE(len(bin_edges_y)-1)
         if self.h3d:
-            assert self.n_bins_z == np.int32(len(bin_edges_z)-1)
-        # copy
+            assert self.n_bins_z == ITYPE(len(bin_edges_z)-1)
+        # Copy arrays to GPU
         cuda.memcpy_htod(self.d_bin_edges_x, bin_edges_x)
         cuda.memcpy_htod(self.d_bin_edges_y, bin_edges_y)
         if self.h3d:
             cuda.memcpy_htod(self.d_bin_edges_z, bin_edges_z)
 
     def get_hist(self, n_events, d_x, d_y, d_w, d_z=None):
-        """Retrive histogram, given device arrays for x&y values as well as
+        """Retrieve histogram, given device arrays for x&y values as well as
         weights w"""
         # TODO: useful comments on what's going on with magical numbers and
         # computations
@@ -280,6 +293,8 @@ class GPUHist(object):
 
 
 def test_GPUHist():
+    """Unit tests (and timings) for GPUHist class"""
+    from time import time
     from itertools import product
     import pycuda.autoinit
 
@@ -293,9 +308,9 @@ def test_GPUHist():
                       %(ftype.__name__, weight, n_bins, nexp))
 
         if ftype == np.float32:
-            rtol = 1e-6
+            rtol = 1e-5
         elif ftype == np.float64:
-            rtol = 1e-13
+            rtol = 1e-12
 
         # Draw random samples from the Pareto distribution for energy values
         rs = np.random.RandomState(seed=0)
@@ -328,6 +343,7 @@ def test_GPUHist():
         else:
             w = np.ones_like(e, dtype=ftype)
 
+        t0 = time()
         d_e = cuda.mem_alloc(e.nbytes)
         d_cz = cuda.mem_alloc(cz.nbytes)
         d_pid = cuda.mem_alloc(pid.nbytes)
@@ -336,6 +352,7 @@ def test_GPUHist():
         cuda.memcpy_htod(d_cz, cz)
         cuda.memcpy_htod(d_pid, pid)
         cuda.memcpy_htod(d_w, w)
+        logging.debug('time to copy data: %s' % (time()-t0))
 
         bin_edges_e = np.logspace(0, 2, n_bins+1, dtype=ftype)
         bin_edges_cz = np.linspace(-1, 1, n_bins+1, dtype=ftype)
@@ -344,18 +361,21 @@ def test_GPUHist():
         histogrammer = GPUHist(
             bin_edges_x=bin_edges_e,
             bin_edges_y=bin_edges_cz,
-            #ftype=ftype
         )
-        for i in range(3):
+        for _ in range(3):
+            t0 = time()
             hist2d = histogrammer.get_hist(
                 n_events=n_events, d_x=d_e, d_y=d_cz, d_w=d_w
             )
+            logging.debug('gpu 2d hist took %s' % (time()-t0))
 
+        t0 = time()
         np_hist2d, _, _ = np.histogram2d(
             e, cz,
             bins=(bin_edges_e, bin_edges_cz),
             weights=w
         )
+        logging.debug('np  2d hist took %s' % (time()-t0))
 
         with np.errstate(divide='ignore', invalid='ignore'):
             fract_err = (hist2d/np_hist2d) - 1
@@ -368,8 +388,8 @@ def test_GPUHist():
                   np.nanmean(np.abs(fract_err)))
             )
             if not np.allclose(hist2d, np_hist2d, atol=0, rtol=rtol):
-                logging.error('Numpy hist:\n%s' %repr(np_hist2d))
-                logging.error('GPUHist hist:\n%s' %repr(hist2d))
+                logging.error('Numpy hist:\n%s' % repr(np_hist2d))
+                logging.error('GPUHist hist:\n%s' % repr(hist2d))
                 raise ValueError(
                     '2D histogram ftype=%s, weighted=%s, n_events=%s worst'
                     ' fractional error is %s'
@@ -386,18 +406,21 @@ def test_GPUHist():
             bin_edges_x=bin_edges_e,
             bin_edges_y=bin_edges_cz,
             bin_edges_z=bin_edges_pid,
-            #ftype=ftype
         )
-        for i in range(3):
+        for _ in range(3):
+            t0 = time()
             hist3d = histogrammer.get_hist(
                 n_events=n_events, d_x=d_e, d_y=d_cz, d_w=d_w, d_z=d_pid
             )
+            logging.debug('gpu 3d hist took %s' % (time()-t0))
 
+        t0 = time()
         np_hist3d, _ = np.histogramdd(
             sample=[e, cz, pid],
             bins=(bin_edges_e, bin_edges_cz, bin_edges_pid),
             weights=w
         )
+        logging.debug('np  3d hist took %s' % (time()-t0))
 
         with np.errstate(divide='ignore', invalid='ignore'):
             fract_err = (hist3d/np_hist3d) - 1
@@ -410,8 +433,8 @@ def test_GPUHist():
                   np.nanmean(np.abs(fract_err)))
             )
             if not np.allclose(hist3d, np_hist3d, atol=0, rtol=rtol):
-                logging.error('Numpy hist:\n%s' %repr(np_hist3d))
-                logging.error('GPUHist hist:\n%s' %repr(hist3d))
+                logging.error('Numpy hist:\n%s' % repr(np_hist3d))
+                logging.error('GPUHist hist:\n%s' % repr(hist3d))
                 raise ValueError(
                     '3D histogram ftype=%s, weighted=%s, n_events=%s worst'
                     ' fractional error is %s'

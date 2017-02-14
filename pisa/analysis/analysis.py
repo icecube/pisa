@@ -153,10 +153,8 @@ class Analysis(object):
 
         alternate_fits = []
 
-        print hypo_param_selections
-
         for extra_param_selection in extra_param_selections:
-
+            
             if extra_param_selection is not None:
                 full_param_selections = hypo_param_selections
                 full_param_selections.append(extra_param_selection)

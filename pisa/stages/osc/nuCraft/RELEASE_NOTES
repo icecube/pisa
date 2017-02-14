@@ -3,6 +3,38 @@ Release notes for nuCraft
 
 
 
+2017-01-09, rev20,  Marius Wallraff
+-------------------------------------------------------------------------------
+
+Minor changes:
+- Bug fix in EarthModel's init method; setting custom Earth radii by providing
+  init arguments did not work as intended because of "==" instead of "=".
+  Thanks to Justin Lanfranchi for finding and reporting this.
+- Minor improvements in the documentation.
+- Removal of matplotlib "usetex" in the standalone example for improved compat-
+  ibility; had been removed already in CPC version.
+
+2015-03-09, rev19,  Marius Wallraff
+-------------------------------------------------------------------------------
+
+Minor changes:
+- Made detectorDepth and atmHeight more easily configurable by adding keyword
+  arguments with default values to the NuCraft class.
+- Backported keyword argument numPrec to CalcWeightsLegacy method.
+- Replaced the built-in eval function with ast.literal_eval for reading in
+  EarthModel files to eliminate security risks.
+- Added text to the assertions and improved README, docstrings and comments;
+  cleaned up code.
+- Improved the example script.
+- Slightly adjusted ODE solver settings:
+  - Order was changed from 4 to 5, where 5 is the highest order that features
+    changes compared to lower orders; seldom requires less steps than before,
+    therefore a miniscule performance increase
+  - Removed min_steps and max_steps and increased nsteps; those parameters were/
+    are chosen not to be reached, anyway
+
+
+
 2014-08-01, rev18,  Marius Wallraff
 -------------------------------------------------------------------------------
 

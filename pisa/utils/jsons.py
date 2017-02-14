@@ -22,8 +22,9 @@ import numpy as np
 import pint
 import simplejson as json
 
-from pisa import ureg, Q_
 from pisa.utils.comparisons import isbarenumeric
+# NOTE: relative imports of `resources` and `log` seems necessary or else
+# circular imports will result.
 import resources
 import log
 
@@ -165,6 +166,7 @@ class NumpyEncoder(json.JSONEncoder):
         except:
             raise Exception('JSON serialization for %s not implemented'
                             %type(obj).__name__)
+
 
 class NumpyDecoder(json.JSONDecoder):
     """Decode JSON array(s) as numpy.ndarray, also returns python strings

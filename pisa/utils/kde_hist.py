@@ -1,23 +1,25 @@
-# TODO(philippeller): cleanups, docs, blah blah
-
-
-from argparse import ArgumentParser
-from shutil import rmtree
-from tempfile import mkdtemp
 
 from kde.cudakde import gaussian_kde
 import numpy as np
 from uncertainties import unumpy as unp
 
-from pisa import ureg
 from pisa.core.binning import OneDimBinning, MultiDimBinning
-from pisa.core.map import Map, MapSet
-from pisa.utils.log import logging, set_verbosity
-from pisa.utils.plotter import Plotter
 
 
 __all__ = ['get_hist', 'kde_histogramdd', 'test_kde_histogramdd']
 
+
+# TODO:
+# * Module-level docstring
+# * Docstring for `get_hist` function
+# * Handle zenith like coszen? Or better: Define set of variables to perform
+#   reflection on and reflection parameters (e.g. `reflect_fract` or somesuch
+#   to stand in for for `coszen_reflection` and `reflect_dims` as standin for
+#   `coszen_name`; also need some way to specify whether to reflect about lower
+#   and/or upper edge); each such parameter can either be a single value, or a
+#   sequence with one value per variable.
+# * Any good reason for 0.25 and 'scott' defaults? If not, don't define a
+#   default and force the user to explicitly set this when function is called.
 
 def get_hist(sample, binning, weights=None, bw_method='scott', adaptive=True,
              alpha=0.3, use_cuda=False, coszen_reflection=0.25,
@@ -28,24 +30,25 @@ def get_hist(sample, binning, weights=None, bw_method='scott', adaptive=True,
     if len(weights) == 0:
         norm = sample.shape[0]
     else:
-        norm = np.sum(weights)
+        # TODO: make explicit axis reference in sum
+        norm = np.sum(weights, axis=0)
 
-    # Oversample
-    if oversample != 1:
-        binning = binning.oversample(oversample)
+    binning = binning.oversample(oversample)
 
     # Flip around to satisfy the kde implementation
     x = sample.T
 
     # Must have same amount of dimensions as binning dimensions
     assert x.shape[0] == len(binning)
+
+    # TODO: What if coszen isn't in binning? Does this fail?
     cz_bin = binning.names.index(coszen_name)
 
     # Normal hist
 
     # Swap out cz bin to first place (index 0)
     if cz_bin != 0:
-        #also swap binning:
+        # Also swap binning:
         new_binning = [binning[coszen_name]]
         for b in binning:
             if b.name != coszen_name:
@@ -56,18 +59,18 @@ def get_hist(sample, binning, weights=None, bw_method='scott', adaptive=True,
     # Check if edge needs to be reflected
     reflect_lower = binning[coszen_name].bin_edges[0] == -1
     reflect_upper = binning[coszen_name].bin_edges[-1] == 1
+
     # Get the kernel weights
     kernel_weights_adaptive = gaussian_kde(
         x, weights=weights, bw_method=bw_method, adaptive=adaptive,
         alpha=alpha, use_cuda=use_cuda
     )
 
-    # Get the bin centers, where we're going to evaluate the kdes at, en extend
+    # Get the bin centers, where we're going to evaluate the KDEs, and extend
     # the bin range for reflection
     bin_points = []
     for b in binning:
         c = unp.nominal_values(b.weighted_centers)
-        #c = unp.nominal_values(b.midpoints)
         if b.name == coszen_name:
             # how many bins to add for reflection
             l = int(len(c)*coszen_reflection)
@@ -76,7 +79,7 @@ def get_hist(sample, binning, weights=None, bw_method='scott', adaptive=True,
             else:
                 c0 = []
             if reflect_upper:
-                c1 = 2*c[-1] -c[-l-1:-1][::-1]
+                c1 = 2*c[-1] - c[-l-1:-1][::-1]
             else:
                 c1 = []
             c = np.concatenate([c0, c, c1])
@@ -101,7 +104,7 @@ def get_hist(sample, binning, weights=None, bw_method='scott', adaptive=True,
     # Reshape 1d array into nd
     hist = hist.reshape(megashape)
 
-    # Cut off the reflection edges, mirror then, fill up remaining space with
+    # Cut off the reflection edges, mirror them, fill up remaining space with
     # zeros and add to histo
     if reflect_lower:
         hist0 = hist[0:l, :]
@@ -138,128 +141,160 @@ def get_hist(sample, binning, weights=None, bw_method='scott', adaptive=True,
     if cz_bin != 0:
         hist = np.swapaxes(hist, 0, cz_bin)
 
+    # TODO: either this is needed or not, don't leave commented-out code
     #hist = hist/np.sum(hist)*norm
     return hist*norm
 
 
+# TODO:
+# * Stack_pid parameter seems oddly named, not clearly documented
+# * The body of this function seems like it could be cleaned up with methods on
+#   the binning object which should make working with things like this more
+#   generic, though I haven't thought through the whole problem
+# * Explicitly call functions with named parameters, especially when there are
+#   more than just a couple
+
 def kde_histogramdd(sample, binning, weights=None, bw_method='scott',
-                    adaptive=True, alpha=0.3, use_cuda=True,
-                    coszen_reflection=0.25, coszen_name='coszen',
-                    oversample=1, stack_pid=True):
+                    adaptive=True, alpha=0.3, use_cuda=False,
+                    coszen_reflection=0.25, coszen_name='coszen', oversample=1,
+                    stack_pid=True):
     """Run kernel density estimation (KDE) for an array of data points, and
-    then evaluate the on a histogram like grid, to effectively produce a
-    histogram-like output
+    then evaluate them on a histogram-like grid to effectively produce a
+    histogram-like output.
 
     Based on Sebastian Schoenen's KDE implementation:
-    http://code.icecube.wisc.edu/svn/sandbox/schoenen/kde/
+    http://code.icecube.wisc.edu/svn/sandbox/schoenen/kde
 
     Parameters
     ----------
-    sample : nd-array
-        of shape (N_evts, vars), with vars in the right order corresponding to
-        the binning order
+    sample : array
+        Shape (N_evts, vars), with vars in the right order corresponding to the
+        binning order.
 
     binning : MultiDimBinning
 
     weights : None or array
+        Same shape as `sample`
 
     bw_method: string
-        scott or silverman
+        'scott' or 'silverman' (see kde module)
 
     adaptive : bool
+        (see kde module)
 
     alpha : float
-        some parameter for the KDEs
+        A parameter for the KDEs (see kde module)
 
     use_cuda : bool
-        run on GPU (only allowing <= 2d)
+        Run on GPU (only works with <= 2d)
 
     coszen_reflection : float
-        part (number between 0 and 1) of binning that is reflect at the coszen
-        -1 and 1 egdes
+        Part (number between 0 and 1) of binning that is reflected at the
+        coszen -1 and 1 edges
 
     coszen_name : string
-        binning name to identify the coszen bin that needs to undergo special
+        Binning name to identify the coszen bin that needs to undergo special
         treatment for reflection
 
     oversample : int
-        evaluate KDE at more points per bin, takes longer, but is more accurate
+        Evaluate KDE at more points per bin, takes longer, but is more accurate
 
     stack_pid : bool
-        treat pid binning demension separate, not as KDEs
+        Treat each pid bin separately, not as another dimension of the KDEs
 
     Returns
     -------
     histogram : numpy.ndarray
 
     """
-    if weights is None:
-        weights = []
-
-    if len(weights) > 0:
-        assert len(weights) == sample.shape[0], 'Length of sample (%s) and weights (%s) incompatible'%(sample.shape[0], len(weights))
+    if weights is not None and len(weights) != sample.shape[0]:
+        raise ValueError('Length of sample (%s) and weights (%s) incompatible'
+                         %(sample.shape[0], len(weights)))
 
     if not stack_pid:
-        return get_hist(sample, binning, weights, bw_method,
-                        adaptive, alpha, use_cuda,
-                        coszen_reflection, coszen_name,
-                        oversample)
-    else:
-        bin_names = binning.names
-        bin_edges = []
-        for i, name in enumerate(bin_names):
-            if 'energy' in  name:
-                bin_edge = binning[name].bin_edges.to('GeV').magnitude
-            else:
-                bin_edge = binning[name].bin_edges.magnitude
-            bin_edges.append(bin_edge)
-        pid_bin = bin_names.index('pid')
-        other_bins = [0, 1, 2]
-        other_bins.pop(pid_bin)
-        bin_names.pop(pid_bin)
-        assert len(bin_names) == 2
-        pid_bin_edges = bin_edges.pop(pid_bin)
-        d2d_binning = []
-        for b in binning:
-            if b.name != 'pid':
-                d2d_binning.append(b)
-        d2d_binning = MultiDimBinning(d2d_binning)
-        pid_stack = []
-        for pid in range(len(pid_bin_edges)-1):
-            mask_pid = (
-                (sample.T[pid_bin] >= pid_bin_edges[pid])
-                & (sample.T[pid_bin] < pid_bin_edges[pid+1])
-                )
-            data = np.array([
-                sample.T[other_bins[0]][mask_pid],
-                sample.T[other_bins[1]][mask_pid]
-                ])
-            if len(weights) > 0:
-                weights_pid = weights[mask_pid]
-            else:
-                weights_pid = []
-            pid_stack.append(
-                get_hist(
-                    data.T,
-                    weights=weights_pid,
-                    binning=d2d_binning,
-                    coszen_name=coszen_name,
-                    use_cuda=use_cuda,
-                    bw_method=bw_method,
-                    alpha=alpha,
-                    oversample=oversample,
-                    coszen_reflection=coszen_reflection,
-                    adaptive=adaptive
-                    )
-                )
-        hist = np.dstack(pid_stack)
-        if pid_bin != 2:
-            hist = np.swapaxes(hist, pid_bin, 2)
-        return hist
+        return get_hist(
+            sample=sample,
+            binning=binning,
+            weights=weights,
+            bw_method=bw_method,
+            adaptive=adaptive,
+            alpha=alpha,
+            use_cuda=use_cuda,
+            coszen_reflection=coszen_reflection,
+            coszen_name=coszen_name,
+            oversample=oversample
+        )
 
+    bin_names = binning.names
+    bin_edges = []
+    # TODO: why the following? and why must it be GeV?
+    for name in bin_names:
+        if 'energy' in name:
+            bin_edge = binning[name].bin_edges.to('GeV').magnitude
+        else:
+            bin_edge = binning[name].bin_edges.magnitude
+        bin_edges.append(bin_edge)
+    pid_bin = bin_names.index('pid')
+    other_bins = [0, 1, 2]
+    other_bins.pop(pid_bin)
+    bin_names.pop(pid_bin)
+    assert len(bin_names) == 2
+    pid_bin_edges = bin_edges.pop(pid_bin)
+    d2d_binning = []
+    for b in binning:
+        if b.name != 'pid':
+            d2d_binning.append(b)
+    d2d_binning = MultiDimBinning(d2d_binning)
+    pid_stack = []
+    for pid in range(len(pid_bin_edges)-1):
+        mask_pid = (
+            (sample.T[pid_bin] >= pid_bin_edges[pid])
+            & (sample.T[pid_bin] < pid_bin_edges[pid+1])
+        )
+        data = np.array([
+            sample.T[other_bins[0]][mask_pid],
+            sample.T[other_bins[1]][mask_pid]
+        ])
+
+        if weights is None:
+            weights_pid = None
+        else:
+            weights_pid = weights[mask_pid]
+
+        pid_stack.append(
+            get_hist(
+                sample=data.T,
+                weights=weights_pid,
+                binning=d2d_binning,
+                coszen_name=coszen_name,
+                use_cuda=use_cuda,
+                bw_method=bw_method,
+                alpha=alpha,
+                oversample=oversample,
+                coszen_reflection=coszen_reflection,
+                adaptive=adaptive
+            )
+        )
+    hist = np.dstack(pid_stack)
+    if pid_bin != 2:
+        hist = np.swapaxes(hist, pid_bin, 2)
+    return hist
+
+
+# TODO: make the plotting optional but add comparisons against some known
+# results. This can be accomplished by seeding before calling random to obtain
+# a reference result, and check that the same values are returned when run
+# below.
 
 def test_kde_histogramdd():
     """Unit tests for kde_histogramdd"""
+    from argparse import ArgumentParser
+    from shutil import rmtree
+    from tempfile import mkdtemp
+    from pisa import ureg
+    from pisa.core.map import Map, MapSet
+    from pisa.utils.log import logging, set_verbosity
+    from pisa.utils.plotter import Plotter
 
     parser = ArgumentParser()
     parser.add_argument('-v', action='count', default=None,
@@ -267,9 +302,6 @@ def test_kde_histogramdd():
     args = parser.parse_args()
     set_verbosity(args.v)
 
-
-if __name__ == '__main__':
-    test_kde_histogramdd()
     temp_dir = mkdtemp()
     try:
         my_plotter = Plotter(stamp='', outdir=temp_dir, fmt='pdf', log=False,
@@ -285,16 +317,18 @@ if __name__ == '__main__':
         x = np.random.normal(1, 1, (2, 1000))
         p = np.random.uniform(0, 3, 10000)
         x = np.array([np.abs(x[0])-1, x[1], p])
-        # cut away outside csozen
+        # Cut away outside coszen
         x = x.T[(x[0] <= 1) & (x[0] >= -1), :].T
         # Swap
         x[[0, 1]] = x[[1, 0]]
         bins = [unp.nominal_values(b.bin_edges) for b in binning]
-        raw_hist, e = np.histogramdd(x.T, bins=bins)
+        raw_hist, _ = np.histogramdd(x.T, bins=bins)
 
         hist = kde_histogramdd(x.T, binning, bw_method='silverman',
                                coszen_name='coszen', oversample=10,
                                stack_pid=True)
+
+        # TODO: use or remove the following line
         #hist = hist/np.sum(hist)*np.sum(raw_hist)
         m1 = Map(name='KDE', hist=hist, binning=binning)
         m2 = Map(name='raw', hist=raw_hist, binning=binning)
@@ -313,3 +347,7 @@ if __name__ == '__main__':
     else:
         logging.warn('Inspect and manually clean up output(s) saved to %s'
                      % temp_dir)
+
+
+if __name__ == '__main__':
+    test_kde_histogramdd()

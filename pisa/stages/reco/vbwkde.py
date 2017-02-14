@@ -1727,7 +1727,7 @@ def plot_kde_detail(flavints, kde_info, extra_info, binning, outdir,
         ax2.xaxis.grid(color=GRIDCOL)
         ax2.yaxis.grid(color=GRIDCOL)
         leg_title_tex = (r'$\mathrm{Normalized}\,\cos\,\theta'
-                         ' \mathrm{-err.\,distr.}$')
+                         r' \mathrm{-err.\,distr.}$')
         leg = ax2.legend(loc='upper right', title=leg_title_tex,
                          frameon=True, framealpha=LEGALPHA, fancybox=True,
                          bbox_to_anchor=[1, 0.975])
