@@ -14,7 +14,6 @@ TODO:
 1) Some of the "combined" plots currently make it impossible to read the axis 
    labels. Come up with a better way of doing this. Could involve making 
    legends and just labelling the axes alphabetically.
-
 2) The important one - Figure out if this script generalises to the case of 
    analysing data. My gut says it doesn't...
 
@@ -41,28 +40,37 @@ from pisa.utils.postprocess import tex_axis_label, parse_pint_string, get_num_ro
 __all__ = ['extract_trials', 'extract_fit', 'parse_args', 'main']
 
 
-def extract_injval(injparams, systkey, data_label, hypo_label, injlabel):
+def extract_paramval(injparams, systkey, fid_label=None, hypo_label=None,
+                     paramlabel=None):
     '''
-    Extracts the injected value and modifies it based on the 
+    Extracts a value from a set of parameters and modifies it based on the 
     hypothesis/fiducial fit being considered. The label associated with this 
     is then modified accordingly.
     '''
-    if systkey == 'deltam31':
-        if hypo_label == data_label:
-            injval = float(injparams[systkey].split(' ')[0])
-        else:
-            injval = -1*float(injparams[systkey].split(' ')[0])
-            injlabel += r' ($\times-1$)'
-            
+    paramval = float(injparams[systkey].split(' ')[0])
+    if (fid_label == None) or (hypo_label == None) or (paramlabel == None):
+        if not ((fid_label == None) and (hypo_label == None) and
+                (paramlabel == None)):
+            raise ValueError("Either all three labels must be None or they "
+                             " must all be specified.")
+        return paramval
     else:
-        injval = float(injparams[systkey].split(' ')[0])
+        if systkey == 'deltam31':
+            if 'no' in hypo_label:
+                if np.sign(paramval) != 1:
+                    paramval = -1*float(injparams[systkey].split(' ')[0])
+                    paramlabel += r' ($\times-1$)'
+            elif 'io' in hypo_label:
+                if np.sign(paramval) != -1:
+                    paramval = -1*float(injparams[systkey].split(' ')[0])
+                    paramlabel += r' ($\times-1$)'
 
-    if (injval < 1e-2) and (injval != 0.0):
-        injlabel += ' = %.3e'%injval
-    else:    
-        injlabel += ' = %.3g'%injval
+        if (np.abs(paramval) < 1e-2) and (paramval != 0.0):
+            paramlabel += ' = %.3e'%paramval
+        else:    
+            paramlabel += ' = %.3g'%paramval
 
-    return injval, injlabel
+        return paramval, paramlabel
     
 
 def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
@@ -122,6 +130,20 @@ def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
         parse_string = ('(.*)=(.*); prior=(.*),'
                         ' range=(.*), is_fixed=(.*),'
                         ' is_discrete=(.*); help="(.*)"')
+        if not data_is_data:
+            all_params['data_params'] = {}
+            for param_string in cfg['data_params']:
+                bits = re.match(parse_string, param_string, re.M|re.I)
+                if bits.group(5) == 'False':
+                    all_params['data_params'][bits.group(1)] = {}
+                    all_params['data_params'][bits.group(1)]['value'] \
+                        = bits.group(2)
+                    all_params['data_params'][bits.group(1)]['prior'] \
+                        = bits.group(3)
+                    all_params['data_params'][bits.group(1)]['range'] \
+                        = bits.group(4)
+        else:
+            all_params['data_params'] = None
         for param_string in cfg['h0_params']:
             bits = re.match(parse_string, param_string, re.M|re.I)
             if bits.group(5) == 'False':
@@ -566,9 +588,17 @@ def make_llr_plots(data, fid_data, labels, detector, selection, outdir):
     minLLR = min(min(LLRbest), min(LLRalt))
     maxLLR = max(max(LLRbest), max(LLRalt))
     rangeLLR = maxLLR - minLLR
-    binning = np.linspace(minLLR - 0.1*rangeLLR,
-                          maxLLR + 0.1*rangeLLR,
-                          int(num_trials/40))
+    # Special case for low numbers of trials. Here, the plot can't really be
+    # interpreted but the numbers printed on it can still be useful, so we need
+    # to make something.
+    if num_trials < 100:
+        binning = np.linspace(minLLR - 0.1*rangeLLR,
+                              maxLLR + 0.1*rangeLLR,
+                              10)
+    else:
+        binning = np.linspace(minLLR - 0.1*rangeLLR,
+                              maxLLR + 0.1*rangeLLR,
+                              int(num_trials/40))
     binwidth = binning[1]-binning[0]
     bincens = np.linspace(binning[0]+binwidth/2.0,
                           binning[-1]-binwidth/2.0,
@@ -788,9 +818,339 @@ def make_llr_plots(data, fid_data, labels, detector, selection, outdir):
     plt.close()
 
 
-def plot_individual_posterior(data, injparams, altparams, all_params, labels,
-                              injlabel, altlabel, systkey, fhkey,
-                              subplotnum=None):
+def write_latex_preamble(texfile):
+    '''
+    Writes the latex preamble needed to be able to make tex files that look 
+    nice.
+    '''
+    texfile.write("\n")
+    texfile.write("\documentclass[a4paper,12pt]{article}\n")
+    texfile.write("\usepackage{tabu}\n")
+    texfile.write("\usepackage{booktabs}\n")
+    texfile.write("\usepackage[font=small,labelsep=space]{caption} %specifies the caption formatting for the document\n")
+    texfile.write("\usepackage[margin=2.5cm]{geometry}\n")
+    texfile.write("\setlength{\\topmargin}{1.0cm}\n")
+    texfile.write("\setlength{\\textheight}{22cm}\n")
+    texfile.write("\usepackage{fancyhdr} %allows for headers and footers\n")
+    texfile.write("\pagestyle{fancy}\n")
+    texfile.write("\\fancyhf{}\n")
+    texfile.write("\\fancyhead[R]{\leftmark}\n")
+    texfile.write("\usepackage{multirow}\n")
+    texfile.write("\n")
+    texfile.write("\\begin{document}\n")
+    texfile.write("\n")
+
+
+def setup_latex_table(texfile, tabletype, injected=False):
+    '''
+    Sets up the beginning of the table for the tex output files. Currently will
+    make tables for the output fiducial fit params and the chi2 values only.
+    '''
+    texfile.write("\\renewcommand{\\arraystretch}{1.6}\n")
+    texfile.write("\n")
+    texfile.write("\\begin{table}[t!]\n")
+    texfile.write("  \\begin{center}\n")
+    if tabletype == 'fiducial_fit_params':
+        if injected:
+            texfile.write("    \\begin{tabu} to 1.0\\textwidth {| X[2.0,c] | X[1,c] | X[1,c] | X[1,c] | X[1,c] | X[1,c] | X[1,c] | X[1,c] |}\n")
+            texfile.write("    \hline\n")
+            texfile.write("    \multirow{2}{*}{\\textbf{Parameter}} & \multirow{2}{*}{\\textbf{Inj}} & \multicolumn{3}{c|}{h0} & \multicolumn{3}{c|}{h1} \\\\ \cline{3-8}")
+            texfile.write("    & & Prior & Fit & \(\Delta\) & Prior & Fit & \(\Delta\) \\\\ \hline\n")
+        else:
+            texfile.write("    \\begin{tabu} to 1.0\\textwidth {| X[c] | X[c] | X[c] |}\n")
+            texfile.write("    \hline\n")
+            texfile.write("    Parameter & h0 & h1 \\\\ \hline\n")
+    elif tabletype == 'fiducial_fit_metrics':
+        texfile.write("    \\begin{tabu} to 1.0\\textwidth {| X[c] | X[c] | X[c] |}\n")
+        texfile.write("    \hline\n")
+        texfile.write("    h0 & h1 & $\Delta$ \\\\ \hline\n")
+    else:
+        raise ValueError("This function is only for making fit metric or fit "
+                         "param tables in LaTeX.")
+
+
+def end_latex_file(texfile, tabletype, detector, selection, h0, h1, truth=None):
+    '''
+    Ends the table and the whole document for the tex output files.
+    '''
+    if tabletype == 'fiducial_fit_params':
+        texfile.write("    \end{tabu}\n")
+        texfile.write("  \end{center}\n")
+        texfile.write("  \\vspace{-10pt}\n")
+        if truth is not None:
+            texfile.write("  \caption{shows the fiducial fit parameters obtained with the %s %s sample for h0 of %s and h1 of %s. The truth is %s.}\n"%(detector,selection,h0,h1,truth))
+        else:
+            texfile.write("  \caption{shows the fiducial fit parameters obtained with the %s %s sample for h0 of %s and h1 of %s.}\n"%(detector,selection,h0,h1))
+        texfile.write("  \label{tab:%s%s%stable}\n"%(detector,selection,tabletype))
+        texfile.write("\end{table}\n")
+        texfile.write("\n")
+        texfile.write("\end{document}\n")
+    elif tabletype == 'fiducial_fit_metrics':
+        texfile.write("    \end{tabu}\n")
+        texfile.write("  \end{center}\n")
+        texfile.write("  \\vspace{-10pt}\n")
+        if truth is not None:
+            texfile.write("  \caption{shows the fiducial fit metrics obtained with the %s %s sample for h0 of %s and h1 of %s. The truth is %s.}\n"%(detector,selection,h0,h1,truth))
+        else:
+            texfile.write("  \caption{shows the fiducial fit metrics obtained with the %s %s sample for h0 of %s and h1 of %s.}\n"%(detector,selection,h0,h1))
+        texfile.write("  \label{tab:%s%s%stable}\n"%(detector,selection,tabletype))
+        texfile.write("\end{table}\n")
+        texfile.write("\n")
+        texfile.write("\end{document}\n")
+
+
+def format_table_line(val, dataval, stddev=None, maximum=None, last=False):
+    '''
+    Formatting the numbers to look nice is awkard so do it in its' own function
+    '''
+    line = ""
+    if stddev is not None:
+        if (np.abs(stddev) < 1e-2) and (stddev != 0.0):
+            line += r'$%.3e\pm%.3e$ &'%(maximum,stddev)
+        else:
+            line += r'$%.3g\pm%.3g$ &'%(maximum,stddev)
+    else:
+        if maximum is not None:
+            raise ValueError("Both stddev and maximum should be None or "
+                             "specified")
+        else:
+            line += "-- &"
+    if (np.abs(val) < 1e-2) and (val != 0.0):
+        line += "%.3e"%val
+    else:
+        line += "%.3g"%val
+    if dataval is not None:
+        line += " &"
+        if isinstance(dataval, basestring):
+            line += "%s"%dataval
+        else:
+            delta = val - dataval
+            if (np.abs(delta) < 1e-2) and (delta != 0.0):
+                line += "%.3e"%delta
+            else:
+                line += "%.3g"%delta
+    if not last:
+            line += " &"
+    return line
+
+
+def make_fiducial_plots(data, fid_data, labels, all_params, detector,
+                        selection, outdir):
+    '''
+    This function will make tex files which can be then be compiled in to 
+    tables showing the two fiducial fits and, if applicable, how they compare 
+    to what was injected.
+    '''
+    outdir = os.path.join(outdir,'FiducialFits')
+    if not os.path.exists(outdir):
+        logging.info('Making output directory %s'%outdir)
+        os.makedirs(outdir)
+
+    # Make output file to write to
+    paramfilename = ("true_%s_%s_%s_fiducial_fit_params.tex"
+                     %(labels['data_name'],
+                       detector,
+                       selection))
+    paramfile = os.path.join(outdir,paramfilename)
+    pf = open(paramfile, 'w')
+    write_latex_preamble(texfile = pf)
+
+    h0_params = fid_data[
+        ('h0_fit_to_toy_%s_asimov'%labels['data_name'])
+    ]['params']
+    h1_params = fid_data[
+        ('h1_fit_to_toy_%s_asimov'%labels['data_name'])
+    ]['params']
+
+    if 'data_params' in all_params.keys():
+        data_params = {}
+        for pkey in all_params['data_params'].keys():
+            data_params[pkey] = all_params['data_params'][pkey]['value']
+        injected = True
+    else:
+        data_params = None
+        injected = False
+
+    setup_latex_table(
+        texfile = pf,
+        tabletype = 'fiducial_fit_params',
+        injected=injected
+    )
+
+    for param in h0_params.keys():
+        # Get the units for this parameter
+        val, param_units = parse_pint_string(
+            pint_string=fid_data[
+                'h0_fit_to_toy_%s_asimov'%labels['data_name']
+            ]['params'][param]
+        )
+        # Get priors if they exists
+        if 'gaussian' in all_params['h0_params'][param]['prior']:
+            h0stddev, h0maximum = extract_gaussian(
+                prior_string = all_params['h0_params'][param]['prior'],
+                units = param_units
+            )
+        else:
+            h0stddev = None
+        if 'gaussian' in all_params['h1_params'][param]['prior']:
+            h1stddev, h1maximum = extract_gaussian(
+                prior_string = all_params['h1_params'][param]['prior'],
+                units = param_units
+            )
+        else:
+            h1stddev = None
+        # Include injected parameter, fitted parameters and differences with
+        # appropriate formatting.
+        if data_params is not None:
+            tableline = "      "
+            tableline += "%s "%tex_axis_label(param)
+            if param == 'deltam31':
+                tableline += r" / $10^{-3}$ "
+            if param_units != 'dimensionless':
+                tableline += "(%s) &"%tex_axis_label(param_units)
+            else:
+                tableline += "&"
+            if param in data_params.keys():
+                dataval = extract_paramval(
+                    injparams = data_params,
+                    systkey = param
+                )
+                if param == 'deltam31':
+                    dataval *= 1000.0
+                if (np.abs(dataval) < 1e-2) and (dataval != 0.0):
+                    tableline += "%.3e &"%dataval
+                else:
+                    tableline += "%.3g &"%dataval
+            # If no injected parameter, show this and the deltas with a line
+            else:
+                dataval = '--'
+                tableline += "%s &"%dataval
+            h0val = extract_paramval(
+                injparams = h0_params,
+                systkey = param
+            )
+            if param == 'deltam31':
+                h0val *= 1000.0
+            if h0stddev is not None:
+                tableline += format_table_line(val=h0val, dataval=dataval,
+                                               stddev=h0stddev,
+                                               maximum=h0maximum)
+            else:
+                tableline += format_table_line(val=h0val, dataval=dataval)
+            h1val = extract_paramval(
+                injparams = h1_params,
+                systkey = param
+            )
+            if param == 'deltam31':
+                h1val *= 1000.0
+            if h1stddev is not None:
+                tableline += format_table_line(val=h1val, dataval=dataval,
+                                               stddev=h1stddev,
+                                               maximum=h1maximum, last=True)
+            else:
+                tableline += format_table_line(val=h1val, dataval=dataval,
+                                               last=True)
+            tableline += " \\\\ \hline\n"
+            pf.write(tableline)
+        # If no injected parameters it's much simpler
+        else:
+            h0val = extract_paramval(
+                injparams = h0_params,
+                systkey = param
+            )
+            h1val = extract_paramval(
+                injparams = h1_params,
+                systkey = param
+            )
+            if (np.abs(h0val) < 1e-2) and (h0val != 0.0):
+                pf.write("    %s & %.3e & %.3e\n"%(h0val, h1val))
+            else:
+                pf.write("    %s & %.3g & %.3g\n"%(h0val, h1val))
+
+    end_latex_file(
+        texfile=pf,
+        tabletype='fiducial_fit_params',
+        detector=detector,
+        selection=selection,
+        h0 = tex_axis_label(labels['h0_name']),
+        h1 = tex_axis_label(labels['h1_name']),
+        truth = tex_axis_label(labels['data_name'])
+    )
+
+    # Make output file to write to
+    metricfilename = ("true_%s_%s_%s_fiducial_fit_metrics.tex"
+                     %(labels['data_name'],
+                       detector,
+                       selection))
+    metricfile = os.path.join(outdir,metricfilename)
+    mf = open(metricfile, 'w')
+    write_latex_preamble(texfile = mf)
+
+    setup_latex_table(
+        texfile = mf,
+        tabletype = 'fiducial_fit_metrics'
+    )
+
+    h0_fid_metric = fid_data[
+        'h0_fit_to_toy_%s_asimov'%labels['data_name']
+    ][
+        'metric_val'
+    ]
+    h1_fid_metric = fid_data[
+        'h1_fit_to_toy_%s_asimov'%labels['data_name']
+    ][
+        'metric_val'
+    ]
+
+    metric_type = data['h0_fit_to_h0_fid']['metric_val']['type']
+    metric_type_pretty = tex_axis_label(metric_type)
+    # In the case of likelihood, the maximum metric is the better fit.
+    # With chi2 metrics the opposite is true, and so we must multiply
+    # everything by -1 in order to apply the same treatment.
+    if 'chi2' not in metric_type:
+        logging.info("Converting likelihood metric to chi2 equivalent.")
+        h0_fid_metric *= -1
+        h1_fid_metric *= -1
+
+    # If truth is known, report the fits the correct way round
+    if labels['data_name'] is not None:
+        if labels['data_name'] in labels['h0_name']:
+            delta = h1_fid_metric-h0_fid_metric
+        elif labels['data_name'] in labels['h1_name']:
+            delta = h0_fid_metric-h1_fid_metric
+        else:
+            logging.warning("Truth is known but could not be identified in "
+                            "either of the hypotheses. The difference between"
+                            " the best fit metrics will just be reported as "
+                            "positive and so will not necessarily reflect if "
+                            "the truth was recovered.")
+            if h1_fid_metric > h0_fid_metric:
+                delta = h0_fid_metric-h1_fid_metric
+            else:
+                delta = h1_fid_metric-h0_fid_metric
+    # Else just report it as delta between best fits
+    else:
+        if h1_fid_metric > h0_fid_metric:
+            delta = h0_fid_metric-h1_fid_metric
+        else:
+            delta = h1_fid_metric-h0_fid_metric
+    # Write this in the file
+    mf.write("    %.3g & %.3g & %.3g \\\\ \hline\n"%(h0_fid_metric, h1_fid_metric, delta))
+    # Then end the file
+    end_latex_file(
+        texfile=mf,
+        tabletype='fiducial_fit_metrics',
+        detector=detector,
+        selection=selection,
+        h0 = tex_axis_label(labels['h0_name']),
+        h1 = tex_axis_label(labels['h1_name']),
+        truth = tex_axis_label(labels['data_name'])
+    )
+    
+
+def plot_individual_posterior(data, data_params, h0_params, h1_params,
+                              all_params, labels, h0label, h1label, systkey,
+                              fhkey, subplotnum=None):
     '''
     This function will use matplotlib to make a histogram of the vals contained
     in data. The injected value will be plotted along with, where appropriate,
@@ -810,36 +1170,61 @@ def plot_individual_posterior(data, injparams, altparams, all_params, labels,
                 
     plt.hist(systvals, bins=10)
 
-    # Add injected and alternate fit lines
+    # Add injected and hypothesis fit lines
     if not systkey == 'metric_val':
-        injval, injlabelproper = extract_injval(
-            injparams = injparams,
-            systkey = systkey,
-            data_label = labels['data_name'],
-            hypo_label = labels['%s_name'%hypo],
-            injlabel = injlabel
-        )
-        plt.axvline(
-            injval,
-            color='r',
-            linewidth=2,
-            label=injlabelproper
-        )
-        if not labels['%s_name'%fid] == labels['data_name']:
-            altval, altlabelproper = extract_injval(
-                injparams = altparams,
+        if data_params is not None:
+            if systkey in data_params.keys():
+                injval, injlabelproper = extract_paramval(
+                    injparams = data_params,
+                    systkey = systkey,
+                    fid_label = labels['%s_name'%fid],
+                    hypo_label = labels['%s_name'%hypo],
+                    paramlabel = 'Injected Value'
+                )
+                plt.axvline(
+                    injval,
+                    color='r',
+                    linewidth=2,
+                    label=injlabelproper
+                )
+            else:
+                injval = None
+        else:
+            injval = None
+        if fid == 'h0':
+            fitval, fitlabelproper = extract_paramval(
+                injparams = h0_params,
                 systkey = systkey,
-                data_label = labels['%s_name'%fid],
+                fid_label = labels['%s_name'%fid],
                 hypo_label = labels['%s_name'%hypo],
-                injlabel = altlabel
+                paramlabel = h0label
             )
+        elif fid == 'h1':
+            fitval, fitlabelproper = extract_paramval(
+                injparams = h1_params,
+                systkey = systkey,
+                fid_label = labels['%s_name'%fid],
+                hypo_label = labels['%s_name'%hypo],
+                paramlabel = h1label
+            )
+        else:
+            raise ValueError("I got a hypothesis %s. Expected h0 or h1 only."
+                             %fid)
+        if injval is not None:
+            if fitval != injval:
+                plt.axvline(
+                    fitval,
+                    color='g',
+                    linewidth=2,
+                    label=fitlabelproper
+                )
+        else:
             plt.axvline(
-                altval,
+                fitval,
                 color='g',
                 linewidth=2,
-                label=altlabelproper
+                label=fitlabelproper
             )
-
     # Add shaded region for prior, if appropriate
     # TODO - Deal with non-gaussian priors
     wanted_params = all_params['%s_params'%hypo]
@@ -851,7 +1236,7 @@ def plot_individual_posterior(data, injparams, altparams, all_params, labels,
                     units = units
                 )
                 currentxlim = plt.xlim()
-                if (stddev < 1e-2) and (stddev != 0.0):
+                if (np.abs(stddev) < 1e-2) and (stddev != 0.0):
                     priorlabel = (r'Gaussian Prior '
                                   '($%.3e\pm%.3e$)'%(maximum,stddev))
                 else:
@@ -904,22 +1289,19 @@ def plot_individual_posteriors(data, fid_data, labels, all_params, detector,
 
     MainTitle = '%s %s Event Selection Posterior'%(detector, selection)
 
-    if labels['data_name'] == labels['h0_name']:
-        inj = 'h0'
-        alt = 'h1'
+    h0_params = fid_data[
+        ('h0_fit_to_toy_%s_asimov'%labels['data_name'])
+    ]['params']
+    h1_params = fid_data[
+        ('h1_fit_to_toy_%s_asimov'%labels['data_name'])
+    ]['params']
+
+    if 'data_params' in all_params.keys():
+        data_params = {}
+        for pkey in all_params['data_params'].keys():
+            data_params[pkey] = all_params['data_params'][pkey]['value']
     else:
-        inj = 'h1'
-        alt = 'h0'
-    injparams = fid_data[
-        ('%s_fit_to_toy_%s_asimov'
-         %(inj,labels['data_name']))
-    ]['params']
-    altparams = fid_data[
-        ('%s_fit_to_toy_%s_asimov'
-         %(alt,labels['data_name']))
-    ]['params']
-    injlabel = 'Injected Value'
-    altlabel = 'Alternate Fit'
+        data_params = None
 
     for fhkey in data.keys():
         for systkey in data[fhkey].keys():
@@ -934,12 +1316,13 @@ def plot_individual_posteriors(data, fid_data, labels, all_params, detector,
 
             plot_individual_posterior(
                 data = data[fhkey][systkey],
-                injparams = injparams,
-                altparams = altparams,
+                data_params = data_params,
+                h0_params = h0_params,
+                h1_params = h1_params,
                 all_params = all_params,
                 labels = labels,
-                injlabel = injlabel,
-                altlabel = altlabel,
+                h0label = '%s Fiducial Fit'%labels['h0_name'],
+                h1label = '%s Fiducial Fit'%labels['h1_name'],
                 systkey = systkey,
                 fhkey = fhkey
             )
@@ -971,24 +1354,21 @@ def plot_combined_posteriors(data, fid_data, labels, all_params,
 
     MainTitle = '%s %s Event Selection Posteriors'%(detector, selection)
 
-    labels['MainTitle'] = MainTitle
+    h0_params = fid_data[
+        ('h0_fit_to_toy_%s_asimov'%labels['data_name'])
+    ]['params']
+    h1_params = fid_data[
+        ('h1_fit_to_toy_%s_asimov'%labels['data_name'])
+    ]['params']
 
-    if labels['data_name'] == labels['h0_name']:
-        inj = 'h0'
-        alt = 'h1'
+    if 'data_params' in all_params.keys():
+        data_params = {}
+        for pkey in all_params['data_params'].keys():
+            data_params[pkey] = all_params['data_params'][pkey]['value']
     else:
-        inj = 'h1'
-        alt = 'h0'
-    injparams = fid_data[
-        ('%s_fit_to_toy_%s_asimov'
-         %(inj,labels['data_name']))
-    ]['params']
-    altparams = fid_data[
-        ('%s_fit_to_toy_%s_asimov'
-         %(alt,labels['data_name']))
-    ]['params']
-    injlabel = 'Injected Value'
-    altlabel = 'Alternate Fit'
+        data_params = None
+
+    labels['MainTitle'] = MainTitle
 
     for fhkey in data.keys():
         
@@ -1011,12 +1391,13 @@ def plot_combined_posteriors(data, fid_data, labels, all_params,
 
             plot_individual_posterior(
                 data = data[fhkey][systkey],
-                injparams = injparams,
-                altparams = altparams,
+                data_params = data_params,
+                h0_params = h0_params,
+                h1_params = h1_params,
                 all_params = all_params,
                 labels = labels,
-                injlabel = injlabel,
-                altlabel = altlabel,
+                h0label = '%s Fiducial Fit'%labels['h0_name'],
+                h1label = '%s Fiducial Fit'%labels['h1_name'],
                 systkey = systkey,
                 fhkey = fhkey,
                 subplotnum = subplotnum
@@ -1480,11 +1861,12 @@ def parse_args():
         combination.'''
     )
     parser.add_argument(
-        '--threshold', type=float, default=5.0,
+        '--threshold', type=float, default=0.0,
         help='''Sets the threshold for which to remove 'outlier' trials. 
         Ideally this will not be needed at all, but it is there in case of
         e.g. failed minimiser. The higher this value, the more outliers will 
-        be included. Set it to 0 if you want to include ALL trials.'''
+        be included. Do not set this parameter if you want all trials to be 
+        included.'''
     )
     parser.add_argument(
         '--outdir', metavar='DIR', type=str, required=True,
@@ -1557,11 +1939,23 @@ def main():
                 )
             else:
                 logging.info("All trials will be included in the analysis.")
-            
+
+            '''
             make_llr_plots(
                 data = values[injkey],
                 fid_data = fid_values[injkey],
                 labels = labels.dict,
+                detector = detector,
+                selection = selection,
+                outdir = outdir
+            )
+            '''
+
+            make_fiducial_plots(
+                data = values[injkey],
+                fid_data = fid_values[injkey],
+                labels = labels.dict,
+                all_params = all_params,
                 detector = detector,
                 selection = selection,
                 outdir = outdir
