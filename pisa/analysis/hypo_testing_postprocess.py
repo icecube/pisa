@@ -1940,16 +1940,15 @@ def main():
             else:
                 logging.info("All trials will be included in the analysis.")
 
-            '''
-            make_llr_plots(
-                data = values[injkey],
-                fid_data = fid_values[injkey],
-                labels = labels.dict,
-                detector = detector,
-                selection = selection,
-                outdir = outdir
-            )
-            '''
+            if len(trial_nums) != 1:
+                make_llr_plots(
+                    data = values[injkey],
+                    fid_data = fid_values[injkey],
+                    labels = labels.dict,
+                    detector = detector,
+                    selection = selection,
+                    outdir = outdir
+                )
 
             make_fiducial_plots(
                 data = values[injkey],
