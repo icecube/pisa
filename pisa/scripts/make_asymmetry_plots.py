@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from pisa.analysis.hypo_testing import HypoTesting
+from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.map import Map
 from pisa.utils.fileio import mkdir
 from pisa.utils.format import text2tex
@@ -224,6 +225,13 @@ def main():
     init_args_d['fluctuate_data'] = None
     init_args_d['fluctuate_fid'] = None
     init_args_d['metric'] = 'chi2'
+
+    if init_args_d['h1_maker'] is None:
+        init_args_d['h1_maker'] = init_args_d['h0_maker']
+
+    init_args_d['h0_maker'] = DistributionMaker(init_args_d['h0_maker'])
+    init_args_d['h1_maker'] = DistributionMaker(init_args_d['h1_maker'])
+    init_args_d['h1_maker'].select_params(init_args_d['h1_param_selections'])
 
     # Instantiate the analysis object
     hypo_testing = HypoTesting(**init_args_d)
