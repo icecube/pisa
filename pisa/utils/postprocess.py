@@ -58,6 +58,8 @@ def tex_axis_label(label):
     pretty_labels["nuebar"] = r"$\bar{\nu}_e$"
     pretty_labels["numu"] = r"$\nu_{\mu}$"
     pretty_labels["numubar"] = r"$\bar{\nu}_{\mu}$"
+    pretty_labels["second"] = r"s"
+    pretty_labels["seconds"] = r"s"
     if label not in pretty_labels.keys():
         logging.warn("I don't know what to do with %s. Returning as is."%label)
         return label

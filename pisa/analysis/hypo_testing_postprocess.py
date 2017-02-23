@@ -510,13 +510,78 @@ def plot_fit_information(minimiser_info, labels, detector, selection, outdir):
                           labels['%s_name'%hypo]))
             plt.savefig(os.path.join(outdir,SaveName))
             plt.close()
+
+
+def add_extra_points(points, labels, ymax):
+    '''
+    Adds the extra points specified in points and labels them with the labels 
+    specified in labels.
+    '''
+    for point, label in zip(points,labels):
+        if isinstance(point, basestring):
+            if os.path.isfile(point):
+                point = np.genfromtxt(point)
+            try:
+                point = eval(point)
+            except:
+                raise ValueError("Provided point, %s, was not either a "
+                                 "path to a file or a string which could "
+                                 "be parsed by eval()"%point)
+        if not isinstance(point, float):
+            raise ValueError("Expecting a single point here to add to the plot"
+                             " and got %s instead."%point)
+        # Give SPIceHD a nice colouring code.
+        if '544' in label:
+            plt.axvline(
+                point,
+                color='maroon',
+                ymax=ymax,
+                lw=2,
+                label=label+" Fit Value = %.4f"%point
+            )
+        elif '545' in label:
+            plt.axvline(
+                point,
+                color='goldenrod',
+                ymax=ymax,
+                lw=2,
+                label=label+" Fit Value = %.4f"%point
+            )
+        elif '548' in label:
+            plt.axvline(
+                point,
+                color='blueviolet',
+                ymax=ymax,
+                lw=2,
+                label=label+" Fit Value = %.4f"%point
+            )
+        elif '549' in label:
+            plt.axvline(
+                point,
+                color='forestgreen',
+                ymax=ymax,
+                lw=2,
+                label=label+" Fit Value = %.4f"%point
+            )
+        # I see an unknown extra point and I want to paint it black
+        else:
+            plt.axvline(
+                point,
+                color='k',
+                ymax=ymax,
+                lw=2,
+                label=label+" Fit Value = %.4f"%point
+            )
                     
 
-def make_llr_plots(data, fid_data, labels, detector, selection, outdir):
+def make_llr_plots(data, fid_data, labels, detector, selection, outdir,
+                   extra_points = None, extra_points_labels = None):
     '''
     Does what you think. Takes the data and makes LLR distributions. These are 
     then saved to the requested outdir within a folder labelled 
-    "LLRDistributions".
+    "LLRDistributions". The extra_points and extra_points_labels arguments can 
+    be used to specify extra points to be added to the plot for e.g. other fit
+    LLR values.
 
     TODO:
 
@@ -645,27 +710,6 @@ def make_llr_plots(data, fid_data, labels, detector, selection, outdir):
     wterm = wdenom/(misid_m_trials*misid_m_trials)
     Nterm = 1.0/num_trials
     unc_med_p_value = med_p_value * np.sqrt(wterm + Nterm)
-
-    med_plot_labels = []
-    med_plot_labels.append((r"Hypo %s median = $%.4f\pm%.4f$"%(best_name,best_median,median_error)))
-    med_plot_labels.append(
-        (r"%s best fit - $\log\left[\mathcal{L}\left(\mathcal{H}_{%s}\right)/"
-         r"\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"
-         %(best_name, best_name, alt_name))
-    )
-    med_plot_labels.append(
-        (r"%s best fit - $\log\left[\mathcal{L}\left(\mathcal{H}_{%s}\right)/"
-         r"\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"
-         %(alt_name, best_name, alt_name))
-    )
-
-    crit_plot_labels = []
-    crit_plot_labels.append((r"Critical value = %.4f"%(critical_value)))
-    crit_plot_labels.append(
-        (r"%s best fit - $\log\left[\mathcal{L}\left(\mathcal{H}_{%s}\right)/"
-         r"\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"
-         %(alt_name, best_name, alt_name))
-    )
     
     if metric_type == 'llh':
         plot_title = ("%s %s Event Selection "%(detector,selection)\
@@ -681,8 +725,28 @@ def make_llr_plots(data, fid_data, labels, detector, selection, outdir):
     plot_scaling_factor = 1.55
 
     # In case of median plot, draw both best and alt histograms
-    plt.hist(LLRbest,bins=binning,color='r',histtype='step',lw=2)
-    plt.hist(LLRalt,bins=binning,color='b',histtype='step',lw=2)
+    plt.hist(
+        LLRbest,
+        bins=binning,
+        color='r',
+        histtype='step',
+        lw=2,
+        label=r"%s best fit - $\log\left[\mathcal{L}\left(\mathcal{H}_"%(
+                  best_name) + \
+              r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+                  best_name, alt_name)
+    )
+    plt.hist(
+        LLRalt,
+        bins=binning,
+        color='b',
+        histtype='step',
+        lw=2,
+        label=r"%s best fit - $\log\left[\mathcal{L}\left(\mathcal{H}_"%(
+                  alt_name) + \
+              r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+                  best_name, alt_name)
+    )
     plt.xlabel(r'Log-Likelihood Ratio')
     plt.ylabel(r'Number of Trials (per %.2f)'%binwidth)
     # Nicely scale the plot
@@ -709,7 +773,9 @@ def make_llr_plots(data, fid_data, labels, detector, selection, outdir):
         best_median,
         color='k',
         ymax=float(max(LLRbesthist))/float(plot_scaling_factor*LLRhistmax),
-        lw=2
+        lw=2,
+        label=r"Hypo %s median = $%.4f\pm%.4f$"%(
+            best_name,best_median,median_error)
     )
     # Create an object so that a hatch can be drawn over the region of
     # interest to the p-value.
@@ -733,7 +799,7 @@ def make_llr_plots(data, fid_data, labels, detector, selection, outdir):
         edgecolor="k",
         lw=0
     )
-    plt.legend(med_plot_labels, loc='upper left')
+    plt.legend(loc='upper left')
     plt.title(plot_title)
     # Write the p-value on the plot
     plt.figtext(
@@ -747,10 +813,35 @@ def make_llr_plots(data, fid_data, labels, detector, selection, outdir):
         inj_name, detector, selection, metric_type, num_trials
     )
     plt.savefig(os.path.join(outdir,filename))
+    if extra_points is not None:
+        add_extra_points(
+            points=extra_points,
+            labels=extra_points_labels,
+            ymax=float(max(LLRbesthist))/float(plot_scaling_factor*LLRhistmax)
+        )
+        plt.subplots_adjust(bottom=0.12,top=0.9)
+        plt.title(plot_title)
+        plt.legend(bbox_to_anchor=(0., 0.80, 1., .102), loc=3,
+                   ncol=2, mode="expand", borderaxespad=0.,
+                   fontsize="small")
+        filename = 'true_%s_%s_%s_%s_LLRDistribution_median'%(
+            inj_name, detector, selection, metric_type
+        )+'_w_extra_points_%i_Trials.png'%(num_trials)
+        plt.savefig(os.path.join(outdir,filename))
     plt.close()
 
     # In case of critical plot, draw just alt histograms
-    plt.hist(LLRalt,bins=binning,color='b',histtype='step',lw=2)
+    plt.hist(
+        LLRalt,
+        bins=binning,
+        color='b',
+        histtype='step',
+        lw=2,
+        label=r"%s best fit - $\log\left[\mathcal{L}\left(\mathcal{H}_"%(
+                  alt_name) + \
+              r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+                  best_name, alt_name)
+    )
     plt.xlabel(r'Log-Likelihood Ratio')
     plt.ylabel(r'Number of Trials (per %.2f)'%binwidth)
     # Nicely scale the plot
@@ -777,7 +868,8 @@ def make_llr_plots(data, fid_data, labels, detector, selection, outdir):
         critical_value,
         color='k',
         ymax=float((max(LLRalthist)*1.1)/(plot_scaling_factor*LLRhistmax)),
-        lw=2
+        lw=2,
+        label=r"Critical value = %.4f"%(critical_value)
     )
     # Create an object so that a hatch can be drawn over the region of
     # interest to the p-value.
@@ -801,7 +893,7 @@ def make_llr_plots(data, fid_data, labels, detector, selection, outdir):
         edgecolor="k",
         lw=0
     )
-    plt.legend(crit_plot_labels, loc='upper left')
+    plt.legend(loc='upper left')
     plt.title(plot_title)
     # Write the p-value on the plot
     plt.figtext(
@@ -1869,6 +1961,20 @@ def parse_args():
         included.'''
     )
     parser.add_argument(
+        '--extra-point', type=str, action='append', metavar='LIST',
+        help='''Extra lines to be added to the LLR plots. This is useful, for 
+        example, when you wish to add specific LLR fit values to the plot for 
+        comparison. These should be supplied as a single value e.g. x1 or 
+        as a path to a file with the value provided in one column that can be 
+        intepreted by numpy genfromtxt. Repeat this argument in conjunction 
+        with the extra points label below to specify multiple (and uniquely 
+        identifiable) sets of extra points.'''
+    )
+    parser.add_argument(
+        '--extra-point-label', type=str, action='append',
+        help='''The label(s) for the extra points above.'''
+    )
+    parser.add_argument(
         '--outdir', metavar='DIR', type=str, required=True,
         help='''Store all output plots to this directory. This will make
         further subdirectories, if needed, to organise the output plots.'''
@@ -1899,6 +2005,23 @@ def main():
     cscatter = init_args_d.pop('combined_scatter')
     cmatrix = init_args_d.pop('correlation_matrix')
     threshold = init_args_d.pop('threshold')
+    extra_points = init_args_d.pop('extra_point')
+    extra_points_labels = init_args_d.pop('extra_point_label')
+    if extra_points is not None:
+        if extra_points_labels is not None:
+            if len(extra_points) != len(extra_points_labels):
+                raise ValueError("You must specify at least one label for each"
+                                 " set of extra points. Got %i label(s) for %s "
+                                 "set(s) of extra points."%(len(extra_points),
+                                 len(extra_points_labels)))
+        else:
+            raise ValueError("You have specified %i set(s) of extra points but "
+                             "no labels to go with them."%len(extra_points))
+    else:
+        if extra_points_labels is not None:
+            raise ValueError("You have specified %i label(s) for extra points "
+                             "but no set(s) of extra points."%len(
+                                 extra_points_labels))
     outdir = init_args_d.pop('outdir')
 
     if args.asimov:
@@ -1947,6 +2070,8 @@ def main():
                     labels = labels.dict,
                     detector = detector,
                     selection = selection,
+                    extra_points = extra_points,
+                    extra_points_labels = extra_points_labels,
                     outdir = outdir
                 )
 
