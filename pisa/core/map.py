@@ -455,7 +455,8 @@ class Map(object):
 
     def plot(self, evtrate=True, symm=False, logz=False, fig=None, ax=None,
              title=None, outdir=None, fname=None, backend='pdf', fmt='pdf',
-             cmap=None, fig_kw=None, plt_kw=None, vmax=None):
+             cmap=None, fig_kw=None, plt_kw=None, vmax=None, clabel=None,
+             clabelsize=None, xlabelsize=None, ylabelsize=None, titlesize=None):
         """Simple plot of a map"""
         import matplotlib as mpl
         if (backend is not None
@@ -527,6 +528,11 @@ class Map(object):
         )
         cbar = plt.colorbar(mappable=pcmesh, ax=ax)
         cbar.ax.tick_params(labelsize='large')
+        if clabel is not None:
+            if clabelsize is not None:
+                cbar.set_label(label=clabel,size=clabelsize)
+            else:
+                cbar.set_label(label=clabel)
 
         xlabel = strip_outer_dollars(self.binning.dims[0].tex)
         ylabel = strip_outer_dollars(self.binning.dims[1].tex)
@@ -542,9 +548,18 @@ class Map(object):
         xlabel = '$%s$' % xlabel
         ylabel = '$%s$' % ylabel
 
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
-        ax.set_title(title, y=1.03)
+        if xlabelsize is not None:
+            ax.set_xlabel(xlabel, size=xlabelsize)
+        else:
+            ax.set_xlabel(xlabel)
+        if ylabelsize is not None:
+            ax.set_ylabel(ylabel, size=ylabelsize)
+        else:
+            ax.set_ylabel(ylabel)
+        if titlesize is not None:
+            ax.set_title(title, y=1.03, size=titlesize)
+        else:
+            ax.set_title(title, y=1.03)
         ax.set_xlim(np.min(x), np.max(x))
         ax.set_ylim(np.min(y), np.max(y))
 
