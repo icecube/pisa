@@ -308,7 +308,8 @@ def make_plots(data, injkey, detector, selection, testtype, outdir):
             outdir=outdir
         )
     else:
-        print "DUNNO yet m8"
+        raise ValueError("Only processing for the standard N-1 test aka Hidden"
+                         " Potential test has been implemented thus far.")
 
 
 def make_nminusone_plots(data, injkey, detector, selection, outdir):
@@ -377,7 +378,7 @@ def parse_args():
     parser.add_argument(
         '-d', '--dir', required=True,
         metavar='DIR', type=str,
-        help="""Directory into which the output of hypo_testing_injparamscan.py 
+        help="""Directory into which the output of hypo_testing_systtests.py 
         was stored."""
     )
     parser.add_argument(

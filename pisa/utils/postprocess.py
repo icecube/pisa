@@ -60,6 +60,7 @@ def tex_axis_label(label):
     pretty_labels["numubar"] = r"$\bar{\nu}_{\mu}$"
     pretty_labels["second"] = r"s"
     pretty_labels["seconds"] = r"s"
+    pretty_labels["atm_delta_index"] = r"Atmospheric Index Change"
     if label not in pretty_labels.keys():
         logging.warn("I don't know what to do with %s. Returning as is."%label)
         return label
@@ -214,4 +215,73 @@ def add_tex_to_binning(binning_dict):
         binning_dict['tex'] = r'$E_{%s}$'%sub_string
     elif 'coszen' in binning_dict['name']:
         binning_dict['tex'] = r'$\cos\theta_{Z,%s}$'%sub_string
+
+
+def plot_colour(label):
+    '''
+    Will return a standard colour scheme which can be used for e.g. specific 
+    truths or specific ice models etc.
+    '''
+    label = label.lower()
+    pretty_colours = {}
+    # SPIce HD
+    pretty_colours['544'] = 'maroon'
+    pretty_colours['545'] = 'goldenrod'
+    pretty_colours['548'] = 'blueviolet'
+    pretty_colours['549'] = 'forestgreen'
+    # H2
+    ## DOM Efficiency Sets
+    pretty_colours['551'] = 'cornflowerblue'
+    pretty_colours['552'] = 'cornflowerblue'
+    pretty_colours['553'] = 'cornflowerblue'
+    pretty_colours['554'] = 'mediumseagreen'
+    pretty_colours['555'] = 'mediumseagreen'
+    pretty_colours['556'] = 'mediumseagreen'
+    ## Hole Ice Sets
+    pretty_colours['560'] = 'olive'
+    pretty_colours['561'] = 'olive'
+    pretty_colours['564'] = 'darkorange'
+    pretty_colours['565'] = 'darkorange'
+    pretty_colours['572'] = 'teal'
+    pretty_colours['573'] = 'teal'
+    ## Dima Hole Ice Set without RDE
+    pretty_colours['570'] = 'mediumvioletred'
+    
+    ## Baseline
+    pretty_colours['585'] = 'slategrey'
+
+    for colourkey in pretty_colours.keys():
+        if colourkey in label:
+            return pretty_colours[colourkey]
+    else:
+        logging.info("I do not have a colour scheme for your label %s. "
+                     "Returning black."%label)
+        return 'k'
+
+def plot_style(label):
+    '''
+    Will return a standard line style for plots similar to above.
+    '''
+    label = label.lower()
+    pretty_styles = {}
+    # H2
+    ## DOM Efficiency Sets
+    pretty_styles['552'] = '--'
+    pretty_styles['553'] = '-.'
+    pretty_styles['555'] = '--'
+    pretty_styles['556'] = '-.'
+    ## Hole Ice Sets
+    pretty_styles['561'] = '--'
+    pretty_styles['565'] = '--'
+    pretty_styles['572'] = '--'
+    pretty_styles['573'] = '-.'
+
+    for colourkey in pretty_styles.keys():
+        if colourkey in label:
+            return pretty_styles[colourkey]
+    else:
+        logging.info("I do not have a style for your label %s. "
+                     "Returning standard."%label)
+        return '-'
+    
     

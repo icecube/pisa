@@ -34,7 +34,7 @@ from scipy.stats import spearmanr
 from pisa.analysis.hypo_testing import Labels
 from pisa.utils.fileio import from_file, to_file, nsort
 from pisa.utils.log import set_verbosity, logging
-from pisa.utils.postprocess import tex_axis_label, parse_pint_string, get_num_rows, extract_gaussian
+from pisa.utils.postprocess import tex_axis_label, parse_pint_string, get_num_rows, extract_gaussian, plot_colour, plot_style
 
 
 __all__ = ['extract_trials', 'extract_fit', 'parse_args', 'main']
@@ -517,6 +517,7 @@ def add_extra_points(points, labels, ymax):
     Adds the extra points specified in points and labels them with the labels 
     specified in labels.
     '''
+    linelist = []
     for point, label in zip(points,labels):
         if isinstance(point, basestring):
             if os.path.isfile(point):
@@ -530,48 +531,16 @@ def add_extra_points(points, labels, ymax):
         if not isinstance(point, float):
             raise ValueError("Expecting a single point here to add to the plot"
                              " and got %s instead."%point)
-        # Give SPIceHD a nice colouring code.
-        if '544' in label:
-            plt.axvline(
-                point,
-                color='maroon',
-                ymax=ymax,
-                lw=2,
-                label=label+" Fit Value = %.4f"%point
-            )
-        elif '545' in label:
-            plt.axvline(
-                point,
-                color='goldenrod',
-                ymax=ymax,
-                lw=2,
-                label=label+" Fit Value = %.4f"%point
-            )
-        elif '548' in label:
-            plt.axvline(
-                point,
-                color='blueviolet',
-                ymax=ymax,
-                lw=2,
-                label=label+" Fit Value = %.4f"%point
-            )
-        elif '549' in label:
-            plt.axvline(
-                point,
-                color='forestgreen',
-                ymax=ymax,
-                lw=2,
-                label=label+" Fit Value = %.4f"%point
-            )
-        # I see an unknown extra point and I want to paint it black
-        else:
-            plt.axvline(
-                point,
-                color='k',
-                ymax=ymax,
-                lw=2,
-                label=label+" Fit Value = %.4f"%point
-            )
+        line = plt.axvline(
+            point,
+            color=plot_colour(label),
+            linestyle=plot_style(label),
+            ymax=ymax,
+            lw=2,
+            label=label
+        )
+        linelist.append(label)
+    return linelist
                     
 
 def make_llr_plots(data, fid_data, labels, detector, selection, outdir,
@@ -814,16 +783,27 @@ def make_llr_plots(data, fid_data, labels, detector, selection, outdir,
     )
     plt.savefig(os.path.join(outdir,filename))
     if extra_points is not None:
-        add_extra_points(
+        curleg = plt.gca().get_legend()
+        linelist = add_extra_points(
             points=extra_points,
             labels=extra_points_labels,
             ymax=float(max(LLRbesthist))/float(plot_scaling_factor*LLRhistmax)
         )
-        plt.subplots_adjust(bottom=0.12,top=0.9)
-        plt.title(plot_title)
-        plt.legend(bbox_to_anchor=(0., 0.80, 1., .102), loc=3,
-                   ncol=2, mode="expand", borderaxespad=0.,
-                   fontsize="small")
+        handles, labels = plt.gca().get_legend_handles_labels()
+        newhandles = []
+        for l,h in zip(labels, handles):
+            if l in linelist:
+                newhandles.append(h)
+        if len(newhandles) > 13:
+            newleg = plt.legend(
+                handles=newhandles,
+                loc='upper right',
+                fontsize=11
+            )
+        else:
+            newleg = plt.legend(handles=newhandles, loc='upper right')
+        plt.gca().add_artist(newleg)
+        plt.gca().add_artist(curleg)
         filename = 'true_%s_%s_%s_%s_LLRDistribution_median'%(
             inj_name, detector, selection, metric_type
         )+'_w_extra_points_%i_Trials.png'%(num_trials)
@@ -1961,7 +1941,7 @@ def parse_args():
         included.'''
     )
     parser.add_argument(
-        '--extra-point', type=str, action='append', metavar='LIST',
+        '--extra-point', type=str, action='append',
         help='''Extra lines to be added to the LLR plots. This is useful, for 
         example, when you wish to add specific LLR fit values to the plot for 
         comparison. These should be supplied as a single value e.g. x1 or 
