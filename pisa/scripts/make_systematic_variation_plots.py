@@ -250,6 +250,7 @@ def main():
             else:
                 data_param.value = -1.0
         down_maps = data_maker.get_outputs(return_sum=return_sum)
+        data_maker.params.reset_free()
 
         baseline_map = baseline_maps['total']
         baseline_map.set_errors(error_hist=None)
