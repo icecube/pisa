@@ -431,7 +431,7 @@ def do_2D_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
                 m=diff_ratio_map,
                 title='%s Flux Integral Deviation'%flavtex,
                 ax=axes,
-                clabel=r'Ratio to Honda Table Value'
+                clabel=r'Ratio to Honda Table Value',
                 largelabels=True
             )
 
