@@ -421,6 +421,28 @@ def do_2D_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
                 )
             )
             plt.close(fig.number)
+
+            gridspec_kw = dict(left=0.15, right=0.90, wspace=0.32)
+            fig, axes = plt.subplots(nrows=1, ncols=1, gridspec_kw=gridspec_kw,
+                                     sharex=False, sharey=False,
+                                     figsize=(12,10))
+
+            logplot(
+                m=diff_ratio_map,
+                title='%s Flux Integral Deviation'%flavtex,
+                ax=axes,
+                clabel=r'Ratio to Honda Table Value'
+                largelabels=True
+            )
+
+            fig.savefig(
+                os.path.join(
+                    outdir,
+                    '%s_%s2dintegraldeviation.png'%(SaveName,flav)
+                )
+            )
+
+            
             
 
 def do_1D_2D_bartol_test(spline_dict, flux_dict, outdir, enpow=1):
