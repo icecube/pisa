@@ -375,7 +375,7 @@ class prob3gpu(Stage):
                                                  self.cz_dim_num)]
 
     def create_transforms_datastructs(self):
-        xform_shape = [3, 2] + list(self.output_binning.shape)
+        xform_shape = [3, 2] + list(self.input_binning.shape)
         nu_xform = np.empty(xform_shape)
         antinu_xform = np.empty(xform_shape)
         return nu_xform, antinu_xform
@@ -484,7 +484,7 @@ class prob3gpu(Stage):
                     input_names=input_names,
                     output_name=output_name,
                     input_binning=self.input_binning,
-                    output_binning=self.output_binning,
+                    output_binning=self.input_binning,
                     xform_array=xform
                 )
             )

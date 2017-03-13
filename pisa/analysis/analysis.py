@@ -167,8 +167,8 @@ class Analysis(object):
             if reset_free:
                 hypo_maker.reset_free()
             else:
-                # Saves the current minimiser start values for the octant check
-                minimiser_start_params = hypo_maker.params
+                # Saves the current minimizer start values for the octant check
+                minimizer_start_params = hypo_maker.params
 
             best_fit_info = self.fit_hypo_inner(
                 hypo_maker=hypo_maker,
@@ -186,7 +186,7 @@ class Analysis(object):
                 if reset_free:
                     hypo_maker.reset_free()
                 else:
-                    for param in minimiser_start_params:
+                    for param in minimizer_start_params:
                         hypo_maker.params[param.name].value = param.value
 
                 # Hop to other octant by reflecting about 45 deg
@@ -282,7 +282,7 @@ class Analysis(object):
         logging.debug('Running the %s minimizer.'
                       %minimizer_settings['method']['value'])
 
-        # Using scipy.optimize.minimize allows a whole host of minimisers to be
+        # Using scipy.optimize.minimize allows a whole host of minimizers to be
         # used.
         counter = Counter()
         fit_history = []
@@ -376,17 +376,9 @@ class Analysis(object):
         fit_info['minimizer_time'] = minimizer_time * ureg.sec
         fit_info['minimizer_metadata'] = metadata
         fit_info['fit_history'] = fit_history
-        # If blind replace hypo_asimov_dist with dummy map of just ones
+        # If blind replace hypo_asimov_dist with none object
         if blind:
-            blinded_maps = []
-            for asimov_map in hypo_asimov_dist:
-                blinded_asimov_map = Map(
-                    name=asimov_map.name+'_blinded',
-                    hist=np.ones_like(asimov_map.hist),
-                    binning=asimov_map.binning
-                )
-                blinded_maps.append(blinded_asimov_map)
-            hypo_asimov_dist = MapSet(blinded_maps)
+            hypo_asimov_dist = None
         fit_info['hypo_asimov_dist'] = hypo_asimov_dist
 
         return fit_info
@@ -452,18 +444,18 @@ class Analysis(object):
             name_vals_d['maps'] = data_dist.metric_per_map(
                 expected_values=hypo_asimov_dist, metric=m
             )
-            chi2_hists = data_dist.metric_per_map(
+            metric_hists = data_dist.metric_per_map(
                 expected_values=hypo_asimov_dist, metric='binned_'+m
             )
-            name_vals_d['maps_binned'] = {}
-            for asimov_map, chi2_hist in zip(hypo_asimov_dist, chi2_hists):
-                name_vals_d['maps_binned'][asimov_map.name] = {}
-                name_vals_d['maps_binned'][asimov_map.name]['hist'] = \
-                    np.reshape(
-                        chi2_hists[chi2_hist],asimov_map.shape
-                    )
-                name_vals_d['maps_binned'][asimov_map.name]['binning'] = \
-                    str(asimov_map.binning)
+            maps_binned = []
+            for asimov_map, metric_hist in zip(hypo_asimov_dist, metric_hists):
+                map_binned = Map(
+                    name=asimov_map.name,
+                    hist=np.reshape(metric_hists[metric_hist],asimov_map.shape)
+                    binning=asimov_map.binning
+                )
+                maps_binned.append(map_binned)
+            name_vals_d['maps_binned'] = MapSet(maps_binned)
             name_vals_d['priors'] = params.priors_penalties(metric=metric)
             detailed_metric_info[m] = name_vals_d
         return detailed_metric_info

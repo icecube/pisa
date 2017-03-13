@@ -89,6 +89,30 @@ params through the DistributionMaker's update_params method.
 If you DO NOT want parameters to be synchronized, provide a unique_id for them.
 This is imply done by setting `.unique_id`
 
+Param selector:
+---------------
+
+A special mechanism allows the user to specify multiple, different values for
+the same param via the param selector method. This can be used for example for
+hypothesis testing, there for hypothesis A a param takes a certain value, while
+for hypothesis B a different value.
+
+A given param, say `foo`, then needs two definitions like the following, assuming
+we name our selections `A` and `B`:
+
+param.A.foo = 1
+param.B.foo = 2
+
+The default param selector needs to be spcified under section `pipeline` as e.g.
+
+param_selections = A
+
+Which will default the value of 1 for param `foo`. An instatiated pipeline can
+dynamically switch to another selection after instantiation.
+
+Multiple different param selectors are allowed in a single config. In the default selection
+they must be separated by commas.
+
 """
 
 # TODO: add try: except: blocks around class instantiation calls to give

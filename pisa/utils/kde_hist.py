@@ -1,37 +1,46 @@
-
 from kde.cudakde import gaussian_kde
 import numpy as np
 from uncertainties import unumpy as unp
 
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 
+"""
+Functions to get KDE smoothed historgams
+"""
 
 __all__ = ['get_hist', 'kde_histogramdd', 'test_kde_histogramdd']
-
-
-# TODO:
-# * Module-level docstring
-# * Docstring for `get_hist` function
-# * Handle zenith like coszen? Or better: Define set of variables to perform
-#   reflection on and reflection parameters (e.g. `reflect_fract` or somesuch
-#   to stand in for for `coszen_reflection` and `reflect_dims` as standin for
-#   `coszen_name`; also need some way to specify whether to reflect about lower
-#   and/or upper edge); each such parameter can either be a single value, or a
-#   sequence with one value per variable.
-# * Any good reason for 0.25 and 'scott' defaults? If not, don't define a
-#   default and force the user to explicitly set this when function is called.
 
 def get_hist(sample, binning, weights=None, bw_method='scott', adaptive=True,
              alpha=0.3, use_cuda=False, coszen_reflection=0.25,
              coszen_name='coszen', oversample=1):
+    """Helper function for histograms from KDE
+
+    For description of args see kde_histogramdd()
+     
+    Handling the reflctions at the coszen edges
+
+    ToDo:
+    ----
+    * Handle zenith like coszen? Or better: Define set of variables to perform
+      reflection on and reflection parameters (e.g. `reflect_fract` or somesuch
+      to stand in for for `coszen_reflection` and `reflect_dims` as standin for
+      `coszen_name`; also need some way to specify whether to reflect about lower
+      and/or upper edge); each such parameter can either be a single value, or a
+      sequence with one value per variable.
+    * Any good reason for 0.25 and 'scott' defaults? If not, don't define a
+      default and force the user to explicitly set this when function is called.
+    """
+
+    # the KDE implementation expects an empty weights array instead of `None`
     if weights is None:
         weights = []
 
+    # Get the overall normalization here, because the KDE will be normalized
+    # to one and we'll need to rescale in the end
     if len(weights) == 0:
         norm = sample.shape[0]
     else:
-        # TODO: make explicit axis reference in sum
-        norm = np.sum(weights, axis=0)
+        norm = np.sum(weights)
 
     binning = binning.oversample(oversample)
 
@@ -42,9 +51,8 @@ def get_hist(sample, binning, weights=None, bw_method='scott', adaptive=True,
     assert x.shape[0] == len(binning)
 
     # TODO: What if coszen isn't in binning? Does this fail?
-    cz_bin = binning.names.index(coszen_name)
-
-    # Normal hist
+    # Yes, coszen is expected
+    cz_bin = binning.index(coszen_name)
 
     # Swap out cz bin to first place (index 0)
     if cz_bin != 0:
@@ -141,18 +149,7 @@ def get_hist(sample, binning, weights=None, bw_method='scott', adaptive=True,
     if cz_bin != 0:
         hist = np.swapaxes(hist, 0, cz_bin)
 
-    # TODO: either this is needed or not, don't leave commented-out code
-    #hist = hist/np.sum(hist)*norm
     return hist*norm
-
-
-# TODO:
-# * Stack_pid parameter seems oddly named, not clearly documented
-# * The body of this function seems like it could be cleaned up with methods on
-#   the binning object which should make working with things like this more
-#   generic, though I haven't thought through the whole problem
-# * Explicitly call functions with named parameters, especially when there are
-#   more than just a couple
 
 def kde_histogramdd(sample, binning, weights=None, bw_method='scott',
                     adaptive=True, alpha=0.3, use_cuda=False,
@@ -161,6 +158,7 @@ def kde_histogramdd(sample, binning, weights=None, bw_method='scott',
     """Run kernel density estimation (KDE) for an array of data points, and
     then evaluate them on a histogram-like grid to effectively produce a
     histogram-like output.
+    Handles reflection at coszen edges, and will expect coszen to be in the binning
 
     Based on Sebastian Schoenen's KDE implementation:
     http://code.icecube.wisc.edu/svn/sandbox/schoenen/kde
@@ -172,6 +170,7 @@ def kde_histogramdd(sample, binning, weights=None, bw_method='scott',
         binning order.
 
     binning : MultiDimBinning
+        A coszen dimension is expected
 
     weights : None or array
         Same shape as `sample`
@@ -201,10 +200,17 @@ def kde_histogramdd(sample, binning, weights=None, bw_method='scott',
 
     stack_pid : bool
         Treat each pid bin separately, not as another dimension of the KDEs
+        Only supported for two additional dimensions, pid binning must be named `pid`
 
     Returns
     -------
     histogram : numpy.ndarray
+
+    ToDo:
+    -----
+
+    * Maybe return Map with binnings attached insted of nd-array?
+    * Generalize to handle any dimensions with any reflection criterias
 
     """
     if weights is not None and len(weights) != sample.shape[0]:
@@ -225,15 +231,10 @@ def kde_histogramdd(sample, binning, weights=None, bw_method='scott',
             oversample=oversample
         )
 
+    # treat pid bins separately
+    # asuming we're dealing with 2d apart from PID
     bin_names = binning.names
-    bin_edges = []
-    # TODO: why the following? and why must it be GeV?
-    for name in bin_names:
-        if 'energy' in name:
-            bin_edge = binning[name].bin_edges.to('GeV').magnitude
-        else:
-            bin_edge = binning[name].bin_edges.magnitude
-        bin_edges.append(bin_edge)
+    bin_edges = [b.bin_edges.m for b in binning]
     pid_bin = bin_names.index('pid')
     other_bins = [0, 1, 2]
     other_bins.pop(pid_bin)
@@ -303,6 +304,7 @@ def test_kde_histogramdd():
     set_verbosity(args.v)
 
     temp_dir = mkdtemp()
+
     try:
         my_plotter = Plotter(stamp='', outdir=temp_dir, fmt='pdf', log=False,
                              annotate=False, symmetric=False, ratio=True)
@@ -310,26 +312,32 @@ def test_kde_histogramdd():
         b1 = OneDimBinning(name='coszen', num_bins=20, is_lin=True,
                            domain=[-1, 1], tex=r'\cos(\theta)')
         b2 = OneDimBinning(name='energy', num_bins=10, is_log=True,
-                           domain=[0.1, 10]*ureg.GeV, tex=r'E')
+                           domain=[1, 80]*ureg.GeV, tex=r'E')
         b3 = OneDimBinning(name='pid', num_bins=2,
-                           bin_edges=[0, 1, 3], tex=r'pid')
-        binning = b2 * b1 * b3
-        x = np.random.normal(1, 1, (2, 1000))
-        p = np.random.uniform(0, 3, 10000)
-        x = np.array([np.abs(x[0])-1, x[1], p])
-        # Cut away outside coszen
-        x = x.T[(x[0] <= 1) & (x[0] >= -1), :].T
-        # Swap
-        x[[0, 1]] = x[[1, 0]]
-        bins = [unp.nominal_values(b.bin_edges) for b in binning]
-        raw_hist, _ = np.histogramdd(x.T, bins=bins)
+                           bin_edges=[0, 1, 2], tex=r'pid')
+        binning = b1 * b2 * b3
 
-        hist = kde_histogramdd(x.T, binning, bw_method='silverman',
+        # now let's generate some toy data
+
+        N = 100000
+        cz = np.random.normal(1, 1.2, N)
+        # cut away coszen outside -1, 1
+        cz = cz[(cz >= -1) & (cz <= 1)]
+        e = np.random.normal(30, 20, len(cz))
+        pid = np.random.uniform(0, 2, len(cz))
+        data = np.array([cz, e, pid]).T
+
+        # make numpy histogram for validation
+        bins = [unp.nominal_values(b.bin_edges) for b in binning]
+        raw_hist, _ = np.histogramdd(data, bins=bins)
+
+        # get KDE'ed histo
+        hist = kde_histogramdd(data, binning, bw_method='silverman',
                                coszen_name='coszen', oversample=10,
+                               use_cuda=True,
                                stack_pid=True)
 
-        # TODO: use or remove the following line
-        #hist = hist/np.sum(hist)*np.sum(raw_hist)
+        # put into mapsets and plot
         m1 = Map(name='KDE', hist=hist, binning=binning)
         m2 = Map(name='raw', hist=raw_hist, binning=binning)
         with np.errstate(divide='ignore', invalid='ignore'):

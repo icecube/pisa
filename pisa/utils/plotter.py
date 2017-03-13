@@ -98,7 +98,7 @@ class Plotter(object):
         self.loc = loc
 
     def reset_colors(self):
-        self.colors = itertools.cycle(["r", "b", "g"])
+        self.colors = itertools.cycle(["r", "b", "g", "k", "c", "m", "y"])
 
     def next_color(self):
         self.color = next(self.colors)
@@ -138,6 +138,7 @@ class Plotter(object):
 
     def dump(self, fname):
         """dump figure to file"""
+        logging.info('Writing %s to file'%fname)
         for fmt in self.fmt:
             plt.savefig(self.outdir+'/'+fname+'.'+fmt, dpi=150,
                         edgecolor='none', facecolor=self.fig.get_facecolor())
@@ -154,11 +155,32 @@ class Plotter(object):
             self.add_stamp(map.tex)
             self.dump(map.name)
 
-    def plot_2d_array(self, map_set, n_rows=None, n_cols=None, fname=None,
+    def plot_2d_array(self, map_set, n_rows=None, n_cols=None, fname=None, 
                       **kwargs):
         """plot all maps or transforms in a single plot"""
         if fname is None:
             fname = 'test2d'
+        # if dimensionality is 3, then still define a spli_axis automatically
+        new_maps = []
+        split_axis = kwargs.pop('split_axis', None)
+        for map in map_set:
+            if len(map.binning) == 3:
+                if split_axis is None:
+                    # Find shortest dimension
+                    l = map.binning.num_bins
+                    idx = l.index(min(l))
+                    split_axis_ = map.binning.names[idx]
+                    logging.warning(
+                        'Plotter automatically splitting map %s along %s axis'
+                        % (map.name, split_axis_)
+                    )
+                new_maps.extend(map.split(split_axis_))
+            elif len(map.binning) == 2:
+                new_maps.append(map)
+            else:
+                raise Exception('Cannot plot %i dimensional map in 2d'
+                                %len(map))
+        map_set = MapSet(new_maps)
         self.plot_array(map_set, 'plot_2d_map', n_rows=n_rows, n_cols=n_cols,
                         **kwargs)
         self.dump(fname)
@@ -209,6 +231,9 @@ class Plotter(object):
         """1d comparisons for two map_sets as projections"""
         for i in range(len(map_sets[0])):
             maps = [map_set[i] for map_set in map_sets]
+            self.stamp = maps[0].tex
+            for k in range(len(map_sets)):
+                maps[k].tex = map_sets[k].tex
             self.init_fig()
             if self.ratio:
                 ax1 = plt.subplot2grid((4, 1), (0, 0), rowspan=3)
@@ -224,7 +249,6 @@ class Plotter(object):
                 self.plot_1d_ratio(maps, plot_axis, **kwargs)
             self.dump('%s_%s'%(fname, maps[0].name))
 
-
     # --- plotting core functions ---
 
     def plot_array(self, map_set, fun, *args, **kwargs):
@@ -232,31 +256,8 @@ class Plotter(object):
         set distributed over a grid"""
         n_rows = kwargs.pop('n_rows', None)
         n_cols = kwargs.pop('n_cols', None)
-        split_axis = kwargs.pop('split_axis', None)
         if isinstance(map_set, Map):
             map_set = MapSet([map_set])
-
-        # if dimensionality is 3, then still define a spli_axis automatically
-        new_maps = []
-        for map in map_set:
-            if map.binning.num_dims == 3:
-                if split_axis is None:
-                    # Find shortest dimension
-                    l = map.binning.num_bins
-                    idx = l.index(min(l))
-                    split_axis_ = map.binning.names[idx]
-                    logging.warning(
-                        'Plotter automatically splitting map %s along %s axis'
-                        % (map.name, split_axis_)
-                    )
-                new_maps.extend(map.split(split_axis_))
-            elif len(map.binning) == 2:
-                new_maps.append(map)
-            else:
-                raise Exception('Cannot plot %i dimensional map in 2d'
-                                %len(map))
-        map_set = MapSet(new_maps)
-
         if isinstance(map_set, MapSet):
             n = len(map_set)
         elif isinstance(map_set, TransformSet):
@@ -460,10 +461,9 @@ class Plotter(object):
         """sum up a map along all axes except plot_axis"""
         hist = map.hist
         plt_axis_n = map.binning.names.index(plot_axis)
-        for i in range(len(map.binning)):
-            if i == plt_axis_n:
-                continue
-            hist = np.sum(map.hist, i)
+        hist = np.swapaxes(hist, plt_axis_n, 0)
+        for i in range(1, len(map.binning)):
+            hist = np.sum(hist, 1)
         return hist
 
     def plot_1d_ratio(self, maps, plot_axis):
@@ -511,6 +511,7 @@ class Plotter(object):
                     plt_binning.weighted_centers, weights=ratio,
                     bins=plt_binning.bin_edges, histtype='step', lw=1.5,
                     label=dollars(text2tex(map.tex)), color=self.color)
+
                 axis.bar(
                     plt_binning.bin_edges.m[:-1], 2*ratio_error,
                     bottom=ratio-ratio_error, width=plt_binning.bin_widths,

@@ -537,8 +537,7 @@ class ParamSet(Sequence):
                              "and want to change to a set containing %s."%(
                                  self.names,new_params.names))
         for new_param in new_params:
-            idx = self.index(new_param.name)
-            self._params[idx].value = new_param.value
+            self[new_param.name].value = new_param.value
 
     def fix(self, x):
         """Set param(s) to be fixed in value (and hence not modifiable by e.g.

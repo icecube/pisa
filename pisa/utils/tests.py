@@ -714,12 +714,14 @@ def pisa2_map_to_pisa3_map(pisa2_map, ebins_name='ebins', czbins_name='czbins'):
     ebins = OneDimBinning(
         name=ebins_name,
         bin_edges=pisa2_map['ebins'] * ureg.GeV,
-        is_log=True
+        is_log=True,
+        tex='E_{\nu}'
     )
     czbins = OneDimBinning(
         name=czbins_name,
         bin_edges=pisa2_map['czbins'],
-        is_lin=True
+        is_lin=True,
+        tex='\cos\theta_Z'
     )
     bins = MultiDimBinning([ebins, czbins])
     return Map(

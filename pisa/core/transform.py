@@ -907,9 +907,6 @@ class BinnedTensorTransform(Transform):
                      hist=output,
                      binning=self.output_binning)
 
-        # Rebin if necessary so output has `output_binning`
-        output = output.rebin(self.output_binning)
-
         return output
 
 

@@ -264,7 +264,6 @@ def compare_aeff(config, servicename, pisa2file, systname,
     outputs = stage.get_outputs(inputs=MapSet(maps=input_maps, name='ones',
                                               hash=1))
     pisa2_comparisons = from_file(pisa2file)
-
     for nukey in pisa2_comparisons.keys():
         if 'nu' not in nukey:
             continue
@@ -310,15 +309,37 @@ def compare_aeff(config, servicename, pisa2file, systname,
     return pipeline
 
 
-def compare_reco(config, servicename, pisa2file, outdir, ratio_test_threshold,
+def compare_reco(config, servicename, pisa2file, systname,
+                 outdir, ratio_test_threshold,
                  diff_test_threshold):
     """Compare reco stages run in isolation with dummy inputs"""
     logging.debug('>> Working on reco stage comparisons')
     logging.debug('>>> Checking %s service'%servicename)
     test_service = servicename
 
-    logging.debug('>>> Checking baseline')
-    test_syst = 'baseline'
+    k = [k for k in config.keys() if k[0] == 'reco'][0]
+    params = config[k]['params'].params
+
+    if systname is not None:
+        logging.debug('>>> Checking %s systematic'%systname)
+        test_syst = systname
+        try:
+            params[systname] = \
+                    params[systname].value + \
+                    params[systname].prior.stddev
+        except:
+            params[systname] = \
+                    1.25*params[systname].value
+
+        pisa2file = pisa2file.split('.json')[0] + \
+                '-%s%.2f.json' \
+                %(systname, params[systname].value)
+        servicename += '-%s%.2f' \
+                %(systname, params[systname].value)
+    else:
+        logging.debug('>>> Checking baseline')
+        test_syst = 'baseline'
+        
     pipeline = Pipeline(config)
     stage = pipeline.stages[0]
     input_maps = []
@@ -839,7 +860,7 @@ def main():
     # Perform flux tests
     if args.flux or test_all:
         flux_settings = os.path.join(
-            'tests', 'settings', 'pisa2_flux_test.cfg'
+            'tests', 'settings', 'pisa2_flux_honda_test.cfg'
         )
         flux_config = parse_pipeline_config(flux_settings)
 
@@ -937,7 +958,7 @@ def main():
     # Perform effective-area tests
     if args.aeff or test_all:
         aeff_settings = os.path.join(
-            'tests', 'settings', 'pisa2_aeff_test.cfg'
+            'tests', 'settings', 'pisa2_aeff_hist_test.cfg'
         )
         aeff_config = parse_pipeline_config(aeff_settings)
 
@@ -961,12 +982,34 @@ def main():
                 outdir=args.outdir,
                 ratio_test_threshold=args.ratio_threshold,
                 diff_test_threshold=args.diff_threshold
+            )    
+        aeff_settings = os.path.join(
+            'tests', 'settings', 'pisa2_aeff_param_test.cfg'
+        )
+        aeff_config = parse_pipeline_config(aeff_settings)
+
+        k = [k for k in aeff_config.keys() if k[0] == 'aeff'][0]
+        params = aeff_config[k]['params'].params
+
+        pisa2file = os.path.join(
+            'tests', 'data', 'aeff', 'PISAV2AeffStageParam1X60Service.json'
+        )
+        pisa2file = find_resource(pisa2file)
+        for syst in [None, 'aeff_scale']:
+            aeff_pipeline = compare_aeff(
+                config=deepcopy(aeff_config),
+                servicename='param_1X60',
+                pisa2file=pisa2file,
+                systname=syst,
+                outdir=args.outdir,
+                ratio_test_threshold=args.ratio_threshold,
+                diff_test_threshold=args.diff_threshold
             )
 
     # Perform reconstruction tests
     if args.reco or test_all:
         reco_settings = os.path.join(
-            'tests', 'settings', 'pisa2_reco_test.cfg'
+            'tests', 'settings', 'pisa2_reco_hist_test.cfg'
         )
         reco_config = parse_pipeline_config(reco_settings)
 
@@ -986,6 +1029,7 @@ def main():
             config=deepcopy(reco_config),
             servicename='hist_1X585',
             pisa2file=pisa2file,
+            systname=None,
             outdir=args.outdir,
             ratio_test_threshold=args.ratio_threshold,
             diff_test_threshold=args.diff_threshold
@@ -1003,15 +1047,34 @@ def main():
             config=deepcopy(reco_config),
             servicename='hist_1X60',
             pisa2file=pisa2file,
+            systname=None,
             outdir=args.outdir,
             ratio_test_threshold=args.ratio_threshold,
             diff_test_threshold=args.diff_threshold
         )
+        reco_settings = os.path.join(
+            'tests', 'settings', 'pisa2_reco_param_test.cfg'
+        )
+        reco_config = parse_pipeline_config(reco_settings)
+        pisa2file = os.path.join(
+            'tests', 'data', 'reco', 'PISAV2RecoStageParam1X60Service.json'
+        )
+        pisa2file = find_resource(pisa2file)
+        for syst in [None, 'e_res_scale', 'cz_res_scale']:
+            reco_pipeline = compare_reco(
+                config=deepcopy(reco_config),
+                servicename='param_1X60',
+                pisa2file=pisa2file,
+                systname=syst,
+                outdir=args.outdir,
+                ratio_test_threshold=args.ratio_threshold,
+                diff_test_threshold=args.diff_threshold
+            )
 
     # Perform PID tests
     if args.pid or test_all:
         pid_settings = os.path.join(
-            'tests', 'settings', 'pisa2_pid_test.cfg'
+            'tests', 'settings', 'pisa2_pid_hist_test.cfg'
         )
         pid_config = parse_pipeline_config(pid_settings)
 
@@ -1051,6 +1114,22 @@ def main():
             logging.info(PID_PASS_MESSAGE)
         else:
             raise ValueError(PID_FAIL_MESSAGE)
+        pid_settings = os.path.join(
+            'tests', 'settings', 'pisa2_pid_param_test.cfg'
+        )
+        pid_config = parse_pipeline_config(pid_settings)
+        pisa2file = os.path.join(
+            'tests', 'data', 'pid', 'PISAV2PIDStageParam1X60Service.json'
+        )
+        pisa2file = find_resource(pisa2file)
+        pid_pipeline = compare_pid(
+            config=deepcopy(pid_config),
+            servicename='param_1X60',
+            pisa2file=pisa2file,
+            outdir=args.outdir,
+            ratio_test_threshold=args.ratio_threshold,
+            diff_test_threshold=args.diff_threshold
+        )
     ## Perform reco+PID tests
     #if args.recopid or test_all:
     #    pid_settings = os.path.join(

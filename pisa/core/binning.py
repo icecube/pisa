@@ -602,6 +602,11 @@ class OneDimBinning(object):
         return self._domain
 
     @property
+    def range(self):
+        """float : range of the binning, (max-min) bin edges"""
+        return self._domain[-1] - self._domain[0]
+
+    @property
     def units(self):
         """pint.units : units of the bins' edges"""
         return self._units

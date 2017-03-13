@@ -246,7 +246,7 @@ class hist(Stage):
                         input_names=xform_input_names,
                         output_name=output_name,
                         input_binning=self.input_binning,
-                        output_binning=self.output_binning,
+                        output_binning=self.input_binning,
                         xform_array=aeff_transform,
                         sum_inputs=self.sum_grouped_flavints
                     )
@@ -270,9 +270,8 @@ class hist(Stage):
                             input_names=input_name,
                             output_name=output_name,
                             input_binning=self.input_binning,
-                            output_binning=self.output_binning,
+                            output_binning=self.input_binning,
                             xform_array=aeff_transform,
-                            sum_inputs=self.sum_grouped_flavints
                         )
                         nominal_transforms.append(xform)
 

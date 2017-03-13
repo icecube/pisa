@@ -513,9 +513,9 @@ def main():
                           annotate=False,
                           symmetric=fract_diff_symm,
                           ratio=True)
-        plotter.label = '%s/%s - 1' % (test_plot_label, ref_plot_label)
+        plotter.label = '(%s-%s)/(%s+%s)' % (test_plot_label, ref_plot_label, test_plot_label, ref_plot_label)
         plotter.plot_2d_array(
-            test/ref - 1.,
+            (test-ref)/(test+ref),
             fname='fract_diff__%s__%s' % (test_plot_label, ref_plot_label),
             cmap='RdBu',
             #vmin=args.fract_diff_min, vmax=args.fract_diff_max
@@ -527,10 +527,10 @@ def main():
                           annotate=False,
                           symmetric=asymm_symm,
                           ratio=True)
-        plotter.label = '(%s - %s)/sqrt(%s)' % (test_plot_label,
-                                                ref_plot_label, ref_plot_label)
+        plotter.label = r'$(%s - %s)/\sqrt{%s + %s}$' % (test_plot_label,
+                                                ref_plot_label, test_plot_label, ref_plot_label)
         plotter.plot_2d_array(
-            (test-ref)/ref**0.5,
+            (test-ref)/(test+ref)**0.5,
             fname='asymm__%s__%s' % (test_plot_label, ref_plot_label),
             cmap='RdBu',
             #vmin=args.asymm_min, vmax=args.asymm_max

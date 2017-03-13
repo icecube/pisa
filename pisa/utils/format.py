@@ -433,7 +433,10 @@ def dollars(s):
     out_lines = []
     for line in stripped.split('\n'):
         stripped_line = strip_outer_dollars(line)
-        out_lines.append('$%s$' % stripped_line)
+        if stripped_line == '':
+            out_lines.append('')
+        else:
+            out_lines.append('$%s$' % stripped_line)
     return '\n'.join(out_lines)
 
 

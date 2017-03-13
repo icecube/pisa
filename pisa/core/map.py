@@ -2241,16 +2241,23 @@ class MapSet(object):
         return MapSet([m.downsample(*args, **kwargs) for m in self])
 
     def metric_per_map(self, expected_values, metric):
-        metric = metric.lower() if isinstance(metric, basestring) else metric
-        if metric in stats.ALL_METRICS:
+        metric = metric.lower()
+        if isinstance(metric, basestring):
+            metric = metric.lower()
+            if 'binned_' in metric:
+                metric_base = metric.replace('binned_','')
+                if not metric_base == 'mod_chi2':
+                    raise ValueError(
+                        "Returning the binned metric currently only possible"
+                        " with the modified chi2. Sorry about that!"
+                    )
+            else:
+                metric_base = metric
+        else:
+            metric_base = metric
+        if metric_base in stats.ALL_METRICS:
             return self.apply_to_maps(metric, expected_values)
         else:
-            if 'binned_' in metric:
-                if metric.split('binned_')[-1] in stats.ALL_METRICS:
-                    return self.apply_to_maps(metric, expected_values)
-                else:
-                    raise ValueError('`metric` "%s" not recognized; use one of' 
-                                     ' %s.'%(metric, stats.ALL_METRICS))
             raise ValueError('`metric` "%s" not recognized; use one of %s.'
                              %(metric, stats.ALL_METRICS))
 
