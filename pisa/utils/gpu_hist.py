@@ -448,5 +448,5 @@ def test_GPUHist():
 
 
 if __name__ == '__main__':
-    set_verbosity(1)
+    set_verbosity(3)
     test_GPUHist()

@@ -12,6 +12,7 @@ from pisa.utils.resources import find_resource
 from pisa.stages.osc.prob3.BargerPropagator import BargerPropagator
 from pisa.utils.comparisons import normQuant
 from pisa.utils.profiler import profile
+from pisa.utils.log import logging
 
 
 __all__ = ['prob3cpu']
@@ -406,11 +407,6 @@ class prob3cpu(Stage):
                              "PISA maps and so this is the wrong function for"
                              " calculating the probabilities.")
         self.setup_barger_propagator()
-        if self._barger_earth_model is not None:
-            raise ValueError("The barger propagator has been setup with a "
-                             "user-defined Earth Model but this calculations"
-                             " MUST be used for vacuum oscillations. Something"
-                             " is wrong.")
         # Set up oscillation parameters needed to initialise MNS matrix
         kSquared = True
         theta12 = self.params['theta12'].value.m_as('rad')
@@ -426,36 +422,62 @@ class prob3cpu(Stage):
             mAtm = deltam31
         else:
             mAtm = deltam31 - deltam21
-        # Set up the distance to the detector. Radius of Earth is 6371km and
-        # we then account for the depth of the detector in the Earth.
-        depth = self.params.detector_depth.m_as('km')
-        prop_height = self.params.prop_height.m_as('km')
-        rdetector = 6371.0 - depth
-        # Probability is separately calculated for each event
-        for i, (en, cz) in enumerate(zip(true_energy, true_coszen)):
-            en *= true_e_scale
-            if cz < 0:
-                path = np.sqrt(
-                    (rdetector + prop_height + depth) * \
-                    (rdetector + prop_height + depth) - \
-                    (rdetector*rdetector)*(1 - cz*cz)
-                ) - rdetector*cz
-            else:
-                kappa = (depth + prop_height)/rdetector
-                path = rdetector * np.sqrt(
-                    cz*cz - 1 + (1 + kappa)*(1 + kappa)
-                ) - rdetector*cz
-            self.barger_propagator.SetMNS(
-                sin2th12Sq,sin2th13Sq,sin2th23Sq,deltam21,
-                mAtm,deltacp,en,kSquared,kNuBar
-            )
-            # kFlav is zero-start indexed, whereas Prob3 wants it from 1
-            prob_e[i] = self.barger_propagator.GetVacuumProb(
-                1, kFlav+1, en, path
-            )
-            prob_mu[i] = self.barger_propagator.GetVacuumProb(
-                2, kFlav+1, en, path
-            )
+        if self._barger_earth_model is None:
+            logging.info("Calculating vacuum oscillations")
+            # Set up the distance to the detector. Radius of Earth is 6371km and
+            # we then account for the depth of the detector in the Earth.
+            depth = self.params.detector_depth.m_as('km')
+            prop_height = self.params.prop_height.m_as('km')
+            rdetector = 6371.0 - depth
+            # Probability is separately calculated for each event
+            for i, (en, cz) in enumerate(zip(true_energy, true_coszen)):
+                en *= true_e_scale
+                if cz < 0:
+                    path = np.sqrt(
+                        (rdetector + prop_height + depth) * \
+                        (rdetector + prop_height + depth) - \
+                        (rdetector*rdetector)*(1 - cz*cz)
+                    ) - rdetector*cz
+                else:
+                    kappa = (depth + prop_height)/rdetector
+                    path = rdetector * np.sqrt(
+                        cz*cz - 1 + (1 + kappa)*(1 + kappa)
+                    ) - rdetector*cz
+                self.barger_propagator.SetMNS(
+                    sin2th12Sq,sin2th13Sq,sin2th23Sq,deltam21,
+                    mAtm,deltacp,en,kSquared,kNuBar
+                )
+                # kFlav is zero-start indexed, whereas Prob3 wants it from 1
+                prob_e[i] = self.barger_propagator.GetVacuumProb(
+                    1, kFlav+1, en, path
+                )
+                prob_mu[i] = self.barger_propagator.GetVacuumProb(
+                    2, kFlav+1, en, path
+                )
+        else:
+            logging.info("Calculating matter oscillations")
+            YeI = self.params.YeI.m_as('dimensionless')
+            YeO = self.params.YeO.m_as('dimensionless')
+            YeM = self.params.YeM.m_as('dimensionless')
+            depth = self.params.detector_depth.m_as('km')
+            prop_height = self.params.prop_height.m_as('km')
+            # Probability is separately calculated for each event
+            for i, (en, cz) in enumerate(zip(true_energy, true_coszen)):
+                en *= true_e_scale
+                self.barger_propagator.SetMNS(
+                    sin2th12Sq,sin2th13Sq,sin2th23Sq,deltam21,
+                    mAtm,deltacp,en,kSquared,kNuBar
+                )
+                self.barger_propagator.DefinePath(
+                    cz, prop_height, YeI, YeO, YeM
+                )
+                self.barger_propagator.propagate(kNuBar)
+                prob_e[i] = self.barger_propagator.GetProb(
+                    0, kFlav
+                )
+                prob_mu[i] = self.barger_propagator.GetProb(
+                    1, kFlav
+                )
             
     def validate_params(self, params):
         if params['earth_model'].value is None:

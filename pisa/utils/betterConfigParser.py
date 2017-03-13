@@ -10,6 +10,7 @@ import ConfigParser
 import re
 
 from pisa.utils import resources
+from pisa.utils.log import logging
 
 
 __all__ = ['BetterConfigParser']
@@ -48,6 +49,7 @@ class BetterConfigParser(ConfigParser.SafeConfigParser):
                     inc_file = line[9:].rstrip()
                     inc_file = resources.find_resource(inc_file)
                     processed_fnames.append(inc_file)
+                    logging.info('including file %s in cfg'%inc_file)
                 else:
                     break
         return processed_fnames
