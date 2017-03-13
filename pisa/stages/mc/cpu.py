@@ -212,10 +212,15 @@ class cpu(Stage):
         self.fixed_error = None
 
         # Initialize classes
-        earth_model = find_resource(self.params.earth_model.value)
-        YeI = self.params.YeI.value.m_as('dimensionless')
-        YeO = self.params.YeO.value.m_as('dimensionless')
-        YeM = self.params.YeM.value.m_as('dimensionless')
+        earth_model = self.params.earth_model.value
+        YeI = self.params.YeI.value
+        YeO = self.params.YeO.value
+        YeM = self.params.YeM.value
+        if earth_model is not None:
+            earth_model = find_resource(self.params.earth_model.value)
+            YeI = self.params.YeI.value.m_as('dimensionless')
+            YeO = YeO.m_as('dimensionless')
+            YeM = YeM.m_as('dimensionless')
         prop_height = self.params.prop_height.value.m_as('km')
         detector_depth = self.params.detector_depth.value.m_as('km')
 

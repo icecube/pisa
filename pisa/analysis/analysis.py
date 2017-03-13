@@ -451,7 +451,7 @@ class Analysis(object):
             for asimov_map, metric_hist in zip(hypo_asimov_dist, metric_hists):
                 map_binned = Map(
                     name=asimov_map.name,
-                    hist=np.reshape(metric_hists[metric_hist],asimov_map.shape)
+                    hist=np.reshape(metric_hists[metric_hist],asimov_map.shape),
                     binning=asimov_map.binning
                 )
                 maps_binned.append(map_binned)

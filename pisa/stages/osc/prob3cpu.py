@@ -195,7 +195,6 @@ class prob3cpu(Stage):
             # calculations will use the GetVacuumProb so what we define here
             # doesn't matter.
             self.barger_propagator = BargerPropagator(
-                find_resource('osc/PREM_12layer.dat'),
                 self._barger_detector_depth
             )
         self.barger_propagator.UseMassEigenstates(False)
@@ -384,23 +383,23 @@ class prob3cpu(Stage):
                         )
         return prob_list
 
-    def calc_path(coszen, rdetector, prop_height, depth):
+    def calc_path(self, coszen, rdetector, prop_height, depth):
         """
         Calculates the path through a spherical body of radius rdetector for
         a neutrino coming in with at coszen from prop_height to a detector
         at detph.
         """
-        if cz < 0:
+        if coszen < 0:
             path = np.sqrt(
                 (rdetector + prop_height + depth) * \
                 (rdetector + prop_height + depth) - \
-                (rdetector*rdetector)*(1 - cz*cz)
-            ) - rdetector*cz
+                (rdetector*rdetector)*(1 - coszen*coszen)
+            ) - rdetector*coszen
         else:
             kappa = (depth + prop_height)/rdetector
             path = rdetector * np.sqrt(
-                cz*cz - 1 + (1 + kappa)*(1 + kappa)
-            ) - rdetector*cz
+                coszen*coszen - 1 + (1 + kappa)*(1 + kappa)
+            ) - rdetector*coszen
         return path
     
     def calc_probs(self, true_e_scale, events_dict):

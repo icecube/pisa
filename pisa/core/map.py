@@ -2241,7 +2241,6 @@ class MapSet(object):
         return MapSet([m.downsample(*args, **kwargs) for m in self])
 
     def metric_per_map(self, expected_values, metric):
-        metric = metric.lower()
         if isinstance(metric, basestring):
             metric = metric.lower()
             if 'binned_' in metric:
