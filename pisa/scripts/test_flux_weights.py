@@ -432,7 +432,8 @@ def do_2D_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
                 title='%s Flux Integral Deviation'%flavtex,
                 ax=axes,
                 clabel=r'Ratio to Honda Table Value',
-                largelabels=True
+                largelabels=True,
+                logz=False
             )
 
             fig.savefig(
@@ -1601,9 +1602,22 @@ if __name__ == '__main__':
     args = parser.parse_args()
     set_verbosity(args.v)
 
+    if not os.path.exists(args.outdir):
+        logging.info("Making output directory %s"%args.outdir)
+        os.makedirs(args.outdir)
+
+    if (args.ip_checks) and (not args.twodim_checks):
+        logging.info(
+            "You have requested to perform the integral-preserving checks and"
+            " so the two dimensional checks will be performed too (this adds"
+            " nothing extra to the computing time)."
+        )
+        args.twodim_checks = True
+        
     if args.flux_file_2D is not None:
 
-        if ('honda' not in args.flux_file_2D) and ('bartol' not in args.flux_file_2D):
+        if ('honda' not in args.flux_file_2D) and \
+           ('bartol' not in args.flux_file_2D):
             raise ValueError('Type of flux file not recognised.')
 
         spline_dict_2D, flux_dict_2D = load_2D_table(
