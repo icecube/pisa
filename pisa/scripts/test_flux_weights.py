@@ -427,11 +427,12 @@ def do_2D_2D_honda_test(spline_dict, flux_dict, outdir, ip_checks,
                                      sharex=False, sharey=False,
                                      figsize=(12,10))
 
+            diff_ratio_map['map'] = diff_ratio_map['map'] * 100.0
             logplot(
                 m=diff_ratio_map,
                 title='%s Flux Integral Deviation'%flavtex,
                 ax=axes,
-                clabel=r'Ratio to Honda Table Value',
+                clabel=r'Ratio to Honda Table Value (\%)',
                 largelabels=True,
                 logz=False
             )
@@ -732,6 +733,30 @@ def do_2D_2D_bartol_test(spline_dict, flux_dict, outdir, ip_checks,
                 plt.subplots_adjust(top=0.8)
                 fig.savefig(os.path.join(outdir,'bartol_%s_%siptest_fullrange.png'%(en_label,flav)))
                 plt.close(fig.number)
+
+                gridspec_kw = dict(left=0.15, right=0.90, wspace=0.32)
+                fig, axes = plt.subplots(nrows=1, ncols=1,
+                                         gridspec_kw=gridspec_kw,
+                                         sharex=False, sharey=False,
+                                         figsize=(12,10))
+
+                diff_ratio_map['map'] = diff_ratio_map['map'] * 100.0
+                logplot(
+                    m=diff_ratio_map,
+                    title='%s Flux Integral Deviation'%flavtex,
+                    ax=axes,
+                    clabel=r'Ratio to Bartol Table Value (\%)',
+                    largelabels=True,
+                    logz=False
+                )
+
+                fig.savefig(
+                    os.path.join(
+                        outdir,
+                        'bartol_%s_%s2dintegraldeviation_fullrange.png'%(
+                            en_label,flav)
+                    )
+                )
 
     for flav, flavtex in zip(primaries, texprimaries):
                 
