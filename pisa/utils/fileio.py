@@ -27,7 +27,8 @@ __all__ = ['PKL_EXTS', 'DILL_EXTS', 'CFG_EXTS', 'ZIP_EXTS', 'TXT_EXTS',
            'NSORT_RE',
            'expandPath', 'mkdir', 'get_valid_filename', 'nsort', 'findFiles',
            'from_cfg', 'from_pickle', 'to_pickle', 'from_dill', 'to_dill',
-           'from_file', 'to_file']
+           'from_file', 'to_file',
+           'is_dir', 'is_valid_file']
 
 
 PKL_EXTS = ['pickle', 'pckl', 'pkl', 'p']
@@ -323,3 +324,24 @@ def to_file(obj, fname, fmt=None, overwrite=True, warn=True, **kwargs):
         errmsg = 'Unrecognized file type/extension: ' + ext
         log.logging.error(errmsg)
         raise TypeError(errmsg)
+
+
+def is_dir(dirname):
+    """
+    Checks if a path is an actual directory, if not found then it creates the
+    directory
+    """
+    if not os.path.isdir(dirname):
+        mkdir(dirname)
+    return dirname
+
+
+def is_valid_file(filepath):
+    """
+    Checks if a path is an actual file
+    """
+    if not os.path.exists(filepath):
+        msg = 'The file {0} does not exist!'.format(filepath)
+        raise ValueError(msg)
+    else:
+        return filepath

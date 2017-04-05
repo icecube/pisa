@@ -31,7 +31,7 @@ from pisa.utils.plotter import Plotter
 
 __all__ = ['DISTRIBUTIONMAKER_SOURCE_STR', 'PIPELINE_SOURCE_STR',
            'MAP_SOURCE_STR', 'MAPSET_SOURCE_STR',
-           'parse_args', 'main']
+           'parse_args', 'compare', 'main']
 
 
 DISTRIBUTIONMAKER_SOURCE_STR = (
@@ -40,6 +40,7 @@ DISTRIBUTIONMAKER_SOURCE_STR = (
 PIPELINE_SOURCE_STR = 'Pipeline instantiated from a pipelinen config file'
 MAP_SOURCE_STR = 'Map stored on disk'
 MAPSET_SOURCE_STR = 'MapSet stored on disk'
+
 
 def parse_args():
     parser = ArgumentParser(description=__doc__)
@@ -156,178 +157,182 @@ def parse_args():
     return args
 
 
-def main():
-    args = parse_args()
-    set_verbosity(args.v)
-
-    ref_plot_label = args.ref_label
-    if args.ref_abs and not args.ref_label.startswith('abs'):
+def compare(outdir, ref, ref_label, test, test_label, asymm_max=None,
+            asymm_min=None, combine=None, sum=None, diff_max=None,
+            diff_min=None, fract_diff_max=None, fract_diff_min=None,
+            json=False, pdf=False, png=False, ref_abs=False,
+            ref_param_selections=None, test_abs=False,
+            test_param_selections=None):
+    ref_plot_label = ref_label
+    if ref_abs and not ref_label.startswith('abs'):
         ref_plot_label = 'abs(%s)' % ref_plot_label
-    test_plot_label = args.test_label
-    if args.test_abs and not args.test_label.startswith('abs'):
+    test_plot_label = test_label
+    if test_abs and not test_label.startswith('abs'):
         test_plot_label = 'abs(%s)' % test_plot_label
 
     plot_formats = []
-    if args.pdf:
+    if pdf:
         plot_formats.append('pdf')
-    if args.png:
+    if png:
         plot_formats.append('png')
 
     diff_symm = True
-    if args.diff_min is not None and args.diff_max is None:
-        args.diff_max = -args.diff_min
+    if diff_min is not None and diff_max is None:
+        diff_max = -diff_min
         diff_symm = False
-    if args.diff_max is not None and args.diff_min is None:
-        args.diff_min = -args.diff_max
+    if diff_max is not None and diff_min is None:
+        diff_min = -diff_max
         diff_symm = False
 
     fract_diff_symm = True
-    if args.fract_diff_min is not None and args.fract_diff_max is None:
-        args.fract_diff_max = -args.fract_diff_min
+    if fract_diff_min is not None and fract_diff_max is None:
+        fract_diff_max = -fract_diff_min
         fract_diff_symm = False
-    if args.fract_diff_max is not None and args.fract_diff_min is None:
-        args.fract_diff_min = -args.fract_diff_max
+    if fract_diff_max is not None and fract_diff_min is None:
+        fract_diff_min = -fract_diff_max
         fract_diff_symm = False
 
     asymm_symm = True
-    if args.asymm_max is not None and args.asymm_min is None:
-        args.asymm_min = -args.asymm_max
+    if asymm_max is not None and asymm_min is None:
+        asymm_min = -asymm_max
         asymm_symm = False
-    if args.asymm_min is not None and args.asymm_max is None:
-        args.asymm_max = -args.asymm_min
+    if asymm_min is not None and asymm_max is None:
+        asymm_max = -asymm_min
         asymm_symm = False
 
-    args.outdir = os.path.expanduser(os.path.expandvars(args.outdir))
-    mkdir(args.outdir)
+    outdir = os.path.expanduser(os.path.expandvars(outdir))
+    mkdir(outdir)
 
     # Get the reference distribution(s) into the form of a test MapSet
-    ref = None
+    p_ref = None
     ref_source = None
-    if len(args.ref) == 1:
+    if len(ref) == 1:
         try:
-            ref_pipeline = Pipeline(config=args.ref[0])
+            ref_pipeline = Pipeline(config=ref[0])
         except:
             pass
         else:
             ref_source = PIPELINE_SOURCE_STR
-            if args.ref_param_selections is not None:
-                ref_pipeline.select_params(args.ref_param_selections)
-            ref = ref_pipeline.get_outputs()
+            if ref_param_selections is not None:
+                ref_pipeline.select_params(ref_param_selections)
+            p_ref = ref_pipeline.get_outputs()
     else:
         try:
-            ref_dmaker = DistributionMaker(pipelines=args.ref)
+            ref_dmaker = DistributionMaker(pipelines=ref)
         except:
             pass
         else:
             ref_source = DISTRIBUTIONMAKER_SOURCE_STR
-            if args.ref_param_selections is not None:
-                ref_dmaker.select_params(args.ref_param_selections)
-            ref = ref_dmaker.get_outputs()
+            if ref_param_selections is not None:
+                ref_dmaker.select_params(ref_param_selections)
+            p_ref = ref_dmaker.get_outputs()
 
-    if ref is None:
+    if p_ref is None:
         try:
-            ref = [Map.from_json(f) for f in args.ref]
+            p_ref = [Map.from_json(f) for f in ref]
         except:
             pass
         else:
             ref_source = MAP_SOURCE_STR
-            ref = MapSet(ref)
+            p_ref = MapSet(p_ref)
 
-    if ref is None:
-        assert args.ref_param_selections is None
-        assert len(args.ref) == 1, 'Can only handle one MapSet'
+    if p_ref is None:
+        assert ref_param_selections is None
+        assert len(ref) == 1, 'Can only handle one MapSet'
         try:
-            ref = MapSet.from_json(args.ref[0])
+            p_ref = MapSet.from_json(ref[0])
         except:
             pass
         else:
             ref_source = MAPSET_SOURCE_STR
 
-    if ref is None:
+    if p_ref is None:
         raise ValueError(
             'Could not instantiate the reference Pipeline, DistributionMaker,'
-            ' Map, or MapSet from ref value(s) %s' % args.ref
+            ' Map, or MapSet from ref value(s) %s' % ref
         )
+    ref = p_ref
 
     logging.info('Reference map(s) derived from a ' + ref_source)
 
     # Get the test distribution(s) into the form of a test MapSet
-    test = None
+    p_test = None
     test_source = None
-    if len(args.test) == 1:
+    if len(test) == 1:
         try:
-            test_pipeline = Pipeline(config=args.test[0])
+            test_pipeline = Pipeline(config=test[0])
         except:
             pass
         else:
             test_source = PIPELINE_SOURCE_STR
-            if args.test_param_selections is not None:
-                test_pipeline.select_params(args.test_param_selections)
-            test = test_pipeline.get_outputs()
+            if test_param_selections is not None:
+                test_pipeline.select_params(test_param_selections)
+            p_test = test_pipeline.get_outputs()
     else:
         try:
-            test_dmaker = DistributionMaker(pipelines=args.test)
+            test_dmaker = DistributionMaker(pipelines=test)
         except:
             pass
         else:
             test_source = DISTRIBUTIONMAKER_SOURCE_STR
-            if args.test_param_selections is not None:
-                test_dmaker.select_params(args.test_param_selections)
-            test = test_dmaker.get_outputs()
+            if test_param_selections is not None:
+                test_dmaker.select_params(test_param_selections)
+            p_test = test_dmaker.get_outputs()
 
-    if test is None:
+    if p_test is None:
         try:
-            test = [Map.from_json(f) for f in args.test]
+            p_test = [Map.from_json(f) for f in test]
         except:
             pass
         else:
             test_source = MAP_SOURCE_STR
-            test = MapSet(test)
+            p_test = MapSet(p_test)
 
-    if test is None:
-        assert args.test_param_selections is None
-        assert len(args.test) == 1, 'Can only handle one MapSet'
+    if p_test is None:
+        assert test_param_selections is None
+        assert len(test) == 1, 'Can only handle one MapSet'
         try:
-            test = MapSet.from_json(args.test[0])
+            p_test = MapSet.from_json(test[0])
         except:
             pass
         else:
             test_source = MAPSET_SOURCE_STR
 
-    if test is None:
+    if p_test is None:
         raise ValueError(
             'Could not instantiate the test Pipeline, DistributionMaker, Map,'
-            ' or MapSet from test value(s) %s' % args.test
+            ' or MapSet from test value(s) %s' % test
         )
+    test = p_test
 
     logging.info('Test map(s) derived from a ' + test_source)
 
-    if args.combine is not None:
-        ref = ref.combine_wildcard(args.combine)
-        test = test.combine_wildcard(args.combine)
+    if combine is not None:
+        ref = ref.combine_wildcard(combine)
+        test = test.combine_wildcard(combine)
         if isinstance(ref, Map):
             ref = MapSet([ref])
         if isinstance(test, Map):
             test = MapSet([test])
 
-    if args.sum is not None:
-        ref = ref.sum(args.sum)
-        test = test.sum(args.sum)
+    if sum is not None:
+        ref = ref.sum(sum)
+        test = test.sum(sum)
 
     # Set the MapSet names according to args passed by user
-    ref.name = args.ref_label
-    test.name = args.test_label
+    ref.name = ref_label
+    test.name = test_label
 
     # Save to disk the maps being plotted (excluding optional aboslute value
     # operations)
-    if args.json:
+    if json:
         refmaps_path = os.path.join(
-            args.outdir, 'maps__%s.json.bz2' % args.ref_label
+            outdir, 'maps__%s.json.bz2' % ref_label
         )
         to_file(ref, refmaps_path)
 
         testmaps_path = os.path.join(
-            args.outdir, 'maps__%s.json.bz2' % args.test_label
+            outdir, 'maps__%s.json.bz2' % test_label
         )
         to_file(test, testmaps_path)
 
@@ -355,9 +360,9 @@ def main():
     summary_stats = {}
     for ref_map in ref:
         test_map = test[ref_map.name].reorder_dimensions(ref_map.binning)
-        if args.ref_abs:
+        if ref_abs:
             ref_map = abs(ref_map)
-        if args.test_abs:
+        if test_abs:
             test_map = abs(test_map)
 
         diff_map = test_map - ref_map
@@ -478,30 +483,30 @@ def main():
     fract_diff = MapSet(fract_diff_maps)
     asymm = MapSet(asymm_maps)
 
-    if args.json:
+    if json:
         diff.to_json(os.path.join(
-            args.outdir,
+            outdir,
             'diff__%s__%s.json.bz2' %(test_plot_label, ref_plot_label)
         ))
         fract_diff.to_json(os.path.join(
-            args.outdir,
+            outdir,
             'fract_diff__%s___%s.json.bz2' %(test_plot_label, ref_plot_label)
         ))
         asymm.to_json(os.path.join(
-            args.outdir,
+            outdir,
             'asymm__%s___%s.json.bz2' %(test_plot_label, ref_plot_label)
         ))
         to_file(
             summary_stats,
             os.path.join(
-                args.outdir,
+                outdir,
                 'stats__%s__%s.json.bz2' %(test_plot_label, ref_plot_label)
             )
         )
 
     for plot_format in plot_formats:
         # Plot the raw distributions
-        plotter = Plotter(stamp='', outdir=args.outdir, fmt=plot_format,
+        plotter = Plotter(stamp='', outdir=outdir, fmt=plot_format,
                           log=False, annotate=False,
                           symmetric=False,
                           ratio=False)
@@ -511,7 +516,7 @@ def main():
                               % test_plot_label)
 
         # Plot the difference (test - ref)
-        plotter = Plotter(stamp='', outdir=args.outdir, fmt=plot_format,
+        plotter = Plotter(stamp='', outdir=outdir, fmt=plot_format,
                           log=False, annotate=False,
                           symmetric=diff_symm,
                           ratio=False)
@@ -519,11 +524,11 @@ def main():
         plotter.plot_2d_array(
             test - ref,
             fname='diff__%s__%s' % (test_plot_label, ref_plot_label),
-            #vmin=args.diff_min, vmax=args.diff_max
+            #vmin=diff_min, vmax=diff_max
         )
 
         # Plot the fractional difference (test - ref)/ref
-        plotter = Plotter(stamp='', outdir=args.outdir, fmt=plot_format,
+        plotter = Plotter(stamp='', outdir=outdir, fmt=plot_format,
                           log=False,
                           annotate=False,
                           symmetric=fract_diff_symm,
@@ -533,11 +538,11 @@ def main():
         plotter.plot_2d_array(
             (test-ref)/MapSet([zero_to_nan(r) for r in ref]),
             fname='fract_diff__%s__%s' % (test_plot_label, ref_plot_label),
-            #vmin=args.fract_diff_min, vmax=args.fract_diff_max
+            #vmin=fract_diff_min, vmax=fract_diff_max
         )
 
         # Plot the asymmetry (test - ref)/sqrt(ref)
-        plotter = Plotter(stamp='', outdir=args.outdir, fmt=plot_format,
+        plotter = Plotter(stamp='', outdir=outdir, fmt=plot_format,
                           log=False,
                           annotate=False,
                           symmetric=asymm_symm,
@@ -547,8 +552,15 @@ def main():
         plotter.plot_2d_array(
             (test-ref)/MapSet([zero_to_nan(r**0.5) for r in ref]),
             fname='asymm__%s__%s' % (test_plot_label, ref_plot_label),
-            #vmin=args.asymm_min, vmax=args.asymm_max
+            #vmin=asymm_min, vmax=asymm_max
         )
+
+
+def main():
+    args = vars(parse_args())
+    set_verbosity(args.pop('v'))
+
+    compare(**args)
 
 
 main.__doc__ = __doc__
