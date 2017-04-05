@@ -158,11 +158,116 @@ def parse_args():
 
 
 def compare(outdir, ref, ref_label, test, test_label, asymm_max=None,
-            asymm_min=None, combine=None, sum=None, diff_max=None,
+            asymm_min=None, combine=None, diff_max=None,
             diff_min=None, fract_diff_max=None, fract_diff_min=None,
             json=False, pdf=False, png=False, ref_abs=False,
-            ref_param_selections=None, test_abs=False,
+            ref_param_selections=None, sum=None, test_abs=False,
             test_param_selections=None):
+    """Compare two entities. The result each entity specification is
+    formatted into a MapSet and stored to disk, so that e.g. re-running
+    a DistributionMaker is unnecessary to reproduce the results.
+
+    Parameters
+    ----------
+    outdir : string
+        Store output plots to this directory
+
+    ref : string or array of strings
+        Pipeline settings config file that generates reference output,
+        or a stored map or map set. Multiple pipelines, maps, or map sets are
+        supported
+
+    ref_abs : bool
+        Use the absolute value of the reference plot for comparisons
+
+    ref_label : string
+        Label for reference
+
+    ref_param-selections : string
+        Param selections to apply to ref pipeline config(s). Not
+        applicable if ref specifies stored map or map sets
+
+    test : string or array of strings
+        Pipeline settings config file that generates test output, or a
+        stored map or map set. Multiple pipelines, maps, or map sets are
+        supported
+
+    test_abs : bool
+        Use the absolute value of the test plot for comparisons
+
+    test_label : string
+        Label for test
+
+    test_param_selections : None or string
+        Param selections to apply to test pipeline config(s). Not
+        applicable if test specifies stored map or map sets
+
+    combine : None or string or array of strings
+        Combine by wildcard string, where string globbing (a la command
+        line) uses asterisk for any number of wildcard characters. Use
+        single quotes such that asterisks do not get expanded by the
+        shell. Multiple combine strings supported
+
+    sum : None or int
+        Sum over (and hence remove) the specified axis or axes. I.e.,
+        project the map onto remaining (unspecified) axis or axes
+
+    json : bool
+        Save output maps in compressed json (json.bz2) format
+
+    pdf : bool
+        Save plots in PDF format. If neither this nor png is
+        specified, no plots are produced
+
+    png : bool
+        Save plots in PNG format. If neither this nor pdf is specfied,
+        no plots are produced
+
+    diff_min : None or float
+        Difference plot vmin; if you specify only one of diff_min or
+        diff_max, symmetric limits are automatically used (min = -max)
+
+    diff_max : None or float
+        Difference plot max; if you specify only one of diff_min or
+        diff_max, symmetric limits are automatically used (min = -max)
+
+    fract_diff_min : None or float
+        Fractional difference plot vmin; if you specify only one of
+        fract_diff_min or fract_diff_max, symmetric limits are
+        automatically used (min = -max)
+
+    fract_diff_max : None or float
+        Fractional difference plot max; if you specify only one of
+        fract_diff_min or fract_diff_max, symmetric limits are
+        automatically used (min = -max)
+
+    asymm_min : None or float
+        Asymmetry plot vmin; if you specify only one of asymm_min or
+        asymm_max, symmetric limits are automatically used (min = -max)
+
+    asymm_max : None or float
+        Fractional difference plot max; if you specify only one of
+        asymm_min or asymm_max, symmetric limits are automatically used
+        (min = -max)
+
+    Returns
+    -------
+    summary_stats : dict
+        Dictionary containing a summary for each h Map processed
+
+    diff : MapSet
+        MapSet of the difference
+        - (Test - Ref)
+
+    fract_diff : MapSet
+        MapSet of the fractional difference
+        - (Test - Ref) / Ref
+
+    asymm : MapSet
+        MapSet of the asymmetric fraction difference or pull
+        - (Test - Ref) / sqrt(Ref)
+
+    """
     ref_plot_label = ref_label
     if ref_abs and not ref_label.startswith('abs'):
         ref_plot_label = 'abs(%s)' % ref_plot_label
@@ -555,16 +660,10 @@ def compare(outdir, ref, ref_label, test, test_label, asymm_max=None,
             #vmin=asymm_min, vmax=asymm_max
         )
 
+    return summary_stats, diff, fract_diff, asymm
 
-def main():
+if __name__ == '__main__':
     args = vars(parse_args())
     set_verbosity(args.pop('v'))
 
     compare(**args)
-
-
-main.__doc__ = __doc__
-
-
-if __name__ == '__main__':
-    main()

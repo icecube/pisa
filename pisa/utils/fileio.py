@@ -324,24 +324,3 @@ def to_file(obj, fname, fmt=None, overwrite=True, warn=True, **kwargs):
         errmsg = 'Unrecognized file type/extension: ' + ext
         log.logging.error(errmsg)
         raise TypeError(errmsg)
-
-
-def is_dir(dirname):
-    """
-    Checks if a path is an actual directory, if not found then it creates the
-    directory
-    """
-    if not os.path.isdir(dirname):
-        mkdir(dirname)
-    return dirname
-
-
-def is_valid_file(filepath):
-    """
-    Checks if a path is an actual file
-    """
-    if not os.path.exists(filepath):
-        msg = 'The file {0} does not exist!'.format(filepath)
-        raise ValueError(msg)
-    else:
-        return filepath
