@@ -77,6 +77,41 @@ def extract_paramval(injparams, systkey, fid_label=None, hypo_label=None,
         return paramval, paramlabel
 
 
+def get_set_file_nums(filedir, labels, fluctuate_fid):
+    """This function returns the set of file numbers that exist for all h0 and 
+    h1 combination. This is needed to account for any failed or non-transferred
+    jobs. i.e. for trial X you may not have all of the necessary fit files so 
+    it must be ignored."""
+    file_nums = OrderedDict()
+    for fnum, fname in enumerate(nsort(os.listdir(filedir))):
+        fpath = os.path.join(filedir, fname)
+        for x in ['0', '1']:
+            for y in ['0', '1']:
+                k = 'h{x}_fit_to_h{y}_fid'.format(x=x, y=y)
+                r = labels.dict[k + '_re']
+                m = r.match(fname)
+                if m is None:
+                    continue
+                if fluctuate_fid:
+                    fid_label = int(m.groupdict()['fid_ind'])
+                else:
+                    fid_label = labels.fid
+                if k not in file_nums:
+                    file_nums[k] = []
+                file_nums[k].append(fid_label)
+                break
+
+    set_file_nums = []
+    for hypokey in file_nums.keys():
+        if len(set_file_nums) == 0:
+            set_file_nums = set(file_nums[hypokey])
+        else:
+            set_file_nums = set_file_nums.intersection(
+                file_nums[hypokey]
+            )
+    return set_file_nums
+
+
 def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
     """Extract and aggregate analysis results.
 
@@ -103,179 +138,240 @@ def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
     """
     logdir = os.path.expanduser(os.path.expandvars(logdir))
     logdir_content = os.listdir(logdir)
-    if 'data_sets.pckl' in logdir_content:
-        logging.info('Found files I assume to be from a previous run of this '
-                     'processing script. If this is incorrect please delete '
-                     'the files: data_sets.pckl, all_params.pckl and '
-                     'labels.pckl from the logdir you have provided.')
-        data_sets = from_file(os.path.join(logdir, 'data_sets.pckl'))
-        all_params = from_file(os.path.join(logdir, 'all_params.pckl'))
-        labels = from_file(os.path.join(logdir, 'labels.pckl'))
-        minimiser_info = from_file(os.path.join(logdir, 'minimiser_info.pckl'))
-    elif 'config_summary.json' in logdir_content:
-        config_summary_fpath = os.path.join(logdir, 'config_summary.json')
-        cfg = from_file(config_summary_fpath)
+    if 'config_summary.json' in logdir_content:
+        # Look for the pickle files in the directory to indicate that this
+        # data may have already been processed.
+        expected_files = ['data_sets.pckl', 'all_params.pckl',
+                          'labels.pckl', 'minimiser_info.pckl']
+        if np.all(np.array([s in logdir_content for s in expected_files])):
+            # Processed output files are there so make sure that there
+            # have been no more trials run since this last processing.
+            ## To do this, get the number of output files
+            config_summary_fpath = os.path.join(logdir,
+                                                'config_summary.json')
+            cfg = from_file(config_summary_fpath)
+            data_is_data = cfg['data_is_data']
+            # Get naming scheme
+            labels = Labels(
+                h0_name=cfg['h0_name'], h1_name=cfg['h1_name'],
+                data_name=cfg['data_name'], data_is_data=data_is_data,
+                fluctuate_data=fluctuate_data, fluctuate_fid=fluctuate_fid
+            )
+            for basename in nsort(os.listdir(logdir)):
+                m = labels.subdir_re.match(basename)
+                if m is None:
+                    continue
+                # Here is the output directory which contains the files
+                subdir = os.path.join(logdir, basename)
+                # Account for failed jobs. Get the set of file numbers that
+                # exist for all h0 and h1 combinations
+                set_file_nums = get_set_file_nums(
+                    filedir=os.path.join(logdir, basename),
+                    labels=labels,
+                    fluctuate_fid=fluctuate_fid
+                )
+                num_trials = len(set_file_nums)
+                # Take one of the pickle files to see how many data
+                # entries it has.
+                data_sets = from_file(os.path.join(logdir,
+                                                   'data_sets.pckl'))
+                # Take the first data key and then the h0 fit to h0 fid
+                # which should always exist. The length of this is then
+                # the number of trials in the pickle files.
+                pckl_trials = len(data_sets[data_sets.keys()[0]][
+                    'h0_fit_to_h0_fid'].keys())
+                # The number of pickle trials should match the number of
+                # trials derived from the output directory.
+                if num_trials == pckl_trials:
+                    logging.info(
+                        'Found files I assume to be from a previous run of'
+                        ' this processing script containing %i trials. If '
+                        'this seems incorrect please delete the files: '
+                        'data_sets.pckl, all_params.pckl and labels.pckl '
+                        'from the logdir you have provided.'%pckl_trials
+                    )
+                    data_sets = from_file(
+                        os.path.join(logdir, 'data_sets.pckl')
+                    )
+                    all_params = from_file(
+                        os.path.join(logdir, 'all_params.pckl')
+                    )
+                    labels = from_file(
+                        os.path.join(logdir, 'labels.pckl')
+                    )
+                    minimiser_info = from_file(
+                        os.path.join(logdir, 'minimiser_info.pckl')
+                    )
+                    genfiles = False
+                else:
+                    logging.info(
+                        'Found files I assume to be from a previous run of'
+                        ' this processing script containing %i trials. '
+                        'However, based on the number of json files in the '
+                        'output directory there should be %i trials in '
+                        'these pickle files, so they will be regenerated.'%(
+                            pckl_trials,num_trials)
+                    )
+                    genfiles = True
+        else:
+            logging.info(
+                'Did not find all of the files - %s - expected to indicate '
+                'this data has already been extracted.'
+            )
+            genfiles = True
+        if genfiles:
+            config_summary_fpath = os.path.join(logdir, 'config_summary.json')
+            cfg = from_file(config_summary_fpath)
 
-        data_is_data = cfg['data_is_data']
-        if data_is_data and fluctuate_data:
-            raise ValueError('Analysis was performed on data, so '
-                             '`fluctuate_data` is not supported.')
+            data_is_data = cfg['data_is_data']
+            if data_is_data and fluctuate_data:
+                raise ValueError('Analysis was performed on data, so '
+                                 '`fluctuate_data` is not supported.')
 
-        # Get naming scheme
-        labels = Labels(
-            h0_name=cfg['h0_name'], h1_name=cfg['h1_name'],
-            data_name=cfg['data_name'], data_is_data=data_is_data,
-            fluctuate_data=fluctuate_data, fluctuate_fid=fluctuate_fid
-        )
-
-        all_params = {}
-        all_params['h0_params'] = {}
-        all_params['h1_params'] = {}
-        parse_string = ('(.*)=(.*); prior=(.*),'
-                        ' range=(.*), is_fixed=(.*),'
-                        ' is_discrete=(.*); help="(.*)"')
-        if not data_is_data:
-            all_params['data_params'] = {}
-            for param_string in cfg['data_params']:
+            # Get naming scheme
+            labels = Labels(
+                h0_name=cfg['h0_name'], h1_name=cfg['h1_name'],
+                data_name=cfg['data_name'], data_is_data=data_is_data,
+                fluctuate_data=fluctuate_data, fluctuate_fid=fluctuate_fid
+            )
+            
+            all_params = {}
+            all_params['h0_params'] = {}
+            all_params['h1_params'] = {}
+            parse_string = ('(.*)=(.*); prior=(.*),'
+                            ' range=(.*), is_fixed=(.*),'
+                            ' is_discrete=(.*); help="(.*)"')
+            if not data_is_data:
+                all_params['data_params'] = {}
+                for param_string in cfg['data_params']:
+                    bits = re.match(parse_string, param_string, re.M|re.I)
+                    if bits.group(5) == 'False':
+                        all_params['data_params'][bits.group(1)] = {}
+                        all_params['data_params'][bits.group(1)]['value'] \
+                            = bits.group(2)
+                        all_params['data_params'][bits.group(1)]['prior'] \
+                            = bits.group(3)
+                        all_params['data_params'][bits.group(1)]['range'] \
+                            = bits.group(4)
+            else:
+                all_params['data_params'] = None
+            for param_string in cfg['h0_params']:
                 bits = re.match(parse_string, param_string, re.M|re.I)
                 if bits.group(5) == 'False':
-                    all_params['data_params'][bits.group(1)] = {}
-                    all_params['data_params'][bits.group(1)]['value'] \
+                    all_params['h0_params'][bits.group(1)] = {}
+                    all_params['h0_params'][bits.group(1)]['value'] \
                         = bits.group(2)
-                    all_params['data_params'][bits.group(1)]['prior'] \
+                    all_params['h0_params'][bits.group(1)]['prior'] \
                         = bits.group(3)
-                    all_params['data_params'][bits.group(1)]['range'] \
+                    all_params['h0_params'][bits.group(1)]['range'] \
                         = bits.group(4)
-        else:
-            all_params['data_params'] = None
-        for param_string in cfg['h0_params']:
-            bits = re.match(parse_string, param_string, re.M|re.I)
-            if bits.group(5) == 'False':
-                all_params['h0_params'][bits.group(1)] = {}
-                all_params['h0_params'][bits.group(1)]['value'] = bits.group(2)
-                all_params['h0_params'][bits.group(1)]['prior'] = bits.group(3)
-                all_params['h0_params'][bits.group(1)]['range'] = bits.group(4)
-        for param_string in cfg['h1_params']:
-            bits = re.match(parse_string, param_string, re.M|re.I)
-            if bits.group(5) == 'False':
-                all_params['h1_params'][bits.group(1)] = {}
-                all_params['h1_params'][bits.group(1)]['value'] = bits.group(2)
-                all_params['h1_params'][bits.group(1)]['prior'] = bits.group(3)
-                all_params['h1_params'][bits.group(1)]['range'] = bits.group(4)
+            for param_string in cfg['h1_params']:
+                bits = re.match(parse_string, param_string, re.M|re.I)
+                if bits.group(5) == 'False':
+                    all_params['h1_params'][bits.group(1)] = {}
+                    all_params['h1_params'][bits.group(1)]['value'] \
+                        = bits.group(2)
+                    all_params['h1_params'][bits.group(1)]['prior'] \
+                        = bits.group(3)
+                    all_params['h1_params'][bits.group(1)]['range'] \
+                        = bits.group(4)
 
-        # Find all relevant data dirs, and from each extract the fiducial fit(s)
-        # information contained
-        data_sets = OrderedDict()
-        minimiser_info = OrderedDict()
-        for basename in nsort(os.listdir(logdir)):
-            m = labels.subdir_re.match(basename)
-            if m is None:
-                continue
+            # Find all relevant data dirs, and from each extract the fiducial
+            # fit(s) information contained
+            data_sets = OrderedDict()
+            minimiser_info = OrderedDict()
+            for basename in nsort(os.listdir(logdir)):
+                m = labels.subdir_re.match(basename)
+                if m is None:
+                    continue
 
-            if fluctuate_data:
-                data_ind = int(m.groupdict()['data_ind'])
-                dset_label = data_ind
-            else:
-                dset_label = labels.data_prefix
-                if not labels.data_name in [None, '']:
-                    dset_label += '_' + labels.data_name
-                if not labels.data_suffix in [None, '']:
-                    dset_label += '_' + labels.data_suffix
-
-            lvl2_fits = OrderedDict()
-            lvl2_fits['h0_fit_to_data'] = None
-            lvl2_fits['h1_fit_to_data'] = None
-            minim_info = OrderedDict()
-            minim_info['h0_fit_to_data'] = None
-            minim_info['h1_fit_to_data'] = None
-
-            # Account for failed jobs. Get the set of file numbers that exist
-            # for all h0 an h1 combinations
-            file_nums = OrderedDict()
-            subdir = os.path.join(logdir, basename)
-            for fnum, fname in enumerate(nsort(os.listdir(subdir))):
-                fpath = os.path.join(subdir, fname)
-                for x in ['0', '1']:
-                    for y in ['0', '1']:
-                        k = 'h{x}_fit_to_h{y}_fid'.format(x=x, y=y)
-                        r = labels.dict[k + '_re']
-                        m = r.match(fname)
-                        if m is None:
-                            continue
-                        if fluctuate_fid:
-                            fid_label = int(m.groupdict()['fid_ind'])
-                        else:
-                            fid_label = labels.fid
-                        if k not in file_nums:
-                            file_nums[k] = []
-                        file_nums[k].append(fid_label)
-                        break
-
-            set_file_nums = []
-            for hypokey in file_nums.keys():
-                if len(set_file_nums) == 0:
-                    set_file_nums = set(file_nums[hypokey])
+                if fluctuate_data:
+                    data_ind = int(m.groupdict()['data_ind'])
+                    dset_label = data_ind
                 else:
-                    set_file_nums = set_file_nums.intersection(file_nums[hypokey])
+                    dset_label = labels.data_prefix
+                    if not labels.data_name in [None, '']:
+                        dset_label += '_' + labels.data_name
+                    if not labels.data_suffix in [None, '']:
+                        dset_label += '_' + labels.data_suffix
 
-            for fnum, fname in enumerate(nsort(os.listdir(subdir))):
-                fpath = os.path.join(subdir, fname)
-                for x in ['0', '1']:
-                    k = 'h{x}_fit_to_data'.format(x=x)
-                    if fname == labels.dict[k]:
-                        lvl2_fits[k] = extract_fit(fpath, 'metric_val')
-                        break
-                    # Also extract fiducial fits if needed
-                    if 'toy' in dset_label:
-                        ftest = ('hypo_%s_fit_to_%s.json'
-                                 %(labels.dict['h{x}_name'.format(x=x)],
-                                   dset_label))
-                        if fname == ftest:
-                            k = 'h{x}_fit_to_{y}'.format(x=x, y=dset_label)
-                            lvl2_fits[k] = extract_fit(
-                                fpath,
-                                ['metric_val', 'params']
-                            )
+                lvl2_fits = OrderedDict()
+                lvl2_fits['h0_fit_to_data'] = None
+                lvl2_fits['h1_fit_to_data'] = None
+                minim_info = OrderedDict()
+                minim_info['h0_fit_to_data'] = None
+                minim_info['h1_fit_to_data'] = None
+
+                # Account for failed jobs. Get the set of file numbers that
+                # exist for all h0 an h1 combinations
+                subdir = os.path.join(logdir, basename)
+                set_file_nums = get_set_file_nums(
+                    filedir=subdir,
+                    labels=labels,
+                    fluctuate_fid=fluctuate_fid
+                )
+
+                for fnum, fname in enumerate(nsort(os.listdir(subdir))):
+                    fpath = os.path.join(subdir, fname)
+                    for x in ['0', '1']:
+                        k = 'h{x}_fit_to_data'.format(x=x)
+                        if fname == labels.dict[k]:
+                            lvl2_fits[k] = extract_fit(fpath, 'metric_val')
                             break
-                    k = 'h{x}_fit_to_{y}'.format(x=x, y=dset_label)
-                    for y in ['0', '1']:
-                        k = 'h{x}_fit_to_h{y}_fid'.format(x=x, y=y)
-                        r = labels.dict[k + '_re']
-                        m = r.match(fname)
-                        if m is None:
-                            continue
-                        if fluctuate_fid:
-                            fid_label = int(m.groupdict()['fid_ind'])
-                        else:
-                            fid_label = labels.fid
-                        if k not in lvl2_fits:
-                            lvl2_fits[k] = OrderedDict()
-                            minim_info[k] = OrderedDict()
-                        if fid_label in set_file_nums:
-                            lvl2_fits[k][fid_label] = extract_fit(
-                                fpath,
-                                ['metric', 'metric_val', 'params']
-                            )
-                            minim_info[k][fid_label] = extract_fit(
-                                fpath,
-                                ['minimizer_metadata', 'minimizer_time']
-                            )
-                        break
-            data_sets[dset_label] = lvl2_fits
-            minimiser_info[dset_label] = minim_info
-            data_sets[dset_label]['params'] = extract_fit(
-                fpath,
-                ['params']
-            )['params']
-        to_file(data_sets, os.path.join(logdir, 'data_sets.pckl'))
-        to_file(all_params, os.path.join(logdir, 'all_params.pckl'))
-        to_file(labels, os.path.join(logdir, 'labels.pckl'))
-        to_file(minimiser_info, os.path.join(logdir, 'minimiser_info.pckl'))
+                        # Also extract fiducial fits if needed
+                        if 'toy' in dset_label:
+                            ftest = ('hypo_%s_fit_to_%s.json'
+                                     %(labels.dict['h{x}_name'.format(x=x)],
+                                       dset_label))
+                            if fname == ftest:
+                                k = 'h{x}_fit_to_{y}'.format(x=x, y=dset_label)
+                                lvl2_fits[k] = extract_fit(
+                                    fpath,
+                                    ['metric_val', 'params']
+                                )
+                                break
+                        k = 'h{x}_fit_to_{y}'.format(x=x, y=dset_label)
+                        for y in ['0', '1']:
+                            k = 'h{x}_fit_to_h{y}_fid'.format(x=x, y=y)
+                            r = labels.dict[k + '_re']
+                            m = r.match(fname)
+                            if m is None:
+                                continue
+                            if fluctuate_fid:
+                                fid_label = int(m.groupdict()['fid_ind'])
+                            else:
+                                fid_label = labels.fid
+                            if k not in lvl2_fits:
+                                lvl2_fits[k] = OrderedDict()
+                                minim_info[k] = OrderedDict()
+                            if fid_label in set_file_nums:
+                                lvl2_fits[k][fid_label] = extract_fit(
+                                    fpath,
+                                    ['metric', 'metric_val', 'params']
+                                )
+                                minim_info[k][fid_label] = extract_fit(
+                                    fpath,
+                                    ['minimizer_metadata', 'minimizer_time']
+                                )
+                            break
+                data_sets[dset_label] = lvl2_fits
+                minimiser_info[dset_label] = minim_info
+                data_sets[dset_label]['params'] = extract_fit(
+                    fpath,
+                    ['params']
+                )['params']
+                to_file(data_sets, os.path.join(logdir, 'data_sets.pckl'))
+                to_file(all_params, os.path.join(logdir, 'all_params.pckl'))
+                to_file(labels, os.path.join(logdir, 'labels.pckl'))
+                to_file(minimiser_info, os.path.join(logdir,
+                                                     'minimiser_info.pckl'))
     else:
-        raise ValueError('config_summary.json cannot be found in the specified'
-                         ' logdir. It should have been created as part of the '
-                         'output of hypo_testing.py and so this postprocessing'
-                         ' cannot be performed.')
+        raise ValueError(
+            'config_summary.json cannot be found in the specified logdir. It '
+            'should have been created as part of the output of hypo_testing.py'
+            'and so this postprocessing cannot be performed.'
+        )
+    
     return data_sets, all_params, labels, minimiser_info
 
 
@@ -2330,7 +2426,7 @@ def main():
                 labels=labels.dict,
                 detector=args.detector,
                 selection=args.selection,
-                extra_points=args.extra_points,
+                extra_points=extra_points,
                 extra_points_labels=extra_points_labels,
                 outdir=args.outdir,
                 formats=formats
@@ -2346,7 +2442,7 @@ def main():
             outdir=args.outdir
         )
 
-        if args.fitinfo:
+        if args.fit_information:
             plot_fit_information(
                 minimiser_info=minimiser_info[injkey],
                 labels=labels.dict,
@@ -2356,7 +2452,7 @@ def main():
                 formats=formats
             )
 
-        if args.iposteriors:
+        if args.individual_posteriors:
             plot_individual_posteriors(
                 data=values[injkey],
                 fid_data=fid_values[injkey],
@@ -2368,7 +2464,7 @@ def main():
                 formats=formats
             )
 
-        if args.cposteriors:
+        if args.combined_posteriors:
             plot_combined_posteriors(
                 data=values[injkey],
                 fid_data=fid_values[injkey],
@@ -2380,7 +2476,7 @@ def main():
                 formats=formats
             )
 
-        if args.iscatter:
+        if args.individual_scatter:
             plot_individual_scatters(
                 data=values[injkey],
                 labels=labels.dict,
@@ -2390,7 +2486,7 @@ def main():
                 formats=formats
             )
 
-        if args.ciscatter:
+        if args.combined_individual_scatter:
             plot_combined_individual_scatters(
                 data=values[injkey],
                 labels=labels.dict,
@@ -2400,7 +2496,7 @@ def main():
                 formats=formats
             )
 
-        if args.cscatter:
+        if args.combined_scatter:
             plot_combined_scatters(
                 data=values[injkey],
                 labels=labels.dict,
@@ -2410,7 +2506,7 @@ def main():
                 formats=formats
             )
 
-        if args.cmatrix:
+        if args.correlation_matrix:
             plot_correlation_matrices(
                 data=values[injkey],
                 labels=labels.dict,
