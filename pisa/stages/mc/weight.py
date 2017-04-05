@@ -288,14 +288,14 @@ class weight(Stage):
     def _compute_outputs(self, inputs=None):
         """Compute histograms for output channels."""
         logging.debug('Entering weight._compute_outputs')
+        if not isinstance(inputs, Data):
+            raise AssertionError('inputs is not a Data object, instead is '
+                                 'type {0}'.format(type(inputs)))
         self.sample_hash = deepcopy(inputs.metadata['sample_hash'])
         logging.trace('{0} weight sample_hash = '
                       '{1}'.format(inputs.metadata['name'], self.sample_hash))
         logging.trace('{0} weight weight_hash = '
                       '{1}'.format(inputs.metadata['name'], self.weight_hash))
-        if not isinstance(inputs, Data):
-            raise AssertionError('inputs is not a Data object, instead is '
-                                 'type {0}'.format(type(inputs)))
         self._data = inputs
         self.reweight()
 
@@ -433,7 +433,7 @@ class weight(Stage):
         return MapSet(maps=outputs, name=self._data.metadata['name'])
 
     def reweight(self):
-        """Main rewwighting function."""
+        """Main rewighting function."""
         this_hash = hash_obj(
             [self.sample_hash, self.params.values_hash],
             full_hash = self.full_hash

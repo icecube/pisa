@@ -39,7 +39,7 @@ class roounfold(Stage):
                  true_binning, error_method=None, disk_cache=None,
                  outputs_cache_depth=20, memcache_deepcopy=True,
                  debug_mode=None):
-        self.weight_hash = None
+        self.fit_hash = None
         """Hash of reweighted event sample."""
         self.random_state = None
         """Hash of random state."""
@@ -119,9 +119,9 @@ class roounfold(Stage):
     def _compute_outputs(self, inputs=None):
         """Compute histograms for output channels."""
         logging.debug('Entering roounfold._compute_outputs')
-        self.weight_hash = deepcopy(inputs.metadata['weight_hash'])
-        logging.trace('{0} roounfold weight_hash = '
-                      '{1}'.format(inputs.metadata['name'], self.weight_hash))
+        self.fit_hash = deepcopy(inputs.metadata['fit_hash'])
+        logging.trace('{0} roounfold fit_hash = '
+                      '{1}'.format(inputs.metadata['name'], self.fit_hash))
         if self.random_state is not None:
             logging.trace(
                 '{0} roounfold random_state = '
@@ -386,7 +386,7 @@ class roounfold(Stage):
 
     def split_data(self):
         this_hash = hash_obj(
-            [self.weight_hash, self.output_str, self._data.contains_muons,
+            [self.fit_hash, self.output_str, self._data.contains_muons,
              self._data.contains_noise], full_hash = self.full_hash
         )
         if self.split_data_hash == this_hash:
@@ -471,7 +471,7 @@ class roounfold(Stage):
                 )
         else:
             this_hash = hash_obj(
-                [this_hash, self.weight_hash], full_hash = self.full_hash
+                [this_hash, self.fit_hash], full_hash = self.full_hash
             )
             if self.inv_eff_hash == this_hash:
                 logging.trace('Loading inv eff from mem cache')
@@ -520,7 +520,7 @@ class roounfold(Stage):
                 )
         else:
             this_hash = hash_obj(
-                [this_hash, self.weight_hash, normQuant(self.params)],
+                [this_hash, self.fit_hash, normQuant(self.params)],
                 full_hash = self.full_hash
             )
             if self.response_hash == this_hash:
@@ -568,7 +568,7 @@ class roounfold(Stage):
                 )
         else:
             this_hash = hash_obj(
-                [this_hash, self.weight_hash], full_hash = self.full_hash
+                [this_hash, self.fit_hash], full_hash = self.full_hash
             )
             if self.bg_hist_hash == this_hash:
                 logging.trace('Loading bg hist from mem cache')

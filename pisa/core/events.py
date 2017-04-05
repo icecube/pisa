@@ -613,6 +613,55 @@ class Data(FlavIntDataGroup):
         ret_obj.update_hash()
         return ret_obj
 
+    def digitize(self, kinds, binning, binning_cols=None):
+        """Wrapper for numpy's digitize function."""
+        if isinstance(kinds, basestring):
+            kinds = [kinds]
+        if 'muons' not in kinds and 'noise' not in kinds:
+            kinds = self._parse_flavint_groups(kinds)
+        kinds = kinds[0]
+
+        if isinstance(binning_cols, basestring):
+            binning_cols = [binning_cols]
+
+        # TODO: units of columns, and convert bin edges if necessary
+        if isinstance(binning, OneDimBinning):
+            binning = MultiDimBinning([binning])
+        elif isinstance(binning, MultiDimBinning):
+            pass
+        elif (isinstance(binning, Iterable)
+              and not isinstance(binning, Sequence)):
+            binning = list(binning)
+        elif isinstance(binning, Sequence):
+            pass
+        else:
+            raise TypeError('Unhandled type %s for `binning`.' % type(binning))
+
+        if isinstance(binning, Sequence):
+            raise NotImplementedError(
+                'Simle sequences not handled at this time. Please specify a'
+                ' OneDimBinning or MultiDimBinning object for `binning`.'
+            )
+            # assert len(binning_cols) == len(binning)
+            # bin_edges = binning
+
+        # TODO: units support for Data will mean we can do `m_as(...)` here!
+        bin_edges = [edges.magnitude for edges in binning.bin_edges]
+        if binning_cols is None:
+            binning_cols = binning.names
+        else:
+            assert set(binning_cols).issubset(set(binning.names))
+
+        hist_idxs = []
+        for colname in binning_cols:
+            sample = self[kinds][colname]
+            hist_idxs.append(np.digitize(
+                sample, binning[colname].bin_edges.m
+            ))
+        hist_idxs = np.vstack(hist_idxs).T
+
+        return hist_idxs
+
     def histogram(self, kinds, binning, binning_cols=None, weights_col=None,
                   errors=False, name=None, tex=None, **kwargs):
         """Histogram the events of all `kinds` specified, with `binning` and

@@ -16,24 +16,24 @@ from scipy.ndimage.filters import gaussian_filter
 from scipy.optimize import curve_fit
 
 import numpy as np
+from uncertainties import unumpy as unp
 import pint
 
 from pisa import FTYPE
 from pisa import ureg
+from pisa.core.binning import OneDimBinning
 from pisa.core.events import Data
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
 from pisa.core.stage import Stage
 from pisa.core.pipeline import Pipeline
-from pisa.utils.comparisons import normQuant
 from pisa.utils.flavInt import ALL_NUFLAVINTS
-from pisa.utils.flavInt import NuFlavInt, NuFlavIntGroup
+from pisa.utils.flavInt import NuFlavIntGroup
 from pisa.utils.fileio import from_file
 from pisa.utils.format import text2tex
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-from pisa.utils.resources import open_resource
 
 
 __all__ = ['fit']
@@ -57,6 +57,9 @@ class fit(Stage):
         Parameters which set everything besides the binning
 
         Parameters required by this service are
+            * pipeline_config : filepath
+                Filepath to pipeline config
+
             * discr_sys_sample_config : filepath
                 Filepath to event sample configuration
 
@@ -67,9 +70,28 @@ class fit(Stage):
                 Flag to specify whether the service output returns a
                 MapSet or the Data
 
-            * nu_dom_eff
+            * poly_degree : int
+                Polynominal degree to use when fitting
 
-            * nu_hole_ice
+            * force_through_nominal : bool
+                Force the polynominal to pass through the nominal sample
+
+            * smoothing : str
+                Option to apply smoothing once fit coefficients have been
+                calculated
+
+            * Neutrino discrete systematics
+                - nu_dom_eff
+                - nu_hole_ice
+
+            * Muon discrete systematics
+                - mu_dom_eff
+                - mu_hole_ice
+
+            * cache_fit: bool
+                Flag to specifiy whether to cache the fit values if
+                calculated inside this service to a file specified by
+                `disk_cache`.
 
     input_names : string
         Specifies the string representation of the NuFlavIntGroup(s) that
@@ -100,41 +122,51 @@ class fit(Stage):
     def __init__(self, params, output_binning, input_names, output_names,
                  error_method=None, debug_mode=None, disk_cache=None,
                  memcache_deepcopy=True, outputs_cache_depth=20):
+        self.sample_hash = None
+        """Hash of input event sample."""
+        self.weight_hash = None
+        """Hash of event sample."""
+        self.fit_hash = None
+        """Hash of fit sample."""
+        self.fitcoeffs_hash = None
+        """Hash of fit coefficients."""
+        self.fitcoeffs_cache_hash = None
+        """Hash of cached fit coefficients."""
+
         self.fit_params = (
             'pipeline_config', 'discr_sys_sample_config', 'stop_after_stage',
-            'output_events_discr_sys'
+            'output_events_discr_sys', 'poly_degree', 'force_through_nominal',
+            'smoothing'
         )
 
         self.nu_params = (
             'nu_dom_eff', 'nu_hole_ice'
         )
 
-        self.atm_muon_params = (
+        self.mu_params = (
             'mu_dom_eff', 'mu_hole_ice'
         )
 
-        expected_params = self.fit_params
+        self.other_params = (
+            'cache_fit',
+        )
+
+        expected_params = self.fit_params + self.other_params
         if ('all_nu' in input_names) or ('neutrinos' in input_names):
             expected_params += self.nu_params
         if 'muons' in input_names:
-            expected_params += self.atm_muon_params
+            expected_params += self.mu_params
 
         self.neutrinos = False
         self.muons = False
         self.noise = False
 
-        input_names = input_names.replace(' ', '').split(',')
-        clean_innames = []
-        for name in input_names:
-            if 'muons' in name:
-                clean_innames.append(name)
-            elif 'noise' in name:
-                clean_innames.append(name)
-            elif 'all_nu' in name:
-                clean_innames = [str(NuFlavIntGroup(f))
-                                 for f in ALL_NUFLAVINTS]
-            else:
-                clean_innames.append(str(NuFlavIntGroup(name)))
+        if input_names != output_names:
+            raise AssertionError(
+                'Input names must match output names for this '
+                'stage\n{0}(input names) != {1}(output '
+                'names)'.format(input_names, output_names)
+            )
 
         output_names = output_names.replace(' ', '').split(',')
         clean_outnames = []
@@ -161,7 +193,7 @@ class fit(Stage):
             use_transforms=False,
             params=params,
             expected_params=expected_params,
-            input_names=clean_innames,
+            input_names=clean_outnames,
             output_names=clean_outnames,
             error_method=error_method,
             debug_mode=debug_mode,
@@ -171,43 +203,297 @@ class fit(Stage):
             output_binning=output_binning
         )
 
+        if self.params['smoothing'].value is not None:
+            if self.params['smoothing'].value != 'gauss':
+                raise AssertionError(
+                    'Parameter "smoothing" accepts "none" or "gauss" as '
+                    'input, instead got {0} as '
+                    'input'.format(self.params['smoothing'].value)
+                )
+
+        self.include_attrs_for_hashes('sample_hash')
+
     @profile
     def _compute_outputs(self, inputs=None):
         """Compute histograms for output channels."""
+        logging.debug('Entering fit._compute_outputs')
         if not isinstance(inputs, Data):
             raise AssertionError('inputs is not a Data object, instead is '
                                  'type {0}'.format(type(inputs)))
-        self._data = deepcopy(inputs)
-        config = from_file(self.params['discr_sys_sample_config'].value)
+        self.weight_hash = deepcopy(inputs.metadata['weight_hash'])
+        logging.trace('{0} fit weight_hash = '
+                      '{1}'.format(inputs.metadata['name'], self.weight_hash))
+        logging.trace('{0} fit fit_hash = '
+                      '{1}'.format(inputs.metadata['name'], self.fit_hash))
+        self._data = inputs
+        self.reweight()
 
-        degree = config.getint('general', 'poly_degree')
-        smoothing = config.get('general', 'smoothing')
-        force_through_nominal = config.getboolean(
-            'general', 'force_through_nominal'
+        if self.params['output_events_discr_sys'].value:
+            return self._data
+
+        outputs = []
+        if self.neutrinos:
+            trans_nu_data = self._data.transform_groups(
+                self._output_nu_groups
+            )
+            for fig in trans_nu_data.iterkeys():
+                outputs.append(
+                    trans_nu_data.histogram(
+                        kinds=fig,
+                        binning=self.output_binning,
+                        weights_col='pisa_weight',
+                        errors=True,
+                        name=str(NuFlavIntGroup(fig)),
+                    )
+                )
+
+        if self.muons:
+            outputs.append(
+                self._data.histogram(
+                    kinds='muons',
+                    binning=self.output_binning,
+                    weights_col='pisa_weight',
+                    errors=True,
+                    name='muons',
+                    tex=text2tex('muons')
+                )
+            )
+
+        if self.noise:
+            outputs.append(
+                self._data.histogram(
+                    kinds='noise',
+                    binning=self.output_binning,
+                    weights_col='pisa_weight',
+                    errors=True,
+                    name='noise',
+                    tex=text2tex('noise')
+                )
+            )
+
+        return MapSet(maps=outputs, name=self._data.metadata['name'])
+
+    def reweight(self):
+        """Main rewighting function."""
+        this_hash = hash_obj(
+            [self.weight_hash, self.params.values_hash],
+            full_hash=self.full_hash
         )
+        if this_hash == self.fit_hash:
+            return
+
+        fit_coeffs = self.calculate_fit_coeffs()
+
+        sample_config = from_file(self.params['discr_sys_sample_config'].value)
+        degree = self.params['poly_degree'].value
+        force_through_nominal = self.params['force_through_nominal'].value
 
         if force_through_nominal:
-            def fit_func(vals, poly_coeffs):
+            def fit_func(vals, *poly_coeffs):
                 return np.polynomial.polynomial.polyval(
                     vals, [1.] + list(poly_coeffs)
                 )
         else:
-            def fit_func(vals, poly_coeffs):
+            def fit_func(vals, *poly_coeffs):
                 return np.polynomial.polynomial.polyval(
                     vals, list(poly_coeffs)
                 )
             # add free param for constant term
             degree += 1
 
-        template_maker = Pipeline(self.params['pipeline_config'].value)
+        def parse(string):
+            return string.replace(' ', '').split(',')
+
+        if self.neutrinos:
+            sys_list = parse(sample_config.get('neutrinos', 'sys_list'))
+
+            for fig in self._data.iterkeys():
+                self._data[fig]['fit_weight'] = \
+                    deepcopy(self._data[fig]['weight_weight'])
+
+            for sys in sys_list:
+                nominal = sample_config.get('neutrinos:' + sys, 'nominal')
+                for fig in self._data.iterkeys():
+                    fit_map = unp.nominal_values(fit_coeffs[sys][fig].hist)
+
+                    if self.params['smoothing'].value == 'gauss':
+                        # TODO(shivesh): new MapSet functions?
+                        for d in xrange(degree):
+                            fit_map[..., d] = gaussian_filter(
+                                fit_map[..., d], sigma=1
+                            )
+
+                    shape = self.output_binning.shape
+                    transform = np.ones(shape)
+                    sys_offset = self.params['nu_'+sys].value.m-float(nominal)
+                    for idx in np.ndindex(shape):
+                        transform[idx] *= fit_func(sys_offset, *fit_map[idx])
+
+                    hist_idxs = self._data.digitize(
+                        kinds   = fig,
+                        binning = self.output_binning,
+                    )
+
+                    # Discrete systematics reweighting
+                    # TODO(shivesh): speedup this
+                    for idx, wght in enumerate(
+                        np.nditer(self._data[fig]['fit_weight'],
+                                  op_flags=['readwrite'])
+                    ):
+                        idx_slice = tuple(hist_idxs[idx])
+                        if shape[0] == 0 or shape[1] == 0 or \
+                           idx_slice[0] > shape[0] or idx_slice[1] > shape[1]:
+                            # Outside binning range
+                            wght *= 0
+                        else:
+                            wght *= transform[tuple([x-1 for x in idx_slice])]
+
+            for fig in self._data.iterkeys():
+                self._data[fig]['pisa_weight'] = \
+                    deepcopy(self._data[fig]['fit_weight'])
+
+        if self.muons:
+            sys_list = parse(sample_config.get('muons', 'sys_list'))
+
+            self._data['muons']['fit_weight'] = \
+                deepcopy(self._data['muons']['weight_weight'])
+
+            for sys in sys_list:
+                fit_map = unp.nominal_values(fit_coeffs[sys]['muons'].hist)
+
+                if self.params['smoothing'].value == 'gauss':
+                    # TODO(shivesh): new MapSet functions?
+                    for d in xrange(degree):
+                        fit_map[..., d] = gaussian_filter(
+                            fit_map[..., d], sigma=1
+                        )
+
+                shape = self.output_binning.shape
+                transform = np.ones(shape)
+                for idx in np.ndindex(shape):
+                    transform[idx] *= fit_func(
+                        self.params['mu_'+sys].value, *fit_map[idx]
+                    )
+
+                hist_idxs = self._data.digitize(
+                    kinds   = 'muons',
+                    binning = self.output_binning,
+                )
+
+                # Discrete systematics reweighting
+                for idx, wght in enumerate(self._data['muons']['fit_weight']):
+                    idx_slice = tuple(hist_idxs[idx])
+                    if shape[0] == 0 or shape[1] == 0 or \
+                       idx_slice[0] > shape[0] or idx_slice[1] > shape[1]:
+                        # Outside binning range
+                        wght *= 0
+                    else:
+                        wght *= transform[tuple([x-1 for x in idx_slice])]
+
+                self._data['muons']['pisa_weight'] = \
+                    deepcopy(self._data['muons']['fit_weight'])
+
+        self.fit_hash = this_hash
+        self._data.metadata['fit_hash'] = self.fit_hash
+        self._data.update_hash()
+
+    def calculate_fit_coeffs(self):
+        """
+        Calculate the fit coefficients for each systematic, flavint, bin
+        for a polynomial.
+        """
+        this_hash = hash_obj(
+            [self.output_binning.hash, self.weight_hash] +
+            [self.params[name].value for name in self.fit_params],
+            full_hash=self.full_hash
+        )
+        if self.fitcoeffs_hash == this_hash:
+            return self._fit_coeffs
+
+        if self.neutrinos:
+            nu_params = self.nu_params
+        else:
+            nu_params = None
+        if self.muons:
+            mu_params = self.mu_params
+        else:
+            mu_params = None
+
+        if self.params['cache_fit'].value:
+            # TODO(shivesh): merge with CAKE master
+            this_cache_hash = hash_obj(
+                [self._data.metadata['name'], self._data.metadata['sample'],
+                 self._data.metadata['cuts'], self.output_binning.hash] +
+                [self.params[name].value for name in self.fit_params],
+                full_hash=self.full_hash
+            )
+
+            if self.fitcoeffs_cache_hash == this_cache_hash:
+                fit_coeffs = deepcopy(self._cached_fc)
+            elif this_cache_hash in self.disk_cache:
+                logging.info('Loading fit coefficients from cache.')
+                self._cached_fc = self.disk_cache[this_cache_hash]
+                fit_coeffs = deepcopy(self._cached_fc)
+                self.fitcoeffs_cache_hash = this_cache_hash
+            else:
+                fit_coeffs = self._calculate_fit_coeffs(
+                    self._data, ParamSet(p for p in self.params
+                                         if p.name in self.fit_params),
+                    self.output_binning, nu_params, mu_params
+                )
+        else:
+            fit_coeffs = self._calculate_fit_coeffs(
+                self._data, ParamSet(p for p in self.params
+                                     if p.name in self.fit_params),
+                self.output_binning, nu_params, mu_params
+            )
+
+        if self.params['cache_fit'].value:
+            if this_cache_hash not in self.disk_cache:
+                logging.info('Caching fit coefficients values to disk.')
+                self.disk_cache[this_cache_hash] = fit_coeffs
+
+        self.fitcoeffs_hash = this_hash
+        self._fit_coeffs = fit_coeffs
+        return fit_coeffs
+
+    @staticmethod
+    def _calculate_fit_coeffs(data, params, output_binning, nu_params=None,
+                              mu_params=None):
+        """
+        Calculate the fit coefficients for each systematic, flavint,
+        bin for a polynomial.
+        """
+        logging.debug('Calculating fit coefficients')
+
+        config = from_file(params['discr_sys_sample_config'].value)
+
+        degree = params['poly_degree'].value
+        force_through_nominal = params['force_through_nominal'].value
+
+        if force_through_nominal:
+            def fit_func(vals, *poly_coeffs):
+                return np.polynomial.polynomial.polyval(
+                    vals, [1.] + list(poly_coeffs)
+                )
+        else:
+            def fit_func(vals, *poly_coeffs):
+                return np.polynomial.polynomial.polyval(
+                    vals, list(poly_coeffs)
+                )
+            # add free param for constant term
+            degree += 1
+
+        template_maker = Pipeline(params['pipeline_config'].value)
         dataset_param = template_maker.params['dataset']
 
         def parse(string):
             return string.replace(' ', '').split(',')
 
-        if self.neutrinos:
+        sys_fit_coeffs = OrderedDict()
+        if nu_params is not None:
             sys_list = parse(config.get('neutrinos', 'sys_list'))
-            nu_params = map(lambda x: x[3:], self.nu_params)
+            nu_params = deepcopy(map(lambda x: x[3:], nu_params))
 
             if set(nu_params) != set(sys_list):
                 raise AssertionError(
@@ -222,43 +508,203 @@ class fit(Stage):
                 nominal = config.get(ev_sys, 'nominal')
 
                 mapset_dict = OrderedDict()
+                flavint_groups = None
                 for run in runs:
                     logging.info('Loading run {0} of systematic '
                                  '{1}'.format(run, sys))
                     dataset_param.value = ev_sys + ':' + run
                     template_maker.update_params(dataset_param)
                     template = template_maker.get_outputs(
-                        idx=int(self.params['stop_after_stage'].m)
+                        idx=int(params['stop_after_stage'].m)
                     )
                     if not isinstance(template, Data):
                         raise AssertionError(
-                            'template output is not a Data object, instead is '
-                            'type {0}'.format(type(inputs))
+                            'Template output is not a Data object, instead is '
+                            'type {0}'.format(type(template))
                         )
+                    if flavint_groups is None:
+                        flavint_groups = template.flavint_groups
+                    else:
+                        if set(flavint_groups) != set(template.flavint_groups):
+                            raise AssertionError(
+                                'Mismatch of flavint_groups - ({0}) does not '
+                                'match flavint_groups '
+                                '({1})'.format(flavint_groups,
+                                               template.flavint_groups)
+                            )
 
                     outputs = []
                     for fig in template.iterkeys():
                         outputs.append(template.histogram(
                             kinds       = fig,
-                            binning     = self.output_binning,
-                            weights_col = 'pisa_weight',
-                            errors      = True,
-                            name        = str(NuFlavIntGroup(fig)),
+                            binning     = output_binning,
+                            # NOTE: weights cancel in fraction
+                            weights_col = None,
+                            errors      = False,
+                            name        = str(NuFlavIntGroup(fig))
                         ))
                     mapset_dict[run] = MapSet(outputs, name=run)
 
-                nominal_mapset = mapset_dict[nominal]
-                delta_mapset_dict = OrderedDict()
-                for run in mapset_dict.iterkeys():
-                    # TODO(shivesh): 0's?
-                    mask = (nominal_mapset.hist == 0.)
-                    div = unp.uarray(np.zeros(nominal_mapset.hist.shape),
-                                     np.zeros(nominal_mapset.hist.shape))
-                    div[~mask] = mapset_dict[run][~mask] / nominal_mapset[~mask]
-                    delta_mapset_dict[run] = div
+                nom_mapset = mapset_dict[nominal]
+                fracdiff_mapset_dict = OrderedDict()
+                for run in runs:
+                    mapset = []
+                    for flavintg_map in mapset_dict[run]:
+                        # TODO(shivesh): error propagation?
+                        flavintg = flavintg_map.name
+                        mask = ~(nom_mapset[flavintg].hist == 0.)
+                        div = np.zeros(flavintg_map.shape)
+                        with np.errstate(divide='ignore', invalid='ignore'):
+                            div[mask] = \
+                                unp.nominal_values(flavintg_map.hist[mask]) /\
+                                unp.nominal_values(nom_mapset[flavintg].hist[mask])
+                        mapset.append(Map(
+                            name=flavintg, binning=flavintg_map.binning,
+                            hist=div
+                        ))
+                    fracdiff_mapset_dict[run] = MapSet(mapset)
 
-                delta_runs = np.array([float(x) for x in runs]) - float(nominal)
-                print delta_runs
+                delta_runs = np.array([float(x) for x in runs])-float(nominal)
+
+                coeff_binning = OneDimBinning(
+                    name='coeff', num_bins=degree, is_lin=True, domain=[-1, 1]
+                )
+                combined_binning = output_binning + coeff_binning
+
+                params_mapset = []
+                for fig in template.iterkeys():
+                    # TODO(shivesh): Fix numpy warning on this line
+                    pvals_hist = np.empty(map(int, combined_binning.shape),
+                                          dtype=object)
+                    hists = [fracdiff_mapset_dict[run][fig].hist for run in runs]
+                    zip_hists = np.dstack(hists)
+                    for idx in np.ndindex(output_binning.shape):
+                        y_values = unp.nominal_values(zip_hists[idx])
+                        y_sigma = unp.std_devs(zip_hists[idx])
+                        if np.any(y_sigma):
+                            popt, pcov = curve_fit(
+                                fit_func, delta_runs, y_values, sigma=y_sigma,
+                                p0=np.ones(degree)
+                            )
+                        else:
+                            popt, pcov = curve_fit(
+                                fit_func, delta_runs, y_values,
+                                p0=np.ones(degree)
+                            )
+                        # perr = np.sqrt(np.diag(pcov))
+                        # pvals = unp.uarray(popt, perr)
+                        pvals_hist[idx] = popt
+                    pvals_hist = np.array(pvals_hist.tolist())
+                    params_mapset.append(Map(
+                        name=fig, binning=combined_binning, hist=pvals_hist
+                    ))
+                params_mapset = MapSet(params_mapset, name=sys)
+
+                if sys in sys_fit_coeffs:
+                    sys_fit_coeffs[sys] = MapSet(
+                        [sys_fit_coeffs[sys], params_mapset]
+                    )
+                else:
+                    sys_fit_coeffs[sys] = params_mapset
+
+        if mu_params is not None:
+            sys_list = parse(config.get('muons', 'sys_list'))
+            mu_params = deepcopy(map(lambda x: x[3:], mu_params))
+
+            if set(mu_params) != set(sys_list):
+                raise AssertionError(
+                    'Systematics list listed in the sample config file does '
+                    'not match the params in the pipeline config file\n {0} '
+                    '!= {1}'.format(set(mu_params), set(sys_list))
+                )
+
+            for sys in sys_list:
+                ev_sys = 'muons:' + sys
+                runs = parse(config.get(ev_sys, 'runs')[1: -1])
+                nominal = config.get(ev_sys, 'nominal')
+
+                map_dict = OrderedDict()
+                flavint_groups = None
+                for run in runs:
+                    logging.info('Loading run {0} of systematic '
+                                 '{1}'.format(run, sys))
+                    dataset_param.value = ev_sys + ':' + run
+                    template_maker.update_params(dataset_param)
+                    template = template_maker.get_outputs(
+                        idx=int(params['stop_after_stage'].m)
+                    )
+                    if not isinstance(template, Data):
+                        raise AssertionError(
+                            'Template output is not a Data object, instead is '
+                            'type {0}'.format(type(template))
+                        )
+                    if not template.contains_muons:
+                        raise AssertionError(
+                            'Template output does not contain muons'
+                        )
+
+                    output = template.histogram(
+                        kinds       = 'muons',
+                        binning     = output_binning,
+                        # NOTE: weights cancel in fraction
+                        weights_col = None,
+                        errors      = False,
+                        name        = 'muons'
+                    )
+                    map_dict[run] = output
+
+                nom_map = map_dict[nominal]
+                fracdiff_map_dict = OrderedDict()
+                for run in runs:
+                    mask = ~(nom_map.hist == 0.)
+                    div = np.zeros(nom_map.shape)
+                    with np.errstate(divide='ignore', invalid='ignore'):
+                        div[mask] = \
+                            unp.nominal_values(map_dict[run].hist[mask]) /\
+                            unp.nominal_values(nom_map.hist[mask])
+                    fracdiff_map_dict[run] = Map(
+                        name='muons', binning = nom_map.binning, hist=div
+                    )
+
+                delta_runs = np.array([float(x) for x in runs])-float(nominal)
+
+                coeff_binning = OneDimBinning(
+                    name='coeff', num_bins=degree, is_lin=True, domain=[-1, 1]
+                )
+                combined_binning = output_binning + coeff_binning
+
+                pvals_hist = np.empty(map(int, combined_binning.shape),
+                                      dtype=object)
+                hists = [fracdiff_map_dict[run].hist for run in runs]
+                zip_hists = np.dstack(hists)
+                for idx in np.ndindex(output_binning.shape):
+                    y_values = unp.nominal_values(zip_hists[idx])
+                    y_sigma = unp.std_devs(zip_hists[idx])
+                    if np.any(y_sigma):
+                        popt, pcov = curve_fit(
+                            fit_func, delta_runs, y_values, sigma=y_sigma,
+                            p0=np.ones(degree)
+                        )
+                    else:
+                        popt, pcov = curve_fit(
+                            fit_func, delta_runs, y_values,
+                            p0=np.ones(degree)
+                        )
+                    # perr = np.sqrt(np.diag(pcov))
+                    # pvals = unp.uarray(popt, perr)
+                    pvals_hist[idx] = popt
+                pvals_hist = np.array(pvals_hist.tolist())
+                params_map = Map(
+                    name='muons', binning=combined_binning, hist=pvals_hist
+                )
+                if sys in sys_fit_coeffs:
+                    sys_fit_coeffs[sys] = MapSet(
+                        [sys_fit_coeffs[sys], params_map]
+                    )
+                else:
+                    sys_fit_coeffs[sys] = params_map
+
+        return sys_fit_coeffs
 
     def validate_params(self, params):
         pq = pint.quantity._Quantity
@@ -267,6 +713,8 @@ class fit(Stage):
             ('discr_sys_sample_config', basestring),
             ('stop_after_stage', pq),
             ('output_events_discr_sys', bool),
+            ('poly_degree', pq),
+            ('force_through_nominal', bool),
         ]
         if self.neutrinos:
             param_types.extend([
@@ -278,6 +726,12 @@ class fit(Stage):
                 ('mu_dom_eff', pq),
                 ('mu_hole_ice', pq)
             ])
+        if not isinstance(params['smoothing'].value, basestring) \
+           and params['smoothing'].value is not None:
+            raise TypeError(
+                'Param "smoothing" must be type basestring or NoneType but is '
+                '{0} instead'.format(type(params['smoothing'].value))
+            )
         for p, t in param_types:
             val = params[p].value
             if not isinstance(val, t):
@@ -285,4 +739,3 @@ class fit(Stage):
                     'Param "%s" must be type %s but is %s instead'
                     % (p, type(t), type(val))
                 )
-

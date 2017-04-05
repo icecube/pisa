@@ -259,8 +259,8 @@ class sample(Stage):
             weight_units = gen_cfg.get('general', 'weight_units')
             keep_keys    = parse(gen_cfg.get('general', 'keep_keys'))
             aliases      = gen_cfg.items('aliases')
-            logging.info('Extracting dataset "{0}" from generator level '
-                         'sample "{1}"'.format(dataset, name))
+            logging.info('Extracting neutrino dataset "{0}" from generator '
+                         'level sample "{1}"'.format(dataset, name))
 
             for idx, flav in enumerate(event_types):
                 fig = NuFlavIntGroup(flav)
@@ -281,8 +281,8 @@ class sample(Stage):
             base_prefix  = config.get('neutrinos', 'baseprefix')
             keep_keys    = parse(config.get('neutrinos', 'keep_keys'))
             aliases      = config.items('neutrinos:aliases')
-            logging.info('Extracting dataset "{0}" from generator level '
-                         'sample "{1}"'.format(dataset, name))
+            logging.info('Extracting neutrino dataset "{0}" from sample '
+                         '"{1}"'.format(dataset, name))
             if base_prefix == 'None':
                 base_prefix = ''
 
@@ -352,6 +352,8 @@ class sample(Stage):
             file_path = paths[0]
         else:
             file_path = config.get(dataset, 'file_path')
+        logging.info('Extracting muon dataset "{0}" from sample '
+                     '"{1}"'.format(dataset, name))
 
         muons = from_file(file_path)
         sample.strip_keys(keep_keys, muons)
@@ -406,6 +408,8 @@ class sample(Stage):
             file_path = paths[0]
         else:
             file_path = config.get(dataset, 'file_path')
+        logging.info('Extracting noise dataset "{0}" from sample '
+                     '"{1}"'.format(dataset, name))
 
         noise = from_file(file_path)
         sample.strip_keys(keep_keys, noise)
