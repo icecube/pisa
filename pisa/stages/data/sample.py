@@ -476,7 +476,7 @@ class sample(Stage):
 
     @staticmethod
     def strip_keys(keep_keys, events):
-        if keep_keys == 'all':
+        if keep_keys == ['all']:
             pass
         else:
             remove_keys = []
