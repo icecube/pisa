@@ -79,8 +79,6 @@ class param(Stage):
 
         cz_reco_bias : float
 
-        transform_events_keep_criteria : None, string, or sequence of strings
-
     particles : string
         Must be one of 'neutrinos' or 'muons' (though only neutrinos are
         supported at this time).

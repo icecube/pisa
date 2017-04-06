@@ -52,7 +52,6 @@ class param(Stage):
         livetime
         aeff_scale
         nutau_cc_norm
-        transform_events_keep_criteria
 
     particles : string
         Must be one of 'neutrinos' or 'muons' (though only neutrinos are
@@ -111,7 +110,7 @@ class param(Stage):
         # `params` argument.
         expected_params = [
             'aeff_energy_paramfile', 'aeff_coszen_paramfile',
-            'livetime', 'aeff_scale', 'transform_events_keep_criteria'
+            'livetime', 'aeff_scale'
         ]
         if particles == 'neutrinos':
             expected_params.append('nutau_cc_norm')
