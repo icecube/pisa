@@ -996,22 +996,26 @@ class OneDimBinning(object):
             logging.trace('Bin names do not match')
             return False
 
+        # TODO: should we force normalization?
+        # TODO: Should we use FTYPE_SIGFIGS or # HASH_SIGFIGS?
         if self.normalize_values:
-            my_normed_bin_edges = set(normQuant(self.bin_edges).magnitude)
-            other_normed_bin_edges = set(normQuant(other.bin_edges).magnitude)
+            my_normed_bin_edges = set(
+                normQuant(self.bin_edges, sigfigs=HASH_SIGFIGS).magnitude
+            )
+            other_normed_bin_edges = set(
+                normQuant(other.bin_edges, sigfigs=HASH_SIGFIGS).magnitude
+            )
         else:
             my_normed_bin_edges = set(self.bin_edges.magnitude)
             other_normed_bin_edges = set(other.bin_edges.magnitude)
 
         if my_normed_bin_edges.issubset(other_normed_bin_edges):
             return True
-        logging.trace('self.bin_edges  = %s' % self.bin_edges)
-        logging.trace('other.bin_edges = %s' % other.bin_edges)
+
         logging.trace('self.bin_edges not a subset of other.bin_edges')
-        #if len(my_normed_bin_edges.difference(other_normed_bin_edges)) == 0:
-        #    return True
-        #if len(other_normed_bin_edges.difference(my_normed_bin_edges)) == 0:
-        #    return True
+        logging.trace('Bins in this map not found in other = %s',
+                      my_normed_bin_edges.difference(other_normed_bin_edges))
+
         return False
 
     @property

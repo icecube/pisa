@@ -725,7 +725,7 @@ class Map(object):
 
     @_new_obj
     def rebin(self, new_binning):
-        """Rebin the map with bin edge lodations and names according to those
+        """Rebin the map with bin edge locations and names according to those
         specified in `new_binning`.
 
         Calls the `rebin` function in the pisa.core.map.rebin module to do the
@@ -2469,6 +2469,12 @@ def test_Map():
     m1 = Map(name='x', hist=np.ones((n_ebins, n_czbins)), hash=23,
              binning=(e_binning, cz_binning))
 
+    # Test rebin
+    _ = m1.rebin(m1.binning.downsample(2, 5))
+    m_rebinned = m1.rebin(m1.binning.downsample(n_ebins, n_czbins))
+    assert m_rebinned.hist[0, 0] == np.sum(m1.hist)
+
+
     # Test sum()
     m1 = Map(
         name='x',
@@ -2628,6 +2634,13 @@ def test_MapSet():
     m2 = Map(name='twos', hist=2*np.ones(binning.shape), binning=binning,
              hash='xyz')
     ms01 = MapSet([m1, m2])
+
+    # Test rebin
+    _ = ms01.rebin(m1.binning.downsample(3))
+    ms01_rebinned = ms01.rebin(m1.binning.downsample(6, 3))
+    for m_orig, m_rebinned in zip(ms01, ms01_rebinned):
+        assert m_rebinned.hist[0, 0] == np.sum(m_orig.hist)
+
     logging.debug(str(("downsampling =====================")))
     logging.debug(str((ms01.downsample(3))))
     logging.debug(str(("===================== downsampling")))
