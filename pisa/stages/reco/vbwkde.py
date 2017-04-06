@@ -408,7 +408,7 @@ def coszen_error_edges(true_edges, reco_edges):
     return all_dcz_binedges, reco_indices
 
 
-@numba_jit(nogil=True, nopython=True)
+@numba_jit(nogil=True, nopython=True, fastmath=True)
 def sorted_fast_histogram(a, bins, weights):
     """Fast but less precise histogramming of a sorted array with weights.
 
@@ -451,7 +451,7 @@ def sorted_fast_histogram(a, bins, weights):
     return hist, bins
 
 
-@numba_jit(nogil=True, nopython=True)
+@numba_jit(nogil=True, nopython=True, fastmath=True)
 def fast_histogram(a, bins, weights):
     """Fast but less precise histogramming of an array with weights.
 
