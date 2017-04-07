@@ -144,21 +144,7 @@ class param(Stage):
             'e_reco_bias', 'cz_reco_bias'
         )
 
-        for bin_name in input_binning.names:
-            if 'coszen' in bin_name:
-                if coszen_flipback is None:
-                    raise ValueError(
-                        "coszen_flipback should be set to True or False since"
-                        " coszen is in your binning."
-                    )
-                else:
-                    if (not input_binning[bin_name].is_lin) and coszen_flipback:
-                        raise ValueError(
-                            "coszen_flipback is set to True but then zenith "
-                            "binning is not linear. This will cause problems."
-                        )
-                    else:
-                        self.coszen_flipback = coszen_flipback
+        self.coszen_flipback = coszen_flipback
 
         if isinstance(input_names, basestring):
             input_names = (''.join(input_names.split(' '))).split(',')
@@ -201,11 +187,31 @@ class param(Stage):
                 "Got %s."%(self.input_binning.names)
             )
 
-        # Require in- and output binnings to be the same (modulo mapping from
-        # truth to reco space)
-        assert self.input_binning.basename_binning == \
-               self.output_binning.basename_binning, \
-               "input and output binning deviate!"
+        assert set(self.input_binning.basename_binning.names) == \
+               set(self.output_binning.basename_binning.names), \
+               "input and output binning must both be 2D in energy / coszenith!"
+
+
+        if self.coszen_flipback is None:
+            raise ValueError(
+                        "coszen_flipback should be set to True or False since"
+                        " coszen is in your binning."
+                  )
+
+        if self.coszen_flipback:
+            if not self.output_binning.basename_binning['coszen'].is_lin:
+                raise ValueError(
+                            "coszen_flipback is set to True but zenith output"
+                            " binning is not linear - incompatible settings!"
+                      )
+            domain_in = self.input_binning.basename_binning['coszen'].domain
+            domain_out = self.output_binning.basename_binning['coszen'].domain
+            if (domain_out[0] != -1. or domain_out[1] > 0.):
+                raise ValueError(
+                            "coszen_flipback currently only compatible with"
+                            " upgoing output domain (including coszen = -1)!"
+                            " Your choice: %s"%domain_out
+                      )
 
     def process_reco_dist_params(self, param_dict):
         """
@@ -512,18 +518,23 @@ class param(Stage):
         # These binnings will be in the computational units defined above
         input_binning = self.input_binning.to(**in_units)
         output_binning = self.output_binning.to(**out_units)
-        evals = self.input_binning['true_energy'].weighted_centers.magnitude
-        ebins = self.input_binning['true_energy'].bin_edges.magnitude
-        czvals = self.input_binning['true_coszen'].weighted_centers.magnitude
-        czbins = self.input_binning['true_coszen'].bin_edges.magnitude
-        offset = 0
-        n_e = len(evals)
-        n_cz = len(czvals)
+        en_centers_in = self.input_binning['true_energy'].weighted_centers.magnitude
+        en_edges_in = self.input_binning['true_energy'].bin_edges.magnitude
+        cz_centers_in = self.input_binning['true_coszen'].weighted_centers.magnitude
+        cz_edges_in = self.input_binning['true_coszen'].bin_edges.magnitude
+        en_edges_out = self.output_binning['reco_energy'].bin_edges.magnitude
+        cz_edges_out = self.output_binning['reco_coszen'].bin_edges.magnitude
+
+        n_e_in = len(en_centers_in)
+        n_cz_in = len(cz_centers_in)
+        n_e_out = len(en_edges_out)-1
+        n_cz_out = len(cz_edges_out)-1
         if self.coszen_flipback:
-            coszen_range = self.input_binning['true_coszen'].range.magnitude
-            czvals = np.append(czvals-coszen_range, czvals)
-            czbins = np.append(czbins[:-1]-coszen_range, czbins)
-            offset = n_cz
+            logging.trace("Preparing binning for flipback of reco kernel at"
+                          " lower coszen boundary.")
+            coszen_range = self.output_binning['reco_coszen'].range.magnitude
+            cz_edges_out = np.append(cz_edges_out[:-1]-coszen_range, cz_edges_out)
+            logging.trace(" -> temporary coszen bin edges:\n%s"%cz_edges_out)
 
         xforms = []
         for xform_flavints in self.transform_groups:
@@ -533,27 +544,27 @@ class param(Stage):
                 this_params = self.param_dict['nuall_nc']
             else:
                 this_params = self.param_dict[str(repr_flavint)]
-            reco_kernel = np.zeros((n_e, n_cz, n_e, n_cz))
-            for (i,j) in itertools.product(range(n_e), range(n_cz)):
+            reco_kernel = np.zeros((n_e_in, n_cz_in, n_e_out, n_cz_out))
+            for (i,j) in itertools.product(range(n_e_in), range(n_cz_in)):
                 e_kern_cdf = self.make_cdf(
-                    bin_edges=ebins,
-                    enval=evals[i],
+                    bin_edges=en_edges_out,
+                    enval=en_centers_in[i],
                     enindex=i,
                     czval=None,
                     czindex=j,
                     dist_params=this_params['energy']
                 )
                 cz_kern_cdf = self.make_cdf(
-                    bin_edges=czbins,
-                    enval=evals[i],
+                    bin_edges=cz_edges_out,
+                    enval=en_centers_in[i],
                     enindex=i,
-                    czval=czvals[j+offset],
+                    czval=cz_centers_in[j],
                     czindex=j,
                     dist_params=this_params['coszen']
                 )
                 if self.coszen_flipback:
-                    cz_kern_cdf = cz_kern_cdf[:int(len(czbins)/2)][::-1] + \
-                        cz_kern_cdf[int(len(czbins)/2):]
+                    cz_kern_cdf = cz_kern_cdf[:int(len(cz_edges_out)/2)][::-1] + \
+                        cz_kern_cdf[int(len(cz_edges_out)/2):]
 
                 reco_kernel[i,j] = np.outer(e_kern_cdf, cz_kern_cdf)
 
