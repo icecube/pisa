@@ -22,7 +22,7 @@ import numpy as np
 from pisa.core.events import Events
 from pisa.utils.dataProcParams import DataProcParams
 from pisa.utils.format import list2hrlist
-from pisa.utils.fileio import expandPath, mkdir, to_file
+from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.flavInt import (FlavIntData, NuFlav, NuFlavIntGroup,
                                 ALL_NUFLAVINTS, ALL_NUINT_TYPES, xlateGroupsStr)
 from pisa.utils.log import logging, set_verbosity
@@ -266,7 +266,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
             cuts.append(ccut)
 
     orig_outdir = outdir
-    outdir = expandPath(outdir)
+    outdir = expand(outdir)
     logging.info('Output dir spec\'d: %s', orig_outdir)
     if outdir != orig_outdir:
         logging.info('Output dir expands to: %s', outdir)

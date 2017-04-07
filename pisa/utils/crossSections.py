@@ -16,7 +16,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from pisa.utils.resources import find_resource
-from pisa.utils.fileio import expandPath, from_file, to_file
+from pisa.utils.fileio import expand, from_file, to_file
 from pisa.utils import flavInt
 from pisa.utils.log import logging, set_verbosity
 
@@ -586,7 +586,7 @@ def test_CrossSections(outdir=None):
         xs = CrossSections(ver='genie_2.6.4', xsec=pisa_xs_file)
 
         # Location of the root file to use (not included in PISA at the moment)
-        test_dir = expandPath(os.path.join('$PISA', 'tests', 'cross_sections'))
+        test_dir = expand(os.path.join('$PISA', 'tests', 'cross_sections'))
         #ROOT_xs_file = os.path.join(test_dir, 'genie_2.6.4_simplified.root')
         ROOT_xs_file = find_resource(os.path.join(
             'tests', 'data', 'xsec', 'genie_2.6.4_simplified.root'
