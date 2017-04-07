@@ -144,21 +144,7 @@ class param(Stage):
             'e_reco_bias', 'cz_reco_bias'
         )
 
-        for bin_name in input_binning.names:
-            if 'coszen' in bin_name:
-                if coszen_flipback is None:
-                    raise ValueError(
-                        "coszen_flipback should be set to True or False since"
-                        " coszen is in your binning."
-                    )
-                else:
-                    if (not input_binning[bin_name].is_lin) and coszen_flipback:
-                        raise ValueError(
-                            "coszen_flipback is set to True but then zenith "
-                            "binning is not linear. This will cause problems."
-                        )
-                    else:
-                        self.coszen_flipback = coszen_flipback
+        self.coszen_flipback = coszen_flipback
 
         if isinstance(input_names, basestring):
             input_names = (''.join(input_names.split(' '))).split(',')
@@ -201,11 +187,31 @@ class param(Stage):
                 "Got %s."%(self.input_binning.names)
             )
 
-        # Require in- and output binnings to be the same (modulo mapping from
-        # truth to reco space)
-        #assert self.input_binning.basename_binning == \
-        #       self.output_binning.basename_binning, \
-        #       "input and output binning deviate!"
+        assert set(self.input_binning.basename_binning.names) == \
+               set(self.output_binning.basename_binning.names), \
+               "input and output binning must both be 2D in energy / coszenith!"
+
+
+        if self.coszen_flipback is None:
+            raise ValueError(
+                        "coszen_flipback should be set to True or False since"
+                        " coszen is in your binning."
+                  )
+
+        if self.coszen_flipback:
+            if not self.output_binning.basename_binning['coszen'].is_lin:
+                raise ValueError(
+                            "coszen_flipback is set to True but zenith output"
+                            " binning is not linear - incompatible settings!"
+                      )
+            domain_in = self.input_binning.basename_binning['coszen'].domain
+            domain_out = self.output_binning.basename_binning['coszen'].domain
+            if (domain_out[0] != -1. or domain_out[1] > 0.):
+                raise ValueError(
+                            "coszen_flipback currently only compatible with"
+                            " upgoing output domain (including coszen = -1)!"
+                            " Your choice: %s"%domain_out
+                      )
 
     def process_reco_dist_params(self, param_dict):
         """
@@ -524,8 +530,11 @@ class param(Stage):
         n_e_out = len(en_edges_out)-1
         n_cz_out = len(cz_edges_out)-1
         if self.coszen_flipback:
+            logging.trace("Preparing binning for flipback of reco kernel at"
+                          " lower coszen boundary.")
             coszen_range = self.output_binning['reco_coszen'].range.magnitude
             cz_edges_out = np.append(cz_edges_out[:-1]-coszen_range, cz_edges_out)
+            logging.trace(" -> temporary coszen bin edges:\n%s"%cz_edges_out)
 
         xforms = []
         for xform_flavints in self.transform_groups:
