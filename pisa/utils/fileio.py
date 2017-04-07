@@ -25,7 +25,7 @@ import numpy as np
 
 __all__ = ['PKL_EXTS', 'DILL_EXTS', 'CFG_EXTS', 'ZIP_EXTS', 'TXT_EXTS',
            'NSORT_RE',
-           'expandPath', 'mkdir', 'get_valid_filename', 'nsort', 'findFiles',
+           'expand', 'mkdir', 'get_valid_filename', 'nsort', 'find_files',
            'from_cfg', 'from_pickle', 'to_pickle', 'from_dill', 'to_dill',
            'from_file', 'to_file']
 
@@ -39,8 +39,32 @@ TXT_EXTS = ['txt', 'dat']
 NSORT_RE = re.compile(r'(\d+)')
 
 
-def expandPath(path, exp_user=True, exp_vars=True, absolute=False):
-    """Convenience function for expanding a path"""
+def expand(path, exp_user=True, exp_vars=True, absolute=False):
+    """Convenience function for expanding a path
+
+    Parameters
+    ----------
+    path : string
+        Path to be expanded.
+
+    exp_user : bool
+        Expand special home dir spec character, tilde: "~".
+
+    exp_vars : bool
+        Expand the string using environment variables. E.g.
+        "$HOME/${vardir}/xyz" will have "$HOME" and "${vardir}$" replaced by
+        the values stored in "HOME" and "vardir".
+
+    absolute : bool
+        Make a relative path (e.g. "../xyz") absolute, referenced from system
+        root directory, "/dir/sbudir/xyz".
+
+    Returns
+    -------
+    exp_path : string
+        Expanded path
+
+    """
     if exp_user:
         path = os.path.expanduser(path)
     if exp_vars:
@@ -51,13 +75,13 @@ def expandPath(path, exp_user=True, exp_vars=True, absolute=False):
 
 
 def check_file_exists(fname, overwrite=True, warn=True):
-    fpath = expandPath(path=fname, exp_user=True, exp_vars=True)
+    fpath = expand(fname)
     if os.path.exists(fpath):
         if overwrite:
             if warn:
-                log.logging.warn("Overwriting file at '%s'"%fpath)
+                log.logging.warn("Overwriting file at '%s'", fpath)
         else:
-            raise Exception("Refusing to overwrite path '%s'"%fpath)
+            raise Exception("Refusing to overwrite path '%s'", fpath)
     return fpath
 
 
@@ -80,11 +104,11 @@ def mkdir(d, mode=0750, warn=True):
     except OSError as err:
         if err[0] == 17:
             if warn:
-                log.logging.warn('Directory "%s" already exists' %d)
+                log.logging.warn('Directory "%s" already exists', d)
         else:
             raise err
     else:
-        log.logging.info('Created directory "%s"' %d)
+        log.logging.info('Created directory "%s"', d)
 
 
 def get_valid_filename(s):
@@ -119,7 +143,7 @@ def nsort(l):
     )
 
 
-def findFiles(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
+def find_files(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
               file_sorter=nsort):
     """Find files by re or name recursively w/ ordering.
 
@@ -130,25 +154,32 @@ def findFiles(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
     ----------
     root : str
         Root directory at which to start searching for files
+
     regex : str or re.SRE_Pattern
         Only yield files matching `regex`.
+
     fname : str
         Only yield files matching `fname`
+
     recurse : bool
         Whether to search recursively down from the root directory
+
     dir_sorter
         Function that takes a list and returns a sorted version of it, for
         purposes of sorting directories
+
     file_sorter
         Function as specified for `dir_sorter` but used for sorting file names
+
 
     Yields
     ------
     fullfilepath : str
     basename : str
     match : re.SRE_Match or None
+
     """
-    root = expandPath(path=root, exp_user=True, exp_vars=True)
+    root = expand(root)
     if isinstance(regex, basestring):
         regex = re.compile(regex)
 
@@ -170,9 +201,9 @@ def findFiles(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
             return False, None
 
     if recurse:
-        for rootdir, dirs, files in os.walk(root):
+        for rootdir, dirs, files in os.walk(root, followlinks=True):
             for basename in file_sorter(files):
-                fullfilepath = os.path.join(root, basename)
+                fullfilepath = os.path.join(rootdir, basename)
                 is_valid, match = validfilefunc(basename)
                 if is_valid:
                     yield fullfilepath, basename, match
