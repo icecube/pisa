@@ -130,60 +130,65 @@ def validate_minimizer_settings(minimizer_settings):
     missing = set(must_have).difference(set(options))
     excess = set(options).difference(set(may_have))
     if len(missing) > 0:
-        raise ValueError('Missing the following options to %s minimizer: %s'
+        raise ValueError('Missing the following options for %s minimizer: %s'
                          % (method, missing))
     if len(excess) > 0:
-        raise ValueError('Excess options to %s minimizer: %s'
+        raise ValueError('Excess options for %s minimizer: %s'
                          % (method, excess))
 
-    eps_msg = '%s minimizer option %s(=%e) is < %d * FTYPE_EPS(=%e)'
+    eps_msg = '%s minimizer option %s(=%e) is < %d * %s_EPS(=%e)'
+    eps_gt_msg = '%s minimizer option %s(=%e) is > %e'
     scale_msg = '%s minimizer option %s(=%e) is > %d * %s(=%e)'
+    fp64_eps = np.finfo(np.float64).eps
 
     if method == 'l-bfgs-b':
-        err_lim, warn_lim = 5, 20
+        err_lim, warn_lim = 2, 10
         for s in ['ftol', 'gtol']:
             val = options[s]
             if val < err_lim * ftype_eps:
-                raise ValueError(eps_msg % (method, s, val, err_lim, ftype_eps))
+                raise ValueError(eps_msg % (method, s, val, err_lim, 'FTYPE',
+                                            ftype_eps))
             if val < warn_lim * ftype_eps:
-                logging.warn(eps_msg, method, s, val, warn_lim, ftype_eps)
+                logging.warn(eps_msg, method, s, val, warn_lim, 'FTYPE',
+                             ftype_eps)
 
-        err_lim, warn_lim = 2, 10
         val = options['eps']
-        if val < err_lim * ftype_eps:
-            raise ValueError(eps_msg % (method, 'eps', val, err_lim, ftype_eps))
+        err_lim, warn_lim = 1, 10
+        if val < err_lim * fp64_eps:
+            raise ValueError(eps_msg % (method, 'eps', val, err_lim, 'FP64',
+                                        fp64_eps))
         if val < warn_lim * ftype_eps:
-            logging.warn(eps_msg, method, 'eps', val, warn_lim, ftype_eps)
+            logging.warn(eps_msg, method, 'eps', val, warn_lim, 'FTYPE',
+                         ftype_eps)
 
-        err_lim, warn_lim = 4, 1
-        for s in ['ftol', 'gtol']:
-            if options['eps'] > err_lim * options[s]:
-                raise ValueError(scale_msg % (method, 'eps', options['eps'],
-                                              err_lim, s, options[s]))
-            if options['eps'] > warn_lim * options[s]:
-                logging.warn(scale_msg, method, 'eps', options['eps'],
-                             warn_lim, s, options[s])
+        err_lim, warn_lim = 0.25, 0.1
+        if val > err_lim:
+            raise ValueError(eps_gt_msg % (method, 'eps', val, err_lim))
+        if val > warn_lim:
+            logging.warn(eps_gt_msg, method, 'eps', val, warn_lim)
 
     if method == 'slsqp':
+        err_lim, warn_lim = 2, 10
         val = options['ftol']
-        if val < 3 * ftype_eps:
-            raise ValueError(eps_msg % (method, 'ftol', val, 3, ftype_eps))
-        if val < 10 * ftype_eps:
-            logging.warn(eps_msg, method, 'ftol', val, 10, ftype_eps)
+        if val < err_lim * ftype_eps:
+            raise ValueError(eps_msg % (method, 'ftol', val, err_lim, 'FTYPE',
+                                        ftype_eps))
+        if val < warn_lim * ftype_eps:
+            logging.warn(eps_msg, method, 'ftol', val, warn_lim, 'FTYPE',
+                         ftype_eps)
 
         val = options['eps']
-        if val < ftype_eps:
-            raise ValueError(eps_msg % (method, 'eps', val, 1, ftype_eps))
-        if val < 2 * ftype_eps:
-            logging.warn(eps_msg, method, 'eps', val, 10, ftype_eps)
+        err_lim, warn_lim = 1, 10
+        if val < err_lim * fp64_eps:
+            raise ValueError(eps_msg % (method, 'eps', val, 1, 'FP64', fp64_eps))
+        if val < warn_lim * ftype_eps:
+            logging.warn(eps_msg, method, 'eps', val, warn_lim, 'FP64', fp64_eps)
 
-        err_lim, warn_lim = 4, 1
-        if options['eps'] > err_lim * options['ftol']:
-            raise ValueError(scale_msg % (method, 'eps', options['eps'],
-                                          err_lim, 'ftol', options['ftol']))
-        if options['eps'] > warn_lim * options['ftol']:
-            logging.warn(scale_msg, method, 'eps', options['eps'], warn_lim,
-                         'ftol', options['ftol'])
+        err_lim, warn_lim = 0.25, 0.1
+        if val > err_lim:
+            raise ValueError(eps_gt_msg % (method, 'eps', val, err_lim))
+        if val > warn_lim:
+            logging.warn(eps_gt_msg, method, 'eps', val, warn_lim)
 
 
 # TODO: move this to a central location prob. in utils
