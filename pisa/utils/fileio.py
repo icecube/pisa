@@ -144,7 +144,7 @@ def nsort(l):
 
 
 def find_files(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
-              file_sorter=nsort):
+               file_sorter=nsort):
     """Find files by re or name recursively w/ ordering.
 
     Code adapted from

@@ -484,10 +484,10 @@ class Plotter(object):
             hist = np.sum(hist, 1)
         return hist
 
-    def plot_1d_ratio(self, maps, plot_axis):
+    def plot_1d_ratio(self, maps, plot_axis, **kwargs):
+        """make a ratio plot for a 1d projection"""
         r_vmin = kwargs.pop('r_vmin', None)
         r_vmax = kwargs.pop('r_vmax', None)
-        """make a ratio plot for a 1d projection"""
         axis = plt.gca()
         map0 = maps[0]
         plt_binning = map0.binning[plot_axis]
