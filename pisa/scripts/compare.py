@@ -5,9 +5,8 @@
 Compare two entities: Maps, map sets, pipelines, or distribution makers. One
 kind can be compared against another, so long as the resulting map(s) have
 equivalent names and binning. The result each entity specification is formatted
-into a MapSet and stored to disk, so that e.g. re-running a DistributionMaker
-is unnecessary to reproduce the results.
-
+into a MapSet and can be stored to disk so that e.g. re-running a
+DistributionMaker is unnecessary to reproduce the results.
 """
 
 # TODO: make use of `MapSet.compare()` method (and/or expand that until it is
@@ -40,121 +39,6 @@ DISTRIBUTIONMAKER_SOURCE_STR = (
 PIPELINE_SOURCE_STR = 'Pipeline instantiated from a pipelinen config file'
 MAP_SOURCE_STR = 'Map stored on disk'
 MAPSET_SOURCE_STR = 'MapSet stored on disk'
-
-
-def parse_args():
-    parser = ArgumentParser(description=__doc__)
-    parser.add_argument(
-        '--outdir', metavar='DIR', type=str, required=True,
-        help='''Store output plots to this directory.'''
-    )
-    parser.add_argument(
-        '--ref', type=str, required=True, action='append',
-        help='''Pipeline settings config file that generates reference
-        output, or a stored map or map set. Repeat --ref option for multiple
-        pipelines, maps, or map sets'''
-    )
-    parser.add_argument(
-        '--ref-abs', action='store_true',
-        help='''Use the absolute value of the reference plot for
-        comparisons.'''
-    )
-    parser.add_argument(
-        '--ref-label', type=str, required=True,
-        help='''Label for reference'''
-    )
-    parser.add_argument(
-        '--ref-param-selections', type=str, required=False,
-        action='append',
-        help='''Param selections to apply to --ref pipeline config(s). Not
-        applicable if --ref specifies stored map or map sets'''
-    )
-    parser.add_argument(
-        '--test', type=str, required=True, action='append',
-        help='''Pipeline settings config file that generates test
-        output, or a stored map or map set. Repeat --test option for multiple
-        pipelines, maps, or map sets'''
-    )
-    parser.add_argument(
-        '--test-abs', action='store_true',
-        help='''Use the absolute value of the test plot for
-        comparisons.'''
-    )
-    parser.add_argument(
-        '--test-label', type=str, required=True,
-        help='''Label for test'''
-    )
-    parser.add_argument(
-        '--test-param-selections', type=str, required=False,
-        action='append',
-        help='''Param selections to apply to --test pipeline config(s). Not
-        applicable if --test specifies stored map or map sets'''
-    )
-    parser.add_argument(
-        '--combine', type=str, action='append',
-        help='''Combine by wildcard string, where string globbing (a la command
-        line) uses asterisk for any number of wildcard characters. Use single
-        quotes such that asterisks do not get expanded by the shell. Repeat the
-        --combine option for multiple combine strings.'''
-    )
-    parser.add_argument(
-        '--sum', nargs='+',
-        help='''Sum over (and hence remove) the specified axis or axes. I.e.,
-        project the map onto remaining (unspecified) axis or axes.'''
-    )
-    parser.add_argument(
-        '--json', action='store_true',
-        help='''Save output maps in compressed json (json.bz2) format.'''
-    )
-    parser.add_argument(
-        '--pdf', action='store_true',
-        help='''Save plots in PDF format. If neither this nor --png is
-        specified, no plots are produced.'''
-    )
-    parser.add_argument(
-        '--png', action='store_true',
-        help='''Save plots in PNG format. If neither this nor --pdf is
-        specfied, no plots are produced.'''
-    )
-    parser.add_argument(
-        '--diff-min', type=float, required=False,
-        help='''Difference plot vmin; if you specify only one of --diff-min or
-        --diff-max, symmetric limits are automatically used (min = -max).'''
-    )
-    parser.add_argument(
-        '--diff-max', type=float, required=False,
-        help='''Difference plot max; if you specify only one of --diff-min or
-        --diff-max, symmetric limits are automatically used (min = -max).'''
-    )
-    parser.add_argument(
-        '--fract-diff-min', type=float, required=False,
-        help='''Fractional difference plot vmin; if you specify only one of
-        --fract-diff-min or --fract-diff-max, symmetric limits are
-        automatically used (min = -max).'''
-    )
-    parser.add_argument(
-        '--fract-diff-max', type=float, required=False,
-        help='''Fractional difference plot max; if you specify only one of
-        --fract-diff-min or --fract-diff-max, symmetric limits are
-        automatically used (min = -max).'''
-    )
-    parser.add_argument(
-        '--asymm-min', type=float, required=False,
-        help='''Asymmetry plot vmin; if you specify only one of --asymm-min or
-        --asymm-max, symmetric limits are automatically used (min = -max).'''
-    )
-    parser.add_argument(
-        '--asymm-max', type=float, required=False,
-        help='''Fractional difference plot max; if you specify only one of
-        --asymm-min or --asymm-max, symmetric limits are automatically used
-        (min = -max).'''
-    )
-    parser.add_argument(
-        '-v', action='count',
-        help='Set verbosity level; repeat -v for higher level.'
-    )
-    args = parser.parse_args()
-    return args
 
 
 def compare(outdir, ref, ref_label, test, test_label, asymm_max=None,
@@ -662,8 +546,130 @@ def compare(outdir, ref, ref_label, test, test_label, asymm_max=None,
 
     return summary_stats, diff, fract_diff, asymm
 
-if __name__ == '__main__':
+
+def parse_args():
+    """Parse command line arguments"""
+    parser = ArgumentParser(description=__doc__)
+    parser.add_argument(
+        '--outdir', metavar='DIR', type=str, required=True,
+        help='''Store output plots to this directory.'''
+    )
+    parser.add_argument(
+        '--ref', type=str, required=True, action='append',
+        help='''Pipeline settings config file that generates reference
+        output, or a stored map or map set. Repeat --ref option for multiple
+        pipelines, maps, or map sets'''
+    )
+    parser.add_argument(
+        '--ref-abs', action='store_true',
+        help='''Use the absolute value of the reference plot for
+        comparisons.'''
+    )
+    parser.add_argument(
+        '--ref-label', type=str, required=True,
+        help='''Label for reference'''
+    )
+    parser.add_argument(
+        '--ref-param-selections', type=str, required=False,
+        action='append',
+        help='''Param selections to apply to --ref pipeline config(s). Not
+        applicable if --ref specifies stored map or map sets'''
+    )
+    parser.add_argument(
+        '--test', type=str, required=True, action='append',
+        help='''Pipeline settings config file that generates test
+        output, or a stored map or map set. Repeat --test option for multiple
+        pipelines, maps, or map sets'''
+    )
+    parser.add_argument(
+        '--test-abs', action='store_true',
+        help='''Use the absolute value of the test plot for
+        comparisons.'''
+    )
+    parser.add_argument(
+        '--test-label', type=str, required=True,
+        help='''Label for test'''
+    )
+    parser.add_argument(
+        '--test-param-selections', type=str, required=False,
+        action='append',
+        help='''Param selections to apply to --test pipeline config(s). Not
+        applicable if --test specifies stored map or map sets'''
+    )
+    parser.add_argument(
+        '--combine', type=str, action='append',
+        help='''Combine by wildcard string, where string globbing (a la command
+        line) uses asterisk for any number of wildcard characters. Use single
+        quotes such that asterisks do not get expanded by the shell. Repeat the
+        --combine option for multiple combine strings.'''
+    )
+    parser.add_argument(
+        '--sum', nargs='+',
+        help='''Sum over (and hence remove) the specified axis or axes. I.e.,
+        project the map onto remaining (unspecified) axis or axes.'''
+    )
+    parser.add_argument(
+        '--json', action='store_true',
+        help='''Save output maps in compressed json (json.bz2) format.'''
+    )
+    parser.add_argument(
+        '--pdf', action='store_true',
+        help='''Save plots in PDF format. If neither this nor --png is
+        specified, no plots are produced.'''
+    )
+    parser.add_argument(
+        '--png', action='store_true',
+        help='''Save plots in PNG format. If neither this nor --pdf is
+        specfied, no plots are produced.'''
+    )
+    parser.add_argument(
+        '--diff-min', type=float, required=False,
+        help='''Difference plot vmin; if you specify only one of --diff-min or
+        --diff-max, symmetric limits are automatically used (min = -max).'''
+    )
+    parser.add_argument(
+        '--diff-max', type=float, required=False,
+        help='''Difference plot max; if you specify only one of --diff-min or
+        --diff-max, symmetric limits are automatically used (min = -max).'''
+    )
+    parser.add_argument(
+        '--fract-diff-min', type=float, required=False,
+        help='''Fractional difference plot vmin; if you specify only one of
+        --fract-diff-min or --fract-diff-max, symmetric limits are
+        automatically used (min = -max).'''
+    )
+    parser.add_argument(
+        '--fract-diff-max', type=float, required=False,
+        help='''Fractional difference plot max; if you specify only one of
+        --fract-diff-min or --fract-diff-max, symmetric limits are
+        automatically used (min = -max).'''
+    )
+    parser.add_argument(
+        '--asymm-min', type=float, required=False,
+        help='''Asymmetry plot vmin; if you specify only one of --asymm-min or
+        --asymm-max, symmetric limits are automatically used (min = -max).'''
+    )
+    parser.add_argument(
+        '--asymm-max', type=float, required=False,
+        help='''Fractional difference plot max; if you specify only one of
+        --asymm-min or --asymm-max, symmetric limits are automatically used
+        (min = -max).'''
+    )
+    parser.add_argument(
+        '-v', action='count',
+        help='Set verbosity level; repeat -v for higher level.'
+    )
+    args = parser.parse_args()
+    return args
+
+
+def main():
+    """Function used from command-line calls (either `python compare.py` or via
+    installer's console scripts (see `setup.py`)."""
     args = vars(parse_args())
     set_verbosity(args.pop('v'))
-
     compare(**args)
+
+
+if __name__ == '__main__':
+    main()
