@@ -576,9 +576,11 @@ class Analysis(object):
         fit_info['hypo_asimov_dist'] = hypo_asimov_dist
 
         if not optimize_result.success:
-            if not blind:
-                logging.error(optimize_result.message)
-            raise ValueError('Optimization failed.')
+            if blind:
+                msg = ''
+            else:
+                msg = ' ' + optimize_result.message
+            raise ValueError('Optimization failed.' + msg)
 
         return fit_info
 

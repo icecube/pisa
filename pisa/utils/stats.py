@@ -117,7 +117,7 @@ def chi2(actual_values, expected_values):
 
     assert np.all(actual_values > 0), str(actual_values)
     chi2_val = np.square(delta) / actual_values
-    assert np.all(chi2_val > 0), str(chi2_val)
+    assert np.all(chi2_val >= 0), str(chi2_val[chi2_val < 0])
     return chi2_val
 
 

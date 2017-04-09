@@ -28,7 +28,6 @@ from collections import OrderedDict
 import os
 import re
 
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import spearmanr
 
@@ -41,9 +40,6 @@ from pisa.utils.postprocess import (tex_axis_label, parse_pint_string,
 
 
 __all__ = ['extract_trials', 'extract_fit', 'parse_args', 'main']
-
-
-plt.rcParams['text.usetex'] = True
 
 
 def extract_paramval(injparams, systkey, fid_label=None, hypo_label=None,
@@ -311,6 +307,7 @@ def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
                     fluctuate_fid=fluctuate_fid
                 )
 
+                fnum = None
                 for fnum, fname in enumerate(nsort(os.listdir(subdir))):
                     fpath = os.path.join(subdir, fname)
                     for x in ['0', '1']:
@@ -354,6 +351,10 @@ def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
                                     ['minimizer_metadata', 'minimizer_time']
                                 )
                             break
+
+                if fnum is None:
+                    raise ValueError('No files?')
+
                 data_sets[dset_label] = lvl2_fits
                 minimiser_info[dset_label] = minim_info
                 data_sets[dset_label]['params'] = extract_fit(
@@ -510,6 +511,9 @@ def purge_failed_jobs(data, trial_nums, thresh=5.0):
 
 def save_plot(labels, fid, hypo, detector, selection, outdir, formats, end):
     """Save plot as each type of file format specified in `formats`"""
+    import matplotlib.pyplot as plt
+    plt.rcParams['text.usetex'] = True
+
     save_name = ""
     if 'data_name' in labels.keys():
         save_name += "true_%s_"%labels['data_name']
@@ -555,6 +559,8 @@ def make_fit_title(labels, fid, hypo, trials):
 
 def make_fit_information_plot(fit_info, xlabel, title):
     """Make histogram of fit_info given with axis label and title"""
+    import matplotlib.pyplot as plt
+    plt.rcParams['text.usetex'] = True
     plt.grid(axis='y', zorder=0)
     plt.hist(
         fit_info,
@@ -575,6 +581,9 @@ def plot_fit_information(minimiser_info, labels, detector,
     """Make plots of the number of iterations and time taken with the
     minimiser. This is a good cross-check that the minimiser did not end
     abruptly since you would see significant pile-up if it did."""
+    import matplotlib.pyplot as plt
+    plt.rcParams['text.usetex'] = True
+
     outdir = os.path.join(outdir, 'MinimiserPlots')
     mkdir(outdir)
     MainTitle = make_main_title(detector, selection, 'Minimiser Information')
@@ -682,6 +691,9 @@ def plot_fit_information(minimiser_info, labels, detector,
 
 def add_extra_points(points, labels, ymax):
     """Add extra points specified by `points` and label them with `labels`"""
+    import matplotlib.pyplot as plt
+    plt.rcParams['text.usetex'] = True
+
     linelist = []
     for point, label in zip(points, labels):
         if isinstance(point, basestring):
@@ -761,6 +773,9 @@ def plot_LLR_histograms(LLRarrays, LLRhistmax, binning, colors, labels,
                         plot_scaling_factor=1.55, greater=True, CLs=False):
     """Plot the LLR histograms. The `greater` argument is intended to be used
     the same as in the p value function above."""
+    import matplotlib.pyplot as plt
+    plt.rcParams['text.usetex'] = True
+
     for LLRarray, label, color in zip(LLRarrays, labels, colors):
         plt.hist(
             LLRarray,
@@ -871,6 +886,9 @@ def make_llr_plots(data, fid_data, labels, detector, selection, outdir,
        from this after the fact.
 
     """
+    import matplotlib.pyplot as plt
+    plt.rcParams['text.usetex'] = True
+
     outdir = os.path.join(outdir, 'LLRDistributions')
     mkdir(outdir)
 
@@ -1593,6 +1611,8 @@ def plot_individual_posterior(data, data_params, h0_params, h1_params,
     hypothesis" fiducial fit and the prior. The axis labels and the legend are
     taken care of in here. The optional subplotnum argument can be given in the
     combined case so that the y-axis label only get put on when appropriate."""
+    import matplotlib.pyplot as plt
+    plt.rcParams['text.usetex'] = True
 
     if systkey == 'metric_val':
         metric_type = data['type']
@@ -1726,6 +1746,9 @@ def plot_individual_posterior(data, data_params, h0_params, h1_params,
 def plot_individual_posteriors(data, fid_data, labels, all_params, detector,
                                selection, outdir, formats):
     """Use `plot_individual_posterior` and save each time."""
+    import matplotlib.pyplot as plt
+    plt.rcParams['text.usetex'] = True
+
 
     outdir = os.path.join(outdir, 'IndividualPosteriors')
     mkdir(outdir)
@@ -1789,6 +1812,8 @@ def plot_combined_posteriors(data, fid_data, labels, all_params,
     """Use `plot_individual_posterior` multiple times but just save once all of
     the posteriors for a given combination of h0 and h1 have been plotted on
     the same canvas."""
+    import matplotlib.pyplot as plt
+    plt.rcParams['text.usetex'] = True
 
     outdir = os.path.join(outdir, 'CombinedPosteriors')
     mkdir(outdir)
@@ -1869,6 +1894,8 @@ def plot_individual_scatter(xdata, ydata, labels, xsystkey, ysystkey,
     with this. Axis labels are done in here too. The optional subplotnum
     argument can be given in the combined case so that the y-axis label only
     get put on when appropriate."""
+    import matplotlib.pyplot as plt
+    plt.rcParams['text.usetex'] = True
 
     # Extract data and units
     xvals = np.array(xdata['vals'])
@@ -1940,6 +1967,8 @@ def plot_individual_scatter(xdata, ydata, labels, xsystkey, ysystkey,
 def plot_individual_scatters(data, labels, detector, selection,
                              outdir, formats):
     """Use `plot_individual_scatter` and save every time."""
+    import matplotlib.pyplot as plt
+    plt.rcParams['text.usetex'] = True
 
     outdir = os.path.join(outdir, 'IndividualScatterPlots')
     mkdir(outdir)
@@ -1988,6 +2017,8 @@ def plot_combined_individual_scatters(data, labels, detector,
     """Use `plot_individual_scatter` and save once all of the scatter plots for
     a single systematic with every other systematic have been plotted on the
     same canvas for each h0 and h1 combination."""
+    import matplotlib.pyplot as plt
+    plt.rcParams['text.usetex'] = True
 
     outdir = os.path.join(outdir, 'CombinedScatterPlots')
     mkdir(outdir)
@@ -2048,6 +2079,8 @@ def plot_combined_individual_scatters(data, labels, detector,
 def plot_combined_scatters(data, labels, detector, selection, outdir, formats):
     """Use `plot_individual_scatter` and save once every scatter plot has been
     plotted on a single canvas for each of the h0 and h1 combinations."""
+    import matplotlib.pyplot as plt
+    plt.rcParams['text.usetex'] = True
 
     outdir = os.path.join(outdir, 'CombinedScatterPlots')
     mkdir(outdir)
@@ -2114,6 +2147,8 @@ def plot_correlation_matrices(data, labels, detector, selection,
     and, if the user has the PathEffects module then it will also write the
     values on the bins. If a number is invalid it will come up bright green.
     """
+    import matplotlib.pyplot as plt
+    plt.rcParams['text.usetex'] = True
     try:
         import matplotlib.patheffects as PathEffects
         logging.warn('PathEffects could be imported, so the correlation values'
