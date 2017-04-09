@@ -76,7 +76,12 @@ def chi2(actual_values, expected_values):
       the calculation to avoid infinities due to the divide function.
 
     """
-    assert actual_values.shape == expected_values.shape
+    if actual_values.shape != expected_values.shape:
+        raise ValueError(
+            'Shape mismatch: actual_values.shape = %s,'
+            ' expected_values.shape = %s'
+            % (actual_values.shape, expected_values.shape)
+        )
 
     # Convert to simple numpy arrays containing floats
     if not isbarenumeric(actual_values):
@@ -231,7 +236,7 @@ def log_smear(x, sigma):
 
 
 def conv_poisson(k, l, s, nsigma=3, steps=50):
-    """Poisson pdf
+    r"""Poisson pdf
 
     .. math::
         p(k,l) = l^k \cdot e^{-l}/k!
