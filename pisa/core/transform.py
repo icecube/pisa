@@ -898,6 +898,10 @@ class BinnedTensorTransform(Transform):
             output = np.tensordot(input_array, self.xform_array,
                                   axes=(axes, axes))
 
+        elif (input_array.shape ==
+              self.xform_array.shape[-len(input_array.shape):]):
+            output = input_array * self.xform_array
+
         else:
             raise ValueError(
                 'Unhandled shapes for input(s) "%s": %s and'
