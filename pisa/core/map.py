@@ -135,7 +135,7 @@ def rebin(hist, orig_binning, new_binning, normalize_values=True):
             "`new_binning` dimensions' basenames %s do not have 1:1"
             " correspondence (modulo pre/suffixes) to original binning"
             " dimensions' basenames %s"
-            % (new_binning.basenames, orig_binning.binning.basenames)
+            % (new_binning.basenames, orig_binning.basenames)
         )
 
     if orig_binning.edges_hash == new_binning.edges_hash:
