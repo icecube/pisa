@@ -430,7 +430,17 @@ class param(Stage):
                 # different parameters and evaluating cdfs doesn't seem
                 # to work, so do it one-by-one
                 rv = dist(loc=loc, scale=scale)
-                cdfs = frac*rv.cdf(bin_edges)
+                # truncate each distribution at the physical boundaries,
+                # i.e., renormalise so that integral between boundaries yields 1.
+                if czval is None:
+                    trunc_low = 0.
+                    trunc_high = None
+                else:
+                    trunc_low = -1.
+                    trunc_high = 1.
+                cdf_low = rv.cdf(trunc_low) if trunc_low is not None else 0.
+                cdf_high = rv.cdf(trunc_high) if trunc_high is not None else 1.
+                cdfs = frac*rv.cdf(bin_edges)/(cdf_high-cdf_low)
                 binwise_cdfs.append(cdfs[1:] - cdfs[:-1])
             # the following would be nice:
             # cdfs = dist(loc=loc_list, scale=scale_list).cdf(bin_edges)
