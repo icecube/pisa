@@ -372,37 +372,37 @@ class param(Stage):
                 pid_indexer = self.transform_output_binning.defaults_indexer(pid=signature)
                 xform_array[pid_indexer] = broadcasted_pid
 
-                if self.sum_grouped_flavints:
-                    xform_input_names = []
-                    for input_name in self.input_names:
-                        input_flavs = NuFlavIntGroup(input_name)
-                        if set(xform_flavints).intersection(input_flavs):
-                            xform_input_names.append(input_name)
+            if self.sum_grouped_flavints:
+                xform_input_names = []
+                for input_name in self.input_names:
+                    input_flavs = NuFlavIntGroup(input_name)
+                    if set(xform_flavints).intersection(input_flavs):
+                        xform_input_names.append(input_name)
 
-                    for output_name in self.output_names:
-                        if output_name not in xform_flavints:
-                            continue
-                        xform = BinnedTensorTransform(
-                            input_names=xform_input_names,
-                            output_name=str(xform_flavints),
-                            input_binning=self.input_binning,
-                            output_binning=self.transform_output_binning,
-                            xform_array=xform_array,
-                            sum_inputs=self.sum_grouped_flavints
-                        )
-                        nominal_transforms.append(xform)
-                else:
-                    for input_name in self.input_names:
-                        if input_name not in xform_flavints:
-                            continue
-                        xform = BinnedTensorTransform(
-                            input_names=input_name,
-                            output_name=input_name,
-                            input_binning=self.input_binning,
-                            output_binning=self.transform_output_binning,
-                            xform_array=xform_array,
-                        )
-                        nominal_transforms.append(xform)
+                for output_name in self.output_names:
+                    if output_name not in xform_flavints:
+                        continue
+                    xform = BinnedTensorTransform(
+                        input_names=xform_input_names,
+                        output_name=str(xform_flavints),
+                        input_binning=self.input_binning,
+                        output_binning=self.transform_output_binning,
+                        xform_array=xform_array,
+                        sum_inputs=self.sum_grouped_flavints
+                    )
+                    nominal_transforms.append(xform)
+            else:
+                for input_name in self.input_names:
+                    if input_name not in xform_flavints:
+                        continue
+                    xform = BinnedTensorTransform(
+                        input_names=input_name,
+                        output_name=input_name,
+                        input_binning=self.input_binning,
+                        output_binning=self.transform_output_binning,
+                        xform_array=xform_array,
+                    )
+                    nominal_transforms.append(xform)
 
         return TransformSet(transforms=nominal_transforms)
 
