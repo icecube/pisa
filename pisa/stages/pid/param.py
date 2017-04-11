@@ -20,19 +20,13 @@ which has as many bins as PID signatures.
 
 
 from collections import Mapping, OrderedDict
-from copy import deepcopy
-from itertools import product
 
 import numpy as np
 
 # Note the following imports are liberal to allow for more flexible PID
 # parameterization strings specs
-from numpy import *
 import scipy as sp
-from scipy.stats import *
 
-from pisa.core.binning import OneDimBinning
-from pisa.core.map import Map, MapSet
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.fileio import from_file
@@ -181,7 +175,7 @@ class param(Stage):
             params=params,
             expected_params=expected_params,
             input_names=input_names,
-            output_names=input_names,
+            output_names=output_names,
             error_method=error_method,
             outputs_cache_depth=outputs_cache_depth,
             transforms_cache_depth=transforms_cache_depth,
@@ -209,7 +203,9 @@ class param(Stage):
         # output is passed through the `rebin` function each time it is
         # computed, and this takes care of any axis swapping necessary.
 
-        self.transform_output_binning = self.output_binning.pid * self.input_binning
+        self.transform_output_binning = (
+            self.output_binning.pid * self.input_binning
+        )
 
         self.energy_param_dict = None
         self._energy_param_hash = None
@@ -233,7 +229,7 @@ class param(Stage):
         # While output binning will have a 'pid' dimension, the remaining
         # dimensions must be the same in both input and output binnings
         for dim in self.input_binning.dims:
-            if not dim == self.output_binning[dim.name]:
+            if dim != self.output_binning[dim.name]:
                 raise NotImplementedError(
                     'Input and output dimensions %s are not equal, but stage'
                     ' %s / service %s does not implement binning up- or'
@@ -313,14 +309,7 @@ class param(Stage):
                     % (name, implicit_transform_groups)
                 )
 
-        # Create dict with one parameterization for _each_ NuFlavInt,
-        # duplicating parameterization specs as necessary
-        energy_param_dict = OrderedDict()
-        for flavintgroup, val in flavintgroup_dict.iteritems():
-            for flavint in flavintgroup:
-                energy_param_dict[flavint] = val
-
-        self.energy_param_dict = energy_param_dict
+        self.energy_param_dict = flavintgroup_dict
         self._energy_param_hash = this_hash
 
     @profile
@@ -337,8 +326,7 @@ class param(Stage):
 
             xform_array = np.empty(self.transform_output_binning.shape)
 
-            repr_flavint = xform_flavints[0]
-            all_pid_param_specs = self.energy_param_dict[repr_flavint]
+            all_pid_param_specs = self.energy_param_dict[xform_flavints]
 
             for signature, sig_param_spec in all_pid_param_specs.iteritems():
                 if isinstance(sig_param_spec, basestring):
@@ -347,15 +335,15 @@ class param(Stage):
                         raise ValueError(
                             'Group %s PID signature %s param spec "%s" does'
                             ' not evaluate to a callable.'
-                            % (xform_flavints, signature, pid_param_spec)
+                            % (xform_flavints, signature, sig_param_spec)
                         )
-                elif callable(pid_param_spec):
-                    sig_param_func = pid_param_spec
+                elif callable(sig_param_spec):
+                    sig_param_func = sig_param_spec
                 else:
                     raise TypeError(
                         'Group %s PID signature %s parameterization is a "%s"'
                         ' but must be a string or callable.'
-                        % (xform_flavints, signature, type(param_spec))
+                        % (xform_flavints, signature, type(sig_param_spec))
                     )
 
                 # Get the PID probabilities vs. energy at the energy bins'

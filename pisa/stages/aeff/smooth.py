@@ -11,12 +11,15 @@ from scipy import ndimage
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.core.binning import OneDimBinning
+from pisa.stages.aeff.hist import compute_transforms, validate_binning
 from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils.spline_smooth import spline_smooth
 
+
 __all__ = ['smooth']
+
 
 # TODO: the below logic does not generalize to muons, but probably should
 # (rather than requiring an almost-identical version just for muons). For
@@ -152,14 +155,6 @@ class smooth(Stage):
         self.include_attrs_for_hashes('particles')
         self.include_attrs_for_hashes('transform_groups')
 
-    def validate_binning(self):
-        # Only works if only true_energy and true_coszen in input binning
-        if set(self.input_binning.names) != set(['true_coszen', 'true_energy']):
-            raise ValueError('Input binning must contain both "true_energy"'
-                             ' and "true_coszen" dimension (and no more),'
-                             ' but does not.')
-        # TODO Add support for azimuth
-
     def smooth(self, xform, errors, e_binning, cz_binning):
         """Smooth a 2d array
 
@@ -235,7 +230,7 @@ class smooth(Stage):
         # what's the stat. situation here?
         rel_error = errors/xform
         rel_error = np.median(rel_error[xform != 0])
-        logging.debug('Relative errors are ~ %.2f' % rel_error)
+        logging.debug('Relative errors are ~ %.2f', rel_error)
 
         # now use gaussian smoothing on those
         # some black magic sigma values
@@ -311,7 +306,7 @@ class smooth(Stage):
         transforms = []
 
         for xform_flavints in self.transform_groups:
-            logging.info("Working on %s effective areas xform" %xform_flavints)
+            logging.info("Working on %s effective areas xform", xform_flavints)
 
             raw_hist = self.events.histogram(
                 kinds=xform_flavints,
@@ -395,45 +390,7 @@ class smooth(Stage):
 
         return TransformSet(transforms=transforms)
 
-    @profile
-    def _compute_transforms(self):
-        """Compute new effective areas transforms"""
-        # Read parameters in in the units used for computation
-        aeff_scale = self.params.aeff_scale.value.m_as('dimensionless')
-        livetime_s = self.params.livetime.value.m_as('sec')
-        logging.trace('livetime = %s --> %s sec'
-                      %(self.params.livetime.value, livetime_s))
+    # Generic methods from aeff.hist
 
-        if self.particles == 'neutrinos':
-            nutau_cc_norm = self.params.nutau_cc_norm.m_as('dimensionless')
-            if nutau_cc_norm != 1:
-                assert NuFlavIntGroup('nutau_cc') in self.transform_groups
-                assert NuFlavIntGroup('nutaubar_cc') in self.transform_groups
-
-        new_transforms = []
-        for xform_flavints in self.transform_groups:
-            repr_flav_int = xform_flavints[0]
-            flav_names = [str(flav) for flav in xform_flavints.flavs]
-            raw_transform = None
-            for transform in self.nominal_transforms:
-                if (transform.input_names[0] in flav_names
-                        and transform.output_name in xform_flavints):
-                    if raw_transform is None:
-                        scale = aeff_scale * livetime_s
-                        if (self.particles == 'neutrinos' and
-                                ('nutau_cc' in transform.output_name
-                                 or 'nutaubar_cc' in transform.output_name)):
-                            scale *= nutau_cc_norm
-                        raw_transform = transform.xform_array * scale
-
-                    new_xform = BinnedTensorTransform(
-                        input_names=transform.input_names,
-                        output_name=transform.output_name,
-                        input_binning=transform.input_binning,
-                        output_binning=transform.output_binning,
-                        xform_array=raw_transform,
-                        sum_inputs=self.sum_grouped_flavints
-                    )
-                    new_transforms.append(new_xform)
-
-        return TransformSet(new_transforms)
+    validate_binning = validate_binning
+    _compute_transforms = compute_transforms

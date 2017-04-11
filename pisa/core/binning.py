@@ -1830,7 +1830,10 @@ class MultiDimBinning(object):
         indexer = []
         for dim in self.dims:
             if dim.name in kwargs:
-                indexer.append(dim.index(kwargs[dim.name]))
+                val = kwargs[dim.name]
+                if isinstance(val, basestring):
+                    val = dim.index(val)
+                indexer.append(val)
             else:
                 indexer.append(slice(None))
         return tuple(indexer)

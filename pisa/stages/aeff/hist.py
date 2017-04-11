@@ -18,7 +18,91 @@ from pisa.utils.log import logging
 from pisa.utils.resources import find_resource
 
 
-__all__ = ['hist']
+__all__ = ['validate_binning', 'compute_transforms', 'hist']
+
+
+def validate_binning(self, must_have_dims=('true_energy',),
+                     can_have_dims=('true_energy', 'true_coszen',
+                                    'true_azimuth')):
+    """Validate binning for effective areas.
+
+    Input binning must contain `must_have_dims` and can have `can_have_dims`
+    but no other dims are allowed. Output binning dimension names must match
+    those of input binning.
+
+    """
+    for dim in must_have_dims:
+        if dim not in self.input_binning:
+            raise ValueError(
+                'Input binning must contain "%s" dimension; got %s instead.'
+                % (dim, self.input_binning.names)
+            )
+
+    excess_dims = set(self.input_binning.names).difference(set(can_have_dims))
+    if len(excess_dims) > 0:
+        raise ValueError('Input binning has extra dimension(s): %s'
+                         % sorted(excess_dims))
+
+    if set(self.input_binning.names) != set(self.output_binning.names):
+        raise ValueError(
+            'Input binning dim names (%s) do not match output binning dim'
+            ' names (%s).'
+            % (self.input_binning.names, self.output_binning.names)
+        )
+
+
+def compute_transforms(self):
+    """Compute effective area transforms, taking aeff systematics into account.
+
+    Systematics are: `aeff_scale`, `livetime`, and `nutau_cc_norm`
+
+    """
+    aeff_scale = self.params.aeff_scale.m_as('dimensionless')
+    livetime_s = self.params.livetime.m_as('sec')
+    base_scale = aeff_scale * livetime_s
+
+    logging.trace('livetime = %s --> %s sec',
+                  self.params.livetime.value, livetime_s)
+
+    if self.particles == 'neutrinos':
+        nutau_cc_norm = self.params.nutau_cc_norm.m_as('dimensionless')
+        if nutau_cc_norm != 1 and self.nutau_cc_norm_must_be_one:
+            raise ValueError(
+                '`nutau_cc_norm` = %e but can only be != 1 if nutau CC and'
+                ' nutaubar CC are separated from other flav/ints.'
+                ' Transform groups are: %s'
+                % (nutau_cc_norm, self.transform_groups)
+            )
+
+    if hasattr(self, 'sum_grouped_flavints'):
+        sum_grouped_flavints = self.sum_grouped_flavints
+    else:
+        sum_grouped_flavints = False
+
+    new_transforms = []
+    for transform in self.nominal_transforms:
+        this_scale = base_scale
+        if self.particles == 'neutrinos':
+            out_nfig = NuFlavIntGroup(transform.output_name)
+            if 'nutau_cc' in out_nfig or 'nutaubar_cc' in out_nfig:
+                this_scale *= nutau_cc_norm
+
+        if this_scale != 1:
+            aeff_transform = transform.xform_array * this_scale
+        else:
+            aeff_transform = transform.xform_array
+
+        new_xform = BinnedTensorTransform(
+            input_names=transform.input_names,
+            output_name=transform.output_name,
+            input_binning=transform.input_binning,
+            output_binning=transform.output_binning,
+            xform_array=aeff_transform,
+            sum_inputs=sum_grouped_flavints
+        )
+        new_transforms.append(new_xform)
+
+    return TransformSet(new_transforms)
 
 
 # TODO: the below logic does not generalize to muons, but probably should
@@ -166,18 +250,6 @@ class hist(Stage):
         self.include_attrs_for_hashes('particles')
         self.include_attrs_for_hashes('transform_groups')
 
-    def validate_binning(self):
-        # Only works if energy is in input_binning
-        if 'true_energy' not in self.input_binning:
-            raise ValueError('Input binning must contain "true_energy"'
-                             ' dimension, but does not.')
-        excess_dims = set(self.input_binning.names).difference(
-            set(('true_energy', 'true_coszen', 'true_azimuth'))
-        )
-        if len(excess_dims) > 0:
-            raise ValueError('Input binning has extra dimension(s): %s'
-                             %sorted(excess_dims))
-
     def _compute_nominal_transforms(self):
         self.load_events(self.params.aeff_events)
         self.cut_events(self.params.transform_events_keep_criteria)
@@ -292,43 +364,7 @@ class hist(Stage):
 
         return TransformSet(transforms=nominal_transforms)
 
-    def _compute_transforms(self):
-        """Compute new effective area transforms"""
-        aeff_scale = self.params.aeff_scale.m_as('dimensionless')
-        livetime_s = self.params.livetime.m_as('sec')
-        base_scale = aeff_scale * livetime_s
+    # Generic methods
 
-        logging.trace('livetime = %s --> %s sec',
-                      self.params.livetime.value, livetime_s)
-
-        if self.particles == 'neutrinos':
-            nutau_cc_norm = self.params.nutau_cc_norm.m_as('dimensionless')
-            if nutau_cc_norm != 1 and self.nutau_cc_norm_must_be_one:
-                raise ValueError(
-                    '`nutau_cc_norm` = %e but can only be != 1 if nutau CC and'
-                    ' nutaubar CC are separated from other flav/ints.'
-                    ' Transform groups are: %s'
-                    % (nutau_cc_norm, self.transform_groups)
-                )
-
-        new_transforms = []
-        for transform in self.nominal_transforms:
-            this_scale = base_scale
-            if self.particles == 'neutrinos':
-                out_nfig = NuFlavIntGroup(transform.output_name)
-                if 'nutau_cc' in out_nfig or 'nutaubar_cc' in out_nfig:
-                    this_scale *= nutau_cc_norm
-
-            aeff_transform = transform.xform_array * this_scale
-
-            new_xform = BinnedTensorTransform(
-                input_names=transform.input_names,
-                output_name=transform.output_name,
-                input_binning=transform.input_binning,
-                output_binning=transform.output_binning,
-                xform_array=aeff_transform,
-                sum_inputs=self.sum_grouped_flavints
-            )
-            new_transforms.append(new_xform)
-
-        return TransformSet(new_transforms)
+    validate_binning = validate_binning
+    _compute_transforms = compute_transforms
