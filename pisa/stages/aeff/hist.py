@@ -1,6 +1,10 @@
 # authors: J.Lanfranchi/P.Eller
 # date:   March 20, 2016
+"""
+Effective areas histogramming service.
 
+Histogram Monte Carlo events directly to derive the effective area transforms.
+"""
 
 import os
 
@@ -92,6 +96,21 @@ class hist(Stage):
         self.transform_groups = flavintGroupsFromString(transform_groups)
         """Particle/interaction types to group for computing transforms"""
 
+        self.nutau_cc_norm_must_be_one = False
+        """If any flav/ints besides nutau_cc and nutaubar_cc are grouped
+        with one or both of those for transforms, then a `nutau_cc_norm` != 1
+        cannot be applied."""
+
+        nutaucc_and_nutaubarcc = set(NuFlavIntGroup('nutau_cc+nutaubar_cc'))
+        for group in self.transform_groups:
+            # If nutau_cc, nutaubar_cc, or both are the group and other flavors
+            # are present, nutau_cc_norm must be one!
+            group_set = set(group)
+            if group_set.intersection(nutaucc_and_nutaubarcc) and \
+                    group_set.difference(nutaucc_and_nutaubarcc):
+                self.nutau_cc_norm_must_be_one = True
+
+        assert isinstance(sum_grouped_flavints, bool)
         self.sum_grouped_flavints = sum_grouped_flavints
 
         # All of the following params (and no more) must be passed via the
@@ -102,7 +121,6 @@ class hist(Stage):
         ]
         if particles == 'neutrinos':
             expected_params.append('nutau_cc_norm')
-
 
         if isinstance(input_names, basestring):
             input_names = input_names.replace(' ', '').split(',')
@@ -124,8 +142,8 @@ class hist(Stage):
         else:
             raise ValueError('Particle type `%s` is not valid' % self.particles)
 
-        logging.trace('transform_groups = %s' %self.transform_groups)
-        logging.trace('output_names = %s' %' :: '.join(output_names))
+        logging.trace('transform_groups = %s', self.transform_groups)
+        logging.trace('output_names = %s', ' :: '.join(output_names))
 
         # Invoke the init method from the parent class, which does a lot of
         # work for you.
@@ -199,7 +217,7 @@ class hist(Stage):
 
         nominal_transforms = []
         for xform_flavints in self.transform_groups:
-            logging.debug("Working on %s effective areas xform" %xform_flavints)
+            logging.debug('Working on %s effective areas xform', xform_flavints)
 
             aeff_transform = self.events.histogram(
                 kinds=xform_flavints,
@@ -218,15 +236,16 @@ class hist(Stage):
             aeff_transform /= (bin_volumes * missing_dims_vol)
 
             if self.debug_mode:
-                outfile = os.path.join(outdir,
-                                       'aeff_' + str(xform_flavints) + '.dill')
+                outfile = os.path.join(
+                    outdir, 'aeff_' + str(xform_flavints) + '.dill'
+                )
                 to_file(aeff_transform, outfile)
 
             # If combining grouped flavints:
-            # Create a single transform for each group and assign all flavors
-            # that contribute to the group as the transform's inputs. Combining
-            # the event rate maps will be performed by the
-            # BinnedTensorTransform object upon invocation of the `apply`
+            # Create a single transform for each group and assign all inputs
+            # that contribute to the group as the single transform's inputs.
+            # The actual sum of the input event rate maps will be performed by
+            # the BinnedTensorTransform object upon invocation of the `apply`
             # method.
             if self.sum_grouped_flavints:
                 xform_input_names = []
@@ -275,40 +294,41 @@ class hist(Stage):
 
     def _compute_transforms(self):
         """Compute new effective area transforms"""
-        # Read parameters in in the units used for computation
         aeff_scale = self.params.aeff_scale.m_as('dimensionless')
         livetime_s = self.params.livetime.m_as('sec')
-        logging.trace('livetime = %s --> %s sec'
-                      %(self.params.livetime.value, livetime_s))
+        base_scale = aeff_scale * livetime_s
+
+        logging.trace('livetime = %s --> %s sec',
+                      self.params.livetime.value, livetime_s)
 
         if self.particles == 'neutrinos':
             nutau_cc_norm = self.params.nutau_cc_norm.m_as('dimensionless')
-            if nutau_cc_norm != 1:
-                assert NuFlavIntGroup('nutau_cc') in self.transform_groups
-                assert NuFlavIntGroup('nutaubar_cc') in self.transform_groups
+            if nutau_cc_norm != 1 and self.nutau_cc_norm_must_be_one:
+                raise ValueError(
+                    '`nutau_cc_norm` = %e but can only be != 1 if nutau CC and'
+                    ' nutaubar CC are separated from other flav/ints.'
+                    ' Transform groups are: %s'
+                    % (nutau_cc_norm, self.transform_groups)
+                )
 
         new_transforms = []
-        for xform_flavints in self.transform_groups:
-            flav_names = [str(flav) for flav in xform_flavints.flavs]
-            aeff_transform = None
-            for transform in self.nominal_transforms:
-                if (transform.input_names[0] in flav_names
-                        and transform.output_name in xform_flavints):
-                    if aeff_transform is None:
-                        scale = aeff_scale * livetime_s
-                        if (self.particles == 'neutrinos' and
-                                ('nutau_cc' in transform.output_name
-                                 or 'nutaubar_cc' in transform.output_name)):
-                            scale *= nutau_cc_norm
-                        aeff_transform = transform.xform_array * scale
-                    new_xform = BinnedTensorTransform(
-                        input_names=transform.input_names,
-                        output_name=transform.output_name,
-                        input_binning=transform.input_binning,
-                        output_binning=transform.output_binning,
-                        xform_array=aeff_transform,
-                        sum_inputs=self.sum_grouped_flavints
-                    )
-                    new_transforms.append(new_xform)
+        for transform in self.nominal_transforms:
+            this_scale = base_scale
+            if self.particles == 'neutrinos':
+                out_nfig = NuFlavIntGroup(transform.output_name)
+                if 'nutau_cc' in out_nfig or 'nutaubar_cc' in out_nfig:
+                    this_scale *= nutau_cc_norm
+
+            aeff_transform = transform.xform_array * this_scale
+
+            new_xform = BinnedTensorTransform(
+                input_names=transform.input_names,
+                output_name=transform.output_name,
+                input_binning=transform.input_binning,
+                output_binning=transform.output_binning,
+                xform_array=aeff_transform,
+                sum_inputs=self.sum_grouped_flavints
+            )
+            new_transforms.append(new_xform)
 
         return TransformSet(new_transforms)
