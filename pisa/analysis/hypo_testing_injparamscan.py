@@ -22,7 +22,7 @@ import os
 import numpy as np
 
 from pisa import ureg
-from pisa.analysis.hypo_testing import HypoTesting, Labels
+from pisa.analysis.hypo_testing import HypoTesting, Labels, parse_args
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.prior import Prior
 from pisa.utils.log import logging, set_verbosity
@@ -30,211 +30,8 @@ from pisa.utils.resources import find_resource
 from pisa.utils.stats import ALL_METRICS
 
 
-def parse_args():
-    parser = ArgumentParser(
-        formatter_class=ArgumentDefaultsHelpFormatter,
-        description='''Perform the LLR analysis for calculating the NMO
-        sensitivity of the distribution made from data-settings compared with
-        hypotheses generated from template-settings.
-
-        Currently the output should be a json file containing the dictionary
-        of best fit and likelihood values.'''
-    )
-    parser.add_argument(
-        '-d', '--logdir', required=True,
-        metavar='DIR', type=str,
-        help='Directory into which to store results and metadata.'
-    )
-    parser.add_argument(
-        '-m', '--minimizer-settings',
-        type=str, metavar='MINIMIZER_CFG', required=True,
-        help='''Settings related to the optimizer used in the LLR analysis.'''
-    )
-    parser.add_argument(
-        '--no-octant-check',
-        action='store_true',
-        help='''Disable fitting hypotheses in theta23 octant opposite initial
-        octant.'''
-    )
-    parser.add_argument(
-        '--ordering-check', action='store_true',
-        help='''Fit both ordering hypotheses. This should only be flagged if 
-        the ordering is NOT the discrete hypothesis being tested'''
-    )
-    parser.add_argument(
-        '--h0-pipeline', required=True,
-        type=str, action='append', metavar='PIPELINE_CFG',
-        help='''Settings for the generation of hypothesis h0
-        distributions; repeat this argument to specify multiple pipelines.'''
-    )
-    parser.add_argument(
-        '--h0-param-selections',
-        type=str, default=None, metavar='PARAM_SELECTOR_LIST',
-        help='''Comma-separated (no spaces) list of param selectors to apply to
-        hypothesis h0's distribution maker's pipelines.'''
-    )
-    parser.add_argument(
-        '--h0-name',
-        type=str, metavar='NAME', default=None,
-        help='''Name for hypothesis h0. E.g., "NO" for normal
-        ordering in the neutrino mass ordering analysis. Note that the name
-        here has no bearing on the actual process, so it's important that you
-        be careful to use a name that appropriately identifies the
-        hypothesis.'''
-    )
-    parser.add_argument(
-        '--h1-param-selections',
-        type=str, default=None, metavar='PARAM_SELECTOR_LIST',
-        help='''Comma-separated (no spaces) list of param selectors to apply to
-        hypothesis h1 distribution maker's pipelines. The h1 pipeline is forced
-        to be the h0 pipeline in these tests.'''
-    )
-    parser.add_argument(
-        '--h1-name',
-        type=str, metavar='NAME', default=None,
-        help='''Name for hypothesis h1. E.g., "IO" for inverted
-        ordering in the neutrino mass ordering analysis. Note that the name
-        here has no bearing on the actual process, so it's important that you
-        be careful to use a name that appropriately identifies the
-        hypothesis.'''
-    )
-    parser.add_argument(
-        '--data-param-selections',
-        type=str, default=None, metavar='PARAM_SELECTOR_LIST',
-        help='''Comma-separated list of param selectors to apply to the data
-        distribution maker's pipelines. If --data-param-selections are not
-        specified then they are copied from --h0-param-selections. The data 
-        pipeline is forced to be the h0 pipeline in these tests.'''
-    )
-    parser.add_argument(
-        '--data-name',
-        type=str, metavar='NAME', default=None,
-        help='''Name for the data. E.g., "NO" for normal ordering in the
-        neutrino mass ordering analysis. Note that the name here has no bearing
-        on the actual process, so it's important that you be careful to use a
-        name that appropriately identifies the hypothesis.'''
-    )
-    parser.add_argument(
-        '--metric',
-        type=str, default=None, metavar='METRIC',
-        help='''Name of metric to use for optimizing the fit.'''
-    )
-    parser.add_argument(
-        '--other-metric',
-        type=str, default=None, metavar='METRIC', action='append',
-        choices=['all'] + sorted(ALL_METRICS),
-        help='''Name of another metric to evaluate at the best-fit point. Must
-        be either "all" or a metric specified in ALL_METRICS. Repeat this
-        argument (or use "all") to specify multiple metrics.'''
-    )
-    parser.add_argument(
-        '--allow-dirty',
-        action='store_true',
-        help='''Warning: Use with caution. (Allow for run despite dirty
-        repository.)'''
-    )
-    parser.add_argument(
-        '--allow-no-git-info',
-        action='store_true',
-        help='''*** DANGER! Use with extreme caution! (Allow for run despite
-        complete inability to track provenance of code.)'''
-    )
-    parser.add_argument(
-        '--no-minimizer-history',
-        action='store_true',
-        help='''Do not store minimizer history (steps). This behavior is also
-        enforced if --blind is specified.'''
-    )
-    parser.add_argument(
-        '--param_name',
-        type=str, metavar='NAME', required=True,
-        help='''Name of param to scan over. This must be in the config files 
-        defined above. One exception is that you can define this as 
-        `sin2theta23` and it will be interpreted not as theta23 values but as 
-        the square of the sine of theta23 values instead.'''
-    )
-    parser.add_argument(
-        '--inj_vals',
-        type=str, required=True,
-        help='''List of values to inject as true points in the parameter 
-        defined above. Must be something that numpy can interpret. In this 
-        script, numpy is imported as np so please use np in your string. An 
-        example would be np.linspace(0.35,0.65,31).'''
-    )
-    parser.add_argument(
-        '--inj_units',
-        type=str, required=True,
-        help='''A string to be able to deal with the units in the parameter 
-        scan and make sure that they match those in the config files. Even if 
-        the parameter is dimensionless this must be stated.'''
-    )
-    parser.add_argument(
-        '--use-inj-prior', action='store_true',
-        help='''Generally, one should not use a prior on the parameter of 
-        interest here since the Asimov analysis breaks down with the use of 
-        non-central prior i.e. injecting a truth that differs from the centre 
-        of the prior. Flag this to force the prior to be left on.'''
-    )
-    parser.add_argument(
-        '--pprint',
-        action='store_true',
-        help='''Live-updating one-line vew of metric and parameter values. (The
-        latter are not displayed if --blind is specified.)'''
-    )
-    parser.add_argument(
-        '-v', action='count', default=None,
-        help='set verbosity level'
-    )
-    return parser.parse_args()
-
-
-# TODO: make this work with Python package resources, not merely absolute
-# paths! ... e.g. hash on the file or somesuch?
-# TODO: move to a central loc prob. in utils
-def normcheckpath(path, checkdir=False):
-    normpath = find_resource(path)
-    if checkdir:
-        kind = 'dir'
-        check = os.path.isdir
-    else:
-        kind = 'file'
-        check = os.path.isfile
-
-    if not check(normpath):
-        raise IOError('Path "%s" which resolves to "%s" is not a %s.'
-                      %(path, normpath, kind))
-    return normpath
-
-
 def main():
-    args = parse_args()
-    init_args_d = vars(args)
-
-    # NOTE: Removing extraneous args that won't get passed to instantiate the
-    # HypoTesting object via dictionary's `pop()` method.
-
-    set_verbosity(init_args_d.pop('v'))
-    init_args_d['check_octant'] = not init_args_d.pop('no_octant_check')
-    init_args_d['check_ordering'] = init_args_d.pop('ordering_check')
-
-    init_args_d['data_is_data'] = False
-
-    init_args_d['store_minimizer_history'] = (
-        not init_args_d.pop('no_minimizer_history')
-    )
-
-    other_metrics = init_args_d.pop('other_metric')
-    if other_metrics is not None:
-        other_metrics = [s.strip().lower() for s in other_metrics]
-        if 'all' in other_metrics:
-            other_metrics = sorted(ALL_METRICS)
-        if init_args_d['metric'] in other_metrics:
-            other_metrics.remove(init_args_d['metric'])
-        if len(other_metrics) == 0:
-            other_metrics = None
-        else:
-            logging.info('Will evaluate other metrics %s' %other_metrics)
-        init_args_d['other_metrics'] = other_metrics
+    init_args_d = parse_args(injparamscan=True)
 
     # Normalize and convert `*_pipeline` filenames; store to `*_maker`
     # (which is argument naming convention that HypoTesting init accepts).
@@ -259,9 +56,6 @@ def main():
         else:
             ps_list = [x.strip().lower() for x in ps_str.split(',')]
         init_args_d[ps_name] = ps_list
-
-    init_args_d['fluctuate_data'] = False
-    init_args_d['fluctuate_fid'] = False
 
     init_args_d['data_maker'] = init_args_d['h0_maker']
     init_args_d['h1_maker'] = init_args_d['h0_maker']

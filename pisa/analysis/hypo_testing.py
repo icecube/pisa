@@ -1485,7 +1485,7 @@ class HypoTesting(Analysis):
                 sort_keys=False)
 
 
-def parse_args(description=__doc__):
+def parse_args(description=__doc__, injparamscan=False):
     """Parse command line args.
 
     Returns
@@ -1533,18 +1533,21 @@ def parse_args(description=__doc__):
         help='''Fit both ordering hypotheses. This should only be flagged if
         the ordering is NOT the discrete hypothesis being tested'''
     )
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        '--data-is-data', action='store_true',
-        help='''Data pipeline is based upon actual, measured data. The naming
-        scheme for stored results is chosen accordingly.'''
-    )
-    group.add_argument(
-        '--data-is-mc', action='store_true',
-        help='''Data pipeline is based upon Monte Carlo simulation, and not
-        actual data. The naming scheme for stored results is chosen
-        accordingly. If this is selected, --fluctuate-data is forced off.'''
-    )
+    # Data cannot be data for MC studies e.g. injected parameter scans so these
+    # arguments are redundant there.
+    if not injparamscan:
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument(
+            '--data-is-data', action='store_true',
+            help='''Data pipeline is based upon actual, measured data. The
+            naming scheme for stored results is chosen accordingly.'''
+        )
+        group.add_argument(
+            '--data-is-mc', action='store_true',
+            help='''Data pipeline is based upon Monte Carlo simulation, and not
+            actual data. The naming scheme for stored results is chosen
+            accordingly. If this is selected, --fluctuate-data is forced off.'''
+        )
     parser.add_argument(
         '--h0-pipeline', required=True,
         type=str, action='append', metavar='PIPELINE_CFG',
@@ -1618,22 +1621,25 @@ def parse_args(description=__doc__):
         on the actual process, so it's important that you be careful to use a
         name that appropriately identifies the hypothesis.'''
     )
-    parser.add_argument(
-        '--fluctuate-data',
-        action='store_true',
-        help='''Apply fluctuations to the data distribution. This should *not*
-        be set for analyzing "real" (measured) data, and it is common to not
-        use this feature even for Monte Carlo analysis. Note that if this is
-        not set, --num-data-trials and --data-start-ind are forced to 1 and 0,
-        respectively.'''
-    )
-    parser.add_argument(
-        '--fluctuate-fid',
-        action='store_true',
-        help='''Apply fluctuations to the fiducaial distributions. If this flag
-        is not set, --num-fid-trials and --fid-start-ind are forced to 1 and 0,
-        respectively.'''
-    )
+    # For the injected parameter scan, only the Asimov analysis should be used,
+    # so these arguments are not needed.
+    if not injparamscan:
+        parser.add_argument(
+            '--fluctuate-data',
+            action='store_true',
+            help='''Apply fluctuations to the data distribution. This should 
+            *not* be set for analyzing "real" (measured) data, and it is common
+            to not use this feature even for Monte Carlo analysis. Note that if
+            this is not set, --num-data-trials and --data-start-ind are forced
+            to 1 and 0, respectively.'''
+        )
+        parser.add_argument(
+            '--fluctuate-fid',
+            action='store_true',
+            help='''Apply fluctuations to the fiducaial distributions. If this
+            flag is not set, --num-fid-trials and --fid-start-ind are forced to
+            1 and 0, respectively.'''
+        )
     parser.add_argument(
         '--metric',
         type=str, default=None, metavar='METRIC',
@@ -1648,40 +1654,45 @@ def parse_args(description=__doc__):
         be either 'all' or one of %s. Repeat this argument (or use 'all') to
         specify multiple metrics.''' % (ALL_METRICS,)
     )
-    parser.add_argument(
-        '--num-data-trials',
-        type=int, default=1,
-        help='''When performing Monte Carlo analysis, set to > 1 to produce
-        multiple pseudodata distributions from the data distribution maker's
-        Asimov distribution. This is overridden if --fluctuate-data is not
-        set (since each data distribution will be identical if it is not
-        fluctuated). This is typically left at 1 (i.e., the Asimov distribution
-        is assumed to be representative.'''
-    )
-    parser.add_argument(
-        '--data-start-ind',
-        type=int, default=0,
-        help='''Fluctated data set index.'''
-    )
-    parser.add_argument(
-        '--num-fid-trials',
-        type=int, default=1,
-        help='''Number of fiducial pseudodata trials to run. In our experience,
-        it takes ~10^3-10^5 fiducial psuedodata trials to achieve low
-        uncertainties on the resulting significance, though that exact number
-        will vary based upon the details of an analysis.'''
-    )
-    parser.add_argument(
-        '--fid-start-ind',
-        type=int, default=0,
-        help='''Fluctated fiducial data index.'''
-    )
-    parser.add_argument(
-        '--blind',
-        action='store_true',
-        help='''Blinded analysis. Do not show parameter values or store to
-        logfiles.'''
-    )
+    if not injparamscan:
+        parser.add_argument(
+            '--num-data-trials',
+            type=int, default=1,
+            help='''When performing Monte Carlo analysis, set to > 1 to produce
+            multiple pseudodata distributions from the data distribution maker's
+            Asimov distribution. This is overridden if --fluctuate-data is not
+            set (since each data distribution will be identical if it is not
+            fluctuated). This is typically left at 1 (i.e., the Asimov
+            distribution is assumed to be representative.'''
+        )
+        parser.add_argument(
+            '--data-start-ind',
+            type=int, default=0,
+            help='''Fluctated data set index.'''
+        )
+        parser.add_argument(
+            '--num-fid-trials',
+            type=int, default=1,
+            help='''Number of fiducial pseudodata trials to run. In our
+            experience, it takes ~10^3-10^5 fiducial psuedodata trials to 
+            achieve low uncertainties on the resulting significance, though
+            that exact number will vary based upon the details of an 
+            analysis.'''
+        )
+        parser.add_argument(
+            '--fid-start-ind',
+            type=int, default=0,
+            help='''Fluctated fiducial data index.'''
+        )
+    # A blind analysis only makes sense when the possibility of actually
+    # analysing data is available.
+    if not injparamscan:
+        parser.add_argument(
+            '--blind',
+            action='store_true',
+            help='''Blinded analysis. Do not show parameter values or store to
+            logfiles.'''
+        )
     parser.add_argument(
         '--allow-dirty',
         action='store_true',
@@ -1749,7 +1760,12 @@ def parse_args(description=__doc__):
     init_args_d['check_octant'] = not init_args_d.pop('no_octant_check')
     init_args_d['check_ordering'] = init_args_d.pop('ordering_check')
 
-    init_args_d['data_is_data'] = not init_args_d.pop('data_is_mc')
+    if not injparamscan:
+        init_args_d['data_is_data'] = not init_args_d.pop('data_is_mc')
+    else:
+        init_args_d['data_is_data'] = False
+        init_args_d['fluctuate_data'] = False
+        init_args_d['fluctuate_fid'] = False
 
     init_args_d['store_minimizer_history'] = (
         not init_args_d.pop('no_min_history')
