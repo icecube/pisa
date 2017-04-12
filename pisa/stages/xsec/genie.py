@@ -151,7 +151,7 @@ class genie(Stage):
             transform_groups = flavintGroupsFromString(transform_groups)
             output_names = []
             for grp in transform_groups:
-                flavints = [str(g) for g in grp.flavints()]
+                flavints = [str(g) for g in grp.flavints]
                 if set(flavints).intersection(all_names) \
                    and str(grp) not in output_names:
                     output_names.append(str(grp))
@@ -219,13 +219,13 @@ class genie(Stage):
 
         nominal_transforms = []
         for flav_int_group in self.transform_groups:
-            flav_names = [str(flav) for flav in flav_int_group.flavs()]
+            flav_names = [str(flav) for flav in flav_int_group.flavs]
             for input_name in self.input_names:
                 if input_name not in flav_names:
                     continue
 
                 xform_array = []
-                for flav_int in flav_int_group.flavints():
+                for flav_int in flav_int_group.flavints:
                     if flav_int in xsec_transforms:
                         xform_array.append(xsec_transforms[flav_int])
                 xform_array = reduce(add, xform_array)

@@ -136,5 +136,5 @@ def test_get_random_state():
 
 
 if __name__ == '__main__':
-    set_verbosity(3)
-    test_get_random_state()
+    set_verbosity(1)
+    #test_get_random_state()

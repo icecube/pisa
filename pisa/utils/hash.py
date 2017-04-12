@@ -6,6 +6,7 @@ Utilities for hashing objects.
 
 import base64
 import cPickle as pickle
+#import dill
 import hashlib
 import struct
 from collections import Sequence
@@ -106,20 +107,25 @@ def hash_obj(obj, hash_to='int', full_hash=True):
         try:
             pkl = pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
         except:
+            # Iterate through each element if obj is a Sequence
             if isinstance(obj, Sequence):
-                obj_2 = []
-                for el in obj:
+                # Store hash of each element
+                hash_list = []
+                for ele in obj:
                     try:
-                        a = pickle.dumps(el, pickle.HIGHEST_PROTOCOL)
-                        obj_2.append(el)
+                        # Try to get hash using pickle
+                        a = pickle.dumps(ele, pickle.HIGHEST_PROTOCOL)
+                        hash_list.append(ele)
                     except:
+                        # Otherwise try to get hash from property
                         try:
-                            obj_2.append(el.state_hash)
+                            hash_list.append(ele.hash)
                         except:
                             pass
                         pass
+                # Get hash values by pickling the hash list
                 try:
-                    pkl = pickle.dumps(obj_2, pickle.HIGHEST_PROTOCOL)
+                    pkl = pickle.dumps(hash_list, pickle.HIGHEST_PROTOCOL)
                 except:
                     logging.error('Failed to pickle `obj` "%s" of type "%s"'
                                   %(obj, type(obj)))

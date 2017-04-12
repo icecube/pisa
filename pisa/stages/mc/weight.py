@@ -819,9 +819,9 @@ class weight(Stage):
         osc_weights = OrderedDict()
         for fig in nu_data.iterkeys():
             flavint = NuFlavInt(fig)
-            pdg = abs(flavint.flavCode())
-            kNuBar = 1 if flavint.isParticle() else -1
-            p = '' if flavint.isParticle() else 'bar'
+            pdg = abs(flavint.flavCode)
+            kNuBar = 1 if flavint.isParticle else -1
+            p = '' if flavint.isParticle else 'bar'
             if pdg == 12:
                 kFlav = 0
             elif pdg == 14:

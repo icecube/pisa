@@ -14,7 +14,7 @@ import re
 import numpy as np
 import pint
 
-from pisa import ureg
+from pisa import FTYPE, ureg
 from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
 from pisa.utils.log import logging, set_verbosity
 
@@ -144,7 +144,7 @@ def list2hrlist(lst):
     if isinstance(lst, numbers.Number):
         lst = [lst]
     lst = sorted(lst)
-    rtol = np.finfo(float).resolution
+    rtol = np.finfo(FTYPE).resolution
     n = len(lst)
     result = []
     scan = 0
@@ -174,7 +174,7 @@ def hrgroup2list(hrgroup):
     def isint(num):
         """Test whether a number is *functionally* an integer"""
         try:
-            return int(num) == float(num)
+            return int(num) == FTYPE(num)
         except ValueError:
             return False
 
@@ -184,7 +184,7 @@ def hrgroup2list(hrgroup):
                 return int(num)
         except (ValueError, TypeError):
             pass
-        return float(num)
+        return FTYPE(num)
 
     # Strip all whitespace, brackets, parens, and other ignored characters from
     # the group string
@@ -238,7 +238,8 @@ def hrlist2list(hrlst):
     lst = []
     if len(groups) == 0:
         return lst
-    [lst.extend(hrgroup2list(g)) for g in groups]
+    for group in groups:
+        lst.extend(hrgroup2list(group))
     return lst
 
 
@@ -326,8 +327,8 @@ def engfmt(n, sigfigs=3, decimals=None, sign_always=False):
         only negative numbers are prefixed with a sign ("-")
 
     """
-    prefixes = {-18:'a', -15:'f', -12:'p', -9:'n', -6:'u', -3:'m', 0:'',
-                3:'k', 6:'M', 9:'G', 12:'T', 15:'P', 18:'E'}
+    prefixes = {-18: 'a', -15: 'f', -12: 'p', -9: 'n', -6: 'u', -3: 'm', 0: '',
+                3: 'k', 6: 'M', 9: 'G', 12: 'T', 15: 'P', 18: 'E'}
     if isinstance(n, pint.quantity._Quantity):
         units = n.units
         n = n.magnitude
@@ -398,7 +399,7 @@ def text2tex(txt):
 
     nfig = NuFlavIntGroup(txt)
     if len(nfig) > 0:
-        return nfig.tex()
+        return nfig.tex
 
     for c in TEX_BACKSLASH_CHARS:
         txt = txt.replace(c, r'\%s'%c)
@@ -433,7 +434,10 @@ def dollars(s):
     out_lines = []
     for line in stripped.split('\n'):
         stripped_line = strip_outer_dollars(line)
-        out_lines.append('$%s$' % stripped_line)
+        if stripped_line == '':
+            out_lines.append('')
+        else:
+            out_lines.append('$%s$' % stripped_line)
     return '\n'.join(out_lines)
 
 
@@ -505,6 +509,8 @@ def hash2hex(hash, bits=64):
 
 
 def strip_outer_dollars(value):
+    if value is None:
+        return '{}'
     value = value.strip()
     m = re.match(r'^\$(.*)\$$', value)
     if m is not None:
@@ -513,6 +519,8 @@ def strip_outer_dollars(value):
 
 
 def strip_outer_parens(value):
+    if value is None:
+        return ''
     value = value.strip()
     m = re.match(r'^\{\((.*)\)\}$', value)
     if m is not None:
@@ -523,6 +531,10 @@ def strip_outer_parens(value):
     return value
 
 
+# TODO: this is relatively slow (and is called in constructors that are used
+# frequently, e.g. OneDimBinning, MultiDimBinning); can we speed it up any?
+RE_INVALID_CHARS = re.compile('[^0-9a-zA-Z_]')
+RE_LEADING_INVALID = re.compile('^[^a-zA-Z_]+')
 def make_valid_python_name(name):
     """Make a name a valid Python identifier.
 
@@ -530,9 +542,9 @@ def make_valid_python_name(name):
 
     """
     # Remove invalid characters
-    name = re.sub('[^0-9a-zA-Z_]', '', name)
+    name = RE_INVALID_CHARS.sub('', name)
     # Remove leading characters until we find a letter or underscore
-    name = re.sub('^[^a-zA-Z_]+', '', name)
+    name = RE_LEADING_INVALID.sub('', name)
     return name
 
 

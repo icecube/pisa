@@ -15,14 +15,14 @@ from copy import deepcopy
 import os
 import sys
 
-from pisa import ureg, Q_
+from pisa import PYCUDA_AVAIL, ureg, Q_
 from pisa.core.map import MapSet
 from pisa.core.pipeline import Pipeline
 from pisa.utils.config_parser import parse_pipeline_config
 from pisa.utils.fileio import from_file
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
-from pisa.utils.tests import has_cuda, print_agreement, check_agreement, plot_comparisons
+from pisa.utils.tests import print_agreement, check_agreement, plot_comparisons
 
 
 __all__ = ['consistency_test', 'compare_baseline', 'compare_systematics', 'main']
@@ -209,13 +209,13 @@ def main():
                         plots. If this is not reached the tests will fail. This
                         test is only important if any ratios return inf.''')
     parser.add_argument('-v', action='count', default=None,
-                        help='set verbosity level')
+                        help='''Set verbosity level; default is 1, so only -vv
+                        or -vvv has an effect.''')
     args = parser.parse_args()
+    args.v = min(1, args.v)
     set_verbosity(args.v)
 
-    cuda_present = has_cuda()
-
-    if not has_cuda():
+    if not PYCUDA_AVAIL:
         raise RuntimeError('This system does not have a GPU so these tests '
                            'cannot be performed. Aborting')
 

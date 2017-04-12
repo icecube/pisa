@@ -6,7 +6,7 @@ In Ubuntu you can peform the following steps to perform a clean, full (all optio
 
 ```bash
 # Install required and optional system packages
-sudo apt-get install git swig libhdf5-10 llvm-dev python2.7 python-pip virtualenv
+sudo apt-get install git swig libhdf5-10 llvm-3.9-dev python2.7 python-pip virtualenv
 
 # Create and activate a virtual environment: so fresh and so clean
 virtualenv my_virtual_env
@@ -18,11 +18,6 @@ mkdir my_virtual_env/src
 # Obtain the PISA sourcecode (must have access to the WIPACrepo/pisa repo)
 git clone https://github.com/jllanfranchi/pisa.git --branch cake \
     --single-branch my_virtual_env/src/pisa
-
-# If you want to install numba to accelerate certain pieces of code (highly
-# recommended!), you have to manually install enum34 first
-# (see Issue 253: https://github.com/jllanfranchi/pisa/issues/253)
-pip install enum34
 
 # Install PISA and its python package dependencies (optional dependency
 # categories are in brackets). Note that sometimes an install issue with the
@@ -121,7 +116,7 @@ Optional dependencies. Some of these must be installed manually prior to install
   * Anaconda<br>
     `conda install numba`
   * In Ubuntu,<br>
-    `sudo apt-get install llvm-dev`
+    `sudo apt install llvm-3.9-dev`
 * [virtualenv](https://virtualenv.pypa.io/en/stable/) Use virtual environments to e.g. create a "clean" installation and/or to have multiple multiple versions installed, one version per virtual environment. To speed up installation (at the cost of a less "clean" environment), you can specify the `--system-site-packages` option to `virtualenv` to make use of already-installed Python packages.
   * Anaconda<br>
     `conda install virtualenv`
@@ -132,7 +127,6 @@ Optional dependencies. Some of these must be installed manually prior to install
 * [PyROOT](https://root.cern.ch/pyroot) Necessary to read ROOT cross sections files; must install ROOT on your system in addition to PyROOT. There is no `pip` package for either.
   * Ubuntu 15.x and 16.04:<br>
     `sudo apt-get install root-system libroot-bindings-python*`
-* [enum34](https://pypi.python.org/pypi/enum34) Required for numba, and for some reason pip is not installing this as a dependency automatically, so it must be installed manually.
 * [numba](http://numba.pydata.org) Just-in-time compilation of decorated Python functions to native machine code via LLVM. This can accelerate certain routines significantly. If not using Anaconda to install, you must have LLVM installed already on your system (see above).
   * Installed alongside PISA if you specify option `['numba']` to `pip`
 * [PyCUDA](https://mathema.tician.de/software/pycuda): run certain routines on Nvidia CUDA GPUs (must have compute 2.0 or greater capability)<br>
@@ -291,16 +285,9 @@ __Notes:__
 
 ### Reinstall PISA
 
-* To remove any compiled bits to ensure they get recompiled:
-  ```bash
-  cd $PISA
-  python setup.py clean --all
-  pip install --editable $PISA -r $PISA/requirements.txt
-  ```
-* To just reinstall the Python bits (and only build binaries if they don't already exist)
-  ```bash
-  pip install --editable $PISA -r $PISA/requirements.txt --upgrade
-  ```
+```bash
+pip install --editable $PISA -r $PISA/requirements.txt --force-reinstall
+```
 
 ### Compiling the Documentation
 
@@ -322,9 +309,9 @@ cd $PISA/docs && make html
 Throughout the codebase there are `test_*.py` files and `test_*` functions within various `*.py` files that represent unit tests.
 Unit tests are designed to ensure that the basic mechanisms of objects' functionality work.
 
-These are not automatically run, but can be invoked via
+These are all run, plus additional tests (takes about 15-20 minutes on a laptop) with the command
 ```bash
-python <python_file>
+$PISA/tests/test_command_lines.sh
 ```
 
 #### Physics Tests

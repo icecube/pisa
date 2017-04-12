@@ -20,15 +20,13 @@ from pisa.core.map import MapSet
 from pisa.core.pipeline import Pipeline
 from pisa.core.param import ParamSet
 from pisa.utils.betterConfigParser import BetterConfigParser
-from pisa.utils.fileio import expandPath, mkdir, to_file
+from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import set_verbosity, logging
 from pisa.utils.random_numbers import get_random_state
 
 
-__all__ = ['DistributionMaker',
-           'test_DistributionMaker',
-           'parse_args', 'main']
+__all__ = ['DistributionMaker', 'test_DistributionMaker', 'parse_args', 'main']
 
 
 class DistributionMaker(object):
@@ -110,7 +108,8 @@ class DistributionMaker(object):
         return outputs
 
     def update_params(self, params):
-        [pipeline.update_params(params) for pipeline in self]
+        for pipeline in self:
+            pipeline.update_params(params)
 
     def select_params(self, selections, error_on_missing=True):
         successes = 0
@@ -125,8 +124,9 @@ class DistributionMaker(object):
 
             if error_on_missing and successes == 0:
                 raise KeyError(
-                    'None of the selections %s found in any pipeline in this'
-                    ' distribution maker' %(selections,)
+                    'None of the stages from any pipeline in this distribution'
+                    ' maker has all of the selections %s available.'
+                    %(selections,)
                 )
         else:
             for pipeline in self:
@@ -134,8 +134,8 @@ class DistributionMaker(object):
                 if not len(possible_selections) == 0:
                     logging.warn("Although you didn't make a parameter "
                                  "selection, the following were available: %s."
-                                 " This may cause issues."
-                                 %(possible_selections))
+                                 " This may cause issues.",
+                                 possible_selections)
 
     @property
     def pipelines(self):
@@ -144,13 +144,15 @@ class DistributionMaker(object):
     @property
     def params(self):
         params = ParamSet()
-        [params.extend(pipeline.params) for pipeline in self]
+        for pipeline in self:
+            params.extend(pipeline.params)
         return params
 
     @property
     def param_selections(self):
         selections = set()
-        [selections.update(pipeline.param_selections) for pipeline in self]
+        for pipeline in self:
+            selections.update(pipeline.param_selections)
         return sorted(selections)
 
     @property
@@ -197,15 +199,18 @@ class DistributionMaker(object):
 
     def reset_all(self):
         """Reset both free and fixed parameters to their nominal values."""
-        [p.params.reset_all() for p in self]
+        for p in self:
+            p.params.reset_all()
 
     def reset_free(self):
         """Reset only free parameters to their nominal values."""
-        [p.params.reset_free() for p in self]
+        for p in self:
+            p.params.reset_free()
 
     def set_nominal_by_current_values(self):
         """Define the nominal values as the parameters' current values."""
-        [p.params.set_nominal_by_current_values() for p in self]
+        for p in self:
+            p.params.set_nominal_by_current_values()
 
     def _set_rescaled_free_params(self, rvalues):
         """Set free param values given a simple list of [0,1]-rescaled,
@@ -225,6 +230,7 @@ class DistributionMaker(object):
 
 
 def test_DistributionMaker():
+    """Unit tests for DistributionMaker"""
     #
     # Test: select_params and param_selections
     #
@@ -299,6 +305,7 @@ def test_DistributionMaker():
 
 
 def parse_args():
+    """Get command line arguments"""
     parser = ArgumentParser(
         description='''Generate, store, and plot a distribution from pipeline
         configuration file(s).''',
@@ -310,9 +317,9 @@ def parse_args():
         help='''Settings file for each pipeline (repeat for multiple).'''
     )
     parser.add_argument(
-        '--select', metavar='PARAM_SELECTIONS', type=str, required=False,
-        help='''Comma-separated list of param selectors to use (overriding any
-        defaults in the config file).'''
+        '--select', metavar='PARAM_SELECTIONS', nargs='+', default=None,
+        help='''Param selectors (separated by spaces) to use to override any
+        defaults in the config file.'''
     )
     parser.add_argument(
         '--return-sum', action='store_true',
@@ -341,6 +348,8 @@ def parse_args():
 
 
 def main(return_outputs=False):
+    """Main; call as script with `return_outputs=False` or interactively with
+    `return_outputs=True`"""
     from pisa.utils.plotter import Plotter
     args = parse_args()
     set_verbosity(args.v)
@@ -352,15 +361,14 @@ def main(return_outputs=False):
 
     distribution_maker = DistributionMaker(pipelines=args.pipeline)
     if args.select is not None:
-        selectors = [s.strip() for s in args.select.split(',')]
-        distribution_maker.select_params(selectors)
+        distribution_maker.select_params(args.select)
 
     outputs = distribution_maker.get_outputs(return_sum=args.return_sum)
     if args.dir:
         # TODO: unique filename: append hash (or hash per pipeline config)
         fname = 'distribution_maker_outputs.json.bz2'
         mkdir(args.dir)
-        fpath = expandPath(os.path.join(args.dir, fname))
+        fpath = expand(os.path.join(args.dir, fname))
         to_file(outputs, fpath)
 
     if args.dir and len(plot_formats) > 0:
@@ -369,8 +377,11 @@ def main(return_outputs=False):
             fmt=plot_formats, log=False,
             annotate=False
         )
-        #my_plotter.ratio = True
-        my_plotter.plot_2d_array(outputs, fname='dist_output', cmap='OrRd')
+        for num, output in enumerate(outputs):
+            my_plotter.plot_2d_array(
+                output,
+                fname='dist_output_%d' % num
+            )
 
     if return_outputs:
         return distribution_maker, outputs

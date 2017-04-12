@@ -13,7 +13,7 @@ import os
 
 from pisa import CACHE_DIR
 from pisa.core.events import Events
-from pisa.core.map import MapSet
+from pisa.core.map import Map, MapSet
 from pisa.core.param import Param, ParamSelector
 from pisa.core.transform import TransformSet
 from pisa.utils.cache import DiskCache, MemoryCache
@@ -198,6 +198,7 @@ class Stage(object):
 
         self.input_binning = input_binning
         self.output_binning = output_binning
+        self.validate_binning()
         self._source_code_hash = None
 
         # Storage of latest transforms and outputs; default to empty
@@ -295,6 +296,10 @@ class Stage(object):
                 self.include_attrs_for_hashes(attr)
             except ValueError():
                 pass
+
+        self.inputs = None
+        self.events = None
+        self.nominal_transforms = None
 
         # Define useful flags and values for debugging behavior after running
 
@@ -437,10 +442,11 @@ class Stage(object):
         # Compute nominal transforms; if feature is not used, this doesn't
         # actually do much of anything. To do more than this, override the
         # `_compute_nominal_transforms` method.
-        nominal_transforms, nominal_transforms_hash = \
-                self.get_nominal_transforms(
-                    nominal_transforms_hash=nominal_transforms_hash
-                )
+        _, nominal_transforms_hash = (
+            self.get_nominal_transforms(
+                nominal_transforms_hash=nominal_transforms_hash
+            )
+        )
 
         # Generate hash from param values
         if transforms_hash is None:
@@ -493,10 +499,13 @@ class Stage(object):
         nominal_outputs, hash
 
         """
-        if self.nominal_outputs_hash is None \
-           or self.nominal_outputs_hash != self._derive_nominal_outputs_hash():
+        if nominal_outputs_hash is None:
+            nominal_outputs_hash = self._derive_nominal_outputs_hash()
+
+        if (self.nominal_outputs_hash is None
+                or self.nominal_outputs_hash != nominal_outputs_hash):
             self._compute_nominal_outputs()
-            self.nominal_outputs_hash = self._derive_nominal_outputs_hash()
+            self.nominal_outputs_hash = nominal_outputs_hash
 
     @profile
     def get_outputs(self, inputs=None):
@@ -554,7 +563,6 @@ class Stage(object):
             logging.trace('Loading outputs from cache.')
             outputs = self.outputs_cache[outputs_hash]
         else:
-            self.outputs_computed = True
             logging.trace('Need to compute outputs...')
 
             if self.use_transforms:
@@ -565,8 +573,13 @@ class Stage(object):
 
             logging.trace('... now computing outputs.')
             outputs = self._compute_outputs(inputs=self.inputs)
-            outputs.hash = outputs_hash
             self.check_outputs(outputs)
+
+            if isinstance(outputs, (Map, MapSet)):
+                outputs = outputs.rebin(self.output_binning)
+
+            outputs.hash = outputs_hash
+            self.outputs_computed = True
 
             # Store output to cache
             if self.outputs_cache is not None and outputs_hash is not None:
@@ -586,12 +599,19 @@ class Stage(object):
         if len(unused_input_names) == 0:
             return outputs
 
+        # TODO: update logic for Data object, generic sideband objects
         # Create a new output container different from `outputs` but copying
         # the contents, for purposes of attaching the sideband objects found.
-        augmented_outputs = MapSet(outputs)
-        [augmented_outputs.append(inputs[name]) for name in unused_input_names]
+        if isinstance(outputs, MapSet):
+            augmented_outputs = MapSet(outputs)
+            for name in unused_input_names:
+                augmented_outputs.append(inputs[name])
 
-        return augmented_outputs
+            return augmented_outputs
+        else:
+            raise TypeError('Outputs are %s, but must currently be a MapSet in'
+                            ' the case that the input includes sideband'
+                            ' objects.' % type(outputs))
 
     @profile
     def _check_params(self, params):
@@ -640,17 +660,27 @@ class Stage(object):
 
     @profile
     def check_outputs(self, outputs):
-        assert set(outputs.names) == set(self.output_names), \
-                "Outputs: " + str(outputs.names) + \
+        if set(outputs.names) != set(self.output_names):
+            raise ValueError(
+                "Outputs: " + str(outputs.names) +
                 "\nStage outputs: " + str(self.output_names)
+            )
 
     def select_params(self, selections, error_on_missing=False):
+        """Apply the `selections` to contained ParamSet.
+
+        Parameters
+        ----------
+        selections : string or iterable
+        error_on_missing : bool
+
+        """
         try:
             self._param_selector.select_params(
                 selections, error_on_missing=True
             )
         except KeyError:
-            msg = 'None of the selections %s found in this pipeline.' \
+            msg = 'Not all of the selections %s found in this stage.' \
                     %(selections,)
             if error_on_missing:
                 #logging.error(msg)
@@ -661,6 +691,15 @@ class Stage(object):
                           %(selections, self.params))
 
     def load_events(self, events):
+        """Load events from path given by `events`. Stored as `self.events`.
+
+        Parameters
+        ----------
+        events : string or Events object
+            If string, load events from that location. If Events object,
+            deepcopy to obtain `self.events`
+
+        """
         if isinstance(events, Param):
             events = events.value
         elif isinstance(events, basestring):
@@ -668,20 +707,35 @@ class Stage(object):
         this_hash = hash_obj(events, full_hash=self.full_hash)
         if self._events_hash is not None and this_hash == self._events_hash:
             return
-        logging.debug('Extracting events from Events obj or file: %s' %events)
-        self.events = Events(events)
-        self._events_hash = this_hash
+        logging.debug('Extracting events from Events obj or file: %s', events)
+        events_obj = Events(events)
+        events_hash = this_hash
+
+        self.events = events_obj
+        self._events_hash = events_hash
 
     def cut_events(self, keep_criteria):
+        """Apply a cut to `self.events`, keeping only events that pass
+        `keep_criteria`.
+
+        Parameters
+        ----------
+        keep_criteria : string
+             See pisa.core.Events.applyCut for more info on specifying this.
+
+        """
         if isinstance(keep_criteria, Param):
             keep_criteria = keep_criteria.value
+
         if keep_criteria is not None:
-            self.remaining_events = deepcopy(self.events)
-            self.remaining_events.applyCut(keep_criteria=keep_criteria)
-        else:
-            self.remaining_events = self.events
+            events = self.events.applyCut(keep_criteria=keep_criteria)
+            events_hash = hash_obj(events, full_hash=self.full_hash)
+
+            self.events = events
+            self._events_hash = events_hash
 
     def instantiate_disk_cache(self):
+        """Instantiate a disk cache for use by the stage."""
         if isinstance(self.disk_cache, DiskCache):
             self.disk_cache_path = self.disk_cache.path
             return
@@ -721,18 +775,22 @@ class Stage(object):
 
     @property
     def params(self):
+        """Params"""
         return self._params
 
     @property
     def param_selections(self):
+        """Param selections"""
         return sorted(deepcopy(self._param_selector.param_selections))
 
     @property
     def input_names(self):
+        """Names of input objects (e.g. names of input maps)"""
         return deepcopy(self._input_names)
 
     @property
     def output_names(self):
+        """Names of output objects (e.g. names of output maps)"""
         return deepcopy(self._output_names)
 
     @property
@@ -789,7 +847,8 @@ class Stage(object):
                                  ' attrs to hash.' %(attr, attrs))
 
         # Include the attribute names
-        [self._attrs_to_hash.add(attr) for attr in attrs]
+        for attr in attrs:
+            self._attrs_to_hash.add(attr)
 
     @property
     def debug_mode(self):
@@ -969,7 +1028,6 @@ class Stage(object):
         else:
             nominal_transforms_hash = hash_obj(id_objects,
                                                full_hash=self.full_hash)
-
         return nominal_transforms_hash
 
     def _derive_nominal_outputs_hash(self):
@@ -984,8 +1042,7 @@ class Stage(object):
 
     def _compute_transforms(self):
         """Stages that apply transforms to inputs should override this method
-        for deriving the transform. No-input stages should leave this as-is,
-        simply returning None."""
+        for deriving the transform. No-input stages should leave this as-is."""
         return TransformSet([])
 
     def _compute_nominal_outputs(self):
@@ -1001,4 +1058,10 @@ class Stage(object):
     def validate_params(self, params):
         """Override this method to test if params are valid; e.g., check range
         and dimensionality."""
+        return
+
+    def validate_binning(self):
+        """Override this method to test if the input and output binning
+        (e.g., dimensionality, domains, separately or in combination)
+        conform to the transform applied by the stage."""
         return

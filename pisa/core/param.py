@@ -152,11 +152,19 @@ class Param(object):
     def validate_value(self, value):
         if self.range is not None:
             if self.is_discrete:
-                assert value in self.range, 'value=%s ; range=%s' \
-                        %(value, self.range)
+                if value not in self.range:
+                    raise ValueError(
+                        'Param %s has a value %s which is not in the range of '
+                        '%s'%(self.name, value, self.range)
+                    )
             else:
-                assert value >= min(self.range) and value <= max(self.range), \
-                        'value=%s ; range=%s' %(value, self.range)
+                value_not_big_enough = value < min(self.range)
+                value_not_small_enough = value > max(self.range)
+                if value_not_big_enough or value_not_small_enough:
+                    raise ValueError(
+                        'Param %s has a value %s which is not in the range of '
+                        '%s'%(self.name, value, self.range)
+                    )
 
     @property
     def value(self):
@@ -217,6 +225,8 @@ class Param(object):
         for val in values:
             if isbarenumeric(val):
                 val = val * ureg.dimensionless
+            # NOTE: intentionally using type() instead of isinstance() here.
+            # Not sure if this could be converted to isinstance(), though.
             assert type(val) == type(self.value), \
                     'Value "%s" has type %s but must be of type %s.' \
                     %(val, type(val), type(self.value))
@@ -456,7 +466,7 @@ class ParamSet(Sequence):
         self.normalize_values = False
 
     @property
-    def _serializable_state(self):
+    def serializable_state(self):
         state = OrderedDict()
         for p in self._params:
             state[p.name] = p.state
@@ -515,6 +525,21 @@ class ParamSet(Sequence):
         """
         idx = self.index(new.name)
         self._params[idx] = new
+
+    def set_values(self, new_params):
+        """Set values in current ParamSet to those defined in new ParamSet
+
+        Parameters
+        ----------
+        new_params : ParamSet
+            ParamSet containing set of values to change current ParamSet to.
+        """
+        if self.names != new_params.names:
+            raise ValueError('ParamSet names do not match. Currently have %s '
+                             'and want to change to a set containing %s.'
+                             % (self.names, new_params.names))
+        for new_param in new_params:
+            self[new_param.name].value = new_param.value
 
     def fix(self, x):
         """Set param(s) to be fixed in value (and hence not modifiable by e.g.
@@ -833,7 +858,8 @@ class ParamSet(Sequence):
     @values.setter
     def values(self, values):
         assert len(values) == len(self._params)
-        [setattr(self._params[i], 'value', val) for i, val in enumerate(values)]
+        for i, val in enumerate(values):
+            setattr(self._params[i], 'value', val)
 
     @property
     def name_val_dict(self):
@@ -882,7 +908,8 @@ class ParamSet(Sequence):
     @ranges.setter
     def ranges(self, values):
         assert len(values) == len(self._params)
-        [setattr(self._params[i], 'range', val) for i, val in enumerate(values)]
+        for i, val in enumerate(values):
+            setattr(self._params[i], 'range', val)
 
     @property
     def state(self):
@@ -910,7 +937,7 @@ class ParamSet(Sequence):
         """Serialize the state to a JSON file that can be instantiated as a new
         object later.
         """
-        jsons.to_json(self._serializable_state, filename=filename, **kwargs)
+        jsons.to_json(self.serializable_state, filename=filename, **kwargs)
 
 class ParamSelector(object):
     """
@@ -1016,7 +1043,7 @@ class ParamSelector(object):
             p = ParamSet(p)
         except:
             logging.error('Could not instantiate a ParamSet with `p` of type'
-                          ' %s, value = %s' %(type(p), p))
+                          ' %s, value = %s', type(p), p)
             raise
 
         if selector is None:
@@ -1076,8 +1103,8 @@ def test_Param():
         _ = p2.prior_llh
         logging.debug(str(p2))
         logging.debug(str(linterp_m))
-        logging.debug('p2.units: %s' %p2.units)
-        logging.debug('p2.prior.units: %s' %p2.prior.units)
+        logging.debug('p2.units: %s', p2.units)
+        logging.debug('p2.prior.units: %s', p2.prior.units)
     except (TypeError, pint.DimensionalityError):
         pass
     else:
@@ -1116,8 +1143,8 @@ def test_Param():
         _ = p2.prior_llh
         logging.debug(str(p2))
         logging.debug(str(linterp_nounits))
-        logging.debug('p2.units: %s' %p2.units)
-        logging.debug('p2.prior.units: %s' %p2.prior.units)
+        logging.debug('p2.units: %s', p2.units)
+        logging.debug('p2.prior.units: %s', p2.prior.units)
     except (TypeError, AssertionError):
         pass
     else:
@@ -1176,12 +1203,13 @@ def test_ParamSet():
 
     logging.debug(str((param_set['a'])))
     logging.debug(str((param_set['a'].value)))
+    logging.debug(str((param_set['a'].range)))
     try:
         param_set['a'].value = 33
     except:
         pass
     else:
-        assert False
+        assert False, 'was able to set value outside of range'
     logging.debug(str((param_set['a'].value)))
 
     logging.debug(str((param_set['c'].is_fixed)))

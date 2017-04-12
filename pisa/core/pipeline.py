@@ -32,8 +32,7 @@ from pisa.utils.log import logging, set_verbosity
 from pisa.utils.profiler import profile
 
 
-__all__ = ['Pipeline',
-           'test_Pipeline', 'parse_args', 'main']
+__all__ = ['Pipeline', 'test_Pipeline', 'parse_args', 'main']
 
 
 # TODO: should we check that the output binning of a previous stage produces
@@ -51,6 +50,7 @@ __all__ = ['Pipeline',
 # TODO: return an OrderedDict instead of a list if the user requests
 # intermediate results? Or simply use the `outputs` attribute of each stage to
 # dynamically access this?
+
 
 class Pipeline(object):
     """Instantiate stages according to a parsed config object; excecute
@@ -101,7 +101,7 @@ class Pipeline(object):
         for stage_num, stage in enumerate(self):
             if stage_id in [stage_num, stage.stage_name]:
                 return stage_num
-        raise ValueError('No stage named "%s" in the pipeline.' % stage.name)
+        raise ValueError('No stage "%s" found in the pipeline.' % stage_id)
 
     def __len__(self):
         return len(self._stages)
@@ -137,18 +137,18 @@ class Pipeline(object):
             * `service` cannot be an instantiation argument for a service
 
         """
-        self._stages = []
+        stages = []
         for stage_num, ((stage_name, service_name), settings) \
                 in enumerate(self.config.items()):
             try:
-                logging.debug('instantiating stage %s / service %s'
-                              %(stage_name, service_name))
+                logging.debug('instantiating stage %s / service %s',
+                              stage_name, service_name)
 
                 # Import service's module
-                logging.trace('Importing: pisa.stages.%s.%s' %(stage_name,
-                                                               service_name))
+                logging.trace('Importing: pisa.stages.%s.%s',
+                              stage_name, service_name)
                 module = import_module(
-                    'pisa.stages.%s.%s' %(stage_name, service_name)
+                    'pisa.stages.%s.%s' % (stage_name, service_name)
                 )
 
                 # Get service class from module
@@ -161,22 +161,51 @@ class Pipeline(object):
                         'Trying to create service "%s" for stage #%d (%s),'
                         ' but object %s instantiated from class %s is not a'
                         ' %s type but instead is of type %s.'
-                        %(service_name, stage_num, stage_name, service, cls,
-                          Stage, type(service))
+                        % (service_name, stage_num, stage_name, service, cls,
+                           Stage, type(service))
                     )
 
                 # Append service to pipeline
-                self._stages.append(service)
+                stages.append(service)
 
             except:
                 logging.error(
-                    'Failed to initialize stage #%d (stage=%s, service=%s).'
-                    %(stage_num, stage_name, service_name)
+                    'Failed to initialize stage #%d (stage=%s, service=%s).',
+                    stage_num, stage_name, service_name
                 )
                 raise
 
-        for stage in self:
+        previous_stage = None
+        for stage in stages:
             stage.select_params(self.param_selections, error_on_missing=False)
+            if previous_stage is not None:
+                prev_has_binning = hasattr(previous_stage, 'output_binning')
+                this_has_binning = hasattr(stage, 'input_binning')
+                if this_has_binning != prev_has_binning:
+                    raise ValueError(
+                        'hasattr(%s, "output_binning") is %s but'
+                        ' hasattr(%s, "input_binning") is %s.'
+                        % (previous_stage.stage_name, prev_has_binning,
+                           stage.stage_name, this_has_binning)
+                    )
+                if this_has_binning:
+                    is_compat = stage.input_binning.is_compat(
+                        previous_stage.output_binning
+                    )
+                    if not is_compat:
+                        logging.error('Stage %s output binning: %s',
+                                      previous_stage.stage_name,
+                                      previous_stage.output_binning)
+                        logging.error('Stage %s input binning: %s',
+                                      stage.stage_name, stage.input_binning)
+                        raise ValueError(
+                            "%s stage's output binning is incompatible with"
+                            " %s stage's input binning."
+                            % (previous_stage.stage_name, stage.stage_name)
+                        )
+            previous_stage = stage
+
+        self._stages = stages
 
     # TODO: handle other container(s)
     @profile
@@ -192,7 +221,7 @@ class Pipeline(object):
             Specification of which stage(s) to run. If None is passed, all
             stages will be run. If a string is passed, all stages are run up to
             and including the named stage. If int is passed, all stages are run
-            up to but *not* including `idx`. Numbering follows Python
+            up to and including `idx`. Numbering follows Python
             conventions (i.e., is 0-indexed).
         return_intermediate : bool
             If True,
@@ -207,23 +236,23 @@ class Pipeline(object):
         """
         intermediate = []
         if isinstance(idx, basestring):
-            idx = self.stage_names.index(idx) + 1
+            idx = self.stage_names.index(idx)
         if idx is not None:
             if idx < 0:
                 raise ValueError('Integer `idx` must be >= 0')
             idx += 1
         assert len(self) > 0
         for stage in self.stages[:idx]:
-            logging.debug('>> Working on stage "%s" service "%s"'
-                          %(stage.stage_name, stage.service_name))
+            logging.debug('>> Working on stage "%s" service "%s"',
+                          stage.stage_name, stage.service_name)
             try:
                 logging.trace('>>> BEGIN: get_outputs')
                 outputs = stage.get_outputs(inputs=inputs)
                 logging.trace('>>> END  : get_outputs')
             except:
                 logging.error('Error occurred computing outputs in stage %s /'
-                              ' service %s ...' %(stage.stage_name,
-                                                  stage.service_name))
+                              ' service %s ...',
+                              stage.stage_name, stage.service_name)
                 raise
 
             logging.trace('outputs: %s' %(outputs,))
@@ -250,7 +279,8 @@ class Pipeline(object):
             Parameters to be updated
 
         """
-        [stage.params.update_existing(params) for stage in self]
+        for stage in self:
+            stage.params.update_existing(params)
 
     def select_params(self, selections, error_on_missing=False):
         """Select a set of alternate param values/specifications.
@@ -277,22 +307,24 @@ class Pipeline(object):
 
         if error_on_missing and successes == 0:
             raise KeyError(
-                'None of the selections %s was found in any stage in this'
-                ' pipeline.' %(selections,)
+                'None of the stages in this pipeline has all of the'
+                ' selections %s available.' %(selections,)
             )
 
     @property
     def params(self):
         """pisa.core.param.ParamSet : pipeline's parameters"""
         params = ParamSet()
-        [params.extend(stage.params) for stage in self]
+        for stage in self:
+            params.extend(stage.params)
         return params
 
     @property
     def param_selections(self):
         """list of strings : param selections collected from all stages"""
         selections = set()
-        [selections.update(stage.param_selections) for stage in self]
+        for stage in self:
+            selections.update(stage.param_selections)
         return sorted(selections)
 
     @property
@@ -329,6 +361,11 @@ class Pipeline(object):
         the state of the corresponding stage."""
         return hash_obj([self.source_code_hash] + [s.state_hash for s in self])
 
+    @property
+    def hash(self):
+        """High level hash of this object's class"""
+        return hash_obj((self.source_code_hash, self.state_hash))
+
 
 def test_Pipeline():
     """Unit tests for Pipeline class"""
@@ -356,7 +393,7 @@ def test_Pipeline():
     current_hier = 'nh'
 
     for new_hier, new_mat in product(hierarchies, materials):
-        new_YeO = YeO[new_mat]
+        _ = YeO[new_mat]
 
         assert pipeline.param_selections == sorted([current_hier, current_mat]), str(pipeline.params.param_selections)
         assert pipeline.params.theta23.value == t23[current_hier], str(pipeline.params.theta23)
@@ -403,9 +440,9 @@ def parse_args():
         help='File containing settings for the pipeline.'
     )
     parser.add_argument(
-        '--select', metavar='PARAM_SELECTIONS', type=str, required=False,
-        help='''Comma-separated list of param selectors to use (overriding any
-        defaults in the config file).'''
+        '--select', metavar='PARAM_SELECTIONS', nargs='+', default=None,
+        help='''Param selectors (separated by spaces) to use to override any
+        defaults in the config file.'''
     )
     parser.add_argument(
         '--only-stage', metavar='STAGE', type=str,
@@ -418,7 +455,7 @@ def parse_args():
         arguments.'''
     )
     parser.add_argument(
-        '--stop-after-stage', metavar='STAGE', type=int,
+        '--stop-after-stage', metavar='STAGE',
         help='''Test stage: Instantiate a pipeline up to and including
         STAGE, but stop there.'''
     )
@@ -495,16 +532,20 @@ def main(return_outputs=False):
     # Instantiate the pipeline
     pipeline = Pipeline(args.pipeline)
     if args.select is not None:
-        pipeline.select_params([s.strip() for s in ','.split(args.select)])
+        pipeline.select_params(args.select, error_on_missing=True)
 
     if args.only_stage is None:
         stop_idx = args.stop_after_stage
+        try:
+            stop_idx = int(stop_idx)
+        except (TypeError, ValueError):
+            pass
         if isinstance(stop_idx, basestring):
             stop_idx = pipeline.index(stop_idx)
+        outputs = pipeline.get_outputs(idx=stop_idx)
         if stop_idx is not None:
             stop_idx += 1
         indices = slice(0, stop_idx)
-        outputs = pipeline.get_outputs(idx=args.stop_after_stage)
     else:
         assert args.stop_after_stage is None
         idx = pipeline.index(args.only_stage)
@@ -573,7 +614,8 @@ def main(return_outputs=False):
             )
             my_plotter.ratio = True
             my_plotter.plot_2d_array(
-                outputs, fname=stg_svc+'__output', cmap='OrRd'
+                outputs,
+                fname=stg_svc + '__output'
             )
 
     if return_outputs:

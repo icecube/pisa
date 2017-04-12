@@ -85,7 +85,7 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--metric', type=str,
-        choices=['llh', 'chi2', 'conv_llh'], required=True,
+        choices=['llh', 'chi2', 'conv_llh', 'mod_chi2'], required=True,
         help='''Settings related to the minimizer used in the LLR analysis.'''
     )
     parser.add_argument(

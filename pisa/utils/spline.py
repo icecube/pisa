@@ -60,7 +60,7 @@ class Spline(object):
         self._hash = hash
 
         if tex is None:
-            tex = flavInt.NuFlavIntGroup(name).tex()
+            tex = flavInt.NuFlavIntGroup(name).tex
 
         # Ensure eval_spl has correct structure
         eval_args = inspect.getargspec(eval_spl).args

@@ -16,7 +16,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from pisa.utils.resources import find_resource
-from pisa.utils.fileio import expandPath, from_file, to_file
+from pisa.utils.fileio import expand, from_file, to_file
 from pisa.utils import flavInt
 from pisa.utils.log import logging, set_verbosity
 
@@ -304,7 +304,7 @@ class CrossSections(flavInt.FlavIntData):
         """
         if flavintgroup is None:
             flavintgroups = [flavInt.NuFlavIntGroup(fi)
-                             for fi in self.flavints()]
+                             for fi in self.flavints]
         else:
             flavintgroups = [flavInt.NuFlavIntGroup(flavintgroup)]
 
@@ -336,13 +336,13 @@ class CrossSections(flavInt.FlavIntData):
         """
         flavintgroup = flavInt.NuFlavIntGroup(flavintgroup)
         # Trivial case: nothing to combine
-        if len(flavintgroup.flavints()) == 1:
-            return self[flavintgroup.flavints()[0]]
+        if len(flavintgroup.flavints) == 1:
+            return self[flavintgroup.flavints[0]]
 
-        cc_flavints = flavintgroup.ccFlavInts()
-        nc_flavints = flavintgroup.ncFlavInts()
+        cc_flavints = flavintgroup.ccFlavInts
+        nc_flavints = flavintgroup.ncFlavInts
         if cc_flavints and nc_flavints:
-            assert flavintgroup.ccFlavs() == flavintgroup.ncFlavs(), \
+            assert flavintgroup.ccFlavs == flavintgroup.ncFlavs, \
                     'Combining CC and NC but CC flavors do not match NC flavors'
         cc_avg_xs = 0
         if cc_flavints:
@@ -526,20 +526,20 @@ class CrossSections(flavInt.FlavIntData):
 
         energy = self.energy
         nc_n = cc_n = 0
-        for flavint in list(flavInt.ALL_NUFLAVINTS.particles()) + \
-                list(flavInt.ALL_NUFLAVINTS.antiParticles()):
+        for flavint in list(flavInt.ALL_NUFLAVINTS.particles) + \
+                list(flavInt.ALL_NUFLAVINTS.antiParticles):
             # Convert from [m^2] to [1e-38 cm^2]
             xs = self[flavint] * 1e38 * 1e4
-            if flavint.isCC():
+            if flavint.isCC:
                 ax1.plot(energy, xs/energy,
                          alpha=alpha,
-                         label=flavInt.tex(flavint.flav(), d=1),
+                         label=flavInt.tex(flavint.flav, d=1),
                          **ls[cc_n%len(ls)])
                 cc_n += 1
             else:
                 ax2.plot(energy, xs/energy,
                          alpha=alpha,
-                         label=flavInt.tex(flavint.flav(), d=1),
+                         label=flavInt.tex(flavint.flav, d=1),
                          **ls[nc_n%len(ls)])
                 nc_n += 1
 
@@ -586,7 +586,7 @@ def test_CrossSections(outdir=None):
         xs = CrossSections(ver='genie_2.6.4', xsec=pisa_xs_file)
 
         # Location of the root file to use (not included in PISA at the moment)
-        test_dir = expandPath(os.path.join('$PISA', 'tests', 'cross_sections'))
+        test_dir = expand(os.path.join('$PISA', 'tests', 'cross_sections'))
         #ROOT_xs_file = os.path.join(test_dir, 'genie_2.6.4_simplified.root')
         ROOT_xs_file = find_resource(os.path.join(
             'tests', 'data', 'xsec', 'genie_2.6.4_simplified.root'

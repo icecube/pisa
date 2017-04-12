@@ -21,35 +21,199 @@ import numpy as np
 import pint
 import scipy.optimize as optimize
 
-from pisa import ureg
+from pisa import FTYPE, ureg
+from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
 from pisa.utils.log import logging
 from pisa.utils.fileio import to_file
 from pisa.utils.stats import METRICS_TO_MAXIMIZE
 
 
-__all__ = ['Analysis', 'Counter']
+__all__ = ['MINIMIZERS_USING_SYMM_GRAD',
+           'set_minimizer_defaults', 'validate_minimizer_settings',
+           'Counter', 'Analysis']
+
+
+MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b',)
+"""Minimizers that use symmetrical steps on either side of a point to compute
+gradients. See https://github.com/scipy/scipy/issues/4916"""
+
+
+# TODO: add Nelder-Mead, as it was used previously...
+def set_minimizer_defaults(minimizer_settings):
+    """Fill in default values for minimizer settings.
+
+    Parameters
+    ----------
+    minimizer_settings : dict
+
+    Returns
+    -------
+    new_minimizer_settings : dict
+
+    """
+    new_minimizer_settings = dict(
+        method=dict(value='', desc=''),
+        options=dict(value=dict(), desc=dict())
+    )
+    new_minimizer_settings.update(minimizer_settings)
+
+    sqrt_ftype_eps = np.sqrt(np.finfo(FTYPE).eps)
+    opt_defaults = {}
+    method = minimizer_settings['method']['value'].lower()
+
+    if method == 'l-bfgs-b' and FTYPE == np.float64:
+        # From `scipy.optimize.lbfgsb._minimize_lbfgsb`
+        opt_defaults.update(dict(
+            maxcor=10, ftol=2.2204460492503131e-09, gtol=1e-5, eps=1e-8,
+            maxfun=15000, maxiter=15000, iprint=-1, maxls=20
+        ))
+    elif method == 'l-bfgs-b' and FTYPE == np.float32:
+        # Adapted to lower precision
+        opt_defaults.update(dict(
+            maxcor=10, ftol=sqrt_ftype_eps, gtol=1e-3, eps=1e-5,
+            maxfun=15000, maxiter=15000, iprint=-1, maxls=20
+        ))
+    elif method == 'slsqp' and FTYPE == np.float64:
+        opt_defaults.update(dict(
+            maxiter=100, ftol=1e-6, iprint=0, eps=sqrt_ftype_eps,
+        ))
+    elif method == 'slsqp' and FTYPE == np.float32:
+        opt_defaults.update(dict(
+            maxiter=100, ftol=1e-4, iprint=0, eps=sqrt_ftype_eps
+        ))
+    else:
+        raise ValueError('Unhandled minimizer "%s" / FTYPE=%s'
+                         % (method, FTYPE))
+
+    opt_defaults.update(new_minimizer_settings['options']['value'])
+
+    new_minimizer_settings['options']['value'] = opt_defaults
+
+    # Populate the descriptions with something
+    for opt_name in new_minimizer_settings['options']['value']:
+        if opt_name not in new_minimizer_settings['options']['desc']:
+            new_minimizer_settings['options']['desc'] = 'no desc'
+
+    return new_minimizer_settings
+
+
+# TODO: add Nelder-Mead, as it was used previously...
+def validate_minimizer_settings(minimizer_settings):
+    """Validate minimizer settings.
+
+    See source for specific thresholds set.
+
+    Parameters
+    ----------
+    minimizer_settings : dict
+
+    Raises
+    ------
+    ValueError
+        If any minimizer settings are deemed to be invalid.
+
+    """
+    ftype_eps = np.finfo(FTYPE).eps
+    method = minimizer_settings['method']['value'].lower()
+    options = minimizer_settings['options']['value']
+    if method == 'l-bfgs-b':
+        must_have = ('maxcor', 'ftol', 'gtol', 'eps', 'maxfun', 'maxiter',
+                     'maxls')
+        may_have = must_have + ('args', 'jac', 'bounds', 'disp', 'iprint',
+                                'callback')
+    elif method == 'slsqp':
+        must_have = ('maxiter', 'ftol', 'eps')
+        may_have = must_have + ('args', 'jac', 'bounds', 'constraints',
+                                'iprint', 'disp', 'callback')
+
+    missing = set(must_have).difference(set(options))
+    excess = set(options).difference(set(may_have))
+    if len(missing) > 0:
+        raise ValueError('Missing the following options for %s minimizer: %s'
+                         % (method, missing))
+    if len(excess) > 0:
+        raise ValueError('Excess options for %s minimizer: %s'
+                         % (method, excess))
+
+    eps_msg = '%s minimizer option %s(=%e) is < %d * %s_EPS(=%e)'
+    eps_gt_msg = '%s minimizer option %s(=%e) is > %e'
+    scale_msg = '%s minimizer option %s(=%e) is > %d * %s(=%e)'
+    fp64_eps = np.finfo(np.float64).eps
+
+    if method == 'l-bfgs-b':
+        err_lim, warn_lim = 2, 10
+        for s in ['ftol', 'gtol']:
+            val = options[s]
+            if val < err_lim * ftype_eps:
+                raise ValueError(eps_msg % (method, s, val, err_lim, 'FTYPE',
+                                            ftype_eps))
+            if val < warn_lim * ftype_eps:
+                logging.warn(eps_msg, method, s, val, warn_lim, 'FTYPE',
+                             ftype_eps)
+
+        val = options['eps']
+        err_lim, warn_lim = 1, 10
+        if val < err_lim * fp64_eps:
+            raise ValueError(eps_msg % (method, 'eps', val, err_lim, 'FP64',
+                                        fp64_eps))
+        if val < warn_lim * ftype_eps:
+            logging.warn(eps_msg, method, 'eps', val, warn_lim, 'FTYPE',
+                         ftype_eps)
+
+        err_lim, warn_lim = 0.25, 0.1
+        if val > err_lim:
+            raise ValueError(eps_gt_msg % (method, 'eps', val, err_lim))
+        if val > warn_lim:
+            logging.warn(eps_gt_msg, method, 'eps', val, warn_lim)
+
+    if method == 'slsqp':
+        err_lim, warn_lim = 2, 10
+        val = options['ftol']
+        if val < err_lim * ftype_eps:
+            raise ValueError(eps_msg % (method, 'ftol', val, err_lim, 'FTYPE',
+                                        ftype_eps))
+        if val < warn_lim * ftype_eps:
+            logging.warn(eps_msg, method, 'ftol', val, warn_lim, 'FTYPE',
+                         ftype_eps)
+
+        val = options['eps']
+        err_lim, warn_lim = 1, 10
+        if val < err_lim * fp64_eps:
+            raise ValueError(eps_msg % (method, 'eps', val, 1, 'FP64', fp64_eps))
+        if val < warn_lim * ftype_eps:
+            logging.warn(eps_msg, method, 'eps', val, warn_lim, 'FP64', fp64_eps)
+
+        err_lim, warn_lim = 0.25, 0.1
+        if val > err_lim:
+            raise ValueError(eps_gt_msg % (method, 'eps', val, err_lim))
+        if val > warn_lim:
+            logging.warn(eps_gt_msg, method, 'eps', val, warn_lim)
+
 
 # TODO: move this to a central location prob. in utils
 class Counter(object):
+    """Simple counter object for use as a minimizer callback."""
     def __init__(self, i=0):
-        self._i = i
+        self._count = i
 
     def __str__(self):
-        return str(self._i)
+        return str(self._count)
 
     def __repr__(self):
         return str(self)
 
     def __iadd__(self, inc):
-        self._i += inc
+        self._count += inc
 
     def reset(self):
-        self._i = 0
+        """Reset counter"""
+        self._count = 0
 
     @property
     def count(self):
-        return self._i
+        """int : Current count"""
+        return self._count
 
 
 class Analysis(object):
@@ -68,7 +232,8 @@ class Analysis(object):
 
     def fit_hypo(self, data_dist, hypo_maker, hypo_param_selections, metric,
                  minimizer_settings, reset_free=True, check_octant=True,
-                 other_metrics=None, blind=False, pprint=True):
+                 check_ordering=False, other_metrics=None,
+                 blind=False, pprint=True):
         """Fitter "outer" loop: If `check_octant` is True, run
         `fit_hypo_inner` starting in each octant of theta23 (assuming that
         is a param in the `hypo_maker`). Otherwise, just run the inner
@@ -109,6 +274,10 @@ class Analysis(object):
             free), the fit will be re-run in the second (first) octant if
             theta23 is initialized in the first (second) octant.
 
+        check_ordering : bool
+            If the ordering is not in the hypotheses already being tested, the
+            fit will be run in both orderings.
+
         other_metrics : None, string, or list of strings
             After finding the best fit, these other metrics will be evaluated
             for each output that contributes to the overall fit. All strings
@@ -132,38 +301,38 @@ class Analysis(object):
         alternate_fits : list of `fit_info` from other fits run
 
         """
-        # Select the version of the parameters used for this hypothesis
-        hypo_maker.select_params(hypo_param_selections)
 
-        # Reset free parameters to nominal values
-        if reset_free:
-            hypo_maker.reset_free()
+        if check_ordering:
+            if 'nh' in hypo_param_selections or 'ih' in hypo_param_selections:
+                raise ValueError('One of the orderings has already been '
+                                 'specified as one of the hypotheses but the '
+                                 'fit has been requested to check both. These '
+                                 'are incompatible.')
+
+            logging.info('Performing fits in both orderings.')
+            extra_param_selections = ['nh', 'ih']
+        else:
+            extra_param_selections = [None]
 
         alternate_fits = []
 
-        best_fit_info = self.fit_hypo_inner(
-            hypo_maker=hypo_maker,
-            data_dist=data_dist,
-            metric=metric,
-            minimizer_settings=minimizer_settings,
-            other_metrics=other_metrics,
-            pprint=pprint,
-            blind=blind
-        )
+        for extra_param_selection in extra_param_selections:
+            if extra_param_selection is not None:
+                full_param_selections = hypo_param_selections
+                full_param_selections.append(extra_param_selection)
+            else:
+                full_param_selections = hypo_param_selections
+            # Select the version of the parameters used for this hypothesis
+            hypo_maker.select_params(full_param_selections)
 
-        # Decide whether fit for other octant is necessary
-        if check_octant and 'theta23' in hypo_maker.params.free.names:
-            logging.debug('checking other octant of theta23')
-            hypo_maker.reset_free()
+            # Reset free parameters to nominal values
+            if reset_free:
+                hypo_maker.reset_free()
+            else:
+                # Saves the current minimizer start values for the octant check
+                minimizer_start_params = hypo_maker.params
 
-            # Hop to other octant by reflecting about 45 deg
-            theta23 = hypo_maker.params.theta23
-            inflection_point = (45*ureg.deg).to(theta23.units)
-            theta23.value = 2*inflection_point - theta23.value
-            hypo_maker.update_params(theta23)
-
-            # Re-run minimizer starting at new point
-            new_fit_info = self.fit_hypo_inner(
+            best_fit_info = self.fit_hypo_inner(
                 hypo_maker=hypo_maker,
                 data_dist=data_dist,
                 metric=metric,
@@ -173,23 +342,51 @@ class Analysis(object):
                 blind=blind
             )
 
-            # Take the one with the best fit
-            if metric in METRICS_TO_MAXIMIZE:
-                it_got_better = new_fit_info['metric_val'] > \
-                        best_fit_info['metric_val']
-            else:
-                it_got_better = new_fit_info['metric_val'] < \
-                        best_fit_info['metric_val']
+            # Decide whether fit for other octant is necessary
+            if check_octant and 'theta23' in hypo_maker.params.free.names:
+                logging.debug('checking other octant of theta23')
+                if reset_free:
+                    hypo_maker.reset_free()
+                else:
+                    for param in minimizer_start_params:
+                        hypo_maker.params[param.name].value = param.value
 
-            if it_got_better:
-                alternate_fits.append(best_fit_info)
-                best_fit_info = new_fit_info
-                if not blind:
-                    logging.debug('Accepting other-octant fit')
-            else:
-                alternate_fits.append(new_fit_info)
-                if not blind:
-                    logging.debug('Accepting initial-octant fit')
+                # Hop to other octant by reflecting about 45 deg
+                theta23 = hypo_maker.params.theta23
+                inflection_point = (45*ureg.deg).to(theta23.units)
+                theta23.value = 2*inflection_point - theta23.value
+                hypo_maker.update_params(theta23)
+
+                # Re-run minimizer starting at new point
+                new_fit_info = self.fit_hypo_inner(
+                    hypo_maker=hypo_maker,
+                    data_dist=data_dist,
+                    metric=metric,
+                    minimizer_settings=minimizer_settings,
+                    other_metrics=other_metrics,
+                    pprint=pprint,
+                    blind=blind
+                )
+
+                # Take the one with the best fit
+                if metric in METRICS_TO_MAXIMIZE:
+                    it_got_better = (
+                        new_fit_info['metric_val'] > best_fit_info['metric_val']
+                    )
+                else:
+                    it_got_better = (
+                        new_fit_info['metric_val'] < best_fit_info['metric_val']
+                    )
+
+                if it_got_better:
+                    alternate_fits.append(best_fit_info)
+                    best_fit_info = new_fit_info
+                    if not blind:
+                        logging.debug('Accepting other-octant fit')
+                else:
+                    alternate_fits.append(new_fit_info)
+                    if not blind:
+                        logging.debug('Accepting initial-octant fit')
 
         return best_fit_info, alternate_fits
 
@@ -214,7 +411,7 @@ class Analysis(object):
 
         metric : string
 
-        minimizer_settings : string
+        minimizer_settings : dict
 
         other_metrics : None, string, or sequence of strings
 
@@ -231,25 +428,55 @@ class Analysis(object):
             'minimizer_metadata'
 
         """
+        minimizer_settings = set_minimizer_defaults(minimizer_settings)
+        validate_minimizer_settings(minimizer_settings)
+
         sign = -1 if metric in METRICS_TO_MAXIMIZE else +1
 
         # Get starting free parameter values
         x0 = hypo_maker.params.free._rescaled_values
 
-        # TODO: does this break if not using bfgs?
+        minimizer_method = minimizer_settings['method']['value'].lower()
+        if minimizer_method in MINIMIZERS_USING_SYMM_GRAD:
+            logging.warning(
+                'Minimizer %s requires artificial boundaries SMALLER than the'
+                ' user-specified boundaries (so that numerical gradients do'
+                ' not exceed the user-specified boundaries).',
+                minimizer_method
+            )
+            step_size = minimizer_settings['options']['value']['eps']
+            bounds = [(0 + step_size, 1 - step_size)]*len(x0)
+        else:
+            bounds = [(0, 1)]*len(x0)
 
-        # bfgs steps outside of given bounds by 1 epsilon to evaluate gradients
-        minimizer_kind = minimizer_settings['options']['value']
-        try:
-            epsilon = minimizer_kind['eps']
-        except KeyError:
-            epsilon = minimizer_kind['epsilon']
-        bounds = [(0+epsilon, 1-epsilon)]*len(x0)
+        for param, x0_val, bds in zip(hypo_maker.params.free, x0, bounds):
+            if x0_val < bds[0]:
+                raise ValueError(
+                    'Param %s, initial value %e exceeds the lower bound.'
+                    % (param.name, param.value)
+                )
+            if x0_val > bds[1]:
+                raise ValueError(
+                    'Param %s, initial value %e exceeds the upper bound.'
+                    % (param.name, param.value)
+                )
 
-        logging.debug('Running the %s minimizer.'
-                      %minimizer_settings['method']['value'])
+            if np.isclose(x0_val, bds[0], atol=np.finfo(FTYPE).eps, rtol=0):
+                logging.warn(
+                    'Param %s, initial value value %e is at the lower bound;'
+                    ' minimization may fail as a result.',
+                    param.name, param.value
+                )
+            if np.isclose(x0_val, bds[1], atol=np.finfo(FTYPE).eps, rtol=0):
+                logging.warn(
+                    'Param %s, initial value value %e is at the upper bound;'
+                    ' minimization may fail as a rsult.',
+                    param.name, param.value
+                )
 
-        # Using scipy.optimize.minimize allows a whole host of minimisers to be
+        logging.debug('Running the %s minimizer...', minimizer_method)
+
+        # Using scipy.optimize.minimize allows a whole host of minimizers to be
         # used.
         counter = Counter()
         fit_history = []
@@ -302,11 +529,11 @@ class Analysis(object):
 
         minimizer_time = end_t - start_t
 
-        logging.info('Total time to optimize: %8.4f s;'
-                     ' # of dists generated: %6d;'
-                     ' avg dist gen time: %10.4f ms'
-                     %(minimizer_time, counter.count,
-                       minimizer_time*1000./counter.count))
+        logging.info(
+            'Total time to optimize: %8.4f s; # of dists generated: %6d;'
+            ' avg dist gen time: %10.4f ms',
+            minimizer_time, counter.count, minimizer_time*1000./counter.count
+        )
 
         # Will not assume that the minimizer left the hypo maker in the
         # minimized state, so set the values now (also does conversion of
@@ -343,7 +570,17 @@ class Analysis(object):
         fit_info['minimizer_time'] = minimizer_time * ureg.sec
         fit_info['minimizer_metadata'] = metadata
         fit_info['fit_history'] = fit_history
+        # If blind replace hypo_asimov_dist with none object
+        if blind:
+            hypo_asimov_dist = None
         fit_info['hypo_asimov_dist'] = hypo_asimov_dist
+
+        if not optimize_result.success:
+            if blind:
+                msg = ''
+            else:
+                msg = ' ' + optimize_result.message
+            raise ValueError('Optimization failed.' + msg)
 
         return fit_info
 
@@ -408,6 +645,19 @@ class Analysis(object):
             name_vals_d['maps'] = data_dist.metric_per_map(
                 expected_values=hypo_asimov_dist, metric=m
             )
+            metric_hists = data_dist.metric_per_map(
+                expected_values=hypo_asimov_dist, metric='binned_'+m
+            )
+            maps_binned = []
+            for asimov_map, metric_hist in zip(hypo_asimov_dist, metric_hists):
+                map_binned = Map(
+                    name=asimov_map.name,
+                    hist=np.reshape(metric_hists[metric_hist],
+                                    asimov_map.shape),
+                    binning=asimov_map.binning
+                )
+                maps_binned.append(map_binned)
+            name_vals_d['maps_binned'] = MapSet(maps_binned)
             name_vals_d['priors'] = params.priors_penalties(metric=metric)
             detailed_metric_info[m] = name_vals_d
         return detailed_metric_info
@@ -468,7 +718,7 @@ class Analysis(object):
             if not blind:
                 logging.error(
                     'Failed to generate Asimov distribution with free'
-                    ' params %s' %(hypo_maker.params.free,)
+                    ' params %s', hypo_maker.params.free
                 )
             raise
 
@@ -482,8 +732,8 @@ class Analysis(object):
         except:
             if not blind:
                 logging.error(
-                    'Failed when computing metric with free params %s'
-                    %hypo_maker.params.free
+                    'Failed when computing metric with free params %s',
+                    hypo_maker.params.free
                 )
             raise
 
@@ -697,7 +947,7 @@ class Analysis(object):
             steplist = [[(param_names[0], val) for val in values[0]]]
 
         points_acc = []
-        if not only_points is None:
+        if only_points is not None:
             assert len(only_points) == 1 or len(only_points) % 2 == 0
             if len(only_points) == 1:
                 points_acc = only_points
@@ -765,13 +1015,15 @@ class Analysis(object):
                 # TODO: serialisation!
                 for k in best_fit['minimizer_metadata']:
                     if k in ['hess', 'hess_inv']:
-                        print "deleting %s"%k
+                        logging.debug("deleting %s", k)
                         del best_fit['minimizer_metadata'][k]
 
-            best_fit['params'] = \
-                    deepcopy(best_fit['params']._serializable_state)
-            best_fit['hypo_asimov_dist'] = \
-                    deepcopy(best_fit['hypo_asimov_dist']._serializable_state)
+            best_fit['params'] = deepcopy(
+                best_fit['params'].serializable_state
+            )
+            best_fit['hypo_asimov_dist'] = deepcopy(
+                best_fit['hypo_asimov_dist'].serializable_state
+            )
 
             # decide which information to retain based on chosen debug mode
             if debug_mode == 0 or debug_mode == 1:
@@ -790,11 +1042,8 @@ class Analysis(object):
                     pass
 
             results['results'].append(best_fit)
-            if not outfile is None:
+            if outfile is not None:
                 # store intermediate results
                 to_file(results, outfile)
 
         return results
-
-def test_Counter():
-    pass

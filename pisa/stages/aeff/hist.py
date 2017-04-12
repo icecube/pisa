@@ -8,13 +8,9 @@ import numpy as np
 
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
-from pisa.core.events import Events
-from pisa.utils.flavInt import (ALL_NUFLAVINTS, flavintGroupsFromString,
-                                IntType, NuFlavIntGroup)
+from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
 from pisa.utils.fileio import mkdir, to_file
-from pisa.utils.hash import hash_obj
-from pisa.utils.log import logging, set_verbosity
-from pisa.utils.profiler import profile
+from pisa.utils.log import logging
 from pisa.utils.resources import find_resource
 
 
@@ -152,6 +148,18 @@ class hist(Stage):
         self.include_attrs_for_hashes('particles')
         self.include_attrs_for_hashes('transform_groups')
 
+    def validate_binning(self):
+        # Only works if energy is in input_binning
+        if 'true_energy' not in self.input_binning:
+            raise ValueError('Input binning must contain "true_energy"'
+                             ' dimension, but does not.')
+        excess_dims = set(self.input_binning.names).difference(
+            set(('true_energy', 'true_coszen', 'true_azimuth'))
+        )
+        if len(excess_dims) > 0:
+            raise ValueError('Input binning has extra dimension(s): %s'
+                             %sorted(excess_dims))
+
     def _compute_nominal_transforms(self):
         self.load_events(self.params.aeff_events)
         self.cut_events(self.params.transform_events_keep_criteria)
@@ -161,25 +169,13 @@ class hist(Stage):
         comp_units = dict(true_energy='GeV', true_coszen=None,
                           true_azimuth='rad')
 
-        # Only works if energy is in input_binning
-        if 'true_energy' not in self.input_binning:
-            raise ValueError('Input binning must contain "true_energy"'
-                             ' dimension, but does not.')
-
-        # coszen and azimuth are both optional, but no further dimensions are
-        excess_dims = set(self.input_binning.names).difference(
-            comp_units.keys()
-        )
-        if len(excess_dims) > 0:
-            raise ValueError('Input binning has extra dimension(s): %s'
-                             %sorted(excess_dims))
-
         # Select only the units in the input/output binning for conversion
         # (can't pass more than what's actually there)
         in_units = {dim: unit for dim, unit in comp_units.items()
                     if dim in self.input_binning}
-        out_units = {dim: unit for dim, unit in comp_units.items()
-                     if dim in self.output_binning}
+        # TODO: use out_units for some kind of conversion?
+        #out_units = {dim: unit for dim, unit in comp_units.items()
+        #             if dim in self.output_binning}
 
         # These will be in the computational units
         input_binning = self.input_binning.to(**in_units)
@@ -205,7 +201,7 @@ class hist(Stage):
         for xform_flavints in self.transform_groups:
             logging.debug("Working on %s effective areas xform" %xform_flavints)
 
-            aeff_transform = self.remaining_events.histogram(
+            aeff_transform = self.events.histogram(
                 kinds=xform_flavints,
                 binning=input_binning,
                 weights_col='weighted_aeff',
@@ -246,7 +242,7 @@ class hist(Stage):
                         input_names=xform_input_names,
                         output_name=output_name,
                         input_binning=self.input_binning,
-                        output_binning=self.output_binning,
+                        output_binning=self.input_binning,
                         xform_array=aeff_transform,
                         sum_inputs=self.sum_grouped_flavints
                     )
@@ -270,9 +266,8 @@ class hist(Stage):
                             input_names=input_name,
                             output_name=output_name,
                             input_binning=self.input_binning,
-                            output_binning=self.output_binning,
+                            output_binning=self.input_binning,
                             xform_array=aeff_transform,
-                            sum_inputs=self.sum_grouped_flavints
                         )
                         nominal_transforms.append(xform)
 
@@ -294,7 +289,7 @@ class hist(Stage):
 
         new_transforms = []
         for xform_flavints in self.transform_groups:
-            flav_names = [str(flav) for flav in xform_flavints.flavs()]
+            flav_names = [str(flav) for flav in xform_flavints.flavs]
             aeff_transform = None
             for transform in self.nominal_transforms:
                 if (transform.input_names[0] in flav_names

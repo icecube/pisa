@@ -234,13 +234,8 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
 
     # Perform the actual operation using the dict passed in by user
     if isinstance(tgt, basestring):
-        fpath = os.path.expandvars(os.path.expanduser(tgt))
-        if os.path.exists(fpath):
-            if overwrite:
-                if warn:
-                    logging.warn('Overwriting file at ' + fpath)
-            else:
-                raise Exception('Refusing to overwrite path ' + fpath)
+        from pisa.utils.fileio import check_file_exists
+        fpath = check_file_exists(fname=tgt, overwrite=overwrite, warn=warn)
         h5file = h5py.File(fpath, 'w')
         try:
             if attrs is not None:

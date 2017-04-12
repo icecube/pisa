@@ -21,6 +21,11 @@ from __future__ import division
 import numpy as np
 import scipy.optimize as optimize
 
+try:
+    from pisa import EPSILON
+except ImportError:
+    EPSILON = 1e-10
+
 
 __all__ = ['MLConfInterval']
 
@@ -42,7 +47,7 @@ class MLConfInterval(object):
         Numerical tolerance for checking numerics
 
     """
-    def __init__(self, x, y, epsilon=1e-10):
+    def __init__(self, x, y, epsilon=EPSILON):
         self.epsilon = epsilon
 
         # Sort all data in ascending-X order

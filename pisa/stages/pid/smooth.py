@@ -25,7 +25,6 @@ then returned.
 
 
 from collections import OrderedDict
-from copy import deepcopy
 from itertools import product
 
 import numpy as np
@@ -183,7 +182,7 @@ class smooth(Stage):
 
     """
     # TODO: add sum_grouped_flavints instantiation arg
-    def __init__(self, params, smoothing_method, particles, input_names,
+    def __init__(self, params, particles, input_names,
                  transform_groups, input_binning, output_binning,
                  error_method, memcache_deepcopy, transforms_cache_depth,
                  outputs_cache_depth, debug_mode=None):
@@ -221,7 +220,6 @@ class smooth(Stage):
             input_names=input_names,
             output_names=output_names,
             error_method=error_method,
-            disk_cache=disk_cache,
             outputs_cache_depth=outputs_cache_depth,
             transforms_cache_depth=transforms_cache_depth,
             memcache_deepcopy=memcache_deepcopy,
@@ -234,14 +232,7 @@ class smooth(Stage):
         self.include_attrs_for_hashes('particles')
         self.include_attrs_for_hashes('transform_groups')
 
-    @profile
-    def _compute_nominal_transforms(self):
-        """Compute new PID transforms."""
-        logging.debug('Updating pid.hist PID histograms...')
-
-        # TODO(shivesh): As of now, events do not have units as far as PISA
-        # is concerned
-
+    def validate_binning(self):
         # Works only if either energy, coszen or azimuth is in input_binning
         dim_names = ('reco_energy', 'reco_coszen', 'reco_azimuth')
         if set(self.input_binning.names).isdisjoint(dim_names):
@@ -254,6 +245,14 @@ class smooth(Stage):
         # objects; implement this! (and then this assert statement can go away)
         assert self.input_binning == self.output_binning
 
+    @profile
+    def _compute_nominal_transforms(self):
+        """Compute new PID transforms."""
+        logging.debug('Updating pid.hist PID histograms...')
+
+        # TODO(shivesh): As of now, events do not have units as far as PISA
+        # is concerned
+
         self.load_events(self.params.pid_events)
         self.cut_events(self.params.transform_events_keep_criteria)
 
@@ -261,10 +260,10 @@ class smooth(Stage):
         # already, and it should be done here (or in a nominal transform,
         # etc.). See below about taking this step when we move to directly
         # using the I3-HDF5 files.
-        events_file_combined_flavints = tuple([
-            NuFlavIntGroup(s)
-            for s in self.remaining_events.metadata['flavints_joined']
-        ])
+        #events_file_combined_flavints = tuple([
+        #    NuFlavIntGroup(s)
+        #    for s in self.events.metadata['flavints_joined']
+        #])
 
         # TODO: take events object as an input instead of as a param that
         # specifies a file? Or handle both cases?
@@ -279,8 +278,7 @@ class smooth(Stage):
         logging.debug("Separating events by PID...")
         separated_events = OrderedDict()
         for sig in self.output_channels:
-            this_sig_events = deepcopy(self.remaining_events)
-            this_sig_events.applyCut(pid_spec[sig])
+            this_sig_events = self.events.applyCut(pid_spec[sig])
             separated_events[sig] = this_sig_events
 
         # Derive transforms by combining flavints that behave similarly, but
@@ -288,7 +286,7 @@ class smooth(Stage):
         # (leaving combining these together to later)
         transforms = []
         for flav_int_group in self.transform_groups:
-            logging.debug("Working on %s PID" %flav_int_group)
+            logging.debug("Working on %s PID", flav_int_group)
 
             repr_flav_int = flav_int_group[0]
 
@@ -297,24 +295,24 @@ class smooth(Stage):
             sig_histograms = {}
             total_histo = np.zeros(self.output_binning.shape)
             for repr_flav_int in flav_int_group:
-                hist = self.remaining_events.histogram(
+                histo = self.events.histogram(
                     kinds=repr_flav_int,
                     binning=self.output_binning,
                     weights_col=self.params.pid_weights_name.value,
                     errors=None
                 ).hist
-                total_histo += hist
+                total_histo += histo
 
             for sig in self.output_channels:
                 sig_histograms[sig] = np.zeros(self.output_binning.shape)
                 for repr_flav_int in flav_int_group:
-                    this_sig_hist = separated_events[sig].histogram(
+                    this_sig_histo = separated_events[sig].histogram(
                         kinds=repr_flav_int,
                         binning=self.output_binning,
                         weights_col=self.params.pid_weights_name.value,
                         errors=None
                     ).hist
-                    sig_histograms[sig] += this_sig_hist
+                    sig_histograms[sig] += this_sig_histo
 
             for sig in self.output_channels:
                 with np.errstate(divide='ignore', invalid='ignore'):
@@ -326,8 +324,8 @@ class smooth(Stage):
                         'Group "%s", PID signature "%s" has %d bins with no'
                         ' events (and hence the ability to separate events'
                         ' by PID cannot be ascertained). These are being'
-                        ' masked off from any further computations.'
-                        % (flav_int_group, sig, num_invalid)
+                        ' masked off from any further computations.',
+                        flav_int_group, sig, num_invalid
                     )
                     # TODO: this caused buggy event propagation for some
                     # reason; check and re-introduced the masked array idea
@@ -361,7 +359,8 @@ class smooth(Stage):
         """
         return self.nominal_transforms
 
-    def suffix_channel(self, flavint, channel):
+    @staticmethod
+    def suffix_channel(flavint, channel):
         return '%s_%s' % (flavint, channel)
 
     def validate_params(self, params):

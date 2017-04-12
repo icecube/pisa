@@ -95,8 +95,8 @@ def get_bar_ssep():
 # TODO: move this to central loc in utils
 def tex(x, d=False):
     if d:
-        return '$' + x.tex() + '$'
-    return x.tex()
+        return '$' + x.tex + '$'
+    return x.tex
 
 
 class NuFlav(object):
@@ -128,9 +128,9 @@ class NuFlav(object):
             'bar': self.ANTIPART_CODE,
         }
         self.f2tex = {
-            self.NUE_CODE:  r'{\nu_e}',
-            self.NUMU_CODE:  r'{\nu_\mu}',
-            self.NUTAU_CODE:  r'{\nu_\tau}',
+            self.NUE_CODE: r'{\nu_e}',
+            self.NUMU_CODE: r'{\nu_\mu}',
+            self.NUTAU_CODE: r'{\nu_\tau}',
             self.NUEBAR_CODE: r'{\bar\nu_e}',
             self.NUMUBAR_CODE: r'{\bar\nu_\mu}',
             self.NUTAUBAR_CODE: r'{\bar\nu_\tau}',
@@ -147,10 +147,10 @@ class NuFlav(object):
                 self.__flav = self.fstr2code[matches[0][0]]
                 self.__barnobar = self.barnobar2code[matches[0][1]]
             elif hasattr(val, 'flavCode'):
-                self.__flav = val.flavCode()
+                self.__flav = val.flavCode
                 self.__barnobar = np.sign(self.__flav)
             elif hasattr(val, 'flav'):
-                self.__flav = val.flav().flavCode()
+                self.__flav = val.flav.flavCode
                 self.__barnobar = np.sign(self.__flav)
             else:
                 if val in self.fstr2code.values():
@@ -191,8 +191,8 @@ class NuFlav(object):
     def __cmp__(self, other):
         if not isinstance(other, NuFlav):
             return 1
-        c0 = self.flavCode()
-        c1 = other.flavCode()
+        c0 = self.flavCode
+        c1 = other.flavCode
         ac0 = abs(c0)
         ac1 = abs(c1)
         if ac0 < ac1:
@@ -208,22 +208,27 @@ class NuFlav(object):
     def __add__(self, other):
         return NuFlavIntGroup(self, other)
 
+    @property
     def tex(self):
         """TeX string"""
         return self.f2tex[self.__flav]
 
+    @property
     def flavCode(self):
         """Integer PDG code"""
         return self.__flav
 
+    @property
     def barNoBar(self):
         """Return +/-1 for particle/antiparticle"""
         return self.__barnobar
 
+    @property
     def isParticle(self):
         """Is this a particle (vs. antiparticle) flavor?"""
         return self.__barnobar == self.PART_CODE
 
+    @property
     def isAntiParticle(self):
         """Is this an antiparticle flavor?"""
         return self.__barnobar == self.ANTIPART_CODE
@@ -254,12 +259,14 @@ class AllNu(object):
     def __init__(self):
         self.__flav = [p for p in ALL_NUPARTICLES]
 
+    @property
     def flav(self):
         return self.__flav
 
     def __str__(self):
         return 'nuall'
 
+    @property
     def tex(self):
         return r'{\nu_{\rm all}}'
 
@@ -268,12 +275,14 @@ class AllNuBar(object):
     def __init__(self):
         self.__flav = [p for p in ALL_NUANTIPARTICLES]
 
+    @property
     def flav(self):
         return self.__flav
 
     def __str__(self):
         return 'nuallbar'
 
+    @property
     def tex(self):
         return r'{\bar\nu_{\rm all}}'
 
@@ -286,9 +295,9 @@ class IntType(object):
       * Numerical code: 1=CC, 2=NC
       * String (case-insensitive; all characters besides valid tokens are
         ignored)
-      * Instantiated IntType object (or any method implementing intTypeCode()
+      * Instantiated IntType object (or any method implementing intTypeCode
         which returns a valid interaction type code)
-      * Instantiated NuFlavInt object (or any object implementing intType()
+      * Instantiated NuFlavInt object (or any object implementing intType
         which returns a valid IntType object)
 
     The following, e.g., are all interpreted as charged-current IntTypes:
@@ -324,9 +333,9 @@ class IntType(object):
                     raise ValueError('Invalid IntType spec: "%s"' % val)
                 self.__int_type = self.istr2code[int_type[0]]
             elif hasattr(val, 'intType'):
-                self.__int_type = val.intType().intTypeCode()
+                self.__int_type = val.intType.intTypeCode
             elif hasattr(val, 'intTypeCode'):
-                self.__int_type = val.intTypeCode()
+                self.__int_type = val.intTypeCode
             else:
                 if val in self.istr2code.values():
                     self.__int_type = int(val)
@@ -356,20 +365,24 @@ class IntType(object):
     def __cmp__(self, other):
         if not isinstance(other, IntType):
             return 1
-        return self.intTypeCode() - other.intTypeCode()
+        return self.intTypeCode - other.intTypeCode
 
+    @property
     def isCC(self):
         """Is this interaction type charged current (CC)?"""
         return self.__int_type == self.CC_CODE
 
+    @property
     def isNC(self):
         """Is this interaction type neutral current (NC)?"""
         return self.__int_type == self.NC_CODE
 
+    @property
     def intTypeCode(self):
         """Integer code for this interaction type"""
         return self.__int_type
 
+    @property
     def tex(self):
         """TeX representation of this interaction type"""
         return self.i2tex[self.__int_type]
@@ -449,27 +462,27 @@ class NuFlavInt(object):
             self.__flav = NuFlav(flav_int[0])
             self.__int_type = IntType(flav_int[1])
         elif isinstance(flav_int, NuFlavInt):
-            self.__flav = NuFlav(flav_int.flav())
-            self.__int_type = IntType(flav_int.intTypeCode())
+            self.__flav = NuFlav(flav_int.flav)
+            self.__int_type = IntType(flav_int.intTypeCode)
         else:
             raise TypeError('Unhandled type: "' + str(type(flav_int)) +
                             '"; class: "' + str(flav_int.__class__) +
                             '; value: "' + str(flav_int) + '"')
 
     def __str__(self):
-        return self.flavStr() + self.FINT_SSEP + self.intTypeStr()
+        return self.flavStr + self.FINT_SSEP + self.intTypeStr
 
     def __repr__(self):
         return self.__str__()
 
     def __hash__(self):
-        return hash((self.flavCode(), self.intTypeCode()))
+        return hash((self.flavCode, self.intTypeCode))
 
     def __cmp__(self, other):
         if not isinstance(other, NuFlavInt):
             return 1
         return cmp(
-            (self.flav(), self.intType()), (other.flav(), other.intType())
+            (self.flav, self.intType), (other.flav, other.intType)
         )
 
     def __neg__(self):
@@ -490,71 +503,85 @@ class NuFlavInt(object):
         """
 
         with BarSep('_'):
-            field = d[str(self.flav())][str(self.intType())]
+            field = d[str(self.flav)][str(self.intType)]
         for idx in args:
             field = field[idx]
         return field
 
+    @property
     def flav(self):
         """Return just the NuFlav part of this NuFlavInt"""
         return self.__flav
 
+    @property
     def flavCode(self):
         """Return the integer PDG code for this flavor"""
-        return self.__flav.flavCode()
+        return self.__flav.flavCode
 
+    @property
     def barNoBar(self):
         """Return +/-1 depending on if the flavor is a particle/antiparticle"""
-        return self.__flav.barNoBar()
+        return self.__flav.barNoBar
 
+    @property
     def isParticle(self):
         """Is this a particle (vs. antiparticle) flavor?"""
-        return self.__flav.isParticle()
+        return self.__flav.isParticle
 
+    @property
     def isAntiParticle(self):
         """Is this an antiparticle flavor?"""
-        return self.__flav.isAntiParticle()
+        return self.__flav.isAntiParticle
 
+    @property
     def isCC(self):
         """Is this interaction type charged current (CC)?"""
-        return self.__int_type.isCC()
+        return self.__int_type.isCC
 
+    @property
     def isNC(self):
         """Is this interaction type neutral current (NC)?"""
-        return self.__int_type.isNC()
+        return self.__int_type.isNC
 
+    @property
     def intType(self):
         """Return IntType object that composes this NuFlavInt"""
         return self.__int_type
 
+    @property
     def intTypeCode(self):
         """Return integer code for IntType that composes this NuFlavInt"""
-        return self.__int_type.intTypeCode()
+        return self.__int_type.intTypeCode
 
+    @property
     def flavStr(self):
         """String representation of flavor that comprises this NuFlavInt"""
         return str(self.__flav)
 
+    @property
     def intTypeStr(self):
         """String representation of interaction type that comprises this
         NuFlavInt"""
         return str(self.__int_type)
 
+    @property
     def flavTex(self):
         """TeX string representation of the flavor that comprises this
         NuFlavInt"""
-        return self.__flav.tex()
+        return self.__flav.tex
 
+    @property
     def intTypeTex(self):
         """TeX string representation of interaction type that comprises this
         NuFlavInt"""
-        return self.__int_type.tex()
+        return self.__int_type.tex
 
+    @property
     def tex(self):
         """TeX string representation of this NuFlavInt"""
-        return '{%s%s%s}' % (self.flavTex(),
+        return '{%s%s%s}' % (self.flavTex,
                              self.FINT_TEXSEP,
-                             self.intTypeTex())
+                             self.intTypeTex)
 
 
 class NuFlavIntGroup(MutableSequence):
@@ -590,7 +617,8 @@ class NuFlavIntGroup(MutableSequence):
         # if this is the case
         if len(args) == 2:
             args = [args]
-        [self.__iadd__(a) for a in args]
+        for a in args:
+            self += a
 
     def __add__(self, val):
         flavint_list = sorted(set(self.__flavints + self.interpret(val)))
@@ -653,19 +681,19 @@ class NuFlavIntGroup(MutableSequence):
         return self.__flavints[idx]
 
     def __str__(self):
-        allkg = set(self.flavints())
+        allkg = set(self.flavints)
 
         # Check if nuall or nuallbar CC, NC, or both
         nuallcc, nuallbarcc, nuallnc, nuallbarnc = False, False, False, False
-        ccFlavInts = NuFlavIntGroup(self.ccFlavInts())
-        ncFlavInts = NuFlavIntGroup(self.ncFlavInts())
-        if len(ccFlavInts.particles()) == 3:
+        ccFlavInts = NuFlavIntGroup(self.ccFlavInts)
+        ncFlavInts = NuFlavIntGroup(self.ncFlavInts)
+        if len(ccFlavInts.particles) == 3:
             nuallcc = True
-        if len(ccFlavInts.antiParticles()) == 3:
+        if len(ccFlavInts.antiParticles) == 3:
             nuallbarcc = True
-        if len(ncFlavInts.particles()) == 3:
+        if len(ncFlavInts.particles) == 3:
             nuallnc = True
-        if len(ncFlavInts.antiParticles()) == 3:
+        if len(ncFlavInts.antiParticles) == 3:
             nuallbarnc = True
 
         # Construct nuall(bar) part(s) of string
@@ -696,7 +724,7 @@ class NuFlavIntGroup(MutableSequence):
         # NC are present for individual flavors (i.e., eliminate the intType
         # string altogether)
         for flav in ALL_NUPARTICLES + ALL_NUANTIPARTICLES:
-            if flav in [k.flav() for k in allkg]:
+            if flav in [k.flav for k in allkg]:
                 cc, nc = False, False
                 if NuFlavInt(flav, 'cc') in allkg:
                     cc = True
@@ -781,7 +809,7 @@ class NuFlavIntGroup(MutableSequence):
         elif isinstance(val, NuFlavInt):
             flavints = [val]
         elif isinstance(val, NuFlavIntGroup):
-            flavints = list(val.flavints())
+            flavints = list(val.flavints)
         elif np.isscalar(val):
             flavints = [val]
         elif val is None:
@@ -828,53 +856,61 @@ class NuFlavIntGroup(MutableSequence):
                 flavint_list.append(NuFlavInt((flav, 'nc')))
         return flavint_list
 
+    @property
     def flavints(self):
         """Return tuple of all NuFlavInts that make up this group"""
         return tuple(self.__flavints)
 
+    @property
     def flavs(self):
         """Return tuple of unique flavors that make up this group"""
-        return tuple(sorted(set([k.flav() for k in self.__flavints])))
+        return tuple(sorted(set([k.flav for k in self.__flavints])))
 
+    @property
     def ccFlavInts(self):
         """Return tuple of unique charged-current-interaction NuFlavInts that
         make up this group"""
         return tuple([k for k in self.__flavints
-                      if k.intType() == IntType('cc')])
+                      if k.intType == IntType('cc')])
 
+    @property
     def ncFlavInts(self):
         """Return tuple of unique neutral-current-interaction NuFlavInts that
         make up this group"""
         return tuple([k for k in self.__flavints
-                      if k.intType() == IntType('nc')])
+                      if k.intType == IntType('nc')])
 
+    @property
     def particles(self):
         """Return tuple of unique particle (vs antiparticle) NuFlavInts that
         make up this group"""
-        return tuple([k for k in self.__flavints if k.isParticle()])
+        return tuple([k for k in self.__flavints if k.isParticle])
 
+    @property
     def antiParticles(self):
         """Return tuple of unique antiparticle NuFlavInts that make up this
         group"""
-        return tuple([k for k in self.__flavints if k.isAntiParticle()])
+        return tuple([k for k in self.__flavints if k.isAntiParticle])
 
+    @property
     def ccFlavs(self):
         """Return tuple of unique charged-current-interaction flavors that
         make up this group. Note that only the flavors, and not NuFlavInts, are
         returned (cf. method `ccFlavInts`"""
-        return tuple(sorted(set([k.flav() for k in self.__flavints
-                                 if k.intType() == IntType('cc')])))
+        return tuple(sorted(set([k.flav for k in self.__flavints
+                                 if k.intType == IntType('cc')])))
 
+    @property
     def ncFlavs(self):
         """Return tuple of unique neutral-current-interaction flavors that
         make up this group. Note that only the flavors, and not NuFlavInts, are
         returned (cf. method `ncFlavInts`"""
-        return tuple(sorted(set([k.flav() for k in self.__flavints
-                                 if k.intType() == IntType('nc')])))
+        return tuple(sorted(set([k.flav for k in self.__flavints
+                                 if k.intType == IntType('nc')])))
 
     #def uniqueFlavs(self):
     #    """Return tuple of unique flavors that make up this group"""
-    #    return tuple(sorted(set([k.flav() for k in self.__flavints])))
+    #    return tuple(sorted(set([k.flav for k in self.__flavints])))
 
     def groupFlavsByIntType(self):
         """Return a dictionary with flavors grouped by the interaction types
@@ -888,12 +924,12 @@ class NuFlavIntGroup(MutableSequence):
         }
         where the lists of NuFlav objects are mutually exclusive
         """
-        uniqueF = self.flavs()
-        fint_d = {f:set() for f in uniqueF}
-        [fint_d[k.flav()].add(k.intType()) for k in self.flavints()]
+        uniqueF = self.flavs
+        fint_d = {f: set() for f in uniqueF}
+        [fint_d[k.flav].add(k.intType) for k in self.flavints]
         grouped = {
             'all_int_type_flavs': [],
-            'cc_only_flavs' : [],
+            'cc_only_flavs': [],
             'nc_only_flavs': []
         }
         for f in uniqueF:
@@ -910,11 +946,11 @@ class NuFlavIntGroup(MutableSequence):
         all_nu = AllNu()
         all_nubar = AllNuBar()
         for k, v in grouped.items():
-            if all([f in v for f in all_nubar.flav()]):
-                [grouped[k].remove(f) for f in all_nubar.flav()]
+            if all([f in v for f in all_nubar.flav]):
+                [grouped[k].remove(f) for f in all_nubar.flav]
                 grouped[k].insert(0, all_nubar)
-            if all([f in v for f in all_nu.flav()]):
-                [grouped[k].remove(f) for f in all_nu.flav()]
+            if all([f in v for f in all_nu.flav]):
+                [grouped[k].remove(f) for f in all_nu.flav]
                 grouped[k].insert(0, all_nu)
         all_s = flavsep.join([func(f) for f in grouped['all_int_type_flavs']])
         cc_only_s = flavsep.join([func(f) for f in grouped['cc_only_flavs']])
@@ -946,14 +982,16 @@ class NuFlavIntGroup(MutableSequence):
         return self.__simpleStr(flavsep=flavsep, intsep=intsep,
                                 flavintsep=flavintsep, addsep=addsep, func=tex)
 
-    def tex(self, *args, **kwargs):
+    @property
+    def tex(self):
         """TeX string representation for this group"""
-        return self.simpleTex(*args, **kwargs)
+        return self.simpleTex()
 
-    def uniqueFlavsTex(self, flavsep=r' + '):
+    @property
+    def uniqueFlavsTex(self):
         """TeX string representation of the unique flavors present in this
         group"""
-        return flavsep.join([f.tex() for f in self.flavs()])
+        return ' + '.join([f.tex for f in self.flavs])
 
 
 ALL_NUFLAVINTS = NuFlavIntGroup('nuall,nuallbar')
@@ -1017,7 +1055,7 @@ class FlavIntData(dict):
         elif val is None:
             # Instantiate empty FlavIntData
             with BarSep('_'):
-                d = {str(f): {str(it):None for it in ALL_NUINT_TYPES}
+                d = {str(f): {str(it): None for it in ALL_NUINT_TYPES}
                      for f in ALL_NUFLAVS}
         else:
             raise TypeError('Unrecognized `val` type %s' % type(val))
@@ -1032,7 +1070,7 @@ class FlavIntData(dict):
         with BarSep('_'):
             try:
                 nfi = NuFlavInt(idx)
-                return [str(nfi.flav()), str(nfi.intType())]
+                return [str(nfi.flav), str(nfi.intType)]
             except (AssertionError, ValueError, TypeError):
                 try:
                     return [str(NuFlav(idx))]
@@ -1067,8 +1105,8 @@ class FlavIntData(dict):
     def __basic_validate(fi_container):
         for flavint in ALL_NUFLAVINTS:
             with BarSep('_'):
-                f = str(flavint.flav())
-                it = str(flavint.intType())
+                f = str(flavint.flav)
+                it = str(flavint.intType)
             assert isinstance(fi_container, dict), "container must be of" \
                     " type 'dict'; instead got %s" % type(fi_container)
             assert fi_container.has_key(f), "container missing flavor '%s'" % f
@@ -1092,7 +1130,7 @@ class FlavIntData(dict):
     @staticmethod
     def __translate_inttype_dict(d):
         for key in d.keys():
-            if not isinstance(key, basestring) or not (key.lower() == key):
+            if not isinstance(key, basestring) or key.lower() != key:
                 val = d.pop(key)
                 d[str(key).lower()] = val
         return d
@@ -1102,14 +1140,16 @@ class FlavIntData(dict):
         self.validate(d)
         return d
 
+    @property
     def flavs(self):
         return tuple(sorted([NuFlav(k) for k in self.keys()]))
 
+    @property
     def flavints(self):
         fis = []
-        [[fis.append(NuFlavInt(flav, int_type))
-          for int_type in self[flav].keys()]
-         for flav in self.keys()]
+        for flav in self.keys():
+            for int_type in self[flav].keys():
+                fis.append(NuFlavInt(flav, int_type))
         return tuple(sorted(fis))
 
     def allclose(self, other, rtol=1e-05, atol=1e-08):
@@ -1166,7 +1206,7 @@ class FlavIntData(dict):
 
         dupe_flavintgroups = []
         dupe_flavintgroups_data = []
-        for flavint in self.flavints():
+        for flavint in self.flavints:
             this_datum = self[flavint]
             match = False
             for n, group_datum in enumerate(dupe_flavintgroups_data):
@@ -1214,6 +1254,7 @@ class FlavIntDataGroup(dict):
     """
     def __init__(self, val=None, flavint_groups=None):
         super(FlavIntDataGroup, self).__init__()
+        self._flavint_groups = None
         if flavint_groups is None:
             if val is None:
                 raise ValueError('Error - must input at least one of '
@@ -1257,7 +1298,7 @@ class FlavIntDataGroup(dict):
     def flavint_groups(self, value):
         assert 'muons' not in value
         fig = self._parse_flavint_groups(value)
-        all_flavints = reduce(add, [f.flavints() for f in fig])
+        all_flavints = reduce(add, [f.flavints for f in fig])
         for fi in set(all_flavints):
             if all_flavints.count(fi) > 1:
                 raise AssertionError(
@@ -1282,9 +1323,9 @@ class FlavIntDataGroup(dict):
         """
         flavint_groups = self._parse_flavint_groups(flavint_groups)
 
-        original_flavints = reduce(add, [list(f.flavints()) for f in
+        original_flavints = reduce(add, [list(f.flavints) for f in
                                          self.flavint_groups])
-        inputted_flavints = reduce(add, [list(f.flavints()) for f in
+        inputted_flavints = reduce(add, [list(f.flavints) for f in
                                          flavint_groups])
         if not set(inputted_flavints).issubset(set(original_flavints)):
             raise AssertionError(
@@ -1558,7 +1599,7 @@ class CombinedFlavIntData(FlavIntData):
                     else:
                         out_dict[str(flav)] = top_val
 
-                    for nfi in NuFlavIntGroup(flav).flavints():
+                    for nfi in NuFlavIntGroup(flav).flavints:
                         named_g = 999999999999999999999999999999999
                 except ValueError:
                     nfig = NuFlavIntGroup(top_key)
@@ -1581,7 +1622,7 @@ class CombinedFlavIntData(FlavIntData):
             named_g = grouped
             named_ung = ungrouped
             # Instantiate empty dict with groupings as keys
-            d = {str(k):None for k in named_g+named_ung}
+            d = {str(k): None for k in named_g+named_ung}
 
         else:
             raise TypeError('Unrecognized `val`: "%s", type %s' %
@@ -1724,7 +1765,7 @@ class CombinedFlavIntData(FlavIntData):
                 match = True
                 #print 'found subset match:', tgt_grp, 'in', flavints
                 logging.debug('Requesting data for subset (%s) of'
-                              ' grouping %s' % (str(tgt_grp), str(flavints)))
+                              ' grouping %s', str(tgt_grp), str(flavints))
             # Get it
             if match:
                 branch_keys = all_keys[:-1]
@@ -1785,7 +1826,7 @@ def test_IntType():
     assert IntType('\n\t _cc \n') == ref
     try:
         IntType('numubarcc')
-    except:
+    except ValueError:
         pass
     else:
         raise Exception()
@@ -1807,14 +1848,14 @@ def test_NuFlav():
     # Test NuFlav
     #==========================================================================
     ref = NuFlav('numu')
-    assert ref.flavCode() == 14
-    assert (-ref).flavCode() == -14
-    assert ref.barNoBar() == 1
-    assert (-ref).barNoBar() == -1
-    assert ref.isParticle()
-    assert not (-ref).isParticle()
-    assert not ref.isAntiParticle()
-    assert (-ref).isAntiParticle()
+    assert ref.flavCode == 14
+    assert (-ref).flavCode == -14
+    assert ref.barNoBar == 1
+    assert (-ref).barNoBar == -1
+    assert ref.isParticle
+    assert not (-ref).isParticle
+    assert not ref.isAntiParticle
+    assert (-ref).isAntiParticle
 
     #assert NuFlav('\n\t _ nu_ mu_ cc\n\t\r') == ref
     #assert NuFlav('numucc') == ref
@@ -1913,7 +1954,7 @@ def test_NuFlavIntGroup():
     assert nkg0 != 'xyz'
 
     # Test inputs
-    assert NuFlavIntGroup('nuall,nuallbar').flavs() == \
+    assert NuFlavIntGroup('nuall,nuallbar').flavs == \
             tuple([NuFlav(c) for c in all_f_codes])
 
     #
@@ -1929,32 +1970,32 @@ def test_NuFlavIntGroup():
     NuFlavIntGroup([])
 
     # String flavor promoted to CC+NC
-    assert set(NuFlavIntGroup('nue').flavints()) == set((nue_cc, nue_nc))
+    assert set(NuFlavIntGroup('nue').flavints) == set((nue_cc, nue_nc))
     # NuFlav promoted to CC+NC
-    assert set(NuFlavIntGroup(nue).flavints()) == set((nue_cc, nue_nc))
+    assert set(NuFlavIntGroup(nue).flavints) == set((nue_cc, nue_nc))
     # List of single flav str same as above
-    assert set(NuFlavIntGroup(['nue']).flavints()) == set((nue_cc, nue_nc))
+    assert set(NuFlavIntGroup(['nue']).flavints) == set((nue_cc, nue_nc))
     # List of single flav same as above
-    assert set(NuFlavIntGroup([nue]).flavints()) == set((nue_cc, nue_nc))
+    assert set(NuFlavIntGroup([nue]).flavints) == set((nue_cc, nue_nc))
 
     # Single flavint spec
-    assert set(NuFlavIntGroup(nue_cc).flavints()) == set((nue_cc,))
+    assert set(NuFlavIntGroup(nue_cc).flavints) == set((nue_cc,))
     # Str with single flavint spec
-    assert set(NuFlavIntGroup('nue_cc').flavints()) == set((nue_cc,))
+    assert set(NuFlavIntGroup('nue_cc').flavints) == set((nue_cc,))
     # List of single str containing single flavint spec
-    assert set(NuFlavIntGroup(['nue_cc']).flavints()) == set((nue_cc,))
+    assert set(NuFlavIntGroup(['nue_cc']).flavints) == set((nue_cc,))
 
     # Multiple flavints as *args
-    assert set(NuFlavIntGroup(nue_cc, nue_nc).flavints()) == set((nue_cc, nue_nc))
+    assert set(NuFlavIntGroup(nue_cc, nue_nc).flavints) == set((nue_cc, nue_nc))
     # List of flavints
-    assert set(NuFlavIntGroup([nue_cc, nue_nc]).flavints()) == set((nue_cc, nue_nc))
+    assert set(NuFlavIntGroup([nue_cc, nue_nc]).flavints) == set((nue_cc, nue_nc))
     # List of single str containing multiple flavints spec
-    assert set(NuFlavIntGroup(['nue_cc,nue_nc']).flavints()) == set((nue_cc, nue_nc))
+    assert set(NuFlavIntGroup(['nue_cc,nue_nc']).flavints) == set((nue_cc, nue_nc))
     # List of str containing flavints spec
-    assert set(NuFlavIntGroup(['nue_cc', 'nue_nc']).flavints()) == set((nue_cc, nue_nc))
+    assert set(NuFlavIntGroup(['nue_cc', 'nue_nc']).flavints) == set((nue_cc, nue_nc))
 
     # Another NuFlavIntGroup
-    assert set(NuFlavIntGroup(NuFlavIntGroup(nue_cc, nue_nc)).flavints()) == set((nue_cc, nue_nc))
+    assert set(NuFlavIntGroup(NuFlavIntGroup(nue_cc, nue_nc)).flavints) == set((nue_cc, nue_nc))
 
     # Addition of flavints promoted to NuFlavIntGroup
     assert nue_cc + nue_nc == NuFlavIntGroup(nue)
@@ -1974,7 +2015,7 @@ def test_NuFlavIntGroup():
     # Equivalent object when converting to string and back to NuFlavIntGroup from
     # that string
     for n in range(1, len(ALL_NUFLAVINTS)+1):
-        logging.debug('NuFlavIntGroup --> str --> NuFlavIntGroup, n = %d' % n)
+        logging.debug('NuFlavIntGroup --> str --> NuFlavIntGroup, n = %d', n)
         for comb in combinations(ALL_NUFLAVINTS, n):
             ref = NuFlavIntGroup(comb)
             assert ref == NuFlavIntGroup(str(ref))
@@ -1985,7 +2026,7 @@ def test_NuFlavIntGroup():
     logging.info(tex(nkg))
     logging.info(nkg.simpleStr())
     logging.info(nkg.simpleTex())
-    logging.info(nkg.uniqueFlavsTex())
+    logging.info(nkg.uniqueFlavsTex)
 
     logging.info('<< ???? : test_NuFlavIntGroup >> checks pass upon inspection'
                  ' of above outputs and generated file(s).')
@@ -2006,7 +2047,7 @@ def test_FlavIntData():
     # still works and this separator is still set when we're done
     oddball_sep = 'xyz'
     set_bar_ssep(oddball_sep)
-    ref_pisa_dict = {f:{it:None for it in ['cc', 'nc']} for f in
+    ref_pisa_dict = {f: {it: None for it in ['cc', 'nc']} for f in
                      ['nue', 'nue_bar', 'numu', 'numu_bar', 'nutau',
                       'nutau_bar']}
     fi_cont = FlavIntData()
@@ -2031,7 +2072,7 @@ def test_FlavIntData():
     # These should fail because you're only allowed to access the flav or
     # flavint part of the data structure, no longer any sub-items (use
     # subsequent [k1][k2]... to do this instead)
-    fi_cont['numu', 'cc'] = {'sub-key':{'sub-sub-key': None}}
+    fi_cont['numu', 'cc'] = {'sub-key': {'sub-sub-key': None}}
     try:
         fi_cont['numu', 'cc', 'sub-key']
     except ValueError:
@@ -2073,19 +2114,19 @@ def test_FlavIntData():
 
     # Test setting, getting, and JSON serialization of FlavIntData
     fi_cont['nue', 'cc'] = 'this is a string blah blah blah'
-    fi_cont[NuFlavInt('nue_cc')]
+    _ = fi_cont[NuFlavInt('nue_cc')]
     fi_cont[NuFlavInt('nue_nc')] = np.pi
-    fi_cont[NuFlavInt('nue_nc')]
+    _ = fi_cont[NuFlavInt('nue_nc')]
     fi_cont[NuFlavInt('numu_cc')] = [0, 1, 2, 3]
-    fi_cont[NuFlavInt('numu_cc')]
-    fi_cont[NuFlavInt('numu_nc')] = {'new':{'nested':{'dict':'xyz'}}}
-    fi_cont[NuFlavInt('numu_nc')]
+    _ = fi_cont[NuFlavInt('numu_cc')]
+    fi_cont[NuFlavInt('numu_nc')] = {'new': {'nested': {'dict': 'xyz'}}}
+    _ = fi_cont[NuFlavInt('numu_nc')]
     fi_cont[NuFlavInt('nutau_cc')] = 1
-    fi_cont[NuFlavInt('nutau_cc')]
+    _ = fi_cont[NuFlavInt('nutau_cc')]
     fi_cont[NuFlavInt('nutaubar_cc')] = np.array([0, 1, 2, 3])
-    fi_cont[NuFlavInt('nutaubar_cc')]
+    _ = fi_cont[NuFlavInt('nutaubar_cc')]
     fname = '/tmp/test_FlavIntData.json'
-    logging.info('Writing FlavIntData to file %s; inspect.' %fname)
+    logging.info('Writing FlavIntData to file %s; inspect.', fname)
     fileio.to_file(fi_cont, fname, warn=False)
     fi_cont2 = fileio.from_file(fname)
     assert recursiveEquality(fi_cont2, fi_cont), \

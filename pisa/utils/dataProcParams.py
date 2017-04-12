@@ -263,10 +263,10 @@ class DataProcParams(dict):
         # Add generic cuts
         self['cuts'].update({
             # Cut for particles only (no anti-particles)
-            str(NuFlav(12).barNoBar()).lower():
+            str(NuFlav(12).barNoBar).lower():
                 {'fields': ['nu_code'], 'pass_if': 'nu_code > 0'},
             # Cut for anti-particles only (no particles)
-            str(NuFlav(-12).barNoBar()).lower():
+            str(NuFlav(-12).barNoBar).lower():
                 {'fields': ['nu_code'], 'pass_if': 'nu_code < 0'},
             # Cut for charged-current interactions only
             str(IntType('cc')).lower():
@@ -541,7 +541,7 @@ class DataProcParams(dict):
     def subselect(data, fields, indices=None):
         if isinstance(data, FlavIntData):
             outdata = FlavIntData()
-            for flavint in data.flavints():
+            for flavint in data.flavints:
                 outdata[flavint] = DataProcParams.subselect(data[flavint],
                                                             fields=fields,
                                                             indices=indices)
@@ -565,7 +565,7 @@ class DataProcParams(dict):
         """
         if isinstance(data, FlavIntData):
             outdata = FlavIntData()
-            for flavint in data.flavints():
+            for flavint in data.flavints:
                 outdata[flavint] = self.applyCuts(
                     data[flavint], cuts=cuts, boolean_op=boolean_op,
                     return_fields=return_fields

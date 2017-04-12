@@ -26,26 +26,26 @@ numucc = flavInt.NuFlavInt('numu_bar_cc')
 numucc = flavInt.NuFlavInt(numu, cc)
 numubarcc = -numucc
 
-numubarcc.flav() # -> 'numubar'
-numubarcc.intType() # -> 'cc'
-numubar.isParticle() # -> False
-numubarcc.isCC() # -> True
+numubarcc.flav # -> 'numubar'
+numubarcc.intType # -> 'cc'
+numubar.isParticle # -> False
+numubarcc.isCC # -> True
 
 # TeX string (nice for plots!)
-numubarcc.tex() # -> '{{\bar\nu_\mu} \, {\rm CC}}'
+numubarcc.tex # -> '{{\bar\nu_\mu} \, {\rm CC}}'
 
 # NuFlavIntGroup
 nkg = flavInt.NuFlavIntGroup('numucc,numubarcc')
 nkg = numucc + numubarcc # works!
-nkg.flavints() # -> (numu_cc, numubar_cc)
-nkg.particles() # -> (numu_cc,)
+nkg.flavints # -> (numu_cc, numubar_cc)
+nkg.particles # -> (numu_cc,)
 nkg -= numucc # remove a flavInt
-nkg.flavints() # -> (numubar_cc,)
+nkg.flavints # -> (numubar_cc,)
 
 # No intType spec=BOTH intTypes
 nkg = flavInt.NuFlavIntGroup('numu')
-nkg.flavints() # -> (numu_cc, numu_nc)
-nkg.ccFlavInts() # -> (numu_cc,)
+nkg.flavints # -> (numu_cc, numu_nc)
+nkg.ccFlavInts # -> (numu_cc,)
 
 # Loop over all particle CC flavInts
 for fi in flavInt.NuFlavIntGroup('nuallcc'):
@@ -54,7 +54,7 @@ for fi in flavInt.NuFlavIntGroup('nuallcc'):
 # String, TeX
 nkg = flavInt.NuFlavIntGroup('nuallcc')
 print nkg # -> 'nuall_cc'
-nkg.tex() # -> '{\nu_{\rm all}} \, {\rm CC}'
+nkg.tex # -> '{\nu_{\rm all}} \, {\rm CC}'
 
 ```
 

@@ -134,6 +134,9 @@ class MCSimRunSettings(dict):
     def translateSourceDict(d):
         d['tot_gen'] = d['num_events_per_file'] * d['num_i3_files']
 
+        # TODO: does the following logic actually work with both old and new
+        # conventions?
+
         # NOTE: the ',' --> '+' mapping is necessary since some data files
         # were saved prior to the convention that commas exclusively separate
         # groups while plus signs indicate flav/ints grouped together
@@ -170,26 +173,34 @@ class MCSimRunSettings(dict):
         """Fraction of events generated (either particles or antiparticles).
 
         Specifying whether you want the fraction for particle or
-        antiparticle can be done in one (and only one) of three ways:
+        antiparticle is done by specifying one (and only one) of the three
+        parameters:
+            `barnobar`, `is_particle` or `flav_or_flavint`
 
-        barnobar : None, -1 (antiparticle), or +1 (particle)
+        Parameters
+        ----------
+        barnobar : None or int
+            -1 for antiparticle, +1 for particle
         is_particle : None or bool
+            True for particle, false for antiparticle
         flav_or_flavint : None or convertible to NuFlav or NuFlavInt
-            Particle or antiparticles is determined from the flavor / flavint
+            Particle or antiparticles is determined from the flavor or flavint
             passed
+
         """
         nargs = sum([(not barnobar is None),
                      (not is_particle is None),
                      (not flav_or_flavint is None)])
         if nargs != 1:
-            raise ValueError('One and only one of barnobar, is_particle, and'
-                             ' flav_or_flavint must be specified. Got ' +
-                             str(nargs) + ' args instead.')
+            raise ValueError('One and only one of `barnobar`, `is_particle`,'
+                             ' and `flav_or_flavint` must be specified. Got'
+                             ' %d non-None args instead.' % nargs)
 
         if flav_or_flavint is not None:
-            is_particle = flavInt.NuFlavInt(flav_or_flavint).isParticle()
-        if barnobar is not None:
+            is_particle = flavInt.NuFlavInt(flav_or_flavint).isParticle
+        elif barnobar is not None:
             is_particle = barnobar > 0
+
         if is_particle:
             return self['nu_to_total_fract']
         return 1 - self['nu_to_total_fract']
@@ -237,10 +248,10 @@ class MCSimRunSettings(dict):
         return self['tot_gen'] * barnobarfract * physical_fract
 
     def get_flavints(self):
-        return self['flavints'].flavints()
+        return self['flavints'].get_flavints()
 
     def get_flavs(self):
-        return self['flavints'].flavs()
+        return self['flavints'].get_flavs()
 
     def get_energy_range(self):
         """(min, max) energy in GeV"""
@@ -278,6 +289,7 @@ class DetMCSimRunsSettings(dict):
     MCSimRunSettings : Same, but specifies a specific run at instantiation; see
                        class docstring for specification of run_settings dict /
                        JSON file
+
     """
     def __init__(self, run_settings, detector=None):
         if isinstance(run_settings, basestring):

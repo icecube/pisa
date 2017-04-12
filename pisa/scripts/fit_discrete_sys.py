@@ -240,7 +240,7 @@ def main():
                                     binning=binning))
                 maps = MapSet(maps)
                 my_plotter = Plotter(
-                    stamp='PISA cake test',
+                    stamp='',
                     outdir=args.out_dir,
                     fmt='pdf',
                     log=False,
@@ -249,7 +249,6 @@ def main():
                 my_plotter.plot_2d_array(
                     maps,
                     fname='%s_%s_%s_%s'%(sys, args.tag, d, smooth),
-                    cmap='RdBu'
                 )
 
 

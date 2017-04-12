@@ -9,7 +9,6 @@ Hypothesis testing: How do two hypotheses compare for describing MC or data?
 This script/module can run either Asimov or LLR analyses. See
 `hypo_testing_postprocess.py` to derive significances, etc. from the files
 logged by this script.
-
 """
 
 
@@ -327,20 +326,24 @@ class HypoTesting(Analysis):
                  num_data_trials=1, num_fid_trials=1,
                  data_start_ind=0, fid_start_ind=0,
                  check_octant=True,
+                 check_ordering=False,
                  allow_dirty=False, allow_no_git_info=False,
-                 blind=False, store_minimizer_history=True, pprint=False):
+                 blind=False, store_minimizer_history=True, pprint=False,
+                 reset_free=True):
         assert num_data_trials >= 1
         assert num_fid_trials >= 1
         assert data_start_ind >= 0
         assert fid_start_ind >= 0
         assert metric in ALL_METRICS
 
+        # Make it possible to seed minimiser off truth
+        self.reset_free = reset_free
+
         # Instantiate h0 distribution maker to ensure it is a valid spec
         if h0_maker is None:
             raise ValueError('`h0_maker` must be specified (and not None)')
         if not isinstance(h0_maker, DistributionMaker):
             h0_maker = DistributionMaker(h0_maker)
-
         if isinstance(h0_param_selections, basestring):
             h0_param_selections = h0_param_selections.strip().lower()
             if h0_param_selections == '':
@@ -469,6 +472,7 @@ class HypoTesting(Analysis):
         self.logdir = logdir
         self.minimizer_settings = minimizer_settings
         self.check_octant = check_octant
+        self.check_ordering = check_ordering
 
         self.h0_maker = h0_maker
         self.h0_param_selections = h0_param_selections
@@ -512,6 +516,12 @@ class HypoTesting(Analysis):
         self.h0_fid_dist = None
         self.h1_fid_dist = None
 
+        # Storage for most recent fiducial fit parameters
+        self.h0_fit_to_h0_fid = None
+        self.h0_fit_to_h1_fid = None
+        self.h1_fit_to_h0_fid = None
+        self.h1_fit_to_h1_fid = None
+
         # Populate names with user-specified strings or try to make intelligent
         # guesses based on configuration
         if h0_name is None:
@@ -549,6 +559,7 @@ class HypoTesting(Analysis):
             fluctuate_fid=self.fluctuate_fid
         )
 
+
     def run_analysis(self):
         """Run the defined analysis.
 
@@ -576,13 +587,13 @@ class HypoTesting(Analysis):
                 )
                 logging.info(
                     'Working on %s set ID %d (will stop after ID %d).'
-                    ' %0.2f%s of %s sets completed.'
-                    %(self.labels.data_disp,
-                      self.data_ind,
-                      self.data_start_ind+self.num_data_trials-1,
-                      pct_data_complete,
-                      '%',
-                      self.labels.data_disp)
+                    ' %0.2f%s of %s sets completed.',
+                    self.labels.data_disp,
+                    self.data_ind,
+                    self.data_start_ind+self.num_data_trials-1,
+                    pct_data_complete,
+                    '%',
+                    self.labels.data_disp
                 )
 
                 self.generate_data()
@@ -627,7 +638,8 @@ class HypoTesting(Analysis):
             if exc[0] is not None:
                 logging.error('`run_analysis` body failed with exception:')
                 for line in format_exception(*exc):
-                    [logging.error(' '*4 + sl) for sl in line.splitlines()]
+                    for sl in line.splitlines():
+                        logging.error(' '*4 + sl)
 
             try:
                 self.write_run_stop_info(exc=exc)
@@ -639,14 +651,15 @@ class HypoTesting(Analysis):
             if exc_l[0] is not None:
                 logging.error('`write_run_stop_info` failed with exception:')
                 for line in format_exception(*exc_l):
-                    [logging.error(' '*4 + sl) for sl in line.splitlines()]
+                    for sl in line.splitlines():
+                        logging.error(' '*4 + sl)
                 raise exc_l
 
             if exc[0] is not None:
-                raise exc
+                raise
 
     def generate_data(self):
-        logging.info('Generating %s distributions.' %self.labels.data_disp)
+        logging.info('Generating %s distributions.', self.labels.data_disp)
         # Ambiguous whether we're dealing with Asimov or regular data if the
         # data set is provided for us, so just return it.
         if self.num_data_trials == 1 and self.data_dist is not None:
@@ -711,8 +724,8 @@ class HypoTesting(Analysis):
                 and self.h0_param_selections == self.data_param_selections
                 and not self.fluctuate_data):
             logging.info('Hypo %s will reproduce exactly %s distributions; not'
-                         ' running corresponding fit.'
-                         %(self.labels.h0_name, self.labels.data_disp))
+                         ' running corresponding fit.',
+                         self.labels.h0_name, self.labels.data_disp)
 
             self.data_maker.select_params(self.data_param_selections)
             self.data_maker.reset_free()
@@ -728,19 +741,34 @@ class HypoTesting(Analysis):
 
         # Otherwise, we do have to do the fit.
         else:
-            logging.info('Fitting hypo %s to %s distributions.'
-                         %(self.labels.h0_name, self.labels.data_disp))
-            self.h0_fit_to_data, alternate_fits = self.fit_hypo(
-                data_dist=self.data_dist,
-                hypo_maker=self.h0_maker,
-                hypo_param_selections=self.h0_param_selections,
-                metric=self.metric,
-                other_metrics=self.other_metrics,
-                minimizer_settings=self.minimizer_settings,
-                check_octant=self.check_octant,
-                pprint=self.pprint,
-                blind=self.blind
-            )
+            logging.info('Fitting hypo %s to %s distributions.',
+                         self.labels.h0_name, self.labels.data_disp)
+            # Except in the case of no free params
+            if len(self.h0_maker.params.free) == 0:
+                logging.info('No free params found. Returning fit value only')
+                h0_asimov_data = self.h0_maker.get_outputs(return_sum=True)
+                self.h0_fit_to_data = self.nofit_hypo(
+                    data_dist=self.data_dist,
+                    hypo_maker=self.h0_maker,
+                    hypo_param_selections=self.h0_param_selections,
+                    hypo_asimov_dist=h0_asimov_data,
+                    metric=self.metric, other_metrics=self.other_metrics,
+                    blind=self.blind
+                )
+            else:
+                self.h0_fit_to_data, alternate_fits = self.fit_hypo(
+                    data_dist=self.data_dist,
+                    hypo_maker=self.h0_maker,
+                    hypo_param_selections=self.h0_param_selections,
+                    metric=self.metric,
+                    other_metrics=self.other_metrics,
+                    minimizer_settings=self.minimizer_settings,
+                    check_octant=self.check_octant,
+                    check_ordering=self.check_ordering,
+                    pprint=self.pprint,
+                    blind=self.blind,
+                    reset_free=self.reset_free
+                )
         self.h0_fid_asimov_dist = self.h0_fit_to_data['hypo_asimov_dist']
 
         self.log_fit(fit_info=self.h0_fit_to_data,
@@ -751,8 +779,8 @@ class HypoTesting(Analysis):
                 and self.h1_param_selections == self.data_param_selections
                 and not self.fluctuate_data):
             logging.info('Hypo %s will reproduce exactly %s distributions; not'
-                         ' running corresponding fit.'
-                         %(self.labels.h1_name, self.labels.data_disp))
+                         ' running corresponding fit.',
+                         self.labels.h1_name, self.labels.data_disp)
 
             self.data_maker.select_params(self.data_param_selections)
             self.data_maker.reset_free()
@@ -769,19 +797,34 @@ class HypoTesting(Analysis):
               and self.h1_param_selections == self.h0_param_selections):
             self.h1_fit_to_data = copy(self.h0_fit_to_data)
         else:
-            logging.info('Fitting hypo %s to %s distributions.'
-                         %(self.labels.h1_name, self.labels.data_disp))
-            self.h1_fit_to_data, alternate_fits = self.fit_hypo(
-                data_dist=self.data_dist,
-                hypo_maker=self.h1_maker,
-                hypo_param_selections=self.h1_param_selections,
-                metric=self.metric,
-                other_metrics=self.other_metrics,
-                minimizer_settings=self.minimizer_settings,
-                check_octant=self.check_octant,
-                pprint=self.pprint,
-                blind=self.blind
-            )
+            logging.info('Fitting hypo %s to %s distributions.',
+                         self.labels.h1_name, self.labels.data_disp)
+            # Except in the case of no free params
+            if len(self.h1_maker.params.free) == 0:
+                logging.info('No free params found. Returning fit value only')
+                h1_asimov_data = self.h1_maker.get_outputs(return_sum=True)
+                self.h1_fit_to_data = self.nofit_hypo(
+                    data_dist=self.data_dist,
+                    hypo_maker=self.h1_maker,
+                    hypo_param_selections=self.h1_param_selections,
+                    hypo_asimov_dist=h1_asimov_data,
+                    metric=self.metric, other_metrics=self.other_metrics,
+                    blind=self.blind
+                )
+            else:
+                self.h1_fit_to_data, alternate_fits = self.fit_hypo(
+                    data_dist=self.data_dist,
+                    hypo_maker=self.h1_maker,
+                    hypo_param_selections=self.h1_param_selections,
+                    metric=self.metric,
+                    other_metrics=self.other_metrics,
+                    minimizer_settings=self.minimizer_settings,
+                    check_octant=self.check_octant,
+                    check_ordering=self.check_ordering,
+                    pprint=self.pprint,
+                    blind=self.blind,
+                    reset_free=self.reset_free
+                )
         self.h1_fid_asimov_dist = self.h1_fit_to_data['hypo_asimov_dist']
 
         self.log_fit(fit_info=self.h1_fit_to_data,
@@ -789,7 +832,7 @@ class HypoTesting(Analysis):
                      label=self.labels.h1_fit_to_data)
 
     def produce_fid_data(self):
-        logging.info('Generating %s distributions.' %self.labels.fid_disp)
+        logging.info('Generating %s distributions.', self.labels.fid_disp)
         # Retrieve event-rate maps for best fit to data with each hypo
 
         if self.fluctuate_fid:
@@ -827,7 +870,7 @@ class HypoTesting(Analysis):
         self.labels.derive_fid_fits_names(fid_ind=self.fid_ind)
 
         fpath = os.path.join(self.thisdata_dirpath,
-                             self.labels.h0_fit_to_h0_fid + '.json')
+                             self.labels.h0_fit_to_h0_fid + '.json.bz2')
         if not os.path.isfile(fpath):
             # If fid isn't fluctuated, it's redundant to fit a hypo to a dist
             # it generated
@@ -836,9 +879,9 @@ class HypoTesting(Analysis):
             if not self.fluctuate_fid:
                 logging.info(
                     'Hypo %s %s is not fluctuated; fitting this hypo to its'
-                    ' own %s distributions is unnecessary.'
-                    %(self.labels.h0_name, self.labels.fid_disp,
-                      self.labels.fid_disp)
+                    ' own %s distributions is unnecessary.',
+                    self.labels.h0_name, self.labels.fid_disp,
+                    self.labels.fid_disp
                 )
                 self.h0_fit_to_h0_fid = self.nofit_hypo(
                     data_dist=self.h0_fid_dist,
@@ -849,35 +892,49 @@ class HypoTesting(Analysis):
                     blind=self.blind
                 )
             else:
-                logging.info('Fitting hypo %s to its own %s distributions.'
-                             %(self.labels.h0_name, self.labels.fid_disp))
-                self.h0_fit_to_h0_fid, alternate_fits = self.fit_hypo(
-                    data_dist=self.h0_fid_dist,
-                    hypo_maker=self.h0_maker,
-                    hypo_param_selections=self.h0_param_selections,
-                    metric=self.metric,
-                    other_metrics=self.other_metrics,
-                    minimizer_settings=self.minimizer_settings,
-                    check_octant=self.check_octant,
-                    pprint=self.pprint,
-                    blind=self.blind
-                )
-
+                logging.info('Fitting hypo %s to its own %s distributions.',
+                             self.labels.h0_name, self.labels.fid_disp)
+                # Except in the case of no free params
+                if len(self.h0_maker.params.free) == 0:
+                    logging.info('No free params found. '
+                                 'Returning fit value only')
+                    self.h0_fit_to_h0_fid = self.nofit_hypo(
+                        data_dist=self.h0_fid_dist,
+                        hypo_maker=self.h0_maker,
+                        hypo_param_selections=self.h0_param_selections,
+                        hypo_asimov_dist=self.h0_fid_asimov_dist,
+                        metric=self.metric, other_metrics=self.other_metrics,
+                        blind=self.blind
+                    )
+                else:
+                    self.h0_fit_to_h0_fid, alternate_fits = self.fit_hypo(
+                        data_dist=self.h0_fid_dist,
+                        hypo_maker=self.h0_maker,
+                        hypo_param_selections=self.h0_param_selections,
+                        metric=self.metric,
+                        other_metrics=self.other_metrics,
+                        minimizer_settings=self.minimizer_settings,
+                        check_octant=self.check_octant,
+                        check_ordering=self.check_ordering,
+                        pprint=self.pprint,
+                        blind=self.blind,
+                        reset_free=self.reset_free
+                    )
             self.log_fit(fit_info=self.h0_fit_to_h0_fid,
                          dirpath=self.thisdata_dirpath,
                          label=self.labels.h0_fit_to_h0_fid)
 
         fpath = os.path.join(self.thisdata_dirpath,
-                             self.labels.h1_fit_to_h1_fid + '.json')
+                             self.labels.h1_fit_to_h1_fid + '.json.bz2')
         if not os.path.isfile(fpath):
             self.h1_maker.select_params(self.h1_param_selections)
             self.h1_maker.reset_free()
             if not self.fluctuate_fid:
                 logging.info(
                     'Hypo %s %s is not fluctuated; fitting this hypo to its'
-                    ' own %s distributions is unnecessary.'
-                    %(self.labels.h1_name, self.labels.fid_disp,
-                      self.labels.fid_disp)
+                    ' own %s distributions is unnecessary.',
+                    self.labels.h1_name, self.labels.fid_disp,
+                    self.labels.fid_disp
                 )
                 self.h1_fit_to_h1_fid = self.nofit_hypo(
                     data_dist=self.h1_fid_dist,
@@ -888,19 +945,34 @@ class HypoTesting(Analysis):
                     blind=self.blind
                 )
             else:
-                logging.info('Fitting hypo %s to its own %s distributions.'
-                             %(self.labels.h1_name, self.labels.fid_disp))
-                self.h1_fit_to_h1_fid, alternate_fits = self.fit_hypo(
-                    data_dist=self.h1_fid_dist,
-                    hypo_maker=self.h1_maker,
-                    hypo_param_selections=self.h1_param_selections,
-                    metric=self.metric,
-                    other_metrics=self.other_metrics,
-                    minimizer_settings=self.minimizer_settings,
-                    check_octant=self.check_octant,
-                    pprint=self.pprint,
-                    blind=self.blind
-                )
+                logging.info('Fitting hypo %s to its own %s distributions.',
+                             self.labels.h1_name, self.labels.fid_disp)
+                # Except in the case of no free params
+                if len(self.h0_maker.params.free) == 0:
+                    logging.info('No free params found. '
+                                 'Returning fit value only')
+                    self.h1_fit_to_h1_fid = self.nofit_hypo(
+                        data_dist=self.h1_fid_dist,
+                        hypo_maker=self.h1_maker,
+                        hypo_param_selections=self.h1_param_selections,
+                        hypo_asimov_dist=self.h1_fid_asimov_dist,
+                        metric=self.metric, other_metrics=self.other_metrics,
+                        blind=self.blind
+                    )
+                else:
+                    self.h1_fit_to_h1_fid, alternate_fits = self.fit_hypo(
+                        data_dist=self.h1_fid_dist,
+                        hypo_maker=self.h1_maker,
+                        hypo_param_selections=self.h1_param_selections,
+                        metric=self.metric,
+                        other_metrics=self.other_metrics,
+                        minimizer_settings=self.minimizer_settings,
+                        check_octant=self.check_octant,
+                        check_ordering=self.check_ordering,
+                        pprint=self.pprint,
+                        blind=self.blind,
+                        reset_free=self.reset_free
+                    )
 
             self.log_fit(fit_info=self.h1_fit_to_h1_fid,
                          dirpath=self.thisdata_dirpath,
@@ -914,7 +986,7 @@ class HypoTesting(Analysis):
         # Perform fits of one hypo to fid dist produced by other hypo
 
         fpath = os.path.join(self.thisdata_dirpath,
-                             self.labels.h1_fit_to_h0_fid + '.json')
+                             self.labels.h1_fit_to_h0_fid + '.json.bz2')
         if not os.path.isfile(fpath):
             if ((not self.fluctuate_data) and (not self.fluctuate_fid)
                     and self.data_maker_is_h0_maker
@@ -922,35 +994,50 @@ class HypoTesting(Analysis):
                 logging.info(
                     'Fitting hypo %s to hypo %s %s distributions is'
                     ' unnecessary since former was already fit to %s'
-                    ' distributions, which are identical distributions.'
-                    %(self.labels.h1_name, self.labels.h0_name,
-                      self.labels.fid_disp, self.labels.data_disp)
+                    ' distributions, which are identical distributions.',
+                    self.labels.h1_name, self.labels.h0_name,
+                    self.labels.fid_disp, self.labels.data_disp
                 )
                 self.h1_fit_to_h0_fid = copy(self.h1_fit_to_data)
             else:
-                logging.info('Fitting hypo %s to hypo %s %s distributions.'
-                             %(self.labels.h1_name, self.labels.h0_name,
-                               self.labels.fid_disp))
+                logging.info('Fitting hypo %s to hypo %s %s distributions.',
+                             self.labels.h1_name, self.labels.h0_name,
+                             self.labels.fid_disp)
                 self.h1_maker.select_params(self.h1_param_selections)
                 self.h1_maker.reset_free()
-                self.h1_fit_to_h0_fid, alternate_fits = self.fit_hypo(
-                    data_dist=self.h0_fid_dist,
-                    hypo_maker=self.h1_maker,
-                    hypo_param_selections=self.h1_param_selections,
-                    metric=self.metric,
-                    other_metrics=self.other_metrics,
-                    minimizer_settings=self.minimizer_settings,
-                    check_octant=self.check_octant,
-                    pprint=self.pprint,
-                    blind=self.blind
-                )
+                # Except in the case of no free params
+                if len(self.h1_maker.params.free) == 0:
+                    logging.info('No free params found. '
+                                 'Returning fit value only')
+                    self.h1_fit_to_h0_fid = self.nofit_hypo(
+                        data_dist=self.h0_fid_dist,
+                        hypo_maker=self.h1_maker,
+                        hypo_param_selections=self.h1_param_selections,
+                        hypo_asimov_dist=self.h1_fid_asimov_dist,
+                        metric=self.metric, other_metrics=self.other_metrics,
+                        blind=self.blind
+                    )
+                else:
+                    self.h1_fit_to_h0_fid, alternate_fits = self.fit_hypo(
+                        data_dist=self.h0_fid_dist,
+                        hypo_maker=self.h1_maker,
+                        hypo_param_selections=self.h1_param_selections,
+                        metric=self.metric,
+                        other_metrics=self.other_metrics,
+                        minimizer_settings=self.minimizer_settings,
+                        check_octant=self.check_octant,
+                        check_ordering=self.check_ordering,
+                        pprint=self.pprint,
+                        blind=self.blind,
+                        reset_free=self.reset_free
+                    )
 
             self.log_fit(fit_info=self.h1_fit_to_h0_fid,
                          dirpath=self.thisdata_dirpath,
                          label=self.labels.h1_fit_to_h0_fid)
 
         fpath = os.path.join(self.thisdata_dirpath,
-                             self.labels.h0_fit_to_h1_fid + '.json')
+                             self.labels.h0_fit_to_h1_fid + '.json.bz2')
         if not os.path.isfile(fpath):
             if ((not self.fluctuate_data) and (not self.fluctuate_fid)
                     and self.data_maker_is_h1_maker
@@ -958,34 +1045,49 @@ class HypoTesting(Analysis):
                 logging.info(
                     'Fitting hypo %s to hypo %s %s distributions is'
                     ' unnecessary since former was already fit to %s'
-                    ' distributions, which are identical distributions.'
-                    %(self.labels.h0_name, self.labels.h1_name,
-                      self.labels.fid_disp, self.labels.data_disp)
+                    ' distributions, which are identical distributions.',
+                    self.labels.h0_name, self.labels.h1_name,
+                    self.labels.fid_disp, self.labels.data_disp
                 )
                 self.h0_fit_to_h1_fid = copy(self.h0_fit_to_data)
             else:
-                logging.info('Fitting hypo %s to hypo %s %s distributions.'
-                             %(self.labels.h0_name, self.labels.h1_name,
-                               self.labels.fid_disp))
+                logging.info('Fitting hypo %s to hypo %s %s distributions.',
+                             self.labels.h0_name, self.labels.h1_name,
+                             self.labels.fid_disp)
                 self.h0_maker.select_params(self.h0_param_selections)
                 self.h0_maker.reset_free()
-                self.h0_fit_to_h1_fid, alternate_fits = self.fit_hypo(
-                    data_dist=self.h1_fid_dist,
-                    hypo_maker=self.h0_maker,
-                    hypo_param_selections=self.h0_param_selections,
-                    metric=self.metric,
-                    other_metrics=self.other_metrics,
-                    minimizer_settings=self.minimizer_settings,
-                    check_octant=self.check_octant,
-                    pprint=self.pprint,
-                    blind=self.blind
-                )
+                # Except in the case of no free params
+                if len(self.h0_maker.params.free) == 0:
+                    logging.info('No free params found. '
+                                 'Returning fit value only')
+                    self.h0_fit_to_h1_fid = self.nofit_hypo(
+                        data_dist=self.h1_fid_dist,
+                        hypo_maker=self.h0_maker,
+                        hypo_param_selections=self.h0_param_selections,
+                        hypo_asimov_dist=self.h0_fid_asimov_dist,
+                        metric=self.metric, other_metrics=self.other_metrics,
+                        blind=self.blind
+                    )
+                else:
+                    self.h0_fit_to_h1_fid, alternate_fits = self.fit_hypo(
+                        data_dist=self.h1_fid_dist,
+                        hypo_maker=self.h0_maker,
+                        hypo_param_selections=self.h0_param_selections,
+                        metric=self.metric,
+                        other_metrics=self.other_metrics,
+                        minimizer_settings=self.minimizer_settings,
+                        check_octant=self.check_octant,
+                        check_ordering=self.check_ordering,
+                        pprint=self.pprint,
+                        blind=self.blind,
+                        reset_free=self.reset_free
+                    )
 
             self.log_fit(fit_info=self.h0_fit_to_h1_fid,
                          dirpath=self.thisdata_dirpath,
                          label=self.labels.h0_fit_to_h1_fid)
 
-    def setup_logging(self):
+    def setup_logging(self, reset_params=True):
         """
         Should store enough information for the following two purposes:
             1. Be able to completely reproduce the results, assuming access to
@@ -1094,17 +1196,28 @@ class HypoTesting(Analysis):
 
         run_id comes from (??? hostname and microsecond timestamp??? settings???)
 
+        Notes
+        -----
+        I have added an optional reset_params option here since I want to be
+        able to use this function when doing systematic tests. Here, the
+        parameters in the makers may be temporarily changed and this should be
+        reflected in the logging. Thus, this option allows the parameters to
+        NOT be reset here. This option should be used with caution.
+
         """
         self.h0_maker.select_params(self.h0_param_selections)
-        self.h0_maker.reset_free()
+        if reset_params:
+            self.h0_maker.reset_free()
         self.h0_hash = self.h0_maker.state_hash
 
         self.h1_maker.select_params(self.h1_param_selections)
-        self.h1_maker.reset_free()
+        if reset_params:
+            self.h1_maker.reset_free()
         self.h1_hash = self.h1_maker.state_hash
 
         self.data_maker.select_params(self.data_param_selections)
-        self.data_maker.reset_free()
+        if reset_params:
+            self.data_maker.reset_free()
         self.data_hash = self.data_maker.state_hash
 
         # Single unique hash for hypotheses and data configurations
@@ -1140,7 +1253,7 @@ class HypoTesting(Analysis):
             else:
                 raise Exception(msg)
 
-        logging.debug('Code version: %s' %self.__version__)
+        logging.debug('Code version: %s', self.__version__)
 
         # Construct root dir name and create dir if necessary
         dirname = '__'.join([self.labels.h0, self.labels.h1,
@@ -1151,7 +1264,7 @@ class HypoTesting(Analysis):
         mkdir(dirpath)
         normpath = find_resource(dirpath)
         self.logroot = normpath
-        logging.info('Output will be saved to dir "%s"' %self.logroot)
+        logging.info('Output will be saved to dir "%s"', self.logroot)
 
         self.data_dirpath = os.path.join(self.logroot, self.labels.data)
 
@@ -1174,7 +1287,7 @@ class HypoTesting(Analysis):
         )
         self.run_info_fpath = os.path.join(self.logroot, self.run_info_fname)
 
-    def write_config_summary(self):
+    def write_config_summary(self, reset_params=True):
         if os.path.isfile(self.config_summary_fpath):
             return
         summary = OrderedDict()
@@ -1189,13 +1302,15 @@ class HypoTesting(Analysis):
         d['minimizer_name'] = self.minimizer_settings['method']['value']
         d['minimizer_settings_hash'] = self.minimizer_settings_hash
         d['check_octant'] = self.check_octant
+        d['check_ordering'] = self.check_ordering
         d['metric_optimized'] = self.metric
         summary['minimizer_info'] = d
 
         summary['data_is_data'] = self.data_is_data
 
         self.data_maker.select_params(self.data_param_selections)
-        self.data_maker.reset_free()
+        if reset_params:
+            self.data_maker.reset_free()
         summary['data_name'] = self.labels.data_name
         summary['data_is_data'] = self.data_is_data
         summary['data_hash'] = self.data_hash
@@ -1205,7 +1320,8 @@ class HypoTesting(Analysis):
         summary['data_pipelines'] = self.summarize_dist_maker(self.data_maker)
 
         self.h0_maker.select_params(self.h0_param_selections)
-        self.h0_maker.reset_free()
+        if reset_params:
+            self.h0_maker.reset_free()
         summary['h0_name'] = self.labels.h0_name
         summary['h0_hash'] = self.h0_hash
         summary['h0_param_selections'] = ','.join(self.h0_param_selections)
@@ -1214,7 +1330,8 @@ class HypoTesting(Analysis):
         summary['h0_pipelines'] = self.summarize_dist_maker(self.h0_maker)
 
         self.h1_maker.select_params(self.h1_param_selections)
-        self.h1_maker.reset_free()
+        if reset_params:
+            self.h1_maker.reset_free()
         summary['h1_name'] = self.labels.h1_name
         summary['h1_hash'] = self.h1_hash
         summary['h1_param_selections'] = ','.join(self.h1_param_selections)
@@ -1290,9 +1407,9 @@ class HypoTesting(Analysis):
             run_info.append('%s = %s' %(env_var, val))
 
         for prefix in ['PBS_']:
-            [run_info.append('%s = %s' %(env_var, val))
-             for env_var, val in os.environ.iteritems()
-             if env_var.startswith(prefix)]
+            for env_var, val in os.environ.iteritems():
+                if env_var.startswith(prefix):
+                    run_info.append('%s = %s' %(env_var, val))
 
         with file(self.run_info_fpath, 'w') as f:
             f.write('\n'.join(run_info) + '\n')
@@ -1364,12 +1481,20 @@ class HypoTesting(Analysis):
             if isinstance(v, pint.quantity._Quantity):
                 v = str(v)
             info[k] = v
-        to_file(info, os.path.join(dirpath, label + '.json'), sort_keys=False)
+        to_file(info, os.path.join(dirpath, label + '.json.bz2'),
+                sort_keys=False)
 
 
-def parse_args():
+def parse_args(description=__doc__):
+    """Parse command line args.
+
+    Returns
+    -------
+    init_args_d : dict
+
+    """
     parser = ArgumentParser(
-        description=__doc__,
+        description=description,
         formatter_class=ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -1378,15 +1503,35 @@ def parse_args():
         help='Directory into which to store results and metadata.'
     )
     parser.add_argument(
-        '-m', '--minimizer-settings',
-        type=str, metavar='MINIMIZER_CFG', required=True,
-        help='''Settings related to the optimizer used in the LLR analysis.'''
+        '--min-settings',
+        type=str, metavar='MINIMIZER_CFG', default=None,
+        help='''Minimizer settings config file.'''
+    )
+    parser.add_argument(
+        '--min-method',
+        type=str, default=None, choices=('l-bfgs-b', 'slsqp'),
+        help='''Name of minimizer to use. Note that this takes precedence over
+        the minimizer method specified via the --min-settings config
+        file.'''
+    )
+    parser.add_argument(
+        '--min-opt',
+        type=str, metavar='OPTION:VALUE', nargs='+', default=None,
+        help='''Minimizer option:value pair(s) (can specify multiple).
+        Values specified here override any of the same name in the config file
+        specified by --min-settings'''
     )
     parser.add_argument(
         '--no-octant-check',
         action='store_true',
         help='''Disable fitting hypotheses in theta23 octant opposite initial
         octant.'''
+    )
+    parser.add_argument(
+        '--ordering-check',
+        action='store_true',
+        help='''Fit both ordering hypotheses. This should only be flagged if
+        the ordering is NOT the discrete hypothesis being tested'''
     )
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(
@@ -1550,7 +1695,7 @@ def parse_args():
         complete inability to track provenance of code.)'''
     )
     parser.add_argument(
-        '--no-minimizer-history',
+        '--no-min-history',
         action='store_true',
         help='''Do not store minimizer history (steps). This behavior is also
         enforced if --blind is specified.'''
@@ -1565,7 +1710,65 @@ def parse_args():
         '-v', action='count', default=None,
         help='set verbosity level'
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    assert args.min_settings is not None or args.min_method is not None
+    init_args_d = vars(args)
+
+    set_verbosity(init_args_d.pop('v'))
+
+    min_settings_from_file = init_args_d.pop('min_settings')
+    minimizer = init_args_d.pop('min_method')
+    min_opt = init_args_d.pop('min_opt')
+
+    # TODO: put this datastructure remnant from PISA 2 out of its misery...
+    minimizer_settings = dict(
+        method=dict(value='', desc='no desc'),
+        options=dict(value=dict(), desc=dict())
+    )
+
+    if min_settings_from_file is not None:
+        minimizer_settings.update(from_file(min_settings_from_file))
+
+    if minimizer is not None:
+        minimizer_settings['method'] = dict(value=minimizer, desc='no desc')
+
+    if min_opt is not None:
+        for opt_val_str in min_opt:
+            opt, val_str = [s.strip() for s in opt_val_str.split(':')]
+            try:
+                val = int(val_str)
+            except ValueError:
+                try:
+                    val = float(val_str)
+                except ValueError:
+                    val = val_str
+            minimizer_settings['options']['value'][opt] = val
+            minimizer_settings['options']['desc'][opt] = 'no desc'
+    init_args_d['minimizer_settings'] = minimizer_settings
+
+    init_args_d['check_octant'] = not init_args_d.pop('no_octant_check')
+    init_args_d['check_ordering'] = init_args_d.pop('ordering_check')
+
+    init_args_d['data_is_data'] = not init_args_d.pop('data_is_mc')
+
+    init_args_d['store_minimizer_history'] = (
+        not init_args_d.pop('no_min_history')
+    )
+
+    other_metrics = init_args_d.pop('other_metric')
+    if other_metrics is not None:
+        other_metrics = [s.strip().lower() for s in other_metrics]
+        if 'all' in other_metrics:
+            other_metrics = sorted(ALL_METRICS)
+        if init_args_d['metric'] in other_metrics:
+            other_metrics.remove(init_args_d['metric'])
+        if len(other_metrics) == 0:
+            other_metrics = None
+        else:
+            logging.info('Will evaluate other metrics %s', other_metrics)
+        init_args_d['other_metrics'] = other_metrics
+
+    return init_args_d
 
 
 # TODO: make this work with Python package resources, not merely absolute
@@ -1586,34 +1789,25 @@ def normcheckpath(path, checkdir=False):
     return normpath
 
 
-def main():
-    args = parse_args()
-    init_args_d = vars(args)
+def main(return_outputs=False):
+    """Setup distribution makers and run the hypo_testing process.
 
+    Parameters
+    ----------
+    return_outputs : bool
+        Whether to return the hypo_testing object
+
+    Returns
+    -------
+    None or hypo_testing : HypoTesting
+        If `return_outputs` is True, returns the object used for running the
+        analysis (e.g. for calling this script/function from an interactive
+        shell).
+
+    """
     # NOTE: Removing extraneous args that won't get passed to instantiate the
     # HypoTesting object via dictionary's `pop()` method.
-
-    set_verbosity(init_args_d.pop('v'))
-    init_args_d['check_octant'] = not init_args_d.pop('no_octant_check')
-
-    init_args_d['data_is_data'] = not init_args_d.pop('data_is_mc')
-
-    init_args_d['store_minimizer_history'] = (
-        not init_args_d.pop('no_minimizer_history')
-    )
-
-    other_metrics = init_args_d.pop('other_metric')
-    if other_metrics is not None:
-        other_metrics = [s.strip().lower() for s in other_metrics]
-        if 'all' in other_metrics:
-            other_metrics = sorted(ALL_METRICS)
-        if init_args_d['metric'] in other_metrics:
-            other_metrics.remove(init_args_d['metric'])
-        if len(other_metrics) == 0:
-            other_metrics = None
-        else:
-            logging.info('Will evaluate other metrics %s' %other_metrics)
-        init_args_d['other_metrics'] = other_metrics
+    init_args_d = parse_args()
 
     # Normalize and convert `*_pipeline` filenames; store to `*_maker`
     # (which is argument naming convention that HypoTesting init accepts).
@@ -1639,6 +1833,9 @@ def main():
     # Run the analysis
     hypo_testing.run_analysis()
 
+    if return_outputs:
+        return hypo_testing
+
 
 if __name__ == '__main__':
-    main()
+    hypo_testing = main(return_outputs=True)
