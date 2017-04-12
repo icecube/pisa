@@ -10,7 +10,7 @@ import cPickle as pickle
 import hashlib
 import struct
 from collections import Sequence
-from copy import deepcopy
+from pickle import PickleError
 
 import numpy as np
 
@@ -106,29 +106,30 @@ def hash_obj(obj, hash_to='int', full_hash=True):
     if not isinstance(obj, basestring):
         try:
             pkl = pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
-        except:
+        except (PickleError, TypeError):
             # Iterate through each element if obj is a Sequence
             if isinstance(obj, Sequence):
                 # Store hash of each element
                 hash_list = []
                 for ele in obj:
-                    try:
-                        # Try to get hash using pickle
-                        a = pickle.dumps(ele, pickle.HIGHEST_PROTOCOL)
-                        hash_list.append(ele)
-                    except:
-                        # Otherwise try to get hash from property
+                    # Try to get hash from property
+                    if hasattr(ele, 'hash'):
+                        hash_list.append(ele.hash)
+                    else:
+                        # Otherwise try to get hash using pickle
                         try:
-                            hash_list.append(ele.hash)
-                        except:
-                            pass
-                        pass
+                            a = pickle.dumps(ele, pickle.HIGHEST_PROTOCOL)
+                            hash_list.append(a)
+                        except (PickleError, TypeError):
+                            logging.error('Failed to pickle `ele` "%s" of '
+                                          'type "%s"' %(ele, type(ele)))
+                            raise
                 # Get hash values by pickling the hash list
                 try:
                     pkl = pickle.dumps(hash_list, pickle.HIGHEST_PROTOCOL)
-                except:
-                    logging.error('Failed to pickle `obj` "%s" of type "%s"'
-                                  %(obj, type(obj)))
+                except (PickleError, TypeError):
+                    logging.error('Failed to pickle `hash_list` "%s" of type '
+                                  '"%s"' %(hash_list, type(hash_list)))
                     raise
             else:
                 logging.error('Failed to pickle `obj` "%s" of type "%s"'
