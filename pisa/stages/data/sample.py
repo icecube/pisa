@@ -264,7 +264,7 @@ class sample(Stage):
 
             for idx, flav in enumerate(event_types):
                 fig = NuFlavIntGroup(flav)
-                all_flavints = fig.flavints()
+                all_flavints = fig.flavints
                 events_file = datadir + gen_cfg.get(flav, 'filename')
 
                 flav_fidg = sample.load_from_nu_file(
@@ -288,7 +288,7 @@ class sample(Stage):
 
             for idx, flav in enumerate(flavours):
                 f = int(flav)
-                all_flavints = NuFlavIntGroup(f, -f).flavints()
+                all_flavints = NuFlavIntGroup(f, -f).flavints
                 if dataset == 'nominal':
                     prefixes = []
                     for sys in sys_list:
@@ -467,8 +467,8 @@ class sample(Stage):
             events[alias] = eval(re.sub(r'\<(.*?)\>', r"events['\1']", expr))
 
         for flavint in all_flavints:
-            i_mask = cc_mask if flavint.isCC() else nc_mask
-            t_mask = nu_mask if flavint.isParticle() else nubar_mask
+            i_mask = cc_mask if flavint.isCC else nc_mask
+            t_mask = nu_mask if flavint.isParticle else nubar_mask
 
             flav_fidg[flavint] = {var: events[var][i_mask & t_mask]
                                   for var in events.iterkeys()}
