@@ -1711,6 +1711,38 @@ def parse_args(description=__doc__, injparamscan=False):
         help='''Do not store minimizer history (steps). This behavior is also
         enforced if --blind is specified.'''
     )
+    # Add in the arguments specific to the injected parameter scan.
+    if injparamscan:
+        parser.add_argument(
+            '--param_name',
+            type=str, metavar='NAME', required=True,
+            help='''Name of param to scan over. This must be in the config
+            files defined above. One exception is that you can define this as
+            `sin2theta23` and it will be interpreted not as theta23 values but
+            as the square of the sine of theta23 values instead.'''
+        )
+        parser.add_argument(
+            '--inj_vals',
+            type=str, required=True,
+            help='''List of values to inject as true points in the parameter
+            defined above. Must be something that numpy can interpret. In this
+            script, numpy is imported as np so please use np in your string. An
+            example would be np.linspace(0.35,0.65,31).'''
+        )
+        parser.add_argument(
+            '--inj_units',
+            type=str, required=True,
+            help='''A string to be able to deal with the units in the parameter
+            scan and make sure that they match those in the config files. Even
+            if the parameter is dimensionless this must be stated.'''
+        )
+        parser.add_argument(
+            '--use-inj-prior', action='store_true',
+            help='''Generally, one should not use a prior on the parameter of
+            interest here since the Asimov analysis breaks down with the use of
+            non-central prior i.e. injecting a truth that differs from the
+            centre of the prior. Flag this to force the prior to be left on.'''
+        )
     parser.add_argument(
         '--pprint',
         action='store_true',
