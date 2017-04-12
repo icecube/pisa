@@ -57,9 +57,6 @@ def main():
             ps_list = [x.strip().lower() for x in ps_str.split(',')]
         init_args_d[ps_name] = ps_list
 
-    init_args_d['data_maker'] = init_args_d['h0_maker']
-    init_args_d['h1_maker'] = init_args_d['h0_maker']
-
     init_args_d['h0_maker'] = DistributionMaker(init_args_d['h0_maker'])
     init_args_d['h1_maker'] = DistributionMaker(init_args_d['h1_maker'])
     init_args_d['h1_maker'].select_params(init_args_d['h1_param_selections'])
