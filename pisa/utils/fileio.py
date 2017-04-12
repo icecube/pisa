@@ -27,8 +27,7 @@ __all__ = ['PKL_EXTS', 'DILL_EXTS', 'CFG_EXTS', 'ZIP_EXTS', 'TXT_EXTS',
            'NSORT_RE',
            'expand', 'mkdir', 'get_valid_filename', 'nsort', 'find_files',
            'from_cfg', 'from_pickle', 'to_pickle', 'from_dill', 'to_dill',
-           'from_file', 'to_file',
-           'is_dir', 'is_valid_file']
+           'from_file', 'to_file']
 
 
 PKL_EXTS = ['pickle', 'pckl', 'pkl', 'p']
