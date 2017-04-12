@@ -1484,6 +1484,125 @@ class HypoTesting(Analysis):
         to_file(info, os.path.join(dirpath, label + '.json.bz2'),
                 sort_keys=False)
 
+    def set_param_ranges(self, selection, test_name, rangetple, inj_units):
+        '''
+        Sets the parameter in hypo_testing selected by selection (if not None)
+        with name test_name to a range defined by rangetuple. This should have
+        the correct units even if the rangetuple units did not match those of
+        the original parameter and also will stay positive if the original
+        range did.
+        '''
+        if selection is not None:
+            self.h0_maker.select_params([selection])
+            self.h1_maker.select_params([selection])
+        if self.h0_maker.params[test_name].range is not None:
+            if self.h0_maker.params[test_name].range[0] >= 0:
+                enforce_positive = True
+            else:
+                enforce_positive = False
+        else:
+            enforce_positive = False
+        # Convert the units if necessary
+        if self.h0_maker.params[test_name].units != inj_units:
+            newminrangeval = rangetuple[0].to(
+                self.h0_maker.params[test_name].units
+            )
+            newmaxrangeval = rangetuple[1].to(
+                self.h0_maker.params[test_name].units
+            )
+            rangetuple = (newminrangeval, newmaxrangeval)
+        # Make the lower end equal to zero if it needs to be
+        if enforce_positive and rangetuple[0] < 0:
+            newminrangeval = 0.0 * ureg(inj_units)
+            newminrangeval = newminrangeval.to(
+                self.h0_maker.params[test_name].units
+            )
+            rangetuple = (newminrangeval, rangetuple[1])
+        self.h0_maker.params[test_name].range = rangetuple
+        self.h1_maker.params[test_name].range = rangetuple
+        if selection is not None:
+            # Only modify the data maker range if the signs match
+            if np.sign(self.data_maker.params[test_name].value.magnitude) \
+               == np.sign(rangetuple[1].magnitude):
+                self.data_maker.params[test_name].range = rangetuple
+        else:
+            self.data_maker.params[test_name].range = rangetuple
+
+    def inj_param_scan(self, test_name, inj_vals, requested_vals,
+                       h0_name, h1_name, data_name):
+        '''
+        Performs the Asimov hypo testing analysis over some injected data
+        parameter. This will be the parameter specified by test_name and the
+        injected values are in inj_vals. The requested vals from the command
+        line are also given for making labels for all of the output
+        directories. 
+        '''
+        # Scan over the injected values. We also loop over the requested vals
+        # here in case they are different so that value can be put in labels
+        for inj_val, requested_val in zip(inj_vals, requested_vals):
+            # Be sure to inject the right value!
+            if isinstance(inj_val, dict):
+                for hierarchy in ['nh', 'ih']:
+                    self.h0_maker.select_params([hierarchy])
+                    self.h1_maker.select_params([hierarchy])
+                    inj_val[hierarchy] = inj_val[hierarchy].to(
+                        self.h0_maker.params[test_name].units
+                    )
+                    self.h0_maker.params[test_name].value = inj_val[hierarchy]
+                    self.h1_maker.params[test_name].value = inj_val[hierarchy]
+                    if np.sign(self.data_maker.params[
+                            test_name].value.magnitude) == 1:
+                        self.data_maker.params[test_name].value = inj_val['nh']
+                    else:
+                        self.data_maker.params[test_name].value = inj_val['ih']
+            # This is easy if there's just one of them
+            else:
+                # Make sure the units are right
+                inj_val = inj_val.to(self.h0_maker.params[test_name].units)
+                # Then set the value in all of the makers
+                self.h0_maker.params[test_name].value = inj_val
+                self.h1_maker.params[test_name].value = inj_val
+                self.data_maker.params[test_name].value = inj_val
+            # Make names reflect parameter value
+            if param_name == 'deltam3l':
+                self.labels = Labels(
+                    h0_name=h0_name,
+                    h1_name=h1_name,
+                    data_name=data_name+'_%s_%.4f'
+                    %(param_name,requested_val*1000.0),
+                    data_is_data=False,
+                    fluctuate_data=False,
+                    fluctuate_fid=False
+                )
+            else:
+                self.labels = Labels(
+                    h0_name=h0_name,
+                    h1_name=h1_name,
+                    data_name=data_name+'_%s_%.4f'
+                    %(param_name,requested_val),
+                    data_is_data=False,
+                    fluctuate_data=False,
+                    fluctuate_fid=False
+                )
+            # Setup logging and things.
+            self.setup_logging(reset_params=False)
+            self.write_config_summary(reset_params=False)
+            self.write_minimizer_settings()
+            self.write_run_info()
+            # Now do the fits
+            self.generate_data()
+            self.fit_hypos_to_data()
+            self.produce_fid_data()
+            self.fit_hypos_to_fid()
+            # At the end, reset the parameters in the maker
+            self.data_maker.params.reset_free()
+            self.h0_maker.params.reset_free()
+            self.h1_maker.params.reset_free()
+            # Also be sure to remove the data_dist and tor_data_asimov_dist
+            # so that it is regenerated next time
+            self.data_dist = None
+            self.toy_data_asimov_dist = None
+
 
 def parse_args(description=__doc__, injparamscan=False):
     """Parse command line args.

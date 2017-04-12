@@ -128,8 +128,8 @@ def main():
         inj_vals = []
         for no_inj_val, io_inj_val in zip(no_inj_vals, io_inj_vals):
             o_vals = {}
-            o_vals['no'] = no_inj_val
-            o_vals['io'] = io_inj_val
+            o_vals['nh'] = no_inj_val
+            o_vals['ih'] = io_inj_val
             inj_vals.append(o_vals)
     else:
         test_name = param_name
@@ -157,172 +157,39 @@ def main():
     # if so, enforce that it is positive now.
     if isinstance(inj_vals[0], dict):
         # Calculate ranges for both parameters
-        norangediff = max(no_inj_vals) - max(no_inj_vals)
+        norangediff = max(no_inj_vals) - min(no_inj_vals)
         norangediff = norangediff*ureg(inj_units)
         norangetuple = (min(no_inj_vals)*ureg(inj_units) - 0.5*norangediff,
                         max(no_inj_vals)*ureg(inj_units) + 0.5*norangediff)
-        iorangediff = max(io_inj_vals) - max(io_inj_vals)
+        iorangediff = max(io_inj_vals) - min(io_inj_vals)
         iorangediff = iorangediff*ureg(inj_units)
         iorangetuple = (min(io_inj_vals)*ureg(inj_units) - 0.5*iorangediff,
                         max(io_inj_vals)*ureg(inj_units) + 0.5*iorangediff)
-        # Select the NO (or nh) parameters in the config file
-        hypo_testing.h0_maker.select_params(['nh'])
-        hypo_testing.h1_maker.select_params(['nh'])
-        if hypo_testing.h0_maker.params[test_name].range is not None:
-            if hypo_testing.h0_maker.params[test_name].range[0] > 0:
-                enforce_positive = True
-            else:
-                enforce_positive = False
-        else:
-            enforce_positive = False
-        if hypo_testing.h0_maker.params[test_name].units != inj_units:
-            newminrangeval = norangetuple[0].to(
-                hypo_testing.h0_maker.params[test_name].units
+        # Do it for both hierarchies
+        for hierarchy, rangetuple in zip(['nh', 'ih'],
+                                         [norangetuple, iorangetuple]):
+            set_new_ranges(
+                hypo_testing=hypo_testing,
+                selection=hierarchy,
+                test_name=test_name,
+                rangetuple=rangetuple,
+                inj_units=inj_units
             )
-            newmaxrangeval = norangetuple[1].to(
-                hypo_testing.h0_maker.params[test_name].units
-            )
-            if enforce_positive and newminrangeval < 0:
-                newminrangeval = 0.0 * ureg(inj_units)
-                newminrangeval = newminrangeval.to(
-                    hypo_testing.h0_maker.params[test_name].units
-                )
-            newrangetuple = (newminrangeval, newmaxrangeval)
-            hypo_testing.h0_maker.params[test_name].range = newrangetuple
-            hypo_testing.h1_maker.params[test_name].range = newrangetuple
-        else:
-            if enforce_positive and norangetuple[0] < 0:
-                norangetuple = (0.0 * ureg(inj_units),
-                                max(no_inj_vals)*ureg(inj_units) + \
-                                0.5*norangediff)
-            hypo_testing.h0_maker.params[test_name].range = norangetuple
-            hypo_testing.h1_maker.params[test_name].range = norangetuple
-        # Select the IO (or ih) parameters in the cofig file
-        hypo_testing.h0_maker.select_params(['ih'])
-        hypo_testing.h1_maker.select_params(['ih'])
-        if hypo_testing.h0_maker.params[test_name].range is not None:
-            if hypo_testing.h0_maker.params[test_name].range[0] > 0:
-                enforce_positive = True
-            else:
-                enforce_positive = False
-        else:
-            enforce_positive = False
-        if hypo_testing.h0_maker.params[test_name].units != inj_units:
-            newminrangeval = iorangetuple[0].to(
-                hypo_testing.h0_maker.params[test_name].units
-            )
-            newmaxrangeval = iorangetuple[1].to(
-                hypo_testing.h0_maker.params[test_name].units
-            )
-            if enforce_positive and newminrangeval < 0:
-                newminrangeval = 0.0 * ureg(inj_units)
-                newminrangeval = newminrangeval.to(
-                    hypo_testing.h0_maker.params[test_name].units
-                )
-            newrangetuple = (newminrangeval, newmaxrangeval)
-            hypo_testing.h0_maker.params[test_name].range = newrangetuple
-            hypo_testing.h1_maker.params[test_name].range = newrangetuple
-        else:
-            if enforce_positive and iorangetuple[0] < 0:
-                iorangetuple = (0.0 * ureg(inj_units),
-                                max(io_inj_vals)*ureg(inj_units) + \
-                                0.5*iorangediff)
-            hypo_testing.h0_maker.params[test_name].range = iorangetuple
-            hypo_testing.h1_maker.params[test_name].range = iorangetuple
-        # BE SURE TO SELECT THE PROPER ONES AGAIN AT THE END
+        # Select the proper params again
         hypo_testing.h0_maker.select_params(init_args_d['h0_param_selections'])
         hypo_testing.h1_maker.select_params(init_args_d['h1_param_selections'])
-        # Now for the data maker we must test the sign of the value
-        # However, enforcing positive if the original range was positive is NOT
-        # necessary here because their is no minimisation using the data maker.
-        # Thus, if the value falls in to an unphysical range here it will be
-        # because the user requested an unphysical value and in that case it
-        # should be allowed to go there and raise the appropriate error.
-        if np.sign(
-                hypo_testing.h1_maker.params[test_name].value.magnitude) == 1:
-            if hypo_testing.h1_maker.params[test_name].units != inj_units:
-                newminrangeval = norangetuple[0].to(
-                    hypo_testing.h1_maker.params[test_name].units
-                )
-                newmaxrangeval = norangetuple[1].to(
-                    hypo_testing.h1_maker.params[test_name].units
-                )
-                newrangetuple = (newminrangeval, newmaxrangeval)
-                hypo_testing.h1_maker.params[test_name].range = newrangetuple
-            else:
-                hypo_testing.h1_maker.params[test_name].range = norangetuple
-        else:
-            if hypo_testing.h1_maker.params[test_name].units != inj_units:
-                newminrangeval = iorangetuple[0].to(
-                    hypo_testing.h1_maker.params[test_name].units
-                )
-                newmaxrangeval = iorangetuple[1].to(
-                    hypo_testing.h1_maker.params[test_name].units
-                )
-                newrangetuple = (newminrangeval, newmaxrangeval)
-                hypo_testing.h1_maker.params[test_name].range = newrangetuple
-            else:
-                hypo_testing.h1_maker.params[test_name].range = iorangetuple
-        if np.sign(
-                hypo_testing.data_maker.params[test_name].value.magnitude) == 1:
-            if hypo_testing.data_maker.params[test_name].units != inj_units:
-                newminrangeval = norangetuple[0].to(
-                    hypo_testing.data_maker.params[test_name].units
-                )
-                newmaxrangeval = norangetuple[1].to(
-                    hypo_testing.data_maker.params[test_name].units
-                )
-                newrangetuple = (newminrangeval, newmaxrangeval)
-                hypo_testing.data_maker.params[test_name].range = newrangetuple
-            else:
-                hypo_testing.data_maker.params[test_name].range = norangetuple
-        else:
-            if hypo_testing.data_maker.params[test_name].units != inj_units:
-                newminrangeval = iorangetuple[0].to(
-                    hypo_testing.data_maker.params[test_name].units
-                )
-                newmaxrangeval = iorangetuple[1].to(
-                    hypo_testing.data_maker.params[test_name].units
-                )
-                newrangetuple = (newminrangeval, newmaxrangeval)
-                hypo_testing.data_maker.params[test_name].range = newrangetuple
-            else:
-                hypo_testing.data_maker.params[test_name].range = iorangetuple
     # Otherwise it's way simpler...
     else:
-        if hypo_testing.h0_maker.params[test_name].range is not None:
-            if hypo_testing.h0_maker.params[test_name].range[0] > 0:
-                enforce_positive = True
-            else:
-                enforce_positive = False
-        else:
-            enforce_positive = False
         rangediff = max(inj_vals) - min(inj_vals)
         rangetuple = (min(inj_vals) - 0.5*rangediff,
                       max(inj_vals) + 0.5*rangediff)
-        if enforce_positive and rangetuple[0] < 0:
-            rangetuple = (0.0 * ureg(inj_units),
-                          max(inj_vals) + 0.5*rangediff)
-        # Ensure that the units match, if not change them
-        if hypo_testing.h0_maker.params[test_name].units != inj_units:
-            minrangeval = rangetuple[0].to(
-                hypo_testing.h0_maker.params[test_name].units
-            )
-            maxrangeval = rangetuple[1].to(
-                hypo_testing.h0_maker.params[test_name].units
-            )
-            if enforce_positive and minrangeval < 0:
-                newminrangeval = 0.0 * ureg(inj_units)
-                newminrangeval = newminrangeval.to(
-                    hypo_testing.h0_maker.params[test_name].units
-                )
-            rangetuple = (minrangeval, maxrangeval)
-        hypo_testing.h0_maker.params[test_name].range\
-            = rangetuple
-        hypo_testing.h1_maker.params[test_name].range\
-            = rangetuple
-        hypo_testing.data_maker.params[test_name].range\
-            = rangetuple
+        set_new_ranges(
+            hypo_testing=hypo_testing,
+            selection=None,
+            test_name=test_name,
+            rangetuple=rangetple,
+            inj_units=inj_units
+        )
 
     if hypo_testing.data_maker.params[test_name].prior is not None:
         if hypo_testing.data_maker.params[test_name].prior.kind != 'uniform':
@@ -351,83 +218,15 @@ def main():
             logging.info("Parameter to be scanned, %s, does not have a prior. "
                          "So nothing needs to be done."%test_name)
 
-    # Scan over the injected values. We also loop over the requested vals here
-    # in case they are different so that value can be put in the labels
-    for inj_val, requested_val in zip(inj_vals, requested_vals):
-        # Be sure to inject the right value!
-        if isinstance(inj_val, dict):
-            hypo_testing.h0_maker.select_params(['nh'])
-            hypo_testing.h1_maker.select_params(['nh'])
-            inj_val['no'] = inj_val['no'].to(
-                hypo_testing.h0_maker.params[test_name].units
-            )
-            hypo_testing.h0_maker.params[test_name].value = inj_val['no']
-            hypo_testing.h1_maker.params[test_name].value = inj_val['no']
-            hypo_testing.h0_maker.select_params(['ih'])
-            hypo_testing.h1_maker.select_params(['ih'])
-            inj_val['io'] = inj_val['io'].to(
-                hypo_testing.h0_maker.params[test_name].units
-            )
-            hypo_testing.h0_maker.params[test_name].value = inj_val['io']
-            hypo_testing.h1_maker.params[test_name].value = inj_val['io']
-            hypo_testing.h0_maker.select_params(
-                init_args_d['h0_param_selections']
-            )
-            hypo_testing.h1_maker.select_params(
-                init_args_d['h1_param_selections']
-            )
-            if np.sign(hypo_testing.data_maker.params[
-                    test_name].value.magnitude) == 1:
-                hypo_testing.data_maker.params[test_name].value = inj_val['no']
-            else:
-                hypo_testing.data_maker.params[test_name].value = inj_val['io']
-        # This is easy if there's just one of them
-        else:
-            # Make sure the units are right
-            inj_val = inj_val.to(hypo_testing.h0_maker.params[test_name].units)
-            # Then set the value in all of the makers
-            hypo_testing.h0_maker.params[test_name].value = inj_val
-            hypo_testing.h1_maker.params[test_name].value = inj_val
-            hypo_testing.data_maker.params[test_name].value = inj_val
-        # Make names reflect parameter value
-        if param_name == 'deltam3l':
-            hypo_testing.labels = Labels(
-                h0_name=init_args_d['h0_name'],
-                h1_name=init_args_d['h1_name'],
-                data_name=init_args_d['data_name']+'_%s_%.4f'
-                %(param_name,requested_val*1000.0),
-                data_is_data=init_args_d['data_is_data'],
-                fluctuate_data=init_args_d['fluctuate_data'],
-                fluctuate_fid=init_args_d['fluctuate_fid']
-            )
-        else:
-            hypo_testing.labels = Labels(
-                h0_name=init_args_d['h0_name'],
-                h1_name=init_args_d['h1_name'],
-                data_name=init_args_d['data_name']+'_%s_%.4f'
-                %(param_name,requested_val),
-                data_is_data=init_args_d['data_is_data'],
-                fluctuate_data=init_args_d['fluctuate_data'],
-                fluctuate_fid=init_args_d['fluctuate_fid']
-            )
-        # Setup logging and things.
-        hypo_testing.setup_logging(reset_params=False)
-        hypo_testing.write_config_summary(reset_params=False)
-        hypo_testing.write_minimizer_settings()
-        hypo_testing.write_run_info()
-        # Now do the fits
-        hypo_testing.generate_data()
-        hypo_testing.fit_hypos_to_data()
-        hypo_testing.produce_fid_data()
-        hypo_testing.fit_hypos_to_fid()
-        # At the end, reset the parameters in the maker
-        hypo_testing.data_maker.params.reset_free()
-        hypo_testing.h0_maker.params.reset_free()
-        hypo_testing.h1_maker.params.reset_free()
-        # Also be sure to remove the data_dist and tor_data_asimov_dist
-        # so that it is regenerated next time
-        hypo_testing.data_dist = None
-        hypo_testing.toy_data_asimov_dist = None
+    # Everything is set up. Now do the scan.
+    hypo_testing.inj_param_scan(
+        test_name=test_name,
+        inj_vals=inj_vals,
+        requested_vals=requested_vals,
+        **init_args_d
+    )
+
+    
 
 
 if __name__ == '__main__':
