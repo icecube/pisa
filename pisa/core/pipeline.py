@@ -361,6 +361,11 @@ class Pipeline(object):
         the state of the corresponding stage."""
         return hash_obj([self.source_code_hash] + [s.state_hash for s in self])
 
+    @property
+    def hash(self):
+        """High level hash of this object's class"""
+        return hash_obj((self.source_code_hash, self.state_hash))
+
 
 def test_Pipeline():
     """Unit tests for Pipeline class"""

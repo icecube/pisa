@@ -105,9 +105,33 @@ def hash_obj(obj, hash_to='int', full_hash=True):
         try:
             pkl = pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
         except:
-            logging.error('Failed to pickle `obj` "%s" of type "%s"'
-                          %(obj, type(obj)))
-            raise
+            # Iterate through each element if obj is a Sequence
+            if isinstance(obj, Sequence):
+                # Store hash of each element
+                hash_list = []
+                for ele in obj:
+                    try:
+                        # Try to get hash using pickle
+                        a = pickle.dumps(ele, pickle.HIGHEST_PROTOCOL)
+                        hash_list.append(ele)
+                    except:
+                        # Otherwise try to get hash from property
+                        try:
+                            hash_list.append(ele.hash)
+                        except:
+                            pass
+                        pass
+                # Get hash values by pickling the hash list
+                try:
+                    pkl = pickle.dumps(hash_list, pickle.HIGHEST_PROTOCOL)
+                except:
+                    logging.error('Failed to pickle `obj` "%s" of type "%s"'
+                                  %(obj, type(obj)))
+                    raise
+            else:
+                logging.error('Failed to pickle `obj` "%s" of type "%s"'
+                              %(obj, type(obj)))
+                raise
         obj = pkl
 
     if full_hash:
