@@ -792,65 +792,68 @@ def plot_LLR_histograms(LLRarrays, LLRhistmax, binning, colors, labels,
         horizontalalignment='right'
     )
     # Add the critical value with the desired height and colour.
-    plt.axvline(
-        critical_value,
-        color=critical_color,
-        ymax=critical_height,
-        lw=2,
-        label=critical_label
-    )
-    if CLs:
-        for hist, color in zip(LLRhist, colors):
-            finehist = np.repeat(hist, 100)
-            finebinning = np.linspace(binning[0],
-                                      binning[-1],
-                                      (len(binning)-1)*100+1)
-            finebinwidth = finebinning[1]-finebinning[0]
-            finebincens = np.linspace(finebinning[0]+finebinwidth/2.0,
-                                      finebinning[-1]-finebinwidth/2.0,
-                                      len(finebinning)-1)
-            if color == 'r':
-                where = (finebincens < critical_value)
-            elif color == 'b':
-                where = (finebincens > critical_value)
-            plt.fill_between(
-                finebincens,
-                0,
-                finehist,
-                where=where,
-                color='none',
-                hatch='X',
-                edgecolor=color,
-                lw=0
-            )
-    else:
-        # Create an object so that a hatch can be drawn over the region of
-        # interest to the p-value.
-        finehist = np.repeat(LLRhist, 100)
-        finebinning = np.linspace(binning[0], binning[-1], (len(binning)-1)*100+1)
-        finebinwidth = finebinning[1]-finebinning[0]
-        finebincens = np.linspace(finebinning[0]+finebinwidth/2.0,
-                                  finebinning[-1]-finebinwidth/2.0,
-                                  len(finebinning)-1)
-        # Draw the hatch. This is between the x-axis (0) and the finehist
-        # object made above. The "where" tells is to only draw above the
-        # critical value. To make it just the hatch, color is set to none and
-        # hatch is set to X.
-        # Also, so that it doesn't have a border we set linewidth to zero.
-        if greater:
-            where = (finebincens > critical_value)
-        else:
-            where = (finebincens < critical_value)
-        plt.fill_between(
-            finebincens,
-            0,
-            finehist,
-            where=where,
-            color='none',
-            hatch='X',
-            edgecolor='k',
-            lw=0
+    if critical_value is not None:
+        plt.axvline(
+            critical_value,
+            color=critical_color,
+            ymax=critical_height,
+            lw=2,
+            label=critical_label
         )
+        if LLRhist is not None:
+            if CLs:
+                for hist, color in zip(LLRhist, colors):
+                    finehist = np.repeat(hist, 100)
+                    finebinning = np.linspace(binning[0],
+                                              binning[-1],
+                                              (len(binning)-1)*100+1)
+                    finebinwidth = finebinning[1]-finebinning[0]
+                    finebincens = np.linspace(finebinning[0]+finebinwidth/2.0,
+                                              finebinning[-1]-finebinwidth/2.0,
+                                              len(finebinning)-1)
+                    if color == 'r':
+                        where = (finebincens < critical_value)
+                    elif color == 'b':
+                        where = (finebincens > critical_value)
+                    plt.fill_between(
+                        finebincens,
+                        0,
+                        finehist,
+                        where=where,
+                        color='none',
+                        hatch='X',
+                        edgecolor=color,
+                        lw=0
+                    )
+            else:
+                # Create an object so that a hatch can be drawn over the region
+                # of interest to the p-value.
+                finehist = np.repeat(LLRhist, 100)
+                finebinning = np.linspace(binning[0], binning[-1],
+                                          (len(binning)-1)*100+1)
+                finebinwidth = finebinning[1]-finebinning[0]
+                finebincens = np.linspace(finebinning[0]+finebinwidth/2.0,
+                                          finebinning[-1]-finebinwidth/2.0,
+                                          len(finebinning)-1)
+                # Draw the hatch. This is between the x-axis (0) and the
+                # finehist object made above. The "where" tells is to only draw
+                # above the critical value. To make it just the hatch, color is
+                # set to none and hatch is set to X. Also, so that it doesn't
+                # have a border we set linewidth to zero.
+                if greater:
+                    where = (finebincens > critical_value)
+                else:
+                    where = (finebincens < critical_value)
+                plt.fill_between(
+                    finebincens,
+                    0,
+                    finehist,
+                    where=where,
+                    color='none',
+                    hatch='X',
+                    edgecolor='k',
+                    lw=0
+                )
 
     plt.subplots_adjust(left=0.10, right=0.90, top=0.9, bottom=0.15)
 
@@ -1097,6 +1100,203 @@ def make_llr_plots(data, fid_data, labels, detector, selection, outdir,
             end='%s_LLRDistribution_median_w_extra_points_%i_Trials'%(
                 metric_type, num_trials)
         )
+    plt.close()
+
+    # Make some debugging plots
+    ## Set up the labels for the histograms
+    LLR_labels = [
+        r"%s Best Fit - $\log\left[\mathcal{L}\left(\mathcal{H}_"%(
+            tex_axis_label(best_name)) + \
+        r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+            best_name, alt_name),
+        r"%s Best Fit - $\log\left[\mathcal{L}\left(\mathcal{H}_"%(
+            tex_axis_label(alt_name)) + \
+        r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+            best_name, alt_name)
+    ]
+    plot_LLR_histograms(
+        LLRarrays=[LLRbest, LLRalt],
+        LLRhistmax=LLRhistmax,
+        binning=binning,
+        colors=['r', 'b'],
+        labels=LLR_labels,
+        best_name=best_name,
+        alt_name=alt_name,
+        critical_value=best_median,
+        critical_label=r"%s Median = $%.4f\pm%.4f$"%(
+            tex_axis_label(best_name),
+            best_median,
+            median_error),
+        critical_height=float(max(LLRbesthist))/float(
+            plot_scaling_factor*LLRhistmax),
+        LLRhist=None,
+        greater=True
+    )
+    plt.legend(loc='upper left')
+    plt.title(plot_title)
+    save_plot(
+        labels=labels,
+        fid=None,
+        hypo=None,
+        detector=detector,
+        selection=selection,
+        outdir=outdir,
+        formats=formats,
+        end='%s_LLRDistribution_median_both_fit_dists_%i_Trials'%(metric_type, num_trials)
+    )
+    plt.close()
+    ## Set up the labels for the histograms
+    LLR_labels = [
+        r"%s Best Fit - $\log\left[\mathcal{L}\left(\mathcal{H}_"%(
+            tex_axis_label(best_name)) + \
+        r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+            best_name, alt_name),
+    ]
+    plot_LLR_histograms(
+        LLRarrays=[LLRbest],
+        LLRhistmax=LLRhistmax,
+        binning=binning,
+        colors=['r'],
+        labels=LLR_labels,
+        best_name=best_name,
+        alt_name=alt_name,
+        critical_value=None,
+        critical_label=None,
+        critical_height=None,
+        LLRhist=None,
+        greater=True
+    )
+    plt.legend(loc='upper left')
+    plt.title(plot_title)
+    save_plot(
+        labels=labels,
+        fid=None,
+        hypo=None,
+        detector=detector,
+        selection=selection,
+        outdir=outdir,
+        formats=formats,
+        end='%s_LLRDistribution_best_fit_dist_%i_Trials'%(metric_type, num_trials)
+    )
+    plt.close()
+    ## Set up the labels for the histograms
+    LLR_labels = [
+        r"%s Best Fit - $\log\left[\mathcal{L}\left(\mathcal{H}_"%(
+            tex_axis_label(best_name)) + \
+        r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+            best_name, alt_name),
+    ]
+    plot_LLR_histograms(
+        LLRarrays=[LLRbest],
+        LLRhistmax=LLRhistmax,
+        binning=binning,
+        colors=['r'],
+        labels=LLR_labels,
+        best_name=best_name,
+        alt_name=alt_name,
+        critical_value=best_median,
+        critical_label=r"%s Median = $%.4f\pm%.4f$"%(
+            tex_axis_label(best_name),
+            best_median,
+            median_error),
+        critical_height=float(max(LLRbesthist))/float(
+            plot_scaling_factor*LLRhistmax),
+        LLRhist=None,
+        greater=True
+    )
+    plt.legend(loc='upper left')
+    plt.title(plot_title)
+    save_plot(
+        labels=labels,
+        fid=None,
+        hypo=None,
+        detector=detector,
+        selection=selection,
+        outdir=outdir,
+        formats=formats,
+        end='%s_LLRDistribution_median_best_fit_dist_%i_Trials'%(metric_type, num_trials)
+    )
+    plt.close()
+    ## Set up the labels for the histograms
+    LLR_labels = [
+        r"%s Best Fit - $\log\left[\mathcal{L}\left(\mathcal{H}_"%(
+            tex_axis_label(alt_name)) + \
+        r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+            best_name, alt_name)
+    ]
+    plot_LLR_histograms(
+        LLRarrays=[LLRalt],
+        LLRhistmax=LLRhistmax,
+        binning=binning,
+        colors=['b'],
+        labels=LLR_labels,
+        best_name=best_name,
+        alt_name=alt_name,
+        critical_value=None,
+        critical_label=None,
+        critical_height=None,
+        LLRhist=None,
+        greater=True
+    )
+    plt.legend(loc='upper left')
+    plt.title(plot_title)
+    save_plot(
+        labels=labels,
+        fid=None,
+        hypo=None,
+        detector=detector,
+        selection=selection,
+        outdir=outdir,
+        formats=formats,
+        end='%s_LLRDistribution_alt_fit_dist_%i_Trials'%(metric_type, num_trials)
+    )
+    plt.close()
+    ## Set up the labels for the histograms
+    LLR_labels = [
+        r"%s Best Fit - $\log\left[\mathcal{L}\left(\mathcal{H}_"%(
+            tex_axis_label(alt_name)) + \
+        r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+            best_name, alt_name)
+    ]
+    plot_LLR_histograms(
+        LLRarrays=[LLRalt],
+        LLRhistmax=LLRhistmax,
+        binning=binning,
+        colors=['b'],
+        labels=LLR_labels,
+        best_name=best_name,
+        alt_name=alt_name,
+        critical_value=best_median,
+        critical_label=r"%s Median = $%.4f\pm%.4f$"%(
+            tex_axis_label(best_name),
+            best_median,
+            median_error),
+        critical_height=float(max(LLRbesthist))/float(
+            plot_scaling_factor*LLRhistmax),
+        LLRhist=LLRalthist,
+        greater=True
+    )
+    plt.legend(loc='upper left')
+    plt.title(plot_title)
+    # Write the p-value on the plot
+    plt.figtext(
+        0.15,
+        0.66,
+        r"$\mathrm{p}\left(\mathcal{H}_{%s}\right) = %.4f\pm%.4f$"%(
+            best_name, med_p_value, unc_med_p_value),
+        color='k',
+        size='xx-large'
+    )
+    save_plot(
+        labels=labels,
+        fid=None,
+        hypo=None,
+        detector=detector,
+        selection=selection,
+        outdir=outdir,
+        formats=formats,
+        end='%s_LLRDistribution_median_alt_fit_dist_%i_Trials'%(metric_type, num_trials)
+    )
     plt.close()
 
     # In case of critical plot, draw just alt histograms
