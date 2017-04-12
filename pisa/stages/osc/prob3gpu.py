@@ -442,7 +442,11 @@ class prob3gpu(Stage):
         cuda.memcpy_htod(d_smooth_maps, smooth_maps)
 
         block_size = (16, 16, 1)
-        grid_size = (nczbins_fine/block_size[0] + 1, nebins_fine/block_size[1] + 1, 2)
+        grid_size = (
+            nczbins_fine // block_size[0] + 1,
+            nebins_fine // block_size[1] + 1,
+            2
+        )
         self.propGrid(d_smooth_maps,
                       d_dm_mat, d_mix_mat,
                       self.d_ecen_fine, self.d_czcen_fine,
