@@ -1603,8 +1603,163 @@ class HypoTesting(Analysis):
             self.data_dist = None
             self.toy_data_asimov_dist = None
 
+    def nminusone_test(data_param, h0_name, h1_name, data_name):
+        '''
+        This function will perform the standard N-1 test. This function expects
+        h0_name, h1_name and data_name so that the labels can be redefined 
+        to make everything unique. It is also expected that this is used inside
+        of a loop where data_param is one of the data params.
+        '''
+        self.labels = Labels(
+            h0_name=h0_name + '_fixed_%s_baseline'%data_param.name,
+            h1_name=h1_name + '_fixed_%s_baseline'%data_param.name,
+            data_name=data_name,
+            data_is_data=False,
+            fluctuate_data=False,
+            fluctuate_fid=False
+        )
+        # This is a standard N-1 test, so fix the parameter in the hypo makers.
+        for h0_param in self.h0_maker.params.free:
+            if h0_param.name == data_param.name:
+                h0_param.is_fixed = True
+        for h1_param in self.h1_maker.params.free:
+            if h1_param.name == data_param.name:
+                h1_param.is_fixed = True
+        # Setup logging and things.
+        self.setup_logging(reset_params=False)
+        self.write_config_summary(reset_params=False)
+        self.write_minimizer_settings()
+        self.write_run_info()
+        # Now do the fits
+        self.generate_data()
+        self.fit_hypos_to_data()
+        self.produce_fid_data()
+        self.fit_hypos_to_fid()
 
-def parse_args(description=__doc__, injparamscan=False):
+    def systematic_wrong_analysis(self, data_param, hypo_testing, fit_wrong,
+                                  direction, h0_name, h1_name, data_name):
+        '''
+        This function will perform a modified version of the N-1 test. This
+        differs in that here we do not assume the systematics take their
+        baseline values but here see instead what happens with something
+        systematically wrong. So, the data_param is shifted by 1 sigma or 10%
+        off baseline. The direction of this shift should be specified pve or
+        nve in the direction argument (meaning positive or negative). Then one
+        can allow the minimiser to correct for this by specifying fit_wrong. If
+        this is false then the hypothesis maker will be fixed to the baseline
+        in this parameter i.e. a systematically wrong hypothesis to what is
+        injected. As with the N-1 test below it is assumed that this function
+        exists inside of a loop over the parameters in the data_maker and this
+        is for the systematic defined in data_param. This function also expects
+        h0_name, h1_name and data_name so that the labels can be redefined to
+        make everything unique. 
+        '''
+        if direction != 'pve':
+            if direction != 'nve':
+                raise ValueError('Direction to shift systematic value must be '
+                                 'specified either as "pve" or "nve" for '
+                                 'positive and negative respectively')
+        # Calculate this wrong value based on the prior
+        if hasattr(data_param, 'prior'):
+            # Gaussian priors are easy - just do 1 sigma
+            if data_param.prior.kind == 'gaussian':
+                if direction == 'pve':
+                    data_param.value \
+                        = data_param.value + data_param.prior.stddev
+                else:
+                    data_param.value \
+                        = data_param.value - data_param.prior.stddev
+            # Else do 10%
+            else:
+                if direction == 'pve':
+                    data_param.value = 1.1 * data_param.value
+                else:
+                    data_param.value = 0.9 * data_param.value
+        # If we are not allowing the fit to correct for this, it must be
+        # fixed in the hypo makers.
+        if not fit_wrong:
+            for h0_param in self.h0_maker.params.free:
+                if h0_param.name == data_param.name:
+                    h0_param.is_fixed = True
+            for h1_param in self.h1_maker.params.free:
+                if h1_param.name == data_param.name:
+                    h1_param.is_fixed = True
+        # Set up labels so that each file comes out unique
+        if fit_wrong:
+            self.labels = Labels(
+                h0_name=h0_name,
+                h1_name=h1_name,
+                data_name=data_name + '_inj_%s_%s_wrong'%(
+                    data_param.name,direction),
+                data_is_data=False,
+                fluctuate_data=False,
+                fluctuate_fid=False
+            )
+        else:
+            self.labels = Labels(
+                h0_name=h0_name + '_fixed_%s_baseline'%data_param.name,
+                h1_name=h1_name + '_fixed_%s_baseline'%data_param.name,
+                data_name=data_name + '_inj_%s_%s_wrong'%(
+                    data_param.name,direction),
+                data_is_data=False,
+                fluctuate_data=False,
+                fluctuate_fid=False
+            )
+        # Setup logging and things.
+        self.setup_logging(reset_params=False)
+        self.write_config_summary(reset_params=False)
+        self.write_minimizer_settings()
+        self.write_run_info()
+        # Now do the fits
+        self.generate_data()
+        self.fit_hypos_to_data()
+        self.produce_fid_data()
+        self.fit_hypos_to_fid()
+
+    def syst_tests(self, inject_wrong, fit_wrong, h0_name, h1_name, data_name):
+        for data_param in self.data_maker.params.free:
+            if inject_wrong:
+                # First inject this wrong up by one sigma
+                self.systematic_wrong_analysis(
+                    data_param=data_param,
+                    fit_wrong=fit_wrong,
+                    direction='pve',
+                    h0_name=h0_name,
+                    h1_name=h1_name,
+                    data_name=data_name
+                )
+                # Then inject this wrong down by one sigma
+                self.systematic_wrong_analysis(
+                    data_param=data_param,
+                    fit_wrong=fit_wrong,
+                    direction='nve',
+                    h0_name=h0_name,
+                    h1_name=h1_name,
+                    data_name=data_name
+                )
+            else:
+                # Just do the standard N-1 test
+                self.nminusone_test(
+                    data_param=data_param,
+                    h0_name=h0_name,
+                    h1_name=h1_name,
+                    data_name=data_name
+                )
+            # At the end, reset the parameters in the maker
+            self.data_maker.params.reset_free()
+            self.h0_maker.params.reset_free()
+            self.h1_maker.params.reset_free()
+            # Also unfix the hypo maker parameters
+            for h0_param in self.h0_maker.params:
+                if h0_param.name == data_param.name:
+                    h0_param.is_fixed = False
+            for h1_param in self.h1_maker.params:
+                if h1_param.name == data_param.name:
+                    h1_param.is_fixed = False
+            
+
+
+def parse_args(description=__doc__, injparamscan=False, systtests=False):
     """Parse command line args.
 
     Returns
@@ -1654,7 +1809,7 @@ def parse_args(description=__doc__, injparamscan=False):
     )
     # Data cannot be data for MC studies e.g. injected parameter scans so these
     # arguments are redundant there.
-    if not injparamscan:
+    if (not injparamscan) and (not systtests):
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument(
             '--data-is-data', action='store_true',
@@ -1667,12 +1822,25 @@ def parse_args(description=__doc__, injparamscan=False):
             actual data. The naming scheme for stored results is chosen
             accordingly. If this is selected, --fluctuate-data is forced off.'''
         )
-    parser.add_argument(
-        '--h0-pipeline', required=True,
-        type=str, action='append', metavar='PIPELINE_CFG',
-        help='''Settings for the generation of hypothesis h0
-        distributions; repeat this argument to specify multiple pipelines.'''
-    )
+    # For the MC tests (injected parameter scan, systematic tests etc.) you
+    # must have the same pipeline for h0, h1 and data. So this argument is
+    # instead replaced with a generic pipeline argument.
+    if (not injparamscan) and (not systtests):
+        parser.add_argument(
+            '--h0-pipeline', required=True,
+            type=str, action='append', metavar='PIPELINE_CFG',
+            help='''Settings for the generation of hypothesis h0
+            distributions; repeat this argument to specify multiple
+            pipelines.'''
+        )
+    else:
+        parser.add_argument(
+            '--pipeline', required=True,
+            type=str, action='append', metavar='PIPELINE_CFG',
+            help='''Settings for the generation of h0, h1 and data 
+            distributions; repeat this argument to specify multiple
+            pipelines.'''
+        )
     parser.add_argument(
         '--h0-param-selections',
         type=str, default=None, metavar='PARAM_SELECTOR_LIST',
@@ -1688,16 +1856,20 @@ def parse_args(description=__doc__, injparamscan=False):
         be careful to use a name that appropriately identifies the
         hypothesis.'''
     )
-    parser.add_argument(
-        '--h1-pipeline',
-        type=str, action='append', default=None, metavar='PIPELINE_CFG',
-        help='''Settings for the generation of hypothesis h1 distributions;
-        repeat this argument to specify multiple pipelines. If omitted, the
-        same settings as specified for --h0-pipeline are used to generate
-        hypothesis h1 distributions (and so you have to use the
-        --h1-param-selections argument to generate a hypotheses distinct
-        from hypothesis h0 but still use h0's distribution maker).'''
-    )
+    # For the MC tests (injected parameter scan, systematic tests etc.) you
+    # must have the same pipeline for h0, h1 and data. So this argument is
+    # hidden.
+    if (not injparamscan) and (not systtests):
+        parser.add_argument(
+            '--h1-pipeline',
+            type=str, action='append', default=None, metavar='PIPELINE_CFG',
+            help='''Settings for the generation of hypothesis h1 distributions;
+            repeat this argument to specify multiple pipelines. If omitted, the
+            same settings as specified for --h0-pipeline are used to generate
+            hypothesis h1 distributions (and so you have to use the
+            --h1-param-selections argument to generate a hypotheses distinct
+            from hypothesis h0 but still use h0's distribution maker).'''
+        )
     parser.add_argument(
         '--h1-param-selections',
         type=str, default=None, metavar='PARAM_SELECTOR_LIST',
@@ -1713,14 +1885,18 @@ def parse_args(description=__doc__, injparamscan=False):
         be careful to use a name that appropriately identifies the
         hypothesis.'''
     )
-    parser.add_argument(
-        '--data-pipeline',
-        type=str, action='append', default=None, metavar='PIPELINE_CFG',
-        help='''Settings for the generation of "data" distributions; repeat
-        this argument to specify multiple pipelines. If omitted, the same
-        settings as specified for --h0-pipeline are used to generate data
-        distributions (i.e., data is assumed to come from hypothesis h0.'''
-    )
+    # For the MC tests (injected parameter scan, systematic tests etc.) you
+    # must have the same pipeline for h0, h1 and data. So this argument is
+    # hidden.
+    if (not injparamscan) and (not systtests):
+        parser.add_argument(
+            '--data-pipeline',
+            type=str, action='append', default=None, metavar='PIPELINE_CFG',
+            help='''Settings for the generation of "data" distributions; repeat
+            this argument to specify multiple pipelines. If omitted, the same
+            settings as specified for --h0-pipeline are used to generate data
+            distributions (i.e., data is assumed to come from hypothesis h0.'''
+        )
     parser.add_argument(
         '--data-param-selections',
         type=str, default=None, metavar='PARAM_SELECTOR_LIST',
@@ -1740,9 +1916,9 @@ def parse_args(description=__doc__, injparamscan=False):
         on the actual process, so it's important that you be careful to use a
         name that appropriately identifies the hypothesis.'''
     )
-    # For the injected parameter scan, only the Asimov analysis should be used,
-    # so these arguments are not needed.
-    if not injparamscan:
+    # For the injected parameter scan and systematic studies, only the Asimov
+    # analysis should be used, so these arguments are not needed.
+    if (not injparamscan) and (not systtests):
         parser.add_argument(
             '--fluctuate-data',
             action='store_true',
@@ -1773,7 +1949,7 @@ def parse_args(description=__doc__, injparamscan=False):
         be either 'all' or one of %s. Repeat this argument (or use 'all') to
         specify multiple metrics.''' % (ALL_METRICS,)
     )
-    if not injparamscan:
+    if (not injparamscan) and (not systtests):
         parser.add_argument(
             '--num-data-trials',
             type=int, default=1,
@@ -1805,7 +1981,7 @@ def parse_args(description=__doc__, injparamscan=False):
         )
     # A blind analysis only makes sense when the possibility of actually
     # analysing data is available.
-    if not injparamscan:
+    if (not injparamscan) and (not systtests):
         parser.add_argument(
             '--blind',
             action='store_true',
@@ -1862,6 +2038,24 @@ def parse_args(description=__doc__, injparamscan=False):
             non-central prior i.e. injecting a truth that differs from the
             centre of the prior. Flag this to force the prior to be left on.'''
         )
+    # Add in the arguments specific to the systematic tests.
+    if systtests:
+        parser.add_argument(
+            '--inject_wrong',
+            action='store_true',
+            help='''Inject a parameter to some systematically wrong value. This 
+            will be either +/- 1 sigma or +/- 10%% if such a definition is 
+            impossible. By default this parameter will be fixed unless the 
+            fit_wrong argument is also flagged.'''
+        )
+        parser.add_argument(
+            '--fit_wrong',
+            action='store_true',
+            help='''In the case of injecting a systematically wrong hypothesis 
+            setting this argument will get the minimiser to try correct for it.
+            If inject_wrong is set to false then this must also be set to 
+            false or else the script will fail.'''
+        )
     parser.add_argument(
         '--pprint',
         action='store_true',
@@ -1911,12 +2105,14 @@ def parse_args(description=__doc__, injparamscan=False):
     init_args_d['check_octant'] = not init_args_d.pop('no_octant_check')
     init_args_d['check_ordering'] = init_args_d.pop('ordering_check')
 
-    if not injparamscan:
+    if (not injparamscan) and (not systtests):
         init_args_d['data_is_data'] = not init_args_d.pop('data_is_mc')
     else:
         init_args_d['data_is_data'] = False
         init_args_d['fluctuate_data'] = False
         init_args_d['fluctuate_fid'] = False
+        init_args_d['data_maker'] = init_args_d['h0_maker']
+        init_args_d['h1_maker'] = init_args_d['h0_maker']
 
     init_args_d['store_minimizer_history'] = (
         not init_args_d.pop('no_min_history')
