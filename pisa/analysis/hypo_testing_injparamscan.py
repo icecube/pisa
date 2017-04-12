@@ -22,7 +22,7 @@ import os
 import numpy as np
 
 from pisa import ureg
-from pisa.analysis.hypo_testing import HypoTesting, Labels, parse_args
+from pisa.analysis.hypo_testing import HypoTesting, parse_args, normcheckpath
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.prior import Prior
 from pisa.utils.log import logging, set_verbosity
