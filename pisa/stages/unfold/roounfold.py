@@ -520,7 +520,7 @@ class roounfold(Stage):
                 )
         else:
             this_hash = hash_obj(
-                [this_hash, self.fit_hash, normQuant(self.params)],
+                [this_hash, self.fit_hash] + list(self.params.values),
                 full_hash = self.full_hash
             )
             if self.response_hash == this_hash:

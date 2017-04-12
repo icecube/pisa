@@ -430,7 +430,6 @@ class fit(Stage):
             mu_params = None
 
         if self.params['cache_fit'].value:
-            # TODO(shivesh): merge with CAKE master
             this_cache_hash = hash_obj(
                 [self._data.metadata['name'], self._data.metadata['sample'],
                  self._data.metadata['cuts'], self.fit_binning.hash] +
