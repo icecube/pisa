@@ -52,16 +52,16 @@ class sample(Stage):
                 `keep_criteria` are kept.
                 Any string interpretable as numpy boolean expression.
 
-            * output_events_data : bool
-                Flag to specify whether the service output returns a MapSet
-                or the full information about each event
-
     output_binning : MultiDimBinning or convertible thereto
         The binning desired for the output maps.
 
     output_names : string
         Specifies the string representation of the NuFlavIntGroup(s) which will
         be produced as an output.
+
+    output_events : bool
+        Flag to specify whether the service output returns a MapSet
+        or the full information about each event
 
     error_method : None, bool, or string
         If None, False, or empty string, the stage does not compute errors for
@@ -77,15 +77,15 @@ class sample(Stage):
     outputs_cache_depth : int >= 0
 
     """
-    def __init__(self, params, output_binning, output_names, error_method=None,
-                 debug_mode=None, disk_cache=None, memcache_deepcopy=True,
+    def __init__(self, params, output_binning, output_names,
+                 output_events=True, error_method=None, debug_mode=None,
+                 disk_cache=None, memcache_deepcopy=True,
                  transforms_cache_depth=20, outputs_cache_depth=20):
         self.sample_hash = None
         """Hash of event sample"""
 
         expected_params = (
             'data_sample_config', 'dataset', 'keep_criteria',
-            'output_events_data'
         )
 
         self.neutrinos = False
@@ -112,6 +112,15 @@ class sample(Stage):
 
         if self.neutrinos:
             clean_outnames += [str(f) for f in self._output_nu_groups]
+
+        if not isinstance(output_events, bool):
+            raise AssertionError(
+                'output_events must be of type bool, instead it is supplied '
+                'with type {0}'.format(type(output_events))
+            )
+        if output_events:
+            output_binning = None
+        self.output_events = output_events
 
         super(self.__class__, self).__init__(
             use_transforms=False,
@@ -147,7 +156,7 @@ class sample(Stage):
             self._data.applyCut(self.params['keep_criteria'].value)
             self._data.update_hash()
 
-        if self.params['output_events_data'].value:
+        if self.output_events:
             return self._data
 
         outputs = []
@@ -497,4 +506,3 @@ class sample(Stage):
         assert isinstance(params['dataset'].value, basestring)
         assert params['keep_criteria'].value is None or \
             isinstance(params['keep_criteria'].value, basestring)
-        assert isinstance(params['output_events_data'].value, bool)

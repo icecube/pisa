@@ -66,10 +66,6 @@ class fit(Stage):
             * stop_after_stage : int
                 Extract templates up to this stage for the fitting
 
-            * output_events_discr_sys : bool
-                Flag to specify whether the service output returns a
-                MapSet or the Data
-
             * poly_degree : int
                 Polynominal degree to use when fitting
 
@@ -105,6 +101,10 @@ class fit(Stage):
         Specifies the string representation of the NuFlavIntGroup(s) which will
         be produced as an output.
 
+    output_events : bool
+        Flag to specify whether the service output returns a MapSet
+        or the full information about each event
+
     error_method : None, bool, or string
         If None, False, or empty string, the stage does not compute errors for
         the transforms and does not apply any (additional) error to produce its
@@ -120,8 +120,9 @@ class fit(Stage):
 
     """
     def __init__(self, params, output_binning, input_names, output_names,
-                 error_method=None, debug_mode=None, disk_cache=None,
-                 memcache_deepcopy=True, outputs_cache_depth=20):
+                 output_events=True, error_method=None, debug_mode=None,
+                 disk_cache=None, memcache_deepcopy=True,
+                 outputs_cache_depth=20):
         self.sample_hash = None
         """Hash of input event sample."""
         self.weight_hash = None
@@ -135,8 +136,7 @@ class fit(Stage):
 
         self.fit_params = (
             'pipeline_config', 'discr_sys_sample_config', 'stop_after_stage',
-            'output_events_discr_sys', 'poly_degree', 'force_through_nominal',
-            'smoothing'
+            'poly_degree', 'force_through_nominal', 'smoothing'
         )
 
         self.nu_params = (
@@ -189,6 +189,16 @@ class fit(Stage):
         if self.neutrinos:
             clean_outnames += [str(f) for f in self._output_nu_groups]
 
+        if not isinstance(output_events, bool):
+            raise AssertionError(
+                'output_events must be of type bool, instead it is supplied '
+                'with type {0}'.format(type(output_events))
+            )
+        if output_events:
+            self.fit_binning = deepcopy(output_binning)
+            output_binning = None
+        self.output_events = output_events
+
         super(self.__class__, self).__init__(
             use_transforms=False,
             params=params,
@@ -228,7 +238,7 @@ class fit(Stage):
         self._data = inputs
         self.reweight()
 
-        if self.params['output_events_discr_sys'].value:
+        if self.output_events:
             return self._data
 
         outputs = []
@@ -323,7 +333,7 @@ class fit(Stage):
                                 fit_map[..., d], sigma=1
                             )
 
-                    shape = self.output_binning.shape
+                    shape = self.fit_binning.shape
                     transform = np.ones(shape)
                     sys_offset = self.params['nu_'+sys].value.m-float(nominal)
                     for idx in np.ndindex(shape):
@@ -331,7 +341,7 @@ class fit(Stage):
 
                     hist_idxs = self._data.digitize(
                         kinds   = fig,
-                        binning = self.output_binning,
+                        binning = self.fit_binning,
                     )
 
                     # Discrete systematics reweighting
@@ -368,7 +378,7 @@ class fit(Stage):
                             fit_map[..., d], sigma=1
                         )
 
-                shape = self.output_binning.shape
+                shape = self.fit_binning.shape
                 transform = np.ones(shape)
                 for idx in np.ndindex(shape):
                     transform[idx] *= fit_func(
@@ -377,7 +387,7 @@ class fit(Stage):
 
                 hist_idxs = self._data.digitize(
                     kinds   = 'muons',
-                    binning = self.output_binning,
+                    binning = self.fit_binning,
                 )
 
                 # Discrete systematics reweighting
@@ -403,7 +413,7 @@ class fit(Stage):
         for a polynomial.
         """
         this_hash = hash_obj(
-            [self.output_binning.hash, self.weight_hash] +
+            [self.fit_binning.hash, self.weight_hash] +
             [self.params[name].value for name in self.fit_params],
             full_hash=self.full_hash
         )
@@ -423,7 +433,7 @@ class fit(Stage):
             # TODO(shivesh): merge with CAKE master
             this_cache_hash = hash_obj(
                 [self._data.metadata['name'], self._data.metadata['sample'],
-                 self._data.metadata['cuts'], self.output_binning.hash] +
+                 self._data.metadata['cuts'], self.fit_binning.hash] +
                 [self.params[name].value for name in self.fit_params],
                 full_hash=self.full_hash
             )
@@ -439,13 +449,13 @@ class fit(Stage):
                 fit_coeffs = self._calculate_fit_coeffs(
                     self._data, ParamSet(p for p in self.params
                                          if p.name in self.fit_params),
-                    self.output_binning, nu_params, mu_params
+                    self.fit_binning, nu_params, mu_params
                 )
         else:
             fit_coeffs = self._calculate_fit_coeffs(
                 self._data, ParamSet(p for p in self.params
                                      if p.name in self.fit_params),
-                self.output_binning, nu_params, mu_params
+                self.fit_binning, nu_params, mu_params
             )
 
         if self.params['cache_fit'].value:
@@ -458,7 +468,7 @@ class fit(Stage):
         return fit_coeffs
 
     @staticmethod
-    def _calculate_fit_coeffs(data, params, output_binning, nu_params=None,
+    def _calculate_fit_coeffs(data, params, fit_binning, nu_params=None,
                               mu_params=None):
         """
         Calculate the fit coefficients for each systematic, flavint,
@@ -537,7 +547,7 @@ class fit(Stage):
                     for fig in template.iterkeys():
                         outputs.append(template.histogram(
                             kinds       = fig,
-                            binning     = output_binning,
+                            binning     = fit_binning,
                             # NOTE: weights cancel in fraction
                             weights_col = None,
                             errors      = False,
@@ -569,7 +579,7 @@ class fit(Stage):
                 coeff_binning = OneDimBinning(
                     name='coeff', num_bins=degree, is_lin=True, domain=[-1, 1]
                 )
-                combined_binning = output_binning + coeff_binning
+                combined_binning = fit_binning + coeff_binning
 
                 params_mapset = []
                 for fig in template.iterkeys():
@@ -578,7 +588,7 @@ class fit(Stage):
                                           dtype=object)
                     hists = [fracdiff_mapset_dict[run][fig].hist for run in runs]
                     zip_hists = np.dstack(hists)
-                    for idx in np.ndindex(output_binning.shape):
+                    for idx in np.ndindex(fit_binning.shape):
                         y_values = unp.nominal_values(zip_hists[idx])
                         y_sigma = unp.std_devs(zip_hists[idx])
                         if np.any(y_sigma):
@@ -645,7 +655,7 @@ class fit(Stage):
 
                     output = template.histogram(
                         kinds       = 'muons',
-                        binning     = output_binning,
+                        binning     = fit_binning,
                         # NOTE: weights cancel in fraction
                         weights_col = None,
                         errors      = False,
@@ -671,13 +681,13 @@ class fit(Stage):
                 coeff_binning = OneDimBinning(
                     name='coeff', num_bins=degree, is_lin=True, domain=[-1, 1]
                 )
-                combined_binning = output_binning + coeff_binning
+                combined_binning = fit_binning + coeff_binning
 
                 pvals_hist = np.empty(map(int, combined_binning.shape),
                                       dtype=object)
                 hists = [fracdiff_map_dict[run].hist for run in runs]
                 zip_hists = np.dstack(hists)
-                for idx in np.ndindex(output_binning.shape):
+                for idx in np.ndindex(fit_binning.shape):
                     y_values = unp.nominal_values(zip_hists[idx])
                     y_sigma = unp.std_devs(zip_hists[idx])
                     if np.any(y_sigma):
@@ -712,7 +722,6 @@ class fit(Stage):
             ('pipeline_config', basestring),
             ('discr_sys_sample_config', basestring),
             ('stop_after_stage', pq),
-            ('output_events_discr_sys', bool),
             ('poly_degree', pq),
             ('force_through_nominal', bool),
         ]

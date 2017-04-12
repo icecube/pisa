@@ -45,10 +45,6 @@ class weight(Stage):
         Parameters which set everything besides the binning
 
         Parameters required by this service are
-            * output_events_mc : bool
-                Flag to specify whether the service output returns a
-                MapSet or the Data
-
             * livetime : ureg.Quantity
                 Desired lifetime.
 
@@ -109,6 +105,10 @@ class weight(Stage):
         Specifies the string representation of the NuFlavIntGroup(s) which will
         be produced as an output.
 
+    output_events : bool
+        Flag to specify whether the service output returns a MapSet
+        or the full information about each event
+
     error_method : None, bool, or string
         If None, False, or empty string, the stage does not compute errors for
         the transforms and does not apply any (additional) error to produce its
@@ -124,8 +124,9 @@ class weight(Stage):
 
     """
     def __init__(self, params, output_binning, input_names, output_names,
-                 error_method=None, debug_mode=None, disk_cache=None,
-                 memcache_deepcopy=True, outputs_cache_depth=20):
+                 output_events=True, error_method=None, debug_mode=None,
+                 disk_cache=None, memcache_deepcopy=True,
+                 outputs_cache_depth=20):
         self.sample_hash = None
         """Hash of input event sample."""
         self.weight_hash = None
@@ -140,7 +141,6 @@ class weight(Stage):
         """Hash of reweighted osc flux values."""
 
         self.weight_params = (
-            'output_events_mc',
             'kde_hist',
             'livetime',
         )
@@ -248,6 +248,15 @@ class weight(Stage):
         if self.neutrinos:
             clean_outnames += [str(f) for f in self._output_nu_groups]
 
+        if not isinstance(output_events, bool):
+            raise AssertionError(
+                'output_events must be of type bool, instead it is supplied '
+                'with type {0}'.format(type(output_events))
+            )
+        if output_events:
+            output_binning = None
+        self.output_events = output_events
+
         super(self.__class__, self).__init__(
             use_transforms=False,
             params=params,
@@ -268,7 +277,7 @@ class weight(Stage):
                 'disable this in your configuration file by setting kde_hist '
                 'to False.'
             )
-            if self.params['output_events_mc'].value:
+            if self.output_events:
                 logging.warn(
                     'Warning - You have selected to apply KDE smoothing to '
                     'the output histograms but have also selected that the '
@@ -299,7 +308,7 @@ class weight(Stage):
         self._data = inputs
         self.reweight()
 
-        if self.params['output_events_mc'].value:
+        if self.output_events:
             return self._data
 
         outputs = []
@@ -939,7 +948,6 @@ class weight(Stage):
     def validate_params(self, params):
         pq = pint.quantity._Quantity
         param_types = [
-            ('output_events_mc', bool),
             ('kde_hist', bool),
             ('livetime', pq)
         ]

@@ -592,6 +592,14 @@ def main(return_outputs=False):
 
         formats = OrderedDict(png=args.png, pdf=args.pdf)
         if isinstance(stage.outputs, Data):
+            # TODO(shivesh): plots made here will use the most recent
+            # "pisa_weight" column and so all stages will have identical plots
+            # (one workaround is to turn on "memcache_deepcopy")
+            # TODO(shivesh): intermediate stages have no output binning
+            if stage.output_binning is None:
+                logging.debug('Skipping plot of intermediate stage '
+                              '{0}'.format(stage))
+                continue
             outputs = stage.outputs.histogram_set(
                 binning=stage.output_binning,
                 nu_weights_col='pisa_weight',
