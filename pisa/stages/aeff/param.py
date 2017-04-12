@@ -15,6 +15,8 @@ benchmark scenarios.
 """
 
 
+from __future__ import division
+
 from collections import Mapping, OrderedDict
 
 import numpy as np

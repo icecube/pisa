@@ -4,6 +4,9 @@
 Smoothed-histogram effective areas stage
 """
 
+
+from __future__ import division
+
 import numpy as np
 from uncertainties import unumpy as unp
 from scipy import ndimage

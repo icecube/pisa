@@ -921,7 +921,7 @@ class vbwkde(Stage):
 
         self.kde_profiles = dict()
         """dict containing `KDEProfile`s. Structure is:
-            {dim_basename: {flavintgroup: {(Coord): (KDEProfile)}}}
+            {dim_basename: {flavintgroup: {(coord): (KDEProfile)}}}
 
         For example:
             {'pid': {
@@ -1426,7 +1426,7 @@ class vbwkde(Stage):
                           true_e_bin_num+1, true_energy.size)
 
             idx = np.argmin(np.abs(np.log(true_e_center/pid_kde_e_centers)))
-            pid_closest_kde_coord = char_binning['pid'].Coord(true_energy=idx)
+            pid_closest_kde_coord = char_binning['pid'].coord(true_energy=idx)
 
             # Figure out PID fractions
             pid_kde_profile = pid_kde_profiles[pid_closest_kde_coord]
@@ -1462,7 +1462,7 @@ class vbwkde(Stage):
                 closest_e_idx = np.argmin(
                     np.abs(np.log(true_e_center / e_kde_e_centers))
                 )
-                e_closest_kde_coord = char_binning['energy'].Coord(
+                e_closest_kde_coord = char_binning['energy'].coord(
                     pid=pid_bin_num,
                     true_energy=closest_e_idx
                 )
@@ -1516,7 +1516,7 @@ class vbwkde(Stage):
                 for true_cz_bin_num, (true_cz_lower_edge, true_cz_upper_edge) \
                         in enumerate(true_cz_edge_pairs):
                     cz_closest_cz_idx = cz_closest_cz_indices[true_cz_bin_num]
-                    cz_closest_kde_coord = char_binning['coszen'].Coord(
+                    cz_closest_kde_coord = char_binning['coszen'].coord(
                         pid=pid_bin_num,
                         true_coszen=cz_closest_cz_idx,
                         true_energy=cz_closest_e_idx

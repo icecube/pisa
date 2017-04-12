@@ -19,12 +19,11 @@ which has as many bins as PID signatures.
 """
 
 
+from __future__ import division
+
 from collections import Mapping, OrderedDict
 
 import numpy as np
-
-# Note the following imports are liberal to allow for more flexible PID
-# parameterization strings specs
 import scipy as sp
 
 from pisa.core.stage import Stage

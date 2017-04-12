@@ -24,6 +24,8 @@ in turn is essential for caching to work correctly.
 """
 
 
+from __future__ import division
+
 from itertools import izip
 from collections import Iterable, Iterator, Mapping, OrderedDict, Sequence
 from numbers import Number

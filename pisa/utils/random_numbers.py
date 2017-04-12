@@ -9,6 +9,8 @@ reproducible manner.
 """
 
 
+from __future__ import division
+
 from collections import Sequence
 
 import numpy as np

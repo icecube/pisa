@@ -6,6 +6,8 @@ Effective areas histogramming service.
 Histogram Monte Carlo events directly to derive the effective area transforms.
 """
 
+
+from __future__ import division
 import os
 
 import numpy as np

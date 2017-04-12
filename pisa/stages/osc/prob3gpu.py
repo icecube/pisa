@@ -3,6 +3,9 @@ prob3gpu : use CUDA (via PyCUDA module) to accelerate 3-neutrino oscillation
 calculations. Equivalent agorithm to Prob3++.
 """
 
+
+from __future__ import division
+
 import os
 
 import numpy as np

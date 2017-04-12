@@ -6,6 +6,8 @@ Histogramming on the GPU
 """
 
 
+from __future__ import division
+
 import os
 
 import numpy as np
