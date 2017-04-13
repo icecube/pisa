@@ -76,7 +76,7 @@ def compute_transforms(service):
             `nutau_cc_norm` != 1 cannot be applied."""
 
             nutaucc_and_nutaubarcc = set(NuFlavIntGroup('nutau_cc+nutaubar_cc'))
-            for group in self.transform_groups:
+            for group in service.transform_groups:
                 # If nutau_cc, nutaubar_cc, or both are the group and other flavors
                 # are present, nutau_cc_norm must be one!
                 group_set = set(group)
@@ -147,6 +147,7 @@ def populate_transforms(service, xform_flavints, xform_array):
 
     """
     transforms = []
+
     # If combining grouped flavints:
     # Create a single transform for each group and assign all inputs
     # that contribute to the group as the single transform's inputs.
@@ -156,13 +157,17 @@ def populate_transforms(service, xform_flavints, xform_array):
     if service.sum_grouped_flavints:
         xform_input_names = []
         for input_name in service.input_names:
-            input_flavs = NuFlavIntGroup(input_name)
-            if len(set(xform_flavints).intersection(input_flavs)) > 0:
-                xform_input_names.append(input_name)
+            if set(NuFlavIntGroup(input_name)).isdisjoint(xform_flavints):
+                continue
+            xform_input_names.append(input_name)
 
         for output_name in service.output_names:
             if output_name not in xform_flavints:
                 continue
+
+            logging.trace('  inputs: %s, output: %s, xform: %s',
+                          xform_input_names, output_name, xform_flavints)
+
             xform = BinnedTensorTransform(
                 input_names=xform_input_names,
                 output_name=output_name,
@@ -178,16 +183,20 @@ def populate_transforms(service, xform_flavints, xform_array):
     # transform is computed from a combination of flavors.
     else:
         for input_name in service.input_names:
-            input_flavs = NuFlavIntGroup(input_name)
             # Since aeff "splits" neutrino flavors into
             # flavor+interaction types, need to check if the output
             # flavints are encapsulated by the input flavor(s).
-            if set(xform_flavints).isdisjoint(input_flavs):
+            if set(NuFlavIntGroup(input_name)).isdisjoint(xform_flavints):
                 continue
 
             for output_name in service.output_names:
-                if output_name not in xform_flavints:
+                if (output_name not in NuFlavIntGroup(input_name)
+                        or output_name not in xform_flavints):
                     continue
+
+                logging.trace('  input: %s, output: %s, xform: %s',
+                              input_name, output_name, xform_flavints)
+
                 xform = BinnedTensorTransform(
                     input_names=input_name,
                     output_name=output_name,
