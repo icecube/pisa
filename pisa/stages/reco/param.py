@@ -580,23 +580,22 @@ class param(Stage):
 
             # Sanity check of reco kernels - intolerable negative values?
             logging.trace(" Ensuring reco kernel sanity...")
-            kern_neg_invalid = reco_kernel < -EQUALITY_PREC*np.abs(reco_kernel)
+            kern_neg_invalid = reco_kernel < -EQUALITY_PREC
             if np.any(kern_neg_invalid):
                 raise ValueError("Detected intolerable negative entries in"
-                                 " reco kernel! Min.: %s"
-                                 %np.min(kern_neg_invalid))
+                                 " reco kernel! Min.: %.15e"
+                                 % np.min(reco_kernel))
+
             # Set values numerically compatible with zero to zero
             np.where(
-                (reco_kernel >= -EQUALITY_PREC*np.abs(reco_kernel)) &
-                (reco_kernel <= EQUALITY_PREC*np.abs(reco_kernel)),
-                reco_kernel, 0.
+                (np.abs(reco_kernel) < EQUALITY_PREC), reco_kernel, 0
             )
             sum_over_axes = tuple(range(-len(self.output_binning), 0))
             totals = np.sum(reco_kernel, axis=sum_over_axes)
-            totals_large = (totals >= 1 + EQUALITY_PREC)
+            totals_large = totals > (1 + EQUALITY_PREC)
             if np.any(totals_large):
-                raise ValueError("Detected overflow in reco kernel! Max.: %s"
-                                 %str(np.max(totals_large)-1))
+                raise ValueError("Detected overflow in reco kernel! Max.:"
+                                 " %0.15e" % (np.max(totals)))
 
             if self.input_binning.basenames[0] == "coszen":
                 # The reconstruction kernel has been set up with energy as its
