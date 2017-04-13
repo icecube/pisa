@@ -3,6 +3,7 @@
 Unittests for functions that live in the gaussians.pyx Cython module.
 """
 
+from __future__ import division
 
 from itertools import product, izip
 

@@ -321,7 +321,7 @@ class gpu(Stage):
         if self.error_method in ['sumw2', 'fixed_sumw2']:
             empty += ['sumw2']
 
-        # List of flav_ints to use and corresponding number used in several
+        # List of flavints to use and corresponding number used in several
         # parts of the code
         self.flavs = [
             'nue_cc',

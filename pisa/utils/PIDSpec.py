@@ -9,6 +9,8 @@ PIDSpec class for importing, working with, and storing PID specifications.
 """
 
 
+from __future__ import division
+
 import collections
 import os
 

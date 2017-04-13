@@ -23,6 +23,8 @@ changes/improvements applied.
 """
 
 
+from __future__ import division
+
 from collections import Mapping
 
 import numpy as np
@@ -1132,7 +1134,7 @@ class honda(Stage):
             evals = all_binning.true_energy.weighted_centers.magnitude
 
             # Values are pivoted about the median energy in the chosen range
-            median_energy = evals[len(evals)/2]
+            median_energy = evals[len(evals)//2]
 
             # This pivoting will give an energy-dependent scale factor
             scale = np.power(evals/median_energy,

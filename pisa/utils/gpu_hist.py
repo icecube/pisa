@@ -6,6 +6,8 @@ Histogramming on the GPU
 """
 
 
+from __future__ import division
+
 import os
 
 import numpy as np
@@ -257,7 +259,7 @@ class GPUHist(object):
         # computations
 
         # Block and grid dimensions
-        dx, mx = divmod(n_events/self.events_per_thread+1, self.bdim[0])
+        dx, mx = divmod(n_events // self.events_per_thread + 1, self.bdim[0])
         gdim = ((dx + (mx > 0)) * self.bdim[0], 1)
         self.clear()
 
@@ -378,7 +380,7 @@ def test_GPUHist():
         logging.debug('np  2d hist took %s' % (time()-t0))
 
         with np.errstate(divide='ignore', invalid='ignore'):
-            fract_err = (hist2d/np_hist2d) - 1
+            fract_err = (hist2d / np_hist2d) - 1
             logging.debug(
                 '2D hist ftype=%s, weighted=%s, n_events=%s: max abs fract'
                 ' err=%s, mean fract err=%s, mean abs fract err=%s'
@@ -394,7 +396,7 @@ def test_GPUHist():
                     '2D histogram ftype=%s, weighted=%s, n_events=%s worst'
                     ' fractional error is %s'
                     %(ftype, weight, n_events,
-                      np.max(np.abs((hist2d-np_hist2d)/np_hist2d)))
+                      np.max(np.abs((hist2d - np_hist2d) / np_hist2d)))
                 )
 
         del histogrammer
@@ -423,7 +425,7 @@ def test_GPUHist():
         logging.debug('np  3d hist took %s' % (time()-t0))
 
         with np.errstate(divide='ignore', invalid='ignore'):
-            fract_err = (hist3d/np_hist3d) - 1
+            fract_err = (hist3d / np_hist3d) - 1
             logging.debug(
                 '3D hist ftype=%s, weighted=%s, n_events=%s: max abs fract'
                 ' err=%s, mean fract err=%s, mean abs fract err=%s'
@@ -439,7 +441,7 @@ def test_GPUHist():
                     '3D histogram ftype=%s, weighted=%s, n_events=%s worst'
                     ' fractional error is %s'
                     %(ftype, weight, n_events,
-                      np.max(np.abs((hist3d-np_hist3d)/np_hist3d)))
+                      np.max(np.abs((hist3d - np_hist3d) / np_hist3d)))
                 )
 
         del histogrammer
