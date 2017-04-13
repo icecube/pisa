@@ -195,6 +195,10 @@ def compare(outdir, ref, ref_label, test, test_label, asymm_max=None,
     # Get the reference distribution(s) into the form of a test MapSet
     p_ref = None
     ref_source = None
+    if isinstance(ref, MapSet):
+        p_ref = ref
+        ref_source = MAPSET_SOURCE_STR
+
     if len(ref) == 1:
         try:
             ref_pipeline = Pipeline(config=ref[0])
@@ -247,6 +251,10 @@ def compare(outdir, ref, ref_label, test, test_label, asymm_max=None,
     # Get the test distribution(s) into the form of a test MapSet
     p_test = None
     test_source = None
+    if isinstance(ref, MapSet):
+        p_test = test
+        test_source = MAPSET_SOURCE_STR
+
     if len(test) == 1:
         try:
             test_pipeline = Pipeline(config=test[0])

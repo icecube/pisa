@@ -109,6 +109,7 @@ def mkdir(d, mode=0750, warn=True):
             raise err
     else:
         log.logging.info('Created directory "%s"', d)
+    return d
 
 
 def get_valid_filename(s):
