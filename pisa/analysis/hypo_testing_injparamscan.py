@@ -162,8 +162,7 @@ def main():
         # Do it for both hierarchies
         for hierarchy, rangetuple in zip(['nh', 'ih'],
                                          [norangetuple, iorangetuple]):
-            set_new_ranges(
-                hypo_testing=hypo_testing,
+            hypo_testing.set_param_ranges(
                 selection=hierarchy,
                 test_name=test_name,
                 rangetuple=rangetuple,
@@ -177,11 +176,10 @@ def main():
         rangediff = max(inj_vals) - min(inj_vals)
         rangetuple = (min(inj_vals) - 0.5*rangediff,
                       max(inj_vals) + 0.5*rangediff)
-        set_new_ranges(
-            hypo_testing=hypo_testing,
+        hypo_testing.set_param_ranges(
             selection=None,
             test_name=test_name,
-            rangetuple=rangetple,
+            rangetuple=rangetuple,
             inj_units=inj_units
         )
 
@@ -214,6 +212,7 @@ def main():
 
     # Everything is set up. Now do the scan.
     hypo_testing.inj_param_scan(
+        param_name=param_name,
         test_name=test_name,
         inj_vals=inj_vals,
         requested_vals=requested_vals,

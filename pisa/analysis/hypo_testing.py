@@ -1484,7 +1484,7 @@ class HypoTesting(Analysis):
         to_file(info, os.path.join(dirpath, label + '.json.bz2'),
                 sort_keys=False)
 
-    def set_param_ranges(self, selection, test_name, rangetple, inj_units):
+    def set_param_ranges(self, selection, test_name, rangetuple, inj_units):
         '''
         Sets the parameter in hypo_testing selected by selection (if not None)
         with name test_name to a range defined by rangetuple. This should have
@@ -1528,8 +1528,8 @@ class HypoTesting(Analysis):
         else:
             self.data_maker.params[test_name].range = rangetuple
 
-    def inj_param_scan(self, test_name, inj_vals, requested_vals,
-                       h0_name, h1_name, data_name):
+    def inj_param_scan(self, param_name, test_name, inj_vals,
+                       requested_vals, h0_name, h1_name, data_name):
         '''
         Performs the Asimov hypo testing analysis over some injected data
         parameter. This will be the parameter specified by test_name and the
