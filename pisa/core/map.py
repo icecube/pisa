@@ -405,18 +405,18 @@ class Map(object):
 
         See Also
         --------
-        pisa.core.binning.MultiDimBinning.defaults_indexer
+        pisa.core.binning.MultiDimBinning.indexer
             Method used to generate a raw indexer (that can be used to
             index into a map or a Numpy array of same dimensionality).
             This method is accessible from a Map `map_x` object via its
-            `binning` attribute: `map_x.binning.defaults_indexer(...)`
+            `binning` attribute: `map_x.binning.indexer(...)`
 
         pisa.core.binning.MultiDimBinning.broadcast
             Broadcast a 1D Numpy array to dimensionality with reference to this
             object's dimensionality.
 
         """
-        return self[self.binning.defaults_indexer(**kwargs)]
+        return self[self.binning.indexer(**kwargs)]
 
     def set_poisson_errors(self):
         """Approximate poisson errors using sqrt(n)."""
@@ -2113,8 +2113,8 @@ class MapSet(object):
             except ValueError:
                 pass
         if idx is None:
-            raise ValueError('Could not find map name "%s" in %s'
-                             % (value, self))
+            raise ValueError('Could not find map name "%s" among maps %s'
+                             % (value, self.names))
         return self[idx]
 
     def apply_to_maps(self, attr, *args, **kwargs):

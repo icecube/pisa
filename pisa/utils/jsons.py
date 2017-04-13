@@ -14,6 +14,8 @@ just use from_json, to_json) for... faster JSON serdes?
 # TODO: why the second line above?
 
 
+from __future__ import division
+
 import bz2
 from collections import OrderedDict
 import os

@@ -231,12 +231,12 @@ class Events(FlavIntData):
             assert set(binning_cols).issubset(set(binning.names))
 
         # Extract the columns' data into a list of array(s) for histogramming
-        repr_flav_int = kinds[0]
-        sample = [self[repr_flav_int][colname] for colname in binning_cols]
+        repr_flavint = kinds[0]
+        sample = [self[repr_flavint][colname] for colname in binning_cols]
         err_weights = None
         hist_weights = None
         if weights_col is not None:
-            hist_weights = self[repr_flav_int][weights_col]
+            hist_weights = self[repr_flavint][weights_col]
             if errors:
                 err_weights = np.square(hist_weights)
 

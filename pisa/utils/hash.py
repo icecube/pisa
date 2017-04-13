@@ -4,6 +4,8 @@ Utilities for hashing objects.
 """
 
 
+from __future__ import division
+
 import base64
 import cPickle as pickle
 #import dill

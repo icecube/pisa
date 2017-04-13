@@ -7,6 +7,8 @@ Utilities for interpreting and returning formatted strings.
 """
 
 
+from __future__ import division
+
 from itertools import imap
 import numbers
 import re

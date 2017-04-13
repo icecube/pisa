@@ -770,6 +770,9 @@ class BinnedTensorTransform(Transform):
         pass
 
     def validate_input(self, inputs):
+        if inputs is None:
+            raise ValueError('No inputs provided.')
+
         for input_name in self.input_names:
             assert input_name in inputs, \
                     'Input "%s" expected; got: %s.' \

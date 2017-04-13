@@ -302,7 +302,7 @@ class cpu(Stage):
             'prob_mu',
         ]
 
-        # List of flav_ints to use and corresponding number used in several
+        # List of flavints to use and corresponding number used in several
         # parts of the code
         self.flavs = [
             'nue_cc',
