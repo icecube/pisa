@@ -150,8 +150,8 @@ class param(Stage):
         if self.truncate_at_physical_bounds and self.coszen_flipback:
             raise ValueError(
                         "Truncating parameterisations at physical boundaries"
-                        " and flipping back at coszen = +-1 is not allowed!"
-                        " Please decide on only one of these."
+                        " and flipping back at coszen = +-1 at the same time is"
+                        " not allowed! Please decide on only one of these."
                   )
 
         if isinstance(input_names, basestring):
@@ -206,18 +206,19 @@ class param(Stage):
                   )
 
         if self.coszen_flipback:
-            if not self.output_binning.basename_binning['coszen'].is_lin:
+            coszen_output_binning = self.output_binning.basename_binning['coszen']
+            if not coszen_output_binning.is_lin:
                 raise ValueError(
                             "coszen_flipback is set to True but zenith output"
                             " binning is not linear - incompatible settings!"
                       )
-            domain_in = self.input_binning.basename_binning['coszen'].domain
-            domain_out = self.output_binning.basename_binning['coszen'].domain
-            if (domain_out[0] != -1. or domain_out[1] > 0.):
+            coszen_step_out = (coszen_output_binning.range.magnitude/
+                               coszen_output_binning.size)
+            if not recursiveEquality(int(1/coszen_step_out), 1/coszen_step_out):
                 raise ValueError(
-                            "coszen_flipback currently only compatible with"
-                            " upgoing output domain (including coszen = -1)!"
-                            " Your choice: %s"%domain_out
+                            "coszen_flipback requires an integer number of"
+                            " coszen output binning steps to fit into a range"
+                            " of integer length."
                       )
 
     def process_reco_dist_params(self, param_dict):
@@ -555,8 +556,28 @@ class param(Stage):
             logging.trace("Preparing binning for flipback of reco kernel at"
                           " coszen boundaries of physical range.")
             coszen_range = self.output_binning['reco_coszen'].range.magnitude
-            cz_edges_out = np.append(cz_edges_out[:-1]-coszen_range, cz_edges_out)
-            logging.trace(" -> temporary coszen bin edges:\n%s"%cz_edges_out)
+            coszen_step = coszen_range/n_cz_out
+            # we need to check for possible contributions from (-3, -1) and
+            # (1, 3) in coszen
+            extended = np.linspace(-3., 3., int(6/coszen_step) + 1)
+            # We cannot flipback if we don't have -1 & +1 as (part of extended)
+            # bin edges. This could happen if 1 is a multiple of the output bin
+            # size, but the original edges themselves are not a multiple of that
+            # size.
+            for edge in (-1., +1.):
+                comp = [recursiveEquality(edge, e) for e in extended]
+                assert np.any(comp)
+            # Perform one final check: original edges subset of extended ones?
+            for coszen in cz_edges_out:
+                comp = [recursiveEquality(coszen, e) for e in extended]
+                assert np.any(comp)
+            # Binning seems fine - we can proceed
+            ext_cent = (extended[1:] + extended[:-1])/2.
+            flipback_mask = ((ext_cent < -1. ) | (ext_cent > +1.))
+            keep = np.where((ext_cent > cz_edges_out[0]) &
+                                (ext_cent < cz_edges_out[-1]))[0]
+            cz_edges_out = extended
+            logging.trace("  -> temporary coszen bin edges:\n%s"%cz_edges_out)
 
         xforms = []
         for xform_flavints in self.transform_groups:
@@ -585,8 +606,16 @@ class param(Stage):
                     dist_params=this_params['coszen']
                 )
                 if self.coszen_flipback:
-                    cz_kern_cdf = cz_kern_cdf[:int(len(cz_edges_out)/2)][::-1] + \
-                        cz_kern_cdf[int(len(cz_edges_out)/2):]
+                    # independent of whether the output binning is upgoing,
+                    # downgoing or allsky, we mirror back in any density that
+                    # goes beyond -1 as well as +1
+                    flipback = np.where(flipback_mask)[0]
+                    cz_kern_cdf = \
+                        (
+                            cz_kern_cdf[flipback[:int(len(flipback)/2)]][::-1] +
+                            cz_kern_cdf[flipback[int(len(flipback)/2):]][::-1] +
+                            cz_kern_cdf[np.logical_not(flipback_mask)]
+                        )[keep-int(len(flipback)/2)]
 
                 reco_kernel[i,j] = np.outer(e_kern_cdf, cz_kern_cdf)
 
