@@ -128,9 +128,9 @@ class param(Stage):
     """
     def __init__(self, params, particles, input_names, transform_groups,
                  sum_grouped_flavints, input_binning, output_binning,
-                 coszen_flipback=None, error_method=None,
-                 transforms_cache_depth=20, outputs_cache_depth=20,
-                 memcache_deepcopy=True, debug_mode=None):
+                 truncate_at_physical_bounds=True, coszen_flipback=None,
+                 error_method=None, transforms_cache_depth=20,
+                 outputs_cache_depth=20, memcache_deepcopy=True, debug_mode=None):
         assert particles in ['neutrinos', 'muons']
         self.particles = particles
         self.transform_groups = flavintGroupsFromString(transform_groups)
@@ -145,6 +145,14 @@ class param(Stage):
         )
 
         self.coszen_flipback = coszen_flipback
+        self.truncate_at_physical_bounds = truncate_at_physical_bounds
+
+        if self.truncate_at_physical_bounds and self.coszen_flipback:
+            raise ValueError(
+                        "Truncating parameterisations at physical boundaries"
+                        " and flipping back at coszen = +-1 is not allowed!"
+                        " Please decide on only one of these."
+                  )
 
         if isinstance(input_names, basestring):
             input_names = (''.join(input_names.split(' '))).split(',')
@@ -190,7 +198,6 @@ class param(Stage):
         assert set(self.input_binning.basename_binning.names) == \
                set(self.output_binning.basename_binning.names), \
                "input and output binning must both be 2D in energy / coszenith!"
-
 
         if self.coszen_flipback is None:
             raise ValueError(
@@ -430,17 +437,22 @@ class param(Stage):
                 # different parameters and evaluating cdfs doesn't seem
                 # to work, so do it one-by-one
                 rv = dist(loc=loc, scale=scale)
-                # truncate each distribution at the physical boundaries,
-                # i.e., renormalise so that integral between boundaries yields 1.
-                if czval is None:
-                    trunc_low = 0.
-                    trunc_high = None
+                if self.truncate_at_physical_bounds:
+                    # truncate each distribution at the physical boundaries,
+                    # i.e., renormalise so that integral between boundaries yields 1.
+                    if czval is None:
+                        # energy reco
+                        trunc_low = 0.
+                        trunc_high = None
+                    else:
+                        # coszen reco
+                        trunc_low = -1.
+                        trunc_high = 1.
+                    cdf_low = rv.cdf(trunc_low)
+                    cdf_high = rv.cdf(trunc_high) if trunc_high is not None else 1.
+                    cdfs = frac*rv.cdf(bin_edges)/(cdf_high-cdf_low)
                 else:
-                    trunc_low = -1.
-                    trunc_high = 1.
-                cdf_low = rv.cdf(trunc_low) if trunc_low is not None else 0.
-                cdf_high = rv.cdf(trunc_high) if trunc_high is not None else 1.
-                cdfs = frac*rv.cdf(bin_edges)/(cdf_high-cdf_low)
+                    cdfs = frac*rv.cdf(bin_edges)
                 binwise_cdfs.append(cdfs[1:] - cdfs[:-1])
             # the following would be nice:
             # cdfs = dist(loc=loc_list, scale=scale_list).cdf(bin_edges)
@@ -541,7 +553,7 @@ class param(Stage):
         n_cz_out = len(cz_edges_out)-1
         if self.coszen_flipback:
             logging.trace("Preparing binning for flipback of reco kernel at"
-                          " lower coszen boundary.")
+                          " coszen boundaries of physical range.")
             coszen_range = self.output_binning['reco_coszen'].range.magnitude
             cz_edges_out = np.append(cz_edges_out[:-1]-coszen_range, cz_edges_out)
             logging.trace(" -> temporary coszen bin edges:\n%s"%cz_edges_out)
@@ -599,10 +611,10 @@ class param(Stage):
 
             if self.input_binning.basenames[0] == "coszen":
                 # The reconstruction kernel has been set up with energy as its
-                # first dimension, so transpose if it is applied to an input
+                # first dimension, so swap axes if it is applied to an input
                 # binning where 'coszen' is the first
-                logging.trace(" Transposing kernel, since 'coszen' has been"
-                              " detected as the first dimension.")
+                logging.trace(" Swapping kernel dimensions since 'coszen' has"
+                              " been requested as the first.")
                 reco_kernel = np.swapaxes(reco_kernel, 0, 1)
                 reco_kernel = np.swapaxes(reco_kernel, 2, 3)
 
