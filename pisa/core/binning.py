@@ -1766,7 +1766,7 @@ class MultiDimBinning(object):
 
     # TODO: add *args to handle positional indexing (?) (also would need to
     # add this to `slice` method if implemented.
-    def defaults_indexer(self, **kwargs):
+    def indexer(self, **kwargs):
         """Any dimension index/slice not specified by name in kwargs will
         default to ":" (all elements).
 
@@ -1786,7 +1786,7 @@ class MultiDimBinning(object):
         broadcast
             Assignment of a one-dimensional array to a higher-dimensional array
             is simplified greatly by using `broadcast` in conjunction with
-            `defaults_indexer` or `pisa.core.map.Map.slice`. See examples in
+            `indexer` or `pisa.core.map.Map.slice`. See examples in
             docs for `broadcast`.
         broadcaster
             Similar to `broadcast`, but returns a tuple that can be applied to
@@ -1796,7 +1796,7 @@ class MultiDimBinning(object):
             object, returning a new MultiDimBinning object.
         pisa.core.map.Map.slice
             Same operation, but slices a Map object by dimension-name
-            (internally, calls `defaults_indexer`).
+            (internally, calls `indexer`).
 
         Examples
         --------
@@ -1807,22 +1807,22 @@ class MultiDimBinning(object):
         >>> czbins = OneDimBinning(name='coszen',
         ...                        is_lin=True, num_bins=4, domain=[-1, 0])
         >>> mdb = ebins * czbins
-        >>> print mdb.defaults_indexer(energy=0)
+        >>> print mdb.indexer(energy=0)
         (0, slice(None, None, None))
 
         Omitting a dimension (coszen in the above) is equivalent to slicing
         with a colon (i.e., `(0, slice(None))`):
 
-        >>> print mdb.defaults_indexer(energy=0, coszen=slice(None))
+        >>> print mdb.indexer(energy=0, coszen=slice(None))
         (0, slice(None, None, None))
 
-        >>> print mdb.defaults_indexer(energy=slice(None), coszen=1)
+        >>> print mdb.indexer(energy=slice(None), coszen=1)
         (slice(None, None, None), 1)
 
         Now create an indexer to use on a Numpy array:
 
         >>> x = np.random.RandomState(0).uniform(size=mdb.shape)
-        >>> indexer = mdb.defaults_indexer(energy=slice(0, 5), coszen=1)
+        >>> indexer = mdb.indexer(energy=slice(0, 5), coszen=1)
         >>> print x[indexer]
         [ 0.71518937  0.64589411  0.38344152  0.92559664  0.83261985]
 
@@ -1842,14 +1842,14 @@ class MultiDimBinning(object):
         """Slice the binning by dimension name. Any dimension/index not
         specified by name in kwargs will default to ":" (all bins).
 
-        Uses `defaults_indexer` internally to define the indexing tuple.
+        Uses `indexer` internally to define the indexing tuple.
 
         Returns
         -------
         sliced_binning : MultiDimBinning
 
         """
-        return self[self.defaults_indexer(**kwargs)]
+        return self[self.indexer(**kwargs)]
 
     def broadcast(self, a, from_dim, to_dims):
         """Take a one-dimensional array representing one input dimension and
