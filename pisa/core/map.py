@@ -2113,8 +2113,8 @@ class MapSet(object):
             except ValueError:
                 pass
         if idx is None:
-            raise ValueError('Could not find map name "%s" in %s'
-                             % (value, self))
+            raise ValueError('Could not find map name "%s" among maps %s'
+                             % (value, self.names))
         return self[idx]
 
     def apply_to_maps(self, attr, *args, **kwargs):

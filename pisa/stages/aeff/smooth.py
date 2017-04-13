@@ -12,9 +12,10 @@ from uncertainties import unumpy as unp
 from scipy import ndimage
 
 from pisa.core.stage import Stage
-from pisa.core.transform import BinnedTensorTransform, TransformSet
+from pisa.core.transform import TransformSet
 from pisa.core.binning import OneDimBinning
-from pisa.stages.aeff.hist import compute_transforms, validate_binning
+from pisa.stages.aeff.hist import (compute_transforms, populate_transforms,
+                                   validate_binning)
 from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
@@ -288,8 +289,8 @@ class smooth(Stage):
         # (can't pass more than what's actually there)
         in_units = {dim: unit for dim, unit in comp_units.items()
                     if dim in self.input_binning}
-        out_units = {dim: unit for dim, unit in comp_units.items()
-                     if dim in self.output_binning}
+        #out_units = {dim: unit for dim, unit in comp_units.items()
+        #             if dim in self.output_binning}
 
         # These will be in the computational units
         input_binning = self.input_binning.to(**in_units)
@@ -306,7 +307,7 @@ class smooth(Stage):
         if 'true_coszen' not in input_binning:
             missing_dims_vol *= 2
 
-        transforms = []
+        nominal_transforms = []
 
         for xform_flavints in self.transform_groups:
             logging.info("Working on %s effective areas xform", xform_flavints)
@@ -336,62 +337,23 @@ class smooth(Stage):
                 raw_errors = raw_errors.T
 
             # Do the smoothing
-            smooth_transform = self.smooth(raw_transform, raw_errors, input_binning['true_energy'], input_binning['true_coszen'])
+            smooth_transform = self.smooth(raw_transform, raw_errors,
+                                           input_binning['true_energy'],
+                                           input_binning['true_coszen'])
 
             if e_idx == 1:
                 # transpose back
                 smooth_transform = smooth_transform.T
 
-            # If combining grouped flavints:
-            # Create a single transform for each group and assign all flavors
-            # that contribute to the group as the transform's inputs. Combining
-            # the event rate maps will be performed by the
-            # BinnedTensorTransform object upon invocation of the `apply`
-            # method.
-            if self.sum_grouped_flavints:
-                xform_input_names = []
-                for input_name in self.input_names:
-                    input_flavs = NuFlavIntGroup(input_name)
-                    if len(set(xform_flavints).intersection(input_flavs)) > 0:
-                        xform_input_names.append(input_name)
+            nominal_transforms.extend(
+                populate_transforms(
+                    service=self,
+                    xform_flavints=xform_flavints,
+                    xform_array=smooth_transform
+                )
+            )
 
-                for output_name in self.output_names:
-                    if output_name not in xform_flavints:
-                        continue
-                    xform = BinnedTensorTransform(
-                        input_names=xform_input_names,
-                        output_name=output_name,
-                        input_binning=input_binning,
-                        output_binning=input_binning,
-                        xform_array=smooth_transform,
-                        sum_inputs=self.sum_grouped_flavints
-                    )
-                    transforms.append(xform)
-
-            # If *not* combining grouped flavints:
-            # Copy the transform for each input flavor, regardless if the
-            # transform is computed from a combination of flavors.
-            else:
-                for input_name in self.input_names:
-                    input_flavs = NuFlavIntGroup(input_name)
-                    # Since aeff "splits" neutrino flavors into
-                    # flavor+interaction types, need to check if the output
-                    # flavints are encapsulated by the input flavor(s).
-                    if len(set(xform_flavints).intersection(input_flavs)) == 0:
-                        continue
-                    for output_name in self.output_names:
-                        if output_name not in xform_flavints:
-                            continue
-                        xform = BinnedTensorTransform(
-                            input_names=input_name,
-                            output_name=output_name,
-                            input_binning=input_binning,
-                            output_binning=input_binning,
-                            xform_array=smooth_transform,
-                        )
-                        transforms.append(xform)
-
-        return TransformSet(transforms=transforms)
+        return TransformSet(transforms=nominal_transforms)
 
     # Generic methods from aeff.hist
 

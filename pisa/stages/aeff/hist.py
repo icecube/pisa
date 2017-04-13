@@ -23,7 +23,7 @@ from pisa.utils.resources import find_resource
 __all__ = ['validate_binning', 'compute_transforms', 'hist']
 
 
-def validate_binning(self, must_have_dims=('true_energy',),
+def validate_binning(service, must_have_dims=('true_energy',),
                      can_have_dims=('true_energy', 'true_coszen',
                                     'true_azimuth')):
     """Validate binning for effective areas.
@@ -34,57 +34,74 @@ def validate_binning(self, must_have_dims=('true_energy',),
 
     """
     for dim in must_have_dims:
-        if dim not in self.input_binning:
+        if dim not in service.input_binning:
             raise ValueError(
                 'Input binning must contain "%s" dimension; got %s instead.'
-                % (dim, self.input_binning.names)
+                % (dim, service.input_binning.names)
             )
 
-    excess_dims = set(self.input_binning.names).difference(set(can_have_dims))
+    excess_dims = set(service.input_binning.names).difference(
+        set(can_have_dims)
+    )
     if len(excess_dims) > 0:
         raise ValueError('Input binning has extra dimension(s): %s'
                          % sorted(excess_dims))
 
-    if set(self.input_binning.names) != set(self.output_binning.names):
+    if set(service.input_binning.names) != set(service.output_binning.names):
         raise ValueError(
             'Input binning dim names (%s) do not match output binning dim'
             ' names (%s).'
-            % (self.input_binning.names, self.output_binning.names)
+            % (service.input_binning.names, service.output_binning.names)
         )
 
 
-def compute_transforms(self):
+def compute_transforms(service):
     """Compute effective area transforms, taking aeff systematics into account.
 
     Systematics are: `aeff_scale`, `livetime`, and `nutau_cc_norm`
 
     """
-    aeff_scale = self.params.aeff_scale.m_as('dimensionless')
-    livetime_s = self.params.livetime.m_as('sec')
+    aeff_scale = service.params.aeff_scale.m_as('dimensionless')
+    livetime_s = service.params.livetime.m_as('sec')
     base_scale = aeff_scale * livetime_s
 
     logging.trace('livetime = %s --> %s sec',
-                  self.params.livetime.value, livetime_s)
+                  service.params.livetime.value, livetime_s)
 
-    if self.particles == 'neutrinos':
-        nutau_cc_norm = self.params.nutau_cc_norm.m_as('dimensionless')
-        if nutau_cc_norm != 1 and self.nutau_cc_norm_must_be_one:
+    if service.particles == 'neutrinos':
+        if not hasattr(service, 'nutau_cc_norm_must_be_one'):
+            service.nutau_cc_norm_must_be_one = False
+            """If any flav/ints besides nutau_cc and nutaubar_cc are grouped
+            with one or both of those for transforms, then a
+            `nutau_cc_norm` != 1 cannot be applied."""
+
+            nutaucc_and_nutaubarcc = set(NuFlavIntGroup('nutau_cc+nutaubar_cc'))
+            for group in self.transform_groups:
+                # If nutau_cc, nutaubar_cc, or both are the group and other flavors
+                # are present, nutau_cc_norm must be one!
+                group_set = set(group)
+                if group_set.intersection(nutaucc_and_nutaubarcc) and \
+                        group_set.difference(nutaucc_and_nutaubarcc):
+                    service.nutau_cc_norm_must_be_one = True
+
+        nutau_cc_norm = service.params.nutau_cc_norm.m_as('dimensionless')
+        if nutau_cc_norm != 1 and service.nutau_cc_norm_must_be_one:
             raise ValueError(
                 '`nutau_cc_norm` = %e but can only be != 1 if nutau CC and'
                 ' nutaubar CC are separated from other flav/ints.'
                 ' Transform groups are: %s'
-                % (nutau_cc_norm, self.transform_groups)
+                % (nutau_cc_norm, service.transform_groups)
             )
 
-    if hasattr(self, 'sum_grouped_flavints'):
-        sum_grouped_flavints = self.sum_grouped_flavints
+    if hasattr(service, 'sum_grouped_flavints'):
+        sum_grouped_flavints = service.sum_grouped_flavints
     else:
         sum_grouped_flavints = False
 
     new_transforms = []
-    for transform in self.nominal_transforms:
+    for transform in service.nominal_transforms:
         this_scale = base_scale
-        if self.particles == 'neutrinos':
+        if service.particles == 'neutrinos':
             out_nfig = NuFlavIntGroup(transform.output_name)
             if 'nutau_cc' in out_nfig or 'nutaubar_cc' in out_nfig:
                 this_scale *= nutau_cc_norm
@@ -105,6 +122,83 @@ def compute_transforms(self):
         new_transforms.append(new_xform)
 
     return TransformSet(new_transforms)
+
+
+def populate_transforms(service, xform_flavints, xform_array):
+    """General function for populating a BinnedTensorTransform with a single
+    aeff transform array, taking into account e.g. sum_grouped_flavints etc.
+
+    Note that, as certain assumptions are made about input and outputs names
+    and binning, this function should only be applied to aeff services (unless
+    carefull considered).
+
+
+    Parameters
+    ----------
+    service : Stage
+        The aeff serivce
+
+    xform_array : numpy.ndarray
+        Raw transform array
+
+    Returns
+    -------
+    transforms : list of BinnedTensorTransform
+
+    """
+    transforms = []
+    # If combining grouped flavints:
+    # Create a single transform for each group and assign all inputs
+    # that contribute to the group as the single transform's inputs.
+    # The actual sum of the input event rate maps will be performed by
+    # the BinnedTensorTransform object upon invocation of the `apply`
+    # method.
+    if service.sum_grouped_flavints:
+        xform_input_names = []
+        for input_name in service.input_names:
+            input_flavs = NuFlavIntGroup(input_name)
+            if len(set(xform_flavints).intersection(input_flavs)) > 0:
+                xform_input_names.append(input_name)
+
+        for output_name in service.output_names:
+            if output_name not in xform_flavints:
+                continue
+            xform = BinnedTensorTransform(
+                input_names=xform_input_names,
+                output_name=output_name,
+                input_binning=service.input_binning,
+                output_binning=service.input_binning,
+                xform_array=xform_array,
+                sum_inputs=service.sum_grouped_flavints
+            )
+            transforms.append(xform)
+
+    # If *not* combining grouped flavints:
+    # Copy the transform for each input flavor, regardless if the
+    # transform is computed from a combination of flavors.
+    else:
+        for input_name in service.input_names:
+            input_flavs = NuFlavIntGroup(input_name)
+            # Since aeff "splits" neutrino flavors into
+            # flavor+interaction types, need to check if the output
+            # flavints are encapsulated by the input flavor(s).
+            if set(xform_flavints).isdisjoint(input_flavs):
+                continue
+
+            for output_name in service.output_names:
+                if output_name not in xform_flavints:
+                    continue
+                xform = BinnedTensorTransform(
+                    input_names=input_name,
+                    output_name=output_name,
+                    input_binning=service.input_binning,
+                    output_binning=service.input_binning,
+                    xform_array=xform_array,
+                    sum_inputs=service.sum_grouped_flavints
+                )
+                transforms.append(xform)
+
+    return transforms
 
 
 # TODO: the below logic does not generalize to muons, but probably should
@@ -182,20 +276,6 @@ class hist(Stage):
         self.transform_groups = flavintGroupsFromString(transform_groups)
         """Particle/interaction types to group for computing transforms"""
 
-        self.nutau_cc_norm_must_be_one = False
-        """If any flav/ints besides nutau_cc and nutaubar_cc are grouped
-        with one or both of those for transforms, then a `nutau_cc_norm` != 1
-        cannot be applied."""
-
-        nutaucc_and_nutaubarcc = set(NuFlavIntGroup('nutau_cc+nutaubar_cc'))
-        for group in self.transform_groups:
-            # If nutau_cc, nutaubar_cc, or both are the group and other flavors
-            # are present, nutau_cc_norm must be one!
-            group_set = set(group)
-            if group_set.intersection(nutaucc_and_nutaubarcc) and \
-                    group_set.difference(nutaucc_and_nutaubarcc):
-                self.nutau_cc_norm_must_be_one = True
-
         assert isinstance(sum_grouped_flavints, bool)
         self.sum_grouped_flavints = sum_grouped_flavints
 
@@ -226,7 +306,8 @@ class hist(Stage):
         elif self.particles == 'muons':
             raise NotImplementedError
         else:
-            raise ValueError('Particle type `%s` is not valid' % self.particles)
+            raise ValueError('Particle type `%s` is not valid'
+                             % self.particles)
 
         logging.trace('transform_groups = %s', self.transform_groups)
         logging.trace('output_names = %s', ' :: '.join(output_names))
@@ -265,6 +346,7 @@ class hist(Stage):
         # (can't pass more than what's actually there)
         in_units = {dim: unit for dim, unit in comp_units.items()
                     if dim in self.input_binning}
+
         # TODO: use out_units for some kind of conversion?
         #out_units = {dim: unit for dim, unit in comp_units.items()
         #             if dim in self.output_binning}
@@ -289,9 +371,13 @@ class hist(Stage):
             mkdir(outdir)
             #hex_hash = hash2hex(kde_hash)
 
+        bin_volumes = input_binning.bin_volumes(attach_units=False)
+        norm_volumes = bin_volumes * missing_dims_vol
+
         nominal_transforms = []
         for xform_flavints in self.transform_groups:
-            logging.debug('Working on %s effective areas xform', xform_flavints)
+            logging.debug('Working on %s effective areas xform',
+                          xform_flavints)
 
             aeff_transform = self.events.histogram(
                 kinds=xform_flavints,
@@ -306,8 +392,7 @@ class hist(Stage):
             # volumes to convert from sums-of-OneWeights-in-bins to
             # effective areas. Note that volume correction factor for
             # missing dimensions is applied here.
-            bin_volumes = input_binning.bin_volumes(attach_units=False)
-            aeff_transform /= (bin_volumes * missing_dims_vol)
+            aeff_transform /= norm_volumes
 
             if self.debug_mode:
                 outfile = os.path.join(
@@ -315,54 +400,13 @@ class hist(Stage):
                 )
                 to_file(aeff_transform, outfile)
 
-            # If combining grouped flavints:
-            # Create a single transform for each group and assign all inputs
-            # that contribute to the group as the single transform's inputs.
-            # The actual sum of the input event rate maps will be performed by
-            # the BinnedTensorTransform object upon invocation of the `apply`
-            # method.
-            if self.sum_grouped_flavints:
-                xform_input_names = []
-                for input_name in self.input_names:
-                    input_flavs = NuFlavIntGroup(input_name)
-                    if len(set(xform_flavints).intersection(input_flavs)) > 0:
-                        xform_input_names.append(input_name)
-
-                for output_name in self.output_names:
-                    if output_name not in xform_flavints:
-                        continue
-                    xform = BinnedTensorTransform(
-                        input_names=xform_input_names,
-                        output_name=output_name,
-                        input_binning=self.input_binning,
-                        output_binning=self.input_binning,
-                        xform_array=aeff_transform,
-                        sum_inputs=self.sum_grouped_flavints
-                    )
-                    nominal_transforms.append(xform)
-
-            # If *not* combining grouped flavints:
-            # Copy the transform for each input flavor, regardless if the
-            # transform is computed from a combination of flavors.
-            else:
-                for input_name in self.input_names:
-                    input_flavs = NuFlavIntGroup(input_name)
-                    # Since aeff "splits" neutrino flavors into
-                    # flavor+interaction types, need to check if the output
-                    # flavints are encapsulated by the input flavor(s).
-                    if len(set(xform_flavints).intersection(input_flavs)) == 0:
-                        continue
-                    for output_name in self.output_names:
-                        if output_name not in xform_flavints:
-                            continue
-                        xform = BinnedTensorTransform(
-                            input_names=input_name,
-                            output_name=output_name,
-                            input_binning=self.input_binning,
-                            output_binning=self.input_binning,
-                            xform_array=aeff_transform,
-                        )
-                        nominal_transforms.append(xform)
+            nominal_transforms.extend(
+                populate_transforms(
+                    service=self,
+                    xform_flavints=xform_flavints,
+                    xform_array=aeff_transform
+                )
+            )
 
         return TransformSet(transforms=nominal_transforms)
 

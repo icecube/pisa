@@ -26,6 +26,11 @@ from collections import Mapping, OrderedDict
 import numpy as np
 import scipy as sp
 
+# NOTE: need both versions of the imported names, as eval strings can name
+# numpy and scipy either ways
+import numpy
+import scipy
+
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.fileio import from_file
@@ -154,13 +159,6 @@ class param(Stage):
         if isinstance(input_names, basestring):
             input_names = input_names.replace(' ', '').split(',')
 
-        self.signatures = output_binning.pid.bin_names
-        """PID signatures that this stage generates"""
-
-        # If no bin names are present, use the integer bin indices instead
-        if self.signatures is None:
-            self.signatures = range(len(output_binning.pid))
-
         if self.particles == 'neutrinos':
             if self.sum_grouped_flavints:
                 output_names = [str(g) for g in self.transform_groups]
@@ -187,6 +185,13 @@ class param(Stage):
         self.include_attrs_for_hashes('particles')
         self.include_attrs_for_hashes('sum_grouped_flavints')
         self.include_attrs_for_hashes('transform_groups')
+
+        self.signatures = output_binning.pid.bin_names
+        """PID signatures that this stage generates"""
+
+        # If no bin names are present, use the integer bin indices instead
+        if self.signatures is None:
+            self.signatures = range(len(output_binning.pid))
 
         # Define the transform binnning...
 
@@ -222,7 +227,7 @@ class param(Stage):
                                     self.input_binning.names))
 
         if set(self.output_binning.names) != set(required_output_binning_dims):
-            raise ValueError(msg % ('Output', required_input_binning_dims,
+            raise ValueError(msg % ('Output', required_output_binning_dims,
                                     self.input_binning.names))
 
         # While output binning will have a 'pid' dimension, the remaining

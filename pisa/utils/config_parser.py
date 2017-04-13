@@ -125,6 +125,7 @@ from collections import OrderedDict
 import re
 
 import numpy as np
+from numpy import inf
 from uncertainties import ufloat, ufloat_fromstr
 
 from pisa import ureg
