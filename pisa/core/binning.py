@@ -149,7 +149,7 @@ class OneDimBinning(object):
         Number of bins; specify if `domain` and either `is_lin` or `is_log` are
         specified, but redundant if `bin_edges` is specified.
 
-    bin_names : None or sequence of strings
+    bin_names : None or sequence of nonzero-length strings
         Strings by which each bin can be identified. This is expected to be
         useful when one needs to easily identify bins by name where the actual
         numerical values can be non-obvious e.g. the PID dimension.
@@ -205,14 +205,24 @@ class OneDimBinning(object):
         if domain is not None:
             assert isinstance(domain, Iterable)
             assert len(domain) == 2
-
+        if bin_names is not None:
+            if isinstance(bin_names, basestring):
+                bin_names = (bin_names,)
+            if (isinstance(bin_names, Iterable)
+                    and all(isinstance(n, basestring) and len(n) > 0
+                            for n in bin_names)):
+                bin_names = tuple(bin_names)
+            else:
+                raise ValueError(
+                    '`bin_names` must either be None or an iterable of'
+                    ' nonzero-length strings.'
+                )
         self._normalize_values = True
         self._name = make_valid_python_name(name)
         if self._name != name:
             logging.warning('Converted `name` "%s" to valid Python: "%s"',
                             name, self._name)
         self._tex = tex
-
         self._basename = None
         self._bin_names = bin_names
         self._hashable_state = None
@@ -355,6 +365,15 @@ class OneDimBinning(object):
             assert num_bins == len(self.bin_edges) - 1, \
                     '%s, %s' %(num_bins, self.bin_edges)
         self._num_bins = num_bins
+
+        if (self._bin_names is not None
+                and len(self._bin_names) != self._num_bins):
+            raise ValueError(
+                'There are %d bins, so there must be %d `bin_names` (or None)'
+                ' provided; got %d bin name instead: %s.'
+                % (self._num_bins, self._num_bins, len(self._bin_names),
+                   self._bin_names)
+            )
 
         self._is_lin = is_lin
         self._is_log = is_log
@@ -502,16 +521,16 @@ class OneDimBinning(object):
                 assert x >= 0 and x < len(self)
                 return x
             raise TypeError('`x` must be either int or string; got %s instead.'
-                            %type(x))
+                            % type(x))
         except (AssertionError, ValueError):
             valid_range = [0, len(self)-1]
             if self.bin_names is None:
                 valid_names = ''
             else:
-                valid_names = ' or a valid bin name in %s' %self.bin_names
-            raise ValueError("Bin corresponding to '%s' could not be located."
-                             " Specify an int in %s%s."
-                             %(x, valid_range, valid_names))
+                valid_names = ' or a valid bin name in %s' % (self.bin_names,)
+            raise ValueError('Bin corresponding to "%s" could not be located.'
+                             ' Specify an int in %s%s.'
+                             % (x, valid_range, valid_names))
 
     def iterbins(self):
         """Return an iterator over each bin. The elments returned by the
@@ -996,22 +1015,26 @@ class OneDimBinning(object):
             logging.trace('Bin names do not match')
             return False
 
+        # TODO: should we force normalization?
+        # TODO: Should we use FTYPE_SIGFIGS or # HASH_SIGFIGS?
         if self.normalize_values:
-            my_normed_bin_edges = set(normQuant(self.bin_edges).magnitude)
-            other_normed_bin_edges = set(normQuant(other.bin_edges).magnitude)
+            my_normed_bin_edges = set(
+                normQuant(self.bin_edges, sigfigs=HASH_SIGFIGS).magnitude
+            )
+            other_normed_bin_edges = set(
+                normQuant(other.bin_edges, sigfigs=HASH_SIGFIGS).magnitude
+            )
         else:
             my_normed_bin_edges = set(self.bin_edges.magnitude)
             other_normed_bin_edges = set(other.bin_edges.magnitude)
 
         if my_normed_bin_edges.issubset(other_normed_bin_edges):
             return True
-        logging.trace('self.bin_edges  = %s' % self.bin_edges)
-        logging.trace('other.bin_edges = %s' % other.bin_edges)
+
         logging.trace('self.bin_edges not a subset of other.bin_edges')
-        #if len(my_normed_bin_edges.difference(other_normed_bin_edges)) == 0:
-        #    return True
-        #if len(other_normed_bin_edges.difference(my_normed_bin_edges)) == 0:
-        #    return True
+        logging.trace('Bins in this map not found in other = %s',
+                      my_normed_bin_edges.difference(other_normed_bin_edges))
+
         return False
 
     @property
@@ -1355,7 +1378,7 @@ class MultiDimBinning(object):
                 raise TypeError('Argument/object #%d unhandled type: %s'
                                 %(obj_num, type(obj)))
             tmp_dimensions.append(one_dim_binning)
-        self._dimensions = tmp_dimensions
+        self._dimensions = tuple(tmp_dimensions)
         self._names = None
         self._basenames = None
         self._hash = None
@@ -1363,7 +1386,7 @@ class MultiDimBinning(object):
         self._size = None
         self._shape = None
         self._hashable_state = None
-        self.Coord = namedtuple('Coord', self.names)
+        self._coord = None
 
     def __repr__(self):
         previous_precision = np.get_printoptions()['precision']
@@ -1378,7 +1401,7 @@ class MultiDimBinning(object):
 
     def __str__(self):
         return (self.__class__.__name__ + '(\n    '
-                + ',\n    '.join([str(dim) for dim in self._dimensions])
+                + ',\n    '.join(str(dim) for dim in self._dimensions)
                 + '\n)')
 
     def __pretty__(self, p, cycle):
@@ -1484,13 +1507,17 @@ class MultiDimBinning(object):
 
     @property
     def dimensions(self):
-        """list of OneDimBinning : each dimension's binning in a list"""
+        """tuple of OneDimBinning : each dimension's binning in a list"""
         return self._dimensions
 
     @property
     def dims(self):
-        """list of OneDimBinning : shortcut for `dimensions`"""
+        """tuple of OneDimBinning : shortcut for `dimensions`"""
         return self._dimensions
+
+    def iterdims(self):
+        """Iterator over contained `dimensions`, each a OneDimBinning"""
+        return iter(self._dimensions)
 
     @property
     def num_dims(self):
@@ -1503,7 +1530,7 @@ class MultiDimBinning(object):
     def shape(self):
         """tuple : shape of binning, akin to `nump.ndarray.shape`"""
         if self._shape is None:
-            self._shape = tuple([b.num_bins for b in self._dimensions])
+            self._shape = tuple(b.num_bins for b in self._dimensions)
         return self._shape
 
     @property
@@ -1512,6 +1539,13 @@ class MultiDimBinning(object):
         if self._size is None:
             self._size = reduce(mul, self.shape)
         return self._size
+
+    @property
+    def coord(self):
+        """namedtuple : coordinate for indexing into binning by dim names"""
+        if self._coord is None:
+            self._coord = namedtuple('coord', self.names)
+        return self._coord
 
     @property
     def normalize_values(self):
@@ -1732,7 +1766,7 @@ class MultiDimBinning(object):
 
     # TODO: add *args to handle positional indexing (?) (also would need to
     # add this to `slice` method if implemented.
-    def defaults_indexer(self, **kwargs):
+    def indexer(self, **kwargs):
         """Any dimension index/slice not specified by name in kwargs will
         default to ":" (all elements).
 
@@ -1743,18 +1777,16 @@ class MultiDimBinning(object):
             an integer index into that dimension or a Python `slice` object for
             that dimension. See examples below for details.
 
-
         Returns
         -------
         indexer : tuple
-
 
         See Also
         --------
         broadcast
             Assignment of a one-dimensional array to a higher-dimensional array
             is simplified greatly by using `broadcast` in conjunction with
-            `defaults_indexer` or `pisa.core.map.Map.slice`. See examples in
+            `indexer` or `pisa.core.map.Map.slice`. See examples in
             docs for `broadcast`.
         broadcaster
             Similar to `broadcast`, but returns a tuple that can be applied to
@@ -1764,7 +1796,7 @@ class MultiDimBinning(object):
             object, returning a new MultiDimBinning object.
         pisa.core.map.Map.slice
             Same operation, but slices a Map object by dimension-name
-            (internally, calls `defaults_indexer`).
+            (internally, calls `indexer`).
 
         Examples
         --------
@@ -1775,22 +1807,22 @@ class MultiDimBinning(object):
         >>> czbins = OneDimBinning(name='coszen',
         ...                        is_lin=True, num_bins=4, domain=[-1, 0])
         >>> mdb = ebins * czbins
-        >>> print mdb.defaults_indexer(energy=0)
+        >>> print mdb.indexer(energy=0)
         (0, slice(None, None, None))
 
         Omitting a dimension (coszen in the above) is equivalent to slicing
         with a colon (i.e., `(0, slice(None))`):
 
-        >>> print mdb.defaults_indexer(energy=0, coszen=slice(None))
+        >>> print mdb.indexer(energy=0, coszen=slice(None))
         (0, slice(None, None, None))
 
-        >>> print mdb.defaults_indexer(energy=slice(None), coszen=1)
+        >>> print mdb.indexer(energy=slice(None), coszen=1)
         (slice(None, None, None), 1)
 
         Now create an indexer to use on a Numpy array:
 
         >>> x = np.random.RandomState(0).uniform(size=mdb.shape)
-        >>> indexer = mdb.defaults_indexer(energy=slice(0, 5), coszen=1)
+        >>> indexer = mdb.indexer(energy=slice(0, 5), coszen=1)
         >>> print x[indexer]
         [ 0.71518937  0.64589411  0.38344152  0.92559664  0.83261985]
 
@@ -1798,7 +1830,10 @@ class MultiDimBinning(object):
         indexer = []
         for dim in self.dims:
             if dim.name in kwargs:
-                indexer.append(kwargs[dim.name])
+                val = kwargs[dim.name]
+                if isinstance(val, basestring):
+                    val = dim.index(val)
+                indexer.append(val)
             else:
                 indexer.append(slice(None))
         return tuple(indexer)
@@ -1807,14 +1842,14 @@ class MultiDimBinning(object):
         """Slice the binning by dimension name. Any dimension/index not
         specified by name in kwargs will default to ":" (all bins).
 
-        Uses `defaults_indexer` internally to define the indexing tuple.
+        Uses `indexer` internally to define the indexing tuple.
 
         Returns
         -------
         sliced_binning : MultiDimBinning
 
         """
-        return self[self.defaults_indexer(**kwargs)]
+        return self[self.indexer(**kwargs)]
 
     def broadcast(self, a, from_dim, to_dims):
         """Take a one-dimensional array representing one input dimension and
@@ -1956,7 +1991,7 @@ class MultiDimBinning(object):
 
         Returns
         -------
-        coord : self.Coord namedtuple
+        coord : self.coord namedtuple
             Coordinates are in the same order as the binning is here defined
             and each coordinate is named by its corresponding dimension.
             Therefore integer indexing into `coord` as well as named indexing
@@ -1968,7 +2003,7 @@ class MultiDimBinning(object):
         for dim_length in self.shape[::-1]:
             quot, rem = divmod(quot, dim_length)
             coord.append(rem)
-        return self.Coord(*coord[::-1])
+        return self.coord(*coord[::-1])
 
     # TODO: examples!
     def reorder_dimensions(self, order, use_deepcopy=False):
@@ -2198,7 +2233,7 @@ class MultiDimBinning(object):
     def ito(self, *args, **kwargs):
         """Convert units in-place. Cf. Pint's `ito` method."""
         units_list = self._args_kwargs_to_list(*args, **kwargs)
-        for dim, units in izip(self._dimensions, units_list):
+        for dim, units in izip(self.iterdims(), units_list):
             dim.ito(units)
 
     def to(self, *args, **kwargs):
@@ -2208,7 +2243,7 @@ class MultiDimBinning(object):
         """
         units_list = self._args_kwargs_to_list(*args, **kwargs)
         new_binnings = [dim.to(units)
-                        for dim, units in izip(self._dimensions, units_list)]
+                        for dim, units in izip(self.iterdims(), units_list)]
         return MultiDimBinning(new_binnings)
 
     def meshgrid(self, entity, attach_units=True):
@@ -2235,22 +2270,22 @@ class MultiDimBinning(object):
         """
         entity = entity.lower().strip()
         if entity == 'midpoints':
-            mg = np.meshgrid(*[d.midpoints for d in self._dimensions],
+            mg = np.meshgrid(*[d.midpoints for d in self.iterdims()],
                              indexing='ij')
         elif entity == 'weighted_centers':
-            mg = np.meshgrid(*[d.weighted_centers for d in self._dimensions],
+            mg = np.meshgrid(*[d.weighted_centers for d in self.iterdims()],
                              indexing='ij')
         elif entity == 'bin_edges':
-            mg = np.meshgrid(*[d.bin_edges for d in self._dimensions],
+            mg = np.meshgrid(*[d.bin_edges for d in self.iterdims()],
                              indexing='ij')
         elif entity == 'bin_widths':
-            mg = np.meshgrid(*[d.bin_widths for d in self._dimensions],
+            mg = np.meshgrid(*[d.bin_widths for d in self.iterdims()],
                              indexing='ij')
         else:
             raise ValueError('Unrecognized `entity`: "%s"' %entity)
 
         if attach_units:
-            return [m*dim.units for m, dim in izip(mg, self._dimensions)]
+            return [m*dim.units for m, dim in izip(mg, self.iterdims())]
         return mg
 
     # TODO: modify technique depending upon grid size for memory concerns, or
@@ -2273,9 +2308,7 @@ class MultiDimBinning(object):
         volumes = reduce(lambda x, y: x*y, meshgrid)
         if attach_units:
             return (
-                volumes
-                * reduce(lambda x, y: x*y, [ureg(str(d.units)) for d in
-                                            self._dimensions])
+                volumes * reduce(lambda x, y: x*y, (ureg(str(d.units)) for d in self.iterdims()))
             )
         return volumes
 
@@ -2476,7 +2509,7 @@ class MultiDimBinning(object):
             return self
 
         if isinstance(index, basestring):
-            for d in self._dimensions:
+            for d in self.iterdims():
                 if d.name == index:
                     return d
 
@@ -2497,7 +2530,7 @@ class MultiDimBinning(object):
                              %(self.num_dims, input_dim))
 
         new_binning = {'dimensions': [dim[idx] for dim, idx in
-                                      zip(self._dimensions, index)]}
+                                      izip(self.iterdims(), index)]}
 
         return MultiDimBinning(**new_binning)
 
@@ -2851,11 +2884,10 @@ def test_MultiDimBinning():
     tprofile.info('Time to iterate over %d edge tuples: %.6f sec',
                   mdb_3d_reco.size, time.time() - t0)
 
-    sub_binning = mdb_3d_reco[:10, :10, :10]
     t0 = time.time()
-    _ = [b for b in sub_binning.iterbins()]
+    _ = [b for b in mdb_3d_reco.iterbins()]
     tprofile.info('Time to iterate over %d bins: %.6f sec',
-                  sub_binning.size, time.time() - t0)
+                  mdb_3d_reco.size, time.time() - t0)
 
     logging.info('<< PASSED >> test_MultiDimBinning')
 

@@ -656,7 +656,7 @@ class HypoTesting(Analysis):
                 raise exc_l
 
             if exc[0] is not None:
-                raise exc
+                raise
 
     def generate_data(self):
         logging.info('Generating %s distributions.', self.labels.data_disp)

@@ -36,6 +36,7 @@ mpl.rcParams['mathtext.fontset'] = 'custom'
 mpl.rcParams['mathtext.rm'] = 'Bitstream Vera Sans'
 mpl.rcParams['mathtext.it'] = 'Bitstream Vera Sans:italic'
 mpl.rcParams['mathtext.bf'] = 'Bitstream Vera Sans:bold'
+mpl.rcParams['font.size'] = 14
 
 
 class Plotter(object):
@@ -287,7 +288,7 @@ class Plotter(object):
         plt.tight_layout()
         h_margin = 1. / size[0]
         v_margin = 1. / size[1]
-        self.fig.subplots_adjust(hspace=0.3, wspace=0.3, top=1-v_margin,
+        self.fig.subplots_adjust(hspace=0.2, wspace=0.2, top=1-v_margin,
                                  bottom=v_margin, left=h_margin,
                                  right=1-h_margin)
         for i, map in enumerate(map_set):
@@ -311,7 +312,7 @@ class Plotter(object):
         h_margin = 1. / size[0]
         v_margin = 1. / size[1]
         # big one
-        self.fig.subplots_adjust(hspace=0., wspace=0.3, top=1-v_margin,
+        self.fig.subplots_adjust(hspace=0., wspace=0.2, top=1-v_margin,
                                  bottom=v_margin, left=h_margin,
                                  right=1-h_margin)
         stamp = self.stamp
@@ -484,10 +485,10 @@ class Plotter(object):
             hist = np.sum(hist, 1)
         return hist
 
-    def plot_1d_ratio(self, maps, plot_axis):
+    def plot_1d_ratio(self, maps, plot_axis, **kwargs):
+        """make a ratio plot for a 1d projection"""
         r_vmin = kwargs.pop('r_vmin', None)
         r_vmax = kwargs.pop('r_vmax', None)
-        """make a ratio plot for a 1d projection"""
         axis = plt.gca()
         map0 = maps[0]
         plt_binning = map0.binning[plot_axis]

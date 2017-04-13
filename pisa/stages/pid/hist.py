@@ -25,6 +25,8 @@ then returned.
 """
 
 
+from __future__ import division
+
 from collections import OrderedDict
 from itertools import product
 
@@ -302,18 +304,18 @@ class hist(Stage):
         # apply the derived transforms to the input flavints separately
         # (leaving combining these together to later)
         transforms = []
-        for flav_int_group in self.transform_groups:
-            logging.debug("Working on %s PID", flav_int_group)
+        for flavint_group in self.transform_groups:
+            logging.debug("Working on %s PID", flavint_group)
 
-            repr_flav_int = flav_int_group[0]
+            repr_flavint = flavint_group[0]
 
             # TODO(shivesh): errors
             # TODO(shivesh): total histo check?
             sig_histograms = {}
             total_histo = np.zeros(self.output_binning.shape)
-            for repr_flav_int in flav_int_group:
+            for repr_flavint in flavint_group:
                 histo = self.events.histogram(
-                    kinds=repr_flav_int,
+                    kinds=repr_flavint,
                     binning=self.output_binning,
                     weights_col=self.params.pid_weights_name.value,
                     errors=None
@@ -322,9 +324,9 @@ class hist(Stage):
 
             for sig in self.output_channels:
                 sig_histograms[sig] = np.zeros(self.output_binning.shape)
-                for repr_flav_int in flav_int_group:
+                for repr_flavint in flavint_group:
                     this_sig_histo = separated_events[sig].histogram(
-                        kinds=repr_flav_int,
+                        kinds=repr_flavint,
                         binning=self.output_binning,
                         weights_col=self.params.pid_weights_name.value,
                         errors=None
@@ -342,7 +344,7 @@ class hist(Stage):
                         ' events (and hence the ability to separate events'
                         ' by PID cannot be ascertained). These are being'
                         ' masked off from any further computations.',
-                        flav_int_group, sig, num_invalid
+                        flavint_group, sig, num_invalid
                     )
                     # TODO: this caused buggy event propagation for some
                     # reason; check and re-introduced the masked array idea
@@ -355,7 +357,7 @@ class hist(Stage):
 
                 # Copy this transform to use for each input in the group
                 for input_name in self.input_names:
-                    if input_name not in flav_int_group:
+                    if input_name not in flavint_group:
                         continue
                     xform = BinnedTensorTransform(
                         input_names=input_name,

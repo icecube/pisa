@@ -119,10 +119,13 @@ they must be separated by commas.
 # maximally useful error info to the user (spit out a good message, but then
 # re-raise the exception)
 
+from __future__ import division
+
 from collections import OrderedDict
 import re
 
 import numpy as np
+from numpy import inf
 from uncertainties import ufloat, ufloat_fromstr
 
 from pisa import ureg

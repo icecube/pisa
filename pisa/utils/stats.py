@@ -6,6 +6,9 @@ Statistical functions
 
 """
 
+
+from __future__ import division
+
 import numpy as np
 from scipy.special import gammaln
 from uncertainties import unumpy as unp
@@ -76,7 +79,12 @@ def chi2(actual_values, expected_values):
       the calculation to avoid infinities due to the divide function.
 
     """
-    assert actual_values.shape == expected_values.shape
+    if actual_values.shape != expected_values.shape:
+        raise ValueError(
+            'Shape mismatch: actual_values.shape = %s,'
+            ' expected_values.shape = %s'
+            % (actual_values.shape, expected_values.shape)
+        )
 
     # Convert to simple numpy arrays containing floats
     if not isbarenumeric(actual_values):
@@ -117,7 +125,7 @@ def chi2(actual_values, expected_values):
 
     assert np.all(actual_values > 0), str(actual_values)
     chi2_val = np.square(delta) / actual_values
-    assert np.all(chi2_val > 0), str(chi2_val)
+    assert np.all(chi2_val >= 0), str(chi2_val[chi2_val < 0])
     return chi2_val
 
 
@@ -231,7 +239,7 @@ def log_smear(x, sigma):
 
 
 def conv_poisson(k, l, s, nsigma=3, steps=50):
-    """Poisson pdf
+    r"""Poisson pdf
 
     .. math::
         p(k,l) = l^k \cdot e^{-l}/k!

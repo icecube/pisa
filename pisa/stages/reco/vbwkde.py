@@ -408,7 +408,7 @@ def coszen_error_edges(true_edges, reco_edges):
     return all_dcz_binedges, reco_indices
 
 
-@numba_jit(nogil=True, nopython=True)
+@numba_jit(nogil=True, nopython=True, fastmath=True)
 def sorted_fast_histogram(a, bins, weights):
     """Fast but less precise histogramming of a sorted array with weights.
 
@@ -451,7 +451,7 @@ def sorted_fast_histogram(a, bins, weights):
     return hist, bins
 
 
-@numba_jit(nogil=True, nopython=True)
+@numba_jit(nogil=True, nopython=True, fastmath=True)
 def fast_histogram(a, bins, weights):
     """Fast but less precise histogramming of an array with weights.
 
@@ -921,7 +921,7 @@ class vbwkde(Stage):
 
         self.kde_profiles = dict()
         """dict containing `KDEProfile`s. Structure is:
-            {dim_basename: {flavintgroup: {(Coord): (KDEProfile)}}}
+            {dim_basename: {flavintgroup: {(coord): (KDEProfile)}}}
 
         For example:
             {'pid': {
@@ -990,7 +990,7 @@ class vbwkde(Stage):
         output binning. The transform maps the truth bin counts to the
         reconstructed bin counts.
 
-        I.e., for the case of 1D input binning, the ith element of the
+        I.e., for the case of 1D input binning, the i-th element of the
         reconstruction kernel will be a map showing the distribution of events
         over all the reco space from truth bin i. This will be normalised to
         the total number of events in truth bin i.
@@ -1012,6 +1012,10 @@ class vbwkde(Stage):
             for output_name in self.output_names:
                 if output_name not in xform_flavints:
                     continue
+
+                logging.trace('  inputs: %s, output: %s, xform: %s',
+                              xform_input_names, output_name, xform_flavints)
+
                 xform = BinnedTensorTransform(
                     input_names=xform_input_names,
                     output_name=output_name,
@@ -1426,7 +1430,7 @@ class vbwkde(Stage):
                           true_e_bin_num+1, true_energy.size)
 
             idx = np.argmin(np.abs(np.log(true_e_center/pid_kde_e_centers)))
-            pid_closest_kde_coord = char_binning['pid'].Coord(true_energy=idx)
+            pid_closest_kde_coord = char_binning['pid'].coord(true_energy=idx)
 
             # Figure out PID fractions
             pid_kde_profile = pid_kde_profiles[pid_closest_kde_coord]
@@ -1447,7 +1451,7 @@ class vbwkde(Stage):
             for pid_bin_num in range(num_pid_bins):
                 pid_fraction = pid_fractions[pid_bin_num]
 
-                energy_indexer = kernel_binning.defaults_indexer(
+                energy_indexer = kernel_binning.indexer(
                     true_energy=true_e_bin_num,
                     pid=pid_bin_num
                 )
@@ -1462,7 +1466,7 @@ class vbwkde(Stage):
                 closest_e_idx = np.argmin(
                     np.abs(np.log(true_e_center / e_kde_e_centers))
                 )
-                e_closest_kde_coord = char_binning['energy'].Coord(
+                e_closest_kde_coord = char_binning['energy'].coord(
                     pid=pid_bin_num,
                     true_energy=closest_e_idx
                 )
@@ -1516,7 +1520,7 @@ class vbwkde(Stage):
                 for true_cz_bin_num, (true_cz_lower_edge, true_cz_upper_edge) \
                         in enumerate(true_cz_edge_pairs):
                     cz_closest_cz_idx = cz_closest_cz_indices[true_cz_bin_num]
-                    cz_closest_kde_coord = char_binning['coszen'].Coord(
+                    cz_closest_kde_coord = char_binning['coszen'].coord(
                         pid=pid_bin_num,
                         true_coszen=cz_closest_cz_idx,
                         true_energy=cz_closest_e_idx
@@ -1560,7 +1564,7 @@ class vbwkde(Stage):
                     # Here we index directly into (i.e. the smearing profile
                     # applies direclty to) a single
                     # `(true_energy, true_coszen, pid)` coordinate.
-                    coszen_indexer = kernel_binning.defaults_indexer(
+                    coszen_indexer = kernel_binning.indexer(
                         true_energy=true_e_bin_num,
                         true_coszen=true_cz_bin_num,
                         pid=pid_bin_num

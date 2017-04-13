@@ -20,7 +20,7 @@ from pisa.core.map import MapSet
 from pisa.core.pipeline import Pipeline
 from pisa.core.param import ParamSet
 from pisa.utils.betterConfigParser import BetterConfigParser
-from pisa.utils.fileio import expandPath, mkdir, to_file
+from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import set_verbosity, logging
 from pisa.utils.random_numbers import get_random_state
@@ -368,7 +368,7 @@ def main(return_outputs=False):
         # TODO: unique filename: append hash (or hash per pipeline config)
         fname = 'distribution_maker_outputs.json.bz2'
         mkdir(args.dir)
-        fpath = expandPath(os.path.join(args.dir, fname))
+        fpath = expand(os.path.join(args.dir, fname))
         to_file(outputs, fpath)
 
     if args.dir and len(plot_formats) > 0:

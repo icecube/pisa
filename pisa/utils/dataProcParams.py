@@ -10,6 +10,8 @@ parameters (e.g., PINGU's V5 processing).
 """
 
 
+from __future__ import division
+
 from collections import Mapping, OrderedDict, Sequence
 from itertools import izip
 import os
@@ -263,10 +265,10 @@ class DataProcParams(dict):
         # Add generic cuts
         self['cuts'].update({
             # Cut for particles only (no anti-particles)
-            str(NuFlav(12).barNoBar).lower():
+            str(NuFlav(12).bar_code).lower():
                 {'fields': ['nu_code'], 'pass_if': 'nu_code > 0'},
             # Cut for anti-particles only (no particles)
-            str(NuFlav(-12).barNoBar).lower():
+            str(NuFlav(-12).bar_code).lower():
                 {'fields': ['nu_code'], 'pass_if': 'nu_code < 0'},
             # Cut for charged-current interactions only
             str(IntType('cc')).lower():

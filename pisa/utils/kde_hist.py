@@ -1,3 +1,10 @@
+"""
+Functions to get KDE smoothed historgams
+"""
+
+
+from __future__ import division
+
 from kde.cudakde import gaussian_kde
 import numpy as np
 from uncertainties import unumpy as unp
@@ -5,11 +12,9 @@ import copy
 
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 
-"""
-Functions to get KDE smoothed historgams
-"""
 
 __all__ = ['get_hist', 'kde_histogramdd', 'test_kde_histogramdd']
+
 
 def get_hist(sample, binning, weights=None, bw_method='scott', adaptive=True,
              alpha=0.3, use_cuda=False, coszen_reflection=0.25,

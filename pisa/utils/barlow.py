@@ -40,6 +40,8 @@ To use this, you need to run  SetData, SetMC, and the SetUnweighted
 """
 
 
+from __future__ import division
+
 from copy import copy
 import numpy
 import sys

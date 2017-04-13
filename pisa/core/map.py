@@ -135,7 +135,7 @@ def rebin(hist, orig_binning, new_binning, normalize_values=True):
             "`new_binning` dimensions' basenames %s do not have 1:1"
             " correspondence (modulo pre/suffixes) to original binning"
             " dimensions' basenames %s"
-            % (new_binning.basenames, orig_binning.binning.basenames)
+            % (new_binning.basenames, orig_binning.basenames)
         )
 
     if orig_binning.edges_hash == new_binning.edges_hash:
@@ -405,18 +405,18 @@ class Map(object):
 
         See Also
         --------
-        pisa.core.binning.MultiDimBinning.defaults_indexer
+        pisa.core.binning.MultiDimBinning.indexer
             Method used to generate a raw indexer (that can be used to
             index into a map or a Numpy array of same dimensionality).
             This method is accessible from a Map `map_x` object via its
-            `binning` attribute: `map_x.binning.defaults_indexer(...)`
+            `binning` attribute: `map_x.binning.indexer(...)`
 
         pisa.core.binning.MultiDimBinning.broadcast
             Broadcast a 1D Numpy array to dimensionality with reference to this
             object's dimensionality.
 
         """
-        return self[self.binning.defaults_indexer(**kwargs)]
+        return self[self.binning.indexer(**kwargs)]
 
     def set_poisson_errors(self):
         """Approximate poisson errors using sqrt(n)."""
@@ -725,7 +725,7 @@ class Map(object):
 
     @_new_obj
     def rebin(self, new_binning):
-        """Rebin the map with bin edge lodations and names according to those
+        """Rebin the map with bin edge locations and names according to those
         specified in `new_binning`.
 
         Calls the `rebin` function in the pisa.core.map.rebin module to do the
@@ -2113,8 +2113,8 @@ class MapSet(object):
             except ValueError:
                 pass
         if idx is None:
-            raise ValueError('Could not find map name "%s" in %s'
-                             % (value, self))
+            raise ValueError('Could not find map name "%s" among maps %s'
+                             % (value, self.names))
         return self[idx]
 
     def apply_to_maps(self, attr, *args, **kwargs):
@@ -2469,6 +2469,12 @@ def test_Map():
     m1 = Map(name='x', hist=np.ones((n_ebins, n_czbins)), hash=23,
              binning=(e_binning, cz_binning))
 
+    # Test rebin
+    _ = m1.rebin(m1.binning.downsample(2, 5))
+    m_rebinned = m1.rebin(m1.binning.downsample(n_ebins, n_czbins))
+    assert m_rebinned.hist[0, 0] == np.sum(m1.hist)
+
+
     # Test sum()
     m1 = Map(
         name='x',
@@ -2628,6 +2634,13 @@ def test_MapSet():
     m2 = Map(name='twos', hist=2*np.ones(binning.shape), binning=binning,
              hash='xyz')
     ms01 = MapSet([m1, m2])
+
+    # Test rebin
+    _ = ms01.rebin(m1.binning.downsample(3))
+    ms01_rebinned = ms01.rebin(m1.binning.downsample(6, 3))
+    for m_orig, m_rebinned in zip(ms01, ms01_rebinned):
+        assert m_rebinned.hist[0, 0] == np.sum(m_orig.hist)
+
     logging.debug(str(("downsampling =====================")))
     logging.debug(str((ms01.downsample(3))))
     logging.debug(str(("===================== downsampling")))

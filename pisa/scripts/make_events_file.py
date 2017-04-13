@@ -22,7 +22,7 @@ import numpy as np
 from pisa.core.events import Events
 from pisa.utils.dataProcParams import DataProcParams
 from pisa.utils.format import list2hrlist
-from pisa.utils.fileio import expandPath, mkdir, to_file
+from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.flavInt import (FlavIntData, NuFlav, NuFlavIntGroup,
                                 ALL_NUFLAVINTS, ALL_NUINT_TYPES, xlateGroupsStr)
 from pisa.utils.log import logging, set_verbosity
@@ -266,7 +266,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
             cuts.append(ccut)
 
     orig_outdir = outdir
-    outdir = expandPath(outdir)
+    outdir = expand(outdir)
     logging.info('Output dir spec\'d: %s', orig_outdir)
     if outdir != orig_outdir:
         logging.info('Output dir expands to: %s', outdir)
@@ -370,7 +370,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
 
             # Loop through all flavints spec'd for run
             for run_flavint in rs_run['flavints']:
-                barnobar = run_flavint.barNoBar
+                barnobar = run_flavint.bar_code
                 int_type = run_flavint.intType
 
                 # Retrieve this-interaction-type- & this-barnobar-only events
@@ -388,11 +388,11 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
                         continue
 
                     # Instantiate a field for particles and antiparticles,
-                    # keyed by the output of the barNoBar method for each
+                    # keyed by the output of the bar_code property for each
                     if not run in ngen[grp_n][int_type]:
                         ngen[grp_n][int_type][run] = {
-                            NuFlav(12).barNoBar: 0,
-                            NuFlav(-12).barNoBar: 0,
+                            NuFlav(12).bar_code: 0,
+                            NuFlav(-12).bar_code: 0,
                         }
 
                     # Record count only if it hasn't already been recorded
@@ -446,7 +446,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
                         ngen_it_tot += barnobar_counts
                         logging.info(
                             fmt %
-                            (flavint_group.simpleStr(), int_type, str(run),
+                            (flavint_group.simple_str(), int_type, str(run),
                              barnobar, int(barnobar_counts), int(ngen_it_tot))
                         )
                 # Convert data to numpy array

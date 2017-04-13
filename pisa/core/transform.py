@@ -770,6 +770,9 @@ class BinnedTensorTransform(Transform):
         pass
 
     def validate_input(self, inputs):
+        if inputs is None:
+            raise ValueError('No inputs provided.')
+
         for input_name in self.input_names:
             assert input_name in inputs, \
                     'Input "%s" expected; got: %s.' \
@@ -897,6 +900,10 @@ class BinnedTensorTransform(Transform):
             axes = range(len(input_array.shape))
             output = np.tensordot(input_array, self.xform_array,
                                   axes=(axes, axes))
+
+        elif (input_array.shape ==
+              self.xform_array.shape[-len(input_array.shape):]):
+            output = input_array * self.xform_array
 
         else:
             raise ValueError(

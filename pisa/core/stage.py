@@ -1042,8 +1042,7 @@ class Stage(object):
 
     def _compute_transforms(self):
         """Stages that apply transforms to inputs should override this method
-        for deriving the transform. No-input stages should leave this as-is,
-        simply returning None."""
+        for deriving the transform. No-input stages should leave this as-is."""
         return TransformSet([])
 
     def _compute_nominal_outputs(self):
