@@ -990,7 +990,7 @@ class vbwkde(Stage):
         output binning. The transform maps the truth bin counts to the
         reconstructed bin counts.
 
-        I.e., for the case of 1D input binning, the ith element of the
+        I.e., for the case of 1D input binning, the i-th element of the
         reconstruction kernel will be a map showing the distribution of events
         over all the reco space from truth bin i. This will be normalised to
         the total number of events in truth bin i.
@@ -1012,6 +1012,10 @@ class vbwkde(Stage):
             for output_name in self.output_names:
                 if output_name not in xform_flavints:
                     continue
+
+                logging.trace('  inputs: %s, output: %s, xform: %s',
+                              xform_input_names, output_name, xform_flavints)
+
                 xform = BinnedTensorTransform(
                     input_names=xform_input_names,
                     output_name=output_name,
@@ -1447,7 +1451,7 @@ class vbwkde(Stage):
             for pid_bin_num in range(num_pid_bins):
                 pid_fraction = pid_fractions[pid_bin_num]
 
-                energy_indexer = kernel_binning.defaults_indexer(
+                energy_indexer = kernel_binning.indexer(
                     true_energy=true_e_bin_num,
                     pid=pid_bin_num
                 )
@@ -1560,7 +1564,7 @@ class vbwkde(Stage):
                     # Here we index directly into (i.e. the smearing profile
                     # applies direclty to) a single
                     # `(true_energy, true_coszen, pid)` coordinate.
-                    coszen_indexer = kernel_binning.defaults_indexer(
+                    coszen_indexer = kernel_binning.indexer(
                         true_energy=true_e_bin_num,
                         true_coszen=true_cz_bin_num,
                         pid=pid_bin_num
