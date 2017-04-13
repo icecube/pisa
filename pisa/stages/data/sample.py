@@ -476,8 +476,8 @@ class sample(Stage):
             events[alias] = eval(re.sub(r'\<(.*?)\>', r"events['\1']", expr))
 
         for flavint in all_flavints:
-            i_mask = cc_mask if flavint.isCC else nc_mask
-            t_mask = nu_mask if flavint.isParticle else nubar_mask
+            i_mask = cc_mask if flavint.cc else nc_mask
+            t_mask = nu_mask if flavint.particle else nubar_mask
 
             flav_fidg[flavint] = {var: events[var][i_mask & t_mask]
                                   for var in events.iterkeys()}
