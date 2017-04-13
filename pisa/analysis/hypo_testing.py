@@ -1603,7 +1603,7 @@ class HypoTesting(Analysis):
             self.data_dist = None
             self.toy_data_asimov_dist = None
 
-    def nminusone_test(data_param, h0_name, h1_name, data_name):
+    def nminusone_test(self, data_param, h0_name, h1_name, data_name):
         '''
         This function will perform the standard N-1 test. This function expects
         h0_name, h1_name and data_name so that the labels can be redefined 
@@ -1636,8 +1636,8 @@ class HypoTesting(Analysis):
         self.produce_fid_data()
         self.fit_hypos_to_fid()
 
-    def systematic_wrong_analysis(self, data_param, hypo_testing, fit_wrong,
-                                  direction, h0_name, h1_name, data_name):
+    def systematic_wrong_analysis(self, data_param, fit_wrong, direction,
+                                  h0_name, h1_name, data_name):
         '''
         This function will perform a modified version of the N-1 test. This
         differs in that here we do not assume the systematics take their
@@ -1716,7 +1716,11 @@ class HypoTesting(Analysis):
         self.produce_fid_data()
         self.fit_hypos_to_fid()
 
-    def syst_tests(self, inject_wrong, fit_wrong, h0_name, h1_name, data_name):
+    def syst_tests(self, inject_wrong, fit_wrong,
+                   h0_name, h1_name, data_name):
+        '''The function which actually does the syst tests. The one that will
+        actually be performed will be depending on whether inject_wrong is
+        true or not.'''
         for data_param in self.data_maker.params.free:
             if inject_wrong:
                 # First inject this wrong up by one sigma
@@ -2111,8 +2115,6 @@ def parse_args(description=__doc__, injparamscan=False, systtests=False):
         init_args_d['data_is_data'] = False
         init_args_d['fluctuate_data'] = False
         init_args_d['fluctuate_fid'] = False
-        init_args_d['data_maker'] = init_args_d['h0_maker']
-        init_args_d['h1_maker'] = init_args_d['h0_maker']
 
     init_args_d['store_minimizer_history'] = (
         not init_args_d.pop('no_min_history')

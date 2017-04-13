@@ -997,7 +997,11 @@ class ParamSelector(object):
         for selection in selections:
             if selection is None:
                 continue
-            assert isinstance(selection, basestring)
+            if not isinstance(selection, basestring):
+                raise ValueError(
+                    "Selection should be a basestring. Got %s instead."%(
+                        type(selection))
+                )
             selection = selection.strip().lower()
             try:
                 if selection not in self._selector_params:

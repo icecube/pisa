@@ -25,7 +25,7 @@ from pisa import ureg
 from pisa.analysis.hypo_testing import HypoTesting, parse_args, normcheckpath
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.prior import Prior
-from pisa.utils.log import logging, set_verbosity
+from pisa.utils.log import logging
 from pisa.utils.resources import find_resource
 from pisa.utils.stats import ALL_METRICS
 
@@ -35,28 +35,25 @@ def main():
 
     # Normalize and convert `*_pipeline` filenames; store to `*_maker`
     # (which is argument naming convention that HypoTesting init accepts).
+    # For this test, pipeline is required so we don't need the try arguments
+    # or the checks on it being None
+    filenames = init_args_d.pop('pipeline')
+    filenames = sorted(
+        [normcheckpath(fname) for fname in filenames]
+    )
+    init_args_d['h0_maker'] = filenames
+    # However, we do need them for the selections, since they can be different
     for maker in ['h0', 'h1', 'data']:
-        try:
-            filenames = init_args_d.pop(maker + '_pipeline')
-        except:
-            filenames = None
-        if filenames is not None:
-            filenames = sorted(
-                [normcheckpath(fname) for fname in filenames]
-            )
-        init_args_d[maker + '_maker'] = filenames
-
         ps_name = maker + '_param_selections'
-        try:
-            ps_str = init_args_d[ps_name]
-        except:
-            ps_str = None
+        ps_str = init_args_d[ps_name]
         if ps_str is None:
             ps_list = None
         else:
             ps_list = [x.strip().lower() for x in ps_str.split(',')]
         init_args_d[ps_name] = ps_list
 
+    init_args_d['data_maker'] = init_args_d['h0_maker']
+    init_args_d['h1_maker'] = init_args_d['h0_maker']
     init_args_d['h0_maker'] = DistributionMaker(init_args_d['h0_maker'])
     init_args_d['h1_maker'] = DistributionMaker(init_args_d['h1_maker'])
     init_args_d['h1_maker'].select_params(init_args_d['h1_param_selections'])
@@ -220,7 +217,9 @@ def main():
         test_name=test_name,
         inj_vals=inj_vals,
         requested_vals=requested_vals,
-        **init_args_d
+        h0_name=init_args_d['h0_name'],
+        h1_name=init_args_d['h1_name'],
+        data_name=init_args_d['data_name']
     )
 
     
