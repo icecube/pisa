@@ -19,20 +19,18 @@ which has as many bins as PID signatures.
 """
 
 
+from __future__ import division
+
 from collections import Mapping, OrderedDict
-from copy import deepcopy
-from itertools import product
 
 import numpy as np
-
-# Note the following imports are liberal to allow for more flexible PID
-# parameterization strings specs
-from numpy import *
 import scipy as sp
-from scipy.stats import *
 
-from pisa.core.binning import OneDimBinning
-from pisa.core.map import Map, MapSet
+# NOTE: need both versions of the imported names, as eval strings can name
+# numpy and scipy either ways
+import numpy
+import scipy
+
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.fileio import from_file
@@ -43,6 +41,62 @@ from pisa.utils.profiler import profile
 
 
 __all__ = ['param']
+
+
+def load_pid_energy_param(source):
+    """Load pid energy-dependent parameterisation from file or dictionary.
+
+    Parameters
+    ----------
+    source : string or mapping
+        If string, interprete as resource location of the file; if mapping, use
+        directly.
+
+    Returns
+    -------
+    pid_energy_param_dict : OrderedDict
+        Keys are `NuFlavIntGroup`s and values are callables of one arg.
+
+    """
+    # Get the original dict
+    if isinstance(source, basestring):
+        orig_dict = from_file(source)
+    elif isinstance(source, Mapping):
+        orig_dict = source
+    else:
+        raise TypeError('`source` must either be string or mapping; got %s'
+                        ' instead.' % type(source))
+
+    # Build dict with flavintgroups as keys; subdict with signatures as keys
+    # and callables as values
+    pid_energy_param_dict = OrderedDict()
+
+    for flavintgroup_str, subdict in orig_dict.iteritems():
+        flavintgroup = NuFlavIntGroup(flavintgroup_str)
+
+        pid_energy_param_dict[flavintgroup] = OrderedDict()
+
+        for signature, sig_param_spec in subdict.iteritems():
+            if isinstance(sig_param_spec, basestring):
+                sig_param_func = eval(sig_param_spec)
+                if not callable(sig_param_func):
+                    raise ValueError(
+                        'Group %s PID signature %s param spec "%s" does'
+                        ' not evaluate to a callable.'
+                        % (xform_flavints, signature, sig_param_spec)
+                    )
+            elif callable(sig_param_spec):
+                sig_param_func = sig_param_spec
+            else:
+                raise TypeError(
+                    'Group %s PID signature %s parameterization is a "%s"'
+                    ' but must be a string or callable.'
+                    % (xform_flavints, signature, type(sig_param_spec))
+                )
+
+            pid_energy_param_dict[flavintgroup][signature] = sig_param_func
+
+    return pid_energy_param_dict
 
 
 class param(Stage):
@@ -161,13 +215,6 @@ class param(Stage):
         if isinstance(input_names, basestring):
             input_names = input_names.replace(' ', '').split(',')
 
-        self.signatures = output_binning.pid.bin_names
-        """PID signatures that this stage generates"""
-
-        # If no bin names are present, use the integer bin indices instead
-        if self.signatures is None:
-            self.signatures = range(len(output_binning.pid))
-
         if self.particles == 'neutrinos':
             if self.sum_grouped_flavints:
                 output_names = [str(g) for g in self.transform_groups]
@@ -181,7 +228,7 @@ class param(Stage):
             params=params,
             expected_params=expected_params,
             input_names=input_names,
-            output_names=input_names,
+            output_names=output_names,
             error_method=error_method,
             outputs_cache_depth=outputs_cache_depth,
             transforms_cache_depth=transforms_cache_depth,
@@ -194,6 +241,13 @@ class param(Stage):
         self.include_attrs_for_hashes('particles')
         self.include_attrs_for_hashes('sum_grouped_flavints')
         self.include_attrs_for_hashes('transform_groups')
+
+        self.signatures = output_binning.pid.bin_names
+        """PID signatures that this stage generates"""
+
+        # If no bin names are present, use the integer bin indices instead
+        if self.signatures is None:
+            self.signatures = range(len(output_binning.pid))
 
         # Define the transform binnning...
 
@@ -209,10 +263,16 @@ class param(Stage):
         # output is passed through the `rebin` function each time it is
         # computed, and this takes care of any axis swapping necessary.
 
-        self.transform_output_binning = self.output_binning.pid * self.input_binning
+        self.transform_output_binning = (
+            self.output_binning.pid * self.input_binning
+        )
 
-        self.energy_param_dict = None
-        self._energy_param_hash = None
+        self.ebin_centers = (
+            self.input_binning.reco_energy.weighted_centers.m_as('GeV')
+        )
+
+        self.pid_energy_param_dict = None
+        self._pid_energy_param_hash = None
 
     def validate_binning(self):
         """Validate input and output binning"""
@@ -227,13 +287,13 @@ class param(Stage):
                                     self.input_binning.names))
 
         if set(self.output_binning.names) != set(required_output_binning_dims):
-            raise ValueError(msg % ('Output', required_input_binning_dims,
+            raise ValueError(msg % ('Output', required_output_binning_dims,
                                     self.input_binning.names))
 
         # While output binning will have a 'pid' dimension, the remaining
         # dimensions must be the same in both input and output binnings
         for dim in self.input_binning.dims:
-            if not dim == self.output_binning[dim.name]:
+            if dim != self.output_binning[dim.name]:
                 raise NotImplementedError(
                     'Input and output dimensions %s are not equal, but stage'
                     ' %s / service %s does not implement binning up- or'
@@ -241,65 +301,47 @@ class param(Stage):
                     % (dim.name, self.stage_name, self.service_name)
                 )
 
-    def load_pid_energy_param(self, pid_energy_param):
+    def load_pid_energy_param(self, source):
         """Load pid energy-dependent parameterisation from file or dictionary.
 
         Parameters
         ----------
-        pid_energy_param : string
+        source : string
             Resource location of the file
 
         """
-        this_hash = hash_obj(pid_energy_param)
-        if (self._energy_param_hash is not None
-                and this_hash == self._energy_param_hash):
+        this_hash = hash_obj(source)
+        if (self._pid_energy_param_hash is not None
+                and this_hash == self._pid_energy_param_hash):
             return
 
         # Invalidate the hash and clear the entry, so we aren't left in an
         # inconsistent state if any of the below fails
-        self._energy_param_hash = None
-        self.energy_param_dict = None
+        self._pid_energy_param_hash = None
+        self.pid_energy_param_dict = None
 
-        # Get the original dict
-        if isinstance(pid_energy_param, basestring):
-            orig_dict = from_file(pid_energy_param)
-        elif isinstance(pid_energy_param, Mapping):
-            orig_dict = pid_energy_param
+        # Call external function for basic loading and conversion
+        pid_energy_param_dict = load_pid_energy_param(source)
 
         # Perform validation
-        for key, val in orig_dict.iteritems():
-            # Each item itself should be a dict...
-            if not isinstance(val, Mapping):
-                raise TypeError(
-                    "Loaded energy PID parameterisation should be a mapping"
-                    " but got '%s.'" % type(val)
-                )
-
-            # ...with keys the same names as the PID signatures
-            if set(val.keys()) != set(self.signatures):
+        for flavintgroup, subdict in pid_energy_param_dict.iteritems():
+            if set(subdict.keys()) != set(self.signatures):
                 raise ValueError(
                     'Expected PID specs for %s, but the energy PID'
-                    ' parameterisation for %s specifies %s instead.'
-                    % (self.signatures, key, val.keys())
+                    ' parameterization for %s specifies %s instead.'
+                    % (self.signatures, flavintgroup, subdict.keys())
                 )
 
-        #  Build dict with flavintgroups as keys
-        flavintgroup_dict = OrderedDict()
-        for key, val in orig_dict.iteritems():
-            flavintgroup_dict[NuFlavIntGroup(key)] = val
-
-        # Transform groups are implicitly defined by the contents of the
-        # `pid_energy_paramfile`'s keys
-        implicit_transform_groups = flavintgroup_dict.keys()
+        # Transform groups are implicitly defined by keys
+        implicit_transform_groups = pid_energy_param_dict.keys()
 
         # Make sure these match the transform groups specified for the stage
         if set(implicit_transform_groups) != set(self.transform_groups):
             raise ValueError(
-                'Transform groups (%s) defined implicitly by'
-                ' `pid_energy_paramfile` "%s" do not match those defined'
-                ' as the stage `transform_groups` (%s).'
-                % (implicit_transform_groups, pid_energy_param,
-                   self.transform_groups)
+                'Transform groups (%s) defined implicitly by `source` "%s" do'
+                ' not match those defined as the stage\'s configured'
+                ' `transform_groups` (%s).'
+                % (implicit_transform_groups, source, self.transform_groups)
             )
 
         # Verify that each input name--which specifies a flavint or
@@ -313,15 +355,8 @@ class param(Stage):
                     % (name, implicit_transform_groups)
                 )
 
-        # Create dict with one parameterization for _each_ NuFlavInt,
-        # duplicating parameterization specs as necessary
-        energy_param_dict = OrderedDict()
-        for flavintgroup, val in flavintgroup_dict.iteritems():
-            for flavint in flavintgroup:
-                energy_param_dict[flavint] = val
-
-        self.energy_param_dict = energy_param_dict
-        self._energy_param_hash = this_hash
+        self.pid_energy_param_dict = pid_energy_param_dict
+        self._pid_energy_param_hash = this_hash
 
     @profile
     def _compute_nominal_transforms(self):
@@ -329,7 +364,6 @@ class param(Stage):
         logging.debug('Updating pid.param PID histograms...')
 
         self.load_pid_energy_param(self.params.pid_energy_paramfile.value)
-        ecen = self.transform_output_binning.reco_energy.weighted_centers.m_as('GeV')
 
         nominal_transforms = []
         for xform_flavints in self.transform_groups:
@@ -337,30 +371,11 @@ class param(Stage):
 
             xform_array = np.empty(self.transform_output_binning.shape)
 
-            repr_flavint = xform_flavints[0]
-            all_pid_param_specs = self.energy_param_dict[repr_flavint]
-
-            for signature, sig_param_spec in all_pid_param_specs.iteritems():
-                if isinstance(sig_param_spec, basestring):
-                    sig_param_func = eval(sig_param_spec)
-                    if not callable(sig_param_func):
-                        raise ValueError(
-                            'Group %s PID signature %s param spec "%s" does'
-                            ' not evaluate to a callable.'
-                            % (xform_flavints, signature, pid_param_spec)
-                        )
-                elif callable(pid_param_spec):
-                    sig_param_func = pid_param_spec
-                else:
-                    raise TypeError(
-                        'Group %s PID signature %s parameterization is a "%s"'
-                        ' but must be a string or callable.'
-                        % (xform_flavints, signature, type(param_spec))
-                    )
-
+            subdict = self.pid_energy_param_dict[xform_flavints]
+            for signature, sig_param_func in subdict.iteritems():
                 # Get the PID probabilities vs. energy at the energy bins'
                 # (weighted) centers
-                pid1d = sig_param_func(ecen)
+                pid1d = sig_param_func(self.ebin_centers)
 
                 # Broadcast this 1d array across the reco_coszen dimension
                 # since it's independent of reco_coszen
@@ -368,8 +383,11 @@ class param(Stage):
                     pid1d, from_dim='reco_energy', to_dims='reco_coszen'
                 )
 
-                # Assign the broadcasted array to the appropriate PID bin
-                pid_indexer = self.transform_output_binning.defaults_indexer(pid=signature)
+                pid_indexer = (
+                    self.transform_output_binning.indexer(pid=signature)
+                )
+
+                # Assign the broadcasted array to the correct PID bin
                 xform_array[pid_indexer] = broadcasted_pid
 
             if self.sum_grouped_flavints:
@@ -391,6 +409,7 @@ class param(Stage):
                         sum_inputs=self.sum_grouped_flavints
                     )
                     nominal_transforms.append(xform)
+
             else:
                 for input_name in self.input_names:
                     if input_name not in xform_flavints:

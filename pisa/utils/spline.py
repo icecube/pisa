@@ -1,6 +1,8 @@
 """
 Classes to store and handle the evaluation of splines.
 """
+
+
 from __future__ import division
 
 import inspect
@@ -13,12 +15,6 @@ from pisa.utils.profiler import profile
 
 
 __all__ = ['Spline', 'CombinedSpline']
-
-
-HASH_SIGFIGS = 12
-"""Round to this many significant figures for hashing numbers, such that
-machine precision doesn't cause effectively equivalent numbers to hash
-differently."""
 
 
 class Spline(object):

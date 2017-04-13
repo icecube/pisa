@@ -10,6 +10,8 @@ accidentally do the wrong thing with that script.
 """
 
 
+from __future__ import division
+
 import numpy as np
 import scipy.interpolate as interpolate
 
