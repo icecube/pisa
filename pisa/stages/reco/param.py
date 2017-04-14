@@ -376,6 +376,13 @@ class param(Stage):
         to specify this string
 
     sum_grouped_flavints : bool
+        Whether to sum the event-rate maps for the flavint groupings
+        specified by `transform_groups`. If this is done, the output map names
+        will be the group names (as well as the names of any flavor/interaction
+        types not grouped together). Otherwise, the output map names will be
+        the same as the input map names. Combining grouped flavints' is
+        computationally faster and results in fewer maps, but it may be
+        desirable to not do so for, e.g., debugging.
 
     input_binning : MultiDimBinning or convertible thereto
         Input binning is in true variables, with names prefixed by "true_".
@@ -440,8 +447,7 @@ class param(Stage):
             if self.sum_grouped_flavints:
                 output_names = [str(g) for g in self.transform_groups]
             else:
-                input_flavints = NuFlavIntGroup(input_names)
-                output_names = [str(fi) for fi in input_flavints]
+                output_names = input_names
         elif self.particles == 'muons':
             raise NotImplementedError
         else:
@@ -855,12 +861,12 @@ class param(Stage):
             if self.sum_grouped_flavints:
                 xform_input_names = []
                 for input_name in self.input_names:
-                    input_flavs = NuFlavIntGroup(input_name)
-                    if len(set(xform_flavints).intersection(input_flavs)) > 0:
-                        xform_input_names.append(input_name)
+                    if set(NuFlavIntGroup(input_name)).isdisjoint(xform_flavints):
+                        continue
+                    xform_input_names.append(input_name)
 
                 for output_name in self.output_names:
-                    if not output_name in xform_flavints:
+                    if output_name not in xform_flavints:
                         continue
                     xform = BinnedTensorTransform(
                         input_names=xform_input_names,
@@ -871,23 +877,28 @@ class param(Stage):
                         sum_inputs=self.sum_grouped_flavints
                     )
                     xforms.append(xform)
+            # If *not* combining grouped flavints:
+            # Copy the transform for each input flavor, regardless if the
+            # transform is computed from a combination of flavors.
             else:
-                # NOTES:
-                # * Output name is same as input name
-                # * Use `self.input_binning` and `self.output_binning` so maps
-                #   are returned in user-defined units (rather than
-                #   computational units, which are attached to the non-`self`
-                #   versions of these binnings).
                 for input_name in self.input_names:
-                    if input_name not in xform_flavints:
+                    if set(NuFlavIntGroup(input_name)).isdisjoint(xform_flavints):
                         continue
-                    xform = BinnedTensorTransform(
-                        input_names=input_name,
-                        output_name=input_name,
-                        input_binning=self.input_binning,
-                        output_binning=self.output_binning,
-                        xform_array=reco_kernel,
-                    )
-                    xforms.append(xform)
+                    for output_name in self.output_names:
+                        if (output_name not in NuFlavIntGroup(input_name)
+                                or output_name not in xform_flavints):
+                            continue
+                        logging.trace('  input: %s, output: %s, xform: %s',
+                                      input_name, output_name, xform_flavints)
+
+                        xform = BinnedTensorTransform(
+                            input_names=input_name,
+                            output_name=output_name,
+                            input_binning=self.input_binning,
+                            output_binning=self.output_binning,
+                            xform_array=reco_kernel,
+                            sum_inputs=self.sum_grouped_flavints
+                        )
+                        xforms.append(xform)
 
         return TransformSet(transforms=xforms)
