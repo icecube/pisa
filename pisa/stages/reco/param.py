@@ -265,6 +265,7 @@ def process_reco_dist_params(reco_param_dict):
     return dist_param_dict
 
 def get_physical_bounds(is_coszen, is_energy):
+    """Returns the boundaries of the physical region for coszen or energy"""
     assert not (is_coszen and is_energy)
 
     if is_coszen:
@@ -281,6 +282,8 @@ def get_physical_bounds(is_coszen, is_energy):
     return trunc_low, trunc_high
 
 def get_trunc_cdf(rv, is_coszen, is_energy):
+    """Returns the cdf of the distribution `rv` at the physical boundaries
+    in coszen or energy"""
     trunc_low, trunc_high = get_physical_bounds(is_coszen, is_energy)
     cdf_low = rv.cdf(trunc_low) if trunc_low is not None else 0.
     cdf_high = rv.cdf(trunc_high) if trunc_high is not None else 1.
@@ -288,6 +291,9 @@ def get_trunc_cdf(rv, is_coszen, is_energy):
     return cdf_low, cdf_high
 
 def truncate_and_renormalise_dist(is_coszen, is_energy, rv, frac, bin_edges):
+    """Renormalises the part of the distribution `rv` which spans the physical
+    domain to 1 (where `frac` is an overall normalisation factor of the
+    distribution)"""
     cdf_low, cdf_high = get_trunc_cdf(rv, is_coszen, is_energy)
     cdfs = frac*rv.cdf(bin_edges)/(cdf_high-cdf_low)
 
@@ -295,6 +301,11 @@ def truncate_and_renormalise_dist(is_coszen, is_energy, rv, frac, bin_edges):
 
 def truncate_and_renormalise_superposition(weighted_integrals_physical_domain,
                                            binwise_cdf_summed):
+    """Renormalise the combined distribution - characterised by
+    its binwise quantiles `binwise_cdf_summed` - resulting from a superposition
+    of n invidiual distributions with relative weights n_i to integrate to 1
+    over the physical domain. `weighted_integrals_physical_domain` is the list
+    of n_i-weighted integrals of the constituting distributions."""
     return binwise_cdf_summed/np.sum(weighted_integrals_physical_domain)
 
 def perform_coszen_flipback(cz_kern_cdf, flipback_mask, keep):
@@ -306,11 +317,15 @@ def perform_coszen_flipback(cz_kern_cdf, flipback_mask, keep):
     """
     flipback = np.where(flipback_mask)[0]
 
+    flipup = flipback[:int(len(flipback)/2)]
+    flipdown = flipback[int(len(flipback)/2):]
+    no_flipback = np.where(np.logical_not(flipback_mask))[0]
+
     cz_kern_cdf = \
         (
-            cz_kern_cdf[flipback[:int(len(flipback)/2)]][::-1] +
-            cz_kern_cdf[flipback[int(len(flipback)/2):]][::-1] +
-            cz_kern_cdf[np.logical_not(flipback_mask)]
+            cz_kern_cdf[flipup][::-1] +
+            cz_kern_cdf[flipdown][::-1] +
+            cz_kern_cdf[no_flipback]
         )[keep-int(len(flipback)/2)]
 
     return cz_kern_cdf
@@ -679,7 +694,7 @@ class param(Stage):
         # everything seems to be fine, so rescale and shift distributions
         self.scale_and_shift_reco_dists()
 
-    def prepare_binning_for_coszen_flipback(self):
+    def extend_binning_for_coszen(self, ext_low=-3., ext_high=+3.):
         """
         Check whether `coszen_flipback` can be applied to the stage's
         coszen output binning and return an extended binning spanning [-3, +3]
@@ -694,7 +709,9 @@ class param(Stage):
         coszen_step = coszen_range/n_cz_out
         # we need to check for possible contributions from (-3, -1) and
         # (1, 3) in coszen
-        extended = np.linspace(-3., 3., int(6/coszen_step) + 1)
+        assert ext_high > ext_low
+        ext_range = ext_high - ext_low
+        extended = np.linspace(ext_low, ext_high, int(ext_range/coszen_step) + 1)
 
         # We cannot flipback if we don't have -1 & +1 as (part of extended)
         # bin edges. This could happen if 1 is a multiple of the output bin
@@ -795,7 +812,7 @@ class param(Stage):
 
         if self.coszen_flipback:
             cz_edges_out, flipback_mask, keep = \
-                self.prepare_binning_for_coszen_flipback()
+                self.extend_binning_for_coszen(ext_low=-3., ext_high=+3.)
 
         xforms = []
         for xform_flavints in self.transform_groups:
