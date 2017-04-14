@@ -280,23 +280,40 @@ def get_physical_bounds(is_coszen, is_energy):
 
     return trunc_low, trunc_high
 
-def truncate_and_renormalise_dist(is_coszen, is_energy, rv, frac, bin_edges):
+def get_trunc_cdf(rv, is_coszen, is_energy):
     trunc_low, trunc_high = get_physical_bounds(is_coszen, is_energy)
-
-    cdf_low = rv.cdf(trunc_low)
+    cdf_low = rv.cdf(trunc_low) if trunc_low is not None else 0.
     cdf_high = rv.cdf(trunc_high) if trunc_high is not None else 1.
 
+    return cdf_low, cdf_high
+
+def truncate_and_renormalise_dist(is_coszen, is_energy, rv, frac, bin_edges):
+    cdf_low, cdf_high = get_trunc_cdf(rv, is_coszen, is_energy)
     cdfs = frac*rv.cdf(bin_edges)/(cdf_high-cdf_low)
 
     return cdfs
 
-def truncate_and_renormalise_superposition(is_coszen, is_energy, bin_edges,
+def truncate_and_renormalise_superposition(weighted_integrals_physical_domain,
                                            binwise_cdf_summed):
-    trunc_low, trunc_high = get_physical_bounds(is_coszen, is_energy)
+    return binwise_cdf_summed/np.sum(weighted_integrals_physical_domain)
 
-    norm = np.sum(binwise_cdf_summed)
+def perform_coszen_flipback(cz_kern_cdf, flipback_mask, keep):
+    """
+    Performs the flipback by mirroring back in any probability quantiles
+    that go beyond the physical bounds in coszen. Independent of whether
+    the output binning is upgoing, downgoing or allsky, mirror back in
+    any density that goes beyond -1 as well as +1.
+    """
+    flipback = np.where(flipback_mask)[0]
 
-    return binwise_cdf_summed/norm
+    cz_kern_cdf = \
+        (
+            cz_kern_cdf[flipback[:int(len(flipback)/2)]][::-1] +
+            cz_kern_cdf[flipback[int(len(flipback)/2):]][::-1] +
+            cz_kern_cdf[np.logical_not(flipback_mask)]
+        )[keep-int(len(flipback)/2)]
+
+    return cz_kern_cdf
 
 # TODO: the below logic does not generalize to muons, but probably should
 # (rather than requiring an almost-identical version just for muons). For
@@ -571,6 +588,7 @@ class param(Stage):
         is_energy = czval is None
         assert not (is_coszen and is_energy)
 
+        weighted_physical_int = []
         for dist in dist_params.keys():
             binwise_cdfs = []
             for this_dist_dict in dist_params[dist]:
@@ -584,6 +602,11 @@ class param(Stage):
                 rv = dist(loc=loc, scale=scale)
                 cdfs = frac*rv.cdf(bin_edges)
 
+                if self.only_physics_domain_sum:
+                    cdf_low, cdf_high = get_trunc_cdf(rv, is_coszen, is_energy)
+                    int_weighted_physical = frac*(cdf_high-cdf_low)
+                    weighted_physical_int.append(int_weighted_physical)
+
                 if self.only_physics_domain_distwise:
                     cdfs = truncate_and_renormalise_dist(
                                is_coszen=is_coszen, is_energy=is_energy,
@@ -596,8 +619,8 @@ class param(Stage):
 
         if self.only_physics_domain_sum:
             binwise_cdf_summed = truncate_and_renormalise_superposition(
-                                     is_coszen=is_coszen, is_energy=is_energy,
-                                     bin_edges=bin_edges,
+                                     weighted_integrals_physical_domain=
+                                     weighted_physical_int,
                                      binwise_cdf_summed=binwise_cdf_summed
                                  )
 
@@ -689,24 +712,6 @@ class param(Stage):
         logging.trace("  -> temporary coszen bin edges:\n%s"%cz_edges_out)
 
         return cz_edges_out, flipback_mask, keep
-
-    def perform_coszen_flipback(self, cz_kern_cdf, flipback_mask, keep):
-        """
-        Performs the flipback by mirroring back in any probability quantiles
-        that go beyond the physical bounds in coszen. Independent of whether
-        the output binning is upgoing, downgoing or allsky, mirror back in
-        any density that goes beyond -1 as well as +1.
-        """
-        flipback = np.where(flipback_mask)[0]
-
-        cz_kern_cdf = \
-            (
-                cz_kern_cdf[flipback[:int(len(flipback)/2)]][::-1] +
-                cz_kern_cdf[flipback[int(len(flipback)/2):]][::-1] +
-                cz_kern_cdf[np.logical_not(flipback_mask)]
-            )[keep-int(len(flipback)/2)]
-
-        return cz_kern_cdf
 
     def _compute_transforms(self):
         """
@@ -812,8 +817,8 @@ class param(Stage):
                 )
 
                 if self.coszen_flipback:
-                    cz_kern_cdf = self.perform_coszen_flipback(
-                                    cz_kern_cdf, flipback_mask, keep
+                    cz_kern_cdf = perform_coszen_flipback(
+                                      cz_kern_cdf, flipback_mask, keep
                                   )
 
                 reco_kernel[i,j] = np.outer(e_kern_cdf, cz_kern_cdf)
