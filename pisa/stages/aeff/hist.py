@@ -128,10 +128,15 @@ def populate_transforms(service, xform_flavints, xform_array):
     """General function for populating a BinnedTensorTransform with a single
     aeff transform array, taking into account e.g. sum_grouped_flavints etc.
 
-    Note that, as certain assumptions are made about input and outputs names
-    and binning, this function should only be applied to aeff services (unless
-    carefull considered).
+    Any rebinning is assumed to be performed outside of the transform, so the
+    transform's `output_binning` is the same as its `input_binning`. This does
+    _not_ mean that the stage's output binning needs to match its input
+    binning, though, since a rebinning can occur after the transform is
+    applied but before the maps are emitted from the stage.
 
+    Note that, as certain assumptions (like the above) are made about input and
+    outputs names and binning, this function should _only_ be applied to aeff
+    services_ (unless very carefully considered).
 
     Parameters
     ----------
