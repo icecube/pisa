@@ -321,12 +321,8 @@ def perform_coszen_flipback(cz_kern_cdf, flipback_mask, keep):
     flipdown = flipback[int(len(flipback)/2):]
     no_flipback = np.where(np.logical_not(flipback_mask))[0]
 
-    cz_kern_cdf = \
-        (
-            cz_kern_cdf[flipup][::-1] +
-            cz_kern_cdf[flipdown][::-1] +
-            cz_kern_cdf[no_flipback]
-        )[keep-int(len(flipback)/2)]
+    cz_kern_cdf = (cz_kern_cdf[flipup][::-1] + cz_kern_cdf[flipdown][::-1] +
+                   cz_kern_cdf[no_flipback])[keep-int(len(flipback)/2)]
 
     return cz_kern_cdf
 
