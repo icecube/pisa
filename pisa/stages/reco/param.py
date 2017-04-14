@@ -264,6 +264,40 @@ def process_reco_dist_params(reco_param_dict):
                      str(tuple(never_sel)))
     return dist_param_dict
 
+def get_physical_bounds(is_coszen, is_energy):
+    assert not (is_coszen and is_energy)
+
+    if is_coszen:
+        trunc_low = -1.
+        trunc_high = 1.
+
+    elif is_energy:
+        trunc_low = 0.
+        trunc_high = None
+
+    else:
+        raise ValueError("Dimension needs to be set for truncation.")
+
+    return trunc_low, trunc_high
+
+def truncate_and_renormalise_dist(is_coszen, is_energy, rv, frac, bin_edges):
+    trunc_low, trunc_high = get_physical_bounds(is_coszen, is_energy)
+
+    cdf_low = rv.cdf(trunc_low)
+    cdf_high = rv.cdf(trunc_high) if trunc_high is not None else 1.
+
+    cdfs = frac*rv.cdf(bin_edges)/(cdf_high-cdf_low)
+
+    return cdfs
+
+def truncate_and_renormalise_superposition(is_coszen, is_energy, bin_edges,
+                                           binwise_cdf_summed):
+    trunc_low, trunc_high = get_physical_bounds(is_coszen, is_energy)
+
+    norm = np.sum(binwise_cdf_summed)
+
+    return binwise_cdf_summed/norm
+
 # TODO: the below logic does not generalize to muons, but probably should
 # (rather than requiring an almost-identical version just for muons). For
 # example, an input arg can dictate neutrino or muon, which then sets the
@@ -358,12 +392,18 @@ class param(Stage):
     """
     def __init__(self, params, particles, input_names, transform_groups,
                  sum_grouped_flavints, input_binning, output_binning,
-                 truncate_at_physical_bounds=True, coszen_flipback=None,
-                 error_method=None, transforms_cache_depth=20,
-                 outputs_cache_depth=20, memcache_deepcopy=True, debug_mode=None):
+                 only_physics_domain_sum=None, only_physics_domain_distwise=None,
+                 coszen_flipback=None, error_method=None,
+                 transforms_cache_depth=20, outputs_cache_depth=20,
+                 memcache_deepcopy=True, debug_mode=None):
         assert particles in ['neutrinos', 'muons']
         self.particles = particles
+        """Whether stage is instantiated to process neutrinos or muons"""
+
         self.transform_groups = flavintGroupsFromString(transform_groups)
+        """Particle/interaction types to group for computing transforms"""
+
+        assert isinstance(sum_grouped_flavints, bool)
         self.sum_grouped_flavints = sum_grouped_flavints
 
         # All of the following params (and no more) must be passed via the
@@ -374,16 +414,6 @@ class param(Stage):
             'e_reco_bias', 'cz_reco_bias'
         )
 
-        self.coszen_flipback = coszen_flipback
-        self.truncate_at_physical_bounds = truncate_at_physical_bounds
-
-        if self.truncate_at_physical_bounds and self.coszen_flipback:
-            raise ValueError(
-                        "Truncating parameterisations at physical boundaries"
-                        " and flipping back at coszen = +-1 at the same time is"
-                        " not allowed! Please decide on only one of these."
-                  )
-
         if isinstance(input_names, basestring):
             input_names = (''.join(input_names.split(' '))).split(',')
 
@@ -393,7 +423,47 @@ class param(Stage):
             if self.sum_grouped_flavints:
                 output_names = [str(g) for g in self.transform_groups]
             else:
-                output_names = input_names
+                input_flavints = NuFlavIntGroup(input_names)
+                output_names = [str(fi) for fi in input_flavints]
+        elif self.particles == 'muons':
+            raise NotImplementedError
+        else:
+            raise ValueError('Particle type `%s` is not valid'
+                             % self.particles)
+
+        logging.trace('transform_groups = %s', self.transform_groups)
+        logging.trace('output_names = %s', ' :: '.join(output_names))
+
+        if only_physics_domain_sum and only_physics_domain_distwise:
+            raise ValueError(
+                        "Either choose truncation of the superposition at the"
+                        " physical boundaries or truncation of the individual"
+                        " distributions, but not both!"
+                  )
+
+        self.only_physics_domain_sum = only_physics_domain_sum
+        """Whether to restrict the superposition of the reco dists to the
+           physical boundaries (so that it integrates to 1)"""
+
+        self.only_physics_domain_distwise = only_physics_domain_distwise
+        """Whether to restrict each reco dist to the physical boundaries
+           (so that it integrates to 1) - before superimposing."""
+
+        only_physics_domain = (only_physics_domain_sum or
+                                   only_physics_domain_distwise)
+
+        if only_physics_domain and coszen_flipback:
+            raise ValueError(
+                        "Truncating parameterisations at physical boundaries"
+                        " and flipping back at coszen = +-1 at the same time is"
+                        " not allowed! Please decide on only one of these."
+                  )
+
+        self.only_physics_domain = only_physics_domain
+        """Whether one of the physics domain restrictions has been requested"""
+
+        self.coszen_flipback = coszen_flipback
+        """Whether to flipback coszen error distributions at +1 and -1"""
 
         # Invoke the init method from the parent class, which does a lot of
         # work for you.
@@ -437,6 +507,7 @@ class param(Stage):
 
         if self.coszen_flipback:
             coszen_output_binning = self.output_binning.basename_binning['coszen']
+
             if not coszen_output_binning.is_lin:
                 raise ValueError(
                             "coszen_flipback is set to True but zenith output"
@@ -444,6 +515,7 @@ class param(Stage):
                       )
             coszen_step_out = (coszen_output_binning.range.magnitude/
                                coszen_output_binning.size)
+
             if not recursiveEquality(int(1/coszen_step_out), 1/coszen_step_out):
                 raise ValueError(
                             "coszen_flipback requires an integer number of"
@@ -494,39 +566,41 @@ class param(Stage):
         """
         General make function for the cdf needed to construct the kernels.
         """
+
+        is_coszen = czval is not None
+        is_energy = czval is None
+        assert not (is_coszen and is_energy)
+
         for dist in dist_params.keys():
             binwise_cdfs = []
             for this_dist_dict in dist_params[dist]:
                 loc = this_dist_dict['loc'][enindex,czindex]
                 scale = this_dist_dict['scale'][enindex,czindex]
                 frac = this_dist_dict['fraction'][enindex,czindex]
+
                 # now add error to true parameter value
                 loc = loc + czval if czval is not None else loc + enval
-                # unfortunately, creating all dists of same type with
-                # different parameters and evaluating cdfs doesn't seem
-                # to work, so do it one-by-one
+
                 rv = dist(loc=loc, scale=scale)
-                if self.truncate_at_physical_bounds:
-                    # truncate each distribution at the physical boundaries,
-                    # i.e., renormalise so that integral between boundaries yields 1.
-                    if czval is None:
-                        # energy reco
-                        trunc_low = 0.
-                        trunc_high = None
-                    else:
-                        # coszen reco
-                        trunc_low = -1.
-                        trunc_high = 1.
-                    cdf_low = rv.cdf(trunc_low)
-                    cdf_high = rv.cdf(trunc_high) if trunc_high is not None else 1.
-                    cdfs = frac*rv.cdf(bin_edges)/(cdf_high-cdf_low)
-                else:
-                    cdfs = frac*rv.cdf(bin_edges)
+                cdfs = frac*rv.cdf(bin_edges)
+
+                if self.only_physics_domain_distwise:
+                    cdfs = truncate_and_renormalise_dist(
+                               is_coszen=is_coszen, is_energy=is_energy,
+                               rv=rv, frac=frac, bin_edges=bin_edges
+                           )
+
                 binwise_cdfs.append(cdfs[1:] - cdfs[:-1])
-            # the following would be nice:
-            # cdfs = dist(loc=loc_list, scale=scale_list).cdf(bin_edges)
-            # binwise_cdfs = [cdf[1:]-cdf[:-1] for cdf in cdfs]
+
         binwise_cdf_summed = np.sum(binwise_cdfs, axis=0)
+
+        if self.only_physics_domain_sum:
+            binwise_cdf_summed = truncate_and_renormalise_superposition(
+                                     is_coszen=is_coszen, is_energy=is_energy,
+                                     bin_edges=bin_edges,
+                                     binwise_cdf_summed=binwise_cdf_summed
+                                 )
+
         return binwise_cdf_summed
 
     def scale_and_shift_reco_dists(self):
@@ -657,7 +731,7 @@ class param(Stage):
 
         reco_param_hash = hash_obj(reco_param_source)
 
-        reco_param = load_reco_param(self.params['reco_paramfile'].value)
+        reco_param = load_reco_param(reco_param_source)
 
         # Transform groups are implicitly defined by the contents of the
         # `pid_energy_paramfile`'s keys
