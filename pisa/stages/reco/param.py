@@ -404,6 +404,27 @@ class param(Stage):
         in PISA but not necessarily) prefixed by "reco_". Each must match a
         corresponding dimension in `input_binning`.
 
+    only_physics_domain_sum : bool
+        Set to `True` in order to truncate the superposition of distributions
+        at the physical boundaries of cosine zenith and energy, and renormalise
+        its area to 1, so as to not smear events into unphysical regions.
+
+    only_physics_domain_distwise : bool
+        Set to `True` in order to truncate the individual distributions
+        at the physical boundaries of cosine zenith and energy, and renormalise
+        their areas to 1, before they are superimposed according to their
+        respective relative weights. Has the same effect as
+        `only_physics_domain_sum` in the case of a single distribution in any
+        dimension.
+
+    coszen_flipback : bool
+        Mirror back in "probability" that would otherwise leak into unphysical
+        regions in cosine zenith. This will be applied to a cosine zenith range
+        of [-3, +3], so there is no mirroring "back-and-forth" between the
+        physical cosine zenith boundaries. Not compatible with either one of the
+        preferred `only_physics_domain_*` options, which means no correction of
+        the energy resolution functions will be made.
+
     transforms_cache_depth : int >= 0
 
     outputs_cache_depth : int >= 0
@@ -470,28 +491,24 @@ class param(Stage):
 
         if only_physics_domain_sum and only_physics_domain_distwise:
             raise ValueError(
-                        "Either choose truncation of the superposition at the"
-                        " physical boundaries or truncation of the individual"
-                        " distributions, but not both!"
-                  )
+                "Either choose truncation of the superposition at the"
+                " physical boundaries or truncation of the individual"
+                " distributions, but not both!"
+                )
 
         self.only_physics_domain_sum = only_physics_domain_sum
-        """Whether to restrict the superposition of the reco dists to the
-           physical boundaries (so that it integrates to 1)"""
 
         self.only_physics_domain_distwise = only_physics_domain_distwise
-        """Whether to restrict each reco dist to the physical boundaries
-           (so that it integrates to 1) - before superimposing."""
 
         only_physics_domain = (only_physics_domain_sum or
-                                   only_physics_domain_distwise)
+                               only_physics_domain_distwise)
 
         if only_physics_domain and coszen_flipback:
             raise ValueError(
-                        "Truncating parameterisations at physical boundaries"
-                        " and flipping back at coszen = +-1 at the same time is"
-                        " not allowed! Please decide on only one of these."
-                  )
+                "Truncating parameterisations at physical boundaries"
+                " and flipping back at coszen = +-1 at the same time is"
+                " not allowed! Please decide on only one of these."
+                )
 
         self.only_physics_domain = only_physics_domain
         """Whether one of the physics domain restrictions has been requested"""
@@ -635,11 +652,11 @@ class param(Stage):
         binwise_cdf_summed = np.sum(binwise_cdfs, axis=0)
 
         if self.only_physics_domain_sum:
-            binwise_cdf_summed = truncate_and_renormalise_superposition(
-                                     weighted_integrals_physical_domain=
-                                     weighted_physical_int,
-                                     binwise_cdf_summed=binwise_cdf_summed
-                                 )
+            binwise_cdf_summed = \
+                truncate_and_renormalise_superposition(
+                    weighted_integrals_physical_domain=weighted_physical_int,
+                    binwise_cdf_summed=binwise_cdf_summed
+                )
 
         return binwise_cdf_summed
 
