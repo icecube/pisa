@@ -37,7 +37,7 @@ Define convenience tuples ALL_{x} for easy iteration
 # don't think there's a way to know "this is a simple str" vs not easily.)
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 from collections import MutableSequence, MutableMapping, Mapping, Sequence
 from copy import deepcopy
@@ -47,8 +47,8 @@ from operator import add
 import re
 
 import numpy as np
-import pint
 
+from pisa import ureg
 from pisa.utils import fileio
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.comparisons import recursiveAllclose, recursiveEquality
@@ -499,12 +499,12 @@ class NuFlavInt(object):
                 raise TypeError('Either positional or keyword args may be'
                                 ' provided, but not both')
             keys = kwargs.keys()
-            if len(set(keys).difference(set(('flav', 'int_type')))) != 0:
+            if set(keys).difference(set(('flav', 'int_type'))):
                 raise TypeError('Invalid kwarg(s) specified: %s' %
                                 kwargs.keys())
             flavint = (kwargs['flav'], kwargs['int_type'])
         elif args:
-            if len(args) == 0:
+            if not args:
                 raise TypeError('No flavint specification provided')
             elif len(args) == 1:
                 flavint = args[0]
@@ -883,7 +883,7 @@ class NuFlavIntGroup(MutableSequence):
                     ))
 
                     # If flavint_str does not include 'cc' or 'nc', include both
-                    if len(ints) == 0:
+                    if not ints:
                         ints = ['cc', 'nc']
 
                     # Add all combinations of (flav, int) found in this
@@ -894,8 +894,7 @@ class NuFlavIntGroup(MutableSequence):
             except (ValueError, AttributeError):
                 raise ValueError('Could not interpret `val` = "%s" as %s;'
                                  ' type(val) = %s'
-                                 % (orig_val, self.__class__.__name__,
-                                    type(orig_val)))
+                                 % (orig_val, NuFlavIntGroup, type(orig_val)))
 
         elif isinstance(val, NuFlav):
             flavints = [NuFlavInt((val, 'cc')), NuFlavInt((val, 'nc'))]
@@ -1053,14 +1052,14 @@ class NuFlavIntGroup(MutableSequence):
         cc_only_s = flavsep.join([func(f) for f in grouped['cc_only_flavs']])
         nc_only_s = flavsep.join([func(f) for f in grouped['nc_only_flavs']])
         strs = []
-        if len(all_s) > 0:
-            if len(cc_only_s) == 0 and len(nc_only_s) == 0:
+        if all_s:
+            if not cc_only_s and not nc_only_s:
                 strs.append(all_s)
             else:
                 strs.append(all_s + intsep + func(CC) + addsep + func(NC))
-        if len(cc_only_s) > 0:
+        if cc_only_s:
             strs.append(cc_only_s + intsep + func(CC))
-        if len(nc_only_s) > 0:
+        if nc_only_s:
             strs.append(nc_only_s + intsep + func(NC))
         return flavintsep.join(strs)
 
@@ -1509,8 +1508,8 @@ class FlavIntDataGroup(dict):
                 elif isinstance(a[key], np.ndarray) and \
                         isinstance(b[key], np.ndarray):
                     a[key] = np.concatenate((a[key], b[key]))
-                elif isinstance(a[key], pint.quantity._Quantity) and \
-                        isinstance(b[key], pint.quantity._Quantity):
+                elif isinstance(a[key], ureg.Quantity) and \
+                        isinstance(b[key], ureg.Quantity):
                     if isinstance(a[key].m, np.ndarray) and \
                        isinstance(b[key].m, np.ndarray):
                         units = a[key].units
@@ -1698,7 +1697,7 @@ class CombinedFlavIntData(FlavIntData):
                                 is_valid = False
                             else:
                                 int_types.append((int_type, level2_data))
-                        if is_valid and len(int_types) != 0:
+                        if is_valid and int_types:
                             nfig = NuFlavIntGroup()
                             for int_type in int_types:
                                 nfig += (flav, int_type)
@@ -1719,7 +1718,7 @@ class CombinedFlavIntData(FlavIntData):
             for key in val.keys():
                 for g in named_g + named_ung:
                     if (NuFlavIntGroup(key) == g) and key != str(g):
-                        d[str(g)] = val.pop(key)
+                        val[str(g)] = val.pop(key)
 
         elif val is None:
             if flavint_groupings is None:
@@ -1762,11 +1761,11 @@ class CombinedFlavIntData(FlavIntData):
     def __eq__(self, other):
         return recursiveEquality(self, other)
 
-    def __getitem__(self, item):
-        return super(CombinedFlavIntData, self).__getitem__(item)
+    #def __getitem__(self, item):
+    #    return super(CombinedFlavIntData, self).__getitem__(item)
 
-    def __setitem__(self, item, value):
-        return super(CombinedFlavIntData, self).__setitem__(item, value)
+    #def __setitem__(self, item, value):
+    #    return super(CombinedFlavIntData, self).__setitem__(item, value)
 
     def deduplicate(self, rtol=None, atol=None):
         """Identify duplicate datasets and combine the associated flavints
@@ -1866,7 +1865,7 @@ class CombinedFlavIntData(FlavIntData):
                 match = True
                 #print 'found exact match:', tgt_grp, '==', flavints
             # Requested flavints are strict subset
-            elif len(tgt_grp - flavints) == 0:
+            elif not (tgt_grp - flavints):
                 all_keys[0] = key
                 match = True
                 #print 'found subset match:', tgt_grp, 'in', flavints
