@@ -27,6 +27,7 @@ from scipy import stats
 
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
+from pisa.core.binning import basename
 from pisa.utils.fileio import from_file
 from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
 from pisa.utils.hash import hash_obj
@@ -264,37 +265,42 @@ def process_reco_dist_params(reco_param_dict):
                      str(tuple(never_sel)))
     return dist_param_dict
 
-def get_physical_bounds(is_coszen, is_energy):
-    """Returns the boundaries of the physical region for coszen or energy"""
-    assert not (is_coszen and is_energy)
+def get_physical_bounds(dim):
+    """Returns the boundaries of the physical region for the various
+    dimensions"""
+    dim = basename(dim)
 
-    if is_coszen:
+    if dim == "coszen":
         trunc_low = -1.
         trunc_high = 1.
 
-    elif is_energy:
+    elif dim == "energy":
         trunc_low = 0.
         trunc_high = None
 
+    elif dim == "azimuth":
+        trunc_low = 0.
+        trunc_high = 2*np.pi
+
     else:
-        raise ValueError("Dimension needs to be set for truncation.")
+        raise ValueError("No physical bounds for dimension '%s' available."%dim)
 
     return trunc_low, trunc_high
 
-def get_trunc_cdf(rv, is_coszen, is_energy):
-    """Returns the cdf of the distribution `rv` at the physical boundaries
-    in coszen or energy"""
-    trunc_low, trunc_high = get_physical_bounds(is_coszen, is_energy)
+def get_trunc_cdf(rv, dim):
+    """Returns the value of the distribution `rv`'s cdf at the physical
+    boundaries in the requested dimension (e.g., coszen or energy)"""
+    trunc_low, trunc_high = get_physical_bounds(dim=dim)
     cdf_low = rv.cdf(trunc_low) if trunc_low is not None else 0.
     cdf_high = rv.cdf(trunc_high) if trunc_high is not None else 1.
 
     return cdf_low, cdf_high
 
-def truncate_and_renormalise_dist(is_coszen, is_energy, rv, frac, bin_edges):
+def truncate_and_renormalise_dist(rv, frac, bin_edges, dim):
     """Renormalises the part of the distribution `rv` which spans the physical
     domain to 1 (where `frac` is an overall normalisation factor of the
     distribution)"""
-    cdf_low, cdf_high = get_trunc_cdf(rv, is_coszen, is_energy)
+    cdf_low, cdf_high = get_trunc_cdf(rv=rv, dim=dim)
     cdfs = frac*rv.cdf(bin_edges)/(cdf_high-cdf_low)
 
     return cdfs
@@ -533,6 +539,8 @@ class param(Stage):
             debug_mode=debug_mode
         )
 
+        self._reco_param_hash = None
+
         self.include_attrs_for_hashes('particles')
         self.include_attrs_for_hashes('transform_groups')
         self.include_attrs_for_hashes('sum_grouped_flavints')
@@ -617,10 +625,7 @@ class param(Stage):
         """
         General make function for the cdf needed to construct the kernels.
         """
-
-        is_coszen = czval is not None
-        is_energy = czval is None
-        assert not (is_coszen and is_energy)
+        dim = "coszen" if czval is not None else "energy"
 
         weighted_physical_int = []
         for dist in dist_params.keys():
@@ -632,19 +637,17 @@ class param(Stage):
 
                 # now add error to true parameter value
                 loc = loc + czval if czval is not None else loc + enval
-
                 rv = dist(loc=loc, scale=scale)
                 cdfs = frac*rv.cdf(bin_edges)
 
                 if self.only_physics_domain_sum:
-                    cdf_low, cdf_high = get_trunc_cdf(rv, is_coszen, is_energy)
+                    cdf_low, cdf_high = get_trunc_cdf(rv=rv, dim=dim)
                     int_weighted_physical = frac*(cdf_high-cdf_low)
                     weighted_physical_int.append(int_weighted_physical)
 
                 if self.only_physics_domain_distwise:
                     cdfs = truncate_and_renormalise_dist(
-                               is_coszen=is_coszen, is_energy=is_energy,
-                               rv=rv, frac=frac, bin_edges=bin_edges
+                               rv=rv, frac=frac, bin_edges=bin_edges, dim=dim
                            )
 
                 binwise_cdfs.append(cdfs[1:] - cdfs[:-1])
@@ -772,10 +775,12 @@ class param(Stage):
 
         reco_param_hash = hash_obj(reco_param_source)
 
-        reco_param = load_reco_param(reco_param_source)
+        if (self._reco_param_hash is None
+                or reco_param_hash != self._reco_param_hash):
+            reco_param = load_reco_param(reco_param_source)
 
         # Transform groups are implicitly defined by the contents of the
-        # `pid_energy_paramfile`'s keys
+        # reco paramfile's keys
         implicit_transform_groups = reco_param.keys()
 
         # Make sure these match transform groups specified for the stage
@@ -789,7 +794,7 @@ class param(Stage):
             )
 
         self.param_dict = reco_param
-        self._param_hash = reco_param_hash
+        self._reco_param_hash = reco_param_hash
 
         self.eval_dict = self.evaluate_reco_param()
         self.apply_reco_scales_and_biases()
