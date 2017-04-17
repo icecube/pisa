@@ -1613,7 +1613,7 @@ class HypoTesting(Analysis):
             self.log_and_do_fits()
             # At the end, reset the parameters in the maker
             self.reset_makers()
-            # Also be sure to remove the data_dist and tor_data_asimov_dist
+            # Also be sure to remove the data_dist and toy_data_asimov_dist
             # so that it is regenerated next time
             self.data_dist = None
             self.toy_data_asimov_dist = None
@@ -1725,8 +1725,7 @@ class HypoTesting(Analysis):
         self.labels = Labels(
             h0_name=h0_name,
             h1_name=h1_name,
-            data_name=data_name + '_full_syst_baseline'%(
-                data_param.name,direction),
+            data_name=data_name + '_full_syst_baseline',
             data_is_data=False,
             fluctuate_data=False,
             fluctuate_fid=False
