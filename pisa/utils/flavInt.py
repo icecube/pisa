@@ -4,6 +4,7 @@
 #         jll1062+pisa@phys.psu.edu
 #
 # date:   October 24, 2015
+# pylint: disable=global-statement
 """
 Classes for working with neutrino flavors (NuFlav), interactions types
 (IntType), "flavints" (a flavor and an interaction type) (NuFlavInt), and
@@ -60,11 +61,11 @@ __all__ = ['NuFlav', 'NuFlavInt', 'NuFlavIntGroup', 'FlavIntData',
            'get_bar_ssep', 'ALL_NUPARTICLES', 'ALL_NUANTIPARTICLES',
            'ALL_NUFLAVS', 'ALL_NUINT_TYPES', 'CC', 'NC',
            'NUE', 'NUEBAR', 'NUMU', 'NUMUBAR', 'NUTAU', 'NUTAUBAR',
+           'ALL_NUFLAVINTS', 'ALL_NUCC', 'ALL_NUNC',
            'NUECC', 'NUEBARCC', 'NUMUCC', 'NUMUBARCC', 'NUTAUCC', 'NUTAUBARCC',
            'NUENC', 'NUEBARNC', 'NUMUNC', 'NUMUBARNC', 'NUTAUNC', 'NUTAUBARNC']
 
 
-global __BAR_SSEP__
 __BAR_SSEP__ = ''
 
 
@@ -112,12 +113,31 @@ class BarSep(object):
 
 
 def set_bar_ssep(val):
+    """Set the separator between "base" flavor ("nue", "numu", or "nutau") and
+    "bar" when converting antineutrino `NuFlav`s or `NuFlavInt`s to strings.
+
+    Parameters
+    ----------
+    val : string
+        Separator
+
+    """
     global __BAR_SSEP__
     assert isinstance(val, basestring)
     __BAR_SSEP__ = val
 
 
 def get_bar_ssep():
+    """Get the separator that is set to be used between "base" flavor ("nue",
+    "numu", or "nutau") and "bar" when converting antineutrino `NuFlav`s or
+    `NuFlavInt`s to strings.
+
+    Returns
+    -------
+    sep : string
+        Separator
+
+    """
     global __BAR_SSEP__
     return __BAR_SSEP__
 
@@ -213,7 +233,7 @@ class NuFlav(object):
         if not isinstance(other, self.__class__):
             try:
                 other = self.__class__(other)
-            except:
+            except Exception:
                 return False
         return other.code == self.code
 
@@ -423,7 +443,7 @@ class IntType(object):
         if not isinstance(other, self.__class__):
             try:
                 other = self.__class__(other)
-            except:
+            except Exception:
                 return False
         return other.cc == self.cc
 
@@ -441,12 +461,12 @@ class IntType(object):
         return self.code < other.code
 
     @property
-    def cc(self):
+    def cc(self): # pylint: disable=invalid-name
         """Is this interaction type charged current (CC)?"""
         return self.__int_type == self.CC_CODE
 
     @property
-    def nc(self):
+    def nc(self): # pylint: disable=invalid-name
         """Is this interaction type neutral current (NC)?"""
         return self.__int_type == self.NC_CODE
 
@@ -555,7 +575,7 @@ class NuFlavInt(object):
         if not isinstance(other, self.__class__):
             try:
                 other = self.__class__(other)
-            except:
+            except Exception:
                 return False
         return (other.flav, other.int_type) == (self.flav, self.int_type)
 
@@ -618,12 +638,12 @@ class NuFlavInt(object):
         return self.__flav.antiparticle
 
     @property
-    def cc(self):
+    def cc(self): # pylint: disable=invalid-name
         """Is this interaction type charged current (CC)?"""
         return self.__int_type.cc
 
     @property
-    def nc(self):
+    def nc(self): # pylint: disable=invalid-name
         """Is this interaction type neutral current (NC)?"""
         return self.__int_type.nc
 
@@ -703,13 +723,15 @@ class NuFlavIntGroup(MutableSequence):
     def __delitem__(self, idx):
         self.__flavints.__delitem__(idx)
 
-    def remove(self, val):
-        """
-        Remove a flavint from this group.
+    def remove(self, value):
+        """Remove a flavint from this group.
 
-        `val` must be valid for the interpret() method
+        Parameters
+        ----------
+        value : anything accepted by `interpret` method
+
         """
-        flavint_list = sorted(set(self.interpret(val)))
+        flavint_list = sorted(set(self.interpret(value)))
         for k in flavint_list:
             try:
                 idx = self.__flavints.index(k)
@@ -730,14 +752,15 @@ class NuFlavIntGroup(MutableSequence):
     def __setitem__(self, idx, val):
         self.__flavints[idx] = val
 
-    def insert(self, idx, val):
-        self.__flavints.insert(idx, val)
+    def insert(self, index, value):
+        """Insert flavint `value` before `index`"""
+        self.__flavints.insert(index, value)
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
             try:
                 self.__class__(other)
-            except:
+            except Exception:
                 return False
         return set(self) == set(other)
 
@@ -1374,11 +1397,11 @@ class FlavIntDataGroup(dict):
                 d = val
             else:
                 raise TypeError('Unrecognized `val` type %s' % type(val))
-            d = {str(NuFlavIntGroup(key)): d[key] for key in d.iterkeys()}
+            d = {str(NuFlavIntGroup(key)): d[key] for key in d.keys()}
             if d.keys() == ['']:
                 raise ValueError('NuFlavIntGroups not found in data keys')
 
-            fig = [NuFlavIntGroup(fig) for fig in d.iterkeys()]
+            fig = [NuFlavIntGroup(fig) for fig in d.keys()]
             if flavint_groups is None:
                 self.flavint_groups = fig
             else:
@@ -1679,7 +1702,7 @@ class CombinedFlavIntData(FlavIntData):
         if isinstance(val, dict):
             out_dict = {}
             groupings_found = []
-            for top_key, top_val in val.iteritems():
+            for top_key, top_val in val.items():
                 # If top-level key consists of a single flavor and NO int type,
                 # check for a sub-dict that specifies interaction type to
                 # formulate a full NuFlavInt
@@ -1923,9 +1946,6 @@ def xlateGroupsStr(val):
 # pylint: disable=line-too-long
 def test_IntType():
     """IntType unit tests"""
-    all_f_codes = [12, -12, 14, -14, 16, -16]
-    all_i_codes = [1, 2]
-
     #==========================================================================
     # Test IntType
     #==========================================================================
@@ -1941,9 +1961,9 @@ def test_IntType():
     assert IntType(1.0) == ref
     assert IntType(CC) == ref
     assert IntType(NuFlavInt('numubarcc')) == ref
-    for i in all_i_codes:
-        IntType(i)
-        IntType(float(i))
+    for int_code in [1, 2]:
+        IntType(int_code)
+        IntType(float(int_code))
     logging.info('<< PASS : test_IntType >>')
 
 
@@ -1951,7 +1971,6 @@ def test_IntType():
 def test_NuFlav():
     """NuFlav unit tests"""
     all_f_codes = [12, -12, 14, -14, 16, -16]
-    all_i_codes = [1, 2]
 
     #==========================================================================
     # Test NuFlav
@@ -2015,20 +2034,18 @@ def test_NuFlavInt():
     assert len(nfl0) == len(nfl_sorted)
 
     # Test NuFlavInt instantiation
-    nue = NuFlav('nue')
-    cc = IntType('cc')
-    nc = IntType('nc')
-    nuebar = NuFlav('nuebar')
+    _ = NuFlav('nue')
+    _ = IntType('cc')
+    _ = IntType('nc')
+    _ = NuFlav('nuebar')
     flavs = list(ALL_NUFLAVS)
     flavs.extend(['nue', 'numu', 'nutau', 'nu_e', 'nu e', 'Nu E', 'nuebar',
                   'nu e bar'])
     flavs.extend(all_f_codes)
-    ints = [cc, nc, 'cc', 'nc', 'CC', 'NC', 1, 2]
-    nuecc = NuFlavInt('nuecc')
-    nuebarnc = NuFlavInt('nuebarnc')
+    _ = NuFlavInt('nuebarnc')
 
     # Instantiate with combinations of flavs and int types
-    for f, i in product(flavs, ints):
+    for f, i in product(flavs, [1, 2, 'cc', 'nc', CC, NC]):
         ref = NuFlavInt(f, i)
         assert NuFlavInt((f, i)) == ref
         assert NuFlavInt(flav=f, int_type=i) == ref
@@ -2038,8 +2055,8 @@ def test_NuFlavInt():
             assert NuFlavInt(f + ' ' + i) == ref
 
     # Instantiate with already-instantiated `NuFlavInt`s
-    assert NuFlavInt(nuecc) == NuFlavInt('nuecc')
-    assert NuFlavInt(nuebarnc) == NuFlavInt('nuebarnc')
+    assert NuFlavInt(NUECC) == NuFlavInt('nuecc')
+    assert NuFlavInt(NUEBARNC) == NuFlavInt('nuebarnc')
 
     # test negating flavint
     nk = NuFlavInt('numucc')
@@ -2169,9 +2186,6 @@ def test_NuFlavIntGroup():
 # pylint: disable=line-too-long
 def test_FlavIntData():
     """FlavIntData unit tests"""
-    all_f_codes = [12, -12, 14, -14, 16, -16]
-    all_i_codes = [1, 2]
-
     #==========================================================================
     # Test FlavIntData
     #==========================================================================
@@ -2385,9 +2399,6 @@ def test_FlavIntDataGroup():
 # pylint: disable=line-too-long
 def test_CombinedFlavIntData():
     """CombinedFlavIntData unit tests"""
-    all_f_codes = [12, -12, 14, -14, 16, -16]
-    all_i_codes = [1, 2]
-
     #==========================================================================
     # Test xlateGroupsStr function
     #==========================================================================
