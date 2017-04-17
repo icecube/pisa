@@ -203,7 +203,7 @@ def extract_trials(logdir, fluctuate_fid, fluctuate_data=False):
                                 ftest = ('hypo_%s_fit_to_%s.json'
                                          %(labels.dict['h{x}_name'.format(x=x)],
                                            dset_label))
-                                if fname == ftest:
+                                if ftest in fname:
                                     k = 'h{x}_fit_to_{y}'.format(x=x,y=dset_label)
                                     lvl2_fits[k] = extract_fit(
                                         fpath,
