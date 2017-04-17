@@ -27,6 +27,7 @@ from scipy import stats
 
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
+from pisa.core.binning import basename
 from pisa.utils.fileio import from_file
 from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
 from pisa.utils.hash import hash_obj
@@ -50,11 +51,14 @@ def load_reco_param(source):
     Returns
     -------
     reco_params : OrderedDict
-        Keys are stringified flavintgroups and values are dicts of `scipy.stats`
-        callables (keys) and lists of distribution property dicts (values,
-        one list per key, one property dict per distribution-to-be-superimposed
-        of a given type). These property dicts consist of string-callable pairs,
-        and are eventually used to produce the reco kernels (via integration)
+        Keys are stringified flavintgroups and values are dicts of strings
+        representing the different reco dimensions and lists of distribution
+        properties. These latter have a 'fraction', a 'dist' and a 'kwargs' key.
+        The former two hold callables, while the latter holds a dict of
+        key-callable pairs ('loc', 'scale'), which can be evaluated at the desired
+        energies and passed into the respective `scipy.stats` distribution.
+        The distributions for a given dimension will be superimposed according
+        to their relative weights to form the reco kernels (via integration)
         when called with energy values (parameterisations are functions of
         energy only!).
 
@@ -66,8 +70,11 @@ def load_reco_param(source):
                 {
                     <dimension_string>:
                         {
-                            "dist": dist_string,
-                            <dist_property_string> : val,
+                            "dist": dist_id,
+                            "fraction": val,
+                            "loc": val,
+                            "scale": val,
+                            }
                             ...
                         },
                     ...
@@ -89,9 +96,11 @@ def load_reco_param(source):
     be attempted to proceed with a sum of two normal distributions
     (PISA2 default behaviour).
 
-    Valid `dist_property_string`s are: ["loc", "scale", "fraction"] (refer to
-    README for how these can be used in the case of multiple distributions that
-    are superimposed).
+    Valid properties for distributions are: ["loc", "scale", "fraction"], where
+    the former two will be stored under the `"kwargs"` key, so they can be
+    easily passed into the respective `scipy.stats` function. Other possible
+    kwargs are currently not "supported"/will not be recognised.
+
 
     `val`s can be one of the following:
         - Callable with one argument
@@ -111,13 +120,22 @@ def load_reco_param(source):
                         % type(source))
 
     # Build dict of parameterizations (each a callable) per flavintgroup
-
+    valid_dimensions = ('coszen', 'energy')
     reco_params = OrderedDict()
     for flavint_key, dim_dict in orig_dict.iteritems():
         flavintgroup = NuFlavIntGroup(flavint_key)
         reco_params[flavintgroup] = {}
         for dimension in dim_dict.iterkeys():
+
+            if not isinstance(dimension, basestring):
+                raise TypeError("The dimension needs to be given as a string!"
+                                " Allowed: %s."%valid_dimensions)
+
+            if dimension not in valid_dimensions:
+                raise ValueError("Dimension '%s' not recognised!"%dimension)
+
             dist_spec_dict = {}
+
             if 'dist' in dim_dict[dimension]:
                 dist_spec = dim_dict[dimension]['dist']
 
@@ -200,7 +218,8 @@ def process_reco_dist_params(reco_param_dict):
             pass
         return param_str_sel
 
-    allowed_dist_params = ['loc','scale','fraction']
+    allowed_dist_params = {'kwargs': ['loc', 'scale'], 'other': ['fraction']}
+
     # Prepare for detection of parameter ids that are never selected
     sometime_sel = []; sometime_unsel = set()
     # First, get list of distributions to be superimposed
@@ -212,11 +231,10 @@ def process_reco_dist_params(reco_param_dict):
     for dist_type in dists:
         dist_type_count[dist_type] = dist_type_count.get(dist_type, 0) + 1
     reco_param_dict.pop('dist')
-    dist_param_dict = {}
+    dist_param_dict = []
     tot_dist_count = 1
     # For each distribution type, find all distributions' 'scale' and 'loc'
-    # parameterisations and store in a list of dictionaries
-    # (with length `this_dist_type_count`)
+    # parameterisations and store
     for dist_str, this_dist_type_count in dist_type_count.items():
         dist_str = "".join(dist_str.split())
         try:
@@ -230,31 +248,47 @@ def process_reco_dist_params(reco_param_dict):
                 raise AttributeError("'%s' is not a valid distribution from"
                                      " scipy.stats (your scipy version: '%s')."
                                      %(dist_str, sp_ver_str))
-        dist_param_dict[dist] = []
+
         for i in xrange(1, this_dist_type_count+1):
             logging.trace(" Collecting parameters for resolution"
                           " function #%d of type '%s'."%(i, dist_str))
-            this_dist_dict = {}
+
+            this_dist_dict = {'dist': dist, 'kwargs': {}}
             # Also explicitly require a 'fraction' to be present always
-            for param in allowed_dist_params:
-                if ndist == 1:
-                    # There's greater flexibility in this case
-                    allowed_here = (param, param+"_"+dist_str,
-                                    param+"%s"%tot_dist_count,
-                                    param+"_"+dist_str+"%s"%i)
-                else:
-                    allowed_here = (param+"%s"%tot_dist_count,
-                                    param+"_"+dist_str+"%s"%i)
-                param_str = select_dist_param_key(allowed_here,
-                                                  reco_param_dict,
-                                                  sometime_unsel)
-                # Keep track of the parameter id that got selected
-                sometime_sel += [param_str]
-                # Select the corresponding entry
-                this_dist_dict[param] = reco_param_dict[param_str]
-            # Add to list of distribution properties for each distribution
-            # of this type
-            dist_param_dict[dist].append(this_dist_dict)
+            for param_type, dist_params in allowed_dist_params.iteritems():
+                for param in dist_params:
+                    if ndist == 1:
+                        # There's greater flexibility in this case
+                        allowed_here = (param, param+"_"+dist_str,
+                                        param+"%s"%tot_dist_count,
+                                        param+"_"+dist_str+"%s"%i)
+                    else:
+                        allowed_here = (param+"%s"%tot_dist_count,
+                                        param+"_"+dist_str+"%s"%i)
+
+                    param_str = select_dist_param_key(allowed_here,
+                                                      reco_param_dict,
+                                                      sometime_unsel)
+
+                    # Keep track of the parameter id that got selected
+                    sometime_sel += [param_str]
+
+                    # Select the corresponding entry param <-> param_str
+                    # Put directly into dictionary if not a kwarg
+                    if param_type == 'other':
+                        this_dist_dict[param] = reco_param_dict[param_str]
+
+                    elif param_type == 'kwargs':
+                        this_dist_dict['kwargs'][param] = \
+                            reco_param_dict[param_str]
+
+                    else:
+                        raise ValueError("Don't know what to do with "
+                                         "distribution parameters of type '%s'."
+                                         % param_type)
+
+            # Add to list of distribution dictionaries
+            dist_param_dict.append(this_dist_dict)
             tot_dist_count += 1
     # Find the parameter ids that are present in the parameterisation
     # dictionary, but which never got selected, and warn the user about those
@@ -264,37 +298,42 @@ def process_reco_dist_params(reco_param_dict):
                      str(tuple(never_sel)))
     return dist_param_dict
 
-def get_physical_bounds(is_coszen, is_energy):
-    """Returns the boundaries of the physical region for coszen or energy"""
-    assert not (is_coszen and is_energy)
+def get_physical_bounds(dim):
+    """Returns the boundaries of the physical region for the various
+    dimensions"""
+    dim = basename(dim)
 
-    if is_coszen:
+    if dim == "coszen":
         trunc_low = -1.
         trunc_high = 1.
 
-    elif is_energy:
+    elif dim == "energy":
         trunc_low = 0.
         trunc_high = None
 
+    elif dim == "azimuth":
+        trunc_low = 0.
+        trunc_high = 2*np.pi
+
     else:
-        raise ValueError("Dimension needs to be set for truncation.")
+        raise ValueError("No physical bounds for dimension '%s' available."%dim)
 
     return trunc_low, trunc_high
 
-def get_trunc_cdf(rv, is_coszen, is_energy):
-    """Returns the cdf of the distribution `rv` at the physical boundaries
-    in coszen or energy"""
-    trunc_low, trunc_high = get_physical_bounds(is_coszen, is_energy)
+def get_trunc_cdf(rv, dim):
+    """Returns the value of the distribution `rv`'s cdf at the physical
+    boundaries in the requested dimension (e.g., coszen or energy)"""
+    trunc_low, trunc_high = get_physical_bounds(dim=dim)
     cdf_low = rv.cdf(trunc_low) if trunc_low is not None else 0.
     cdf_high = rv.cdf(trunc_high) if trunc_high is not None else 1.
 
     return cdf_low, cdf_high
 
-def truncate_and_renormalise_dist(is_coszen, is_energy, rv, frac, bin_edges):
+def truncate_and_renormalise_dist(rv, frac, bin_edges, dim):
     """Renormalises the part of the distribution `rv` which spans the physical
     domain to 1 (where `frac` is an overall normalisation factor of the
     distribution)"""
-    cdf_low, cdf_high = get_trunc_cdf(rv, is_coszen, is_energy)
+    cdf_low, cdf_high = get_trunc_cdf(rv=rv, dim=dim)
     cdfs = frac*rv.cdf(bin_edges)/(cdf_high-cdf_low)
 
     return cdfs
@@ -533,6 +572,8 @@ class param(Stage):
             debug_mode=debug_mode
         )
 
+        self._reco_param_hash = None
+
         self.include_attrs_for_hashes('particles')
         self.include_attrs_for_hashes('transform_groups')
         self.include_attrs_for_hashes('sum_grouped_flavints')
@@ -574,16 +615,14 @@ class param(Stage):
                             " of integer length."
                       )
 
-    def check_reco_dist_consistency(self, dist_param_dict):
+    def check_reco_dist_consistency(self, dist_list):
         """Enforces correct normalisation of resolution functions."""
         logging.trace(" Verifying correct normalisation of resolution function.")
-        # Obtain list of all distributions (one list of dicts for a distribution
-        # of a certain type). The sum of their relative weights should yield 1.
-        dist_dicts = np.array(dist_param_dict.values())
-        frac_sum = np.zeros_like(dist_dicts[0][0]['fraction'])
-        for dist_type in dist_dicts:
-            for dist_dict in dist_type:
-                frac_sum += dist_dict['fraction']
+        # Obtain list of all distributions. The sum of their relative weights
+        # should yield 1.
+        frac_sum = np.zeros_like(dist_list[0]['fraction'])
+        for dist_dict in dist_list:
+            frac_sum += dist_dict['fraction']
         if not recursiveEquality(frac_sum, np.ones_like(frac_sum)):
             err_msg = ("Total normalisation of resolution function is off"
                        " (fractions do not add up to 1).")
@@ -600,54 +639,58 @@ class param(Stage):
         n_cz = len(self.input_binning['true_coszen'].weighted_centers.magnitude)
         eval_dict = deepcopy(self.param_dict)
         for flavintgroup, dim_dict in eval_dict.iteritems():
-            for dim, dist_dict in dim_dict.iteritems():
-                for dist, dist_prop_list in dist_dict.iteritems():
-                    for dist_prop_dict in dist_prop_list:
-                        for dist_prop in dist_prop_dict.iterkeys():
+            for dim, dist_list in dim_dict.iteritems():
+                for dist_prop_dict in dist_list:
+                    for dist_prop in dist_prop_dict.iterkeys():
+                        if dist_prop == 'dist':
+                            continue
+                        if callable(dist_prop_dict[dist_prop]):
                             func = dist_prop_dict[dist_prop]
                             vals = func(evals)
                             dist_prop_dict[dist_prop] =\
                                 np.repeat(vals,n_cz).reshape((n_e,n_cz))
+                        elif isinstance(dist_prop_dict[dist_prop], dict):
+                            assert dist_prop == 'kwargs'
+                            for kwarg in dist_prop_dict['kwargs'].iterkeys():
+                                func = dist_prop_dict['kwargs'][kwarg]
+                                vals = func(evals)
+                                dist_prop_dict['kwargs'][kwarg] =\
+                                    np.repeat(vals,n_cz).reshape((n_e,n_cz))
                 # Now check for consistency, to not have to loop over all dict
                 # entries again at a later point in time
-                self.check_reco_dist_consistency(dist_dict)
+                self.check_reco_dist_consistency(dist_list)
         return eval_dict
 
     def make_cdf(self, bin_edges, enval, enindex, czindex, czval, dist_params):
         """
         General make function for the cdf needed to construct the kernels.
         """
-
-        is_coszen = czval is not None
-        is_energy = czval is None
-        assert not (is_coszen and is_energy)
+        dim = "coszen" if czval is not None else "energy"
 
         weighted_physical_int = []
-        for dist in dist_params.keys():
-            binwise_cdfs = []
-            for this_dist_dict in dist_params[dist]:
-                loc = this_dist_dict['loc'][enindex,czindex]
-                scale = this_dist_dict['scale'][enindex,czindex]
-                frac = this_dist_dict['fraction'][enindex,czindex]
+        binwise_cdfs = []
+        for this_dist_dict in dist_params:
+            dist_kwargs = {}
+            for dist_prop, prop_vals in this_dist_dict['kwargs'].iteritems():
+                dist_kwargs[dist_prop] = prop_vals[enindex, czindex]
+            frac = this_dist_dict['fraction'][enindex,czindex]
 
-                # now add error to true parameter value
-                loc = loc + czval if czval is not None else loc + enval
+            # now add error to true parameter value
+            dist_kwargs['loc'] += czval if czval is not None else enval
+            rv = this_dist_dict['dist'](**dist_kwargs)
+            cdfs = frac*rv.cdf(bin_edges)
 
-                rv = dist(loc=loc, scale=scale)
-                cdfs = frac*rv.cdf(bin_edges)
+            if self.only_physics_domain_sum:
+                cdf_low, cdf_high = get_trunc_cdf(rv=rv, dim=dim)
+                int_weighted_physical = frac*(cdf_high-cdf_low)
+                weighted_physical_int.append(int_weighted_physical)
 
-                if self.only_physics_domain_sum:
-                    cdf_low, cdf_high = get_trunc_cdf(rv, is_coszen, is_energy)
-                    int_weighted_physical = frac*(cdf_high-cdf_low)
-                    weighted_physical_int.append(int_weighted_physical)
+            if self.only_physics_domain_distwise:
+                cdfs = truncate_and_renormalise_dist(
+                           rv=rv, frac=frac, bin_edges=bin_edges, dim=dim
+                       )
 
-                if self.only_physics_domain_distwise:
-                    cdfs = truncate_and_renormalise_dist(
-                               is_coszen=is_coszen, is_energy=is_energy,
-                               rv=rv, frac=frac, bin_edges=bin_edges
-                           )
-
-                binwise_cdfs.append(cdfs[1:] - cdfs[:-1])
+            binwise_cdfs.append(cdfs[1:] - cdfs[:-1])
 
         binwise_cdf_summed = np.sum(binwise_cdfs, axis=0)
 
@@ -668,20 +711,21 @@ class param(Stage):
         cz_res_scale = self.params.cz_res_scale.value.m_as('dimensionless')
         e_reco_bias = self.params.e_reco_bias.value.m_as('GeV')
         cz_reco_bias = self.params.cz_reco_bias.value.m_as('dimensionless')
-        for flavintgroup in self.eval_dict.keys():
+        eval_dict_mod = deepcopy(self.eval_dict)
+        for flavintgroup in eval_dict_mod.iterkeys():
             for (dim, dim_scale, dim_bias) in \
               (('energy', e_res_scale, e_reco_bias),
                ('coszen', cz_res_scale, cz_reco_bias)):
-                for dist in self.eval_dict[flavintgroup][dim].keys():
-                    for i,flav_dim_dist_dict in \
-                      enumerate(self.eval_dict[flavintgroup][dim][dist]):
-                        for param in flav_dim_dist_dict.keys():
-                            if param == 'scale':
-                                flav_dim_dist_dict[param] *= dim_scale
-                            elif param == 'loc':
-                                flav_dim_dist_dict[param] += dim_bias
+                for i,flav_dim_dist_dict in \
+                  enumerate(eval_dict_mod[flavintgroup][dim]):
+                    for param in flav_dim_dist_dict["kwargs"].keys():
+                        if param == 'scale':
+                            flav_dim_dist_dict["kwargs"][param] *= dim_scale
+                        elif param == 'loc':
+                            flav_dim_dist_dict["kwargs"][param] += dim_bias
+        return eval_dict_mod
         
-    def apply_reco_scales_and_biases(self):
+    def reco_scales_and_biases_applicable(self):
         """
         Wrapper function for applying the resolution scales and biases to all
         distributions. Performs consistency check, then calls the function
@@ -695,17 +739,15 @@ class param(Stage):
         # really present, raise exception if not
         for flavintgroup in self.eval_dict.keys():
             for dim in self.eval_dict[flavintgroup].keys():
-                for dist in self.eval_dict[flavintgroup][dim].keys():
-                    for flav_dim_dist_dict in self.eval_dict[flavintgroup][dim][dist]:
-                        param_view = flav_dim_dist_dict.viewkeys()
-                        if not entries_to_mod & param_view == entries_to_mod:
-                            raise ValueError(
-                            "Couldn't find all of "+str(tuple(entries_to_mod))+
-                            " in chosen reco parameterisation, but required for"
-                            " applying reco scale and bias. Got %s for %s %s."
-                            %(flav_dim_dist_dict.keys(), flavintgroup, dim))
-        # everything seems to be fine, so rescale and shift distributions
-        self.scale_and_shift_reco_dists()
+                for flav_dim_dist_dict in self.eval_dict[flavintgroup][dim]:
+                    param_view = flav_dim_dist_dict["kwargs"].viewkeys()
+                    if not entries_to_mod & param_view == entries_to_mod:
+                        raise ValueError(
+                        "Couldn't find all of "+str(tuple(entries_to_mod))+
+                        " in chosen reco parameterisation, but required for"
+                        " applying reco scale and bias. Got %s for %s %s."
+                        %(flav_dim_dist_dict["kwargs"].keys(), flavintgroup, dim))
+        return
 
     def extend_binning_for_coszen(self, ext_low=-3., ext_high=+3.):
         """
@@ -772,27 +814,32 @@ class param(Stage):
 
         reco_param_hash = hash_obj(reco_param_source)
 
-        reco_param = load_reco_param(reco_param_source)
+        if (self._reco_param_hash is None
+                or reco_param_hash != self._reco_param_hash):
+            reco_param = load_reco_param(reco_param_source)
 
-        # Transform groups are implicitly defined by the contents of the
-        # `pid_energy_paramfile`'s keys
-        implicit_transform_groups = reco_param.keys()
+            # Transform groups are implicitly defined by the contents of the
+            # reco paramfile's keys
+            implicit_transform_groups = reco_param.keys()
 
-        # Make sure these match transform groups specified for the stage
-        if set(implicit_transform_groups) != set(self.transform_groups):
-            raise ValueError(
-                'Transform groups (%s) defined implicitly by'
-                ' %s reco parameterizations do not match those'
-                ' defined as the stage\'s `transform_groups` (%s).'
-                % (implicit_transform_groups, reco_param_source,
-                   self.transform_groups)
-            )
+            # Make sure these match transform groups specified for the stage
+            if set(implicit_transform_groups) != set(self.transform_groups):
+                raise ValueError(
+                    'Transform groups (%s) defined implicitly by'
+                    ' %s reco parameterizations do not match those'
+                    ' defined as the stage\'s `transform_groups` (%s).'
+                    % (implicit_transform_groups, reco_param_source,
+                       self.transform_groups)
+                )
 
-        self.param_dict = reco_param
-        self._param_hash = reco_param_hash
+            self.param_dict = reco_param
+            self._reco_param_hash = reco_param_hash
 
-        self.eval_dict = self.evaluate_reco_param()
-        self.apply_reco_scales_and_biases()
+            self.eval_dict = self.evaluate_reco_param()
+            self.reco_scales_and_biases_applicable()
+
+        # everything seems to be fine, so rescale and shift distributions
+        eval_dict = self.scale_and_shift_reco_dists()
 
         # Computational units must be the following for compatibility with
         # events file
@@ -831,7 +878,7 @@ class param(Stage):
         for xform_flavints in self.transform_groups:
             logging.debug("Working on %s reco kernel..." %xform_flavints)
 
-            this_params = self.eval_dict[xform_flavints]
+            this_params = eval_dict[xform_flavints]
             reco_kernel = np.zeros((n_e_in, n_cz_in, n_e_out, n_cz_out))
 
             for (i,j) in itertools.product(range(n_e_in), range(n_cz_in)):
