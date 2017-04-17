@@ -32,7 +32,7 @@ from pisa.utils.fileio import from_file
 from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
-from pisa.utils.comparisons import recursiveEquality, EQUALITY_PREC
+from pisa.utils.comparisons import recursiveEquality, EQUALITY_PREC, isscalar
 
 
 __all__ = ['load_reco_param', 'param']
@@ -68,16 +68,18 @@ def load_reco_param(source):
         {
             <flavintgroup_string>:
                 {
-                    <dimension_string>:
+                    <dimension_string>:[
                         {
                             "dist": dist_id,
                             "fraction": val,
-                            "loc": val,
-                            "scale": val,
+                            "kwargs": {
+                                "loc": val,
+                                "scale": val,
+                                ...
                             }
-                            ...
                         },
                     ...
+                    ]
                 },
             <flavintgroup_string>:
                 ...
@@ -92,15 +94,14 @@ def load_reco_param(source):
     distribution is parameterised (`"energy"` or `"coszen"`).
 
     `dist_id` needs to be a string identifying a probability distribution/statistical
-    function provided by `scipy.stats`. If the `"dist"` key is missing, it will
-    be attempted to proceed with a sum of two normal distributions
-    (PISA2 default behaviour).
+    function provided by `scipy.stats`. No implicit assumptions about the
+    distribution will be made if the `"dist"` key is missing.
 
-    Valid properties for distributions are: ["loc", "scale", "fraction"], where
-    the former two will be stored under the `"kwargs"` key, so they can be
-    easily passed into the respective `scipy.stats` function. Other possible
-    kwargs are currently not "supported"/will not be recognised.
+    `"fraction"` holds the relative weight of the distribution. For a given
+    dimension, the sum of all fractions present must be 1.
 
+    Valid kwargs for distributions must at least include `"loc"` and `"scale"` -
+    these will be passed into the respective `scipy.stats` function.
 
     `val`s can be one of the following:
         - Callable with one argument
@@ -126,6 +127,7 @@ def load_reco_param(source):
         flavintgroup = NuFlavIntGroup(flavint_key)
         reco_params[flavintgroup] = {}
         for dimension in dim_dict.iterkeys():
+            dim_dist_list = []
 
             if not isinstance(dimension, basestring):
                 raise TypeError("The dimension needs to be given as a string!"
@@ -134,10 +136,25 @@ def load_reco_param(source):
             if dimension not in valid_dimensions:
                 raise ValueError("Dimension '%s' not recognised!"%dimension)
 
-            dist_spec_dict = {}
+            for dist_dict in dim_dict[dimension]:
+                dist_spec_dict = {}
 
-            if 'dist' in dim_dict[dimension]:
-                dist_spec = dim_dict[dimension]['dist']
+                # allow reading in even if kwargs not present - computation of
+                # transform will fail because "loc" and "scale" hard-coded
+                # requirement
+                for required in ('dist', 'fraction'):#, 'kwargs'):
+                    if required not in dist_dict:
+                        raise ValueError("Found distribution property dict "
+                                         "without required '%s' key for "
+                                         "%s - %s!"
+                                         %(required, flavintgroup, dimension))
+
+                for k in dist_dict.iterkeys():
+                    if k not in required:
+                        raise ValueError("Unrecognised key in distribution"
+                                         " property dict: '%s'"%k)
+
+                dist_spec = dist_dict['dist']
 
                 if not isinstance(dist_spec, basestring):
                     raise TypeError(" The resolution function needs to be"
@@ -145,44 +162,58 @@ def load_reco_param(source):
 
                 if not dist_spec:
                     raise ValueError("Empty string found for resolution"
-                                     " function! Cannot proceed.")
+                                     " function!")
 
-                logging.debug("Found %s %s resolution function: '%s'"
+                logging.debug("Found %s - %s resolution function: '%s'"
                               %(flavintgroup, dimension, dist_spec.lower()))
 
-            else:
-                # For backward compatibility, assume double Gauss if key
-                # is not present.
-                logging.warn("No resolution function specified for %s %s."
-                             " Assuming sum of two Gaussians."
-                             %(flavintgroup, dimension))
-                dist_spec = "norm+norm"
+                dist_spec_dict['dist'] = dist_spec.lower()
 
-            dist_spec_dict['dist'] = dist_spec.lower()
+                frac = dist_dict['fraction']
 
-            for dist_prop, param_spec in dim_dict[dimension].iteritems():
-                dist_prop = dist_prop.lower()
+                if isinstance(frac, basestring):
+                    param_func = eval(frac)
 
-                if dist_prop == 'dist':
-                    continue
-
-                if isinstance(param_spec, basestring):
-                    param_func = eval(param_spec)
-
-                elif callable(param_spec):
-                    param_func = param_spec
+                elif callable(frac):
+                    param_func = frac
 
                 else:
                     raise TypeError(
-                        "Expected parameterization spec to be either a string"
+                        "Expected 'fraction' spec to be either a string"
                         " that can be interpreted by eval or a callable."
-                        " Got '%s'." % type(param_spec)
+                        " Got '%s'." % type(frac)
                     )
-                dist_spec_dict[dist_prop] = param_func
 
-            dist_spec_dict_proc = process_reco_dist_params(dist_spec_dict)
+                dist_spec_dict['fraction'] = frac
 
-            reco_params[flavintgroup][dimension] = dist_spec_dict_proc
+                if 'kwargs' in dist_dict:
+                    kwargs = dist_dict['kwargs']
+                    if not isinstance(kwargs, dict):
+                        raise TypeError(
+                            "'kwargs' must hold a dictionary. Got '%s' instead."
+                            % type(kwargs)
+                        )
+                    dist_spec_dict['kwargs'] = kwargs
+                    for kwarg, kwarg_spec in kwargs.iteritems():
+                        if isinstance(kwarg_spec, basestring):
+                            kwarg_eval = eval(kwarg_spec)
+                        elif callable(kwarg_spec) or isscalar(kwarg_spec):
+                            kwarg_eval = kwarg_spec
+                        else:
+                            raise TypeError(
+                                "Expected kwarg '%s' spec to be either a string"
+                                " that can be interpreted by eval, a callable or"
+                                " a scalar. Got '%s'." % type(kwarg_spec)
+                            )
+                        dist_spec_dict['kwargs'][kwarg] = kwarg_eval
+                else:
+                    logging.warn("No 'kwargs' entry found for a %s - %s"
+                                 " resolution function. This might cause"
+                                 " problems."%(flavintgroup, dimension))
+
+                dim_dist_list.append(dist_spec_dict)
+
+            reco_params[flavintgroup][dimension] = dim_dist_list
 
     return reco_params
 
