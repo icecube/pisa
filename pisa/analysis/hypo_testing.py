@@ -1528,6 +1528,31 @@ class HypoTesting(Analysis):
         else:
             self.data_maker.params[test_name].range = rangetuple
 
+    def log_and_do_fits(self):
+        '''
+        Sets up the logging and does an Asimov analysis. Used in the injected
+        parameter scans and the systematic tests.
+        '''
+        # Setup logging and things.
+        self.setup_logging(reset_params=False)
+        self.write_config_summary(reset_params=False)
+        self.write_minimizer_settings()
+        self.write_run_info()
+        # Now do the fits
+        self.generate_data()
+        self.fit_hypos_to_data()
+        self.produce_fid_data()
+        self.fit_hypos_to_fid()
+
+    def reset_makers(self):
+        '''
+        Resets all 3 makers. Used in the injected parameter scans and the
+        systematic tests.
+        '''
+        self.data_maker.params.reset_free()
+        self.h0_maker.params.reset_free()
+        self.h1_maker.params.reset_free()
+
     def inj_param_scan(self, param_name, test_name, inj_vals,
                        requested_vals, h0_name, h1_name, data_name):
         '''
@@ -1584,20 +1609,10 @@ class HypoTesting(Analysis):
                     fluctuate_data=False,
                     fluctuate_fid=False
                 )
-            # Setup logging and things.
-            self.setup_logging(reset_params=False)
-            self.write_config_summary(reset_params=False)
-            self.write_minimizer_settings()
-            self.write_run_info()
-            # Now do the fits
-            self.generate_data()
-            self.fit_hypos_to_data()
-            self.produce_fid_data()
-            self.fit_hypos_to_fid()
+            # Setup logging and do the fits
+            self.log_and_do_fits()
             # At the end, reset the parameters in the maker
-            self.data_maker.params.reset_free()
-            self.h0_maker.params.reset_free()
-            self.h1_maker.params.reset_free()
+            self.reset_makers()
             # Also be sure to remove the data_dist and tor_data_asimov_dist
             # so that it is regenerated next time
             self.data_dist = None
@@ -1625,16 +1640,8 @@ class HypoTesting(Analysis):
         for h1_param in self.h1_maker.params.free:
             if h1_param.name == data_param.name:
                 h1_param.is_fixed = True
-        # Setup logging and things.
-        self.setup_logging(reset_params=False)
-        self.write_config_summary(reset_params=False)
-        self.write_minimizer_settings()
-        self.write_run_info()
-        # Now do the fits
-        self.generate_data()
-        self.fit_hypos_to_data()
-        self.produce_fid_data()
-        self.fit_hypos_to_fid()
+        # Setup logging and do the fits
+        self.log_and_do_fits()
 
     def systematic_wrong_analysis(self, data_param, fit_wrong, direction,
                                   h0_name, h1_name, data_name):
@@ -1705,22 +1712,29 @@ class HypoTesting(Analysis):
                 fluctuate_data=False,
                 fluctuate_fid=False
             )
-        # Setup logging and things.
-        self.setup_logging(reset_params=False)
-        self.write_config_summary(reset_params=False)
-        self.write_minimizer_settings()
-        self.write_run_info()
-        # Now do the fits
-        self.generate_data()
-        self.fit_hypos_to_data()
-        self.produce_fid_data()
-        self.fit_hypos_to_fid()
+        # Setup logging and do the fits
+        self.log_and_do_fits()
 
     def syst_tests(self, inject_wrong, fit_wrong,
                    h0_name, h1_name, data_name):
         '''The function which actually does the syst tests. The one that will
         actually be performed will be depending on whether inject_wrong is
         true or not.'''
+        # Perform the baseline analysis so that the other results can
+        # have a comparison line.
+        self.labels = Labels(
+            h0_name=h0_name,
+            h1_name=h1_name,
+            data_name=data_name + '_full_syst_baseline'%(
+                data_param.name,direction),
+            data_is_data=False,
+            fluctuate_data=False,
+            fluctuate_fid=False
+        )
+        # Setup logging and do the fits
+        self.log_and_do_fits()
+        # Reset the makers
+        self.reset_makers()
         for data_param in self.data_maker.params.free:
             if inject_wrong:
                 # First inject this wrong up by one sigma
@@ -1750,9 +1764,7 @@ class HypoTesting(Analysis):
                     data_name=data_name
                 )
             # At the end, reset the parameters in the maker
-            self.data_maker.params.reset_free()
-            self.h0_maker.params.reset_free()
-            self.h1_maker.params.reset_free()
+            self.reset_makers()
             # Also unfix the hypo maker parameters
             for h0_param in self.h0_maker.params:
                 if h0_param.name == data_param.name:
