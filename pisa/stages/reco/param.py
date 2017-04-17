@@ -711,19 +711,21 @@ class param(Stage):
         cz_res_scale = self.params.cz_res_scale.value.m_as('dimensionless')
         e_reco_bias = self.params.e_reco_bias.value.m_as('GeV')
         cz_reco_bias = self.params.cz_reco_bias.value.m_as('dimensionless')
-        for flavintgroup in self.eval_dict.keys():
+        eval_dict_mod = deepcopy(self.eval_dict)
+        for flavintgroup in eval_dict_mod.iterkeys():
             for (dim, dim_scale, dim_bias) in \
               (('energy', e_res_scale, e_reco_bias),
                ('coszen', cz_res_scale, cz_reco_bias)):
                 for i,flav_dim_dist_dict in \
-                  enumerate(self.eval_dict[flavintgroup][dim]):
+                  enumerate(eval_dict_mod[flavintgroup][dim]):
                     for param in flav_dim_dist_dict["kwargs"].keys():
                         if param == 'scale':
                             flav_dim_dist_dict["kwargs"][param] *= dim_scale
                         elif param == 'loc':
                             flav_dim_dist_dict["kwargs"][param] += dim_bias
+        return eval_dict_mod
         
-    def apply_reco_scales_and_biases(self):
+    def reco_scales_and_biases_applicable(self):
         """
         Wrapper function for applying the resolution scales and biases to all
         distributions. Performs consistency check, then calls the function
@@ -745,8 +747,7 @@ class param(Stage):
                         " in chosen reco parameterisation, but required for"
                         " applying reco scale and bias. Got %s for %s %s."
                         %(flav_dim_dist_dict["kwargs"].keys(), flavintgroup, dim))
-        # everything seems to be fine, so rescale and shift distributions
-        self.scale_and_shift_reco_dists()
+        return
 
     def extend_binning_for_coszen(self, ext_low=-3., ext_high=+3.):
         """
@@ -817,25 +818,28 @@ class param(Stage):
                 or reco_param_hash != self._reco_param_hash):
             reco_param = load_reco_param(reco_param_source)
 
-        # Transform groups are implicitly defined by the contents of the
-        # reco paramfile's keys
-        implicit_transform_groups = reco_param.keys()
+            # Transform groups are implicitly defined by the contents of the
+            # reco paramfile's keys
+            implicit_transform_groups = reco_param.keys()
 
-        # Make sure these match transform groups specified for the stage
-        if set(implicit_transform_groups) != set(self.transform_groups):
-            raise ValueError(
-                'Transform groups (%s) defined implicitly by'
-                ' %s reco parameterizations do not match those'
-                ' defined as the stage\'s `transform_groups` (%s).'
-                % (implicit_transform_groups, reco_param_source,
-                   self.transform_groups)
-            )
+            # Make sure these match transform groups specified for the stage
+            if set(implicit_transform_groups) != set(self.transform_groups):
+                raise ValueError(
+                    'Transform groups (%s) defined implicitly by'
+                    ' %s reco parameterizations do not match those'
+                    ' defined as the stage\'s `transform_groups` (%s).'
+                    % (implicit_transform_groups, reco_param_source,
+                       self.transform_groups)
+                )
 
-        self.param_dict = reco_param
-        self._reco_param_hash = reco_param_hash
+            self.param_dict = reco_param
+            self._reco_param_hash = reco_param_hash
 
-        self.eval_dict = self.evaluate_reco_param()
-        self.apply_reco_scales_and_biases()
+            self.eval_dict = self.evaluate_reco_param()
+            self.reco_scales_and_biases_applicable()
+
+        # everything seems to be fine, so rescale and shift distributions
+        eval_dict = self.scale_and_shift_reco_dists()
 
         # Computational units must be the following for compatibility with
         # events file
@@ -874,7 +878,7 @@ class param(Stage):
         for xform_flavints in self.transform_groups:
             logging.debug("Working on %s reco kernel..." %xform_flavints)
 
-            this_params = self.eval_dict[xform_flavints]
+            this_params = eval_dict[xform_flavints]
             reco_kernel = np.zeros((n_e_in, n_cz_in, n_e_out, n_cz_out))
 
             for (i,j) in itertools.product(range(n_e_in), range(n_cz_in)):
