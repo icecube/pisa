@@ -2,13 +2,15 @@
 Detection uncertainties
 """
 
+
+from __future__ import division
+
 from copy import deepcopy
+from itertools import product
 
 import numpy as np
 from numpy.polynomial.polynomial import polyfit
 from scipy.interpolate import interp1d
-
-from pisa.utils.miscFunctions import cartesian
 
 
 __all__ = ['getSystematicFunctions', 'axialMassVar', 'norm_fcn', 'LogLogParam',
@@ -48,7 +50,7 @@ def getSystematicFunctions(y_values, y_valuesw2, xpoints, xi_nominal=None,
     poly_matrix = np.zeros(y_values.shape[:-1], dtype=object)
 
     indices      = np.array(list(y_values.shape)[:-1])
-    all_indices  = cartesian(([range(0,x) for x in indices]))
+    all_indices  = np.array(product(*[range(0, x) for x in indices]), dtype=FTYPE)
 
     for one_index in all_indices:
         yvalues_bin = np.array(y_values[[[x]for x in one_index]][0])

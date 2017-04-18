@@ -179,8 +179,14 @@ class Pipeline(object):
         for stage in stages:
             stage.select_params(self.param_selections, error_on_missing=False)
             if previous_stage is not None:
-                prev_has_binning = hasattr(previous_stage, 'output_binning')
-                this_has_binning = hasattr(stage, 'input_binning')
+                prev_has_binning = (
+                    hasattr(previous_stage, 'output_binning')
+                    and previous_stage.output_binning is not None
+                )
+                this_has_binning = (
+                    hasattr(stage, 'input_binning')
+                    and stage.input_binning is not None
+                )
                 if this_has_binning != prev_has_binning:
                     raise ValueError(
                         'hasattr(%s, "output_binning") is %s but'

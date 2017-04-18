@@ -294,7 +294,7 @@ class weight(Stage):
 
                 # No oscillations
                 for fig in self._data.iterkeys():
-                    flav_pdg = NuFlavInt(fig).flavCode
+                    flav_pdg = NuFlavInt(fig).flav.code
                     pisa_weight = self._data[fig]['pisa_weight']
                     if flav_pdg == 12:
                         pisa_weight *= flux_weights[fig]['nue_flux']
@@ -686,9 +686,9 @@ class weight(Stage):
         osc_weights = OrderedDict()
         for fig in nu_data.iterkeys():
             flavint = NuFlavInt(fig)
-            pdg = abs(flavint.flavCode)
-            kNuBar = 1 if flavint.isParticle else -1
-            p = '' if flavint.isParticle else 'bar'
+            pdg = abs(flavint.flav.code)
+            kNuBar = 1 if flavint.particle else -1
+            p = '' if flavint.particle else 'bar'
             if pdg == 12:
                 kFlav = 0
             elif pdg == 14:

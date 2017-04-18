@@ -257,10 +257,7 @@ def compare_aeff(config, servicename, pisa2file, systname,
     stage = pipeline.stages[0]
     input_maps = []
     for name in stage.input_names:
-        hist = np.ones(stage.input_binning.shape)
-        input_maps.append(
-            Map(name=name, hist=hist, binning=stage.input_binning)
-        )
+        input_maps.append(stage.input_binning.ones(name=name))
     outputs = stage.get_outputs(inputs=MapSet(maps=input_maps, name='ones',
                                               hash=1))
     pisa2_comparisons = from_file(pisa2file)
@@ -435,14 +432,14 @@ def compare_pid(config, servicename, pisa2file, outdir, ratio_test_threshold,
 
     pisa2_comparisons = from_file(pisa2file)
     pisa_trck = pisa2_map_to_pisa3_map(
-        pisa2_map = pisa2_comparisons['trck'],
-        ebins_name = 'reco_energy',
-        czbins_name = 'reco_coszen'
+        pisa2_map=pisa2_comparisons['trck'],
+        ebins_name='reco_energy',
+        czbins_name='reco_coszen'
     )
     pisa_cscd = pisa2_map_to_pisa3_map(
-        pisa2_map = pisa2_comparisons['cscd'],
-        ebins_name = 'reco_energy',
-        czbins_name = 'reco_coszen'
+        pisa2_map=pisa2_comparisons['cscd'],
+        ebins_name='reco_energy',
+        czbins_name='reco_coszen'
     )
 
     # Do check if output is exactly the same as old PISA 2 with track and
@@ -858,7 +855,7 @@ def parse_args():
                         help='''Ignore errors if pycuda cannot be used. If
                         pycuda can be used, however, errors will still be
                         raised as exceptions.''')
-    parser.add_argument('-v', action='count', default=None,
+    parser.add_argument('-v', action='count', default=0,
                         help='''Set verbosity level; default is 1, so only -vv
                         or -vvv has an effect.''')
     args = parser.parse_args()
@@ -868,7 +865,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    set_verbosity(args.v)
+    set_verbosity(1)
 
     # Figure out which tests to do
     test_all = True

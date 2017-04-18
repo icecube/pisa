@@ -36,7 +36,7 @@ mpl.rcParams['mathtext.fontset'] = 'custom'
 mpl.rcParams['mathtext.rm'] = 'Bitstream Vera Sans'
 mpl.rcParams['mathtext.it'] = 'Bitstream Vera Sans:italic'
 mpl.rcParams['mathtext.bf'] = 'Bitstream Vera Sans:bold'
-mpl.rcParams['font.size'] = 12
+mpl.rcParams['font.size'] = 14
 
 
 class Plotter(object):

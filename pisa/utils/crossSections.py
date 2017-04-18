@@ -9,6 +9,9 @@ Define CrossSections class for importing, working with, and storing neutrino
 cross sections
 """
 
+
+from __future__ import division
+
 from copy import deepcopy
 import os, sys
 
@@ -339,10 +342,10 @@ class CrossSections(flavInt.FlavIntData):
         if len(flavintgroup.flavints) == 1:
             return self[flavintgroup.flavints[0]]
 
-        cc_flavints = flavintgroup.ccFlavInts
-        nc_flavints = flavintgroup.ncFlavInts
+        cc_flavints = flavintgroup.cc_flavints
+        nc_flavints = flavintgroup.nc_flavints
         if cc_flavints and nc_flavints:
-            assert flavintgroup.ccFlavs == flavintgroup.ncFlavs, \
+            assert flavintgroup.cc_flavs == flavintgroup.nc_flavs, \
                     'Combining CC and NC but CC flavors do not match NC flavors'
         cc_avg_xs = 0
         if cc_flavints:
@@ -527,10 +530,10 @@ class CrossSections(flavInt.FlavIntData):
         energy = self.energy
         nc_n = cc_n = 0
         for flavint in list(flavInt.ALL_NUFLAVINTS.particles) + \
-                list(flavInt.ALL_NUFLAVINTS.antiParticles):
+                list(flavInt.ALL_NUFLAVINTS.antiparticles):
             # Convert from [m^2] to [1e-38 cm^2]
             xs = self[flavint] * 1e38 * 1e4
-            if flavint.isCC:
+            if flavint.cc:
                 ax1.plot(energy, xs/energy,
                          alpha=alpha,
                          label=flavInt.tex(flavint.flav, d=1),

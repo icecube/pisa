@@ -2,6 +2,8 @@
 # date:   March 20, 2016
 
 
+from __future__ import division
+
 import numpy as np
 
 from pisa.core.binning import MultiDimBinning
