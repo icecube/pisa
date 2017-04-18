@@ -319,30 +319,26 @@ class param(Stage):
     params : ParamSet
         Must exclusively have parameters:
 
-        reco_events : string or Events
-            PISA events file to use to derive transforms, or a string
-            specifying the resource location of the same.
-
-        reco_weights_name : None or string
-            Column in the events file to use for Monte Carlo weighting of the
-            events
+        reco_paramfile : string
+            Source of the parameterization. File path or resource location; must
+            yield a mapping. See `load_reco_param()`.
 
         res_scale_ref : string
-            One of "mean", "median", or "zero". This is the reference point
-            about which resolutions are scaled. "zero" scales about the
-            zero-error point (i.e., the bin midpoint), "mean" scales about the
-            mean of the events in the bin, and "median" scales about the median
-            of the events in the bin.
+            This is the reference point about which every resolution distribution
+            is scaled. "zero" scales about the zero-error point (i.e., the bin
+            midpoint). No other reference points implemented.
 
         e_res_scale : float
-            A scaling factor for energy resolutions.
+            A scaling factor for energy resolutions (cf. `res_scale_ref`).
 
         cz_res_scale : float
-            A scaling factor for coszen resolutions.
+            A scaling factor for coszen resolutions (cf. `res_scale_ref`).
 
         e_reco_bias : float
+            A shift of each energy resolution function's `loc` parameter.
 
         cz_reco_bias : float
+            A shift of each coszen resolution function's `loc` parameter.
 
     particles : string
         Must be one of 'neutrinos' or 'muons' (though only neutrinos are
