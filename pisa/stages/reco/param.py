@@ -120,8 +120,10 @@ def load_reco_param(source):
         raise TypeError('Cannot load reco parameterizations from a %s'
                         % type(source))
 
-    # Build dict of parameterizations (each a callable) per flavintgroup
     valid_dimensions = ('coszen', 'energy')
+    required_keys = ('dist', 'fraction', 'kwargs')
+
+    # Build dict of parameterizations (each a callable) per flavintgroup
     reco_params = OrderedDict()
     for flavint_key, dim_dict in orig_dict.iteritems():
         flavintgroup = NuFlavIntGroup(flavint_key)
@@ -142,7 +144,7 @@ def load_reco_param(source):
                 # allow reading in even if kwargs not present - computation of
                 # transform will fail because "loc" and "scale" hard-coded
                 # requirement
-                for required in ('dist', 'fraction'):#, 'kwargs'):
+                for required in required_keys:
                     if required not in dist_dict:
                         raise ValueError("Found distribution property dict "
                                          "without required '%s' key for "
@@ -150,9 +152,9 @@ def load_reco_param(source):
                                          %(required, flavintgroup, dimension))
 
                 for k in dist_dict.iterkeys():
-                    if k not in required:
-                        raise ValueError("Unrecognised key in distribution"
-                                         " property dict: '%s'"%k)
+                    if k not in required_keys:
+                        logging.warn("Unrecognised key in distribution"
+                                     " property dict: '%s'"%k)
 
                 dist_spec = dist_dict['dist']
 
@@ -164,170 +166,71 @@ def load_reco_param(source):
                     raise ValueError("Empty string found for resolution"
                                      " function!")
 
+                try:
+                    dist = getattr(stats, dist_spec.lower())
+                except AttributeError:
+                    try:
+                        import scipy
+                        sp_ver_str = scipy.__version__
+                    except:
+                        sp_ver_str = "N/A"
+                    raise AttributeError("'%s' is not a valid distribution"
+                                         " from scipy.stats (your scipy"
+                                         " version: '%s')."
+                                         %(dist_spec.lower(), sp_ver_str))
                 logging.debug("Found %s - %s resolution function: '%s'"
-                              %(flavintgroup, dimension, dist_spec.lower()))
+                              %(flavintgroup, dimension, dist.name))
 
-                dist_spec_dict['dist'] = dist_spec.lower()
+                dist_spec_dict['dist'] = dist
 
                 frac = dist_dict['fraction']
 
                 if isinstance(frac, basestring):
-                    param_func = eval(frac)
+                    frac_func = eval(frac)
 
                 elif callable(frac):
-                    param_func = frac
+                    frac_func = frac
 
                 else:
                     raise TypeError(
-                        "Expected 'fraction' spec to be either a string"
+                        "Expected 'fraction' to be either a string"
                         " that can be interpreted by eval or a callable."
                         " Got '%s'." % type(frac)
                     )
 
-                dist_spec_dict['fraction'] = frac
+                dist_spec_dict['fraction'] = frac_func
 
-                if 'kwargs' in dist_dict:
-                    kwargs = dist_dict['kwargs']
-                    if not isinstance(kwargs, dict):
+                kwargs = dist_dict['kwargs']
+
+                if not isinstance(kwargs, dict):
+                    raise TypeError(
+                        "'kwargs' must hold a dictionary. Got '%s' instead."
+                        % type(kwargs)
+                    )
+
+                dist_spec_dict['kwargs'] = kwargs
+                for kwarg, kwarg_spec in kwargs.iteritems():
+
+                    if isinstance(kwarg_spec, basestring):
+                        kwarg_eval = eval(kwarg_spec)
+
+                    elif callable(kwarg_spec) or isscalar(kwarg_spec):
+                        kwarg_eval = kwarg_spec
+
+                    else:
                         raise TypeError(
-                            "'kwargs' must hold a dictionary. Got '%s' instead."
-                            % type(kwargs)
+                            "Expected kwarg '%s' spec to be either a string"
+                            " that can be interpreted by eval, a callable or"
+                            " a scalar. Got '%s'." % type(kwarg_spec)
                         )
-                    dist_spec_dict['kwargs'] = kwargs
-                    for kwarg, kwarg_spec in kwargs.iteritems():
-                        if isinstance(kwarg_spec, basestring):
-                            kwarg_eval = eval(kwarg_spec)
-                        elif callable(kwarg_spec) or isscalar(kwarg_spec):
-                            kwarg_eval = kwarg_spec
-                        else:
-                            raise TypeError(
-                                "Expected kwarg '%s' spec to be either a string"
-                                " that can be interpreted by eval, a callable or"
-                                " a scalar. Got '%s'." % type(kwarg_spec)
-                            )
-                        dist_spec_dict['kwargs'][kwarg] = kwarg_eval
-                else:
-                    logging.warn("No 'kwargs' entry found for a %s - %s"
-                                 " resolution function. This might cause"
-                                 " problems."%(flavintgroup, dimension))
+
+                    dist_spec_dict['kwargs'][kwarg] = kwarg_eval
 
                 dim_dist_list.append(dist_spec_dict)
 
             reco_params[flavintgroup][dimension] = dim_dist_list
 
     return reco_params
-
-def process_reco_dist_params(reco_param_dict):
-    """
-    Ensure consistency between specified reconstruction function(s)
-    and their corresponding parameters.
-    """
-    def select_dist_param_key(allowed, param_dict, unsel=None):
-        """
-        Evaluates whether 'param_dict' contains exactly
-        one of the keys from 'allowed', and returns it if so.
-        If none or more than one is found, raises exception.
-        `unsel` (if a set) is updated with non-allowed/
-        unselected keys.
-        """
-        logging.trace("  Searching for one of '%s'."%str(allowed))
-        allowed_here = set(allowed)
-        search_keys = set(param_dict.keys())
-        search_found = allowed_here & search_keys
-        diff = search_keys.difference(search_found)
-        if len(search_found) == 0:
-            raise ValueError("No parameter from "+
-                             str(tuple(allowed_here))+" found!")
-        elif len(search_found) > 1:
-            raise ValueError("Please remove one of "+
-                             str(tuple(allowed_here))+" !")
-        param_str_sel = search_found.pop()
-        logging.trace("  Found and selected '%s'."%param_str_sel)
-        try:
-            unsel.update(diff)
-        except:
-            pass
-        return param_str_sel
-
-    allowed_dist_params = {'kwargs': ['loc', 'scale'], 'other': ['fraction']}
-
-    # Prepare for detection of parameter ids that are never selected
-    sometime_sel = []; sometime_unsel = set()
-    # First, get list of distributions to be superimposed
-    dists = reco_param_dict['dist'].split("+")
-    ndist = len(dists)
-    # Need to retain order of specification for correct assignment of
-    # distributions' parameters
-    dist_type_count = OrderedDict()
-    for dist_type in dists:
-        dist_type_count[dist_type] = dist_type_count.get(dist_type, 0) + 1
-    reco_param_dict.pop('dist')
-    dist_param_dict = []
-    tot_dist_count = 1
-    # For each distribution type, find all distributions' 'scale' and 'loc'
-    # parameterisations and store
-    for dist_str, this_dist_type_count in dist_type_count.items():
-        dist_str = "".join(dist_str.split())
-        try:
-            dist = getattr(stats, dist_str)
-        except AttributeError:
-            try:
-                import scipy
-                sp_ver_str = scipy.__version__
-            except:
-                sp_ver_str = "N/A"
-                raise AttributeError("'%s' is not a valid distribution from"
-                                     " scipy.stats (your scipy version: '%s')."
-                                     %(dist_str, sp_ver_str))
-
-        for i in xrange(1, this_dist_type_count+1):
-            logging.trace(" Collecting parameters for resolution"
-                          " function #%d of type '%s'."%(i, dist_str))
-
-            this_dist_dict = {'dist': dist, 'kwargs': {}}
-            # Also explicitly require a 'fraction' to be present always
-            for param_type, dist_params in allowed_dist_params.iteritems():
-                for param in dist_params:
-                    if ndist == 1:
-                        # There's greater flexibility in this case
-                        allowed_here = (param, param+"_"+dist_str,
-                                        param+"%s"%tot_dist_count,
-                                        param+"_"+dist_str+"%s"%i)
-                    else:
-                        allowed_here = (param+"%s"%tot_dist_count,
-                                        param+"_"+dist_str+"%s"%i)
-
-                    param_str = select_dist_param_key(allowed_here,
-                                                      reco_param_dict,
-                                                      sometime_unsel)
-
-                    # Keep track of the parameter id that got selected
-                    sometime_sel += [param_str]
-
-                    # Select the corresponding entry param <-> param_str
-                    # Put directly into dictionary if not a kwarg
-                    if param_type == 'other':
-                        this_dist_dict[param] = reco_param_dict[param_str]
-
-                    elif param_type == 'kwargs':
-                        this_dist_dict['kwargs'][param] = \
-                            reco_param_dict[param_str]
-
-                    else:
-                        raise ValueError("Don't know what to do with "
-                                         "distribution parameters of type '%s'."
-                                         % param_type)
-
-            # Add to list of distribution dictionaries
-            dist_param_dict.append(this_dist_dict)
-            tot_dist_count += 1
-    # Find the parameter ids that are present in the parameterisation
-    # dictionary, but which never got selected, and warn the user about those
-    never_sel = sometime_unsel.difference(set(sometime_sel))
-    if len(never_sel) > 0:
-        logging.warn("Unused distribution parameter identifiers detected: "+
-                     str(tuple(never_sel)))
-    return dist_param_dict
 
 def get_physical_bounds(dim):
     """Returns the boundaries of the physical region for the various
