@@ -11,11 +11,15 @@ values.
 
 """
 
+
+from __future__ import absolute_import, division
+
 from collections import OrderedDict, Sequence
 from copy import deepcopy
 from functools import total_ordering
 from itertools import izip
 from operator import setitem
+import sys
 
 import numpy as np
 import pint
@@ -230,7 +234,7 @@ class Param(object):
             assert type(val) == type(self.value), \
                     'Value "%s" has type %s but must be of type %s.' \
                     %(val, type(val), type(self.value))
-            if isinstance(self.value, pint.quantity._Quantity):
+            if isinstance(self.value, ureg.Quantity):
                 assert self.dimensionality == val.dimensionality, \
                     'Value "%s" units "%s" incompatible with units "%s".' \
                     %(val, val.units, self.units)
@@ -397,8 +401,8 @@ class Param(object):
 
 # TODO: temporary modification of parameters via "with" syntax?
 class ParamSet(Sequence):
-    """Container class for a set of parameters. Most methods are passed through
-    to contained params.
+    r"""Container class for a set of parameters. Most methods are passed
+    through to contained params.
 
     Parameters
     ----------
@@ -618,7 +622,7 @@ class ParamSet(Sequence):
             If True, params not in this param set are appended.
 
         """
-        if isinstance(obj, Sequence) or isinstance(obj, ParamSet):
+        if isinstance(obj, (Sequence, ParamSet)):
             for param in obj:
                 self.update(param, existing_must_match=existing_must_match,
                             extend=extend)
@@ -683,16 +687,17 @@ class ParamSet(Sequence):
 
     def __getattr__(self, attr):
         try:
-            return super(self.__class__, self).__getattribute__(attr)
-        except AttributeError, exc:
+            return super(ParamSet, self).__getattribute__(attr)
+        except AttributeError:
+            t, v, tb = sys.exc_info()
             try:
                 return self[attr]
             except KeyError:
-                raise exc
+                raise t, v, tb
 
     def __setattr__(self, attr, val):
         try:
-            params = super(self.__class__, self).__getattribute__('_params')
+            params = super(ParamSet, self).__getattribute__('_params')
             param_names = [p.name for p in params]
         except AttributeError:
             params = []
@@ -700,7 +705,7 @@ class ParamSet(Sequence):
         try:
             idx = param_names.index(attr)
         except ValueError:
-            super(self.__class__, self).__setattr__(attr, val)
+            super(ParamSet, self).__setattr__(attr, val)
         else:
             # `attr` (should be) param name
             if isinstance(val, Param):
@@ -720,7 +725,7 @@ class ParamSet(Sequence):
         strings = []
         for p in self:
             string = p.name + '='
-            if isinstance(p.value, pint.quantity._Quantity):
+            if isinstance(p.value, ureg.Quantity):
                 string += numfmt %p.m
                 full_unit_str = str(p.u)
                 if full_unit_str in [str(ureg('electron_volt ** 2').u)]:
@@ -1070,7 +1075,7 @@ class ParamSelector(object):
 
 def test_Param():
     """Unit tests for Param class"""
-    from scipy.interpolate import splrep, splev
+    from scipy.interpolate import splrep
     from pisa.core.prior import Prior
 
     uniform = Prior(kind='uniform', llh_offset=1.5)

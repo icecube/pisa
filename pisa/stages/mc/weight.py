@@ -8,16 +8,16 @@ advantage of the Data object being passed as a sideband in the Stage.
 """
 
 
+from __future__ import absolute_import, division
+
 from collections import OrderedDict
 from copy import deepcopy
 
 from scipy.interpolate import interp1d
 
 import numpy as np
-import pint
 
-from pisa import FTYPE
-from pisa import ureg
+from pisa import FTYPE, ureg
 from pisa.core.events import Data
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
@@ -257,7 +257,7 @@ class weight(Stage):
             output_binning = None
         self.output_events = output_events
 
-        super(self.__class__, self).__init__(
+        super(weight, self).__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
@@ -591,8 +591,7 @@ class weight(Stage):
                         flux_weights[fig][flav] = \
                                 self._flux_weights[fig][flav]*out_units
                 return flux_weights
-            else:
-                return self._flux_weights
+            return self._flux_weights
 
         data_contains_flux = all(
             ['nue_flux' in fig and 'numu_flux' in fig and 'nuebar_flux' in fig
@@ -684,8 +683,7 @@ class weight(Stage):
                 for flav in flux_weights[fig].iterkeys():
                     fw_units[fig][flav] = flux_weights[fig][flav]*out_units
             return fw_units
-        else:
-            return flux_weights
+        return flux_weights
 
     def compute_osc_weights(self, flux_weights):
         """Neutrino oscillations calculation via Prob3."""
@@ -946,7 +944,7 @@ class weight(Stage):
         return muon_uncf
 
     def validate_params(self, params):
-        pq = pint.quantity._Quantity
+        pq = ureg.Quantity
         param_types = [
             ('kde_hist', bool),
             ('livetime', pq)

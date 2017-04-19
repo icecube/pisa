@@ -5,18 +5,20 @@ unfolding to the reconstructed variables.
 This service in particular uses the RooUnfold implementation of Bayesian
 unfolding.
 """
+
+from __future__ import absolute_import
+
 from operator import add
 from copy import deepcopy
 
 import numpy as np
-import pint
 from uncertainties import unumpy as unp
 
 from ROOT import TH1
 from ROOT import RooUnfoldResponse, RooUnfoldBayes
-TH1.SetDefaultSumw2(False)
+from root_numpy import array2hist, hist2array
 
-from pisa import ureg, Q_
+from pisa import ureg
 from pisa.core.stage import Stage
 from pisa.core.events import Data
 from pisa.core.pipeline import Pipeline
@@ -31,6 +33,8 @@ from pisa.utils.comparisons import normQuant
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
+
+TH1.SetDefaultSumw2(False)
 
 
 class roounfold(Stage):
@@ -704,10 +708,10 @@ class roounfold(Stage):
         dims = len(shape)
         assert dims % 2 == 0
 
-        nbins_a = np.product(shape[:dims/2])
-        nbins_b = np.product(shape[dims/2:])
-        names_a = reduce(lambda x, y: x+' '+y, names[:dims/2])
-        names_b = reduce(lambda x, y: x+' '+y, names[dims/2:])
+        nbins_a = np.product(shape[:dims//2])
+        nbins_b = np.product(shape[dims//2:])
+        names_a = reduce(lambda x, y: x+' '+y, names[:dims//2])
+        names_b = reduce(lambda x, y: x+' '+y, names[dims//2:])
 
         binning = []
         binning.append(OneDimBinning(
