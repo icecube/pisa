@@ -1636,7 +1636,7 @@ def parse_args(description=__doc__):
     )
     parser.add_argument(
         '--metric',
-        type=str, default=None, metavar='METRIC',
+        type=str, required=True, metavar='METRIC', choices=ALL_METRICS,
         help='''Name of metric to use for optimizing the fit. Must be one of
         %s.''' % (ALL_METRICS,)
     )
