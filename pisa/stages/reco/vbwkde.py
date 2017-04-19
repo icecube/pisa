@@ -22,14 +22,15 @@ events.
 #       is preferred
 # TODO: Figure out a dynamic similarity metric such that the parameters can be
 #       figured out by the software, rather than set by the user. E.g., use
-#       some statistical clustering technique?
+#       some statistical clustering technique? See e.g. Scargle's Bayesian
+#       Blocks, change point identification routines (RelULSIF, Bayesian, etc.)
 # TODO: Move (most/all) functions defined here into module(s) in utils dir
 # TODO: Add n_dct as a class instantiation argument?
 # TODO: Separate VBWKDE parameters for each dimension, specified either in
 #       char_deps_downsampling or as a separate arg?
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 from ast import literal_eval
 from collections import Mapping, namedtuple, OrderedDict, Sequence
@@ -37,20 +38,22 @@ from copy import deepcopy
 import threading
 
 import numpy as np
+from numpy import inf
 
-from pisa import EPSILON, FTYPE, NUMBA_AVAIL, OMP_NUM_THREADS, numba_jit, ureg
+from pisa import EPSILON, FTYPE, NUMBA_AVAIL, OMP_NUM_THREADS, numba_jit
 from pisa.core.binning import MultiDimBinning, OneDimBinning
 from pisa.core.events import Events
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 
-from pisa.utils.comparisons import EQUALITY_SIGFIGS, isbarenumeric, isscalar
+from pisa.utils.comparisons import EQUALITY_SIGFIGS, isscalar
 from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
 from pisa.utils.gaussians import gaussians
 from pisa.utils.hash import hash_obj
 from pisa.utils.parallel import parallel_run
 from pisa.utils.vbwkde import vbwkde as vbwkde_func
 from pisa.utils.log import logging
+from pisa.utils.profiler import line_profile, profile
 
 
 __all__ = ['KDEProfile', 'collect_enough_events', 'fold_coszen_diff',
@@ -61,12 +64,9 @@ KDEProfile = namedtuple('KDEProfile', ['x', 'counts'])
 """namedtuple type for storing the normalized KDE profile: (x, counts)"""
 
 
-# TODO: modify this once we have fixed the Events object to be more agnostic to
-#       flavint
-# TODO: When running w/ GPU, this function (specifically `applyCut` method of
-#       Events object) is the bottleneck. Make that faster!
-
-def collect_enough_events(events, flavint, bin, min_num_events, tgt_num_events,
+@numba_jit(nogil=True, fastmath=True)
+def collect_enough_events(events, mask, free_dim, bin_center, bin_edges,
+                          is_log, min_num_events, tgt_num_events,
                           tgt_max_binwidth_factor):
     """Heuristic to collect enough events close to the provided bin such
     that KDEs can be applied and achieve robust results.
@@ -100,13 +100,12 @@ def collect_enough_events(events, flavint, bin, min_num_events, tgt_num_events,
 
     Parameters
     ----------
-    events : pisa.core.events.Events
-        Note that a deepcopy is made on this object, so it is not modified in
-        this function.
+    events : dict
 
-    bin : pisa.core.binning.OneDimBinning
+    mask
 
-    flavint : None or convertible to pisa.utils.flavInts.NuFlavIntGroup
+    bin_center
+    bin_edges
 
     min_num_events : int
         At least this many events will collected, regardless how far outside
@@ -127,43 +126,22 @@ def collect_enough_events(events, flavint, bin, min_num_events, tgt_num_events,
         above.
 
     """
-    # For now, be strict about what is allowed, so as to keep logic simple
-    assert isinstance(events, Events)
-    flavintgroup = NuFlavIntGroup(flavint)
-    repr_flavint = flavintgroup[0]
-    logging.trace('flavintgroup=%s, repr_flavint=%s, bin=%s',
-                  flavintgroup, repr_flavint, bin)
-
-    if isinstance(bin, MultiDimBinning):
-        dims = bin.dimensions
-        assert len(dims) == 1
-        bin = dims[0]
-    assert isinstance(bin, OneDimBinning)
-    edges = bin.bin_edges.m
-    assert len(edges) == 2
-    assert bin.is_log
-    assert min_num_events <= tgt_num_events
-
-    # ASSUMPTION: units in Events object are same as in `bin`
-    bin_wtd_center = bin.weighted_centers[0].m
-
-    if bin.is_log:
-        bin_width = edges[1] / edges[0]
+    if is_log:
+        bin_width = bin_edges[1] / bin_edges[0]
         bin_half_width = np.sqrt(bin_width)
     else:
-        bin_width = edges[1] - edges[0]
+        bin_width = bin_edges[1] - bin_edges[0]
         bin_half_width = bin_width / 2
 
-    # Define for convenience of use elsewhere
-    field_values = events[repr_flavint][bin.name]
+    field_values = events[free_dim][mask]
     n_events = len(field_values)
 
     if n_events == 0:
         raise ValueError(
-            'No events were found for %s! Do you apply a cut that removes all'
+            'No events were found! Do you apply a cut that removes all'
             ' relevant events? E.g. this can occur if you cut away'
             ' downgoing events but then define true-coszen bins in the'
-            ' downgoing region.' % flavintgroup
+            ' downgoing region.'
         )
 
     # If either min_num_events or tgt_num_events is greater than the total
@@ -174,17 +152,17 @@ def collect_enough_events(events, flavint, bin, min_num_events, tgt_num_events,
 
     # Absolute distance from these events to the center of the bin, sorted in
     # ascending order (so events closest to bin center come first)
-    if bin.is_log:
-        sorted_abs_dist = np.sort(np.abs(np.log(field_values/bin_wtd_center)))
+    if is_log:
+        sorted_abs_dist = np.sort(np.abs(np.log(field_values/bin_center)))
     else:
-        sorted_abs_dist = np.sort(np.abs(field_values - bin_wtd_center))
+        sorted_abs_dist = np.sort(np.abs(field_values - bin_center))
 
     # Distance from the bin center you have to go to obtain `tgt_num_events`
     tgt_num_events_dist = np.exp(sorted_abs_dist[tgt_num_events-1])
 
     # Maximum distance the  tgt_max_binwidth_factor` allows us to go in order
     # to obtain `tgt_num_events` events
-    if bin.is_log:
+    if is_log:
         tgt_max_dist = bin_half_width * (1 + tgt_max_binwidth_factor)**2
     else:
         tgt_max_dist = bin_half_width + bin_width*tgt_max_binwidth_factor
@@ -215,25 +193,18 @@ def collect_enough_events(events, flavint, bin, min_num_events, tgt_num_events,
         else:
             thresh_dist = tgt_dist
 
-    if bin.is_log:
-        lower_edge = bin_wtd_center / thresh_dist
-        upper_edge = bin_wtd_center * thresh_dist
+    if is_log:
+        lower_edge = bin_center / thresh_dist
+        upper_edge = bin_center * thresh_dist
     else:
-        lower_edge = bin_wtd_center - thresh_dist
-        upper_edge = bin_wtd_center + thresh_dist
+        lower_edge = bin_center - thresh_dist
+        upper_edge = bin_center + thresh_dist
 
-    keep_criteria = (
-        '({field:s} >= {lower:.15e}) & ({field:s} <= {upper:0.15e})'.format(
-            field=bin.name, lower=lower_edge, upper=upper_edge)
+    new_mask = (
+        (field_values >= lower_edge) & (field_values <= upper_edge)
     )
-    events_subset = events.applyCut(keep_criteria=keep_criteria)
-    logging.trace('keep criteria:                 %s', keep_criteria)
-    logging.trace('total events in that group:    %s',
-                  len(events[repr_flavint][bin.name]))
-    logging.trace('events in that group selected: %s',
-                  len(events_subset[repr_flavint][bin.name]))
 
-    return events_subset
+    return new_mask
 
 
 def inf2finite(x):
@@ -278,8 +249,8 @@ def fold_coszen_diff(coszen_diff, randomize=False):
     return folded_coszen_diff
 
 
-@numba_jit(nogil=True)
-def weight_coszen_tails(cz_diff, cz_bin_edges, input_weights=None):
+@numba_jit(nopython=True, nogil=True, fastmath=True)
+def weight_coszen_tails(cz_diff, cz_bin_edges, input_weights):
     """Calculate weights that compensate for fewer points in the inherent tails
     of the coszen-difference (usually coszen-error) distribution.
 
@@ -304,12 +275,8 @@ def weight_coszen_tails(cz_diff, cz_bin_edges, input_weights=None):
         (diff_lower_lim, diff_upper_lim)
 
     """
-    # Create all-ones weights vector if a weights field
-    # hasn't been specified
-    if input_weights is None:
-        weights = np.ones_like(cz_diff)
-    else:
-        weights = np.copy(input_weights)
+    new_weights = np.empty_like(cz_diff)
+    num_elements = FTYPE(len(cz_diff))
 
     # Shortcuts for accessing bin edges
     bin_lower_edge = np.min(cz_bin_edges)
@@ -328,24 +295,44 @@ def weight_coszen_tails(cz_diff, cz_bin_edges, input_weights=None):
     lower_tail_width = lower_tail_upper_lim - diff_lower_lim
     upper_tail_width = diff_upper_lim - upper_tail_lower_lim
 
-    # Create masks for events in the tails
-    upper_tail_mask = cz_diff > upper_tail_lower_lim
-    lower_tail_mask = cz_diff < lower_tail_upper_lim
+    total = 0.0
+    if len(input_weights) > 0:
+        for n, orig_weight in enumerate(input_weights):
+            cz_d = cz_diff[n]
+            if cz_d > upper_tail_lower_lim:
+                new_weight = (
+                    orig_weight * upper_tail_width / (diff_upper_lim - cz_d)
+                )
+            elif cz_d < lower_tail_upper_lim:
+                new_weight = (
+                    orig_weight * lower_tail_width / (cz_d - diff_lower_lim)
+                )
+            else:
+                new_weight = orig_weight
+            total += new_weight
+            new_weights[n] = new_weight
+    else:
+        for n, cz_d in enumerate(cz_diff):
+            if cz_d > upper_tail_lower_lim:
+                new_weight = upper_tail_width / (diff_upper_lim - cz_d)
+            elif cz_d < lower_tail_upper_lim:
+                new_weight = lower_tail_width / (cz_d - diff_lower_lim)
+            else:
+                new_weight = 1.0
+            total += new_weight
+            new_weights[n] = new_weight
 
-    # Update the weights for events in the tails
-    weights[lower_tail_mask] *= (
-        lower_tail_width/(cz_diff[lower_tail_mask] - diff_lower_lim)
-    )
-    weights[upper_tail_mask] *= (
-        upper_tail_width/(diff_upper_lim - cz_diff[upper_tail_mask])
-    )
+    norm_factor = num_elements / total
 
-    return weights, diff_limits
+    for n, wt in enumerate(new_weights):
+        new_weights[n] = wt * norm_factor
+
+    return new_weights, diff_limits
 
 
 def coszen_error_edges(true_edges, reco_edges):
     """Return a list of edges in coszen-error space given 2 true-coszen
-    edges and reco-coszen edges. Systematics are not implemented at thistime.
+    edges and reco-coszen edges. Systematics are not implemented at this time.
 
     Parameters
     ----------
@@ -677,7 +664,7 @@ class vbwkde(Stage):
     The `transform_groups` string is interpreted (and therefore defined) by
     pisa.utils.flavInt.flavint_groups_string. E.g. commonly one might use:
 
-    'nue cc + nuebar cc, numu_cc+numubar_cc, nutau_cc+nutaubar_cc, nuall_nc+nuallbar_nc'
+    'nue_cc+nuebar_cc, numu_cc+numubar_cc, nutau_cc+nutaubar_cc, nuall_nc+nuallbar_nc'
 
     Any particle type not explicitly mentioned in `transform_groups` is taken
     as a singleton group.
@@ -773,7 +760,7 @@ class vbwkde(Stage):
 
         # Until `collect_enough_events` is fixed to work with dimensions other
         # than `true_energy` as the final dimension, have to enforce this
-        for dim_name, dependencies in char_deps_downsampling.iteritems():
+        for dim_name, dependencies in char_deps_downsampling.items():
             if dependencies.keys()[-1] != 'true_energy':
                 raise NotImplementedError(
                     "Only 'true_energy' can come last in the list of"
@@ -816,7 +803,7 @@ class vbwkde(Stage):
             }
 
         assert isinstance(tgt_max_binwidth_factors, Mapping), \
-                str(max_binwidth_factor)
+                str(tgt_max_binwidth_factors)
 
         # `input_names` ...
 
@@ -839,7 +826,7 @@ class vbwkde(Stage):
 
         # Invoke the init method from the parent class, which does a lot of
         # work for you.
-        super(self.__class__, self).__init__(
+        super(vbwkde, self).__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,
@@ -980,6 +967,7 @@ class vbwkde(Stage):
         for base_d in input_basenames:
             assert base_d in output_basenames
 
+    @line_profile
     def _compute_transforms(self):
         """Generate reconstruction smearing kernels by estimating the
         distribution of reconstructed events corresponding to each bin of true
@@ -1006,7 +994,7 @@ class vbwkde(Stage):
             xform_input_names = []
             for input_name in self.input_names:
                 input_flavs = NuFlavIntGroup(input_name)
-                if len(set(xform_flavints).intersection(input_flavs)) > 0:
+                if set(xform_flavints).intersection(input_flavs):
                     xform_input_names.append(input_name)
 
             for output_name in self.output_names:
@@ -1046,6 +1034,16 @@ class vbwkde(Stage):
                       self.transform_groups, self.particles,
                       self.sum_grouped_flavints]
 
+        sorted_events = dict()
+        for flavintgroup in self.transform_groups:
+            repr_flavint = flavintgroup[0]
+            data_node = self.events[repr_flavint]
+            sortind = np.argsort(data_node['true_energy'])
+
+            sorted_events[flavintgroup] = {}
+            for key, value in data_node.items():
+                sorted_events[flavintgroup][key] = value[sortind]
+
         for char_dim, dep_dims_binning in self.char_binning.items():
             logging.debug('Working on KDE dimension "%s"', char_dim)
             new_hash = hash_obj(deepcopy(hash_items) + [dep_dims_binning.hash])
@@ -1067,7 +1065,7 @@ class vbwkde(Stage):
                         self.kde_profiles[char_dim] = self.disk_cache[new_hash]
                         self._kde_hashes[char_dim] = new_hash
                         continue
-                except:
+                except Exception:
                     logging.error('Loading from disk cache failed.')
 
             # Reset the hash for this dim so if anything fails below, the wrong
@@ -1086,55 +1084,64 @@ class vbwkde(Stage):
 
             sizeof_kde_profiles = 0
 
-            # First element in the list is the full set of events. Then the
-            # next element is the previous element's events but with inbounds
-            # cut from the first dim applied, and the next element has second
-            # dim's inbounds cut applied to the first dim's inbounds cut, and
-            # so forth.
-            #
-            # The final dimensional dependency is _not_ cut on, allowing for
-            # events to be collected exceeding its boundaries so that enough
-            # statistics can be acquired.
-            cut_events = [self.events] * len(dep_dims_binning)
-
             for bin_num, bin_binning in enumerate(dep_dims_binning.iterbins()):
                 bin_dims = bin_binning.dims
                 bin_coord = dep_dims_binning.index2coord(bin_num)
                 logging.debug('  > characterizing bin %s (%d of %d)',
                               bin_coord, bin_num+1, dep_dims_binning.size)
 
-                # Apply cuts for all but the last dimension dependency
-                for dim_num, dim in enumerate(bin_dims[:-1]):
-                    if dim.inbounds_criteria not in cut_events[dim_num + 1]:
-                        # Apply this dim cut to "parent" dim's events. Note
-                        # that indices are off by 1, so this dim's events are
-                        # stored in element dim_num + 1 and its parent is at
-                        # [dim_num]
-                        cut_events[dim_num + 1] = (
-                            cut_events[dim_num].applyCut(dim.inbounds_criteria)
-                        )
+                # Formulate a single cut string that can be evaluated for
+                # each flavintgroup
+                criteria = []
+                for dim in bin_dims[:-1]:
+                    dim_name = dim.name
+                    criteria.append(dim.inbounds_criteria.replace(
+                        dim_name, 'flav_events["%s"]' % dim_name
+                    ))
+                criteria = (' & '.join(criteria)).strip()
+
+                last_dim = bin_dims[-1]
+                last_dim_bin_center = last_dim.weighted_centers[0].m
+                last_dim_bin_edges = last_dim.bin_edges.m
+                last_dim_name = last_dim.name
+                last_dim_is_log = last_dim.is_log
 
                 for flavintgroup in self.transform_groups:
                     logging.trace('    > flavintgroup = %s', flavintgroup)
-                    repr_flavint = flavintgroup[0]
 
-                    flav_events = collect_enough_events(
-                        events=cut_events[-1],
-                        flavint=repr_flavint,
-                        bin=bin_dims[-1],
+                    flav_events = sorted_events[flavintgroup]
+                    if criteria:
+                        try:
+                            mask1 = eval(criteria)
+                        except:
+                            logging.error(
+                                'Failed during eval of the string "%s"'
+                                % criteria
+                            )
+                            raise
+                    else:
+                        mask1 = slice(None)
+
+                    mask2 = collect_enough_events(
+                        events=flav_events,
+                        mask=mask1,
+                        free_dim=last_dim_name,
+                        is_log=last_dim_is_log,
+                        bin_center=last_dim_bin_center,
+                        bin_edges=last_dim_bin_edges,
                         min_num_events=self.min_num_events[char_dim],
                         tgt_num_events=self.tgt_num_events[char_dim],
                         tgt_max_binwidth_factor=self.tgt_max_binwidth_factors[char_dim]
-                    )[repr_flavint]
+                    )
 
-                    if weights_name in flav_events:
-                        weights = flav_events[weights_name]
+                    if weights_name in flav_events.keys():
+                        weights = flav_events[weights_name][mask1][mask2]
                         weights = weights * (len(weights)/np.sum(weights))
                     else:
                         weights = None
 
                     if char_dim == 'pid':
-                        feature = flav_events['pid']
+                        feature = flav_events['pid'][mask1][mask2]
                         fmin, fmax = min(feature), max(feature)
                         half_width = (fmax - fmin)/2
                         lowerlim = fmin - half_width
@@ -1143,12 +1150,15 @@ class vbwkde(Stage):
                             n_dct=int(2**6),
                             min=lowerlim, max=upperlim,
                             evaluate_at=np.linspace(lowerlim, upperlim,
-                                                    int(5e3))
+                                                    int(1e4))
                         )
 
                     elif char_dim == 'energy':
-                        feature = np.log(flav_events['reco_energy']
-                                         / flav_events['true_energy'])
+                        feature = np.log(
+                            flav_events['reco_energy'][mask1][mask2]
+                            / flav_events['true_energy'][mask1][mask2]
+                        )
+
                         fmin, fmax = min(feature), max(feature)
                         lowerlim = fmin
                         upperlim = fmax
@@ -1158,18 +1168,21 @@ class vbwkde(Stage):
                             n_dct=int(2**6),
                             min=lowerlim, max=upperlim,
                             evaluate_at=np.linspace(lowerlim, upperlim,
-                                                    int(5e3))
+                                                    int(1e4))
                         )
 
                     elif char_dim == 'coszen':
-                        feature = (flav_events['reco_coszen']
-                                   - flav_events['true_coszen'])
+                        feature = (flav_events['reco_coszen'][mask1][mask2]
+                                   - flav_events['true_coszen'][mask1][mask2])
+                        if weights is not None:
+                            w = weights
+                        else:
+                            w = np.array([], dtype=FTYPE)
                         weights, error_limits = weight_coszen_tails(
                             cz_diff=feature,
                             cz_bin_edges=bin_binning.true_coszen.bin_edges.m,
-                            input_weights=weights
+                            input_weights=w
                         )
-                        weights = weights * (len(weights)/np.sum(weights))
 
                         # TODO: try the following to fix the tails falling off
                         # too abruptly:
@@ -1197,10 +1210,14 @@ class vbwkde(Stage):
                         feature_to_cat = [orig_feature]
                         weights_to_cat = [orig_weights]
                         if np.sum(lower_mask) > 0:
-                            feature_to_cat.append(2*error_limits[0] - feature[lower_mask])
+                            feature_to_cat.append(
+                                2*error_limits[0] - feature[lower_mask]
+                            )
                             weights_to_cat.append(weights[lower_mask])
                         if np.sum(upper_mask) > 0:
-                            feature_to_cat.append(2*error_limits[1] - feature[upper_mask])
+                            feature_to_cat.append(
+                                2*error_limits[1] - feature[upper_mask]
+                            )
                             weights_to_cat.append(weights[upper_mask])
                         feature = np.concatenate(feature_to_cat)
                         weights = np.concatenate(weights_to_cat)
@@ -1212,6 +1229,7 @@ class vbwkde(Stage):
                             n_dct=int(2**6),
                             min=extended_lower_lim,
                             max=extended_upper_lim,
+                            evaluate_dens=False,
                             evaluate_at=None
                         )
 
@@ -1227,7 +1245,7 @@ class vbwkde(Stage):
 
                     if char_dim == 'coszen':
                         x = np.linspace(extended_lower_lim, extended_upper_lim,
-                                        5e4)
+                                        2e4)
                         counts = gaussians(x=x, mu=orig_feature,
                                            sigma=bw[:len(orig_feature)],
                                            weights=orig_weights)
@@ -1362,6 +1380,11 @@ class vbwkde(Stage):
         # TODO: implement these systematics
         cz_res_scale = self.params.cz_res_scale.value.m
         cz_reco_bias = self.params.cz_reco_bias.value.m
+        if cz_res_scale != 1 or cz_reco_bias != 0:
+            raise NotImplementedError(
+                'cz_res_scale and cz_reco_bias systematics are not implemented'
+                ' yet, so must be fixed at 1 and 0, respectively.'
+            )
 
         pid_edges = inf2finite(pid_binning.bin_edges.m)
 
@@ -1517,8 +1540,7 @@ class vbwkde(Stage):
                 # this is why `true_cz_lower_edge` and `true_cz_upper_edge` are
                 # enumerated over in the below loop, since these will be
                 # necessary to implement the systamtic(s).
-                for true_cz_bin_num, (true_cz_lower_edge, true_cz_upper_edge) \
-                        in enumerate(true_cz_edge_pairs):
+                for true_cz_bin_num, _ in enumerate(true_cz_edge_pairs):
                     cz_closest_cz_idx = cz_closest_cz_indices[true_cz_bin_num]
                     cz_closest_kde_coord = char_binning['coszen'].coord(
                         pid=pid_bin_num,

@@ -624,7 +624,7 @@ def main(return_outputs=False):
                     outputs,
                     fname=stg_svc + '__output'
                 )
-        except ValueError:
+        except ValueError as exc:
             logging.error('Failed to save plot to format %s. See exception'
                           ' message below' % fmt)
             traceback.format_exc()
