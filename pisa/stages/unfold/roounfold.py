@@ -13,6 +13,7 @@ from copy import deepcopy
 
 import numpy as np
 from uncertainties import unumpy as unp
+import pint
 
 from ROOT import TH1
 from ROOT import RooUnfoldResponse, RooUnfoldBayes
