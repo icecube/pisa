@@ -94,7 +94,7 @@ PISA_FTYPE=float64 $PISA/pisa/scripts/compare.py \
 	--test settings/pipeline/example_gpu.cfg \
 	--test-label 'gpu' \
 	--outdir $OUTDIR \
-	--pdf --png -v
+	--png -v
 
 
 OUTDIR_IH=$TMP/ih_pipeline
@@ -107,7 +107,7 @@ PISA_FTYPE=float64 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example.cfg \
 	--select "ih" \
 	-d $OUTDIR_IH \
-	--pdf --png -v
+	--png -v
 
 OUTDIR_NH=$TMP/nh_pipeline
 echo "=============================================================================="
@@ -119,7 +119,7 @@ PISA_FTYPE=float64 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example.cfg \
 	--select "nh" \
 	-d $OUTDIR_NH \
-	--pdf --png -v
+	--png -v
 
 OUTDIR_NH_DIST_MAKER=$TMP/nh_dist_maker
 echo "=============================================================================="
@@ -131,7 +131,7 @@ PISA_FTYPE=float64 $PISA/pisa/core/distribution_maker.py \
 	-p settings/pipeline/example.cfg \
 	--select "nh" \
 	-d $OUTDIR_NH_DIST_MAKER \
-	--pdf --png -v
+	--png -v
 
 OUTDIR=$TMP/compare_nh_to_ih
 echo "=============================================================================="
@@ -145,7 +145,7 @@ $PISA/pisa/scripts/compare.py \
 	--test $OUTDIR_NH/*.json.bz2 \
 	--test-label 'nh' \
 	--outdir $OUTDIR \
-	--pdf --png -v
+	--png -v
 
 
 OUTDIR_NH_FP32_CPU=$TMP/nh_pipeline_fp32_cpu
@@ -196,7 +196,7 @@ $PISA/pisa/scripts/compare.py \
 	--test $OUTDIR_NH_FP32_CPU/*.json.bz2 \
 	--test-label 'fp32_cpu' \
 	--outdir $OUTDIR \
-	--pdf --png -v
+	--png -v
 
 OUTDIR=$TMP/compare_fp32_gpu_to_fp64_cpu
 echo "=============================================================================="
@@ -210,7 +210,7 @@ $PISA/pisa/scripts/compare.py \
 	--test $OUTDIR_NH_FP32_GPU/*.json.bz2 \
 	--test-label 'fp32_gpu' \
 	--outdir $OUTDIR \
-	--pdf --png -v
+	--png -v
 
 OUTDIR=$TMP/compare_fp64_gpu_to_fp64_cpu
 echo "=============================================================================="
@@ -224,7 +224,7 @@ $PISA/pisa/scripts/compare.py \
 	--test $OUTDIR_NH_FP64_GPU/*.json.bz2 \
 	--test-label 'fp64_gpu' \
 	--outdir $OUTDIR \
-	--pdf --png -v
+	--png -v
 
 OUTDIR=$TMP/compare_fp32_gpu_to_fp64_gpu
 echo "=============================================================================="
@@ -238,7 +238,7 @@ $PISA/pisa/scripts/compare.py \
 	--test $OUTDIR_NH_FP32_GPU/*.json.bz2 \
 	--test-label 'fp32_gpu' \
 	--outdir $OUTDIR \
-	--pdf --png -v
+	--png -v
 
 
 OUTDIR=$TMP/hypo_testing_test
