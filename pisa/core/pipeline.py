@@ -15,6 +15,7 @@ from importlib import import_module
 from itertools import product
 from inspect import getsource
 import os
+import traceback
 
 import numpy as np
 
@@ -608,20 +609,27 @@ def main(return_outputs=False):
         elif isinstance(stage.outputs, (MapSet, TransformSet)):
             outputs = stage.outputs
 
-        for fmt, enabled in formats.items():
-            if not enabled:
-                continue
-            my_plotter = Plotter(
-                stamp='Event rate',
-                outdir=args.dir,
-                fmt=fmt, log=False,
-                annotate=args.annotate
-            )
-            my_plotter.ratio = True
-            my_plotter.plot_2d_array(
-                outputs,
-                fname=stg_svc + '__output'
-            )
+        try:
+            for fmt, enabled in formats.items():
+                if not enabled:
+                    continue
+                my_plotter = Plotter(
+                    stamp='Event rate',
+                    outdir=args.dir,
+                    fmt=fmt, log=False,
+                    annotate=args.annotate
+                )
+                my_plotter.ratio = True
+                my_plotter.plot_2d_array(
+                    outputs,
+                    fname=stg_svc + '__output'
+                )
+        except ValueError:
+            logging.error('Failed to save plot to format %s. See exception'
+                          ' message below' % fmt)
+            traceback.format_exc()
+            logging.exception(exc)
+            logging.warning("I can't go on, I'll go on.")
 
     if return_outputs:
         return pipeline, outputs
