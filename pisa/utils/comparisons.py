@@ -24,7 +24,7 @@ in turn is essential for caching to work correctly.
 """
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 from itertools import izip
 from collections import Iterable, Iterator, Mapping, OrderedDict, Sequence
@@ -32,10 +32,10 @@ from numbers import Number
 import re
 
 import numpy as np
+import pint
 from uncertainties.core import AffineScalarFunc
 from uncertainties import ufloat
 from uncertainties import unumpy as unp
-import pint
 
 from pisa import ureg, FTYPE, HASH_SIGFIGS
 from pisa.utils.log import logging, set_verbosity
@@ -154,10 +154,12 @@ def recursiveEquality(x, y):
     # NOTE: The order in which types are compared below matters, so change
     # order carefully.
 
-    # pint units
+    # pint units; allow for comparing across different regestries, for
+    # pragmatic (but possibly not the most correct) reasons...
+    # pylint: disable=protected-access
     if isinstance(x, pint.unit._Unit):
         if not isinstance(y, pint.unit._Unit):
-            logging.trace('type(x)=%s but type(y)=%s' %(type(x), type(y)))
+            logging.trace('type(x)=%s but type(y)=%s', type(x), type(y))
         if repr(x) != repr(y):
             logging.trace('x: %s' %x)
             logging.trace('y: %s' %y)
@@ -294,7 +296,7 @@ def recursiveAllclose(x, y, *args, **kwargs):
     elif hasattr(x, '__len__'):
         if len(x) != len(y):
             return False
-        if isinstance(x, list) or isinstance(x, tuple):
+        if isinstance(x, (list, tuple)):
             # NOTE: A list is allowed to be allclose to a tuple so long
             # as the contents are allclose
             if not isinstance(y, list) or isinstance(y, tuple):
@@ -467,7 +469,6 @@ def normQuant(obj, sigfigs=None, full_norm=True):
     True
 
     """
-    from pisa.core.binning import MultiDimBinning, OneDimBinning
     #logging.trace('-'*80)
     #logging.trace('obj: %s', obj)
     #logging.trace('type(obj): %s', type(obj))
@@ -507,6 +508,9 @@ def normQuant(obj, sigfigs=None, full_norm=True):
     # Sequences, etc. but NOT numpy arrays (or pint quantities, which are
     # iterable) get their elements normalized and populated to a new list for
     # returning.
+    # NOTE/TODO: allowing access across unit regestries for pragmatic (if
+    # incorrect) reasons... may want to revisit this decision.
+    # pylint: disable=protected-access
     misbehaving_sequences = (np.ndarray, pint.quantity._Quantity)
     if (isinstance(obj, (Iterable, Iterator, Sequence))
             and not isinstance(obj, misbehaving_sequences)):
@@ -528,7 +532,7 @@ def normQuant(obj, sigfigs=None, full_norm=True):
 
     has_units = False
     if isinstance(obj, pint.quantity._Quantity):
-        #logging.trace('is a _Quantity, converting to base units')
+        #logging.trace('is a Quantity, converting to base units')
         has_units = True
         if full_norm:
             obj = obj.to_base_units()
@@ -606,6 +610,7 @@ def normQuant(obj, sigfigs=None, full_norm=True):
 
 
 def test_isscalar():
+    """Unit test for isscalar function"""
     assert isscalar(0)
     assert isscalar('xyz')
     assert isscalar('')
@@ -634,6 +639,7 @@ def test_isscalar():
 
 
 def test_recursiveEquality():
+    """Unit test for recursiveEquality function"""
     d1 = {'one': 1, 'two': 2, 'three': None, 'four': 'four'}
     d2 = {'one': 1.0, 'two': 2.0, 'three': None, 'four': 'four'}
     d3 = {'one': np.arange(0, 100),
@@ -664,10 +670,11 @@ def test_recursiveEquality():
     assert recursiveEquality(d7, d8)
 
     # Units and quantities (numbers with units)
+
     ureg0 = pint.UnitRegistry()
     ureg1 = pint.UnitRegistry()
     u0 = ureg0.GeV
-    u1 = ureg1.MeV
+    u1 = ureg0.MeV
     u2 = ureg1.GeV
     u3 = ureg1.gigaelectron_volt
     u4 = ureg1.foot
@@ -694,6 +701,7 @@ def test_recursiveEquality():
 
 
 def test_normQuant():
+    """Unit test for normQuant function"""
     # TODO: test:
     # * non-numerical
     #   * single non-numerical
