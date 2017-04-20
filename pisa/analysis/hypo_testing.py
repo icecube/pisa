@@ -1756,6 +1756,8 @@ class HypoTesting(Analysis):
                     h1_name=h1_name,
                     data_name=data_name
                 )
+                # Data must be cleared or else it won't be regenerated
+                self.clear_data()
                 # Then inject this wrong down by one sigma
                 self.systematic_wrong_analysis(
                     data_param=data_param,
