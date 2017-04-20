@@ -98,9 +98,9 @@ Required Python modules that are installed automatically when you use the pip co
 * [dill](http://trac.mystic.cacr.caltech.edu/project/pathos/wiki/dill.html)
 * [h5py](http://www.h5py.org)
 * [line_profiler](https://pypi.python.org/pypi/line_profiler): detailed profiling output<br>
-* [matplotlib](http://matplotlib.org)
+* [matplotlib](http://matplotlib.org) >= 1.5 required
 * [numpy](http://www.numpy.org) version >= 1.11.0 required
-* [pint](https://pint.readthedocs.org); at present this must be installed from its github source, as there is a bug not yet fixed in a release; specifying `-r requirements.txt` to `pip` will automatically install pint from the correct source (https://github.com/hgrecco/pint.git@c5925bfdab09c75a26bb70cd29fb3d34eed56a5f#egg=pint)
+* [pint](https://pint.readthedocs.org) >= 0.8 required
 * [scipy](http://www.scipy.org) version >= 0.17 required
 * [setuptools](https://setuptools.readthedocs.io) version >= 0.18 required
 * [simplejson](https://github.com/simplejson/simplejson) version >= 3.2.0 required
