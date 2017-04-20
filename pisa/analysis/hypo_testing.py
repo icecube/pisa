@@ -1553,6 +1553,15 @@ class HypoTesting(Analysis):
         self.h0_maker.params.reset_free()
         self.h1_maker.params.reset_free()
 
+    def clear_data(self):
+        '''
+        Clears the data distributions so that they are regenerated. This is
+        needed for making multiple different data distributions (parameter
+        scans, systematics tests) with the same hypo_testing object.
+        '''
+        self.data_dist = None
+        self.toy_data_asimov_dist = None
+
     def inj_param_scan(self, param_name, test_name, inj_vals,
                        requested_vals, h0_name, h1_name, data_name):
         '''
@@ -1614,9 +1623,8 @@ class HypoTesting(Analysis):
             # At the end, reset the parameters in the maker
             self.reset_makers()
             # Also be sure to remove the data_dist and toy_data_asimov_dist
-            # so that it is regenerated next time
-            self.data_dist = None
-            self.toy_data_asimov_dist = None
+            # so that they are regenerated next time
+            self.clear_data()
 
     def nminusone_test(self, data_param, h0_name, h1_name, data_name):
         '''
@@ -1734,6 +1742,9 @@ class HypoTesting(Analysis):
         self.log_and_do_fits()
         # Reset the makers
         self.reset_makers()
+        # Also be sure to remove the data_dist and toy_data_asimov_dist
+        # so that they are regenerated next time
+        self.clear_data()
         for data_param in self.data_maker.params.free:
             if inject_wrong:
                 # First inject this wrong up by one sigma
@@ -1764,6 +1775,9 @@ class HypoTesting(Analysis):
                 )
             # At the end, reset the parameters in the maker
             self.reset_makers()
+            # Also be sure to remove the data_dist and toy_data_asimov_dist
+            # so they are regenerated next time
+            self.clear_data()
             # Also unfix the hypo maker parameters
             for h0_param in self.h0_maker.params:
                 if h0_param.name == data_param.name:
