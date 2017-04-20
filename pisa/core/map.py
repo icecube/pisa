@@ -845,6 +845,11 @@ class Map(object):
         return self.hist.size
 
     @property
+    def counts(self):
+        """float : summed bin counts"""
+        return np.sum(self.hist)
+
+    @property
     def serializable_state(self):
         state = OrderedDict()
         state['name'] = self.name
