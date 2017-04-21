@@ -278,10 +278,11 @@ def do_setup():
                 'numba>=0.31' # fastmath jit flag
             ],
             'develop': [
-                'sphinx>1.3',
+                'pylint>=1.7',
                 'recommonmark',
+                'sphinx>=1.3',
+                'sphinx_rtd_theme',
                 'versioneer',
-                'sphinx_rtd_theme'
             ]
         },
         packages=find_packages(),

@@ -129,9 +129,11 @@ Optional dependencies. Some of these must be installed manually prior to install
     `sudo apt-get install root-system libroot-bindings-python*`
 * [numba](http://numba.pydata.org) Just-in-time compilation of decorated Python functions to native machine code via LLVM. This can accelerate certain routines significantly. If not using Anaconda to install, you must have LLVM installed already on your system (see above).
   * Installed alongside PISA if you specify option `['numba']` to `pip`
+* [Pylint](http://www.pylint.org): Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.<br>
+  * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [PyCUDA](https://mathema.tician.de/software/pycuda): run certain routines on Nvidia CUDA GPUs (must have compute 2.0 or greater capability)<br>
   * Installed alongside PISA if you specify option `['cuda']` to `pip`
-* [Sphinx](http://www.sphinx-doc.org/en/stable/) version > 1.3
+* [Sphinx](http://www.sphinx-doc.org/en/stable/) version >= 1.3
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [recommonmark](http://recommonmark.readthedocs.io/en/latest/) Translator to allow markdown docs/docstrings to be used; plugin for Sphinx. (Required to compile PISA's documentation.)
   * Installed alongside PISA if you specify option `['develop']` to `pip`
