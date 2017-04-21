@@ -251,7 +251,7 @@ def weight_coszen_tails(cz_diff, cz_bin_edges, input_weights):
     upper_tail_width = diff_upper_lim - upper_tail_lower_lim
 
     total = 0.0
-    if input_weights:
+    if len(input_weights) > 0:
         for n, orig_weight in enumerate(input_weights):
             cz_d = cz_diff[n]
             if cz_d > upper_tail_lower_lim:
@@ -1095,7 +1095,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
                     weights = None
                     if weights_name in flav_events.keys():
                         weights = flav_events[weights_name][mask1][mask2]
-                        assert weights
+                        assert len(weights) > 0
                         weights_total = np.sum(weights)
                         if weights_total != 0:
                             weights = weights * (len(weights)/weights_total)
