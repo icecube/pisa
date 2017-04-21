@@ -310,6 +310,7 @@ def do_setup():
                 'make_asymmetry_plots.py = pisa.scripts.make_asymmetry_plots:main',
                 'make_events_file.py = pisa.scripts.make_events_file:main',
                 'make_nufit_theta23_spline_priors.py = pisa.scripts.make_nufit_theta23_spline_priors:main',
+                'make_toy_events.py = pisa.scripts.make_toy_events:main'
             ]
         }
     )
