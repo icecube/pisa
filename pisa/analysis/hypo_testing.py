@@ -1756,6 +1756,8 @@ class HypoTesting(Analysis):
                     h1_name=h1_name,
                     data_name=data_name
                 )
+                # At the end, reset the parameters in the maker
+                self.reset_makers()
                 # Data must be cleared or else it won't be regenerated
                 self.clear_data()
                 # Then inject this wrong down by one sigma
