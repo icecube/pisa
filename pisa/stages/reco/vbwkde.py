@@ -35,14 +35,15 @@ from __future__ import absolute_import, division
 from ast import literal_eval
 from collections import Mapping, namedtuple, OrderedDict, Sequence
 from copy import deepcopy
+from math import exp, log
 import threading
+import traceback
 
 import numpy as np
-from numpy import inf
+from numpy import inf # pylint: disable=unused-import
 
 from pisa import EPSILON, FTYPE, NUMBA_AVAIL, OMP_NUM_THREADS, numba_jit
-from pisa.core.binning import MultiDimBinning, OneDimBinning
-from pisa.core.events import Events
+from pisa.core.binning import MultiDimBinning
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 
@@ -53,21 +54,19 @@ from pisa.utils.hash import hash_obj
 from pisa.utils.parallel import parallel_run
 from pisa.utils.vbwkde import vbwkde as vbwkde_func
 from pisa.utils.log import logging
-from pisa.utils.profiler import line_profile, profile
 
 
-__all__ = ['KDEProfile', 'collect_enough_events', 'fold_coszen_diff',
-           'weight_coszen_tails', 'coszen_error_edges', 'vbwkde']
+__all__ = ['KDEProfile', 'collect_enough_events', 'weight_coszen_tails',
+           'coszen_error_edges', 'vbwkde']
 
 
 KDEProfile = namedtuple('KDEProfile', ['x', 'counts'])
 """namedtuple type for storing the normalized KDE profile: (x, counts)"""
 
 
-@numba_jit(nogil=True, fastmath=True)
-def collect_enough_events(events, mask, free_dim, bin_center, bin_edges,
-                          is_log, min_num_events, tgt_num_events,
-                          tgt_max_binwidth_factor):
+@numba_jit(nopython=True, nogil=True, fastmath=True)
+def collect_enough_events(values, bin_edges, is_log, min_num_events,
+                          tgt_num_events, tgt_max_binwidth_factor):
     """Heuristic to collect enough events close to the provided bin such
     that KDEs can be applied and achieve robust results.
 
@@ -100,12 +99,9 @@ def collect_enough_events(events, mask, free_dim, bin_center, bin_edges,
 
     Parameters
     ----------
-    events : dict
+    values : array of floats
 
-    mask
-
-    bin_center
-    bin_edges
+    bin_edges : length-2 sequence of floats
 
     min_num_events : int
         At least this many events will collected, regardless how far outside
@@ -121,20 +117,20 @@ def collect_enough_events(events, mask, free_dim, bin_center, bin_edges,
 
     Returns
     -------
-    events_subset : pisa.core.events.Events
-        The subset of the passed `events` that fulfill the criteria outlined
-        above.
+    mask : array
+        A mask that selects which `values` fulfill the criteria outlined above.
 
     """
     if is_log:
-        bin_width = bin_edges[1] / bin_edges[0]
-        bin_half_width = np.sqrt(bin_width)
+        bin_width = log(bin_edges[1] / bin_edges[0])
+        bin_center = np.log(np.sqrt(bin_edges[0] * bin_edges[1]))
     else:
         bin_width = bin_edges[1] - bin_edges[0]
-        bin_half_width = bin_width / 2
+        bin_center = (bin_edges[0] + bin_edges[1]) / 2
 
-    field_values = events[free_dim][mask]
-    n_events = len(field_values)
+    bin_half_width = bin_width / 2
+
+    n_events = len(values)
 
     if n_events == 0:
         raise ValueError(
@@ -153,19 +149,16 @@ def collect_enough_events(events, mask, free_dim, bin_center, bin_edges,
     # Absolute distance from these events to the center of the bin, sorted in
     # ascending order (so events closest to bin center come first)
     if is_log:
-        sorted_abs_dist = np.sort(np.abs(np.log(field_values/bin_center)))
+        sorted_abs_dist = np.sort(np.abs(np.log(values) - bin_center))
     else:
-        sorted_abs_dist = np.sort(np.abs(field_values - bin_center))
+        sorted_abs_dist = np.sort(np.abs(values - bin_center))
 
     # Distance from the bin center you have to go to obtain `tgt_num_events`
-    tgt_num_events_dist = np.exp(sorted_abs_dist[tgt_num_events-1])
+    tgt_num_events_dist = sorted_abs_dist[tgt_num_events - 1]
 
     # Maximum distance the  tgt_max_binwidth_factor` allows us to go in order
     # to obtain `tgt_num_events` events
-    if is_log:
-        tgt_max_dist = bin_half_width * (1 + tgt_max_binwidth_factor)**2
-    else:
-        tgt_max_dist = bin_half_width + bin_width*tgt_max_binwidth_factor
+    tgt_max_dist = bin_half_width + bin_width*tgt_max_binwidth_factor
 
     # Define a single "target" distance taking into consideration that we
     # should neither exceed `tgt_max_dist` nor `tgt_num_events`
@@ -181,7 +174,7 @@ def collect_enough_events(events, mask, free_dim, bin_center, bin_edges,
 
     else:
         # Figure out how far out we have to go to get `min_num_events`
-        min_num_events_dist = np.exp(sorted_abs_dist[min_num_events-1])
+        min_num_events_dist = sorted_abs_dist[min_num_events - 1]
 
         # If this is _further_ than `tgt_dist`, then we have to suck it up
         # and go `min_num_events_dist` away to ensure we collect enough events
@@ -193,60 +186,22 @@ def collect_enough_events(events, mask, free_dim, bin_center, bin_edges,
         else:
             thresh_dist = tgt_dist
 
+    lower_edge = bin_center - thresh_dist
+    upper_edge = bin_center + thresh_dist
+
     if is_log:
-        lower_edge = bin_center / thresh_dist
-        upper_edge = bin_center * thresh_dist
-    else:
-        lower_edge = bin_center - thresh_dist
-        upper_edge = bin_center + thresh_dist
+        lower_edge = exp(lower_edge)
+        upper_edge = exp(upper_edge)
 
-    new_mask = (
-        (field_values >= lower_edge) & (field_values <= upper_edge)
-    )
+    mask = (values >= lower_edge) & (values <= upper_edge)
 
-    return new_mask
+    return mask
 
 
 def inf2finite(x):
     """Convert +/- infinities to largest/smallest representable numbers
     according to the current pisa.FTYPE"""
     return np.clip(x, a_min=np.finfo(FTYPE).min, a_max=np.finfo(FTYPE).max)
-
-
-def fold_coszen_diff(coszen_diff, randomize=False):
-    """Fold coszen difference above 1 down, and below -1 up.
-
-    Parameters
-    ----------
-    coszen_diff
-        Cosine-zenith difference, e.g. `reco_coszen - true_coszen`
-
-    randomize : bool
-        Randomizes the differences about 0, such that the full distribution of
-        coszen diffs looks good to the eye when plotted against true coszen.
-        This is not necessary, though, as a computational step (the underlying
-        distribution of coszen diffs is the same with or without
-        randomization).
-
-    Returns
-    -------
-    folded_coszen_diffs
-
-    """
-    if randomize:
-        rnd = np.random.RandomState()
-        random_sign = rnd.choice((-1, +1), size=coszen_diff.shape)
-        coszen_diff = coszen_diff * random_sign
-        folded_coszen_diff = coszen_diff
-    else:
-        folded_coszen_diff = np.copy(coszen_diff)
-
-    mask = coszen_diff > 1
-    folded_coszen_diff[mask] = 2 - coszen_diff[mask]
-    mask = coszen_diff < -1
-    folded_coszen_diff[mask] = -2 - coszen_diff[mask]
-
-    return folded_coszen_diff
 
 
 @numba_jit(nopython=True, nogil=True, fastmath=True)
@@ -296,7 +251,7 @@ def weight_coszen_tails(cz_diff, cz_bin_edges, input_weights):
     upper_tail_width = diff_upper_lim - upper_tail_lower_lim
 
     total = 0.0
-    if len(input_weights) > 0:
+    if input_weights:
         for n, orig_weight in enumerate(input_weights):
             cz_d = cz_diff[n]
             if cz_d > upper_tail_lower_lim:
@@ -330,6 +285,7 @@ def weight_coszen_tails(cz_diff, cz_bin_edges, input_weights):
     return new_weights, diff_limits
 
 
+@numba_jit(nopython=False, nogil=True, fastmath=True)
 def coszen_error_edges(true_edges, reco_edges):
     """Return a list of edges in coszen-error space given 2 true-coszen
     edges and reco-coszen edges. Systematics are not implemented at this time.
@@ -357,20 +313,21 @@ def coszen_error_edges(true_edges, reco_edges):
     n_reco_edges = len(reco_edges)
     reco_lower_binedges = reco_edges[:-1]
     reco_upper_binedges = reco_edges[1:]
-    true_lower_binedge, true_upper_binedge = true_edges
+    true_lower_binedge = true_edges[0]
+    true_upper_binedge = true_edges[1]
 
     full_reco_range_lower_binedge = np.round(
-        -1 - true_upper_binedge, EQUALITY_SIGFIGS
+        -1 - true_upper_binedge, decimals=EQUALITY_SIGFIGS
     )
     full_reco_range_upper_binedge = np.round(
-        +1 - true_lower_binedge, EQUALITY_SIGFIGS
+        +1 - true_lower_binedge, decimals=EQUALITY_SIGFIGS
     )
 
     dcz_lower_binedges = np.round(
-        reco_lower_binedges - true_upper_binedge, EQUALITY_SIGFIGS
+        reco_lower_binedges - true_upper_binedge, decimals=EQUALITY_SIGFIGS
     )
     dcz_upper_binedges = np.round(
-        reco_upper_binedges - true_lower_binedge, EQUALITY_SIGFIGS
+        reco_upper_binedges - true_lower_binedge, decimals=EQUALITY_SIGFIGS
     )
 
     all_dcz_binedges, indices = np.unique(
@@ -397,7 +354,12 @@ def coszen_error_edges(true_edges, reco_edges):
 
 @numba_jit(nogil=True, nopython=True, fastmath=True)
 def sorted_fast_histogram(a, bins, weights):
-    """Fast but less precise histogramming of a sorted array with weights.
+    """Fast but less precise histogramming of a sorted (in ascending order)
+    array with weights.
+
+    Note that due to the assumption that `a` is sorted, this histogram function
+    is slightly faster and more precise than `fast_histogram` operating on an
+    unsorted array.
 
     Parameters
     ----------
@@ -463,7 +425,7 @@ def fast_histogram(a, bins, weights):
     See Also
     --------
     sorted_fast_histogram
-        Small speedup if `a` is sorted
+        Small speedup and more precision if `a` is sorted
 
     """
     nbins = len(bins) - 1
@@ -500,7 +462,7 @@ else:
     HIST_FUNC = np.histogram
 
 
-class vbwkde(Stage):
+class vbwkde(Stage): # pylint: disable=invalid-name
     r"""
     From simulated events, a set of transforms are created which map
     bins of true events onto distributions of reconstructed events using
@@ -682,7 +644,7 @@ class vbwkde(Stage):
                  char_deps_downsampling, min_num_events, tgt_num_events,
                  tgt_max_binwidth_factors,
                  error_method=None,
-                 disk_cache=True,
+                 disk_cache=False,
                  transforms_cache_depth=1,
                  outputs_cache_depth=20,
                  memcache_deepcopy=False,
@@ -967,7 +929,6 @@ class vbwkde(Stage):
         for base_d in input_basenames:
             assert base_d in output_basenames
 
-    @line_profile
     def _compute_transforms(self):
         """Generate reconstruction smearing kernels by estimating the
         distribution of reconstructed events corresponding to each bin of true
@@ -1034,6 +995,7 @@ class vbwkde(Stage):
                       self.transform_groups, self.particles,
                       self.sum_grouped_flavints]
 
+        # Create a copy of the events sorted according to ascending true_energy
         sorted_events = dict()
         for flavintgroup in self.transform_groups:
             repr_flavint = flavintgroup[0]
@@ -1101,7 +1063,6 @@ class vbwkde(Stage):
                 criteria = (' & '.join(criteria)).strip()
 
                 last_dim = bin_dims[-1]
-                last_dim_bin_center = last_dim.weighted_centers[0].m
                 last_dim_bin_edges = last_dim.bin_edges.m
                 last_dim_name = last_dim.name
                 last_dim_is_log = last_dim.is_log
@@ -1115,30 +1076,31 @@ class vbwkde(Stage):
                             mask1 = eval(criteria)
                         except:
                             logging.error(
-                                'Failed during eval of the string "%s"'
-                                % criteria
+                                'Failed during eval of the string "%s"',
+                                criteria
                             )
                             raise
                     else:
                         mask1 = slice(None)
 
                     mask2 = collect_enough_events(
-                        events=flav_events,
-                        mask=mask1,
-                        free_dim=last_dim_name,
-                        is_log=last_dim_is_log,
-                        bin_center=last_dim_bin_center,
+                        values=flav_events[last_dim_name][mask1],
                         bin_edges=last_dim_bin_edges,
+                        is_log=last_dim_is_log,
                         min_num_events=self.min_num_events[char_dim],
                         tgt_num_events=self.tgt_num_events[char_dim],
                         tgt_max_binwidth_factor=self.tgt_max_binwidth_factors[char_dim]
                     )
 
+                    weights = None
                     if weights_name in flav_events.keys():
                         weights = flav_events[weights_name][mask1][mask2]
-                        weights = weights * (len(weights)/np.sum(weights))
-                    else:
-                        weights = None
+                        assert weights
+                        weights_total = np.sum(weights)
+                        if weights_total != 0:
+                            weights = weights * (len(weights)/weights_total)
+                        else:
+                            weights = None
 
                     if char_dim == 'pid':
                         feature = flav_events['pid'][mask1][mask2]
@@ -1285,12 +1247,16 @@ class vbwkde(Stage):
             if self.disk_cache is not None:
                 try:
                     self.disk_cache[new_hash] = self.kde_profiles[char_dim]
-                except:
+                except Exception as exc:
                     logging.error(
                         'Failed to write KDE profiles for dimension %s'
-                        ' (%d bytes) to disk cache; skipping caching.',
+                        ' (%d bytes) to disk cache. To debug issue, see'
+                        ' exception message below.',
                         char_dim, sizeof_kde_profiles
                     )
+                    traceback.format_exc()
+                    logging.exception(exc)
+                    logging.warning('Proceeding without disk caching.')
 
     def generate_all_kernels(self):
         """Dispatches `generate_single_kernel` for all specified transform
@@ -1396,7 +1362,7 @@ class vbwkde(Stage):
             / e_res_scale
         )
 
-        reco_cz_edges = reco_coszen.bin_edges.m
+        reco_cz_edges = np.asarray(reco_coszen.bin_edges.m, dtype=FTYPE)
         if self.debug_mode:
             assert np.all(np.isfinite(reco_cz_edges)), str(reco_cz_edges)
 
@@ -1416,16 +1382,14 @@ class vbwkde(Stage):
 
         true_e_centers = true_energy.weighted_centers.m
         true_cz_centers = true_coszen.weighted_centers.m
-        true_cz_edges = true_coszen.bin_edges.m
-        true_cz_edge_pairs = [(e0, e1) for e0, e1 in zip(true_cz_edges[:-1],
-                                                         true_cz_edges[1:])]
 
         allbins_dcz_edge_info = []
         cz_closest_cz_indices = []
         for center, true_edgetuple in zip(true_cz_centers,
                                           true_coszen.iteredgetuples()):
             all_dcz_binedges, cz_reco_indices = coszen_error_edges(
-                true_edges=true_edgetuple, reco_edges=reco_cz_edges
+                true_edges=np.asarray(true_edgetuple, dtype=FTYPE),
+                reco_edges=reco_cz_edges
             )
 
             # Note that the final (uppermost) edge doesn't matter as it does
@@ -1458,12 +1422,17 @@ class vbwkde(Stage):
             # Figure out PID fractions
             pid_kde_profile = pid_kde_profiles[pid_closest_kde_coord]
 
-            pid_norm = 1/np.sum(pid_kde_profile.counts)
-            pid_counts, _ = HIST_FUNC(
-                pid_kde_profile.x, weights=pid_kde_profile.counts,
-                bins=pid_edges
-            )
-            pid_fractions = pid_norm * pid_counts
+            pid_total = np.sum(pid_kde_profile.counts)
+            if pid_total == 0:
+                pid_fractions = np.zeros(size=len(pid_edges) - 1, dtype=FTYPE)
+                logging.warn('Zero events in PID bin!')
+            else:
+                pid_norm = 1 / pid_total
+                pid_counts, _ = HIST_FUNC(
+                    pid_kde_profile.x, weights=pid_kde_profile.counts,
+                    bins=pid_edges
+                )
+                pid_fractions = pid_norm * pid_counts
 
             if self.debug_mode:
                 assert np.all(pid_fractions >= 0), str(pid_fractions)
@@ -1502,21 +1471,28 @@ class vbwkde(Stage):
                 # where we characterized the energy resolutions
                 e_edges = reco_e_edges - np.log(true_e_center)/e_res_scale
 
-                energy_norm = 1 / np.sum(e_kde_profile.counts)
+                energy_total = np.sum(e_kde_profile.counts)
 
-                reco_energy_counts, _ = HIST_FUNC(
-                    e_kde_profile.x, weights=e_kde_profile.counts,
-                    bins=e_edges
-                )
-                reco_energy_fractions = energy_norm * reco_energy_counts
+                if energy_total == 0:
+                    reco_energy_fractions = np.zeros(shape=len(e_edges) - 1,
+                                                     dtype=FTYPE)
+                    logging.warn('Zero events in energy bin!')
+                else:
+                    energy_norm = 1 / energy_total
 
-                if self.debug_mode:
-                    assert np.all(reco_energy_fractions >= 0), \
-                            str(reco_energy_fractions)
-                    assert np.all(reco_energy_fractions <= 1), \
-                            str(reco_energy_fractions)
-                    assert np.sum(reco_energy_fractions < 1 + 10*EPSILON), \
-                            str(reco_energy_fractions)
+                    reco_energy_counts, _ = HIST_FUNC(
+                        e_kde_profile.x, weights=e_kde_profile.counts,
+                        bins=e_edges
+                    )
+                    reco_energy_fractions = energy_norm * reco_energy_counts
+
+                    if self.debug_mode:
+                        assert np.all(reco_energy_fractions >= 0), \
+                                str(reco_energy_fractions)
+                        assert np.all(reco_energy_fractions <= 1), \
+                                str(reco_energy_fractions)
+                        assert np.sum(reco_energy_fractions < 1 + 10*EPSILON), \
+                                str(reco_energy_fractions)
 
                 # pid and true_energy are covered by the `energy_indexer`;
                 # then we broadcast reco_energy to
@@ -1533,15 +1509,14 @@ class vbwkde(Stage):
                     np.log(true_e_center / cz_kde_e_centers)
                 ))
 
-                # Get the closest coszen smearing for this
-                # (PID, true-coszen, true-energy) bin
+                # Get closest coszen smearing for (PID, true-cz, true-E) bin
 
                 # TODO: implement `res_scale_ref` and `cz_reco_bias`! Note that
                 # this is why `true_cz_lower_edge` and `true_cz_upper_edge` are
                 # enumerated over in the below loop, since these will be
                 # necessary to implement the systamtic(s).
-                for true_cz_bin_num, _ in enumerate(true_cz_edge_pairs):
-                    cz_closest_cz_idx = cz_closest_cz_indices[true_cz_bin_num]
+                for true_cz_bin_num, cz_closest_cz_idx \
+                        in enumerate(cz_closest_cz_indices):
                     cz_closest_kde_coord = char_binning['coszen'].coord(
                         pid=pid_bin_num,
                         true_coszen=cz_closest_cz_idx,
