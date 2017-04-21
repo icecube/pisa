@@ -27,6 +27,8 @@ If you wish to upgrade PISA and/or its dependencies:
 """
 
 
+from __future__ import absolute_import
+
 from distutils.command.build import build
 import os
 import shutil
@@ -260,8 +262,8 @@ def do_setup():
             'dill',
             'h5py',
             'line_profiler',
-            'matplotlib',
-            'pint',
+            'matplotlib>=1.5', # inferno colormap
+            'pint>=0.8', # earlier versions buggy
             'kde',
             'simplejson>=3.2',
             'tables',
@@ -276,10 +278,11 @@ def do_setup():
                 'numba>=0.31' # fastmath jit flag
             ],
             'develop': [
-                'sphinx>1.3',
+                'pylint>=1.7',
                 'recommonmark',
+                'sphinx>=1.3',
+                'sphinx_rtd_theme',
                 'versioneer',
-                'sphinx_rtd_theme'
             ]
         },
         packages=find_packages(),
