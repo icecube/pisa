@@ -1523,6 +1523,12 @@ class vbwkde(Stage): # pylint: disable=invalid-name
                         true_energy=cz_closest_e_idx
                     )
 
+                    if debug_mode:
+                        logging.debug(
+                            'true_cz_bin_num = %d, cz_closest_kde_coord = %s',
+                            true_cz_bin_num, cz_closest_kde_coord
+                        )
+
                     # Get KDE profile (in "delta-cz" space)
                     dcz_kde_profile = dcz_kde_profiles[cz_closest_kde_coord]
 
