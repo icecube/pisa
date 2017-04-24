@@ -35,7 +35,7 @@ test_consistency_with_pisa2.py -v
 # EXAMPLE: Run a Monte Carlo pipeline to produce, store, and plot its expected
 # distributions at the output of each stage
 pipeline.py --settings settings/pipeline/example.cfg \
-    --dir /tmp/pipeline_output --intermediate --pdf -v
+    --outdir /tmp/pipeline_output --intermediate --pdf -v
 
 # EXAMPLE: Run the Asimov NMO analysis; leave off "_gpu" to run CPU-only
 # version
@@ -50,7 +50,7 @@ hypo_testing.py --logdir /tmp/test \
     --pprint -v
 
 # Display the significance for distinguishing hypothesis h1 from h0
-hypo_testing_postprocess.py --asimov --dir /tmp/test/*
+hypo_testing_postprocess.py --asimov --logdir /tmp/test/*
 
 # Leave the virtual environment (run the `source...` command above to re-enter
 # the virtual environment at a later time)
