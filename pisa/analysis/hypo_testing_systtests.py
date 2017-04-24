@@ -35,6 +35,8 @@ def main():
     # HypoTesting object via dictionary's `pop()` method.
     inject_wrong = init_args_d.pop('inject_wrong')
     fit_wrong = init_args_d.pop('fit_wrong')
+    only_syst = init_args_d.pop('only_syst')
+    do_baseline = not init_args_d.pop('skip_baseline')
     if fit_wrong:
         if not inject_wrong:
             raise ValueError('You have specified to fit the systematically '
@@ -90,12 +92,28 @@ def main():
         init_args_d['data_param_selections']
     )
 
+    if only_syst is not None:
+        for syst in only_syst:
+            if syst not in init_args_d['h0_maker'].params.free.names:
+                raise ValueError(
+                    "Systematic test requested to be performed on systematic "
+                    "%s but it does not appear in the free parameters of the "
+                    "pipeline passed to the script - %s."%(
+                        syst, init_args_d['h0_maker'].params.free.names)
+                )
+        logging.info(
+            "Performing chosen systematic test on just the following "
+            "systematics - %s."%(only_syst)
+        )
+
     # Instantiate the analysis object
     hypo_testing = HypoTesting(**init_args_d)
     # Everything is set up so do the tests
     hypo_testing.syst_tests(
         inject_wrong=inject_wrong,
         fit_wrong=fit_wrong,
+        only_syst=only_syst,
+        do_baseline=do_baseline,
         h0_name=init_args_d['h0_name'],
         h1_name=init_args_d['h1_name'],
         data_name=init_args_d['data_name']
