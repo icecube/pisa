@@ -17,10 +17,11 @@ visually inspect.
 """
 
 
+from __future__ import absolute_import
+
 from argparse import ArgumentParser
 from copy import deepcopy
 import os
-import sys
 
 import numpy as np
 
