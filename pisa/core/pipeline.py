@@ -8,8 +8,11 @@ run a pipeline (the outputs of which can be plotted and stored to disk).
 """
 
 
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from __future__ import absolute_import
+
+from argparse import ArgumentParser
 from collections import OrderedDict
+from ConfigParser import NoSectionError
 from copy import deepcopy
 from importlib import import_module
 from itertools import product
@@ -25,8 +28,7 @@ from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
 from pisa.core.stage import Stage
 from pisa.core.transform import TransformSet
-from pisa.utils.config_parser import parse_pipeline_config
-from pisa.utils.betterConfigParser import BetterConfigParser
+from pisa.utils.config_parser import BetterConfigParser, parse_pipeline_config
 from pisa.utils.fileio import mkdir
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging, set_verbosity
@@ -224,14 +226,16 @@ class Pipeline(object):
         ----------
         inputs : None or MapSet
             Optional inputs to send to the first stage of the pipeline.
+
         idx : None, string, or int
             Specification of which stage(s) to run. If None is passed, all
             stages will be run. If a string is passed, all stages are run up to
             and including the named stage. If int is passed, all stages are run
             up to and including `idx`. Numbering follows Python
             conventions (i.e., is 0-indexed).
+
         return_intermediate : bool
-            If True,
+            Return list containing outputs from each stage in the pipeline.
 
         Returns
         -------
@@ -376,6 +380,8 @@ class Pipeline(object):
 
 def test_Pipeline():
     """Unit tests for Pipeline class"""
+    # pylint: disable=line-too-long
+
     #
     # Test: select_params and param_selections
     #
@@ -437,19 +443,33 @@ def test_Pipeline():
 def parse_args():
     """Parse command line arguments if `pipeline.py` is called as a script."""
     parser = ArgumentParser(
-        formatter_class=ArgumentDefaultsHelpFormatter,
+        #formatter_class=ArgumentDefaultsHelpFormatter,
         description='''Instantiate and run a pipeline from a config file.
         Optionally store the resulting distribution(s) and plot(s) to disk.'''
     )
-    parser.add_argument(
-        '-p', '--pipeline', metavar='CONFIGFILE', type=str,
-        required=True,
+
+    required = parser.add_argument_group('required arguments')
+    required.add_argument(
+        '-p', '--pipeline', metavar='CONFIGFILE', type=str, required=True,
         help='File containing settings for the pipeline.'
+    )
+
+    parser.add_argument(
+        '-a', '--arg', metavar='SECTION ARG=VAL', nargs='+', action='append',
+        help='''Set config arg(s) manually. SECTION can be e.g.
+        "stage:<stage_name>" (like "stage:flux", "stage:reco", etc.),
+        "pipeline", and so forth. Arg values specified here take precedence
+        over those in the config file, but note that the sections specified
+        must already exist in the config file.'''
     )
     parser.add_argument(
         '--select', metavar='PARAM_SELECTIONS', nargs='+', default=None,
         help='''Param selectors (separated by spaces) to use to override any
         defaults in the config file.'''
+    )
+    parser.add_argument(
+        '--inputs', metavar='FILE', type=str,
+        help='''File from which to read inputs to be fed to the pipeline.'''
     )
     parser.add_argument(
         '--only-stage', metavar='STAGE', type=str,
@@ -458,16 +478,16 @@ def parse_args():
         pipeline). If it is a stage that requires inputs, these can be
         specified with the --infile argument, or else dummy stage input maps
         (numpy.ones(...), matching the input binning specification) are
-        generated for testing purposes. See also --infile and --transformfile
-        arguments.'''
+        generated for testing purposes.'''
     )
     parser.add_argument(
         '--stop-after-stage', metavar='STAGE',
-        help='''Test stage: Instantiate a pipeline up to and including
-        STAGE, but stop there.'''
+        help='''Instantiate a pipeline up to and including STAGE, but stop
+        there. Can specify a stage by index in the pipeline config (e.g., 0, 1,
+        etc.) or name (e.g., flux, osc, etc.)'''
     )
     parser.add_argument(
-        '-d', '--dir', metavar='DIR', type=str,
+        '--outdir', metavar='DIR', type=str,
         help='''Store all output files (data and plots) to this directory.
         Directory will be created (including missing parent directories) if it
         does not exist already. If no dir is provided, no outputs will be
@@ -481,10 +501,6 @@ def parse_args():
     parser.add_argument(
         '--transforms', action='store_true',
         help='''Store all transforms (for stages that use transforms).'''
-    )
-    parser.add_argument(
-        '-i', '--inputs-file', metavar='FILE', type=str,
-        help='''File from which to read inputs to be fed to the pipeline.'''
     )
     # TODO: optionally store the transform sets from each stage
     #parser.add_argument(
@@ -505,7 +521,8 @@ def parse_args():
     )
     parser.add_argument(
         '-v', action='count', default=None,
-        help='set verbosity level'
+        help='''Set verbosity level. Repeat for increased verbosity. -v is
+        info-level, -vv is debug-level and -vvv is trace-level output.'''
     )
     args = parser.parse_args()
     return args
@@ -530,14 +547,44 @@ def main(return_outputs=False):
     else:
         args.only_stage = only_stage_int
 
-    if args.dir:
-        mkdir(args.dir)
+    if args.outdir:
+        mkdir(args.outdir)
     else:
         if args.pdf or args.png:
             raise ValueError('No --dir provided, so cannot save images.')
 
+    # Most basic parsing of the pipeline config (parsing only to this level
+    # allows for simple strings to be specified as args for updating)
+    bcp = BetterConfigParser()
+    bcp.read(args.pipeline)
+
+    # Update the config with any args specified on command line
+    if args.arg is not None:
+        for arg_list in args.arg:
+            if len(arg_list) < 2:
+                raise ValueError(
+                    'Args must be formatted as: "section arg=val". Got "%s"'
+                    ' instead.' % ' '.join(arg_list)
+                )
+            section = arg_list[0]
+            remainder = ' '.join(arg_list[1:])
+            eq_split = remainder.split('=')
+            newarg = eq_split[0]
+            value = '='.join(eq_split[1:])
+            logging.debug('Setting config section "%s" arg "%s" = "%s"',
+                          section, newarg, value)
+            try:
+                bcp.set(section, newarg, value)
+            except NoSectionError:
+                logging.error(
+                    'Invalid section "%s" specified. Must be one of %s',
+                    section, bcp.sections()
+                )
+                raise
+
     # Instantiate the pipeline
-    pipeline = Pipeline(args.pipeline)
+    pipeline = Pipeline(bcp)
+
     if args.select is not None:
         pipeline.select_params(args.select, error_on_missing=True)
 
@@ -558,7 +605,9 @@ def main(return_outputs=False):
         idx = pipeline.index(args.only_stage)
         stage = pipeline[idx]
         indices = slice(idx, idx+1)
-        # Create dummy inputs
+
+        # Create dummy inputs if necessary
+        inputs = None
         if hasattr(stage, 'input_binning'):
             logging.warn(
                 'Stage requires input, so building dummy'
@@ -583,15 +632,14 @@ def main(return_outputs=False):
                 input_map.reorder_dimensions(stage.input_binning)
                 input_maps.append(input_map)
             inputs = MapSet(maps=input_maps, name='ones', hash=1)
-        else:
-            inputs = None
+
         outputs = stage.get_outputs(inputs=inputs)
 
     for stage in pipeline[indices]:
-        if not args.dir:
+        if not args.outdir:
             break
         stg_svc = stage.stage_name + '__' + stage.service_name
-        fbase = os.path.join(args.dir, stg_svc)
+        fbase = os.path.join(args.outdir, stg_svc)
         if args.intermediate or stage == pipeline[indices][-1]:
             stage.outputs.to_json(fbase + '__output.json.bz2')
         if args.transforms and stage.use_transforms:
@@ -615,7 +663,7 @@ def main(return_outputs=False):
                     continue
                 my_plotter = Plotter(
                     stamp='Event rate',
-                    outdir=args.dir,
+                    outdir=args.outdir,
                     fmt=fmt, log=False,
                     annotate=args.annotate
                 )
@@ -626,7 +674,7 @@ def main(return_outputs=False):
                 )
         except ValueError as exc:
             logging.error('Failed to save plot to format %s. See exception'
-                          ' message below' % fmt)
+                          ' message below', fmt)
             traceback.format_exc()
             logging.exception(exc)
             logging.warning("I can't go on, I'll go on.")
@@ -636,4 +684,4 @@ def main(return_outputs=False):
 
 
 if __name__ == '__main__':
-    pipeline, outputs = main(return_outputs=True)
+    pipeline, outputs = main(return_outputs=True) # pylint: disable=invalid-name

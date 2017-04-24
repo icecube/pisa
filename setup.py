@@ -262,12 +262,13 @@ def do_setup():
             'dill',
             'h5py',
             'line_profiler',
-            'matplotlib>=1.5', # inferno colormap
+            'matplotlib>=2.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
             'pint>=0.8', # earlier versions buggy
             'kde',
             'simplejson>=3.2',
             'tables',
-            'uncertainties'
+            'uncertainties',
+            'decorator'
         ],
         extras_require={
             'cuda': [

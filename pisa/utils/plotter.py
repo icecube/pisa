@@ -111,7 +111,7 @@ class Plotter(object):
         self.loc = loc
 
     def reset_colors(self):
-        self.colors = itertools.cycle(["r", "b", "g", "k", "c", "m", "y"])
+        self.colors = itertools.cycle('C%d' % n for n in range(10))
 
     def next_color(self):
         self.color = next(self.colors)
@@ -262,6 +262,7 @@ class Plotter(object):
             self.add_leg()
             if self.ratio:
                 plt.subplot2grid((4, 1), (3, 0), sharex=ax1)
+                #self.plot_1d_ratio(maps, plot_axis, r_vmin=0.1, r_vmax=0.1, **kwargs)
                 self.plot_1d_ratio(maps, plot_axis, **kwargs)
             self.dump('%s_%s'%(fname, maps[0].name))
 
@@ -562,7 +563,7 @@ class Plotter(object):
             axis.set_ylim(1 - r_vmin, 1 + r_vmax)
         else:
             off = max(maximum-1, 1-minimum)
-            axis.set_ylim(1 - 1.2 * off, 1 + 1.2 * off )
+            axis.set_ylim(1 - 1.2 * off, 1 + 1.2 * off)
 
     def plot_xsec(self, map_set, ylim=None, logx=True):
         from pisa.utils import fileio
