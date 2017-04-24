@@ -1764,7 +1764,7 @@ class HypoTesting(Analysis):
                 else:
                     do_test = False
             else:
-                do_test = False
+                do_test = True
             if do_test:
                 if inject_wrong:
                     # First inject this wrong up by one sigma
