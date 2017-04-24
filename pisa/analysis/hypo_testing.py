@@ -1544,14 +1544,17 @@ class HypoTesting(Analysis):
         self.produce_fid_data()
         self.fit_hypos_to_fid()
 
-    def reset_makers(self):
+    def reset_makers(self, data=True, h0=True, h1=True):
         '''
         Resets all 3 makers. Used in the injected parameter scans and the
         systematic tests.
         '''
-        self.data_maker.params.reset_free()
-        self.h0_maker.params.reset_free()
-        self.h1_maker.params.reset_free()
+        if data:
+            self.data_maker.params.reset_free()
+        if h0:
+            self.h0_maker.params.reset_free()
+        if h1:
+            self.h1_maker.params.reset_free()
 
     def clear_data(self):
         '''
@@ -1684,6 +1687,12 @@ class HypoTesting(Analysis):
                 else:
                     data_param.value \
                         = data_param.value - data_param.prior.stddev
+            # Special case for 0 since 0 +/- 10% is still zero
+            elif data_param.value == 0.0:
+                if direction == 'pve':
+                    data_param.value = 1.0
+                else:
+                    data_param.value = -1.0
             # Else do 10%
             else:
                 if direction == 'pve':
@@ -1723,72 +1732,83 @@ class HypoTesting(Analysis):
         # Setup logging and do the fits
         self.log_and_do_fits()
 
-    def syst_tests(self, inject_wrong, fit_wrong,
+    def syst_tests(self, inject_wrong, fit_wrong, only_syst, do_baseline,
                    h0_name, h1_name, data_name):
         '''The function which actually does the syst tests. The one that will
         actually be performed will be depending on whether inject_wrong is
         true or not.'''
-        # Perform the baseline analysis so that the other results can
-        # have a comparison line.
-        self.labels = Labels(
-            h0_name=h0_name,
-            h1_name=h1_name,
-            data_name=data_name + '_full_syst_baseline',
-            data_is_data=False,
-            fluctuate_data=False,
-            fluctuate_fid=False
-        )
-        # Setup logging and do the fits
-        self.log_and_do_fits()
-        # Reset the makers
-        self.reset_makers()
-        # Also be sure to remove the data_dist and toy_data_asimov_dist
-        # so that they are regenerated next time
-        self.clear_data()
-        for data_param in self.data_maker.params.free:
-            if inject_wrong:
-                # First inject this wrong up by one sigma
-                self.systematic_wrong_analysis(
-                    data_param=data_param,
-                    fit_wrong=fit_wrong,
-                    direction='pve',
-                    h0_name=h0_name,
-                    h1_name=h1_name,
-                    data_name=data_name
-                )
-                # At the end, reset the parameters in the maker
-                self.reset_makers()
-                # Data must be cleared or else it won't be regenerated
-                self.clear_data()
-                # Then inject this wrong down by one sigma
-                self.systematic_wrong_analysis(
-                    data_param=data_param,
-                    fit_wrong=fit_wrong,
-                    direction='nve',
-                    h0_name=h0_name,
-                    h1_name=h1_name,
-                    data_name=data_name
-                )
-            else:
-                # Just do the standard N-1 test
-                self.nminusone_test(
-                    data_param=data_param,
-                    h0_name=h0_name,
-                    h1_name=h1_name,
-                    data_name=data_name
-                )
-            # At the end, reset the parameters in the maker
+        if do_baseline:
+            # Perform the baseline analysis so that the other results can
+            # have a comparison line.
+            self.labels = Labels(
+                h0_name=h0_name,
+                h1_name=h1_name,
+                data_name=data_name + '_full_syst_baseline',
+                data_is_data=False,
+                fluctuate_data=False,
+                fluctuate_fid=False
+            )
+            # Setup logging and do the fits
+            self.log_and_do_fits()
+            # Reset the makers
             self.reset_makers()
             # Also be sure to remove the data_dist and toy_data_asimov_dist
-            # so they are regenerated next time
+            # so that they are regenerated next time
             self.clear_data()
-            # Also unfix the hypo maker parameters
-            for h0_param in self.h0_maker.params:
-                if h0_param.name == data_param.name:
-                    h0_param.is_fixed = False
-            for h1_param in self.h1_maker.params:
-                if h1_param.name == data_param.name:
-                    h1_param.is_fixed = False
+        else:
+            logging.info("Baseline systematic fit will be skipped.")
+        for data_param in self.data_maker.params.free:
+            if only_syst is not None:
+                if data_param.name in only_syst:
+                    do_test = True
+                else:
+                    do_test = False
+            else:
+                do_test = False
+            if do_test:
+                if inject_wrong:
+                    # First inject this wrong up by one sigma
+                    self.systematic_wrong_analysis(
+                        data_param=data_param,
+                        fit_wrong=fit_wrong,
+                        direction='pve',
+                        h0_name=h0_name,
+                        h1_name=h1_name,
+                        data_name=data_name
+                    )
+                    # At the end, reset the parameters in the maker
+                    self.reset_makers()
+                    # Data must be cleared or else it won't be regenerated
+                    self.clear_data()
+                    # Then inject this wrong down by one sigma
+                    self.systematic_wrong_analysis(
+                        data_param=data_param,
+                        fit_wrong=fit_wrong,
+                        direction='nve',
+                        h0_name=h0_name,
+                        h1_name=h1_name,
+                        data_name=data_name
+                    )
+                else:
+                    # Just do the standard N-1 test
+                    self.nminusone_test(
+                        data_param=data_param,
+                        h0_name=h0_name,
+                        h1_name=h1_name,
+                        data_name=data_name
+                    )
+                # At the end, reset the parameters in the maker
+                self.reset_makers()
+                # Also be sure to remove the data_dist and
+                # toy_data_asimov_dist so they are regenerated next time
+                self.clear_data()
+                # Also unfix the hypo maker parameters
+                for h0_param in self.h0_maker.params:
+                    if h0_param.name == data_param.name:
+                        h0_param.is_fixed = False
+                for h1_param in self.h1_maker.params:
+                    if h1_param.name == data_param.name:
+                        h1_param.is_fixed = False
             
 
 
@@ -2088,6 +2108,22 @@ def parse_args(description=__doc__, injparamscan=False, systtests=False):
             setting this argument will get the minimiser to try correct for it.
             If inject_wrong is set to false then this must also be set to 
             false or else the script will fail.'''
+        )
+        parser.add_argument(
+            '--only_syst', default=None,
+            type=str, action='append', metavar='PARAM_NAME',
+            help='''Specify the name of one of the systematics in the file to
+            run the test for this systematic. Repeat this argument to specify
+            multiple systematics. If none are provided, the test will be run
+            over all systematics in the pipeline.'''
+        )
+        parser.add_argument(
+            '--skip_baseline',
+            action='store_true',
+            help='''Skip the baseline systematic test i.e. the one where none
+            of them are fixed and/or modified. In most cases you will want this
+            for comparison but if you are only interested in the effect of
+            shifting certain systematics then this step can be skipped.'''
         )
     parser.add_argument(
         '--pprint',
