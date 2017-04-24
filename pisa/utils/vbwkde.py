@@ -64,7 +64,7 @@ See also
 # TODO : accuracy tests for fbwkde and vbwkde
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 from math import exp, sqrt
 from time import time
@@ -78,9 +78,7 @@ from pisa.utils.log import logging, set_verbosity, tprofile
 
 
 __all__ = ['OPT_TYPE', 'FIXED_POINT_IMPL',
-           'fbwkde', 'vbwkde', 'isj_bandwidth', 'fixed_point',
-           'test_fbwkde', 'test_vbwkde', 'test_isj_bandwidth',
-           'test_fixed_point']
+           'fbwkde', 'vbwkde', 'isj_bandwidth', 'test_fbwkde', 'test_vbwkde']
 
 
 # NOTE: 'minimum' is giving very rough overfit results. Switching to 'root' for
@@ -127,15 +125,6 @@ def fbwkde(data, weights=None, n_dct=None, min=None, max=None,
     density : None or array of float
 
     """
-    if (min is not None
-            and (len(np.shape(min)) != 0 or not isinstance(min, (float, int)))):
-        raise TypeError('`min` must be a scalar; got %s instead.'
-                        % min.__class__)
-    if (max is not None
-            and (len(np.shape(max)) != 0 or not isinstance(max, (float, int)))):
-        raise TypeError('`max` must be a scalar; got %s instead'
-                        % max.__class__)
-
     if n_dct is None:
         n_dct = int(2**np.ceil(np.log2(len(data)*10)))
     assert int(n_dct) == n_dct
@@ -278,15 +267,6 @@ def vbwkde(data, weights=None, n_dct=None, min=None, max=None, n_addl_iter=0,
         modifications that have been proposed in the literature.
 
     """
-    if (min is not None
-            and (len(np.shape(min)) != 0 or not isinstance(min, (float, int)))):
-        raise TypeError('`min` must be a scalar; got %s instead.'
-                        % min.__class__)
-    if (max is not None
-            and (len(np.shape(max)) != 0 or not isinstance(max, (float, int)))):
-        raise TypeError('`max` must be a scalar; got %s instead'
-                        % max.__class__)
-
     if n_dct is None:
         n_dct = int(2**np.ceil(np.log2(len(data)*10)))
     assert n_addl_iter >= 0 and int(n_addl_iter) == n_addl_iter
@@ -471,7 +451,6 @@ if OPT_TYPE == 'root':
 elif OPT_TYPE == 'minimum':
     def optfunc(f):
         """Decorator for returning abs of function output"""
-        return f
         def func(*args, **kw):
             """Return absolute value of function"""
             return np.abs(f(*args, **kw))
@@ -488,7 +467,7 @@ _K0 = np.array([
 @optfunc
 @numba_jit(
     '{f:s}({f:s}, int64, {f:s}[:], {f:s}[:], {f:s}[:])'.format(f='float64'),
-    nopython=True, nogil=True, cache=True
+    nopython=True, nogil=True, cache=True, fastmath=True
 )
 def fixed_point_numba_np(t, n_datapoints, i_range, log_i_range, a2):
     """ISJ fixed-point calculation as per Botev et al..
@@ -524,7 +503,7 @@ def fixed_point_numba_np(t, n_datapoints, i_range, log_i_range, a2):
 
 @optfunc
 @numba_jit('{f}({f}, int64, {f}[:], {f}[:], {f}[:])'.format(f='float64'),
-           nopython=True, nogil=True, cache=True)
+           nopython=True, nogil=True, cache=True, fastmath=True)
 def fixed_point_numba_loops(t, n_datapoints, i_range, log_i_range, a2):
     """ISJ fixed-point calculation as per Botev et al..
 
@@ -574,7 +553,7 @@ def fixed_point_numba_loops(t, n_datapoints, i_range, log_i_range, a2):
 
 @optfunc
 @numba_jit('{f:s}({f:s}, int64, {f:s}[:], {f:s}[:])'.format(f='float64'),
-           nopython=True, nogil=True, cache=True)
+           nopython=True, nogil=True, cache=True, fastmath=True)
 def fixed_point_numba_orig(t, n_datapoints, i_range, a2):
     """Fixed point algorithm for Improved Sheather Jones bandwidth
     selection.
@@ -665,19 +644,7 @@ def test_vbwkde():
     logging.info('<< PASS : test_vbwkde >>')
 
 
-def test_isj_bandwidth():
-    """Test function `isj_bandwidth`"""
-    pass
-
-
-def test_fixed_point():
-    """Test function `fixed_point`"""
-    pass
-
-
 if __name__ == "__main__":
     set_verbosity(1)
-    test_fixed_point()
-    test_isj_bandwidth()
     test_fbwkde()
     test_vbwkde()

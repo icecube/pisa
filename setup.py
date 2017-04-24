@@ -27,6 +27,8 @@ If you wish to upgrade PISA and/or its dependencies:
 """
 
 
+from __future__ import absolute_import
+
 from distutils.command.build import build
 import os
 import shutil
@@ -260,12 +262,13 @@ def do_setup():
             'dill',
             'h5py',
             'line_profiler',
-            'matplotlib',
-            'pint',
+            'matplotlib>=2.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
+            'pint>=0.8', # earlier versions buggy
             'kde',
             'simplejson>=3.2',
             'tables',
-            'uncertainties'
+            'uncertainties',
+            'decorator'
         ],
         extras_require={
             'cuda': [
@@ -276,10 +279,11 @@ def do_setup():
                 'numba>=0.31' # fastmath jit flag
             ],
             'develop': [
-                'sphinx>1.3',
+                'pylint>=1.7',
                 'recommonmark',
+                'sphinx>=1.3',
+                'sphinx_rtd_theme',
                 'versioneer',
-                'sphinx_rtd_theme'
             ]
         },
         packages=find_packages(),
@@ -307,6 +311,7 @@ def do_setup():
                 'make_asymmetry_plots.py = pisa.scripts.make_asymmetry_plots:main',
                 'make_events_file.py = pisa.scripts.make_events_file:main',
                 'make_nufit_theta23_spline_priors.py = pisa.scripts.make_nufit_theta23_spline_priors:main',
+                'make_toy_events.py = pisa.scripts.make_toy_events:main'
             ]
         }
     )

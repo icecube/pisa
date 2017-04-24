@@ -19,7 +19,7 @@ from pisa import ureg
 from pisa.core.map import MapSet
 from pisa.core.pipeline import Pipeline
 from pisa.core.param import ParamSet
-from pisa.utils.betterConfigParser import BetterConfigParser
+from pisa.utils.config_parser import BetterConfigParser
 from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import set_verbosity, logging
