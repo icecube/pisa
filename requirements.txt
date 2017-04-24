@@ -8,6 +8,6 @@ pint>=0.8
 svn+http://code.icecube.wisc.edu/svn/sandbox/schoenen/kde/releases/V00-01-01#egg=kde
 h5py
 line_profiler
-matplotlib>=1.5
+matplotlib>=2.0
 uncertainties
 decorator
