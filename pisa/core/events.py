@@ -836,7 +836,7 @@ class Data(FlavIntDataGroup):
         return Map(name=name, hist=hist, binning=binning, tex=tex, **kwargs)
 
     def histogram_set(self, binning, nu_weights_col, mu_weights_col,
-                      no_weights_col, mapset_name, errors=False):
+                      noise_weights_col, mapset_name, errors=False):
         """Uses the above histogram function but returns the set of all of them
         for everything in the Data object.
 
@@ -850,7 +850,7 @@ class Data(FlavIntDataGroup):
         mu_weights_col : None or string
             The column in the Data object by which to weight the muon
             histograms. Specify None for unweighted histograms.
-        no_weights_col : None or string
+        noise_weights_col : None or string
             The column in the Data object by which to weight the noise
             histograms. Specify None for unweighted histograms.
         mapset_name : string

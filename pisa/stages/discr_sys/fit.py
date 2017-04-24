@@ -547,8 +547,7 @@ class fit(Stage):
                         outputs.append(template.histogram(
                             kinds       = fig,
                             binning     = fit_binning,
-                            # NOTE: weights cancel in fraction
-                            weights_col = None,
+                            weights_col = 'pisa_weight',
                             errors      = False,
                             name        = str(NuFlavIntGroup(fig))
                         ))
