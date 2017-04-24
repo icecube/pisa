@@ -53,7 +53,7 @@ from pisa.utils.gaussians import gaussians
 from pisa.utils.hash import hash_obj
 from pisa.utils.parallel import parallel_run
 from pisa.utils.vbwkde import vbwkde as vbwkde_func
-from pisa.utils.log import logging
+from pisa.utils.log import logging, set_verbosity
 
 
 __all__ = ['KDEProfile', 'collect_enough_events', 'weight_coszen_tails',
@@ -64,7 +64,7 @@ KDEProfile = namedtuple('KDEProfile', ['x', 'counts'])
 """namedtuple type for storing the normalized KDE profile: (x, counts)"""
 
 
-@numba_jit(nopython=True, nogil=True, fastmath=True)
+@numba_jit(nopython=True, nogil=True, fastmath=True, cache=True)
 def collect_enough_events(values, bin_edges, is_log, min_num_events,
                           tgt_num_events, tgt_max_binwidth_factor):
     """Heuristic to collect enough events close to the provided bin such
@@ -204,7 +204,7 @@ def inf2finite(x):
     return np.clip(x, a_min=np.finfo(FTYPE).min, a_max=np.finfo(FTYPE).max)
 
 
-@numba_jit(nopython=True, nogil=True, fastmath=True)
+@numba_jit(nopython=True, nogil=True, fastmath=True, cache=True)
 def weight_coszen_tails(cz_diff, cz_bin_edges, input_weights):
     """Calculate weights that compensate for fewer points in the inherent tails
     of the coszen-difference (usually coszen-error) distribution.
@@ -285,7 +285,7 @@ def weight_coszen_tails(cz_diff, cz_bin_edges, input_weights):
     return new_weights, diff_limits
 
 
-@numba_jit(nopython=False, nogil=True, fastmath=True)
+@numba_jit(nogil=True, fastmath=True, cache=True)
 def coszen_error_edges(true_edges, reco_edges):
     """Return a list of edges in coszen-error space given 2 true-coszen
     edges and reco-coszen edges. Systematics are not implemented at this time.
@@ -305,9 +305,9 @@ def coszen_error_edges(true_edges, reco_edges):
         be from -1 to +1), and from the spans due to `reco_edges`.
 
     reco_indices : tuple with 2 lists of scalars
-        Each list contains `len(reco_edges - 1)` scalars. Thesea are the
+        Each list contains `len(reco_edges - 1)` scalars. These are the
         indices for locating the edge in `all_binedges`, corresponding to
-        `(reco_edges[:-1], reco_dges[1:])`.
+        `(reco_edges[:-1], reco_edges[1:])`.
 
     """
     n_reco_edges = len(reco_edges)
@@ -315,19 +315,21 @@ def coszen_error_edges(true_edges, reco_edges):
     reco_upper_binedges = reco_edges[1:]
     true_lower_binedge = true_edges[0]
     true_upper_binedge = true_edges[1]
+    true_bin_width = abs(true_upper_binedge - true_lower_binedge)
+    true_bin_midpoint = (true_lower_binedge + true_upper_binedge) / 2
 
     full_reco_range_lower_binedge = np.round(
-        -1 - true_upper_binedge, decimals=EQUALITY_SIGFIGS
+        FTYPE(-1) - true_upper_binedge, EQUALITY_SIGFIGS
     )
     full_reco_range_upper_binedge = np.round(
-        +1 - true_lower_binedge, decimals=EQUALITY_SIGFIGS
+        FTYPE(+1) - true_lower_binedge, EQUALITY_SIGFIGS
     )
 
     dcz_lower_binedges = np.round(
-        reco_lower_binedges - true_upper_binedge, decimals=EQUALITY_SIGFIGS
+        reco_lower_binedges - true_upper_binedge, EQUALITY_SIGFIGS
     )
     dcz_upper_binedges = np.round(
-        reco_upper_binedges - true_lower_binedge, decimals=EQUALITY_SIGFIGS
+        reco_upper_binedges - true_lower_binedge, EQUALITY_SIGFIGS
     )
 
     all_dcz_binedges, indices = np.unique(
@@ -340,19 +342,51 @@ def coszen_error_edges(true_edges, reco_edges):
         return_inverse=True
     )
 
-    # Note: first index will be for `full_reco_range_lower_binedge`;
-    # next `n_reco_edges - 1` edges correspond to `dcz_lower_binedges`
-    # next `n_reco_edges - 1` edges correspond to `dcz_upper_binedges`, and
-    # last index will be for `full_reco_range_upper_binedge`.
-    dcz_lower_binedge_indices = indices[1:n_reco_edges]
-    dcz_upper_binedge_indices = indices[n_reco_edges:-1]
+    # Note: first index is for `full_reco_range_lower_binedge`,
+    # next `n_reco_edges - 1` edges correspond to `dcz_lower_binedges`,
+    # next `n_reco_edges - 1` edges correspond to `dcz_upper_binedges`,
+    # and last index is for `full_reco_range_upper_binedge`.
+    # We drop the first and last as it is assumed the full range requires all
+    # the bins, so indices for indicating the "full range" are trivial (i.e. 0
+    # and len(bins) - 1)
+    reco_indices = (indices[1:n_reco_edges], indices[n_reco_edges:-1])
 
-    reco_indices = (dcz_lower_binedge_indices, dcz_upper_binedge_indices)
+    # Note that the final (uppermost) edge doesn't matter as it does
+    # not define the *start* of a range.
+    num_bins = len(all_dcz_binedges) - 1
+    bin_reps = np.empty(shape=num_bins)
+    for bin_lower_edge_idx in range(num_bins):
+        reps = 0
+        for lower_idx, upper_idx in zip(*reco_indices):
+            if lower_idx <= bin_lower_edge_idx < upper_idx:
+                reps += 1
+        bin_reps[bin_lower_edge_idx] = reps
 
-    return all_dcz_binedges, reco_indices
+    # Simplistic version of the above, assuming input bin has 0-width
+    augmented_reco_binedges, indices = np.unique(
+        np.concatenate([
+            [FTYPE(-1)],
+            reco_edges,
+            [FTYPE(+1)]
+        ]),
+        return_inverse=True
+    )
+    simple_reco_indices = indices[1:-1]
+    simple_dcz_binedges = augmented_reco_binedges - true_bin_midpoint
+
+    results = dict(
+        true_bin_width=true_bin_width,
+        all_dcz_binedges=all_dcz_binedges,
+        reco_indices=reco_indices,
+        bin_reps=bin_reps,
+        simple_dcz_binedges=simple_dcz_binedges,
+        simple_reco_indices=simple_reco_indices
+    )
+
+    return results
 
 
-@numba_jit(nogil=True, nopython=True, fastmath=True)
+@numba_jit(nogil=True, nopython=True, fastmath=True, cache=True)
 def sorted_fast_histogram(a, bins, weights):
     """Fast but less precise histogramming of a sorted (in ascending order)
     array with weights.
@@ -400,7 +434,7 @@ def sorted_fast_histogram(a, bins, weights):
     return hist, bins
 
 
-@numba_jit(nogil=True, nopython=True, fastmath=True)
+@numba_jit(nogil=True, nopython=True, fastmath=True, cache=True)
 def fast_histogram(a, bins, weights):
     """Fast but less precise histogramming of an array with weights.
 
@@ -1060,7 +1094,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
                     criteria.append(dim.inbounds_criteria.replace(
                         dim_name, 'flav_events["%s"]' % dim_name
                     ))
-                criteria = (' & '.join(criteria)).strip()
+                crit_str = (' & '.join(criteria)).strip()
 
                 last_dim = bin_dims[-1]
                 last_dim_bin_edges = last_dim.bin_edges.m
@@ -1071,13 +1105,13 @@ class vbwkde(Stage): # pylint: disable=invalid-name
                     logging.trace('    > flavintgroup = %s', flavintgroup)
 
                     flav_events = sorted_events[flavintgroup]
-                    if criteria:
+                    if crit_str:
                         try:
-                            mask1 = eval(criteria)
+                            mask1 = eval(crit_str)
                         except:
                             logging.error(
                                 'Failed during eval of the string "%s"',
-                                criteria
+                                crit_str
                             )
                             raise
                     else:
@@ -1324,7 +1358,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
         true_coszen = self.input_binning.true_coszen
         reco_energy = self.output_binning.reco_energy
         reco_coszen = self.output_binning.reco_coszen
-        pid_binning = self.output_binning.pid
+        pid = self.output_binning.pid
 
         # Get the following once so we don't have to repeat within the loops
 
@@ -1339,7 +1373,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
             char_binning['coszen'].true_coszen.weighted_centers.m
         )
 
-        num_pid_bins = len(pid_binning)
+        num_pid_bins = len(pid)
 
         e_res_scale = self.params.e_res_scale.value.m
 
@@ -1352,7 +1386,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
                 ' yet, so must be fixed at 1 and 0, respectively.'
             )
 
-        pid_edges = inf2finite(pid_binning.bin_edges.m)
+        pid_edges = inf2finite(pid.bin_edges.m)
 
         # NOTE: when we get scaling-about-the-mode working, will have to change
         # this.
@@ -1387,25 +1421,11 @@ class vbwkde(Stage): # pylint: disable=invalid-name
         cz_closest_cz_indices = []
         for center, true_edgetuple in zip(true_cz_centers,
                                           true_coszen.iteredgetuples()):
-            all_dcz_binedges, cz_reco_indices = coszen_error_edges(
-                true_edges=np.asarray(true_edgetuple, dtype=FTYPE),
-                reco_edges=reco_cz_edges
-            )
-
-            # Note that the final (uppermost) edge doesn't matter as it does
-            # not define the *start* of a range.
-            edge_counts = []
-            for idx in range(len(all_dcz_binedges) - 1):
-                count = 0
-                for rng in zip(*cz_reco_indices):
-                    if idx >= rng[0] and idx < rng[1]:
-                        count += 1
-                edge_counts.append(count)
-
             allbins_dcz_edge_info.append(
-                dict(all_dcz_binedges=all_dcz_binedges,
-                     cz_reco_indices=cz_reco_indices,
-                     edge_counts=np.array(edge_counts))
+                coszen_error_edges(
+                    true_edges=np.asarray(true_edgetuple, dtype=FTYPE),
+                    reco_edges=reco_cz_edges
+                )
             )
 
             cz_closest_cz_indices.append(
@@ -1523,45 +1543,68 @@ class vbwkde(Stage): # pylint: disable=invalid-name
                         true_energy=cz_closest_e_idx
                     )
 
-                    if debug_mode:
-                        logging.debug(
-                            'true_cz_bin_num = %d, cz_closest_kde_coord = %s',
-                            true_cz_bin_num, cz_closest_kde_coord
-                        )
-
                     # Get KDE profile (in "delta-cz" space)
                     dcz_kde_profile = dcz_kde_profiles[cz_closest_kde_coord]
+                    x_range = (np.max(dcz_kde_profile.x)
+                               - np.min(dcz_kde_profile.x))
+                    num_x = len(dcz_kde_profile.x)
+                    dx = x_range / (num_x - 1)
 
                     dcz_edge_info = allbins_dcz_edge_info[true_cz_bin_num]
 
+                    boxcar_width = int(
+                        np.ceil(dcz_edge_info['true_bin_width'] / dx)
+                    )
+                    boxcar = np.full(shape=boxcar_width,
+                                     fill_value=1/boxcar_width)
+                    y = np.convolve(dcz_kde_profile.counts, boxcar,
+                                    mode='same')
+
                     reco_coszen_counts, _ = HIST_FUNC(
-                        dcz_kde_profile.x, weights=dcz_kde_profile.counts,
-                        bins=dcz_edge_info['all_dcz_binedges']
+                        dcz_kde_profile.x, weights=y,
+                        #bins=dcz_edge_info['all_dcz_binedges']
+                        bins=dcz_edge_info['simple_dcz_binedges']
                     )
+                    #reco_coszen_counts /= dcz_edge_info['bin_reps']
 
-                    # Collect the relevant hist sections to describe each
-                    # quantity of interest, starting with normalization
-                    reco_indices = dcz_edge_info['cz_reco_indices']
-
-                    coszen_norm = 1 / np.sum(
-                        reco_coszen_counts * dcz_edge_info['edge_counts']
-                    )
-
-                    reco_coszen_fractions = []
-                    for reco_lower, reco_upper in zip(*reco_indices):
-                        reco_coszen_fractions.append(
-                            coszen_norm * np.sum(
-                                reco_coszen_counts[reco_lower:reco_upper]
-                            )
+                    if self.debug_mode:
+                        logging.debug(
+                            'true_cz_bin_num = %d, cz_closest_kde_coord = %s',
+                            true_cz_bin_num, cz_closest_kde_coord,
                         )
-                    reco_coszen_fractions = np.array(reco_coszen_fractions)
+
+                    ## Collect the relevant hist sections to describe each
+                    ## quantity of interest, starting with normalization
+                    #reco_indices = dcz_edge_info['cz_reco_indices']
+
+                    ##coszen_norm = 1 / np.sum(
+                    ##    reco_coszen_counts #* dcz_edge_info['bin_reps']
+                    ##)
+
+                    #reco_coszen_fractions = []
+                    #for reco_lower, reco_upper in zip(*reco_indices):
+                    #    reco_coszen_fractions.append(
+                    #        np.sum(reco_coszen_counts[reco_lower:reco_upper])
+                    #    )
+                    #reco_coszen_fractions = np.asarray(reco_coszen_fractions,
+                    #                                   dtype=FTYPE)
+                    #reco_coszen_fractions /= np.sum(reco_coszen_fractions)
+
+                    reco_coszen_total = np.sum(reco_coszen_counts)
+                    coszen_norm = 1 / reco_coszen_total
+                    # Note that the indices are into bin _edges_, so to convert
+                    # to bin number, leave off the right-most index
+                    use_indices = dcz_edge_info['simple_reco_indices'][:-1]
+                    reco_coszen_fractions = (
+                        reco_coszen_counts[use_indices] * coszen_norm
+                    )
 
                     if self.debug_mode:
                         assert np.all(reco_coszen_fractions <= 1), \
                                 str(reco_coszen_fractions)
                         assert np.all(reco_coszen_fractions >= 0), \
                                 str(reco_coszen_fractions)
-                        assert np.sum(reco_coszen_fractions) < 1 + 10*EPSILON, \
+                        assert np.sum(reco_coszen_fractions) <= 1 + EPSILON, \
                                 str(reco_coszen_fractions)
 
                     # Here we index directly into (i.e. the smearing profile
@@ -1584,3 +1627,41 @@ class vbwkde(Stage): # pylint: disable=invalid-name
 
         with self._xform_kernels_lock:
             self.xform_kernels[flavintgroup] = kernel
+
+
+def test_coszen_error_edges():
+    """Unit tests for function coszen_error_edges"""
+    true_edges = np.array([-0.55, -0.50], dtype=FTYPE)
+    true_lower_edge, true_upper_edge = true_edges
+    reco_edges = np.linspace(-0.1, 0.0, 5, dtype=FTYPE)
+
+    edge_info = coszen_error_edges(true_edges, reco_edges)
+    all_dcz_binedges = edge_info['all_dcz_binedges']
+    reco_indices = edge_info['reco_indices']
+    bin_reps = edge_info['bin_reps']
+    simple_dcz_binedges = edge_info['simple_dcz_binedges']
+    simple_reco_indices = edge_info['simple_reco_indices']
+
+    logging.debug('true_edges:\n%s', true_edges)
+    logging.debug('reco_edges:\n%s', reco_edges)
+    logging.debug('all_dcz_binedges:\n%s', all_dcz_binedges)
+    logging.debug('simple_dcz_binedges:\n%s', simple_dcz_binedges)
+    logging.debug('simple_reco_indices:\n%s', simple_reco_indices)
+    logging.debug('zip(*reco_indices):\n%s', list(zip(*reco_indices)))
+    logging.debug('bin_reps:\n%s', bin_reps)
+    for reco_lower_edge, reco_upper_edge, lower_idx, upper_idx \
+            in zip(reco_edges[:-1], reco_edges[1:], *reco_indices):
+        dcz_lower_edge = all_dcz_binedges[lower_idx]
+        dcz_upper_edge = all_dcz_binedges[upper_idx]
+        dcz_lower_edge_ref = reco_lower_edge - true_upper_edge
+        dcz_upper_edge_ref = reco_upper_edge - true_lower_edge
+        assert np.isclose(dcz_lower_edge, dcz_lower_edge_ref,
+                          rtol=EQUALITY_SIGFIGS)
+        assert np.isclose(dcz_upper_edge, dcz_upper_edge_ref,
+                          rtol=EQUALITY_SIGFIGS)
+    logging.info('<< PASS : test_coszen_error_edges >>')
+
+
+if __name__ == '__main__':
+    set_verbosity(2)
+    test_coszen_error_edges()

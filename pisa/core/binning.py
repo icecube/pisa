@@ -894,7 +894,7 @@ class OneDimBinning(object):
         if isinstance(other, OneDimBinning):
             return MultiDimBinning([self, other])
         elif isinstance(other, MultiDimBinning):
-            return MultiDimBinning(chain(self, other))
+            return MultiDimBinning(chain([self], other))
         return OneDimBinning(name=self.name, tex=self.tex,
                              bin_edges=self.bin_edges * other)
 
@@ -906,7 +906,7 @@ class OneDimBinning(object):
         if isinstance(other, OneDimBinning):
             return MultiDimBinning([self, other])
         elif isinstance(other, MultiDimBinning):
-            return MultiDimBinning(chain(self, other))
+            return MultiDimBinning(chain([self], other))
 
         if isbarenumeric(other):
             other = other * ureg.dimensionless
@@ -2590,6 +2590,7 @@ class MultiDimBinning(object):
 
 def test_OneDimBinning():
     """Unit tests for OneDimBinning class"""
+    # pylint: disable=line-too-long
     import cPickle as pickle
     import os
     import shutil

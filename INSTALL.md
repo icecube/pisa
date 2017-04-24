@@ -95,6 +95,7 @@ Also note that Python, SWIG, HDF5, and pip support come pre-packaged or as `cond
 
 Required Python modules that are installed automatically when you use the pip command detailed later:
 * [cython](http://cython.org)
+* [decorator](https://pypi.python.org/pypi/decorator)
 * [dill](http://trac.mystic.cacr.caltech.edu/project/pathos/wiki/dill.html)
 * [h5py](http://www.h5py.org)
 * [line_profiler](https://pypi.python.org/pypi/line_profiler): detailed profiling output<br>

@@ -6,7 +6,7 @@
 Parse a ConfigFile object into a dict containing an item for every analysis
 stage, that itself contains all necessary instantiation arguments/objects for
 that stage. for en example config file, please consider
-`$PISA/pisa.utils/settings/pipeline/example.cfg`
+`$PISA/pisa/resources/settings/pipeline/example.cfg`
 
 Config File Structure:
 ===============
@@ -21,9 +21,9 @@ The config file is expected to contain the following sections::
     [binning]
     binning1.order = axis1, axis2
     binning1.axis1 = {'num_bins':40, 'is_log':True,
-                      'domain':[1,80] * units.GeV, 'tex': r'$A_1$'}
+                      'domain':[1,80] * units.GeV, 'tex': r'A_1'}
     binning1.axis2 = {'num_bins':10, 'is_lin':True,
-                      'domain':[1,5], 'tex': r'$A_2$'}
+                      'domain':[1,5], 'tex': r'A_2'}
 
     [stage:stageA]
     input_binning = bining1
@@ -97,8 +97,8 @@ the same param via the param selector method. This can be used for example for
 hypothesis testing, there for hypothesis A a param takes a certain value, while
 for hypothesis B a different value.
 
-A given param, say `foo`, then needs two definitions like the following, assuming
-we name our selections `A` and `B`:
+A given param, say `foo`, then needs two definitions like the following,
+assuming we name our selections `A` and `B`:
 
 param.A.foo = 1
 param.B.foo = 2
@@ -110,36 +110,39 @@ param_selections = A
 Which will default the value of 1 for param `foo`. An instatiated pipeline can
 dynamically switch to another selection after instantiation.
 
-Multiple different param selectors are allowed in a single config. In the default selection
-they must be separated by commas.
+Multiple different param selectors are allowed in a single config. In the
+default selection they must be separated by commas.
 
 """
 
+
+# TODO: Make interoperable with pisa.utils.resources. I.e., able to work with
+# Python package resources, not just filesystem files.
+# TODO: Docstrings, Philipp!
 # TODO: add try: except: blocks around class instantiation calls to give
 # maximally useful error info to the user (spit out a good message, but then
 # re-raise the exception)
 
-from __future__ import division
+
+from __future__ import absolute_import, division
 
 from collections import OrderedDict
+from ConfigParser import ConfigParser, SafeConfigParser
 import re
 
 import numpy as np
-from numpy import inf
 from uncertainties import ufloat, ufloat_fromstr
 
 from pisa import ureg
-from pisa.core.binning import MultiDimBinning, OneDimBinning
-from pisa.core.param import Param, ParamSelector
-from pisa.core.prior import Prior
-from pisa.utils.betterConfigParser import BetterConfigParser
+
 from pisa.utils.fileio import from_file
-from pisa.utils.log import logging
+from pisa.utils.log import logging, set_verbosity
 
 
 __all__ = ['PARAM_RE', 'PARAM_ATTRS', 'units',
            'parse_quantity', 'parse_string_literal', 'split',
-           'interpret_param_subfields', 'parse_param', 'parse_pipeline_config']
+           'interpret_param_subfields', 'parse_param', 'parse_pipeline_config',
+           'BetterConfigParser']
 
 
 PARAM_RE = re.compile(
@@ -149,14 +152,13 @@ PARAM_RE = re.compile(
 
 PARAM_ATTRS = ['range', 'prior', 'fixed']
 
+# Define names that users can specify in configs such that the eval of those
+# strings works.
+numpy = np # pylint: disable=invalid-name
+inf = np.inf # pylint: disable=invalid-name
+units = ureg # pylint: disable=invalid-name
 
-# Config files use "units.xyz" to denote that "xyz" is a unit; therefore,
-# ureg is also referred to as "units" in this context.
-units = ureg
 
-
-# TODO: document code, add comments, docstrings, abide by PISA coding
-# conventions
 def parse_quantity(string):
     """Parse a string into a pint/uncertainty quantity.
 
@@ -252,13 +254,11 @@ def split(string, sep=','):
 
 
 def interpret_param_subfields(subfields, selector=None, pname=None, attr=None):
-    """
-    """
     infodict = dict(subfields=subfields, selector=selector, pname=pname,
                     attr=attr)
 
     # Everything has been parsed
-    if len(infodict['subfields']) == 0:
+    if not infodict['subfields']:
         return infodict
 
     # If only one field, this must be the param's name, and we're done
@@ -278,7 +278,7 @@ def interpret_param_subfields(subfields, selector=None, pname=None, attr=None):
         attr_idx = attr_indices[0]
         infodict['attr'] = [
             infodict['subfields'].pop(attr_idx)
-            for i in range(attr_idx, len(infodict['subfields']))
+            for _ in range(attr_idx, len(infodict['subfields']))
         ]
         return interpret_param_subfields(**infodict)
 
@@ -295,9 +295,11 @@ def interpret_param_subfields(subfields, selector=None, pname=None, attr=None):
 
 
 def parse_param(config, section, selector, fullname, pname, value):
-    """
-    """
-    # TODO: Are these defaults actually a good idea?
+    # Note: imports placed here to avoid circular imports
+    from pisa.core.param import Param
+    from pisa.core.prior import Prior
+    # TODO: Are these defaults actually a good idea? Should all be explicitly
+    # specified?
     kwargs = dict(name=pname, is_fixed=True, prior=None, range=None)
     try:
         value = parse_quantity(value)
@@ -341,41 +343,54 @@ def parse_param(config, section, selector, fullname, pname, value):
 
     if config.has_option(section, fullname + '.range'):
         range_ = config.get(section, fullname + '.range')
-        # TODO: unused vars `nominal` and `sigma`...?
+        # Note: `nominal` and `sigma` are called out in the `range_` string
         if 'nominal' in range_:
-            nominal = value.n * value.units
+            nominal = value.n * value.units # pylint: disable=unused-variable
         if 'sigma' in range_:
-            sigma = value.s * value.units
+            sigma = value.s * value.units # pylint: disable=unused-variable
         range_ = range_.replace('[', 'np.array([')
         range_ = range_.replace(']', '])')
-        kwargs['range'] = eval(range_).to(value.units)
+        kwargs['range'] = eval(range_).to(value.units) # pylint: disable=eval-used
 
     try:
         param = Param(**kwargs)
     except:
-        logging.error('Failed to instantiate new Param object with kwargs %s'
-                      %kwargs)
+        logging.error('Failed to instantiate new Param object with kwargs %s',
+                      kwargs)
         raise
 
     return param
 
 
 def parse_pipeline_config(config):
-    """Parse a PISA pipeline configuration file.
+    """Parse pipeline config.
 
     Parameters
     ----------
-    config : TODO
+    config : string or ConfigParser
 
     Returns
     -------
-    TODO
+    stage_dicts : OrderedDict
+        Keys are (stage_name, service_name) tuples and values are OrderedDicts
+        with keys the argnames and values the arguments' values. Some known arg
+        values are parsed out fully into Python objects, while the rest remain
+        as strings that must be used or parsed elsewhere.
 
     """
-    # TODO: Why do we have to make sure it isn't a BetterConfigParser?
-    if (isinstance(config, basestring)
-            and not isinstance(config, BetterConfigParser)):
+    # Note: imports placed here to avoid circular imports
+    from pisa.core.binning import MultiDimBinning, OneDimBinning
+    from pisa.core.param import ParamSelector
+
+    if isinstance(config, basestring):
         config = from_file(config)
+    elif isinstance(config, ConfigParser):
+        pass
+    else:
+        raise TypeError(
+            '`config` must either be a string or ConfigParser. Got %s instead.'
+            % type(config)
+        )
 
     # Create binning objects
     binning_dict = {}
@@ -385,7 +400,9 @@ def parse_pipeline_config(config):
             binning, _ = split(name, sep='.')
             bins = []
             for bin_name in order:
-                kwargs = eval(config.get('binning', binning + '.' + bin_name))
+                kwargs = eval( # pylint: disable=eval-used
+                    config.get('binning', binning + '.' + bin_name)
+                )
                 bins.append(OneDimBinning(bin_name, **kwargs))
             binning_dict[binning] = MultiDimBinning(bins)
 
@@ -498,17 +515,114 @@ def parse_pipeline_config(config):
     return stage_dicts
 
 
-#if __name__ == '__main__':
-#    from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-#    parser = ArgumentParser()
-#    parser.add_argument(
-#        '-p', '--pipeline-settings', metavar='CONFIGFILE', type=str,
-#        required=True,
-#        help='File containing settings for the pipeline.'
-#    )
-#    args = parser.parse_args()
-#    config = BetterConfigParser()
-#    config.read(args.pipeline_settings)
-#    cfg =  parse_pipeline_config(config)
-#    for key,vals in cfg.items():
-#        print key, vals
+class BetterConfigParser(SafeConfigParser):
+    def __init__(self, *args, **kwargs):
+        SafeConfigParser.__init__(self, *args, **kwargs)
+
+    def read(self, filenames):
+        from pisa.utils.resources import find_resource
+        if isinstance(filenames, basestring):
+            filenames = [filenames]
+        new_filenames = [find_resource(fn) for fn in filenames]
+
+        # Preprocessing for include statements
+        processed_filenames = []
+        # loop until we cannot find any more includes
+        while True:
+            processed_filenames.extend(new_filenames)
+            new_filenames = self.recursive_filenames(new_filenames)
+            rec_incs = set(new_filenames).intersection(processed_filenames)
+            if any(rec_incs):
+                raise ValueError('Recursive include statements found for %s'
+                                 % ', '.join(rec_incs))
+            if not new_filenames:
+                break
+        # call read with complete files list
+        SafeConfigParser.read(self, processed_filenames)
+
+    def recursive_filenames(self, filenames):
+        new_filenames = []
+        for filename in filenames:
+            new_filenames.extend(self.process_file_and_includes(filename))
+        return new_filenames
+
+    @staticmethod
+    def process_file_and_includes(filename):
+        from pisa.utils.resources import find_resource
+        processed_filenames = []
+        with open(filename) as f:
+            for line in f.readlines():
+                if line.startswith('#include '):
+                    inc_file = line[9:].rstrip()
+                    inc_file = find_resource(inc_file)
+                    processed_filenames.append(inc_file)
+                    logging.debug('including file %s in cfg', inc_file)
+                else:
+                    break
+        return processed_filenames
+
+    def get(self, section, option, raw=True, vars=None): # pylint: disable=redefined-builtin
+        result = SafeConfigParser.get(self, section, option,
+                                                   raw=raw, vars=vars)
+        result = self.__replace_sectionwide_templates(result)
+        return result
+
+    def items(self, section, raw=True, vars=None): # pylint: disable=redefined-builtin
+        config_list = SafeConfigParser.items(
+            self, section=section, raw=raw, vars=vars
+        )
+        result = [(key, self.__replace_sectionwide_templates(value))
+                  for key, value in config_list]
+        return result
+
+    def optionxform(self, optionstr):
+        """Enable case sensitive options in .ini/.cfg files."""
+        return optionstr
+
+    def __replace_sectionwide_templates(self, data):
+        """Replace <section|option> with get(section, option) recursively."""
+        result = data
+        findExpression = re.compile(r"((.*)\<!(.*)\|(.*)\!>(.*))*")
+        groups = findExpression.search(data).groups()
+
+        # If expression not matched
+        if groups != (None, None, None, None, None):
+            result = self.__replace_sectionwide_templates(groups[1])
+            result += self.get(groups[2], groups[3])
+            result += self.__replace_sectionwide_templates(groups[4])
+        return result
+
+
+def test_parse_pipeline_config():
+    """Unit test for function `parse_pipeline_config`"""
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser()
+    parser.add_argument(
+        '-p', '--pipeline', metavar='CONFIGFILE',
+        default='settings/pipeline/example.cfg',
+        help='File containing settings for the pipeline.'
+    )
+    parser.add_argument(
+        '-v', action='count', default=0,
+        help='Set verbosity level. Minimum is forced to level 1 (info)'
+    )
+    args = parser.parse_args()
+    args.v = max(1, args.v)
+    set_verbosity(args.v)
+
+    # Load via BetterConfigParser
+    config0 = BetterConfigParser()
+    config0.read(args.pipeline)
+    _ = parse_pipeline_config(config0)
+
+    # Load directly
+    config = parse_pipeline_config(args.pipeline)
+
+    for key, vals in config.items():
+        logging.debug('%s: %s', key, vals)
+    logging.info('<< PASS : test_parse_pipeline_config >>')
+
+
+if __name__ == '__main__':
+    test_parse_pipeline_config()

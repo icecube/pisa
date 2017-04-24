@@ -10,3 +10,4 @@ h5py
 line_profiler
 matplotlib>=1.5
 uncertainties
+decorator

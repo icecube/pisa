@@ -267,7 +267,8 @@ def do_setup():
             'kde',
             'simplejson>=3.2',
             'tables',
-            'uncertainties'
+            'uncertainties',
+            'decorator'
         ],
         extras_require={
             'cuda': [
