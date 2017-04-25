@@ -417,10 +417,10 @@ class param(Stage):
     """
     def __init__(self, params, particles, input_names, transform_groups,
                  sum_grouped_flavints, input_binning, output_binning,
-                 only_physics_domain_sum=None, only_physics_domain_distwise=None,
-                 coszen_flipback=None, error_method=None,
-                 transforms_cache_depth=20, outputs_cache_depth=20,
-                 memcache_deepcopy=True, debug_mode=None):
+                 only_physics_domain_sum, only_physics_domain_distwise,
+                 coszen_flipback, error_method=None, transforms_cache_depth=20,
+                 outputs_cache_depth=20, memcache_deepcopy=False,
+                 debug_mode=None):
         assert particles in ['neutrinos', 'muons']
         self.particles = particles
         """Whether stage is instantiated to process neutrinos or muons"""
