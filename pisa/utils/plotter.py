@@ -471,7 +471,7 @@ class Plotter(object):
                 width=plt_binning.bin_widths, alpha=0.25, linewidth=0,
                 color=self.color, **kwargs
             )
-        axis.set_xlabel(dollars(text2tex(plt_binning.label)))
+        axis.set_xlabel(dollars(plt_binning.label))
         if self.label:
             axis.set_ylabel(dollars(text2tex(self.label)))
         if plt_binning.is_log:
@@ -557,7 +557,7 @@ class Plotter(object):
             plt.grid(True, which="both", ls='-', alpha=0.2)
         self.fig.subplots_adjust(hspace=0)
         axis.set_ylabel(dollars(text2tex('ratio')))
-        axis.set_xlabel(dollars(text2tex(plt_binning.label)))
+        axis.set_xlabel(dollars(plt_binning.label))
         # Calculate nice scale:
         if r_vmin is not None and r_vmax is not None:
             axis.set_ylim(1 - r_vmin, 1 + r_vmax)
@@ -584,7 +584,7 @@ class Plotter(object):
             ax = fig.add_subplot(111)
             ax.grid(b=True, which='major')
             ax.grid(b=True, which='minor', linestyle=':')
-            plt.xlabel(dollars(text2tex(energy_binning.label)), size=18)
+            plt.xlabel(dollars(energy_binning.label), size=18)
             plt.ylabel(dollars(text2tex(self.label)), size=18)
             if self.log:
                 ax.set_yscale('log')
