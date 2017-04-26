@@ -167,8 +167,8 @@ class DistributionMaker(object):
         return self._source_code_hash
 
     @property
-    def state_hash(self):
-        return hash_obj([self.source_code_hash] + [p.state_hash for p in self])
+    def hash(self):
+        return hash_obj([self.source_code_hash] + [p.hash for p in self])
 
     def set_free_params(self, values):
         """Set free parameters' values.

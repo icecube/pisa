@@ -892,6 +892,8 @@ class vbwkde(Stage): # pylint: disable=invalid-name
         self.include_attrs_for_hashes('min_num_events')
         self.include_attrs_for_hashes('tgt_num_events')
         self.include_attrs_for_hashes('tgt_max_binwidth_factors')
+        self.include_attrs_for_hashes('energy_inbin_smoothing')
+        self.include_attrs_for_hashes('coszen_inbin_smoothing')
 
         self.kde_profiles = dict()
         """dict containing `KDEProfile`s. Structure is:
@@ -1108,13 +1110,19 @@ class vbwkde(Stage): # pylint: disable=invalid-name
                     else:
                         mask1 = slice(None)
 
+                    values = flav_events[last_dim_name][mask1]
                     mask2 = collect_enough_events(
-                        values=flav_events[last_dim_name][mask1],
+                        values=values,
                         bin_edges=last_dim_bin_edges,
                         is_log=last_dim_is_log,
                         min_num_events=self.min_num_events[char_dim],
                         tgt_num_events=self.tgt_num_events[char_dim],
                         tgt_max_binwidth_factor=self.tgt_max_binwidth_factors[char_dim]
+                    )
+                    logging.trace(
+                        '  ... total %d values strictly in dim(s) excluding'
+                        ' last dim; selected %d to characterize in-bin res.',
+                        len(values), np.sum(mask2)
                     )
 
                     weights = None
