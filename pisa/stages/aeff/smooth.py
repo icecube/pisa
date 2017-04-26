@@ -192,7 +192,8 @@ class smooth(Stage):
 
         # Now lets extend that array at both energy ends
         # by about 10% of bins
-        num_extension_bins = int(np.floor(0.1*len(e_binning)))
+        num_extension_bins_lower = int(np.floor(0.1*len(e_binning)))
+        num_extension_bins_upper = 0 #int(np.floor(0.05*len(e_binning)))
         assert e_binning.is_lin or e_binning.is_log, 'Do not know how to extend arbitrary binning'
 
         # what will new bin edges be?
@@ -203,8 +204,9 @@ class smooth(Stage):
         lower_edges = []
         upper_edges = []
         delta = bin_edges[1] - bin_edges[0]
-        for i in range(num_extension_bins):
+        for i in range(num_extension_bins_lower):
             lower_edges.append(bin_edges[0] - (i+1)*delta)
+        for i in range(num_extension_bins_upper):
             upper_edges.append(bin_edges[-1] + (i+1)*delta)
         new_edges = np.array(lower_edges[::-1] + bin_edges + upper_edges)
         if e_binning.is_log:
@@ -217,35 +219,41 @@ class smooth(Stage):
         # so an array like  [0 1 2 3 4 ...] will become [-3 -2 -1 0 1 2 3 4 ...]
 
         #if non_zero_idx == 0:
-        lower_bit = 2*truncated_xform[0, :] - np.flipud(truncated_xform[1:num_extension_bins+1, :])
+        lower_bit = 2*truncated_xform[0, :] - np.flipud(truncated_xform[1:num_extension_bins_lower+1, :])
         #else:
         #    lower_bit =  - np.flipud(truncated_xform[1:num_extension_bins+1,:])
-        upper_bit = 2*truncated_xform[-1, :] - np.flipud(truncated_xform[-num_extension_bins-1:-1, :])
+        upper_bit = 2*truncated_xform[-1, :] - np.flipud(truncated_xform[-num_extension_bins_upper-1:-1, :])
         extended_xform = np.concatenate((lower_bit, truncated_xform, upper_bit))
 
         # also handle the errors (which simply add up in quadrature)
         #if non_zero_idx == 0:
-        lower_bit = truncated_sumw2[0, :] + np.flipud(truncated_sumw2[1:num_extension_bins+1, :])
+        lower_bit = truncated_sumw2[0, :] + np.flipud(truncated_sumw2[1:num_extension_bins_lower+1, :])
         #else:
         #    lower_bit = np.flipud(truncated_sumw2[1:num_extension_bins+1,:])
-        upper_bit = truncated_sumw2[-1, :] + np.flipud(truncated_sumw2[-num_extension_bins-1:-1, :])
+        upper_bit = truncated_sumw2[-1, :] + np.flipud(truncated_sumw2[-num_extension_bins_upper-1:-1, :])
         extended_sumw2 = np.concatenate((lower_bit, truncated_sumw2, upper_bit))
 
         # what's the stat. situation here?
-        rel_error = errors/xform
+        rel_error = np.square(errors)/xform
         rel_error = np.median(rel_error[xform != 0])
-        logging.debug('Relative errors are ~ %.2f', rel_error)
+        logging.debug('Relative errors are ~ %.5f', rel_error)
+        # how many zero bins?
+        zero_fraction = np.count_nonzero(truncated_xform == 0)/float(truncated_xform.size)
+        logging.debug('zero fraction is %.3f', zero_fraction)
+
 
         # now use gaussian smoothing on those
         # some black magic sigma values
-        sigma_e = xform.shape[0] * 0.025 * rel_error
-        sigma_cz = xform.shape[1] * 0.05 * rel_error
+        #sigma_e = xform.shape[0] * 0.025 * rel_error
+        #sigma_cz = xform.shape[1] * 0.05 * rel_error
+        sigma_e = xform.shape[0] * np.sqrt(zero_fraction) * 0.02
+        sigma_cz = xform.shape[1] * np.sqrt(zero_fraction) * 0.05
         sigma1 = (0, sigma_cz)
         sigma2 = (sigma_e, 0)
         smooth_extended_xform = ndimage.filters.gaussian_filter(extended_xform, sigma1, mode='reflect')
         smooth_extended_sumw2 = ndimage.filters.gaussian_filter(extended_sumw2, sigma1, mode='reflect')
-        smooth_extended_xform = ndimage.filters.gaussian_filter(smooth_extended_xform, sigma2, mode='nearest', truncate=1.)
-        smooth_extended_sumw2 = ndimage.filters.gaussian_filter(smooth_extended_sumw2, sigma2, mode='nearest', truncate=1.)
+        smooth_extended_xform = ndimage.filters.gaussian_filter(smooth_extended_xform, sigma2, mode='nearest')#, truncate=1.)
+        smooth_extended_sumw2 = ndimage.filters.gaussian_filter(smooth_extended_sumw2, sigma2, mode='nearest')#, truncate=1.)
         smooth_extended_errors = np.sqrt(smooth_extended_sumw2)
 
         # now spline smooth
@@ -253,7 +261,7 @@ class smooth(Stage):
                                      spline_binning=extended_binning,
                                      eval_binning=e_binning,
                                      axis=0,
-                                     smooth_factor=self.params.aeff_e_smooth_factor.value/rel_error,
+                                     smooth_factor=self.params.aeff_e_smooth_factor.value/(rel_error * 10000),
                                      k=3,
                                      errors=smooth_extended_errors)
 
@@ -261,7 +269,7 @@ class smooth(Stage):
                                        spline_binning=cz_binning,
                                        eval_binning=cz_binning,
                                        axis=1,
-                                       smooth_factor=self.params.aeff_cz_smooth_factor.value/rel_error,
+                                       smooth_factor=self.params.aeff_cz_smooth_factor.value/(rel_error * 10000),
                                        k=3,
                                        errors=None)
 
