@@ -729,6 +729,30 @@ class Map(object):
                 new_binning.append(dim)
         return {'hist': new_hist, 'binning': new_binning}
 
+    def project(self, axis, keepdims=False):
+        """Project all dimensions onto a single `axis`.
+
+        Parameters
+        ----------
+        axis : string or int
+            Dimensions to be projected onto.
+        keepdims : bool
+            If True, marginalizes out (removes) the specified dimensions. If
+            False, the binning in the summed dimension(s) is expanded to the
+            full range of the binning for each dimension over which the sum is
+            performed.
+
+        Returns
+        -------
+        projection : Map
+
+        """
+        keep_index = self.binning.index(axis)
+        sum_indices = list(range(len(self.binning.dims)))
+        sum_indices.remove(keep_index)
+
+        return self.sum(axis=sum_indices, keepdims=keepdims)
+
     @_new_obj
     def rebin(self, new_binning):
         """Rebin the map with bin edge locations and names according to those
@@ -2333,6 +2357,11 @@ class MapSet(object):
 
     def sum(self, *args, **kwargs):
         return MapSet(maps=[m.sum(*args, **kwargs) for m in self],
+                      name=self.name, tex=self.tex,
+                      collate_by_name=self.collate_by_name)
+
+    def project(self, *args, **kwargs):
+        return MapSet(maps=[m.project(*args, **kwargs) for m in self],
                       name=self.name, tex=self.tex,
                       collate_by_name=self.collate_by_name)
 
