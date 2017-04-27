@@ -8,6 +8,7 @@ each event.
 import os
 import sys
 import numpy as np
+import glob
 
 import pisa.core.events as events
 from pisa.utils.log import logging, set_verbosity
@@ -64,7 +65,7 @@ def main():
     if os.path.isdir(args.file):
         files = [os.path.join(args.file, B) for B in os.listdir(args.file)]
     else:
-        files = [args.file]
+        files = glob.glob(args.file)
     for file in files:
         if os.path.isfile(file) and file.endswith('.hdf5'):
             print 'working on %s'%file

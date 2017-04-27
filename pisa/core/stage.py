@@ -808,14 +808,17 @@ class Stage(object):
         return self._source_code_hash
 
     @property
-    def state_hash(self):
+    def hash(self):
         """Combines source_code_hash and params.hash for checking/tagging
         provenance of persisted (on-disk) objects."""
-        objects_to_hash = [self.source_code_hash, self.params.state_hash]
+        objects_to_hash = [self.source_code_hash, self.params.hash]
         for attr in self._attrs_to_hash:
             objects_to_hash.append(hash_obj(getattr(self, attr),
                                             full_hash=self.full_hash))
         return hash_obj(objects_to_hash, full_hash=self.full_hash)
+
+    def __hash__(self):
+        return self.hash
 
     def include_attrs_for_hashes(self, attrs):
         """Include a class attribute or attributes to be included when
