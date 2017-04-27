@@ -604,37 +604,17 @@ class vbwkde(Stage): # pylint: disable=invalid-name
             }
         ```
 
-    char_binning : mapping
-        Binning used for characterizing each dimension. E.g.
+    energy_inbin_smoothing : bool
+        Smear energy-error KDE profiles by boxcar funciton of same width as input
+        (true-energy) bin it applies to. This is intended to account for the
+        ambiguity in where the KDE profile is located when the input bin is of
+        finite width, and so the effect of this parameter should decrease with
+        smaller `input_binning`.
 
-        ```
-            {
-                'pid': MultiDimBinning([
-                        dict(name='true_energy', num_bins=80, is_log=True,
-                             domain=[1, 80]*ureg.GeV')
-                    ]),
-                'energy': MultiDimBinning([
-                        dict(name='true_energy', num_bins=40, is_log=True,
-                             domain=[1, 80]*ureg.GeV')
-                    ]),
-                'coszen': MultiDimBinning([
-                        dict(name='true_coszen', num_bins=80, is_lin=True,
-                             domain=[-1, 1], tex=r'\cos\,\theta_{\rm true}'),
-                        dict(name='true_energy', num_bins=20, is_log=True,
-                             domain=[1, 80]*ureg.GeV')
-                    ])
-            }
-        ```
-
-        It is not necessary to
-        define a binning here that is the same as that defined in
-        `output_binning`, but a different definition here takes precedence over
-        `output_binning`.
-
-        As for `char_deps_downsampling`, specify characterization dimensions by
-        their basenames.
-
-        See `CHAR_BINNING` for the default, and use this an example.
+    coszen_inbin_smoothing : bool
+        Smear coszen-error KDE profiles by boxcar function of same width as
+        input (true-coszen) bin it applies to. See `energy_inbin_smoothing` for
+        more explanation.
 
     disk_cache : bool, string, etc.
         Simplest to set to True or False for enabling/disabling disk caching,
@@ -676,7 +656,8 @@ class vbwkde(Stage): # pylint: disable=invalid-name
     def __init__(self, params, particles, input_names, transform_groups,
                  sum_grouped_flavints, input_binning, output_binning,
                  char_deps_downsampling, min_num_events, tgt_num_events,
-                 tgt_max_binwidth_factors,
+                 tgt_max_binwidth_factors, energy_inbin_smoothing,
+                 coszen_inbin_smoothing,
                  error_method=None,
                  disk_cache=False,
                  transforms_cache_depth=1,
@@ -801,6 +782,16 @@ class vbwkde(Stage): # pylint: disable=invalid-name
         assert isinstance(tgt_max_binwidth_factors, Mapping), \
                 str(tgt_max_binwidth_factors)
 
+        # `energy_inbin_smoothing` ...
+
+        assert isinstance(energy_inbin_smoothing, bool)
+        self.energy_inbin_smoothing = energy_inbin_smoothing
+
+        # `coszen_inbin_smoothing` ...
+
+        assert isinstance(coszen_inbin_smoothing, bool)
+        self.coszen_inbin_smoothing = coszen_inbin_smoothing
+
         # `input_names` ...
 
         if isinstance(input_names, basestring):
@@ -901,6 +892,8 @@ class vbwkde(Stage): # pylint: disable=invalid-name
         self.include_attrs_for_hashes('min_num_events')
         self.include_attrs_for_hashes('tgt_num_events')
         self.include_attrs_for_hashes('tgt_max_binwidth_factors')
+        self.include_attrs_for_hashes('energy_inbin_smoothing')
+        self.include_attrs_for_hashes('coszen_inbin_smoothing')
 
         self.kde_profiles = dict()
         """dict containing `KDEProfile`s. Structure is:
@@ -1117,13 +1110,19 @@ class vbwkde(Stage): # pylint: disable=invalid-name
                     else:
                         mask1 = slice(None)
 
+                    values = flav_events[last_dim_name][mask1]
                     mask2 = collect_enough_events(
-                        values=flav_events[last_dim_name][mask1],
+                        values=values,
                         bin_edges=last_dim_bin_edges,
                         is_log=last_dim_is_log,
                         min_num_events=self.min_num_events[char_dim],
                         tgt_num_events=self.tgt_num_events[char_dim],
                         tgt_max_binwidth_factor=self.tgt_max_binwidth_factors[char_dim]
+                    )
+                    logging.trace(
+                        '  ... total %d values strictly in dim(s) excluding'
+                        ' last dim; selected %d to characterize in-bin res.',
+                        len(values), np.sum(mask2)
                     )
 
                     weights = None
@@ -1264,11 +1263,15 @@ class vbwkde(Stage): # pylint: disable=invalid-name
                         x = x_in_range
                         counts = counts_in_range
 
-                    # Sort according to ascending weight to improve numerical
-                    # precision of "poor-man's" histogram
-                    sortind = counts.argsort()
-                    x = x[sortind]
-                    counts = counts[sortind]
+                    # NOTE: removed this sort such that convolution version of
+                    # the code works (which assumes profile counts are sorted
+                    # by x).
+
+                    ## Sort according to ascending weight to improve numerical
+                    ## precision of "poor-man's" histogram
+                    #sortind = counts.argsort()
+                    #x = x[sortind]
+                    #counts = counts[sortind]
 
                     self.kde_profiles[char_dim][flavintgroup][bin_coord] = (
                         KDEProfile(x=x, counts=counts)
@@ -1432,9 +1435,12 @@ class vbwkde(Stage): # pylint: disable=invalid-name
                 np.argmin(np.abs(center - cz_kde_cz_centers))
             )
 
-        for true_e_bin_num, true_e_center in enumerate(true_e_centers):
+        for true_e_bin_num, (true_e_center, true_e_edges) \
+                in enumerate(zip(true_e_centers, true_energy.iteredgetuples())):
             logging.debug('  > Working on true_e_bin_num %d of %d',
                           true_e_bin_num+1, true_energy.size)
+
+            true_e_bin_width = np.log(true_e_edges[1] / true_e_edges[0])
 
             idx = np.argmin(np.abs(np.log(true_e_center/pid_kde_e_centers)))
             pid_closest_kde_coord = char_binning['pid'].coord(true_energy=idx)
@@ -1484,13 +1490,6 @@ class vbwkde(Stage): # pylint: disable=invalid-name
                 )
                 e_kde_profile = e_kde_profiles[e_closest_kde_coord]
 
-                # TODO: scale about the mode of the KDE! i.e., implement
-                #       `res_scale_ref`
-
-                # Tranform reco-energy bin edges into the log-ratio space
-                # where we characterized the energy resolutions
-                e_edges = reco_e_edges - np.log(true_e_center)/e_res_scale
-
                 energy_total = np.sum(e_kde_profile.counts)
 
                 if energy_total == 0:
@@ -1498,11 +1497,39 @@ class vbwkde(Stage): # pylint: disable=invalid-name
                                                      dtype=FTYPE)
                     logging.warn('Zero events in energy bin!')
                 else:
+                    # TODO: scale about the mode of the KDE! i.e., implement
+                    #       `res_scale_ref`
+
+                    # Tranform reco-energy bin edges into the log-ratio space
+                    # where we characterized the energy resolutions
+                    e_err_edges = (
+                        reco_e_edges - np.log(true_e_center)/e_res_scale
+                    )
+
+                    if self.energy_inbin_smoothing:
+                        # Formulate a "boxcar" function for convolution...
+                        x_range = (
+                            np.max(e_kde_profile.x) - np.min(e_kde_profile.x)
+                        )
+                        num_x = len(e_kde_profile.x)
+                        dx = x_range / (num_x - 1)
+                        boxcar_width = int(np.ceil(true_e_bin_width / dx))
+                        boxcar = np.full(shape=boxcar_width,
+                                         fill_value=1/boxcar_width)
+
+                        # Convolve profile with input bin (logarithmic) width
+                        # to account for uncertainty in where event is located
+                        # within the input bin
+                        y = np.convolve(e_kde_profile.counts, boxcar,
+                                        mode='same')
+                    else:
+                        y = e_kde_profile.counts
+
                     energy_norm = 1 / energy_total
 
                     reco_energy_counts, _ = HIST_FUNC(
-                        e_kde_profile.x, weights=e_kde_profile.counts,
-                        bins=e_edges
+                        e_kde_profile.x, weights=y,
+                        bins=e_err_edges
                     )
                     reco_energy_fractions = energy_norm * reco_energy_counts
 
@@ -1511,7 +1538,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
                                 str(reco_energy_fractions)
                         assert np.all(reco_energy_fractions <= 1), \
                                 str(reco_energy_fractions)
-                        assert np.sum(reco_energy_fractions < 1 + 10*EPSILON), \
+                        assert np.sum(reco_energy_fractions < 1 + EPSILON), \
                                 str(reco_energy_fractions)
 
                 # pid and true_energy are covered by the `energy_indexer`;
@@ -1545,20 +1572,23 @@ class vbwkde(Stage): # pylint: disable=invalid-name
 
                     # Get KDE profile (in "delta-cz" space)
                     dcz_kde_profile = dcz_kde_profiles[cz_closest_kde_coord]
-                    x_range = (np.max(dcz_kde_profile.x)
-                               - np.min(dcz_kde_profile.x))
-                    num_x = len(dcz_kde_profile.x)
-                    dx = x_range / (num_x - 1)
-
                     dcz_edge_info = allbins_dcz_edge_info[true_cz_bin_num]
 
-                    boxcar_width = int(
-                        np.ceil(dcz_edge_info['true_bin_width'] / dx)
-                    )
-                    boxcar = np.full(shape=boxcar_width,
-                                     fill_value=1/boxcar_width)
-                    y = np.convolve(dcz_kde_profile.counts, boxcar,
-                                    mode='same')
+                    if self.coszen_inbin_smoothing:
+                        x_range = (np.max(dcz_kde_profile.x)
+                                   - np.min(dcz_kde_profile.x))
+                        num_x = len(dcz_kde_profile.x)
+                        dx = x_range / (num_x - 1)
+
+                        boxcar_width = int(
+                            np.ceil(dcz_edge_info['true_bin_width'] / dx)
+                        )
+                        boxcar = np.full(shape=boxcar_width,
+                                         fill_value=1/boxcar_width)
+                        y = np.convolve(dcz_kde_profile.counts, boxcar,
+                                        mode='same')
+                    else:
+                        y = dcz_kde_profile.counts
 
                     reco_coszen_counts, _ = HIST_FUNC(
                         dcz_kde_profile.x, weights=y,

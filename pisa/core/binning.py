@@ -263,7 +263,7 @@ class OneDimBinning(object):
             if isinstance(units, ureg.Quantity):
                 units = units.units
             elif not isinstance(units, ureg.Unit):
-                units = ureg(units)
+                units = ureg.Unit(units)
             units_dimensionality = units.dimensionality
 
         dimensionless_bin_edges = None

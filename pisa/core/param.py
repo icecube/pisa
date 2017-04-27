@@ -8,7 +8,6 @@
 Define Param, ParamSet, and ParamSelector classes for handling parameters, sets
 of parameters, and being able to discretely switch between sets of parameter
 values.
-
 """
 
 
@@ -393,10 +392,14 @@ class Param(object):
         return self.prior_penalty(metric='chi2')
 
     @property
-    def state_hash(self):
+    def hash(self):
+        """int : hash of full state"""
         if self.normalize_values:
             return hash_obj(normQuant(self.state))
         return hash_obj(self.state)
+
+    def __hash__(self):
+        return self.hash
 
 
 # TODO: temporary modification of parameters via "with" syntax?
@@ -922,21 +925,27 @@ class ParamSet(Sequence):
 
     @property
     def values_hash(self):
+        """int : hash only on the current param values (not full state)"""
         if self.normalize_values:
             return hash_obj(normQuant(self.values))
         return hash_obj(self.values)
 
     @property
     def nominal_values_hash(self):
+        """int : hash only on the nominal param values"""
         if self.normalize_values:
             return hash_obj(normQuant(self.nominal_values))
         return hash_obj(self.nominal_values)
 
     @property
-    def state_hash(self):
+    def hash(self):
+        """int : full state hash"""
         if self.normalize_values:
             return hash_obj(normQuant(self.state))
         return hash_obj(self.state)
+
+    def __hash__(self):
+        return self.hash
 
     def to_json(self, filename, **kwargs):
         """Serialize the state to a JSON file that can be instantiated as a new
@@ -1239,9 +1248,9 @@ def test_ParamSet():
     logging.debug(str((param_set.free.values_hash)))
 
     logging.debug(str((param_set[0].state)))
-    logging.debug(str((param_set.state_hash)))
-    logging.debug(str((param_set.fixed.state_hash)))
-    logging.debug(str((param_set.free.state_hash)))
+    logging.debug(str((param_set.hash)))
+    logging.debug(str((param_set.fixed.hash)))
+    logging.debug(str((param_set.free.hash)))
 
     logging.debug(str(('fixed:', param_set.fixed.names)))
     logging.debug(str(('fixed, discrete:', param_set.fixed.discrete.names)))

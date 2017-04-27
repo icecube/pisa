@@ -366,16 +366,15 @@ class Pipeline(object):
         return self._source_code_hash
 
     @property
-    def state_hash(self):
-        """int : Hash of the state of the pipeline. This hashes together a hash
-        of the Pipeline class's source code and a hash per contained stage on
-        the state of the corresponding stage."""
-        return hash_obj([self.source_code_hash] + [s.state_hash for s in self])
-
-    @property
     def hash(self):
-        """High level hash of this object's class"""
-        return hash_obj((self.source_code_hash, self.state_hash))
+        """int : Hash of the state of the pipeline. This hashes together a hash
+        of the Pipeline class's source code and a hash of the state of each
+        contained stage."""
+        return hash_obj([self.source_code_hash]
+                        + [stage.hash for stage in self])
+
+    def __hash__(self):
+        return self.hash
 
 
 def test_Pipeline():
@@ -569,8 +568,8 @@ def main(return_outputs=False):
             section = arg_list[0]
             remainder = ' '.join(arg_list[1:])
             eq_split = remainder.split('=')
-            newarg = eq_split[0]
-            value = '='.join(eq_split[1:])
+            newarg = eq_split[0].strip()
+            value = ('='.join(eq_split[1:])).strip()
             logging.debug('Setting config section "%s" arg "%s" = "%s"',
                           section, newarg, value)
             try:

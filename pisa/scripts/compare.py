@@ -36,7 +36,7 @@ __all__ = ['DISTRIBUTIONMAKER_SOURCE_STR', 'PIPELINE_SOURCE_STR',
 DISTRIBUTIONMAKER_SOURCE_STR = (
     'DistributionMaker instantiated from multiple pipeline config files'
 )
-PIPELINE_SOURCE_STR = 'Pipeline instantiated from a pipelinen config file'
+PIPELINE_SOURCE_STR = 'Pipeline instantiated from a pipeline config file'
 MAP_SOURCE_STR = 'Map stored on disk'
 MAPSET_SOURCE_STR = 'MapSet stored on disk'
 
@@ -194,26 +194,43 @@ def compare(outdir, ref, ref_label, test, test_label, asymm_max=None,
     # Get the reference distribution(s) into the form of a test MapSet
     p_ref = None
     ref_source = None
-    if len(ref) == 1:
-        try:
-            ref_pipeline = Pipeline(config=ref[0])
-        except:
-            pass
-        else:
-            ref_source = PIPELINE_SOURCE_STR
-            if ref_param_selections is not None:
-                ref_pipeline.select_params(ref_param_selections)
-            p_ref = ref_pipeline.get_outputs()
+    if isinstance(ref, Map):
+        p_ref = MapSet(ref)
+        ref_source = MAP_SOURCE_STR
+    elif isinstance(ref, MapSet):
+        p_ref = ref
+        ref_source = MAPSET_SOURCE_STR
+    elif isinstance(ref, Pipeline):
+        if ref_param_selections is not None:
+            ref.select_params(ref_param_selections)
+        p_ref = ref.get_outputs()
+        ref_source = PIPELINE_SOURCE_STR
+    elif isinstance(ref, DistributionMaker):
+        if ref_param_selections is not None:
+            ref.select_params(ref_param_selections)
+        p_ref = ref.get_outputs()
+        ref_source = DISTRIBUTIONMAKER_SOURCE_STR
     else:
-        try:
-            ref_dmaker = DistributionMaker(pipelines=ref)
-        except:
-            pass
+        if len(ref) == 1:
+            try:
+                ref_pipeline = Pipeline(config=ref[0])
+            except:
+                pass
+            else:
+                ref_source = PIPELINE_SOURCE_STR
+                if ref_param_selections is not None:
+                    ref_pipeline.select_params(ref_param_selections)
+                p_ref = ref_pipeline.get_outputs()
         else:
-            ref_source = DISTRIBUTIONMAKER_SOURCE_STR
-            if ref_param_selections is not None:
-                ref_dmaker.select_params(ref_param_selections)
-            p_ref = ref_dmaker.get_outputs()
+            try:
+                ref_dmaker = DistributionMaker(pipelines=ref)
+            except:
+                pass
+            else:
+                ref_source = DISTRIBUTIONMAKER_SOURCE_STR
+                if ref_param_selections is not None:
+                    ref_dmaker.select_params(ref_param_selections)
+                p_ref = ref_dmaker.get_outputs()
 
     if p_ref is None:
         try:
@@ -246,26 +263,43 @@ def compare(outdir, ref, ref_label, test, test_label, asymm_max=None,
     # Get the test distribution(s) into the form of a test MapSet
     p_test = None
     test_source = None
-    if len(test) == 1:
-        try:
-            test_pipeline = Pipeline(config=test[0])
-        except:
-            pass
-        else:
-            test_source = PIPELINE_SOURCE_STR
-            if test_param_selections is not None:
-                test_pipeline.select_params(test_param_selections)
-            p_test = test_pipeline.get_outputs()
+    if isinstance(test, Map):
+        p_test = MapSet(test)
+        test_source = MAP_SOURCE_STR
+    elif isinstance(test, MapSet):
+        p_test = test
+        test_source = MAPSET_SOURCE_STR
+    elif isinstance(test, Pipeline):
+        if test_param_selections is not None:
+            test.select_params(test_param_selections)
+        p_test = test.get_outputs()
+        test_source = PIPELINE_SOURCE_STR
+    elif isinstance(test, DistributionMaker):
+        if test_param_selections is not None:
+            test.select_params(test_param_selections)
+        p_test = test.get_outputs()
+        test_source = DISTRIBUTIONMAKER_SOURCE_STR
     else:
-        try:
-            test_dmaker = DistributionMaker(pipelines=test)
-        except:
-            pass
+        if len(test) == 1:
+            try:
+                test_pipeline = Pipeline(config=test[0])
+            except:
+                pass
+            else:
+                test_source = PIPELINE_SOURCE_STR
+                if test_param_selections is not None:
+                    test_pipeline.select_params(test_param_selections)
+                p_test = test_pipeline.get_outputs()
         else:
-            test_source = DISTRIBUTIONMAKER_SOURCE_STR
-            if test_param_selections is not None:
-                test_dmaker.select_params(test_param_selections)
-            p_test = test_dmaker.get_outputs()
+            try:
+                test_dmaker = DistributionMaker(pipelines=test)
+            except:
+                pass
+            else:
+                test_source = DISTRIBUTIONMAKER_SOURCE_STR
+                if test_param_selections is not None:
+                    test_dmaker.select_params(test_param_selections)
+                p_test = test_dmaker.get_outputs()
 
     if p_test is None:
         try:
