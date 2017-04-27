@@ -99,29 +99,37 @@ def extract_tests(logdir, fluctuate_fid, fluctuate_data=False):
                     data_name=cfg['data_name'], data_is_data=data_is_data,
                     fluctuate_data=fluctuate_data, fluctuate_fid=fluctuate_fid
                 )
-                if 'fixed' in labels.dict['h0_name']:
-                    if 'inj' in labels.dict['data_name']:
-                        testtype = 'fixwrong'
+                # Special extraction for the baseline case of all systematics
+                if 'full_syst_baseline' in labels.dict['data_name']:
+                    trueordering = labels.dict['data_name'].split('_')[0]
+                    systematic = 'full_syst_baseline'
+                    direction = None
+                else:
+                    if 'fixed' in labels.dict['h0_name']:
+                        if 'inj' in labels.dict['data_name']:
+                            testtype = 'fixwrong'
+                            trueordering = labels.dict['data_name'].split(
+                                '_')[0]
+                            direction = labels.dict['data_name'].split('_')[-2]
+                            systematic = labels.dict['data_name'].split(
+                                '%s_inj_'%trueordering
+                            )[-1].split('_%s_wrong'%direction)[0]
+                        else:
+                            testtype = 'nminusone'
+                            trueordering = labels.dict['data_name'].split(
+                                '_')[0]
+                            hypo = labels.dict['h0_name'].split('_')[0]
+                            direction = None
+                            systematic = labels.dict['h0_name'].split(
+                                '%s_fixed_'%hypo
+                            )[-1].split('_baseline')[0]
+                    else:
+                        testtype = 'fitwrong'
                         trueordering = labels.dict['data_name'].split('_')[0]
                         direction = labels.dict['data_name'].split('_')[-2]
                         systematic = labels.dict['data_name'].split(
                             '%s_inj_'%trueordering
                         )[-1].split('_%s_wrong'%direction)[0]
-                    else:
-                        testtype = 'nminusone'
-                        trueordering = labels.dict['data_name'].split('_')[0]
-                        hypo = labels.dict['h0_name'].split('_')[0]
-                        direction = None
-                        systematic = labels.dict['h0_name'].split(
-                            '%s_fixed_'%hypo
-                        )[-1].split('_baseline')[0]
-                else:
-                    testtype = 'fitwrong'
-                    trueordering = labels.dict['data_name'].split('_')[0]
-                    direction = labels.dict['data_name'].split('_')[-2]
-                    systematic = labels.dict['data_name'].split(
-                        '%s_inj_'%trueordering
-                    )[-1].split('_%s_wrong'%direction)[0]
                 trueordering = 'toy_%s_asimov'%trueordering
                 if trueordering not in all_labels.keys():
                     all_labels[trueordering] = {}
@@ -134,9 +142,11 @@ def extract_tests(logdir, fluctuate_fid, fluctuate_data=False):
                 if direction is not None:
                     if direction not in  all_labels[
                             trueordering][systematic].keys():
-                        all_labels[trueordering][systematic][direction] = {}
+                        all_labels[trueordering][systematic][direction] = labels
                         all_params[trueordering][systematic][direction] = {}
                         all_data[trueordering][systematic][direction] = {}
+                else:
+                    all_labels[trueordering][systematic] = labels
 
                 # Get injected parameters
                 these_params = {}
@@ -207,7 +217,7 @@ def extract_tests(logdir, fluctuate_fid, fluctuate_data=False):
                                 ftest = ('hypo_%s_fit_to_%s.json'
                                          %(labels.dict['h{x}_name'.format(x=x)],
                                            dset_label))
-                                if fname == ftest:
+                                if ftest in fname:
                                     k = 'h{x}_fit_to_{y}'.format(x=x,y=dset_label)
                                     lvl2_fits[k] = extract_fit(
                                         fpath,
@@ -241,6 +251,7 @@ def extract_tests(logdir, fluctuate_fid, fluctuate_data=False):
                     all_data[trueordering][systematic][direction] = this_data
                 else:
                     all_data[trueordering][systematic] = this_data
+                    
         to_file(all_data, os.path.join(logdir, 'data_sets.pckl'))
         to_file(all_params, os.path.join(logdir, 'all_params.pckl'))
         to_file(all_labels, os.path.join(logdir, 'labels.pckl'))
@@ -275,14 +286,13 @@ def extract_fit(fpath, keys=None):
     return info
 
 
-def extract_relevant_fit_data(fit_data, injkey):
+def extract_relevant_fit_data(fit_data, datakey, labels):
     '''
     Function to extract relevant fit information from Asimov data
     '''
-    # Find which hypothesis is the best fit. Since this is an MC study in
-    # Asimov, this should also be the injected truth.
-    h0_fit = fit_data['h0_fit_to_%s'%injkey]
-    h1_fit = fit_data['h1_fit_to_%s'%injkey]
+    # Find which hypothesis is the best fit.
+    h0_fit = fit_data['h0_fit_to_%s'%datakey]
+    h1_fit = fit_data['h1_fit_to_%s'%datakey]
     if h0_fit['metric_val'] > h1_fit['metric_val']:
         bestfit = 'h1'
         altfit = 'h0'
@@ -290,29 +300,48 @@ def extract_relevant_fit_data(fit_data, injkey):
         bestfit = 'h0'
         altfit = 'h1'
     # Extract the relevant fits
-    TO_to_WO_fit = fit_data['%s_fit_to_%s_fid'%(bestfit,altfit)]['fid_asimov']
-    WO_to_TO_fit = fit_data['%s_fit_to_%s_fid'%(altfit,bestfit)]['fid_asimov']
+    best_to_alt_key = '%s_fit_to_%s_fid'%(bestfit,altfit)
+    best_to_alt_fit = fit_data[best_to_alt_key]['fid_asimov']
     relevant_fit_data = {}
-    relevant_fit_data['TO_to_WO_fit'] = TO_to_WO_fit
-    relevant_fit_data['WO_to_TO_fit'] = WO_to_TO_fit
+    relevant_fit_data['best_to_alt_fit'] = best_to_alt_fit
+    relevant_fit_data['alt_to_best_fit'] = \
+        fit_data['%s_fit_to_%s'%(altfit,datakey)]
+    relevant_fit_data['best_to_best_fit'] = \
+        fit_data['%s_fit_to_%s'%(bestfit,datakey)]
+    # Since this is an MC study in Asimov, this _should_ also be the injected
+    # truth. But, it is possible that if a systematically wrong hypothesis has
+    # been injected that this is NOT the case.
+    truth_recovered = labels['%s_name'%bestfit] in labels['data_name'] or \
+                      labels['data_name'] in labels['%s_name'%bestfit]
+    relevant_fit_data['truth_recovered'] = truth_recovered
     return relevant_fit_data
 
 
-def make_plots(data, injkey, detector, selection, testtype, outdir):
+def make_plots(data, baseline_data, injkey, detector,
+               selection, testtype, outdir):
     if testtype == 'nminusone':
         make_nminusone_plots(
             data=data,
+            baseline_data=baseline_data,
             injkey=injkey,
             detector=detector,
             selection=selection,
             outdir=outdir
         )
     else:
-        raise ValueError("Only processing for the standard N-1 test aka Hidden"
-                         " Potential test has been implemented thus far.")
+        make_injwrong_plots(
+            data=data,
+            testtype=testtype,
+            baseline_data=baseline_data,
+            injkey=injkey,
+            detector=detector,
+            selection=selection,
+            outdir=outdir
+        )
 
 
-def make_nminusone_plots(data, injkey, detector, selection, outdir):
+def make_nminusone_plots(data, baseline_data, injkey,
+                         detector, selection, outdir):
     '''
     Make the N-1 test plot showing the importance of the systematics
     '''
@@ -322,17 +351,52 @@ def make_nminusone_plots(data, injkey, detector, selection, outdir):
     MainTitle = '%s %s Event Selection N-1 Systematic Test for true %s'%(
         detector, selection, injkey.split('_')[1]
     )
-    WO_to_TO_metrics = []
-    TO_to_WO_metrics = []
+    if not baseline_data['truth_recovered']:
+        raise ValueError("The truth was NOT recovered in the baseline fit.")
+    baseline_significance = calculate_deltachi2_significances(
+        best_to_best_metrics=np.array(
+            [baseline_data['best_to_best_fit']['metric_val']]
+        ),
+        alt_to_best_metrics=np.array(
+            [baseline_data['alt_to_best_fit']['metric_val']]
+        ),
+        best_to_alt_metrics=np.array(
+            [baseline_data['best_to_alt_fit']['metric_val']]
+        )
+    )[0]
+    best_to_best_metrics = []
+    alt_to_best_metrics = []
+    best_to_alt_metrics = []
+    truth_recovered = []
     for testsyst in data.keys():
-        WO_to_TO_metrics.append(data[testsyst]['WO_to_TO_fit']['metric_val'])
-        TO_to_WO_metrics.append(data[testsyst]['TO_to_WO_fit']['metric_val'])
-    WO_to_TO_metrics = np.array(WO_to_TO_metrics)
-    TO_to_WO_metrics = np.array(TO_to_WO_metrics)
-    significances = calculate_deltachi2_signifiances(
-        WO_to_TO_metrics=WO_to_TO_metrics,
-        TO_to_WO_metrics=TO_to_WO_metrics
+        best_to_best_metrics.append(
+            data[testsyst]['best_to_best_fit']['metric_val']
+        )
+        alt_to_best_metrics.append(
+            data[testsyst]['alt_to_best_fit']['metric_val']
+        )
+        best_to_alt_metrics.append(
+            data[testsyst]['best_to_alt_fit']['metric_val']
+        )
+        truth_recovered.append(
+            data[testsyst]['truth_recovered']
+        )
+    best_to_best_metrics = np.array(best_to_best_metrics)
+    alt_to_best_metrics = np.array(alt_to_best_metrics)
+    best_to_alt_metrics = np.array(best_to_alt_metrics)
+    truth_recovered = np.array(truth_recovered)
+    significances = calculate_deltachi2_significances(
+        best_to_best_metrics=best_to_best_metrics,
+        alt_to_best_metrics=alt_to_best_metrics,
+        best_to_alt_metrics=best_to_alt_metrics,
     )
+    if not np.all(truth_recovered):
+        systnames = []
+        for systname in np.array(data.keys())[significances.argsort()]:
+            systnames.append(systname)
+        systnames = np.array(systnames)
+        raise ValueError("Truth not recovered in tests where %s were fixed."%
+                         systnames[np.logical_not(truth_recovered)])
     systnames = []
     for systname in np.array(data.keys())[significances.argsort()]:
         systnames.append(tex_axis_label(systname))
@@ -358,18 +422,182 @@ def make_nminusone_plots(data, injkey, detector, selection, outdir):
         injkey.split('_')[1], detector, selection
     )
     plt.savefig(os.path.join(outdir,SaveName))
+
+    plt.axhline(
+        baseline_significance,
+        linestyle='--',
+        label='Baseline Asimov Significance',
+        color='r',
+        lw=2
+    )
+    plt.legend(loc='upper left')
+    SaveName = "true_%s_%s_%s_nminusone_systematic_test_w_baseline.png"%(
+        injkey.split('_')[1], detector, selection
+    )
+    plt.savefig(os.path.join(outdir,SaveName))
+    plt.close()
+
+    corrected_significances = significances - baseline_significance
+    plt.plot(
+        np.linspace(0.5,len(significances)-0.5,len(significances)),
+        corrected_significances[significances.argsort()],
+        linestyle='None',
+        marker='x',
+        markersize=10
+    )
+    plt.xticks(
+        np.linspace(0.5,len(significances)-0.5,len(significances)),
+        systnames,
+        rotation=45,
+        horizontalalignment='right'
+    )
+    plt.xlim(0,len(significances))
+    plt.xlabel('Fixed Systematic')
+    plt.ylabel(r'Change in Asimov Significance ($\sigma$)')
+    plt.title(MainTitle, fontsize=16)
+    plt.tight_layout()
+    SaveName = "true_%s_%s_%s_nminusone_systematic_test_baseline_corrected.png"%(
+        injkey.split('_')[1], detector, selection
+    )
+    plt.savefig(os.path.join(outdir,SaveName))
     plt.close()
 
 
-def calculate_deltachi2_signifiances(WO_to_TO_metrics, TO_to_WO_metrics):
+def make_injwrong_plots(data, testtype, baseline_data, injkey,
+                        detector, selection, outdir):
+    '''
+    Make the plots where the data has a systematic injected off baseline.
+    '''
+    if not os.path.exists(outdir):
+        logging.info('Making output directory %s'%outdir)
+        os.makedirs(outdir)
+    if testtype == 'fixwrong':
+        MainTitle = '%s %s Event Selection Fitting Relevance Test for '%(
+            detector, selection
+        ) + 'true %s'%(
+            injkey.split('_')[1]
+        )
+    elif testtype == 'fitwrong':
+        MainTitle = '%s %s Event Selection Sensitivity Stability Test for '%(
+            detector, selection
+        ) + 'true %s'%(
+            injkey.split('_')[1]
+        )
+        
+    baseline_significance = calculate_deltachi2_significances(
+        best_to_best_metrics=np.array(
+            [baseline_data['best_to_best_fit']['metric_val']]
+        ),
+        alt_to_best_metrics=np.array(
+            [baseline_data['alt_to_best_fit']['metric_val']]
+        ),
+        best_to_alt_metrics=np.array(
+            [baseline_data['best_to_alt_fit']['metric_val']]
+        )
+    )[0]
+    best_to_best_metrics = {}
+    alt_to_best_metrics = {}
+    best_to_alt_metrics = {}
+    truth_recovered = {}
+    significances = {}
+    for direction in ['pve','nve']:
+        best_to_best_metrics[direction] = []
+        alt_to_best_metrics[direction] = []
+        best_to_alt_metrics[direction] = []
+        truth_recovered[direction] = []
+        for testsyst in data.keys():
+            best_to_best_metrics[direction].append(
+                data[testsyst][direction]['best_to_best_fit']['metric_val']
+            )
+            alt_to_best_metrics[direction].append(
+                data[testsyst][direction]['alt_to_best_fit']['metric_val']
+            )
+            best_to_alt_metrics[direction].append(
+                data[testsyst][direction]['best_to_alt_fit']['metric_val']
+            )
+            truth_recovered[direction].append(
+                data[testsyst][direction]['truth_recovered']
+            )
+        best_to_best_metrics[direction] = np.array(
+            best_to_best_metrics[direction]
+        )
+        alt_to_best_metrics[direction] = np.array(
+            alt_to_best_metrics[direction]
+        )
+        best_to_alt_metrics[direction] = np.array(
+            best_to_alt_metrics[direction]
+        )
+        significances[direction] = calculate_deltachi2_significances(
+            best_to_best_metrics=best_to_best_metrics[direction],
+            alt_to_best_metrics=alt_to_best_metrics[direction],
+            best_to_alt_metrics=best_to_alt_metrics[direction],
+            truth_recovered=truth_recovered[direction]
+            
+        )
+        systnames = []
+        for systname in np.array(data.keys())[
+                significances[direction].argsort()]:
+            systnames.append(tex_axis_label(systname))
+        plt.plot(
+            np.linspace(0.5,
+                        len(significances[direction])-0.5,
+                        len(significances[direction])),
+            significances[direction][significances[direction].argsort()],
+            linestyle='None',
+            marker='x',
+            markersize=10,
+            label='%s Shift'%tex_axis_label(direction)
+        )
+    plt.xticks(
+        np.linspace(0.5,
+                    len(significances['pve'])-0.5,
+                    len(significances['pve'])),
+        systnames,
+        rotation=45,
+        horizontalalignment='right'
+    )
+    plt.xlim(0,len(significances['pve']))
+    plt.xlabel('Systematic Injected Wrong')
+    plt.ylabel(r'Asimov Significance ($\sigma$)')
+    plt.title(MainTitle, fontsize=16)
+    plt.tight_layout()
+    plt.axhline(
+        baseline_significance,
+        linestyle='--',
+        label='Baseline Asimov Significance',
+        color='r',
+        lw=2
+    )
+    plt.legend(loc='upper left')
+    SaveName = "true_%s_%s_%s_fitwrong_systematic_test.png"%(
+        injkey.split('_')[1], detector, selection
+    )
+    plt.savefig(os.path.join(outdir,SaveName))
+    plt.close()
+
+
+def calculate_deltachi2_significances(best_to_best_metrics,
+                                      alt_to_best_metrics,
+                                      best_to_alt_metrics,
+                                      truth_recovered = None):
     '''
     Takes the true and wrong ordering fit metrics and combines them in to the 
     Asimov significance.
     '''
-    significances = []
-    num = WO_to_TO_metrics + TO_to_WO_metrics
-    denom = 2 * np.sqrt(WO_to_TO_metrics)
+    dLLHTH = alt_to_best_metrics - best_to_best_metrics
+    dLLHTRH = best_to_alt_metrics
+    num = dLLHTH + dLLHTRH
+    denom = 2 * np.sqrt(dLLHTRH)
     significances = num/denom
+    if truth_recovered is not None:
+        truth_multiplier = []
+        for tr in truth_recovered:
+            if tr:
+                truth_multiplier.append(1.0)
+            else:
+                truth_multiplier.append(-1.0)
+        truth_multiplier = np.array(truth_multiplier)
+        significances *= truth_multiplier
     return significances
 
     
@@ -422,20 +650,71 @@ def main():
 
     for injkey in data_sets.keys():
         data = {}
+        baseline_result = data_sets[injkey].pop('full_syst_baseline')
+        baseline_data = extract_relevant_fit_data(
+            fit_data=baseline_result[baseline_result.keys()[0]],
+            datakey=baseline_result.keys()[0],
+            labels=labels[injkey]['full_syst_baseline'].dict
+        )
         for testsyst in data_sets[injkey].keys():
             data[testsyst] = {}
             # This will be the case of doing systematic tests off baseline
             if len(data_sets[injkey][testsyst].keys()) == 2:
-                print "Forthcoming"
+                testdatakey = injkey.split('_asimov')[0] + \
+                              '_inj_%s_%s_wrong_asimov'%(testsyst,'nve')
+                fitted_syst = data_sets[injkey][testsyst]['nve'][testdatakey][
+                    'h0_fit_to_%s'%testdatakey]['params'].keys()
+                # If the number of fitted systematics equals the total number
+                # of systematics then the wrong thing was injected with the
+                # fitter being allowed to correct for it.
+                #if len(fitted_syst) == len(data_sets[injkey].keys()):
+                if True:
+                    testtype = 'fitwrong'
+                    datakey = injkey.split('_asimov')[0] + \
+                              '_inj_%s_%s_wrong_asimov'%(testsyst,'nve')
+                    data[testsyst]['nve'] = extract_relevant_fit_data(
+                        fit_data=data_sets[injkey][testsyst]['nve'][datakey],
+                        datakey=datakey,
+                        labels=labels[injkey][testsyst]['nve'].dict
+                    )
+                    datakey = injkey.split('_asimov')[0] + \
+                              '_inj_%s_%s_wrong_asimov'%(testsyst,'pve')
+                    data[testsyst]['pve'] = extract_relevant_fit_data(
+                        fit_data=data_sets[injkey][testsyst]['pve'][datakey],
+                        datakey=datakey,
+                        labels=labels[injkey][testsyst]['nve'].dict
+                    )
+                # If the number of fitted systematics is exactly one less than
+                # the total number of systematics then the wrong thing was
+                # injected without the fitter being allowed to correct for it.
+                elif len(fitted_syst) == len(data_sets[injkey].keys())-1:
+                    testtype = 'fixwrong'
+                    raise ValueError(
+                        "Postprocessing of type %s not implemented yet."%(
+                            testtype
+                        )
+                    )
+                # If something else then something is wrong.
+                else:
+                    raise ValueError(
+                        "Fitted systematics should either be the same as or 1 "
+                        "less than the total number. For %i systematics I "
+                        "found %i fitted systematics."%(
+                            len(data_sets[injkey].keys()),
+                            len(fitted_syst)
+                        )
+                    )
             # Otherwise it's a standard N-1 test
             else:
                 testtype = 'nminusone'
                 data[testsyst] = extract_relevant_fit_data(
                     fit_data=data_sets[injkey][testsyst][injkey],
-                    injkey=injkey
+                    datakey=injkey,
+                    labels=labels[injkey][testsyst].dict
                 )
         make_plots(
             data=data,
+            baseline_data=baseline_data,
             injkey=injkey,
             detector=detector,
             selection=selection,

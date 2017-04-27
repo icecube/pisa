@@ -695,17 +695,25 @@ def plot_significance(inj_param_vals, significances, truth, inj_param_name,
     plt.ylim(min(significances)-0.1*yrange,max(significances)+0.1*yrange)
     if inj_param_name == 'deltam3l':
         plt.xlabel(r'$|$' + tex_axis_label(inj_param_name) + \
-                   r'$|$ $/$ $10^{-3}$ (%s)'%tex_axis_label(inj_param_units))
+                   r'$|$ $/$ $10^{-3}$ (%s)'%tex_axis_label(inj_param_units),
+                   fontsize=24)
     else:
         if not inj_param_units == 'dimensionless':
             plt.xlabel(tex_axis_label(inj_param_name) + \
-                       r' (%s)'%tex_axis_label(inj_param_units))
+                       r' (%s)'%tex_axis_label(inj_param_units),
+                       fontsize=24)
         else:
-            plt.xlabel(tex_axis_label(inj_param_name))
+            plt.xlabel(tex_axis_label(inj_param_name),
+                       fontsize=24)
     if (testlabel is not None) and (testlabel is not False):
-        plt.ylabel(r'%s Significance ($\sigma$)'%testlabel)
+        plt.ylabel(r'%s Significance ($\sigma$)'%testlabel,
+                   fontsize=24)
     else:
-        plt.ylabel(r'Significance ($\sigma$)')
+        plt.ylabel(r'Significance ($\sigma$)',
+                   fontsize=24)
+    plt.grid()
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
 
 
 def add_extra_points(points, labels):
@@ -1039,6 +1047,8 @@ def plot_multiple_significances(directories, dir_labels, detector, selection,
         selection,
         inj_param_name
     )
+    plt.grid()
+    plt.tight_layout()
     plt.savefig(os.path.join(outdir,SaveName))
     if extra_points is not None:
         minextra, maxextra = add_extra_points(
@@ -1094,21 +1104,27 @@ def plot_fit(inj_param_vals, inj_param_name, inj_param_units, fit_param,
     plt.ylim(ymin-0.1*yrange,ymax+0.1*yrange)
     if not inj_param_units == 'dimensionless':
         plt.xlabel(tex_axis_label(inj_param_name) + \
-                   r' (%s)'%tex_axis_label(inj_param_units))
+                   r' (%s)'%tex_axis_label(inj_param_units),
+                   fontsize=24)
     else:
-        plt.xlabel(tex_axis_label(inj_param_name))
+        plt.xlabel(tex_axis_label(inj_param_name),
+        fontsize=24)
     if fit_param == 'deltam31':
         if not fit_param_units == 'dimensionless':
             plt.ylabel(r'$|$'+tex_axis_label(fit_param) + \
-                       r'$|$ (%s)'%tex_axis_label(fit_param_units))
+                       r'$|$ (%s)'%tex_axis_label(fit_param_units),
+                       fontsize=24)
         else:
-            plt.ylabel(r'$|$'+tex_axis_label(fit_param)+r'$|$')
+            plt.ylabel(r'$|$'+tex_axis_label(fit_param)+r'$|$',
+                       fontsize=24)
     else:
         if not fit_param_units == 'dimensionless':
             plt.ylabel(tex_axis_label(fit_param) + \
-                       r' (%s)'%tex_axis_label(fit_param_units))
+                       r' (%s)'%tex_axis_label(fit_param_units),
+                       fontsize=24)
         else:
-            plt.ylabel(tex_axis_label(fit_param))
+            plt.ylabel(tex_axis_label(fit_param),
+                       fontsize=24)
     plt.legend(loc='best')
 
 
