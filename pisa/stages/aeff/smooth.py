@@ -193,7 +193,7 @@ class smooth(Stage):
         # Now lets extend that array at both energy ends
         # by about 10% of bins
         num_extension_bins_lower = int(np.floor(0.1*len(e_binning)))
-        num_extension_bins_upper = 0 #int(np.floor(0.05*len(e_binning)))
+        num_extension_bins_upper = 0 
         assert e_binning.is_lin or e_binning.is_log, 'Do not know how to extend arbitrary binning'
 
         # what will new bin edges be?
@@ -244,24 +244,25 @@ class smooth(Stage):
 
         # now use gaussian smoothing on those
         # some black magic sigma values
-        #sigma_e = xform.shape[0] * 0.025 * rel_error
-        #sigma_cz = xform.shape[1] * 0.05 * rel_error
         sigma_e = xform.shape[0] * np.sqrt(zero_fraction) * 0.02
         sigma_cz = xform.shape[1] * np.sqrt(zero_fraction) * 0.05
         sigma1 = (0, sigma_cz)
         sigma2 = (sigma_e, 0)
         smooth_extended_xform = ndimage.filters.gaussian_filter(extended_xform, sigma1, mode='reflect')
         smooth_extended_sumw2 = ndimage.filters.gaussian_filter(extended_sumw2, sigma1, mode='reflect')
-        smooth_extended_xform = ndimage.filters.gaussian_filter(smooth_extended_xform, sigma2, mode='nearest')#, truncate=1.)
-        smooth_extended_sumw2 = ndimage.filters.gaussian_filter(smooth_extended_sumw2, sigma2, mode='nearest')#, truncate=1.)
+        smooth_extended_xform = ndimage.filters.gaussian_filter(smooth_extended_xform, sigma2, mode='nearest')
+        smooth_extended_sumw2 = ndimage.filters.gaussian_filter(smooth_extended_sumw2, sigma2, mode='nearest')
         smooth_extended_errors = np.sqrt(smooth_extended_sumw2)
+
+        # for low stats, smooth less....otherwise leave factor alone
+        smooth_corr_factor = max(1., (rel_error * 10000))
 
         # now spline smooth
         new_xform, _ = spline_smooth(array=smooth_extended_xform,
                                      spline_binning=extended_binning,
                                      eval_binning=e_binning,
                                      axis=0,
-                                     smooth_factor=self.params.aeff_e_smooth_factor.value/(rel_error * 10000),
+                                     smooth_factor=self.params.aeff_e_smooth_factor.value/smooth_corr_factor,
                                      k=3,
                                      errors=smooth_extended_errors)
 
@@ -269,7 +270,7 @@ class smooth(Stage):
                                        spline_binning=cz_binning,
                                        eval_binning=cz_binning,
                                        axis=1,
-                                       smooth_factor=self.params.aeff_cz_smooth_factor.value/(rel_error * 10000),
+                                       smooth_factor=self.params.aeff_cz_smooth_factor.value/smooth_corr_factor,
                                        k=3,
                                        errors=None)
 
