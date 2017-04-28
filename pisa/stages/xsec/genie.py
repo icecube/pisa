@@ -151,7 +151,7 @@ class genie(Stage):
             transform_groups = flavintGroupsFromString(transform_groups)
             output_names = []
             for grp in transform_groups:
-                flavints = [str(g) for g in grp.flavints()]
+                flavints = [str(g) for g in grp.flavints]
                 if set(flavints).intersection(all_names) \
                    and str(grp) not in output_names:
                     output_names.append(str(grp))
@@ -218,21 +218,21 @@ class genie(Stage):
                 xsec_transforms[NuFlavInt(flavint)] = xsec_trns
 
         nominal_transforms = []
-        for flav_int_group in self.transform_groups:
-            flav_names = [str(flav) for flav in flav_int_group.flavs()]
+        for flavint_group in self.transform_groups:
+            flav_names = [str(flav) for flav in flavint_group.flavs]
             for input_name in self.input_names:
                 if input_name not in flav_names:
                     continue
 
                 xform_array = []
-                for flav_int in flav_int_group.flavints():
-                    if flav_int in xsec_transforms:
-                        xform_array.append(xsec_transforms[flav_int])
+                for flavint in flavint_group.flavints:
+                    if flavint in xsec_transforms:
+                        xform_array.append(xsec_transforms[flavint])
                 xform_array = reduce(add, xform_array)
 
                 xform = BinnedTensorTransform(
                     input_names=input_name,
-                    output_name=str(flav_int_group),
+                    output_name=str(flavint_group),
                     input_binning=input_binning,
                     output_binning=self.output_binning,
                     xform_array=xform_array

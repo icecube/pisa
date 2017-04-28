@@ -15,7 +15,7 @@ import shutil
 import tempfile
 import time
 
-import dill
+import pickle
 
 from pisa.utils.log import logging, set_verbosity
 
@@ -314,8 +314,7 @@ class DiskCache(object):
             data = tmp[0]
             t4 = time.time()
             logging.trace('fetch: % 0.4f' % (t4 - t3))
-            #data = pickle.loads(bytes(data))
-            data = dill.loads(bytes(data))
+            data = pickle.loads(bytes(data))
             t5 = time.time()
             logging.trace('loads: % 0.4f' % (t5 - t4))
         finally:
@@ -331,8 +330,7 @@ class DiskCache(object):
             )
         t0 = time.time()
         assert isinstance(key, int)
-        #data = sqlite3.Binary(pickle.dumps(obj, pickle.HIGHEST_PROTOCOL))
-        data = sqlite3.Binary(dill.dumps(obj, dill.HIGHEST_PROTOCOL))
+        data = sqlite3.Binary(pickle.dumps(obj, pickle.HIGHEST_PROTOCOL))
         t1 = time.time()
         logging.trace('dumps: % 0.4f' % (t1 - t0))
 

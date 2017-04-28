@@ -17,21 +17,22 @@ visually inspect.
 """
 
 
+from __future__ import absolute_import
+
 from argparse import ArgumentParser
 from copy import deepcopy
 import os
-import sys
 
 import numpy as np
 
-from pisa import FTYPE
+from pisa import FTYPE, PYCUDA_AVAIL
 from pisa.core.map import Map, MapSet
 from pisa.core.pipeline import Pipeline
 from pisa.utils.fileio import from_file
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
 from pisa.utils.config_parser import parse_pipeline_config
-from pisa.utils.tests import has_cuda, check_agreement, plot_map_comparisons, pisa2_map_to_pisa3_map
+from pisa.utils.tests import check_agreement, plot_map_comparisons, pisa2_map_to_pisa3_map
 
 
 __all__ = ['PID_FAIL_MESSAGE', 'PID_PASS_MESSAGE',
@@ -257,10 +258,7 @@ def compare_aeff(config, servicename, pisa2file, systname,
     stage = pipeline.stages[0]
     input_maps = []
     for name in stage.input_names:
-        hist = np.ones(stage.input_binning.shape)
-        input_maps.append(
-            Map(name=name, hist=hist, binning=stage.input_binning)
-        )
+        input_maps.append(stage.input_binning.ones(name=name))
     outputs = stage.get_outputs(inputs=MapSet(maps=input_maps, name='ones',
                                               hash=1))
     pisa2_comparisons = from_file(pisa2file)
@@ -433,20 +431,31 @@ def compare_pid(config, servicename, pisa2file, outdir, ratio_test_threshold,
     outputs = stage.get_outputs(inputs=MapSet(maps=input_maps, name='ones',
                                               hash=1))
 
-    cake_trck = outputs.combine_wildcard('*_trck')
-    cake_cscd = outputs.combine_wildcard('*_cscd')
-
     pisa2_comparisons = from_file(pisa2file)
     pisa_trck = pisa2_map_to_pisa3_map(
-        pisa2_map = pisa2_comparisons['trck'],
-        ebins_name = 'reco_energy',
-        czbins_name = 'reco_coszen'
+        pisa2_map=pisa2_comparisons['trck'],
+        ebins_name='reco_energy',
+        czbins_name='reco_coszen'
     )
     pisa_cscd = pisa2_map_to_pisa3_map(
-        pisa2_map = pisa2_comparisons['cscd'],
-        ebins_name = 'reco_energy',
-        czbins_name = 'reco_coszen'
+        pisa2_map=pisa2_comparisons['cscd'],
+        ebins_name='reco_energy',
+        czbins_name='reco_coszen'
     )
+
+    # Do check if output is exactly the same as old PISA 2 with track and
+    # cascade separated or is new PISA 3 where PID is a binning dimension.
+    bins_old = [('trck' in s) or ('cscd' in s) for s in outputs.names]
+    if np.all(np.array(bins_old)):
+        # In this case we can get the two PID maps using the wildcard.
+        cake_trck = outputs.combine_wildcard('*_trck')
+        cake_cscd = outputs.combine_wildcard('*_cscd')
+
+    else:
+        # If not we must split along the PID dimension.
+        total_outputs = outputs.combine_wildcard('*')
+        cake_trck = total_outputs.slice(pid=1).squeeze()
+        cake_cscd = total_outputs.slice(pid=0).squeeze()
 
     max_diff_ratio, max_diff= plot_map_comparisons(
         ref_map=pisa_cscd,
@@ -462,7 +471,7 @@ def compare_pid(config, servicename, pisa2file, outdir, ratio_test_threshold,
 
     check_agreement(
         testname='PISAV3-PISAV2 pid:%s %s cscd'
-            %(test_service, test_syst),
+        %(test_service, test_syst),
         thresh_ratio=ratio_test_threshold,
         ratio=max_diff_ratio,
         thresh_diff=diff_test_threshold,
@@ -483,7 +492,7 @@ def compare_pid(config, servicename, pisa2file, outdir, ratio_test_threshold,
 
     check_agreement(
         testname='PISAV3-PISAV2 pid:%s %s trck'
-            %(test_service, test_syst),
+        %(test_service, test_syst),
         thresh_ratio=ratio_test_threshold,
         ratio=max_diff_ratio,
         thresh_diff=diff_test_threshold,
@@ -510,7 +519,8 @@ def compare_flux_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
         pisa_map_to_plot = pisa2_map_to_pisa3_map(
             pisa2_map = pisa_maps[nukey],
             ebins_name = 'true_energy',
-            czbins_name = 'true_coszen'
+            czbins_name = 'true_coszen',
+            is_log=False
         )
 
         if '_' in nukey:
@@ -561,7 +571,8 @@ def compare_osc_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
         pisa_map_to_plot = pisa2_map_to_pisa3_map(
             pisa2_map = pisa_maps[nukey],
             ebins_name = 'true_energy',
-            czbins_name = 'true_coszen'
+            czbins_name = 'true_coszen',
+            is_log=False
         )
 
         if '_' in nukey:
@@ -621,7 +632,8 @@ def compare_aeff_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
             pisa_map_to_plot = pisa2_map_to_pisa3_map(
                 pisa2_map = pisa_maps[nukey][intkey],
                 ebins_name = 'true_energy',
-                czbins_name = 'true_coszen'
+                czbins_name = 'true_coszen',
+                is_log=False
             )
 
             cake_map_to_plot = cake_maps[cakekey]
@@ -681,7 +693,8 @@ def compare_reco_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
         pisa_map_to_plot = pisa2_map_to_pisa3_map(
             pisa2_map = pisa_maps[nukey],
             ebins_name = 'reco_energy',
-            czbins_name = 'reco_coszen'
+            czbins_name = 'reco_coszen',
+            is_log=False
         )
 
         if '_' in nukey:
@@ -744,12 +757,14 @@ def compare_pid_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
     pisa_trck = pisa2_map_to_pisa3_map(
         pisa2_map = pisa_maps['trck'],
         ebins_name = 'reco_energy',
-        czbins_name = 'reco_coszen'
+        czbins_name = 'reco_coszen',
+        is_log=False
     )
     pisa_cscd = pisa2_map_to_pisa3_map(
         pisa2_map = pisa_maps['cscd'],
         ebins_name = 'reco_energy',
-        czbins_name = 'reco_coszen'
+        czbins_name = 'reco_coszen',
+        is_log=False
     )
 
     max_diff_ratio, max_diff = plot_map_comparisons(
@@ -841,15 +856,17 @@ def parse_args():
                         help='''Ignore errors if pycuda cannot be used. If
                         pycuda can be used, however, errors will still be
                         raised as exceptions.''')
-    parser.add_argument('-v', action='count', default=None,
-                        help='set verbosity level')
+    parser.add_argument('-v', action='count', default=0,
+                        help='''Set verbosity level; default is 1, so only -vv
+                        or -vvv has an effect.''')
     args = parser.parse_args()
+    args.v = min(1, args.v)
     return args
 
 
 def main():
     args = parse_args()
-    set_verbosity(args.v)
+    set_verbosity(1)
 
     # Figure out which tests to do
     test_all = True
@@ -924,8 +941,7 @@ def main():
             )
 
     # Test for CUDA being present
-    cuda_present = has_cuda()
-    if not cuda_present:
+    if not PYCUDA_AVAIL:
         msg = 'No CUDA support found, so GPU-based services cannot run.'
         if args.osc_prob3gpu or test_all:
             if args.ignore_cuda_errors:
@@ -934,7 +950,7 @@ def main():
                 raise ImportError(msg)
 
     # Perform GPU-based oscillations tests
-    if (args.osc_prob3gpu or test_all) and cuda_present:
+    if (args.osc_prob3gpu or test_all) and PYCUDA_AVAIL:
         osc_settings = os.path.join(
             'tests', 'settings', 'pisa2_osc_prob3gpu_test.cfg'
         )

@@ -5,13 +5,11 @@
   },
   "options":{
     "value": {
-      "disp"   : 0,
-      "ftol"   : 2e-11,
-      "eps"    : 1.0e-8,
+      "ftol"   : 1.0e-6,
+      "eps"    : 1.0e-4,
       "maxiter": 1000
     },
     "desc": {
-      "disp"   : "Set to True to print convergence messages",
       "ftol"   : "Precision goal for the value of f in the stopping criterion",
       "eps"    : "Step size used for numerical approximation of the jacobian.",
       "maxiter": "Maximum number of iteration"

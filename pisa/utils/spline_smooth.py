@@ -32,7 +32,8 @@ def spline_smooth(array, spline_binning, eval_binning, axis=0, smooth_factor=5, 
     could be expanded to nd arrays to generalize it
     """
     # only working for 2d right now!
-    assert(array.ndim == 2, 'cannot do other dimensions than 2 right now, sorry')
+    if array.ndim != 2:
+        raise ValueError('cannot do other dimensions than 2 right now, sorry')
     # points at which to evaluate splines
     spline_points = spline_binning.midpoints
     if axis == 1:

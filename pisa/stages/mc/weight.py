@@ -8,16 +8,16 @@ advantage of the Data object being passed as a sideband in the Stage.
 """
 
 
+from __future__ import absolute_import, division
+
 from collections import OrderedDict
 from copy import deepcopy
 
 from scipy.interpolate import interp1d
 
 import numpy as np
-import pint
 
-from pisa import FTYPE
-from pisa import ureg
+from pisa import FTYPE, ureg
 from pisa.core.events import Data
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
@@ -237,7 +237,7 @@ class weight(Stage):
         if self.neutrinos:
             clean_outnames += [str(f) for f in self._output_nu_groups]
 
-        super(self.__class__, self).__init__(
+        super(weight, self).__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
@@ -294,7 +294,7 @@ class weight(Stage):
 
                 # No oscillations
                 for fig in self._data.iterkeys():
-                    flav_pdg = NuFlavInt(fig).flavCode()
+                    flav_pdg = NuFlavInt(fig).flav.code
                     pisa_weight = self._data[fig]['pisa_weight']
                     if flav_pdg == 12:
                         pisa_weight *= flux_weights[fig]['nue_flux']
@@ -333,7 +333,7 @@ class weight(Stage):
             rw_array = self.prim_unc_spline(self._data.muons[rw_variable])
             # Reweighting term is positive-only by construction, so normalise
             # it by shifting the whole array down by a normalisation factor
-            norm = sum(rw_array)/len(rw_array)
+            norm = sum(rw_array) / len(rw_array)
             cr_rw_array = rw_array-norm
             self._data.muons['pisa_weight'] *= (1+cr_rw_scale*cr_rw_array)
 
@@ -464,8 +464,7 @@ class weight(Stage):
                         flux_weights[fig][flav] = \
                                 self._flux_weights[fig][flav]*out_units
                 return flux_weights
-            else:
-                return self._flux_weights
+            return self._flux_weights
 
         data_contains_flux = all(
             ['nue_flux' in fig and 'numu_flux' in fig and 'nuebar_flux' in fig
@@ -548,8 +547,7 @@ class weight(Stage):
                 for flav in flux_weights[fig].iterkeys():
                     fw_units[fig][flav] = flux_weights[fig][flav]*out_units
             return fw_units
-        else:
-            return flux_weights
+        return flux_weights
 
     def compute_osc_weights(self, flux_weights):
         """Neutrino oscillations calculation via Prob3."""
@@ -686,9 +684,9 @@ class weight(Stage):
         osc_weights = OrderedDict()
         for fig in nu_data.iterkeys():
             flavint = NuFlavInt(fig)
-            pdg = abs(flavint.flavCode())
-            kNuBar = 1 if flavint.isParticle() else -1
-            p = '' if flavint.isParticle() else 'bar'
+            pdg = abs(flavint.flav.code)
+            kNuBar = 1 if flavint.particle else -1
+            p = '' if flavint.particle else 'bar'
             if pdg == 12:
                 kFlav = 0
             elif pdg == 14:
@@ -802,7 +800,7 @@ class weight(Stage):
         return muon_uncf
 
     def validate_params(self, params):
-        pq = pint.quantity._Quantity
+        pq = ureg.Quantity
         param_types = [
             ('output_events_mc', bool),
             ('kde_hist', bool),

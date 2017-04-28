@@ -279,7 +279,7 @@ if __name__ == '__main__':
 
             for bf_dict in (bf_wo, bf_to):
                 # TODO: serialisation!
-                bf_dict['params'] = deepcopy(bf_dict['params']._serializable_state)
+                bf_dict['params'] = deepcopy(bf_dict['params'].serializable_state)
                 if 'minimizer_metadata' in bf_dict:
                     delete_keys(bf_dict['minimizer_metadata'],
                                 keys=['hess_inv'])
@@ -290,7 +290,7 @@ if __name__ == '__main__':
                 if debug_mode == 0:
                     delete_keys(bf_dict, ['minimizer_metadata', 'minimizer_time'])
                 try: bf_dict['hypo_asimov_dist'] = \
-                        deepcopy(bf_dict['hypo_asimov_dist']._serializable_state)
+                        deepcopy(bf_dict['hypo_asimov_dist'].serializable_state)
                 except: pass
 
             one_fit_dict['wrong octant'] = deepcopy(bf_wo)

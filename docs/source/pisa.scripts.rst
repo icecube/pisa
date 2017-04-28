@@ -52,18 +52,10 @@ pisa.scripts.make_nufit_theta23_spline_priors module
     :undoc-members:
     :show-inheritance:
 
-pisa.scripts.slice_smooth_aeff module
--------------------------------------
+pisa.scripts.make_systematic_variation_plots module
+---------------------------------------------------
 
-.. automodule:: pisa.scripts.slice_smooth_aeff
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.scripts.smooth_aeff module
--------------------------------
-
-.. automodule:: pisa.scripts.smooth_aeff
+.. automodule:: pisa.scripts.make_systematic_variation_plots
     :members:
     :undoc-members:
     :show-inheritance:

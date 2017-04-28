@@ -4,10 +4,26 @@ pisa.stages.mc package
 Submodules
 ----------
 
+pisa.stages.mc.CPUWeight module
+-------------------------------
+
+.. automodule:: pisa.stages.mc.CPUWeight
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.stages.mc.GPUWeight module
 -------------------------------
 
 .. automodule:: pisa.stages.mc.GPUWeight
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.stages.mc.cpu module
+-------------------------
+
+.. automodule:: pisa.stages.mc.cpu
     :members:
     :undoc-members:
     :show-inheritance:

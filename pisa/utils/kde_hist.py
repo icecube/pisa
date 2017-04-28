@@ -1,14 +1,20 @@
-from kde.cudakde import gaussian_kde
-import numpy as np
-from uncertainties import unumpy as unp
-
-from pisa.core.binning import OneDimBinning, MultiDimBinning
-
 """
 Functions to get KDE smoothed historgams
 """
 
+
+from __future__ import division
+
+from kde.cudakde import gaussian_kde
+import numpy as np
+from uncertainties import unumpy as unp
+import copy
+
+from pisa.core.binning import OneDimBinning, MultiDimBinning
+
+
 __all__ = ['get_hist', 'kde_histogramdd', 'test_kde_histogramdd']
+
 
 def get_hist(sample, binning, weights=None, bw_method='scott', adaptive=True,
              alpha=0.3, use_cuda=False, coszen_reflection=0.25,
@@ -233,7 +239,7 @@ def kde_histogramdd(sample, binning, weights=None, bw_method='scott',
 
     # treat pid bins separately
     # asuming we're dealing with 2d apart from PID
-    bin_names = binning.names
+    bin_names = copy.copy(binning.names)
     bin_edges = [b.bin_edges.m for b in binning]
     pid_bin = bin_names.index('pid')
     other_bins = [0, 1, 2]

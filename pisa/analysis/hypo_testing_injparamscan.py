@@ -13,10 +13,6 @@ set the range of values. For example, one could scan over the space of theta23
 by using a string such as `numpy.linspace(0.35,0.65,31)` which will then be 
 evaluated to figure out a space of theta23 to inject and run Asimov tests.
 
-TODO:
-
-1) Make sure this actually works...
-
 """
 
 
@@ -361,19 +357,30 @@ def main():
     # on the ordering. Need to extend the ranges of both values in the
     # hypothesis maker since the hypotheses may minimise over the ordering,
     # and could then go out of range.
+
+    # Also, some parameters CANNOT go negative or else things won't work.
+    # To account for this, check if parameters lower value was positive and,
+    # if so, enforce that it is positive now.
     if isinstance(inj_vals[0], dict):
         # Calculate ranges for both parameters
         norangediff = max(no_inj_vals) - max(no_inj_vals)
         norangediff = norangediff*ureg(inj_units)
         norangetuple = (min(no_inj_vals)*ureg(inj_units) - 0.5*norangediff,
-                       max(no_inj_vals)*ureg(inj_units) + 0.5*norangediff)
+                        max(no_inj_vals)*ureg(inj_units) + 0.5*norangediff)
         iorangediff = max(io_inj_vals) - max(io_inj_vals)
         iorangediff = iorangediff*ureg(inj_units)
         iorangetuple = (min(io_inj_vals)*ureg(inj_units) - 0.5*iorangediff,
-                       max(io_inj_vals)*ureg(inj_units) + 0.5*iorangediff)
+                        max(io_inj_vals)*ureg(inj_units) + 0.5*iorangediff)
         # Select the NO (or nh) parameters in the config file
         hypo_testing.h0_maker.select_params(['nh'])
         hypo_testing.h1_maker.select_params(['nh'])
+        if hypo_testing.h0_maker.params[test_name].range is not None:
+            if hypo_testing.h0_maker.params[test_name].range[0] > 0:
+                enforce_positive = True
+            else:
+                enforce_positive = False
+        else:
+            enforce_positive = False
         if hypo_testing.h0_maker.params[test_name].units != inj_units:
             newminrangeval = norangetuple[0].to(
                 hypo_testing.h0_maker.params[test_name].units
@@ -381,15 +388,31 @@ def main():
             newmaxrangeval = norangetuple[1].to(
                 hypo_testing.h0_maker.params[test_name].units
             )
+            if enforce_positive and newminrangeval < 0:
+                newminrangeval = 0.0 * ureg(inj_units)
+                newminrangeval = newminrangeval.to(
+                    hypo_testing.h0_maker.params[test_name].units
+                )
             newrangetuple = (newminrangeval, newmaxrangeval)
             hypo_testing.h0_maker.params[test_name].range = newrangetuple
             hypo_testing.h1_maker.params[test_name].range = newrangetuple
         else:
+            if enforce_positive and norangetuple[0] < 0:
+                norangetuple = (0.0 * ureg(inj_units),
+                                max(no_inj_vals)*ureg(inj_units) + \
+                                0.5*norangediff)
             hypo_testing.h0_maker.params[test_name].range = norangetuple
             hypo_testing.h1_maker.params[test_name].range = norangetuple
         # Select the IO (or ih) parameters in the cofig file
         hypo_testing.h0_maker.select_params(['ih'])
         hypo_testing.h1_maker.select_params(['ih'])
+        if hypo_testing.h0_maker.params[test_name].range is not None:
+            if hypo_testing.h0_maker.params[test_name].range[0] > 0:
+                enforce_positive = True
+            else:
+                enforce_positive = False
+        else:
+            enforce_positive = False
         if hypo_testing.h0_maker.params[test_name].units != inj_units:
             newminrangeval = iorangetuple[0].to(
                 hypo_testing.h0_maker.params[test_name].units
@@ -397,16 +420,30 @@ def main():
             newmaxrangeval = iorangetuple[1].to(
                 hypo_testing.h0_maker.params[test_name].units
             )
+            if enforce_positive and newminrangeval < 0:
+                newminrangeval = 0.0 * ureg(inj_units)
+                newminrangeval = newminrangeval.to(
+                    hypo_testing.h0_maker.params[test_name].units
+                )
             newrangetuple = (newminrangeval, newmaxrangeval)
             hypo_testing.h0_maker.params[test_name].range = newrangetuple
             hypo_testing.h1_maker.params[test_name].range = newrangetuple
         else:
+            if enforce_positive and iorangetuple[0] < 0:
+                iorangetuple = (0.0 * ureg(inj_units),
+                                max(io_inj_vals)*ureg(inj_units) + \
+                                0.5*iorangediff)
             hypo_testing.h0_maker.params[test_name].range = iorangetuple
             hypo_testing.h1_maker.params[test_name].range = iorangetuple
         # BE SURE TO SELECT THE PROPER ONES AGAIN AT THE END
         hypo_testing.h0_maker.select_params(init_args_d['h0_param_selections'])
         hypo_testing.h1_maker.select_params(init_args_d['h1_param_selections'])
         # Now for the data maker we must test the sign of the value
+        # However, enforcing positive if the original range was positive is NOT
+        # necessary here because their is no minimisation using the data maker.
+        # Thus, if the value falls in to an unphysical range here it will be
+        # because the user requested an unphysical value and in that case it
+        # should be allowed to go there and raise the appropriate error.
         if np.sign(
                 hypo_testing.h1_maker.params[test_name].value.magnitude) == 1:
             if hypo_testing.h1_maker.params[test_name].units != inj_units:
@@ -459,9 +496,19 @@ def main():
                 hypo_testing.data_maker.params[test_name].range = iorangetuple
     # Otherwise it's way simpler...
     else:
+        if hypo_testing.h0_maker.params[test_name].range is not None:
+            if hypo_testing.h0_maker.params[test_name].range[0] > 0:
+                enforce_positive = True
+            else:
+                enforce_positive = False
+        else:
+            enforce_positive = False
         rangediff = max(inj_vals) - min(inj_vals)
         rangetuple = (min(inj_vals) - 0.5*rangediff,
                       max(inj_vals) + 0.5*rangediff)
+        if enforce_positive and rangetuple[0] < 0:
+            rangetuple = (0.0 * ureg(inj_units),
+                          max(inj_vals) + 0.5*rangediff)
         # Ensure that the units match, if not change them
         if hypo_testing.h0_maker.params[test_name].units != inj_units:
             minrangeval = rangetuple[0].to(
@@ -470,6 +517,11 @@ def main():
             maxrangeval = rangetuple[1].to(
                 hypo_testing.h0_maker.params[test_name].units
             )
+            if enforce_positive and minrangeval < 0:
+                newminrangeval = 0.0 * ureg(inj_units)
+                newminrangeval = newminrangeval.to(
+                    hypo_testing.h0_maker.params[test_name].units
+                )
             rangetuple = (minrangeval, maxrangeval)
         hypo_testing.h0_maker.params[test_name].range\
             = rangetuple

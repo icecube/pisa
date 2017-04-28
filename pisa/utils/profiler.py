@@ -23,7 +23,7 @@ class Log(object):
         string = string.rstrip('\n')
         if string:
             log.tprofile.debug(string)
-    def flush():
+    def flush(self):
         pass
 
 
@@ -93,8 +93,8 @@ def profile(func):
         finally:
             end_t = time()
             log.tprofile.debug(
-                'module %s, function %s: %.4f ms'
-                %(func.__module__, func.__name__, (end_t - start_t)*1000)
+                'module %s, function %s: %.4f ms',
+                func.__module__, func.__name__, (end_t - start_t)*1000
             )
     return profiled_func
 

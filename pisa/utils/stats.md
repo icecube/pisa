@@ -5,7 +5,9 @@ The `stats.py` file contains a collection of function to calculate statistical m
 ## Log-Likelihoods
 
 These all assume that our data is poisson distributed with the usual definition of its pdf as:
-
+```math
+P(k,\lambda) = \frac{\lambda^k e^{-\lambda}}{\Gamma(k+1)}
+```
 ![poisson_pdf](images/poisson_pdf.png)
 <!---
 P(k,\lambda) = \frac{\lambda^k e^{-\lambda}}{\Gamma(k+1)}

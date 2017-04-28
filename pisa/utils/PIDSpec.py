@@ -9,6 +9,8 @@ PIDSpec class for importing, working with, and storing PID specifications.
 """
 
 
+from __future__ import division
+
 import collections
 import os
 
@@ -181,7 +183,7 @@ class PIDSpec(object):
         # Outer loop is over flavint, so that same data is processed multiply
         # for different PID signatures, rather than new data loaded for each
         # PID spec. (Theoretically faster.)
-        for flavint in events.flavints():
+        for flavint in events.flavints:
             src = events[flavint]
             dest = separated_events[flavint] = {}
             if return_fields is None:
@@ -213,7 +215,7 @@ class PIDSpec(object):
     @staticmethod
     def aggregate(separated_events):
         agg_events = {}
-        for flavint in separated_events.flavints():
+        for flavint in separated_events.flavints:
             for sig, datadict in separated_events[flavint].iteritems():
                 if sig not in agg_events:
                     agg_events[sig] = {}

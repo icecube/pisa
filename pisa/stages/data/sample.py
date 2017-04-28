@@ -234,7 +234,7 @@ class sample(Stage):
         nu_data = []
         for idx, flav in enumerate(flavours):
             f = int(flav)
-            all_flavints = NuFlavIntGroup(f, -f).flavints()
+            all_flavints = NuFlavIntGroup(f, -f).flavints
             flav_fidg = FlavIntDataGroup(
                 flavint_groups=all_flavints
             )
@@ -280,8 +280,8 @@ class sample(Stage):
                 events['reco_coszen'] = np.cos(events['reco_zenith'])
 
             for flavint in all_flavints:
-                i_mask = cc_mask if flavint.isCC() else nc_mask
-                t_mask = nu_mask if flavint.isParticle() else nubar_mask
+                i_mask = cc_mask if flavint.cc else nc_mask
+                t_mask = nu_mask if flavint.particle else nubar_mask
 
                 flav_fidg[flavint] = {var: events[var][i_mask & t_mask]
                                       for var in events.iterkeys()}
