@@ -435,7 +435,7 @@ class prob3cpu(Stage):
         prob_e = []
         prob_mu = []
         if self._barger_earth_model is None:
-            logging.info("Calculating vacuum oscillations")
+            logging.debug("Calculating vacuum oscillations")
             # Set up the distance to the detector. Radius of Earth is 6371km and
             # we then account for the depth of the detector in the Earth.
             depth = self.params.detector_depth.m_as('km')
@@ -463,7 +463,7 @@ class prob3cpu(Stage):
                     2, events_dict['kFlav']+1, en, path
                 ))
         else:
-            logging.info("Calculating matter oscillations")
+            logging.debug("Calculating matter oscillations")
             YeI = self.params.YeI.m_as('dimensionless')
             YeO = self.params.YeO.m_as('dimensionless')
             YeM = self.params.YeM.m_as('dimensionless')
