@@ -215,7 +215,7 @@ class CPUWeight(object):
         if kNuBar < 0:
             return np.maximum(
                 d0a,
-                d1a/(1.0+(1.0 - nu_nubar)*modfactor)
+                d1a/(1+0.5*modfactor)
             )
         elif kNuBar > 0:
             return np.maximum(
@@ -252,27 +252,27 @@ class CPUWeight(object):
         # nu/nubar ratio systematic
         if kNuBar < 0:
             new_nue_oppo_flux2, new_nue_flux2 = self.apply_ratio_scale(
-                flux1=events_dict['neutrino_oppo_nue_flux'],
-                flux2=events_dict['neutrino_nue_flux'],
+                flux1=new_nue_oppo_flux,
+                flux2=new_nue_flux,
                 ratio_scale=nu_nubar_ratio,
                 sum_const=True
             )
             new_numu_oppo_flux2, new_numu_flux2 = self.apply_ratio_scale(
-                flux1=events_dict['neutrino_oppo_numu_flux'],
-                flux2=events_dict['neutrino_numu_flux'],
+                flux1=new_numu_oppo_flux,
+                flux2=new_numu_flux,
                 ratio_scale=nu_nubar_ratio,
                 sum_const=True
             )
         else:
             new_nue_flux2, new_nue_oppo_flux2 = self.apply_ratio_scale(
-                flux1=events_dict['neutrino_nue_flux'],
-                flux2=events_dict['neutrino_oppo_nue_flux'],
+                flux1=new_nue_flux,
+                flux2=new_nue_oppo_flux,
                 ratio_scale=nu_nubar_ratio,
                 sum_const=True
             )
             new_numu_flux2, new_numu_oppo_flux2 = self.apply_ratio_scale(
-                flux1=events_dict['neutrino_numu_flux'],
-                flux2=events_dict['neutrino_oppo_numu_flux'],
+                flux1=new_numu_flux,
+                flux2=new_numu_oppo_flux,
                 ratio_scale=nu_nubar_ratio,
                 sum_const=True
             )
