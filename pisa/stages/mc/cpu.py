@@ -22,7 +22,7 @@ from pisa.utils.resources import find_resource
 from copy import deepcopy
 
 
-__all__ = ['gpu']
+__all__ = ['cpu']
 
 
 class cpu(Stage):
@@ -49,7 +49,8 @@ class cpu(Stage):
             deltam31 : quantity (mass^2)
             deltacp : quantity (angle)
             no_nc_osc : bool
-                don't oscillate NC events, but rather assign probabilities 1 for nue->nue and numu->numu, and 0 for nutau->nutau
+                don't oscillate NC events, but rather assign probabilities 1 
+                for nue->nue and numu->numu, and 0 for nutau->nutau
             nu_nubar_ratio : quantity (dimensionless)
             nue_numu_ratio : quantity (dimensionless)
             livetime : quantity (time)
@@ -59,7 +60,8 @@ class cpu(Stage):
             Barr_nu_nubar_ratio : quantity (dimensionless)
             Genie_Ma_QE : quantity (dimensionless)
             Genie_Ma_RES : quantity (dimensionless)
-            events_file : hdf5 file path (output from make_events), including flux weights and Genie systematics coefficients
+            events_file : hdf5 file path (output from make_events), including 
+                          flux weights and Genie systematics coefficients
             nutau_cc_norm : quantity (dimensionless)
             nutau_norm : quantity (dimensionless)
             reco_e_res_raw : quantity (dimensionless)
@@ -82,10 +84,15 @@ class cpu(Stage):
         true_coszen : true coszen of the event
         reco_energy : reco energy of the event in GeV
         reco_coszen : reco coszen of the event
-        neutrino_nue_flux : flux weight for nu_e in case of neutrino, or anti-nu_e in case of anti-neutrino event
-        neutrino_numu_flux : flux weight for nu_mu in case of neutrino, or anti-nu_mu in case of anti-neutrino event
-        neutrino_oppo_nue_flux:flux weight for anti-nu_e in case of neutrino, or nu_e in case of anti-neutrino event
-        neutrino_oppo_numu_flux :flux weight for anti-nu_mu in case of neutrino, or nu_mu in case of anti-neutrino event
+        neutrino_nue_flux : flux weight for nu_e in case of neutrino, or
+                            anti-nu_e in case of anti-neutrino event
+        neutrino_numu_flux : flux weight for nu_mu in case of neutrino, or
+                             anti-nu_mu in case of anti-neutrino event
+        neutrino_oppo_nue_flux : flux weight for anti-nu_e in case of neutrino,
+                                 or nu_e in case of anti-neutrino event
+        neutrino_oppo_numu_flux : flux weight for anti-nu_mu in case of
+                                  neutrino, or nu_mu in case of anti-neutrino
+                                  event
         weighted_aeff : effective are weight for event
         pid : pid value
 
@@ -96,14 +103,9 @@ class cpu(Stage):
         linear_fit_maccres : Genie CC resonance linear coefficient
         quad_fit_maccres : Genie CC resonance quadratic coefficient
 
-    the dictionary self.events_dict is the central object here:
-    it contains two dictionaries for every flavour:
-        * host : all event arrays on CPU
-        * device : pointers to the same arrays, but on GPU
-    and some additional keys like:
-        * n_evts : number of events
-        * hist : retrieved histogram
-        * ...
+    the dictionary self.events_dict is the central object here. It is similar
+    to the one in the GPU service except we do not have pointer array to the
+    GPU since everything is just run on the CPU.
 
     """
     def __init__(self, params, output_binning, disk_cache=None,
@@ -181,12 +183,25 @@ class cpu(Stage):
         # Not a good idea to scale nutau norm, without the NC events being
         # oscillated
         if params.nutau_norm.value != 1.0 or not params.nutau_norm.is_fixed:
-            assert (params.no_nc_osc.value == False), 'If you want NC tau events scaled, you should oscillate them -> set no_nc_osc to False!!!'
-        if params.hist_e_scale.is_fixed == False or params.hist_e_scale.value != 1.0:
-            assert (params.kde.value == False), 'The hist_e_scale can only be used with histograms, not KDEs!'
-        if params.hist_pid_scale.is_fixed == False or params.hist_pid_scale.value != 1.0:
-            assert (params.kde.value == False), 'The hist_epid_scale can only be used with histograms, not KDEs!'
-
+            if not params.no_nc_osc.value == False:
+                raise ValueError(
+                    "If you want NC tau events scaled, you should oscillate "
+                    "them -> set no_nc_osc to False!!!"
+                )
+        if (params.hist_e_scale.is_fixed == False) or \
+           (params.hist_e_scale.value != 1.0):
+            if not params.kde.value == False:
+                raise ValueError(
+                    "The hist_e_scale can only be used with histograms, "
+                    "not KDEs!"
+                )
+        if (params.hist_pid_scale.is_fixed == False) or \
+           (params.hist_pid_scale.value != 1.0):
+            if not params.kde.value == False:
+                raise ValueError(
+                    "The hist_epid_scale can only be used with histograms, "
+                    "not KDEs!"
+                )
 
     def _compute_nominal_outputs(self):
         # Store hashes for caching that is done inside the stage
@@ -197,10 +212,15 @@ class cpu(Stage):
         self.fixed_error = None
 
         # Initialize classes
-        earth_model = find_resource(self.params.earth_model.value)
-        YeI = self.params.YeI.value.m_as('dimensionless')
-        YeO = self.params.YeO.value.m_as('dimensionless')
-        YeM = self.params.YeM.value.m_as('dimensionless')
+        earth_model = self.params.earth_model.value
+        YeI = self.params.YeI.value
+        YeO = self.params.YeO.value
+        YeM = self.params.YeM.value
+        if earth_model is not None:
+            earth_model = find_resource(self.params.earth_model.value)
+            YeI = self.params.YeI.value.m_as('dimensionless')
+            YeO = YeO.m_as('dimensionless')
+            YeM = YeM.m_as('dimensionless')
         prop_height = self.params.prop_height.value.m_as('km')
         detector_depth = self.params.detector_depth.value.m_as('km')
 
@@ -280,16 +300,9 @@ class cpu(Stage):
         empty = [
             'prob_e',
             'prob_mu',
-            'weight',
-            'scaled_nue_flux',
-            'scaled_numu_flux',
-            'scaled_nue_flux_shape',
-            'scaled_numu_flux_shape'
         ]
-        if self.error_method in ['sumw2', 'fixed_sumw2']:
-            empty += ['sumw2']
 
-        # List of flav_ints to use and corresponding number used in several
+        # List of flavints to use and corresponding number used in several
         # parts of the code
         self.flavs = [
             'nue_cc',
@@ -384,20 +397,20 @@ class cpu(Stage):
 
         # Get hash to decide whether expensive stuff needs to be recalculated
         osc_param_vals = [self.params[name].value for name in self.osc_params]
-        gpu_flux_vals = [self.params[name].value
+        cpu_flux_vals = [self.params[name].value
                            for name in self.flux_params]
         
         true_params_vals = [self.params[name].value for
                             name in self.true_params]
 
         osc_param_vals += true_params_vals
-        gpu_flux_vals += true_params_vals
+        cpu_flux_vals += true_params_vals
 
         if self.full_hash:
             osc_param_vals = normQuant(osc_param_vals)
-            gpu_flux_vals = normQuant(gpu_flux_vals)
+            cpu_flux_vals = normQuant(cpu_flux_vals)
         osc_hash = hash_obj(osc_param_vals, full_hash=self.full_hash)
-        flux_hash = hash_obj(gpu_flux_vals, full_hash=self.full_hash)
+        flux_hash = hash_obj(cpu_flux_vals, full_hash=self.full_hash)
 
         recalc_osc = not (osc_hash == self.osc_hash)
         recalc_flux = not (flux_hash == self.flux_hash)
@@ -427,7 +440,7 @@ class cpu(Stage):
                 if not (self.params.no_nc_osc.value and flav.endswith('_nc')):
                     self.osc.calc_probs(
                         true_e_scale=true_e_scale,
-                        **self.events_dict[flav]
+                        events_dict=self.events_dict[flav]
                     )
 
             # Calculate weights
@@ -440,7 +453,8 @@ class cpu(Stage):
                     Barr_uphor_ratio=Barr_uphor_ratio,
                     Barr_nu_nubar_ratio=Barr_nu_nubar_ratio,
                     true_e_scale=true_e_scale,
-                    **self.events_dict[flav]
+                    kNuBar=self.events_dict[flav]['kNuBar'],
+                    events_dict=self.events_dict[flav]
                 )
 
             nue_flux_norm = 1.
@@ -457,14 +471,14 @@ class cpu(Stage):
                 Genie_Ma_QE=Genie_Ma_QE,
                 Genie_Ma_RES=Genie_Ma_RES,
                 true_e_scale=true_e_scale,
-                **self.events_dict[flav]
+                events_dict=self.events_dict[flav]
             )
 
             # Calculate weights squared, for error propagation
             if self.error_method in ['sumw2', 'fixed_sumw2']:
-                self.cpu_weight.calc_sumw2(
-                    **self.events_dict[flav]
-                )
+                self.events_dict[flav]['sumw2'] = \
+                    self.events_dict[flav]['weight'] * \
+                    self.events_dict[flav]['weight']
 
             tot += self.events_dict[flav]['n_evts']
 
@@ -497,8 +511,11 @@ class cpu(Stage):
                 self.events_dict[flav]['hist'] = hist
         else:
             # hist_e_scale:
-            self.bin_edges[self.e_bin_number] *= self.params.hist_e_scale.value.m_as('dimensionless')
-            self.bin_edges[self.pid_bin_number][1] *= self.params.hist_pid_scale.value.m_as('dimensionless')
+            self.bin_edges[self.e_bin_number] *= \
+                self.params.hist_e_scale.value.m_as('dimensionless')
+            if 'pid' in self.bin_names:
+                self.bin_edges[self.pid_bin_number][1] *= \
+                    self.params.hist_pid_scale.value.m_as('dimensionless')
 
             # Histogram events if either weights or osc changed
             for flav in self.flavs:
@@ -536,15 +553,19 @@ class cpu(Stage):
                     f *= self.params.nutau_cc_norm.value.m_as('dimensionless')
                 if 'nutau' in flav:
                     f *= self.params.nutau_norm.value.m_as('dimensionless')
-                if ('bar_nc' in flav and 'allbar_nc' in name) or ('_nc' in flav and 'all_nc' in name) or (flav in name):
+                if ('bar_nc' in flav and 'allbar_nc' in name) or \
+                   ('_nc' in flav and 'all_nc' in name) or (flav in name):
                     if out_hists.has_key(name):
-                        out_hists[name] += self.events_dict[flav]['hist'] * f
+                        out_hists[name] += self.events_dict[flav]['hist']*f
                         if self.error_method in ['sumw2', 'fixed_sumw2']:
-                            out_sumw2[name] += self.events_dict[flav]['sumw2'] * f * f
+                            out_sumw2[name] += \
+                                self.events_dict[flav]['sumw2']*f*f
                     else:
-                        out_hists[name] = np.copy(self.events_dict[flav]['hist']) * f
+                        out_hists[name] = \
+                            np.copy(self.events_dict[flav]['hist'])*f
                         if self.error_method in ['sumw2', 'fixed_sumw2']:
-                            out_sumw2[name] = np.copy(self.events_dict[flav]['sumw2']) * f * f
+                            out_sumw2[name] = \
+                                np.copy(self.events_dict[flav]['sumw2'])*f*f
 
         # Pack everything in a final PISA MapSet
         maps = []

@@ -9,57 +9,62 @@ and finally the package resources. The loggers found in there will be lifted
 to the module namespace.
 
 Currently, we have three loggers
-* root: generic for what is going on  (typically: `opening file x` or
+* logging: generic for what is going on  (typically: `opening file x` or
   `doing this now` messages)
 * physics: for any physics output that might be interesting
   (`have x many events`, `the flux is ...`)
 * tprofile: for how much time it takes to run some step (in the format of
   `time : start bla`, `time : stop bla`)
 
-The last one is temporary and should be replaced by a proper profiler.
 """
 
 
-import logging
-import logging.config
+import json
+import logging as logging_module
+import logging.config as logging_config
+from pkg_resources import resource_stream
 
 
-__all__ = ['logging', 'set_verbosity']
+__all__ = ['logging', 'physics', 'tprofile', 'set_verbosity']
 
 
-# Add a trace level
-logging.TRACE = 5
-logging.addLevelName(logging.TRACE, "TRACE")
-def trace(self, message, *args, **kws):
-    self.log(logging.TRACE, message, *args, **kws)
-logging.Logger.trace = trace
-logging.RootLogger.trace = trace
-logging.trace = logging.root.trace
+def initialize_logging():
+    """Intializing PISA logging"""
+    # Add a trace level
+    logging_module.TRACE = 5
+    logging_module.addLevelName(logging_module.TRACE, 'TRACE')
+    def trace(self, message, *args, **kws):
+        """Trace-level logging"""
+        self.log(logging_module.TRACE, message, *args, **kws)
+    logging_module.Logger.trace = trace
+    logging_module.RootLogger.trace = trace
+    logging_module.trace = logging_module.root.trace
 
-# Don't move these up, as "trace" might be used in them
-import simplejson as json
-from pkg_resources import resource_stream #pisa.utils.resources as resources
+    # Get the logging configuration
+    logconfig = json.load(
+        resource_stream('pisa', 'resources/settings/logging/logging.json'),
+    )
 
-# Get the logging configuration
-logconfig = json.load(
-    resource_stream('pisa', 'resources/settings/logging/logging.json'),
-)
+    # Setup the logging system with this config
+    logging_config.dictConfig(logconfig)
 
-# Setup the logging system with this config
-logging.config.dictConfig(logconfig)
+    thandler = logging_module.StreamHandler()
+    tformatter = logging_module.Formatter(
+        fmt=logconfig['formatters']['profile']['format']
+    )
+    thandler.setFormatter(tformatter)
 
-thandler = logging.StreamHandler()
-tformatter = logging.Formatter(fmt=logconfig['formatters']['profile']['format'])
-thandler.setFormatter(tformatter)
+    # Capture warnings
+    logging_module.captureWarnings(True)
 
-#capture warnings
-logging.captureWarnings(True)
+    _logging = logging_module.getLogger('pisa')
+    _physics = logging_module.getLogger('pisa.physics')
+    _tprofile = logging_module.getLogger('pisa.tprofile')
+    # TODO: removed following line due to dupllicate logging messages. Probably
+    # should fix this in a better manner...
+    #_tprofile.handlers = [thandler]
 
-# Make the loggers public
-# In case they haven't been defined, this will just inherit from the root logger
-physics = logging.getLogger('physics')
-tprofile = logging.getLogger('profile')
-tprofile.handlers = [thandler]
+    return _logging, _physics, _tprofile
 
 
 def set_verbosity(verbosity):
@@ -71,10 +76,10 @@ def set_verbosity(verbosity):
         return
 
     # define verbosity levels
-    levels = {0: logging.WARN,
-              1: logging.INFO,
-              2: logging.DEBUG,
-              3: logging.TRACE}
+    levels = {0: logging_module.WARN,
+              1: logging_module.INFO,
+              2: logging_module.DEBUG,
+              3: logging_module.TRACE}
 
     if verbosity not in levels:
         raise ValueError(
@@ -83,5 +88,9 @@ def set_verbosity(verbosity):
         )
 
     # Overwrite the root logger with the verbosity level
-    logging.root.setLevel(levels[verbosity])
+    logging.setLevel(levels[verbosity])
     tprofile.setLevel(levels[verbosity])
+
+
+# Make the loggers public
+logging, physics, tprofile = initialize_logging()

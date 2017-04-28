@@ -6,7 +6,7 @@ In Ubuntu you can peform the following steps to perform a clean, full (all optio
 
 ```bash
 # Install required and optional system packages
-sudo apt-get install git swig libhdf5-10 llvm-dev python2.7 python-pip virtualenv
+sudo apt-get install git swig libhdf5-10 llvm-3.9-dev python2.7 python-pip virtualenv
 
 # Create and activate a virtual environment: so fresh and so clean
 virtualenv my_virtual_env
@@ -18,11 +18,6 @@ mkdir my_virtual_env/src
 # Obtain the PISA sourcecode (must have access to the WIPACrepo/pisa repo)
 git clone https://github.com/jllanfranchi/pisa.git --branch cake \
     --single-branch my_virtual_env/src/pisa
-
-# If you want to install numba to accelerate certain pieces of code (highly
-# recommended!), you have to manually install enum34 first
-# (see Issue 253: https://github.com/jllanfranchi/pisa/issues/253)
-pip install enum34
 
 # Install PISA and its python package dependencies (optional dependency
 # categories are in brackets). Note that sometimes an install issue with the
@@ -40,7 +35,7 @@ test_consistency_with_pisa2.py -v
 # EXAMPLE: Run a Monte Carlo pipeline to produce, store, and plot its expected
 # distributions at the output of each stage
 pipeline.py --settings settings/pipeline/example.cfg \
-    --dir /tmp/pipeline_output --intermediate --pdf -v
+    --outdir /tmp/pipeline_output --intermediate --pdf -v
 
 # EXAMPLE: Run the Asimov NMO analysis; leave off "_gpu" to run CPU-only
 # version
@@ -55,7 +50,7 @@ hypo_testing.py --logdir /tmp/test \
     --pprint -v
 
 # Display the significance for distinguishing hypothesis h1 from h0
-hypo_testing_postprocess.py --asimov --dir /tmp/test/*
+hypo_testing_postprocess.py --asimov --logdir /tmp/test/*
 
 # Leave the virtual environment (run the `source...` command above to re-enter
 # the virtual environment at a later time)
@@ -100,12 +95,13 @@ Also note that Python, SWIG, HDF5, and pip support come pre-packaged or as `cond
 
 Required Python modules that are installed automatically when you use the pip command detailed later:
 * [cython](http://cython.org)
+* [decorator](https://pypi.python.org/pypi/decorator)
 * [dill](http://trac.mystic.cacr.caltech.edu/project/pathos/wiki/dill.html)
 * [h5py](http://www.h5py.org)
 * [line_profiler](https://pypi.python.org/pypi/line_profiler): detailed profiling output<br>
-* [matplotlib](http://matplotlib.org)
+* [matplotlib](http://matplotlib.org) >= 2.0 required
 * [numpy](http://www.numpy.org) version >= 1.11.0 required
-* [pint](https://pint.readthedocs.org); at present this must be installed from its github source, as there is a bug not yet fixed in a release; specifying `-r requirements.txt` to `pip` will automatically install pint from the correct source (https://github.com/hgrecco/pint.git@c5925bfdab09c75a26bb70cd29fb3d34eed56a5f#egg=pint)
+* [pint](https://pint.readthedocs.org) >= 0.8 required
 * [scipy](http://www.scipy.org) version >= 0.17 required
 * [setuptools](https://setuptools.readthedocs.io) version >= 0.18 required
 * [simplejson](https://github.com/simplejson/simplejson) version >= 3.2.0 required
@@ -121,7 +117,7 @@ Optional dependencies. Some of these must be installed manually prior to install
   * Anaconda<br>
     `conda install numba`
   * In Ubuntu,<br>
-    `sudo apt-get install llvm-dev`
+    `sudo apt install llvm-3.9-dev`
 * [virtualenv](https://virtualenv.pypa.io/en/stable/) Use virtual environments to e.g. create a "clean" installation and/or to have multiple multiple versions installed, one version per virtual environment. To speed up installation (at the cost of a less "clean" environment), you can specify the `--system-site-packages` option to `virtualenv` to make use of already-installed Python packages.
   * Anaconda<br>
     `conda install virtualenv`
@@ -132,12 +128,13 @@ Optional dependencies. Some of these must be installed manually prior to install
 * [PyROOT](https://root.cern.ch/pyroot) Necessary to read ROOT cross sections files; must install ROOT on your system in addition to PyROOT. There is no `pip` package for either.
   * Ubuntu 15.x and 16.04:<br>
     `sudo apt-get install root-system libroot-bindings-python*`
-* [enum34](https://pypi.python.org/pypi/enum34) Required for numba, and for some reason pip is not installing this as a dependency automatically, so it must be installed manually.
 * [numba](http://numba.pydata.org) Just-in-time compilation of decorated Python functions to native machine code via LLVM. This can accelerate certain routines significantly. If not using Anaconda to install, you must have LLVM installed already on your system (see above).
   * Installed alongside PISA if you specify option `['numba']` to `pip`
+* [Pylint](http://www.pylint.org): Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.<br>
+  * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [PyCUDA](https://mathema.tician.de/software/pycuda): run certain routines on Nvidia CUDA GPUs (must have compute 2.0 or greater capability)<br>
   * Installed alongside PISA if you specify option `['cuda']` to `pip`
-* [Sphinx](http://www.sphinx-doc.org/en/stable/) version > 1.3
+* [Sphinx](http://www.sphinx-doc.org/en/stable/) version >= 1.3
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [recommonmark](http://recommonmark.readthedocs.io/en/latest/) Translator to allow markdown docs/docstrings to be used; plugin for Sphinx. (Required to compile PISA's documentation.)
   * Installed alongside PISA if you specify option `['develop']` to `pip`
@@ -291,16 +288,9 @@ __Notes:__
 
 ### Reinstall PISA
 
-* To remove any compiled bits to ensure they get recompiled:
-  ```bash
-  cd $PISA
-  python setup.py clean --all
-  pip install --editable $PISA -r $PISA/requirements.txt
-  ```
-* To just reinstall the Python bits (and only build binaries if they don't already exist)
-  ```bash
-  pip install --editable $PISA -r $PISA/requirements.txt --upgrade
-  ```
+```bash
+pip install --editable $PISA -r $PISA/requirements.txt --force-reinstall
+```
 
 ### Compiling the Documentation
 
@@ -322,9 +312,9 @@ cd $PISA/docs && make html
 Throughout the codebase there are `test_*.py` files and `test_*` functions within various `*.py` files that represent unit tests.
 Unit tests are designed to ensure that the basic mechanisms of objects' functionality work.
 
-These are not automatically run, but can be invoked via
+These are all run, plus additional tests (takes about 15-20 minutes on a laptop) with the command
 ```bash
-python <python_file>
+$PISA/tests/test_command_lines.sh
 ```
 
 #### Physics Tests

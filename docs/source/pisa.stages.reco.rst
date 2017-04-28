@@ -12,6 +12,14 @@ pisa.stages.reco.hist module
     :undoc-members:
     :show-inheritance:
 
+pisa.stages.reco.param module
+-----------------------------
+
+.. automodule:: pisa.stages.reco.param
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.stages.reco.vbwkde module
 ------------------------------
 

@@ -124,6 +124,14 @@ pisa.utils.gaussians module
     :undoc-members:
     :show-inheritance:
 
+pisa.utils.gaussians_cython module
+----------------------------------
+
+.. automodule:: pisa.utils.gaussians_cython
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.utils.gpu_hist module
 --------------------------
 
@@ -196,10 +204,26 @@ pisa.utils.miscFunctions module
     :undoc-members:
     :show-inheritance:
 
+pisa.utils.parallel module
+--------------------------
+
+.. automodule:: pisa.utils.parallel
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.utils.plotter module
 -------------------------
 
 .. automodule:: pisa.utils.plotter
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.utils.postprocess module
+-----------------------------
+
+.. automodule:: pisa.utils.postprocess
     :members:
     :undoc-members:
     :show-inheritance:
@@ -232,6 +256,14 @@ pisa.utils.spline module
 ------------------------
 
 .. automodule:: pisa.utils.spline
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.utils.spline_smooth module
+-------------------------------
+
+.. automodule:: pisa.utils.spline_smooth
     :members:
     :undoc-members:
     :show-inheritance:

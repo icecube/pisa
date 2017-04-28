@@ -87,20 +87,20 @@ class TransformSet(object):
         self.hash = hash
 
     @property
-    def _serializable_state(self):
+    def serializable_state(self):
         state = OrderedDict()
         state['transforms'] = [
-            (t.__module__, t.__class__.__name__, t._serializable_state)
+            (t.__module__, t.__class__.__name__, t.serializable_state)
             for t in self
         ]
         state['name'] = self.name
         return state
 
     @property
-    def _hashable_state(self):
+    def hashable_state(self):
         state = OrderedDict()
         state['transforms'] = [
-            (t.__module__, t.__class__.__name__, t._hashable_state)
+            (t.__module__, t.__class__.__name__, t.hashable_state)
             for t in self
         ]
         state['name'] = self.name
@@ -115,7 +115,7 @@ class TransformSet(object):
     def __eq__(self, other):
         if not isinstance(other, TransformSet):
             return False
-        return recursiveEquality(self._hashable_state, other._hashable_state)
+        return recursiveEquality(self.hashable_state, other.hashable_state)
 
     def to_json(self, filename, **kwargs):
         """Serialize the state to a JSON file that can be instantiated as a new
@@ -135,7 +135,7 @@ class TransformSet(object):
         pisa.utils.jsons.to_json
 
         """
-        jsons.to_json(self._serializable_state, filename=filename, **kwargs)
+        jsons.to_json(self.serializable_state, filename=filename, **kwargs)
 
     @classmethod
     def from_json(cls, resource):
@@ -185,7 +185,8 @@ class TransformSet(object):
     @hash.setter
     def hash(self, val):
         if val is not None:
-            [setattr(xform, 'hash', val) for xform in self]
+            for xform in self:
+                setattr(xform, 'hash', val)
 
     @property
     def hashes(self):
@@ -202,7 +203,8 @@ class TransformSet(object):
     def input_names(self):
         """Inputs to the transform must include inputs with these names"""
         input_names = set()
-        [input_names.update(x.input_names) for x in self]
+        for x in self:
+            input_names.update(x.input_names)
         return sorted(input_names)
 
     @property
@@ -216,7 +218,8 @@ class TransformSet(object):
     @property
     def output_names(self):
         output_names = []
-        [output_names.append(x.output_name) for x in self]
+        for x in self:
+            output_names.append(x.output_name)
         return output_names
 
     def get(self, input_names, output_name):
@@ -345,24 +348,24 @@ class Transform(object):
             self._error_method = None
 
     @property
-    def _serializable_state(self):
+    def serializable_state(self):
         state = OrderedDict()
         state['input_names'] = self.input_names
         state['output_name'] = self.output_name
-        state['input_binning'] = self.input_binning._serializable_state
-        state['output_binning'] = self.output_binning._serializable_state
+        state['input_binning'] = self.input_binning.serializable_state
+        state['output_binning'] = self.output_binning.serializable_state
         state['tex'] = self.tex
         state['error_method'] = self.error_method
         state['hash'] = self.hash
         return state
 
     @property
-    def _hashable_state(self):
+    def hashable_state(self):
         state = OrderedDict()
         state['input_names'] = self.input_names
         state['output_name'] = self.output_name
-        state['input_binning'] = self.input_binning._hashable_state
-        state['output_binning'] = self.output_binning._hashable_state
+        state['input_binning'] = self.input_binning.hashable_state
+        state['output_binning'] = self.output_binning.hashable_state
         state['tex'] = self.tex
         state['error_method'] = self.error_method
         return state
@@ -385,7 +388,7 @@ class Transform(object):
         pisa.utils.jsons.to_json
 
         """
-        jsons.to_json(self._serializable_state, filename=filename, **kwargs)
+        jsons.to_json(self.serializable_state, filename=filename, **kwargs)
 
     @classmethod
     def from_json(cls, resource):
@@ -613,15 +616,15 @@ class BinnedTensorTransform(Transform):
             self.set_errors(error_array)
 
     @property
-    def _serializable_state(self):
-        state = super(BinnedTensorTransform, self)._serializable_state
+    def serializable_state(self):
+        state = super(BinnedTensorTransform, self).serializable_state
         state['xform_array'] = self.nominal_values
         state['error_array'] = self.std_devs
         return state
 
     @property
-    def _hashable_state(self):
-        state = super(BinnedTensorTransform, self)._hashable_state
+    def hashable_state(self):
+        state = super(BinnedTensorTransform, self).hashable_state
         state['xform_array'] = normQuant(self.nominal_values,
                                          sigfigs=HASH_SIGFIGS)
         state['error_array'] = normQuant(self.std_devs, sigfigs=HASH_SIGFIGS)
@@ -687,7 +690,7 @@ class BinnedTensorTransform(Transform):
     def __eq__(self, other):
         if not isinstance(other, BinnedTensorTransform):
             return False
-        return recursiveEquality(self._hashable_state, other._hashable_state)
+        return recursiveEquality(self.hashable_state, other.hashable_state)
 
     @_new_obj
     def __mul__(self, other):
@@ -767,6 +770,9 @@ class BinnedTensorTransform(Transform):
         pass
 
     def validate_input(self, inputs):
+        if inputs is None:
+            raise ValueError('No inputs provided.')
+
         for input_name in self.input_names:
             assert input_name in inputs, \
                     'Input "%s" expected; got: %s.' \
@@ -895,6 +901,10 @@ class BinnedTensorTransform(Transform):
             output = np.tensordot(input_array, self.xform_array,
                                   axes=(axes, axes))
 
+        elif (input_array.shape ==
+              self.xform_array.shape[-len(input_array.shape):]):
+            output = input_array * self.xform_array
+
         else:
             raise ValueError(
                 'Unhandled shapes for input(s) "%s": %s and'
@@ -906,9 +916,6 @@ class BinnedTensorTransform(Transform):
         output = Map(name=self.output_name,
                      hist=output,
                      binning=self.output_binning)
-
-        # Rebin if necessary so output has `output_binning`
-        output = output.rebin(self.output_binning)
 
         return output
 

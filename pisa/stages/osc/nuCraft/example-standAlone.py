@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function, division
+from __future__ import division
 
 from numpy import *
 max = amax
@@ -11,7 +11,11 @@ from sys import stdout
 
 from NuCraft import *
 
+from pisa.utils.fileio import mkdir
+from pisa.utils.log import logging, set_verbosity
 
+set_verbosity(1)
+mkdir('/tmp/nucraft')
 
 # Example script that reproduces the left side of figure 1 from the
 # Akhmedov/Rassaque/Smirnov paper arxiv 1205.7071;
@@ -66,7 +70,7 @@ pType = 14
 
 
 
-print("Calculating...")
+logging.info("Calculating...")
 # two methods of using the nuCraft instance:
 
 # saving the current time to measure the time needed for the execution of the following code
@@ -105,11 +109,11 @@ prob = rollaxis( array(prob).reshape(len(eList), len(zList),-1), 0,3)
      # i.e., four elements for the different zenith angles, of which each is an
      # array of 3 x eBins (three oscillation probabilities for every energy bin)
 
-print("Calculating the probabilities took %f seconds." % (time()-t))
+logging.info("Calculating the probabilities took %f seconds." % (time()-t))
 
 
 
-print("Plotting...")
+logging.info("Plotting...")
 
 from matplotlib import rc
 rc('axes', grid=True, titlesize=14, labelsize=14, color_cycle=['b','r','k'])   # only available in recent versions
@@ -141,8 +145,9 @@ ax4.plot(eList, prob[3].T)
 ax4.set_ylabel(r'zenith angle $%d^\circ$' % (zList[3]/pi*180))
 ax4.set_xlim([1,20])
 ax4.set_xlabel("neutrino energy / GeV")
+fig.tight_layout()
 
-savefig("example-standAlone1.png", dpi=160)
+savefig("/tmp/nucraft/example-standAlone1.png", dpi=160)
 
 # plot the verification of unitarity (sum(P) = 1)
 figa = figure(figsize = (6,10))
@@ -164,8 +169,9 @@ ax4a.plot(eList, sum(prob[3],0))
 ax4a.set_ylabel(r'zenith angle $%d^\circ$' % (zList[3]/pi*180))
 ax4a.set_xlim([1,20])
 ax4a.set_xlabel("neutrino energy / GeV")
+figa.tight_layout()
 
-savefig("example-standAlone2.png", dpi=160)
+savefig("/tmp/nucraft/example-standAlone2.png", dpi=160)
 
-print( " \n Completed without fatal errors! \n " )
-
+logging.info( " \n Plots written to /tmp/nucraft \n " )
+logging.info( " \n Completed without fatal errors! \n " )

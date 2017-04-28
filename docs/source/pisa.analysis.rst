@@ -20,10 +20,106 @@ pisa.analysis.hypo_testing module
     :undoc-members:
     :show-inheritance:
 
+pisa.analysis.hypo_testing_fixedmuonerrortests module
+-----------------------------------------------------
+
+.. automodule:: pisa.analysis.hypo_testing_fixedmuonerrortests
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.analysis.hypo_testing_fixedmuonerrortests_postprocess module
+-----------------------------------------------------------------
+
+.. automodule:: pisa.analysis.hypo_testing_fixedmuonerrortests_postprocess
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.analysis.hypo_testing_injparamscan module
+----------------------------------------------
+
+.. automodule:: pisa.analysis.hypo_testing_injparamscan
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.analysis.hypo_testing_injparamscan_postprocess module
+----------------------------------------------------------
+
+.. automodule:: pisa.analysis.hypo_testing_injparamscan_postprocess
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.analysis.hypo_testing_minimscans module
+--------------------------------------------
+
+.. automodule:: pisa.analysis.hypo_testing_minimscans
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.analysis.hypo_testing_minimscans_postprocess module
+--------------------------------------------------------
+
+.. automodule:: pisa.analysis.hypo_testing_minimscans_postprocess
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.analysis.hypo_testing_multifittests module
+-----------------------------------------------
+
+.. automodule:: pisa.analysis.hypo_testing_multifittests
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.analysis.hypo_testing_multifittests_postprocess module
+-----------------------------------------------------------
+
+.. automodule:: pisa.analysis.hypo_testing_multifittests_postprocess
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.analysis.hypo_testing_postprocess module
 ---------------------------------------------
 
 .. automodule:: pisa.analysis.hypo_testing_postprocess
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.analysis.hypo_testing_systtests module
+-------------------------------------------
+
+.. automodule:: pisa.analysis.hypo_testing_systtests
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.analysis.hypo_testing_systtests_postprocess module
+-------------------------------------------------------
+
+.. automodule:: pisa.analysis.hypo_testing_systtests_postprocess
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.analysis.nmo_blindfits module
+----------------------------------
+
+.. automodule:: pisa.analysis.nmo_blindfits
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.analysis.nmo_blindfits_postprocess module
+----------------------------------------------
+
+.. automodule:: pisa.analysis.nmo_blindfits_postprocess
     :members:
     :undoc-members:
     :show-inheritance:
@@ -56,6 +152,22 @@ pisa.analysis.profile_scan module
 ---------------------------------
 
 .. automodule:: pisa.analysis.profile_scan
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.analysis.profile_scan_postprocess module
+---------------------------------------------
+
+.. automodule:: pisa.analysis.profile_scan_postprocess
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.analysis.scan_allsyst module
+---------------------------------
+
+.. automodule:: pisa.analysis.scan_allsyst
     :members:
     :undoc-members:
     :show-inheritance:

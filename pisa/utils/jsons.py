@@ -14,19 +14,17 @@ just use from_json, to_json) for... faster JSON serdes?
 # TODO: why the second line above?
 
 
+from __future__ import absolute_import, division
+
 import bz2
 from collections import OrderedDict
 import os
 
 import numpy as np
-import pint
 import simplejson as json
 
+from pisa import ureg
 from pisa.utils.comparisons import isbarenumeric
-# NOTE: relative imports of `resources` and `log` seems necessary or else
-# circular imports will result.
-import resources
-import log
 
 
 __all__ = ['JSON_EXTS', 'ZIP_EXTS',
@@ -69,17 +67,20 @@ def from_json(filename):
     content: OrderedDict with contents of JSON file
 
     """
+    # Import here to avoid circular imports
+    from pisa.utils.resources import open_resource
+
     _, ext = os.path.splitext(filename)
     ext = ext.replace('.', '').lower()
     assert ext in JSON_EXTS or ext in ZIP_EXTS
     if ext == 'bz2':
         content = json.loads(
-            bz2.decompress(resources.open_resource(filename).read()),
+            bz2.decompress(open_resource(filename).read()),
             cls=NumpyDecoder,
             object_pairs_hook=OrderedDict
         )
     else:
-        content = json.load(resources.open_resource(filename),
+        content = json.load(open_resource(filename),
                             cls=NumpyDecoder,
                             object_pairs_hook=OrderedDict)
     return content
@@ -116,13 +117,11 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
     if hasattr(content, 'to_json'):
         return content.to_json(filename, indent=indent, overwrite=overwrite,
                                warn=warn, sort_keys=sort_keys)
-    fpath = os.path.expandvars(os.path.expanduser(filename))
-    if os.path.exists(fpath):
-        if overwrite:
-            if warn:
-                log.logging.warn('Overwriting file at ' + fpath)
-        else:
-            raise Exception('Refusing to overwrite path ' + fpath)
+    # Import here to avoid circular imports
+    from pisa.utils.fileio import check_file_exists
+    from pisa.utils.log import logging
+
+    check_file_exists(fname=filename, overwrite=overwrite, warn=warn)
 
     _, ext = os.path.splitext(filename)
     ext = ext.replace('.', '').lower()
@@ -143,29 +142,41 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
                 content, outfile, indent=indent, cls=NumpyEncoder,
                 sort_keys=sort_keys, allow_nan=True, ignore_nan=False
             )
-        log.logging.debug('Wrote %.2f kB to %s'
-                          % (outfile.tell()/1024., filename))
+        logging.debug('Wrote %.2f kB to %s', outfile.tell()/1024., filename)
 
 
 class NumpyEncoder(json.JSONEncoder):
     """Encode special objects to be representable as JSON."""
     def default(self, obj):
+        # Import here to avoid circular imports
+        from pisa.utils.log import logging
+
         if isinstance(obj, np.ndarray):
-            return obj.tolist()
+            return obj.astype(np.float64).tolist()
+
         # TODO: poor form to have a way to get this into a JSON file but no way
         # to get it out of a JSON file... so either write a deserializer, or
         # remove this and leave it to other objects to do the following.
-        elif isinstance(obj, pint.quantity._Quantity):
+        if isinstance(obj, ureg.Quantity):
             return obj.to_tuple()
+
         # NOTE: np.bool_ is the *Numpy* bool type, while np.bool is alias for
         # Python bool type, hence this conversion
-        elif isinstance(obj, np.bool_):
+        if isinstance(obj, np.bool_):
             return bool(obj)
+
+        if hasattr(obj, 'serializable_state'):
+            return obj.serializable_state
+
+        if isinstance(obj, np.float32):
+            return float(obj)
+
         try:
             return json.JSONEncoder.default(self, obj)
         except:
-            raise Exception('JSON serialization for %s not implemented'
-                            %type(obj).__name__)
+            logging.error('JSON serialization for %s, type %s not implemented',
+                          obj, type(obj))
+            raise
 
 
 class NumpyDecoder(json.JSONDecoder):
@@ -187,7 +198,7 @@ class NumpyDecoder(json.JSONDecoder):
 
     def json_array_numpy(self, s_and_end, scan_once, **kwargs):
         values, end = json.decoder.JSONArray(s_and_end, scan_once, **kwargs)
-        if len(values) == 0:
+        if not values:
             return values, end
 
         # TODO: is it faster to convert to numpy array and check if the
@@ -211,6 +222,7 @@ class NumpyDecoder(json.JSONDecoder):
 # TODO: finish this little bit
 def test_NumpyEncoderDecoder():
     from shutil import rmtree
+    import sys
     from tempfile import mkdtemp
     from pisa.utils.comparisons import recursiveEquality
 
@@ -237,9 +249,8 @@ def test_NumpyEncoderDecoder():
     finally:
         rmtree(temp_dir)
 
-    log.logging.info('<< PASSED : test_NumpyEncoderDecoder >>')
+    sys.stdout.write('<< PASSED : test_NumpyEncoderDecoder >>\n')
 
 
 if __name__ == '__main__':
-    log.set_verbosity(1)
     test_NumpyEncoderDecoder()

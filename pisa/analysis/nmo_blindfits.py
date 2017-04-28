@@ -27,7 +27,6 @@ our simulations with ONLY the fit metric being reported. This is for the NMO ana
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import Mapping, OrderedDict
 import os
-import pint
 
 from pisa import ureg
 from pisa.analysis.analysis import Analysis
@@ -259,7 +258,7 @@ def main():
                         v['hess_inv'] = v['hess_inv'].todense()
                     except AttributeError:
                         v['hess_inv'] = v['hess_inv']
-            if isinstance(v, pint.quantity._Quantity):
+            if isinstance(v, ureg.Quantity):
                 v = str(v)
             info[k] = v
         info['params'] = mc_maker.params.free.names
@@ -323,7 +322,7 @@ def main():
                             v['hess_inv'] = v['hess_inv'].todense()
                         except AttributeError:
                             v['hess_inv'] = v['hess_inv']
-                if isinstance(v, pint.quantity._Quantity):
+                if isinstance(v, ureg.Quantity):
                     v = str(v)
                 info[k] = v
             info['params'] = mc_maker.params.free.names

@@ -5,20 +5,21 @@ unfolding to the reconstructed variables.
 This service in particular uses the RooUnfold implementation of Bayesian
 unfolding.
 """
+
+from __future__ import absolute_import
+
 from operator import add
 from copy import deepcopy
 from itertools import product
 
 import numpy as np
-import pint
 from uncertainties import unumpy as unp
 
 from ROOT import TH1, TH1D, TH2D
 from ROOT import RooUnfoldResponse, RooUnfoldBayes
 from root_numpy import array2hist, hist2array
-TH1.SetDefaultSumw2(False)
 
-from pisa import ureg, Q_
+from pisa import ureg
 from pisa.core.stage import Stage
 from pisa.core.events import Data
 from pisa.core.map import Map, MapSet
@@ -29,6 +30,8 @@ from pisa.utils.comparisons import normQuant
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
+
+TH1.SetDefaultSumw2(False)
 
 
 class roounfold(Stage):
@@ -376,10 +379,10 @@ class roounfold(Stage):
         dims = len(shape)
         assert dims % 2 == 0
 
-        nbins_a = np.product(shape[:dims/2])
-        nbins_b = np.product(shape[dims/2:])
-        names_a = reduce(lambda x, y: x+' '+y, names[:dims/2])
-        names_b = reduce(lambda x, y: x+' '+y, names[dims/2:])
+        nbins_a = np.product(shape[:dims//2])
+        nbins_b = np.product(shape[dims//2:])
+        names_a = reduce(lambda x, y: x+' '+y, names[:dims//2])
+        names_b = reduce(lambda x, y: x+' '+y, names[dims//2:])
 
         binning = []
         binning.append(OneDimBinning(
@@ -422,7 +425,7 @@ class roounfold(Stage):
         array2hist(unp.nominal_values(in_map.hist), th2d)
         if errors:
             map_errors = unp.std_devs(in_map.hist)
-            for x_idx, y_idx in product(*map(range, n_bins)):
+            for x_idx, y_idx in product(*in_map(range, n_bins)):
                 th2d.SetBinError(x_idx+1, y_idx+1, map_errors[x_idx][y_idx])
         return th2d
 
@@ -437,7 +440,7 @@ class roounfold(Stage):
         return Map(hist=hist, binning=binning, name=name, **kwargs)
 
     def validate_params(self, params):
-        pq = pint.quantity._Quantity
+        pq = ureg.Quantity
         assert isinstance(params['create_response'].value, bool)
         assert isinstance(params['stat_fluctuations'].value, pq)
         assert isinstance(params['regularisation'].value, pq)

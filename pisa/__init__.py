@@ -3,18 +3,79 @@ Define globals available to all modules in PISA
 
 """
 
+
+from __future__ import absolute_import
+
+from collections import namedtuple, OrderedDict
 import os
 import sys
 
+from numpy import array, inf
 import numpy as np
 from pint import UnitRegistry
 
 from ._version import get_versions
 
+PYCUDA_AVAIL = False
+try:
+    from pycuda import driver
+except Exception:
+    pass #logging.debug('Failed to import or use pycuda', exc_info=True)
+else:
+    PYCUDA_AVAIL = True
 
-__all__ = ['__version__',
-           'ureg', 'Q_',
-           'FTYPE', 'HASH_SIGFIGS', 'C_FTYPE', 'C_PRECISION_DEF', 'CACHE_DIR']
+NUMBA_AVAIL = False
+def dummy_func(x):
+    """Decorate to to see if Numba actually works"""
+    x += 1
+try:
+    from numba import jit as numba_jit
+    numba_jit(dummy_func)
+except Exception:
+    #logging.debug('Failed to import or use numba', exc_info=True)
+    def numba_jit(*args, **kwargs):
+        """Dummy decorator to replace `numba.jit` when Numba is not present"""
+        def decorator(func):
+            """Decorator that smply returns the function being decorated"""
+            return func
+        return decorator
+else:
+    NUMBA_AVAIL = True
+
+NUMBA_CUDA_AVAIL = False
+try:
+    from numba import cuda
+    assert cuda.gpus, 'No GPUs detected'
+    cuda.jit('void(float64)')(dummy_func)
+except Exception:
+    pass #logging.debug('Failed to import or use numba.cuda', exc_info=True)
+else:
+    NUMBA_CUDA_AVAIL = True
+finally:
+    if 'cuda' in globals() or 'cuda' in locals():
+        del cuda
+
+
+# TODO: pisa.core names are _not_ included here, but possibly should be...?
+__all__ = [
+    # Versioneer needs this
+    '__version__',
+
+    # Utilities that must be accessed centrally for consistency
+    'ureg', 'Q_',
+
+    # Utilities that should be accessed centrally to avoid hassle
+    'numba_jit',
+
+    # Python standard library and Numpy names so that `eval(repr(x)) == x` for
+    # all types defined in PISA
+    'array', 'inf', 'namedtuple', 'OrderedDict',
+
+    # Constants
+    'PYCUDA_AVAIL', 'NUMBA_AVAIL', 'NUMBA_CUDA_AVAIL', 'OMP_NUM_THREADS',
+    'FTYPE', 'HASH_SIGFIGS', 'EPSILON', 'C_FTYPE', 'C_PRECISION_DEF',
+    'CACHE_DIR'
+]
 
 
 __version__ = get_versions()['version']
@@ -30,26 +91,24 @@ FTYPE = np.float64
 derived from this"""
 
 # Set FTYPE from environment variable PISA_FTYPE, if it is defined
-float32_strings = ['single', 'float32', 'fp32', '32', 'f4']
-float64_strings = ['double', 'float64', 'fp64', '64', 'f8']
-msg = ''
+FLOAT32_STRINGS = ['single', 'float32', 'fp32', '32', 'f4']
+FLOAT64_STRINGS = ['double', 'float64', 'fp64', '64', 'f8']
 if 'PISA_FTYPE' in os.environ:
-    pisa_ftype = os.environ['PISA_FTYPE']
-    sys.stderr.write('PISA_FTYPE env var is defined as: "%s"; ' %pisa_ftype)
-    if pisa_ftype.strip().lower() in float32_strings:
+    PISA_FTYPE = os.environ['PISA_FTYPE']
+    sys.stderr.write('PISA_FTYPE env var is defined as: "%s"; ' % PISA_FTYPE)
+    if PISA_FTYPE.strip().lower() in FLOAT32_STRINGS:
         FTYPE = np.float32
-    elif pisa_ftype.strip().lower() in float64_strings:
+    elif PISA_FTYPE.strip().lower() in FLOAT64_STRINGS:
         FTYPE = np.float64
     else:
-        msg = (
+        sys.stderr.write('\n')
+        raise ValueError(
             'Environment var PISA_FTYPE="%s" is unrecognized.\n'
             '--> For single precision set PISA_FTYPE to one of %s\n'
             '--> For double precision set PISA_FTYPE to one of %s\n'
-            %(pisa_ftype, float32_strings, float64_strings)
+            %(PISA_FTYPE, FLOAT32_STRINGS, FLOAT64_STRINGS)
         )
-        sys.stderr.write('\n')
-        raise ValueError(msg)
-del float32_strings, float64_strings, msg
+del FLOAT32_STRINGS, FLOAT64_STRINGS
 
 
 # Define HASH_SIGFIGS to set hashing precision based on FTYPE above; value here
@@ -61,6 +120,10 @@ differently."""
 
 if FTYPE == np.float32:
     HASH_SIGFIGS = 6
+
+EPSILON = 10**(-HASH_SIGFIGS)
+"""Best precision considering HASH_SIGFIGS (which is chosen kinda ad-hoc but
+based on by FTYPE)"""
 
 
 # Derive #define consts for dynamically-compiled C (and also C++ and CUDA) code
@@ -92,6 +155,14 @@ elif FTYPE == np.float64:
 else:
     raise ValueError('FTYPE must be one of `np.float32` or `np.float64`. Got'
                      ' %s instead.' %FTYPE)
+
+# Default to single thread, then try to read from env
+OMP_NUM_THREADS = 1
+"""Number of threads OpenMP is allocated"""
+
+if os.environ.has_key('OMP_NUM_THREADS'):
+    OMP_NUM_THREADS = int(os.environ['OMP_NUM_THREADS'])
+    assert OMP_NUM_THREADS >= 1
 
 
 # Default value for CACHE_DIR

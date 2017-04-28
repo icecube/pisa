@@ -8,3 +8,4 @@ Collection of utils
 
    cross_sections
    flavor_interaction_types
+   stats

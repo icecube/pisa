@@ -10,6 +10,8 @@ accidentally do the wrong thing with that script.
 """
 
 
+from __future__ import division
+
 import numpy as np
 import scipy.interpolate as interpolate
 
@@ -207,11 +209,11 @@ if __name__ == '__main__':
     plt.plot(czs, low_en_flux_weights)
     plt.xlabel('cos(zenith)')
     plt.ylabel('NuMu Flux at 5.0 GeV')
-    plt.savefig('fluxweightstest5GeV.pdf')
+    plt.savefig('/tmp/fluxweightstest5GeV.pdf')
     plt.close()
 
     plt.plot(czs, high_en_flux_weights)
     plt.xlabel('cos(zenith)')
     plt.ylabel('NuMu Flux at 20.0 GeV')
-    plt.savefig('fluxweightstest20GeV.pdf')
+    plt.savefig('/tmp/fluxweightstest20GeV.pdf')
     plt.close()

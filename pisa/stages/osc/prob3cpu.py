@@ -2,6 +2,8 @@
 # date:   March 20, 2016
 
 
+from __future__ import division
+
 import numpy as np
 
 from pisa.core.binning import MultiDimBinning
@@ -347,17 +349,12 @@ class prob3cpu(Stage):
                 kNuBar = 1
                 for alpha in nuflavs:
                     for beta in nuflavs:
-                        if cz_cen < 0:
-                            path = np.sqrt(
-                                (rdetector + prop_height + depth) * \
-                                (rdetector + prop_height + depth) - \
-                                (rdetector*rdetector)*(1 - cz_cen*cz_cen)
-                            ) - rdetector*cz_cen
-                        else:
-                            kappa = (depth + prop_height)/rdetector
-                            path = rdetector * np.sqrt(
-                                cz_cen*cz_cen - 1 + (1 + kappa)*(1 + kappa)
-                            ) - rdetector*cz_cen
+                        path = self.calc_path(
+                            coszen=cz_cen,
+                            rdetector=rdetector,
+                            prop_height=prop_height,
+                            depth=depth
+                        )
                         self.barger_propagator.SetMNS(
                             sin2th12Sq,sin2th13Sq,sin2th23Sq,deltam21,
                             mAtm,deltacp,e_cen,kSquared,kNuBar
@@ -372,17 +369,12 @@ class prob3cpu(Stage):
                 kNuBar = -1
                 for alpha in nubarflavs:
                     for beta in nubarflavs:
-                        if cz_cen < 0:
-                            path = np.sqrt(
-                                (rdetector + prop_height + depth) * \
-                                (rdetector + prop_height + depth) - \
-                                (rdetector*rdetector)*(1 - cz_cen*cz_cen)
-                            ) - rdetector*cz_cen
-                        else:
-                            kappa = (depth + prop_height)/rdetector
-                            path = rdetector * np.sqrt(
-                                cz_cen*cz_cen - 1 + (1 + kappa)*(1 + kappa)
-                            ) - rdetector*cz_cen
+                        path = self.calc_path(
+                            coszen=cz_cen,
+                            rdetector=rdetector,
+                            prop_height=prop_height,
+                            depth=depth
+                        )
                         self.barger_propagator.SetMNS(
                             sin2th12Sq,sin2th13Sq,sin2th23Sq,deltam21,
                             mAtm,deltacp,e_cen,kSquared,kNuBar
@@ -394,8 +386,26 @@ class prob3cpu(Stage):
                         )
         return prob_list
 
-    def calc_probs(self, kNuBar, kFlav, n_evts, true_e_scale, true_energy,
-                   true_coszen, prob_e, prob_mu, **kwargs):
+    def calc_path(self, coszen, rdetector, prop_height, depth):
+        """
+        Calculates the path through a spherical body of radius rdetector for
+        a neutrino coming in with at coszen from prop_height to a detector
+        at detph.
+        """
+        if coszen < 0:
+            path = np.sqrt(
+                (rdetector + prop_height + depth) * \
+                (rdetector + prop_height + depth) - \
+                (rdetector*rdetector)*(1 - coszen*coszen)
+            ) - rdetector*coszen
+        else:
+            kappa = (depth + prop_height)/rdetector
+            path = rdetector * np.sqrt(
+                coszen*coszen - 1 + (1 + kappa)*(1 + kappa)
+            ) - rdetector*coszen
+        return path
+    
+    def calc_probs(self, true_e_scale, events_dict):
         """
         Calculate oscillation probabilities in the case of vacuum oscillations
         Here we use Prob3 but only because it has already implemented the 
@@ -422,6 +432,8 @@ class prob3cpu(Stage):
             mAtm = deltam31
         else:
             mAtm = deltam31 - deltam21
+        prob_e = []
+        prob_mu = []
         if self._barger_earth_model is None:
             logging.info("Calculating vacuum oscillations")
             # Set up the distance to the detector. Radius of Earth is 6371km and
@@ -430,30 +442,26 @@ class prob3cpu(Stage):
             prop_height = self.params.prop_height.m_as('km')
             rdetector = 6371.0 - depth
             # Probability is separately calculated for each event
-            for i, (en, cz) in enumerate(zip(true_energy, true_coszen)):
+            for i, (en, cz) in enumerate(zip(events_dict['true_energy'],
+                                             events_dict['true_coszen'])):
                 en *= true_e_scale
-                if cz < 0:
-                    path = np.sqrt(
-                        (rdetector + prop_height + depth) * \
-                        (rdetector + prop_height + depth) - \
-                        (rdetector*rdetector)*(1 - cz*cz)
-                    ) - rdetector*cz
-                else:
-                    kappa = (depth + prop_height)/rdetector
-                    path = rdetector * np.sqrt(
-                        cz*cz - 1 + (1 + kappa)*(1 + kappa)
-                    ) - rdetector*cz
+                path = self.calc_path(
+                    coszen=cz,
+                    rdetector=rdetector,
+                    prop_height=prop_height,
+                    depth=depth
+                )
                 self.barger_propagator.SetMNS(
                     sin2th12Sq,sin2th13Sq,sin2th23Sq,deltam21,
-                    mAtm,deltacp,en,kSquared,kNuBar
+                    mAtm,deltacp,en,kSquared,events_dict['kNuBar']
                 )
                 # kFlav is zero-start indexed, whereas Prob3 wants it from 1
-                prob_e[i] = self.barger_propagator.GetVacuumProb(
-                    1, kFlav+1, en, path
-                )
-                prob_mu[i] = self.barger_propagator.GetVacuumProb(
-                    2, kFlav+1, en, path
-                )
+                prob_e.append(self.barger_propagator.GetVacuumProb(
+                    1, events_dict['kFlav']+1, en, path
+                ))
+                prob_mu.append(self.barger_propagator.GetVacuumProb(
+                    2, events_dict['kFlav']+1, en, path
+                ))
         else:
             logging.info("Calculating matter oscillations")
             YeI = self.params.YeI.m_as('dimensionless')
@@ -462,22 +470,25 @@ class prob3cpu(Stage):
             depth = self.params.detector_depth.m_as('km')
             prop_height = self.params.prop_height.m_as('km')
             # Probability is separately calculated for each event
-            for i, (en, cz) in enumerate(zip(true_energy, true_coszen)):
+            for i, (en, cz) in enumerate(zip(events_dict['true_energy'],
+                                             events_dict['true_coszen'])):
                 en *= true_e_scale
                 self.barger_propagator.SetMNS(
                     sin2th12Sq,sin2th13Sq,sin2th23Sq,deltam21,
-                    mAtm,deltacp,en,kSquared,kNuBar
+                    mAtm,deltacp,en,kSquared,events_dict['kNuBar']
                 )
                 self.barger_propagator.DefinePath(
                     cz, prop_height, YeI, YeO, YeM
                 )
-                self.barger_propagator.propagate(kNuBar)
-                prob_e[i] = self.barger_propagator.GetProb(
-                    0, kFlav
-                )
-                prob_mu[i] = self.barger_propagator.GetProb(
-                    1, kFlav
-                )
+                self.barger_propagator.propagate(events_dict['kNuBar'])
+                prob_e.append(self.barger_propagator.GetProb(
+                    0, events_dict['kFlav']
+                ))
+                prob_mu.append(self.barger_propagator.GetProb(
+                    1, events_dict['kFlav']
+                ))
+        events_dict['prob_e'] = prob_e
+        events_dict['prob_mu'] = prob_mu
             
     def validate_params(self, params):
         if params['earth_model'].value is None:

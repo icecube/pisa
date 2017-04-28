@@ -826,7 +826,7 @@ def add_extra_points(points, labels):
                 linestyle='None',
                 marker='o',
                 color='k',
-                label='True %s'%(tex_axis_label(label))
+                label='%s'%(tex_axis_label(label))
             )
     return miny, maxy
 

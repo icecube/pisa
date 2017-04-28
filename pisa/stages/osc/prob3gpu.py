@@ -3,6 +3,9 @@ prob3gpu : use CUDA (via PyCUDA module) to accelerate 3-neutrino oscillation
 calculations. Equivalent agorithm to Prob3++.
 """
 
+
+from __future__ import division
+
 import os
 
 import numpy as np
@@ -375,7 +378,7 @@ class prob3gpu(Stage):
                                                  self.cz_dim_num)]
 
     def create_transforms_datastructs(self):
-        xform_shape = [3, 2] + list(self.output_binning.shape)
+        xform_shape = [3, 2] + list(self.input_binning.shape)
         nu_xform = np.empty(xform_shape)
         antinu_xform = np.empty(xform_shape)
         return nu_xform, antinu_xform
@@ -439,7 +442,11 @@ class prob3gpu(Stage):
         cuda.memcpy_htod(d_smooth_maps, smooth_maps)
 
         block_size = (16, 16, 1)
-        grid_size = (nczbins_fine/block_size[0] + 1, nebins_fine/block_size[1] + 1, 2)
+        grid_size = (
+            nczbins_fine // block_size[0] + 1,
+            nebins_fine // block_size[1] + 1,
+            2
+        )
         self.propGrid(d_smooth_maps,
                       d_dm_mat, d_mix_mat,
                       self.d_ecen_fine, self.d_czcen_fine,
@@ -484,7 +491,7 @@ class prob3gpu(Stage):
                     input_names=input_names,
                     output_name=output_name,
                     input_binning=self.input_binning,
-                    output_binning=self.output_binning,
+                    output_binning=self.input_binning,
                     xform_array=xform
                 )
             )

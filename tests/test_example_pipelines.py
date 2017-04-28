@@ -14,6 +14,7 @@ from argparse import ArgumentParser
 import glob
 import os
 import sys
+import re
 from traceback import format_exception
 
 from pisa.core.pipeline import Pipeline
@@ -39,6 +40,13 @@ def parse_args():
         of ROOT that your python can find else it will fail.'''
     )
     parser.add_argument(
+        '--ignore-missing-data', action='store_true', default=False,
+        help='''Skip the pipeline which fail because you do not have the 
+        necessary data files in the right locations for your local PISA 
+        installation. This is NOT recommended and you should probably acquire 
+        the missing datafiles somehow.'''
+    )
+    parser.add_argument(
         '-v', action='count', default=None,
         help='set verbosity level'
     )
@@ -50,6 +58,13 @@ def main():
     args = parse_args()
     set_verbosity(args.v)
 
+    # Set up the lists of strings needed to search the error messages for
+    # things to ignore e.g. cuda stuff and ROOT stuff
+    ROOT_err_strings = ['ROOT', 'Roo', 'root', 'roo']
+    cuda_err_strings = ['cuda']
+    missing_data_string = ('Could not find resource "(.*)" in '
+                          'filesystem OR in PISA package.')
+
     example_directory = os.path.join(
         'settings', 'pipeline'
     )
@@ -59,13 +74,6 @@ def main():
     num_configs = len(settings_files)
     failure_count = 0
     skip_count = 0
-    for settings_file in settings_files:
-        # aeff smooth stage is currently broken. So ignore for now.
-        if 'aeffsmooth' in settings_file:
-            skip_count += 1
-            logging.warn('Skipping "%s" as it is currently expected to be'
-                         ' broken.' % settings_file)
-            settings_files.remove(settings_file)
 
     for settings_file in settings_files:
         allow_error = False
@@ -79,16 +87,29 @@ def main():
 
         except ImportError as err:
             exc = sys.exc_info()
-            if 'ROOT' in err.message and args.ignore_root:
+            if any(errstr in err.message for errstr in ROOT_err_strings) and \
+              args.ignore_root:
                 skip_count += 1
                 allow_error = True
-                msg = ('    Skipping pipeline as it has ROOT dependencies'
-                       ' (ROOT cannot be imported)')
-            elif 'cuda' in err.message and args.ignore_gpu:
+                msg = ('    Skipping pipeline, %s, as it has ROOT dependencies'
+                       ' (ROOT cannot be imported)'%settings_file)
+            elif any(errstr in err.message for errstr in cuda_err_strings) and \
+              args.ignore_gpu:
                 skip_count += 1
                 allow_error = True
-                msg = ('    Skipping pipeline as it has cuda dependencies'
-                       ' (pycuda cannot be imported)')
+                msg = ('    Skipping pipeline, %s, as it has cuda dependencies'
+                       ' (pycuda cannot be imported)'%settings_file)
+            else:
+                failure_count += 1
+
+        except IOError as err:
+            exc = sys.exc_info()
+            match = re.match(missing_data_string, err.message, re.M|re.I)
+            if match is not None and args.ignore_missing_data:
+                skip_count += 1
+                allow_error = True
+                msg = ('    Skipping pipeline, %s, as it has data that cannot'
+                       ' be found in the local PISA environment'%settings_file)
             else:
                 failure_count += 1
 

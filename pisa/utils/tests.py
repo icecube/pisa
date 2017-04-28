@@ -20,8 +20,8 @@ from pisa.utils.fileio import get_valid_filename, mkdir
 from pisa.utils.log import logging
 
 
-__all__ = ['has_cuda', 'order', 'order_str', 'check_agreement',
-           'print_agreement', 'print_event_rates', 'validate_maps',
+__all__ = ['order', 'order_str', 'check_agreement', 'print_agreement',
+           'print_event_rates', 'validate_maps',
            'make_delta_map', 'make_ratio_map',
            'validate_map_objs',
            'baseplot', 'baseplot2',
@@ -32,17 +32,6 @@ __all__ = ['has_cuda', 'order', 'order_str', 'check_agreement',
 # TODO: make functions work transparently (i.e. autodetect) whether it's a
 # PISA 2 or PISA 3 style map object, convert to PISA 3 maps, and go from
 # there.
-
-
-def has_cuda():
-    # pycuda is present if it can be imported
-    try:
-        import pycuda.driver as cuda
-    except:
-        cuda_present = False
-    else:
-        cuda_present = True
-    return cuda_present
 
 
 def order(x):
@@ -104,7 +93,8 @@ def check_agreement(testname, thresh_ratio, ratio, thresh_diff, diff):
         err_messages += [diff_headline, diff_detail]
 
     if not (ratio_pass and diff_pass):
-        [logging.error(m) for m in err_messages]
+        for m in err_messages:
+            logging.error(m)
         raise ValueError('\n    '.join(err_messages))
 
 
@@ -151,7 +141,7 @@ def validate_map_objs(amap, bmap):
         raise ValueError(
             "Maps' binnings do not match! Got first map as \n%s \nand second "
             " map as \n%s"
-            % (amap.binning._hashable_state, bmap.binning._hashable_state)
+            % (amap.binning.hashable_state, bmap.binning.hashable_state)
         )
 
 
@@ -605,7 +595,7 @@ def plot_cmp(new, ref, new_label, ref_label, plot_label, file_label, outdir,
             elif new.binning.num_dims == 3:
                 n_dims = 3
                 odd_dim_idx = new.binning.shape.index(np.min(new.binning.shape))
-                print odd_dim_idx
+                logging.debug('odd_dim_idx: %s', odd_dim_idx)
                 n_third_dim_bins = new.binning.shape[odd_dim_idx]
 
             gridspec_kw = dict(left=0.03, right=0.968, wspace=0.32)
@@ -706,7 +696,8 @@ def plot_cmp(new, ref, new_label, ref_label, plot_label, file_label, outdir,
         return max_diff_ratio, max_diff
 
 
-def pisa2_map_to_pisa3_map(pisa2_map, ebins_name='ebins', czbins_name='czbins'):
+def pisa2_map_to_pisa3_map(pisa2_map, ebins_name='ebins', czbins_name='czbins',
+                           is_log=True, is_lin=True):
     expected_keys = ['map', 'ebins', 'czbins']
     if sorted(pisa2_map.keys()) != sorted(expected_keys):
         raise ValueError('PISA 2 map should be a dict containining entries: %s'
@@ -714,12 +705,14 @@ def pisa2_map_to_pisa3_map(pisa2_map, ebins_name='ebins', czbins_name='czbins'):
     ebins = OneDimBinning(
         name=ebins_name,
         bin_edges=pisa2_map['ebins'] * ureg.GeV,
-        is_log=True
+        is_log=is_log,
+        tex='E_{\nu}'
     )
     czbins = OneDimBinning(
         name=czbins_name,
         bin_edges=pisa2_map['czbins'],
-        is_lin=True
+        is_lin=is_lin,
+        tex='\cos\theta_Z'
     )
     bins = MultiDimBinning([ebins, czbins])
     return Map(

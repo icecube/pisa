@@ -8,11 +8,15 @@ The total event __counts__ in each bin is simply calculated as the product of
 
 
 ## Services
-Two effective area services are surported, one for __parametrized__ effective areas, the other one builds effective areas directly from histogrammed MC events.
+
+Three effective area services are surported:
+  * The simplest builds effective areas directly from histogrammed MC events.
+  * Another __smooths__ these effective areas from histogrammed MC events.
+  * Lastly, the effective areas can be constructed from parameterisations.
 
 ### hist
 
-This service takes the energy and cos(zenith) bins as well as a data file (`aeff_weight_file`) in HDF5 format. It then reads the events weights for each flavour and interaction type from the datafile and creates histogram of the effective area. The structure of the datafile is
+This service takes the input MC events in HDF5 format. It then reads the events weights for each flavour and interaction type from the datafile and creates histogram of the effective area. The structure of the datafile is
 ```
 flavour / int_type / value
 ```
@@ -38,22 +42,45 @@ To obtain the effective area, these weights are histrogrammed in the given binni
 
 ![AeffMC](images/aeffmc.png)
 
-### AeffServicePar
+### smooth
+
+This service starts out from the exact same histograms as in the hist stage, btu then applies smoothing to them. For sparse MC samples, often 'holes' appear in the histograms, meaning bins with zero events. To aboid this, the historgams and their according uncertainties are smeared out with gaussian kernels, along both energy and coszen axes consecutively.
+The then smoothed version are the input to spline comnstructions. Using cubic splines we achieve a smoothing that can in addition be steared by smoothing parameters in the stage's cfg file (higer value, more aggresive smoothing...too much smoothing will yield wrong results, take caution).
+The splines are also performed in two iterations, first in the energy dimension and afterwards in coszen.
+
+Since some processes, like nutau CC interactions, have hard cutoffs below a certain energy (here around 3.5 GeV), rows that are completely zero over all coszen bins are automatically excluded from the smoothing and remain zero.
+
+The Energy range is extended for the smoothing part using a point-reflection at the edges. This is to be able to have the tails of splines under control for example. These are just helper points that are discarded in the output.
+
+
+### param
 
 This service uses pre-made datatables to describe the energy dependence of the effective area, while the cos(zenith) dependence is described as a functional form (i.e parametrization).
-* **Energy dependence**:  `aeff_egy_par` is a dictionary that lists datatables for the 1D energy dependence for each flavour for charged-current interactions  (`nue`,`nue_bar`,`numu`,`numu_bar`,`nutau`,`nutau_bar`), while neutral-current interactions are modelled as flavour-independent (`NC`,`NC_bar`). A simple text file is used for the datatables with the format
-
+* **Energy dependence**: This is stored in a `.json` file which will be a dictionary of the form:
     ```
-    energy aeff
+    {
+      flav_int : {
+        "energy": [
+	  list of energy values
+	],
+	"aeff": [
+	  list of effective area values
+	]
+      },
+      etc...
+    }
     ```
 
-   where `energy` is in GeV and `aeff` is in m^2. These files are parsed using `numpy.loadtxt`, and interpolated using 1D linear interpolation with all ranges outside the interpolation range set to 0. 
+   where `energy` is in GeV and `aeff` is in m^2. These lists are interpolated using 1D linear interpolation with all ranges outside the interpolation range set to 0. Note that the provided `flav_int` can have either `_nc` for each flavour or just pass a `nuall_nc` (and another `nuallbar_nc`) instead. In the `params` for this service the location of this file is stored under `aeff_energy_paramfile`.
    
-* **cos(zenith) dependence**: `aeff_coszen_par` is a dictionary with one entry per flavour for charged-current and one for neutral-current events (`nue`,`numu`,`nutau`,`NC`). Each entry holds a function definition (typically a `lambda` function) that takes the cos(zenith) angle and returns a modification function for the energy-dependent functions.
+* **cos(zenith) dependence**: This is stored in a `.json` file which will be a dictionary of the form:
     ```
-    { 'nue' : 'lambda cz: 0.882 * np.abs(cz)**0.508 + 0.415', ...}
+    {
+      flav_int : lambda cz function,
+      etc...
+    }
     ```
-    The function strings are evaluated using `eval` to return python function objects.
+    The function strings are evaluated using `eval` to return python function objects. The provided `flav_int` has the option to not include the `bar` versions and the service will just use the standard version instead. Note this is ONLY for the coszenith dependence, since the normalisation comes from the energy dependence and so will account for the difference between `nu` and `nubar` there. In the `params` for this service the location of this file is stored under `aeff_coszen_paramfile`.
 
 The total effective area is calculated for each bin _i_ by evaluating the both parametrization functions at the bin centers in energy and cos(zenith) and multiplying them, where the cos(zenith) functions are also normalized to unity over the energy range. 
 

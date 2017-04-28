@@ -4,10 +4,15 @@ Utilities for hashing objects.
 """
 
 
+from __future__ import division
+
 import base64
 import cPickle as pickle
+#import dill
 import hashlib
 import struct
+from collections import Sequence
+from pickle import PickleError
 
 import numpy as np
 
@@ -103,10 +108,35 @@ def hash_obj(obj, hash_to='int', full_hash=True):
     if not isinstance(obj, basestring):
         try:
             pkl = pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
-        except:
-            logging.error('Failed to pickle `obj` "%s" of type "%s"'
-                          %(obj, type(obj)))
-            raise
+        except (PickleError, TypeError):
+            # Iterate through each element if obj is a Sequence
+            if isinstance(obj, Sequence):
+                # Store hash of each element
+                hash_list = []
+                for ele in obj:
+                    # Try to get hash from property
+                    if hasattr(ele, 'hash'):
+                        hash_list.append(ele.hash)
+                    else:
+                        # Otherwise try to get hash using pickle
+                        try:
+                            a = pickle.dumps(ele, pickle.HIGHEST_PROTOCOL)
+                            hash_list.append(a)
+                        except (PickleError, TypeError):
+                            logging.error('Failed to pickle `ele` "%s" of '
+                                          'type "%s"' %(ele, type(ele)))
+                            raise
+                # Get hash values by pickling the hash list
+                try:
+                    pkl = pickle.dumps(hash_list, pickle.HIGHEST_PROTOCOL)
+                except (PickleError, TypeError):
+                    logging.error('Failed to pickle `hash_list` "%s" of type '
+                                  '"%s"' %(hash_list, type(hash_list)))
+                    raise
+            else:
+                logging.error('Failed to pickle `obj` "%s" of type "%s"'
+                              %(obj, type(obj)))
+                raise
         obj = pkl
 
     if full_hash:

@@ -210,132 +210,122 @@ class CPUWeight(object):
         else:
             raise ValueError("I got the flavour %i which I don't understand." 
                              " Expect 0 or 1."%kFlav)
+        d0a = np.zeros_like(modfactor)
+        d1a = np.ones_like(modfactor)
         if kNuBar < 0:
-            return max(0.0, 1.0 / (1.0 + (1.0 - nu_nubar) * modfactor))
+            return np.maximum(
+                d0a,
+                d1a/(1.0+(1.0 - nu_nubar)*modfactor)
+            )
         elif kNuBar > 0:
-            return max(0.0, 1.0 + 0.5 * modfactor)
+            return np.maximum(
+                d0a,
+                1.0+0.5*modfactor
+            )
         else:
             raise ValueError("I got the nu/nubar number of %.2f which I don't"
                              " understand. Should be non-zero"%kNuBar)
                 
-    def calc_flux(self, n_evts, weighted_aeff, true_energy, true_coszen,
-                  neutrino_nue_flux, neutrino_numu_flux,
-                  neutrino_oppo_nue_flux, neutrino_oppo_numu_flux,
-                  scaled_nue_flux, scaled_numu_flux,
-                  scaled_nue_flux_shape, scaled_numu_flux_shape,
-                  nue_numu_ratio, nu_nubar_ratio, kNuBar, delta_index,
+    def calc_flux(self, nue_numu_ratio, nu_nubar_ratio, delta_index,
                   Barr_uphor_ratio, Barr_nu_nubar_ratio,
-                  true_e_scale,
-                  **kwargs):
-        for idx in range(0, n_evts):
-            true_e = true_energy[idx] * true_e_scale
-            # Delta index systematic
-            # 24.0900951261 was hard coded here as the pivot. I don't know why!
-            idx_scale = self.spectral_index_scale(
-                true_energy=true_e,
-                energy_pivot=24.0900951261,
-                delta_index=delta_index
-            )
-            # nue/numu ratio systematic
-            new_nue_flux, new_numu_flux = self.apply_ratio_scale(
-                flux1=neutrino_nue_flux[idx],
-                flux2=neutrino_numu_flux[idx],
-                ratio_scale=nue_numu_ratio,
+                  true_e_scale, kNuBar, events_dict):
+        # Delta index systematic
+        # 24.0900951261 was hard coded here as the pivot. I don't know why!
+        idx_scale = self.spectral_index_scale(
+            true_energy=events_dict['true_energy'] * true_e_scale,
+            energy_pivot=24.0900951261,
+            delta_index=delta_index
+        )
+        # nue/numu ratio systematic
+        new_nue_flux, new_numu_flux = self.apply_ratio_scale(
+            flux1=events_dict['neutrino_nue_flux'],
+            flux2=events_dict['neutrino_numu_flux'],
+            ratio_scale=nue_numu_ratio,
+            sum_const=True
+        )
+        new_nue_oppo_flux, new_numu_oppo_flux = self.apply_ratio_scale(
+            flux1=events_dict['neutrino_oppo_nue_flux'],
+            flux2=events_dict['neutrino_oppo_numu_flux'],
+            ratio_scale=nue_numu_ratio,
+            sum_const=True
+        )
+        # nu/nubar ratio systematic
+        if kNuBar < 0:
+            new_nue_oppo_flux2, new_nue_flux2 = self.apply_ratio_scale(
+                flux1=events_dict['neutrino_oppo_nue_flux'],
+                flux2=events_dict['neutrino_nue_flux'],
+                ratio_scale=nu_nubar_ratio,
                 sum_const=True
             )
-            new_nue_oppo_flux, new_numu_oppo_flux = self.apply_ratio_scale(
-                flux1=neutrino_oppo_nue_flux[idx],
-                flux2=neutrino_oppo_numu_flux[idx],
-                ratio_scale=nue_numu_ratio,
+            new_numu_oppo_flux2, new_numu_flux2 = self.apply_ratio_scale(
+                flux1=events_dict['neutrino_oppo_numu_flux'],
+                flux2=events_dict['neutrino_numu_flux'],
+                ratio_scale=nu_nubar_ratio,
                 sum_const=True
             )
-            # nu/nubar ratio systematic
-            if kNuBar < 0:
-                new_nue_oppo_flux2, new_nue_flux2 = self.apply_ratio_scale(
-                    flux1=neutrino_oppo_nue_flux[idx],
-                    flux2=neutrino_nue_flux[idx],
-                    ratio_scale=nu_nubar_ratio,
-                    sum_const=True
-                )
-                new_numu_oppo_flux2, new_numu_flux2 = self.apply_ratio_scale(
-                    flux1=neutrino_oppo_numu_flux[idx],
-                    flux2=neutrino_numu_flux[idx],
-                    ratio_scale=nu_nubar_ratio,
-                    sum_const=True
-                )
-            else:
-                new_nue_flux2, new_nue_oppo_flux2 = self.apply_ratio_scale(
-                    flux1=neutrino_nue_flux[idx],
-                    flux2=neutrino_oppo_nue_flux[idx],
-                    ratio_scale=nu_nubar_ratio,
-                    sum_const=True
-                )
-                new_numu_flux2, new_numu_oppo_flux2 = self.apply_ratio_scale(
-                    flux1=neutrino_numu_flux[idx],
-                    flux2=neutrino_oppo_numu_flux[idx],
-                    ratio_scale=nu_nubar_ratio,
-                    sum_const=True
-                )
-            # Barr flux
-            new_nue_flux2 *= self.modRatioNuBar(
-                kNuBar=kNuBar,
+        else:
+            new_nue_flux2, new_nue_oppo_flux2 = self.apply_ratio_scale(
+                flux1=events_dict['neutrino_nue_flux'],
+                flux2=events_dict['neutrino_oppo_nue_flux'],
+                ratio_scale=nu_nubar_ratio,
+                sum_const=True
+            )
+            new_numu_flux2, new_numu_oppo_flux2 = self.apply_ratio_scale(
+                flux1=events_dict['neutrino_numu_flux'],
+                flux2=events_dict['neutrino_oppo_numu_flux'],
+                ratio_scale=nu_nubar_ratio,
+                sum_const=True
+            )
+        # Barr flux
+        new_nue_flux2 *= self.modRatioNuBar(
+            kNuBar=kNuBar,
+            kFlav=0,
+            true_e=events_dict['true_energy'] * true_e_scale,
+            true_cz=events_dict['true_coszen'],
+            nu_nubar=1.0,
+            nubar_sys=Barr_nu_nubar_ratio
+        )
+        new_numu_flux2 *= self.modRatioNuBar(
+            kNuBar=kNuBar,
+            kFlav=1,
+            true_e=events_dict['true_energy'] * true_e_scale,
+            true_cz=events_dict['true_coszen'],
+            nu_nubar=1.0,
+            nubar_sys=Barr_nu_nubar_ratio
+        )
+        events_dict['scaled_nue_flux'] = new_nue_flux2
+        events_dict['scaled_numu_flux'] = new_numu_flux2
+        events_dict['scaled_nue_flux_shape'] = \
+            new_nue_flux2 * idx_scale * self.modRatioUpHor(
                 kFlav=0,
-                true_e=true_e,
-                true_cz=true_coszen[idx],
-                nu_nubar=1.0,
-                nubar_sys=Barr_nu_nubar_ratio
+                true_energy=events_dict['true_energy'] * true_e_scale,
+                true_coszen=events_dict['true_coszen'],
+                uphor=Barr_uphor_ratio
             )
-            new_numu_flux2 *= self.modRatioNuBar(
-                kNuBar=kNuBar,
+        events_dict['scaled_numu_flux_shape'] = \
+            new_numu_flux2 * idx_scale * self.modRatioUpHor(
                 kFlav=1,
-                true_e=true_e,
-                true_cz=true_coszen[idx],
-                nu_nubar=1.0,
-                nubar_sys=Barr_nu_nubar_ratio
+                true_energy=events_dict['true_energy'] * true_e_scale,
+                true_coszen=events_dict['true_coszen'],
+                uphor=Barr_uphor_ratio
             )
-            scaled_nue_flux[idx] = new_nue_flux2
-            scaled_numu_flux[idx] = new_numu_flux2
-            scaled_nue_flux_shape[idx] = new_nue_flux2 * idx_scale * \
-                self.modRatioUpHor(
-                    kFlav=0,
-                    true_energy=true_e,
-                    true_coszen=true_coszen[idx],
-                    uphor=Barr_uphor_ratio
-                )
-            scaled_numu_flux_shape[idx] = new_numu_flux2 * idx_scale * \
-                self.modRatioUpHor(
-                    kFlav=1,
-                    true_energy=true_e,
-                    true_coszen=true_coszen[idx],
-                    uphor=Barr_uphor_ratio
-                )
 
-    def calc_weight(self, n_evts, weighted_aeff, true_energy, true_coszen,
-                    scaled_nue_flux_shape, scaled_numu_flux_shape,
-                    nue_flux_norm, numu_flux_norm,
-                    linear_fit_MaCCQE, quad_fit_MaCCQE,
-                    linear_fit_MaCCRES, quad_fit_MaCCRES,
-                    prob_e, prob_mu, pid, weight,
-                    livetime, aeff_scale,
-                    Genie_Ma_QE, Genie_Ma_RES,
-                    true_e_scale,
-                    **kwargs):
-        for idx in range(0, n_evts):
-            nue_flux = scaled_nue_flux_shape[idx] * nue_flux_norm
-            numu_flux = scaled_numu_flux_shape[idx] * numu_flux_norm
-            # GENIE axial mass systemtic
-            aeff_QE = 1.0+quad_fit_MaCCQE[idx] * np.power(Genie_Ma_QE,2) + \
-                      linear_fit_MaCCQE[idx]*Genie_Ma_QE
-            aeff_RES = 1.0+quad_fit_MaCCRES[idx] * np.power(Genie_Ma_RES,2) + \
-                      linear_fit_MaCCRES[idx]*Genie_Ma_RES
-            # Calculate weight
-            weight[idx] = aeff_scale * livetime * weighted_aeff[idx] * \
-                          aeff_QE * aeff_RES * ((nue_flux * prob_e[idx]) + \
-                                                (numu_flux * prob_mu[idx]))
-
-    def calc_sumw2(self, n_evts, weight, sumw2, **kwargs):
-        for idx in range(0, n_evts):
-            sumw2[idx] = weight[idx] * weight[idx]
+    def calc_weight(self, livetime, nue_flux_norm, numu_flux_norm, aeff_scale,
+                    Genie_Ma_QE, Genie_Ma_RES, true_e_scale, events_dict):
+        nue_flux = events_dict['scaled_nue_flux_shape'] * nue_flux_norm
+        numu_flux = events_dict['scaled_numu_flux_shape'] * numu_flux_norm
+        # GENIE axial mass systemtic
+        aeff_QE = 1.0 + events_dict['quad_fit_MaCCQE'] * np.power(
+            Genie_Ma_QE,2
+        ) + events_dict['linear_fit_MaCCQE'] * Genie_Ma_QE
+        aeff_RES = 1.0 + events_dict['quad_fit_MaCCRES'] * np.power(
+            Genie_Ma_RES,2
+        ) + events_dict['linear_fit_MaCCRES'] * Genie_Ma_RES
+        # Calculate weight
+        events_dict['weight'] = aeff_scale * livetime * \
+                                events_dict['weighted_aeff'] * aeff_QE * \
+                                aeff_RES * ((nue_flux * events_dict['prob_e']) \
+                                + (numu_flux * events_dict['prob_mu']))
 
     def calc_sum(self, n_evts, x, out):
         x[0] = np.sum(x)

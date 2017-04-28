@@ -8,6 +8,7 @@ each event.
 import os
 import sys
 import numpy as np
+import glob
 
 import pisa.core.events as events
 from pisa.utils.log import logging, set_verbosity
@@ -51,7 +52,7 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name, outdir)
 def main():
     parser = ArgumentParser(description=__doc__)
     parser_file = parser.add_mutually_exclusive_group(required=True)
-    parser_file.add_argument( '-f', '--file', metavar='H5_FILE', type=str, help='input HDF5 file')
+    parser_file.add_argument( '-f', '--file', metavar='H5_FILE', type=str, help='input HDF5 file or directory')
     parser_file.add_argument( '--flux-file', metavar='FLUX_FILE', type=str, help='input flux file',default='flux/honda-2015-spl-solmin-aa.d')
     parser.add_argument('-o','--outdir',metavar='DIR',default='',
                         help='Directory to save the output figures.')
@@ -61,8 +62,16 @@ def main():
     set_verbosity(args.v)
     # flux and osc service
     flux_table = load_2D_table(args.flux_file)
-    add_fluxes_to_file(args.file, flux_table, neutrino_weight_name='neutrino', outdir=args.outdir)
-
+    if os.path.isdir(args.file):
+        files = [os.path.join(args.file, B) for B in os.listdir(args.file)]
+    else:
+        files = glob.glob(args.file)
+    for file in files:
+        if os.path.isfile(file) and file.endswith('.hdf5'):
+            print 'working on %s'%file
+            add_fluxes_to_file(file, flux_table, neutrino_weight_name='neutrino', outdir=args.outdir)
+        else:
+            print 'skipping %s'%file
 
 if __name__ == '__main__':
     main()
