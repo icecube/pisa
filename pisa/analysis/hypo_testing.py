@@ -1206,17 +1206,17 @@ class HypoTesting(Analysis):
         self.h0_maker.select_params(self.h0_param_selections)
         if reset_params:
             self.h0_maker.reset_free()
-        self.h0_hash = self.h0_maker.state_hash
+        self.h0_hash = self.h0_maker.hash
 
         self.h1_maker.select_params(self.h1_param_selections)
         if reset_params:
             self.h1_maker.reset_free()
-        self.h1_hash = self.h1_maker.state_hash
+        self.h1_hash = self.h1_maker.hash
 
         self.data_maker.select_params(self.data_param_selections)
         if reset_params:
             self.data_maker.reset_free()
-        self.data_hash = self.data_maker.state_hash
+        self.data_hash = self.data_maker.hash
 
         # Single unique hash for hypotheses and data configurations
         self.config_hash = hash_obj([self.h0_hash, self.h1_hash,
@@ -1312,8 +1312,9 @@ class HypoTesting(Analysis):
         summary['data_name'] = self.labels.data_name
         summary['data_is_data'] = self.data_is_data
         summary['data_hash'] = self.data_hash
-        summary['data_param_selections'] = ','.join(self.data_param_selections)
-        summary['data_params_state_hash'] = self.data_maker.params.state_hash
+        if not self.data_is_data:
+            summary['data_param_selections'] = ','.join(self.data_param_selections)
+        summary['data_params_hash'] = self.data_maker.params.hash
         summary['data_params'] = [str(p) for p in self.data_maker.params]
         summary['data_pipelines'] = self.summarize_dist_maker(self.data_maker)
 
@@ -1323,7 +1324,7 @@ class HypoTesting(Analysis):
         summary['h0_name'] = self.labels.h0_name
         summary['h0_hash'] = self.h0_hash
         summary['h0_param_selections'] = ','.join(self.h0_param_selections)
-        summary['h0_params_state_hash'] = self.h0_maker.params.state_hash
+        summary['h0_params_hash'] = self.h0_maker.params.hash
         summary['h0_params'] = [str(p) for p in self.h0_maker.params]
         summary['h0_pipelines'] = self.summarize_dist_maker(self.h0_maker)
 
@@ -1333,7 +1334,7 @@ class HypoTesting(Analysis):
         summary['h1_name'] = self.labels.h1_name
         summary['h1_hash'] = self.h1_hash
         summary['h1_param_selections'] = ','.join(self.h1_param_selections)
-        summary['h1_params_state_hash'] = self.h1_maker.params.state_hash
+        summary['h1_params_hash'] = self.h1_maker.params.hash
         summary['h1_params'] = [str(p) for p in self.h1_maker.params]
         summary['h1_pipelines'] = self.summarize_dist_maker(self.h1_maker)
 
@@ -1358,7 +1359,7 @@ class HypoTesting(Analysis):
             stage_info = OrderedDict()
             for stage in pipeline:
                 k = ':'.join([stage.stage_name, stage.service_name,
-                              str(stage.state_hash)])
+                              str(stage.hash)])
                 d = OrderedDict()
                 for attr in ['input_binning', 'output_binning']:
                     if (hasattr(stage, attr)
