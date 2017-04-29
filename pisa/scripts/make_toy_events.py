@@ -42,7 +42,6 @@ from pisa.utils.fileio import mkdir, to_file
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
 from pisa.utils.random_numbers import get_random_state
-from pisa.utils.profiler import line_profile
 
 from smartFormat import simpleFormat
 
@@ -368,7 +367,6 @@ def generate_mc_events(num_events, energy_range, coszen_range, spec_ind,
     return mc_events
 
 
-@line_profile
 def populate_reco_observables(mc_events, param_source, random_state=None):
     """Modify `mc_events` with the reconstructed variables derived from the
     true variables that must already be present.
@@ -447,17 +445,17 @@ def populate_reco_observables(mc_events, param_source, random_state=None):
             reco_vals = true_vals + error_samples
 
             if base_dim == 'energy':
-                mrv = min(reco_vals)
-                logging.trace('min reco energy = %s', mrv)
-                assert mrv >= 0, str(mrv)
+                min_reco_val = min(reco_vals)
+                logging.trace('min reco energy = %s', min_reco_val)
+                assert min_reco_val >= 0, format(min_reco_val, '%.15e')
 
             elif base_dim == 'coszen':
-                mrv = min(reco_vals)
-                logging.trace('min reco coszen = %s', mrv)
-                assert mrv >= -1, str(mrv)
-                mrv = max(reco_vals)
-                logging.trace('max reco coszen = %s', mrv)
-                assert mrv <= +1, str(mrv)
+                min_reco_val = min(reco_vals)
+                logging.trace('min reco coszen = %s', min_reco_val)
+                assert min_reco_val >= -1, format(min_reco_val, '%.15e')
+                max_reco_val = max(reco_vals)
+                logging.trace('max reco coszen = %s', max_reco_val)
+                assert max_reco_val <= +1, format(max_reco_val, '%.15e')
 
             mc_events[flavint]['reco_' + base_dim] = reco_vals
 
