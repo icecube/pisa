@@ -362,6 +362,7 @@ def main():
                                  ' minimum)'%(len(values[0]),
                                               values[0][0].magnitude,
                                               values[0][-1].magnitude))
+                    
                 h0_fid_h0_hypo_scan = hypo_testing.scan(
                     data_dist=hypo_testing.h0_fid_dist,
                     hypo_maker=hypo_testing.h0_maker,
@@ -493,7 +494,7 @@ def main():
                              ' file.'%steps)
             else:
                 logging.info('Scanned range will be %i steps in the range '
-                             'of %.4f to %.4f (+/- 10%% around the supposed'
+                             'of %.4f to %.4f (+/- 1%% around the supposed'
                              ' minimum)'%(len(values[0]),
                                           values[0][0].magnitude,
                                           values[0][-1].magnitude))
@@ -560,7 +561,7 @@ def main():
                                  ' file.'%steps)
                 else:
                     logging.info('Scanned range will be %i steps in the range '
-                                 'of %.4f to %.4f (+/- 10%% around the supposed'
+                                 'of %.4f to %.4f (+/- 1%% around the supposed'
                                  ' minimum)'%(len(values[0]),
                                               values[0][0].magnitude,
                                               values[0][-1].magnitude))

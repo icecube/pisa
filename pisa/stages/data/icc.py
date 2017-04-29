@@ -198,6 +198,7 @@ class icc(Stage):
                     )
         else:
             self.icc_bg_hist,_ = np.histogramdd(sample = np.array([cut_events[bin_name] for bin_name in self.bin_names]).T, bins=self.bin_edges)
+	    self.icc_bg_hist = self.icc_bg_hist.astype(FTYPE)
 
 
         conversion = self.params.atm_muon_scale.value.m_as('dimensionless') / ureg('common_year').to('seconds').m
@@ -218,6 +219,7 @@ class icc(Stage):
                 )
             else:
                 self.alt_icc_bg_hist,_ = np.histogramdd(sample = np.array([alt_cut_events[bin_name] for bin_name in self.bin_names]).T, bins=self.bin_edges)
+	        self.alt_icc_bg_hist = self.alt_icc_bg_hist.astype(FTYPE)
             # only interested in shape difference, not rate
             scale = self.icc_bg_hist.sum()/self.alt_icc_bg_hist.sum()
             self.alt_icc_bg_hist *= scale

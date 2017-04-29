@@ -512,9 +512,10 @@ class gpu(Stage):
         # Get hash to decide whether expensive stuff needs to be recalculated
         osc_param_vals = [self.params[name].value for name in self.osc_params]
         gpu_flux_vals = [self.params[name].value
-                           for name in self.flux_params]
+                         for name in self.flux_params]
         
-        true_params_vals = [self.params[name].value for name in self.true_params]
+        true_params_vals = [self.params[name].value
+                            for name in self.true_params]
 
         osc_param_vals += true_params_vals
         gpu_flux_vals += true_params_vals

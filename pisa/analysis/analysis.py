@@ -377,16 +377,69 @@ class Analysis(object):
                     it_got_better = (
                         new_fit_info['metric_val'] < best_fit_info['metric_val']
                     )
-
                 if it_got_better:
                     alternate_fits.append(best_fit_info)
                     best_fit_info = new_fit_info
-                    if not blind:
-                        logging.debug('Accepting other-octant fit')
                 else:
                     alternate_fits.append(new_fit_info)
-                    if not blind:
-                        logging.debug('Accepting initial-octant fit')
+
+                # Check to make sure these two fits were either side of 45
+                # degrees. Only possible if not blinded.
+                if not blind:
+
+                    maximal = 45.0*ureg.deg
+                    old_theta23 = best_fit_info['params'].theta23.value
+                    old_octant = (old_theta23.to(ureg.deg) - maximal).magnitude
+                    new_theta23 = new_fit_info['params'].theta23.value
+                    new_octant = (new_theta23.to(ureg.deg) - maximal).magnitude
+                
+                    if np.sign(old_octant) == np.sign(new_octant):
+                        logging.debug(
+                            'Checking other octant was NOT successful since '
+                            'both %.2f and %.2f are in the same octant. '
+                            'Therefore try start the minimiser at a point '
+                            'further in to the opposite octant.'%(
+                                old_theta23.magnitude,new_theta23.magnitude)
+                        )
+                        if old_octant < 0.0:
+                            better_theta23 = hypo_maker.params.theta23
+                            theta23.value = (55.0*ureg.deg).to(theta23.units)
+                        else:
+                            better_theta23 = hypo_maker.params.theta23
+                            theta23.value = (35.0*ureg.deg).to(theta23.units)
+                        hypo_maker.update_params(theta23)
+                    
+                        # Re-run minimizer starting at new point
+                        new_fit_info = self.fit_hypo_inner(
+                            hypo_maker=hypo_maker,
+                            data_dist=data_dist,
+                            metric=metric,
+                            minimizer_settings=minimizer_settings,
+                            pprint=pprint,
+                            blind=blind
+                        )
+
+                        # Take the one with the best fit
+                        if metric in METRICS_TO_MAXIMIZE:
+                            it_got_better = (
+                                new_fit_info['metric_val'] > \
+                                best_fit_info['metric_val']
+                            )
+                        else:
+                            it_got_better = (
+                                new_fit_info['metric_val'] < \
+                                best_fit_info['metric_val']
+                            )
+
+                        if it_got_better:
+                            alternate_fits.append(best_fit_info)
+                            best_fit_info = new_fit_info
+                            if not blind:
+                                logging.debug('Accepting other-octant fit')
+                        else:
+                            alternate_fits.append(new_fit_info)
+                            if not blind:
+                                logging.debug('Accepting initial-octant fit')
 
         return best_fit_info, alternate_fits
 
