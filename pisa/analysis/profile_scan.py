@@ -89,6 +89,20 @@ if __name__ == '__main__':
         help='''Settings related to the minimizer used in the LLR analysis.'''
     )
     parser.add_argument(
+        '--find-best-fit', action='store_true',
+        help='''Find the best fit point to the data. This is probably
+        unnecessary when the data maker equals the hypo maker but is useful
+        otherwise. This will be an unblinded fit checking both octants (if 
+        theta23 is in the free params) with pprint turned on. Note that 
+        profile must also be flagged else this will raise an error.'''
+    )
+    parser.add_argument(
+        '--best-fit-outfile', metavar='FILE',
+        type=str, action='store', default=None,
+        help='''File to store the best fit output. If --find-best-fit is
+        flagged then this must be specified.'''
+    )
+    parser.add_argument(
         '--debug-mode', type=int, choices=[0, 1, 2], required=False, default=1,
         help='''How much information to keep in the output file. 0 for only
         essentials for a physics analysis, 1 for more minimizer history, 2 for
@@ -112,6 +126,30 @@ if __name__ == '__main__':
     analysis = Analysis()
 
     minimizer_settings = from_file(args.minimizer_settings)
+
+    if args.find_best_fit:
+        if not args.profile:
+            raise ValueError(
+                "You requested to find the best fit point to the data but "
+                "not to profile the free systematic parameters. These are "
+                "incompatible."
+            )
+        if args.best_fit_outfile is None:
+            raise ValueError(
+                "You requested to find the best fit point to the data but "
+                "did not specify a file for which this to be saved in."
+            )
+        # An unblinded fit will be performed checking both octants (if theta23
+        # is in the free params) with pprint turned on.
+        logging.info("Finding the best fit to the data")
+        best_fit, alternate_fits = analysis.fit_hypo(
+            data_dist=data,
+            hypo_maker=hypo_maker,
+            hypo_param_selections=args.hypo_param_selections,
+            metric=args.metric,
+            minimizer_settings=minimizer_settings
+        )
+        to_file(best_fit, args.best_fit_outfile)
 
     res = analysis.scan(data_dist=data, hypo_maker=hypo_maker,
                         hypo_param_selections=args.hypo_param_selections,
