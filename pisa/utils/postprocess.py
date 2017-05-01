@@ -8,14 +8,18 @@ from argparse import ArgumentParser
 from collections import OrderedDict
 import os
 import re
+import sys
 import numpy as np
 
+from pisa import ureg
 from pisa.analysis.hypo_testing import Labels
 from pisa.utils.fileio import from_file, mkdir, nsort, to_file
 from pisa.utils.log import logging, set_verbosity
 
 
-def parse_args(description=__doc__, injparamscan=False, systtests=False):
+def parse_args(description=__doc__, profile_scan=False,
+               injparamscan=False, systtests=False,
+               hypo_testing_analysis=False):
     """Parse command line args.
 
     Returns
@@ -24,21 +28,32 @@ def parse_args(description=__doc__, injparamscan=False, systtests=False):
 
     """
     parser = ArgumentParser(description=description)
-    parser.add_argument(
-        '-d', '--dir', required=True,
-        metavar='DIR', type=str,
-        help='''Directory containing output of hypo_testing.py.'''
-    )
 
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        '--asimov', action='store_true',
-        help='''Analyze the Asimov trials in the specified directories.'''
-    )
-    group.add_argument(
-        '--llr', action='store_true',
-        help='''Analyze the LLR trials in the specified directories.'''
-    )
+    if not profile_scan:
+        parser.add_argument(
+            '-d', '--dir', required=True,
+            metavar='DIR', type=str,
+            help='''Directory containing output of hypo_testing.py.'''
+        )
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument(
+            '--asimov', action='store_true',
+            help='''Analyze the Asimov trials in the specified directories.'''
+        )
+        group.add_argument(
+            '--llr', action='store_true',
+            help='''Analyze the LLR trials in the specified directories.'''
+        )
+    else:
+        parser.add_argument(
+            '--infile', metavar='FILE', type=str, required=True,
+            help='''Output file of profile_scan.py to processs.'''
+        )
+        parser.add_argument(
+            '--best-fit-infile', metavar='FILE', type=str, default=None,
+            help='''Output file of profile_scan.py containing the best
+            fit to add to the plots, if available.'''
+        )
     parser.add_argument(
         '--detector', type=str, default='',
         help='''Name of detector to put in histogram titles.'''
@@ -47,62 +62,66 @@ def parse_args(description=__doc__, injparamscan=False, systtests=False):
         '--selection', type=str, default='',
         help='''Name of selection to put in histogram titles.'''
     )
-    parser.add_argument(
-        '-FM', '--fit_information', action='store_true', default=False,
-        help='''Flag to make plots of the minimiser information i.e. status,
-        number of iterations, time taken etc.'''
-    )
-    parser.add_argument(
-        '-IP', '--individual_posteriors', action='store_true', default=False,
-        help='''Flag to plot individual posteriors.'''
-    )
-    parser.add_argument(
-        '-CP', '--combined_posteriors', action='store_true', default=False,
-        help='''Flag to plot combined posteriors for each h0 and h1
-        combination.'''
-    )
-    parser.add_argument(
-        '-IS', '--individual_scatter', action='store_true', default=False,
-        help='''Flag to plot individual 2D scatter plots of posteriors.'''
-    )
-    parser.add_argument(
-        '-CIS', '--combined_individual_scatter',
-        action='store_true', default=False,
-        help='''Flag to plot all 2D scatter plots of one systematic with every
-        other systematic on one plot for each h0 and h1 combination.'''
-    )
-    parser.add_argument(
-        '-CS', '--combined_scatter', action='store_true', default=False,
-        help='''Flag to plot all 2D scatter plots on one plot for each
-        h0 and h1 combination.'''
-    )
-    parser.add_argument(
-        '-CM', '--correlation_matrix', action='store_true', default=False,
-        help='''Flag to plot the correlation matrices for each h0 and h1
-        combination.'''
-    )
-    parser.add_argument(
-        '--threshold', type=float, default=0.0,
-        help='''Sets the threshold for which to remove 'outlier' trials.
-        Ideally this will not be needed at all, but it is there in case of
-        e.g. failed minimiser. The higher this value, the more outliers will
-        be included. Do not set this parameter if you want all trials to be
-        included.'''
-    )
-    parser.add_argument(
-        '--extra-point', type=str, action='append',
-        help='''Extra lines to be added to the LLR plots. This is useful, for
-        example, when you wish to add specific LLR fit values to the plot for
-        comparison. These should be supplied as a single value e.g. x1 or
-        as a path to a file with the value provided in one column that can be
-        intepreted by numpy genfromtxt. Repeat this argument in conjunction
-        with the extra points label below to specify multiple (and uniquely
-        identifiable) sets of extra points.'''
-    )
-    parser.add_argument(
-        '--extra-point-label', type=str, action='append',
-        help='''The label(s) for the extra points above.'''
-    )
+    if hypo_testing_analysis:
+        parser.add_argument(
+            '-FM', '--fit_information', action='store_true', default=False,
+            help='''Flag to make plots of the minimiser information i.e. status,
+            number of iterations, time taken etc.'''
+        )
+        parser.add_argument(
+            '-IP', '--individual_posteriors', action='store_true',
+            default=False,
+            help='''Flag to plot individual posteriors.'''
+        )
+        parser.add_argument(
+            '-CP', '--combined_posteriors', action='store_true', default=False,
+            help='''Flag to plot combined posteriors for each h0 and h1
+            combination.'''
+        )
+        parser.add_argument(
+            '-IS', '--individual_scatter', action='store_true', default=False,
+            help='''Flag to plot individual 2D scatter plots of posteriors.'''
+        )
+        parser.add_argument(
+            '-CIS', '--combined_individual_scatter',
+            action='store_true', default=False,
+            help='''Flag to plot all 2D scatter plots of one systematic 
+            with every other systematic on one plot for each h0 and h1
+            combination.'''
+        )
+        parser.add_argument(
+            '-CS', '--combined_scatter', action='store_true', default=False,
+            help='''Flag to plot all 2D scatter plots on one plot for each
+            h0 and h1 combination.'''
+        )
+        parser.add_argument(
+            '-CM', '--correlation_matrix', action='store_true', default=False,
+            help='''Flag to plot the correlation matrices for each h0 and h1
+            combination.'''
+        )
+        parser.add_argument(
+            '--threshold', type=float, default=0.0,
+            help='''Sets the threshold for which to remove 'outlier' trials.
+            Ideally this will not be needed at all, but it is there in case 
+            of e.g. failed minimiser. The higher this value, the more outliers
+            will be included. Do not set this parameter if you want all trials
+            to be included.'''
+        )
+        parser.add_argument(
+            '--extra-point', type=str, action='append',
+            help='''Extra lines to be added to the LLR plots. This is useful,
+            for example, when you wish to add specific LLR fit values to the
+            plot for comparison. These should be supplied as a single value
+            e.g. x1 or as a path to a file with the value provided in one
+            column that can be intepreted by numpy genfromtxt. Repeat this
+            argument in conjunction with the extra points label below to
+            specify multiple (and uniquely identifiable) sets of extra 
+            points.'''
+        )
+        parser.add_argument(
+            '--extra-point-label', type=str, action='append',
+            help='''The label(s) for the extra points above.'''
+        )
     parser.add_argument(
         '--outdir', metavar='DIR', type=str, default=None,
         help='''Store all output plots to this directory. This will make
@@ -120,7 +139,10 @@ def parse_args(description=__doc__, injparamscan=False, systtests=False):
         '-v', action='count', default=None,
         help='''set verbosity level'''
     )
-    args = parser.parse_args()
+    if profile_scan:
+        args = parser.parse_args(sys.argv[2:])
+    else:
+        args = parser.parse_args(sys.argv[3:])
     init_args_d = vars(args)
 
     set_verbosity(init_args_d.pop('v'))
@@ -133,6 +155,87 @@ def parse_args(description=__doc__, injparamscan=False, systtests=False):
     
     return init_args_d
 
+
+class Postprocessingargparser(object):
+    """
+    Allows for clever usage of this script such that all of the
+    postprocessing can be contained in this single script.
+    """
+    def __init__(self):
+        parser = ArgumentParser(
+            description="""This script contains all of the functionality for 
+            processing the output of analyses""",
+            usage="""postprocess.py <command> [<subcommand>] [<args>]
+
+            There are two commands that can be issued:
+
+              hypo_testing    Processes output from some form of hypo_testing.
+              profile_scan    Processes output from some form of profile_scan.
+
+            Run postprocess.py <command> -h to see the different possible 
+            subcommands/arguments to each of these commands."""
+        )
+        parser.add_argument('command', help='Subcommand to run')
+        args = parser.parse_args(sys.argv[1:2])
+        expected_commands = ['hypo_testing', 'profile_scan']
+        if not hasattr(self, args.command):
+            raise ValueError(
+                "The command issued, %s, was not one of the expected commands"
+                " - %s."%(args.command, expected_commands)
+            )
+        else:
+            getattr(self, args.command)()
+
+    def hypo_testing(self):
+        main_hypo_testing()
+
+    def profile_scan(self):
+        main_profile_scan()
+
+
+class Hypotestingpostprocessingargparser(object):
+    """
+    Allows for further clever usage of this script such that all of the
+    hypo_testing postprocessing can be contained in this single script.
+    """
+    def __init__(self):
+        parser = ArgumentParser(
+            description="""This script contains all of the functionality for 
+            processing the output of hypo_testing analyses""",
+            usage="""postprocess.py hypo_testing [<subcommand>] [<args>]
+
+            There are three subcommands that can be issued:
+
+              analysis        Processes output from the standard hypothesis 
+                              testing analyses.
+              injparamscan    Processes output from a scan over some injected
+                              parameter in the data.
+              systtests       Processes output from tests on the impact of
+                              systematics on the analysis.
+
+            Run postprocess.py hypo_testing <subcommand> -h to see the
+            different possible arguments to each of these commands."""
+        )
+        parser.add_argument('subcommand', help='Subcommand to run')
+        args = parser.parse_args(sys.argv[2:3])
+        expected_commands = ['analysis', 'injparamscan', 'systtests']
+        print args
+        if not hasattr(self, args.subcommand):
+            raise ValueError(
+                "The command issued, %s, was not one of the expected commands"
+                " - %s."%(args.subcommand, expected_commands)
+            )
+        else:
+            getattr(self, args.subcommand)()
+
+    def analysis(self):
+        main_analysis_postprocessing()
+
+    def injparamscan(self):
+        main_injparamscan_postprocessing()
+
+    def systtests(self):
+        main_systtests_postprocessing()
 
 class Postprocessor(object):
     """Class to contain all of the functions that are used by the various 
@@ -164,22 +267,47 @@ class Postprocessor(object):
     allows these to be separated from one another.
     """
 
-    def __init__(self, analysis_type, test_type, logdir, detector, selection,
-                 outdir, formats, fluctuate_fid, fluctuate_data):
-        if not analysis_type == 'hypo_testing':
-            raise ValueError("Only postprocessing for analyses ran with the "
-                             "hypo_testing module is currently supported "
-                             "within this class.")
-        self.analysis_type = analysis_type
-        self.test_type = test_type
-        self.fluctuate_fid = fluctuate_fid
-        self.fluctuate_data = fluctuate_data
-        self.logdir = logdir
+    def __init__(self, analysis_type, detector, selection, outdir, formats,
+                 test_type=None, logdir=None, fluctuate_fid=None,
+                 fluctuate_data=None, scan_file=None, best_fit_file=None):
+        expected_analysis_types = ['hypo_testing', 'profile_scan']
+        if analysis_type not in expected_analysis_types:
+            raise ValueError(
+                "Postprocessing only implemented for analyses of type %s "
+                "but have been asked to process %s."%(
+                    expected_analysis_types, analysis_type)
+            )
+        if analysis_type == 'hypo_testing':
+            expected_test_types = ['analysis', 'injparamscan', 'systtests']
+        elif analysis_type == 'profile_scan':
+            expected_test_types = [None]
+        if test_type not in expected_test_types:
+            raise ValueError(
+                "Postprocessing only implemented for %s analyses of test "
+                "type %s but have been asked to process %s."%(
+                    analysis_type, expected_test_types, test_type)
+            )
+        # Things to store for all postprocessing
         self.detector = detector
         self.selection = selection
         self.outdir = outdir
         self.formats = formats
-        self.extract_trials()
+        # Things to initialise for hypo_testing
+        if analysis_type == 'hypo_testing':
+            self.analysis_type = analysis_type
+            self.test_type = test_type
+            self.fluctuate_fid = fluctuate_fid
+            self.fluctuate_data = fluctuate_data
+            self.logdir = logdir
+            self.extract_trials()
+        elif analysis_type == 'profile_scan':
+            self.scan_file_dict = from_file(scan_file)
+            if best_fit_file is not None:
+                self.best_fit_dict = from_file(best_fit_file)
+            else:
+                self.best_fit_dict = None
+            self.get_scan_steps()
+            self.get_scan_data()
 
     def store_extra_points(self, extra_points, extra_points_labels):
         """Stores the extra points to self"""
@@ -452,26 +580,6 @@ class Postprocessor(object):
                             self.values[injkey][
                                 fitkey][param]['vals'] = new_vals
 
-    def save_plot(self, fid, hypo, outdir, end):
-        """Save plot as each type of file format specified in self.formats"""
-        import matplotlib.pyplot as plt
-        plt.rcParams['text.usetex'] = True
-        save_name = ""
-        if 'data_name' in self.labels.dict.keys():
-            save_name += "true_%s_"%self.labels.dict['data_name']
-        if self.detector is not None:
-            save_name += "%s_"%self.detector
-        if self.selection is not None:
-            save_name += "%s_"%self.selection
-        if fid is not None:
-            save_name += "fid_%s_"%self.labels.dict['%s_name'%fid]
-        if hypo is not None:
-            save_name += "hypo_%s_"%self.labels.dict['%s_name'%hypo]
-        save_name += end
-        for fileformat in self.formats:
-            full_save_name = save_name + '.%s'%fileformat
-            plt.savefig(os.path.join(outdir, full_save_name))
-
     def make_fit_information_plot(fit_info, xlabel, title):
         """Make histogram of fit_info given with axis label and title"""
         import matplotlib.pyplot as plt
@@ -500,9 +608,7 @@ class Postprocessor(object):
 
         outdir = os.path.join(outdir, 'MinimiserPlots')
         mkdir(outdir)
-        MainTitle = self.make_main_title(
-            detector, selection, 'Minimiser Information'
-        )
+        MainTitle = self.make_main_title(end='Minimiser Information')
         for fhkey in minimiser_info.keys():
             if minimiser_info[fhkey] is not None:
                 hypo = fhkey.split('_')[0]
@@ -954,8 +1060,6 @@ class Postprocessor(object):
             size='xx-large'
         )
         self.save_plot(
-            fid=None,
-            hypo=None,
             outdir=outdir,
             end='%s_LLRDistribution_median_%i_Trials'%(metric_type, num_trials)
         )
@@ -987,8 +1091,6 @@ class Postprocessor(object):
                     metric_type, num_trials)
             )
         plt.close()
-
-        print L
 
         # Make some debugging plots
         ## Set up the labels for the histograms
@@ -1590,14 +1692,16 @@ class Postprocessor(object):
             os.path.join(self.logdir, 'minimiser_info.pckl')
         )
 
-    def make_main_title(self, end):
+    def make_main_title(self, end, end_center=False):
         """Make main title accounting for detector and selection."""
         main_title = r"\begin{center}"
         if self.detector is not None:
-            main_title += "%s "%detector
+            main_title += "%s "%self.detector
         if self.selection is not None:
-            main_title += "%s Event Selection "%selection
+            main_title += "%s Event Selection "%self.selection
         main_title += end
+        if end_center:
+            main_title += r"\end{center}"
         return main_title
 
     def make_fit_title(self, fid, hypo, trials):
@@ -1730,11 +1834,275 @@ class Postprocessor(object):
             num_rows += 1
         return num_rows
 
+    #### Profile Scan Specific Postprocessing Functions ####
+
+    def get_scan_steps(self):
+        """Gets the bin centres, edges, names and units used in the 
+        profile scan"""
+        all_steps = self.scan_file_dict['steps']
+        all_bin_cens = []
+        all_bin_units = []
+        for step_variable in all_steps.keys():
+            bin_cens = []
+            if isinstance(all_steps[step_variable][0][1],list):
+                all_bin_units.append(all_steps[step_variable][0][1][0][0])
+            else:
+                all_bin_units.append('dimensionless')
+            for val in all_steps[step_variable]:
+                if val[0] not in bin_cens:
+                    bin_cens.append(val[0])
+            all_bin_cens.append(bin_cens)
+        all_bin_edges = []
+        for bin_cens in all_bin_cens:
+            bin_width = bin_cens[1]-bin_cens[0]
+            bin_edges = np.linspace(bin_cens[0]-bin_width/2.0,
+                                    bin_cens[-1]+bin_width/2.0,
+                                    len(bin_cens)+1)
+            all_bin_edges.append(bin_edges)
+                
+        self.all_bin_cens = np.array(all_bin_cens)
+        self.all_bin_edges = np.array(all_bin_edges)
+        self.all_bin_names = all_steps.keys()
+        self.all_bin_units = all_bin_units
+
+    def get_scan_data(self):
+        """Gets the data i.e. best fit metric and params over the scan. If a 
+        best fit was supplied it will also be extracted. Also stores the 
+        metric name to self."""
+        self.metric_name = self.scan_file_dict['results'][0]['metric']
+        data = {}
+        data['metric_vals'] = []
+        for result in self.scan_file_dict['results']:
+            data['metric_vals'].append(result['metric_val'])
+            for param_key in result['params'].keys():
+                if not result['params'][param_key]['is_fixed']:
+                    if param_key not in data.keys():
+                        data[param_key] = {}
+                        data[param_key]['vals'] = []
+                        data[param_key]['units'] = \
+                            result['params'][param_key]['prior']['units']
+                    data[param_key]['vals'].append(
+                        result['params'][param_key]['value'][0]
+                    )
+                    
+        if self.best_fit_dict is not None:
+            best_fit_data = {}
+            best_fit_data['metric_val'] = self.best_fit_dict['metric_val']
+            for param_key in self.best_fit_dict['params'].keys():
+                if not self.best_fit_dict['params'][param_key]['is_fixed']:
+                    best_fit_data[param_key] = {}
+                    best_fit_data[param_key]['val'] = \
+                        self.best_fit_dict['params'][param_key]['value'][0]
+                    best_fit_data[param_key]['units'] = \
+                        self.best_fit_dict['params'][param_key]['value'][1]
+            # Make a list of shifted metrics based on this best fit point
+            data['shifted_metric_vals'] = []
+            for val in data['metric_vals']:
+                data['shifted_metric_vals'].append(
+                    val-best_fit_data['metric_val']
+                )
+        else:
+            best_fit_data = None
+            
+        self.data = data
+        self.best_fit_data = best_fit_data
+
+    def get_best_fit(self, xlabel=None, ylabel=None):
+        """Extracts the best fit values from the best fit dictionary 
+        if it is not None"""
+        if self.best_fit_data is not None:
+            if xlabel is not None:
+                best_fit_x = self.best_fit_data[xlabel]['val']
+                if ylabel is not None:
+                    best_fit_y = self.best_fit_data[ylabel]['val']
+                    self.best_fit_point = [best_fit_x, best_fit_y]
+                else:
+                    self.best_fit_point = best_fit_x
+            elif ylabel is None:
+                raise ValueError(
+                    "You have not specified a x parameter name but have"
+                    " specified a y parameter name - %s."%ylabel
+                )
+        else:
+            self.best_fit_point = None
+
+    def sort_z_labels(self, data_key):
+        """Sorts the z labels based on what data_key is passed"""
+        if data_key == 'metric_vals':
+            zlabel = self.metric_name
+            zunits = 'dimensionless'
+            zvals = np.array(self.data[data_key])
+        elif data_key == 'shifted_metric_vals':
+            zlabel = 'contour'
+            zunits = 'dimensionless'
+            zvals = np.array(self.data[data_key])
+        else:
+            zlabel = data_key
+            zunits = self.data[data_key]['units']
+            zvals = np.array(self.data[data_key]['vals'])
+
+        zvals = np.array(np.split(zvals, len(self.all_bin_cens[0])))
+        
+        return zlabel, zunits, zvals
+
+    def plot_2D_scans(self, xbins=None, xlabel=None, xunits=None, xcens=None,
+                      ybins=None, ylabel=None, yunits=None, ycens=None):
+        """Makes the 2D scan plots. The x and y bins as well as their
+        labels/units can be specified here, or else they will be generated
+        from what is stored in self"""
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+        if xbins is None:
+            xbins = self.all_bin_edges[0]
+        if xlabel is None:
+            xlabel = self.all_bin_names[0]
+        if xunits is None:
+            xunits = self.all_bin_units[0]
+        if xcens is None:
+            xcens = self.all_bin_cens[0]
+        if ybins is None:
+            ybins = self.all_bin_edges[1]
+        if ylabel is None:
+            ylabel = self.all_bin_names[1]
+        if yunits is None:
+            yunits = self.all_bin_units[1]
+        if ycens is None:
+            ycens = self.all_bin_cens[1]
+
+        self.get_best_fit(xlabel=xlabel, ylabel=ylabel)
+        title_end = "%s / %s Parameter Scan"%(
+            self.tex_axis_label(xlabel),
+            self.tex_axis_label(ylabel)
+        )
+        MainTitle = self.make_main_title(end_center=True, end=title_end)
+
+        for data_key in self.data.keys():
+            zlabel, zunits, zvals = self.sort_z_labels(data_key=data_key)
+            if zlabel == 'contour':
+                # Contour plots need bin centers...
+                self.make_2D_hist_plot(
+                    zvals=zvals,
+                    xbins=xcens,
+                    ybins=ycens,
+                    xlabel=xlabel,
+                    xunits=xunits,
+                    ylabel=ylabel,
+                    yunits=yunits,
+                    zlabel=zlabel,
+                    zunits=zunits,
+                    levels=[0,4.605]
+                )
+            else:
+                self.make_2D_hist_plot(
+                    zvals=zvals,
+                    xbins=xbins,
+                    ybins=ybins,
+                    xlabel=xlabel,
+                    xunits=xunits,
+                    ylabel=ylabel,
+                    yunits=yunits,
+                    zlabel=zlabel,
+                    zunits=zunits
+                )
+
+            if self.best_fit_data is not None:
+                plt.plot(
+                    self.best_fit_point[0],
+                    self.best_fit_point[1],
+                    marker='x',
+                    linestyle='None',
+                    color='k',
+                    markersize=10
+                )
+
+            plt.title(MainTitle, fontsize=16)
+            plt.tight_layout()
+            save_end = "%s_%s_2D_%s_scan_%s"%(
+                xlabel, ylabel, self.metric_name, zlabel)
+            if zlabel != "contour":
+                save_end += "_values"
+            self.save_plot(outdir=self.outdir, end=save_end)
+            plt.close()
+
+    #### Generic Functions Relating to Plotting ####
+
+    def make_2D_hist_plot(self, zvals, xbins, ybins, xlabel, xunits,
+                          ylabel, yunits, zlabel, zunits, levels=None,
+                          cmap='Blues'):
+        """Generic 2D histogram-style plotting function. Set zlabel to contour
+        to make a contour plot instead of a histogram."""
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+        if zlabel == 'contour':
+            origin = 'lower'
+            if levels is None:
+                raise ValueError(
+                    "Contour plot requested without setting what contours"
+                    " to plot."
+                )
+            X, Y = np.meshgrid(xbins, ybins)
+            plt.contour(
+                X,
+                Y,
+                zvals.T,
+                levels,
+                colors=('k',),
+                linewidths=(3,),
+                origin=origin
+            )
+        else:
+            plt.pcolormesh(xbins, ybins, zvals.T, cmap=cmap)
+            nice_clabel = self.make_label(zlabel, zunits)
+            plt.colorbar().set_label(label=nice_clabel,fontsize=24)
+            
+        plt.xlim(xbins[0],xbins[-1])
+        nice_xlabel = self.make_label(xlabel, xunits)
+        plt.xlabel(nice_xlabel,fontsize=24)
+        plt.ylim(ybins[0],ybins[-1])
+        nice_ylabel = self.make_label(ylabel, yunits)
+        plt.ylabel(nice_ylabel,fontsize=24)
+
+    def save_plot(self, outdir, end, fid=None, hypo=None):
+        """Save plot as each type of file format specified in self.formats"""
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+        save_name = ""
+        if hasattr(self, 'labels'):
+            if 'data_name' in self.labels.dict.keys():
+                save_name += "true_%s_"%self.labels.dict['data_name']
+        if self.detector is not None:
+            save_name += "%s_"%self.detector
+        if self.selection is not None:
+            save_name += "%s_"%self.selection
+        if fid is not None:
+            save_name += "fid_%s_"%self.labels.dict['%s_name'%fid]
+        if hypo is not None:
+            save_name += "hypo_%s_"%self.labels.dict['%s_name'%hypo]
+        save_name += end
+        for fileformat in self.formats:
+            full_save_name = save_name + '.%s'%fileformat
+            plt.savefig(os.path.join(outdir, full_save_name))
+
+    #### General Style Functions ####
+
+    def make_label(self, label, units):
+        """Appends units to a label for plotting."""
+        nice_label = self.tex_axis_label(label)
+        if not (units == 'dimensionless') and not \
+           (units == None) and not (units == []):
+            nice_label += ' (%s)'%self.tex_axis_label(units)
+        return nice_label
+
     def tex_axis_label(self, label):
         """Takes the labels used in the objects and turns them in to something
         nice for plotting. This can never truly be exhaustive, but it
         definitely does the trick. If something looks ugly add it to this
         function!"""
+        if isinstance(label, list):
+            label = label[0]
+        if not isinstance(label, basestring):
+            raise ValueError("Label must be a string. Got %s of "
+                             "type %s"%(label, type(label)))
         label = label.lower()
         pretty_labels = {}
         pretty_labels["atm_muon_scale"] = r"Muon Background Scale"
@@ -1749,6 +2117,7 @@ class Postprocessor(object):
         pretty_labels["theta23"] = r"$\theta_{23}$"
         pretty_labels["sin2theta23"] = r"$\sin^2\theta_{23}$"
         pretty_labels["deltam31"] = r"$\Delta m^2_{31}$"
+        pretty_labels["deltam32"] = r"$\Delta m^2_{32}$"
         pretty_labels["deltam3l"] = r"$\Delta m^2_{3l}$"
         pretty_labels["aeff_scale"] = r"$A_{\mathrm{eff}}$ Scale"
         pretty_labels["energy_scale"] = r"Energy Scale"
@@ -1877,5 +2246,186 @@ class Postprocessor(object):
                           "Returning standard."%label)
             colourstyle = '-'
         return colourstyle
-    
-    
+
+
+def main_hypo_testing():
+    Hypotestingpostprocessingargparser()
+
+
+def main_profile_scan():
+    description="""A script for processing the output files of 
+    profile_scan.py"""
+
+    # TODO:
+    #
+    # 1) Processing of 1D scans
+
+    init_args_d = parse_args(description=description,
+                             profile_scan=True)
+
+    postprocessor = Postprocessor(
+        analysis_type='profile_scan',
+        detector=init_args_d['detector'],
+        selection=init_args_d['selection'],
+        outdir=init_args_d['outdir'],
+        formats=init_args_d['formats'],
+        scan_file=init_args_d['infile'],
+        best_fit_file=init_args_d['best_fit_infile']
+    )
+
+    # 1D profile scans
+    if len(postprocessor.all_bin_cens) == 1:
+        raise NotImplementedError(
+            "Postprocessing of profile scans in 1D not implemented in this"
+            " script yet.")
+
+    # 2D profile scans
+    elif len(postprocessor.all_bin_cens) == 2:
+        #postprocessor.plot_2D_scans()
+        if (postprocessor.all_bin_names[0] == 'theta23') and \
+           (postprocessor.all_bin_names[1] == 'deltam31'):
+            deltam21 = postprocessor.scan_file_dict['results'][0][
+                'params']['deltam21']['value'][0]
+            postprocessor.all_bin_edges[0] = np.power(np.sin(
+                postprocessor.all_bin_edges[0]*ureg(
+                    postprocessor.all_bin_units[0]
+                ).to('radians').magnitude),2)
+            postprocessor.all_bin_cens[0] = np.power(np.sin(
+                postprocessor.all_bin_cens[0]*ureg(
+                    postprocessor.all_bin_units[0]
+                ).to('radians').magnitude),2)
+            if np.all(np.sign(postprocessor.all_bin_edges[1]) == -1):
+                postprocessor.all_bin_edges[1] = \
+                    postprocessor.all_bin_edges[1] + deltam21
+                postprocessor.all_bin_cens[1] = \
+                    postprocessor.all_bin_cens[1] + deltam21
+                best_fit_data['deltam32'] = {}
+                best_fit_data['deltam32']['units'] = \
+                    best_fit_data['deltam31']['units']
+                best_fit_data['deltam32']['val'] = \
+                    best_fit_data['deltam31']['val'] + deltam21
+            elif np.all(np.sign(postprocessor.all_bin_edges[1]) == 1):
+                postprocessor.all_bin_edges[1] = \
+                    postprocessor.all_bin_edges[1] - deltam21
+                postprocessor.all_bin_cens[1] = \
+                    postprocessor.all_bin_cens[1] - deltam21
+                postprocessor.best_fit_data['deltam32'] = {}
+                postprocessor.best_fit_data['deltam32']['units'] = \
+                    postprocessor.best_fit_data['deltam31']['units']
+                postprocessor.best_fit_data['deltam32']['val'] = \
+                    postprocessor.best_fit_data['deltam31']['val'] - deltam21
+            else:
+                raise ValueError(
+                    "All of the deltam31 values did not have the same sign. "
+                    "There should only be one hierarchy/ordering tested here."
+                )
+            postprocessor.best_fit_data['sin2theta23'] = {}
+            postprocessor.best_fit_data['sin2theta23']['units'] = \
+                postprocessor.best_fit_data['theta23']['units']
+            postprocessor.best_fit_data['sin2theta23']['val'] = \
+                np.power(np.sin(postprocessor.best_fit_data['theta23'][
+                    'val']*ureg(postprocessor.all_bin_units[0]).to(
+                        'radians').magnitude),2)
+            postprocessor.plot_2D_scans(
+                xlabel='sin2theta23',
+                xunits='dimensionless',
+                ylabel='deltam32'
+            )
+
+    else:
+        raise NotImplementedError(
+            "Postprocessing of profile scans in anything other than 1D or "
+            " 2D not implemented in this script."
+        )
+
+
+def main_analysis_postprocessing():
+    description="""Hypothesis testing: How do two hypotheses compare for
+    describing MC or data?
+
+    This computes significances, etc. from the logfiles recorded by the
+    `hypo_testing.py` script, for either Asimov or LLR analysis. Plots and
+    tables are produced in the case of LLR analysis."""
+
+    # TODO:
+    #
+    # 1) Some of the "combined" plots currently make it impossible to read the
+    #    axis labels. Come up with a better way of doing this. Could involve
+    #    making legends and just labelling the axes alphabetically.
+    # 2) The important one - Figure out if this script generalises to the case
+    #    of analysing data. My gut says it doesn't...
+
+    init_args_d = parse_args(description=description,
+                             hypo_testing_analysis=True)
+
+    if init_args_d['asimov']:
+        data_sets, all_params, labels, minimiser_info = extract_trials(
+            logdir=init_args_d['dir'],
+            fluctuate_fid=False,
+            fluctuate_data=False
+        )
+        od = data_sets.values()[0]
+        #if od['h1_fit_to_h0_fid']['fid_asimov']['metric_val'] > od['h0_fit_to_h1_fid']['fid_asimov']['metric_val']:
+        print np.sqrt(np.abs(
+            od['h1_fit_to_h0_fid']['fid_asimov']['metric_val'] -
+            od['h0_fit_to_h1_fid']['fid_asimov']['metric_val']
+        ))
+        return
+
+    # Otherwise: LLR analysis
+    if init_args_d['outdir'] is None:
+        raise ValueError('Must specify --outdir when processing LLR results.')
+
+    if len(formats) > 0:
+        logging.info('Files will be saved in format(s) %s', formats)
+    else:
+        raise ValueError('Must specify a plot file format, either --png or'
+                         ' --pdf, when processing LLR results.')
+
+    postprocessor = Postprocessor(
+        analysis_type='hypo_testing',
+        test_type=None,
+        logdir=init_args_d['dir'],
+        detector=init_args_d['detector'],
+        selection=init_args_d['selection'],
+        outdir=init_args_d['outdir'],
+        formats=init_args_d['formats'],
+        fluctuate_fid=True,
+        fluctuate_data=False
+    )
+
+    trial_nums = postprocessor.data_sets[
+        'toy_%s_asimov'%postprocessor.labels.dict[
+            'data_name']]['h0_fit_to_h1_fid'].keys()
+
+    postprocessor.extract_fid_data()
+    postprocessor.extract_data()
+    postprocessor.store_extra_points(
+        extra_points = init_args_d['extra_point'],
+        extra_points_labels = init_args_d['extra_point_label']
+    )
+
+    if init_args_d['threshold'] != 0.0:
+        logging.info('Outlying trials will be removed with a '
+                     'threshold of %.2f', init_args_d['threshold'])
+        postprocessor.purge_failed_jobs(
+            trial_nums=np.array(trial_nums),
+            thresh=init_args_d['threshold']
+        )
+    else:
+        logging.info('All trials will be included in the analysis.')
+
+    if len(trial_nums) != 1:
+        postprocessor.make_llr_plots()
+
+
+def main_injparamscan_postprocessing():
+    raise NotImplementedError("Postprocessing of hypo testing injected parameter scans not implemented in this script yet.")
+
+
+def main_systtests_postprocessing():
+    raise NotImplementedError("Postprocessing of hypo testing systematic tests not implemented in this script yet.")
+
+
+if __name__ == '__main__':
+    Postprocessingargparser()
