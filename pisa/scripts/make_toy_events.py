@@ -68,7 +68,7 @@ FNAME_TEMPLATE = (
 )
 
 FNAME_INFO_RE = re.compile(
-    r'(?P<file_type>[^_]+)'
+    r'^(?P<file_type>[^_.]+)'
     r'__(?P<detector>[^_]+)'
     r'__toy'
     r'_(?P<e_min>[0-9e.+-]+)_to_(?P<e_max>[0-9e.+-]+)(?P<e_units>[^_]*)'
