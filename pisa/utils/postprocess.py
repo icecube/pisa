@@ -219,7 +219,6 @@ class Hypotestingpostprocessingargparser(object):
         parser.add_argument('subcommand', help='Subcommand to run')
         args = parser.parse_args(sys.argv[2:3])
         expected_commands = ['analysis', 'injparamscan', 'systtests']
-        print args
         if not hasattr(self, args.subcommand):
             raise ValueError(
                 "The command issued, %s, was not one of the expected commands"
@@ -269,7 +268,8 @@ class Postprocessor(object):
 
     def __init__(self, analysis_type, detector, selection, outdir, formats,
                  test_type=None, logdir=None, fluctuate_fid=None,
-                 fluctuate_data=None, scan_file=None, best_fit_file=None):
+                 fluctuate_data=None, scan_file=None, best_fit_file=None,
+                 extra_points=None, extra_points_labels=None):
         expected_analysis_types = ['hypo_testing', 'profile_scan']
         if analysis_type not in expected_analysis_types:
             raise ValueError(
@@ -292,6 +292,10 @@ class Postprocessor(object):
         self.selection = selection
         self.outdir = outdir
         self.formats = formats
+        self.store_extra_points(
+            extra_points=extra_points,
+            extra_points_labels=extra_points_labels
+        )
         # Things to initialise for hypo_testing
         if analysis_type == 'hypo_testing':
             self.analysis_type = analysis_type
@@ -300,6 +304,10 @@ class Postprocessor(object):
             self.fluctuate_data = fluctuate_data
             self.logdir = logdir
             self.extract_trials()
+            if test_type == 'analysis':
+                self.extract_fid_data()
+                self.extract_data()
+        # Things to initialise for profile_scan
         elif analysis_type == 'profile_scan':
             self.scan_file_dict = from_file(scan_file)
             if best_fit_file is not None:
@@ -334,6 +342,8 @@ class Postprocessor(object):
                 )
         self.extra_points = extra_points
         self.extra_points_labels = extra_points_labels
+
+    #### Hypo testing Specific Postprocessing functions ####
 
     def extract_trials(self):
         """Extract and aggregate analysis results."""
@@ -402,19 +412,23 @@ class Postprocessor(object):
                 info.pop(key)
         return info
 
-    def extract_paramval(self, injparams, systkey, fid_label=None,
-                         hypo_label=None, paramlabel=None):
+    def extract_paramval(self, injparams, systkey, fhkey=None, paramlabel=None):
         """Extract a value from a set of parameters and modify it based on the
         hypothesis/fiducial fit being considered. The label associated with this
         is then modified accordingly."""
         paramval = float(injparams[systkey].split(' ')[0])
-        if (fid_label is None) or (hypo_label is None) or (paramlabel is None):
-            if not ((fid_label is None) and (hypo_label is None) and
-                    (paramlabel is None)):
-                raise ValueError('Either all three labels must be None or they '
-                                 ' must all be specified.')
+        if (fhkey is None) or (paramlabel is None):
+            if not ((fhkey is None) and (paramlabel is None)):
+                raise ValueError(
+                    "Either both fhkey and paramlabel must be"
+                    " None or they must both be specified."
+                )
             return paramval
         else:
+            hypo = fhkey.split('_')[0]
+            fid = fhkey.split('_')[-2]
+            fid_label = self.labels.dict['%s_name'%fid]
+            hypo_label = self.labels.dict['%s_name'%hypo]
             if systkey == 'deltam31':
                 if 'no' in hypo_label:
                     if np.sign(paramval) != 1:
@@ -426,7 +440,7 @@ class Postprocessor(object):
                         paramlabel += r' ($\times-1$)'
 
             if (np.abs(paramval) < 1e-2) and (paramval != 0.0):
-                paramlabel += ' = %.3e'%paramval
+                paramlabel += ' = %.2e'%paramval
             else:
                 paramlabel += ' = %.3g'%paramval
 
@@ -444,42 +458,6 @@ class Postprocessor(object):
                     fid_values[injkey][datakey] \
                         = self.data_sets[injkey].pop(datakey)
         self.fid_values = fid_values
-
-    def extract_data(self):
-        """Take the data sets returned by `extract_trials` and turn them in to a
-        format used by all of the plotting functions."""
-        values = {}
-        for injkey in self.data_sets.keys():
-            values[injkey] = {}
-            alldata = self.data_sets[injkey]
-            paramkeys = alldata['params'].keys()
-            for datakey in alldata.keys():
-                if not datakey == 'params':
-                    values[injkey][datakey] = {}
-                    values[injkey][datakey]['metric_val'] = {}
-                    values[injkey][datakey]['metric_val']['vals'] = []
-                    for paramkey in paramkeys:
-                        values[injkey][datakey][paramkey] = {}
-                        values[injkey][datakey][paramkey]['vals'] = []
-                    trials = alldata[datakey]
-                    for trial_num in trials.keys():
-                        trial = trials[trial_num]
-                        values[injkey][datakey]['metric_val']['vals'] \
-                            .append(trial['metric_val'])
-                        values[injkey][datakey]['metric_val']['type'] \
-                            = trial['metric']
-                        values[injkey][datakey]['metric_val']['units'] \
-                            = 'dimensionless'
-                        param_vals = trial['params']
-                        for param_name in param_vals.keys():
-                            val, units = self.parse_pint_string(
-                                pint_string=param_vals[param_name]
-                            )
-                            values[injkey][datakey][param_name]['vals'] \
-                                .append(float(val))
-                            values[injkey][datakey][param_name]['units'] \
-                                = units
-        self.values = values
 
     def extract_gaussian(self, prior_string, units):
         """Parses the string for the Gaussian priors that comes from the
@@ -521,10 +499,48 @@ class Postprocessor(object):
 
         return stddev, maximum
 
-    def purge_failed_jobs(self, trial_nums, thresh=5.0):
+    ######## Hypo testing Analysis Specific Postprocessing functions ########
+
+    def extract_data(self):
+        """Take the data sets returned by `extract_trials` and turn them in to a
+        format used by all of the plotting functions."""
+        values = {}
+        for injkey in self.data_sets.keys():
+            values[injkey] = {}
+            alldata = self.data_sets[injkey]
+            paramkeys = alldata['params'].keys()
+            for datakey in alldata.keys():
+                if not datakey == 'params':
+                    values[injkey][datakey] = {}
+                    values[injkey][datakey]['metric_val'] = {}
+                    values[injkey][datakey]['metric_val']['vals'] = []
+                    for paramkey in paramkeys:
+                        values[injkey][datakey][paramkey] = {}
+                        values[injkey][datakey][paramkey]['vals'] = []
+                    trials = alldata[datakey]
+                    for trial_num in trials.keys():
+                        trial = trials[trial_num]
+                        values[injkey][datakey]['metric_val']['vals'] \
+                            .append(trial['metric_val'])
+                        values[injkey][datakey]['metric_val']['type'] \
+                            = trial['metric']
+                        values[injkey][datakey]['metric_val']['units'] \
+                            = 'dimensionless'
+                        param_vals = trial['params']
+                        for param_name in param_vals.keys():
+                            val, units = self.parse_pint_string(
+                                pint_string=param_vals[param_name]
+                            )
+                            values[injkey][datakey][param_name]['vals'] \
+                                .append(float(val))
+                            values[injkey][datakey][param_name]['units'] \
+                                = units
+        self.values = values
+
+    def purge_outlying_trials(self, trial_nums, thresh=5.0):
         """Look at the values of the metric and find any deemed to be from a
         failed job. That is, the value of the metric falls very far outside of
-        the rest of the values.
+            the rest of the values.
 
         Notes
         -----
@@ -546,7 +562,6 @@ class Postprocessor(object):
             Boris Iglewicz and David Hoaglin (1993), "Volume 16: How to Detect
             and Handle Outliers", The ASQC Basic References in Quality Control:
             Statistical Techniques, Edward F. Mykytka, Ph.D., Editor.
-
         """
         for injkey in self.values.keys():
             for fit_key in self.values[injkey].keys():
@@ -580,95 +595,221 @@ class Postprocessor(object):
                             self.values[injkey][
                                 fitkey][param]['vals'] = new_vals
 
-    def make_fit_information_plot(fit_info, xlabel, title):
-        """Make histogram of fit_info given with axis label and title"""
+    def get_resulting_hypo_params(self, injkey):
+        """Returns the sets of h0 and h1 fits to the data"""
+        h0_params = self.fid_values[injkey][
+            'h0_fit_to_%s'%(self.labels.dict['data'])]['params']
+        h1_params = self.fid_values[injkey][
+            'h1_fit_to_%s'%(self.labels.dict['data'])]['params']
+        return h0_params, h1_params
+
+    def get_injected_params(self):
+        """Return the injected params, if they exist"""
+        if 'data_params' in self.all_params.keys():
+            data_params = {}
+            for pkey in self.all_params['data_params'].keys():
+                data_params[pkey] = \
+                    self.all_params['data_params'][pkey]['value']
+        else:
+            data_params = None
+        return data_params
+
+    def make_individual_posterior_plots(self):
+        """Make posterior plots and save each time."""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
-        plt.grid(axis='y', zorder=0)
-        plt.hist(
-            fit_info,
-            bins=10,
-            histtype='bar',
-            color='darkblue',
-            alpha=0.9,
-            zorder=3
-        )
-        plt.xlabel(xlabel, size='24')
-        plt.ylabel('Number of Trials', size='24')
-        plt.title(title, fontsize=16)
-        plt.subplots_adjust(left=0.10, right=0.90, top=0.9, bottom=0.11)
 
-    def plot_fit_information(self, minimiser_info, labels, detector,
-                             selection, outdir, formats):
+        outdir = os.path.join(self.outdir, 'IndividualPosteriors')
+        mkdir(outdir)
+        MainTitle = self.make_main_title(end='Posterior')
+
+        for injkey in self.values.keys():
+            for fhkey in self.values[injkey].keys():
+                for systkey in self.values[injkey][fhkey].keys():
+                    FitTitle = self.make_fit_title(
+                        fhkey=fhkey,
+                        trials=len(self.values[injkey][fhkey][systkey]['vals'])
+                    )
+                    systunits = self.values[injkey][fhkey][systkey]['units']
+                    if systkey == 'metric_val':
+                        xlabel = self.tex_axis_label(
+                            self.values[injkey][fhkey][systkey]['type']
+                        )
+                    else:
+                        xlabel = self.tex_axis_label(systkey)
+                    if not systunits == 'dimensionless':
+                        xlabel += r' (%s)'%self.tex_axis_label(systunits)
+                    self.make_1D_hist_plot(
+                        data=np.array(
+                            self.values[injkey][fhkey][systkey]['vals']
+                        ),
+                        xlabel=xlabel,
+                        title=MainTitle+r'\\'+FitTitle,
+                        ylabel='Number of Trials'
+                    )
+
+                    plt.ylim(0, 1.35*plt.ylim()[1])
+                    if not systkey == 'metric_val':
+                        self.add_inj_fid_lines(
+                            injkey=injkey,
+                            systkey=systkey,
+                            fhkey=fhkey
+                        )
+                        plt.legend(
+                            loc='upper left',
+                            fontsize=12,
+                            framealpha=1.0
+                        )
+
+                    plt.subplots_adjust(
+                        left=0.10,
+                        right=0.90,
+                        top=0.85,
+                        bottom=0.11
+                    )
+
+                    self.save_plot(
+                        fhkey=fhkey,
+                        outdir=outdir,
+                        end='%s_posterior'%systkey
+                    )
+                    plt.close()
+
+    def add_inj_fid_lines(self, injkey, systkey, fhkey):
+        """Add lines to show the injected and fiducial fit lines
+        where appropriate"""
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+        h0_params, h1_params = self.get_resulting_hypo_params(
+            injkey=injkey
+        )
+        data_params = self.get_injected_params()
+        # Add injected and hypothesis fit lines
+        if data_params is not None:
+            if systkey in data_params.keys():
+                injval, injlabelproper = self.extract_paramval(
+                    injparams=data_params,
+                    systkey=systkey,
+                    fhkey=fhkey,
+                    paramlabel='Injected Value'
+                )
+                plt.axvline(
+                    injval,
+                    color='r',
+                    linewidth=2,
+                    label=injlabelproper,
+                    zorder=5
+                )
+            else:
+                injval = None
+        else:
+            injval = None
+        if fhkey.split('_')[-2] == 'h0':
+            fitval, fitlabelproper = self.extract_paramval(
+                injparams=h0_params,
+                systkey=systkey,
+                fhkey=fhkey,
+                paramlabel='%s Fiducial Fit'%self.tex_axis_label(
+                    self.labels.dict['h0_name']
+                )
+            )
+        elif fhkey.split('_')[-2] == 'h1':
+            fitval, fitlabelproper = self.extract_paramval(
+                injparams=h1_params,
+                systkey=systkey,
+                fhkey=fhkey,
+                paramlabel='%s Fiducial Fit'%self.tex_axis_label(
+                    self.labels.dict['h1_name']
+                )
+            )
+        else:
+            raise ValueError("I got a hypothesis %s. Expected h0 or h1 only."
+                             %fid)
+        if injval is not None:
+            if fitval != injval:
+                plt.axvline(
+                    fitval,
+                    color='g',
+                    linewidth=2,
+                    label=fitlabelproper,
+                    zorder=5
+                )
+        else:
+            plt.axvline(
+                fitval,
+                color='g',
+                linewidth=2,
+                label=fitlabelproper,
+                zorder=5
+            )
+
+    def make_fit_information_plots(self):
         """Make plots of the number of iterations and time taken with the
         minimiser. This is a good cross-check that the minimiser did not end
         abruptly since you would see significant pile-up if it did."""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
 
-        outdir = os.path.join(outdir, 'MinimiserPlots')
+        outdir = os.path.join(self.outdir, 'MinimiserPlots')
         mkdir(outdir)
         MainTitle = self.make_main_title(end='Minimiser Information')
-        for fhkey in minimiser_info.keys():
-            if minimiser_info[fhkey] is not None:
-                hypo = fhkey.split('_')[0]
-                fid = fhkey.split('_')[-2]
-                minimiser_times = []
-                minimiser_iterations = []
-                minimiser_funcevals = []
-                minimiser_status = []
-                for trial in minimiser_info[fhkey].keys():
-                    bits = minimiser_info[fhkey][
-                        trial]['minimizer_time'].split(' ')
-                    minimiser_times.append(
-                        float(bits[0])
+        for injkey in self.minimiser_info.keys():
+            for fhkey in self.minimiser_info[injkey].keys():
+                if self.minimiser_info[injkey][fhkey] is not None:
+                    minimiser_times = []
+                    minimiser_iterations = []
+                    minimiser_funcevals = []
+                    minimiser_status = []
+                    for trial in self.minimiser_info[injkey][fhkey].keys():
+                        bits = self.minimiser_info[injkey][fhkey][
+                            trial]['minimizer_time'].split(' ')
+                        minimiser_times.append(
+                            float(bits[0])
+                        )
+                        minimiser_iterations.append(
+                            int(self.minimiser_info[injkey][fhkey][trial][
+                                'minimizer_metadata']['nit'])
+                        )
+                        minimiser_funcevals.append(
+                            int(self.minimiser_info[injkey][fhkey][trial][
+                                'minimizer_metadata']['nfev'])
+                        )
+                        minimiser_status.append(
+                            int(self.minimiser_info[injkey][fhkey][trial][
+                                'minimizer_metadata']['status'])
+                        )
+                        minimiser_units = bits[1]
+                    FitTitle = self.make_fit_title(
+                        fhkey=fhkey,
+                        trials=len(minimiser_times)
                     )
-                    minimiser_iterations.append(
-                        int(minimiser_info[fhkey][trial][
-                            'minimizer_metadata']['nit'])
-                    )
-                    minimiser_funcevals.append(
-                        int(minimiser_info[fhkey][trial][
-                            'minimizer_metadata']['nfev'])
-                    )
-                    minimiser_status.append(
-                        int(minimiser_info[fhkey][trial][
-                            'minimizer_metadata']['status'])
-                    )
-                    minimiser_units = bits[1]
-                FitTitle = make_fit_title(
-                    labels=labels,
-                    fid=fid,
-                    hypo=hypo,
-                    trials=len(minimiser_times)
-                )
-                data_to_plot = [
-                    minimiser_times,
-                    minimiser_iterations,
-                    minimiser_funcevals,
-                    minimiser_status
-                ]
-                data_to_plot_ends = [
-                    'minimiser_times',
-                    'minimiser_iterations',
-                    'minimiser_funcevals',
-                    'minimiser_status'
-                ]
-                for plot_data, plot_end in zip(data_to_plot,
-                                               data_to_plot_ends):
-                    make_fit_information_plot(
-                        fit_info=plot_data,
-                        xlabel=self.tex_axis_label(plot_end),
-                        title=MainTitle+r'\\'+FitTitle
-                    )
-                    save_plot(
-                        fid=fid,
-                        hypo=hypo,
-                        outdir=outdir,
-                        formats=formats,
-                        end=plot_end
-                    )
-                    plt.close()
+                    data_to_plot = [
+                        minimiser_times,
+                        minimiser_iterations,
+                        minimiser_funcevals,
+                        minimiser_status
+                    ]
+                    data_to_plot_ends = [
+                        'minimiser_times',
+                        'minimiser_iterations',
+                        'minimiser_funcevals',
+                        'minimiser_status'
+                    ]
+                    for plot_data, plot_end in zip(data_to_plot,
+                                                   data_to_plot_ends):
+                        self.make_1D_hist_plot(
+                            data=plot_data,
+                            xlabel=self.tex_axis_label(plot_end),
+                            title=MainTitle+r'\\'+FitTitle,
+                            ylabel='Number of Trials'
+                        )
+                        self.save_plot(
+                            fid=fid,
+                            hypo=hypo,
+                            outdir=outdir,
+                            end=plot_end
+                        )
+                        plt.close()
 
     def add_extra_points(self, ymax):
         """Add extra points specified by self.extra_points and label them 
@@ -765,9 +906,9 @@ class Postprocessor(object):
                 lw=2,
                 label=label
             )
-        plt.xlabel(r'Log-Likelihood Ratio', size='24', labelpad=22)
+        plt.xlabel(r'Log-Likelihood Ratio', size='18', labelpad=18)
         plt.ylabel(r'Number of Trials (per %.2f)'%(binning[1]-binning[0]),
-                   size='24')
+                   size='18')
         # Nicely scale the plot
         plt.ylim(0, plot_scaling_factor*LLRhistmax)
         # Add labels to show which side means what...
@@ -1422,6 +1563,337 @@ class Postprocessor(object):
         )
         plt.close()
 
+    def make_fiducial_fit_files(self):
+        """Make tex files which can be then be compiled in to tables 
+        showing the two fiducial fits and, if applicable, how they 
+        compare to what was injected."""
+        outdir = os.path.join(self.outdir, 'FiducialFits')
+        mkdir(outdir)
+
+        paramfilename = self.make_tex_name(end="fiducial_fits")
+        paramfile = os.path.join(outdir, paramfilename)
+        self.texfile = open(paramfile, 'w')
+        self.write_latex_preamble()
+
+        for injkey in self.fid_values.keys():
+            for tabletype in ["fiducial_fit_params", "fiducial_fit_metrics"]:
+                self.setup_latex_table(
+                    tabletype=tabletype,
+                    injected=('data_params' in self.all_params.keys())
+                )
+                self.do_latex_table_middle(
+                    tabletype=tabletype,
+                    injkey=injkey
+                )
+                self.texfile.write("\n")
+                self.end_latex_table(tabletype=tabletype)
+
+        self.texfile.write("\n")
+        self.texfile.write("\end{document}\n")
+
+    def write_latex_preamble(self):
+        """Write latex preamble needed to make, in my often-wrong opinion,
+        nice-looking tex files."""
+        self.texfile.write("\n")
+        self.texfile.write("\documentclass[a4paper,12pt]{article}\n")
+        self.texfile.write("\usepackage{tabu}\n")
+        self.texfile.write("\usepackage{booktabs}\n")
+        self.texfile.write("\usepackage[font=small,labelsep=space]{caption}\n")
+        self.texfile.write("\usepackage[margin=2.5cm]{geometry}\n")
+        self.texfile.write("\setlength{\\topmargin}{1.0cm}\n")
+        self.texfile.write("\setlength{\\textheight}{22cm}\n")
+        self.texfile.write("\usepackage{fancyhdr}\n")
+        self.texfile.write("\pagestyle{fancy}\n")
+        self.texfile.write("\\fancyhf{}\n")
+        self.texfile.write("\\fancyhead[R]{\leftmark}\n")
+        self.texfile.write("\usepackage{multirow}\n")
+        self.texfile.write("\n")
+        self.texfile.write("\\begin{document}\n")
+        self.texfile.write("\n")
+
+    def setup_latex_table(self, tabletype, injected):
+        """Set up the beginning of the table for the tex output files.
+        Currently will make tables for the output fiducial fit params
+        and the chi2 values only."""
+        self.texfile.write("\\renewcommand{\\arraystretch}{1.6}\n")
+        self.texfile.write("\n")
+        self.texfile.write("\\begin{table}[t!]\n")
+        self.texfile.write("  \\begin{center}\n")
+        if tabletype == 'fiducial_fit_params':
+            if injected:
+                nextline = "    \\begin{tabu} to 1.0\\textwidth "
+                nextline += "{| X[2.0,c] | X[1,c] | X[1,c] | X[1,c]"
+                nextline += " | X[1,c] | X[1,c] | X[1,c] | X[1,c] |}\n"
+                self.texfile.write(nextline)
+                self.texfile.write("    \hline\n")
+                nextline = "    \multirow{2}{*}{\\textbf{Parameter}} "
+                nextline += "& \multirow{2}{*}{\\textbf{Inj}} "
+                nextline += "& \multicolumn{3}{c|}{h0} "
+                nextline += "& \multicolumn{3}{c|}{h1} "
+                nextline += "\\\\ \cline{3-8}"
+                self.texfile.write(nextline)
+                nextline = "    & & Prior & Fit & \(\Delta\) "
+                nextline += "& Prior & Fit & \(\Delta\) \\\\ \hline\n"
+                self.texfile.write(nextline)
+            else:
+                nextline = "    \\begin{tabu} to 1.0\\textwidth "
+                nextline += "{| X[c] | X[c] | X[c] |}\n"
+                self.texfile.write(nextline)
+                self.texfile.write("    \hline\n")
+                self.texfile.write("    Parameter & h0 & h1 \\\\ \hline\n")
+        elif tabletype == 'fiducial_fit_metrics':
+            nextline = "    \\begin{tabu} to 1.0\\textwidth "
+            nextline += "{| X[c] | X[c] | X[c] |}\n"
+            self.texfile.write(nextline)
+            self.texfile.write("    \hline\n")
+            self.texfile.write("    h0 & h1 & $\Delta$ \\\\ \hline\n")
+        else:
+            raise ValueError(
+                "This function is only for making fit metric or fit "
+                "param tables in LaTeX. Got type %s"%tabletype
+            )
+
+    def do_latex_table_middle(self, tabletype, injkey):
+        """Adds the actual content to the latex tables."""
+        if tabletype == 'fiducial_fit_params':
+            h0_params, h1_params = self.get_resulting_hypo_params(
+                injkey=injkey
+            )
+            data_params = self.get_injected_params()
+            if data_params is not None:
+                injected = True
+            else:
+                injected = False
+            
+            for param in h0_params.keys():
+                # Get the units for this parameter
+                val, param_units = self.parse_pint_string(
+                    pint_string=h0_params[param]
+                )
+                # Get priors if they exists
+                if 'gaussian' in self.all_params['h0_params'][param]['prior']:
+                    h0stddev, h0maximum = self.extract_gaussian(
+                        prior_string=self.all_params['h0_params'][
+                            param]['prior'],
+                        units=param_units
+                    )
+                else:
+                    h0stddev = None
+                    h0maximum = None
+                if 'gaussian' in self.all_params['h1_params'][param]['prior']:
+                    h1stddev, h1maximum = self.extract_gaussian(
+                        prior_string=self.all_params['h1_params'][
+                            param]['prior'],
+                        units=param_units
+                    )
+                else:
+                    h1stddev = None
+                    h1maximum = None
+                # Include injected parameter, fitted parameters and
+                # differences with appropriate formatting.
+                if data_params is not None:
+                    tableline = "      "
+                    tableline += "%s "%self.tex_axis_label(param)
+                    if param == 'deltam31':
+                        tableline += r" / $10^{-3}$ "
+                    if param_units != 'dimensionless':
+                        tableline += "(%s) &"%self.tex_axis_label(param_units)
+                    else:
+                        tableline += "&"
+                    if param in data_params.keys():
+                        dataval = self.extract_paramval(
+                            injparams=data_params,
+                            systkey=param
+                        )
+                        if param == 'deltam31':
+                            dataval *= 1000.0
+                        if (np.abs(dataval) < 1e-2) and (dataval != 0.0):
+                            tableline += "%.2e &"%dataval
+                        else:
+                            tableline += "%.3g &"%dataval
+                    # If no injected parameter, show this and the
+                    # deltas with a line
+                    else:
+                        dataval = '--'
+                        tableline += "%s &"%dataval
+                    h0val = self.extract_paramval(
+                        injparams=h0_params,
+                        systkey=param
+                    )
+                    if param == 'deltam31':
+                        h0val *= 1000.0
+                    tableline += self.format_table_line(
+                        val=h0val,
+                        dataval=dataval,
+                        stddev=h0stddev,
+                        maximum=h0maximum
+                    )
+                    h1val = self.extract_paramval(
+                        injparams=h1_params,
+                        systkey=param
+                    )
+                    if param == 'deltam31':
+                        h1val *= 1000.0
+                    tableline += self.format_table_line(
+                        val=h1val,
+                        dataval=dataval,
+                        stddev=h1stddev,
+                        maximum=h1maximum,
+                        last=True
+                    )
+                    tableline += " \\\\ \hline\n"
+                    self.texfile.write(tableline)
+                # If no injected parameters it's much simpler
+                else:
+                    h0val = self.extract_paramval(
+                        injparams=h0_params,
+                        systkey=param
+                    )
+                    h1val = self.extract_paramval(
+                        injparams=h1_params,
+                        systkey=param
+                    )
+                    if (np.abs(h0val) < 1e-2) and (h0val != 0.0):
+                        self.texfile.write("    %s & %.2e & %.2e\n"
+                            % (self.tex_axis_label(param), h0val, h1val))
+                    else:
+                        self.texfile.write("    %s & %.3g & %.3g\n"
+                            % (self.tex_axis_label(param), h0val, h1val))
+        elif tabletype == "fiducial_fit_metrics":
+            h0_fid_metric = self.fid_values[injkey][
+                'h0_fit_to_%s'%(self.labels.dict['data'])]['metric_val']
+            h1_fid_metric = self.fid_values[injkey][
+                'h1_fit_to_%s'%(self.labels.dict['data'])]['metric_val']
+
+            # Need the type of metric here. Doesn't matter which
+            # fit that comes from so just choose h0_fit_to_h0_fid
+            # since it will always exist.
+            metric_type = self.values[injkey][
+                'h0_fit_to_h0_fid']['metric_val']['type']
+            # In the case of likelihood, the maximum metric is the better fit.
+            # With chi2 metrics the opposite is true, and so we must multiply
+            # everything by -1 in order to apply the same treatment.
+            if 'chi2' not in metric_type:
+                logging.info(
+                    "Converting likelihood metric to chi2 equivalent."
+                )
+                h0_fid_metric *= -1
+                h1_fid_metric *= -1
+
+            # If truth is known, report the fits the correct way round
+            if self.labels.dict['data_name'] is not None:
+                if self.labels.dict['data_name'] in \
+                    self.labels.dict['h0_name']:
+                    delta = h1_fid_metric-h0_fid_metric
+                elif self.labels.dict['data_name'] in \
+                    self.labels.dict['h1_name']:
+                    delta = h0_fid_metric-h1_fid_metric
+                else:
+                    logging.warning(
+                        "Truth is known but could not be identified in "
+                        "either of the hypotheses. The difference between"
+                        " the best fit metrics will just be reported as "
+                        "positive and so will not necessarily reflect if "
+                        "the truth was recovered."
+                    )
+                    if h1_fid_metric > h0_fid_metric:
+                        delta = h0_fid_metric-h1_fid_metric
+                    else:
+                        delta = h1_fid_metric-h0_fid_metric
+            # Else just report it as delta between best fits
+            else:
+                if h1_fid_metric > h0_fid_metric:
+                    delta = h0_fid_metric-h1_fid_metric
+                else:
+                    delta = h1_fid_metric-h0_fid_metric
+            # Write this in the file
+            newline = "    %.3g "%h0_fid_metric
+            newline += "& %.3g "%h1_fid_metric
+            newline += "& %.3g "%delta
+            newline += "\\\\ \hline\n"
+            self.texfile.write(newline)
+        else:
+            raise ValueError(
+                "This function is only for adding the content to metric"
+                " or fit param tables in LaTeX. Got type %s"%tabletype
+            )
+        
+    def end_latex_table(self, tabletype):
+        """End the table and the whole document for the tex output files."""
+        self.texfile.write("    \end{tabu}\n")
+        self.texfile.write("  \end{center}\n")
+        self.texfile.write("  \\vspace{-10pt}\n")
+        newline = "  \caption{shows the fiducial fit "
+        if tabletype == "fiducial_fit_params":
+            newline += "parameters"
+        elif tabletype == "fiducial_fit_metrics":
+            newline += "metrics"
+        else:
+            raise ValueError(
+                "This function is only for ending fit metric or fit "
+                "param tables in LaTeX. Got type %s"%tabletype
+            )
+        if self.detector is not None:
+            " obtained with the %s"%self.detector
+            if self.selection is not None:
+                " %s sample"%self.selection
+        if self.selection is not None:
+            " obtained with the %s"%self.selection
+        newline += " for h0 of %s"%self.tex_axis_label(
+            self.labels.dict['h0_name']
+        )
+        newline += " and h1 of %s."%self.tex_axis_label(
+            self.labels.dict['h1_name']
+        )
+        if 'data_name' in self.labels.dict.keys():
+            newline += " The truth is %s."%self.tex_axis_label(
+                self.labels.dict['data_name']
+            )
+        newline += "}\n"
+        self.texfile.write(newline)
+        newline = "  \label{tab:"
+        if self.detector is not None:
+            newline += self.detector
+        if self.selection is not None:
+            newline += self.selection
+        newline += "%stable}\n"%tabletype
+        self.texfile.write(newline)
+        self.texfile.write("\end{table}\n")
+
+    def format_table_line(self, val, dataval, stddev=None,
+                          maximum=None, last=False):
+        """Formatting the numbers to look nice is awkard so do it in its own
+        function"""
+        line = ""
+        if stddev is not None:
+            if (np.abs(stddev) < 1e-2) and (stddev != 0.0):
+                line += r'$%.2e\pm%.2e$ &'%(maximum, stddev)
+            else:
+                line += r'$%.3g\pm%.3g$ &'%(maximum, stddev)
+        else:
+            if maximum is not None:
+                raise ValueError("Both stddev and maximum should be None or "
+                                 "specified")
+            else:
+                line += "-- &"
+        if (np.abs(val) < 1e-2) and (val != 0.0):
+            line += "%.2e"%val
+        else:
+            line += "%.3g"%val
+        if dataval is not None:
+            line += " &"
+            if isinstance(dataval, basestring):
+                line += "%s"%dataval
+            else:
+                delta = val - dataval
+                if (np.abs(delta) < 1e-2) and (delta != 0.0):
+                    line += "%.2e"%delta
+                else:
+                    line += "%.3g"%delta
+        if not last:
+            line += " &"
+        return line
+        
     def check_pickle_files(self, logdir_content):
         """Checks for the expected pickle files in the output directory based
         on the analysis and test type. If they are there, it is made sure that
@@ -1430,7 +1902,7 @@ class Postprocessor(object):
         extract_trials happens, at the end of which these pickle files will be
         generated for future use."""
         if self.analysis_type == 'hypo_testing':
-            if self.test_type is not None:
+            if self.test_type not in ['analysis']:
                 raise ValueError("Not implemented yet.")
             else:
                 expected_files = ['data_sets.pckl', 'all_params.pckl',
@@ -1691,32 +2163,6 @@ class Postprocessor(object):
         self.minimiser_info = from_file(
             os.path.join(self.logdir, 'minimiser_info.pckl')
         )
-
-    def make_main_title(self, end, end_center=False):
-        """Make main title accounting for detector and selection."""
-        main_title = r"\begin{center}"
-        if self.detector is not None:
-            main_title += "%s "%self.detector
-        if self.selection is not None:
-            main_title += "%s Event Selection "%self.selection
-        main_title += end
-        if end_center:
-            main_title += r"\end{center}"
-        return main_title
-
-    def make_fit_title(self, fid, hypo, trials):
-        """Make fit title to go with the main title"""
-        FitTitle = ""
-        if 'data_name' in self.labels.keys():
-            FitTitle += "True %s, "%self.labels['data_name']
-        if fid is not None:
-            FitTitle += "Fiducial Fit %s, "%self.labels['%s_name'%fid]
-        if hypo is not None:
-            FitTitle += "Hypothesis %s "%self.labels['%s_name'%hypo]
-        if trials is not None:
-            FitTitle += "(%i Trials)"%trials
-        FitTitle += r"\end{center}"
-        return FitTitle
 
     def get_num_rows(self, data, omit_metric=False):
         """Calculates the number of rows for multiplots based on the number of 
@@ -2026,6 +2472,74 @@ class Postprocessor(object):
 
     #### Generic Functions Relating to Plotting ####
 
+    def make_main_title(self, end, end_center=False):
+        """Make main title accounting for detector and selection. Set 
+        end_center to true if you will not be using this with a 
+        corresponding fit title"""
+        main_title = r"\begin{center}"
+        if self.detector is not None:
+            main_title += "%s "%self.detector
+        if self.selection is not None:
+            main_title += "%s Event Selection "%self.selection
+        main_title += end
+        if end_center:
+            main_title += r"\end{center}"
+        return main_title
+
+    def make_fit_title(self, trials, fid=None, hypo=None,
+                       fhkey=None, begin_center=False):
+        """Make fit title to go with the main title. Set begin_center to 
+        true if you will not be using this with a corresponding main title."""
+        FitTitle = ""
+        if begin_center:
+            FitTitle += r"\begin{center}"
+        if hasattr(self, 'labels'):
+            if 'data_name' in self.labels.dict.keys():
+                FitTitle += "True %s, "%self.labels.dict['data_name']
+        if ((fid is not None) and (hypo is not None)) and (fhkey is not None):
+            raise ValueError(
+                "Got a fid, hypo and fhkey specified. Please use fid "
+                "and hypo OR fhkey (from which fid and hypo will be "
+                "extracted) but not both."
+            )
+        if fid is not None:
+            FitTitle += "Fiducial Fit %s, "%self.labels.dict['%s_name'%fid]
+        if hypo is not None:
+            FitTitle += "Hypothesis %s "%self.labels.dict['%s_name'%hypo]
+        if fhkey is not None:
+            hypo = fhkey.split('_')[0]
+            fid = fhkey.split('_')[-2]
+            FitTitle += "Fiducial Fit %s, "%self.labels.dict['%s_name'%fid]
+            FitTitle += "Hypothesis %s "%self.labels.dict['%s_name'%hypo]
+        if trials is not None:
+            FitTitle += "(%i Trials)"%trials
+        FitTitle += r"\end{center}"
+        return FitTitle
+
+    def make_1D_hist_plot(self, data, xlabel, title, ylabel, bins=10,
+                          histtype='bar', color='darkblue', alpha=0.9,
+                          xlabelsize='18', ylabelsize='18',
+                          titlesize=16, subplots_adjust=True):
+        """Generic 1D histogram plotting function. Set subplots_adjust to 
+        True if the title goes over two lines and you need the plot to 
+        account for this."""
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+        plt.grid(axis='y', zorder=0)
+        plt.hist(
+            data,
+            bins=bins,
+            histtype=histtype,
+            color=color,
+            alpha=alpha,
+            zorder=3
+        )
+        plt.xlabel(xlabel, size=xlabelsize)
+        plt.ylabel(ylabel, size=ylabelsize)
+        plt.title(title, fontsize=titlesize)
+        if subplots_adjust:
+            plt.subplots_adjust(left=0.10, right=0.90, top=0.85, bottom=0.11)
+
     def make_2D_hist_plot(self, zvals, xbins, ybins, xlabel, xunits,
                           ylabel, yunits, zlabel, zunits, levels=None,
                           cmap='Blues'):
@@ -2062,7 +2576,7 @@ class Postprocessor(object):
         nice_ylabel = self.make_label(ylabel, yunits)
         plt.ylabel(nice_ylabel,fontsize=24)
 
-    def save_plot(self, outdir, end, fid=None, hypo=None):
+    def save_plot(self, outdir, end, fid=None, hypo=None, fhkey=None):
         """Save plot as each type of file format specified in self.formats"""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
@@ -2074,14 +2588,39 @@ class Postprocessor(object):
             save_name += "%s_"%self.detector
         if self.selection is not None:
             save_name += "%s_"%self.selection
+        if ((fid is not None) and (hypo is not None)) and (fhkey is not None):
+            raise ValueError(
+                "Got a fid, hypo and fhkey specified. Please use fid "
+                "and hypo OR fhkey (from which fid and hypo will be "
+                "extracted) but not both."
+            )
         if fid is not None:
             save_name += "fid_%s_"%self.labels.dict['%s_name'%fid]
         if hypo is not None:
+            save_name += "hypo_%s_"%self.labels.dict['%s_name'%hypo]
+        if fhkey is not None:
+            hypo = fhkey.split('_')[0]
+            fid = fhkey.split('_')[-2]
+            save_name += "fid_%s_"%self.labels.dict['%s_name'%fid]
             save_name += "hypo_%s_"%self.labels.dict['%s_name'%hypo]
         save_name += end
         for fileformat in self.formats:
             full_save_name = save_name + '.%s'%fileformat
             plt.savefig(os.path.join(outdir, full_save_name))
+
+    def make_tex_name(self, end):
+        """Save plot as each type of file format specified in self.formats"""
+        tex_name = ""
+        if hasattr(self, 'labels'):
+            if 'data_name' in self.labels.dict.keys():
+                tex_name += "true_%s_"%self.labels.dict['data_name']
+        if self.detector is not None:
+            tex_name += "%s_"%self.detector
+        if self.selection is not None:
+            tex_name += "%s_"%self.selection
+        tex_name += end
+        tex_name += ".tex"
+        return tex_name
 
     #### General Style Functions ####
 
@@ -2281,7 +2820,7 @@ def main_profile_scan():
 
     # 2D profile scans
     elif len(postprocessor.all_bin_cens) == 2:
-        #postprocessor.plot_2D_scans()
+        postprocessor.plot_2D_scans()
         if (postprocessor.all_bin_names[0] == 'theta23') and \
            (postprocessor.all_bin_names[1] == 'deltam31'):
             deltam21 = postprocessor.scan_file_dict['results'][0][
@@ -2359,64 +2898,72 @@ def main_analysis_postprocessing():
                              hypo_testing_analysis=True)
 
     if init_args_d['asimov']:
-        data_sets, all_params, labels, minimiser_info = extract_trials(
-            logdir=init_args_d['dir'],
-            fluctuate_fid=False,
-            fluctuate_data=False
+        raise NotImplementedError(
+            "Postprocessing of Asimov trials not implemented yet."
         )
-        od = data_sets.values()[0]
+        #data_sets, all_params, labels, minimiser_info = extract_trials(
+        #    logdir=init_args_d['dir'],
+        #    fluctuate_fid=False,
+        #    fluctuate_data=False
+        #)
+        #od = data_sets.values()[0]
         #if od['h1_fit_to_h0_fid']['fid_asimov']['metric_val'] > od['h0_fit_to_h1_fid']['fid_asimov']['metric_val']:
-        print np.sqrt(np.abs(
-            od['h1_fit_to_h0_fid']['fid_asimov']['metric_val'] -
-            od['h0_fit_to_h1_fid']['fid_asimov']['metric_val']
-        ))
-        return
+        #print np.sqrt(np.abs(
+        #    od['h1_fit_to_h0_fid']['fid_asimov']['metric_val'] -
+        #    od['h0_fit_to_h1_fid']['fid_asimov']['metric_val']
+        #))
+        #return
 
     # Otherwise: LLR analysis
     if init_args_d['outdir'] is None:
         raise ValueError('Must specify --outdir when processing LLR results.')
 
-    if len(formats) > 0:
-        logging.info('Files will be saved in format(s) %s', formats)
+    if len(init_args_d['formats']) > 0:
+        logging.info(
+            "Files will be saved in format(s) %s"%init_args_d['formats']
+        )
     else:
         raise ValueError('Must specify a plot file format, either --png or'
                          ' --pdf, when processing LLR results.')
 
     postprocessor = Postprocessor(
         analysis_type='hypo_testing',
-        test_type=None,
+        test_type='analysis',
         logdir=init_args_d['dir'],
         detector=init_args_d['detector'],
         selection=init_args_d['selection'],
         outdir=init_args_d['outdir'],
         formats=init_args_d['formats'],
         fluctuate_fid=True,
-        fluctuate_data=False
+        fluctuate_data=False,
+        extra_points = init_args_d['extra_point'],
+        extra_points_labels = init_args_d['extra_point_label']
     )
 
     trial_nums = postprocessor.data_sets[
         'toy_%s_asimov'%postprocessor.labels.dict[
             'data_name']]['h0_fit_to_h1_fid'].keys()
 
-    postprocessor.extract_fid_data()
-    postprocessor.extract_data()
-    postprocessor.store_extra_points(
-        extra_points = init_args_d['extra_point'],
-        extra_points_labels = init_args_d['extra_point_label']
-    )
-
     if init_args_d['threshold'] != 0.0:
         logging.info('Outlying trials will be removed with a '
                      'threshold of %.2f', init_args_d['threshold'])
-        postprocessor.purge_failed_jobs(
+        postprocessor.purge_outlying_trials(
             trial_nums=np.array(trial_nums),
             thresh=init_args_d['threshold']
         )
     else:
         logging.info('All trials will be included in the analysis.')
 
-    if len(trial_nums) != 1:
-        postprocessor.make_llr_plots()
+    #if len(trial_nums) != 1:
+    #    postprocessor.make_llr_plots()
+    #
+    #postprocessor.make_fiducial_fit_files()
+    #
+    #if init_args_d['fit_information']:
+    #    postprocessor.make_fit_information_plots()
+
+    if init_args_d['individual_posteriors']:
+        postprocessor.make_individual_posterior_plots()
 
 
 def main_injparamscan_postprocessing():
