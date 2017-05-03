@@ -1,3 +1,6 @@
+# author : S.Wren
+#
+# date   : May 2017
 """
 A class for doing postprocessing.
 
@@ -147,6 +150,12 @@ def parse_args(description=__doc__, profile_scan=False,
         help='''Produce png plot(s).'''
     )
     parser.add_argument(
+        '--plot-settings-file', metavar='FILE', type=str, required=False,
+        help='''File with settings related to the look of the 
+        output plots. If none is set then the defaults will be 
+        loaded from postprocess/default.json'''
+    )
+    parser.add_argument(
         '-v', action='count', default=None,
         help='''set verbosity level'''
     )
@@ -165,6 +174,35 @@ def parse_args(description=__doc__, profile_scan=False,
         init_args_d['formats'].append('pdf')
     
     return init_args_d
+
+
+class Plotstyle(object):
+    """Class to contain all of the settings one could want 
+    for plotting.  The idea is that this can be loaded in to 
+    a script with an appropriate initialisation file and then 
+    the user can just edit this initialisation file to have 
+    whatever plotting style they want.
+
+    Parameters
+    ----------
+    initfile : string
+        Path to a file containing all of the required settings
+        for plotting
+    """
+
+    def __init__(self, initfile=None):
+        if initfile is None:
+            initfile = "postprocess/default.json"
+        self.style_dict = from_file(initfile)
+
+    def __getattr__(self, name):
+        if name in self.style_dict.keys():
+            return self.style_dict[name]
+        else:
+            raise ValueError(
+                "The requested setting %s is not present "
+                "in this style dict."%name
+            )
 
 
 class Postprocessingargparser(object):
@@ -280,7 +318,8 @@ class Postprocessor(object):
     def __init__(self, analysis_type, detector, selection, outdir, formats,
                  test_type=None, logdir=None, fluctuate_fid=None,
                  fluctuate_data=None, scan_file=None, best_fit_file=None,
-                 extra_points=None, extra_points_labels=None):
+                 extra_points=None, extra_points_labels=None,
+                 plot_settings_file=None):
         expected_analysis_types = ['hypo_testing', 'profile_scan']
         if analysis_type not in expected_analysis_types:
             raise ValueError(
@@ -299,6 +338,7 @@ class Postprocessor(object):
                     analysis_type, expected_test_types, test_type)
             )
         # Things to store for all postprocessing
+        self.plotstyle = Plotstyle(initfile=plot_settings_file)
         self.detector = detector
         self.selection = selection
         self.outdir = outdir
@@ -2743,8 +2783,7 @@ class Postprocessor(object):
                     ylabel=ylabel,
                     yunits=yunits,
                     zlabel=zlabel,
-                    zunits=zunits,
-                    levels=[0,4.605]
+                    zunits=zunits
                 )
             else:
                 self.make_2D_hist_plot(
@@ -2854,42 +2893,48 @@ class Postprocessor(object):
             plt.subplots_adjust(left=0.10, right=0.90, top=0.85, bottom=0.11)
 
     def make_2D_hist_plot(self, zvals, xbins, ybins, xlabel, xunits,
-                          ylabel, yunits, zlabel, zunits, levels=None,
-                          cmap='Blues', xticks=None, yticks=None):
+                          ylabel, yunits, zlabel, zunits, cmap=None,
+                          xticks=None, yticks=None):
         """Generic 2D histogram-style plotting function. Set zlabel to contour
-        to make a contour plot instead of a histogram."""
+        to make a contour plot instead of a histogram. cmap will be taken from
+        the Plotstyle object unless explicitly overwritten"""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         if zlabel == 'contour':
-            origin = 'lower'
-            if levels is None:
-                raise ValueError(
-                    "Contour plot requested without setting what contours"
-                    " to plot."
-                )
             X, Y = np.meshgrid(xbins, ybins)
             plt.contour(
                 X,
                 Y,
                 zvals.T,
-                levels,
-                colors=('k',),
-                linewidths=(3,),
-                origin=origin
+                self.plotstyle.contour_levels,
+                colors=self.plotstyle.contour_colors,
+                linewidths=self.plotstyle.contour_linewidths,
+                origin=self.plotstyle.contour_origin
             )
         else:
+            if cmap is None:
+                cmap = self.plotstyle.hist_2D_cmap
             plt.pcolormesh(xbins, ybins, zvals.T, cmap=cmap)
             nice_clabel = self.make_label(zlabel, zunits)
-            plt.colorbar().set_label(label=nice_clabel,fontsize=24)
+            plt.colorbar().set_label(
+                label=nice_clabel,
+                fontsize=self.plotstyle.hist_2D_clabelfontsize
+            )
             
         plt.xlim(xbins[0],xbins[-1])
         if xlabel is not None:
             nice_xlabel = self.make_label(xlabel, xunits)
-            plt.xlabel(nice_xlabel,fontsize=24)
+            plt.xlabel(
+                nice_xlabel,
+                fontsize=self.plotstyle.hist_2D_xlabelfontsize
+            )
         plt.ylim(ybins[0],ybins[-1])
         if ylabel is not None:
             nice_ylabel = self.make_label(ylabel, yunits)
-            plt.ylabel(nice_ylabel,fontsize=24)
+            plt.ylabel(
+                nice_ylabel,
+                fontsize=self.plotstyle.hist_2D_ylabelfontsize
+            )
         if xticks is not None:
             if len(xticks) != (len(xbins)-1):
                 raise ValueError(
@@ -3349,7 +3394,7 @@ def main_analysis_postprocessing():
 
     if init_args_d['asimov']:
         raise NotImplementedError(
-            "Postprocessing of Asimov trials not implemented yet."
+            "Postprocessing of Asimov analysis not implemented yet."
         )
         #data_sets, all_params, labels, minimiser_info = extract_trials(
         #    logdir=init_args_d['dir'],

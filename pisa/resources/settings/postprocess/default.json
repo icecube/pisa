@@ -1,0 +1,17 @@
+{
+  "contour_origin": "lower",
+  "hist_2D_clabelfontsize": 24,
+  "hist_2D_ylabelfontsize": 24,
+  "contour_levels": [
+    0,
+    4.605
+  ],
+  "contour_colors": [
+    "k"
+  ],
+  "contour_linewidths": [
+    3
+  ],
+  "hist_2D_cmap": "Blues",
+  "hist_2D_xlabelfontsize": 24
+}
