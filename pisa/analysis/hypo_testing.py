@@ -12,7 +12,7 @@ logged by this script.
 """
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import Mapping, OrderedDict, Sequence
@@ -28,9 +28,7 @@ import sys
 import time
 from traceback import format_exception
 
-import pint
-
-from pisa import _version, __version__
+from pisa import ureg, _version, __version__
 from pisa.analysis.analysis import Analysis
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.map import MapSet
@@ -67,12 +65,12 @@ class Labels(object):
         self.hypo_prefix = 'hypo'
 
         if self.h0_name == '':
-            self.h0 = self.hypo_prefix
+            self.h0 = self.hypo_prefix # pylint: disable=invalid-name
         else:
             self.h0 = '%s_%s' %(self.hypo_prefix, self.h0_name)
 
         if self.h1_name == '':
-            self.h1 = self.hypo_prefix
+            self.h1 = self.hypo_prefix # pylint: disable=invalid-name
         else:
             self.h1 = '%s_%s' %(self.hypo_prefix, self.h1_name)
 
@@ -364,13 +362,13 @@ class HypoTesting(Analysis):
                 data_param_selections = [h0_param_selections]
 
         if (isinstance(h0_param_selections, Sequence)
-                and len(h0_param_selections) == 0):
+                and not h0_param_selections):
             h0_param_selections = None
         if (isinstance(h1_param_selections, Sequence)
-                and len(h1_param_selections) == 0):
+                and not h1_param_selections):
             h1_param_selections = None
         if (isinstance(data_param_selections, Sequence)
-                and len(data_param_selections) == 0):
+                and not data_param_selections):
             data_param_selections = None
 
         # Cannot specify either of `data_maker` or `data_param_selections` if
@@ -656,7 +654,7 @@ class HypoTesting(Analysis):
                 raise exc_l
 
             if exc[0] is not None:
-                raise
+                raise exc
 
     def generate_data(self):
         logging.info('Generating %s distributions.', self.labels.data_disp)
@@ -744,7 +742,7 @@ class HypoTesting(Analysis):
             logging.info('Fitting hypo %s to %s distributions.',
                          self.labels.h0_name, self.labels.data_disp)
             # Except in the case of no free params
-            if len(self.h0_maker.params.free) == 0:
+            if not self.h0_maker.params.free:
                 logging.info('No free params found. Returning fit value only')
                 h0_asimov_data = self.h0_maker.get_outputs(return_sum=True)
                 self.h0_fit_to_data = self.nofit_hypo(
@@ -800,7 +798,7 @@ class HypoTesting(Analysis):
             logging.info('Fitting hypo %s to %s distributions.',
                          self.labels.h1_name, self.labels.data_disp)
             # Except in the case of no free params
-            if len(self.h1_maker.params.free) == 0:
+            if not self.h1_maker.params.free:
                 logging.info('No free params found. Returning fit value only')
                 h1_asimov_data = self.h1_maker.get_outputs(return_sum=True)
                 self.h1_fit_to_data = self.nofit_hypo(
@@ -895,7 +893,7 @@ class HypoTesting(Analysis):
                 logging.info('Fitting hypo %s to its own %s distributions.',
                              self.labels.h0_name, self.labels.fid_disp)
                 # Except in the case of no free params
-                if len(self.h0_maker.params.free) == 0:
+                if not self.h0_maker.params.free:
                     logging.info('No free params found. '
                                  'Returning fit value only')
                     self.h0_fit_to_h0_fid = self.nofit_hypo(
@@ -948,7 +946,7 @@ class HypoTesting(Analysis):
                 logging.info('Fitting hypo %s to its own %s distributions.',
                              self.labels.h1_name, self.labels.fid_disp)
                 # Except in the case of no free params
-                if len(self.h0_maker.params.free) == 0:
+                if not self.h0_maker.params.free:
                     logging.info('No free params found. '
                                  'Returning fit value only')
                     self.h1_fit_to_h1_fid = self.nofit_hypo(
@@ -1006,7 +1004,7 @@ class HypoTesting(Analysis):
                 self.h1_maker.select_params(self.h1_param_selections)
                 self.h1_maker.reset_free()
                 # Except in the case of no free params
-                if len(self.h1_maker.params.free) == 0:
+                if not self.h1_maker.params.free:
                     logging.info('No free params found. '
                                  'Returning fit value only')
                     self.h1_fit_to_h0_fid = self.nofit_hypo(
@@ -1057,7 +1055,7 @@ class HypoTesting(Analysis):
                 self.h0_maker.select_params(self.h0_param_selections)
                 self.h0_maker.reset_free()
                 # Except in the case of no free params
-                if len(self.h0_maker.params.free) == 0:
+                if not self.h0_maker.params.free:
                     logging.info('No free params found. '
                                  'Returning fit value only')
                     self.h0_fit_to_h1_fid = self.nofit_hypo(
@@ -1208,17 +1206,17 @@ class HypoTesting(Analysis):
         self.h0_maker.select_params(self.h0_param_selections)
         if reset_params:
             self.h0_maker.reset_free()
-        self.h0_hash = self.h0_maker.state_hash
+        self.h0_hash = self.h0_maker.hash
 
         self.h1_maker.select_params(self.h1_param_selections)
         if reset_params:
             self.h1_maker.reset_free()
-        self.h1_hash = self.h1_maker.state_hash
+        self.h1_hash = self.h1_maker.hash
 
         self.data_maker.select_params(self.data_param_selections)
         if reset_params:
             self.data_maker.reset_free()
-        self.data_hash = self.data_maker.state_hash
+        self.data_hash = self.data_maker.hash
 
         # Single unique hash for hypotheses and data configurations
         self.config_hash = hash_obj([self.h0_hash, self.h1_hash,
@@ -1315,7 +1313,7 @@ class HypoTesting(Analysis):
         summary['data_is_data'] = self.data_is_data
         summary['data_hash'] = self.data_hash
         summary['data_param_selections'] = ','.join(self.data_param_selections)
-        summary['data_params_state_hash'] = self.data_maker.params.state_hash
+        summary['data_params_hash'] = self.data_maker.params.hash
         summary['data_params'] = [str(p) for p in self.data_maker.params]
         summary['data_pipelines'] = self.summarize_dist_maker(self.data_maker)
 
@@ -1325,7 +1323,7 @@ class HypoTesting(Analysis):
         summary['h0_name'] = self.labels.h0_name
         summary['h0_hash'] = self.h0_hash
         summary['h0_param_selections'] = ','.join(self.h0_param_selections)
-        summary['h0_params_state_hash'] = self.h0_maker.params.state_hash
+        summary['h0_params_hash'] = self.h0_maker.params.hash
         summary['h0_params'] = [str(p) for p in self.h0_maker.params]
         summary['h0_pipelines'] = self.summarize_dist_maker(self.h0_maker)
 
@@ -1335,7 +1333,7 @@ class HypoTesting(Analysis):
         summary['h1_name'] = self.labels.h1_name
         summary['h1_hash'] = self.h1_hash
         summary['h1_param_selections'] = ','.join(self.h1_param_selections)
-        summary['h1_params_state_hash'] = self.h1_maker.params.state_hash
+        summary['h1_params_hash'] = self.h1_maker.params.hash
         summary['h1_params'] = [str(p) for p in self.h1_maker.params]
         summary['h1_pipelines'] = self.summarize_dist_maker(self.h1_maker)
 
@@ -1360,7 +1358,7 @@ class HypoTesting(Analysis):
             stage_info = OrderedDict()
             for stage in pipeline:
                 k = ':'.join([stage.stage_name, stage.service_name,
-                              str(stage.state_hash)])
+                              str(stage.hash)])
                 d = OrderedDict()
                 for attr in ['input_binning', 'output_binning']:
                     if (hasattr(stage, attr)
@@ -1478,7 +1476,7 @@ class HypoTesting(Analysis):
                         v['hess_inv'] = v['hess_inv'].todense()
                     except AttributeError:
                         v['hess_inv'] = v['hess_inv']
-            if isinstance(v, pint.quantity._Quantity):
+            if isinstance(v, ureg.Quantity):
                 v = str(v)
             info[k] = v
         to_file(info, os.path.join(dirpath, label + '.json.bz2'),
@@ -2033,7 +2031,7 @@ def parse_args(description=__doc__, injparamscan=False, systtests=False):
         )
     parser.add_argument(
         '--metric',
-        type=str, default=None, metavar='METRIC',
+        type=str, required=True, metavar='METRIC', choices=ALL_METRICS,
         help='''Name of metric to use for optimizing the fit. Must be one of
         %s.''' % (ALL_METRICS,)
     )
@@ -2235,7 +2233,7 @@ def parse_args(description=__doc__, injparamscan=False, systtests=False):
             other_metrics = sorted(ALL_METRICS)
         if init_args_d['metric'] in other_metrics:
             other_metrics.remove(init_args_d['metric'])
-        if len(other_metrics) == 0:
+        if not other_metrics:
             other_metrics = None
         else:
             logging.info('Will evaluate other metrics %s', other_metrics)
@@ -2309,7 +2307,7 @@ def main(return_outputs=False):
     if return_outputs:
         return hypo_testing
 
-
+    
 def main_injparamscan():
     doc="""This will load the HypoTesting class and use it to do
     an Asimov test across the space of one of the injected parameters. The
@@ -2607,6 +2605,6 @@ def main_systtests():
         data_name=init_args_d['data_name']
     )
 
-
+    
 if __name__ == '__main__':
     Hypotestingargparser()

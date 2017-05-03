@@ -8,13 +8,14 @@ Generic file I/O, dispatching specific file readers/writers as necessary
 """
 
 
+from __future__ import absolute_import
+
 import cPickle
 import os
 import re
 
 import dill
 
-from pisa.utils.betterConfigParser import BetterConfigParser
 from pisa.utils import hdf
 from pisa.utils import jsons
 from pisa.utils import log
@@ -75,6 +76,32 @@ def expand(path, exp_user=True, exp_vars=True, absolute=False):
 
 
 def check_file_exists(fname, overwrite=True, warn=True):
+    """See if a file exists, warning, raising an exception, or doing neither if
+    it already exists.
+
+    Note that while this function can warn or raise an exception indicating the
+    file will be overwritten, this function does not actually overwrite any
+    files.
+
+    Parameters
+    ----------
+    fname : string
+        File name or path to try to find.
+
+    overwrite : bool
+        Whether it's okay for the file to be overwritten if it exists. Note
+        that this function does not actually overwrite the file.
+
+    warn : bool
+        Whether to warn the user that the file will be overwritten if it
+        exists. Note that this function does not actually overwrite the file.
+
+    Returns
+    -------
+    fpath : string
+        Expanded path of the `fname` passed in.
+
+    """
     fpath = expand(fname)
     if os.path.exists(fpath):
         if overwrite:
@@ -85,7 +112,7 @@ def check_file_exists(fname, overwrite=True, warn=True):
     return fpath
 
 
-def mkdir(d, mode=0750, warn=True):
+def mkdir(d, mode=0o0750, warn=True):
     """Simple wrapper around os.makedirs to create a directory but not raise an
     exception if the dir already exists
 
@@ -102,7 +129,7 @@ def mkdir(d, mode=0750, warn=True):
     try:
         os.makedirs(d, mode=mode)
     except OSError as err:
-        if err[0] == 17:
+        if err.errno == 17:
             if warn:
                 log.logging.warn('Directory "%s" already exists', d)
         else:
@@ -131,10 +158,10 @@ def get_valid_filename(s):
 
 
 def nsort(l):
-    """Numbers sorted by value, not by alpha order.
+    """Numbers in string sorted by value, not by alpha order.
 
-    Code from
-    nedbatchelder.com/blog/200712/human_sorting.html#comments
+    Code from nedbatchelder.com/blog/200712/human_sorting.html#comments
+
     """
     return sorted(
         l,
@@ -225,22 +252,27 @@ def find_files(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
 
 
 def from_cfg(fname):
+    """Load a PISA config file"""
+    from pisa.utils.config_parser import BetterConfigParser
     config = BetterConfigParser()
     config.read(fname)
     return config
 
 
 def from_pickle(fname):
+    """Load from a Python pickle file"""
     return cPickle.load(file(fname, 'rb'))
 
 
 def to_pickle(obj, fname, overwrite=True, warn=True):
+    """Save object to a pickle file"""
     check_file_exists(fname=fname, overwrite=overwrite, warn=warn)
     return cPickle.dump(obj, file(fname, 'wb'),
                         protocol=cPickle.HIGHEST_PROTOCOL)
 
 
 def from_txt(fname, as_array=False):
+    """Load from a text (txt) file"""
     if as_array:
         with open(fname, 'r') as f:
             a = f.readlines()
@@ -253,15 +285,18 @@ def from_txt(fname, as_array=False):
 
 
 def to_txt(obj, fname):
+    """Save object to a text (txt) file"""
     with open(fname, 'w') as f:
         f.write(obj)
 
 
 def from_dill(fname):
+    """Load from a `dill` file"""
     return dill.load(file(fname, 'rb'))
 
 
 def to_dill(obj, fname, overwrite=True, warn=True):
+    """Save an object to a `dill` file."""
     check_file_exists(fname=fname, overwrite=overwrite, warn=warn)
     return dill.dump(obj, file(fname, 'wb'), protocol=dill.HIGHEST_PROTOCOL)
 

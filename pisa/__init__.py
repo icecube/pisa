@@ -3,6 +3,9 @@ Define globals available to all modules in PISA
 
 """
 
+
+from __future__ import absolute_import
+
 from collections import namedtuple, OrderedDict
 import os
 import sys
@@ -23,6 +26,7 @@ else:
 
 NUMBA_AVAIL = False
 def dummy_func(x):
+    """Decorate to to see if Numba actually works"""
     x += 1
 try:
     from numba import jit as numba_jit
@@ -30,9 +34,9 @@ try:
 except Exception:
     #logging.debug('Failed to import or use numba', exc_info=True)
     def numba_jit(*args, **kwargs):
-        """Dummy decorator to replace Numba's `jit`"""
+        """Dummy decorator to replace `numba.jit` when Numba is not present"""
         def decorator(func):
-            """Decorator that gets the actual function being decorated"""
+            """Decorator that smply returns the function being decorated"""
             return func
         return decorator
 else:
@@ -41,7 +45,7 @@ else:
 NUMBA_CUDA_AVAIL = False
 try:
     from numba import cuda
-    assert len(cuda.gpus) > 0, 'No GPUs detected'
+    assert cuda.gpus, 'No GPUs detected'
     cuda.jit('void(float64)')(dummy_func)
 except Exception:
     pass #logging.debug('Failed to import or use numba.cuda', exc_info=True)
@@ -63,7 +67,8 @@ __all__ = [
     # Utilities that should be accessed centrally to avoid hassle
     'numba_jit',
 
-    # Python standard library  names so that `eval(repr(x)) == x`
+    # Python standard library and Numpy names so that `eval(repr(x)) == x` for
+    # all types defined in PISA
     'array', 'inf', 'namedtuple', 'OrderedDict',
 
     # Constants

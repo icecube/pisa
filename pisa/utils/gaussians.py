@@ -332,6 +332,7 @@ def test_gaussians():
     tprofile.debug('gaussians() timings  (Note: OMP_NUM_THREADS=%d; evaluated'
                    ' at %e points)', OMP_NUM_THREADS, n_eval)
     timings_str = '  '.join([format(t, '10d') for t in n_gaus])
+    tprofile.debug(' '*30 + 'Number of gaussians'.center(59))
     tprofile.debug('         %15s       %s', 'impl.', timings_str)
     timings_str = '  '.join(['-'*10 for t in n_gaus])
     tprofile.debug('         %15s       %s', '-'*15, timings_str)

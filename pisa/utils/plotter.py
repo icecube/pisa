@@ -16,6 +16,7 @@ mpl.use('Agg')
 from matplotlib import pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 
+from pisa import FTYPE
 from pisa.core.map import Map, MapSet
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.format import dollars, text2tex, tex_join
@@ -37,6 +38,10 @@ mpl.rcParams['mathtext.rm'] = 'Bitstream Vera Sans'
 mpl.rcParams['mathtext.it'] = 'Bitstream Vera Sans:italic'
 mpl.rcParams['mathtext.bf'] = 'Bitstream Vera Sans:bold'
 mpl.rcParams['font.size'] = 14
+
+
+def inf2finite(x):
+    return np.clip(x, a_min=np.finfo(FTYPE).min, a_max=np.finfo(FTYPE).max)
 
 
 class Plotter(object):
@@ -106,7 +111,7 @@ class Plotter(object):
         self.loc = loc
 
     def reset_colors(self):
-        self.colors = itertools.cycle(["r", "b", "g", "k", "c", "m", "y"])
+        self.colors = itertools.cycle('C%d' % n for n in range(10))
 
     def next_color(self):
         self.color = next(self.colors)
@@ -257,6 +262,7 @@ class Plotter(object):
             self.add_leg()
             if self.ratio:
                 plt.subplot2grid((4, 1), (3, 0), sharex=ax1)
+                #self.plot_1d_ratio(maps, plot_axis, r_vmin=0.1, r_vmax=0.1, **kwargs)
                 self.plot_1d_ratio(maps, plot_axis, **kwargs)
             self.dump('%s_%s'%(fname, maps[0].name))
 
@@ -453,8 +459,10 @@ class Plotter(object):
             )
         else:
             axis.hist(
-                plt_binning.weighted_centers, weights=unp.nominal_values(hist),
-                bins=plt_binning.bin_edges, histtype='step', lw=1.5,
+                inf2finite(plt_binning.weighted_centers.m),
+                weights=unp.nominal_values(hist),
+                bins=inf2finite(plt_binning.bin_edges.m), histtype='step',
+                lw=1.5,
                 label=dollars(text2tex(map.tex)), color=self.color, **kwargs
             )
             axis.bar(
@@ -463,7 +471,7 @@ class Plotter(object):
                 width=plt_binning.bin_widths, alpha=0.25, linewidth=0,
                 color=self.color, **kwargs
             )
-        axis.set_xlabel(dollars(text2tex(plt_binning.label)))
+        axis.set_xlabel(dollars(plt_binning.label))
         if self.label:
             axis.set_ylabel(dollars(text2tex(self.label)))
         if plt_binning.is_log:
@@ -472,7 +480,8 @@ class Plotter(object):
             axis.set_yscale('log')
         else:
             axis.set_ylim(0, np.max(unp.nominal_values(hist))*1.4)
-        axis.set_xlim(plt_binning.bin_edges.m[0], plt_binning.bin_edges.m[-1])
+        axis.set_xlim(inf2finite(plt_binning.bin_edges.m)[0],
+                      inf2finite(plt_binning.bin_edges.m)[-1])
         if self.grid:
             plt.grid(True, which="both", ls='-', alpha=0.2)
 
@@ -497,7 +506,8 @@ class Plotter(object):
         # TODO: should this be used somewhere?
         err0 = unp.std_devs(hist)
 
-        axis.set_xlim(plt_binning.bin_edges.m[0], plt_binning.bin_edges.m[-1])
+        axis.set_xlim(inf2finite(plt_binning.bin_edges.m)[0],
+                      inf2finite(plt_binning.bin_edges.m)[-1])
         maximum = 1.0
         minimum = 1.0
         self.reset_colors()
@@ -530,9 +540,12 @@ class Plotter(object):
                 )
             else:
                 _ = axis.hist(
-                    plt_binning.weighted_centers, weights=ratio,
-                    bins=plt_binning.bin_edges, histtype='step', lw=1.5,
-                    label=dollars(text2tex(map.tex)), color=self.color)
+                    inf2finite(plt_binning.weighted_centers.m),
+                    weights=ratio,
+                    bins=inf2finite(plt_binning.bin_edges.m),
+                    histtype='step', lw=1.5,
+                    label=dollars(text2tex(map.tex)), color=self.color
+                )
 
                 axis.bar(
                     plt_binning.bin_edges.m[:-1], 2*ratio_error,
@@ -544,13 +557,13 @@ class Plotter(object):
             plt.grid(True, which="both", ls='-', alpha=0.2)
         self.fig.subplots_adjust(hspace=0)
         axis.set_ylabel(dollars(text2tex('ratio')))
-        axis.set_xlabel(dollars(text2tex(plt_binning.label)))
+        axis.set_xlabel(dollars(plt_binning.label))
         # Calculate nice scale:
         if r_vmin is not None and r_vmax is not None:
             axis.set_ylim(1 - r_vmin, 1 + r_vmax)
         else:
             off = max(maximum-1, 1-minimum)
-            axis.set_ylim(1 - 1.2 * off, 1 + 1.2 * off )
+            axis.set_ylim(1 - 1.2 * off, 1 + 1.2 * off)
 
     def plot_xsec(self, map_set, ylim=None, logx=True):
         from pisa.utils import fileio
@@ -571,7 +584,7 @@ class Plotter(object):
             ax = fig.add_subplot(111)
             ax.grid(b=True, which='major')
             ax.grid(b=True, which='minor', linestyle=':')
-            plt.xlabel(dollars(text2tex(energy_binning.label)), size=18)
+            plt.xlabel(dollars(energy_binning.label), size=18)
             plt.ylabel(dollars(text2tex(self.label)), size=18)
             if self.log:
                 ax.set_yscale('log')

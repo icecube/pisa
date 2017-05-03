@@ -6,16 +6,17 @@
 #
 """
 Prior class for use in pisa.core.Param objects
-
 """
 
+
+from __future__ import absolute_import, division
 
 from collections import Iterable, OrderedDict
 from numbers import Number
 from operator import setitem
 
 import numpy as np
-from scipy.interpolate import splev, interp1d
+from scipy.interpolate import splev, splrep, interp1d
 from scipy.optimize import fminbound
 
 import pint
@@ -194,9 +195,7 @@ class Prior(object):
         self._str = lambda s: 'uniform prior, llh_offset=%s' %self.llh_offset
 
     def __init_jeffreys(self, A, B, m):
-        '''
-        Calculates jeffreys prior as defined in Sivia p.125
-        '''
+        """Calculate jeffreys prior as defined in Sivia p.125"""
         self.kind = 'jeffreys'
         if isinstance(A, Number):
             A = A * ureg.dimensionless
@@ -204,9 +203,9 @@ class Prior(object):
             B = B * ureg.dimensionless
         assert A.dimensionality == B.dimensionality
         self._state_attrs.extend(['A', 'B'])
-        if isinstance(A, pint.quantity._Quantity):
+        if isinstance(A, ureg.Quantity):
             self.units = str(A.units)
-            assert isinstance(B, pint.quantity._Quantity), '%s' %type(B)
+            assert isinstance(B, ureg.Quantity), '%s' %type(B)
             B = B.to(self.units)
         self.A = A
         self.B = B
@@ -230,9 +229,9 @@ class Prior(object):
         assert mean.dimensionality == stddev.dimensionality
         self._state_attrs.extend(['mean', 'stddev'])
         self.kind = 'gaussian'
-        if isinstance(mean, pint.quantity._Quantity):
+        if isinstance(mean, ureg.Quantity):
             self.units = str(mean.units)
-            assert isinstance(stddev, pint.quantity._Quantity), \
+            assert isinstance(stddev, ureg.Quantity), \
                     str(type(stddev))
             stddev = stddev.to(self.units)
         self.mean = mean
@@ -252,11 +251,11 @@ class Prior(object):
                   self.__stringify(self.mean), self.units_str)
 
     def __init_linterp(self, param_vals, llh_vals):
-        if not isinstance(param_vals, pint.quantity._Quantity):
+        if not isinstance(param_vals, ureg.Quantity):
             param_vals = param_vals * ureg.dimensionless
         self._state_attrs.extend(['param_vals', 'llh_vals'])
         self.kind = 'linterp'
-        if isinstance(param_vals, pint.quantity._Quantity):
+        if isinstance(param_vals, ureg.Quantity):
             self.units = str(param_vals.units)
         self.interp = interp1d(param_vals, llh_vals, kind='linear', copy=True,
                                bounds_error=True, assume_sorted=False)
@@ -276,14 +275,14 @@ class Prior(object):
                   self.max_at_str, self.units_str)
 
     def __init_spline(self, knots, coeffs, deg, units=None):
-        if not isinstance(knots, pint.quantity._Quantity):
+        if not isinstance(knots, ureg.Quantity):
             if units is None:
                 knots = knots * ureg.dimensionless
             else:
                 knots = ureg.Quantity(np.asarray(knots), units)
         self._state_attrs.extend(['knots', 'coeffs', 'deg', 'units'])
         self.kind = 'spline'
-        if isinstance(knots, pint.quantity._Quantity):
+        if isinstance(knots, ureg.Quantity):
             self.units = str(knots.units)
         self.knots = knots
         self.coeffs = coeffs
@@ -309,13 +308,13 @@ class Prior(object):
 
     def __check_units(self, param_val):
         if self.units is None:
-            if (isinstance(param_val, pint.quantity._Quantity)
+            if (isinstance(param_val, ureg.Quantity)
                     and param_val.dimensionality
                     != ureg.dimensionless.dimensionality):
                 raise TypeError('Passed a value with units (%s), but this'
                                 ' prior has no units.' %param_val.units)
         else:
-            if not isinstance(param_val, pint.quantity._Quantity):
+            if not isinstance(param_val, ureg.Quantity):
                 raise TypeError('Passed a value without units, but this prior'
                                 ' has units (%s).' %self.units)
             if param_val.dimensionality != ureg(self.units).dimensionality:
@@ -325,12 +324,12 @@ class Prior(object):
 
     def __convert(self, x):
         if self.units is None:
-            if (isinstance(x, pint.quantity._Quantity)
+            if (isinstance(x, ureg.Quantity)
                     and x.dimensionality != ureg.dimensionless.dimensionality):
                 raise TypeError('No units on prior, so cannot understand'
                                 ' passed value (with units): %s' %x)
             return x
-        if not isinstance(x, pint.quantity._Quantity):
+        if not isinstance(x, ureg.Quantity):
             raise TypeError('Units %s must be present on param values (got'
                             ' %s, type %s instead).'
                             % (self.units, x, type(x)))
@@ -338,7 +337,7 @@ class Prior(object):
 
     @staticmethod
     def __strip(x):
-        if isinstance(x, pint.quantity._Quantity):
+        if isinstance(x, ureg.Quantity):
             return x.magnitude
         return x
 
@@ -397,7 +396,7 @@ def plot_prior(obj, param=None, x_xform=None, ax1=None, ax2=None, **plt_kwargs):
         obj = obj['prior']
 
     prior = Prior(**obj)
-    logging.info('Plotting Prior: %s' %prior)
+    logging.info('Plotting Prior: %s', prior)
     x0 = prior.valid_range[0]
     x1 = prior.valid_range[1]
     if prior.kind == 'gaussian':
@@ -485,7 +484,7 @@ def get_prior_bounds(obj, param=None, stddev=1.0):
 
     prior = Prior(**obj)
 
-    logging.debug('Getting confidence region from prior: %s' % prior)
+    logging.debug('Getting confidence region from prior: %s', prior)
     x0 = prior.valid_range[0]
     x1 = prior.valid_range[1]
     x = ureg.Quantity(np.linspace(x0, x1, 10000), prior.units)
@@ -501,10 +500,10 @@ def get_prior_bounds(obj, param=None, stddev=1.0):
 
 
 # TODO enumerate all the cases rather than picking just a few.
+
+# pylint: disable=unused-variable
 def test_Prior():
     """Unit tests for Prior class"""
-    from scipy.interpolate import splrep, splev
-
     uniform = Prior(kind='uniform', llh_offset=1.5)
     gaussian = Prior(kind='gaussian', mean=10, stddev=1)
     x = np.linspace(-10, 10, 100)
