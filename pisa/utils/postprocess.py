@@ -10,6 +10,7 @@ import os
 import re
 import sys
 import numpy as np
+from scipy.stats import spearmanr
 
 from pisa import ureg
 from pisa.analysis.hypo_testing import Labels
@@ -64,7 +65,17 @@ def parse_args(description=__doc__, profile_scan=False,
     )
     if hypo_testing_analysis:
         parser.add_argument(
+            '-LLR', '--llr_plots', action='store_true', default=False,
+            help='''Flag to make the LLR plots. This will give the 
+            actual analysis results.'''
+        )
+        parser.add_argument(
             '-FM', '--fit_information', action='store_true', default=False,
+            help='''Flag to make tex files containing the 
+            fiducial fit params and metric.'''
+        )
+        parser.add_argument(
+            '-MM', '--minim_information', action='store_true', default=False,
             help='''Flag to make plots of the minimiser information i.e. status,
             number of iterations, time taken etc.'''
         )
@@ -412,6 +423,14 @@ class Postprocessor(object):
                 info.pop(key)
         return info
 
+    def get_hypo_from_fiducial_hypo_key(self, fhkey):
+        """Returns the hypo from the fiducial/fit-hypothesis key"""
+        return fhkey.split('_')[0]
+
+    def get_fid_from_fiducial_hypo_key(self, fhkey):
+        """Returns the fid from the fiducial/fit-hypothesis key"""
+        return fhkey.split('_')[-2]
+
     def extract_paramval(self, injparams, systkey, fhkey=None, paramlabel=None):
         """Extract a value from a set of parameters and modify it based on the
         hypothesis/fiducial fit being considered. The label associated with this
@@ -425,8 +444,8 @@ class Postprocessor(object):
                 )
             return paramval
         else:
-            hypo = fhkey.split('_')[0]
-            fid = fhkey.split('_')[-2]
+            hypo = self.get_hypo_from_fiducial_hypo_key(fhkey=fhkey)
+            fid = self.get_fid_from_fiducial_hypo_key(fhkey=fhkey)
             fid_label = self.labels.dict['%s_name'%fid]
             hypo_label = self.labels.dict['%s_name'%hypo]
             if systkey == 'deltam31':
@@ -614,21 +633,263 @@ class Postprocessor(object):
             data_params = None
         return data_params
 
-    def make_individual_posterior_plots(self):
-        """Make posterior plots and save each time."""
+    def make_scatter_plots(self, combined=False,
+                           singlesyst=False, matrix=False,):
+        """Make scatter plots."""
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+        if matrix:
+            if combined or singlesyst:
+                raise ValueError(
+                    "Function must be used to plot the correlation "
+                    "matrix or the scatter plots, but not both at "
+                    "the same time."
+                )
+            try:
+                import matplotlib.patheffects as PathEffects
+                logging.warn(
+                    "PathEffects could be imported, so the correlation values"
+                    " will be written on the bins. This is slow."
+                )
+                pe = True
+            except ImportError:
+                logging.warn(
+                    "PathEffects could not be imported, so the correlation"
+                    " values will not be written on the bins.")
+                pe = False
+            outdir = os.path.join(self.outdir, 'CorrelationMatrices')
+            MainTitle = self.make_main_title(end='Correlation Coefficients')
+            Systs = []
+        else:
+            if combined:
+                outdir = os.path.join(self.outdir, 'CombinedScatterPlots')
+                MainTitle = self.make_main_title(end='Correlation Plots')
+            else:
+                outdir = os.path.join(self.outdir, 'IndividualScatterPlots')
+                MainTitle = self.make_main_title(end='Correlation Plot')
+        mkdir(outdir)
+        # These arguments to the scattering plot must be none
+        # for the case of individual plots.
+        if not combined:
+            num_rows = None
+            subplotnum = None
+            plot_cor = True
+        for injkey in self.values.keys():
+            for fhkey in self.values[injkey].keys():
+                FitTitle = self.make_fit_title(
+                    fhkey=fhkey,
+                    trials=self.num_trials
+                )
+                # Set up container for correlation coefficients
+                # containers, if necessary
+                if matrix:
+                    all_corr_lists = []
+                # Set up multi-plot, if necessary
+                ## Need a square of size numsyst x numsyst for all combined
+                if combined and (not singlesyst):
+                    # Systematic number is one less than number
+                    # of keys since this also contains the metric_val entry
+                    SystNum = len(self.values[injkey][fhkey].keys())-1
+                    plt.figure(figsize=(3.5*(SystNum-1), 3.5*(SystNum-1)))
+                    subplotnum = (SystNum-1)*(SystNum-1)+1
+                    # Set up container to know which correlations
+                    # have already been plotted
+                    PlottedSysts = []
+                    num_rows = None
+                    plot_cor = False
+                for xsystkey in self.values[injkey][fhkey].keys():
+                    # Set up container for correlation
+                    # coefficients if necessary
+                    if matrix:
+                        if not xsystkey == 'metric_val':
+                            all_corr_values = []
+                            if self.tex_axis_label(xsystkey) not in Systs:
+                                Systs.append(self.tex_axis_label(xsystkey))
+                    if combined and (not singlesyst):
+                        if not xsystkey == 'metric_val':
+                            PlottedSysts.append(xsystkey)
+                    # Set up multi-plot, if necessary
+                    ## One subplot for each systematic
+                    if combined and singlesyst:
+                        num_rows = self.get_num_rows(
+                            data=self.values[injkey][fhkey],
+                            omit_metric=False
+                        )
+                        plt.figure(figsize=(20, 5*num_rows+2))
+                        subplotnum = 1
+                        plot_cor = True
+                    for ysystkey in self.values[injkey][fhkey].keys():
+                        if matrix:
+                            if (not xsystkey == 'metric_val') and \
+                               (not ysystkey == 'metric_val'):
+                                rho, pval = self.get_correlation_coefficient(
+                                    xdata=self.values[injkey][fhkey][
+                                        xsystkey]['vals'],
+                                    ydata=self.values[injkey][fhkey][
+                                        ysystkey]['vals'],
+                                )
+                                all_corr_values.append(rho)
+                            
+                        if (not xsystkey == 'metric_val') and \
+                           (not ysystkey == 'metric_val') and \
+                           (not ysystkey == xsystkey):
+
+                            if combined and (not singlesyst):
+                                # Subplotnum counts backwards in the case of
+                                # putting all correlations on one canvas.
+                                subplotnum -= 1
+                                # Don't repeat plotted systematics
+                                if ysystkey not in PlottedSysts:
+                                    do_plot = True
+                                    plt.subplot(
+                                        SystNum-1,
+                                        SystNum-1,
+                                        subplotnum
+                                    )
+                                else:
+                                    do_plot = False
+                            # Don't plot the scatters when making the matrices
+                            elif matrix:
+                                do_plot = False
+                            # Plot is always wanted in other cases
+                            else:
+                                do_plot = True
+                                
+                            # Set up subplot, if necessary
+                            if combined and singlesyst:
+                                plt.subplot(num_rows, 4, subplotnum)
+                            if do_plot:
+                                self.make_2D_scatter_plot(
+                                    xdata=self.values[injkey][fhkey][
+                                        xsystkey]['vals'],
+                                    ydata=self.values[injkey][fhkey][
+                                        ysystkey]['vals'],
+                                    xlabel=xsystkey,
+                                    xunits=self.values[injkey][fhkey][
+                                        xsystkey]['units'],
+                                    ylabel=ysystkey,
+                                    yunits=self.values[injkey][fhkey][
+                                        ysystkey]['units'],
+                                    title=MainTitle+r'\\'+FitTitle,
+                                    num_rows=num_rows,
+                                    subplotnum=subplotnum,
+                                    plot_cor=plot_cor
+                                )
+                            # Advance the subplot number, if necessary
+                            if combined and singlesyst:
+                                subplotnum += 1
+                            # Save/close this plot, if necessary
+                            if not combined and not matrix:
+                                self.save_plot(
+                                    fhkey=fhkey,
+                                    outdir=outdir,
+                                    end='%s_%s_scatter_plot'%(
+                                        xsystkey,
+                                        ysystkey
+                                    )
+                                )
+                                plt.close()
+                    # Store the list of correlation values for plotting
+                    if matrix:
+                        if xsystkey != 'metric_val':
+                            all_corr_lists.append(all_corr_values)
+                    # Save/close this plot, if necessary
+                    if combined and singlesyst:
+                        plt.suptitle(MainTitle+r'\\'+FitTitle, fontsize=36)
+                        plt.tight_layout()
+                        plt.subplots_adjust(top=0.9)
+                        self.save_plot(
+                            fhkey=fhkey,
+                            outdir=outdir,
+                            end='%s_scatter_plots'%(
+                                xsystkey
+                            )
+                        )
+                        plt.close()
+
+                if matrix:
+                    all_corr_nparray = np.ma.masked_invalid(
+                        np.array(all_corr_lists)
+                    )
+                    self.make_2D_hist_plot(
+                        zvals=all_corr_nparray,
+                        xbins=np.linspace(-0.5,len(Systs)-0.5,len(Systs)+1),
+                        ybins=np.linspace(-0.5,len(Systs)-0.5,len(Systs)+1),
+                        xlabel=None,
+                        xunits=None,
+                        ylabel=None,
+                        yunits=None,
+                        zlabel='correlation_coefficients',
+                        zunits=None,
+                        xticks=Systs,
+                        yticks=Systs,
+                        cmap=plt.cm.RdBu
+                    )
+                    plt.subplots_adjust(
+                        bottom=0.30,
+                        left=0.27,
+                        right=0.95,
+                        top=0.88
+                    )
+                    plt.title(MainTitle+r'\\'+FitTitle, fontsize=16)
+                    self.save_plot(
+                        fhkey=fhkey,
+                        outdir=outdir,
+                        end='correlation_matrix'
+                    )
+                    if pe:
+                        self.add_annotation_to_2D_hist(
+                            annotations=all_corr_nparray
+                        )
+                        self.save_plot(
+                            fhkey=fhkey,
+                            outdir=outdir,
+                            end='correlation_matrix_values'
+                        )
+                    plt.close()
+                if combined and (not singlesyst):
+                    plt.suptitle(MainTitle+r'\\'+FitTitle, fontsize=120)
+                    plt.tight_layout()
+                    plt.subplots_adjust(top=0.9)
+                    self.save_plot(
+                        fhkey=fhkey,
+                        outdir=outdir,
+                        end='all_scatter_plots'
+                    )
+                    plt.close()
+
+    def make_posterior_plots(self, combined=False):
+        """Make posterior plots. With combined=False they will be saved 
+        each time but with combined=True they will be saved on a single 
+        canvas for each fiducial/hypothesis combination."""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
 
-        outdir = os.path.join(self.outdir, 'IndividualPosteriors')
+        if combined:
+            outdir = os.path.join(self.outdir, 'CombinedPosteriors')
+            MainTitle = self.make_main_title(end='Posteriors')
+        else:
+            outdir = os.path.join(self.outdir, 'IndividualPosteriors')
+            MainTitle = self.make_main_title(end='Posterior')
         mkdir(outdir)
-        MainTitle = self.make_main_title(end='Posterior')
-
+        
         for injkey in self.values.keys():
             for fhkey in self.values[injkey].keys():
+                # Set up multi-plot if needed
+                if combined:
+                    num_rows = self.get_num_rows(
+                        data=self.values[injkey][fhkey],
+                        omit_metric=False
+                    )
+                    plt.figure(figsize=(20, 5*num_rows+2))
+                    subplotnum = 1
+                else:
+                    subplotnum = None
+                # Loop through the systematics
                 for systkey in self.values[injkey][fhkey].keys():
                     FitTitle = self.make_fit_title(
                         fhkey=fhkey,
-                        trials=len(self.values[injkey][fhkey][systkey]['vals'])
+                        trials=self.num_trials
                     )
                     systunits = self.values[injkey][fhkey][systkey]['units']
                     if systkey == 'metric_val':
@@ -639,18 +900,27 @@ class Postprocessor(object):
                         xlabel = self.tex_axis_label(systkey)
                     if not systunits == 'dimensionless':
                         xlabel += r' (%s)'%self.tex_axis_label(systunits)
+                    # Specify the subplot, if necessary
+                    if combined:
+                        plt.subplot(num_rows, 4, subplotnum)
                     self.make_1D_hist_plot(
                         data=np.array(
                             self.values[injkey][fhkey][systkey]['vals']
                         ),
                         xlabel=xlabel,
                         title=MainTitle+r'\\'+FitTitle,
-                        ylabel='Number of Trials'
+                        ylabel='Number of Trials',
+                        subplotnum=subplotnum
                     )
-
+                    # Add the details i.e. injected/fiducial lines and priors
                     plt.ylim(0, 1.35*plt.ylim()[1])
                     if not systkey == 'metric_val':
                         self.add_inj_fid_lines(
+                            injkey=injkey,
+                            systkey=systkey,
+                            fhkey=fhkey
+                        )
+                        self.add_prior_region(
                             injkey=injkey,
                             systkey=systkey,
                             fhkey=fhkey
@@ -660,20 +930,70 @@ class Postprocessor(object):
                             fontsize=12,
                             framealpha=1.0
                         )
-
                     plt.subplots_adjust(
                         left=0.10,
                         right=0.90,
                         top=0.85,
                         bottom=0.11
                     )
-
+                    # Advance the subplot number, if necessary
+                    if combined:
+                        subplotnum += 1
+                    # Else, save/close this plot
+                    else:
+                        self.save_plot(
+                            fhkey=fhkey,
+                            outdir=outdir,
+                            end='%s_posterior'%systkey
+                        )
+                        plt.close()
+                # Save the whole canvas, if necessary
+                if combined:
+                    plt.suptitle(MainTitle+r'\\'+FitTitle, fontsize=36)
+                    plt.tight_layout()
+                    plt.subplots_adjust(top=0.9)
                     self.save_plot(
                         fhkey=fhkey,
                         outdir=outdir,
-                        end='%s_posterior'%systkey
+                        end='posteriors'
                     )
                     plt.close()
+
+    def add_prior_region(self, injkey, systkey, fhkey):
+        """Add a shaded region to show the 1 sigma band of the prior"""
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+        # TODO - Deal with non-gaussian priors
+        hypo = self.get_hypo_from_fiducial_hypo_key(fhkey=fhkey)
+        wanted_params = self.all_params['%s_params'%hypo]
+        for param in wanted_params.keys():
+            if param == systkey:
+                if 'gaussian' in wanted_params[param]['prior']:
+                    stddev, maximum = self.extract_gaussian(
+                        prior_string=wanted_params[param]['prior'],
+                        units=self.values[injkey][fhkey][systkey]['units']
+                    )
+                    currentxlim = plt.xlim()
+                    if (np.abs(stddev) < 1e-2) and (stddev != 0.0):
+                        priorlabel = (r'Gaussian Prior '
+                                      '($%.3e\pm%.3e$)'%(maximum, stddev))
+                    else:
+                        priorlabel = (r'Gaussian Prior '
+                                      '($%.3g\pm%.3g$)'%(maximum, stddev))
+                    plt.axvspan(
+                        maximum-stddev,
+                        maximum+stddev,
+                        color='k',
+                        label=priorlabel,
+                        ymax=0.1,
+                        alpha=0.5,
+                        zorder=5
+                    )
+                    # Reset xlimits if prior makes it go far off
+                    if plt.xlim()[0] < currentxlim[0]:
+                        plt.xlim(currentxlim[0], plt.xlim()[1])
+                    if plt.xlim()[1] > currentxlim[1]:
+                        plt.xlim(plt.xlim()[0], currentxlim[1])
 
     def add_inj_fid_lines(self, injkey, systkey, fhkey):
         """Add lines to show the injected and fiducial fit lines
@@ -704,7 +1024,7 @@ class Postprocessor(object):
                 injval = None
         else:
             injval = None
-        if fhkey.split('_')[-2] == 'h0':
+        if self.get_fid_from_fiducial_hypo_key(fhkey=fhkey) == 'h0':
             fitval, fitlabelproper = self.extract_paramval(
                 injparams=h0_params,
                 systkey=systkey,
@@ -713,7 +1033,7 @@ class Postprocessor(object):
                     self.labels.dict['h0_name']
                 )
             )
-        elif fhkey.split('_')[-2] == 'h1':
+        elif self.get_fid_from_fiducial_hypo_key(fhkey=fhkey) == 'h1':
             fitval, fitlabelproper = self.extract_paramval(
                 injparams=h1_params,
                 systkey=systkey,
@@ -781,7 +1101,7 @@ class Postprocessor(object):
                         minimiser_units = bits[1]
                     FitTitle = self.make_fit_title(
                         fhkey=fhkey,
-                        trials=len(minimiser_times)
+                        trials=self.num_trials
                     )
                     data_to_plot = [
                         minimiser_times,
@@ -1052,7 +1372,6 @@ class Postprocessor(object):
                 data['h1_fit_to_h1_fid']['metric_val']['vals']
             )
 
-        num_trials = len(h0_fit_to_h0_fid_metrics)
         metric_type = data['h0_fit_to_h0_fid']['metric_val']['type']
         metric_type_pretty = self.tex_axis_label(metric_type)
 
@@ -1110,14 +1429,14 @@ class Postprocessor(object):
         crit_p_value, unc_crit_p_value = self.calc_p_value(
             LLRdist=LLRalt,
             critical_value=critical_value,
-            num_trials=num_trials,
+            num_trials=self.num_trials,
             greater=True
         )
         ## Then for the alternate hypothesis based on the fiducial fit
         alt_crit_p_value, alt_unc_crit_p_value = self.calc_p_value(
             LLRdist=LLRbest,
             critical_value=critical_value,
-            num_trials=num_trials,
+            num_trials=self.num_trials,
             greater=False
         )
         ## Combine these to give a CLs value based on arXiv:1407.5052
@@ -1132,7 +1451,7 @@ class Postprocessor(object):
         med_p_value, unc_med_p_value, median_error = self.calc_p_value(
             LLRdist=LLRalt,
             critical_value=best_median,
-            num_trials=num_trials,
+            num_trials=self.num_trials,
             greater=True,
             median_p_value=True,
             LLRbest=LLRbest
@@ -1922,7 +2241,6 @@ class Postprocessor(object):
                 self.get_set_file_nums(
                     filedir=os.path.join(self.logdir, basename)
                 )
-                num_trials = len(self.set_file_nums)
                 # Take one of the pickle files to see how many data
                 # entries it has.
                 data_sets = from_file(os.path.join(self.logdir,
@@ -1934,7 +2252,7 @@ class Postprocessor(object):
                     'h0_fit_to_h0_fid'].keys())
                 # The number of pickle trials should match the number of
                 # trials derived from the output directory.
-                if num_trials == pckl_trials:
+                if self.num_trials == pckl_trials:
                     logging.info(
                         'Found files I assume to be from a previous run of'
                         ' this processing script containing %i trials. If '
@@ -1995,6 +2313,7 @@ class Postprocessor(object):
                     file_nums[hypokey]
                 )
         self.set_file_nums = set_file_nums
+        self.num_trials = len(set_file_nums)
 
     def get_starting_params(self, cfg):
         """Extracts the h0, h1 and data (if possible) params from the config 
@@ -2163,18 +2482,7 @@ class Postprocessor(object):
         self.minimiser_info = from_file(
             os.path.join(self.logdir, 'minimiser_info.pckl')
         )
-
-    def get_num_rows(self, data, omit_metric=False):
-        """Calculates the number of rows for multiplots based on the number of 
-        systematics."""
-        if omit_metric:
-            num_rows = int((len(data.keys())-1)/4)
-        else:
-            num_rows = int(len(data.keys())/4)
-        if len(data.keys())%4 != 0:
-            num_rows += 1
-        return num_rows
-
+        
     def parse_binning_string(self, binning_string):
         """Returns a dictionary that can be used to instantiate a binning
         object from the output of having run str on the original binning
@@ -2507,8 +2815,8 @@ class Postprocessor(object):
         if hypo is not None:
             FitTitle += "Hypothesis %s "%self.labels.dict['%s_name'%hypo]
         if fhkey is not None:
-            hypo = fhkey.split('_')[0]
-            fid = fhkey.split('_')[-2]
+            hypo = self.get_hypo_from_fiducial_hypo_key(fhkey=fhkey)
+            fid = self.get_fid_from_fiducial_hypo_key(fhkey=fhkey)
             FitTitle += "Fiducial Fit %s, "%self.labels.dict['%s_name'%fid]
             FitTitle += "Hypothesis %s "%self.labels.dict['%s_name'%hypo]
         if trials is not None:
@@ -2519,7 +2827,8 @@ class Postprocessor(object):
     def make_1D_hist_plot(self, data, xlabel, title, ylabel, bins=10,
                           histtype='bar', color='darkblue', alpha=0.9,
                           xlabelsize='18', ylabelsize='18',
-                          titlesize=16, subplots_adjust=True):
+                          titlesize=16, subplots_adjust=True,
+                          subplotnum=None):
         """Generic 1D histogram plotting function. Set subplots_adjust to 
         True if the title goes over two lines and you need the plot to 
         account for this."""
@@ -2535,14 +2844,18 @@ class Postprocessor(object):
             zorder=3
         )
         plt.xlabel(xlabel, size=xlabelsize)
-        plt.ylabel(ylabel, size=ylabelsize)
-        plt.title(title, fontsize=titlesize)
+        if subplotnum is not None:
+            if (subplotnum-1)%4 == 0:
+                plt.ylabel(ylabel, size=ylabelsize)
+        else:
+            plt.ylabel(ylabel, size=ylabelsize)
+            plt.title(title, fontsize=titlesize)
         if subplots_adjust:
             plt.subplots_adjust(left=0.10, right=0.90, top=0.85, bottom=0.11)
 
     def make_2D_hist_plot(self, zvals, xbins, ybins, xlabel, xunits,
                           ylabel, yunits, zlabel, zunits, levels=None,
-                          cmap='Blues'):
+                          cmap='Blues', xticks=None, yticks=None):
         """Generic 2D histogram-style plotting function. Set zlabel to contour
         to make a contour plot instead of a histogram."""
         import matplotlib.pyplot as plt
@@ -2570,11 +2883,147 @@ class Postprocessor(object):
             plt.colorbar().set_label(label=nice_clabel,fontsize=24)
             
         plt.xlim(xbins[0],xbins[-1])
-        nice_xlabel = self.make_label(xlabel, xunits)
-        plt.xlabel(nice_xlabel,fontsize=24)
+        if xlabel is not None:
+            nice_xlabel = self.make_label(xlabel, xunits)
+            plt.xlabel(nice_xlabel,fontsize=24)
         plt.ylim(ybins[0],ybins[-1])
+        if ylabel is not None:
+            nice_ylabel = self.make_label(ylabel, yunits)
+            plt.ylabel(nice_ylabel,fontsize=24)
+        if xticks is not None:
+            if len(xticks) != (len(xbins)-1):
+                raise ValueError(
+                    "Got %i ticks for %i bins."%(len(xticks),len(xbins)-1)
+                )
+            plt.xticks(
+                np.arange(len(xticks)),
+                xticks,
+                rotation=45,
+                horizontalalignment='right'
+            )
+        if yticks is not None:
+            if len(yticks) != (len(ybins)-1):
+                raise ValueError(
+                    "Got %i ticks for %i bins."%(len(yticks),len(ybins)-1)
+                )
+            plt.yticks(
+                np.arange(len(xticks)),
+                yticks,
+                rotation=0
+            )
+
+    def add_annotation_to_2D_hist(self, annotations):
+        """Adds annotations to bins of 2D hist. Expects to be able 
+        to import PathEffects and will fail if it can't."""
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+        try:
+            import matplotlib.patheffects as PathEffects
+        except:
+            raise ImportError()
+
+        for i in range(0, len(annotations)):
+            for j in range(0, len(annotations[0])):
+                plt.text(i, j, '%.2f'%annotations[i][j],
+                         fontsize='7',
+                         verticalalignment='center',
+                         horizontalalignment='center',
+                         color='w',
+                         path_effects=[PathEffects.withStroke(
+                             linewidth=2.5,
+                             foreground='k'
+                         )])
+
+    def make_2D_scatter_plot(self, xdata, ydata, xlabel, xunits,
+                             ylabel, yunits, title, subplotnum=None,
+                             num_rows=None, plot_cor=True):
+        """Generic 2D scatter plotting function."""
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+
+        plt.scatter(xdata, ydata)
+
+        if isinstance(xdata, list):
+            Xrange = max(xdata) - min(xdata)
+            if Xrange != 0.0:
+                plt.xlim(min(xdata)-0.1*Xrange,
+                         max(xdata)+0.1*Xrange)
+        elif isinstance(xdata, np.ndarray):
+            Xrange = xdata.max() - xdata.min()
+            if Xrange != 0.0:
+                plt.xlim(xdata.min()-0.1*Xrange,
+                         xdata.max()+0.1*Xrange)
+        if isinstance(ydata, list):
+            Yrange = max(ydata) - min(ydata)
+            if Yrange != 0.0:
+                plt.ylim(min(ydata)-0.1*Yrange,
+                         max(ydata)+0.3*Yrange)
+        elif isinstance(ydata, np.ndarray):
+            Yrange = ydata.max() - ydata.min()
+            if Yrange != 0.0:
+                plt.ylim(ydata.min()-0.1*Yrange,
+                         ydata.max()+0.3*Yrange)
+
+        if plot_cor:
+            # Calculate correlation and annotate
+            rho, pval = self.get_correlation_coefficient(
+                xdata=xdata,
+                ydata=ydata
+            )
+            if (len(set(xdata)) != 1) and (len(set(ydata)) != 1):
+                if subplotnum is not None:
+                    if num_rows is None:
+                        raise ValueError(
+                            "Need to know the number of rows in "
+                            "order to correctly place the correlation "
+                            "annotation on the subplot"
+                        )
+                    row = int((subplotnum-1)/4)
+                    xtext = 0.25*0.25+((subplotnum-1)%4)*0.25
+                    ytext = 0.88-(1.0/num_rows)*0.9*row
+                    plt.figtext(
+                        xtext,
+                        ytext,
+                        'Correlation = %.2f'%rho,
+                        fontsize='large'
+                    )
+                else:
+                    plt.figtext(
+                        0.15,
+                        0.80,
+                        'Correlation = %.2f'%rho,
+                        fontsize=16
+                    )
+
+        nice_xlabel = self.make_label(xlabel, xunits)
+        plt.xlabel(nice_xlabel,fontsize=16)
         nice_ylabel = self.make_label(ylabel, yunits)
-        plt.ylabel(nice_ylabel,fontsize=24)
+        plt.ylabel(nice_ylabel,fontsize=16)
+        if subplotnum is None:
+            plt.title(title, fontsize=16)
+
+    def get_correlation_coefficient(self, xdata, ydata):
+        """Calculate the correlation coefficient between x and y"""
+        if len(set(xdata)) == 1:
+            logging.warn(
+                "Parameter %s appears to not have been varied. "
+                "i.e. all of the values in the set are the "
+                "same. This will lead to NaN in the correlation "
+                "calculation and so it will not be done."%xsystkey
+            )
+        if len(set(ydata)) == 1:
+            logging.warn(
+                "Parameter %s appears to not have been varied. "
+                "i.e. all of the values in the set are the "
+                "same. This will lead to NaN in the correlation "
+                "calculation and so it will not be done."%ysystkey
+            )
+        if (len(set(xdata)) != 1) and (len(set(ydata)) != 1):
+            rho, pval = spearmanr(xdata, ydata)
+        else:
+            rho = np.nan
+            pval = 0
+        return rho, pval
 
     def save_plot(self, outdir, end, fid=None, hypo=None, fhkey=None):
         """Save plot as each type of file format specified in self.formats"""
@@ -2599,8 +3048,8 @@ class Postprocessor(object):
         if hypo is not None:
             save_name += "hypo_%s_"%self.labels.dict['%s_name'%hypo]
         if fhkey is not None:
-            hypo = fhkey.split('_')[0]
-            fid = fhkey.split('_')[-2]
+            hypo = self.get_hypo_from_fiducial_hypo_key(fhkey=fhkey)
+            fid = self.get_fid_from_fiducial_hypo_key(fhkey=fhkey)
             save_name += "fid_%s_"%self.labels.dict['%s_name'%fid]
             save_name += "hypo_%s_"%self.labels.dict['%s_name'%hypo]
         save_name += end
@@ -2701,6 +3150,7 @@ class Postprocessor(object):
         pretty_labels["minimiser_iterations"] = r"Minimiser Iterations"
         pretty_labels["minimiser_funcevals"] = r"Minimiser Function Evaluations"
         pretty_labels["minimiser_status"] = r"Minimiser Status"
+        pretty_labels["correlation_coefficients"] = r"Correlation Coefficients"
         if label not in pretty_labels.keys():
             logging.warn("I don't know what to do with %s. "
                          "Returning as is."%label)
@@ -2954,16 +3404,30 @@ def main_analysis_postprocessing():
     else:
         logging.info('All trials will be included in the analysis.')
 
-    #if len(trial_nums) != 1:
-    #    postprocessor.make_llr_plots()
-    #
-    #postprocessor.make_fiducial_fit_files()
-    #
-    #if init_args_d['fit_information']:
-    #    postprocessor.make_fit_information_plots()
-
+    if init_args_d['llr_plots']:
+        if len(trial_nums) != 1:
+            postprocessor.make_llr_plots()
+        else:
+            raise ValueError(
+                "LLR plots were requested but only 1 trial "
+                "was found in the logdir."
+            )
+    if init_args_d['fit_information']:
+        postprocessor.make_fiducial_fit_files()
+    if init_args_d['minim_information']:
+        postprocessor.make_fit_information_plots()
     if init_args_d['individual_posteriors']:
-        postprocessor.make_individual_posterior_plots()
+        postprocessor.make_posterior_plots()
+    if init_args_d['combined_posteriors']:
+        postprocessor.make_posterior_plots(combined=True)
+    if init_args_d['individual_scatter']:
+        postprocessor.make_scatter_plots()
+    if init_args_d['combined_individual_scatter']:
+        postprocessor.make_scatter_plots(combined=True, singlesyst=True)
+    if init_args_d['combined_scatter']:
+        postprocessor.make_scatter_plots(combined=True)
+    if init_args_d['correlation_matrix']:
+        postprocessor.make_scatter_plots(matrix=True)
 
 
 def main_injparamscan_postprocessing():
