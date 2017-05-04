@@ -71,7 +71,7 @@ def parse_args(description=__doc__, profile_scan=False,
             help='''If you want to add other contours to your plots e.g.
             Other experiments then specify them here. This is expected to
             be a json dictionary with the following keys: vars, contour,
-            label, color and (optionally) the best_fit point.'''
+            label, color, linestyle and (optionally) the best_fit point.'''
         )
     parser.add_argument(
         '--detector', type=str, default='',
