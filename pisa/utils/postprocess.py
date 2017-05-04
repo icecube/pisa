@@ -58,6 +58,21 @@ def parse_args(description=__doc__, profile_scan=False,
             help='''Output file of profile_scan.py containing the best
             fit to add to the plots, if available.'''
         )
+        parser.add_argument(
+            '--projection-infile', metavar='FILE',
+            type=str, action='append', default=None,
+            help='''If you want to add projections to your plots e.g. 1D
+            projections to 2D plots you can specify them here. Repeat this
+            argument to specify multiple projections.'''
+        )
+        parser.add_argument(
+            '--other-contour', metavar='FILE',
+            type=str, action='append', default=None,
+            help='''If you want to add other contours to your plots e.g.
+            Other experiments then specify them here. This is expected to
+            be a json dictionary with the following keys: vars, contour,
+            label, color and (optionally) the best_fit point.'''
+        )
     parser.add_argument(
         '--detector', type=str, default='',
         help='''Name of detector to put in histogram titles.'''
@@ -69,12 +84,12 @@ def parse_args(description=__doc__, profile_scan=False,
     if hypo_testing_analysis:
         parser.add_argument(
             '-LLR', '--llr_plots', action='store_true', default=False,
-            help='''Flag to make the LLR plots. This will give the 
+            help='''Flag to make the LLR plots. This will give the
             actual analysis results.'''
         )
         parser.add_argument(
             '-FM', '--fit_information', action='store_true', default=False,
-            help='''Flag to make tex files containing the 
+            help='''Flag to make tex files containing the
             fiducial fit params and metric.'''
         )
         parser.add_argument(
@@ -99,7 +114,7 @@ def parse_args(description=__doc__, profile_scan=False,
         parser.add_argument(
             '-CIS', '--combined_individual_scatter',
             action='store_true', default=False,
-            help='''Flag to plot all 2D scatter plots of one systematic 
+            help='''Flag to plot all 2D scatter plots of one systematic
             with every other systematic on one plot for each h0 and h1
             combination.'''
         )
@@ -151,7 +166,7 @@ def parse_args(description=__doc__, profile_scan=False,
     )
     parser.add_argument(
         '--plot-settings-file', metavar='FILE', type=str, required=False,
-        help='''File with settings related to the look of the 
+        help='''File with settings related to the look of the
         output plots. If none is set then the defaults will be 
         loaded from postprocess/default.json'''
     )
@@ -172,15 +187,15 @@ def parse_args(description=__doc__, profile_scan=False,
         init_args_d['formats'].append('png')
     if args.pdf:
         init_args_d['formats'].append('pdf')
-    
+
     return init_args_d
 
 
 class Plotstyle(object):
-    """Class to contain all of the settings one could want 
-    for plotting.  The idea is that this can be loaded in to 
-    a script with an appropriate initialisation file and then 
-    the user can just edit this initialisation file to have 
+    """Class to contain all of the settings one could want
+    for plotting.  The idea is that this can be loaded in to
+    a script with an appropriate initialisation file and then
+    the user can just edit this initialisation file to have
     whatever plotting style they want.
 
     Parameters
@@ -212,7 +227,7 @@ class Postprocessingargparser(object):
     """
     def __init__(self):
         parser = ArgumentParser(
-            description="""This script contains all of the functionality for 
+            description="""This script contains all of the functionality for
             processing the output of analyses""",
             usage="""postprocess.py <command> [<subcommand>] [<args>]
 
@@ -249,7 +264,7 @@ class Hypotestingpostprocessingargparser(object):
     """
     def __init__(self):
         parser = ArgumentParser(
-            description="""This script contains all of the functionality for 
+            description="""This script contains all of the functionality for
             processing the output of hypo_testing analyses""",
             usage="""postprocess.py hypo_testing [<subcommand>] [<args>]
 
@@ -286,7 +301,7 @@ class Hypotestingpostprocessingargparser(object):
         main_systtests_postprocessing()
 
 class Postprocessor(object):
-    """Class to contain all of the functions that are used by the various 
+    """Class to contain all of the functions that are used by the various
     postprocessing scripts.
 
 
@@ -299,7 +314,7 @@ class Postprocessor(object):
         Name for the type of test then done. This may be none, but may also be
         something along the line of `systematic_tests` etc.
     logdir : string
-        Path to logging directory where files are stored. This should 
+        Path to logging directory where files are stored. This should
         contain e.g. the "config_summary.json" file.
     fluctuate_fid : bool
         Whether the trials you're interested in applied fluctuations to the
@@ -310,16 +325,17 @@ class Postprocessor(object):
         Whether the trials you're interested in applied fluctuations to the
         (toy) data. This is invalid if actual data was processed.
 
-    Note that a single `logdir` can have different kinds of analyses run 
+    Note that a single `logdir` can have different kinds of analyses run
     and results be logged within, so `fluctuate_fid` and `fluctuate_data`
     allows these to be separated from one another.
     """
 
-    def __init__(self, analysis_type, detector, selection, outdir, formats,
-                 test_type=None, logdir=None, fluctuate_fid=None,
-                 fluctuate_data=None, scan_file=None, best_fit_file=None,
+    def __init__(self, analysis_type, detector, selection,
+                 outdir, formats, test_type=None, logdir=None,
+                 fluctuate_fid=None, fluctuate_data=None,
+                 scan_file=None, best_fit_file=None, projection_files=None,
                  extra_points=None, extra_points_labels=None,
-                 plot_settings_file=None):
+                 plot_settings_file=None, other_contours=None):
         expected_analysis_types = ['hypo_testing', 'profile_scan']
         if analysis_type not in expected_analysis_types:
             raise ValueError(
@@ -366,6 +382,26 @@ class Postprocessor(object):
             else:
                 self.best_fit_dict = None
             self.get_scan_steps()
+            if projection_files is not None:
+                if len(self.all_bin_cens) != 2:
+                    raise ValueError(
+                        "Can only deal with projection files for 2D scans."
+                    )
+                self.projection_dicts = []
+                for projection_file in projection_files:
+                    self.projection_dicts.append(from_file(projection_file))
+            else:
+                self.projection_dicts = None
+            if other_contours is not None:
+                if len(self.all_bin_cens) != 2:
+                    raise ValueError(
+                        "Can only deal with extra contours for 2D scans."
+                    )
+                self.contour_dicts = []
+                for other_contour in other_contours:
+                    self.contour_dicts.append(from_file(other_contour))
+            else:
+                self.contour_dicts = None
             self.get_scan_data()
 
     def store_extra_points(self, extra_points, extra_points_labels):
@@ -388,11 +424,151 @@ class Postprocessor(object):
         else:
             if extra_points_labels is not None:
                 raise ValueError(
-                    'You have specified %i label(s) for extra points but no' 
+                    'You have specified %i label(s) for extra points but no'
                     ' set(s) of extra points.'%len(extra_points_labels)
                 )
         self.extra_points = extra_points
         self.extra_points_labels = extra_points_labels
+
+    def add_deltam32_sin2theta23(self):
+        """Will add deltam32 and sin2theta23 to be plotted,
+        given that this is the more standard way of
+        presenting these results."""
+
+        # Get the deltam21 value used in the fits
+        deltam21 = self.scan_file_dict['results'][0][
+            'params']['deltam21']['value'][0]
+
+        # Sort the bins
+        for i, bin_name in enumerate(self.all_bin_names):
+            if bin_name == 'theta23':
+                self.all_bin_edges[i] = np.power(np.sin(
+                    self.all_bin_edges[i]*ureg(
+                        self.all_bin_units[i]
+                    ).to('radians').magnitude), 2)
+                self.all_bin_cens[i] = np.power(np.sin(
+                    self.all_bin_cens[i]*ureg(
+                        self.all_bin_units[i]
+                    ).to('radians').magnitude), 2)
+            elif bin_name == 'deltam31':
+                # Correct for IO hypothesis
+                if np.all(np.sign(self.all_bin_edges[i]) == -1):
+                    ## Correct bins
+                    self.all_bin_edges[i] = self.all_bin_edges[i] + deltam21
+                    self.all_bin_cens[i] = self.all_bin_cens[i] + deltam21
+                    ## Correct best fit, if needed
+                    if self.best_fit_data is not None:
+                        self.best_fit_data['deltam32'] = {}
+                        self.best_fit_data['deltam32']['units'] = \
+                            self.best_fit_data['deltam31']['units']
+                        self.best_fit_data['deltam32']['val'] = \
+                            self.best_fit_data['deltam31']['val'] + deltam21
+
+                # Correct for NO hypothesis
+                elif np.all(np.sign(self.all_bin_edges[i]) == 1):
+                    ## Correct bins
+                    self.all_bin_edges[i] = self.all_bin_edges[i] - deltam21
+                    self.all_bin_cens[i] = self.all_bin_cens[i] - deltam21
+                    ## Correct best fit, if needed
+                    if self.best_fit_data is not None:
+                        self.best_fit_data['deltam32'] = {}
+                        self.best_fit_data['deltam32']['units'] = \
+                            self.best_fit_data['deltam31']['units']
+                        self.best_fit_data['deltam32']['val'] = \
+                            self.best_fit_data['deltam31']['val'] - deltam21
+                # Hypotheses should not be mixed
+                else:
+                    raise ValueError(
+                        "All of the deltam31 values did not have "
+                        "the same sign. There should only be one "
+                        "hierarchy/ordering tested here."
+                    )
+        # Correcting best fit/projection theta23 is easier
+        if self.best_fit_data is not None:
+            self.best_fit_data['sin2theta23'] = {}
+            self.best_fit_data['sin2theta23']['units'] = \
+                self.best_fit_data['theta23']['units']
+            self.best_fit_data['sin2theta23']['val'] = \
+                np.power(np.sin(self.best_fit_data['theta23']['val']*ureg(
+                    self.all_bin_units[0]).to('radians').magnitude), 2)
+
+        ## Correct projections, if needed
+        if self.projection_data is not None:
+            ## Correct bins
+            new_proj_bin_names = []
+            for i, proj_name in enumerate(self.proj_bin_names):
+                ## Projection is a function of theta23
+                if proj_name == 'theta23':
+                    new_proj_bin_names.append('sin2theta23')
+                    ## Correct bins
+                    self.proj_bin_edges[i] = np.power(np.sin(
+                        self.proj_bin_edges[i]*ureg(
+                            self.proj_bin_units[i]
+                        ).to('radians').magnitude), 2)
+                    self.proj_bin_cens[i] = np.power(np.sin(
+                        self.proj_bin_cens[i]*ureg(
+                            self.proj_bin_units[i]
+                        ).to('radians').magnitude), 2)
+                    ## Need to also correct the deltam31 fits
+                    ## This is again ordering dependent
+                    if np.all(np.sign(self.projection_data[i][
+                            'deltam31']['vals']) == -1):
+                        self.projection_data[i]['deltam32'] = {}
+                        self.projection_data[i]['deltam32']['units'] = \
+                            self.projection_data[i]['deltam31']['units']
+                        self.projection_data[i]['deltam32']['vals'] = \
+                            np.array(self.projection_data[i][
+                                'deltam31']['vals']) + deltam21
+                    elif np.all(np.sign(self.projection_data[i][
+                            'deltam31']['vals']) == +1):
+                        self.projection_data[i]['deltam32'] = {}
+                        self.projection_data[i]['deltam32']['units'] = \
+                            self.projection_data[i]['deltam31']['units']
+                        self.projection_data[i]['deltam32']['vals'] = \
+                            np.array(self.projection_data[i][
+                                'deltam31']['vals']) - deltam21
+                    else:
+                        raise ValueError(
+                            "All of the deltam31 values did not have "
+                            "the same sign. There should only be one "
+                            "hierarchy/ordering tested here."
+                        )
+                    del self.projection_data[i]['deltam31']
+                ## Projection is a function of deltam31
+                if proj_name == 'deltam31':
+                    new_proj_bin_names.append('deltam32')
+                    ## Correct bins
+                    ## This is again ordering dependent
+                    if np.all(np.sign(self.proj_bin_edges[i]) == -1):
+                        self.proj_bin_edges[i] = self.proj_bin_edges[i] + \
+                            deltam21
+                        self.proj_bin_cens[i] = self.proj_bin_cens[i] + \
+                            deltam21
+                    elif np.all(np.sign(self.proj_bin_edges[i]) == +1):
+                        self.proj_bin_edges[i] = self.proj_bin_edges[i] - \
+                            deltam21
+                        self.proj_bin_cens[i] = self.proj_bin_cens[i] - \
+                            deltam21
+                    else:
+                        raise ValueError(
+                            "All of the deltam31 values did not have "
+                            "the same sign. There should only be one "
+                            "hierarchy/ordering tested here."
+                        )
+                    ## Need to also correct the theta23 fits
+                    self.projection_data[i]['sin2theta23'] = {}
+                    self.projection_data[i]['sin2theta23']['units'] = \
+                        'dimensionless'
+                    self.projection_data[i]['sin2theta23']['vals'] = \
+                        np.power(np.sin(
+                            np.array(
+                                self.projection_data[i]['theta23']['vals']
+                            )*ureg(
+                                self.projection_data[i]['theta23']['units']
+                            ).to('radians').magnitude), 2)
+                    del self.projection_data[i]['theta23']
+
+            self.proj_bin_names = new_proj_bin_names
 
     #### Hypo testing Specific Postprocessing functions ####
 
@@ -486,7 +662,6 @@ class Postprocessor(object):
         else:
             hypo = self.get_hypo_from_fiducial_hypo_key(fhkey=fhkey)
             fid = self.get_fid_from_fiducial_hypo_key(fhkey=fhkey)
-            fid_label = self.labels.dict['%s_name'%fid]
             hypo_label = self.labels.dict['%s_name'%hypo]
             if systkey == 'deltam31':
                 if 'no' in hypo_label:
@@ -698,15 +873,15 @@ class Postprocessor(object):
                     " values will not be written on the bins.")
                 pe = False
             outdir = os.path.join(self.outdir, 'CorrelationMatrices')
-            MainTitle = self.make_main_title(end='Correlation Coefficients')
-            Systs = []
+            maintitle = self.make_main_title(end='Correlation Coefficients')
+            systs = []
         else:
             if combined:
                 outdir = os.path.join(self.outdir, 'CombinedScatterPlots')
-                MainTitle = self.make_main_title(end='Correlation Plots')
+                maintitle = self.make_main_title(end='Correlation Plots')
             else:
                 outdir = os.path.join(self.outdir, 'IndividualScatterPlots')
-                MainTitle = self.make_main_title(end='Correlation Plot')
+                maintitle = self.make_main_title(end='Correlation Plot')
         mkdir(outdir)
         # These arguments to the scattering plot must be none
         # for the case of individual plots.
@@ -716,7 +891,7 @@ class Postprocessor(object):
             plot_cor = True
         for injkey in self.values.keys():
             for fhkey in self.values[injkey].keys():
-                FitTitle = self.make_fit_title(
+                fittitle = self.make_fit_title(
                     fhkey=fhkey,
                     trials=self.num_trials
                 )
@@ -734,7 +909,7 @@ class Postprocessor(object):
                     subplotnum = (SystNum-1)*(SystNum-1)+1
                     # Set up container to know which correlations
                     # have already been plotted
-                    PlottedSysts = []
+                    plottedsysts = []
                     num_rows = None
                     plot_cor = False
                 for xsystkey in self.values[injkey][fhkey].keys():
@@ -743,11 +918,11 @@ class Postprocessor(object):
                     if matrix:
                         if not xsystkey == 'metric_val':
                             all_corr_values = []
-                            if self.tex_axis_label(xsystkey) not in Systs:
-                                Systs.append(self.tex_axis_label(xsystkey))
+                            if self.tex_axis_label(xsystkey) not in systs:
+                                systs.append(self.tex_axis_label(xsystkey))
                     if combined and (not singlesyst):
                         if not xsystkey == 'metric_val':
-                            PlottedSysts.append(xsystkey)
+                            plottedsysts.append(xsystkey)
                     # Set up multi-plot, if necessary
                     ## One subplot for each systematic
                     if combined and singlesyst:
@@ -769,7 +944,7 @@ class Postprocessor(object):
                                         ysystkey]['vals'],
                                 )
                                 all_corr_values.append(rho)
-                            
+
                         if (not xsystkey == 'metric_val') and \
                            (not ysystkey == 'metric_val') and \
                            (not ysystkey == xsystkey):
@@ -779,7 +954,7 @@ class Postprocessor(object):
                                 # putting all correlations on one canvas.
                                 subplotnum -= 1
                                 # Don't repeat plotted systematics
-                                if ysystkey not in PlottedSysts:
+                                if ysystkey not in plottedsysts:
                                     do_plot = True
                                     plt.subplot(
                                         SystNum-1,
@@ -794,7 +969,7 @@ class Postprocessor(object):
                             # Plot is always wanted in other cases
                             else:
                                 do_plot = True
-                                
+
                             # Set up subplot, if necessary
                             if combined and singlesyst:
                                 plt.subplot(num_rows, 4, subplotnum)
@@ -810,7 +985,7 @@ class Postprocessor(object):
                                     ylabel=ysystkey,
                                     yunits=self.values[injkey][fhkey][
                                         ysystkey]['units'],
-                                    title=MainTitle+r'\\'+FitTitle,
+                                    title=maintitle+r'\\'+fittitle,
                                     num_rows=num_rows,
                                     subplotnum=subplotnum,
                                     plot_cor=plot_cor
@@ -835,7 +1010,7 @@ class Postprocessor(object):
                             all_corr_lists.append(all_corr_values)
                     # Save/close this plot, if necessary
                     if combined and singlesyst:
-                        plt.suptitle(MainTitle+r'\\'+FitTitle, fontsize=36)
+                        plt.suptitle(maintitle+r'\\'+fittitle, fontsize=36)
                         plt.tight_layout()
                         plt.subplots_adjust(top=0.9)
                         self.save_plot(
@@ -853,16 +1028,16 @@ class Postprocessor(object):
                     )
                     self.make_2D_hist_plot(
                         zvals=all_corr_nparray,
-                        xbins=np.linspace(-0.5,len(Systs)-0.5,len(Systs)+1),
-                        ybins=np.linspace(-0.5,len(Systs)-0.5,len(Systs)+1),
+                        xbins=np.linspace(-0.5, len(systs)-0.5, len(systs)+1),
+                        ybins=np.linspace(-0.5, len(systs)-0.5, len(systs)+1),
                         xlabel=None,
                         xunits=None,
                         ylabel=None,
                         yunits=None,
                         zlabel='correlation_coefficients',
                         zunits=None,
-                        xticks=Systs,
-                        yticks=Systs,
+                        xticks=systs,
+                        yticks=systs,
                         cmap=plt.cm.RdBu
                     )
                     plt.subplots_adjust(
@@ -871,7 +1046,7 @@ class Postprocessor(object):
                         right=0.95,
                         top=0.88
                     )
-                    plt.title(MainTitle+r'\\'+FitTitle, fontsize=16)
+                    plt.title(maintitle+r'\\'+fittitle, fontsize=16)
                     self.save_plot(
                         fhkey=fhkey,
                         outdir=outdir,
@@ -888,7 +1063,7 @@ class Postprocessor(object):
                         )
                     plt.close()
                 if combined and (not singlesyst):
-                    plt.suptitle(MainTitle+r'\\'+FitTitle, fontsize=120)
+                    plt.suptitle(maintitle+r'\\'+fittitle, fontsize=120)
                     plt.tight_layout()
                     plt.subplots_adjust(top=0.9)
                     self.save_plot(
@@ -899,20 +1074,20 @@ class Postprocessor(object):
                     plt.close()
 
     def make_posterior_plots(self, combined=False):
-        """Make posterior plots. With combined=False they will be saved 
-        each time but with combined=True they will be saved on a single 
+        """Make posterior plots. With combined=False they will be saved
+        each time but with combined=True they will be saved on a single
         canvas for each fiducial/hypothesis combination."""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
 
         if combined:
             outdir = os.path.join(self.outdir, 'CombinedPosteriors')
-            MainTitle = self.make_main_title(end='Posteriors')
+            maintitle = self.make_main_title(end='Posteriors')
         else:
             outdir = os.path.join(self.outdir, 'IndividualPosteriors')
-            MainTitle = self.make_main_title(end='Posterior')
+            maintitle = self.make_main_title(end='Posterior')
         mkdir(outdir)
-        
+
         for injkey in self.values.keys():
             for fhkey in self.values[injkey].keys():
                 # Set up multi-plot if needed
@@ -927,7 +1102,7 @@ class Postprocessor(object):
                     subplotnum = None
                 # Loop through the systematics
                 for systkey in self.values[injkey][fhkey].keys():
-                    FitTitle = self.make_fit_title(
+                    fittitle = self.make_fit_title(
                         fhkey=fhkey,
                         trials=self.num_trials
                     )
@@ -948,7 +1123,7 @@ class Postprocessor(object):
                             self.values[injkey][fhkey][systkey]['vals']
                         ),
                         xlabel=xlabel,
-                        title=MainTitle+r'\\'+FitTitle,
+                        title=maintitle+r'\\'+fittitle,
                         ylabel='Number of Trials',
                         subplotnum=subplotnum
                     )
@@ -989,7 +1164,7 @@ class Postprocessor(object):
                         plt.close()
                 # Save the whole canvas, if necessary
                 if combined:
-                    plt.suptitle(MainTitle+r'\\'+FitTitle, fontsize=36)
+                    plt.suptitle(maintitle+r'\\'+fittitle, fontsize=36)
                     plt.tight_layout()
                     plt.subplots_adjust(top=0.9)
                     self.save_plot(
@@ -999,41 +1174,91 @@ class Postprocessor(object):
                     )
                     plt.close()
 
-    def add_prior_region(self, injkey, systkey, fhkey):
+    def make_prior_label(self, kind, stddev=None, maximum=None):
+        """Makes a label for showing priors on plots"""
+        if kind == 'gaussian':
+            if (stddev is None) or (maximum is None):
+                raise ValueError(
+                    "A gaussian prior must be defined with "
+                    "both a maximum and a standard deviation."
+                )
+            if (np.abs(stddev) < 1e-2) and (stddev != 0.0):
+                priorlabel = (r'Gaussian Prior '
+                              '($%.3e\pm%.3e$)'%(maximum, stddev))
+            else:
+                priorlabel = (r'Gaussian Prior '
+                              '($%.3g\pm%.3g$)'%(maximum, stddev))
+        else:
+            raise ValueError(
+                "Only gaussian priors are currently implemented. Got %s."%kind
+            )
+        return priorlabel
+
+    def add_prior_region(self, systkey, injkey=None, fhkey=None):
         """Add a shaded region to show the 1 sigma band of the prior"""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         # TODO - Deal with non-gaussian priors
-        hypo = self.get_hypo_from_fiducial_hypo_key(fhkey=fhkey)
-        wanted_params = self.all_params['%s_params'%hypo]
-        for param in wanted_params.keys():
-            if param == systkey:
-                if 'gaussian' in wanted_params[param]['prior']:
-                    stddev, maximum = self.extract_gaussian(
-                        prior_string=wanted_params[param]['prior'],
-                        units=self.values[injkey][fhkey][systkey]['units']
-                    )
-                    currentxlim = plt.xlim()
-                    if (np.abs(stddev) < 1e-2) and (stddev != 0.0):
-                        priorlabel = (r'Gaussian Prior '
-                                      '($%.3e\pm%.3e$)'%(maximum, stddev))
-                    else:
-                        priorlabel = (r'Gaussian Prior '
-                                      '($%.3g\pm%.3g$)'%(maximum, stddev))
-                    plt.axvspan(
-                        maximum-stddev,
-                        maximum+stddev,
-                        color='k',
-                        label=priorlabel,
-                        ymax=0.1,
-                        alpha=0.5,
-                        zorder=5
-                    )
-                    # Reset xlimits if prior makes it go far off
-                    if plt.xlim()[0] < currentxlim[0]:
-                        plt.xlim(currentxlim[0], plt.xlim()[1])
-                    if plt.xlim()[1] > currentxlim[1]:
-                        plt.xlim(plt.xlim()[0], currentxlim[1])
+        # Adding priors to 1D scan plots
+        if (injkey is None) and (fhkey is None):
+            if self.data[systkey]['prior']['kind'] == 'gaussian':
+                stddev = self.data[systkey]['prior']['stddev'][0]
+                maximum = self.data[systkey]['prior']['max_at'][0]
+                currentylim = plt.ylim()
+                priorlabel = self.make_prior_label(
+                    kind='gaussian',
+                    stddev=stddev,
+                    maximum=maximum
+                )
+                plt.axhspan(
+                    maximum-stddev,
+                    maximum+stddev,
+                    color='k',
+                    label=priorlabel,
+                    alpha=0.2,
+                    zorder=5
+                )
+                # Reset ylimits if prior makes it go far off
+                if plt.ylim()[0] < currentylim[0]:
+                    plt.ylim(currentylim[0], plt.ylim()[1])
+                if plt.ylim()[1] > currentylim[1]:
+                    plt.ylim(plt.ylim()[0], currentylim[1])
+        # Adding priors to posterior plots in hypo_testing
+        else:
+            if (injkey is None) or (fhkey is None):
+                raise ValueError(
+                    "injkey and fhkey must either be both "
+                    "None or both specified."
+                )
+            hypo = self.get_hypo_from_fiducial_hypo_key(fhkey=fhkey)
+            wanted_params = self.all_params['%s_params'%hypo]
+            for param in wanted_params.keys():
+                if param == systkey:
+                    if 'gaussian' in wanted_params[param]['prior']:
+                        stddev, maximum = self.extract_gaussian(
+                            prior_string=wanted_params[param]['prior'],
+                            units=self.values[injkey][fhkey][systkey]['units']
+                        )
+                        currentxlim = plt.xlim()
+                        prior_label = self.make_prior_label(
+                            kind='gaussian',
+                            stddev=stddev,
+                            maximum=maximum
+                        )
+                        plt.axvspan(
+                            maximum-stddev,
+                            maximum+stddev,
+                            color='k',
+                            label=priorlabel,
+                            ymax=0.1,
+                            alpha=0.5,
+                            zorder=5
+                        )
+                        # Reset xlimits if prior makes it go far off
+                        if plt.xlim()[0] < currentxlim[0]:
+                            plt.xlim(currentxlim[0], plt.xlim()[1])
+                        if plt.xlim()[1] > currentxlim[1]:
+                            plt.xlim(plt.xlim()[0], currentxlim[1])
 
     def add_inj_fid_lines(self, injkey, systkey, fhkey):
         """Add lines to show the injected and fiducial fit lines
@@ -1112,7 +1337,7 @@ class Postprocessor(object):
 
         outdir = os.path.join(self.outdir, 'MinimiserPlots')
         mkdir(outdir)
-        MainTitle = self.make_main_title(end='Minimiser Information')
+        maintitle = self.make_main_title(end='Minimiser Information')
         for injkey in self.minimiser_info.keys():
             for fhkey in self.minimiser_info[injkey].keys():
                 if self.minimiser_info[injkey][fhkey] is not None:
@@ -1139,7 +1364,7 @@ class Postprocessor(object):
                                 'minimizer_metadata']['status'])
                         )
                         minimiser_units = bits[1]
-                    FitTitle = self.make_fit_title(
+                    fittitle = self.make_fit_title(
                         fhkey=fhkey,
                         trials=self.num_trials
                     )
@@ -1160,7 +1385,7 @@ class Postprocessor(object):
                         self.make_1D_hist_plot(
                             data=plot_data,
                             xlabel=self.tex_axis_label(plot_end),
-                            title=MainTitle+r'\\'+FitTitle,
+                            title=maintitle+r'\\'+fittitle,
                             ylabel='Number of Trials'
                         )
                         self.save_plot(
@@ -1172,7 +1397,7 @@ class Postprocessor(object):
                         plt.close()
 
     def add_extra_points(self, ymax):
-        """Add extra points specified by self.extra_points and label them 
+        """Add extra points specified by self.extra_points and label them
         with self.extra_points_labels`"""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
@@ -1276,14 +1501,16 @@ class Postprocessor(object):
         plt.text(
             xlim[0]-0.05*(xlim[1]-xlim[0]),
             -0.09*plot_scaling_factor*LLRhistmax,
-            r'\begin{flushleft} $\leftarrow$ Prefers %s\end{flushleft}' % self.tex_axis_label(alt_name),
+            r'\begin{flushleft} $\leftarrow$ Prefers %s\end{flushleft}'%(
+                self.tex_axis_label(alt_name)),
             color='k',
             size='large'
         )
         plt.text(
             xlim[1]+0.05*(xlim[1]-xlim[0]),
             -0.09*plot_scaling_factor*LLRhistmax,
-            r'\begin{flushright} Prefers %s $\rightarrow$ \end{flushright}' % self.tex_axis_label(best_name),
+            r'\begin{flushright} Prefers %s $\rightarrow$ \end{flushright}'%(
+                self.tex_axis_label(best_name)),
             color='k',
             size='large',
             horizontalalignment='right'
@@ -1398,7 +1625,7 @@ class Postprocessor(object):
                 bestfit = 'h1'
                 altfit = 'h0'
                 critical_value = h1_fid_metric-h0_fid_metric
-                
+
             h0_fit_to_h0_fid_metrics = np.array(
                 data['h0_fit_to_h0_fid']['metric_val']['vals']
             )
@@ -1628,7 +1855,8 @@ class Postprocessor(object):
             fid=None,
             hypo=None,
             outdir=outdir,
-            end='%s_LLRDistribution_median_both_fit_dists_%i_Trials'%(metric_type, num_trials)
+            end='%s_LLRDistribution_median_both_fit_dists_%i_Trials'%(
+                metric_type, num_trials)
         )
         plt.close()
         ## Set up the labels for the histograms
@@ -1658,7 +1886,8 @@ class Postprocessor(object):
             fid=None,
             hypo=None,
             outdir=outdir,
-            end='%s_LLRDistribution_best_fit_dist_%i_Trials'%(metric_type, num_trials)
+            end='%s_LLRDistribution_best_fit_dist_%i_Trials'%(
+                metric_type, num_trials)
         )
         plt.close()
         ## Set up the labels for the histograms
@@ -1692,7 +1921,8 @@ class Postprocessor(object):
             fid=None,
             hypo=None,
             outdir=outdir,
-            end='%s_LLRDistribution_median_best_fit_dist_%i_Trials'%(metric_type, num_trials)
+            end='%s_LLRDistribution_median_best_fit_dist_%i_Trials'%(
+                metric_type, num_trials)
         )
         plt.close()
         ## Set up the labels for the histograms
@@ -1722,7 +1952,8 @@ class Postprocessor(object):
             fid=None,
             hypo=None,
             outdir=outdir,
-            end='%s_LLRDistribution_alt_fit_dist_%i_Trials'%(metric_type, num_trials)
+            end='%s_LLRDistribution_alt_fit_dist_%i_Trials'%(
+                metric_type, num_trials)
         )
         plt.close()
         ## Set up the labels for the histograms
@@ -1765,7 +1996,8 @@ class Postprocessor(object):
             fid=None,
             hypo=None,
             outdir=outdir,
-            end='%s_LLRDistribution_median_alt_fit_dist_%i_Trials'%(metric_type, num_trials)
+            end='%s_LLRDistribution_median_alt_fit_dist_%i_Trials'%(
+                metric_type, num_trials)
         )
         plt.close()
 
@@ -1807,7 +2039,8 @@ class Postprocessor(object):
             fid=None,
             hypo=None,
             outdir=outdir,
-            end='%s_LLRDistribution_critical_%i_Trials'%(metric_type, num_trials)
+            end='%s_LLRDistribution_critical_%i_Trials'%(
+                metric_type, num_trials)
         )
         plt.close()
 
@@ -1923,8 +2156,8 @@ class Postprocessor(object):
         plt.close()
 
     def make_fiducial_fit_files(self):
-        """Make tex files which can be then be compiled in to tables 
-        showing the two fiducial fits and, if applicable, how they 
+        """Make tex files which can be then be compiled in to tables
+        showing the two fiducial fits and, if applicable, how they
         compare to what was injected."""
         outdir = os.path.join(self.outdir, 'FiducialFits')
         mkdir(outdir)
@@ -2023,7 +2256,7 @@ class Postprocessor(object):
                 injected = True
             else:
                 injected = False
-            
+
             for param in h0_params.keys():
                 # Get the units for this parameter
                 val, param_units = self.parse_pint_string(
@@ -2113,11 +2346,11 @@ class Postprocessor(object):
                         systkey=param
                     )
                     if (np.abs(h0val) < 1e-2) and (h0val != 0.0):
-                        self.texfile.write("    %s & %.2e & %.2e\n"
-                            % (self.tex_axis_label(param), h0val, h1val))
+                        self.texfile.write("    %s & %.2e & %.2e\n"%(
+                            self.tex_axis_label(param), h0val, h1val))
                     else:
-                        self.texfile.write("    %s & %.3g & %.3g\n"
-                            % (self.tex_axis_label(param), h0val, h1val))
+                        self.texfile.write("    %s & %.3g & %.3g\n"%(
+                            self.tex_axis_label(param), h0val, h1val))
         elif tabletype == "fiducial_fit_metrics":
             h0_fid_metric = self.fid_values[injkey][
                 'h0_fit_to_%s'%(self.labels.dict['data'])]['metric_val']
@@ -2176,7 +2409,7 @@ class Postprocessor(object):
                 "This function is only for adding the content to metric"
                 " or fit param tables in LaTeX. Got type %s"%tabletype
             )
-        
+
     def end_latex_table(self, tabletype):
         """End the table and the whole document for the tex output files."""
         self.texfile.write("    \end{tabu}\n")
@@ -2252,7 +2485,7 @@ class Postprocessor(object):
         if not last:
             line += " &"
         return line
-        
+
     def check_pickle_files(self, logdir_content):
         """Checks for the expected pickle files in the output directory based
         on the analysis and test type. If they are there, it is made sure that
@@ -2308,7 +2541,7 @@ class Postprocessor(object):
                         'However, based on the number of json files in the '
                         'output directory there should be %i trials in '
                         'these pickle files, so they will be regenerated.'%(
-                            pckl_trials,num_trials)
+                            pckl_trials, num_trials)
                     )
                     pickle_there = False
         else:
@@ -2349,14 +2582,12 @@ class Postprocessor(object):
             if len(set_file_nums) == 0:
                 set_file_nums = set(file_nums[hypokey])
             else:
-                set_file_nums = set_file_nums.intersection(
-                    file_nums[hypokey]
-                )
+                set_file_nums = set_file_nums.intersection(file_nums[hypokey])
         self.set_file_nums = set_file_nums
         self.num_trials = len(set_file_nums)
 
     def get_starting_params(self, cfg):
-        """Extracts the h0, h1 and data (if possible) params from the config 
+        """Extracts the h0, h1 and data (if possible) params from the config
         summary file."""
         all_params = {}
         all_params['h0_params'] = {}
@@ -2408,7 +2639,7 @@ class Postprocessor(object):
             m = self.labels.subdir_re.match(basename)
             if m is None:
                 continue
-        
+
             if self.fluctuate_data:
                 data_ind = int(m.groupdict()['data_ind'])
                 dset_label = data_ind
@@ -2425,7 +2656,7 @@ class Postprocessor(object):
             minim_info = OrderedDict()
             minim_info['h0_fit_to_data'] = None
             minim_info['h1_fit_to_data'] = None
-        
+
             # Account for failed jobs. Get the set of file numbers that
             # exist for all h0 an h1 combinations
             subdir = os.path.join(self.logdir, basename)
@@ -2477,10 +2708,10 @@ class Postprocessor(object):
                                 ['minimizer_metadata', 'minimizer_time']
                             )
                         break
-                        
+
             if fnum is None:
                 raise ValueError('No files?')
-        
+
             data_sets[dset_label] = lvl2_fits
             minimiser_info[dset_label] = minim_info
             data_sets[dset_label]['params'] = self.extract_fit(
@@ -2495,23 +2726,23 @@ class Postprocessor(object):
         """Will pickle the data for easy access later."""
         to_file(
             self.data_sets,
-            os.path.join(self.logdir,'data_sets.pckl')
+            os.path.join(self.logdir, 'data_sets.pckl')
         )
         to_file(
             self.all_params,
-            os.path.join(self.logdir,'all_params.pckl')
+            os.path.join(self.logdir, 'all_params.pckl')
         )
         to_file(
             self.labels,
-            os.path.join(self.logdir,'labels.pckl')
+            os.path.join(self.logdir, 'labels.pckl')
         )
         to_file(
             self.minimiser_info,
-            os.path.join(self.logdir,'minimiser_info.pckl')
+            os.path.join(self.logdir, 'minimiser_info.pckl')
         )
 
     def load_from_pickle(self):
-        """Load from the pickle files created by the function above in a 
+        """Load from the pickle files created by the function above in a
         previous run of this script."""
         self.data_sets = from_file(
             os.path.join(self.logdir, 'data_sets.pckl')
@@ -2522,7 +2753,7 @@ class Postprocessor(object):
         self.minimiser_info = from_file(
             os.path.join(self.logdir, 'minimiser_info.pckl')
         )
-        
+
     def parse_binning_string(self, binning_string):
         """Returns a dictionary that can be used to instantiate a binning
         object from the output of having run str on the original binning
@@ -2618,7 +2849,7 @@ class Postprocessor(object):
         return val, units
 
     def get_num_rows(self, data, omit_metric=False):
-        """Calculates the number of rows for multiplots based on the number of 
+        """Calculates the number of rows for multiplots based on the number of
         systematics."""
         if omit_metric:
             num_rows = int((len(data.keys())-1)/4)
@@ -2630,15 +2861,21 @@ class Postprocessor(object):
 
     #### Profile Scan Specific Postprocessing Functions ####
 
-    def get_scan_steps(self):
-        """Gets the bin centres, edges, names and units used in the 
-        profile scan"""
-        all_steps = self.scan_file_dict['steps']
+    def get_scan_steps(self, scandict=None):
+        """Gets the bin centres, edges, names and units used in the
+        profile scan. This will default to the one passed in the infile
+        unless you overwrite scandict."""
+        if scandict is None:
+            scandict = self.scan_file_dict
+            return_vals = False
+        else:
+            return_vals = True
+        all_steps = scandict['steps']
         all_bin_cens = []
         all_bin_units = []
         for step_variable in all_steps.keys():
             bin_cens = []
-            if isinstance(all_steps[step_variable][0][1],list):
+            if isinstance(all_steps[step_variable][0][1], list):
                 all_bin_units.append(all_steps[step_variable][0][1][0][0])
             else:
                 all_bin_units.append('dimensionless')
@@ -2653,16 +2890,20 @@ class Postprocessor(object):
                                     bin_cens[-1]+bin_width/2.0,
                                     len(bin_cens)+1)
             all_bin_edges.append(bin_edges)
-                
-        self.all_bin_cens = np.array(all_bin_cens)
-        self.all_bin_edges = np.array(all_bin_edges)
-        self.all_bin_names = all_steps.keys()
-        self.all_bin_units = all_bin_units
+        if return_vals:
+            return (np.array(all_bin_cens), np.array(all_bin_edges),
+                    all_steps.keys(), all_bin_units)
+        else:
+            self.all_bin_cens = np.array(all_bin_cens)
+            self.all_bin_edges = np.array(all_bin_edges)
+            self.all_bin_names = all_steps.keys()
+            self.all_bin_units = all_bin_units
 
     def get_scan_data(self):
-        """Gets the data i.e. best fit metric and params over the scan. If a 
-        best fit was supplied it will also be extracted. Also stores the 
-        metric name to self."""
+        """Gets the data i.e. best fit metric and params over the scan. If a
+        best fit was supplied it will also be extracted. If projections were
+        supplied they will be stored after it has been verified they correspond
+        to the variables in the 2D scan. Also stores the metric name to self."""
         self.metric_name = self.scan_file_dict['results'][0]['metric']
         data = {}
         data['metric_vals'] = []
@@ -2675,10 +2916,12 @@ class Postprocessor(object):
                         data[param_key]['vals'] = []
                         data[param_key]['units'] = \
                             result['params'][param_key]['prior']['units']
+                        data[param_key]['prior'] = \
+                            result['params'][param_key]['prior']
                     data[param_key]['vals'].append(
                         result['params'][param_key]['value'][0]
                     )
-                    
+
         if self.best_fit_dict is not None:
             best_fit_data = {}
             best_fit_data['metric_val'] = self.best_fit_dict['metric_val']
@@ -2697,12 +2940,86 @@ class Postprocessor(object):
                 )
         else:
             best_fit_data = None
+
+        if self.projection_dicts is not None:
+            self.proj_bin_names = []
+            self.proj_bin_edges = []
+            self.proj_bin_cens = []
+            self.proj_bin_units = []
+            self.projection_data = []
+            for projection_dict in self.projection_dicts:
+                projection_data = {}
+                proj_bin_cens, proj_bin_edges, \
+                    proj_bin_names, proj_bin_units = \
+                        self.get_scan_steps(scandict=projection_dict)
+                if len(proj_bin_names) != 1:
+                    raise ValueError(
+                        "Projection files should be 1D scans. "
+                        "Got %i."%len(proj_bin_names)
+                    )
+                if proj_bin_names[0] not in self.all_bin_names:
+                    raise ValueError(
+                        "Projection file was over %s which is "
+                        "not in the 2D scan over %s."%(
+                            proj_bin_names[0], self.all_bin_names)
+                    )
+                else:
+                    self.proj_bin_names.append(proj_bin_names[0])
+                    self.proj_bin_edges.append(proj_bin_edges[0])
+                    self.proj_bin_cens.append(proj_bin_cens[0])
+                    self.proj_bin_units.append(proj_bin_units[0])
+                projection_data['metric_vals'] = []
+                for result in projection_dict['results']:
+                    projection_data['metric_vals'].append(result['metric_val'])
+                    for param_key in result['params'].keys():
+                        if not result['params'][param_key]['is_fixed']:
+                            if param_key not in projection_data.keys():
+                                projection_data[param_key] = {}
+                                projection_data[param_key]['vals'] = []
+                                projection_data[param_key]['units'] = \
+                                    result['params'][
+                                        param_key]['prior']['units']
+                                projection_data[param_key]['prior'] = \
+                                    result['params'][param_key]['prior']
+                            projection_data[param_key]['vals'].append(
+                                result['params'][param_key]['value'][0]
+                            )
+                if best_fit_data is not None:
+                    projection_data['shifted_metric_vals'] = []
+                    for val in projection_data['metric_vals']:
+                        projection_data['shifted_metric_vals'].append(
+                            val-best_fit_data['metric_val']
+                        )
+                self.projection_data.append(projection_data)
+        else:
+            self.projection_data = None
+
+        if self.contour_dicts is not None:
+            for contour_dict in self.contour_dicts:
+                if not sorted(self.all_bin_names) == \
+                   sorted(contour_dict['vars']):
+                    special_vars = sorted(['sin2theta23', 'deltam32'])
+                    special_bins = sorted(['theta23', 'deltam31'])
+                    if (sorted(self.all_bin_names) == special_bins) and \
+                       (sorted(contour_dict['vars']) == special_vars):
+                        good_contour = True
+                    else:
+                        good_contour = False
+                else:
+                    good_contour = True
+                if not good_contour:
+                    raise ValueError(
+                        "Contour variables - %s - do not match "
+                        "the scan variables - %s."%(
+                            contour_dict['vars'], self.all_bin_names
+                        )
+                    )
             
         self.data = data
         self.best_fit_data = best_fit_data
 
     def get_best_fit(self, xlabel=None, ylabel=None):
-        """Extracts the best fit values from the best fit dictionary 
+        """Extracts the best fit values from the best fit dictionary
         if it is not None"""
         if self.best_fit_data is not None:
             if xlabel is not None:
@@ -2720,24 +3037,111 @@ class Postprocessor(object):
         else:
             self.best_fit_point = None
 
-    def sort_z_labels(self, data_key):
-        """Sorts the z labels based on what data_key is passed"""
+    def sort_scan_data(self, data_key, onedimensional=False):
+        """Sorts the scan data and gets the labels and such"""
         if data_key == 'metric_vals':
-            zlabel = self.metric_name
-            zunits = 'dimensionless'
-            zvals = np.array(self.data[data_key])
+            label = self.metric_name
+            units = 'dimensionless'
+            vals = np.array(self.data[data_key])
         elif data_key == 'shifted_metric_vals':
-            zlabel = 'contour'
-            zunits = 'dimensionless'
-            zvals = np.array(self.data[data_key])
+            if not onedimensional:
+                label = 'contour'
+            else:
+                label = 'delta_'+self.metric_name
+            units = 'dimensionless'
+            vals = np.array(self.data[data_key])
         else:
-            zlabel = data_key
-            zunits = self.data[data_key]['units']
-            zvals = np.array(self.data[data_key]['vals'])
+            label = data_key
+            units = self.data[data_key]['units']
+            vals = np.array(self.data[data_key]['vals'])
 
-        zvals = np.array(np.split(zvals, len(self.all_bin_cens[0])))
-        
-        return zlabel, zunits, zvals
+        if not onedimensional:
+            vals = np.array(np.split(vals, len(self.all_bin_cens[0])))
+        return label, units, vals
+
+    def sort_projection_data(self, data_key, xlabel, ylabel):
+        """Gets the projection data stored in self and assigns
+        it as "X" or "Y" based on the passed x and y labels."""
+        if self.projection_data is not None:
+            for i, proj_data in enumerate(self.projection_data):
+                if self.proj_bin_names[i] == xlabel:
+                    xxvals = self.proj_bin_cens[i]
+                    if 'metric_vals' in data_key:
+                        xyvals = proj_data[data_key]
+                    else:
+                        xyvals = proj_data[data_key]['vals']
+                elif self.proj_bin_names[i] == ylabel:
+                    yxvals = self.proj_bin_cens[i]
+                    if 'metric_vals' in data_key:
+                        yyvals = proj_data[data_key]
+                    else:
+                        yyvals = proj_data[data_key]['vals']
+                else:
+                    raise ValueError(
+                        "Got projection variable %s which does "
+                        "not match either of %s or %s"%(
+                            proj_bin_names[i], xlabel, ylabel)
+                    )
+        else:
+            xxvals = None
+            xyvals = None
+            yxvals = None
+            yyvals = None
+        return xxvals, xyvals, yxvals, yyvals
+
+    def plot_1D_scans(self, xvals=None, xlabel=None, xunits=None):
+        """Makes the 2D scan plots. The x values as well as their
+        labels/units can be specified here, or else they will be generated
+        from what is stored in self"""
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+        if xvals is None:
+            xvals = self.all_bin_cens[0]
+        if xlabel is None:
+            xlabel = self.all_bin_names[0]
+        if xunits is None:
+            xunits = self.all_bin_units[0]
+        self.get_best_fit(xlabel=xlabel)
+        title_end = "%s Parameter Scan"%(
+            self.tex_axis_label(xlabel)
+        )
+        maintitle = self.make_main_title(end_center=True, end=title_end)
+
+        for data_key in self.data.keys():
+            ylabel, yunits, yvals = self.sort_scan_data(
+                data_key=data_key,
+                onedimensional=True
+            )
+            self.make_1D_graph(
+                xvals=xvals,
+                yvals=yvals,
+                xlabel=xlabel,
+                xunits=xunits,
+                ylabel=ylabel,
+                yunits=yunits
+            )
+            if 'metric' not in data_key:
+                self.add_prior_region(systkey=ylabel)
+            if self.best_fit_data is not None:
+                bestfitlabel = 'Best Fit %s'%(self.tex_axis_label(xlabel))
+                bestfitlabel += ' = %.3f'%(self.best_fit_point)
+                if (xunits is not None) and (not xunits == 'dimensionless'):
+                    bestfitlabel += ' %s'%(self.tex_axis_label(xunits))
+                plt.axvline(
+                    self.best_fit_point,
+                    linestyle='-',
+                    color='k',
+                    linewidth=2,
+                    label=bestfitlabel
+                )
+                plt.legend(loc='upper left')
+
+            plt.title(maintitle, fontsize=16)
+            plt.tight_layout()
+            save_end = "%s_1D_%s_scan_%s_values"%(
+                xlabel, self.metric_name, ylabel)
+            self.save_plot(outdir=self.outdir, end=save_end)
+            plt.close()
 
     def plot_2D_scans(self, xbins=None, xlabel=None, xunits=None, xcens=None,
                       ybins=None, ylabel=None, yunits=None, ycens=None):
@@ -2768,10 +3172,10 @@ class Postprocessor(object):
             self.tex_axis_label(xlabel),
             self.tex_axis_label(ylabel)
         )
-        MainTitle = self.make_main_title(end_center=True, end=title_end)
+        maintitle = self.make_main_title(end_center=True, end=title_end)
 
         for data_key in self.data.keys():
-            zlabel, zunits, zvals = self.sort_z_labels(data_key=data_key)
+            zlabel, zunits, zvals = self.sort_scan_data(data_key=data_key)
             if zlabel == 'contour':
                 # Contour plots need bin centers...
                 self.make_2D_hist_plot(
@@ -2785,6 +3189,14 @@ class Postprocessor(object):
                     zlabel=zlabel,
                     zunits=zunits
                 )
+                plt.figtext(
+                    0.05,
+                    0.05,
+                    r"ICECUBE INTERNAL",
+                    color='r',
+                    size='xx-large'
+                )
+                plt.grid(zorder=0, linestyle='--')
             else:
                 self.make_2D_hist_plot(
                     zvals=zvals,
@@ -2797,7 +3209,6 @@ class Postprocessor(object):
                     zlabel=zlabel,
                     zunits=zunits
                 )
-
             if self.best_fit_data is not None:
                 plt.plot(
                     self.best_fit_point[0],
@@ -2807,21 +3218,201 @@ class Postprocessor(object):
                     color='k',
                     markersize=10
                 )
-
-            plt.title(MainTitle, fontsize=16)
+            plt.title(maintitle, fontsize=16)
             plt.tight_layout()
             save_end = "%s_%s_2D_%s_scan_%s"%(
                 xlabel, ylabel, self.metric_name, zlabel)
             if zlabel != "contour":
                 save_end += "_values"
             self.save_plot(outdir=self.outdir, end=save_end)
+            if zlabel == 'contour':
+                self.add_other_contours(
+                    xlabel=xlabel,
+                    ylabel=ylabel
+                )
+                plt.subplots_adjust(top=0.80)
+                plt.title('')
+                plt.legend(
+                    bbox_to_anchor=(0., 1.02, 1., .102),
+                    loc=3,
+                    ncol=2,
+                    mode="expand",
+                    borderaxespad=0.,
+                    fontsize=12
+                )
+                save_end += "_w_other_contours"
+                self.save_plot(outdir=self.outdir, end=save_end)
             plt.close()
+            # Plot again with projections, if necessary
+            xxvals, xyvals, yxvals, yyvals = self.sort_projection_data(
+                data_key=data_key,
+                xlabel=xlabel,
+                ylabel=ylabel
+            )
+            if ((xxvals is not None) and (xyvals is not None)) or \
+               ((yxvals is not None) and (yyvals is not None)):
+                if zlabel == 'contour':
+                    # Contour plots need bin centers...
+                    mainplot = self.make_2D_hist_plot(
+                        zvals=zvals,
+                        xbins=xcens,
+                        ybins=ycens,
+                        xlabel=xlabel,
+                        xunits=xunits,
+                        ylabel=ylabel,
+                        yunits=yunits,
+                        zlabel=zlabel,
+                        zunits=zunits,
+                        xxvals=xxvals,
+                        xyvals=xyvals,
+                        yxvals=yxvals,
+                        yyvals=yyvals
+                    )
+                    mainplot.grid(zorder=0, linestyle='--')
+                    plt.figtext(
+                        0.40,
+                        0.15,
+                        r"ICECUBE INTERNAL",
+                        color='r',
+                        size='xx-large'
+                    )
+                else:
+                    mainplot = self.make_2D_hist_plot(
+                        zvals=zvals,
+                        xbins=xbins,
+                        ybins=ybins,
+                        xlabel=xlabel,
+                        xunits=xunits,
+                        ylabel=ylabel,
+                        yunits=yunits,
+                        zlabel=zlabel,
+                        zunits=zunits,
+                        xxvals=xxvals,
+                        xyvals=xyvals,
+                        yxvals=yxvals,
+                        yyvals=yyvals
+                    )
+                if self.best_fit_data is not None:
+                    mainplot.plot(
+                        self.best_fit_point[0],
+                        self.best_fit_point[1],
+                        marker='x',
+                        linestyle='None',
+                        color='k',
+                        markersize=10
+                    )
+                plt.subplots_adjust(
+                    left=0.35,
+                    right=0.95,
+                    top=0.95,
+                    bottom=0.13
+                )
+                save_end = "%s_%s_2D_%s_scan_%s"%(
+                    xlabel, ylabel, self.metric_name, zlabel)
+                if zlabel != "contour":
+                    save_end += "_values"
+                save_end += "_w_1D_projections"
+                self.save_plot(outdir=self.outdir, end=save_end)
+                plt.close()
+
+    def make_other_contour(self, contour_vals, xlabel, ylabel,
+                           contour_dict, do_label=1):
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+        """Makes the actual other contour plot. The do_label argument sets
+        whether to label it or not. This allows multiple contours to have
+        only one label e.g. NoVA with a contour either side of maximal."""
+        xvals = []
+        yvals = []
+        for vals in contour_vals:
+            for i,var in enumerate(contour_dict['vars']):
+                if var == 'deltam32':
+                    vals[i] /= 1000
+                if var == xlabel:
+                    xvals.append(vals[i])
+                else:
+                    yvals.append(vals[i])
+        if do_label == 1:
+            plabel = contour_dict['label']
+        else:
+            plabel = None
+        plt.plot(
+            xvals,
+            yvals,
+            linestyle=contour_dict['linestyle'],
+            label=plabel,
+            color=contour_dict['color'],
+            linewidth=2,
+            zorder=1
+        )
+        if 'best_fit' in contour_dict.keys():
+            for i,var in enumerate(contour_dict['vars']):
+                if var == 'deltam32':
+                    contour_dict['best_fit'][i] /= 1000.0
+                if var == xlabel:
+                    xval = contour_dict['best_fit'][i]
+                else:
+                    yval = contour_dict['best_fit'][i]
+            plt.plot(
+                xval,
+                yval,
+                linestyle='',
+                marker='o',
+                color=contour_dict['color']
+            )
+        xlim = plt.gca().get_xlim()
+        if min(xvals) < xlim[0]:
+            xmin = 0.9*min(xvals)
+        else:
+            xmin = xlim[0]
+        if max(xvals) > xlim[1]:
+            xmax = 1.1*max(xvals)
+        else:
+            xmax = xlim[1]
+        plt.xlim(xmin, xmax)
+        ylim = plt.gca().get_ylim()
+        if min(yvals) < ylim[0]:
+            ymin = 0.9*min(yvals)
+        else:
+            ymin = ylim[0]
+        if max(yvals) > ylim[1]:
+            ymax = 1.1*max(yvals)
+        else:
+            ymax = ylim[1]
+        plt.ylim(ymin, ymax)
+
+    def add_other_contours(self, xlabel, ylabel):
+        """Adds the other contours stored in self.contours_dict to the
+        plot if they exist and if the variables match."""
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+        if self.contour_dicts is not None:
+            for contour_dict in self.contour_dicts:
+                if (xlabel in contour_dict['vars']) and \
+                   (ylabel in contour_dict['vars']):
+                    if isinstance(contour_dict['contour'], dict):
+                        for i,ckey in enumerate(contour_dict['contour'].keys()):
+                            self.make_other_contour(
+                                contour_vals=contour_dict['contour'][ckey],
+                                xlabel=xlabel,
+                                ylabel=ylabel,
+                                contour_dict=contour_dict,
+                                do_label=i
+                            )
+                    else:
+                        self.make_other_contour(
+                            contour_vals=contour_dict['contour'],
+                            xlabel=xlabel,
+                            ylabel=ylabel,
+                            contour_dict=contour_dict,
+                            do_label=1
+                        )
 
     #### Generic Functions Relating to Plotting ####
 
     def make_main_title(self, end, end_center=False):
-        """Make main title accounting for detector and selection. Set 
-        end_center to true if you will not be using this with a 
+        """Make main title accounting for detector and selection. Set
+        end_center to true if you will not be using this with a
         corresponding fit title"""
         main_title = r"\begin{center}"
         if self.detector is not None:
@@ -2835,14 +3426,14 @@ class Postprocessor(object):
 
     def make_fit_title(self, trials, fid=None, hypo=None,
                        fhkey=None, begin_center=False):
-        """Make fit title to go with the main title. Set begin_center to 
+        """Make fit title to go with the main title. Set begin_center to
         true if you will not be using this with a corresponding main title."""
-        FitTitle = ""
+        fittitle = ""
         if begin_center:
-            FitTitle += r"\begin{center}"
+            fittitle += r"\begin{center}"
         if hasattr(self, 'labels'):
             if 'data_name' in self.labels.dict.keys():
-                FitTitle += "True %s, "%self.labels.dict['data_name']
+                fittitle += "True %s, "%self.labels.dict['data_name']
         if ((fid is not None) and (hypo is not None)) and (fhkey is not None):
             raise ValueError(
                 "Got a fid, hypo and fhkey specified. Please use fid "
@@ -2850,26 +3441,26 @@ class Postprocessor(object):
                 "extracted) but not both."
             )
         if fid is not None:
-            FitTitle += "Fiducial Fit %s, "%self.labels.dict['%s_name'%fid]
+            fittitle += "Fiducial Fit %s, "%self.labels.dict['%s_name'%fid]
         if hypo is not None:
-            FitTitle += "Hypothesis %s "%self.labels.dict['%s_name'%hypo]
+            fittitle += "Hypothesis %s "%self.labels.dict['%s_name'%hypo]
         if fhkey is not None:
             hypo = self.get_hypo_from_fiducial_hypo_key(fhkey=fhkey)
             fid = self.get_fid_from_fiducial_hypo_key(fhkey=fhkey)
-            FitTitle += "Fiducial Fit %s, "%self.labels.dict['%s_name'%fid]
-            FitTitle += "Hypothesis %s "%self.labels.dict['%s_name'%hypo]
+            fittitle += "Fiducial Fit %s, "%self.labels.dict['%s_name'%fid]
+            fittitle += "Hypothesis %s "%self.labels.dict['%s_name'%hypo]
         if trials is not None:
-            FitTitle += "(%i Trials)"%trials
-        FitTitle += r"\end{center}"
-        return FitTitle
+            fittitle += "(%i Trials)"%trials
+        fittitle += r"\end{center}"
+        return fittitle
 
     def make_1D_hist_plot(self, data, xlabel, title, ylabel, bins=10,
                           histtype='bar', color='darkblue', alpha=0.9,
                           xlabelsize='18', ylabelsize='18',
                           titlesize=16, subplots_adjust=True,
                           subplotnum=None):
-        """Generic 1D histogram plotting function. Set subplots_adjust to 
-        True if the title goes over two lines and you need the plot to 
+        """Generic 1D histogram plotting function. Set subplots_adjust to
+        True if the title goes over two lines and you need the plot to
         account for this."""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
@@ -2892,73 +3483,212 @@ class Postprocessor(object):
         if subplots_adjust:
             plt.subplots_adjust(left=0.10, right=0.90, top=0.85, bottom=0.11)
 
-    def make_2D_hist_plot(self, zvals, xbins, ybins, xlabel, xunits,
-                          ylabel, yunits, zlabel, zunits, cmap=None,
-                          xticks=None, yticks=None):
-        """Generic 2D histogram-style plotting function. Set zlabel to contour
-        to make a contour plot instead of a histogram. cmap will be taken from
-        the Plotstyle object unless explicitly overwritten"""
+    def make_1D_graph(self, xvals, yvals, xlabel, xunits,
+                      ylabel, yunits, xlims='edges', ylims=None,
+                      linestyle='-', color='darkblue', alpha=0.9,
+                      xlabelsize='18', ylabelsize='18', titlesize=16):
+        """Generic 1D graph plotting function. The x limits will be set as
+        the edges of the xvals unless overwritten. Set this to None to
+        leave it as matplotlib dictates. The y limits will be left alone
+        unless overwritten."""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
-        if zlabel == 'contour':
-            X, Y = np.meshgrid(xbins, ybins)
-            plt.contour(
-                X,
-                Y,
-                zvals.T,
-                self.plotstyle.contour_levels,
-                colors=self.plotstyle.contour_colors,
-                linewidths=self.plotstyle.contour_linewidths,
-                origin=self.plotstyle.contour_origin
-            )
-        else:
-            if cmap is None:
-                cmap = self.plotstyle.hist_2D_cmap
-            plt.pcolormesh(xbins, ybins, zvals.T, cmap=cmap)
-            nice_clabel = self.make_label(zlabel, zunits)
-            plt.colorbar().set_label(
-                label=nice_clabel,
-                fontsize=self.plotstyle.hist_2D_clabelfontsize
-            )
-            
-        plt.xlim(xbins[0],xbins[-1])
+        plt.plot(
+            xvals,
+            yvals,
+            linestyle=linestyle,
+            color=color,
+            alpha=alpha
+        )
+        if xlims is not None:
+            if xlims == 'edges':
+                plt.xlim(xvals[0], xvals[-1])
+            else:
+                plt.xlim(xlims)
         if xlabel is not None:
             nice_xlabel = self.make_label(xlabel, xunits)
             plt.xlabel(
                 nice_xlabel,
-                fontsize=self.plotstyle.hist_2D_xlabelfontsize
+                fontsize=xlabelsize
             )
-        plt.ylim(ybins[0],ybins[-1])
+        if ylims is not None:
+            plt.ylim(ylims)
         if ylabel is not None:
             nice_ylabel = self.make_label(ylabel, yunits)
             plt.ylabel(
                 nice_ylabel,
                 fontsize=self.plotstyle.hist_2D_ylabelfontsize
             )
-        if xticks is not None:
-            if len(xticks) != (len(xbins)-1):
+
+    def make_2D_hist_plot(self, zvals, xbins, ybins, xlabel,
+                          ylabel, zlabel, xunits=None, yunits=None,
+                          zunits=None, cmap=None, xticks=None,
+                          yticks=None, xxvals=None, xyvals=None,
+                          yxvals=None, yyvals=None):
+        """Generic 2D histogram-style plotting function. Set zlabel to contour
+        to make a contour plot instead of a histogram. cmap will be taken from
+        the Plotstyle object unless explicitly overwritten. If any of the units
+        are set None then the make_label function will just apply
+        self.tex_axis_label to the string passed in either xlabel, ylabel
+        or zlabel. Set xxvals/xyvals and yxvals/yyvals to add 1D projections
+        to the edges of the plots."""
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+        if (xxvals is not None) or (xyvals is not None):
+            if not ((xxvals is not None) and (xyvals is not None)):
                 raise ValueError(
-                    "Got %i ticks for %i bins."%(len(xticks),len(xbins)-1)
+                    "When specifying projections, both xx and "
+                    "xy vals must be specified."
                 )
-            plt.xticks(
-                np.arange(len(xticks)),
-                xticks,
-                rotation=45,
-                horizontalalignment='right'
-            )
-        if yticks is not None:
-            if len(yticks) != (len(ybins)-1):
+            has_projections = True
+        if (yxvals is not None) or (yxvals is not None):
+            if not ((yxvals is not None) and (yyvals is not None)):
                 raise ValueError(
-                    "Got %i ticks for %i bins."%(len(yticks),len(ybins)-1)
+                    "When specifying projections, both yx and "
+                    "yy vals must be specified."
                 )
-            plt.yticks(
-                np.arange(len(xticks)),
-                yticks,
-                rotation=0
+            has_projections = True
+            from matplotlib import gridspec, transforms
+            fig, axes = plt.subplots(
+                nrows=2,
+                ncols=2,
+                gridspec_kw={
+                    'width_ratios': [4, 1],
+                    'height_ratios': [1, 4],
+                    'wspace': 0.025,
+                    'hspace': 0.025
+                }
             )
+            if zlabel == 'contour':
+                X, Y = np.meshgrid(xbins, ybins)
+                im = axes[1, 0].contour(
+                    X,
+                    Y,
+                    zvals.T,
+                    self.plotstyle.contour_levels,
+                    colors=self.plotstyle.contour_colors,
+                    linewidths=self.plotstyle.contour_linewidths,
+                    origin=self.plotstyle.contour_origin
+                )
+            else:
+                if cmap is None:
+                    cmap = self.plotstyle.hist_2D_cmap
+                im = axes[1, 0].pcolormesh(xbins, ybins, zvals.T, cmap=cmap)
+                cax = fig.add_axes([0.15, 0.13, 0.03, 0.595])
+                nice_zlabel = self.make_label(zlabel, zunits)
+                cb = fig.colorbar(im, cax=cax)
+                cb.set_label(
+                    label=nice_zlabel,
+                    fontsize=self.plotstyle.hist_2D_clabelfontsize
+                )
+                cb.ax.yaxis.set_ticks_position('left')
+                cb.ax.yaxis.set_label_position('left')
+            axes[0, 1].set_visible(False)
+            axes[1, 0].set_xlim(xbins[0], xbins[-1])
+            axes[1, 0].set_ylim(ybins[0], ybins[-1])
+            axes[0, 0].plot(xxvals, xyvals)
+            if zlabel == 'contour':
+                axes[0, 0].set_ylim(0.0, 2.0)
+                axes[0, 0].set_ylabel(
+                    self.tex_axis_label('delta_%s'%self.metric_name)
+                )
+            axes[0, 0].set_xlim(xbins[0], xbins[-1])
+            axes[0, 0].tick_params(
+                axis='x',
+                which='both',
+                bottom='off',
+                top='off',
+                labelbottom='off'
+            )
+            axes[0, 0].grid(zorder=0, linestyle='--')
+            axes[1, 1].plot(yyvals, yxvals)
+            if zlabel == 'contour':
+                axes[1, 1].set_xlim(0.0, 2.0)
+                axes[1, 1].set_xlabel(
+                    self.tex_axis_label('delta_%s'%self.metric_name)
+                )
+            axes[1, 1].set_ylim(ybins[0], ybins[-1])
+            axes[1, 1].tick_params(
+                axis='y',
+                which='both',
+                left='off',
+                right='off',
+                labelleft='off'
+            )
+            axes[1, 1].grid(zorder=0, linestyle='--')
+            if xlabel is not None:
+                nice_xlabel = self.make_label(xlabel, xunits)
+                axes[1, 0].set_xlabel(
+                    nice_xlabel,
+                    fontsize=self.plotstyle.hist_2D_xlabelfontsize
+                )
+            if ylabel is not None:
+                nice_ylabel = self.make_label(ylabel, yunits)
+                axes[1, 0].set_ylabel(
+                    nice_ylabel,
+                    fontsize=self.plotstyle.hist_2D_ylabelfontsize
+                )
+            return axes[1, 0]
+        else:
+            has_projections = False
+            if zlabel == 'contour':
+                X, Y = np.meshgrid(xbins, ybins)
+                im = plt.contour(
+                    X,
+                    Y,
+                    zvals.T,
+                    self.plotstyle.contour_levels,
+                    colors=self.plotstyle.contour_colors,
+                    linewidths=self.plotstyle.contour_linewidths,
+                    origin=self.plotstyle.contour_origin
+                )
+            else:
+                if cmap is None:
+                    cmap = self.plotstyle.hist_2D_cmap
+                im = plt.pcolormesh(xbins, ybins, zvals.T, cmap=cmap)
+                nice_zlabel = self.make_label(zlabel, zunits)
+                plt.colorbar(im).set_label(
+                    label=nice_zlabel,
+                    fontsize=self.plotstyle.hist_2D_clabelfontsize
+                )
+            plt.xlim(xbins[0], xbins[-1])
+            plt.ylim(ybins[0], ybins[-1])
+            if xlabel is not None:
+                nice_xlabel = self.make_label(xlabel, xunits)
+                plt.xlabel(
+                    nice_xlabel,
+                    fontsize=self.plotstyle.hist_2D_xlabelfontsize
+                )
+            if ylabel is not None:
+                nice_ylabel = self.make_label(ylabel, yunits)
+                plt.ylabel(
+                    nice_ylabel,
+                    fontsize=self.plotstyle.hist_2D_ylabelfontsize
+                )
+            if xticks is not None:
+                if len(xticks) != (len(xbins)-1):
+                    raise ValueError(
+                        "Got %i ticks for %i bins."%(len(xticks), len(xbins)-1)
+                    )
+                plt.xticks(
+                    np.arange(len(xticks)),
+                    xticks,
+                    rotation=45,
+                    horizontalalignment='right'
+                )
+            if yticks is not None:
+                if len(yticks) != (len(ybins)-1):
+                    raise ValueError(
+                        "Got %i ticks for %i bins."%(len(yticks), len(ybins)-1)
+                    )
+                plt.yticks(
+                    np.arange(len(xticks)),
+                    yticks,
+                    rotation=0
+                )
 
     def add_annotation_to_2D_hist(self, annotations):
-        """Adds annotations to bins of 2D hist. Expects to be able 
+        """Adds annotations to bins of 2D hist. Expects to be able
         to import PathEffects and will fail if it can't."""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
@@ -3041,9 +3771,9 @@ class Postprocessor(object):
                     )
 
         nice_xlabel = self.make_label(xlabel, xunits)
-        plt.xlabel(nice_xlabel,fontsize=16)
+        plt.xlabel(nice_xlabel, fontsize=16)
         nice_ylabel = self.make_label(ylabel, yunits)
-        plt.ylabel(nice_ylabel,fontsize=16)
+        plt.ylabel(nice_ylabel, fontsize=16)
         if subplotnum is None:
             plt.title(title, fontsize=16)
 
@@ -3121,8 +3851,8 @@ class Postprocessor(object):
     def make_label(self, label, units):
         """Appends units to a label for plotting."""
         nice_label = self.tex_axis_label(label)
-        if not (units == 'dimensionless') and not \
-           (units == None) and not (units == []):
+        if not (units == 'dimensionless') and \
+           (not units == None) and (not units == []):
             nice_label += ' (%s)'%self.tex_axis_label(units)
         return nice_label
 
@@ -3167,6 +3897,10 @@ class Postprocessor(object):
         pretty_labels["conv_llh"] = r"Convoluted Likelihood"
         pretty_labels["chi2"] = r"$\chi^2$"
         pretty_labels["mod_chi2"] = r"Modified $\chi^2$"
+        pretty_labels["delta_llh"] = r"$\Delta$ Likelihood"
+        pretty_labels["delta_conv_llh"] = r"$\Delta$ Convoluted Likelihood"
+        pretty_labels["delta_chi2"] = r"$\Delta\chi^2$"
+        pretty_labels["delta_mod_chi2"] = r"$\Delta$ $\chi^2_{\mathrm{mod}}$"
         pretty_labels["no"] = r"Normal Ordering"
         pretty_labels["io"] = r"Inverted Ordering"
         pretty_labels["nomsw"] = r"Normal Ordering, Matter Oscillations"
@@ -3255,7 +3989,7 @@ class Postprocessor(object):
                           "Returning black."%label)
             colourlabel = 'k'
         return colourlabel
-    
+
     def plot_style(self, label):
         """Will return a standard line style for plots similar to above."""
         label = label.lower()
@@ -3287,7 +4021,7 @@ def main_hypo_testing():
 
 
 def main_profile_scan():
-    description="""A script for processing the output files of 
+    description = """A script for processing the output files of
     profile_scan.py"""
 
     # TODO:
@@ -3304,62 +4038,23 @@ def main_profile_scan():
         outdir=init_args_d['outdir'],
         formats=init_args_d['formats'],
         scan_file=init_args_d['infile'],
-        best_fit_file=init_args_d['best_fit_infile']
+        best_fit_file=init_args_d['best_fit_infile'],
+        projection_files=init_args_d['projection_infile'],
+        other_contours=init_args_d['other_contour']
     )
 
     # 1D profile scans
     if len(postprocessor.all_bin_cens) == 1:
-        raise NotImplementedError(
-            "Postprocessing of profile scans in 1D not implemented in this"
-            " script yet.")
+        postprocessor.plot_1D_scans()
 
     # 2D profile scans
     elif len(postprocessor.all_bin_cens) == 2:
         postprocessor.plot_2D_scans()
+
         if (postprocessor.all_bin_names[0] == 'theta23') and \
            (postprocessor.all_bin_names[1] == 'deltam31'):
-            deltam21 = postprocessor.scan_file_dict['results'][0][
-                'params']['deltam21']['value'][0]
-            postprocessor.all_bin_edges[0] = np.power(np.sin(
-                postprocessor.all_bin_edges[0]*ureg(
-                    postprocessor.all_bin_units[0]
-                ).to('radians').magnitude),2)
-            postprocessor.all_bin_cens[0] = np.power(np.sin(
-                postprocessor.all_bin_cens[0]*ureg(
-                    postprocessor.all_bin_units[0]
-                ).to('radians').magnitude),2)
-            if np.all(np.sign(postprocessor.all_bin_edges[1]) == -1):
-                postprocessor.all_bin_edges[1] = \
-                    postprocessor.all_bin_edges[1] + deltam21
-                postprocessor.all_bin_cens[1] = \
-                    postprocessor.all_bin_cens[1] + deltam21
-                best_fit_data['deltam32'] = {}
-                best_fit_data['deltam32']['units'] = \
-                    best_fit_data['deltam31']['units']
-                best_fit_data['deltam32']['val'] = \
-                    best_fit_data['deltam31']['val'] + deltam21
-            elif np.all(np.sign(postprocessor.all_bin_edges[1]) == 1):
-                postprocessor.all_bin_edges[1] = \
-                    postprocessor.all_bin_edges[1] - deltam21
-                postprocessor.all_bin_cens[1] = \
-                    postprocessor.all_bin_cens[1] - deltam21
-                postprocessor.best_fit_data['deltam32'] = {}
-                postprocessor.best_fit_data['deltam32']['units'] = \
-                    postprocessor.best_fit_data['deltam31']['units']
-                postprocessor.best_fit_data['deltam32']['val'] = \
-                    postprocessor.best_fit_data['deltam31']['val'] - deltam21
-            else:
-                raise ValueError(
-                    "All of the deltam31 values did not have the same sign. "
-                    "There should only be one hierarchy/ordering tested here."
-                )
-            postprocessor.best_fit_data['sin2theta23'] = {}
-            postprocessor.best_fit_data['sin2theta23']['units'] = \
-                postprocessor.best_fit_data['theta23']['units']
-            postprocessor.best_fit_data['sin2theta23']['val'] = \
-                np.power(np.sin(postprocessor.best_fit_data['theta23'][
-                    'val']*ureg(postprocessor.all_bin_units[0]).to(
-                        'radians').magnitude),2)
+
+            postprocessor.add_deltam32_sin2theta23()
             postprocessor.plot_2D_scans(
                 xlabel='sin2theta23',
                 xunits='dimensionless',
@@ -3374,7 +4069,7 @@ def main_profile_scan():
 
 
 def main_analysis_postprocessing():
-    description="""Hypothesis testing: How do two hypotheses compare for
+    description = """Hypothesis testing: How do two hypotheses compare for
     describing MC or data?
 
     This computes significances, etc. from the logfiles recorded by the
@@ -3402,7 +4097,8 @@ def main_analysis_postprocessing():
         #    fluctuate_data=False
         #)
         #od = data_sets.values()[0]
-        #if od['h1_fit_to_h0_fid']['fid_asimov']['metric_val'] > od['h0_fit_to_h1_fid']['fid_asimov']['metric_val']:
+        #if od['h1_fit_to_h0_fid']['fid_asimov']['metric_val'] \
+        #    > od['h0_fit_to_h1_fid']['fid_asimov']['metric_val']:
         #print np.sqrt(np.abs(
         #    od['h1_fit_to_h0_fid']['fid_asimov']['metric_val'] -
         #    od['h0_fit_to_h1_fid']['fid_asimov']['metric_val']
@@ -3431,8 +4127,8 @@ def main_analysis_postprocessing():
         formats=init_args_d['formats'],
         fluctuate_fid=True,
         fluctuate_data=False,
-        extra_points = init_args_d['extra_point'],
-        extra_points_labels = init_args_d['extra_point_label']
+        extra_points=init_args_d['extra_point'],
+        extra_points_labels=init_args_d['extra_point_label']
     )
 
     trial_nums = postprocessor.data_sets[
@@ -3476,11 +4172,16 @@ def main_analysis_postprocessing():
 
 
 def main_injparamscan_postprocessing():
-    raise NotImplementedError("Postprocessing of hypo testing injected parameter scans not implemented in this script yet.")
+    raise NotImplementedError(
+        "Postprocessing of hypo testing injected parameter "
+        "scans not implemented in this script yet."
+    )
 
 
 def main_systtests_postprocessing():
-    raise NotImplementedError("Postprocessing of hypo testing systematic tests not implemented in this script yet.")
+    raise NotImplementedError(
+        "Postprocessing of hypo testing systematic tests not "
+        "implemented in this script yet.")
 
 
 if __name__ == '__main__':
