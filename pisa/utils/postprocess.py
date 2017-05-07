@@ -1690,7 +1690,7 @@ class Postprocessor(object):
         if self.labels.dict['data_name'] == '':
             inj_name = "data"
         else:
-            inj_name = "true "%self.tex_axis_label(
+            inj_name = "true %s"%self.tex_axis_label(
                 self.labels.dict['data_name']
             )
         best_name = self.labels.dict['%s_name'%bestfit]
