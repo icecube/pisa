@@ -840,16 +840,19 @@ class Postprocessor(object):
     def get_injected_params(self):
         """Return the injected params, if they exist"""
         if 'data_params' in self.all_params.keys():
-            data_params = {}
-            for pkey in self.all_params['data_params'].keys():
-                data_params[pkey] = \
-                    self.all_params['data_params'][pkey]['value']
+            if self.all_params['data_params'] is not None:
+                data_params = {}
+                for pkey in self.all_params['data_params'].keys():
+                    data_params[pkey] = \
+                        self.all_params['data_params'][pkey]['value']
+            else:
+                data_params = None
         else:
             data_params = None
         return data_params
 
     def make_scatter_plots(self, combined=False,
-                           singlesyst=False, matrix=False,):
+                           singlesyst=False, matrix=False):
         """Make scatter plots."""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
@@ -874,7 +877,6 @@ class Postprocessor(object):
                 pe = False
             outdir = os.path.join(self.outdir, 'CorrelationMatrices')
             maintitle = self.make_main_title(end='Correlation Coefficients')
-            systs = []
         else:
             if combined:
                 outdir = os.path.join(self.outdir, 'CombinedScatterPlots')
@@ -889,8 +891,13 @@ class Postprocessor(object):
             num_rows = None
             subplotnum = None
             plot_cor = True
+
         for injkey in self.values.keys():
             for fhkey in self.values[injkey].keys():
+                systs = []
+                for systkey in self.values[injkey][fhkey].keys():
+                    if not systkey == 'metric_val':
+                        systs.append(systkey)
                 fittitle = self.make_fit_title(
                     fhkey=fhkey,
                     trials=self.num_trials
@@ -912,17 +919,13 @@ class Postprocessor(object):
                     plottedsysts = []
                     num_rows = None
                     plot_cor = False
-                for xsystkey in self.values[injkey][fhkey].keys():
+                for xsystkey in systs:
                     # Set up container for correlation
                     # coefficients if necessary
                     if matrix:
-                        if not xsystkey == 'metric_val':
-                            all_corr_values = []
-                            if self.tex_axis_label(xsystkey) not in systs:
-                                systs.append(self.tex_axis_label(xsystkey))
+                        all_corr_values = []
                     if combined and (not singlesyst):
-                        if not xsystkey == 'metric_val':
-                            plottedsysts.append(xsystkey)
+                        plottedsysts.append(xsystkey)
                     # Set up multi-plot, if necessary
                     ## One subplot for each systematic
                     if combined and singlesyst:
@@ -933,21 +936,17 @@ class Postprocessor(object):
                         plt.figure(figsize=(20, 5*num_rows+2))
                         subplotnum = 1
                         plot_cor = True
-                    for ysystkey in self.values[injkey][fhkey].keys():
+                    for ysystkey in systs:
                         if matrix:
-                            if (not xsystkey == 'metric_val') and \
-                               (not ysystkey == 'metric_val'):
-                                rho, pval = self.get_correlation_coefficient(
-                                    xdata=self.values[injkey][fhkey][
-                                        xsystkey]['vals'],
-                                    ydata=self.values[injkey][fhkey][
-                                        ysystkey]['vals'],
-                                )
-                                all_corr_values.append(rho)
+                            rho, pval = self.get_correlation_coefficient(
+                                xdata=self.values[injkey][fhkey][
+                                    xsystkey]['vals'],
+                                ydata=self.values[injkey][fhkey][
+                                    ysystkey]['vals'],
+                            )
+                            all_corr_values.append(rho)
 
-                        if (not xsystkey == 'metric_val') and \
-                           (not ysystkey == 'metric_val') and \
-                           (not ysystkey == xsystkey):
+                        if not ysystkey == xsystkey:
 
                             if combined and (not singlesyst):
                                 # Subplotnum counts backwards in the case of
@@ -1006,8 +1005,7 @@ class Postprocessor(object):
                                 plt.close()
                     # Store the list of correlation values for plotting
                     if matrix:
-                        if xsystkey != 'metric_val':
-                            all_corr_lists.append(all_corr_values)
+                        all_corr_lists.append(all_corr_values)
                     # Save/close this plot, if necessary
                     if combined and singlesyst:
                         plt.suptitle(maintitle+r'\\'+fittitle, fontsize=36)
@@ -1023,6 +1021,9 @@ class Postprocessor(object):
                         plt.close()
 
                 if matrix:
+                    texsysts = []
+                    for syst in systs:
+                        texsysts.append(self.tex_axis_label(syst))
                     all_corr_nparray = np.ma.masked_invalid(
                         np.array(all_corr_lists)
                     )
@@ -1036,8 +1037,8 @@ class Postprocessor(object):
                         yunits=None,
                         zlabel='correlation_coefficients',
                         zunits=None,
-                        xticks=systs,
-                        yticks=systs,
+                        xticks=texsysts,
+                        yticks=texsysts,
                         cmap=plt.cm.RdBu
                     )
                     plt.subplots_adjust(
@@ -1240,7 +1241,7 @@ class Postprocessor(object):
                             units=self.values[injkey][fhkey][systkey]['units']
                         )
                         currentxlim = plt.xlim()
-                        prior_label = self.make_prior_label(
+                        priorlabel = self.make_prior_label(
                             kind='gaussian',
                             stddev=stddev,
                             maximum=maximum
@@ -1389,8 +1390,7 @@ class Postprocessor(object):
                             ylabel='Number of Trials'
                         )
                         self.save_plot(
-                            fid=fid,
-                            hypo=hypo,
+                            fhkey=fhkey,
                             outdir=outdir,
                             end=plot_end
                         )
@@ -1427,7 +1427,7 @@ class Postprocessor(object):
             linelist.append(self.tex_axis_label(label))
         return linelist
 
-    def calc_p_value(self, LLRdist, critical_value, num_trials, greater=True,
+    def calc_p_value(self, LLRdist, critical_value, greater=True,
                      median_p_value=False, LLRbest=None):
         """Calculate the p-value for the given dataset based on the given
         critical value with an associated error.
@@ -1446,7 +1446,7 @@ class Postprocessor(object):
             misid_trials = float(np.sum(LLRdist > critical_value))
         else:
             misid_trials = float(np.sum(LLRdist < critical_value))
-        p_value = misid_trials/num_trials
+        p_value = misid_trials/self.num_trials
         if median_p_value:
             # Quantify the uncertainty on the median by bootstrapping
             sampled_medians = []
@@ -1461,15 +1461,15 @@ class Postprocessor(object):
                     )
                 )
             sampled_medians = np.array(sampled_medians)
-            median_error = np.std(sampled_medians)/np.sqrt(num_trials)
+            median_error = np.std(sampled_medians)/np.sqrt(self.num_trials)
             # Add relative errors in quadrature
             wdenom = misid_trials+median_error*median_error
             wterm = wdenom/(misid_trials*misid_trials)
-            Nterm = 1.0/num_trials
+            Nterm = 1.0/self.num_trials
             unc_p_value = p_value * np.sqrt(wterm + Nterm)
             return p_value, unc_p_value, median_error
         else:
-            unc_p_value = np.sqrt(misid_trials*(1-p_value))/num_trials
+            unc_p_value = np.sqrt(misid_trials*(1-p_value))/self.num_trials
             return p_value, unc_p_value
 
     def plot_LLR_histograms(self, LLRarrays, LLRhistmax, binning, colors,
@@ -1607,12 +1607,12 @@ class Postprocessor(object):
 
             data = self.values[injkey]
             h0_fid_metric = self.fid_values[injkey][
-                'h0_fit_to_toy_%s_asimov'%self.labels.dict['data_name']
+                'h0_fit_to_%s'%self.labels.dict['data']
             ][
                 'metric_val'
             ]
             h1_fid_metric = self.fid_values[injkey][
-                'h1_fit_to_toy_%s_asimov'%self.labels.dict['data_name']
+                'h1_fit_to_%s'%self.labels.dict['data']
             ][
                 'metric_val'
             ]
@@ -1666,14 +1666,14 @@ class Postprocessor(object):
         # Special case for low numbers of trials. Here, the plot can't really
         # be interpreted but the numbers printed on it can still be useful, so
         # we need to make something.
-        if num_trials < 100:
+        if self.num_trials < 100:
             binning = np.linspace(minLLR - 0.1*rangeLLR,
                                   maxLLR + 0.1*rangeLLR,
                                   10)
         else:
             binning = np.linspace(minLLR - 0.1*rangeLLR,
                                   maxLLR + 0.1*rangeLLR,
-                                  int(num_trials/40))
+                                  int(self.num_trials/40))
         binwidth = binning[1]-binning[0]
         bincens = np.linspace(binning[0]+binwidth/2.0,
                               binning[-1]-binwidth/2.0,
@@ -1687,7 +1687,12 @@ class Postprocessor(object):
         best_median = np.median(LLRbest)
         alt_median = np.median(LLRalt)
 
-        inj_name = self.labels.dict['data_name']
+        if self.labels.dict['data_name'] == '':
+            inj_name = "data"
+        else:
+            inj_name = "true "%self.tex_axis_label(
+                self.labels.dict['data_name']
+            )
         best_name = self.labels.dict['%s_name'%bestfit]
         alt_name = self.labels.dict['%s_name'%altfit]
 
@@ -1696,14 +1701,12 @@ class Postprocessor(object):
         crit_p_value, unc_crit_p_value = self.calc_p_value(
             LLRdist=LLRalt,
             critical_value=critical_value,
-            num_trials=self.num_trials,
             greater=True
         )
         ## Then for the alternate hypothesis based on the fiducial fit
         alt_crit_p_value, alt_unc_crit_p_value = self.calc_p_value(
             LLRdist=LLRbest,
             critical_value=critical_value,
-            num_trials=self.num_trials,
             greater=False
         )
         ## Combine these to give a CLs value based on arXiv:1407.5052
@@ -1718,7 +1721,6 @@ class Postprocessor(object):
         med_p_value, unc_med_p_value, median_error = self.calc_p_value(
             LLRdist=LLRalt,
             critical_value=best_median,
-            num_trials=self.num_trials,
             greater=True,
             median_p_value=True,
             LLRbest=LLRbest
@@ -1728,8 +1730,8 @@ class Postprocessor(object):
             plot_title = (r"\begin{center}"\
                           +"%s %s Event Selection "%(self.detector,
                                                      self.selection)\
-                          +r"\\"+" LLR Distributions for true %s (%i trials)"%(
-                              self.tex_axis_label(inj_name), num_trials)\
+                          +r"\\"+" LLR Distributions for %s (%i trials)"%(
+                              inj_name, self.num_trials)\
                           +r"\end{center}")
 
         else:
@@ -1738,8 +1740,8 @@ class Postprocessor(object):
                                                      self.selection)\
                           +r"\\"+" %s \"LLR\" Distributions for "
                           %(metric_type_pretty)\
-                          +"true %s (%i trials)"%(self.tex_axis_label(inj_name),
-                                                  num_trials)\
+                          +"%s (%i trials)"%(inj_name,
+                                             self.num_trials)\
                           +r"\end{center}")
 
         # Factor with which to make everything visible
@@ -1788,7 +1790,8 @@ class Postprocessor(object):
         )
         self.save_plot(
             outdir=outdir,
-            end='%s_LLRDistribution_median_%i_Trials'%(metric_type, num_trials)
+            end='%s_LLRDistribution_median_%i_Trials'%(
+                metric_type, self.num_trials)
         )
         # Add the extra points if they exist
         if self.extra_points is not None:
@@ -1815,7 +1818,7 @@ class Postprocessor(object):
                 hypo=None,
                 outdir=outdir,
                 end='%s_LLRDistribution_median_w_extra_points_%i_Trials'%(
-                    metric_type, num_trials)
+                    metric_type, self.num_trials)
             )
         plt.close()
 
@@ -1856,7 +1859,7 @@ class Postprocessor(object):
             hypo=None,
             outdir=outdir,
             end='%s_LLRDistribution_median_both_fit_dists_%i_Trials'%(
-                metric_type, num_trials)
+                metric_type, self.num_trials)
         )
         plt.close()
         ## Set up the labels for the histograms
@@ -1887,7 +1890,7 @@ class Postprocessor(object):
             hypo=None,
             outdir=outdir,
             end='%s_LLRDistribution_best_fit_dist_%i_Trials'%(
-                metric_type, num_trials)
+                metric_type, self.num_trials)
         )
         plt.close()
         ## Set up the labels for the histograms
@@ -1922,7 +1925,7 @@ class Postprocessor(object):
             hypo=None,
             outdir=outdir,
             end='%s_LLRDistribution_median_best_fit_dist_%i_Trials'%(
-                metric_type, num_trials)
+                metric_type, self.num_trials)
         )
         plt.close()
         ## Set up the labels for the histograms
@@ -1953,7 +1956,7 @@ class Postprocessor(object):
             hypo=None,
             outdir=outdir,
             end='%s_LLRDistribution_alt_fit_dist_%i_Trials'%(
-                metric_type, num_trials)
+                metric_type, self.num_trials)
         )
         plt.close()
         ## Set up the labels for the histograms
@@ -1997,7 +2000,7 @@ class Postprocessor(object):
             hypo=None,
             outdir=outdir,
             end='%s_LLRDistribution_median_alt_fit_dist_%i_Trials'%(
-                metric_type, num_trials)
+                metric_type, self.num_trials)
         )
         plt.close()
 
@@ -2040,7 +2043,7 @@ class Postprocessor(object):
             hypo=None,
             outdir=outdir,
             end='%s_LLRDistribution_critical_%i_Trials'%(
-                metric_type, num_trials)
+                metric_type, self.num_trials)
         )
         plt.close()
 
@@ -2084,7 +2087,7 @@ class Postprocessor(object):
             hypo=None,
             outdir=outdir,
             end='%s_LLRDistribution_critical_alt_%i_Trials'%(
-                metric_type, num_trials)
+                metric_type, self.num_trials)
         )
         plt.close()
 
@@ -2151,7 +2154,8 @@ class Postprocessor(object):
             fid=None,
             hypo=None,
             outdir=outdir,
-            end='%s_LLRDistribution_CLs_%i_Trials'%(metric_type, num_trials)
+            end='%s_LLRDistribution_CLs_%i_Trials'%(
+                metric_type, self.num_trials)
         )
         plt.close()
 
@@ -2437,10 +2441,12 @@ class Postprocessor(object):
         newline += " and h1 of %s."%self.tex_axis_label(
             self.labels.dict['h1_name']
         )
-        if 'data_name' in self.labels.dict.keys():
+        if self.labels.dict['data_name'] == '':
             newline += " The truth is %s."%self.tex_axis_label(
                 self.labels.dict['data_name']
             )
+        else:
+            newline += " This is from an analysis performed on data."
         newline += "}\n"
         self.texfile.write(newline)
         newline = "  \label{tab:"
@@ -2505,14 +2511,14 @@ class Postprocessor(object):
             ## To do this, get the number of output files
             for basename in nsort(os.listdir(self.logdir)):
                 m = self.labels.subdir_re.match(basename)
-                if m is None:
+                if m is None or 'pckl' in basename:
                     continue
                 # Here is the output directory which contains the files
                 subdir = os.path.join(self.logdir, basename)
                 # Account for failed jobs. Get the set of file numbers that
                 # exist for all h0 and h1 combinations
                 self.get_set_file_nums(
-                    filedir=os.path.join(self.logdir, basename)
+                    filedir=subdir
                 )
                 # Take one of the pickle files to see how many data
                 # entries it has.
@@ -2541,7 +2547,7 @@ class Postprocessor(object):
                         'However, based on the number of json files in the '
                         'output directory there should be %i trials in '
                         'these pickle files, so they will be regenerated.'%(
-                            pckl_trials, num_trials)
+                            pckl_trials, self.num_trials)
                     )
                     pickle_there = False
         else:
@@ -2637,7 +2643,7 @@ class Postprocessor(object):
         minimiser_info = OrderedDict()
         for basename in nsort(os.listdir(self.logdir)):
             m = self.labels.subdir_re.match(basename)
-            if m is None:
+            if m is None or 'pckl' in basename:
                 continue
 
             if self.fluctuate_data:
@@ -2674,10 +2680,13 @@ class Postprocessor(object):
                         break
                     # Also extract fiducial fits if needed
                     if 'toy' in dset_label:
-                        ftest = ('hypo_%s_fit_to_%s.json'
+                        ftest = ('hypo_%s_fit_to_%s'
                                  %(self.labels.dict['h{x}_name'.format(x=x)],
                                    dset_label))
-                    if fname == ftest:
+                    elif dset_label == 'data':
+                        ftest = ('hypo_%s_fit_to_data'
+                                 %(self.labels.dict['h{x}_name'.format(x=x)]))
+                    if ftest in fname:
                         k = 'h{x}_fit_to_{y}'.format(x=x, y=dset_label)
                         lvl2_fits[k] = self.extract_fit(
                             fpath,
@@ -3432,8 +3441,10 @@ class Postprocessor(object):
         if begin_center:
             fittitle += r"\begin{center}"
         if hasattr(self, 'labels'):
-            if 'data_name' in self.labels.dict.keys():
+            if self.labels.dict['data_name'] == '':
                 fittitle += "True %s, "%self.labels.dict['data_name']
+            else:
+                fittitle += "Data, "
         if ((fid is not None) and (hypo is not None)) and (fhkey is not None):
             raise ValueError(
                 "Got a fid, hypo and fhkey specified. Please use fid "
@@ -3806,7 +3817,9 @@ class Postprocessor(object):
         plt.rcParams['text.usetex'] = True
         save_name = ""
         if hasattr(self, 'labels'):
-            if 'data_name' in self.labels.dict.keys():
+            if self.labels.dict['data_name'] == '':
+                save_name += "data_"
+            else:
                 save_name += "true_%s_"%self.labels.dict['data_name']
         if self.detector is not None:
             save_name += "%s_"%self.detector
@@ -3833,10 +3846,12 @@ class Postprocessor(object):
             plt.savefig(os.path.join(outdir, full_save_name))
 
     def make_tex_name(self, end):
-        """Save plot as each type of file format specified in self.formats"""
+        """Make file name for tex output files"""
         tex_name = ""
         if hasattr(self, 'labels'):
-            if 'data_name' in self.labels.dict.keys():
+            if self.labels.dict['data_name'] == '':
+                tex_name += "data_"
+            else:
                 tex_name += "true_%s_"%self.labels.dict['data_name']
         if self.detector is not None:
             tex_name += "%s_"%self.detector
@@ -4132,8 +4147,8 @@ def main_analysis_postprocessing():
     )
 
     trial_nums = postprocessor.data_sets[
-        'toy_%s_asimov'%postprocessor.labels.dict[
-            'data_name']]['h0_fit_to_h1_fid'].keys()
+        postprocessor.labels.dict['data']
+    ]['h0_fit_to_h1_fid'].keys()
 
     if init_args_d['threshold'] != 0.0:
         logging.info('Outlying trials will be removed with a '
