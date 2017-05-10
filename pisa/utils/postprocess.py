@@ -467,9 +467,6 @@ class Postprocessor(object):
         # Get the deltam21 value used in the fits
         deltam21 = self.scan_file_dict['results'][0][
             'params']['deltam21']['value'][0]
-        dm31_err = "All of the deltam31 values did not " + \
-                   "have the same sign. There should " + \
-                   "only be one hierarchy/ordering tested here."
 
         # Sort the bins
         for i, bin_name in enumerate(self.all_bin_names):
@@ -483,34 +480,15 @@ class Postprocessor(object):
                         self.all_bin_units[i]
                     ).to('radians').magnitude), 2)
             elif bin_name == 'deltam31':
-                # Correct for IO hypothesis
-                if np.all(np.sign(self.all_bin_edges[i]) == -1):
-                    ## Correct bins
-                    self.all_bin_edges[i] = self.all_bin_edges[i] + deltam21
-                    self.all_bin_cens[i] = self.all_bin_cens[i] + deltam21
-                    ## Correct best fit, if needed
-                    if self.best_fit_data is not None:
-                        self.best_fit_data['deltam32'] = {}
-                        self.best_fit_data['deltam32']['units'] = \
-                            self.best_fit_data['deltam31']['units']
-                        self.best_fit_data['deltam32']['val'] = \
-                            self.best_fit_data['deltam31']['val'] + deltam21
-
-                # Correct for NO hypothesis
-                elif np.all(np.sign(self.all_bin_edges[i]) == 1):
-                    ## Correct bins
-                    self.all_bin_edges[i] = self.all_bin_edges[i] - deltam21
-                    self.all_bin_cens[i] = self.all_bin_cens[i] - deltam21
-                    ## Correct best fit, if needed
-                    if self.best_fit_data is not None:
-                        self.best_fit_data['deltam32'] = {}
-                        self.best_fit_data['deltam32']['units'] = \
-                            self.best_fit_data['deltam31']['units']
-                        self.best_fit_data['deltam32']['val'] = \
-                            self.best_fit_data['deltam31']['val'] - deltam21
-                # Hypotheses should not be mixed
-                else:
-                    raise ValueError(dm31_err)
+                self.all_bin_edges[i] = self.all_bin_edges[i] - deltam21
+                self.all_bin_cens[i] = self.all_bin_cens[i] - deltam21
+                ## Correct best fit, if needed
+                if self.best_fit_data is not None:
+                    self.best_fit_data['deltam32'] = {}
+                    self.best_fit_data['deltam32']['units'] = \
+                        self.best_fit_data['deltam31']['units']
+                    self.best_fit_data['deltam32']['val'] = \
+                        self.best_fit_data['deltam31']['val'] - deltam21
         # Correcting best fit/projection theta23 is easier
         if self.best_fit_data is not None:
             self.best_fit_data['sin2theta23'] = {}
@@ -537,44 +515,21 @@ class Postprocessor(object):
                         self.proj_bin_cens[i]*ureg(
                             self.proj_bin_units[i]
                         ).to('radians').magnitude), 2)
-                    ## Need to also correct the deltam31 fits
-                    ## This is again ordering dependent
-                    if np.all(np.sign(self.projection_data[i][
-                            'deltam31']['vals']) == -1):
-                        self.projection_data[i]['deltam32'] = {}
-                        self.projection_data[i]['deltam32']['units'] = \
-                            self.projection_data[i]['deltam31']['units']
-                        self.projection_data[i]['deltam32']['vals'] = \
-                            np.array(self.projection_data[i][
-                                'deltam31']['vals']) + deltam21
-                    elif np.all(np.sign(self.projection_data[i][
-                            'deltam31']['vals']) == +1):
-                        self.projection_data[i]['deltam32'] = {}
-                        self.projection_data[i]['deltam32']['units'] = \
-                            self.projection_data[i]['deltam31']['units']
-                        self.projection_data[i]['deltam32']['vals'] = \
-                            np.array(self.projection_data[i][
-                                'deltam31']['vals']) - deltam21
-                    else:
-                        raise ValueError(dm31_err)
+                    self.projection_data[i]['deltam32'] = {}
+                    self.projection_data[i]['deltam32']['units'] = \
+                        self.projection_data[i]['deltam31']['units']
+                    self.projection_data[i]['deltam32']['vals'] = \
+                        np.array(self.projection_data[i][
+                            'deltam31']['vals']) - deltam21
                     del self.projection_data[i]['deltam31']
                 ## Projection is a function of deltam31
                 if proj_name == 'deltam31':
                     new_proj_bin_names.append('deltam32')
                     ## Correct bins
-                    ## This is again ordering dependent
-                    if np.all(np.sign(self.proj_bin_edges[i]) == -1):
-                        self.proj_bin_edges[i] = self.proj_bin_edges[i] + \
-                            deltam21
-                        self.proj_bin_cens[i] = self.proj_bin_cens[i] + \
-                            deltam21
-                    elif np.all(np.sign(self.proj_bin_edges[i]) == +1):
-                        self.proj_bin_edges[i] = self.proj_bin_edges[i] - \
-                            deltam21
-                        self.proj_bin_cens[i] = self.proj_bin_cens[i] - \
-                            deltam21
-                    else:
-                        raise ValueError(dm31_err)
+                    self.proj_bin_edges[i] = self.proj_bin_edges[i] - \
+                        deltam21
+                    self.proj_bin_cens[i] = self.proj_bin_cens[i] - \
+                        deltam21
                     ## Need to also correct the theta23 fits
                     self.projection_data[i]['sin2theta23'] = {}
                     self.projection_data[i]['sin2theta23']['units'] = \
@@ -605,22 +560,11 @@ class Postprocessor(object):
                                 self.values[injkey][fhkey]['theta23']['units']
                             ).to('radians').magnitude), 2)
                     self.values[injkey][fhkey]['deltam32'] = {}
-                    if np.all(np.sign(self.values[injkey][fhkey][
-                            'deltam31']['vals']) == -1):
-                        self.values[injkey][fhkey]['deltam32']['units'] = \
-                            self.values[injkey][fhkey]['deltam31']['units']
-                        self.values[injkey][fhkey]['deltam32']['vals'] = \
-                            np.array(self.values[injkey][fhkey][
-                                'deltam31']['vals']) + deltam21
-                    elif np.all(np.sign(self.values[injkey][fhkey][
-                            'deltam31']['vals']) == +1):
-                        self.values[injkey][fhkey]['deltam32']['units'] = \
-                            self.values[injkey][fhkey]['deltam31']['units']
-                        self.values[injkey][fhkey]['deltam32']['vals'] = \
-                            np.array(self.values[injkey][fhkey][
-                                'deltam31']['vals']) - deltam21
-                    else:
-                        raise ValueError(dm31_err)
+                    self.values[injkey][fhkey]['deltam32']['units'] = \
+                        self.values[injkey][fhkey]['deltam31']['units']
+                    self.values[injkey][fhkey]['deltam32']['vals'] = \
+                        np.array(self.values[injkey][fhkey][
+                            'deltam31']['vals']) - deltam21
 
     #### Hypo testing Specific Postprocessing functions ####
 
