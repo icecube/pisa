@@ -1604,6 +1604,8 @@ class Postprocessor(object):
         for injkey in self.values.keys():
 
             data = self.values[injkey]
+            metric_type = data['h0_fit_to_h0_fid']['metric_val']['type']
+            metric_type_pretty = self.tex_axis_label(metric_type)
             h0_fid_metric = self.fid_values[injkey][
                 'h0_fit_to_%s'%self.labels.dict['data']
             ][
@@ -1614,15 +1616,6 @@ class Postprocessor(object):
             ][
                 'metric_val'
             ]
-
-            if h1_fid_metric > h0_fid_metric:
-                bestfit = 'h0'
-                altfit = 'h1'
-                critical_value = h0_fid_metric-h1_fid_metric
-            else:
-                bestfit = 'h1'
-                altfit = 'h0'
-                critical_value = h1_fid_metric-h0_fid_metric
 
             h0_fit_to_h0_fid_metrics = np.array(
                 data['h0_fit_to_h0_fid']['metric_val']['vals']
@@ -1637,507 +1630,514 @@ class Postprocessor(object):
                 data['h1_fit_to_h1_fid']['metric_val']['vals']
             )
 
-        metric_type = data['h0_fit_to_h0_fid']['metric_val']['type']
-        metric_type_pretty = self.tex_axis_label(metric_type)
+            # In the case of likelihood, the maximum metric is the better fit.
+            # With chi2 metrics the opposite is true, and so we must multiply
+            # everything by -1 in order to apply the same treatment.
+            if 'chi2' in metric_type:
+                logging.info('Converting chi2 metric to likelihood equivalent.')
+                h0_fid_metric *= -1
+                h1_fid_metric *= -1
+                h0_fit_to_h0_fid_metrics *= -1
+                h1_fit_to_h0_fid_metrics *= -1
+                h0_fit_to_h1_fid_metrics *= -1
+                h1_fit_to_h1_fid_metrics *= -1
 
-        # In the case of likelihood, the maximum metric is the better fit.
-        # With chi2 metrics the opposite is true, and so we must multiply
-        # everything by -1 in order to apply the same treatment.
-        if 'chi2' in metric_type:
-            logging.info('Converting chi2 metric to likelihood equivalent.')
-            h0_fit_to_h0_fid_metrics *= -1
-            h1_fit_to_h0_fid_metrics *= -1
-            h0_fit_to_h1_fid_metrics *= -1
-            h1_fit_to_h1_fid_metrics *= -1
-            critical_value *= -1
+            if h1_fid_metric < h0_fid_metric:
+                bestfit = 'h0'
+                altfit = 'h1'
+                critical_value = h0_fid_metric-h1_fid_metric
+            else:
+                bestfit = 'h1'
+                altfit = 'h0'
+                critical_value = h1_fid_metric-h0_fid_metric
 
-        if bestfit == 'h0':
-            LLRbest = h0_fit_to_h0_fid_metrics - h1_fit_to_h0_fid_metrics
-            LLRalt = h0_fit_to_h1_fid_metrics - h1_fit_to_h1_fid_metrics
-        else:
-            LLRbest = h1_fit_to_h1_fid_metrics - h0_fit_to_h1_fid_metrics
-            LLRalt = h1_fit_to_h0_fid_metrics - h0_fit_to_h0_fid_metrics
+            if bestfit == 'h0':
+                LLRbest = h0_fit_to_h0_fid_metrics - h1_fit_to_h0_fid_metrics
+                LLRalt = h0_fit_to_h1_fid_metrics - h1_fit_to_h1_fid_metrics
+            else:
+                LLRbest = h1_fit_to_h1_fid_metrics - h0_fit_to_h1_fid_metrics
+                LLRalt = h1_fit_to_h0_fid_metrics - h0_fit_to_h0_fid_metrics
 
-        minLLR = min(min(LLRbest), min(LLRalt))
-        maxLLR = max(max(LLRbest), max(LLRalt))
-        rangeLLR = maxLLR - minLLR
-        # Special case for low numbers of trials. Here, the plot can't really
-        # be interpreted but the numbers printed on it can still be useful, so
-        # we need to make something.
-        if self.num_trials < 100:
-            binning = np.linspace(minLLR - 0.1*rangeLLR,
-                                  maxLLR + 0.1*rangeLLR,
-                                  10)
-        else:
-            binning = np.linspace(minLLR - 0.1*rangeLLR,
-                                  maxLLR + 0.1*rangeLLR,
-                                  int(self.num_trials/40))
-        binwidth = binning[1]-binning[0]
-        bincens = np.linspace(binning[0]+binwidth/2.0,
-                              binning[-1]-binwidth/2.0,
-                              len(binning)-1)
+            minLLR = min(min(LLRbest), min(LLRalt))
+            maxLLR = max(max(LLRbest), max(LLRalt))
+            rangeLLR = maxLLR - minLLR
+            # Special case for low numbers of trials. Here, the plot
+            # can't really be interpreted but the numbers printed on
+            # it can still be useful, so we need to make something.
+            if self.num_trials < 100:
+                binning = np.linspace(minLLR - 0.1*rangeLLR,
+                                      maxLLR + 0.1*rangeLLR,
+                                      10)
+            else:
+                binning = np.linspace(minLLR - 0.1*rangeLLR,
+                                      maxLLR + 0.1*rangeLLR,
+                                      int(self.num_trials/40))
+            binwidth = binning[1]-binning[0]
+            bincens = np.linspace(binning[0]+binwidth/2.0,
+                                  binning[-1]-binwidth/2.0,
+                                  len(binning)-1)
 
-        LLRbesthist, LLRbestbinedges = np.histogram(LLRbest, bins=binning)
-        LLRalthist, LLRaltbinedges = np.histogram(LLRalt, bins=binning)
+            LLRbesthist, LLRbestbinedges = np.histogram(LLRbest, bins=binning)
+            LLRalthist, LLRaltbinedges = np.histogram(LLRalt, bins=binning)
 
-        LLRhistmax = max(max(LLRbesthist), max(LLRalthist))
+            LLRhistmax = max(max(LLRbesthist), max(LLRalthist))
 
-        best_median = np.median(LLRbest)
-        alt_median = np.median(LLRalt)
+            best_median = np.median(LLRbest)
+            alt_median = np.median(LLRalt)
 
-        if self.labels.dict['data_name'] == '':
-            inj_name = "data"
-        else:
-            inj_name = "true %s"%self.tex_axis_label(
-                self.labels.dict['data_name']
+            if self.labels.dict['data_name'] == '':
+                inj_name = "data"
+            else:
+                inj_name = "true %s"%self.tex_axis_label(
+                    self.labels.dict['data_name']
+                )
+            best_name = self.labels.dict['%s_name'%bestfit]
+            alt_name = self.labels.dict['%s_name'%altfit]
+
+            # Calculate p values
+            ## First for the preferred hypothesis based on the fiducial fit
+            crit_p_value, unc_crit_p_value = self.calc_p_value(
+                LLRdist=LLRalt,
+                critical_value=critical_value,
+                greater=True
             )
-        best_name = self.labels.dict['%s_name'%bestfit]
-        alt_name = self.labels.dict['%s_name'%altfit]
-
-        # Calculate p values
-        ## First for the preferred hypothesis based on the fiducial fit
-        crit_p_value, unc_crit_p_value = self.calc_p_value(
-            LLRdist=LLRalt,
-            critical_value=critical_value,
-            greater=True
-        )
-        ## Then for the alternate hypothesis based on the fiducial fit
-        alt_crit_p_value, alt_unc_crit_p_value = self.calc_p_value(
-            LLRdist=LLRbest,
-            critical_value=critical_value,
-            greater=False
-        )
-        ## Combine these to give a CLs value based on arXiv:1407.5052
-        cls_value = (1 - alt_crit_p_value) / (1 - crit_p_value)
-        unc_cls_value = cls_value * np.sqrt(
-            np.power(alt_unc_crit_p_value/alt_crit_p_value, 2.0) + \
-            np.power(unc_crit_p_value/crit_p_value, 2.0)
-        )
-        ## Then for the preferred hypothesis based on the median. That is, the
-        ## case of a median experiment from the distribution under the
-        ## preferred hypothesis.
-        med_p_value, unc_med_p_value, median_error = self.calc_p_value(
-            LLRdist=LLRalt,
-            critical_value=best_median,
-            greater=True,
-            median_p_value=True,
-            LLRbest=LLRbest
-        )
-
-        if metric_type == 'llh':
-            plot_title = (r"\begin{center}"\
-                          +"%s %s Event Selection "%(self.detector,
-                                                     self.selection)\
-                          +r"\\"+" LLR Distributions for %s (%i trials)"%(
-                              inj_name, self.num_trials)\
-                          +r"\end{center}")
-
-        else:
-            plot_title = (r"\begin{center}"\
-                          +"%s %s Event Selection "%(self.detector,
-                                                     self.selection)\
-                          +r"\\"+" %s \"LLR\" Distributions for "
-                          %(metric_type_pretty)\
-                          +"%s (%i trials)"%(inj_name,
-                                             self.num_trials)\
-                          +r"\end{center}")
-
-        # Factor with which to make everything visible
-        plot_scaling_factor = 1.55
-
-        # In case of median plot, draw both best and alt histograms
-        ## Set up the labels for the histograms
-        LLR_labels = [
-            r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
-            r"$\log\left[\mathcal{L}\left(\mathcal{H}_" + \
-            r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
-                best_name, alt_name),
-            r"%s Pseudo-Experiments - "%(self.tex_axis_label(alt_name)) + \
-            r"$\log\left[\mathcal{L}\left(\mathcal{H}_" + \
-            r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
-                best_name, alt_name)
-        ]
-        self.plot_LLR_histograms(
-            LLRarrays=[LLRbest, LLRalt],
-            LLRhistmax=LLRhistmax,
-            binning=binning,
-            colors=['r', 'b'],
-            labels=LLR_labels,
-            best_name=best_name,
-            alt_name=alt_name,
-            critical_value=best_median,
-            critical_label=r"%s Median = $%.4f\pm%.4f$"%(
-                self.tex_axis_label(best_name),
-                best_median,
-                median_error),
-            critical_height=float(max(LLRbesthist))/float(
-                plot_scaling_factor*LLRhistmax),
-            LLRhist=LLRalthist,
-            greater=True
-        )
-        plt.legend(loc='upper left')
-        plt.title(plot_title)
-        # Write the p-value on the plot
-        plt.figtext(
-            0.15,
-            0.66,
-            r"$\mathrm{p}\left(\mathcal{H}_{%s}\right) = %.4f\pm%.4f$"%(
-                best_name, med_p_value, unc_med_p_value),
-            color='k',
-            size='xx-large'
-        )
-        self.save_plot(
-            outdir=outdir,
-            end='%s_LLRDistribution_median_%i_Trials'%(
-                metric_type, self.num_trials)
-        )
-        # Add the extra points if they exist
-        if self.extra_points is not None:
-            plt.legend(loc='upper left', fontsize=11)
-            curleg = plt.gca().get_legend()
-            linelist = self.add_extra_points(
-                ymax=float(max(LLRbesthist))/float(
-                    plot_scaling_factor*LLRhistmax)
+            ## Then for the alternate hypothesis based on the fiducial fit
+            alt_crit_p_value, alt_unc_crit_p_value = self.calc_p_value(
+                LLRdist=LLRbest,
+                critical_value=critical_value,
+                greater=False
             )
-            handles, labels = plt.gca().get_legend_handles_labels()
-            newhandles = []
-            for l, h in zip(labels, handles):
-                if l in linelist:
-                    newhandles.append(h)
-            newleg = plt.legend(
-                handles=newhandles,
-                loc='upper right',
-                fontsize=11
+            ## Combine these to give a CLs value based on arXiv:1407.5052
+            cls_value = (1 - alt_crit_p_value) / (1 - crit_p_value)
+            unc_cls_value = cls_value * np.sqrt(
+                np.power(alt_unc_crit_p_value/alt_crit_p_value, 2.0) + \
+                np.power(unc_crit_p_value/crit_p_value, 2.0)
             )
-            plt.gca().add_artist(newleg)
-            plt.gca().add_artist(curleg)
+            ## Then for the preferred hypothesis based on the median. That
+            ## is, the case of a median experiment from the distribution
+            ## under the preferred hypothesis.
+            med_p_value, unc_med_p_value, median_error = self.calc_p_value(
+                LLRdist=LLRalt,
+                critical_value=best_median,
+                greater=True,
+                median_p_value=True,
+                LLRbest=LLRbest
+            )
+
+            if metric_type == 'llh':
+                plot_title = (r"\begin{center}"\
+                              +"%s %s Event Selection "%(self.detector,
+                                                         self.selection)\
+                              +r"\\"+" LLR Distributions for %s (%i trials)"%(
+                                  inj_name, self.num_trials)\
+                              +r"\end{center}")
+
+            else:
+                plot_title = (r"\begin{center}"\
+                              +"%s %s Event Selection "%(self.detector,
+                                                         self.selection)\
+                              +r"\\"+" %s \"LLR\" Distributions for "
+                              %(metric_type_pretty)\
+                              +"%s (%i trials)"%(inj_name,
+                                                 self.num_trials)\
+                              +r"\end{center}")
+
+            # Factor with which to make everything visible
+            plot_scaling_factor = 1.55
+
+            # In case of median plot, draw both best and alt histograms
+            ## Set up the labels for the histograms
+            LLR_labels = [
+                r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
+                r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
+                r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+                    alt_name),
+                r"%s Pseudo-Experiments - "%(self.tex_axis_label(alt_name)) + \
+                r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
+                r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+                    alt_name)
+            ]
+            self.plot_LLR_histograms(
+                LLRarrays=[LLRbest, LLRalt],
+                LLRhistmax=LLRhistmax,
+                binning=binning,
+                colors=['r', 'b'],
+                labels=LLR_labels,
+                best_name=best_name,
+                alt_name=alt_name,
+                critical_value=best_median,
+                critical_label=r"%s Median = $%.4f\pm%.4f$"%(
+                    self.tex_axis_label(best_name),
+                    best_median,
+                    median_error),
+                critical_height=float(max(LLRbesthist))/float(
+                    plot_scaling_factor*LLRhistmax),
+                LLRhist=LLRalthist,
+                greater=True
+            )
+            plt.legend(loc='upper left')
+            plt.title(plot_title)
+            # Write the p-value on the plot
+            plt.figtext(
+                0.15,
+                0.66,
+                r"$\mathrm{p}\left(\mathcal{H}_{%s}\right) = %.4f\pm%.4f$"%(
+                    best_name, med_p_value, unc_med_p_value),
+                color='k',
+                size='xx-large'
+            )
             self.save_plot(
                 outdir=outdir,
-                end='%s_LLRDistribution_median_w_extra_points_%i_Trials'%(
+                end='%s_LLRDistribution_median_%i_Trials'%(
                     metric_type, self.num_trials)
             )
-        plt.close()
+            # Add the extra points if they exist
+            if self.extra_points is not None:
+                plt.legend(loc='upper left', fontsize=11)
+                curleg = plt.gca().get_legend()
+                linelist = self.add_extra_points(
+                    ymax=float(max(LLRbesthist))/float(
+                        plot_scaling_factor*LLRhistmax)
+                )
+                handles, labels = plt.gca().get_legend_handles_labels()
+                newhandles = []
+                for l, h in zip(labels, handles):
+                    if l in linelist:
+                        newhandles.append(h)
+                newleg = plt.legend(
+                    handles=newhandles,
+                    loc='upper right',
+                    fontsize=11
+                )
+                plt.gca().add_artist(newleg)
+                plt.gca().add_artist(curleg)
+                self.save_plot(
+                    outdir=outdir,
+                    end='%s_LLRDistribution_median_w_extra_points_%i_Trials'%(
+                        metric_type, self.num_trials)
+                )
+            plt.close()
 
-        # Make some debugging plots
-        ## Set up the labels for the histograms
-        LLR_labels = [
-            r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
-            r"$\log\left[\mathcal{L}\left(\mathcal{H}_" + \
-            r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
-                best_name, alt_name),
-            r"%s Pseudo-Experiments - "%(self.tex_axis_label(alt_name)) + \
-            r"$\log\left[\mathcal{L}\left(\mathcal{H}_" + \
-            r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
-                best_name, alt_name)
-        ]
-        self.plot_LLR_histograms(
-            LLRarrays=[LLRbest, LLRalt],
-            LLRhistmax=LLRhistmax,
-            binning=binning,
-            colors=['r', 'b'],
-            labels=LLR_labels,
-            best_name=best_name,
-            alt_name=alt_name,
-            critical_value=best_median,
-            critical_label=r"%s Median = $%.4f\pm%.4f$"%(
-                self.tex_axis_label(best_name),
-                best_median,
-                median_error),
-            critical_height=float(max(LLRbesthist))/float(
-                plot_scaling_factor*LLRhistmax),
-            LLRhist=None,
-            greater=True
-        )
-        plt.legend(loc='upper left')
-        plt.title(plot_title)
-        self.save_plot(
-            outdir=outdir,
-            end='%s_LLRDistribution_median_both_fit_dists_%i_Trials'%(
-                metric_type, self.num_trials)
-        )
-        plt.close()
-        ## Set up the labels for the histograms
-        LLR_labels = [
-            r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
-            r"$\log\left[\mathcal{L}\left(\mathcal{H}_" + \
-            r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
-                best_name, alt_name),
-        ]
-        self.plot_LLR_histograms(
-            LLRarrays=[LLRbest],
-            LLRhistmax=LLRhistmax,
-            binning=binning,
-            colors=['r'],
-            labels=LLR_labels,
-            best_name=best_name,
-            alt_name=alt_name,
-            critical_value=None,
-            critical_label=None,
-            critical_height=None,
-            LLRhist=None,
-            greater=True
-        )
-        plt.legend(loc='upper left')
-        plt.title(plot_title)
-        self.save_plot(
-            outdir=outdir,
-            end='%s_LLRDistribution_best_fit_dist_%i_Trials'%(
-                metric_type, self.num_trials)
-        )
-        plt.close()
-        ## Set up the labels for the histograms
-        LLR_labels = [
-            r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
-            r"$\log\left[\mathcal{L}\left(\mathcal{H}_" + \
-            r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
-                best_name, alt_name),
-        ]
-        self.plot_LLR_histograms(
-            LLRarrays=[LLRbest],
-            LLRhistmax=LLRhistmax,
-            binning=binning,
-            colors=['r'],
-            labels=LLR_labels,
-            best_name=best_name,
-            alt_name=alt_name,
-            critical_value=best_median,
-            critical_label=r"%s Median = $%.4f\pm%.4f$"%(
-                self.tex_axis_label(best_name),
-                best_median,
-                median_error),
-            critical_height=float(max(LLRbesthist))/float(
-                plot_scaling_factor*LLRhistmax),
-            LLRhist=None,
-            greater=True
-        )
-        plt.legend(loc='upper left')
-        plt.title(plot_title)
-        self.save_plot(
-            outdir=outdir,
-            end='%s_LLRDistribution_median_best_fit_dist_%i_Trials'%(
-                metric_type, self.num_trials)
-        )
-        plt.close()
-        ## Set up the labels for the histograms
-        LLR_labels = [
-            r"%s Pseudo-Experiments - "%(self.tex_axis_label(alt_name)) + \
-            r"$\log\left[\mathcal{L}\left(\mathcal{H}_" + \
-            r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
-                best_name, alt_name)
-        ]
-        self.plot_LLR_histograms(
-            LLRarrays=[LLRalt],
-            LLRhistmax=LLRhistmax,
-            binning=binning,
-            colors=['b'],
-            labels=LLR_labels,
-            best_name=best_name,
-            alt_name=alt_name,
-            critical_value=None,
-            critical_label=None,
-            critical_height=None,
-            LLRhist=None,
-            greater=True
-        )
-        plt.legend(loc='upper left')
-        plt.title(plot_title)
-        self.save_plot(
-            outdir=outdir,
-            end='%s_LLRDistribution_alt_fit_dist_%i_Trials'%(
-                metric_type, self.num_trials)
-        )
-        plt.close()
-        ## Set up the labels for the histograms
-        LLR_labels = [
-            r"%s Pseudo-Experiments - "%(self.tex_axis_label(alt_name)) + \
-            r"$\log\left[\mathcal{L}\left(\mathcal{H}_" + \
-            r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
-                best_name, alt_name)
-        ]
-        self.plot_LLR_histograms(
-            LLRarrays=[LLRalt],
-            LLRhistmax=LLRhistmax,
-            binning=binning,
-            colors=['b'],
-            labels=LLR_labels,
-            best_name=best_name,
-            alt_name=alt_name,
-            critical_value=best_median,
-            critical_label=r"%s Median = $%.4f\pm%.4f$"%(
-                self.tex_axis_label(best_name),
-                best_median,
-                median_error),
-            critical_height=float(max(LLRbesthist))/float(
-                plot_scaling_factor*LLRhistmax),
-            LLRhist=LLRalthist,
-            greater=True
-        )
-        plt.legend(loc='upper left')
-        plt.title(plot_title)
-        # Write the p-value on the plot
-        plt.figtext(
-            0.15,
-            0.66,
-            r"$\mathrm{p}\left(\mathcal{H}_{%s}\right) = %.4f\pm%.4f$"%(
-                best_name, med_p_value, unc_med_p_value),
-            color='k',
-            size='xx-large'
-        )
-        self.save_plot(
-            outdir=outdir,
-            end='%s_LLRDistribution_median_alt_fit_dist_%i_Trials'%(
-                metric_type, self.num_trials)
-        )
-        plt.close()
+            # Make some debugging plots
+            ## Set up the labels for the histograms
+            LLR_labels = [
+                r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
+                r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
+                r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+                    alt_name),
+                r"%s Pseudo-Experiments - "%(self.tex_axis_label(alt_name)) + \
+                r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
+                r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+                    alt_name)
+            ]
+            self.plot_LLR_histograms(
+                LLRarrays=[LLRbest, LLRalt],
+                LLRhistmax=LLRhistmax,
+                binning=binning,
+                colors=['r', 'b'],
+                labels=LLR_labels,
+                best_name=best_name,
+                alt_name=alt_name,
+                critical_value=best_median,
+                critical_label=r"%s Median = $%.4f\pm%.4f$"%(
+                    self.tex_axis_label(best_name),
+                    best_median,
+                    median_error),
+                critical_height=float(max(LLRbesthist))/float(
+                    plot_scaling_factor*LLRhistmax),
+                LLRhist=None,
+                greater=True
+            )
+            plt.legend(loc='upper left')
+            plt.title(plot_title)
+            self.save_plot(
+                outdir=outdir,
+                end='%s_LLRDistribution_median_both_fit_dists_%i_Trials'%(
+                    metric_type, self.num_trials)
+            )
+            plt.close()
+            ## Set up the labels for the histograms
+            LLR_labels = [
+                r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
+                r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}" + \
+                r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+                    alt_name),
+            ]
+            self.plot_LLR_histograms(
+                LLRarrays=[LLRbest],
+                LLRhistmax=LLRhistmax,
+                binning=binning,
+                colors=['r'],
+                labels=LLR_labels,
+                best_name=best_name,
+                alt_name=alt_name,
+                critical_value=None,
+                critical_label=None,
+                critical_height=None,
+                LLRhist=None,
+                greater=True
+            )
+            plt.legend(loc='upper left')
+            plt.title(plot_title)
+            self.save_plot(
+                outdir=outdir,
+                end='%s_LLRDistribution_best_fit_dist_%i_Trials'%(
+                    metric_type, self.num_trials)
+            )
+            plt.close()
+            ## Set up the labels for the histograms
+            LLR_labels = [
+                r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
+                r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
+                r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+                    alt_name),
+            ]
+            self.plot_LLR_histograms(
+                LLRarrays=[LLRbest],
+                LLRhistmax=LLRhistmax,
+                binning=binning,
+                colors=['r'],
+                labels=LLR_labels,
+                best_name=best_name,
+                alt_name=alt_name,
+                critical_value=best_median,
+                critical_label=r"%s Median = $%.4f\pm%.4f$"%(
+                    self.tex_axis_label(best_name),
+                    best_median,
+                    median_error),
+                critical_height=float(max(LLRbesthist))/float(
+                    plot_scaling_factor*LLRhistmax),
+                LLRhist=None,
+                greater=True
+            )
+            plt.legend(loc='upper left')
+            plt.title(plot_title)
+            self.save_plot(
+                outdir=outdir,
+                end='%s_LLRDistribution_median_best_fit_dist_%i_Trials'%(
+                    metric_type, self.num_trials)
+            )
+            plt.close()
+            ## Set up the labels for the histograms
+            LLR_labels = [
+                r"%s Pseudo-Experiments - "%(self.tex_axis_label(alt_name)) + \
+                r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
+                r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+                    alt_name)
+            ]
+            self.plot_LLR_histograms(
+                LLRarrays=[LLRalt],
+                LLRhistmax=LLRhistmax,
+                binning=binning,
+                colors=['b'],
+                labels=LLR_labels,
+                best_name=best_name,
+                alt_name=alt_name,
+                critical_value=None,
+                critical_label=None,
+                critical_height=None,
+                LLRhist=None,
+                greater=True
+            )
+            plt.legend(loc='upper left')
+            plt.title(plot_title)
+            self.save_plot(
+                outdir=outdir,
+                end='%s_LLRDistribution_alt_fit_dist_%i_Trials'%(
+                    metric_type, self.num_trials)
+            )
+            plt.close()
+            ## Set up the labels for the histograms
+            LLR_labels = [
+                r"%s Pseudo-Experiments - "%(self.tex_axis_label(alt_name)) + \
+                r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}" + \
+                r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+                    alt_name)
+            ]
+            self.plot_LLR_histograms(
+                LLRarrays=[LLRalt],
+                LLRhistmax=LLRhistmax,
+                binning=binning,
+                colors=['b'],
+                labels=LLR_labels,
+                best_name=best_name,
+                alt_name=alt_name,
+                critical_value=best_median,
+                critical_label=r"%s Median = $%.4f\pm%.4f$"%(
+                    self.tex_axis_label(best_name),
+                    best_median,
+                    median_error),
+                critical_height=float(max(LLRbesthist))/float(
+                    plot_scaling_factor*LLRhistmax),
+                LLRhist=LLRalthist,
+                greater=True
+            )
+            plt.legend(loc='upper left')
+            plt.title(plot_title)
+            # Write the p-value on the plot
+            plt.figtext(
+                0.15,
+                0.66,
+                r"$\mathrm{p}\left(\mathcal{H}_{%s}\right) = %.4f\pm%.4f$"%(
+                    best_name, med_p_value, unc_med_p_value),
+                color='k',
+                size='xx-large'
+            )
+            self.save_plot(
+                outdir=outdir,
+                end='%s_LLRDistribution_median_alt_fit_dist_%i_Trials'%(
+                    metric_type, self.num_trials)
+            )
+            plt.close()
 
-        # In case of critical plot, draw just alt histograms
-        ## Set up the label for the histogram
-        LLR_labels = [
-            r"%s Pseudo-Experiments - "%(self.tex_axis_label(alt_name)) + \
-            r"$\log\left[\mathcal{L}\left(\mathcal{H}_" + \
-            r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
-                best_name, alt_name)
-        ]
-        self.plot_LLR_histograms(
-            LLRarrays=[LLRalt],
-            LLRhistmax=LLRhistmax,
-            binning=binning,
-            colors=['b'],
-            labels=LLR_labels,
-            best_name=best_name,
-            alt_name=alt_name,
-            critical_value=critical_value,
-            critical_label=r"Critical Value = %.4f"%(critical_value),
-            critical_height=float(max(LLRbesthist))/float(
-                plot_scaling_factor*LLRhistmax),
-            LLRhist=LLRalthist,
-            greater=True
-        )
-        plt.legend(loc='upper left')
-        plt.title(plot_title)
-        # Write the p-value on the plot
-        plt.figtext(
-            0.15,
-            0.70,
-            r"$\mathrm{p}\left(\mathcal{H}_{%s}\right) = %.4f\pm%.4f$"%(
-                best_name, crit_p_value, unc_crit_p_value),
-            color='k',
-            size='xx-large'
-        )
-        self.save_plot(
-            outdir=outdir,
-            end='%s_LLRDistribution_critical_%i_Trials'%(
-                metric_type, self.num_trials)
-        )
-        plt.close()
+            # In case of critical plot, draw just alt histograms
+            ## Set up the label for the histogram
+            LLR_labels = [
+                r"%s Pseudo-Experiments - "%(self.tex_axis_label(alt_name)) + \
+                r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
+                r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+                    alt_name)
+            ]
+            self.plot_LLR_histograms(
+                LLRarrays=[LLRalt],
+                LLRhistmax=LLRhistmax,
+                binning=binning,
+                colors=['b'],
+                labels=LLR_labels,
+                best_name=best_name,
+                alt_name=alt_name,
+                critical_value=critical_value,
+                critical_label=r"Critical Value = %.4f"%(critical_value),
+                critical_height=float(max(LLRbesthist))/float(
+                    plot_scaling_factor*LLRhistmax),
+                LLRhist=LLRalthist,
+                greater=True
+            )
+            plt.legend(loc='upper left')
+            plt.title(plot_title)
+            # Write the p-value on the plot
+            plt.figtext(
+                0.15,
+                0.70,
+                r"$\mathrm{p}\left(\mathcal{H}_{%s}\right) = %.4f\pm%.4f$"%(
+                    best_name, crit_p_value, unc_crit_p_value),
+                color='k',
+                size='xx-large'
+            )
+            self.save_plot(
+                outdir=outdir,
+                end='%s_LLRDistribution_critical_%i_Trials'%(
+                    metric_type, self.num_trials)
+            )
+            plt.close()
 
-        # Make a second critical plot for the alt hypothesis, so we draw the
-        # preferred hypothesis
-        ## Set up the label for the histogram
-        LLR_labels = [
-            r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
-            r"$\log\left[\mathcal{L}\left(\mathcal{H}_" + \
-            r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
-                best_name, alt_name)
-        ]
-        self.plot_LLR_histograms(
-            LLRarrays=[LLRbest],
-            LLRhistmax=LLRhistmax,
-            binning=binning,
-            colors=['r'],
-            labels=LLR_labels,
-            best_name=best_name,
-            alt_name=alt_name,
-            critical_value=critical_value,
-            critical_label=r"Critical Value = %.4f"%(critical_value),
-            critical_height=float(max(LLRbesthist))/float(
-                plot_scaling_factor*LLRhistmax),
-            LLRhist=LLRbesthist,
-            greater=False
-        )
-        plt.legend(loc='upper left')
-        plt.title(plot_title)
-        # Write the p-value on the plot
-        plt.figtext(
-            0.15,
-            0.70,
-            r"$\mathrm{p}\left(\mathcal{H}_{%s}\right) = %.4f\pm%.4f$"%(
-                alt_name, alt_crit_p_value, alt_unc_crit_p_value),
-            color='k',
-            size='xx-large'
-        )
-        self.save_plot(
-            outdir=outdir,
-            end='%s_LLRDistribution_critical_alt_%i_Trials'%(
-                metric_type, self.num_trials)
-        )
-        plt.close()
+            # Make a second critical plot for the alt hypothesis, so we draw the
+            # preferred hypothesis
+            ## Set up the label for the histogram
+            LLR_labels = [
+                r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
+                r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
+                r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+                    alt_name)
+            ]
+            self.plot_LLR_histograms(
+                LLRarrays=[LLRbest],
+                LLRhistmax=LLRhistmax,
+                binning=binning,
+                colors=['r'],
+                labels=LLR_labels,
+                best_name=best_name,
+                alt_name=alt_name,
+                critical_value=critical_value,
+                critical_label=r"Critical Value = %.4f"%(critical_value),
+                critical_height=float(max(LLRbesthist))/float(
+                    plot_scaling_factor*LLRhistmax),
+                LLRhist=LLRbesthist,
+                greater=False
+            )
+            plt.legend(loc='upper left')
+            plt.title(plot_title)
+            # Write the p-value on the plot
+            plt.figtext(
+                0.15,
+                0.70,
+                r"$\mathrm{p}\left(\mathcal{H}_{%s}\right) = %.4f\pm%.4f$"%(
+                    alt_name, alt_crit_p_value, alt_unc_crit_p_value),
+                color='k',
+                size='xx-large'
+            )
+            self.save_plot(
+                outdir=outdir,
+                end='%s_LLRDistribution_critical_alt_%i_Trials'%(
+                    metric_type, self.num_trials)
+            )
+            plt.close()
 
-        # Lastly, show both exclusion regions and then the joined CLs value
-        ## Set up the labels for the histograms
-        LLR_labels = [
-            r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
-            r"$\log\left[\mathcal{L}\left(\mathcal{H}_" + \
-            r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
-                best_name, alt_name),
-            r"%s Pseudo-Experiments - "%(self.tex_axis_label(alt_name)) + \
-            r"$\log\left[\mathcal{L}\left(\mathcal{H}_" + \
-            r"{%s}\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
-                best_name, alt_name)
-        ]
-        self.plot_LLR_histograms(
-            LLRarrays=[LLRbest, LLRalt],
-            LLRhistmax=LLRhistmax,
-            binning=binning,
-            colors=['r', 'b'],
-            labels=LLR_labels,
-            best_name=best_name,
-            alt_name=alt_name,
-            critical_value=critical_value,
-            critical_label=r"Critical Value = %.4f"%(critical_value),
-            critical_height=float(max(LLRbesthist))/float(
-                plot_scaling_factor*LLRhistmax),
-            LLRhist=[LLRbesthist, LLRalthist],
-            CLs=True,
-        )
-        plt.legend(loc='upper left')
-        plt.title(plot_title)
-        # Write the p-values on the plot
-        plt.figtext(
-            0.50,
-            0.66,
-            r"$\mathrm{CL}_{s}\left(\mathcal{H}_{%s}\right) = %.4f\pm%.4f$"%(
-                best_name, cls_value, unc_cls_value),
-            horizontalalignment='center',
-            color='k',
-            size='xx-large'
-        )
-        plt.figtext(
-            0.12,
-            0.55,
-            r"$\mathrm{p}\left(\mathcal{H}_{%s}\right) = %.2f\pm%.2f$"%(
-                alt_name, alt_crit_p_value, alt_unc_crit_p_value),
-            bbox=dict(facecolor='none', edgecolor='red', boxstyle='round'),
-            horizontalalignment='left',
-            color='k',
-            size='x-large'
-        )
-        plt.figtext(
-            0.88,
-            0.55,
-            r"$\mathrm{p}\left(\mathcal{H}_{%s}\right) = %.2f\pm%.2f$"%(
-                best_name, crit_p_value, unc_crit_p_value),
-            horizontalalignment='right',
-            bbox=dict(facecolor='none', edgecolor='blue', boxstyle='round'),
-            color='k',
-            size='x-large'
-        )
-        self.save_plot(
-            outdir=outdir,
-            end='%s_LLRDistribution_CLs_%i_Trials'%(
-                metric_type, self.num_trials)
-        )
-        plt.close()
+            # Lastly, show both exclusion regions and then the joined CLs value
+            ## Set up the labels for the histograms
+            LLR_labels = [
+                r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
+                r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
+                r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+                    alt_name),
+                r"%s Pseudo-Experiments - "%(self.tex_axis_label(alt_name)) + \
+                r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
+                r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
+                    alt_name)
+            ]
+            self.plot_LLR_histograms(
+                LLRarrays=[LLRbest, LLRalt],
+                LLRhistmax=LLRhistmax,
+                binning=binning,
+                colors=['r', 'b'],
+                labels=LLR_labels,
+                best_name=best_name,
+                alt_name=alt_name,
+                critical_value=critical_value,
+                critical_label=r"Critical Value = %.4f"%(critical_value),
+                critical_height=float(max(LLRbesthist))/float(
+                    plot_scaling_factor*LLRhistmax),
+                LLRhist=[LLRbesthist, LLRalthist],
+                CLs=True,
+            )
+            plt.legend(loc='upper left')
+            plt.title(plot_title)
+            # Write the p-values on the plot
+            plt.figtext(
+                0.50,
+                0.66,
+                r"$\mathrm{CL}_{s}\left(\mathcal{H}_{%s}"%(best_name) + \
+                r"\right)= %.4f\pm%.4f$"%(cls_value, unc_cls_value),
+                horizontalalignment='center',
+                color='k',
+                size='xx-large'
+            )
+            plt.figtext(
+                0.12,
+                0.55,
+                r"$\mathrm{p}\left(\mathcal{H}_{%s}\right) = %.2f\pm%.2f$"%(
+                    alt_name, alt_crit_p_value, alt_unc_crit_p_value),
+                bbox=dict(facecolor='none', edgecolor='red', boxstyle='round'),
+                horizontalalignment='left',
+                color='k',
+                size='x-large'
+            )
+            plt.figtext(
+                0.88,
+                0.55,
+                r"$\mathrm{p}\left(\mathcal{H}_{%s}\right) = %.2f\pm%.2f$"%(
+                    best_name, crit_p_value, unc_crit_p_value),
+                horizontalalignment='right',
+                bbox=dict(facecolor='none', edgecolor='blue', boxstyle='round'),
+                color='k',
+                size='x-large'
+            )
+            self.save_plot(
+                outdir=outdir,
+                end='%s_LLRDistribution_CLs_%i_Trials'%(
+                    metric_type, self.num_trials)
+            )
+            plt.close()
 
     def make_fiducial_fit_files(self):
         """Make tex files which can be then be compiled in to tables
@@ -4160,7 +4160,7 @@ def main_profile_scan():
 
     # 2D profile scans
     elif len(postprocessor.all_bin_cens) == 2:
-        #postprocessor.plot_2D_scans()
+        postprocessor.plot_2D_scans()
 
         if (postprocessor.all_bin_names[0] == 'theta23') and \
            (postprocessor.all_bin_names[1] == 'deltam31'):
