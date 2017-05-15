@@ -117,6 +117,19 @@ def parse_args(description=__doc__, profile_scan=False,
             combination.'''
         )
         parser.add_argument(
+            '-IOP', '--individual_overlaid_posteriors', action='store_true',
+            default=False,
+            help='''Flag to plot individual overlaid posteriors. Overlaid
+            here means that for a plot will be made with each of the h0
+            and h1 returned values on the same plot for each of the
+            fiducial h0 and h1 pseudos.'''
+        )
+        parser.add_argument(
+            '-COP', '--combined_overlaid_posteriors', action='store_true',
+            default=False,
+            help='''Flag to plot combined overlaid posteriors.'''
+        )
+        parser.add_argument(
             '-IS', '--individual_scatter', action='store_true', default=False,
             help='''Flag to plot individual 2D scatter plots of posteriors.'''
         )
@@ -1166,6 +1179,138 @@ class Postprocessor(object):
                     plt.subplots_adjust(top=0.9)
                     self.save_plot(
                         fhkey=fhkey,
+                        outdir=outdir,
+                        end='posteriors'
+                    )
+                    plt.close()
+
+    def make_overlaid_posterior_plots(self, combined=False):
+        """Make overlaid posterior plots. Overlaid here means that
+        a plot will be made with each of the h0 and h1 returned
+        values on the same plot for each of the fiducial h0 and h1
+        pseudos. With combined=False they will be saved each time but
+        with combined=True they will be saved on a single canvas for
+        each fiducial hypothesis."""
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+
+        if combined:
+            outdir = os.path.join(self.outdir, 'CombinedOverlaidPosteriors')
+            maintitle = self.make_main_title(end='Posteriors')
+        else:
+            outdir = os.path.join(self.outdir, 'IndividualOverlaidPosteriors')
+            maintitle = self.make_main_title(end='Posterior')
+        mkdir(outdir)
+
+        hypos = ['h0', 'h1']
+        hcolors = ['limegreen', 'darkviolet']
+        hlabels = ['Hypo %s'%self.tex_axis_label(self.labels.dict['h0_name']),
+                   'Hypo %s'%self.tex_axis_label(self.labels.dict['h1_name'])]
+
+        for injkey in self.values.keys():
+            for fid in hypos:
+                # Need just one the hypo/fid combinations to feed in
+                # to things at this stage
+                dummy_fhkey = 'h0_fit_to_%s_fid'%fid
+                # Set up multi-plot if needed
+                if combined:
+                    num_rows = self.get_num_rows(
+                        data=self.values[injkey][dummy_fhkey],
+                        omit_metric=False
+                    )
+                    plt.figure(figsize=(20, 5*num_rows+2))
+                    subplotnum = 1
+                else:
+                    subplotnum = None
+                # Loop through the systematics
+                for systkey in self.values[injkey][dummy_fhkey].keys():
+                    fittitle = self.make_fit_title(
+                        fid=fid,
+                        hypo='both',
+                        trials=self.num_trials
+                    )
+                    systunits = self.values[injkey][
+                        dummy_fhkey][systkey]['units']
+                    if systkey == 'metric_val':
+                        xlabel = self.tex_axis_label(
+                            self.values[injkey][dummy_fhkey][systkey]['type']
+                        )
+                    else:
+                        xlabel = self.tex_axis_label(systkey)
+                    if not systunits == 'dimensionless':
+                        xlabel += r' (%s)'%self.tex_axis_label(systunits)
+                    # Specify the subplot, if necessary
+                    if combined:
+                        plt.subplot(num_rows, 4, subplotnum)
+                    # Get binning
+                    datamin = None
+                    datamax = None
+                    for hypo in hypos:
+                        fhkey = '%s_fit_to_%s_fid'%(hypo,fid)
+                        data = np.array(
+                            self.values[injkey][fhkey][systkey]['vals']
+                        )
+                        if datamin == None:
+                            datamin = data.min()
+                        else:
+                            datamin = min(datamin, data.min())
+                        if datamax == None:
+                            datamax = data.max()
+                        else:
+                            datamax = max(datamax, data.max())
+                    datarange = datamax - datamin
+                    databins = np.linspace(datamin - 0.1*datarange,
+                                           datamax + 0.1*datarange,
+                                           21)
+                    for hypo, hcolor, hlabel in zip(hypos, hcolors, hlabels):
+                        fhkey = '%s_fit_to_%s_fid'%(hypo,fid)
+                        self.make_1D_hist_plot(
+                            data=np.array(
+                                self.values[injkey][fhkey][systkey]['vals']
+                            ),
+                            bins=databins,
+                            xlabel=xlabel,
+                            title=maintitle+r'\\'+fittitle,
+                            ylabel='Number of Trials',
+                            subplotnum=subplotnum,
+                            alpha=0.5,
+                            color=hcolor,
+                            label=hlabel,
+                            histtype='step',
+                            lw=2
+                        )
+                    plt.ylim(0, 1.35*plt.ylim()[1])
+                    plt.legend(
+                        loc='upper left',
+                        fontsize=12,
+                        framealpha=1.0
+                    )
+                    plt.subplots_adjust(
+                        left=0.10,
+                        right=0.90,
+                        top=0.85,
+                        bottom=0.11
+                    )
+                    # Advance the subplot number, if necessary
+                    if combined:
+                        subplotnum += 1
+                    # Else, save/close this plot
+                    else:
+                        self.save_plot(
+                            fid=fid,
+                            hypo='both',
+                            outdir=outdir,
+                            end='%s_posterior'%systkey
+                        )
+                        plt.close()
+                # Save the whole canvas, if necessary
+                if combined:
+                    plt.suptitle(maintitle+r'\\'+fittitle, fontsize=36)
+                    plt.tight_layout()
+                    plt.subplots_adjust(top=0.9)
+                    self.save_plot(
+                        fid=fid,
+                        hypo='both',
                         outdir=outdir,
                         end='posteriors'
                     )
@@ -3500,9 +3645,9 @@ class Postprocessor(object):
             fittitle += r"\begin{center}"
         if hasattr(self, 'labels'):
             if self.labels.dict['data_name'] == '':
-                fittitle += "True %s, "%self.labels.dict['data_name']
-            else:
                 fittitle += "Data, "
+            else:
+                fittitle += "True %s, "%self.labels.dict['data_name']
         if ((fid is not None) and (hypo is not None)) and (fhkey is not None):
             raise ValueError(
                 "Got a fid, hypo and fhkey specified. Please use fid "
@@ -3512,7 +3657,11 @@ class Postprocessor(object):
         if fid is not None:
             fittitle += "Fiducial Fit %s, "%self.labels.dict['%s_name'%fid]
         if hypo is not None:
-            fittitle += "Hypothesis %s "%self.labels.dict['%s_name'%hypo]
+            if hypo == 'both':
+                fittitle += "Both (%s/%s) Hypotheses "%(
+                    self.labels.dict['h0_name'], self.labels.dict['h1_name'])
+            else:
+                fittitle += "Hypothesis %s "%self.labels.dict['%s_name'%hypo]
         if fhkey is not None:
             hypo = self.get_hypo_from_fiducial_hypo_key(fhkey=fhkey)
             fid = self.get_fid_from_fiducial_hypo_key(fhkey=fhkey)
@@ -3526,8 +3675,8 @@ class Postprocessor(object):
     def make_1D_hist_plot(self, data, xlabel, title, ylabel, bins=10,
                           histtype='bar', color='darkblue', alpha=0.9,
                           xlabelsize='18', ylabelsize='18',
-                          titlesize=16, subplots_adjust=True,
-                          subplotnum=None):
+                          titlesize=16, label=None, subplots_adjust=True,
+                          subplotnum=None, lw=1):
         """Generic 1D histogram plotting function. Set subplots_adjust to
         True if the title goes over two lines and you need the plot to
         account for this."""
@@ -3540,7 +3689,9 @@ class Postprocessor(object):
             histtype=histtype,
             color=color,
             alpha=alpha,
-            zorder=3
+            zorder=3,
+            label=label,
+            lw=lw
         )
         plt.xlabel(xlabel, size=xlabelsize)
         if subplotnum is not None:
@@ -3920,7 +4071,11 @@ class Postprocessor(object):
         if fid is not None:
             save_name += "fid_%s_"%self.labels.dict['%s_name'%fid]
         if hypo is not None:
-            save_name += "hypo_%s_"%self.labels.dict['%s_name'%hypo]
+            if hypo == 'both':
+                save_name += "both_hypos_%s_%s_"%(
+                    self.labels.dict['h0_name'], self.labels.dict['h1_name'])
+            else:
+                save_name += "hypo_%s_"%self.labels.dict['%s_name'%hypo]
         if fhkey is not None:
             hypo = self.get_hypo_from_fiducial_hypo_key(fhkey=fhkey)
             fid = self.get_fid_from_fiducial_hypo_key(fhkey=fhkey)
@@ -4226,7 +4381,7 @@ def main_analysis_postprocessing():
         )
     else:
         raise ValueError('Must specify a plot file format, either --png or'
-                         ' --pdf, when processing LLR results.')
+                         ' --pdf (or both), when processing LLR results.')
 
     postprocessor = Postprocessor(
         analysis_type='hypo_testing',
@@ -4272,6 +4427,10 @@ def main_analysis_postprocessing():
         postprocessor.make_posterior_plots()
     if init_args_d['combined_posteriors']:
         postprocessor.make_posterior_plots(combined=True)
+    if init_args_d['individual_overlaid_posteriors']:
+        postprocessor.make_overlaid_posterior_plots()
+    if init_args_d['combined_overlaid_posteriors']:
+        postprocessor.make_overlaid_posterior_plots(combined=True)
     if init_args_d['individual_scatter']:
         postprocessor.make_scatter_plots()
     if init_args_d['combined_individual_scatter']:
