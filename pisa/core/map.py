@@ -880,6 +880,19 @@ class Map(object):
         return np.sum(self.hist)
 
     @property
+    def counts_by_pid(self):
+        """dict : summed bin counts, by pid"""
+        if 'pid' not in self.binning.names:
+            raise ValueError(
+                "Cannot return bin counts by PID since PID is "
+                "not in the binning - %s"%self.binning.names
+            )
+        counts = {}
+        for i in range(len(self.binning['pid'])):
+            counts['pid_bin_%i'%i] = self.slice(pid=i).squeeze().counts
+        return counts
+
+    @property
     def serializable_state(self):
         state = OrderedDict()
         state['name'] = self.name
