@@ -343,6 +343,8 @@ class cpu(Stage):
                     except KeyError:
                         pass
 
+
+
         start_t = time.time()
         # Here the GPU service sets stuff up to copy to the GPU.
         # This isn't necessary here.
@@ -355,10 +357,14 @@ class cpu(Stage):
             self.events_dict[flav]['n_evts'] = len(
                 self.events_dict[flav][variables[0]]
             )
-            for var in empty:
-                self.events_dict[flav][var] = np.ones(
-                    self.events_dict[flav]['n_evts'], dtype=FTYPE
-                )
+            #find missing vars:
+            for var in variables + empty:
+                if not evts[flav].has_key(var):
+                    if flav == self.flavs[0]:
+                        logging.warning('replacing variable %s by ones'%var)
+                    self.events_dict[flav][var] = np.ones(
+                        self.events_dict[flav]['n_evts'], dtype=FTYPE
+                    )
 
         # Apply raw reco sys
         self.apply_reco()
@@ -501,7 +507,7 @@ class cpu(Stage):
                         weights=weights,
                         binning=self.output_binning,
                         coszen_name='reco_coszen',
-                        use_cuda=True,
+                        use_cuda=False,
                         bw_method='silverman',
                         alpha=1.0,
                         oversample=1,
