@@ -187,12 +187,6 @@ def parse_args(description=__doc__, profile_scan=False,
         help='''Produce png plot(s).'''
     )
     parser.add_argument(
-        '--plot-settings-file', metavar='FILE', type=str, required=False,
-        help='''File with settings related to the look of the
-        output plots. If none is set then the defaults will be 
-        loaded from postprocess/default.json'''
-    )
-    parser.add_argument(
         '-v', action='count', default=None,
         help='''set verbosity level'''
     )
@@ -211,35 +205,6 @@ def parse_args(description=__doc__, profile_scan=False,
         init_args_d['formats'].append('pdf')
 
     return init_args_d
-
-
-class Plotstyle(object):
-    """Class to contain all of the settings one could want
-    for plotting.  The idea is that this can be loaded in to
-    a script with an appropriate initialisation file and then
-    the user can just edit this initialisation file to have
-    whatever plotting style they want.
-
-    Parameters
-    ----------
-    initfile : string
-        Path to a file containing all of the required settings
-        for plotting
-    """
-
-    def __init__(self, initfile=None):
-        if initfile is None:
-            initfile = "postprocess/default.json"
-        self.style_dict = from_file(initfile)
-
-    def __getattr__(self, name):
-        if name in self.style_dict.keys():
-            return self.style_dict[name]
-        else:
-            raise ValueError(
-                "The requested setting %s is not present "
-                "in this style dict."%name
-            )
 
 
 class Postprocessingargparser(object):
@@ -273,9 +238,11 @@ class Postprocessingargparser(object):
             getattr(self, args.command)()
 
     def hypo_testing(self):
+        """Does the main when the user selects hypo_testing"""
         main_hypo_testing()
 
     def profile_scan(self):
+        """Does the main when the user selects profile_scan"""
         main_profile_scan()
 
 
@@ -314,12 +281,15 @@ class Hypotestingpostprocessingargparser(object):
             getattr(self, args.subcommand)()
 
     def analysis(self):
+        """Does the main when the user selects hypo_testing analysis"""
         main_analysis_postprocessing()
 
     def injparamscan(self):
+        """Does the main when the user selects hypo_testing injparamscan"""
         main_injparamscan_postprocessing()
 
     def systtests(self):
+        """Does the main when the user selects hypo_testing systtests"""
         main_systtests_postprocessing()
 
 class Postprocessor(object):
@@ -379,7 +349,6 @@ class Postprocessor(object):
         # Things to store for all postprocessing
         self.analysis_type = analysis_type
         self.test_type = test_type
-        self.plotstyle = Plotstyle(initfile=plot_settings_file)
         self.detector = detector
         self.selection = selection
         self.outdir = outdir
@@ -670,7 +639,6 @@ class Postprocessor(object):
             return paramval
         else:
             hypo = self.get_hypo_from_fiducial_hypo_key(fhkey=fhkey)
-            fid = self.get_fid_from_fiducial_hypo_key(fhkey=fhkey)
             hypo_label = self.labels.dict['%s_name'%hypo]
             if systkey == 'deltam31':
                 if 'no' in hypo_label:
@@ -689,7 +657,6 @@ class Postprocessor(object):
 
             return paramval, paramlabel
 
-    # TODO (?) - This works in the case of all MC, but I don't know about data.
     def extract_fid_data(self):
         """Take the data sets returned by the `extract_trials` and extract the
         data on the fiducial fits."""
@@ -819,7 +786,7 @@ class Postprocessor(object):
                 modified_z_score = 0.6745 * diff / med_abs_deviation
                 good_trials = modified_z_score < thresh
                 if not np.all(good_trials):
-                    bad_trials = np.where(good_trials == False)[0]
+                    bad_trials = np.where(not good_trials)[0]
                     logging.warn(
                         'Outlier(s) detected for %s in trial(s) %s. Will be '
                         'removed. If you think this should not happen, please '
@@ -920,9 +887,9 @@ class Postprocessor(object):
                 if combined and (not singlesyst):
                     # Systematic number is one less than number
                     # of keys since this also contains the metric_val entry
-                    SystNum = len(self.values[injkey][fhkey].keys())-1
-                    plt.figure(figsize=(3.5*(SystNum-1), 3.5*(SystNum-1)))
-                    subplotnum = (SystNum-1)*(SystNum-1)+1
+                    systnum = len(self.values[injkey][fhkey].keys())-1
+                    plt.figure(figsize=(3.5*(systnum-1), 3.5*(systnum-1)))
+                    subplotnum = (systnum-1)*(systnum-1)+1
                     # Set up container to know which correlations
                     # have already been plotted
                     plottedsysts = []
@@ -952,6 +919,8 @@ class Postprocessor(object):
                                     xsystkey]['vals'],
                                 ydata=self.values[injkey][fhkey][
                                     ysystkey]['vals'],
+                                xsystkey=xsystkey,
+                                ysystkey=ysystkey
                             )
                             all_corr_values.append(rho)
 
@@ -965,8 +934,8 @@ class Postprocessor(object):
                                 if ysystkey not in plottedsysts:
                                     do_plot = True
                                     plt.subplot(
-                                        SystNum-1,
-                                        SystNum-1,
+                                        systnum-1,
+                                        systnum-1,
                                         subplotnum
                                     )
                                 else:
@@ -1246,15 +1215,15 @@ class Postprocessor(object):
                     datamin = None
                     datamax = None
                     for hypo in hypos:
-                        fhkey = '%s_fit_to_%s_fid'%(hypo,fid)
+                        fhkey = '%s_fit_to_%s_fid'%(hypo, fid)
                         data = np.array(
                             self.values[injkey][fhkey][systkey]['vals']
                         )
-                        if datamin == None:
+                        if datamin is None:
                             datamin = data.min()
                         else:
                             datamin = min(datamin, data.min())
-                        if datamax == None:
+                        if datamax is None:
                             datamax = data.max()
                         else:
                             datamax = max(datamax, data.max())
@@ -1263,7 +1232,7 @@ class Postprocessor(object):
                                            datamax + 0.1*datarange,
                                            21)
                     for hypo, hcolor, hlabel in zip(hypos, hcolors, hlabels):
-                        fhkey = '%s_fit_to_%s_fid'%(hypo,fid)
+                        fhkey = '%s_fit_to_%s_fid'%(hypo, fid)
                         self.make_1D_hist_plot(
                             data=np.array(
                                 self.values[injkey][fhkey][systkey]['vals']
@@ -1325,11 +1294,11 @@ class Postprocessor(object):
                     "both a maximum and a standard deviation."
                 )
             if (np.abs(stddev) < 1e-2) and (stddev != 0.0):
-                priorlabel = (r'Gaussian Prior '
-                              '($%.3e\pm%.3e$)'%(maximum, stddev))
+                priorlabel = (r'Gaussian Prior ' + \
+                              r'($%.3e\pm%.3e$)'%(maximum, stddev))
             else:
-                priorlabel = (r'Gaussian Prior '
-                              '($%.3g\pm%.3g$)'%(maximum, stddev))
+                priorlabel = (r'Gaussian Prior ' + \
+                              r'($%.3g\pm%.3g$)'%(maximum, stddev))
         else:
             raise ValueError(
                 "Only gaussian priors are currently implemented. Got %s."%kind
@@ -1451,7 +1420,7 @@ class Postprocessor(object):
             )
         else:
             raise ValueError("I got a hypothesis %s. Expected h0 or h1 only."
-                             %fid)
+                             %self.get_fid_from_fiducial_hypo_key(fhkey=fhkey))
         if injval is not None:
             if fitval != injval:
                 plt.axvline(
@@ -1505,7 +1474,6 @@ class Postprocessor(object):
                             int(self.minimiser_info[injkey][fhkey][trial][
                                 'minimizer_metadata']['status'])
                         )
-                        minimiser_units = bits[1]
                     fittitle = self.make_fit_title(
                         fhkey=fhkey,
                         trials=self.num_trials
@@ -1557,7 +1525,7 @@ class Postprocessor(object):
             if not isinstance(point, float):
                 raise ValueError('Expecting a single point here to add to the'
                                  ' plot and got %s instead.' % point)
-            line = plt.axvline(
+            plt.axvline(
                 point,
                 color=self.plot_colour(label),
                 linestyle=self.plot_style(label),
@@ -1568,8 +1536,8 @@ class Postprocessor(object):
             linelist.append(self.tex_axis_label(label))
         return linelist
 
-    def calc_p_value(self, LLRdist, critical_value, greater=True,
-                     median_p_value=False, LLRbest=None):
+    def calc_p_value(self, llrdist, critical_value, greater=True,
+                     median_p_value=False, llrbest=None):
         """Calculate the p-value for the given dataset based on the given
         critical value with an associated error.
 
@@ -1584,19 +1552,19 @@ class Postprocessor(object):
         distribution from which this was calculated so the error can be
         estimated with bootstrapping."""
         if greater:
-            misid_trials = float(np.sum(LLRdist > critical_value))
+            misid_trials = float(np.sum(llrdist > critical_value))
         else:
-            misid_trials = float(np.sum(LLRdist < critical_value))
+            misid_trials = float(np.sum(llrdist < critical_value))
         p_value = misid_trials/self.num_trials
         if median_p_value:
             # Quantify the uncertainty on the median by bootstrapping
             sampled_medians = []
-            for i in range(0, 1000):
+            for _ in xrange(1000):
                 sampled_medians.append(
                     np.median(
                         np.random.choice(
-                            LLRbest,
-                            size=len(LLRbest),
+                            llrbest,
+                            size=len(llrbest),
                             replace=True
                         )
                     )
@@ -1606,26 +1574,26 @@ class Postprocessor(object):
             # Add relative errors in quadrature
             wdenom = misid_trials+median_error*median_error
             wterm = wdenom/(misid_trials*misid_trials)
-            Nterm = 1.0/self.num_trials
-            unc_p_value = p_value * np.sqrt(wterm + Nterm)
+            nterm = 1.0/self.num_trials
+            unc_p_value = p_value * np.sqrt(wterm + nterm)
             return p_value, unc_p_value, median_error
         else:
             unc_p_value = np.sqrt(misid_trials*(1-p_value))/self.num_trials
             return p_value, unc_p_value
 
-    def plot_LLR_histograms(self, LLRarrays, LLRhistmax, binning, colors,
+    def plot_llr_histograms(self, llrarrays, llrhistmax, binning, colors,
                             labels, best_name, alt_name, critical_value,
-                            critical_label, critical_height, LLRhist,
+                            critical_label, critical_height, llrhist,
                             critical_color='k', plot_scaling_factor=1.55,
-                            greater=True, CLs=False):
-        """Plot the LLR histograms. The `greater` argument is intended to be
+                            greater=True, cls=False):
+        """Plot the llr histograms. The `greater` argument is intended to be
         used the same as in the p value function above."""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
 
-        for LLRarray, label, color in zip(LLRarrays, labels, colors):
+        for llrarray, label, color in zip(llrarrays, labels, colors):
             plt.hist(
-                LLRarray,
+                llrarray,
                 bins=binning,
                 color=color,
                 histtype='step',
@@ -1636,12 +1604,12 @@ class Postprocessor(object):
         plt.ylabel(r'Number of Trials (per %.2f)'%(binning[1]-binning[0]),
                    size='18')
         # Nicely scale the plot
-        plt.ylim(0, plot_scaling_factor*LLRhistmax)
+        plt.ylim(0, plot_scaling_factor*llrhistmax)
         # Add labels to show which side means what...
         xlim = plt.gca().get_xlim()
         plt.text(
             xlim[0]-0.05*(xlim[1]-xlim[0]),
-            -0.09*plot_scaling_factor*LLRhistmax,
+            -0.09*plot_scaling_factor*llrhistmax,
             r'\begin{flushleft} $\leftarrow$ Prefers %s\end{flushleft}'%(
                 self.tex_axis_label(alt_name)),
             color='k',
@@ -1649,7 +1617,7 @@ class Postprocessor(object):
         )
         plt.text(
             xlim[1]+0.05*(xlim[1]-xlim[0]),
-            -0.09*plot_scaling_factor*LLRhistmax,
+            -0.09*plot_scaling_factor*llrhistmax,
             r'\begin{flushright} Prefers %s $\rightarrow$ \end{flushright}'%(
                 self.tex_axis_label(best_name)),
             color='k',
@@ -1665,9 +1633,9 @@ class Postprocessor(object):
                 lw=2,
                 label=critical_label
             )
-            if LLRhist is not None:
-                if CLs:
-                    for hist, color in zip(LLRhist, colors):
+            if llrhist is not None:
+                if cls:
+                    for hist, color in zip(llrhist, colors):
                         finehist = np.repeat(hist, 100)
                         finebinning = np.linspace(binning[0],
                                                   binning[-1],
@@ -1696,7 +1664,7 @@ class Postprocessor(object):
                 else:
                     # Create an object so that a hatch can be drawn over the
                     # region of interest to the p-value.
-                    finehist = np.repeat(LLRhist, 100)
+                    finehist = np.repeat(llrhist, 100)
                     finebinning = np.linspace(binning[0], binning[-1],
                                               (len(binning)-1)*100+1)
                     finebinwidth = finebinning[1]-finebinning[0]
@@ -1726,24 +1694,17 @@ class Postprocessor(object):
         plt.subplots_adjust(left=0.10, right=0.90, top=0.9, bottom=0.15)
 
     def make_llr_plots(self):
-        """Make LLR plots.
+        """Make llr plots.
 
-        Takes the data and makes LLR distributions. These are then saved to the
-        requested outdir within a folder labelled "LLRDistributions". The
+        Takes the data and makes llr distributions. These are then saved to the
+        requested outdir within a folder labelled "llrDistributions". The
         extra_points and extra_points_labels arguments can be used to specify
-        extra points to be added to the plot for e.g. other fit LLR values.
-
-        TODO:
-
-        1) Currently the p-value is put on the LLR distributions as an
-           annotation. This is probably fine, since the significances can just
-           be calculated from this after the fact.
-
+        extra points to be added to the plot for e.g. other fit llr values.
         """
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
 
-        outdir = os.path.join(self.outdir, 'LLRDistributions')
+        outdir = os.path.join(self.outdir, 'llrDistributions')
         mkdir(outdir)
 
         for injkey in self.values.keys():
@@ -1797,38 +1758,34 @@ class Postprocessor(object):
                 critical_value = h1_fid_metric-h0_fid_metric
 
             if bestfit == 'h0':
-                LLRbest = h0_fit_to_h0_fid_metrics - h1_fit_to_h0_fid_metrics
-                LLRalt = h0_fit_to_h1_fid_metrics - h1_fit_to_h1_fid_metrics
+                llrbest = h0_fit_to_h0_fid_metrics - h1_fit_to_h0_fid_metrics
+                llralt = h0_fit_to_h1_fid_metrics - h1_fit_to_h1_fid_metrics
             else:
-                LLRbest = h1_fit_to_h1_fid_metrics - h0_fit_to_h1_fid_metrics
-                LLRalt = h1_fit_to_h0_fid_metrics - h0_fit_to_h0_fid_metrics
+                llrbest = h1_fit_to_h1_fid_metrics - h0_fit_to_h1_fid_metrics
+                llralt = h1_fit_to_h0_fid_metrics - h0_fit_to_h0_fid_metrics
 
-            minLLR = min(min(LLRbest), min(LLRalt))
-            maxLLR = max(max(LLRbest), max(LLRalt))
-            rangeLLR = maxLLR - minLLR
+            minllr = min(min(llrbest), min(llralt))
+            maxllr = max(max(llrbest), max(llralt))
+            rangellr = maxllr - minllr
             # Special case for low numbers of trials. Here, the plot
             # can't really be interpreted but the numbers printed on
             # it can still be useful, so we need to make something.
             if self.num_trials < 100:
-                binning = np.linspace(minLLR - 0.1*rangeLLR,
-                                      maxLLR + 0.1*rangeLLR,
+                binning = np.linspace(minllr - 0.1*rangellr,
+                                      maxllr + 0.1*rangellr,
                                       10)
             else:
-                binning = np.linspace(minLLR - 0.1*rangeLLR,
-                                      maxLLR + 0.1*rangeLLR,
+                binning = np.linspace(minllr - 0.1*rangellr,
+                                      maxllr + 0.1*rangellr,
                                       int(self.num_trials/40))
             binwidth = binning[1]-binning[0]
-            bincens = np.linspace(binning[0]+binwidth/2.0,
-                                  binning[-1]-binwidth/2.0,
-                                  len(binning)-1)
 
-            LLRbesthist, LLRbestbinedges = np.histogram(LLRbest, bins=binning)
-            LLRalthist, LLRaltbinedges = np.histogram(LLRalt, bins=binning)
+            llrbesthist, llrbestbinedges = np.histogram(llrbest, bins=binning)
+            llralthist, llraltbinedges = np.histogram(llralt, bins=binning)
 
-            LLRhistmax = max(max(LLRbesthist), max(LLRalthist))
+            llrhistmax = max(max(llrbesthist), max(llralthist))
 
-            best_median = np.median(LLRbest)
-            alt_median = np.median(LLRalt)
+            best_median = np.median(llrbest)
 
             if self.labels.dict['data_name'] == '':
                 inj_name = "data"
@@ -1842,17 +1799,17 @@ class Postprocessor(object):
             # Calculate p values
             ## First for the preferred hypothesis based on the fiducial fit
             crit_p_value, unc_crit_p_value = self.calc_p_value(
-                LLRdist=LLRalt,
+                llrdist=llralt,
                 critical_value=critical_value,
                 greater=True
             )
             ## Then for the alternate hypothesis based on the fiducial fit
             alt_crit_p_value, alt_unc_crit_p_value = self.calc_p_value(
-                LLRdist=LLRbest,
+                llrdist=llrbest,
                 critical_value=critical_value,
                 greater=False
             )
-            ## Combine these to give a CLs value based on arXiv:1407.5052
+            ## Combine these to give a cls value based on arXiv:1407.5052
             cls_value = (1 - alt_crit_p_value) / (1 - crit_p_value)
             unc_cls_value = cls_value * np.sqrt(
                 np.power(alt_unc_crit_p_value/alt_crit_p_value, 2.0) + \
@@ -1862,18 +1819,18 @@ class Postprocessor(object):
             ## is, the case of a median experiment from the distribution
             ## under the preferred hypothesis.
             med_p_value, unc_med_p_value, median_error = self.calc_p_value(
-                LLRdist=LLRalt,
+                llrdist=llralt,
                 critical_value=best_median,
                 greater=True,
                 median_p_value=True,
-                LLRbest=LLRbest
+                llrbest=llrbest
             )
 
             if metric_type == 'llh':
                 plot_title = (r"\begin{center}"\
                               +"%s %s Event Selection "%(self.detector,
                                                          self.selection)\
-                              +r"\\"+" LLR Distributions for %s (%i trials)"%(
+                              +r"\\"+" llr Distributions for %s (%i trials)"%(
                                   inj_name, self.num_trials)\
                               +r"\end{center}")
 
@@ -1881,7 +1838,7 @@ class Postprocessor(object):
                 plot_title = (r"\begin{center}"\
                               +"%s %s Event Selection "%(self.detector,
                                                          self.selection)\
-                              +r"\\"+" %s \"LLR\" Distributions for "
+                              +r"\\"+" %s \"llr\" Distributions for "
                               %(metric_type_pretty)\
                               +"%s (%i trials)"%(inj_name,
                                                  self.num_trials)\
@@ -1892,7 +1849,7 @@ class Postprocessor(object):
 
             # In case of median plot, draw both best and alt histograms
             ## Set up the labels for the histograms
-            LLR_labels = [
+            llr_labels = [
                 r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
                 r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
                 r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
@@ -1902,12 +1859,12 @@ class Postprocessor(object):
                 r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
                     alt_name)
             ]
-            self.plot_LLR_histograms(
-                LLRarrays=[LLRbest, LLRalt],
-                LLRhistmax=LLRhistmax,
+            self.plot_llr_histograms(
+                llrarrays=[llrbest, llralt],
+                llrhistmax=llrhistmax,
                 binning=binning,
                 colors=['r', 'b'],
-                labels=LLR_labels,
+                labels=llr_labels,
                 best_name=best_name,
                 alt_name=alt_name,
                 critical_value=best_median,
@@ -1915,9 +1872,9 @@ class Postprocessor(object):
                     self.tex_axis_label(best_name),
                     best_median,
                     median_error),
-                critical_height=float(max(LLRbesthist))/float(
-                    plot_scaling_factor*LLRhistmax),
-                LLRhist=LLRalthist,
+                critical_height=float(max(llrbesthist))/float(
+                    plot_scaling_factor*llrhistmax),
+                llrhist=llralthist,
                 greater=True
             )
             plt.legend(loc='upper left')
@@ -1933,7 +1890,7 @@ class Postprocessor(object):
             )
             self.save_plot(
                 outdir=outdir,
-                end='%s_LLRDistribution_median_%i_Trials'%(
+                end='%s_llrDistribution_median_%i_Trials'%(
                     metric_type, self.num_trials)
             )
             # Add the extra points if they exist
@@ -1941,8 +1898,8 @@ class Postprocessor(object):
                 plt.legend(loc='upper left', fontsize=11)
                 curleg = plt.gca().get_legend()
                 linelist = self.add_extra_points(
-                    ymax=float(max(LLRbesthist))/float(
-                        plot_scaling_factor*LLRhistmax)
+                    ymax=float(max(llrbesthist))/float(
+                        plot_scaling_factor*llrhistmax)
                 )
                 handles, labels = plt.gca().get_legend_handles_labels()
                 newhandles = []
@@ -1958,14 +1915,14 @@ class Postprocessor(object):
                 plt.gca().add_artist(curleg)
                 self.save_plot(
                     outdir=outdir,
-                    end='%s_LLRDistribution_median_w_extra_points_%i_Trials'%(
+                    end='%s_llrDistribution_median_w_extra_points_%i_Trials'%(
                         metric_type, self.num_trials)
                 )
             plt.close()
 
             # Make some debugging plots
             ## Set up the labels for the histograms
-            LLR_labels = [
+            llr_labels = [
                 r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
                 r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
                 r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
@@ -1975,12 +1932,12 @@ class Postprocessor(object):
                 r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
                     alt_name)
             ]
-            self.plot_LLR_histograms(
-                LLRarrays=[LLRbest, LLRalt],
-                LLRhistmax=LLRhistmax,
+            self.plot_llr_histograms(
+                llrarrays=[llrbest, llralt],
+                llrhistmax=llrhistmax,
                 binning=binning,
                 colors=['r', 'b'],
-                labels=LLR_labels,
+                labels=llr_labels,
                 best_name=best_name,
                 alt_name=alt_name,
                 critical_value=best_median,
@@ -1988,61 +1945,61 @@ class Postprocessor(object):
                     self.tex_axis_label(best_name),
                     best_median,
                     median_error),
-                critical_height=float(max(LLRbesthist))/float(
-                    plot_scaling_factor*LLRhistmax),
-                LLRhist=None,
+                critical_height=float(max(llrbesthist))/float(
+                    plot_scaling_factor*llrhistmax),
+                llrhist=None,
                 greater=True
             )
             plt.legend(loc='upper left')
             plt.title(plot_title)
             self.save_plot(
                 outdir=outdir,
-                end='%s_LLRDistribution_median_both_fit_dists_%i_Trials'%(
+                end='%s_llrDistribution_median_both_fit_dists_%i_Trials'%(
                     metric_type, self.num_trials)
             )
             plt.close()
             ## Set up the labels for the histograms
-            LLR_labels = [
+            llr_labels = [
                 r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
                 r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}" + \
                 r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
                     alt_name),
             ]
-            self.plot_LLR_histograms(
-                LLRarrays=[LLRbest],
-                LLRhistmax=LLRhistmax,
+            self.plot_llr_histograms(
+                llrarrays=[llrbest],
+                llrhistmax=llrhistmax,
                 binning=binning,
                 colors=['r'],
-                labels=LLR_labels,
+                labels=llr_labels,
                 best_name=best_name,
                 alt_name=alt_name,
                 critical_value=None,
                 critical_label=None,
                 critical_height=None,
-                LLRhist=None,
+                llrhist=None,
                 greater=True
             )
             plt.legend(loc='upper left')
             plt.title(plot_title)
             self.save_plot(
                 outdir=outdir,
-                end='%s_LLRDistribution_best_fit_dist_%i_Trials'%(
+                end='%s_llrDistribution_best_fit_dist_%i_Trials'%(
                     metric_type, self.num_trials)
             )
             plt.close()
             ## Set up the labels for the histograms
-            LLR_labels = [
+            llr_labels = [
                 r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
                 r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
                 r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
                     alt_name),
             ]
-            self.plot_LLR_histograms(
-                LLRarrays=[LLRbest],
-                LLRhistmax=LLRhistmax,
+            self.plot_llr_histograms(
+                llrarrays=[llrbest],
+                llrhistmax=llrhistmax,
                 binning=binning,
                 colors=['r'],
-                labels=LLR_labels,
+                labels=llr_labels,
                 best_name=best_name,
                 alt_name=alt_name,
                 critical_value=best_median,
@@ -2050,61 +2007,61 @@ class Postprocessor(object):
                     self.tex_axis_label(best_name),
                     best_median,
                     median_error),
-                critical_height=float(max(LLRbesthist))/float(
-                    plot_scaling_factor*LLRhistmax),
-                LLRhist=None,
+                critical_height=float(max(llrbesthist))/float(
+                    plot_scaling_factor*llrhistmax),
+                llrhist=None,
                 greater=True
             )
             plt.legend(loc='upper left')
             plt.title(plot_title)
             self.save_plot(
                 outdir=outdir,
-                end='%s_LLRDistribution_median_best_fit_dist_%i_Trials'%(
+                end='%s_llrDistribution_median_best_fit_dist_%i_Trials'%(
                     metric_type, self.num_trials)
             )
             plt.close()
             ## Set up the labels for the histograms
-            LLR_labels = [
+            llr_labels = [
                 r"%s Pseudo-Experiments - "%(self.tex_axis_label(alt_name)) + \
                 r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
                 r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
                     alt_name)
             ]
-            self.plot_LLR_histograms(
-                LLRarrays=[LLRalt],
-                LLRhistmax=LLRhistmax,
+            self.plot_llr_histograms(
+                llrarrays=[llralt],
+                llrhistmax=llrhistmax,
                 binning=binning,
                 colors=['b'],
-                labels=LLR_labels,
+                labels=llr_labels,
                 best_name=best_name,
                 alt_name=alt_name,
                 critical_value=None,
                 critical_label=None,
                 critical_height=None,
-                LLRhist=None,
+                llrhist=None,
                 greater=True
             )
             plt.legend(loc='upper left')
             plt.title(plot_title)
             self.save_plot(
                 outdir=outdir,
-                end='%s_LLRDistribution_alt_fit_dist_%i_Trials'%(
+                end='%s_llrDistribution_alt_fit_dist_%i_Trials'%(
                     metric_type, self.num_trials)
             )
             plt.close()
             ## Set up the labels for the histograms
-            LLR_labels = [
+            llr_labels = [
                 r"%s Pseudo-Experiments - "%(self.tex_axis_label(alt_name)) + \
                 r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}" + \
                 r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
                     alt_name)
             ]
-            self.plot_LLR_histograms(
-                LLRarrays=[LLRalt],
-                LLRhistmax=LLRhistmax,
+            self.plot_llr_histograms(
+                llrarrays=[llralt],
+                llrhistmax=llrhistmax,
                 binning=binning,
                 colors=['b'],
-                labels=LLR_labels,
+                labels=llr_labels,
                 best_name=best_name,
                 alt_name=alt_name,
                 critical_value=best_median,
@@ -2112,9 +2069,9 @@ class Postprocessor(object):
                     self.tex_axis_label(best_name),
                     best_median,
                     median_error),
-                critical_height=float(max(LLRbesthist))/float(
-                    plot_scaling_factor*LLRhistmax),
-                LLRhist=LLRalthist,
+                critical_height=float(max(llrbesthist))/float(
+                    plot_scaling_factor*llrhistmax),
+                llrhist=llralthist,
                 greater=True
             )
             plt.legend(loc='upper left')
@@ -2130,32 +2087,32 @@ class Postprocessor(object):
             )
             self.save_plot(
                 outdir=outdir,
-                end='%s_LLRDistribution_median_alt_fit_dist_%i_Trials'%(
+                end='%s_llrDistribution_median_alt_fit_dist_%i_Trials'%(
                     metric_type, self.num_trials)
             )
             plt.close()
 
             # In case of critical plot, draw just alt histograms
             ## Set up the label for the histogram
-            LLR_labels = [
+            llr_labels = [
                 r"%s Pseudo-Experiments - "%(self.tex_axis_label(alt_name)) + \
                 r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
                 r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
                     alt_name)
             ]
-            self.plot_LLR_histograms(
-                LLRarrays=[LLRalt],
-                LLRhistmax=LLRhistmax,
+            self.plot_llr_histograms(
+                llrarrays=[llralt],
+                llrhistmax=llrhistmax,
                 binning=binning,
                 colors=['b'],
-                labels=LLR_labels,
+                labels=llr_labels,
                 best_name=best_name,
                 alt_name=alt_name,
                 critical_value=critical_value,
                 critical_label=r"Critical Value = %.4f"%(critical_value),
-                critical_height=float(max(LLRbesthist))/float(
-                    plot_scaling_factor*LLRhistmax),
-                LLRhist=LLRalthist,
+                critical_height=float(max(llrbesthist))/float(
+                    plot_scaling_factor*llrhistmax),
+                llrhist=llralthist,
                 greater=True
             )
             plt.legend(loc='upper left')
@@ -2171,7 +2128,7 @@ class Postprocessor(object):
             )
             self.save_plot(
                 outdir=outdir,
-                end='%s_LLRDistribution_critical_%i_Trials'%(
+                end='%s_llrDistribution_critical_%i_Trials'%(
                     metric_type, self.num_trials)
             )
             plt.close()
@@ -2179,25 +2136,25 @@ class Postprocessor(object):
             # Make a second critical plot for the alt hypothesis, so we draw the
             # preferred hypothesis
             ## Set up the label for the histogram
-            LLR_labels = [
+            llr_labels = [
                 r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
                 r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
                 r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
                     alt_name)
             ]
-            self.plot_LLR_histograms(
-                LLRarrays=[LLRbest],
-                LLRhistmax=LLRhistmax,
+            self.plot_llr_histograms(
+                llrarrays=[llrbest],
+                llrhistmax=llrhistmax,
                 binning=binning,
                 colors=['r'],
-                labels=LLR_labels,
+                labels=llr_labels,
                 best_name=best_name,
                 alt_name=alt_name,
                 critical_value=critical_value,
                 critical_label=r"Critical Value = %.4f"%(critical_value),
-                critical_height=float(max(LLRbesthist))/float(
-                    plot_scaling_factor*LLRhistmax),
-                LLRhist=LLRbesthist,
+                critical_height=float(max(llrbesthist))/float(
+                    plot_scaling_factor*llrhistmax),
+                llrhist=llrbesthist,
                 greater=False
             )
             plt.legend(loc='upper left')
@@ -2213,14 +2170,14 @@ class Postprocessor(object):
             )
             self.save_plot(
                 outdir=outdir,
-                end='%s_LLRDistribution_critical_alt_%i_Trials'%(
+                end='%s_llrDistribution_critical_alt_%i_Trials'%(
                     metric_type, self.num_trials)
             )
             plt.close()
 
-            # Lastly, show both exclusion regions and then the joined CLs value
+            # Lastly, show both exclusion regions and then the joined cls value
             ## Set up the labels for the histograms
-            LLR_labels = [
+            llr_labels = [
                 r"%s Pseudo-Experiments - "%(self.tex_axis_label(best_name)) + \
                 r"$\log\left[\mathcal{L}\left(\mathcal{H}_{%s}"%(best_name) + \
                 r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
@@ -2230,20 +2187,20 @@ class Postprocessor(object):
                 r"\right)/\mathcal{L}\left(\mathcal{H}_{%s}\right)\right]$"%(
                     alt_name)
             ]
-            self.plot_LLR_histograms(
-                LLRarrays=[LLRbest, LLRalt],
-                LLRhistmax=LLRhistmax,
+            self.plot_llr_histograms(
+                llrarrays=[llrbest, llralt],
+                llrhistmax=llrhistmax,
                 binning=binning,
                 colors=['r', 'b'],
-                labels=LLR_labels,
+                labels=llr_labels,
                 best_name=best_name,
                 alt_name=alt_name,
                 critical_value=critical_value,
                 critical_label=r"Critical Value = %.4f"%(critical_value),
-                critical_height=float(max(LLRbesthist))/float(
-                    plot_scaling_factor*LLRhistmax),
-                LLRhist=[LLRbesthist, LLRalthist],
-                CLs=True,
+                critical_height=float(max(llrbesthist))/float(
+                    plot_scaling_factor*llrhistmax),
+                llrhist=[llrbesthist, llralthist],
+                cls=True,
             )
             plt.legend(loc='upper left')
             plt.title(plot_title)
@@ -2279,7 +2236,7 @@ class Postprocessor(object):
             )
             self.save_plot(
                 outdir=outdir,
-                end='%s_LLRDistribution_CLs_%i_Trials'%(
+                end='%s_llrDistribution_CLs_%i_Trials'%(
                     metric_type, self.num_trials)
             )
             plt.close()
@@ -2306,68 +2263,68 @@ class Postprocessor(object):
                     tabletype=tabletype,
                     injkey=injkey
                 )
-                self.texfile.write("\n")
+                self.texfile.write(r"\n")
                 self.end_latex_table(tabletype=tabletype)
 
-        self.texfile.write("\n")
-        self.texfile.write("\end{document}\n")
+        self.texfile.write(r"\n")
+        self.texfile.write(r"\end{document}\n")
 
     def write_latex_preamble(self):
         """Write latex preamble needed to make, in my often-wrong opinion,
         nice-looking tex files."""
-        self.texfile.write("\n")
-        self.texfile.write("\documentclass[a4paper,12pt]{article}\n")
-        self.texfile.write("\usepackage{tabu}\n")
-        self.texfile.write("\usepackage{booktabs}\n")
-        self.texfile.write("\usepackage[font=small,labelsep=space]{caption}\n")
-        self.texfile.write("\usepackage[margin=2.5cm]{geometry}\n")
-        self.texfile.write("\setlength{\\topmargin}{1.0cm}\n")
-        self.texfile.write("\setlength{\\textheight}{22cm}\n")
-        self.texfile.write("\usepackage{fancyhdr}\n")
-        self.texfile.write("\pagestyle{fancy}\n")
-        self.texfile.write("\\fancyhf{}\n")
-        self.texfile.write("\\fancyhead[R]{\leftmark}\n")
-        self.texfile.write("\usepackage{multirow}\n")
-        self.texfile.write("\n")
-        self.texfile.write("\\begin{document}\n")
-        self.texfile.write("\n")
+        self.texfile.write(r"\n")
+        self.texfile.write(r"\documentclass[a4paper,12pt]{article}\n")
+        self.texfile.write(r"\usepackage{tabu}\n")
+        self.texfile.write(r"\usepackage{booktabs}\n")
+        self.texfile.write(r"\usepackage[font=small,labelsep=space]{caption}\n")
+        self.texfile.write(r"\usepackage[margin=2.5cm]{geometry}\n")
+        self.texfile.write(r"\setlength{\\topmargin}{1.0cm}\n")
+        self.texfile.write(r"\setlength{\\textheight}{22cm}\n")
+        self.texfile.write(r"\usepackage{fancyhdr}\n")
+        self.texfile.write(r"\pagestyle{fancy}\n")
+        self.texfile.write(r"\\fancyhf{}\n")
+        self.texfile.write(r"\\fancyhead[R]{\leftmark}\n")
+        self.texfile.write(r"\usepackage{multirow}\n")
+        self.texfile.write(r"\n")
+        self.texfile.write(r"\\begin{document}\n")
+        self.texfile.write(r"\n")
 
     def setup_latex_table(self, tabletype, injected):
         """Set up the beginning of the table for the tex output files.
         Currently will make tables for the output fiducial fit params
         and the chi2 values only."""
-        self.texfile.write("\\renewcommand{\\arraystretch}{1.6}\n")
-        self.texfile.write("\n")
-        self.texfile.write("\\begin{table}[t!]\n")
-        self.texfile.write("  \\begin{center}\n")
+        self.texfile.write(r"\\renewcommand{\\arraystretch}{1.6}\n")
+        self.texfile.write(r"\n")
+        self.texfile.write(r"\\begin{table}[t!]\n")
+        self.texfile.write(r"  \\begin{center}\n")
         if tabletype == 'fiducial_fit_params':
             if injected:
-                nextline = "    \\begin{tabu} to 1.0\\textwidth "
-                nextline += "{| X[2.0,c] | X[1,c] | X[1,c] | X[1,c]"
-                nextline += " | X[1,c] | X[1,c] | X[1,c] | X[1,c] |}\n"
+                nextline = r"    \\begin{tabu} to 1.0\\textwidth "
+                nextline += r"{| X[2.0,c] | X[1,c] | X[1,c] | X[1,c]"
+                nextline += r" | X[1,c] | X[1,c] | X[1,c] | X[1,c] |}\n"
                 self.texfile.write(nextline)
-                self.texfile.write("    \hline\n")
-                nextline = "    \multirow{2}{*}{\\textbf{Parameter}} "
-                nextline += "& \multirow{2}{*}{\\textbf{Inj}} "
-                nextline += "& \multicolumn{3}{c|}{h0} "
-                nextline += "& \multicolumn{3}{c|}{h1} "
-                nextline += "\\\\ \cline{3-8}"
+                self.texfile.write(r"    \hline\n")
+                nextline = r"    \multirow{2}{*}{\\textbf{Parameter}} "
+                nextline += r"& \multirow{2}{*}{\\textbf{Inj}} "
+                nextline += r"& \multicolumn{3}{c|}{h0} "
+                nextline += r"& \multicolumn{3}{c|}{h1} "
+                nextline += r"\\\\ \cline{3-8}"
                 self.texfile.write(nextline)
-                nextline = "    & & Prior & Fit & \(\Delta\) "
-                nextline += "& Prior & Fit & \(\Delta\) \\\\ \hline\n"
+                nextline = r"    & & Prior & Fit & \(\Delta\) "
+                nextline += r"& Prior & Fit & \(\Delta\) \\\\ \hline\n"
                 self.texfile.write(nextline)
             else:
-                nextline = "    \\begin{tabu} to 1.0\\textwidth "
-                nextline += "{| X[c] | X[c] | X[c] |}\n"
+                nextline = r"    \\begin{tabu} to 1.0\\textwidth "
+                nextline += r"{| X[c] | X[c] | X[c] |}\n"
                 self.texfile.write(nextline)
-                self.texfile.write("    \hline\n")
-                self.texfile.write("    Parameter & h0 & h1 \\\\ \hline\n")
+                self.texfile.write(r"    \hline\n")
+                self.texfile.write(r"    Parameter & h0 & h1 \\\\ \hline\n")
         elif tabletype == 'fiducial_fit_metrics':
-            nextline = "    \\begin{tabu} to 1.0\\textwidth "
-            nextline += "{| X[c] | X[c] | X[c] |}\n"
+            nextline = r"    \\begin{tabu} to 1.0\\textwidth "
+            nextline += r"{| X[c] | X[c] | X[c] |}\n"
             self.texfile.write(nextline)
-            self.texfile.write("    \hline\n")
-            self.texfile.write("    h0 & h1 & $\Delta$ \\\\ \hline\n")
+            self.texfile.write(r"    \hline\n")
+            self.texfile.write(r"    h0 & h1 & $\Delta$ \\\\ \hline\n")
         else:
             raise ValueError(
                 "This function is only for making fit metric or fit "
@@ -2381,11 +2338,6 @@ class Postprocessor(object):
                 injkey=injkey
             )
             data_params = self.get_injected_params()
-            if data_params is not None:
-                injected = True
-            else:
-                injected = False
-
             for param in h0_params.keys():
                 # Get the units for this parameter
                 val, param_units = self.parse_pint_string(
@@ -2462,7 +2414,7 @@ class Postprocessor(object):
                         maximum=h1maximum,
                         last=True
                     )
-                    tableline += " \\\\ \hline\n"
+                    tableline += r" \\\\ \hline\n"
                     self.texfile.write(tableline)
                 # If no injected parameters it's much simpler
                 else:
@@ -2475,10 +2427,10 @@ class Postprocessor(object):
                         systkey=param
                     )
                     if (np.abs(h0val) < 1e-2) and (h0val != 0.0):
-                        self.texfile.write("    %s & %.2e & %.2e\n"%(
+                        self.texfile.write(r"    %s & %.2e & %.2e\n"%(
                             self.tex_axis_label(param), h0val, h1val))
                     else:
-                        self.texfile.write("    %s & %.3g & %.3g\n"%(
+                        self.texfile.write(r"    %s & %.3g & %.3g\n"%(
                             self.tex_axis_label(param), h0val, h1val))
         elif tabletype == "fiducial_fit_metrics":
             h0_fid_metric = self.fid_values[injkey][
@@ -2531,7 +2483,7 @@ class Postprocessor(object):
             newline = "    %.3g "%h0_fid_metric
             newline += "& %.3g "%h1_fid_metric
             newline += "& %.3g "%delta
-            newline += "\\\\ \hline\n"
+            newline += r"\\\\ \hline\n"
             self.texfile.write(newline)
         else:
             raise ValueError(
@@ -2541,10 +2493,10 @@ class Postprocessor(object):
 
     def end_latex_table(self, tabletype):
         """End the table and the whole document for the tex output files."""
-        self.texfile.write("    \end{tabu}\n")
-        self.texfile.write("  \end{center}\n")
-        self.texfile.write("  \\vspace{-10pt}\n")
-        newline = "  \caption{shows the fiducial fit "
+        self.texfile.write(r"    \end{tabu}\n")
+        self.texfile.write(r"  \end{center}\n")
+        self.texfile.write(r"  \\vspace{-10pt}\n")
+        newline = r"  \caption{shows the fiducial fit "
         if tabletype == "fiducial_fit_params":
             newline += "parameters"
         elif tabletype == "fiducial_fit_metrics":
@@ -2555,11 +2507,11 @@ class Postprocessor(object):
                 "param tables in LaTeX. Got type %s"%tabletype
             )
         if self.detector is not None:
-            " obtained with the %s"%self.detector
+            newline += " obtained with the %s"%self.detector
             if self.selection is not None:
-                " %s sample"%self.selection
+                newline += " %s sample"%self.selection
         if self.selection is not None:
-            " obtained with the %s"%self.selection
+            newline += " obtained with the %s"%self.selection
         newline += " for h0 of %s"%self.tex_axis_label(
             self.labels.dict['h0_name']
         )
@@ -2574,14 +2526,14 @@ class Postprocessor(object):
             newline += " This is from an analysis performed on data."
         newline += "}\n"
         self.texfile.write(newline)
-        newline = "  \label{tab:"
+        newline = r"  \label{tab:"
         if self.detector is not None:
             newline += self.detector
         if self.selection is not None:
             newline += self.selection
         newline += "%stable}\n"%tabletype
         self.texfile.write(newline)
-        self.texfile.write("\end{table}\n")
+        self.texfile.write(r"\end{table}\n")
 
     def format_table_line(self, val, dataval, stddev=None,
                           maximum=None, last=False):
@@ -2681,7 +2633,7 @@ class Postprocessor(object):
         else:
             logging.info(
                 'Did not find all of the files - %s - expected to indicate '
-                'this data has already been extracted.'%expected_files
+                'this data has already been extracted.'%self.expected_pickles
             )
             pickle_there = False
 
@@ -2693,8 +2645,7 @@ class Postprocessor(object):
         non-transferred jobs. i.e. for trial X you may not have all of the
         necessary fit files so it must be ignored."""
         file_nums = OrderedDict()
-        for fnum, fname in enumerate(nsort(os.listdir(filedir))):
-            fpath = os.path.join(filedir, fname)
+        for fname in nsort(os.listdir(filedir)):
             for x in ['0', '1']:
                 for y in ['0', '1']:
                     k = 'h{x}_fit_to_h{y}_fid'.format(x=x, y=y)
@@ -2705,7 +2656,7 @@ class Postprocessor(object):
                     if self.fluctuate_fid:
                         fid_label = int(m.groupdict()['fid_ind'])
                     else:
-                        fid_label = labels.fid
+                        fid_label = self.labels.fid
                     if k not in file_nums:
                         file_nums[k] = []
                     file_nums[k].append(fid_label)
@@ -2765,7 +2716,7 @@ class Postprocessor(object):
                     = bits.group(4)
         self.all_params = all_params
 
-    def get_data(self, cfg):
+    def get_data(self):
         """Get all of the data from the logdir"""
         data_sets = OrderedDict()
         minimiser_info = OrderedDict()
@@ -2912,14 +2863,14 @@ class Postprocessor(object):
         if '1 bin ' in binning_string:
             raise ValueError('Singular bin case not dealt with yet')
         elif 'irregularly' in binning_string:
-            parse_string = ('OneDimBinning\((.*), (.*) irregularly-sized ' + \
-                            'bins with edges at \[(.*)\] (.*)\)')
+            parse_string = (r'OneDimBinning\((.*), (.*) irregularly-sized' + \
+                            r' bins with edges at \[(.*)\] (.*)\)')
             a = re.match(parse_string, binning_string, re.M|re.I)
             # Match should come out None is the bins don't have units
             if a is None:
-                parse_string = ('OneDimBinning\((.*), (.*) ' + \
-                                'irregularly-sized bins with ' + \
-                                'edges at \[(.*)\]\)')
+                parse_string = (r'OneDimBinning\((.*), (.*) ' + \
+                                r'irregularly-sized bins with ' + \
+                                r'edges at \[(.*)\]\)')
                 a = re.match(parse_string, binning_string, re.M|re.I)
             else:
                 binning_dict['units'] = a.group(4)
@@ -2928,14 +2879,14 @@ class Postprocessor(object):
             binning_dict['bin_edges'] = [float(i) for i in \
                                          a.group(3).split(', ')]
         elif 'logarithmically' in binning_string:
-            parse_string = ('OneDimBinning\((.*), (.*) ' + \
-                            'logarithmically-uniform ' + \
-                            'bins spanning \[(.*), (.*)\] (.*)\)')
+            parse_string = (r'OneDimBinning\((.*), (.*) ' + \
+                            r'logarithmically-uniform ' + \
+                            r'bins spanning \[(.*), (.*)\] (.*)\)')
             a = re.match(parse_string, binning_string, re.M|re.I)
             # Match should come out None is the bins don't have units
             if a is None:
-                parse_string = ('OneDimBinning\((.*), (.*) logarithmically' + \
-                                '-uniform bins spanning \[(.*), (.*)\]\)')
+                parse_string = (r'OneDimBinning\((.*), (.*) logarithmically' + \
+                                r'-uniform bins spanning \[(.*), (.*)\]\)')
                 a = re.match(parse_string, binning_string, re.M|re.I)
             else:
                 binning_dict['units'] = a.group(5)
@@ -2944,13 +2895,13 @@ class Postprocessor(object):
             binning_dict['domain'] = [float(a.group(3)), float(a.group(4))]
             binning_dict['is_log'] = True
         elif 'equally-sized' in binning_string:
-            parse_string = ('OneDimBinning\((.*), (.*) equally-sized ' + \
-                            'bins spanning \[(.*) (.*)\] (.*)\)')
+            parse_string = (r'OneDimBinning\((.*), (.*) equally-sized ' + \
+                            r'bins spanning \[(.*) (.*)\] (.*)\)')
             a = re.match(parse_string, binning_string, re.M|re.I)
             # Match should come out None is the bins don't have units
             if a is None:
-                parse_string = ('OneDimBinning\((.*), (.*) equally-sized ' + \
-                                'bins spanning \[(.*), (.*)\]\)')
+                parse_string = (r'OneDimBinning\((.*), (.*) equally-sized ' + \
+                                r'bins spanning \[(.*), (.*)\]\)')
                 a = re.match(parse_string, binning_string, re.M|re.I)
             else:
                 binning_dict['units'] = a.group(5)
@@ -2959,7 +2910,7 @@ class Postprocessor(object):
             binning_dict['domain'] = [float(a.group(3)), float(a.group(4))]
             binning_dict['is_lin'] = True
 
-        add_tex_to_binning(binning_dict)
+        self.add_tex_to_binning(binning_dict)
         return binning_dict
 
     def add_tex_to_binning(self, binning_dict):
@@ -3137,11 +3088,9 @@ class Postprocessor(object):
                    sorted(contour_dict['vars']):
                     special_vars = sorted(['sin2theta23', 'deltam32'])
                     special_bins = sorted(['theta23', 'deltam31'])
-                    if (sorted(self.all_bin_names) == special_bins) and \
-                       (sorted(contour_dict['vars']) == special_vars):
-                        good_contour = True
-                    else:
-                        good_contour = False
+                    good_contour = \
+                        (sorted(self.all_bin_names) == special_bins) and \
+                        (sorted(contour_dict['vars']) == special_vars)
                 else:
                     good_contour = True
                 if not good_contour:
@@ -3151,7 +3100,7 @@ class Postprocessor(object):
                             contour_dict['vars'], self.all_bin_names
                         )
                     )
-            
+
         self.data = data
         self.best_fit_data = best_fit_data
 
@@ -3227,7 +3176,7 @@ class Postprocessor(object):
         return xxvals, xyvals, yxvals, yyvals
 
     def plot_1D_scans(self, xvals=None, xlabel=None, xunits=None):
-        """Makes the 2D scan plots. The x values as well as their
+        """Makes the 1D scan plots. The x values as well as their
         labels/units can be specified here, or else they will be generated
         from what is stored in self"""
         import matplotlib.pyplot as plt
@@ -3501,9 +3450,9 @@ class Postprocessor(object):
                 plt.close()
 
     def add_pseudo_experiments(self, xlabel, ylabel, injkey, fhkey):
-        """Will add the pseudo experiments contained in 
-        self.values[injkey][fhkey] on to whatever is currently in 
-        plt. The idea is to overlay them on top of contours, so it 
+        """Will add the pseudo experiments contained in
+        self.values[injkey][fhkey] on to whatever is currently in
+        plt. The idea is to overlay them on top of contours, so it
         will find the appropriate dimensions from xlabel and ylabel."""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
@@ -3526,13 +3475,18 @@ class Postprocessor(object):
         xvals = []
         yvals = []
         for vals in contour_vals:
-            for i,var in enumerate(contour_dict['vars']):
+            for i, var in enumerate(contour_dict['vars']):
                 if var == 'deltam32':
                     vals[i] /= 1000
                 if var == xlabel:
                     xvals.append(vals[i])
-                else:
+                elif var == ylabel:
                     yvals.append(vals[i])
+                else:
+                    raise ValueError(
+                        "Got a variable - %s - that was not %s or %s"
+                        "as expected"%(var, xlabel, ylabel)
+                    )
         if do_label == 1:
             plabel = contour_dict['label']
         else:
@@ -3547,7 +3501,7 @@ class Postprocessor(object):
             zorder=1
         )
         if 'best_fit' in contour_dict.keys():
-            for i,var in enumerate(contour_dict['vars']):
+            for i, var in enumerate(contour_dict['vars']):
                 if var == 'deltam32':
                     contour_dict['best_fit'][i] /= 1000.0
                 if var == xlabel:
@@ -3591,7 +3545,7 @@ class Postprocessor(object):
             if (xlabel in contour_dict['vars']) and \
                (ylabel in contour_dict['vars']):
                 if isinstance(contour_dict['contour'], dict):
-                    for i,ckey in enumerate(contour_dict['contour'].keys()):
+                    for i, ckey in enumerate(contour_dict['contour'].keys()):
                         self.make_other_contour(
                             contour_vals=contour_dict['contour'][ckey],
                             xlabel=xlabel,
@@ -3611,7 +3565,7 @@ class Postprocessor(object):
     #### Generic Functions Relating to Plotting ####
 
     def make_data_label(self):
-        """Makes a label for the data accounting for detector and 
+        """Makes a label for the data accounting for detector and
         selection. If these are not set it will default to IceCube."""
         data_label = ""
         if self.detector is not None:
@@ -3706,7 +3660,7 @@ class Postprocessor(object):
     def make_1D_graph(self, xvals, yvals, xlabel, xunits,
                       ylabel, yunits, xlims='edges', ylims=None,
                       linestyle='-', color='darkblue', alpha=0.9,
-                      xlabelsize='18', ylabelsize='18', titlesize=16):
+                      xlabelsize='18', ylabelsize='18'):
         """Generic 1D graph plotting function. The x limits will be set as
         the edges of the xvals unless overwritten. Set this to None to
         leave it as matplotlib dictates. The y limits will be left alone
@@ -3737,7 +3691,7 @@ class Postprocessor(object):
             nice_ylabel = self.make_label(ylabel, yunits)
             plt.ylabel(
                 nice_ylabel,
-                fontsize=self.plotstyle.hist_2D_ylabelfontsize
+                fontsize=ylabelsize
             )
 
     def make_2D_hist_plot(self, zvals, xbins, ybins, xlabel,
@@ -3746,8 +3700,8 @@ class Postprocessor(object):
                           yticks=None, xxvals=None, xyvals=None,
                           yxvals=None, yyvals=None):
         """Generic 2D histogram-style plotting function. Set zlabel to contour
-        to make a contour plot instead of a histogram. cmap will be taken from
-        the Plotstyle object unless explicitly overwritten. If any of the units
+        to make a contour plot instead of a histogram. cmap will be Blues
+        unless explicitly overwritten. If any of the units
         are set None then the make_label function will just apply
         self.tex_axis_label to the string passed in either xlabel, ylabel
         or zlabel. Set xxvals/xyvals and yxvals/yyvals to add 1D projections
@@ -3760,15 +3714,12 @@ class Postprocessor(object):
                     "When specifying projections, both xx and "
                     "xy vals must be specified."
                 )
-            has_projections = True
         if (yxvals is not None) or (yxvals is not None):
             if not ((yxvals is not None) and (yyvals is not None)):
                 raise ValueError(
                     "When specifying projections, both yx and "
                     "yy vals must be specified."
                 )
-            has_projections = True
-            from matplotlib import gridspec, transforms
             fig, axes = plt.subplots(
                 nrows=2,
                 ncols=2,
@@ -3785,21 +3736,21 @@ class Postprocessor(object):
                     X,
                     Y,
                     zvals.T,
-                    self.plotstyle.contour_levels,
-                    colors=self.plotstyle.contour_colors,
-                    linewidths=self.plotstyle.contour_linewidths,
-                    origin=self.plotstyle.contour_origin
+                    levels=[0, 4.605],
+                    colors="k",
+                    linewidths=3,
+                    origin="lower"
                 )
             else:
                 if cmap is None:
-                    cmap = self.plotstyle.hist_2D_cmap
+                    cmap = "Blues"
                 im = axes[1, 0].pcolormesh(xbins, ybins, zvals.T, cmap=cmap)
                 cax = fig.add_axes([0.15, 0.13, 0.03, 0.595])
                 nice_zlabel = self.make_label(zlabel, zunits)
                 cb = fig.colorbar(im, cax=cax)
                 cb.set_label(
                     label=nice_zlabel,
-                    fontsize=self.plotstyle.hist_2D_clabelfontsize
+                    fontsize=24
                 )
                 cb.ax.yaxis.set_ticks_position('left')
                 cb.ax.yaxis.set_label_position('left')
@@ -3840,27 +3791,26 @@ class Postprocessor(object):
                 nice_xlabel = self.make_label(xlabel, xunits)
                 axes[1, 0].set_xlabel(
                     nice_xlabel,
-                    fontsize=self.plotstyle.hist_2D_xlabelfontsize
+                    fontsize=24
                 )
             if ylabel is not None:
                 nice_ylabel = self.make_label(ylabel, yunits)
                 axes[1, 0].set_ylabel(
                     nice_ylabel,
-                    fontsize=self.plotstyle.hist_2D_ylabelfontsize
+                    fontsize=24
                 )
             return axes[1, 0]
         else:
-            has_projections = False
             if zlabel == 'contour':
                 X, Y = np.meshgrid(xbins, ybins)
                 im = plt.contour(
                     X,
                     Y,
                     zvals.T,
-                    self.plotstyle.contour_levels,
-                    colors=self.plotstyle.contour_colors,
-                    linewidths=self.plotstyle.contour_linewidths,
-                    origin=self.plotstyle.contour_origin
+                    levels=[0, 4.605],
+                    colors="k",
+                    linewidths=3,
+                    origin="lower"
                 )
                 # Save contour data to a file
                 contour_data = {}
@@ -3880,12 +3830,12 @@ class Postprocessor(object):
                 )
             else:
                 if cmap is None:
-                    cmap = self.plotstyle.hist_2D_cmap
+                    cmap = "Blues"
                 im = plt.pcolormesh(xbins, ybins, zvals.T, cmap=cmap)
                 nice_zlabel = self.make_label(zlabel, zunits)
                 plt.colorbar(im).set_label(
                     label=nice_zlabel,
-                    fontsize=self.plotstyle.hist_2D_clabelfontsize
+                    fontsize=24
                 )
             plt.xlim(xbins[0], xbins[-1])
             plt.ylim(ybins[0], ybins[-1])
@@ -3893,13 +3843,13 @@ class Postprocessor(object):
                 nice_xlabel = self.make_label(xlabel, xunits)
                 plt.xlabel(
                     nice_xlabel,
-                    fontsize=self.plotstyle.hist_2D_xlabelfontsize
+                    fontsize=24
                 )
             if ylabel is not None:
                 nice_ylabel = self.make_label(ylabel, yunits)
                 plt.ylabel(
                     nice_ylabel,
-                    fontsize=self.plotstyle.hist_2D_ylabelfontsize
+                    fontsize=24
                 )
             if xticks is not None:
                 if len(xticks) != (len(xbins)-1):
@@ -3988,7 +3938,9 @@ class Postprocessor(object):
             # Calculate correlation and annotate
             rho, pval = self.get_correlation_coefficient(
                 xdata=xdata,
-                ydata=ydata
+                ydata=ydata,
+                xsystkey=xlabel,
+                ysystkey=ylabel
             )
             if (len(set(xdata)) != 1) and (len(set(ydata)) != 1):
                 if subplotnum is not None:
@@ -4025,7 +3977,7 @@ class Postprocessor(object):
         if subplotnum is None and (title is not None):
             plt.title(title, fontsize=16)
 
-    def get_correlation_coefficient(self, xdata, ydata):
+    def get_correlation_coefficient(self, xdata, ydata, xsystkey, ysystkey):
         """Calculate the correlation coefficient between x and y"""
         if len(set(xdata)) == 1:
             logging.warn(
@@ -4108,7 +4060,7 @@ class Postprocessor(object):
         """Appends units to a label for plotting."""
         nice_label = self.tex_axis_label(label)
         if not (units == 'dimensionless') and \
-           (not units == None) and (not units == []):
+           (units is not None) and (not units == []):
             nice_label += ' (%s)'%self.tex_axis_label(units)
         return nice_label
 
@@ -4167,7 +4119,7 @@ class Postprocessor(object):
         pretty_labels["vacuum"] = r"Vacuum Oscillations"
         pretty_labels["no,llr"] = r"LLR Method"
         pretty_labels["no,llr,nufitpriors"] = r"LLR Method, Nu-Fit Priors"
-        pretty_labels["io,llr"] = r"LLR Method"
+        pretty_labels["io,llr"] = r"llr Method"
         pretty_labels["io,llr,nufitpriors"] = r"LLR Method, Nu-Fit Priors"
         pretty_labels["nue"] = r"$\nu_e$"
         pretty_labels["nuebar"] = r"$\bar{\nu}_e$"
@@ -4273,6 +4225,7 @@ class Postprocessor(object):
 
 
 def main_hypo_testing():
+    """Parses the args when the user selects hypo_testing"""
     Hypotestingpostprocessingargparser()
 
 
@@ -4280,19 +4233,15 @@ def main_profile_scan():
     description = """A script for processing the output files of
     profile_scan.py"""
 
-    # TODO:
-    #
-    # 1) Processing of 1D scans
-
     init_args_d = parse_args(description=description,
                              profile_scan=True)
 
     if init_args_d['pseudo_experiments'] is not None:
-        fluctuate_fid=True
-        fluctuate_data=False
+        fluctuate_fid = True
+        fluctuate_data = False
     else:
-        fluctuate_fid=None
-        fluctuate_data=None
+        fluctuate_fid = None
+        fluctuate_data = None
 
     postprocessor = Postprocessor(
         analysis_type='profile_scan',
@@ -4339,16 +4288,14 @@ def main_analysis_postprocessing():
     describing MC or data?
 
     This computes significances, etc. from the logfiles recorded by the
-    `hypo_testing.py` script, for either Asimov or LLR analysis. Plots and
-    tables are produced in the case of LLR analysis."""
+    `hypo_testing.py` script, for either Asimov or llr analysis. Plots and
+    tables are produced in the case of llr analysis."""
 
     # TODO:
     #
     # 1) Some of the "combined" plots currently make it impossible to read the
     #    axis labels. Come up with a better way of doing this. Could involve
     #    making legends and just labelling the axes alphabetically.
-    # 2) The important one - Figure out if this script generalises to the case
-    #    of analysing data. My gut says it doesn't...
 
     init_args_d = parse_args(description=description,
                              hypo_testing_analysis=True)
@@ -4371,9 +4318,9 @@ def main_analysis_postprocessing():
         #))
         #return
 
-    # Otherwise: LLR analysis
+    # Otherwise: llr analysis
     if init_args_d['outdir'] is None:
-        raise ValueError('Must specify --outdir when processing LLR results.')
+        raise ValueError('Must specify --outdir when processing llr results.')
 
     if len(init_args_d['formats']) > 0:
         logging.info(
@@ -4381,7 +4328,7 @@ def main_analysis_postprocessing():
         )
     else:
         raise ValueError('Must specify a plot file format, either --png or'
-                         ' --pdf (or both), when processing LLR results.')
+                         ' --pdf (or both), when processing llr results.')
 
     postprocessor = Postprocessor(
         analysis_type='hypo_testing',
@@ -4416,7 +4363,7 @@ def main_analysis_postprocessing():
             postprocessor.make_llr_plots()
         else:
             raise ValueError(
-                "LLR plots were requested but only 1 trial "
+                "llr plots were requested but only 1 trial "
                 "was found in the logdir."
             )
     if init_args_d['fit_information']:
