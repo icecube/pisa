@@ -478,7 +478,7 @@ class prob3cpu(Stage):
                     mAtm,deltacp,en,kSquared,events_dict['kNuBar']
                 )
                 self.barger_propagator.DefinePath(
-                    cz, prop_height, YeI, YeO, YeM
+                    float(cz), prop_height, YeI, YeO, YeM
                 )
                 self.barger_propagator.propagate(events_dict['kNuBar'])
                 prob_e.append(self.barger_propagator.GetProb(
