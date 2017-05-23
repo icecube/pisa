@@ -106,7 +106,7 @@ echo "==========================================================================
 PISA_FTYPE=float64 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example.cfg \
 	--select "ih" \
-	-d $OUTDIR_IH \
+	--outdir $OUTDIR_IH \
 	--png -v
 
 OUTDIR_NH=$TMP/nh_pipeline
@@ -118,7 +118,7 @@ echo "==========================================================================
 PISA_FTYPE=float64 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example.cfg \
 	--select "nh" \
-	-d $OUTDIR_NH \
+	--outdir $OUTDIR_NH \
 	--png -v
 
 OUTDIR_NH_DIST_MAKER=$TMP/nh_dist_maker
@@ -130,7 +130,7 @@ echo "==========================================================================
 PISA_FTYPE=float64 $PISA/pisa/core/distribution_maker.py \
 	-p settings/pipeline/example.cfg \
 	--select "nh" \
-	-d $OUTDIR_NH_DIST_MAKER \
+	--outdir $OUTDIR_NH_DIST_MAKER \
 	--png -v
 
 OUTDIR=$TMP/compare_nh_to_ih
@@ -157,7 +157,7 @@ echo "==========================================================================
 PISA_FTYPE=float32 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example.cfg \
 	--select "nh" \
-	-d $OUTDIR_NH_FP32_CPU \
+	--outdir $OUTDIR_NH_FP32_CPU \
 	-v
 
 OUTDIR_NH_FP32_GPU=$TMP/nh_pipeline_fp32_gpu
@@ -169,7 +169,7 @@ echo "==========================================================================
 PISA_FTYPE=float32 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example_gpu.cfg \
 	--select "nh" \
-	-d $OUTDIR_NH_FP32_GPU \
+	--outdir $OUTDIR_NH_FP32_GPU \
 	-v
 
 OUTDIR_NH_FP64_GPU=$TMP/nh_pipeline_fp64_gpu
@@ -181,7 +181,7 @@ echo "==========================================================================
 PISA_FTYPE=float64 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example_gpu.cfg \
 	--select "nh" \
-	-d $OUTDIR_NH_FP64_GPU \
+	--outdir $OUTDIR_NH_FP64_GPU \
 	-v
 
 OUTDIR=$TMP/compare_fp32_cpu_to_fp64_cpu
