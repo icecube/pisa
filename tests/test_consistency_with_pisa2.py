@@ -860,13 +860,13 @@ def parse_args():
                         help='''Set verbosity level; default is 1, so only -vv
                         or -vvv has an effect.''')
     args = parser.parse_args()
-    args.v = min(1, args.v)
+    args.v = max(1, args.v)
     return args
 
 
 def main():
     args = parse_args()
-    set_verbosity(1)
+    set_verbosity(args.v)
 
     # Figure out which tests to do
     test_all = True
