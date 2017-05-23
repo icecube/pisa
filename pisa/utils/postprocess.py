@@ -582,7 +582,7 @@ class Postprocessor(object):
                 self.get_starting_params(cfg=cfg)
                 # Find all relevant data dirs, and from each extract the
                 # fiducial fit(s) information contained
-                self.get_data(cfg=cfg)
+                self.get_data()
                 self.pickle_data()
         else:
             raise ValueError(
@@ -1774,10 +1774,14 @@ class Postprocessor(object):
                 binning = np.linspace(minllr - 0.1*rangellr,
                                       maxllr + 0.1*rangellr,
                                       10)
-            else:
+            elif self.num_trials < 2000:
                 binning = np.linspace(minllr - 0.1*rangellr,
                                       maxllr + 0.1*rangellr,
                                       int(self.num_trials/40))
+            else:
+                binning = np.linspace(minllr - 0.1*rangellr,
+                                      maxllr + 0.1*rangellr,
+                                      50)
             binwidth = binning[1]-binning[0]
 
             llrbesthist, llrbestbinedges = np.histogram(llrbest, bins=binning)
