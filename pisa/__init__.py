@@ -23,6 +23,7 @@ except Exception:
     pass #logging.debug('Failed to import or use pycuda', exc_info=True)
 else:
     PYCUDA_AVAIL = True
+    del driver
 
 NUMBA_AVAIL = False
 def dummy_func(x):
@@ -53,6 +54,7 @@ else:
     NUMBA_CUDA_AVAIL = True
 finally:
     if 'cuda' in globals() or 'cuda' in locals():
+        cuda.close()
         del cuda
 
 
