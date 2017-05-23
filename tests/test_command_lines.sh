@@ -253,7 +253,7 @@ PISA_FTYPE=float64 $PISA/pisa/analysis/hypo_testing.py \
 	--h1-param-selections="nh" \
 	--data-param-selections="nh" \
 	--data-is-mc \
-	--minimizer-settings settings/minimizer/bfgs_settings_fac1e11_eps1e-4_mi20.json \
+	--min-settings settings/minimizer/l-bfgs-b_ftol2e-5_gtol1e-5_eps1e-4_maxiter200.json \
 	--metric=chi2 \
 	--logdir $OUTDIR \
 	--pprint -v --allow-dirty
