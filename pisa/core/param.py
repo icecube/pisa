@@ -241,24 +241,34 @@ class Param(object):
             new_vals.append(val)
         self._range = new_vals
 
+    # TODO: make discrete values rescale to integers 0, 1, ...
     @property
     def _rescaled_value(self):
         if self.is_discrete:
-            val = self.value
-        else:
-            if self.range is None:
-                raise ValueError('Cannot rescale without a range specified'
-                                 ' for parameter %s' %self)
-            val = (self._value.m - self.range[0].m) \
-                    / (self.range[1].m-self.range[0].m)
-        if hasattr(val, 'magnitude'):
-            val = val.magnitude
-        return val
+            return self.value
+        srange = self.range
+        if srange is None:
+            raise ValueError('Cannot rescale without a range specified'
+                             ' for parameter %s' % self)
+        srange = self.range
+        srange0 = srange[0].m
+        srange1 = srange[1].m
+        return (self._value.m - srange0) / (srange1 - srange0)
 
     @_rescaled_value.setter
     def _rescaled_value(self, rval):
-        self.value = ((self.range[1].m - self.range[0].m)*rval +
-                      self.range[0].m)*self.units
+        if srange is None:
+            raise ValueError('Cannot rescale without a range specified'
+                             ' for parameter %s' % self)
+        if rval < 0 or rval > 1:
+            raise ValueError(
+                '%s: `rval`=%.15e, but cannot be outside [0, 1]'
+                % (self.name, rval)
+            )
+        srange = self.range
+        srange0 = srange[0].m
+        srange1 = srange[1].m
+        self._value = (srange0 + (srange1 - srange0)*rval) * self._units
 
     @property
     def tex(self):
