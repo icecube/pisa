@@ -257,6 +257,7 @@ class Param(object):
 
     @_rescaled_value.setter
     def _rescaled_value(self, rval):
+        srange = self.range
         if srange is None:
             raise ValueError('Cannot rescale without a range specified'
                              ' for parameter %s' % self)
@@ -265,7 +266,6 @@ class Param(object):
                 '%s: `rval`=%.15e, but cannot be outside [0, 1]'
                 % (self.name, rval)
             )
-        srange = self.range
         srange0 = srange[0].m
         srange1 = srange[1].m
         self._value = (srange0 + (srange1 - srange0)*rval) * self._units
