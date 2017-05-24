@@ -33,7 +33,7 @@ __all__ = ['MINIMIZERS_USING_SYMM_GRAD',
            'Counter', 'Analysis']
 
 
-MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b',)
+MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b', 'slsqp')
 """Minimizers that use symmetrical steps on either side of a point to compute
 gradients. See https://github.com/scipy/scipy/issues/4916"""
 

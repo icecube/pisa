@@ -49,12 +49,13 @@ try:
     assert cuda.gpus, 'No GPUs detected'
     cuda.jit('void(float64)')(dummy_func)
 except Exception:
-    pass #logging.debug('Failed to import or use numba.cuda', exc_info=True)
+    pass
 else:
     NUMBA_CUDA_AVAIL = True
 finally:
     if 'cuda' in globals() or 'cuda' in locals():
-        cuda.close()
+        if NUMBA_CUDA_AVAIL:
+            cuda.close()
         del cuda
 
 
