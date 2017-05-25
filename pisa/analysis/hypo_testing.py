@@ -327,7 +327,7 @@ class HypoTesting(Analysis):
                  check_ordering=False,
                  allow_dirty=False, allow_no_git_info=False,
                  blind=False, store_minimizer_history=True, pprint=False,
-                 reset_free=True):
+                 reset_free=True, reset_bound=False, recentre_priors=False):
         assert num_data_trials >= 1
         assert num_fid_trials >= 1
         assert data_start_ind >= 0
@@ -336,6 +336,14 @@ class HypoTesting(Analysis):
 
         # Make it possible to seed minimiser off truth
         self.reset_free = reset_free
+
+        # Make it possible to always generate pseudo experiments at nominal
+        # values of bound systematics
+        self.reset_bound = reset_bound
+
+        # Make it possible to re-centre priors after finding the
+        # fiducial parameters.
+        self.recentre_priors = recentre_priors
 
         # Instantiate h0 distribution maker to ensure it is a valid spec
         if h0_maker is None:
@@ -767,7 +775,11 @@ class HypoTesting(Analysis):
                     blind=self.blind,
                     reset_free=self.reset_free
                 )
-        self.h0_fid_asimov_dist = self.h0_fit_to_data['hypo_asimov_dist']
+        if self.reset_bound:
+            self.h0_maker.params.reset_bound()
+            self.h0_fid_asimov_dist = self.h0_maker.get_outputs(return_sum=True)
+        else:
+            self.h0_fid_asimov_dist = self.h0_fit_to_data['hypo_asimov_dist']
 
         self.log_fit(fit_info=self.h0_fit_to_data,
                      dirpath=self.thisdata_dirpath,
@@ -823,7 +835,11 @@ class HypoTesting(Analysis):
                     blind=self.blind,
                     reset_free=self.reset_free
                 )
-        self.h1_fid_asimov_dist = self.h1_fit_to_data['hypo_asimov_dist']
+        if self.reset_bound:
+            self.h1_maker.params.reset_bound()
+            self.h1_fid_asimov_dist = self.h1_maker.get_outputs(return_sum=True)
+        else:
+            self.h1_fid_asimov_dist = self.h1_fit_to_data['hypo_asimov_dist']
 
         self.log_fit(fit_info=self.h1_fit_to_data,
                      dirpath=self.thisdata_dirpath,
@@ -1531,6 +1547,21 @@ def parse_args(description=__doc__):
         action='store_true',
         help='''Fit both ordering hypotheses. This should only be flagged if
         the ordering is NOT the discrete hypothesis being tested'''
+    )
+    parser.add_argument(
+        '--reset-bound',
+        action='store_true',
+        help='''Reset the bound nuisance parameters to the nominal when
+        generating the pseudo-experiments i.e. if you have a parameter that
+        is 1.0 +/- 0.1 and hyou fit 1.05 in your data fit the parameter will
+        be still set to 1.0 for the purposes of generating the
+        pseudo-experiments.'''
+    )
+    parser.add_argument(
+        '--recentre-priors',
+        action='store_true',
+        help='''After finding the h0 and h1 fiducial params, take those
+        with gaussian priors and re-centre the prior on this new value.'''
     )
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument(

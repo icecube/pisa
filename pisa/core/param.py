@@ -793,6 +793,28 @@ class ParamSet(Sequence):
         """Reset only free parameters to their nominal values."""
         self.free.reset_all()
 
+    def reset_bound(self):
+        """Reset only bound parameters to their nominal values."""
+        for param in self.free:
+            if hasattr(param, 'prior'):
+                if param.prior is not None:
+                    if not param.prior.kind == 'uniform':
+                        param.reset()
+
+    def recentre_priors(self):
+        """Recentres the gaussian priors to what is currently
+        stored in the value of each of the parameters."""
+        from pisa.core.prior import Prior
+        for param in self.free:
+            if hasattr(param, 'prior'):
+                if param.prior is not None:
+                    if param.prior.kind == 'gaussian':
+                        param.prior = Prior(
+                            kind='gaussian',
+                            mean=param.value,
+                            stddev=param.prior.stddev
+                        )
+
     def set_nominal_by_current_values(self):
         """Define the nominal values as the parameters' current values."""
         self.nominal_values = self.values
