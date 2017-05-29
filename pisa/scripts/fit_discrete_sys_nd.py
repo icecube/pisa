@@ -79,6 +79,7 @@ def main():
     cfg = from_file(args.fit_settings)
     sys_list = cfg.get('general', 'sys_list').replace(' ', '').split(',')
     stop_idx = cfg.getint('general', 'stop_after_stage')
+    smooth = cfg.get('general', 'smooth')
     force_through_nominal = cfg.getboolean('general', 'force_through_nominal')
 
     # Instantiate template maker
@@ -105,7 +106,7 @@ def main():
     for section in cfg.sections():
         if section == 'general':
             continue
-        elif section.startswith('nominal_set:') or elif section.startswith('sys_set:'):
+        elif section.startswith('nominal_set:') or section.startswith('sys_set:'):
             parameter_point = [float(x) for x in section.split(':')[1].split(',')]
             # retreive settings
             for key, val in cfg.items(section):
@@ -137,9 +138,20 @@ def main():
             sys_mapsets.append(mapset)
             sys_parameter_points.append(parameter_point)
 
-    assert(nominal_map is not None), 'no nominal set in cfg'
+    assert(nominal_mapset is not None), 'no nominal set in cfg'
     
-    sys_parameter_points = np.array(sys_parameter_points)
+    sys_parameter_points = np.array(sys_parameter_points).T
+    # for every bin in the map we need to store 1 + n terms for n systematics, i.e. 1 ofset and n slopes
+    n_params = 1 + sys_parameter_points.shape[0]
+    print n_params
+
+    def fit_fun(X,*P):
+        # X: array of points
+        # P: array of params, with first being the offset followe by the slopes
+        ret_val = P[0]
+        for x,p in zip(X,P[1:]):
+            ret_val += x*p
+        return ret_val
 
     #do it for every map in the MapSet
     outputs = {}
@@ -150,47 +162,47 @@ def main():
         sys_hists = []
         for sys_mapset in sys_mapsets:
             # normalize to nominal:
-            sys_hists.append(sys_mapset[map_name].hist)/unp.nominal_values(nominal_hist)
+            sys_hists.append(sys_mapset[map_name].hist/unp.nominal_values(nominal_hist))
 
         # put them into an array
         sys_hists = np.array(sys_hists)
+        # put that to the last axis
+        sys_hists = np.rollaxis(sys_hists, 0, len(sys_hists.shape))
         
         binning = nominal_mapset[map_name].binning
 
-        # for every bin in the map we need to store 1 + n terms for n systematics, i.e. 1 ofset and n slopes
-        n_params = 1 + sys_parameter_points.shape[0]
         shape_output = [d.num_bins for d in binning] + [n_params]
         shape_map = [d.num_bins for d in binning]
 
         outputs[map_name] = np.ones(shape_output)
         errors[map_name] = np.ones(shape_output)
 
-        for idx in np.ndindex(*shape_small):
-            y_values = unp.nominal_values(sys_hists[:,idx])
-            y_sigma = unp.std_devs(sys_hists[:,idx])
+        for idx in np.ndindex(*shape_map):
+            y_values = unp.nominal_values(sys_hists[idx])
+            y_sigma = unp.std_devs(sys_hists[idx])
             if np.any(y_sigma):
                 popt, pcov = curve_fit(fit_fun, sys_parameter_points, y_values,
                                        sigma=y_sigma, p0=np.ones(n_params))
             else:
-                popt, pcov = curve_fit(fit_fun, x_values, y_values,
+                popt, pcov = curve_fit(fit_fun, sys_parameter_points, y_values,
                                        p0=np.ones(n_params))
             perr = np.sqrt(np.diag(pcov))
             for k, p in enumerate(popt):
-                outputs[map_name][k][idx] = p
-                errors[map_name][k][idx] = perr[k]
+                outputs[map_name][idx][k] = p
+                errors[map_name][idx][k] = perr[k]
 
     # Save the raw ones anyway
     outputs['sys_list'] = sys_list
     outputs['map_names'] = nominal_mapset.names
     outputs['binning_hash'] = binning.hash
-    to_file(outputs, '%s/%s_sysfits_%s_%s.json'%(args.out_dir, sys,
+    to_file(outputs, '%s/nd_sysfits_%s_%s.json'%(args.out_dir,
                                                  args.tag, smooth))
 
     if args.plot:
         for d in range(n_params):
             maps = []
-            for name in map_names:
-                maps.append(Map(name='%s_raw'%name, hist=outputs[name][d,...],
+            for name in nominal_mapset.names:
+                maps.append(Map(name='%s_raw'%name, hist=outputs[name][...,d],
                                 binning=binning))
             maps = MapSet(maps)
             my_plotter = Plotter(
@@ -202,7 +214,7 @@ def main():
             )
             my_plotter.plot_2d_array(
                 maps,
-                fname='%s_%s_%s_%s'%(args.tag, d, smooth),
+                fname='%s_%s_%s_ndfits'%(args.tag, d, smooth),
             )
 
 
