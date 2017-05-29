@@ -70,7 +70,9 @@ class Analysis(object):
         self.blind = blind
 
         # DOF as n_bins - n_free_params + n_gauss_priors
-        n_bins = sum(map.binning.tot_num_bins for map in self.template_maker.get_outputs(return_sum=True))
+        template = self.template_maker.get_outputs(return_sum=True)
+        template = template.combine_wildcard('*')
+        n_bins = sum(map.binning.tot_num_bins for map in template)
         self.n_free_params = len(self.template_maker.params.free)
         n_gauss_priors = 0
         for param in self.template_maker.params.free:
@@ -78,7 +80,8 @@ class Analysis(object):
         self.dof = n_bins - self.n_free_params + n_gauss_priors
 
         # Generate distribution
-        self.data = self.data_maker.get_outputs(return_sum=True, sum_map_name='evts', sum_map_tex_name='evts')
+        data = self.data_maker.get_outputs(return_sum=True)#, sum_map_name='evts', sum_map_tex_name='evts')
+        self.data = data.combine_wildcard('*')
         self.pseudodata_method = None
         self.pseudodata = None
         self.n_minimizer_calls = 0
@@ -178,6 +181,7 @@ class Analysis(object):
             fp[param_names].value = val
             self.template_maker.update_params(fp)
             template = self.template_maker.get_outputs()
+            template = [t.combine_wildcard('*') for t in template]
             metric_vals.append(self.pseudodata.metric_total(expected_values=template,
                                                       metric=self.metric))
         return metric_vals
@@ -215,18 +219,22 @@ class Analysis(object):
             # Want to *maximize* log-likelihood but we're using a minimizer
             sign = -1
         self.template_maker.params.free._rescaled_values = scaled_param_vals
-
         template = self.template_maker.get_outputs()
+        template = [t.combine_wildcard('*') for t in template]
+        template[0][0].name = 'total'
         #N_mc = sum([unp.nominal_values(map.hist).sum() for map in template])
         #scale = self.N_data/N_mc
         #scale=1.
 
         # Assess the fit of the template to the data distribution, and negate
         # if necessary
+        #print [map.name for map in template[0]]
+        #print [map.name for map in self.pseudodata]
         metric_val = (
             self.pseudodata.metric_total(expected_values=template, metric=self.metric)
             + template_maker.params.priors_penalty(metric=self.metric)
         )
+        #print metric_val
 
         mod_chi2_val = (self.pseudodata.metric_total(expected_values=template, metric='mod_chi2')
             + template_maker.params.priors_penalty(metric='mod_chi2'))
@@ -289,6 +297,7 @@ class Analysis(object):
             best_fit_vals = minim_result.x
             metric_val = minim_result.fun
             template = self.template_maker.get_outputs()
+            template = [t.combine_wildcard('*') for t in template]
             dict_flags = {}
             mod_chi2_val = (self.pseudodata.metric_total(expected_values=template, metric='mod_chi2')
                 + template_maker.params.priors_penalty(metric='mod_chi2'))
@@ -304,6 +313,7 @@ class Analysis(object):
 
         all_metrics = {}
         template = self.template_maker.get_outputs()
+        template = [t.combine_wildcard('*') for t in template]
         #for metric in ['llh', 'conv_llh', 'barlow_llh','chi2', 'mod_chi2']:
         for metric in ['llh','chi2']:
             all_metrics[metric] = self.pseudodata.metric_total(expected_values=template, metric=metric) + template_maker.params.priors_penalty(metric=metric) 
@@ -317,6 +327,8 @@ class Analysis(object):
         # Reset free parameters to nominal values
         logging.info('resetting params')
         self.template_maker.params.reset_free()
+        if not check_octant:
+            logging.warning('Skipping octant check in fit!')
 
         best_fit_vals, metric_val, all_metrics, dict_flags = self.run_minimizer(pprint=pprint, skip=skip)
         best_fit = {}
@@ -355,7 +367,7 @@ class Analysis(object):
 
         return best_fit
 
-    def profile(self, p_name, values):
+    def profile(self, p_name, values, check_octant=True):
         """Run profile log likelihood method for param `p_name`.
 
         Parameters
@@ -373,7 +385,7 @@ class Analysis(object):
             test = template_maker.params[p_name]
             test.value = value
             template_maker.update_params(test)
-            condMLE = self.find_best_fit()
+            condMLE = self.find_best_fit(check_octant=check_octant)
             condMLE[p_name] = self.template_maker.params[p_name].value
             append_results(condMLEs,condMLE)
             # report MLEs and LLH
@@ -387,7 +399,7 @@ class Analysis(object):
             skip = True
         else:
             skip = False
-        globMLE = self.find_best_fit(skip=skip)
+        globMLE = self.find_best_fit(skip=skip, check_octant=check_octant)
         # report MLEs and LLH
         return [condMLEs, globMLE]
 
@@ -397,7 +409,7 @@ class Analysis(object):
         results = []
         for template_maker in [template_makerA, template_makerB]:
             self.template_maker = template_maker
-            results.append(self.find_best_fit())
+            results.append(self.find_best_fit(check_octant=check_octant))
         return results
 
 
@@ -429,6 +441,8 @@ if __name__ == '__main__':
                         help='number of trials')
     parser.add_argument('-b', '--blind', action='store_true',
                         help='run blindly i.e. only reporting goodness of fit, no parameter values')
+    parser.add_argument('--no-check-octant', action='store_true',
+                        help='Do not check the second octant of theta23. Careful with that axe Eugene!')
     parser.add_argument('-m', '--minimizer-settings', type=str,
                         metavar='JSONFILE', required=True,
                         help='''Settings related to the optimizer used in the
@@ -515,11 +529,11 @@ if __name__ == '__main__':
         
         if args.function == 'profile':
             if args.mode == 'H0':
-                results.append(analysis.profile(args.var,[0.]*ureg.dimensionless))
+                results.append(analysis.profile(args.var,[0.]*ureg.dimensionless, check_octant=not args.no_check_octant))
             elif args.mode == 'scan':
-                results.append(analysis.profile(args.var,eval(args.range)))
+                results.append(analysis.profile(args.var,eval(args.range), check_octant=not args.no_check_octant))
         elif args.function == 'fit':
-            results.append(analysis.find_best_fit())
+            results.append(analysis.find_best_fit(check_octant=not args.no_check_octant))
 
     to_file(results, args.outfile)
     logging.info('Done.')
