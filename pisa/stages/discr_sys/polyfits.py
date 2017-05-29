@@ -71,7 +71,7 @@ class polyfits(Stage):
             self.fit_results[pname] = from_file(
                 self.params[pname+'_file'].value
             )
-            assert self.input_names == self.fit_results[pname]['map_names']
+            assert set(self.input_names) == set(self.fit_results[pname]['map_names'])
         self.pnames = pnames
 
     def _compute_nominal_transforms(self):
