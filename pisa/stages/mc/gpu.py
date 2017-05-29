@@ -8,6 +8,8 @@ import numpy as np
 import pycuda.driver as cuda
 import pycuda.autoinit
 
+from uncertainties import unumpy as unp
+
 from pisa import ureg, Q_, FTYPE
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.core.events import Events
@@ -73,6 +75,8 @@ class gpu(Stage):
                 scale factor for energy bin edges, as a reco E systematic
             true_e_scale : quantity (dimensionless)
                 scale factor for true energy
+            mc_cuts : cut expr
+                e.g. '(true_coszen <= 0.5) & (true_energy <= 70)'
 
     Notes
     -----
@@ -154,9 +158,8 @@ class gpu(Stage):
             'reco_cz_res_raw',
             'hist_e_scale',
             'hist_pid_scale',
-            'bdt_cut',
             'kde',
-            'cut_outer',
+            'mc_cuts',
         )
 
         expected_params = (self.osc_params + self.flux_params +
@@ -284,10 +287,9 @@ class gpu(Stage):
         # --- Load events
         # open Events file
         evts = Events(self.params.events_file.value)
-        if self.params.bdt_cut.value == None:
-            bdt_cut = None
-        else:
-            bdt_cut = self.params.bdt_cut.value.m_as('dimensionless')
+        if self.params.mc_cuts.value is not None:
+            logging.info('applying the following cuts to events: %s'%self.params.mc_cuts.value)
+            evts = evts.applyCut(self.params.mc_cuts.value)
 
         # Load and copy events
         variables = [
@@ -301,7 +303,6 @@ class gpu(Stage):
             'neutrino_oppo_numu_flux',
             'weighted_aeff',
             'pid',
-            'dunkman_L5',
             'linear_fit_MaCCQE',
             'quad_fit_MaCCQE',
             'linear_fit_MaCCRES',
@@ -341,26 +342,6 @@ class gpu(Stage):
         # Corresponding numbers for the flavours defined above, needed bi Prob3
         kFlavs = [0, 1, 2] * 4
         kNuBars = [1] *6 + [-1] * 6
-
-        for flav, kFlav, kNuBar in zip(self.flavs, kFlavs, kNuBars):
-            cuts = []
-            if self.params.cut_outer.value:
-                for name, edge in zip(self.bin_names, self.bin_edges):
-                    cuts.append(evts[flav][name] >= edge[0])
-                    cuts.append(evts[flav][name] <= edge[-1])
-            if evts[flav].has_key('dunkman_L5'):
-                if bdt_cut is not None:
-                    # only keep events using bdt_score > bdt_cut
-                    l5_bdt_score = evts[flav]['dunkman_L5'].astype(FTYPE)
-                    cuts.append(l5_bdt_score >= bdt_cut)
-            if len(cuts) > 0:
-                cut = np.all(cuts, axis=0)
-                for var in variables:
-                    try:
-                        #if cut is not None:
-                        evts[flav][var] = evts[flav][var][cut]
-                    except KeyError:
-                        pass
 
         logging.debug('read in events and copy to GPU')
         start_t = time.time()
@@ -745,7 +726,10 @@ class gpu(Stage):
 
         # Pack everything in a final PISA MapSet
         maps = []
+        total_nevt = 0
         for name, hist in out_hists.items():
+            logging.info('%s : %.2f events'%(name, np.sum(hist)))
+            total_nevt += np.sum(hist)
             if self.error_method == 'sumw2':
                 maps.append(Map(name=name, hist=hist,
                                 error_hist=np.sqrt(out_sumw2[name]),
@@ -765,4 +749,7 @@ class gpu(Stage):
                 maps.append(Map(name=name, hist=hist,
                                 binning=self.output_binning))
 
+        logging.info('total : %.2f events'%total_nevt)
+        for map in maps:
+            logging.info('%s : %.4f %%'%(map.name, np.sum(unp.nominal_values(map.hist))/total_nevt))
         return MapSet(maps, name='gpu_mc')
