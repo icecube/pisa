@@ -194,7 +194,7 @@ class Prior(object):
                             np.inf * ureg(self.units))
         self._str = lambda s: 'uniform prior, llh_offset=%s' %self.llh_offset
 
-    def __init_jeffreys(self, A, B, m):
+    def __init_jeffreys(self, A, B):
         """Calculate jeffreys prior as defined in Sivia p.125"""
         self.kind = 'jeffreys'
         if isinstance(A, Number):

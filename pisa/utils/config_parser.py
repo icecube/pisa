@@ -315,9 +315,22 @@ def parse_param(config, section, selector, fullname, pname, value):
     if config.has_option(section, fullname + '.unique_id'):
         kwargs['unique_id'] = config.get(section, fullname + '.unique_id')
 
+    if config.has_option(section, fullname + '.range'):
+        range_ = config.get(section, fullname + '.range')
+        # Note: `nominal` and `sigma` are called out in the `range_` string
+        if 'nominal' in range_:
+            nominal = value.n * value.units # pylint: disable=unused-variable
+        if 'sigma' in range_:
+            sigma = value.s * value.units # pylint: disable=unused-variable
+        range_ = range_.replace('[', 'np.array([')
+        range_ = range_.replace(']', '])')
+        kwargs['range'] = eval(range_).to(value.units) # pylint: disable=eval-used
+
     if config.has_option(section, fullname + '.prior'):
         if config.get(section, fullname + '.prior') == 'uniform':
             kwargs['prior'] = Prior(kind='uniform')
+        elif config.get(section, fullname + '.prior') == 'jeffreys':
+            kwargs['prior'] = Prior(kind='jeffreys', A=kwargs['range'][0], B=kwargs['range'][1])
         elif config.get(section, fullname + '.prior') == 'spline':
             priorname = pname
             if selector is not None:
@@ -340,17 +353,6 @@ def parse_param(config, section, selector, fullname, pname, value):
     elif hasattr(value, 's') and value.s != 0:
         kwargs['prior'] = Prior(kind='gaussian', mean=value.n * value.units,
                                 stddev=value.s * value.units)
-
-    if config.has_option(section, fullname + '.range'):
-        range_ = config.get(section, fullname + '.range')
-        # Note: `nominal` and `sigma` are called out in the `range_` string
-        if 'nominal' in range_:
-            nominal = value.n * value.units # pylint: disable=unused-variable
-        if 'sigma' in range_:
-            sigma = value.s * value.units # pylint: disable=unused-variable
-        range_ = range_.replace('[', 'np.array([')
-        range_ = range_.replace(']', '])')
-        kwargs['range'] = eval(range_).to(value.units) # pylint: disable=eval-used
 
     try:
         param = Param(**kwargs)
