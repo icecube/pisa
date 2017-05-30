@@ -43,6 +43,7 @@ class hyperplane(Stage):
             'dom_eff', 
             'hole_ice', 
             'hole_ice_fwd', 
+            'spiciness', 
         )
 
         input_names = split(input_names)
