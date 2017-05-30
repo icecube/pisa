@@ -25,7 +25,7 @@ __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
            'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2']
 
 
-SMALL_POS = 1e-10 #if FTYPE == np.float64 else FTYPE_PREC
+SMALL_POS = 1e-5 #if FTYPE == np.float64 else FTYPE_PREC
 """A small positive number with which to replace numbers smaller than it"""
 
 CHI2_METRICS = ['chi2', 'mod_chi2']
@@ -99,21 +99,22 @@ def chi2(actual_values, expected_values):
 
         # TODO: this check (and the same for `actual_values`) should probably
         # be done elsewhere... maybe?
-        if np.any(actual_values < 0):
-            msg = ('`actual_values` must all be >= 0...\n'
-                   + maperror_logmsg(actual_values))
-            raise ValueError(msg)
+        # don't do that, negative values can occure from discrete sys
+        #if np.any(actual_values < 0):
+        #    msg = ('`actual_values` must all be >= 0...\n'
+        #           + maperror_logmsg(actual_values))
+        #    raise ValueError(msg)
 
-        if np.any(expected_values < 0):
-            msg = ('`expected_values` must all be >= 0...\n'
-                   + maperror_logmsg(expected_values))
-            raise ValueError(msg)
+        #if np.any(expected_values < 0):
+        #    msg = ('`expected_values` must all be >= 0...\n'
+        #           + maperror_logmsg(expected_values))
+        #    raise ValueError(msg)
 
         # TODO: Is this okay to do? Mathematically suspect at best, and can
         #       still destroy a minimizer's hopes and dreams...
 
         # Replace 0's with small positive numbers to avoid inf in division
-        np.clip(actual_values, a_min=SMALL_POS, a_max=np.inf,
+        np.clip(actual_values, a_min=0, a_max=np.inf,
                 out=actual_values)
         np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
                 out=expected_values)
@@ -124,7 +125,7 @@ def chi2(actual_values, expected_values):
         return np.zeros_like(delta, dtype=FTYPE)
 
     assert np.all(actual_values > 0), str(actual_values)
-    chi2_val = np.square(delta) / actual_values
+    chi2_val = np.square(delta) / expected_values
     assert np.all(chi2_val >= 0), str(chi2_val[chi2_val < 0])
     return chi2_val
 
@@ -164,26 +165,26 @@ def llh(actual_values, expected_values):
         expected_values = np.ma.masked_invalid(expected_values)
 
         # Check that new array contains all valid entries
-        if np.any(actual_values < 0):
-            msg = ('`actual_values` must all be >= 0...\n'
-                   + maperror_logmsg(actual_values))
-            raise ValueError(msg)
+        #if np.any(actual_values < 0):
+        #    msg = ('`actual_values` must all be >= 0...\n'
+        #           + maperror_logmsg(actual_values))
+        #    raise ValueError(msg)
 
-        # TODO: How should we handle nan / masked values in the "data"
-        # (actual_values) distribution? How about negative numbers?
+        ## TODO: How should we handle nan / masked values in the "data"
+        ## (actual_values) distribution? How about negative numbers?
 
-        # Make sure actual values (aka "data") are valid -- no infs, no nans,
-        # etc.
-        if np.any((actual_values < 0) | ~np.isfinite(actual_values)):
-            msg = ('`actual_values` must be >= 0 and neither inf nor nan...\n'
-                   + maperror_logmsg(actual_values))
-            raise ValueError(msg)
+        ## Make sure actual values (aka "data") are valid -- no infs, no nans,
+        ## etc.
+        #if np.any((actual_values < 0) | ~np.isfinite(actual_values)):
+        #    msg = ('`actual_values` must be >= 0 and neither inf nor nan...\n'
+        #           + maperror_logmsg(actual_values))
+        #    raise ValueError(msg)
 
-        # Check that new array contains all valid entries
-        if np.any(expected_values < 0.0):
-            msg = ('`expected_values` must all be >= 0...\n'
-                   + maperror_logmsg(expected_values))
-            raise ValueError(msg)
+        ## Check that new array contains all valid entries
+        #if np.any(expected_values < 0.0):
+        #    msg = ('`expected_values` must all be >= 0...\n'
+        #           + maperror_logmsg(expected_values))
+        #    raise ValueError(msg)
 
         # Replace 0's with small positive numbers to avoid inf in log
         np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
