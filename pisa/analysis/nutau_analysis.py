@@ -182,6 +182,7 @@ class Analysis(object):
             self.template_maker.update_params(fp)
             template = self.template_maker.get_outputs()
             template = [t.combine_wildcard('*') for t in template]
+            template[0][0].name = 'total'
             metric_vals.append(self.pseudodata.metric_total(expected_values=template,
                                                       metric=self.metric))
         return metric_vals
@@ -298,6 +299,7 @@ class Analysis(object):
             metric_val = minim_result.fun
             template = self.template_maker.get_outputs()
             template = [t.combine_wildcard('*') for t in template]
+            template[0][0].name = 'total'
             dict_flags = {}
             mod_chi2_val = (self.pseudodata.metric_total(expected_values=template, metric='mod_chi2')
                 + template_maker.params.priors_penalty(metric='mod_chi2'))
@@ -314,6 +316,7 @@ class Analysis(object):
         all_metrics = {}
         template = self.template_maker.get_outputs()
         template = [t.combine_wildcard('*') for t in template]
+        template[0][0].name = 'total'
         #for metric in ['llh', 'conv_llh', 'barlow_llh','chi2', 'mod_chi2']:
         for metric in ['llh','chi2']:
             all_metrics[metric] = self.pseudodata.metric_total(expected_values=template, metric=metric) + template_maker.params.priors_penalty(metric=metric) 
