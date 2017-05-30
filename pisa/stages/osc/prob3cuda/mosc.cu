@@ -1,4 +1,5 @@
 #include "mosc.h"
+#include "mosc3.h"
 #include <stdio.h>
 
 #define elec (0)
@@ -19,6 +20,218 @@ static int matrixtype = standard_type;
   Compute the matter-mass vector M, dM = M_i-M_j and
   and dMimj. type<0 means anti-neutrinos type>0 means "real" neutrinos
 ***********************************************************************/
+
+
+__device__ void getHVac(fType Enu, fType rho,
+                        fType Mix[][3][2], fType dmVacVac[][3], int antitype,
+                        fType HVac[][3][2])
+{
+  fType dmVacDiag[3][3][2], MixConjTranspose[3][3][2], tmp[3][3][2];
+  clear_complex_matrix(dmVacDiag);
+  dmVacDiag[1][1][re] = dmVacVac[1][0]/(2*Enu);
+  dmVacDiag[2][2][re] = dmVacVac[2][0]/(2*Enu);
+  clear_complex_matrix(tmp);
+  conjugate_transpose_complex_matrix(Mix, MixConjTranspose);
+  multiply_complex_matrix(dmVacDiag, MixConjTranspose, tmp);
+  multiply_complex_matrix(Mix, tmp, HVac);
+}
+
+__device__ void getHMat(fType Enu, fType rho,
+                        fType Mix[][3][2], fType dmVacVac[][3], int antitype,
+                        fType HMat[][3][2], bool NSI)
+{
+  fType HSI[3][3][2], HNSI[3][3][2];
+  fType tworttwoGf = 1.52588e-4;
+  fType a = rho*tworttwoGf/2., MatParam = 0.0;
+  clear_complex_matrix(HSI);
+  if (antitype<0) MatParam =  a; /* Anti-neutrinos */
+  else        MatParam = -a; /* Neutrinos */
+  HSI[0][0][re] = MatParam;
+  if (NSI) {
+    // This is where the non-standard matter interactions will be added to
+    // the standard matter Hamiltonian (not implemented yet)
+    add_complex_matrix(HSI, HNSI, HMat);
+  }
+  else {
+    HMat = HSI;
+  }
+}
+
+
+__device__ void getMNSI(fType Enu, fType rho,
+                        fType Mix[][3][2], fType dmVacVac[][3], int antitype,
+                        fType dmMatMat[][3], fType dmMatVac[][3], 
+                        fType HMat[][3][2])
+{
+  //fType c0[2], c1[2], c2[2];
+  int i,j,k;
+  fType c0, c1, c2;
+  fType c0V, c1V, c2V;
+  fType p, q, pV, qV;
+  fType arg, theta0, theta1, theta2, tmp, M1Sq, M2Sq, M3Sq;
+  fType argV, theta0V, theta1V, theta2V, tmpV, M1SqV, M2SqV, M3SqV;
+
+  fType mMatU[3], mMatV[3], mMat[3];
+  fType HEEHMuMuHTauTau[2];
+  fType HMuTauModulusSq, HETauModulusSq, HEMuModulusSq, ReHEMuHMuTauHTauE;
+  // following only here temporarily
+  fType tworttwoGf = 1.52588e-4;
+  fType a = rho*tworttwoGf/2.0, MatParam = 0.0;
+  if (antitype<0) MatParam =  a; // Anti-neutrinos
+  else        MatParam = -a; // Neutrinos
+  
+
+  ReHEMuHMuTauHTauE = HMat[0][1][re]*(HMat[1][2][re]*HMat[2][0][re] - 
+                                            HMat[1][2][im]*HMat[2][0][im]) -
+    HMat[0][1][im]*(HMat[1][2][im]*HMat[2][0][re] + HMat[1][2][re]*HMat[2][0][im]);
+
+  HEMuModulusSq = HMat[0][1][re]*HMat[0][1][re] + HMat[0][1][im]*HMat[0][1][im];
+  HETauModulusSq = HMat[0][2][re]*HMat[0][2][re] + HMat[0][2][im]*HMat[0][2][im];
+  HMuTauModulusSq = HMat[1][2][re]*HMat[1][2][re] + HMat[1][2][im]*HMat[1][2][im];
+  
+  HEEHMuMuHTauTau[re] = HMat[0][0][re]*(HMat[1][1][re]*HMat[2][2][re] - 
+                                            HMat[1][1][im]*HMat[2][2][im]) -
+    HMat[0][0][im]*(HMat[1][1][im]*HMat[2][2][re] + HMat[1][1][re]*HMat[2][2][im]);
+
+  HEEHMuMuHTauTau[im] = HMat[0][0][re]*(HMat[1][1][im]*HMat[2][2][re] - 
+                                            HMat[1][1][re]*HMat[2][2][im]) +
+    HMat[0][0][im]*(HMat[1][1][re]*HMat[2][2][re] - HMat[1][1][im]*HMat[2][2][im]);
+
+  /*
+  //c0 = H_{ee}|H_{\mu\tau}|^2 + H_{\mu\mu}|H_{e\tau}|^2 + H_{\tau\tau}|H_{e\mu}|^2
+  //     - 2Re(H_{e\mu}H_{\mu\tau}H_{\tau e}) - H_{ee}H_{\mu\mu}H_{\tau\tau}
+
+
+  c0[re] = HMat[0][0][re]*HMuTauModulusSq + HMat[1][1][re]*HETauModulusSq + 
+    HMat[2][2][re]*HEMuModulusSq - 2.0*ReHEMuHMuTauHTauE - HEEHMuMuHTauTau[re];
+  c0[im] = HMat[0][0][im]*HMuTauModulusSq + HMat[1][1][im]*HETauModulusSq + 
+    HMat[2][2][im]*HEMuModulusSq - 2.0*ReHEMuHMuTauHTauE - HEEHMuMuHTauTau[im];
+
+
+  //c1 = H_{ee}H_{\mu\mu} + H_{ee}H_{\tau\tau} + H_{\mu\mu}H_{\tau\tau} - |H_{e\mu}|^2
+  //     - |H_{\mu\tau}|^2 - |H_{e\tau}|^2
+
+
+  c1[re] = HMat[0][0][re]*(HMat[1][1][re] + HMat[2][2][re]) - 
+           HMat[0][0][im]*(HMat[1][1][im] + HMat[2][2][im]) +
+           HMat[1][1][re]*HMat[2][2][re] - HMat[1][1][im]*HMat[2][2][im] - 
+           HEMuModulusSq - HMuTauModulusSq - HETauModulusSq;
+                
+  c1[im] = HMat[0][0][re]*(HMat[1][1][im] + HMat[2][2][im]) + 
+           HMat[0][0][im]*(HMat[1][1][re] + HMat[2][2][re]) +
+           HMat[1][1][re]*HMat[2][2][im] + HMat[1][1][im]*HMat[2][2][re];
+
+  
+  //c2 = -H_{ee} - H_{\mu\mu} - H_{\tau\tau}
+  
+
+  c2[re] = -HMat[0][0][re] - HMat[1][1][re] - HMat[2][2][re];
+  c2[im] = -HMat[0][0][im] - HMat[1][1][im] - HMat[2][2][im];
+  */
+  //printf("Mix[im]: %.10f \n", Mix[0][2][im]);
+  //printf("Enu: %.10f \n", Enu);
+
+  c0V = 0.0;
+  c1V = (1.0/(2.0*Enu*2.0*Enu))*(dmVacVac[1][0]*dmVacVac[2][0]);
+  c2 = (-1.0/(2.0*Enu))*(2.0*Enu*MatParam + dmVacVac[1][0] + dmVacVac[2][0]);
+  c2V = (-1.0/(2.0*Enu))*(dmVacVac[1][0] + dmVacVac[2][0]);
+#ifndef ZERO_CP
+  c0 = (-1.0/(2.0*Enu*2.0*Enu*2.0*Enu))*2.0*Enu*MatParam*dmVacVac[1][0]*dmVacVac[2][0]*
+                (Mix[0][0][re]*Mix[0][0][re] + Mix[0][0][im]*Mix[0][0][im]);
+
+  c1 = (1.0/(2.0*Enu*2.0*Enu))*(dmVacVac[1][0]*dmVacVac[2][0] + 2.0*Enu*MatParam*
+                (dmVacVac[1][0]*(1.0 - (Mix[0][1][re]*Mix[0][1][re] + 
+                                      Mix[0][1][im]*Mix[0][1][im])
+                                ) +
+                dmVacVac[2][0]*(1.0 - (Mix[0][2][re]*Mix[0][2][re] + 
+                                      Mix[0][2][im]*Mix[0][2][im])))
+       );
+
+#else
+  c0 = (-1.0/(2.0*Enu*2.0*Enu*2.0*Enu))*2.0*Enu*MatParam*dmVacVac[1][0]*dmVacVac[2][0]*
+                (Mix[0][0][re]*Mix[0][0][re]);
+  c1 = (1.0/(2.0*Enu*2.0*Enu))*(dmVacVac[1][0]*dmVacVac[2][0] + 2.0*Enu*MatParam*
+                (dmVacVac[1][0]*(1.0 - (Mix[0][1][re]*Mix[0][1][re])
+                                ) +
+                dmVacVac[2][0]*(1.0 - (Mix[0][2][re]*Mix[0][2][re])))
+       );
+#endif
+
+                
+  //printf("c0, c1, c2: %.10f %.10f %.10f \n",c0,c1,c2);
+
+  p = c2*c2 - 3.0*c1;
+  pV = (1.0/(2.0*Enu*2.0*Enu))*(dmVacVac[1][0]*dmVacVac[1][0] +
+                              dmVacVac[2][0]*dmVacVac[2][0] - 
+                              dmVacVac[1][0]*dmVacVac[2][0]);
+  if (p<0.0) {
+      printf("getM: p < 0 ! \n");
+      p = 0.0;
+  }
+  
+  q = -27.0*c0/2.0 - c2*c2*c2 + 9.0*c1*c2/2.0;
+  qV = (1.0/(2.0*Enu*2.0*Enu*2.0*Enu))*(
+        (dmVacVac[1][0] + dmVacVac[2][0])*(dmVacVac[1][0] + dmVacVac[2][0])*
+        (dmVacVac[1][0] + dmVacVac[2][0]) - (9.0/2.0)*dmVacVac[1][0]*dmVacVac[2][0]*
+        (dmVacVac[1][0] + dmVacVac[2][0]));
+
+  tmp = p*p*p - q*q;
+  tmpV = pV*pV*pV - qV*qV;
+  if (tmp<0.0) {
+    printf("getM: p^3 - q^2 < 0 !\n");
+    tmp = 0.0;
+  }
+  arg = sqrt(tmp)/q;
+  argV = sqrt(tmpV)/qV;
+  theta0 = theta1 = theta2 = atan(arg)/3.0;
+  theta0V = theta1V = theta2V = atan(argV)/3.0;
+  theta0 += (2.0/3.0)*M_PI;
+  theta0V += (2.0/3.0)*M_PI;
+  theta1 -= (2.0/3.0)*M_PI;
+  theta1V -= (2.0/3.0)*M_PI;
+  //printf("theta0, theta1, theta2: %.10f %.10f %.10f \n", theta0, theta1, theta2);
+  // add dmVacVac[0][0]?
+  M1Sq = 2.0*Enu*((2.0/3.0)*sqrt(p)*cos(theta0) - c2/3.0 + dmVacVac[0][0]);
+  M2Sq = 2.0*Enu*((2.0/3.0)*sqrt(p)*cos(theta1) - c2/3.0 + dmVacVac[0][0]);
+  M3Sq = 2.0*Enu*((2.0/3.0)*sqrt(p)*cos(theta2) - c2/3.0 + dmVacVac[0][0]);
+  M1SqV = 2.0*Enu*((2.0/3.0)*sqrt(pV)*cos(theta0V) - c2V/3.0 + dmVacVac[0][0]);
+  M2SqV = 2.0*Enu*((2.0/3.0)*sqrt(pV)*cos(theta1V) - c2V/3.0 + dmVacVac[0][0]);
+  M3SqV = 2.0*Enu*((2.0/3.0)*sqrt(pV)*cos(theta2V) - c2V/3.0 + dmVacVac[0][0]);
+
+  mMatU[0] = M1Sq;
+  mMatU[1] = M2Sq;
+  mMatU[2] = M3Sq;
+  mMatV[0] = M1SqV;
+  mMatV[1] = M2SqV;
+  mMatV[2] = M3SqV;
+  //printf("m1sq, m2sq, m3sq: %.10f %.10f %.10f \n",M1Sq,M2Sq,M3Sq);
+  //printf("m1sqV, m2sqV, m3sqV: %.10f %.10f %.10f \n",M1SqV,M2SqV,M3SqV);
+
+  /* Sort according to which reproduce the vaccum eigenstates */
+  for (i=0; i<3; i++) {
+    tmpV = fabs(dmVacVac[i][0]-mMatV[0]);
+    k = 0;
+    for (j=1; j<3; j++) {
+      tmp = fabs(dmVacVac[i][0]-mMatV[j]);
+      if (tmp<tmpV) {
+        k = j;
+        tmpV = tmp;
+      }
+    }
+    mMat[i] = mMatU[k];
+  }
+  for (i=0; i<3; i++) {
+    for (j=0; j<3; j++) {
+      dmMatMat[i][j] = mMat[i] - mMat[j];
+      dmMatVac[i][j] = mMat[i] - dmVacVac[j][0];
+    }
+  }
+ printf("m1, m2, m3: %.10f %.10f %.10f \n", dmMatMat[0][0], dmMatMat[0][1], dmMatMat[0][2]);
+ printf("m1V, m2V, m3V: %.10f %.10f %.10f \n", dmMatMat[0][0], dmMatMat[0][1], dmMatMat[0][2]);
+}
+  
+
+
 __device__ void getM(fType Enu, fType rho,
                      fType Mix[][3][2], fType dmVacVac[][3], int antitype,
                      fType dmMatMat[][3], fType dmMatVac[][3])
@@ -77,11 +290,13 @@ __device__ void getM(fType Enu, fType rho,
   gammaV = 0.0;
 #endif
 
+  //printf("alpha, beta, gamma: %.10f %.10f %.10f \n", alpha, beta, gamma);
+
   /* Compute the argument of the arc-cosine */
   tmp = alpha*alpha-3.0*beta;
   tmpV = alphaV*alphaV-3.0*betaV;
   if (tmp<0.0) {
-    // fprintf(stderr, "getM: alpha^2-3*beta < 0 !\n");
+    printf("getM: alpha^2-3*beta < 0 !\n");
     tmp = 0.0;
   }
 
@@ -132,6 +347,7 @@ __device__ void getM(fType Enu, fType rho,
       dmMatVac[i][j] = mMat[i] - dmVacVac[j][0];
     }
  }
+ printf("m1, m2, m3: %.10f %.10f %.10f \n", dmMatMat[0][0], dmMatMat[0][1], dmMatMat[0][2]);
 }
 
 /***********************************************************************

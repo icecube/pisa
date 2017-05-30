@@ -57,6 +57,25 @@ __device__ void multiply_complex_matvec( fType A[][3][2], fType V[][2], fType W[
   }
 }
 
+__device__ void conjugate_transpose_complex_matrix(fType A[][3][2], fType B[][3][2])
+{
+  for (unsigned i=0; i<3; i++){
+    for (unsigned j=0; j<3; j++){
+      B[j][i][re] = A[i][j][re];
+      B[j][i][im] = -A[i][j][im];
+    }
+  } 
+}
+
+__device__ void add_complex_matrix(fType A[][3][2], fType B[][3][2], fType C[][3][2])
+{
+  for (unsigned i=0; i<3; i++) {
+    for (unsigned j=0; j<3; j++) {
+        C[i][j][re] = A[i][j][re] + B[i][j][re];
+        C[i][j][im] = A[i][j][im] + B[i][j][im];
+    }
+  }
+} 
 
 __device__ void convert_from_mass_eigenstate( int state, int flavor, fType pure[][2],
                                               fType mix[][3][2])
@@ -91,9 +110,11 @@ __device__ void get_transition_matrix( int nutype, fType Enu, fType rho, fType L
                                        fType mix[3][3][2], fType dm[3][3])
 {
 
-  fType dmMatVac[3][3], dmMatMat[3][3];
+  fType dmMatVac[3][3], dmMatMat[3][3], HMat[3][3][2];
 
-  getM(Enu,rho,mix,dm,nutype,dmMatMat,dmMatVac);
+  getHMat(Enu, rho, mix, dm, nutype, HMat, false);
+  //getM(Enu,rho,mix,dm,nutype,dmMatMat,dmMatVac);
+  getMNSI(Enu, rho, mix, dm, nutype, dmMatMat, dmMatVac, HMat);
   getA(Len,Enu,rho,mix,dmMatVac,dmMatMat,nutype,Aout,phase_offset);
 
 }
