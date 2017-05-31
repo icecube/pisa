@@ -329,7 +329,7 @@ class Postprocessor(object):
                  extra_points=None, extra_points_labels=None,
                  plot_settings_file=None, other_contours=None,
                  projection_files=None, pseudo_experiments=None):
-        expected_analysis_types = ['hypo_testing', 'profile_scan']
+        expected_analysis_types = ['hypo_testing', 'profile_scan', None]
         if analysis_type not in expected_analysis_types:
             raise ValueError(
                 "Postprocessing only implemented for analyses of type %s "
@@ -339,6 +339,8 @@ class Postprocessor(object):
         if analysis_type == 'hypo_testing':
             expected_test_types = ['analysis', 'injparamscan', 'systtests']
         elif analysis_type == 'profile_scan':
+            expected_test_types = [None]
+        elif analysis_type is None:
             expected_test_types = [None]
         if test_type not in expected_test_types:
             raise ValueError(
@@ -1697,14 +1699,14 @@ class Postprocessor(object):
         """Make llr plots.
 
         Takes the data and makes llr distributions. These are then saved to the
-        requested outdir within a folder labelled "llrDistributions". The
+        requested outdir within a folder labelled "LLRDistributions". The
         extra_points and extra_points_labels arguments can be used to specify
         extra points to be added to the plot for e.g. other fit llr values.
         """
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
 
-        outdir = os.path.join(self.outdir, 'llrDistributions')
+        outdir = os.path.join(self.outdir, 'LLRDistributions')
         mkdir(outdir)
 
         for injkey in self.values.keys():
