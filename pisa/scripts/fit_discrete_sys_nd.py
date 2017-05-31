@@ -79,8 +79,6 @@ def main():
     cfg = from_file(args.fit_settings)
     sys_list = cfg.get('general', 'sys_list').replace(' ', '').split(',')
     stop_idx = cfg.getint('general', 'stop_after_stage')
-    smooth = cfg.get('general', 'smooth')
-    force_through_nominal = cfg.getboolean('general', 'force_through_nominal')
 
     # Instantiate template maker
     template_maker = Pipeline(args.template_settings)
@@ -195,8 +193,8 @@ def main():
     outputs['sys_list'] = sys_list
     outputs['map_names'] = nominal_mapset.names
     outputs['binning_hash'] = binning.hash
-    to_file(outputs, '%s/nd_sysfits_%s_%s.json'%(args.out_dir,
-                                                 args.tag, smooth))
+    to_file(outputs, '%s/nd_sysfits_%s_raw.json'%(args.out_dir,
+                                                 args.tag))
 
     if args.plot:
         for d in range(n_params):
@@ -214,7 +212,7 @@ def main():
             )
             my_plotter.plot_2d_array(
                 maps,
-                fname='%s_%s_%s_ndfits'%(args.tag, d, smooth),
+                fname='%s_%s_raw_ndfits'%(args.tag, d),
             )
 
 
