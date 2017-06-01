@@ -71,7 +71,13 @@ class polyfits(Stage):
             self.fit_results[pname] = from_file(
                 self.params[pname+'_file'].value
             )
-            assert self.input_names == self.fit_results[pname]['map_names']
+            if sorted(self.input_names) != sorted(
+                    self.fit_results[pname]['map_names']):
+                raise ValueError(
+                    "Expected input names - %s. Got %s."%(
+                        self.input_names,
+                        self.fit_results[pname]['map_names'])
+                )
         self.pnames = pnames
 
     def _compute_nominal_transforms(self):
