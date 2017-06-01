@@ -107,12 +107,13 @@ __device__ void convert_from_mass_eigenstate( int state, int flavor, fType pure[
 
 __device__ void get_transition_matrix( int nutype, fType Enu, fType rho, fType Len,
                                        fType Aout[][3][2], fType phase_offset,
-                                       fType mix[3][3][2], fType dm[3][3])
+                                       fType mix[3][3][2], fType nsi_eps[3][3],
+                                       fType dm[3][3])
 {
 
   fType dmMatVac[3][3], dmMatMat[3][3], HMat[3][3][2];
 
-  getHMat(Enu, rho, mix, dm, nutype, HMat, false);
+  getHMat(Enu, rho, mix, nsi_eps, dm, nutype, HMat);
   //getM(Enu,rho,mix,dm,nutype,dmMatMat,dmMatVac);
   getMNSI(Enu, rho, mix, dm, nutype, dmMatMat, dmMatVac, HMat);
   getA(Len,Enu,rho,mix,dmMatVac,dmMatMat,nutype,Aout,phase_offset);

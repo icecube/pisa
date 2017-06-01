@@ -22,6 +22,7 @@ from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.osc_params import OscParams
+from pisa.stages.osc.nsi_params import NSIParams
 
 
 class prob3gpu(Stage):
@@ -46,6 +47,13 @@ class prob3gpu(Stage):
             * theta12
             * theta13
             * theta23
+        NSI parameters:
+            * eps_ee
+            * eps_emu
+            * eps_etau
+            * eps_mumu
+            * eps_mutau
+            * eps_tautau
 
     input_binning : MultiDimBinning
     output_binning : MultiDimBinning
@@ -92,6 +100,7 @@ class prob3gpu(Stage):
      */
     __global__ void propagateGrid(fType* d_smooth_maps,
                                   fType d_dm[3][3], fType d_mix[3][3][2],
+                                  fType d_nsi_eps[3][3],
                                   const fType* const d_ecen_fine,
                                   const fType* const d_czcen_fine,
                                   const int nebins_fine, const int nczbins_fine,
@@ -149,7 +158,7 @@ class prob3gpu(Stage):
                               distance,
                               TransitionMatrix,
                               0.0,
-                              d_mix,
+                              d_mix, d_nsi_eps,
                               d_dm);
 
         if (i==0) {
@@ -205,6 +214,7 @@ class prob3gpu(Stage):
                                    fType* d_prob_mu,
                                    fType d_dm[3][3],
                                    fType d_mix[3][3][2],
+                                   fType d_nsi_eps[3][3],
                                    const int n_evts,
                                    const int kNuBar,
                                    const int kFlav,
@@ -240,7 +250,7 @@ class prob3gpu(Stage):
                               distance,
                               TransitionMatrix,
                               0.0,
-                              d_mix,
+                              d_mix, d_nsi_eps,
                               d_dm);
         if(i==0) {
           copy_complex_matrix(TransitionMatrix, TransitionProduct);
@@ -299,6 +309,8 @@ class prob3gpu(Stage):
                 'detector_depth', 'prop_height',
                 'deltacp', 'deltam21', 'deltam31',
                 'theta12', 'theta13', 'theta23', 'nutau_norm',
+                'eps_ee', 'eps_emu', 'eps_etau', 'eps_mumu', 'eps_mutau',
+                'eps_tautau',
             )
         else:
             logging.debug('Using prob3gpu to calculate probabilities for'
@@ -400,6 +412,13 @@ class prob3gpu(Stage):
         YeO = self.params.YeO.m_as('dimensionless')
         YeM = self.params.YeM.m_as('dimensionless')
         prop_height = self.params.prop_height.m_as('km')
+        eps_ee = self.params.eps_ee.m_as('dimensionless')
+        eps_emu = self.params.eps_emu.m_as('dimensionless')
+        eps_etau = self.params.eps_etau.m_as('dimensionless')
+        eps_mumu = self.params.eps_mumu.m_as('dimensionless')
+        eps_mutau = self.params.eps_mutau.m_as('dimensionless')
+        eps_tautau = self.params.eps_tautau.m_as('dimensionless')
+
 
         sin2th12Sq = np.sin(theta12)**2
         sin2th13Sq = np.sin(theta13)**2
@@ -413,22 +432,30 @@ class prob3gpu(Stage):
         self.layers.setElecFrac(YeI, YeO, YeM)
         self.osc = OscParams(deltam21, mAtm, sin2th12Sq, sin2th13Sq,
                              sin2th23Sq, deltacp)
+        self.nsi = NSIParams(eps_ee=eps_ee, eps_emu=eps_emu, eps_etau=eps_etau,
+                             eps_mumu=eps_mumu, eps_mutau=eps_mutau,
+                             eps_tautau=eps_tautau)
 
         self.prepare_device_arrays()
 
         dm_mat = self.osc.M_mass
         mix_mat = self.osc.M_pmns
+        nsi_eps_mat = self.nsi.M_eps_nsi
 
-        logging.trace('dm_mat: \n %s' %str(dm_mat))
-        logging.trace('mix[re]: \n %s' %str(mix_mat[:,:,0]))
+        logging.info('dm_mat: \n %s' %str(dm_mat))
+        logging.info('mix[re]: \n %s' %str(mix_mat[:,:,0]))
+        logging.info('nsi_mat: \n %s' %str(nsi_eps_mat))
 
         dm_mat = dm_mat.astype(FTYPE)
         mix_mat = mix_mat.astype(FTYPE)
+        nsi_eps_mat = nsi_eps_mat.astype(FTYPE)
 
         d_dm_mat = cuda.mem_alloc(dm_mat.nbytes)
         d_mix_mat = cuda.mem_alloc(mix_mat.nbytes)
+        d_nsi_eps_mat = cuda.mem_alloc(nsi_eps_mat.nbytes)
         cuda.memcpy_htod(d_dm_mat, dm_mat)
         cuda.memcpy_htod(d_mix_mat, mix_mat)
+        cuda.memcpy_htod(d_nsi_eps_mat, nsi_eps_mat)
 
         nebins_fine = np.int32(len(self.ecen_fine))
         nczbins_fine = np.int32(len(self.czcen_fine))
@@ -448,7 +475,7 @@ class prob3gpu(Stage):
             2
         )
         self.propGrid(d_smooth_maps,
-                      d_dm_mat, d_mix_mat,
+                      d_dm_mat, d_mix_mat, d_nsi_eps_mat,
                       self.d_ecen_fine, self.d_czcen_fine,
                       nebins_fine, nczbins_fine,
                       nebins_fine, nczbins_fine,

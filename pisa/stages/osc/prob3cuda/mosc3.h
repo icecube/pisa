@@ -21,7 +21,8 @@ __device__ void convert_from_mass_eigenstate( int state, int flavor, fType pure[
 
 __device__ void get_transition_matrix( int nutype, fType Enu, fType rho, fType Len,
                                        fType Aout[][3][2], fType phase_offset,
-                                       fType mix[][3][2], fType dm[][3]);
+                                       fType mix[][3][2], fType nsi_eps[][3],
+                                       fType dm[][3]);
 
 
 #endif
