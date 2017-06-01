@@ -204,6 +204,14 @@ def parse_args(description=__doc__, profile_scan=False,
     if args.pdf:
         init_args_d['formats'].append('pdf')
 
+    if len(init_args_d['formats']) > 0:
+        logging.info(
+            "Files will be saved in format(s) %s"%init_args_d['formats']
+        )
+    else:
+        raise ValueError('Must specify a plot file format, either --png or'
+                         ' --pdf (or both), when processing llr results.')
+
     return init_args_d
 
 
@@ -4092,6 +4100,7 @@ class Postprocessor(object):
         pretty_labels["delta_index"] = r"Atmospheric Index Change"
         pretty_labels["theta13"] = r"$\theta_{13}$"
         pretty_labels["theta23"] = r"$\theta_{23}$"
+        pretty_labels["gamma"] = r"$\Gamma$"
         pretty_labels["sin2theta23"] = r"$\sin^2\theta_{23}$"
         pretty_labels["deltam31"] = r"$\Delta m^2_{31}$"
         pretty_labels["deltam32"] = r"$\Delta m^2_{32}$"
@@ -4107,6 +4116,7 @@ class Postprocessor(object):
         pretty_labels["radians"] = r"rads"
         pretty_labels["electron_volt ** 2"] = r"$\mathrm{eV}^2$"
         pretty_labels["electron_volt"] = r"$\mathrm{eV}^2$"
+        pretty_labels["gigaelectron_volt"] = r"$\mathrm{GeV}$"
         pretty_labels["llh"] = r"Likelihood"
         pretty_labels["conv_llh"] = r"Convoluted Likelihood"
         pretty_labels["chi2"] = r"$\chi^2$"
@@ -4249,6 +4259,8 @@ def main_profile_scan():
         fluctuate_fid = None
         fluctuate_data = None
 
+    mkdir(init_args_d['outdir'])
+
     postprocessor = Postprocessor(
         analysis_type='profile_scan',
         detector=init_args_d['detector'],
@@ -4327,14 +4339,6 @@ def main_analysis_postprocessing():
     # Otherwise: llr analysis
     if init_args_d['outdir'] is None:
         raise ValueError('Must specify --outdir when processing llr results.')
-
-    if len(init_args_d['formats']) > 0:
-        logging.info(
-            "Files will be saved in format(s) %s"%init_args_d['formats']
-        )
-    else:
-        raise ValueError('Must specify a plot file format, either --png or'
-                         ' --pdf (or both), when processing llr results.')
 
     postprocessor = Postprocessor(
         analysis_type='hypo_testing',
