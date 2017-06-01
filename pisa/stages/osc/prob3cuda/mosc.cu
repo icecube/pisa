@@ -194,10 +194,8 @@ __device__ void getMNSI(fType Enu, fType rho,
     printf("getM: p^3 - q^2 < 0 !\n");
     tmp = 0.0;
   }
-  arg = sqrt(tmp)/q;
-  argV = sqrt(tmpV)/qV;
-  theta0 = theta1 = theta2 = atan(arg)/3.0;
-  theta0V = theta1V = theta2V = atan(argV)/3.0;
+  theta0 = theta1 = theta2 = atan2(sqrt(tmp), q)/3.0;
+  theta0V = theta1V = theta2V = atan2(sqrt(tmpV), qV)/3.0;
   theta0 += (2.0/3.0)*M_PI;
   theta0V += (2.0/3.0)*M_PI;
   theta1 -= (2.0/3.0)*M_PI;
