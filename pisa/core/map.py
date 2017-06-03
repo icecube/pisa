@@ -875,6 +875,24 @@ class Map(object):
         return self.hist.size
 
     @property
+    def counts(self):
+        """float : summed bin counts"""
+        return np.sum(self.hist)
+
+    @property
+    def counts_by_pid(self):
+        """floats : summed bin counts, by pid"""
+        if 'pid' not in self.binning.names:
+            raise ValueError(
+                "Cannot return bin counts by PID since PID is "
+                "not in the binning - %s"%self.binning.names
+            )
+        counts = {}
+        for i in range(len(self.binning['pid'])):
+            counts['pid_bin_%i'%i] = self.slice(pid=i).squeeze().counts
+        return counts
+
+    @property
     def serializable_state(self):
         state = OrderedDict()
         state['name'] = self.name
@@ -2360,8 +2378,32 @@ class MapSet(object):
                       name=self.name, tex=self.tex,
                       collate_by_name=self.collate_by_name)
 
-    def project(self, *args, **kwargs):
-        return MapSet(maps=[m.project(*args, **kwargs) for m in self],
+    def project(self, axis, keepdims=False):
+        """Per-map projections onto single axis. See Map.project for more
+        detailed help.
+
+        Parameters
+        ----------
+        axis : string or int
+        keepdims : bool
+
+        Returns
+        -------
+        projection : MapSet
+            Each map in this MapSet projected onto `axis`.
+
+        See Also
+        --------
+        sum
+            Sum over specified dimension(s)
+
+        Map.project
+            Method called for each map in this MapSet to perform the actual
+            projection.
+
+        """
+        return MapSet(maps=[m.project(axis=axis, keepdims=keepdims)
+                            for m in self],
                       name=self.name, tex=self.tex,
                       collate_by_name=self.collate_by_name)
 
