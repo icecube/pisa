@@ -64,7 +64,7 @@ __device__ void conjugate_transpose_complex_matrix(fType A[][3][2], fType B[][3]
       B[j][i][re] = A[i][j][re];
       B[j][i][im] = -A[i][j][im];
     }
-  } 
+  }
 }
 
 __device__ void add_complex_matrix(fType A[][3][2], fType B[][3][2], fType C[][3][2])
@@ -111,11 +111,12 @@ __device__ void get_transition_matrix( int nutype, fType Enu, fType rho, fType L
                                        fType dm[3][3])
 {
 
-  fType dmMatVac[3][3], dmMatMat[3][3], HMat[3][3][2];
-
+  fType dmMatVac[3][3], dmMatMat[3][3], HFull[3][3][2], HMat[3][3][2], HVac[3][3][2];
+  clear_complex_matrix(HFull);
+  getHVac(Enu, rho, mix, dm, nutype, HVac);
   getHMat(Enu, rho, mix, nsi_eps, dm, nutype, HMat);
-  //getM(Enu,rho,mix,dm,nutype,dmMatMat,dmMatVac);
-  getMNSI(Enu, rho, mix, dm, nutype, dmMatMat, dmMatVac, HMat);
+  add_complex_matrix(HVac, HMat, HFull);
+  getM(Enu, rho, mix, dm, nutype, dmMatMat, dmMatVac, HFull);
   getA(Len,Enu,rho,mix,dmMatVac,dmMatMat,nutype,Aout,phase_offset);
 
 }

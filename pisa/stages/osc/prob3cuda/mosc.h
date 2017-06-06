@@ -31,7 +31,7 @@ typedef enum matrix_type {
   barger_type} MatrixType;
 
 
-__device__ void getM(fType Enu, fType rho,
+__device__ void getMBarger(fType Enu, fType rho,
                      fType Mix[][3][2], fType dmVacVac[][3], int antitype,
                      fType dmMatMat[][3], fType dmMatVac[][3]);
 __device__ void getA(fType L, fType E, fType rho,

@@ -27,6 +27,7 @@ __device__ void getHVac(fType Enu, fType rho,
                         fType HVac[][3][2])
 {
   fType dmVacDiag[3][3][2], MixConjTranspose[3][3][2], tmp[3][3][2];
+  clear_complex_matrix(HVac);
   clear_complex_matrix(dmVacDiag);
   dmVacDiag[1][1][re] = dmVacVac[1][0]/(2*Enu);
   dmVacDiag[2][2][re] = dmVacVac[2][0]/(2*Enu);
@@ -63,6 +64,7 @@ __device__ void getHMat(fType Enu, fType rho,
   if (antitype<0) MatParam =  -a; /* Anti-neutrinos */
   else        MatParam = a; /* Neutrinos */
   HSI[0][0][re] = MatParam;
+  printf("HSI[1][1][re], HSI[1][1][im]: %.10f %.10f \n",HSI[1][1][re], HSI[1][1][im]);
   getHNSI(rho, NSIEps, antitype, HNSI);
   // This is where the non-standard matter interaction Hamiltonian is added to
   // the standard matter Hamiltonian
@@ -70,21 +72,21 @@ __device__ void getHMat(fType Enu, fType rho,
 }
 
 
-__device__ void getMNSI(fType Enu, fType rho,
-                        fType Mix[][3][2], fType dmVacVac[][3], int antitype,
-                        fType dmMatMat[][3], fType dmMatVac[][3], 
-                        fType HMat[][3][2])
+__device__ void getM(fType Enu, fType rho,
+                     fType Mix[][3][2], fType dmVacVac[][3], int antitype,
+                     fType dmMatMat[][3], fType dmMatVac[][3],
+                     fType HMat[][3][2])
 {
   //fType c0[2], c1[2], c2[2];
   int i,j,k;
-  fType c0, c1, c2, c0_final[2], c1_final[2], c2_final[2];
+  fType c0, c1, c2, c0_final, c1_final, c2_final;
   fType c0V, c1V, c2V;
   fType p, q, pV, qV;
   fType arg, theta0, theta1, theta2, tmp, M1Sq, M2Sq, M3Sq;
   fType argV, theta0V, theta1V, theta2V, tmpV, M1SqV, M2SqV, M3SqV;
 
   fType mMatU[3], mMatV[3], mMat[3];
-  fType HEEHMuMuHTauTau[2];
+  fType HEEHMuMuHTauTau;
   fType HMuTauModulusSq, HETauModulusSq, HEMuModulusSq, ReHEMuHMuTauHTauE;
   // following only here temporarily
   fType tworttwoGf = 1.52588e-4;
@@ -93,57 +95,58 @@ __device__ void getMNSI(fType Enu, fType rho,
   else        MatParam = a; // Neutrinos
   
 
-  ReHEMuHMuTauHTauE = HMat[0][1][re]*(HMat[1][2][re]*HMat[2][0][re] - 
-                                            HMat[1][2][im]*HMat[2][0][im]) -
-    HMat[0][1][im]*(HMat[1][2][im]*HMat[2][0][re] + HMat[1][2][re]*HMat[2][0][im]);
+#ifndef ZERO_CP
 
-  HEMuModulusSq = HMat[0][1][re]*HMat[0][1][re] + HMat[0][1][im]*HMat[0][1][im];
-  HETauModulusSq = HMat[0][2][re]*HMat[0][2][re] + HMat[0][2][im]*HMat[0][2][im];
-  HMuTauModulusSq = HMat[1][2][re]*HMat[1][2][re] + HMat[1][2][im]*HMat[1][2][im];
-  
-  HEEHMuMuHTauTau[re] = HMat[0][0][re]*(HMat[1][1][re]*HMat[2][2][re] - 
-                                            HMat[1][1][im]*HMat[2][2][im]) -
-    HMat[0][0][im]*(HMat[1][1][im]*HMat[2][2][re] + HMat[1][1][re]*HMat[2][2][im]);
+  ReHEMuHMuTauHTauE = HMat[elec][muon][re]*(HMat[muon][tau][re]*HMat[tau][elec][re] -
+                                            HMat[muon][tau][im]*HMat[tau][elec][im]) -
+    HMat[elec][muon][im]*(HMat[muon][tau][im]*HMat[tau][elec][re] + HMat[muon][tau][re]*HMat[tau][elec][im]);
 
-  HEEHMuMuHTauTau[im] = HMat[0][0][re]*(HMat[1][1][im]*HMat[2][2][re] - 
-                                            HMat[1][1][re]*HMat[2][2][im]) +
-    HMat[0][0][im]*(HMat[1][1][re]*HMat[2][2][re] - HMat[1][1][im]*HMat[2][2][im]);
+  HEMuModulusSq = HMat[elec][muon][re]*HMat[elec][muon][re] + HMat[elec][muon][im]*HMat[elec][muon][im];
+  HETauModulusSq = HMat[elec][tau][re]*HMat[elec][tau][re] + HMat[elec][tau][im]*HMat[elec][tau][im];
+  HMuTauModulusSq = HMat[muon][tau][re]*HMat[muon][tau][re] + HMat[muon][tau][im]*HMat[muon][tau][im];
 
-
-  //c0 = H_{ee}|H_{\mu\tau}|^2 + H_{\mu\mu}|H_{e\tau}|^2 + H_{\tau\tau}|H_{e\mu}|^2
-  //     - 2Re(H_{e\mu}H_{\mu\tau}H_{\tau e}) - H_{ee}H_{\mu\mu}H_{\tau\tau}
-
-
-  c0_final[re] = HMat[0][0][re]*HMuTauModulusSq + HMat[1][1][re]*HETauModulusSq +
-    HMat[2][2][re]*HEMuModulusSq - 2.0*ReHEMuHMuTauHTauE - HEEHMuMuHTauTau[re];
-  c0_final[im] = HMat[0][0][im]*HMuTauModulusSq + HMat[1][1][im]*HETauModulusSq +
-    HMat[2][2][im]*HEMuModulusSq - 2.0*ReHEMuHMuTauHTauE - HEEHMuMuHTauTau[im];
+  HEEHMuMuHTauTau = HMat[elec][elec][re]*(HMat[muon][muon][re]*HMat[tau][tau][re] -
+                                            HMat[muon][muon][im]*HMat[tau][tau][im]) -
+    HMat[elec][elec][im]*(HMat[muon][muon][im]*HMat[tau][tau][re] + HMat[muon][muon][re]*HMat[tau][tau][im]);
 
 
   //c1 = H_{ee}H_{\mu\mu} + H_{ee}H_{\tau\tau} + H_{\mu\mu}H_{\tau\tau} - |H_{e\mu}|^2
   //     - |H_{\mu\tau}|^2 - |H_{e\tau}|^2
 
 
-  c1_final[re] = HMat[0][0][re]*(HMat[1][1][re] + HMat[2][2][re]) -
-           HMat[0][0][im]*(HMat[1][1][im] + HMat[2][2][im]) +
-           HMat[1][1][re]*HMat[2][2][re] - HMat[1][1][im]*HMat[2][2][im] -
+  c1_final = HMat[elec][elec][re]*(HMat[muon][muon][re] + HMat[tau][tau][re]) -
+           HMat[elec][elec][im]*(HMat[muon][muon][im] + HMat[tau][tau][im]) +
+           HMat[muon][muon][re]*HMat[tau][tau][re] - HMat[muon][muon][im]*HMat[tau][tau][im] -
            HEMuModulusSq - HMuTauModulusSq - HETauModulusSq;
-                
-  c1_final[im] = HMat[0][0][re]*(HMat[1][1][im] + HMat[2][2][im]) +
-           HMat[0][0][im]*(HMat[1][1][re] + HMat[2][2][re]) +
-           HMat[1][1][re]*HMat[2][2][im] + HMat[1][1][im]*HMat[2][2][re];
 
+#else
+
+  ReHEMuHMuTauHTauE = HMat[elec][muon][re]*(HMat[muon][tau][re]*HMat[tau][elec][re]);
+
+  HEMuModulusSq = HMat[elec][muon][re]*HMat[elec][muon][re];
+  HETauModulusSq = HMat[elec][tau][re]*HMat[elec][tau][re];
+  HMuTauModulusSq = HMat[muon][tau][re]*HMat[muon][tau][re];
+
+  HEEHMuMuHTauTau = HMat[elec][elec][re]*(HMat[muon][muon][re]*HMat[tau][tau][re]);
+
+  c1_final = HMat[elec][elec][re]*(HMat[muon][muon][re] + HMat[tau][tau][re]) +
+           HMat[muon][muon][re]*HMat[tau][tau][re] -
+           HEMuModulusSq - HMuTauModulusSq - HETauModulusSq;
+
+  //printf("Mix[im]: %.10f \n", Mix[0][2][im]);
+  //printf("Enu: %.10f \n", Enu);
+#endif
+  //c0 = H_{ee}|H_{\mu\tau}|^2 + H_{\mu\mu}|H_{e\tau}|^2 + H_{\tau\tau}|H_{e\mu}|^2
+  //     - 2Re(H_{e\mu}H_{\mu\tau}H_{\tau e}) - H_{ee}H_{\mu\mu}H_{\tau\tau}
+
+  c0_final = HMat[elec][elec][re]*HMuTauModulusSq + HMat[muon][muon][re]*HETauModulusSq +
+    HMat[tau][tau][re]*HEMuModulusSq - 2.0*ReHEMuHMuTauHTauE - HEEHMuMuHTauTau;
 
   //c2 = -H_{ee} - H_{\mu\mu} - H_{\tau\tau}
 
+  c2_final = -HMat[elec][elec][re] - HMat[muon][muon][re] - HMat[tau][tau][re];
 
-  c2_final[re] = -HMat[0][0][re] - HMat[1][1][re] - HMat[2][2][re];
-  c2_final[im] = -HMat[0][0][im] - HMat[1][1][im] - HMat[2][2][im];
-
-  //printf("rho, c0[re], c1[re], c2[re]: %.5f %.10f %.10f %.10f \n", rho, c0_final[re], c1_final[re], c2_final[re]);
-  //printf("Mix[im]: %.10f \n", Mix[0][2][im]);
-  //printf("Enu: %.10f \n", Enu);
-
+  printf("rho, c0_num, c1_num, c2_num: %.5f %.10f %.10f %.10f \n", rho, c0_final, c1_final, c2_final);
   c0V = 0.0;
   c1V = (1.0/(2.0*Enu*2.0*Enu))*(dmVacVac[1][0]*dmVacVac[2][0]);
   c2 = (-1.0/(2.0*Enu))*(2.0*Enu*MatParam + dmVacVac[1][0] + dmVacVac[2][0]);
@@ -171,9 +174,9 @@ __device__ void getMNSI(fType Enu, fType rho,
 #endif
 
                 
-  //printf("rho, c0, c1, c2: %.5f %.10f %.10f %.10f \n",rho,c0,c1,c2);
+  printf("rho, c0, c1, c2: %.5f %.10f %.10f %.10f \n",rho,c0,c1,c2);
 
-  p = c2*c2 - 3.0*c1;
+  p = c2_final*c2_final - 3.0*c1_final;
   pV = (1.0/(2.0*Enu*2.0*Enu))*(dmVacVac[1][0]*dmVacVac[1][0] +
                               dmVacVac[2][0]*dmVacVac[2][0] - 
                               dmVacVac[1][0]*dmVacVac[2][0]);
@@ -182,7 +185,7 @@ __device__ void getMNSI(fType Enu, fType rho,
       p = 0.0;
   }
   
-  q = -27.0*c0/2.0 - c2*c2*c2 + 9.0*c1*c2/2.0;
+  q = -27.0*c0_final/2.0 - c2_final*c2_final*c2_final + 9.0*c1_final*c2_final/2.0;
   qV = (1.0/(2.0*Enu*2.0*Enu*2.0*Enu))*(
         (dmVacVac[1][0] + dmVacVac[2][0])*(dmVacVac[1][0] + dmVacVac[2][0])*
         (dmVacVac[1][0] + dmVacVac[2][0]) - (9.0/2.0)*dmVacVac[1][0]*dmVacVac[2][0]*
@@ -202,9 +205,9 @@ __device__ void getMNSI(fType Enu, fType rho,
   theta1V -= (2.0/3.0)*M_PI;
   //printf("theta0, theta1, theta2: %.10f %.10f %.10f \n", theta0, theta1, theta2);
   // add dmVacVac[0][0]?
-  M1Sq = 2.0*Enu*((2.0/3.0)*sqrt(p)*cos(theta0) - c2/3.0 + dmVacVac[0][0]);
-  M2Sq = 2.0*Enu*((2.0/3.0)*sqrt(p)*cos(theta1) - c2/3.0 + dmVacVac[0][0]);
-  M3Sq = 2.0*Enu*((2.0/3.0)*sqrt(p)*cos(theta2) - c2/3.0 + dmVacVac[0][0]);
+  M1Sq = 2.0*Enu*((2.0/3.0)*sqrt(p)*cos(theta0) - c2_final/3.0 + dmVacVac[0][0]);
+  M2Sq = 2.0*Enu*((2.0/3.0)*sqrt(p)*cos(theta1) - c2_final/3.0 + dmVacVac[0][0]);
+  M3Sq = 2.0*Enu*((2.0/3.0)*sqrt(p)*cos(theta2) - c2_final/3.0 + dmVacVac[0][0]);
   M1SqV = 2.0*Enu*((2.0/3.0)*sqrt(pV)*cos(theta0V) - c2V/3.0 + dmVacVac[0][0]);
   M2SqV = 2.0*Enu*((2.0/3.0)*sqrt(pV)*cos(theta1V) - c2V/3.0 + dmVacVac[0][0]);
   M3SqV = 2.0*Enu*((2.0/3.0)*sqrt(pV)*cos(theta2V) - c2V/3.0 + dmVacVac[0][0]);
@@ -245,7 +248,7 @@ __device__ void getMNSI(fType Enu, fType rho,
   
 
 
-__device__ void getM(fType Enu, fType rho,
+__device__ void getMBarger(fType Enu, fType rho,
                      fType Mix[][3][2], fType dmVacVac[][3], int antitype,
                      fType dmMatMat[][3], fType dmMatVac[][3])
 {
