@@ -52,6 +52,18 @@ __device__ void getHNSI(fType rho, fType NSIEps[][3], int antitype, fType HNSI[]
   }
 }
 
+__device__ void getHMatMassEigenstateBasis(fType Mix[][3][2], fType HMat[][3][2],
+                                           fType HMatMassEigenstateBasis[][3][2])
+{
+    fType MixConjTranspose[3][3][2], tmp[3][3][2];
+    clear_complex_matrix(MixConjTranspose);
+    clear_complex_matrix(tmp);
+    conjugate_transpose_complex_matrix(Mix, MixConjTranspose);
+    multiply_complex_matrix(HMat, Mix, tmp);
+    multiply_complex_matrix(MixConjTranspose, tmp, HMatMassEigenstateBasis);
+}
+
+
 __device__ void getHMat(fType Enu, fType rho,
                         fType Mix[][3][2], fType NSIEps[][3],
                         fType dmVacVac[][3], int antitype,
@@ -367,6 +379,208 @@ __device__ void getMBarger(fType Enu, fType rho,
     printf("rho, m1, m2, m3, %.5f, %.10f, %.10f, %.10f, \n", rho, dmMatMat[0][0], dmMatMat[0][1], dmMatMat[0][2]);
     printf("rho, m1V, m2V, m3V, %.5f, %.10f, %.10f, %.10f, \n", rho, dmVacVac[0][0], dmVacVac[0][1], dmVacVac[0][2]);
  }
+}
+
+/***********************************************************************
+ getANew (take into account generic potential matrix (=Hamiltonian))
+ Calculate the transition amplitude matrix A (equation 10)
+***********************************************************************/
+__device__ void getANew(fType L, fType E, fType rho,
+                        fType Mix[][3][2], fType dmMatVac[][3],
+                        fType dmMatMat[][3], int antitype, fType HMatMassEigenstateBasis[][3][2],
+                        fType A[3][3][2],
+                        fType phase_offset)
+{
+
+  //int n, m, i, j, k;
+  fType /*fac=0.0,*/ arg, c, s;
+  // TCA ADDITION: set equal to 0!
+  fType X[3][3][2] = {0.0};
+  fType product[3][3][3][2] = {0.0};
+  /* (1/2)*(1/(h_bar*c)) in units of GeV/(eV^2-km) */
+  const fType LoEfac = 2.534;
+
+  if ( phase_offset==0.0 )
+    {
+      get_productNew(L, E, rho, Mix, dmMatVac, dmMatMat, antitype, HMatMassEigenstateBasis,
+                     product);
+    }
+
+  /////////////// product is JUNK /////////////
+
+  for (int i=0; i<3; i++){
+    for (int j=0; j<3; j++) {
+  //printf(" product[%d][%d]: %f, %f\n",i,j,*product[i][j][0],*product[i][j][1]);
+  //printf(" A[%d][%d]: %f, %f\n",i,j,A[i][j][0],A[i][j][1]);
+    }
+  }
+
+  /* Make the sum with the exponential factor */
+  //cudaMemset(X, 0, 3*3*2*sizeof(fType));
+  //memset(X, 0, 3*3*2*sizeof(fType));
+  for (int k=0; k<3; k++)
+    {
+      arg = -LoEfac*dmMatVac[k][0]*L/E;
+      if ( k==2 ) arg += phase_offset ;
+      c = cos(arg);
+      s = sin(arg);
+      for (int i=0; i<3; i++)
+        {
+          for (int j=0; j<3; j++)
+            {
+#ifndef ZERO_CP
+              X[i][j][re] += c*product[i][j][k][re] - s*product[i][j][k][im];
+              X[i][j][im] += c*product[i][j][k][im] + s*product[i][j][k][re];
+#else
+              X[i][j][re] += c*product[i][j][k][re];
+              X[i][j][im] += s*product[i][j][k][re];
+#endif
+            }
+        }
+    }
+
+
+  /* Compute the product with the mixing matrices */
+  for(int i=0; i < 3; i++)
+    for(int j = 0; j < 3; j++)
+      for(int k = 0; k < 2; k++)
+        A[i][j][k] = 0;
+
+  for (int n=0; n<3; n++) {
+    for (int m=0; m<3; m++) {
+      for (int i=0; i<3; i++) {
+        for (int j=0; j<3; j++) {
+#ifndef ZERO_CP
+          A[n][m][re] +=
+            Mix[n][i][re]*X[i][j][re]*Mix[m][j][re] +
+            Mix[n][i][re]*X[i][j][im]*Mix[m][j][im] +
+            Mix[n][i][im]*X[i][j][re]*Mix[m][j][im] -
+            Mix[n][i][im]*X[i][j][im]*Mix[m][j][re];
+          //printf("\nregret %f %f %f",Mix[n][i][re], X[i][j][im], Mix[m][j][im]);
+          A[n][m][im] +=
+            Mix[n][i][im]*X[i][j][im]*Mix[m][j][im] +
+            Mix[n][i][im]*X[i][j][re]*Mix[m][j][re] +
+            Mix[n][i][re]*X[i][j][im]*Mix[m][j][re] -
+            Mix[n][i][re]*X[i][j][re]*Mix[m][j][im];
+#else
+          A[n][m][re] +=
+            Mix[n][i][re]*X[i][j][re]*Mix[m][j][re];
+          A[n][m][im] +=
+            Mix[n][i][re]*X[i][j][im]*Mix[m][j][re];
+#endif
+          //printf("\n %i %i %i A %f", n, m, re, A[n][m][re]);
+        }
+      }
+    }
+  }
+
+  //printf("(getA) Aout: %f\n",A[0][0][0]);
+
+}
+
+
+__device__ void get_productNew(fType L, fType E, fType rho,fType Mix[][3][2],
+                               fType dmMatVac[][3], fType dmMatMat[][3],
+                               int antitype, fType HMatMassEigenstateBasis[][3][2],
+                               fType product[][3][3][2])
+{
+
+  fType fac=0.0;
+  fType twoEHmM[3][3][3][2];
+  fType tworttwoGf = 1.52588e-4;
+
+  /* (1/2)*(1/(h_bar*c)) in units of GeV/(eV^2-km) */
+  /* Reverse the sign of the potential depending on neutrino type */
+  //if (matterFlavor == nue_type) {
+
+  /* If we're doing matter effects for electron neutrinos */
+  if (antitype<0) fac =  tworttwoGf*E*rho; /* Anti-neutrinos */
+  else        fac = -tworttwoGf*E*rho; /* Real-neutrinos */
+  //  }
+
+  /*
+      else if (matterFlavor == sterile_type) {
+      // If we're doing matter effects for sterile neutrinos
+      if (antitype<0) fac = -0.5*tworttwoGf*E*rho; // Anti-neutrinos
+      else        fac =  0.5*tworttwoGf*E*rho; // Real-neutrinos
+      } */
+
+  /* Calculate the matrix 2EH-M_j */
+  for (int n=0; n<3; n++) {
+    for (int m=0; m<3; m++) {
+
+      twoEHmM[n][m][0][re] = 2.0*E*HMatMassEigenstateBasis[n][m][re];
+#ifndef ZERO_CP
+
+      twoEHmM[n][m][0][im] = 2.0*E*HMatMassEigenstateBasis[n][m][im];
+
+#else
+
+      twoEHmM[n][m][0][im] = 0.0 ;
+
+#endif
+
+      twoEHmM[n][m][1][re] = twoEHmM[n][m][2][re] = twoEHmM[n][m][0][re];
+      twoEHmM[n][m][1][im] = twoEHmM[n][m][2][im] = twoEHmM[n][m][0][im];
+
+      if (n==m) for (int j=0; j<3; j++)
+                  twoEHmM[n][m][j][re] -= dmMatVac[j][n];
+    }
+  }
+
+  /* Calculate the product in eq.(10) of twoEHmM for j!=k */
+  for (int i=0; i<3; i++) {
+    for (int j=0; j<3; j++) {
+      for (int k=0; k<3; k++) {
+
+#ifndef ZERO_CP
+
+        product[i][j][0][re] +=
+          twoEHmM[i][k][1][re]*twoEHmM[k][j][2][re] -
+          twoEHmM[i][k][1][im]*twoEHmM[k][j][2][im];
+        product[i][j][0][im] +=
+          twoEHmM[i][k][1][re]*twoEHmM[k][j][2][im] +
+          twoEHmM[i][k][1][im]*twoEHmM[k][j][2][re];
+        product[i][j][1][re] +=
+          twoEHmM[i][k][2][re]*twoEHmM[k][j][0][re] -
+          twoEHmM[i][k][2][im]*twoEHmM[k][j][0][im];
+        product[i][j][1][im] +=
+          twoEHmM[i][k][2][re]*twoEHmM[k][j][0][im] +
+          twoEHmM[i][k][2][im]*twoEHmM[k][j][0][re];
+        product[i][j][2][re] +=
+          twoEHmM[i][k][0][re]*twoEHmM[k][j][1][re] -
+          twoEHmM[i][k][0][im]*twoEHmM[k][j][1][im];
+        product[i][j][2][im] +=
+          twoEHmM[i][k][0][re]*twoEHmM[k][j][1][im] +
+          twoEHmM[i][k][0][im]*twoEHmM[k][j][1][re];
+
+#else
+        product[i][j][0][re] +=
+          twoEHmM[i][k][1][re]*twoEHmM[k][j][2][re];
+        product[i][j][1][re] +=
+          twoEHmM[i][k][2][re]*twoEHmM[k][j][0][re];
+        product[i][j][2][re] +=
+          twoEHmM[i][k][0][re]*twoEHmM[k][j][1][re];
+
+#endif
+      }
+#ifndef ZERO_CP
+
+      product[i][j][0][re] /= (dmMatMat[0][1]*dmMatMat[0][2]);
+      product[i][j][0][im] /= (dmMatMat[0][1]*dmMatMat[0][2]);
+      product[i][j][1][re] /= (dmMatMat[1][2]*dmMatMat[1][0]);
+      product[i][j][1][im] /= (dmMatMat[1][2]*dmMatMat[1][0]);
+      product[i][j][2][re] /= (dmMatMat[2][0]*dmMatMat[2][1]);
+      product[i][j][2][im] /= (dmMatMat[2][0]*dmMatMat[2][1]);
+
+#else
+      product[i][j][0][re] /= (dmMatMat[0][1]*dmMatMat[0][2]);
+      product[i][j][1][re] /= (dmMatMat[1][2]*dmMatMat[1][0]);
+      product[i][j][2][re] /= (dmMatMat[2][0]*dmMatMat[2][1]);
+
+#endif
+    }
+  }
 }
 
 /***********************************************************************

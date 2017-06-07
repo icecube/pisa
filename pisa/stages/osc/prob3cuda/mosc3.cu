@@ -112,11 +112,16 @@ __device__ void get_transition_matrix( int nutype, fType Enu, fType rho, fType L
 {
 
   fType dmMatVac[3][3], dmMatMat[3][3], HFull[3][3][2], HMat[3][3][2], HVac[3][3][2];
+  fType HMatMassEigenstateBasis[3][3][2];
   clear_complex_matrix(HFull);
+  clear_complex_matrix(HMatMassEigenstateBasis);
   getHVac(Enu, rho, mix, dm, nutype, HVac);
   getHMat(Enu, rho, mix, nsi_eps, dm, nutype, HMat);
   add_complex_matrix(HVac, HMat, HFull);
   getM(Enu, rho, mix, dm, nutype, dmMatMat, dmMatVac, HFull);
-  getA(Len,Enu,rho,mix,dmMatVac,dmMatMat,nutype,Aout,phase_offset);
+  //getMBarger(Enu, rho, mix, dm, nutype, dmMatMat, dmMatVac);
+  getHMatMassEigenstateBasis(mix, HMat, HMatMassEigenstateBasis);
+  getANew(Len, Enu, rho, mix, dmMatVac, dmMatMat, nutype, HMatMassEigenstateBasis, Aout, phase_offset);
+  //getA(Len,Enu,rho,mix,dmMatVac,dmMatMat,nutype,Aout,phase_offset);
 
 }
