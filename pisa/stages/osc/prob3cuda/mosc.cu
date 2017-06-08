@@ -76,7 +76,6 @@ __device__ void getHMat(fType Enu, fType rho,
   if (antitype<0) MatParam =  -a; /* Anti-neutrinos */
   else        MatParam = a; /* Neutrinos */
   HSI[0][0][re] = MatParam;
-  printf("HSI[1][1][re], HSI[1][1][im]: %.10f %.10f \n",HSI[1][1][re], HSI[1][1][im]);
   getHNSI(rho, NSIEps, antitype, HNSI);
   // This is where the non-standard matter interaction Hamiltonian is added to
   // the standard matter Hamiltonian
@@ -158,7 +157,7 @@ __device__ void getM(fType Enu, fType rho,
 
   c2_final = -HMat[elec][elec][re] - HMat[muon][muon][re] - HMat[tau][tau][re];
 
-  printf("rho, c0_num, c1_num, c2_num: %.5f %.10f %.10f %.10f \n", rho, c0_final, c1_final, c2_final);
+  //printf("rho, c0_num, c1_num, c2_num: %.5f %.10f %.10f %.10f \n", rho, c0_final, c1_final, c2_final);
   c0V = 0.0;
   c1V = (1.0/(2.0*Enu*2.0*Enu))*(dmVacVac[1][0]*dmVacVac[2][0]);
   c2 = (-1.0/(2.0*Enu))*(2.0*Enu*MatParam + dmVacVac[1][0] + dmVacVac[2][0]);
@@ -186,7 +185,7 @@ __device__ void getM(fType Enu, fType rho,
 #endif
 
                 
-  printf("rho, c0, c1, c2: %.5f %.10f %.10f %.10f \n",rho,c0,c1,c2);
+  //printf("rho, c0, c1, c2: %.5f %.10f %.10f %.10f \n",rho,c0,c1,c2);
 
   p = c2_final*c2_final - 3.0*c1_final;
   pV = (1.0/(2.0*Enu*2.0*Enu))*(dmVacVac[1][0]*dmVacVac[1][0] +
@@ -252,10 +251,12 @@ __device__ void getM(fType Enu, fType rho,
       dmMatVac[i][j] = mMat[i] - dmVacVac[j][0];
     }
   }
+ /*
  if (antitype < 0){
     printf("rho, m1, m2, m3, %.5f, %.10f, %.10f, %.10f, \n", rho, dmMatMat[0][0], dmMatMat[0][1], dmMatMat[0][2]);
     printf("rho, m1V, m2V, m3V, %.5f, %.10f, %.10f, %.10f, \n", rho, dmVacVac[0][0], dmVacVac[0][1], dmVacVac[0][2]);
  }
+ */
 }
   
 
@@ -375,10 +376,6 @@ __device__ void getMBarger(fType Enu, fType rho,
       dmMatVac[i][j] = mMat[i] - dmVacVac[j][0];
     }
  }
- if (antitype < 0){
-    printf("rho, m1, m2, m3, %.5f, %.10f, %.10f, %.10f, \n", rho, dmMatMat[0][0], dmMatMat[0][1], dmMatMat[0][2]);
-    printf("rho, m1V, m2V, m3V, %.5f, %.10f, %.10f, %.10f, \n", rho, dmVacVac[0][0], dmVacVac[0][1], dmVacVac[0][2]);
- }
 }
 
 /***********************************************************************
@@ -407,13 +404,6 @@ __device__ void getANew(fType L, fType E, fType rho,
     }
 
   /////////////// product is JUNK /////////////
-
-  for (int i=0; i<3; i++){
-    for (int j=0; j<3; j++) {
-  //printf(" product[%d][%d]: %f, %f\n",i,j,*product[i][j][0],*product[i][j][1]);
-  //printf(" A[%d][%d]: %f, %f\n",i,j,A[i][j][0],A[i][j][1]);
-    }
-  }
 
   /* Make the sum with the exponential factor */
   //cudaMemset(X, 0, 3*3*2*sizeof(fType));
