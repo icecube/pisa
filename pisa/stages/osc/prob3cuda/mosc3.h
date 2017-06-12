@@ -8,7 +8,7 @@ __device__ void copy_complex_matrix( fType A[][3][2], fType B[][3][2] );
 
 __device__ void multiply_complex_matrix( fType A[][3][2], fType B[][3][2], fType C[][3][2] );
 
-__device__ void clear_probabilities( fType A[3][3] );
+__device__ void clear_real_matrix( fType A[3][3] );
 
 __device__ void multiply_complex_matvec( fType A[][3][2], fType V[][2], fType W[][2] );
 

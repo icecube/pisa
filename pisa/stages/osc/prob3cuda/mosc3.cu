@@ -38,14 +38,14 @@ __device__ void multiply_complex_matrix(fType A[][3][2], fType B[][3][2], fType 
   }
 }
 
-__device__ void clear_probabilities(fType Prob[3][3])
+__device__ void clear_real_matrix(fType R[3][3])
 {
-  memset(Prob,0,sizeof(fType)*9);
+  memset(R,0,sizeof(fType)*9);
 }
 
 
 // Multiply complex 3x3 matrix and 3 vector: W = A X V
-__device__ void multiply_complex_matvec( fType A[][3][2], fType V[][2], fType W[][2])
+__device__ void multiply_complex_matvec(fType A[][3][2], fType V[][2], fType W[][2])
 {
   for(unsigned i=0;i<3;i++) {
     W[i][re] = A[i][0][re]*V[0][re]-A[i][0][im]*V[0][im]+
@@ -57,6 +57,7 @@ __device__ void multiply_complex_matvec( fType A[][3][2], fType V[][2], fType W[
   }
 }
 
+// Complex conjugate all elements of 3x3 matrix A and transpose: B = (A^T)*
 __device__ void conjugate_transpose_complex_matrix(fType A[][3][2], fType B[][3][2])
 {
   for (unsigned i=0; i<3; i++){
@@ -67,6 +68,7 @@ __device__ void conjugate_transpose_complex_matrix(fType A[][3][2], fType B[][3]
   }
 }
 
+// Add two complex 3x3 matrices: C_{ij} = A_{ij} + B_{ij} (for real & imaginary parts)
 __device__ void add_complex_matrix(fType A[][3][2], fType B[][3][2], fType C[][3][2])
 {
   for (unsigned i=0; i<3; i++) {
@@ -104,18 +106,19 @@ __device__ void convert_from_mass_eigenstate( int state, int flavor, fType pure[
 
 }
 
-
+/* Calculate neutrino flavour transition amplitude matrix for neutrino (nutype > 0)
+   or antineutrino (nutype < 0) with energy Enu traversing layer of matter of
+   uniform density rho with thickness Len.
+*/
 __device__ void get_transition_matrix( int nutype, fType Enu, fType rho, fType Len,
                                        fType Aout[][3][2], fType phase_offset,
                                        fType mix[3][3][2], fType nsi_eps[3][3],
                                        fType dm[3][3])
 {
-
-  fType dmMatVac[3][3], dmMatMat[3][3], HFull[3][3][2], HMat[3][3][2], HVac[3][3][2];
-  fType HMatMassEigenstateBasis[3][3][2];
-  clear_complex_matrix(HFull);
-  clear_complex_matrix(HMatMassEigenstateBasis);
-  getHVac(Enu, rho, mix, dm, nutype, HVac);
+  fType dmMatVac[3][3], dmMatMat[3][3];
+  fType HFull[3][3][2], HMat[3][3][2], HVac[3][3][2], HMatMassEigenstateBasis[3][3][2];
+  clear_complex_matrix(HFull); clear_complex_matrix(HMatMassEigenstateBasis);
+  getHVac(Enu, mix, dm, nutype, HVac);
   getHMat(Enu, rho, mix, nsi_eps, dm, nutype, HMat);
   add_complex_matrix(HVac, HMat, HFull);
   getM(Enu, rho, mix, dm, nutype, dmMatMat, dmMatVac, HFull);

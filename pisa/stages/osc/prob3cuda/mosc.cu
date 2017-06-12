@@ -11,20 +11,13 @@
 //#define ZERO_CP
 static int matrixtype = standard_type;
 
-/* Flag to tell us if we're doing nu_e or nu_sterile matter effects */
-//static NuType matterFlavor = nue_type;
-
-
-/***********************************************************************
-  getM
-  Compute the matter-mass vector M, dM = M_i-M_j and
-  and dMimj. type<0 means anti-neutrinos type>0 means "real" neutrinos
-***********************************************************************/
-
-
-__device__ void getHVac(fType Enu, fType rho,
-                        fType Mix[][3][2], fType dmVacVac[][3], int antitype,
-                        fType HVac[][3][2])
+/* Calculate vacuum Hamiltonian in flavor basis for neutrino (nutype > 0) or
+   antineutrino (nutype < 0) of energy Enu.
+   TODO: * only needs to be calculated once per energy
+         * do correctly for deltacp != 0 (nutype!)
+*/
+__device__ void getHVac(fType Enu, fType Mix[][3][2], fType dmVacVac[][3],
+                        int antitype, fType HVac[][3][2])
 {
   fType dmVacDiag[3][3][2], MixConjTranspose[3][3][2], tmp[3][3][2];
   clear_complex_matrix(HVac);
@@ -37,6 +30,7 @@ __device__ void getHVac(fType Enu, fType rho,
   multiply_complex_matrix(Mix, tmp, HVac);
 }
 
+/* Calculate effective non-standard interaction Hamiltonian in flavor basis */
 __device__ void getHNSI(fType rho, fType NSIEps[][3], int antitype, fType HNSI[][3][2])
 {
   fType tworttwoGf = 1.52588e-4;
@@ -52,6 +46,8 @@ __device__ void getHNSI(fType rho, fType NSIEps[][3], int antitype, fType HNSI[]
   }
 }
 
+/* From the full matter Hamiltonian in flavor basis, transform to mass eigenstate
+   basis using mixing matrix */
 __device__ void getHMatMassEigenstateBasis(fType Mix[][3][2], fType HMat[][3][2],
                                            fType HMatMassEigenstateBasis[][3][2])
 {
@@ -63,7 +59,7 @@ __device__ void getHMatMassEigenstateBasis(fType Mix[][3][2], fType HMat[][3][2]
     multiply_complex_matrix(MixConjTranspose, tmp, HMatMassEigenstateBasis);
 }
 
-
+/* Calculate full matter Hamiltonian in flavor basis */
 __device__ void getHMat(fType Enu, fType rho,
                         fType Mix[][3][2], fType NSIEps[][3],
                         fType dmVacVac[][3], int antitype,
@@ -82,7 +78,12 @@ __device__ void getHMat(fType Enu, fType rho,
   add_complex_matrix(HSI, HNSI, HMat);
 }
 
-
+/***********************************************************************
+  getM
+  Compute the matter-mass vector M, dM = M_i-M_j and dMimj
+***********************************************************************/
+/* Calculate mass eigenstates in matter of uniform density rho for
+   neutrino (antitype > 0) or anti-neutrino (antitype < 0) of energy Enu */
 __device__ void getM(fType Enu, fType rho,
                      fType Mix[][3][2], fType dmVacVac[][3], int antitype,
                      fType dmMatMat[][3], fType dmMatVac[][3],
@@ -258,9 +259,8 @@ __device__ void getM(fType Enu, fType rho,
  }
  */
 }
-  
 
-
+/* Original calculation of mass eigenstates going back to Barger et al. paper */
 __device__ void getMBarger(fType Enu, fType rho,
                      fType Mix[][3][2], fType dmVacVac[][3], int antitype,
                      fType dmMatMat[][3], fType dmMatVac[][3])

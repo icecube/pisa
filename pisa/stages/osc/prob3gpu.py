@@ -139,7 +139,7 @@ class prob3gpu(Stage):
       clear_complex_matrix(TransitionMatrix);
       clear_complex_matrix(TransitionProduct);
       clear_complex_matrix(TransitionTemp);
-      clear_probabilities(Probability);
+      clear_real_matrix(Probability);
 
       //int layers = 1;//*(d_numberOfLayers + czidx);
       int layers = d_numberOfLayers[czidx];
@@ -238,7 +238,7 @@ class prob3gpu(Stage):
       clear_complex_matrix( TransitionMatrix );
       clear_complex_matrix( TransitionProduct );
       clear_complex_matrix( TransitionTemp );
-      clear_probabilities( Probability );
+      clear_real_matrix( Probability );
       int layers = *(d_numberOfLayers + idx);
       fType energy = d_energy[idx] * true_e_scale;
       for( int i=0; i<layers; i++) {
