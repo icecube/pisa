@@ -10,32 +10,34 @@
 
 //#define ZERO_CP
 static int matrixtype = standard_type;
+__device__ fType tworttwoGf = 1.52588e-4;
+/* (1/2)*(1/(h_bar*c)) in units of GeV/(eV^2-km) */
+__device__ fType LoEfac = 2.534;
 
 /* Calculate vacuum Hamiltonian in flavor basis for neutrino (nutype > 0) or
    antineutrino (nutype < 0) of energy Enu.
    TODO: * only needs to be calculated once per energy
          * do correctly for deltacp != 0 (nutype!)
 */
-__device__ void getHVac(fType Enu, fType Mix[][3][2], fType dmVacVac[][3],
-                        int antitype, fType HVac[][3][2])
+__device__ void getHVac2Enu(fType Mix[][3][2], fType dmVacVac[][3],
+                            int antitype, fType HVac2Enu[][3][2])
 {
   fType dmVacDiag[3][3][2], MixConjTranspose[3][3][2], tmp[3][3][2];
-  clear_complex_matrix(HVac);
   clear_complex_matrix(dmVacDiag);
-  dmVacDiag[1][1][re] = dmVacVac[1][0]/(2*Enu);
-  dmVacDiag[2][2][re] = dmVacVac[2][0]/(2*Enu);
+  clear_complex_matrix(MixConjTranspose);
   clear_complex_matrix(tmp);
+  dmVacDiag[1][1][re] = dmVacVac[1][0];
+  dmVacDiag[2][2][re] = dmVacVac[2][0];
   conjugate_transpose_complex_matrix(Mix, MixConjTranspose);
   multiply_complex_matrix(dmVacDiag, MixConjTranspose, tmp);
-  multiply_complex_matrix(Mix, tmp, HVac);
+  multiply_complex_matrix(Mix, tmp, HVac2Enu);
 }
 
 /* Calculate effective non-standard interaction Hamiltonian in flavor basis */
 __device__ void getHNSI(fType rho, fType NSIEps[][3], int antitype, fType HNSI[][3][2])
 {
-  fType tworttwoGf = 1.52588e-4;
-  fType fact = 3.0*rho*tworttwoGf/2.0; // assume 3x electron density for
-                                     // "NSI"-quark (e.g., d) density
+  fType NSIRhoScale = 3.0;// assume 3x electron density for "NSI"-quark (e.g., d) density
+  fType fact = NSIRhoScale*rho*tworttwoGf/2.0;
   if (antitype<0) fact =  -fact; /* Anti-neutrinos */
   else        fact = fact; /* Neutrinos */
   for (int i=0; i<3; i++) {
@@ -66,16 +68,27 @@ __device__ void getHMat(fType Enu, fType rho,
                         fType HMat[][3][2])
 {
   fType HSI[3][3][2], HNSI[3][3][2];
-  fType tworttwoGf = 1.52588e-4;
-  fType a = rho*tworttwoGf/2., MatParam = 0.0;
+  fType a = rho*tworttwoGf/2.0;
   clear_complex_matrix(HSI); clear_complex_matrix(HNSI);
-  if (antitype<0) MatParam =  -a; /* Anti-neutrinos */
-  else        MatParam = a; /* Neutrinos */
-  HSI[0][0][re] = MatParam;
+  if (antitype<0) a =  -a; /* Anti-neutrinos */
+  else        a = a; /* Neutrinos */
+  HSI[0][0][re] = a;
   getHNSI(rho, NSIEps, antitype, HNSI);
   // This is where the non-standard matter interaction Hamiltonian is added to
   // the standard matter Hamiltonian
   add_complex_matrix(HSI, HNSI, HMat);
+}
+
+// add_complex_matrix adapted to vacuum and matter Hamiltonian
+__device__ void add_HVac_HMat(fType Enu, fType HVac2Enu[][3][2], fType HMat[][3][2],
+                              fType HFull[][3][2])
+{
+  for (unsigned i=0; i<3; i++) {
+    for (unsigned j=0; j<3; j++) {
+        HFull[i][j][re] = HVac2Enu[i][j][re]/(2.0*Enu) + HMat[i][j][re];
+        HFull[i][j][im] = HVac2Enu[i][j][im]/(2.0*Enu) + HMat[i][j][im];
+    }
+  }
 }
 
 /***********************************************************************
@@ -83,9 +96,9 @@ __device__ void getHMat(fType Enu, fType rho,
   Compute the matter-mass vector M, dM = M_i-M_j and dMimj
 ***********************************************************************/
 /* Calculate mass eigenstates in matter of uniform density rho for
-   neutrino (antitype > 0) or anti-neutrino (antitype < 0) of energy Enu */
-__device__ void getM(fType Enu, fType rho,
-                     fType Mix[][3][2], fType dmVacVac[][3], int antitype,
+   neutrino or anti-neutrino (type already taken into account in Hamiltonian)
+   of energy Enu. */
+__device__ void getM(fType Enu, fType rho, fType dmVacVac[][3],
                      fType dmMatMat[][3], fType dmMatVac[][3],
                      fType HMat[][3][2])
 {
@@ -100,12 +113,6 @@ __device__ void getM(fType Enu, fType rho,
   fType mMatU[3], mMatV[3], mMat[3];
   fType HEEHMuMuHTauTau;
   fType HMuTauModulusSq, HETauModulusSq, HEMuModulusSq, ReHEMuHMuTauHTauE;
-  // following only here temporarily
-  fType tworttwoGf = 1.52588e-4;
-  fType a = rho*tworttwoGf/2.0, MatParam = 0.0;
-  if (antitype<0) MatParam =  -a; // Anti-neutrinos
-  else        MatParam = a; // Neutrinos
-  
 
 #ifndef ZERO_CP
 
@@ -159,10 +166,14 @@ __device__ void getM(fType Enu, fType rho,
   c2_final = -HMat[elec][elec][re] - HMat[muon][muon][re] - HMat[tau][tau][re];
 
   //printf("rho, c0_num, c1_num, c2_num: %.5f %.10f %.10f %.10f \n", rho, c0_final, c1_final, c2_final);
+
+  c2V = (-1.0/(2.0*Enu))*(dmVacVac[1][0] + dmVacVac[2][0]);
+
+/*
   c0V = 0.0;
   c1V = (1.0/(2.0*Enu*2.0*Enu))*(dmVacVac[1][0]*dmVacVac[2][0]);
   c2 = (-1.0/(2.0*Enu))*(2.0*Enu*MatParam + dmVacVac[1][0] + dmVacVac[2][0]);
-  c2V = (-1.0/(2.0*Enu))*(dmVacVac[1][0] + dmVacVac[2][0]);
+
 #ifndef ZERO_CP
   c0 = (-1.0/(2.0*Enu*2.0*Enu*2.0*Enu))*2.0*Enu*MatParam*dmVacVac[1][0]*dmVacVac[2][0]*
                 (Mix[0][0][re]*Mix[0][0][re] + Mix[0][0][im]*Mix[0][0][im]);
@@ -184,6 +195,7 @@ __device__ void getM(fType Enu, fType rho,
                 dmVacVac[2][0]*(1.0 - (Mix[0][2][re]*Mix[0][2][re])))
        );
 #endif
+*/
 
                 
   //printf("rho, c0, c1, c2: %.5f %.10f %.10f %.10f \n",rho,c0,c1,c2);
@@ -271,7 +283,6 @@ __device__ void getMBarger(fType Enu, fType rho,
   fType theta0, theta1, theta2;
   fType theta0V, theta1V, theta2V;
   fType mMatU[3], mMatV[3], mMat[3];
-  fType tworttwoGf = 1.52588e-4;
 
   /* Equations (22) fro Barger et.al.*/
   /* Reverse the sign of the potential depending on neutrino type */
@@ -389,13 +400,9 @@ __device__ void getANew(fType L, fType E, fType rho,
                         fType phase_offset)
 {
 
-  //int n, m, i, j, k;
-  fType /*fac=0.0,*/ arg, c, s;
-  // TCA ADDITION: set equal to 0!
+  fType arg, c, s;
   fType X[3][3][2] = {0.0};
   fType product[3][3][3][2] = {0.0};
-  /* (1/2)*(1/(h_bar*c)) in units of GeV/(eV^2-km) */
-  const fType LoEfac = 2.534;
 
   if ( phase_offset==0.0 )
     {
@@ -403,11 +410,6 @@ __device__ void getANew(fType L, fType E, fType rho,
                      product);
     }
 
-  /////////////// product is JUNK /////////////
-
-  /* Make the sum with the exponential factor */
-  //cudaMemset(X, 0, 3*3*2*sizeof(fType));
-  //memset(X, 0, 3*3*2*sizeof(fType));
   for (int k=0; k<3; k++)
     {
       arg = -LoEfac*dmMatVac[k][0]*L/E;
@@ -475,25 +477,7 @@ __device__ void get_productNew(fType L, fType E, fType rho,fType Mix[][3][2],
                                fType product[][3][3][2])
 {
 
-  fType fac=0.0;
   fType twoEHmM[3][3][3][2];
-  fType tworttwoGf = 1.52588e-4;
-
-  /* (1/2)*(1/(h_bar*c)) in units of GeV/(eV^2-km) */
-  /* Reverse the sign of the potential depending on neutrino type */
-  //if (matterFlavor == nue_type) {
-
-  /* If we're doing matter effects for electron neutrinos */
-  if (antitype<0) fac =  tworttwoGf*E*rho; /* Anti-neutrinos */
-  else        fac = -tworttwoGf*E*rho; /* Real-neutrinos */
-  //  }
-
-  /*
-      else if (matterFlavor == sterile_type) {
-      // If we're doing matter effects for sterile neutrinos
-      if (antitype<0) fac = -0.5*tworttwoGf*E*rho; // Anti-neutrinos
-      else        fac =  0.5*tworttwoGf*E*rho; // Real-neutrinos
-      } */
 
   /* Calculate the matrix 2EH-M_j */
   for (int n=0; n<3; n++) {
@@ -592,8 +576,6 @@ __device__ void getA(fType L, fType E, fType rho,
   // TCA ADDITION: set equal to 0!
   fType X[3][3][2] = {0.0};
   fType product[3][3][3][2] = {0.0};
-  /* (1/2)*(1/(h_bar*c)) in units of GeV/(eV^2-km) */
-  const fType LoEfac = 2.534;
 
   if ( phase_offset==0.0 )
     {
@@ -681,7 +663,6 @@ __device__ void get_product(fType L, fType E, fType rho,fType Mix[][3][2],
 
   fType fac=0.0;
   fType twoEHmM[3][3][3][2];
-  fType tworttwoGf = 1.52588e-4;
 
   /* (1/2)*(1/(h_bar*c)) in units of GeV/(eV^2-km) */
   /* Reverse the sign of the potential depending on neutrino type */

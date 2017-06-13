@@ -77,7 +77,7 @@ __device__ void add_complex_matrix(fType A[][3][2], fType B[][3][2], fType C[][3
         C[i][j][im] = A[i][j][im] + B[i][j][im];
     }
   }
-} 
+}
 
 __device__ void convert_from_mass_eigenstate( int state, int flavor, fType pure[][2],
                                               fType mix[][3][2])
@@ -113,15 +113,22 @@ __device__ void convert_from_mass_eigenstate( int state, int flavor, fType pure[
 __device__ void get_transition_matrix( int nutype, fType Enu, fType rho, fType Len,
                                        fType Aout[][3][2], fType phase_offset,
                                        fType mix[3][3][2], fType nsi_eps[3][3],
-                                       fType dm[3][3])
+                                       fType HVac2Enu[3][3][2], fType dm[3][3])
 {
   fType dmMatVac[3][3], dmMatMat[3][3];
-  fType HFull[3][3][2], HMat[3][3][2], HVac[3][3][2], HMatMassEigenstateBasis[3][3][2];
+  fType HFull[3][3][2], HMat[3][3][2], HMatMassEigenstateBasis[3][3][2];
   clear_complex_matrix(HFull); clear_complex_matrix(HMatMassEigenstateBasis);
-  getHVac(Enu, mix, dm, nutype, HVac);
+
+  /* Compute the matter potential including possible non-standard interactions
+     in the flavor basis */
   getHMat(Enu, rho, mix, nsi_eps, dm, nutype, HMat);
-  add_complex_matrix(HVac, HMat, HFull);
-  getM(Enu, rho, mix, dm, nutype, dmMatMat, dmMatVac, HFull);
+
+  /* Get the full Hamiltonian by adding together matter and vacuum parts */
+  add_HVac_HMat(Enu, HVac2Enu, HMat, HFull);
+
+  /* Calculate modified mass eigenvalues in matter from the full Hamiltonian and
+     the vacuum mass splittings */
+  getM(Enu, rho, dm, dmMatMat, dmMatVac, HFull);
   //getMBarger(Enu, rho, mix, dm, nutype, dmMatMat, dmMatVac);
   getHMatMassEigenstateBasis(mix, HMat, HMatMassEigenstateBasis);
   getANew(Len, Enu, rho, mix, dmMatVac, dmMatMat, nutype, HMatMassEigenstateBasis, Aout, phase_offset);

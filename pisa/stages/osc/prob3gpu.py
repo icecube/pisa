@@ -129,6 +129,10 @@ class prob3gpu(Stage):
 
       bool kUseMassEstates = false;
 
+      fType HVac2Enu[3][3][2];
+      clear_complex_matrix(HVac2Enu);
+      getHVac2Enu(d_mix, d_dm, kNuBar, HVac2Enu);
+
       fType TransitionMatrix[3][3][2];
       fType TransitionProduct[3][3][2];
       fType TransitionTemp[3][3][2];
@@ -158,7 +162,7 @@ class prob3gpu(Stage):
                               distance,
                               TransitionMatrix,
                               0.0,
-                              d_mix, d_nsi_eps,
+                              d_mix, d_nsi_eps, HVac2Enu,
                               d_dm);
 
         if (i==0) {
@@ -229,6 +233,11 @@ class prob3gpu(Stage):
       // ensure we don't access memory outside of bounds!
       if(idx >= n_evts) return;
       bool kUseMassEstates = false;
+
+      fType HVac2Enu[3][3][2];
+      clear_complex_matrix(HVac2Enu);
+      getHVac2Enu(d_mix, d_dm, kNuBar, HVac2Enu);
+
       fType TransitionMatrix[3][3][2];
       fType TransitionProduct[3][3][2];
       fType TransitionTemp[3][3][2];
@@ -250,7 +259,7 @@ class prob3gpu(Stage):
                               distance,
                               TransitionMatrix,
                               0.0,
-                              d_mix, d_nsi_eps,
+                              d_mix, d_nsi_eps, HVac2Enu,
                               d_dm);
         if(i==0) {
           copy_complex_matrix(TransitionMatrix, TransitionProduct);
