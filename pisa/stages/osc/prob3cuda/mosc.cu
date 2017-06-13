@@ -8,16 +8,13 @@
 #define re (0)
 #define im (1)
 
-//#define ZERO_CP
-static int matrixtype = standard_type;
 __device__ fType tworttwoGf = 1.52588e-4;
 /* (1/2)*(1/(h_bar*c)) in units of GeV/(eV^2-km) */
 __device__ fType LoEfac = 2.534;
 
 /* Calculate vacuum Hamiltonian in flavor basis for neutrino (nutype > 0) or
    antineutrino (nutype < 0) of energy Enu.
-   TODO: * only needs to be calculated once per energy
-         * do correctly for deltacp != 0 (nutype!)
+   TODO: * do correctly for deltacp != 0 (nutype!)
 */
 __device__ void getHVac2Enu(fType Mix[][3][2], fType dmVacVac[][3],
                             int antitype, fType HVac2Enu[][3][2])
@@ -42,8 +39,8 @@ __device__ void getHNSI(fType rho, fType NSIEps[][3], int antitype, fType HNSI[]
   else        fact = fact; /* Neutrinos */
   for (int i=0; i<3; i++) {
     for (int j=0; j<3; j++) {
-        HNSI[i][j][0] = fact*NSIEps[i][j];
-        HNSI[i][j][1] = 0.0; // only real NSI for now
+        HNSI[i][j][re] = fact*NSIEps[i][j];
+        HNSI[i][j][im] = 0.0; // only real NSI for now
     }
   }
 }
@@ -72,7 +69,7 @@ __device__ void getHMat(fType Enu, fType rho,
   clear_complex_matrix(HSI); clear_complex_matrix(HNSI);
   if (antitype<0) a =  -a; /* Anti-neutrinos */
   else        a = a; /* Neutrinos */
-  HSI[0][0][re] = a;
+  HSI[elec][elec][re] = a;
   getHNSI(rho, NSIEps, antitype, HNSI);
   // This is where the non-standard matter interaction Hamiltonian is added to
   // the standard matter Hamiltonian
