@@ -61,7 +61,6 @@ __device__ void multiply_complex_matvec(fType A[][3][2], fType V[][2], fType W[]
 // Complex conjugate all elements of 3x3 matrix A: B=A*
 __device__ void conjugate_complex_matrix(fType A[][3][2], fType B[][3][2])
 {
-  printf("Complex conjugating.");
   for (unsigned i=0; i<3; i++){
     for (unsigned j=0; j<3; j++){
       B[i][j][re] = A[i][j][re];
