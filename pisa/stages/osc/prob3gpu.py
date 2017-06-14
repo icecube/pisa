@@ -120,18 +120,24 @@ class prob3gpu(Stage):
       int czidx = thread_2D_pos.x;
 
       int kNuBar;
-      //if (threadIdx.z == 0)
-      //  kNuBar = 1;
-      if (blockIdx.z == 0)
+      fType mixNuType[3][3][2];
+      if (blockIdx.z == 0){
         kNuBar = 1;
-      else
+        // in this case the mixing matrix is left untouched
+        copy_complex_matrix(d_mix, mixNuType);
+      }
+      else {
         kNuBar=-1;
+        // here we need to complex conjugate all entries
+        // (note that this only changes calculations with non-zero deltacp)
+        conjugate_complex_matrix(d_mix, mixNuType);
+      }
 
       bool kUseMassEstates = false;
 
       fType HVac2Enu[3][3][2];
       clear_complex_matrix(HVac2Enu);
-      getHVac2Enu(d_mix, d_dm, kNuBar, HVac2Enu);
+      getHVac2Enu(mixNuType, d_dm, kNuBar, HVac2Enu);
 
       fType TransitionMatrix[3][3][2];
       fType TransitionProduct[3][3][2];
@@ -162,7 +168,7 @@ class prob3gpu(Stage):
                               distance,
                               TransitionMatrix,
                               0.0,
-                              d_mix, d_nsi_eps, HVac2Enu,
+                              mixNuType, d_nsi_eps, HVac2Enu,
                               d_dm);
 
         if (i==0) {
@@ -183,7 +189,7 @@ class prob3gpu(Stage):
         }
 
         if (kUseMassEstates)
-          convert_from_mass_eigenstate(i+1, kNuBar, RawInputPsi, d_mix);
+          convert_from_mass_eigenstate(i+1, RawInputPsi, mixNuType);
         else
           RawInputPsi[i][0] = 1.0;
 
@@ -234,9 +240,26 @@ class prob3gpu(Stage):
       if(idx >= n_evts) return;
       bool kUseMassEstates = false;
 
+      fType mixNuType[3][3][2];
+      /*
+      TODO: * ensure convention below is respected in MC reweighting
+                (kNuBar > 0 for nu, < 0 for anti-nu)
+              * kNuBar is passed in, so could already pass in the correct form
+                of mixing matrix, i.e., possibly conjugated
+      */
+      if (kNuBar > 0){
+        // in this case the mixing matrix is left untouched
+        copy_complex_matrix(d_mix, mixNuType);
+      }
+      else {
+        // here we need to complex conjugate all entries
+        // (note that this only changes calculations with non-zero deltacp)
+        conjugate_complex_matrix(d_mix, mixNuType);
+      }
+
       fType HVac2Enu[3][3][2];
       clear_complex_matrix(HVac2Enu);
-      getHVac2Enu(d_mix, d_dm, kNuBar, HVac2Enu);
+      getHVac2Enu(mixNuType, d_dm, kNuBar, HVac2Enu);
 
       fType TransitionMatrix[3][3][2];
       fType TransitionProduct[3][3][2];
@@ -259,7 +282,7 @@ class prob3gpu(Stage):
                               distance,
                               TransitionMatrix,
                               0.0,
-                              d_mix, d_nsi_eps, HVac2Enu,
+                              mixNuType, d_nsi_eps, HVac2Enu,
                               d_dm);
         if(i==0) {
           copy_complex_matrix(TransitionMatrix, TransitionProduct);
@@ -279,7 +302,7 @@ class prob3gpu(Stage):
         }
 
         if( kUseMassEstates )
-          convert_from_mass_eigenstate(i+1, kNuBar, RawInputPsi, d_mix);
+          convert_from_mass_eigenstate(i+1, RawInputPsi, mixNuType);
         else
           RawInputPsi[i][0] = 1.0;
 
