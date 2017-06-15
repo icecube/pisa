@@ -1312,7 +1312,9 @@ class HypoTesting(Analysis):
         summary['data_name'] = self.labels.data_name
         summary['data_is_data'] = self.data_is_data
         summary['data_hash'] = self.data_hash
-        summary['data_param_selections'] = ','.join(self.data_param_selections)
+        if not self.data_is_data:
+            summary['data_param_selections'] = ','.join(
+                self.data_param_selections)
         summary['data_params_hash'] = self.data_maker.params.hash
         summary['data_params'] = [str(p) for p in self.data_maker.params]
         summary['data_pipelines'] = self.summarize_dist_maker(self.data_maker)
