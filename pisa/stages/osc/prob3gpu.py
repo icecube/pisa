@@ -137,7 +137,7 @@ class prob3gpu(Stage):
 
       fType HVac2Enu[3][3][2];
       clear_complex_matrix(HVac2Enu);
-      getHVac2Enu(mixNuType, d_dm, kNuBar, HVac2Enu);
+      getHVac2Enu(mixNuType, d_dm, HVac2Enu);
 
       fType TransitionMatrix[3][3][2];
       fType TransitionProduct[3][3][2];
@@ -259,7 +259,7 @@ class prob3gpu(Stage):
 
       fType HVac2Enu[3][3][2];
       clear_complex_matrix(HVac2Enu);
-      getHVac2Enu(mixNuType, d_dm, kNuBar, HVac2Enu);
+      getHVac2Enu(mixNuType, d_dm, HVac2Enu);
 
       fType TransitionMatrix[3][3][2];
       fType TransitionProduct[3][3][2];

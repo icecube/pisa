@@ -129,10 +129,8 @@ __device__ void get_transition_matrix( int nutype, fType Enu, fType rho, fType L
   /* Calculate modified mass eigenvalues in matter from the full Hamiltonian and
      the vacuum mass splittings */
   getM(Enu, rho, dm, dmMatMat, dmMatVac, HFull);
-  //getMBarger(Enu, rho, mixNuType, dm, nutype, dmMatMat, dmMatVac);
   getHMatMassEigenstateBasis(mixNuType, HMat, HMatMassEigenstateBasis);
-  getANew(Len, Enu, rho, mixNuType, dmMatVac, dmMatMat, nutype,
+  getAGen(Len, Enu, rho, mixNuType, dmMatVac, dmMatMat, nutype,
           HMatMassEigenstateBasis, Aout, phase_offset);
-  //getA(Len,Enu,rho,mixNuType,dmMatVac,dmMatMat,nutype,Aout,phase_offset);
 
 }
