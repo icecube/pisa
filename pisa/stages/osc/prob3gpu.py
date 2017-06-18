@@ -123,14 +123,15 @@ class prob3gpu(Stage):
       fType mixNuType[3][3][2];
       if (blockIdx.z == 0){
         kNuBar = 1;
-        // in this case the mixing matrix is left untouched
-        copy_complex_matrix(d_mix, mixNuType);
+        // "U* convention" for neutrino states (cf e.g. arXiv:0905.1903, Eq. 1)
+        // (note that this only changes calculations with non-zero deltacp)
+        conjugate_complex_matrix(d_mix, mixNuType);
       }
       else {
         kNuBar=-1;
-        // here we need to complex conjugate all entries
-        // (note that this only changes calculations with non-zero deltacp)
-        conjugate_complex_matrix(d_mix, mixNuType);
+        // "U convention" for antineutrino states (see ref. above)
+        // leave mixing matrix unchanged
+        copy_complex_matrix(d_mix, mixNuType);
       }
 
       bool kUseMassEstates = false;
