@@ -550,7 +550,7 @@ def main(return_outputs=False):
         mkdir(args.outdir)
     else:
         if args.pdf or args.png:
-            raise ValueError('No --dir provided, so cannot save images.')
+            raise ValueError('No --outdir provided, so cannot save images.')
 
     # Most basic parsing of the pipeline config (parsing only to this level
     # allows for simple strings to be specified as args for updating)

@@ -35,6 +35,7 @@ from __future__ import absolute_import, division
 from ast import literal_eval
 from collections import Mapping, namedtuple, OrderedDict, Sequence
 from copy import deepcopy
+from os import path
 from math import exp, log
 import threading
 import traceback
@@ -48,6 +49,7 @@ from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 
 from pisa.utils.comparisons import EQUALITY_SIGFIGS, isscalar
+from pisa.utils.fileio import mkdir, to_file
 from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
 from pisa.utils.gaussians import gaussians
 from pisa.utils.hash import hash_obj
@@ -605,11 +607,11 @@ class vbwkde(Stage): # pylint: disable=invalid-name
         ```
 
     energy_inbin_smoothing : bool
-        Smear energy-error KDE profiles by boxcar funciton of same width as input
-        (true-energy) bin it applies to. This is intended to account for the
-        ambiguity in where the KDE profile is located when the input bin is of
-        finite width, and so the effect of this parameter should decrease with
-        smaller `input_binning`.
+        Smear energy-error KDE profiles by boxcar funciton of same width as
+        input (true-energy) bin it applies to. This is intended to account for
+        the ambiguity in where the KDE profile is located when the input bin is
+        of finite width, and so the effect of this parameter should decrease
+        with smaller `input_binning`.
 
     coszen_inbin_smoothing : bool
         Smear coszen-error KDE profiles by boxcar function of same width as
@@ -632,8 +634,15 @@ class vbwkde(Stage): # pylint: disable=invalid-name
 
     memcache_deepcopy : bool
 
-    debug_mode : None or bool
-        Whether to run extra checks and store extra debug info
+    debug_mode : None, bool, or string
+        Whether to run extra checks and store extra debug info:
+            debug_mode = None or False
+                No debug
+            debug_mode = True or any string
+                Peform extra value checks (ranges, sums, etc.)
+            debug_mode = 'plot'
+                Save info that is necessary to debug the VBW KDE to directory
+                /tmp/pisa/reco.vbwkde
 
     Notes
     -----
@@ -933,6 +942,11 @@ class vbwkde(Stage): # pylint: disable=invalid-name
         """Storage of the N-dim smearing kernels, one per flavintgroup"""
 
         self._xform_kernels_lock = threading.Lock()
+
+        if debug_mode == 'plot':
+            self.debug_dir = '/tmp/pisa/reco.vbwkde'
+            mkdir(self.debug_dir)
+
 
     def validate_binning(self):
         """Require input dimensions of "true_energy" and "true_coszen" (in any
@@ -1279,6 +1293,21 @@ class vbwkde(Stage): # pylint: disable=invalid-name
 
                     sizeof_kde_profiles += 2*len(x) * ftype_bytes
 
+                    if self.debug_mode == 'plot':
+                        info = dict(
+                            bin_binning=bin_binning,
+                            x=x,
+                            counts=counts,
+                            weights=weights,
+                            feature=feature
+                        )
+                        debug_info_basename = path.join(
+                            self.debug_dir,
+                            'profile_%s_%s_%s' % (char_dim, flavintgroup,
+                                                  bin_coord)
+                        )
+                        to_file(obj=info, fname=debug_info_basename + '.pkl')
+
             self._kde_hashes[char_dim] = new_hash
 
             if self.disk_cache is not None:
@@ -1493,8 +1522,10 @@ class vbwkde(Stage): # pylint: disable=invalid-name
                 energy_total = np.sum(e_kde_profile.counts)
 
                 if energy_total == 0:
-                    reco_energy_fractions = np.zeros(shape=len(e_edges) - 1,
-                                                     dtype=FTYPE)
+                    reco_energy_fractions = np.zeros(
+                        shape=len(reco_e_edges) - 1,
+                        dtype=FTYPE
+                    )
                     logging.warn('Zero events in energy bin!')
                 else:
                     # TODO: scale about the mode of the KDE! i.e., implement
