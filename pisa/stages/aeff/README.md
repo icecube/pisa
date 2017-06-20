@@ -1,4 +1,4 @@
-# Stage 3: Effective Area
+# Stage: Effective Area
 
 The purpose of this stage is the conversion of the incoming neutrino flux at the detector into an event count. This includes the interaction of the neutrinos, as well as the triggering and event selection criteria (filters), so that the resulting flux is at _analysis level_. 
 

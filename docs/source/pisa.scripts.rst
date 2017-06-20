@@ -60,6 +60,14 @@ pisa.scripts.make_systematic_variation_plots module
     :undoc-members:
     :show-inheritance:
 
+pisa.scripts.make_toy_events module
+-----------------------------------
+
+.. automodule:: pisa.scripts.make_toy_events
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.scripts.smooth_pid module
 ------------------------------
 

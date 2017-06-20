@@ -217,8 +217,7 @@ def do_setup():
         'tests/settings/*.cfg'
     ]
 
-    extra_compile_args = ['-O3', '-ffast-math', '-msse3',
-                          '-ftree-vectorizer-verbose=1']
+    extra_compile_args = ['-O3', '-ffast-math', '-msse3']
     extra_link_args = ['-ffast-math', '-msse2']
     if has_openmp:
         gaussians_cython_module = Extension(
