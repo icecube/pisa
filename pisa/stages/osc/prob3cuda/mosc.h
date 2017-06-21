@@ -35,7 +35,7 @@ __device__ void getAGen(fType L, fType E, fType rho,
                      fType dmMatMat[][3], int antitype, fType HMatMassEigenstateBasis[][3][2],
                      fType A[3][3][2],
                      fType phase_offset);
-__device__ void get_productGen(fType L, fType E, fType rho,fType Mix[][3][2],
+__device__ void get_productGen(fType L, fType E, fType rho,
                                fType dmMatVac[][3], fType dmMatMat[][3],
                                int antitype, fType HMatMassEigenstateBasis[][3][2],
                                fType product[][3][3][2]);

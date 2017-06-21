@@ -239,7 +239,7 @@ __device__ void getAGen(fType L, fType E, fType rho,
 
   if ( phase_offset==0.0 )
     {
-      get_productGen(L, E, rho, Mix, dmMatVac, dmMatMat, antitype, HMatMassEigenstateBasis,
+      get_productGen(L, E, rho, dmMatVac, dmMatMat, antitype, HMatMassEigenstateBasis,
                      product);
     }
 
@@ -300,7 +300,7 @@ __device__ void getAGen(fType L, fType E, fType rho,
 }
 
 
-__device__ void get_productGen(fType L, fType E, fType rho,fType Mix[][3][2],
+__device__ void get_productGen(fType L, fType E, fType rho,
                                fType dmMatVac[][3], fType dmMatMat[][3],
                                int antitype, fType HMatMassEigenstateBasis[][3][2],
                                fType product[][3][3][2])
