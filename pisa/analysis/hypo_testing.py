@@ -345,6 +345,12 @@ class HypoTesting(Analysis):
         # fiducial parameters.
         self.recentre_priors = recentre_priors
 
+        if reset_bound and recentre_priors:
+            raise ValueError(
+                "reset_bound and recentre_priors are incompatible. "
+                "Please only set one."
+            )
+
         # Instantiate h0 distribution maker to ensure it is a valid spec
         if h0_maker is None:
             raise ValueError('`h0_maker` must be specified (and not None)')
@@ -781,6 +787,9 @@ class HypoTesting(Analysis):
         else:
             self.h0_fid_asimov_dist = self.h0_fit_to_data['hypo_asimov_dist']
 
+        if self.recentre_priors:
+            self.h0_maker.recentre_priors()
+
         self.log_fit(fit_info=self.h0_fit_to_data,
                      dirpath=self.thisdata_dirpath,
                      label=self.labels.h0_fit_to_data)
@@ -840,6 +849,9 @@ class HypoTesting(Analysis):
             self.h1_fid_asimov_dist = self.h1_maker.get_outputs(return_sum=True)
         else:
             self.h1_fid_asimov_dist = self.h1_fit_to_data['hypo_asimov_dist']
+
+        if self.recentre_priors:
+            self.h1_maker.recentre_priors()
 
         self.log_fit(fit_info=self.h1_fit_to_data,
                      dirpath=self.thisdata_dirpath,
