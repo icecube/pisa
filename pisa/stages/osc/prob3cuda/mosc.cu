@@ -57,8 +57,7 @@ __device__ void getHMatMassEigenstateBasis(fType Mix[][3][2], fType HMat[][3][2]
 }
 
 /* Calculate full matter Hamiltonian in flavor basis */
-__device__ void getHMat(fType Enu, fType rho,
-                        fType Mix[][3][2], fType NSIEps[][3],
+__device__ void getHMat(fType Enu, fType rho, fType NSIEps[][3],
                         fType dmVacVac[][3], int antitype,
                         fType HMat[][3][2])
 {

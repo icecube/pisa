@@ -121,7 +121,7 @@ __device__ void get_transition_matrix( int nutype, fType Enu, fType rho, fType L
 
   /* Compute the matter potential including possible non-standard interactions
      in the flavor basis */
-  getHMat(Enu, rho, mixNuType, nsi_eps, dm, nutype, HMat);
+  getHMat(Enu, rho, nsi_eps, dm, nutype, HMat);
 
   /* Get the full Hamiltonian by adding together matter and vacuum parts */
   add_HVac_HMat(Enu, HVac2Enu, HMat, HFull);
