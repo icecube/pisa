@@ -124,7 +124,7 @@ def chi2(actual_values, expected_values):
     if np.all(np.abs(delta) < 5*FTYPE_PREC):
         return np.zeros_like(delta, dtype=FTYPE)
 
-    assert np.all(actual_values > 0), str(actual_values)
+    assert np.all(actual_values >= 0), str(actual_values)
     chi2_val = np.square(delta) / expected_values
     assert np.all(chi2_val >= 0), str(chi2_val[chi2_val < 0])
     return chi2_val

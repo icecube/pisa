@@ -64,7 +64,7 @@ class icc(Stage):
             'fixed_scale_factor'
         )
 
-        output_names = ('evts')
+        output_names = ('total')
 
         super(self.__class__, self).__init__(
             use_transforms=False,

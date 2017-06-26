@@ -154,6 +154,7 @@ def main():
     #do it for every map in the MapSet
     outputs = {}
     errors = {}
+    chi2s = []
     for map_name in nominal_mapset.names:
         print 'working on %s'%map_name
         nominal_hist = nominal_mapset[map_name].hist
@@ -181,6 +182,16 @@ def main():
             if np.any(y_sigma):
                 popt, pcov = curve_fit(fit_fun, sys_parameter_points, y_values,
                                        sigma=y_sigma, p0=np.ones(n_params))
+
+                #calculate chi2 values:
+                for point_idx in range(sys_parameter_points.shape[1]):
+                    point = sys_parameter_points[:,point_idx]
+                    predicted = fit_fun(point, *popt)
+                    observed = y_values[point_idx]
+                    sigma = y_sigma[point_idx]
+                    chi2 = ((predicted - observed)/sigma)**2
+                    chi2s.append(chi2)
+
             else:
                 popt, pcov = curve_fit(fit_fun, sys_parameter_points, y_values,
                                        p0=np.ones(n_params))
@@ -195,6 +206,9 @@ def main():
     outputs['binning_hash'] = binning.hash
     to_file(outputs, '%s/nd_sysfits_%s_raw.json'%(args.out_dir,
                                                  args.tag))
+
+    chi2s = np.array(chi2s)
+    np.save('%s/nd_sysfits_%s_raw_chi2s'%(args.out_dir,args.tag), chi2s)
 
     if args.plot:
         for d in range(n_params):
