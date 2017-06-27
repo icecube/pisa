@@ -34,20 +34,40 @@ def parse_args(description=__doc__, profile_scan=False,
     parser = ArgumentParser(description=description)
 
     if not profile_scan:
-        parser.add_argument(
-            '-d', '--dir', required=True,
-            metavar='DIR', type=str,
-            help='''Directory containing output of hypo_testing.py.'''
-        )
-        group = parser.add_mutually_exclusive_group(required=True)
-        group.add_argument(
-            '--asimov', action='store_true',
-            help='''Analyze the Asimov trials in the specified directories.'''
-        )
-        group.add_argument(
-            '--llr', action='store_true',
-            help='''Analyze the LLR trials in the specified directories.'''
-        )
+        if injparamscan:
+            parser.add_argument(
+                '-d', '--dir', required=True,
+                metavar='DIR', type=str, action='append',
+                help='''Directory containing output of hypo_testing.py.
+                Repeat this argument to plot multiple significance lines on
+                the same plot. Note that if you do then none of the fits or
+                the minimiser info will be plotted'''
+            )
+            parser.add_argument(
+                '-dl', '--dir_label', type=str, action='append',
+                help="""A unique name from which to identify each the above
+                directories can be identified. Repeat this argument for as
+                many times as you have directories. If no labels are
+                specified here they will be constructed using the truth
+                information in the files. So either specify one for
+                every directory or none at all."""
+            )
+        else:
+            parser.add_argument(
+                '-d', '--dir', required=True,
+                metavar='DIR', type=str,
+                help='''Directory containing output of hypo_testing.py.'''
+            )
+            group = parser.add_mutually_exclusive_group(required=True)
+            group.add_argument(
+                '--asimov', action='store_true',
+                help='''Analyze the Asimov trials in the specified 
+                directories.'''
+            )
+            group.add_argument(
+                '--llr', action='store_true',
+                help='''Analyze the LLR trials in the specified directories.'''
+            )
     else:
         parser.add_argument(
             '--infile', metavar='FILE', type=str, required=True,
@@ -159,7 +179,7 @@ def parse_args(description=__doc__, profile_scan=False,
             to be included.'''
         )
         parser.add_argument(
-            '--extra-point', type=str, action='append',
+            '--extra-points', type=str, action='append',
             help='''Extra lines to be added to the LLR plots. This is useful,
             for example, when you wish to add specific LLR fit values to the
             plot for comparison. These should be supplied as a single value
@@ -170,7 +190,53 @@ def parse_args(description=__doc__, profile_scan=False,
             points.'''
         )
         parser.add_argument(
-            '--extra-point-label', type=str, action='append',
+            '--extra-points-labels', type=str, action='append',
+            help='''The label(s) for the extra points above.'''
+        )
+    elif injparamscan:
+        parser.add_argument(
+            '--inj-param-units',type=str,default=None,
+            help="""If you know the units that you injected the parameter
+            with and you expect that the script will not be able to find
+            this by looking at the fit parameters in the config file
+            (i.e. theta13 may be defined in degrees in the config file
+            but you injected it in radians) then use this argument to
+            explicitly set it for use in the plot labels."""
+        )
+        parser.add_argument(
+            '-SIG', '--significances', action='store_true', default=False,
+            help='''Flag to make the Asimov significance plots. This will
+            give the actual results of the study.'''
+        )
+        parser.add_argument(
+            '-MM', '--minim_information', action='store_true', default=False,
+            help='''Flag to make plots of the minimiser information i.e.
+            status, number of iterations, time taken etc.'''
+        )
+        parser.add_argument(
+            '-IF', '--individual_fits', action='store_true', default=False,
+            help='''Flag to make plots of all of the best fit parameters
+            separated by the fitted parameter.'''
+        )
+        parser.add_argument(
+            '-CF', '--combined_fits', action='store_true', default=False,
+            help='''Flag to make plots of all of the best fit parameters joined
+            together.'''
+        )
+        parser.add_argument(
+            '--extra-points', type=str, action='append', metavar='LIST',
+            help='''Extra points to be added to the plots. This is useful,
+            for example, when you wish to add LLR results to the plot.
+            These should be supplied as a list of tuples e.g.
+            "[(x1,y1),(x2,y2)]" or "[(x1,y1,y1err),(x2,y2,y2err)]" or 
+            "[(x1,y1,y1uperr,y1downerr),(x2,y2,y2uperr,y2downerr)]" or
+            as a path to a file with the values provided in columns that
+            can be intepreted by numpy genfromtxt. Repeat this argument in
+            conjunction with the extra points label below to specify
+            multiple (and uniquely identifiable) sets of extra points.'''
+        )
+        parser.add_argument(
+            '--extra-points-labels', type=str, action='append',
             help='''The label(s) for the extra points above.'''
         )
     parser.add_argument(
@@ -336,7 +402,8 @@ class Postprocessor(object):
                  scan_file=None, best_fit_file=None,
                  extra_points=None, extra_points_labels=None,
                  plot_settings_file=None, other_contours=None,
-                 projection_files=None, pseudo_experiments=None):
+                 projection_files=None, pseudo_experiments=None,
+                 inj_param_units=None):
         expected_analysis_types = ['hypo_testing', 'profile_scan', None]
         if analysis_type not in expected_analysis_types:
             raise ValueError(
@@ -372,14 +439,37 @@ class Postprocessor(object):
         # Things to initialise for hypo_testing
         if analysis_type == 'hypo_testing':
             self.test_type = test_type
-            self.logdir = logdir
-            if test_type == 'analysis':
+            if test_type == 'injparamscan':
+                self.logdirs = logdir
+            else:
+                self.logdir = logdir
+            if test_type == 'analysis' or test_type == 'injparamscan':
                 self.expected_pickles = [
                     'data_sets.pckl',
                     'all_params.pckl',
                     'minimiser_info.pckl'
                 ]
-            self.extract_trials()
+                if test_type == 'injparamscan':
+                    self.expected_pickles.append('labels.pckl')
+            if test_type == 'injparamscan':
+                data_sets_list = []
+                WH_to_TH_list = []
+                TH_to_WH_list = []
+                self.inj_param_vals = None
+                self.inj_param_name = None
+                for logdir in self.logdirs:
+                    self.logdir = logdir
+                    self.extract_trials()
+                    data_sets_list.append(self.data_sets)
+                    WH_to_TH_list.append(self.WH_to_TH)
+                    TH_to_WH_list.append(self.TH_to_WH)
+                    self.get_inj_param_vals()
+                    self.set_inj_param_units(inj_param_units=inj_param_units)
+                self.data_sets = data_sets_list
+                self.WH_to_TH = WH_to_TH_list
+                self.TH_to_WH = TH_to_WH_list
+            else:
+                self.extract_trials()
             if test_type == 'analysis':
                 self.extract_fid_data()
                 self.extract_data()
@@ -560,48 +650,246 @@ class Postprocessor(object):
 
     #### Hypo testing Specific Postprocessing functions ####
 
+    def organise_trials(self):
+        """This will actually go in to the directory where the trials 
+        are and pull out the fit results."""
+        config_summary_fpath = os.path.join(
+            self.logdir,
+            'config_summary.json'
+        )
+        cfg = from_file(config_summary_fpath)
+        self.data_is_data = cfg['data_is_data']
+        # Get naming scheme
+        self.labels = Labels(
+            h0_name=cfg['h0_name'],
+            h1_name=cfg['h1_name'],
+            data_name=cfg['data_name'],
+            data_is_data=self.data_is_data,
+            fluctuate_data=self.fluctuate_data,
+            fluctuate_fid=self.fluctuate_fid
+        )
+        # Look for the pickle files in the directory to indicate
+        # that this data may have already been processed.
+        pickle_there = self.check_pickle_files(logdir_content)
+        if pickle_there:
+            self.load_from_pickle()
+        # Else we must extract it
+        else:
+            if self.data_is_data and self.fluctuate_data:
+                raise ValueError('Analysis was performed on data, so '
+                                 '`fluctuate_data` is not supported.')
+            # Get starting params
+            self.get_starting_params(cfg=cfg)
+            # Find all relevant data dirs, and from each extract the
+            # fiducial fit(s) information contained
+            self.get_data()
+            self.pickle_data()
+
+    def extract_scans(self):
+        """This will actually go in to all of the scan directories and
+        pull out the fit results."""
+        config_summary_fpath = os.path.join(
+            self.scandir,
+            'config_summary.json'
+        )
+        cfg = from_file(config_summary_fpath)
+        
+        self.data_is_data = cfg['data_is_data']
+        if self.data_is_data:
+            raise ValueError('Analysis should NOT have been performed '
+                             'on data since this script should only '
+                             'process output from MC studies.')
+
+        # Get naming scheme
+        labels = Labels(
+            h0_name=cfg['h0_name'],
+            h1_name=cfg['h1_name'],
+            data_name=cfg['data_name'],
+            data_is_data=self.data_is_data,
+            fluctuate_data=self.fluctuate_data,
+            fluctuate_fid=self.fluctuate_fid
+        )
+        injparam = '%s_%s'%(labels.dict['data_name'].split('_')[-2],
+                            labels.dict['data_name'].split('_')[-1])
+        self.labels[injparam] = labels
+        # Get starting params
+        self.get_starting_params(cfg=cfg, injparam=injparam)
+        self.get_data(injparam=injparam)
+
+    def organise_scans(self):
+        """Will organise the Asimov scans in to the metrics and the params
+        with the appropriate wrong hypothesis to true hypothesis and true
+        hypothesis to wrong hypothesis fits. Also extracts the minimiser
+        info and saves it to the same object."""
+        self.WH_to_TH = {}
+        self.TH_to_WH = {}
+
+        WH_to_TH_metrics = []
+        TH_to_WH_metrics = []
+        WH_to_TH_params = {}
+        TH_to_WH_params = {}
+        WH_to_TH_minim_info = {}
+        TH_to_WH_minim_info = {}
+        WH_to_TH_minim_info['time'] = []
+        WH_to_TH_minim_info['iterations'] = []
+        WH_to_TH_minim_info['funcevals'] = []
+        WH_to_TH_minim_info['status'] = []
+        TH_to_WH_minim_info['time'] = []
+        TH_to_WH_minim_info['iterations'] = []
+        TH_to_WH_minim_info['funcevals'] = []
+        TH_to_WH_minim_info['status'] = []
+
+        for injparam in sorted(self.data_sets.keys()):
+            injlabels = self.labels[injparam].dict
+            for injkey in self.data_sets[injparam].keys():
+                h0_metric_val = self.data_sets[injparam][injkey][
+                    'h0_fit_to_toy_%s_asimov'
+                    %(injlabels['data_name'])]['metric_val']
+                h1_metric_val = self.data_sets[injparam][injkey][
+                    'h1_fit_to_toy_%s_asimov'
+                    %(injlabels['data_name'])]['metric_val']
+                if h1_metric_val > h0_metric_val:
+                    bestfit = 'h0'
+                    altfit = 'h1'
+                else:
+                    bestfit = 'h1'
+                    altfit = 'h0'
+
+                WH_to_TH_fit = self.data_sets[injparam][injkey][
+                    '%s_fit_to_%s_fid'%(altfit, bestfit)]['fid_asimov']
+                TH_to_WH_fit = self.data_sets[injparam][injkey][
+                    '%s_fit_to_%s_fid'%(bestfit, altfit)]['fid_asimov']
+
+                WH_to_TH_metrics.append(WH_to_TH_fit['metric_val'])
+                TH_to_WH_metrics.append(TH_to_WH_fit['metric_val'])
+
+                for systkey in WH_to_TH_fit['params'].keys():
+                    if systkey not in WH_to_TH_params.keys():
+                        WH_to_TH_params[systkey] = []
+                    WH_to_TH_params[systkey].append(
+                        WH_to_TH_fit['params'][systkey]
+                    )
+                for systkey in TH_to_WH_fit['params'].keys():
+                    if systkey not in TH_to_WH_params.keys():
+                        TH_to_WH_params[systkey] = []
+                    TH_to_WH_params[systkey].append(
+                        TH_to_WH_fit['params'][systkey]
+                    )
+
+                WH_to_TH_minim_info['time'].append(
+                    self.minimiser_info[injparam][injkey][
+                        '%s_fit_to_%s_fid'%(altfit, bestfit)
+                    ]['fid_asimov']['minimizer_time'])
+                WH_to_TH_minim_info['iterations'].append(
+                    self.minimiser_info[injparam][injkey][
+                        '%s_fit_to_%s_fid'%(altfit, bestfit)
+                    ]['fid_asimov']['minimizer_metadata']['nit'])
+                WH_to_TH_minim_info['funcevals'].append(
+                    self.minimiser_info[injparam][injkey][
+                        '%s_fit_to_%s_fid'%(altfit, bestfit)
+                    ]['fid_asimov']['minimizer_metadata']['nfev'])
+                WH_to_TH_minim_info['status'].append(
+                    self.minimiser_info[injparam][injkey][
+                        '%s_fit_to_%s_fid'%(altfit, bestfit)
+                    ]['fid_asimov']['minimizer_metadata']['status'])
+                
+                TH_to_WH_minim_info['time'].append(
+                    self.minimiser_info[injparam][injkey][
+                        '%s_fit_to_%s_fid'%(bestfit, altfit)
+                    ]['fid_asimov']['minimizer_time'])
+                TH_to_WH_minim_info['iterations'].append(
+                    self.minimiser_info[injparam][injkey][
+                        '%s_fit_to_%s_fid'%(bestfit, altfit)
+                    ]['fid_asimov']['minimizer_metadata']['nit'])
+                TH_to_WH_minim_info['funcevals'].append(
+                    self.minimiser_info[injparam][injkey][
+                        '%s_fit_to_%s_fid'%(bestfit, altfit)
+                    ]['fid_asimov']['minimizer_metadata']['nfev'])
+                TH_to_WH_minim_info['status'].append(
+                    self.minimiser_info[injparam][injkey][
+                        '%s_fit_to_%s_fid'%(bestfit, altfit)
+                    ]['fid_asimov']['minimizer_metadata']['status'])
+
+        WH_to_TH_params['bestfit'] = bestfit
+        WH_to_TH_params['altfit'] = altfit
+        TH_to_WH_params['bestfit'] = bestfit
+        TH_to_WH_params['altfit'] = altfit
+
+        self.WH_to_TH['metrics'] = WH_to_TH_metrics
+        self.TH_to_WH['metrics'] = TH_to_WH_metrics
+        self.WH_to_TH['params'] = WH_to_TH_params
+        self.TH_to_WH['params'] = TH_to_WH_params
+        self.WH_to_TH['minim_info'] = WH_to_TH_minim_info
+        self.TH_to_WH['minim_info'] = TH_to_WH_minim_info
+
     def extract_trials(self):
         """Extract and aggregate analysis results."""
         self.logdir = os.path.expanduser(os.path.expandvars(self.logdir))
         logdir_content = os.listdir(self.logdir)
-        if 'config_summary.json' in logdir_content:
-            # Look for the pickle files in the directory to indicate that this
-            # data may have already been processed.
-            config_summary_fpath = os.path.join(
-                self.logdir,
-                'config_summary.json'
-            )
-            cfg = from_file(config_summary_fpath)
-            self.data_is_data = cfg['data_is_data']
-            # Get naming scheme
-            self.labels = Labels(
-                h0_name=cfg['h0_name'], h1_name=cfg['h1_name'],
-                data_name=cfg['data_name'],
-                data_is_data=self.data_is_data,
-                fluctuate_data=self.fluctuate_data,
-                fluctuate_fid=self.fluctuate_fid
-            )
+        # For the standard hypo_testing analysis, this logdir_content
+        # will contain what we need it to and so we can proceed to
+        # extract the trials.
+        if self.test_type == 'analysis':
+            if 'config_summary.json' in logdir_content:
+                self.organise_trials()
+            else:
+                raise ValueError(
+                    'config_summary.json cannot be found in the specified '
+                    'logdir. It should have been created as part of the '
+                    'output of hypo_testing.py and so this postprocessing '
+                    'cannot be performed.'
+                )
+        elif self.test_type == 'injparamscan':
             pickle_there = self.check_pickle_files(logdir_content)
             if pickle_there:
                 self.load_from_pickle()
             else:
-                if self.data_is_data and self.fluctuate_data:
-                    raise ValueError('Analysis was performed on data, so '
-                                     '`fluctuate_data` is not supported.')
-                # Get starting params
-                self.get_starting_params(cfg=cfg)
-                # Find all relevant data dirs, and from each extract the
-                # fiducial fit(s) information contained
-                self.get_data()
+                toy_names = []
+                scan_variables = []
+                for folder in logdir_content:
+                    if '.pckl' not in folder and 'Plots' not in folder:
+                        toy_names.append(
+                            folder.split('toy')[1].split('_')[1]
+                        )
+                        scan_variables.append(
+                            folder.split('toy')[1].split('_')[2]
+                        )
+                toy_names = np.array(toy_names)
+                scan_variables = np.array(scan_variables)
+                # Require all to be the same injected truth model
+                if not np.alltrue(toy_names == toy_names[0]):
+                    raise ValueError(
+                        'Not all output is for the same injected truth '
+                        'hypothesis. Got %s'%set(toy_names)
+                    )
+                # Require all to be scanning the same variable
+                if not np.alltrue(scan_variables == scan_variables[0]):
+                    raise ValueError(
+                        'Not all output is for the same scanned parameter. '
+                        'Got %s'%set(scan_variables)
+                    )
+                self.labels = {}
+                self.all_params = {}
+                self.data_sets = {}
+                self.minimiser_info = {}
+                for scandir in logdir_content:
+                    if '.pckl' not in scandir and 'Plots' not in scandir:
+                        self.scandir = os.path.join(self.logdir, scandir)
+                        scandir_content = os.listdir(self.scandir)
+                        if 'config_summary.json' in scandir_content:
+                            self.extract_scans()
+                        else:
+                            raise ValueError(
+                                'config_summary.json cannot be found in the '
+                                'specified scandir, %s. It should have been '
+                                'created as part of the output of '
+                                'hypo_testing.py and so this postprocessing '
+                                'cannot be performed.'%self.scandir
+                            )
+                # Pickle at the end so all of the scans are in the output
                 self.pickle_data()
-        else:
-            raise ValueError(
-                'config_summary.json cannot be found in the specified logdir. '
-                'It should have been created as part of the output of '
-                'hypo_testing.py and so this postprocessing cannot be '
-                'performed.'
-            )
-
+            self.organise_scans()
+                
     def extract_fit(self, fpath, keys=None):
         """Extract fit info from a file.
 
@@ -823,6 +1111,69 @@ class Postprocessor(object):
             'h1_fit_to_%s'%(self.labels.dict['data'])]['params']
         return h0_params, h1_params
 
+    def get_inj_param_vals(self):
+        """Adds the set of injected parameters to self. If this is not
+        None then it ensures that this matches what is already there
+        i.e. when specifying multiple scan directories."""
+        inj_params = self.data_sets.keys()
+        inj_param_vals = []
+        for inj_param in inj_params:
+            inj_param_vals.append(float(inj_param.split('_')[-1]))
+        if self.inj_param_vals is None:
+            self.inj_param_name = inj_params[0].split(
+                '_%.4f'%inj_param_vals[0]
+            )[0]
+            self.inj_param_vals = sorted(inj_param_vals)
+        else:
+            inj_param_name = inj_params[0].split(
+                '_%.4f'%inj_param_vals[0]
+            )[0]
+            if self.inj_param_name != inj_param_name:
+                raise ValueError(
+                    "You have requested to plot multiple scan directories "
+                    "that do not seem to over the same injected scan "
+                    "parameter. Have %s in self but %s in the current "
+                    "directory."%(self.inj_param_name, inj_param_name)
+                )
+            if self.inj_param_vals != inj_param_vals:
+                raise ValueError(
+                    "You have requested to plot multiple scan directories "
+                    "that do not seem to over the same injected scan "
+                    "range. Have %s in self but %s in the current "
+                    "directory."%(self.inj_param_vals, inj_param_vals)
+                )
+
+    def set_inj_param_units(self, inj_param_units):
+        """Sets the inj param units in to self. Typically it will do this by
+        finding one of the fit parameters and extracting it. This requires
+        that it is in the fitted parameters and that you scanned in the same
+        units as was fit. If this is not the case you must set it in the
+        arguments to the script."""
+        if inj_param_units is None:
+            # If the inj param units are not specified they should
+            # be found from the units attached to the fitted parameters.
+            # There are two known exceptions.
+            if self.inj_param_name == 'sin2theta23':
+                self.inj_param_units = 'dimensionless'
+            elif self.inj_param_name == 'deltam3l':
+                self.inj_param_units = 'electron_volt ** 2'
+            else:
+                if self.inj_param_name not in self.WH_to_TH['params'].keys():
+                    raise ValueError(
+                        "The injected parameter %s could not be found in "
+                        "the fitted parameters: %s. Please use the script"
+                        " argument to set the injected parameter units "
+                        "manually"%(self.inj_param_name,
+                                    self.WH_to_TH['params'].keys())
+                    )
+                else:
+                    val, inj_param_units = self.parse_pint_string(
+                        pint_string=self.WH_to_TH['params'][
+                            self.inj_param_name][0]
+                    )
+                    
+        self.inj_param_units = inj_param_units
+
     def get_injected_params(self):
         """Return the injected params, if they exist"""
         if 'data_params' in self.all_params.keys():
@@ -836,6 +1187,91 @@ class Postprocessor(object):
         else:
             data_params = None
         return data_params
+
+    def calculate_deltachi2_significances(self, WH_to_TH_metrics,
+                                          TH_to_WH_metrics):
+        """Calculates the Asimov significance from the sets of metrics."""
+        if isinstance(WH_to_TH_metrics, list):
+            WH_to_TH_metrics = np.array(WH_to_TH_metrics)
+            TH_to_WH_metrics = np.array(TH_to_WH_metrics)
+        num = WH_to_TH_metrics + TH_to_WH_metrics
+        denom = 2 * np.sqrt(WH_to_TH_metrics)
+        significances = num/denom
+        return significances
+        
+    def make_asimov_significance_plots(self):
+        """Makes the Asimov significance plots."""
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+        outdir = os.path.join(self.outdir, 'Significances')
+        mkdir(outdir)
+        maintitle = self.make_main_title(
+            end='Asimov Analysis Significances',
+            end_center=True
+        )
+
+        # Want to ensure the resulting y range can show all of the plots
+        # Therefore find the max and min sig of the whole set of data_sets
+        maxsig = None
+        minsig = None
+        # xrange is easier
+        hrange = self.inj_param_vals[-1]-self.inj_param_vals[0]
+        xlims = [self.inj_param_vals[0]-0.1*hrange,
+                 self.inj_param_vals[-1]+0.1*hrange]
+
+        for i in xrange(len(self.data_sets)):
+
+            significances = self.calculate_deltachi2_significances(
+                WH_to_TH_metrics=self.WH_to_TH[i]['metrics'],
+                TH_to_WH_metrics=self.TH_to_WH[i]['metrics']
+            )
+
+            truth = self.labels[
+                self.labels.keys()[i]].dict['data_name'].split('_')[0]
+            plotlabel = 'True %s'%self.tex_axis_label(label=truth)
+            
+            self.make_1D_graph(
+                xvals=self.inj_param_vals,
+                yvals=significances,
+                xlabel=self.inj_param_name,
+                xunits=self.inj_param_units,
+                ylabel=None,
+                yunits=None,
+                marker=self.marker_style(label=truth),
+                color=self.plot_colour(label=truth),
+                plotlabel=plotlabel,
+                xlims=xlims
+            )
+
+            if maxsig is None:
+                maxsig = max(significances)
+            else:
+                maxsig = max(maxsig, max(significances))
+            if minsig is None:
+                minsig = min(significances)
+            else:
+                minsig = min(minsig, min(significances))
+
+        # Give a more descriptive y-axis label if only one thing being plotted
+        if len(self.data_sets) == 1:
+            alt = self.labels[
+                self.labels.keys()[0]].dict['%s_name'%(
+                    self.WH_to_TH[0]['params']['altfit'])].split('_')[0]
+            plt.ylabel(r'%s from %s Significance $\left(\sigma\right)$'%(
+                self.tex_axis_label(label=truth),
+                self.tex_axis_label(label=alt)
+            ))
+        else:
+            plt.ylabel(r'Significance $\left(\sigma\right)$', fontsize=24)
+
+        vrange = maxsig - minsig
+        plt.ylim(min(significances)-0.1*vrange, max(significances)+0.2*vrange)
+        plt.title(maintitle, fontsize=16)
+        plt.legend(loc='best')
+        plt.tight_layout()
+        save_end = "%s_asimov_significances"%(self.inj_param_name)
+        self.save_plot(outdir=outdir, end=save_end, truth=truth)
+        plt.close()
 
     def make_scatter_plots(self, combined=False,
                            singlesyst=False, matrix=False):
@@ -1451,69 +1887,141 @@ class Postprocessor(object):
 
     def make_fit_information_plots(self):
         """Make plots of the number of iterations and time taken with the
-        minimiser. This is a good cross-check that the minimiser did not end
-        abruptly since you would see significant pile-up if it did."""
+        minimiser. This is a good cross-check of pseudo-experiments that
+        the minimiser did not end abruptly since you would see significant
+        pile-up if it did."""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
 
         outdir = os.path.join(self.outdir, 'MinimiserPlots')
         mkdir(outdir)
         maintitle = self.make_main_title(end='Minimiser Information')
-        for injkey in self.minimiser_info.keys():
-            for fhkey in self.minimiser_info[injkey].keys():
-                if self.minimiser_info[injkey][fhkey] is not None:
-                    minimiser_times = []
-                    minimiser_iterations = []
-                    minimiser_funcevals = []
-                    minimiser_status = []
-                    for trial in self.minimiser_info[injkey][fhkey].keys():
-                        bits = self.minimiser_info[injkey][fhkey][
-                            trial]['minimizer_time'].split(' ')
-                        minimiser_times.append(
-                            float(bits[0])
-                        )
-                        minimiser_iterations.append(
-                            int(self.minimiser_info[injkey][fhkey][trial][
-                                'minimizer_metadata']['nit'])
-                        )
-                        minimiser_funcevals.append(
-                            int(self.minimiser_info[injkey][fhkey][trial][
-                                'minimizer_metadata']['nfev'])
-                        )
-                        minimiser_status.append(
-                            int(self.minimiser_info[injkey][fhkey][trial][
-                                'minimizer_metadata']['status'])
-                        )
-                    fittitle = self.make_fit_title(
-                        fhkey=fhkey,
-                        trials=self.num_trials
-                    )
-                    data_to_plot = [
-                        minimiser_times,
-                        minimiser_iterations,
-                        minimiser_funcevals,
-                        minimiser_status
-                    ]
-                    data_to_plot_ends = [
-                        'minimiser_times',
-                        'minimiser_iterations',
-                        'minimiser_funcevals',
-                        'minimiser_status'
-                    ]
-                    for plot_data, plot_end in zip(data_to_plot,
-                                                   data_to_plot_ends):
-                        self.make_1D_hist_plot(
-                            data=plot_data,
-                            xlabel=self.tex_axis_label(plot_end),
-                            title=maintitle+r'\\'+fittitle,
-                            ylabel='Number of Trials'
-                        )
-                        self.save_plot(
+        if self.test_type == 'analysis':
+            for injkey in self.minimiser_info.keys():
+                for fhkey in self.minimiser_info[injkey].keys():
+                    if self.minimiser_info[injkey][fhkey] is not None:
+                        minimiser_times = []
+                        minimiser_iterations = []
+                        minimiser_funcevals = []
+                        minimiser_status = []
+                        for trial in self.minimiser_info[injkey][fhkey].keys():
+                            bits = self.minimiser_info[injkey][fhkey][
+                                trial]['minimizer_time'].split(' ')
+                            minimiser_times.append(
+                                float(bits[0])
+                            )
+                            minimiser_iterations.append(
+                                int(self.minimiser_info[injkey][fhkey][trial][
+                                    'minimizer_metadata']['nit'])
+                            )
+                            minimiser_funcevals.append(
+                                int(self.minimiser_info[injkey][fhkey][trial][
+                                    'minimizer_metadata']['nfev'])
+                            )
+                            minimiser_status.append(
+                                int(self.minimiser_info[injkey][fhkey][trial][
+                                    'minimizer_metadata']['status'])
+                            )
+                        fittitle = self.make_fit_title(
                             fhkey=fhkey,
-                            outdir=outdir,
-                            end=plot_end
+                            trials=self.num_trials
                         )
-                        plt.close()
+                        data_to_plot = [
+                            minimiser_times,
+                            minimiser_iterations,
+                            minimiser_funcevals,
+                            minimiser_status
+                        ]
+                        data_to_plot_ends = [
+                            'minimiser_times',
+                            'minimiser_iterations',
+                            'minimiser_funcevals',
+                            'minimiser_status'
+                        ]
+                        for plot_data, plot_end in zip(data_to_plot,
+                                                       data_to_plot_ends):
+                            self.make_1D_hist_plot(
+                                data=plot_data,
+                                xlabel=self.tex_axis_label(plot_end),
+                                title=maintitle+r'\\'+fittitle,
+                                ylabel='Number of Trials'
+                            )
+                            self.save_plot(
+                                fhkey=fhkey,
+                                outdir=outdir,
+                                end=plot_end
+                            )
+                            plt.close()
+        elif self.test_type == 'injparamscan':
+            trueoutdir = os.path.join(outdir, 'TrueToWrongFits')
+            mkdir(trueoutdir)
+            wrongoutdir = os.path.join(outdir, 'WrongToTrueFits')
+            mkdir(wrongoutdir)
+            for odir, fits in zip([trueoutdir, wrongoutdir],
+                                  [self.TH_to_WH, self.TH_to_WH]):
+                # Times have a unit so must be handled differently
+                minimiser_times = []
+                for time in fits[0]['minim_info']['time']:
+                    val, units = self.parse_pint_string(
+                        pint_string=time
+                    )
+                    minimiser_times.append(val)
+                # Otherwise they're easy
+                minimiser_iterations = fits[0]['minim_info']['iterations']
+                minimiser_funcevals = fits[0]['minim_info']['funcevals']
+                minimiser_status = fits[0]['minim_info']['status']
+
+                data_to_plot = [
+                    minimiser_times,
+                    minimiser_iterations,
+                    minimiser_funcevals,
+                    minimiser_status
+                ]
+                data_to_plot_ends = [
+                    'minimiser_times',
+                    'minimiser_iterations',
+                    'minimiser_funcevals',
+                    'minimiser_status'
+                ]
+
+                truth = self.labels[
+                    self.labels.keys()[0]].dict['data_name'].split('_')[0]
+                plotlabel = 'True %s'%self.tex_axis_label(label=truth)
+                hrange = self.inj_param_vals[-1]-self.inj_param_vals[0]
+                xlims = [self.inj_param_vals[0]-0.1*hrange,
+                         self.inj_param_vals[-1]+0.1*hrange]
+
+                for plot_data, plot_end in zip(data_to_plot,
+                                               data_to_plot_ends):
+
+                
+                    vrange = float(max(plot_data)) - float(min(plot_data))
+                    ylims = [float(min(plot_data))-0.1*vrange,
+                             float(max(plot_data))+0.2*vrange]
+
+                    self.make_1D_graph(
+                        xvals=self.inj_param_vals,
+                        yvals=plot_data,
+                        xlabel=self.inj_param_name,
+                        xunits=self.inj_param_units,
+                        ylabel=plot_end,
+                        yunits=None,
+                        marker=self.marker_style(label=truth),
+                        color=self.plot_colour(label=truth),
+                        plotlabel=plotlabel,
+                        xlims=xlims,
+                        ylims=ylims
+                    )
+
+                    plt.title(maintitle, fontsize=16)
+                    plt.legend(loc='best')
+                    plt.tight_layout()
+                    if 'TrueToWrongFits' in odir:
+                        save_end = "true_to_wrong_fits_" + plot_end
+                    else:
+                        save_end = "wrong_to_true_fits_" + plot_end
+                    self.save_plot(outdir=odir, end=save_end, truth=truth)
+                    plt.close()
 
     def add_extra_points(self, ymax):
         """Add extra points specified by self.extra_points and label them
@@ -2583,6 +3091,101 @@ class Postprocessor(object):
             line += " &"
         return line
 
+    def check_analysis_pickle_files(self):
+        """Checks the pickles in the case of hypo_testing analysis"""
+        # Make sure that there have been no more trials run since this
+        # last processing. To do this, get the number of output files
+        for basename in nsort(os.listdir(self.logdir)):
+            m = self.labels.subdir_re.match(basename)
+            if m is None or 'pckl' in basename:
+                continue
+            # Here is the output directory which contains the files
+            subdir = os.path.join(self.logdir, basename)
+            # Account for failed jobs. Get the set of file numbers that
+            # exist for all h0 and h1 combinations
+            self.get_set_file_nums(
+                filedir=subdir
+            )
+            # Take one of the pickle files to see how many data
+            # entries it has.
+            data_sets = from_file(os.path.join(self.logdir,
+                                               'data_sets.pckl'))
+            # Take the first data key and then the h0 fit to h0 fid
+            # which should always exist. The length of this is then
+            # the number of trials in the pickle files.
+            if 'h0_fit_to_h0_fid' in data_sets[data_sets.keys()[0]].keys():
+                pckl_trials = len(data_sets[data_sets.keys()[0]][
+                    'h0_fit_to_h0_fid'].keys())
+                # The number of pickle trials should match the number of
+                # trials derived from the output directory.
+                if self.num_trials == pckl_trials:
+                    logging.info(
+                        'Found files I assume to be from a previous run of'
+                        ' this processing script containing %i trials. If '
+                        'this seems incorrect please delete the files: '
+                        'data_sets.pckl, all_params.pckl and labels.pckl '
+                        'from the logdir you have provided.'%pckl_trials
+                    )
+                    pickle_there = True
+                else:
+                    logging.info(
+                        'Found files I assume to be from a previous run of'
+                        ' this processing script containing %i trials. '
+                        'However, based on the number of json files in the '
+                        'output directory there should be %i trials in '
+                        'these pickle files, so they will be regenerated.'%(
+                            pckl_trials, self.num_trials)
+                    )
+                    pickle_there = False
+            else:
+                logging.info(
+                    'Found files I assume to be from a previous run of'
+                    ' this processing script which do not seem to '
+                    'contain any trials, so they will be regenerated.'
+                )
+                pickle_there = False
+                
+        return pickle_there
+
+    def check_injparamscan_pickle_files(self):
+        """Checks the pickles in the case of injparamscan analysis"""
+        # Make sure that there have been no more new scan points run since this
+        # last processing. To do this, get the number of output directories
+        # Compare this to the number in the pickle files.
+        self.num_scan_points = 0
+        for basename in nsort(os.listdir(self.logdir)):
+            if 'pckl' in basename:
+                continue
+            basename_content = nsort(
+                os.listdir(os.path.join(self.logdir, basename))
+            )
+            # This means it is a directory containing something a scan point
+            if 'config_summary.json' in basename_content:
+                self.num_scan_points += 1
+        data_sets = from_file(os.path.join(self.logdir,
+                                           'data_sets.pckl'))
+        if len(data_sets.keys()) == self.num_scan_points:
+            logging.info(
+                'Found files I assume to be from a previous run of'
+                ' this processing script containing %i scan points. If '
+                'this seems incorrect please delete the files: '
+                'data_sets.pckl, all_params.pckl and labels.pckl '
+                'from the logdir you have provided.'%self.num_scan_points
+            )
+            pickle_there = True
+        else:
+            logging.info(
+                'Found files I assume to be from a previous run of'
+                ' this processing script containing %i scan points. '
+                'However, based on the number of json files in the '
+                'output directory there should be %i scan points in '
+                'these pickle files, so they will be regenerated.'%(
+                    len(data_sets.keys()), self.num_scan_points)
+            )
+            pickle_there = False
+            
+        return pickle_there
+
     def check_pickle_files(self, logdir_content):
         """Checks for the expected pickle files in the output directory based
         on the analysis and test type. If they are there, it is made sure that
@@ -2592,58 +3195,11 @@ class Postprocessor(object):
         generated for future use."""
         if np.all(np.array(
                 [s in logdir_content for s in self.expected_pickles])):
-            # Processed output files are there so make sure that there
-            # have been no more trials run since this last processing.
-            ## To do this, get the number of output files
-            for basename in nsort(os.listdir(self.logdir)):
-                m = self.labels.subdir_re.match(basename)
-                if m is None or 'pckl' in basename:
-                    continue
-                # Here is the output directory which contains the files
-                subdir = os.path.join(self.logdir, basename)
-                # Account for failed jobs. Get the set of file numbers that
-                # exist for all h0 and h1 combinations
-                self.get_set_file_nums(
-                    filedir=subdir
-                )
-                # Take one of the pickle files to see how many data
-                # entries it has.
-                data_sets = from_file(os.path.join(self.logdir,
-                                                   'data_sets.pckl'))
-                # Take the first data key and then the h0 fit to h0 fid
-                # which should always exist. The length of this is then
-                # the number of trials in the pickle files.
-                if 'h0_fit_to_h0_fid' in data_sets[data_sets.keys()[0]].keys():
-                    pckl_trials = len(data_sets[data_sets.keys()[0]][
-                        'h0_fit_to_h0_fid'].keys())
-                    # The number of pickle trials should match the number of
-                    # trials derived from the output directory.
-                    if self.num_trials == pckl_trials:
-                        logging.info(
-                            'Found files I assume to be from a previous run of'
-                            ' this processing script containing %i trials. If '
-                            'this seems incorrect please delete the files: '
-                            'data_sets.pckl, all_params.pckl and labels.pckl '
-                            'from the logdir you have provided.'%pckl_trials
-                        )
-                        pickle_there = True
-                    else:
-                        logging.info(
-                            'Found files I assume to be from a previous run of'
-                            ' this processing script containing %i trials. '
-                            'However, based on the number of json files in the '
-                            'output directory there should be %i trials in '
-                            'these pickle files, so they will be regenerated.'%(
-                                pckl_trials, self.num_trials)
-                        )
-                        pickle_there = False
-                else:
-                    logging.info(
-                        'Found files I assume to be from a previous run of'
-                        ' this processing script which do not seem to '
-                        'contain any trials, so they will be regenerated.'
-                    )
-                    pickle_there = False
+            # Processed output files are there
+            if self.test_type == 'analysis':
+                pickle_there = self.check_analysis_pickle_files()
+            elif self.test_type == 'injparamscan':
+                pickle_there = self.check_injparamscan_pickle_files()
         else:
             logging.info(
                 'Did not find all of the files - %s - expected to indicate '
@@ -2653,24 +3209,28 @@ class Postprocessor(object):
 
         return pickle_there
 
-    def get_set_file_nums(self, filedir):
+    def get_set_file_nums(self, filedir, injparam=None):
         """This function returns the set of file numbers that exist for all h0
         and h1 combination. This is needed to account for any failed or
         non-transferred jobs. i.e. for trial X you may not have all of the
         necessary fit files so it must be ignored."""
         file_nums = OrderedDict()
+        if injparam is not None:
+            wanted_labels = self.labels[injparam]
+        else:
+            wanted_labels = self.labels
         for fname in nsort(os.listdir(filedir)):
             for x in ['0', '1']:
                 for y in ['0', '1']:
                     k = 'h{x}_fit_to_h{y}_fid'.format(x=x, y=y)
-                    r = self.labels.dict[k + '_re']
+                    r = wanted_labels.dict[k + '_re']
                     m = r.match(fname)
                     if m is None:
                         continue
                     if self.fluctuate_fid:
                         fid_label = int(m.groupdict()['fid_ind'])
                     else:
-                        fid_label = self.labels.fid
+                        fid_label = wanted_labels.fid
                     if k not in file_nums:
                         file_nums[k] = []
                     file_nums[k].append(fid_label)
@@ -2685,7 +3245,7 @@ class Postprocessor(object):
         self.set_file_nums = set_file_nums
         self.num_trials = len(set_file_nums)
 
-    def get_starting_params(self, cfg):
+    def get_starting_params(self, cfg, injparam=None):
         """Extracts the h0, h1 and data (if possible) params from the config
         summary file."""
         all_params = {}
@@ -2728,14 +3288,26 @@ class Postprocessor(object):
                     = bits.group(3)
                 all_params['h1_params'][bits.group(1)]['range'] \
                     = bits.group(4)
-        self.all_params = all_params
+        if injparam is not None:
+            self.all_params[injparam] = all_params
+        else:
+            self.all_params = all_params
 
-    def get_data(self):
+    def get_data(self, injparam=None):
         """Get all of the data from the logdir"""
         data_sets = OrderedDict()
         minimiser_info = OrderedDict()
-        for basename in nsort(os.listdir(self.logdir)):
-            m = self.labels.subdir_re.match(basename)
+        if injparam is not None:
+            content = nsort(os.listdir(self.scandir))
+        else:
+            content = nsort(os.listdir(self.logdir))
+        for basename in content:
+            if injparam is not None:
+                m = self.labels[injparam].subdir_re.match(basename)
+                wanted_labels = self.labels[injparam]
+            else:
+                m = self.labels.subdir_re.match(basename)
+                wanted_labels = self.labels
             if m is None or 'pckl' in basename:
                 continue
 
@@ -2743,11 +3315,11 @@ class Postprocessor(object):
                 data_ind = int(m.groupdict()['data_ind'])
                 dset_label = data_ind
             else:
-                dset_label = self.labels.data_prefix
-                if not self.labels.data_name in [None, '']:
-                    dset_label += '_' + self.labels.data_name
-                if not self.labels.data_suffix in [None, '']:
-                    dset_label += '_' + self.labels.data_suffix
+                dset_label = wanted_labels.data_prefix
+                if not wanted_labels.data_name in [None, '']:
+                    dset_label += '_' + wanted_labels.data_name
+                if not wanted_labels.data_suffix in [None, '']:
+                    dset_label += '_' + wanted_labels.data_suffix
 
             lvl2_fits = OrderedDict()
             lvl2_fits['h0_fit_to_data'] = None
@@ -2756,29 +3328,34 @@ class Postprocessor(object):
             minim_info['h0_fit_to_data'] = None
             minim_info['h1_fit_to_data'] = None
 
+            if injparam is not None:
+                subdir = os.path.join(self.scandir, basename)
+            else:
+                subdir = os.path.join(self.logdir, basename)
+
             # Account for failed jobs. Get the set of file numbers that
             # exist for all h0 an h1 combinations
-            subdir = os.path.join(self.logdir, basename)
             self.get_set_file_nums(
-                filedir=subdir
+                filedir=subdir,
+                injparam=injparam
             )
-
             fnum = None
+            
             for fnum, fname in enumerate(nsort(os.listdir(subdir))):
                 fpath = os.path.join(subdir, fname)
                 for x in ['0', '1']:
                     k = 'h{x}_fit_to_data'.format(x=x)
-                    if fname == self.labels.dict[k]:
+                    if fname == wanted_labels.dict[k]:
                         lvl2_fits[k] = self.extract_fit(fpath, 'metric_val')
                         break
                     # Also extract fiducial fits if needed
                     if 'toy' in dset_label:
                         ftest = ('hypo_%s_fit_to_%s'
-                                 %(self.labels.dict['h{x}_name'.format(x=x)],
+                                 %(wanted_labels.dict['h{x}_name'.format(x=x)],
                                    dset_label))
                     elif dset_label == 'data':
                         ftest = ('hypo_%s_fit_to_data'
-                                 %(self.labels.dict['h{x}_name'.format(x=x)]))
+                                 %(wanted_labels.dict['h{x}_name'.format(x=x)]))
                     if ftest in fname:
                         k = 'h{x}_fit_to_{y}'.format(x=x, y=dset_label)
                         lvl2_fits[k] = self.extract_fit(
@@ -2789,14 +3366,14 @@ class Postprocessor(object):
                     k = 'h{x}_fit_to_{y}'.format(x=x, y=dset_label)
                     for y in ['0', '1']:
                         k = 'h{x}_fit_to_h{y}_fid'.format(x=x, y=y)
-                        r = self.labels.dict[k + '_re']
+                        r = wanted_labels.dict[k + '_re']
                         m = r.match(fname)
                         if m is None:
                             continue
                         if self.fluctuate_fid:
                             fid_label = int(m.groupdict()['fid_ind'])
                         else:
-                            fid_label = self.labels.fid
+                            fid_label = wanted_labels.fid
                         if k not in lvl2_fits:
                             lvl2_fits[k] = OrderedDict()
                             minim_info[k] = OrderedDict()
@@ -2821,8 +3398,12 @@ class Postprocessor(object):
                 ['params']
             )['params']
 
-        self.data_sets = data_sets
-        self.minimiser_info = minimiser_info
+        if injparam is not None:
+            self.data_sets[injparam] = data_sets
+            self.minimiser_info[injparam] = minimiser_info
+        else:
+            self.data_sets = data_sets
+            self.minimiser_info = minimiser_info
 
     def pickle_data(self):
         """Will pickle the data for easy access later."""
@@ -2846,15 +3427,22 @@ class Postprocessor(object):
     def load_from_pickle(self):
         """Load from the pickle files created by the function above in a
         previous run of this script."""
-        self.data_sets = from_file(
-            os.path.join(self.logdir, 'data_sets.pckl')
-        )
-        self.all_params = from_file(
-            os.path.join(self.logdir, 'all_params.pckl')
-        )
-        self.minimiser_info = from_file(
-            os.path.join(self.logdir, 'minimiser_info.pckl')
-        )
+        if 'data_sets.pckl' in self.expected_pickles:
+            self.data_sets = from_file(
+                os.path.join(self.logdir, 'data_sets.pckl')
+            )
+        if 'all_params.pckl' in self.expected_pickles:
+            self.all_params = from_file(
+                os.path.join(self.logdir, 'all_params.pckl')
+            )
+        if 'minimiser_info.pckl' in self.expected_pickles:
+            self.minimiser_info = from_file(
+                os.path.join(self.logdir, 'minimiser_info.pckl')
+            )
+        if 'labels.pckl' in self.expected_pickles:
+            self.labels = from_file(
+                os.path.join(self.logdir, 'labels.pckl')
+            )
 
     def parse_binning_string(self, binning_string):
         """Returns a dictionary that can be used to instantiate a binning
@@ -3674,7 +4262,8 @@ class Postprocessor(object):
     def make_1D_graph(self, xvals, yvals, xlabel, xunits,
                       ylabel, yunits, xlims='edges', ylims=None,
                       linestyle='-', color='darkblue', alpha=0.9,
-                      xlabelsize='18', ylabelsize='18'):
+                      xlabelsize='18', ylabelsize='18', marker=None,
+                      plotlabel=None):
         """Generic 1D graph plotting function. The x limits will be set as
         the edges of the xvals unless overwritten. Set this to None to
         leave it as matplotlib dictates. The y limits will be left alone
@@ -3686,7 +4275,9 @@ class Postprocessor(object):
             yvals,
             linestyle=linestyle,
             color=color,
-            alpha=alpha
+            alpha=alpha,
+            marker=marker,
+            label=plotlabel
         )
         if xlims is not None:
             if xlims == 'edges':
@@ -3700,7 +4291,10 @@ class Postprocessor(object):
                 fontsize=xlabelsize
             )
         if ylims is not None:
-            plt.ylim(ylims)
+            if ylims[0] == ylims[1]:
+                plt.ylim(ylims[0]-0.1, ylims[0]+0.1)
+            else:
+                plt.ylim(ylims)
         if ylabel is not None:
             nice_ylabel = self.make_label(ylabel, yunits)
             plt.ylabel(
@@ -4014,16 +4608,25 @@ class Postprocessor(object):
             pval = 0
         return rho, pval
 
-    def save_plot(self, outdir, end, fid=None, hypo=None, fhkey=None):
+    def save_plot(self, outdir, end, fid=None, hypo=None,
+                  fhkey=None, truth=None):
         """Save plot as each type of file format specified in self.formats"""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         save_name = ""
-        if hasattr(self, 'labels') and not self.analysis_type == 'profile_scan':
-            if self.labels.dict['data_name'] == '':
-                save_name += "data_"
-            else:
-                save_name += "true_%s_"%self.labels.dict['data_name']
+        if isinstance(self.labels, dict):
+            wanted_labels = self.labels[self.labels.keys()[0]]
+        else:
+            wanted_labels = self.labels
+        if truth is None:
+            if hasattr(self, 'labels') and \
+               not self.analysis_type == 'profile_scan':
+                if wanted_labels.dict['data_name'] == '':
+                    save_name += "data_"
+                else:
+                    save_name += "true_%s_"%wanted_labels.dict['data_name']
+        else:
+            save_name += "true_%s_"%truth    
         if self.detector is not None:
             save_name += "%s_"%self.detector
         if self.selection is not None:
@@ -4035,18 +4638,20 @@ class Postprocessor(object):
                 "extracted) but not both."
             )
         if fid is not None:
-            save_name += "fid_%s_"%self.labels.dict['%s_name'%fid]
+            save_name += "fid_%s_"%wanted_labels.dict['%s_name'%fid]
         if hypo is not None:
             if hypo == 'both':
                 save_name += "both_hypos_%s_%s_"%(
-                    self.labels.dict['h0_name'], self.labels.dict['h1_name'])
+                    wanted_labels.dict['h0_name'],
+                    wanted_labels.dict['h1_name']
+                )
             else:
-                save_name += "hypo_%s_"%self.labels.dict['%s_name'%hypo]
+                save_name += "hypo_%s_"%wanted_labels.dict['%s_name'%hypo]
         if fhkey is not None:
             hypo = self.get_hypo_from_fiducial_hypo_key(fhkey=fhkey)
             fid = self.get_fid_from_fiducial_hypo_key(fhkey=fhkey)
-            save_name += "fid_%s_"%self.labels.dict['%s_name'%fid]
-            save_name += "hypo_%s_"%self.labels.dict['%s_name'%hypo]
+            save_name += "fid_%s_"%wanted_labels.dict['%s_name'%fid]
+            save_name += "hypo_%s_"%wanted_labels.dict['%s_name'%hypo]
         save_name += end
         for fileformat in self.formats:
             full_save_name = save_name + '.%s'%fileformat
@@ -4204,6 +4809,9 @@ class Postprocessor(object):
         pretty_colours['barr_nu_nubar'] = 'thistle'
         pretty_colours['barr_uphor'] = 'orchid'
         pretty_colours['delta_index'] = 'navy'
+        # Mass ordering
+        pretty_colours['no'] = 'r'
+        pretty_colours['io'] = 'b'
         colourlabel = None
         for colourkey in pretty_colours.keys():
             if (colourkey in label) or (colourkey == label):
@@ -4239,6 +4847,24 @@ class Postprocessor(object):
             colourstyle = '-'
         return colourstyle
 
+    def marker_style(self, label):
+        """Will return a standard marker style for plots similar to above."""
+        label = label.lower()
+        pretty_markers = {}
+        # NMO
+        pretty_markers['no'] = 'o'
+        pretty_markers['io'] = 'o'
+        # MSW
+        pretty_markers['msw'] = '^'
+        markerstyle = None
+        for markerkey in pretty_markers.keys():
+            if markerkey in label:
+                markerstyle = pretty_markers[markerkey]
+        if markerstyle is None:
+            logging.debug("I do not have a marker for your label %s. "
+                          "Returning standard."%label)
+            markerstyle = 'x'
+        return markerstyle
 
 def main_hypo_testing():
     """Parses the args when the user selects hypo_testing"""
@@ -4350,8 +4976,8 @@ def main_analysis_postprocessing():
         formats=init_args_d['formats'],
         fluctuate_fid=True,
         fluctuate_data=False,
-        extra_points=init_args_d['extra_point'],
-        extra_points_labels=init_args_d['extra_point_label']
+        extra_points=init_args_d['extra_points'],
+        extra_points_labels=init_args_d['extra_points_labels']
     )
 
     trial_nums = postprocessor.data_sets[
@@ -4399,10 +5025,62 @@ def main_analysis_postprocessing():
 
 
 def main_injparamscan_postprocessing():
-    raise NotImplementedError(
-        "Postprocessing of hypo testing injected parameter "
-        "scans not implemented in this script yet."
+    description = """Hypothesis testing: How do two hypotheses compare for
+    describing MC or data?
+
+    This computes significances, etc. from the logfiles recorded by the
+    `hypo_testing.py` script for a scan over some injected parameter.
+    The main result will be an Asimov sensitivity curve as a function of
+    this inejcted parameter."""
+
+    # TODO:
+    #
+    # 1) Everything!
+
+    init_args_d = parse_args(description=description,
+                             injparamscan=True)
+
+    postprocessor = Postprocessor(
+        analysis_type='hypo_testing',
+        test_type='injparamscan',
+        logdir=init_args_d['dir'],
+        detector=init_args_d['detector'],
+        selection=init_args_d['selection'],
+        outdir=init_args_d['outdir'],
+        formats=init_args_d['formats'],
+        fluctuate_fid=False,
+        fluctuate_data=False,
+        extra_points=init_args_d['extra_points'],
+        extra_points_labels=init_args_d['extra_points_labels']
     )
+
+    if len(postprocessor.data_sets) == 1:
+        if postprocessor.WH_to_TH[0]['params'].keys() == ['bestfit', 'altit']:
+            if init_args_d['individual_fits'] or init_args_d['combined_fits']:
+                raise ValueError(
+                    "You have requested to make plots of the best fit "
+                    "points of the systematic parameters but this is "
+                    "not possible snce there are none included in "
+                    "this analysis."
+                )
+        if init_args_d['significances']:
+            postprocessor.make_asimov_significance_plots()
+        if init_args_d['minim_information']:
+            postprocessor.make_fit_information_plots()
+        if init_args_d['individual_fits']:
+            print "IFITS"
+        if init_args_d['combined_fits']:
+            print "CFITS"
+    else:
+        if init_args_d['individual_fits'] or init_args_d['combned_fits'] or \
+           init_args_d['minim_information']:
+            raise ValueError(
+                "You have specified multiple input directories but have "
+                "also requested to make plots of the fit parameters or the "
+                "minimiser information. Multiple input directories are "
+                "only compatible with plotting the significances overlaid."
+            )
+        
 
 
 def main_systtests_postprocessing():
