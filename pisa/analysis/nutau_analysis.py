@@ -95,6 +95,8 @@ class Analysis(object):
             self.pseudodata = self.data.fluctuate('poisson', random_state=data_random_state)
         elif self.pseudodata_method == 'gauss+poisson':
             self.pseudodata = self.data.fluctuate('gauss+poisson', random_state=data_random_state)
+        elif self.pseudodata_method == 'gauss':
+            self.pseudodata = self.data.fluctuate('gauss', random_state=data_random_state)
         else:
             raise Exception('unknown method %s'%method)
         self.N_data = sum([unp.nominal_values(map.hist).sum() for map in self.pseudodata])
@@ -457,7 +459,7 @@ if __name__ == '__main__':
     parser.add_argument('-spf', '--fix-param-scan', type=str, default='',
                         help='''fix parameter for scan only in hypo''')
     parser.add_argument('-pd', '--pseudo-data', type=str, default='poisson',
-                        choices=['poisson', 'gauss+poisson', 'asimov', 'data'], 
+                        choices=['poisson', 'gauss', 'gauss+poisson', 'asimov', 'data'], 
                         help='''Mode for pseudo data sampling''')
     parser.add_argument('--var', type=str, default='nutau_norm',
                         help='''param to be profiled''')
