@@ -9,6 +9,7 @@ from scipy.stats import chisqprob
 import time
 from uncertainties import unumpy as unp
 import random
+import os
 
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.utils.fileio import from_file
@@ -479,66 +480,69 @@ if __name__ == '__main__':
 
     set_verbosity(args.v)
 
-    if args.blind:
-        assert(args.function == 'fit')
-        assert(args.pseudo_data == 'data')
-
-    if args.data_settings is None:
-        data_settings = args.template_settings
+    if os.path.isfile(args.outfile):
+        print "Output file ", args.outfile, " already existed, delete or remove it."
     else:
-        data_settings = args.data_settings
+        if args.blind:
+            assert(args.function == 'fit')
+            assert(args.pseudo_data == 'data')
 
-    data_maker = DistributionMaker(data_settings)
-    template_maker = DistributionMaker(args.template_settings)
+        if args.data_settings is None:
+            data_settings = args.template_settings
+        else:
+            data_settings = args.data_settings
 
-    if not args.fix_param == '':
-        template_maker.params.fix(args.fix_param)
-    if not args.set_param == '':
-        p_name,value = args.set_param.split("=")
-        print "p_name,value= ", p_name, " ", value
-        value = parse_quantity(value)
-        value = value.n * value.units
-        test = template_maker.params[p_name]
-        test.value = value
-        template_maker.update_params(test)
-        if p_name in data_maker.params.names:
-            test = data_maker.params[p_name]
+        data_maker = DistributionMaker(data_settings)
+        template_maker = DistributionMaker(args.template_settings)
+
+        if not args.fix_param == '':
+            template_maker.params.fix(args.fix_param)
+        if not args.set_param == '':
+            p_name,value = args.set_param.split("=")
+            print "p_name,value= ", p_name, " ", value
+            value = parse_quantity(value)
+            value = value.n * value.units
+            test = template_maker.params[p_name]
             test.value = value
-            data_maker.update_params(test)
-    if not args.fix_param_scan == '':
-        p_name,value = args.fix_param_scan.split("=")
-        print "p_name,value= ", p_name, " ", value
-        value = parse_quantity(value)
-        value = value.n * value.units
-        test = template_maker.params[p_name]
-        test.value = value
-        template_maker.update_params(test)
-        template_maker.params.fix(p_name)
+            template_maker.update_params(test)
+            if p_name in data_maker.params.names:
+                test = data_maker.params[p_name]
+                test.value = value
+                data_maker.update_params(test)
+        if not args.fix_param_scan == '':
+            p_name,value = args.fix_param_scan.split("=")
+            print "p_name,value= ", p_name, " ", value
+            value = parse_quantity(value)
+            value = value.n * value.units
+            test = template_maker.params[p_name]
+            test.value = value
+            template_maker.update_params(test)
+            template_maker.params.fix(p_name)
 
-    analysis = Analysis(data_maker=data_maker,
-                        template_maker=template_maker,
-                        metric=args.metric,
-                        blind=args.blind)
+        analysis = Analysis(data_maker=data_maker,
+                            template_maker=template_maker,
+                            metric=args.metric,
+                            blind=args.blind)
 
-    analysis.minimizer_settings = from_file(args.minimizer_settings)
-    analysis.pseudodata_method = args.pseudo_data
-    
-    #analysis.randomize_free_params()
-
-    results = []
-
-    for i in range(args.num_trials):
-        logging.info('Running trial %i'%i)
-        np.random.seed()
-        analysis.generate_psudodata()
+        analysis.minimizer_settings = from_file(args.minimizer_settings)
+        analysis.pseudodata_method = args.pseudo_data
         
-        if args.function == 'profile':
-            if args.mode == 'H0':
-                results.append(analysis.profile(args.var,[0.]*ureg.dimensionless, check_octant=not args.no_check_octant))
-            elif args.mode == 'scan':
-                results.append(analysis.profile(args.var,eval(args.range), check_octant=not args.no_check_octant))
-        elif args.function == 'fit':
-            results.append(analysis.find_best_fit(check_octant=not args.no_check_octant))
+        #analysis.randomize_free_params()
 
-    to_file(results, args.outfile)
-    logging.info('Done.')
+        results = []
+
+        for i in range(args.num_trials):
+            logging.info('Running trial %i'%i)
+            np.random.seed()
+            analysis.generate_psudodata()
+            
+            if args.function == 'profile':
+                if args.mode == 'H0':
+                    results.append(analysis.profile(args.var,[0.]*ureg.dimensionless, check_octant=not args.no_check_octant))
+                elif args.mode == 'scan':
+                    results.append(analysis.profile(args.var,eval(args.range), check_octant=not args.no_check_octant))
+            elif args.function == 'fit':
+                results.append(analysis.find_best_fit(check_octant=not args.no_check_octant))
+
+        to_file(results, args.outfile)
+        logging.info('Done.')
