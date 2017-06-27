@@ -24,7 +24,7 @@ from pisa.utils import resources
 import numpy as np
 
 
-__all__ = ['PKL_EXTS', 'DILL_EXTS', 'CFG_EXTS', 'ZIP_EXTS', 'TXT_EXTS',
+__all__ = ['PKL_EXTS', 'DILL_EXTS', 'CFG_EXTS', 'ZIP_EXTS', 'TXT_EXTS', 'XOR_EXTS',
            'NSORT_RE',
            'expand', 'mkdir', 'get_valid_filename', 'nsort', 'find_files',
            'from_cfg', 'from_pickle', 'to_pickle', 'from_dill', 'to_dill',
@@ -36,6 +36,7 @@ DILL_EXTS = ['dill']
 CFG_EXTS = ['ini', 'cfg']
 ZIP_EXTS = ['bz2']
 TXT_EXTS = ['txt', 'dat']
+XOR_EXTS = ['xor']
 
 NSORT_RE = re.compile(r'(\d+)')
 
@@ -329,7 +330,7 @@ def from_file(fname, fmt=None, **kwargs):
         ext = fmt.lower()
 
     zip_ext = None
-    if ext in ZIP_EXTS:
+    if ext in ZIP_EXTS or ext in XOR_EXTS:
         rootname, inner_ext = os.path.splitext(rootname)
         inner_ext = inner_ext.replace('.', '').lower()
         zip_ext = ext
@@ -364,7 +365,7 @@ def to_file(obj, fname, fmt=None, overwrite=True, warn=True, **kwargs):
         ext = fmt.lower()
 
     zip_ext = None
-    if ext in ZIP_EXTS:
+    if ext in ZIP_EXTS or ext in XOR_EXTS:
         rootname, inner_ext = os.path.splitext(rootname)
         inner_ext = inner_ext.replace('.', '').lower()
         zip_ext = ext

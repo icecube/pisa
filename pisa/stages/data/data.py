@@ -60,6 +60,16 @@ class data(Stage):
             debug_mode=debug_mode
         )
 
+    def find_key(self, data_file, key):
+        if not key in data_file.keys():
+            possible_keys = [k for k in data_file.keys() if k.endswith(key)]
+            if len(possible_keys) == 1:
+                logging.warning('Substituting %s by %s'%(key, possible_keys[0]))
+                key = possible_keys[0]
+            else:
+                logging.error('Cannot find key %s and no clear substitution'%key)
+        return key
+
     def _compute_nominal_outputs(self):
         """load the evnts from file, perform sanity checks and histogram them
         (into final MapSet)
@@ -97,8 +107,11 @@ class data(Stage):
             )
 
         data_file = h5py.File(find_resource(data_file_name), 'r')
-        L6_result = np.array(data_file['IC86_Dunkman_L6']['result'])
-        dLLH = np.array(data_file['IC86_Dunkman_L6']['delta_LLH'])
+        Reco_Track_Name = self.find_key(data_file, Reco_Track_Name)
+        Reco_Neutrino_Name = self.find_key(data_file, Reco_Neutrino_Name)
+        L6_name = self.find_key(data_file, 'IC86_Dunkman_L6')
+        L6_result = np.array(data_file[L6_name]['result'])
+        dLLH = np.array(data_file[L6_name]['delta_LLH'])
         reco_energy_all = np.array(data_file[Reco_Neutrino_Name]['energy'])
         reco_coszen_all = np.array(np.cos(
             data_file[Reco_Neutrino_Name]['zenith']
@@ -107,11 +120,15 @@ class data(Stage):
         #print "before L6 cut, no. of burn sample = ", len(reco_coszen_all)
 
         # sanity check
-        santa_doms = data_file['IC86_Dunkman_L6_SANTA_DirectDOMs']['value']
         l3 = data_file['IC86_Dunkman_L3']['value']
         l4 = data_file['IC86_Dunkman_L4']['result']
         l5 = data_file['IC86_Dunkman_L5']['bdt_score']
-        assert(np.all(santa_doms>=3) and np.all(l3 == 1) and np.all(l5 >= 0.1))
+        assert(np.all(l3 == 1) and np.all(l5 >= 0.1))
+        try:
+            santa_doms = data_file['IC86_Dunkman_L6_SANTA_DirectDOMs']['value']
+            assert(np.all(santa_doms>=3))
+        except KeyError:
+            logging.warning('Sanity check for SANTA DirectDOMs not possible')
 
         # l4==1 was not applied when i3 files were written to hdf5 files, so do
         # it here
