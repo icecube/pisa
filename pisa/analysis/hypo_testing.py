@@ -787,9 +787,6 @@ class HypoTesting(Analysis):
         else:
             self.h0_fid_asimov_dist = self.h0_fit_to_data['hypo_asimov_dist']
 
-        if self.recentre_priors:
-            self.h0_maker.params.recentre_priors()
-
         self.log_fit(fit_info=self.h0_fit_to_data,
                      dirpath=self.thisdata_dirpath,
                      label=self.labels.h0_fit_to_data)
@@ -850,12 +847,13 @@ class HypoTesting(Analysis):
         else:
             self.h1_fid_asimov_dist = self.h1_fit_to_data['hypo_asimov_dist']
 
-        if self.recentre_priors:
-            self.h1_maker.params.recentre_priors()
-
         self.log_fit(fit_info=self.h1_fit_to_data,
                      dirpath=self.thisdata_dirpath,
                      label=self.labels.h1_fit_to_data)
+
+        if self.recentre_priors:
+            self.h0_maker.params.recentre_priors()
+            self.h1_maker.params.recentre_priors()
 
     def produce_fid_data(self):
         logging.info('Generating %s distributions.', self.labels.fid_disp)
