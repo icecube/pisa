@@ -228,14 +228,14 @@ __device__ void getM(fType Enu, fType rho, fType dmVacVac[][3],
 
 
 /***********************************************************************
- getAGen (take into account generic potential matrix (=Hamiltonian))
+ getA (take into account generic potential matrix (=Hamiltonian))
  Calculate the transition amplitude matrix A (equation 10)
 ***********************************************************************/
-__device__ void getAGen(fType L, fType E, fType rho,
-                        fType Mix[][3][2], fType dmMatVac[][3],
-                        fType dmMatMat[][3], fType HMatMassEigenstateBasis[][3][2],
-                        fType A[3][3][2],
-                        fType phase_offset)
+__device__ void getA(fType L, fType E, fType rho,
+                     fType Mix[][3][2], fType dmMatVac[][3],
+                     fType dmMatMat[][3], fType HMatMassEigenstateBasis[][3][2],
+                     fType A[3][3][2],
+                     fType phase_offset)
 {
 
   fType arg, c, s;
@@ -244,8 +244,8 @@ __device__ void getAGen(fType L, fType E, fType rho,
 
   if ( phase_offset==0.0 )
     {
-      get_productGen(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis,
-                     product);
+      get_product(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis,
+                  product);
     }
 
   for (int k=0; k<3; k++)
@@ -305,10 +305,10 @@ __device__ void getAGen(fType L, fType E, fType rho,
 }
 
 
-__device__ void get_productGen(fType L, fType E, fType rho,
-                               fType dmMatVac[][3], fType dmMatMat[][3],
-                               fType HMatMassEigenstateBasis[][3][2],
-                               fType product[][3][3][2])
+__device__ void get_product(fType L, fType E, fType rho,
+                            fType dmMatVac[][3], fType dmMatMat[][3],
+                            fType HMatMassEigenstateBasis[][3][2],
+                            fType product[][3][3][2])
 {
 
   fType twoEHmM[3][3][3][2];

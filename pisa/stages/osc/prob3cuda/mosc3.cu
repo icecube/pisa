@@ -129,8 +129,15 @@ __device__ void get_transition_matrix( int nutype, fType Enu, fType rho, fType L
   /* Calculate modified mass eigenvalues in matter from the full Hamiltonian and
      the vacuum mass splittings */
   getM(Enu, rho, dm, dmMatMat, dmMatVac, HFull);
+
+  /* Now we transform the matter (TODO: matter? full?) Hamiltonian back into the
+     mass eigenstate basis so we don't need to compute products of the effective
+     mixing matrix elements explicitly */
   getHMatMassEigenstateBasis(mixNuType, HMat, HMatMassEigenstateBasis);
-  getAGen(Len, Enu, rho, mixNuType, dmMatVac, dmMatMat, HMatMassEigenstateBasis,
-          Aout, phase_offset);
+
+  /* We can now proceed to calculating the transition amplitude from the Hamiltonian
+     in the mass basis and the effective mass splittings */
+  getA(Len, Enu, rho, mixNuType, dmMatVac, dmMatMat, HMatMassEigenstateBasis,
+       Aout, phase_offset);
 
 }
