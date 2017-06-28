@@ -2178,7 +2178,7 @@ def parse_args(description=__doc__, injparamscan=False, systtests=False):
         '-v', action='count', default=None,
         help='set verbosity level'
     )
-    args = parser.parse_args()
+    args = parser.parse_args(2:)
     assert args.min_settings is not None or args.min_method is not None
     init_args_d = vars(args)
 
