@@ -1265,12 +1265,25 @@ class Postprocessor(object):
             plt.ylabel(r'Significance $\left(\sigma\right)$', fontsize=24)
 
         vrange = maxsig - minsig
-        plt.ylim(min(significances)-0.1*vrange, max(significances)+0.2*vrange)
+        plt.ylim(minsig-0.1*vrange, maxsig+0.2*vrange)
         plt.title(maintitle, fontsize=16)
         plt.legend(loc='best')
         plt.tight_layout()
         save_end = "%s_asimov_significances"%(self.inj_param_name)
         self.save_plot(outdir=outdir, end=save_end, truth=truth)
+        if self.extra_points is not None:
+            yminextra, ymaxextra = self.add_extra_points()
+            yminall = min(yminextra, minsig)
+            ymaxall = max(yminextra, maxsig)
+            vrange = ymaxall - yminall
+            if yminall == 0:
+                plt.ylim(yminall, ymaxall+0.2*vrange)
+            else:
+                plt.ylim(yminall-0.1*vrange, ymaxall+0.3*vrange)
+            plt.legend(loc='upper left')
+            save_end = "%s_asimov_significances_w_extra_points"%(
+                self.inj_param_name)
+            self.save_plot(outdir=outdir, end=save_end, truth=truth)
         plt.close()
 
     def make_asimov_fit_parameter_plots(self, combined=False):
@@ -2137,36 +2150,118 @@ class Postprocessor(object):
                     self.save_plot(outdir=odir, end=save_end, truth=truth)
                     plt.close()
 
-    def add_extra_points(self, ymax):
+    def add_extra_points(self, ymax=None):
         """Add extra points specified by self.extra_points and label them
         with self.extra_points_labels`"""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
 
-        linelist = []
-        for point, label in zip(self.extra_points, self.extra_points_labels):
-            if isinstance(point, basestring):
-                if os.path.isfile(point):
-                    point = np.genfromtxt(point)
-                try:
-                    point = eval(point)
-                except:
-                    raise ValueError('Provided point, %s, was not either a '
-                                     'path to a file or a string which could '
-                                     'be parsed by eval()' % point)
-            if not isinstance(point, float):
-                raise ValueError('Expecting a single point here to add to the'
-                                 ' plot and got %s instead.' % point)
-            plt.axvline(
-                point,
-                color=self.plot_colour(label),
-                linestyle=self.plot_style(label),
-                ymax=ymax,
-                lw=2,
-                label=self.tex_axis_label(label)
-            )
-            linelist.append(self.tex_axis_label(label))
-        return linelist
+        if self.test_type == 'analysis':
+            if ymax is None:
+                raise ValueError(
+                    'A maximum y value must be provided to add extra '
+                    'points to the hypo_testing analysis plots.'
+                )
+            linelist = []
+            for point, label in zip(self.extra_points,
+                                    self.extra_points_labels):
+                if isinstance(point, basestring):
+                    if os.path.isfile(point):
+                        point = np.genfromtxt(point)
+                    try:
+                        point = eval(point)
+                    except:
+                        raise ValueError(
+                            'Provided point, %s, was not either a '
+                            'path to a file or a string which could '
+                            'be parsed by eval()' % point
+                        )
+                if not isinstance(point, float):
+                    raise ValueError(
+                        'Expecting a single point here to add to the'
+                        ' plot and got %s instead.' % point
+                    )
+                plt.axvline(
+                    point,
+                    color=self.plot_colour(label),
+                    linestyle=self.plot_style(label),
+                    ymax=ymax,
+                    lw=2,
+                    label=self.tex_axis_label(label)
+                )
+                linelist.append(self.tex_axis_label(label))
+            return linelist
+        elif self.test_type == 'injparamscan':
+            ymin = None
+            ymax = None
+            for pointset, label in zip(self.extra_points,
+                                    self.extra_points_labels):
+                if os.path.isfile(pointset):
+                    pointset = np.genfromtxt(pointset)
+                else:
+                    try:
+                        pointset = eval(pointset)
+                    except:
+                        raise ValueError(
+                            "Provided pointset, %s, was not either a "
+                            "path to a file or a string which could "
+                            "be parsed by eval()"%pointset
+                        )
+                x = []
+                y = []
+                yerr = []
+                for point in pointset:
+                    x.append(point[0])
+                    y.append(point[1])
+                    # For no errors
+                    if len(point) == 2:
+                        yerr.append(0.0)
+                    # For symmetric errors
+                    elif len(point) == 3:
+                        yerr.append(point[2])
+                    # For asymmetric errors
+                    elif len(point) == 4:
+                        if len(yerr) == 0:
+                            yerr.append([])
+                            yerr.append([])
+                        yerr[0].append(point[2])
+                        yerr[1].append(point[3])
+                    else:
+                        raise ValueError(
+                            "Number of entries found for each point was "
+                            "not what was expected. Should be at least "
+                            "(x,y) but may also be (x,y,yerr) or "
+                            "(x,y,yuperr,ydownerr). Got a set with %i "
+                            "numbers."%len(point)
+                        )
+                x = np.array(x)
+                y = np.array(y)
+                yerr = np.array(yerr)
+                if ymin is not None:
+                    if len(yerr) == 2:
+                        ymin = min(ymin, min(y-yerr[0]))
+                        ymax = max(ymax, max(y+yerr[1]))
+                    else:
+                        ymin = min(ymin, min(y-yerr))
+                        ymax = max(ymax, max(y+yerr))
+                else:
+                    if len(yerr) == 2:
+                        ymin = min(y-yerr[0])
+                        ymax = max(y+yerr[1])
+                    else:
+                        ymin = min(y-yerr)
+                        ymax = max(y+yerr)
+                plt.errorbar(
+                    x,
+                    y,
+                    yerr=yerr,
+                    linestyle='None',
+                    marker=self.marker_style(label),
+                    markersize=10,
+                    color=self.plot_colour(label),
+                    label='%s'%(self.tex_axis_label(label))
+                )
+            return ymin, ymax
 
     def calc_p_value(self, llrdist, critical_value, greater=True,
                      median_p_value=False, llrbest=None):
@@ -4881,8 +4976,10 @@ class Postprocessor(object):
         pretty_labels["minimiser_funcevals"] = r"Minimiser Function Evaluations"
         pretty_labels["minimiser_status"] = r"Minimiser Status"
         pretty_labels["correlation_coefficients"] = r"Correlation Coefficients"
+        pretty_labels["true no, llr"] = r"True Normal Ordering, LLR"
+        pretty_labels["true io, llr"] = r"True Inverted Ordering, LLR"
         if label not in pretty_labels.keys():
-            logging.warn("I don't know what to do with %s. "
+            logging.warn("I have no nice label for %s. "
                          "Returning as is."%label)
             return label
         return pretty_labels[label]
@@ -4979,6 +5076,9 @@ class Postprocessor(object):
         # NMO
         pretty_markers['no'] = 'o'
         pretty_markers['io'] = 'o'
+        # LLR
+        pretty_markers['true no, llr'] = 'D'
+        pretty_markers['true io, llr'] = 'D'
         # Asimov Fits
         pretty_markers['th_to_wh'] = 'o'
         pretty_markers['wh_to_th'] = 'o'
@@ -4986,8 +5086,13 @@ class Postprocessor(object):
         pretty_markers['msw'] = '^'
         markerstyle = None
         for markerkey in pretty_markers.keys():
-            if markerkey in label:
+            # Look for exact match
+            if markerkey == label:
                 markerstyle = pretty_markers[markerkey]
+            # Look for partial match
+            if markerstyle is None:
+                if markerkey in label:
+                    markerstyle = pretty_markers[markerkey]
         if markerstyle is None:
             logging.debug("I do not have a marker for your label %s. "
                           "Returning standard."%label)
