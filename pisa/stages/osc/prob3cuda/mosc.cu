@@ -57,20 +57,25 @@ __device__ void getHMatMassEigenstateBasis(fType Mix[][3][2], fType HMat[][3][2]
 }
 
 /* Calculate full matter Hamiltonian in flavor basis */
-__device__ void getHMat(fType Enu, fType rho, fType NSIEps[][3],
-                        fType dmVacVac[][3], int antitype,
+__device__ void getHMat(fType rho, fType NSIEps[][3], int antitype,
                         fType HMat[][3][2])
 {
   fType HSI[3][3][2], HNSI[3][3][2];
+
+  /* in the following, `a` is just the standard effective matter potential
+  induced by charged-current weak interactions with electrons
+  (modulo a factor of 2E) */
   fType a = rho*tworttwoGf/2.0;
   clear_complex_matrix(HSI); clear_complex_matrix(HNSI);
   if (antitype<0) a =  -a; /* Anti-neutrinos */
   else        a = a; /* Neutrinos */
   HSI[elec][elec][re] = a;
+
+  // Obtain effective non-standard matter interaction Hamiltonian
   getHNSI(rho, NSIEps, antitype, HNSI);
-  // This is where the non-standard matter interaction Hamiltonian is added to
-  // the standard matter Hamiltonian
-  add_complex_matrix(HSI, HNSI, HMat);
+
+  // This is where the full matter Hamiltonian is created
+   add_complex_matrix(HSI, HNSI, HMat);
 }
 
 // add_complex_matrix adapted to vacuum and matter Hamiltonian
@@ -96,7 +101,6 @@ __device__ void getM(fType Enu, fType rho, fType dmVacVac[][3],
                      fType dmMatMat[][3], fType dmMatVac[][3],
                      fType HMat[][3][2])
 {
-  //fType c0[2], c1[2], c2[2];
   int i,j,k;
   fType c0, c1, c2, c2V;
   fType p, q, pV, qV;
@@ -179,13 +183,14 @@ __device__ void getM(fType Enu, fType rho, fType dmVacVac[][3],
     printf("getM: p^3 - q^2 < 0 !\n");
     tmp = 0.0;
   }
+
   theta0 = theta1 = theta2 = atan2(sqrt(tmp), q)/3.0;
   theta0V = theta1V = theta2V = atan2(sqrt(tmpV), qV)/3.0;
   theta0 += (2.0/3.0)*M_PI;
   theta0V += (2.0/3.0)*M_PI;
   theta1 -= (2.0/3.0)*M_PI;
   theta1V -= (2.0/3.0)*M_PI;
-  //printf("theta0, theta1, theta2: %.10f %.10f %.10f \n", theta0, theta1, theta2);
+
   M1Sq = 2.0*Enu*((2.0/3.0)*sqrt(p)*cos(theta0) - c2/3.0 + dmVacVac[0][0]);
   M2Sq = 2.0*Enu*((2.0/3.0)*sqrt(p)*cos(theta1) - c2/3.0 + dmVacVac[0][0]);
   M3Sq = 2.0*Enu*((2.0/3.0)*sqrt(p)*cos(theta2) - c2/3.0 + dmVacVac[0][0]);
@@ -228,7 +233,7 @@ __device__ void getM(fType Enu, fType rho, fType dmVacVac[][3],
 ***********************************************************************/
 __device__ void getAGen(fType L, fType E, fType rho,
                         fType Mix[][3][2], fType dmMatVac[][3],
-                        fType dmMatMat[][3], int antitype, fType HMatMassEigenstateBasis[][3][2],
+                        fType dmMatMat[][3], fType HMatMassEigenstateBasis[][3][2],
                         fType A[3][3][2],
                         fType phase_offset)
 {
@@ -239,7 +244,7 @@ __device__ void getAGen(fType L, fType E, fType rho,
 
   if ( phase_offset==0.0 )
     {
-      get_productGen(L, E, rho, dmMatVac, dmMatMat, antitype, HMatMassEigenstateBasis,
+      get_productGen(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis,
                      product);
     }
 
@@ -302,7 +307,7 @@ __device__ void getAGen(fType L, fType E, fType rho,
 
 __device__ void get_productGen(fType L, fType E, fType rho,
                                fType dmMatVac[][3], fType dmMatMat[][3],
-                               int antitype, fType HMatMassEigenstateBasis[][3][2],
+                               fType HMatMassEigenstateBasis[][3][2],
                                fType product[][3][3][2])
 {
 
