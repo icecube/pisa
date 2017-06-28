@@ -36,25 +36,49 @@ from pisa.utils.tests import check_agreement, plot_map_comparisons, pisa2_map_to
 
 
 __all__ = ['PID_FAIL_MESSAGE', 'PID_PASS_MESSAGE',
+           'RECO_FAIL_MESSAGE', 'RECO_PASS_MESSAGE',
            'compare_flux', 'compare_osc', 'compare_aeff', 'compare_reco',
            'compare_pid', 'compare_flux_full', 'compare_osc_full',
            'compare_aeff_full', 'compare_reco_full', 'compare_pid_full',
            'parse_args', 'main']
 
 
-PID_FAIL_MESSAGE = (
-    "PISA 2 reference file has a known bug in its PID (fraction for each PID"
-    " signature is taken as total of events ID'd for each signatures, and not"
-    " total of all events, as it should be. Therefore, if PISA 3 / full"
-    " pipeline PID agrees with PISA 2 (same) for DeepCore (which does not have"
-    " mutually-exclusive PID definition), then PISA 3 is in error."
-)
+PID_FAIL_MESSAGE = ' '.join((
+    """
+    PISA 2 reference file has a known bug in its PID (fraction for each PID
+    signature is taken as total of events ID'd for each signatures, and not
+    total of all events, as it should be. Therefore, if PISA 3 / full
+    pipeline PID agrees with PISA 2 (same) for DeepCore (which does not have
+    mutually-exclusive PID definition), then PISA 3 is in error.
+    """
+).strip().split())
 
-PID_PASS_MESSAGE = (
-    "**NOTE** Ignore above FAIL message; PID passed, since PISA 3 *should"
-    " disagree* with PISA 2 due to known bug in PISA 2 (doesn't normalize"
-    " correctly if PID categories don't include all events)"
-)
+PID_PASS_MESSAGE = ' '.join((
+    """
+    **NOTE** Ignore above FAIL message; PID passed, since PISA 3 *should
+    disagree* with PISA 2 due to known bug in PISA 2 (doesn't normalize
+    correctly if PID categories don't include all events)
+    """
+).strip().split())
+
+RECO_FAIL_MESSAGE = ' '.join((
+    """
+    PISA 2 reference file has a known discrepancy in reco.param. The coszen
+    flipback (which is actually nonsensical in the first place) in PISA 2 is
+    only done if the coszen binning goes to +/-1, while PISA 3 does flipback
+    for any area in the parameterization out to +/-3 and maps this into any
+    coszen binning (even if it doesn't extend to +/-1). Therefore, if PISA 3
+    agrees with PISA 2, then PISA 3 is in "error."
+    """
+).strip().split())
+
+RECO_PASS_MESSAGE = ' '.join((
+    """
+    **NOTE** Ignore above FAIL message; reco.param passed, since PISA 3
+    *should disagree* with PISA 2 due to known discrepancy in implementations
+    of coszen flipback (which probably shouldn't be used anyway).
+    """
+).strip().split())
 
 
 def compare_flux(config, servicename, pisa2file, systname,
@@ -860,13 +884,13 @@ def parse_args():
                         help='''Set verbosity level; default is 1, so only -vv
                         or -vvv has an effect.''')
     args = parser.parse_args()
-    args.v = min(1, args.v)
+    args.v = max(1, args.v)
     return args
 
 
 def main():
     args = parse_args()
-    set_verbosity(1)
+    set_verbosity(args.v)
 
     # Figure out which tests to do
     test_all = True
@@ -1077,15 +1101,20 @@ def main():
         )
         pisa2file = find_resource(pisa2file)
         for syst in [None, 'e_res_scale', 'cz_res_scale']:
-            reco_pipeline = compare_reco(
-                config=deepcopy(reco_config),
-                servicename='param_1X60',
-                pisa2file=pisa2file,
-                systname=syst,
-                outdir=args.outdir,
-                ratio_test_threshold=args.ratio_threshold,
-                diff_test_threshold=args.diff_threshold
-            )
+            try:
+                reco_pipeline = compare_reco(
+                    config=deepcopy(reco_config),
+                    servicename='param_1X60',
+                    pisa2file=pisa2file,
+                    systname=syst,
+                    outdir=args.outdir,
+                    ratio_test_threshold=args.ratio_threshold,
+                    diff_test_threshold=args.diff_threshold
+                )
+            except ValueError:
+                logging.info(RECO_PASS_MESSAGE)
+            else:
+                raise ValueError(RECO_FAIL_MESSAGE)
 
     # Perform PID tests
     if args.pid or test_all:

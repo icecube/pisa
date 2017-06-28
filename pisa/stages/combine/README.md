@@ -1,4 +1,4 @@
-# Stage: combine
+# Stage: Combine
 
 This stage is used to simply combine different Maps together and apply scale factors to them.
 

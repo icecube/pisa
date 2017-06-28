@@ -16,8 +16,7 @@ source my_virtual_env/bin/activate
 mkdir my_virtual_env/src
 
 # Obtain the PISA sourcecode (must have access to the WIPACrepo/pisa repo)
-git clone https://github.com/jllanfranchi/pisa.git --branch cake \
-    --single-branch my_virtual_env/src/pisa
+git clone https://github.com/jllanfranchi/pisa.git --branch cake my_virtual_env/src/pisa
 
 # Install PISA and its python package dependencies (optional dependency
 # categories are in brackets). Note that sometimes an install issue with the
@@ -30,11 +29,11 @@ pip install -e my_virtual_env/src/pisa/[cuda,numba,develop] \
 export PISA_FTYPE=single
 
 # Run the physics tests (append --ignore-cuda-errors if no CUDA support)
-test_consistency_with_pisa2.py -v
+my_virtual_env/src/pisa/tests/test_consistency_with_pisa2.py -v
 
 # EXAMPLE: Run a Monte Carlo pipeline to produce, store, and plot its expected
 # distributions at the output of each stage
-pipeline.py --settings settings/pipeline/example.cfg \
+pipeline.py --pipeline settings/pipeline/example.cfg \
     --outdir /tmp/pipeline_output --intermediate --pdf -v
 
 # EXAMPLE: Run the Asimov NMO analysis; leave off "_gpu" to run CPU-only
@@ -45,12 +44,12 @@ hypo_testing.py --logdir /tmp/test \
     --h1-param-selections="nh" \
     --data-param-selections="nh" \
     --data-is-mc \
-    --minimizer-settings settings/minimizer/bfgs_settings_fac1e11_eps1e-4_mi20.json \
+    --min-method l-bfgs-b \
     --metric=chi2 \
     --pprint -v
 
 # Display the significance for distinguishing hypothesis h1 from h0
-hypo_testing_postprocess.py --asimov --logdir /tmp/test/*
+hypo_testing_postprocess.py --asimov --dir /tmp/test/*
 
 # Leave the virtual environment (run the `source...` command above to re-enter
 # the virtual environment at a later time)
@@ -65,7 +64,7 @@ Although the selection of maintained packages is smaller than if you use the `pi
 
 The other advantage to these distributions is that they easily install without system administrative privileges (and install in a user directory) and come with the non-Python binary libraries upon which many Python modules rely, making them ideal for setup on e.g. clusters.
 
-* **Note**: Make sure that your `PATH` variable points to e.g. `<anaconda_install_dr>/bin` and *not* your system Python directory. To check this, type: `echo $PATH`; to udpate it, add `export PATH=<anaconda_install_dir>/bin:$PIATH` to your .bashrc file.
+* **Note**: Make sure that your `PATH` variable points to e.g. `<anaconda_install_dr>/bin` and *not* your system Python directory. To check this, type: `echo $PATH`; to udpate it, add `export PATH=<anaconda_install_dir>/bin:$PATH` to your .bashrc file.
 * Python 2.7.x can also be found from the Python website [https://www.python.org/downloads](https://www.python.org/downloads/) or pre-packaged for almost any OS.
 
 
@@ -206,10 +205,10 @@ When you want to share your changes with `jllanfranchi/pisa`, you can then submi
 * Navigate to the [PISA github page](https://github.com/jllanfranchi/pisa) and fork the repository by clicking on the ![fork](images/ForkButton.png) button.
 * Clone the repository into the `$PISA` directory via one of the following commands (`<github username>` is your Github username):
   * either SSH access to repo:<br>
-`git clone git@github.com:<github username>/pisa.git --branch <brnnchname> --single-branch $PISA
+`git clone git@github.com:<github username>/pisa.git $PISA
 `
   * or HTTPS access to repo:<br>
-`git clone https://github.com/<github username>/pisa.git --branch <brnnchname> --single-branch $PISA`
+`git clone https://github.com/<github username>/pisa.git $PISA`
 
 
 #### Using but not developing PISA: Cloning
@@ -218,9 +217,9 @@ If you just wish to pull changes from github (and not submit any changes back), 
 
 * Clone the repository into the `$PISA` directory via one of the following commands:
   * either SSH access to repo:<br>
-`git clone git@github.com:jllanfranchi/pisa.git --branch cake --single-branch $PISA`
+`git clone git@github.com:jllanfranchi/pisa.git $PISA`
   * or HTTPS access to repo:<br>
-`git clone https://github.com/jllanfranchi/pisa.git --branch cake --single-branch $PISA`
+`git clone https://github.com/jllanfranchi/pisa.git $PISA`
 
 
 ### Ensuring a Clean Install: Using Virtualenv
@@ -288,9 +287,14 @@ __Notes:__
 
 ### Reinstall PISA
 
+Sometimes a change within PISA requires re-installation (particularly if a compiled module changes, the below forces re-compilation).
+
 ```bash
 pip install --editable $PISA -r $PISA/requirements.txt --force-reinstall
 ```
+
+Note that if files change names or locations, though, the above can still not be enough.
+In this case, the old files have to be removed manually (along with any associated `.pyc` files, as Python will use these even if the `.py` files have been removed).
 
 ### Compiling the Documentation
 
@@ -327,15 +331,24 @@ test_consistency_with_pisa2.py -v
 
 ### Running a Basic Analysis
 
-To make sure that an analysis can run, you can run the Asimov analysis of neutrion mass ordering (NMO) with the following command:
+To make sure that an analysis can be run, try running an Asimov analysis of neutrino mass ordering (NMO) with the following (this takes about one minute on a laptop; note, though, that the result is not terribly accurate due to the use of coarse binning and low Monte Carlo statistics):
 ```bash
-hypo_testing.py --logdir /tmp/test \
-    --h0-pipeline settings/pipeline/example_gpu.cfg \
+export PISA_FTYPE=fp64
+hypo_testing.py --logdir /tmp/nmo_test \
+    --h0-pipeline settings/pipeline/example.cfg \
     --h0-param-selections="ih" \
     --h1-param-selections="nh" \
     --data-param-selections="nh" \
     --data-is-mc \
-    --minimizer-settings settings/minimizer/bfgs_settings_fac1e11_eps1e-4_mi20.json \
-    --metric="chi2" \
+    --min-method slsqp \
+    --metric=chi2 \
     --pprint -v
+```
+
+The above command sets the null hypothesis (h0) to be the inverted hierarchy (ih) and the hypothesis to be tested (h1) to the normal hierarchy (nh).
+Meanwhile, the Asimov dataset is derived from the normal hierarchy.
+
+The significance for distinguishing NH from IH in this case (with the crude but fast settings specified) is shown by typing the follwoing command (which should output something close to 4.3):
+```bash
+hypo_testing_postprocess.py --asimov --detector "pingu_v39" --dir /tmp/nmo_test/hypo*
 ```

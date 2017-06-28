@@ -550,7 +550,7 @@ def main(return_outputs=False):
         mkdir(args.outdir)
     else:
         if args.pdf or args.png:
-            raise ValueError('No --dir provided, so cannot save images.')
+            raise ValueError('No --outdir provided, so cannot save images.')
 
     # Most basic parsing of the pipeline config (parsing only to this level
     # allows for simple strings to be specified as args for updating)
@@ -646,10 +646,19 @@ def main(return_outputs=False):
 
         formats = OrderedDict(png=args.png, pdf=args.pdf)
         if isinstance(stage.outputs, Data):
+            # TODO(shivesh): plots made here will use the most recent
+            # "pisa_weight" column and so all stages will have identical plots
+            # (one workaround is to turn on "memcache_deepcopy")
+            # TODO(shivesh): intermediate stages have no output binning
+            if stage.output_binning is None:
+                logging.debug('Skipping plot of intermediate stage '
+                              '{0}'.format(stage))
+                continue
             outputs = stage.outputs.histogram_set(
                 binning=stage.output_binning,
                 nu_weights_col='pisa_weight',
                 mu_weights_col='pisa_weight',
+                noise_weights_col='pisa_weight',
                 mapset_name=stg_svc,
                 errors=True
             )

@@ -328,7 +328,7 @@ def parse_args():
         pipeline)'''
     )
     parser.add_argument(
-        '-d', '--dir', type=str, action='store',
+        '--outdir', type=str, action='store',
         help='Directory into which to store the output'
     )
     parser.add_argument(
@@ -364,16 +364,16 @@ def main(return_outputs=False):
         distribution_maker.select_params(args.select)
 
     outputs = distribution_maker.get_outputs(return_sum=args.return_sum)
-    if args.dir:
+    if args.outdir:
         # TODO: unique filename: append hash (or hash per pipeline config)
         fname = 'distribution_maker_outputs.json.bz2'
-        mkdir(args.dir)
-        fpath = expand(os.path.join(args.dir, fname))
+        mkdir(args.outdir)
+        fpath = expand(os.path.join(args.outdir, fname))
         to_file(outputs, fpath)
 
-    if args.dir and len(plot_formats) > 0:
+    if args.outdir and len(plot_formats) > 0:
         my_plotter = Plotter(
-            outdir=args.dir,
+            outdir=args.outdir,
             fmt=plot_formats, log=False,
             annotate=False
         )

@@ -42,11 +42,10 @@ MAPSET_SOURCE_STR = 'MapSet stored on disk'
 
 
 def compare(outdir, ref, ref_label, test, test_label, asymm_max=None,
-            asymm_min=None, combine=None, diff_max=None,
-            diff_min=None, fract_diff_max=None, fract_diff_min=None,
-            json=False, pdf=False, png=False, ref_abs=False,
-            ref_param_selections=None, sum=None, test_abs=False,
-            test_param_selections=None):
+            asymm_min=None, combine=None, diff_max=None, diff_min=None,
+            fract_diff_max=None, fract_diff_min=None, json=False, pdf=False,
+            png=False, ref_abs=False, ref_param_selections=None, sum=None,
+            test_abs=False, test_param_selections=None):
     """Compare two entities. The result each entity specification is
     formatted into a MapSet and stored to disk, so that e.g. re-running
     a DistributionMaker is unnecessary to reproduce the results.

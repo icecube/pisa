@@ -1,10 +1,11 @@
-# Stage: reweighted MC
+# Stage: Reweighted MC
 
 This stage generates event rate templates with 'traditional' MC reweighting (in contrast to the PISA histo mode)
 
 ## Services
 
-only a gpu based method is available right now, requiring a Nvidia GPU
+* gpu
+* cpu (should be identical to gpu)
 
 ### gpu
 
