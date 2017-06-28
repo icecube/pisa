@@ -26,6 +26,7 @@ import socket
 import string
 import sys
 import time
+import numpy as np
 from traceback import format_exception
 
 from pisa import ureg, _version, __version__
