@@ -4737,25 +4737,25 @@ class Postprocessor(object):
         # Adjust ranges unless told otherwise
         if set_range:
             if isinstance(xdata, list):
-                Xrange = max(xdata) - min(xdata)
-                if Xrange != 0.0:
-                    plt.xlim(min(xdata)-0.1*Xrange,
-                             max(xdata)+0.1*Xrange)
+                hrange = max(xdata) - min(xdata)
+                if hrange != 0.0:
+                    plt.xlim(min(xdata)-0.1*hrange,
+                             max(xdata)+0.1*hrange)
             elif isinstance(xdata, np.ndarray):
-                Xrange = xdata.max() - xdata.min()
-                if Xrange != 0.0:
-                    plt.xlim(xdata.min()-0.1*Xrange,
-                             xdata.max()+0.1*Xrange)
+                hrange = xdata.max() - xdata.min()
+                if hrange != 0.0:
+                    plt.xlim(xdata.min()-0.1*hrange,
+                             xdata.max()+0.1*hrange)
             if isinstance(ydata, list):
-                Yrange = max(ydata) - min(ydata)
-                if Yrange != 0.0:
-                    plt.ylim(min(ydata)-0.1*Yrange,
-                             max(ydata)+0.3*Yrange)
+                vrange = max(ydata) - min(ydata)
+                if vrange != 0.0:
+                    plt.ylim(min(ydata)-0.1*vrange,
+                             max(ydata)+0.3*vrange)
             elif isinstance(ydata, np.ndarray):
-                Yrange = ydata.max() - ydata.min()
-                if Yrange != 0.0:
-                    plt.ylim(ydata.min()-0.1*Yrange,
-                             ydata.max()+0.3*Yrange)
+                vrange = ydata.max() - ydata.min()
+                if vrange != 0.0:
+                    plt.ylim(ydata.min()-0.1*vrange,
+                             ydata.max()+0.3*vrange)
         else:
             plt.xlim(xlim)
             plt.ylim(ylim)
