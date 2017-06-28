@@ -473,7 +473,7 @@ class prob3gpu(Stage):
 
         dm_mat = self.osc.M_mass
         mix_mat = self.osc.M_pmns
-        nsi_eps_mat = self.nsi.M_eps_nsi
+        nsi_eps_mat = self.nsi.eps_matrix
 
         logging.info('dm_mat: \n %s' %str(dm_mat))
         logging.info('mix[re]: \n %s' %str(mix_mat[:,:,0]))

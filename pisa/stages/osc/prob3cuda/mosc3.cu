@@ -130,7 +130,7 @@ __device__ void get_transition_matrix( int nutype, fType Enu, fType rho, fType L
      the vacuum mass splittings */
   getM(Enu, rho, dm, dmMatMat, dmMatVac, HFull);
   getHMatMassEigenstateBasis(mixNuType, HMat, HMatMassEigenstateBasis);
-  getAGen(Len, Enu, rho, mixNuType, dmMatVac, dmMatMat, nutype,
-          HMatMassEigenstateBasis, Aout, phase_offset);
+  getAGen(Len, Enu, rho, mixNuType, dmMatVac, dmMatMat, HMatMassEigenstateBasis,
+          Aout, phase_offset);
 
 }
