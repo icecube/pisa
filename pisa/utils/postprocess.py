@@ -453,21 +453,21 @@ class Postprocessor(object):
                     self.expected_pickles.append('labels.pckl')
             if test_type == 'injparamscan':
                 data_sets_list = []
-                WH_to_TH_list = []
-                TH_to_WH_list = []
+                wh_to_th_list = []
+                th_to_wh_list = []
                 self.inj_param_vals = None
                 self.inj_param_name = None
                 for logdir in self.logdirs:
                     self.logdir = logdir
                     self.extract_trials()
                     data_sets_list.append(self.data_sets)
-                    WH_to_TH_list.append(self.WH_to_TH)
-                    TH_to_WH_list.append(self.TH_to_WH)
+                    wh_to_th_list.append(self.wh_to_th)
+                    th_to_wh_list.append(self.th_to_wh)
                     self.get_inj_param_vals()
                     self.set_inj_param_units(inj_param_units=inj_param_units)
                 self.data_sets = data_sets_list
-                self.WH_to_TH = WH_to_TH_list
-                self.TH_to_WH = TH_to_WH_list
+                self.wh_to_th = wh_to_th_list
+                self.th_to_wh = th_to_wh_list
             else:
                 self.extract_trials()
             if test_type == 'analysis':
@@ -721,23 +721,23 @@ class Postprocessor(object):
         with the appropriate wrong hypothesis to true hypothesis and true
         hypothesis to wrong hypothesis fits. Also extracts the minimiser
         info and saves it to the same object."""
-        self.WH_to_TH = {}
-        self.TH_to_WH = {}
+        self.wh_to_th = {}
+        self.th_to_wh = {}
 
-        WH_to_TH_metrics = []
-        TH_to_WH_metrics = []
-        WH_to_TH_params = {}
-        TH_to_WH_params = {}
-        WH_to_TH_minim_info = {}
-        TH_to_WH_minim_info = {}
-        WH_to_TH_minim_info['time'] = []
-        WH_to_TH_minim_info['iterations'] = []
-        WH_to_TH_minim_info['funcevals'] = []
-        WH_to_TH_minim_info['status'] = []
-        TH_to_WH_minim_info['time'] = []
-        TH_to_WH_minim_info['iterations'] = []
-        TH_to_WH_minim_info['funcevals'] = []
-        TH_to_WH_minim_info['status'] = []
+        wh_to_th_metrics = []
+        th_to_wh_metrics = []
+        wh_to_th_params = {}
+        th_to_wh_params = {}
+        wh_to_th_minim_info = {}
+        th_to_wh_minim_info = {}
+        wh_to_th_minim_info['time'] = []
+        wh_to_th_minim_info['iterations'] = []
+        wh_to_th_minim_info['funcevals'] = []
+        wh_to_th_minim_info['status'] = []
+        th_to_wh_minim_info['time'] = []
+        th_to_wh_minim_info['iterations'] = []
+        th_to_wh_minim_info['funcevals'] = []
+        th_to_wh_minim_info['status'] = []
 
         for injparam in sorted(self.data_sets.keys()):
             injlabels = self.labels[injparam].dict
@@ -755,72 +755,72 @@ class Postprocessor(object):
                     bestfit = 'h1'
                     altfit = 'h0'
 
-                WH_to_TH_fit = self.data_sets[injparam][injkey][
+                wh_to_th_fit = self.data_sets[injparam][injkey][
                     '%s_fit_to_%s_fid'%(altfit, bestfit)]['fid_asimov']
-                TH_to_WH_fit = self.data_sets[injparam][injkey][
+                th_to_wh_fit = self.data_sets[injparam][injkey][
                     '%s_fit_to_%s_fid'%(bestfit, altfit)]['fid_asimov']
 
-                WH_to_TH_metrics.append(WH_to_TH_fit['metric_val'])
-                TH_to_WH_metrics.append(TH_to_WH_fit['metric_val'])
+                wh_to_th_metrics.append(wh_to_th_fit['metric_val'])
+                th_to_wh_metrics.append(th_to_wh_fit['metric_val'])
 
-                for systkey in WH_to_TH_fit['params'].keys():
-                    if systkey not in WH_to_TH_params.keys():
-                        WH_to_TH_params[systkey] = []
-                    WH_to_TH_params[systkey].append(
-                        WH_to_TH_fit['params'][systkey]
+                for systkey in wh_to_th_fit['params'].keys():
+                    if systkey not in wh_to_th_params.keys():
+                        wh_to_th_params[systkey] = []
+                    wh_to_th_params[systkey].append(
+                        wh_to_th_fit['params'][systkey]
                     )
-                for systkey in TH_to_WH_fit['params'].keys():
-                    if systkey not in TH_to_WH_params.keys():
-                        TH_to_WH_params[systkey] = []
-                    TH_to_WH_params[systkey].append(
-                        TH_to_WH_fit['params'][systkey]
+                for systkey in th_to_wh_fit['params'].keys():
+                    if systkey not in th_to_wh_params.keys():
+                        th_to_wh_params[systkey] = []
+                    th_to_wh_params[systkey].append(
+                        th_to_wh_fit['params'][systkey]
                     )
 
-                WH_to_TH_minim_info['time'].append(
+                wh_to_th_minim_info['time'].append(
                     self.minimiser_info[injparam][injkey][
                         '%s_fit_to_%s_fid'%(altfit, bestfit)
                     ]['fid_asimov']['minimizer_time'])
-                WH_to_TH_minim_info['iterations'].append(
+                wh_to_th_minim_info['iterations'].append(
                     self.minimiser_info[injparam][injkey][
                         '%s_fit_to_%s_fid'%(altfit, bestfit)
                     ]['fid_asimov']['minimizer_metadata']['nit'])
-                WH_to_TH_minim_info['funcevals'].append(
+                wh_to_th_minim_info['funcevals'].append(
                     self.minimiser_info[injparam][injkey][
                         '%s_fit_to_%s_fid'%(altfit, bestfit)
                     ]['fid_asimov']['minimizer_metadata']['nfev'])
-                WH_to_TH_minim_info['status'].append(
+                wh_to_th_minim_info['status'].append(
                     self.minimiser_info[injparam][injkey][
                         '%s_fit_to_%s_fid'%(altfit, bestfit)
                     ]['fid_asimov']['minimizer_metadata']['status'])
                 
-                TH_to_WH_minim_info['time'].append(
+                th_to_wh_minim_info['time'].append(
                     self.minimiser_info[injparam][injkey][
                         '%s_fit_to_%s_fid'%(bestfit, altfit)
                     ]['fid_asimov']['minimizer_time'])
-                TH_to_WH_minim_info['iterations'].append(
+                th_to_wh_minim_info['iterations'].append(
                     self.minimiser_info[injparam][injkey][
                         '%s_fit_to_%s_fid'%(bestfit, altfit)
                     ]['fid_asimov']['minimizer_metadata']['nit'])
-                TH_to_WH_minim_info['funcevals'].append(
+                th_to_wh_minim_info['funcevals'].append(
                     self.minimiser_info[injparam][injkey][
                         '%s_fit_to_%s_fid'%(bestfit, altfit)
                     ]['fid_asimov']['minimizer_metadata']['nfev'])
-                TH_to_WH_minim_info['status'].append(
+                th_to_wh_minim_info['status'].append(
                     self.minimiser_info[injparam][injkey][
                         '%s_fit_to_%s_fid'%(bestfit, altfit)
                     ]['fid_asimov']['minimizer_metadata']['status'])
 
-        WH_to_TH_params['bestfit'] = bestfit
-        WH_to_TH_params['altfit'] = altfit
-        TH_to_WH_params['bestfit'] = bestfit
-        TH_to_WH_params['altfit'] = altfit
+        wh_to_th_params['bestfit'] = bestfit
+        wh_to_th_params['altfit'] = altfit
+        th_to_wh_params['bestfit'] = bestfit
+        th_to_wh_params['altfit'] = altfit
 
-        self.WH_to_TH['metrics'] = WH_to_TH_metrics
-        self.TH_to_WH['metrics'] = TH_to_WH_metrics
-        self.WH_to_TH['params'] = WH_to_TH_params
-        self.TH_to_WH['params'] = TH_to_WH_params
-        self.WH_to_TH['minim_info'] = WH_to_TH_minim_info
-        self.TH_to_WH['minim_info'] = TH_to_WH_minim_info
+        self.wh_to_th['metrics'] = wh_to_th_metrics
+        self.th_to_wh['metrics'] = th_to_wh_metrics
+        self.wh_to_th['params'] = wh_to_th_params
+        self.th_to_wh['params'] = th_to_wh_params
+        self.wh_to_th['minim_info'] = wh_to_th_minim_info
+        self.th_to_wh['minim_info'] = th_to_wh_minim_info
 
     def extract_trials(self):
         """Extract and aggregate analysis results."""
@@ -1158,17 +1158,17 @@ class Postprocessor(object):
             elif self.inj_param_name == 'deltam3l':
                 self.inj_param_units = 'electron_volt ** 2'
             else:
-                if self.inj_param_name not in self.WH_to_TH['params'].keys():
+                if self.inj_param_name not in self.wh_to_th['params'].keys():
                     raise ValueError(
                         "The injected parameter %s could not be found in "
                         "the fitted parameters: %s. Please use the script"
                         " argument to set the injected parameter units "
                         "manually"%(self.inj_param_name,
-                                    self.WH_to_TH['params'].keys())
+                                    self.wh_to_th['params'].keys())
                     )
                 else:
                     val, inj_param_units = self.parse_pint_string(
-                        pint_string=self.WH_to_TH['params'][
+                        pint_string=self.wh_to_th['params'][
                             self.inj_param_name][0]
                     )
                     
@@ -1188,14 +1188,14 @@ class Postprocessor(object):
             data_params = None
         return data_params
 
-    def calculate_deltachi2_significances(self, WH_to_TH_metrics,
-                                          TH_to_WH_metrics):
+    def calculate_deltachi2_significances(self, wh_to_th_metrics,
+                                          th_to_wh_metrics):
         """Calculates the Asimov significance from the sets of metrics."""
-        if isinstance(WH_to_TH_metrics, list):
-            WH_to_TH_metrics = np.array(WH_to_TH_metrics)
-            TH_to_WH_metrics = np.array(TH_to_WH_metrics)
-        num = WH_to_TH_metrics + TH_to_WH_metrics
-        denom = 2 * np.sqrt(WH_to_TH_metrics)
+        if isinstance(wh_to_th_metrics, list):
+            wh_to_th_metrics = np.array(wh_to_th_metrics)
+            th_to_wh_metrics = np.array(th_to_wh_metrics)
+        num = wh_to_th_metrics + th_to_wh_metrics
+        denom = 2 * np.sqrt(wh_to_th_metrics)
         significances = num/denom
         return significances
         
@@ -1222,13 +1222,13 @@ class Postprocessor(object):
         for i in xrange(len(self.data_sets)):
 
             significances = self.calculate_deltachi2_significances(
-                WH_to_TH_metrics=self.WH_to_TH[i]['metrics'],
-                TH_to_WH_metrics=self.TH_to_WH[i]['metrics']
+                wh_to_th_metrics=self.wh_to_th[i]['metrics'],
+                th_to_wh_metrics=self.th_to_wh[i]['metrics']
             )
 
             truth = self.labels[
                 self.labels.keys()[i]].dict['data_name'].split('_')[0]
-            plotlabel = 'True %s'%self.tex_axis_label(label=truth)
+            plotlabel = 'True %s'%self.tex_axis_label(truth)
             
             self.make_1D_graph(
                 xvals=self.inj_param_vals,
@@ -1237,8 +1237,8 @@ class Postprocessor(object):
                 xunits=self.inj_param_units,
                 ylabel=None,
                 yunits=None,
-                marker=self.marker_style(label=truth),
-                color=self.plot_colour(label=truth),
+                marker=self.marker_style(truth),
+                color=self.plot_colour(truth),
                 plotlabel=plotlabel,
                 xlims=xlims
             )
@@ -1256,10 +1256,10 @@ class Postprocessor(object):
         if len(self.data_sets) == 1:
             alt = self.labels[
                 self.labels.keys()[0]].dict['%s_name'%(
-                    self.WH_to_TH[0]['params']['altfit'])].split('_')[0]
+                    self.wh_to_th[0]['params']['altfit'])].split('_')[0]
             plt.ylabel(r'%s from %s Significance $\left(\sigma\right)$'%(
-                self.tex_axis_label(label=truth),
-                self.tex_axis_label(label=alt)
+                self.tex_axis_label(truth),
+                self.tex_axis_label(alt)
             ))
         else:
             plt.ylabel(r'Significance $\left(\sigma\right)$', fontsize=24)
@@ -1272,6 +1272,120 @@ class Postprocessor(object):
         save_end = "%s_asimov_significances"%(self.inj_param_name)
         self.save_plot(outdir=outdir, end=save_end, truth=truth)
         plt.close()
+
+    def make_asimov_fit_parameter_plots(self, combined=False):
+        """Makes the plots of the fitted parameters in the injected
+        parameter scans. The combined argument will plot these on the
+        same canvas for the same hypothesis fit."""
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+        
+        if combined:
+            outdir = os.path.join(self.outdir, 'CombinedBestFits')
+        else:
+            outdir = os.path.join(self.outdir, 'IndividualBestFits')
+        mkdir(outdir)
+        
+        maintitle = self.make_main_title(
+            end='Asimov Analysis'
+        )
+
+        hrange = self.inj_param_vals[-1]-self.inj_param_vals[0]
+        xlims = [self.inj_param_vals[0]-0.1*hrange,
+                 self.inj_param_vals[-1]+0.1*hrange]
+
+        th = self.labels[self.labels.keys()[0]].dict[
+            '%s_name'%self.th_to_wh[0]['params']['bestfit']]
+        wh = self.labels[self.labels.keys()[0]].dict[
+            '%s_name'%self.th_to_wh[0]['params']['altfit']]
+
+        th_to_wh_label = "%s fit to %s fiducial"%(
+            self.tex_axis_label(th),
+            self.tex_axis_label(wh)
+        )
+        wh_to_th_label = "%s fit to %s fiducial"%(
+            self.tex_axis_label(wh),
+            self.tex_axis_label(th)
+        )
+        fitlabels = [th_to_wh_label, wh_to_th_label]
+
+        subtitle = "True %s Best Fit Parameters\end{center}"%(self.tex_axis_label(th))
+
+        # Set up multi-plot if needed
+        if combined:
+            num_rows = self.get_num_rows(
+                data=self.th_to_wh[0]['params'],
+                omit_metric=False
+            )
+            plt.figure(figsize=(20, 5*num_rows+2))
+            subplotnum = 1
+        else:
+            subplotnum = None
+
+        for param in self.th_to_wh[0]['params'].keys():
+            if param not in ['bestfit', 'altfit']:
+                ymax = None
+                ymin = None
+                for fit, fitname, fitlabel in zip(
+                        [self.th_to_wh, self.wh_to_th],
+                        ['th_to_wh', 'wh_to_th'],
+                        fitlabels):
+                    vals = []
+                    for param_val in fit[0]['params'][param]:
+                        val, units = self.parse_pint_string(
+                            pint_string=param_val
+                        )
+                        if param == 'deltam31':
+                            vals.append(np.abs(float(val)))
+                        else:
+                            vals.append(float(val))
+                    # Specify the subplot, if necessary
+                    if combined:
+                        plt.subplot(num_rows, 4, subplotnum)
+                    self.make_1D_graph(
+                        xvals=self.inj_param_vals,
+                        yvals=vals,
+                        xlabel=self.inj_param_name,
+                        xunits=self.inj_param_units,
+                        ylabel=param,
+                        yunits=units,
+                        marker=self.marker_style(fitname),
+                        color=self.plot_colour(fitname),
+                        plotlabel=fitlabel,
+                        xlims=xlims
+                    )
+
+                    if ymax is None:
+                        ymax = max(vals)
+                    else:
+                        ymax = max(ymax, max(vals))
+                    if ymin is None:
+                        ymin = min(vals)
+                    else:
+                        ymin = min(ymin, min(vals))
+
+                yrange = ymax - ymin
+                plt.ylim(ymin-0.1*yrange, ymax+0.2*yrange)
+                plt.legend(loc='upper left')
+                # Advance the subplot number, if necessary
+                if combined:
+                    subplotnum += 1
+                # Else, save/close this plot
+                else:
+                    plt.title(r'%s \\ %s'%(maintitle,subtitle))
+                    plt.tight_layout()
+                    save_end = "%s_%s_best_fit_values"%(self.inj_param_name,
+                                                    param)
+                    self.save_plot(outdir=outdir, end=save_end, truth=th)
+                    plt.close()
+        # Save the whole canvas, if necessary
+        if combined:
+            plt.suptitle(r'%s \\ %s'%(maintitle,subtitle), fontsize=36)
+            plt.tight_layout()
+            plt.subplots_adjust(top=0.9)
+            save_end = "%s_all_best_fit_values"%(self.inj_param_name)
+            self.save_plot(outdir=outdir, end=save_end, truth=th)
+            plt.close()                
 
     def make_scatter_plots(self, combined=False,
                            singlesyst=False, matrix=False):
@@ -1958,7 +2072,7 @@ class Postprocessor(object):
             wrongoutdir = os.path.join(outdir, 'WrongToTrueFits')
             mkdir(wrongoutdir)
             for odir, fits in zip([trueoutdir, wrongoutdir],
-                                  [self.TH_to_WH, self.TH_to_WH]):
+                                  [self.th_to_wh, self.th_to_wh]):
                 # Times have a unit so must be handled differently
                 minimiser_times = []
                 for time in fits[0]['minim_info']['time']:
@@ -1986,7 +2100,7 @@ class Postprocessor(object):
 
                 truth = self.labels[
                     self.labels.keys()[0]].dict['data_name'].split('_')[0]
-                plotlabel = 'True %s'%self.tex_axis_label(label=truth)
+                plotlabel = 'True %s'%self.tex_axis_label(truth)
                 hrange = self.inj_param_vals[-1]-self.inj_param_vals[0]
                 xlims = [self.inj_param_vals[0]-0.1*hrange,
                          self.inj_param_vals[-1]+0.1*hrange]
@@ -2006,8 +2120,8 @@ class Postprocessor(object):
                         xunits=self.inj_param_units,
                         ylabel=plot_end,
                         yunits=None,
-                        marker=self.marker_style(label=truth),
-                        color=self.plot_colour(label=truth),
+                        marker=self.marker_style(truth),
+                        color=self.plot_colour(truth),
                         plotlabel=plotlabel,
                         xlims=xlims,
                         ylims=ylims
@@ -4263,7 +4377,7 @@ class Postprocessor(object):
                       ylabel, yunits, xlims='edges', ylims=None,
                       linestyle='-', color='darkblue', alpha=0.9,
                       xlabelsize='18', ylabelsize='18', marker=None,
-                      plotlabel=None):
+                      plotlabel=None, subplotnum=None):
         """Generic 1D graph plotting function. The x limits will be set as
         the edges of the xvals unless overwritten. Set this to None to
         leave it as matplotlib dictates. The y limits will be left alone
@@ -4296,11 +4410,19 @@ class Postprocessor(object):
             else:
                 plt.ylim(ylims)
         if ylabel is not None:
-            nice_ylabel = self.make_label(ylabel, yunits)
-            plt.ylabel(
-                nice_ylabel,
-                fontsize=ylabelsize
-            )
+            if subplotnum is not None:
+                if (subplotnum-1)%4 == 0:
+                    nice_ylabel = self.make_label(ylabel, yunits)
+                    plt.ylabel(
+                        nice_ylabel,
+                        fontsize=ylabelsize
+                    )
+            else:
+                nice_ylabel = self.make_label(ylabel, yunits)
+                plt.ylabel(
+                    nice_ylabel,
+                    fontsize=ylabelsize
+                )
 
     def make_2D_hist_plot(self, zvals, xbins, ybins, xlabel,
                           ylabel, zlabel, xunits=None, yunits=None,
@@ -4812,6 +4934,9 @@ class Postprocessor(object):
         # Mass ordering
         pretty_colours['no'] = 'r'
         pretty_colours['io'] = 'b'
+        # Asimov fits
+        pretty_colours['th_to_wh'] = 'darkviolet'
+        pretty_colours['wh_to_th'] = 'deepskyblue'
         colourlabel = None
         for colourkey in pretty_colours.keys():
             if (colourkey in label) or (colourkey == label):
@@ -4854,6 +4979,9 @@ class Postprocessor(object):
         # NMO
         pretty_markers['no'] = 'o'
         pretty_markers['io'] = 'o'
+        # Asimov Fits
+        pretty_markers['th_to_wh'] = 'o'
+        pretty_markers['wh_to_th'] = 'o'
         # MSW
         pretty_markers['msw'] = '^'
         markerstyle = None
@@ -5055,7 +5183,7 @@ def main_injparamscan_postprocessing():
     )
 
     if len(postprocessor.data_sets) == 1:
-        if postprocessor.WH_to_TH[0]['params'].keys() == ['bestfit', 'altit']:
+        if postprocessor.wh_to_th[0]['params'].keys() == ['bestfit', 'altit']:
             if init_args_d['individual_fits'] or init_args_d['combined_fits']:
                 raise ValueError(
                     "You have requested to make plots of the best fit "
@@ -5068,9 +5196,9 @@ def main_injparamscan_postprocessing():
         if init_args_d['minim_information']:
             postprocessor.make_fit_information_plots()
         if init_args_d['individual_fits']:
-            print "IFITS"
+            postprocessor.make_asimov_fit_parameter_plots()
         if init_args_d['combined_fits']:
-            print "CFITS"
+            postprocessor.make_asimov_fit_parameter_plots(combined=True)
     else:
         if init_args_d['individual_fits'] or init_args_d['combned_fits'] or \
            init_args_d['minim_information']:
