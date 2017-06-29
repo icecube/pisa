@@ -36,6 +36,8 @@ class NSIParams(object):
     def __init__(self, eps_ee, eps_emu, eps_etau, eps_mumu, eps_mutau,
                  eps_tautau):
         """Set NSI parameters."""
+        self._eps_matrix = np.zeros((3, 3))
+        self._eps_type = (float,)
         self.eps_ee = eps_ee
         self.eps_emu = eps_emu
         self.eps_etau = eps_etau
@@ -46,24 +48,11 @@ class NSIParams(object):
     @property
     def eps_type(self):
         """Allowed numerical type of NSI coupling parameters."""
-        self._eps_type = (float,)
         return self._eps_type
 
     @property
     def eps_matrix(self):
         """Symmetric matrix of NSI coupling parameters."""
-
-        eps_matrix = np.zeros((3,3))
-
-        eps_matrix[0][0] = self._eps_ee
-        eps_matrix[1][0] = eps_matrix[0][1] = self._eps_emu
-        eps_matrix[2][0] = eps_matrix[0][2] = self._eps_etau
-        eps_matrix[1][1] = self._eps_mumu
-        eps_matrix[2][2] = self._eps_tautau
-        eps_matrix[1][2] = eps_matrix[2][1] = self._eps_mutau
-
-        self._eps_matrix = eps_matrix
-
         return self._eps_matrix
 
     @property
@@ -74,7 +63,7 @@ class NSIParams(object):
     @eps_ee.setter
     def eps_ee(self, value):
         assert isinstance(value, self.eps_type)
-        self._eps_ee = value
+        self._eps_matrix[0][0] = self._eps_ee = value
 
     @property
     def eps_emu(self):
@@ -84,7 +73,7 @@ class NSIParams(object):
     @eps_emu.setter
     def eps_emu(self, value):
         assert isinstance(value, self.eps_type)
-        self._eps_emu = value
+        self._eps_matrix[1][0] = self._eps_matrix[0][1] = self._eps_emu = value
 
     @property
     def eps_etau(self):
@@ -94,7 +83,7 @@ class NSIParams(object):
     @eps_etau.setter
     def eps_etau(self, value):
         assert isinstance(value, self.eps_type)
-        self._eps_etau = value
+        self._eps_matrix[2][0] = self._eps_matrix[0][2] = self._eps_etau = value
 
     @property
     def eps_mumu(self):
@@ -104,7 +93,7 @@ class NSIParams(object):
     @eps_mumu.setter
     def eps_mumu(self, value):
         assert isinstance(value, self.eps_type)
-        self._eps_mumu = value
+        self._eps_matrix[1][1] = self._eps_mumu = value
 
     @property
     def eps_mutau(self):
@@ -114,7 +103,7 @@ class NSIParams(object):
     @eps_mutau.setter
     def eps_mutau(self, value):
         assert isinstance(value, self.eps_type)
-        self._eps_mutau = value
+        self._eps_matrix[1][2] = self._eps_matrix[2][1] = self._eps_mutau = value
 
     @property
     def eps_tautau(self):
@@ -124,5 +113,5 @@ class NSIParams(object):
     @eps_tautau.setter
     def eps_tautau(self, value):
         assert isinstance(value, self.eps_type)
-        self._eps_tautau = value
+        self._eps_matrix[2][2] = self._eps_tautau = value
 
