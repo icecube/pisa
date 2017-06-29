@@ -2,6 +2,7 @@ pip>=1.8
 cython
 dill
 numpy>=1.11.0
+configparser
 scipy>=0.17.0
 simplejson>=3.2.0
 pint>=0.8

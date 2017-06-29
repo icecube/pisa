@@ -257,6 +257,7 @@ def do_setup():
             'numpy>=1.11',
         ],
         install_requires=[
+            'configparser',
             'scipy>=0.17',
             'dill',
             'h5py',

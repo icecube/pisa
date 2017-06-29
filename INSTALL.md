@@ -93,6 +93,7 @@ Also note that Python, SWIG, HDF5, and pip support come pre-packaged or as `cond
     `sudo apt-get install libhdf5-10`
 
 Required Python modules that are installed automatically when you use the pip command detailed later:
+* [configparser](https://pypi.python.org/pypi/configparser)
 * [cython](http://cython.org)
 * [decorator](https://pypi.python.org/pypi/decorator)
 * [dill](http://trac.mystic.cacr.caltech.edu/project/pathos/wiki/dill.html)

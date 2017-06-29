@@ -200,7 +200,7 @@ from os.path import abspath, expanduser, expandvars, isfile, join
 import re
 import sys
 
-from configparser import (
+from backports.configparser import (
     RawConfigParser, ExtendedInterpolation, DuplicateOptionError,
     SectionProxy, MissingSectionHeaderError, DuplicateSectionError
 )
