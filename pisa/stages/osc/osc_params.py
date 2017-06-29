@@ -165,6 +165,7 @@ class OscParams(object):
 
     @property
     def dm_matrix(self):
+        """Neutrino mass splitting matrix in vacuum"""
         dmVacVac = np.zeros((3,3))
         mVac = np.zeros(3)
         delta = 5.0e-9
