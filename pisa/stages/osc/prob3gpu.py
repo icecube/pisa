@@ -470,8 +470,8 @@ class prob3gpu(Stage):
 
         self.prepare_device_arrays()
 
-        dm_mat = self.osc.M_mass
-        mix_mat = self.osc.M_pmns
+        dm_mat = self.osc.dm_matrix
+        mix_mat = self.osc.mix_matrix
         nsi_eps_mat = self.nsi.eps_matrix
 
         logging.info('dm_mat: \n %s' %str(dm_mat))
@@ -671,8 +671,8 @@ class prob3gpu(Stage):
         #if mAtm < 0.0: mAtm -= deltam21;
 
         self.osc = OscParams(deltam21, mAtm, sin12, sin13, sin23, deltacp)
-        dm_mat = self.osc.M_mass
-        mix_mat = self.osc.M_pmns
+        dm_mat = self.osc.dm_matrix
+        mix_mat = self.osc.mix_matrix
 
         logging.debug("dm_mat: \n %s"%str(dm_mat))
         logging.debug("mix[re]: \n %s"%str(mix_mat[:,:,0]))
