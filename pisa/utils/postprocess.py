@@ -195,7 +195,7 @@ def parse_args(description=__doc__, profile_scan=False,
         )
     elif injparamscan:
         parser.add_argument(
-            '--inj-param-units',type=str,default=None,
+            '--inj-param-units', type=str, default=None,
             help="""If you know the units that you injected the parameter
             with and you expect that the script will not be able to find
             this by looking at the fit parameters in the config file
@@ -650,7 +650,7 @@ class Postprocessor(object):
 
     #### Hypo testing Specific Postprocessing functions ####
 
-    def organise_trials(self):
+    def organise_trials(self, logdir_content):
         """This will actually go in to the directory where the trials 
         are and pull out the fit results."""
         config_summary_fpath = os.path.join(
@@ -709,8 +709,15 @@ class Postprocessor(object):
             fluctuate_data=self.fluctuate_data,
             fluctuate_fid=self.fluctuate_fid
         )
-        injparam = '%s_%s'%(labels.dict['data_name'].split('_')[-2],
-                            labels.dict['data_name'].split('_')[-1])
+        bits = labels.dict['data_name'].split('_')
+        bare_truth = bits[0]
+        injparam = None
+        for bit in bits:
+            if not (bit == bare_truth):
+                if injparam is None:
+                    injparam = bit
+                else:
+                    injparam += '_%s'%bit
         self.labels[injparam] = labels
         # Get starting params
         self.get_starting_params(cfg=cfg, injparam=injparam)
@@ -831,7 +838,7 @@ class Postprocessor(object):
         # extract the trials.
         if self.test_type == 'analysis':
             if 'config_summary.json' in logdir_content:
-                self.organise_trials()
+                self.organise_trials(logdir_content=logdir_content)
             else:
                 raise ValueError(
                     'config_summary.json cannot be found in the specified '
@@ -848,12 +855,25 @@ class Postprocessor(object):
                 scan_variables = []
                 for folder in logdir_content:
                     if '.pckl' not in folder and 'Plots' not in folder:
+                        bits = folder.split('toy')[1].split('_')
+                        toy_name = bits[1]
                         toy_names.append(
-                            folder.split('toy')[1].split('_')[1]
+                            toy_name
                         )
-                        scan_variables.append(
-                            folder.split('toy')[1].split('_')[2]
-                        )
+                        scan_variable = None
+                        add_bit = True
+                        for bit in bits:
+                            try:
+                                float(bit)
+                                add_bit = False
+                            except:
+                                if not (bit == '') and not (bit == toy_name):
+                                    if add_bit:
+                                        if scan_variable is None:
+                                            scan_variable = bit
+                                        else:
+                                            scan_variable += '_%s'%bit
+                        scan_variables.append(scan_variable)
                 toy_names = np.array(toy_names)
                 scan_variables = np.array(scan_variables)
                 # Require all to be the same injected truth model
@@ -4936,6 +4956,7 @@ class Postprocessor(object):
         pretty_labels["hole_ice_fwd"] = r"Hole Ice Forward"
         pretty_labels["degree"] = r"$^\circ$"
         pretty_labels["radians"] = r"rads"
+        pretty_labels["radian"] = r"rads"
         pretty_labels["electron_volt ** 2"] = r"$\mathrm{eV}^2$"
         pretty_labels["electron_volt"] = r"$\mathrm{eV}^2$"
         pretty_labels["gigaelectron_volt"] = r"$\mathrm{GeV}$"
@@ -4978,6 +4999,8 @@ class Postprocessor(object):
         pretty_labels["correlation_coefficients"] = r"Correlation Coefficients"
         pretty_labels["true no, llr"] = r"True Normal Ordering, LLR"
         pretty_labels["true io, llr"] = r"True Inverted Ordering, LLR"
+        pretty_labels["e_res_scale"] = r"Energy Resolution Scale"
+        pretty_labels["cz_res_scale"] = r"$\cos\theta_Z$ Resolution Scale"
         if label not in pretty_labels.keys():
             logging.warn("I have no nice label for %s. "
                          "Returning as is."%label)
@@ -5178,22 +5201,12 @@ def main_analysis_postprocessing():
                              hypo_testing_analysis=True)
 
     if init_args_d['asimov']:
+        # TODO - Something like the necessary function is there with
+        # calculate_deltachi2_significances but exactly how to output
+        # this should probably be thought about
         raise NotImplementedError(
             "Postprocessing of Asimov analysis not implemented yet."
         )
-        #data_sets, all_params, labels, minimiser_info = extract_trials(
-        #    logdir=init_args_d['dir'],
-        #    fluctuate_fid=False,
-        #    fluctuate_data=False
-        #)
-        #od = data_sets.values()[0]
-        #if od['h1_fit_to_h0_fid']['fid_asimov']['metric_val'] \
-        #    > od['h0_fit_to_h1_fid']['fid_asimov']['metric_val']:
-        #print np.sqrt(np.abs(
-        #    od['h1_fit_to_h0_fid']['fid_asimov']['metric_val'] -
-        #    od['h0_fit_to_h1_fid']['fid_asimov']['metric_val']
-        #))
-        #return
 
     # Otherwise: llr analysis
     if init_args_d['outdir'] is None:
@@ -5284,7 +5297,8 @@ def main_injparamscan_postprocessing():
         fluctuate_fid=False,
         fluctuate_data=False,
         extra_points=init_args_d['extra_points'],
-        extra_points_labels=init_args_d['extra_points_labels']
+        extra_points_labels=init_args_d['extra_points_labels'],
+        inj_param_units=init_args_d['inj_param_units']
     )
 
     if len(postprocessor.data_sets) == 1:
