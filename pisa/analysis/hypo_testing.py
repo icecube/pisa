@@ -418,7 +418,12 @@ class HypoTesting(Analysis):
         # Identify duplicate `*_maker` specifications
         self.h1_maker_is_h0_maker = False
         if h1_maker is None or h1_maker == h0_maker:
-            self.h1_maker_is_h0_maker = True
+            # Need an entirely separate one in this case because the
+            # re-centred priors will be different for each hypothesis.
+            if recentre_priors:
+                h1_maker = DistributionMaker(h0_maker)
+            else:
+                self.h1_maker_is_h0_maker = True
 
         self.data_maker_is_h0_maker = False
         if data_maker is None or data_maker == h0_maker:
