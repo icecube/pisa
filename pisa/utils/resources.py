@@ -13,9 +13,12 @@ in the filesystem or with the installed PISA package.
 """
 
 
+from __future__ import absolute_import
+
 import os
-import pkg_resources
 import sys
+
+import pkg_resources
 
 
 __all__ = ['RESOURCES_SUBDIRS', 'find_resource', 'open_resource', 'find_path']
@@ -90,8 +93,8 @@ def find_resource(resource, fail=True):
         resource_path = pkg_resources.resource_filename(
             'pisa', 'resources/' + resource
         )
-        log.logging.debug('Found resource "%s" in PISA package at "%s"'
-                          %(resource, resource_path))
+        log.logging.debug('Found resource "%s" in PISA package at "%s"',
+                          resource, resource_path)
         return resource_path
 
     for subdir in RESOURCES_SUBDIRS + [None]:
@@ -104,8 +107,8 @@ def find_resource(resource, fail=True):
             resource_path = pkg_resources.resource_filename(
                 'pisa', augmented_path
             )
-            log.logging.debug('Found resource "%s" in PISA package at "%s"'
-                              %(resource, resource_path))
+            log.logging.debug('Found resource "%s" in PISA package at "%s"',
+                              resource, resource_path)
             return resource_path
 
     # 3) If you get here, the resource is nowhere to be found
@@ -173,8 +176,8 @@ def open_resource(resource, mode='r'):
     except IOError:
         fs_exc_info = sys.exc_info()
     else:
-        log.logging.debug('Opening resource "%s" from filesystem at "%s"'
-                          %(resource, resource_path))
+        log.logging.debug('Opening resource "%s" from filesystem at "%s"',
+                          resource, resource_path)
         return open(resource_path, mode=mode)
 
     # 2) Look inside the installed pisa package; this should error out if not
@@ -199,8 +202,8 @@ def open_resource(resource, mode='r'):
         except IOError:
             pkg_exc_info = sys.exc_info()
         else:
-            log.logging.debug('Opening resource "%s" from PISA package.'
-                              %resource)
+            log.logging.debug('Opening resource "%s" from PISA package.',
+                              resource)
             return stream
 
     if fs_exc_info is not None:
@@ -236,7 +239,7 @@ def find_path(pathspec, fail=True):
     log.logging.trace('Checking absolute or path relative to cwd...')
     resource_path = os.path.expandvars(os.path.expanduser(pathspec))
     if os.path.exists(resource_path):
-        log.logging.debug('Found %s at %s' % (pathspec, resource_path))
+        log.logging.debug('Found "%s" at "%s"', pathspec, resource_path)
         return resource_path
 
     # 2) Check if $PISA_RESOURCES is set in environment; if so, look relative
@@ -248,7 +251,7 @@ def find_path(pathspec, fail=True):
                           % pisa_resources)
         resource_paths = pisa_resources.split(':')
         for resource_path in resource_paths:
-            if len(resource_path) == 0:
+            if not resource_path:
                 continue
             resource_path = os.path.expandvars(os.path.expanduser(
                 resource_path
@@ -261,13 +264,13 @@ def find_path(pathspec, fail=True):
 
             for augmented_path in augmented_paths:
                 if os.path.exists(augmented_path):
-                    log.logging.debug('Found path "%s" at %s'
-                                      % (pathspec, augmented_path))
+                    log.logging.debug('Found path "%s" at %s',
+                                      pathspec, augmented_path)
                     return augmented_path
 
     # 3) If you get here, the file is nowhere to be found
     msg = 'Could not find path "%s"' % pathspec
     if fail:
         raise IOError(msg)
-    log.logging.debug(msg)
+    log.logging.trace(msg)
     return None

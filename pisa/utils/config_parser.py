@@ -1,17 +1,24 @@
 # author: P.Eller
 #         pde3+pisa@psu.edu
+#         J.L. Lanfranchi
+#         jll1062+pisa@phys.psu.edu
 #
 # date:   2016-04-28
 """
 Parse a ConfigFile object into a dict containing an item for every analysis
 stage, that itself contains all necessary instantiation arguments/objects for
 that stage. for en example config file, please consider
-`$PISA/pisa/resources/settings/pipeline/example.cfg`
+:file:`$PISA/pisa/resources/settings/pipeline/example.cfg`
 
-Config File Structure:
-===============
+Config File Structure
+=====================
 
-The config file is expected to contain the following sections::
+The config file is expected to contain something like the following, with the
+sections `[pipeline]` and corresponding `[stage:<...>]` required, in addition
+to `[binning]`:
+
+.. code-block:: cfg
+
     #include file_x.cfg
     #include file_y.cfg
 
@@ -39,33 +46,78 @@ The config file is expected to contain the following sections::
     ...
 
 * `#include` statements can be used to include other cfg files; these must be
-    the first line(s) of the file.
-
+  the first line(s) of the file.
 * `pipeline` is the top most section that defines the hierarchy of stages and
-    what services to be instantiated.
-
+  what services to be instantiated.
 * `binning` can contain different binning definitions, that are then later
-    referred to from within the stage sections.
-
+  referred to from within the stage sections.
 * `stage` one such section per stage:service is necessary. It contains some
-    options that are common for all stages (`binning`, `error_method` and
-    `debug_mode`) as well as all the necessary arguments and parameters for a
-    given stage.
+  options that are common for all stages (`binning`, `error_method` and
+  `debug_mode`) as well as all the necessary arguments and parameters for a
+  given stage.
 
 
-Param definitions:
-------------------
+Param definitions
+-----------------
 
-Every key in a stage section that starts with `param.name` is interpreted and
-parsed into a PISA param object. These can be strings (e.g. a filename - don't
-use any quotation marks) or quantities. The later case expects an expression
-that can be converted by the `parse_quantity` function. The `+/-` notation will
-be interpreted as a gaussian prior for the quantity. Units can be added by `*
-unit.soandso`.
+Every key in a stage section that starts with `param.<name>` is interpreted and
+parsed into a PISA :class:`pisa.core.param.Param` object. These can be strings
+(e.g. a filename--but don't use any quotation marks) or quantities (numbers
+with units).
 
-Additional arguments to a parameter are passed in with the `.` notation, for
-example `param.name.fixed = False`, which makes it a free parameter in the fit
-(by default a parameter is fixed unless specified like this).
+Quantities expect an expression that can be converted by the
+:func:`parse_quantity` function. The expression for a quantity can optionally
+include a simple Gaussian prior and units. The simplest definition of a
+quantity with neither Gaussian prior nor units would look something like this:
+
+.. code-block:: cfg
+
+    param.p1 = 12.5
+
+Gaussian priors can be included for a quantity using ``+/-`` notation, where
+the number that follows ``+/-`` is the standard deviation. E.g.:
+
+.. code-block:: cfg
+
+    param.p1 = 12.5 +/- 2.3
+
+If no units are explicitly set for a quantity, it is taken to be a quantity
+with special units ``dimensionless``. Units can be set by multiplying (using
+``*``) by ``units.<unit>`` where ``<unit>`` is the short or long name
+(optionally including metric prefix) of a unit. E.g. the following set
+equivalent values for params `p1` and `p2`:
+
+.. code-block:: cfg
+
+    param.p1 = 12.5 * unit.GeV
+    param.p2 = 12.5 * unit.gigaelectronvolt
+
+and this can be combined with the Gaussian-prior ``+/-`` notation:
+
+.. code-block:: cfg
+
+    param.p1 = 12.5 +/- 2.3 * unit.GeV
+
+Additional arguments to a parameter are passed in with the ``.`` notation, for
+example ``param.<name>.fixed = False``, which makes it a free parameter in the
+fit (by default a parameter is fixed unless specified like this).
+
+Uniform and spline priors can also be set using the ``.prior`` attribute:
+
+.. code-block:: cfg
+
+    param.p1 = 12.5
+    param.p1.prior = uniform
+
+    param.p2 = 12.5
+    param.p2.prior = spline
+    param.p2.prior.data =
+
+
+If no prior is specified, it is taken to have no prior (or, equivalently, a
+uniform prior with no penalty). A uniform prior can be explicitly set or
+arbitrary (Priors (including a Gaussian prior, as an alternative to the above
+notation) can be explicitly set using the ``.prior`` attribute of a ``param``:
 
 A range must be given for a free parameter. Either as absolute range `[x,y]` or
 in conjunction with the keywords `nominal` (= nominal parameter value) and
@@ -75,8 +127,8 @@ in conjunction with the keywords `nominal` (= nominal parameter value) and
 for the latter case a `.prior.data` will be expected, pointing to the spline
 data file.
 
-N.B.:
-+++++
+N.B.
+++++
 Params that have the same name in multiple stages of the pipeline are
 instantiated as references to a single param in memory, so updating one updates
 all of them.
@@ -89,8 +141,9 @@ params through the DistributionMaker's update_params method.
 If you DO NOT want parameters to be synchronized, provide a unique_id for them.
 This is imply done by setting `.unique_id`
 
-Param selector:
----------------
+
+Param selector
+--------------
 
 A special mechanism allows the user to specify multiple, different values for
 the same param via the param selector method. This can be used for example for
@@ -100,12 +153,16 @@ for hypothesis B a different value.
 A given param, say `foo`, then needs two definitions like the following,
 assuming we name our selections `A` and `B`:
 
-param.A.foo = 1
-param.B.foo = 2
+.. code-block:: cfg
+
+    param.A.foo = 1
+    param.B.foo = 2
 
 The default param selector needs to be spcified under section `pipeline` as e.g.
 
-param_selections = A
+.. code-block:: cfg
+
+    param_selections = A
 
 Which will default the value of 1 for param `foo`. An instatiated pipeline can
 dynamically switch to another selection after instantiation.
@@ -115,6 +172,17 @@ default selection they must be separated by commas.
 
 """
 
+# TODO: consistency, etc.
+# 1. Can we specify two sections with same name in the config?
+# 2. Add explicit gaussian prior (NOT +/- notation)
+# 3. If param value is defined with +/- gaussian prior notation, and is ref'd
+#    elsewhere, does the other param get the prior? (Meanwhile, a ref'd param
+#    value does NOT get a prior if it's set via `.prior`.)
+# 4. If param value is ref'd that has +/- gaussian prior, but then another
+#    prior is set via `.prior`, which takes precedence (the latter *should*
+#    take precedence...).
+# 5. Multiple definitions of same param should explicitly fail or at least give
+#    warning (right now, it quietly accepts the last definition)
 
 # TODO: Make interoperable with pisa.utils.resources. I.e., able to work with
 # Python package resources, not just filesystem files.
@@ -127,22 +195,29 @@ default selection they must be separated by commas.
 from __future__ import absolute_import, division
 
 from collections import OrderedDict
-from ConfigParser import ConfigParser, SafeConfigParser
+from io import StringIO
+from os.path import abspath, expanduser, expandvars, isfile, join
 import re
+import sys
 
+from configparser import (
+    RawConfigParser, ExtendedInterpolation, DuplicateOptionError,
+    SectionProxy, MissingSectionHeaderError, DuplicateSectionError
+)
+from backports.configparser.helpers import open as c_open
 import numpy as np
 from uncertainties import ufloat, ufloat_fromstr
 
 from pisa import ureg
-
 from pisa.utils.fileio import from_file
 from pisa.utils.log import logging, set_verbosity
+from pisa.utils.resources import find_resource
 
 
-__all__ = ['PARAM_RE', 'PARAM_ATTRS', 'units',
+__all__ = ['PARAM_RE', 'PARAM_ATTRS', 'STAGE_SEP',
            'parse_quantity', 'parse_string_literal', 'split',
            'interpret_param_subfields', 'parse_param', 'parse_pipeline_config',
-           'BetterConfigParser']
+           'MutableMultiFileIterator', 'PISAConfigParser']
 
 
 PARAM_RE = re.compile(
@@ -151,6 +226,8 @@ PARAM_RE = re.compile(
 )
 
 PARAM_ATTRS = ['range', 'prior', 'fixed']
+
+STAGE_SEP = '.'
 
 # Define names that users can specify in configs such that the eval of those
 # strings works.
@@ -250,7 +327,7 @@ def split(string, sep=','):
     ['one', 'two', 'three']
 
     """
-    return [x.strip().lower() for x in str.split(string, sep)]
+    return [x.strip().lower() for x in str.split(str(string), sep)]
 
 
 def interpret_param_subfields(subfields, selector=None, pname=None, attr=None):
@@ -384,17 +461,17 @@ def parse_pipeline_config(config):
 
     if isinstance(config, basestring):
         config = from_file(config)
-    elif isinstance(config, ConfigParser):
+    elif isinstance(config, PISAConfigParser):
         pass
     else:
         raise TypeError(
-            '`config` must either be a string or ConfigParser. Got %s instead.'
-            % type(config)
+            '`config` must either be a string or PISAConfigParser. Got %s '
+            'instead.' % type(config)
         )
 
     # Create binning objects
     binning_dict = {}
-    for name, value in config.items('binning'):
+    for name, value in config['binning'].items():
         if name.endswith('.order'):
             order = split(config.get('binning', name))
             binning, _ = split(name, sep='.')
@@ -410,16 +487,16 @@ def parse_pipeline_config(config):
     section = 'pipeline'
 
     # Get and parse the order of the stages (and which services implement them)
-    order = [split(x, ':') for x in split(config.get(section, 'order'))]
+    order = [split(x, STAGE_SEP) for x in split(config.get(section, 'order'))]
 
     param_selections = []
     if config.has_option(section, 'param_selections'):
         param_selections = split(config.get(section, 'param_selections'))
 
-    # Parse [stage:<stage_name>] sections and store to stage_dicts
+    # Parse [stage.<stage_name>] sections and store to stage_dicts
     stage_dicts = OrderedDict()
     for stage, service in order:
-        section = 'stage:%s' %stage
+        section = 'stage%s%s' % (STAGE_SEP, stage)
 
         # Instantiate dict to store args to pass to this stage
         service_kwargs = OrderedDict()
@@ -515,82 +592,446 @@ def parse_pipeline_config(config):
     return stage_dicts
 
 
-class BetterConfigParser(SafeConfigParser):
-    def __init__(self, *args, **kwargs):
-        SafeConfigParser.__init__(self, *args, **kwargs)
+class MutableMultiFileIterator(object):
+    """
+    Iterate through the lines of an already-open file (`fp`) but then can pause
+    at any point and open and iterate through another file via the
+    `switch_to_file` method (and this file can be paused to iterate through
+    another, etc.).
 
-    def read(self, filenames):
-        from pisa.utils.resources import find_resource
-        if isinstance(filenames, basestring):
-            filenames = [filenames]
-        new_filenames = [find_resource(fn) for fn in filenames]
+    This has the effect of in-lining files within files for e.g. parsing
+    multiple files as if they're a singe file. Which line comes from which file
+    is also tracked for generating maximally-useful error messages, via the
+    `location` method.
 
-        # Preprocessing for include statements
-        processed_filenames = []
-        # loop until we cannot find any more includes
-        while True:
-            processed_filenames.extend(new_filenames)
-            new_filenames = self.recursive_filenames(new_filenames)
-            rec_incs = set(new_filenames).intersection(processed_filenames)
-            if any(rec_incs):
-                raise ValueError('Recursive include statements found for %s'
-                                 % ', '.join(rec_incs))
-            if not new_filenames:
-                break
-        # call read with complete files list
-        SafeConfigParser.read(self, processed_filenames)
+    Note that circular references are not allowed.
 
-    def recursive_filenames(self, filenames):
-        new_filenames = []
-        for filename in filenames:
-            new_filenames.extend(self.process_file_and_includes(filename))
-        return new_filenames
+    Parameters
+    ----------
+    fp : file-like object
+        The (opened) main config to be read. E.g. can be an opened file,
+        io.StringIO object, etc.
 
-    @staticmethod
-    def process_file_and_includes(filename):
-        from pisa.utils.resources import find_resource
-        processed_filenames = []
-        with open(filename) as f:
-            for line in f.readlines():
-                if line.startswith('#include '):
-                    inc_file = line[9:].rstrip()
-                    inc_file = find_resource(inc_file)
-                    processed_filenames.append(inc_file)
-                    logging.debug('including file %s in cfg', inc_file)
+    fpname : string
+        Identifier for the initially `fp` object
+
+    """
+    def __init__(self, fp, fpname, fpath=None):
+        self._iter_stack = []
+        """Stack for storing dicts with 'fp', 'fpname', 'fpath', 'lineno', and
+        'line' for keeping track of the hierarchy of master config & included
+        configs"""
+
+        # It's ok to not find the fpname / fpname to not be a file for the
+        # *master* config, since this could e.g. be a io.StringIO file-like
+        # object (`read_string`) which comes from no actual file/resource on
+        # disk.
+        if not fpname and hasattr(fp, 'name'):
+            fpname = fp.name
+
+        if fpath is None:
+            try:
+                resource = find_resource(fpname)
+            except IOError:
+                pass
+            else:
+                if isfile(resource):
+                    fpath = abspath(expanduser(expandvars(fpname)))
+        record = dict(fp=fp, fpname=fpname, fpath=fpath, lineno=0, line='')
+        self._iter_stack.append(record)
+
+    def next(self):
+        """Iterate through lines in the file(s).
+
+        Returns
+        -------
+        line : string
+            The next line from the current file.
+
+        fpname : string
+            The `fpname` of the file from which the line was gotten.
+
+        lineno : int
+            The line number in the file.
+
+        """
+        if not self._iter_stack:
+            self._cleanup()
+            raise StopIteration
+        try:
+            record = self._iter_stack[-1]
+            record['line'] = next(record['fp'])
+            record['lineno'] += 1
+            return record
+        except StopIteration:
+            record = self._iter_stack.pop()
+            logging.trace(('Finished processing "{fpname:s}" with {lineno:d}'
+                           ' line(s)').format(**record))
+            return next(self)
+        except:
+            self._cleanup()
+            raise
+
+    def switch_to_file(self, fp=None, fpname=None):
+        """Switch iterator to a new resource location to continue processing.
+
+        Parameters
+        ----------
+        fp : None or file-like object
+            If `fp` is specified, this takes precedence over `fpname`.
+
+        fpname : None or string
+            Path of the file or resource to read from. This resource will be
+            located and opened if `fp` is None.
+
+        encoding
+            Argument is passed to the builtin ``open`` function for opening
+            the file.
+
+        """
+        if fp is None:
+            assert fpname
+            fpath = None
+            resource = find_resource(fpname)
+            if isfile(resource):
+                fpath = abspath(expanduser(expandvars(resource)))
+                if fpath in [r['fpath'] for r in self._iter_stack]:
+                    self._cleanup()
+                    raise ValueError(
+                        'Already processed "%s" at path "%s"' % (fpname, fpath)
+                    )
+            else:
+                self._cleanup()
+                raise ValueError('`fpname` "%s" is not a file')
+            fp_ = c_open(fpath, encoding=None)
+        else:
+            fp_ = fp
+            if fpname is None:
+                if hasattr(fp_, 'name'):
+                    fpname = fp_.name
                 else:
-                    break
-        return processed_filenames
+                    fpname = ''
+            fpath = fpname
 
-    def get(self, section, option, raw=True, vars=None): # pylint: disable=redefined-builtin
-        result = SafeConfigParser.get(self, section, option,
-                                                   raw=raw, vars=vars)
-        result = self.__replace_sectionwide_templates(result)
-        return result
+        logging.trace('Switching to "%s" at path "%s"' % (fpname, fpath))
 
-    def items(self, section, raw=True, vars=None): # pylint: disable=redefined-builtin
-        config_list = SafeConfigParser.items(
-            self, section=section, raw=raw, vars=vars
+        record = dict(fp=fp_, fpname=fpname, fpath=fpath, lineno=0, line='')
+        self._iter_stack.append(record)
+
+    @property
+    def location(self):
+        """string : Full hierarchical location, formatted for display"""
+        info = ['File hierarchy (most recent last):\n']
+        for record_num, record in enumerate(self._iter_stack):
+            s = '  Line {lineno:d}, fpname "{fpname:s}"'
+            if record_num > 0:
+                s += ' at path "{fpath:s}"'
+            s += '\n    {line:s}'
+            info.append(s.format(**record))
+        return ''.join(info)
+
+    def __iter__(self):
+        return self
+
+    def __del__(self):
+        self._cleanup()
+
+    def _cleanup(self):
+        """Close all file handles opened by this object (i.e. all except the
+        first file pointer, which is provided as an argument to `__init__`)"""
+        for record in self._iter_stack[1:]:
+            record['fp'].close()
+
+
+class PISAConfigParser(RawConfigParser):
+    """
+    Parses a PISA config file, extending :class:`configparser.RawConfigParser`
+    (the backport of RawConfigParser from Python 3.x) by adding the ability to
+    include external files inline via, for example:
+
+    .. code-block:: cfg
+
+        #include /path/to/file.cfg
+        #include path/to/resource.cfg
+        #include path/to/resource2.cfg as section2
+
+        [section1]
+        key11 = value1
+        key12 = ${section2:key21}
+        key13 = value3
+
+    where the files or resources located at "/path/to/file.cfg",
+    "path/to/resource.cfg", and "path/to/resource2.cfg" are effectively inlined
+    wherever the #include statements occur.
+
+    The ``#include path/to/resource2.cfg as section_name`` syntax
+    prefixes the contents of ``resource2.cfg`` by a section header named
+    "section2", expanding ``resource2.cfg`` as:
+
+    .. code-block:: cfg
+
+        [section2]
+        line1 of resource2.cfg
+        line2 of resource2.cfg
+        ... etc.
+
+    Special parsing rules we have added to make ``#include`` behavior sensible:
+
+    1. Using an ``#include file`` that contains a sction header
+       (``[section_name]``) *or* using ``#include file as section_name``
+       requires that the next non-blank / non-comment / non-#include line be a
+       new section header (``[section_name2]``).
+    2. Empty sections after fully parsing a config will raise a ``ValueError``.
+       This is likely never a desired behavior, and should alert the user to
+       inadvertent use of ``#include``.
+
+    Also note that, unlike the default :class:`~configparser.ConfigParser`
+    behavior, :class:`~configparser.ExtendedInterpolation` is used, whitespace
+    surrounding text in a section header is ignored, empty lines are *not*
+    allowed between multi-line values, and section names, keys, and values are
+    all case-sensitive.
+
+    All other options are taken as the defaults / default behaviors of
+    :class:`~configparser.ConfigParser`.
+
+    See help for :class:`configparser.ConfigParser` for further help on valid
+    config file syntax and parsing behavior.
+
+    """
+
+    _DEFAULT_INTERPOLATION = ExtendedInterpolation()
+    INCLUDE_RE = re.compile(r'\s*#include\s+(?P<include>\S.*)')
+    INCLUDE_AS_RE = re.compile(r'\s*(?P<file>.+)((?:\s+as\s+)(?P<as>\S+))')
+    SECTCRE = re.compile(r'\[\s*(?P<header>[^]]+?)\s*\]')
+
+    def __init__(self):
+        #self.default_section = None #DEFAULTSECT
+        # Instantiate parent class with PISA-specific options
+        #super(PISAConfigParser, self).__init__(
+        RawConfigParser.__init__(
+            self,
+            interpolation=ExtendedInterpolation(),
+            empty_lines_in_values=False,
         )
-        result = [(key, self.__replace_sectionwide_templates(value))
-                  for key, value in config_list]
-        return result
+
+        # Ignore whitespace before and after the text of the section name
+
+    def set(self, section, option, value=None):
+        """Set an option.  Extends RawConfigParser.set by validating type and
+        interpolation syntax on the value."""
+        _, option, value = self._validate_value_types(option=option,
+                                                      value=value)
+        super(PISAConfigParser, self).set(section, option, value)
+
+    def add_section(self, section):
+        """Create a new section in the configuration.  Extends
+        RawConfigParser.add_section by validating if the section name is
+        a string."""
+        section, _, _ = self._validate_value_types(section=section)
+        super(PISAConfigParser, self).add_section(section)
 
     def optionxform(self, optionstr):
-        """Enable case sensitive options in .ini/.cfg files."""
-        return optionstr
+        """Enable case-sensitive options in .cfg files, and force all values to
+        be ASCII strings."""
+        return optionstr #.encode('ascii')
 
-    def __replace_sectionwide_templates(self, data):
-        """Replace <section|option> with get(section, option) recursively."""
-        result = data
-        findExpression = re.compile(r"((.*)\<!(.*)\|(.*)\!>(.*))*")
-        groups = findExpression.search(data).groups()
+    @staticmethod
+    def _get_include_info(line):
+        match = PISAConfigParser.INCLUDE_RE.match(line)
+        if not match:
+            return None
+        include = match.groupdict()['include']
+        match = PISAConfigParser.INCLUDE_AS_RE.match(include)
+        if match is None:
+            return {'file': include, 'as': None}
+        return match.groupdict()
 
-        # If expression not matched
-        if groups != (None, None, None, None, None):
-            result = self.__replace_sectionwide_templates(groups[1])
-            result += self.get(groups[2], groups[3])
-            result += self.__replace_sectionwide_templates(groups[4])
-        return result
+    def read(self, filenames, encoding=None):
+        """Override `read` method to interpret `filenames` as PISA resource
+        locations, then call overridden `read` method.
+
+        For further help on this method and its arguments, see
+        :method:`~backports.configparser.configparser.read`
+
+        """
+        if isinstance(filenames, basestring):
+            filenames = [filenames]
+        resource_locations = []
+        for filename in filenames:
+            resource_locations.append(find_resource(filename))
+
+        return super(PISAConfigParser, self).read(filenames=resource_locations,
+                                                  encoding=encoding)
+
+    # NOTE: the `_read` method is copy-pasted (then modified slightly) from
+    # Python's backports.configparser (version 3.5.0), and so any copyright
+    # notices at the top of this file might need modification to be compatible
+    # with copyrights on that module.
+    #
+    # Also, diff this function with future releases in case something needs
+    # modification.
+    def _read(self, fp, fpname):
+        """Parse a sectioned configuration file.
+
+        Each section in a configuration file contains a header, indicated by
+        a name in square brackets (`[]'), plus key/value options, indicated by
+        `name' and `value' delimited with a specific substring (`=' or `:' by
+        default).
+
+        Values can span multiple lines, as long as they are indented deeper
+        than the first line of the value. Depending on the parser's mode, blank
+        lines may be treated as parts of multiline values or ignored.
+
+        Configuration files may include comments, prefixed by specific
+        characters (`#' and `;' by default). Comments may appear on their own
+        in an otherwise empty line or may be entered in lines holding values or
+        section names.
+
+        This implementation is extended from the original to also accept
+
+        .. code:: ini
+
+          #include <file or pisa_resource>
+
+        or
+
+        .. code:: ini
+
+          #include <file or pisa_resource> as <section_name>
+
+        syntax anywhere in the file, which switches (via
+        :class:`MutableMultiFileIterator`) to the new file as if it were
+        in-lined within the original file. The latter syntax also prepends a
+        section header
+
+        .. code:: ini
+
+            [section_name]
+
+        before the text of the specified file or pisa_resource.
+
+        """
+        elements_added = set()
+        cursect = None                        # None, or a dictionary
+        sectname = None
+        optname = None
+        lineno = 0
+        indent_level = 0
+        e = None                              # None, or an exception
+
+        file_iter = MutableMultiFileIterator(fp=fp, fpname=fpname)
+        for record in file_iter:
+            fpname = record['fpname']
+            lineno = record['lineno']
+            line = record['line']
+
+            comment_start = sys.maxsize
+            # strip inline comments
+            inline_prefixes = dict(
+                (p, -1) for p in self._inline_comment_prefixes)
+            while comment_start == sys.maxsize and inline_prefixes:
+                next_prefixes = {}
+                for prefix, index in inline_prefixes.items():
+                    index = line.find(prefix, index+1)
+                    if index == -1:
+                        continue
+                    next_prefixes[prefix] = index
+                    if index == 0 or (index > 0 and line[index-1].isspace()):
+                        comment_start = min(comment_start, index)
+                inline_prefixes = next_prefixes
+            # parse include statement
+            include_info = self._get_include_info(line)
+            if include_info:
+                file_iter.switch_to_file(fpname=include_info['file'])
+                if include_info['as']:
+                    as_header = '[%s]\n' % include_info['as']
+                    file_iter.switch_to_file(
+                        fp=StringIO(as_header.decode('utf-8'))
+                    )
+                continue
+            # strip full line comments (or expand #include statements)
+            for prefix in self._comment_prefixes:
+                if line.strip().startswith(prefix):
+                    comment_start = 0
+                    break
+            if comment_start == sys.maxsize:
+                comment_start = None
+            value = line[:comment_start].strip()
+            if not value:
+                if self._empty_lines_in_values:
+                    # add empty line to the value, but only if there was no
+                    # comment on the line
+                    if (comment_start is None and
+                        cursect is not None and
+                        optname and
+                        cursect[optname] is not None):
+                        cursect[optname].append('') # newlines added at join
+                else:
+                    # empty line marks end of value
+                    indent_level = sys.maxsize
+                continue
+            # continuation line?
+            first_nonspace = self.NONSPACECRE.search(line)
+            cur_indent_level = first_nonspace.start() if first_nonspace else 0
+            if (cursect is not None and optname and
+                cur_indent_level > indent_level):
+                cursect[optname].append(value)
+            # a section header or option header?
+            else:
+                indent_level = cur_indent_level
+                # is it a section header?
+                mo = self.SECTCRE.match(value)
+                if mo:
+                    sectname = mo.group('header')
+                    if sectname in self._sections:
+                        if self._strict and sectname in elements_added:
+                            raise DuplicateSectionError(sectname, fpname,
+                                                        lineno)
+                        cursect = self._sections[sectname]
+                        elements_added.add(sectname)
+                    elif sectname == self.default_section:
+                        cursect = self._defaults
+                    else:
+                        cursect = self._dict()
+                        self._sections[sectname] = cursect
+                        self._proxies[sectname] = SectionProxy(self, sectname)
+                        elements_added.add(sectname)
+                    # So sections can't start with a continuation line
+                    optname = None
+                # no section header in the file?
+                elif cursect is None:
+                    raise MissingSectionHeaderError(fpname, lineno, line)
+                # an option line?
+                else:
+                    mo = self._optcre.match(value)
+                    if mo:
+                        optname, vi, optval = mo.group('option', 'vi', 'value')
+                        if not optname:
+                            e = self._handle_error(e, fpname, lineno, line)
+                        optname = self.optionxform(optname.rstrip())
+                        if (self._strict and
+                            (sectname, optname) in elements_added):
+                            raise DuplicateOptionError(sectname, optname,
+                                                       fpname, lineno)
+                        elements_added.add((sectname, optname))
+                        # This check is fine because the OPTCRE cannot
+                        # match if it would set optval to None
+                        if optval is not None:
+                            optval = optval.strip()
+                            cursect[optname] = [optval]
+                        else:
+                            # valueless option handling
+                            cursect[optname] = None
+                    else:
+                        # a non-fatal parsing error occurred. set up the
+                        # exception but keep going. the exception will be
+                        # raised at the end of the file and will contain a
+                        # list of all bogus lines
+                        e = self._handle_error(e, fpname, lineno, line)
+        # if any parsing errors occurred, raise an exception
+        if e:
+            raise e
+        self._join_multiline_values()
 
 
 def test_parse_pipeline_config():
@@ -611,18 +1052,80 @@ def test_parse_pipeline_config():
     args.v = max(1, args.v)
     set_verbosity(args.v)
 
-    # Load via BetterConfigParser
-    config0 = BetterConfigParser()
+    # Load via PISAConfigParser
+    config0 = PISAConfigParser()
     config0.read(args.pipeline)
     _ = parse_pipeline_config(config0)
 
     # Load directly
     config = parse_pipeline_config(args.pipeline)
 
+    logging.debug('Keys and values found in config:')
     for key, vals in config.items():
         logging.debug('%s: %s', key, vals)
+
     logging.info('<< PASS : test_parse_pipeline_config >>')
 
 
+def test_MutableMultiFileIterator():
+    """Unit test for class `MutableMultiFileIterator`"""
+    import shutil
+    import tempfile
+
+    prefixes = ['a', 'b', 'c']
+    file_len = 4
+
+    reference_lines = [
+        # start in file a
+        'a0', 'a1',
+        # switch to file b after second line of a
+        'b0', 'b1',
+        # switch to file c after second line of b
+        'c0', 'c1', 'c2', 'c3',
+        # switch back to b after exhausting c
+        'b2', 'b3',
+        # switch back to a after exhausting b
+        'a2', 'a3'
+    ]
+
+    tempdir = tempfile.mkdtemp()
+    try:
+        # Create test files
+        paths = [join(tempdir, prefix) for prefix in prefixes]
+        for prefix, path in zip(prefixes, paths):
+            with open(path, 'w') as f:
+                for i in range(file_len):
+                    f.write('%s%d\n' % (prefix, i))
+            logging.trace(path)
+
+        actual_lines = []
+        with open(paths[0]) as fp:
+            file_iter = MutableMultiFileIterator(fp=fp, fpname=paths[0])
+
+            remaining_paths = paths[1:]
+
+            for record in file_iter:
+                actual_lines.append(record['line'].strip())
+                logging.trace(str(record))
+                if record['line'][1:].strip() == '1':
+                    if remaining_paths:
+                        path = remaining_paths.pop(0)
+                        file_iter.switch_to_file(fpname=path)
+                    else:
+                        for l in str(file_iter.location).split('\n'):
+                            logging.trace(l)
+    except:
+        shutil.rmtree(tempdir)
+        raise
+
+    if actual_lines != reference_lines:
+        raise ValueError('<< FAIL : test_MutableMultiFileIterator >>')
+
+    logging.info('<< PASS : test_MutableMultiFileIterator >>')
+
+
 if __name__ == '__main__':
+    # Note: put test_parse_pipeline_config first since it reads command line
+    # args and -v option will be used also by subsequent unit tests
     test_parse_pipeline_config()
+    test_MutableMultiFileIterator()

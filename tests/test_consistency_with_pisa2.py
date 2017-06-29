@@ -101,8 +101,8 @@ def compare_flux(config, servicename, pisa2file, systname,
         except:
             params[systname] = 1.25*params[systname].value
 
-        pisa2file = (pisa2file.split('.json')[0]
-                     + '-%s%.2f.json' %(systname, params[systname].value))
+        pisa2file = (pisa2file.split('.json.bz2')[0]
+                     + '-%s%.2f.json.bz2' %(systname, params[systname].value))
         servicename += ('-%s%.2f' %(systname, params[systname].value))
     else:
         logging.debug('>>> Checking baseline')
@@ -184,8 +184,8 @@ def compare_osc(config, servicename, pisa2file, systname,
         else:
             systval = '%.2f'%params[systname].magnitude
 
-        pisa2file = pisa2file.split('.json')[0] + \
-                '-%s%s.json' %(systname, systval)
+        pisa2file = pisa2file.split('.json.bz2')[0] + \
+                '-%s%s.json.bz2' %(systname, systval)
         servicename += '-%s%s' %(systname, systval)
     else:
         logging.debug('>>> Checking baseline')
@@ -269,8 +269,8 @@ def compare_aeff(config, servicename, pisa2file, systname,
             params[systname] = \
                     1.25*params[systname].value
 
-        pisa2file = pisa2file.split('.json')[0] + \
-                '-%s%.2f.json' \
+        pisa2file = pisa2file.split('.json.bz2')[0] + \
+                '-%s%.2f.json.bz2' \
                 %(systname, params[systname].value)
         servicename += '-%s%.2f' \
                 %(systname, params[systname].value)
@@ -353,8 +353,8 @@ def compare_reco(config, servicename, pisa2file, systname,
             params[systname] = \
                     1.25*params[systname].value
 
-        pisa2file = pisa2file.split('.json')[0] + \
-                '-%s%.2f.json' \
+        pisa2file = pisa2file.split('.json.bz2')[0] + \
+                '-%s%.2f.json.bz2' \
                 %(systname, params[systname].value)
         servicename += '-%s%.2f' \
                 %(systname, params[systname].value)
@@ -914,7 +914,7 @@ def main():
         for syst in [None, 'atm_delta_index', 'nue_numu_ratio',
                      'nu_nubar_ratio', 'energy_scale']:
             pisa2file = os.path.join(
-                'tests', 'data', 'flux', 'PISAV2IPHonda2015SPLSolMaxFlux.json'
+                'tests', 'data', 'flux', 'PISAV2IPHonda2015SPLSolMaxFlux.json.bz2'
             )
             pisa2file = find_resource(pisa2file)
             flux_pipeline = compare_flux(
@@ -929,7 +929,7 @@ def main():
 
         params.flux_mode.value = 'bisplrep'
         pisa2file = os.path.join(
-            'tests', 'data', 'flux', 'PISAV2bisplrepHonda2015SPLSolMaxFlux.json'
+            'tests', 'data', 'flux', 'PISAV2bisplrepHonda2015SPLSolMaxFlux.json.bz2'
         )
         pisa2file = find_resource(pisa2file)
         flux_pipeline = compare_flux(
