@@ -453,9 +453,9 @@ class prob3gpu(Stage):
         eps_tautau = self.params.eps_tautau.m_as('dimensionless')
 
 
-        sin2th12Sq = np.sin(theta12)**2
-        sin2th13Sq = np.sin(theta13)**2
-        sin2th23Sq = np.sin(theta23)**2
+        sin12 = np.sin(theta12)
+        sin13 = np.sin(theta13)
+        sin23 = np.sin(theta23)
 
         mAtm = deltam31 if deltam31 < 0.0 else (deltam31 - deltam21)
 
@@ -463,8 +463,7 @@ class prob3gpu(Stage):
                              self.params.detector_depth.m_as('km'),
                              prop_height)
         self.layers.setElecFrac(YeI, YeO, YeM)
-        self.osc = OscParams(deltam21, mAtm, sin2th12Sq, sin2th13Sq,
-                             sin2th23Sq, deltacp)
+        self.osc = OscParams(deltam21, mAtm, sin12, sin13, sin23, deltacp)
         self.nsi = NSIParams(eps_ee=eps_ee, eps_emu=eps_emu, eps_etau=eps_etau,
                              eps_mumu=eps_mumu, eps_mutau=eps_mutau,
                              eps_tautau=eps_tautau)
@@ -659,9 +658,9 @@ class prob3gpu(Stage):
 
         assert(not self.calc_transforms)
 
-        sin2th12Sq = np.sin(theta12)**2
-        sin2th13Sq = np.sin(theta13)**2
-        sin2th23Sq = np.sin(theta23)**2
+        sin12 = np.sin(theta12)
+        sin13 = np.sin(theta13)
+        sin23 = np.sin(theta23)
 
         mAtm = deltam31 if deltam31 < 0.0 else (deltam31 - deltam21)
 
@@ -671,7 +670,7 @@ class prob3gpu(Stage):
         # to feed the core libraries the correct value of m32."
         #if mAtm < 0.0: mAtm -= deltam21;
 
-        self.osc = OscParams(deltam21, mAtm, sin2th12Sq, sin2th13Sq, sin2th23Sq, deltacp)
+        self.osc = OscParams(deltam21, mAtm, sin12, sin13, sin23, deltacp)
         dm_mat = self.osc.M_mass
         mix_mat = self.osc.M_pmns
 
