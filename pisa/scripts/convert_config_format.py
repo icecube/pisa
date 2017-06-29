@@ -12,7 +12,7 @@ import os
 import re
 import sys
 
-from configparser import MissingSectionHeaderError
+from backports.configparser import MissingSectionHeaderError
 
 from pisa.utils.config_parser import PISAConfigParser
 
