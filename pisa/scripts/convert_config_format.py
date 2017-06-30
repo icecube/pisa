@@ -15,6 +15,7 @@ import sys
 from backports.configparser import MissingSectionHeaderError
 
 from pisa.utils.config_parser import PISAConfigParser
+from pisa.utils.resources import find_resource
 
 
 __all__ = ['OLD_SUB_RE', 'parse_args', 'main']
@@ -166,9 +167,21 @@ def replace_substitution(match):
         Replacement text
 
     """
-    replaced = tuple(s.replace(':', OTHER_SECTION_NAME_SEPARATOR)
-                     for s in match.groups())
-    return '${%s:%s}' % replaced
+    substrs = match.groups()
+    loc = substrs[0].find('stage:')
+    if loc >= 0:
+        postloc = loc + len('stage:')
+        s0 = (
+            substrs[0][:loc]
+            + 'stage:'
+            + substrs[0][postloc:].replace(':', OTHER_SECTION_NAME_SEPARATOR)
+        )
+    else:
+        s0 = substrs[0].replace(':', OTHER_SECTION_NAME_SEPARATOR)
+
+    s1 = substrs[1].replace(':', OTHER_SECTION_NAME_SEPARATOR)
+
+    return '${%s:%s}' % (s0, s1)
 
 
 def replace_order(match):
@@ -435,6 +448,20 @@ def main():
             raise ValueError('Found a subset of NSI params defined; missing %s'
                              % str(nsi_params_missing))
 
+        # NOTE: since for now the contents of nsi_null.cfg are commented out
+        # (until merging NSI branch), the above check will say NSI params are
+        # missing if the #include statement was made. So check to see if
+        # settings/osc/nsi_null.cfg _has_ been included (we can't tell what
+        # section it is in, but we'll have to just accept that).
+        #
+        # We will probably want to remove this stanza as soon as NSI brnach is
+        # merged, since this is imprecise and can introduce other weird corner
+        # cases.
+        rsrc_loc = find_resource('settings/osc/nsi_null.cfg')
+        for file_iter in pcp.file_iterators:
+            if rsrc_loc in file_iter.fpaths_processed:
+                all_nsi_params_defined = True
+
         if not all_nsi_params_defined and osc_stage_header_line is None:
             raise ValueError(
                 "Found a stage.osc section without NSI params defined (using"
@@ -480,7 +507,7 @@ def main():
         pcp.read_string((''.join(new_contents)).decode('utf-8'))
 
     if new_contents == orig_contents:
-        sys.stdout.write('Nothing modified in the original file.\n')
+        sys.stdout.write('Nothing modified in the original file (ok!).\n')
         return
 
     if args.validate_only:
