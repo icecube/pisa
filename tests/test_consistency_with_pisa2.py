@@ -28,7 +28,7 @@ import numpy as np
 from pisa import FTYPE, PYCUDA_AVAIL
 from pisa.core.map import Map, MapSet
 from pisa.core.pipeline import Pipeline
-from pisa.utils.fileio import from_file
+from pisa.utils.fileio import from_file, ZIP_EXTS
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
 from pisa.utils.config_parser import parse_pipeline_config
@@ -81,19 +81,53 @@ RECO_PASS_MESSAGE = ' '.join((
 ).strip().split())
 
 
+def splitext_incl_zip(path):
+    """Split file's basename from its extension, where extension includes
+    optional zip extensions.
+
+    Parameters
+    ----------
+    path : string
+
+    Returns
+    -------
+    rootname, full_ext : string
+
+    Examples
+    --------
+    >>> splitext_incl_zip('foo.json')
+    'foo', 'json'
+    >>> splitext_incl_zip('foo.json.bz2')
+    'foo', 'json.bz2'
+
+    """
+    rootname, ext = os.path.splitext(path)
+    ext = ext[1:]
+    if ext in ZIP_EXTS:
+        rootname, inner_ext = os.path.splitext(rootname)
+        inner_ext = inner_ext[1:]
+        zip_ext = ext
+        ext = inner_ext
+        full_ext = '.'.join([ext, zip_ext])
+    else:
+        zip_ext = None
+        full_ext = ext
+    return rootname, full_ext
+
+
 def compare_flux(config, servicename, pisa2file, systname,
                  outdir, ratio_test_threshold, diff_test_threshold):
     """Compare flux stages run in isolation with dummy inputs"""
 
     logging.debug('>> Working on flux stage comparisons')
-    logging.debug('>>> Checking %s service'%servicename)
+    logging.debug('>>> Checking %s service', servicename)
     test_service = servicename
 
     k = [k for k in config.keys() if k[0] == 'flux'][0]
     params = config[k]['params'].params
 
     if systname is not None:
-        logging.debug('>>> Checking %s systematic'%systname)
+        logging.debug('>>> Checking %s systematic', systname)
         test_syst = systname
         try:
             params[systname] = params[systname].value + \
@@ -101,9 +135,11 @@ def compare_flux(config, servicename, pisa2file, systname,
         except:
             params[systname] = 1.25*params[systname].value
 
-        pisa2file = (pisa2file.split('.json')[0]
-                     + '-%s%.2f.json' %(systname, params[systname].value))
-        servicename += ('-%s%.2f' %(systname, params[systname].value))
+        rootname, ext = splitext_incl_zip(pisa2file)
+        pisa2file = (
+            '%s-%s%.2f.%s' % (rootname, systname, params[systname].value, ext)
+        )
+        servicename += '-%s%.2f' % (systname, params[systname].value)
     else:
         logging.debug('>>> Checking baseline')
         test_syst = 'baseline'
@@ -118,9 +154,9 @@ def compare_flux(config, servicename, pisa2file, systname,
             continue
 
         pisa_map_to_plot = pisa2_map_to_pisa3_map(
-            pisa2_map = pisa2_comparisons[nukey],
-            ebins_name = 'true_energy',
-            czbins_name = 'true_coszen'
+            pisa2_map=pisa2_comparisons[nukey],
+            ebins_name='true_energy',
+            czbins_name='true_coszen'
         )
 
         if '_' in nukey:
@@ -145,8 +181,8 @@ def compare_flux(config, servicename, pisa2file, systname,
         )
 
         check_agreement(
-            testname='PISAV3-PISAV2 flux:%s %s %s'
-                %(test_service, test_syst, nukey),
+            testname=('PISAV3-PISAV2 flux:%s %s %s'
+                      % (test_service, test_syst, nukey)),
             thresh_ratio=ratio_test_threshold,
             ratio=max_diff_ratio,
             thresh_diff=diff_test_threshold,
@@ -161,14 +197,14 @@ def compare_osc(config, servicename, pisa2file, systname,
     """Compare osc stages run in isolation with dummy inputs"""
 
     logging.debug('>> Working on osc stage comparisons')
-    logging.debug('>>> Checking %s service'%servicename)
+    logging.debug('>>> Checking %s service', servicename)
     test_service = servicename
 
     k = [k for k in config.keys() if k[0] == 'osc'][0]
     params = config[k]['params'].params
 
     if systname is not None:
-        logging.debug('>>> Checking %s systematic'%systname)
+        logging.debug('>>> Checking %s systematic', systname)
         test_syst = systname
         try:
             params[systname] = \
@@ -184,8 +220,10 @@ def compare_osc(config, servicename, pisa2file, systname,
         else:
             systval = '%.2f'%params[systname].magnitude
 
-        pisa2file = pisa2file.split('.json')[0] + \
-                '-%s%s.json' %(systname, systval)
+        rootname, ext = splitext_incl_zip(pisa2file)
+        pisa2file = (
+            '%s-%s%s.%s' % (rootname, systname, systval, ext)
+        )
         servicename += '-%s%s' %(systname, systval)
     else:
         logging.debug('>>> Checking baseline')
@@ -209,9 +247,9 @@ def compare_osc(config, servicename, pisa2file, systname,
             continue
 
         pisa_map_to_plot = pisa2_map_to_pisa3_map(
-            pisa2_map = pisa2_comparisons[nukey],
-            ebins_name = 'true_energy',
-            czbins_name = 'true_coszen'
+            pisa2_map=pisa2_comparisons[nukey],
+            ebins_name='true_energy',
+            czbins_name='true_coszen'
         )
 
         if '_' in nukey:
@@ -236,8 +274,8 @@ def compare_osc(config, servicename, pisa2file, systname,
         )
 
         check_agreement(
-            testname='PISAV3-PISAV2 osc:%s %s %s'
-                %(test_service, test_syst, nukey),
+            testname=('PISAV3-PISAV2 osc:%s %s %s'
+                      % (test_service, test_syst, nukey)),
             thresh_ratio=ratio_test_threshold,
             ratio=max_diff_ratio,
             thresh_diff=diff_test_threshold,
@@ -252,14 +290,14 @@ def compare_aeff(config, servicename, pisa2file, systname,
     """Compare aeff stages run in isolation with dummy inputs"""
 
     logging.debug('>> Working on aeff stage comparisons')
-    logging.debug('>>> Checking %s service'%servicename)
+    logging.debug('>>> Checking %s service', servicename)
     test_service = servicename
 
     k = [k for k in config.keys() if k[0] == 'aeff'][0]
     params = config[k]['params'].params
 
     if systname is not None:
-        logging.debug('>>> Checking %s systematic'%systname)
+        logging.debug('>>> Checking %s systematic', systname)
         test_syst = systname
         try:
             params[systname] = \
@@ -269,9 +307,10 @@ def compare_aeff(config, servicename, pisa2file, systname,
             params[systname] = \
                     1.25*params[systname].value
 
-        pisa2file = pisa2file.split('.json')[0] + \
-                '-%s%.2f.json' \
-                %(systname, params[systname].value)
+        rootname, ext = splitext_incl_zip(pisa2file)
+        pisa2file = (
+            '%s-%s%.2f.%s' % (rootname, systname, params[systname].value, ext)
+        )
         servicename += '-%s%.2f' \
                 %(systname, params[systname].value)
     else:
@@ -300,9 +339,9 @@ def compare_aeff(config, servicename, pisa2file, systname,
                 new_nukey = nukey
             cakekey = new_nukey + '_' + intkey
             pisa_map_to_plot = pisa2_map_to_pisa3_map(
-                pisa2_map = pisa2_comparisons[nukey][intkey],
-                ebins_name = 'true_energy',
-                czbins_name = 'true_coszen'
+                pisa2_map=pisa2_comparisons[nukey][intkey],
+                ebins_name='true_energy',
+                czbins_name='true_coszen'
             )
 
             cake_map_to_plot = outputs[cakekey]
@@ -320,8 +359,8 @@ def compare_aeff(config, servicename, pisa2file, systname,
             )
 
             check_agreement(
-                testname='PISAV3-PISAV2 aeff:%s %s %s'
-                    %(test_service, test_syst, cakekey),
+                testname=('PISAV3-PISAV2 aeff:%s %s %s'
+                          % (test_service, test_syst, cakekey)),
                 thresh_ratio=ratio_test_threshold,
                 ratio=max_diff_ratio,
                 thresh_diff=diff_test_threshold,
@@ -336,14 +375,14 @@ def compare_reco(config, servicename, pisa2file, systname,
                  diff_test_threshold):
     """Compare reco stages run in isolation with dummy inputs"""
     logging.debug('>> Working on reco stage comparisons')
-    logging.debug('>>> Checking %s service'%servicename)
+    logging.debug('>>> Checking %s service', servicename)
     test_service = servicename
 
     k = [k for k in config.keys() if k[0] == 'reco'][0]
     params = config[k]['params'].params
 
     if systname is not None:
-        logging.debug('>>> Checking %s systematic'%systname)
+        logging.debug('>>> Checking %s systematic', systname)
         test_syst = systname
         try:
             params[systname] = \
@@ -353,15 +392,16 @@ def compare_reco(config, servicename, pisa2file, systname,
             params[systname] = \
                     1.25*params[systname].value
 
-        pisa2file = pisa2file.split('.json')[0] + \
-                '-%s%.2f.json' \
-                %(systname, params[systname].value)
+        rootname, ext = splitext_incl_zip(pisa2file)
+        pisa2file = (
+            '%s-%s%.2f.%s' %(rootname, systname, params[systname].value, ext)
+        )
         servicename += '-%s%.2f' \
                 %(systname, params[systname].value)
     else:
         logging.debug('>>> Checking baseline')
         test_syst = 'baseline'
-        
+
     pipeline = Pipeline(config)
     stage = pipeline.stages[0]
     input_maps = []
@@ -394,9 +434,9 @@ def compare_reco(config, servicename, pisa2file, systname,
             continue
 
         pisa_map_to_plot = pisa2_map_to_pisa3_map(
-            pisa2_map = pisa2_comparisons[nukey],
-            ebins_name = 'reco_energy',
-            czbins_name = 'reco_coszen'
+            pisa2_map=pisa2_comparisons[nukey],
+            ebins_name='reco_energy',
+            czbins_name='reco_coszen'
         )
 
         if '_' in nukey:
@@ -436,7 +476,7 @@ def compare_pid(config, servicename, pisa2file, outdir, ratio_test_threshold,
                 diff_test_threshold):
     """Compare pid stages run in isolation with dummy inputs"""
     logging.debug('>> Working on pid stage comparisons')
-    logging.debug('>>> Checking %s service'%servicename)
+    logging.debug('>>> Checking %s service', servicename)
     test_service = servicename
 
     logging.debug('>>> Checking baseline')
@@ -481,7 +521,7 @@ def compare_pid(config, servicename, pisa2file, outdir, ratio_test_threshold,
         cake_trck = total_outputs.slice(pid=1).squeeze()
         cake_cscd = total_outputs.slice(pid=0).squeeze()
 
-    max_diff_ratio, max_diff= plot_map_comparisons(
+    max_diff_ratio, max_diff = plot_map_comparisons(
         ref_map=pisa_cscd,
         new_map=cake_cscd,
         ref_abv='PISAV2', new_abv='PISAV3',
@@ -541,9 +581,9 @@ def compare_flux_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
             continue
 
         pisa_map_to_plot = pisa2_map_to_pisa3_map(
-            pisa2_map = pisa_maps[nukey],
-            ebins_name = 'true_energy',
-            czbins_name = 'true_coszen',
+            pisa2_map=pisa_maps[nukey],
+            ebins_name='true_energy',
+            czbins_name='true_coszen',
             is_log=False
         )
 
@@ -569,8 +609,8 @@ def compare_flux_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
         )
 
         check_agreement(
-            testname='PISAV3-PISAV2 full pipeline through flux:%s %s'
-                %(test_service, nukey),
+            testname=('PISAV3-PISAV2 full pipeline through flux:%s %s'
+                      % (test_service, nukey)),
             thresh_ratio=ratio_test_threshold,
             ratio=max_diff_ratio,
             thresh_diff=diff_test_threshold,
@@ -593,9 +633,9 @@ def compare_osc_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
             continue
 
         pisa_map_to_plot = pisa2_map_to_pisa3_map(
-            pisa2_map = pisa_maps[nukey],
-            ebins_name = 'true_energy',
-            czbins_name = 'true_coszen',
+            pisa2_map=pisa_maps[nukey],
+            ebins_name='true_energy',
+            czbins_name='true_coszen',
             is_log=False
         )
 
@@ -621,8 +661,8 @@ def compare_osc_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
         )
 
         check_agreement(
-            testname='PISAV3-PISAV2 full pipeline through osc:%s %s'
-                %(test_service, nukey),
+            testname=('PISAV3-PISAV2 full pipeline through osc:%s %s'
+                      % (test_service, nukey)),
             thresh_ratio=ratio_test_threshold,
             ratio=max_diff_ratio,
             thresh_diff=diff_test_threshold,
@@ -654,9 +694,9 @@ def compare_aeff_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
                 new_nukey = nukey
             cakekey = new_nukey + '_' + intkey
             pisa_map_to_plot = pisa2_map_to_pisa3_map(
-                pisa2_map = pisa_maps[nukey][intkey],
-                ebins_name = 'true_energy',
-                czbins_name = 'true_coszen',
+                pisa2_map=pisa_maps[nukey][intkey],
+                ebins_name='true_energy',
+                czbins_name='true_coszen',
                 is_log=False
             )
 
@@ -715,9 +755,9 @@ def compare_reco_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
             continue
 
         pisa_map_to_plot = pisa2_map_to_pisa3_map(
-            pisa2_map = pisa_maps[nukey],
-            ebins_name = 'reco_energy',
-            czbins_name = 'reco_coszen',
+            pisa2_map=pisa_maps[nukey],
+            ebins_name='reco_energy',
+            czbins_name='reco_coszen',
             is_log=False
         )
 
@@ -751,8 +791,8 @@ def compare_reco_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
         )
 
         check_agreement(
-            testname='PISAV3-PISAV2 full pipeline through reco:%s %s'
-                %(test_service, nukey),
+            testname=('PISAV3-PISAV2 full pipeline through reco:%s %s'
+                      % (test_service, nukey)),
             thresh_ratio=ratio_test_threshold,
             ratio=max_diff_ratio,
             thresh_diff=diff_test_threshold,
@@ -775,19 +815,19 @@ def compare_pid_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
         cake_cscd = cake_maps.combine_wildcard('*_cscd')
     except ValueError:
         total = cake_maps.combine_wildcard('*')
-        cake_cscd = total[0,:,:]
-        cake_trck = total[1,:,:]
+        cake_cscd = total[0, :, :]
+        cake_trck = total[1, :, :]
 
     pisa_trck = pisa2_map_to_pisa3_map(
-        pisa2_map = pisa_maps['trck'],
-        ebins_name = 'reco_energy',
-        czbins_name = 'reco_coszen',
+        pisa2_map=pisa_maps['trck'],
+        ebins_name='reco_energy',
+        czbins_name='reco_coszen',
         is_log=False
     )
     pisa_cscd = pisa2_map_to_pisa3_map(
-        pisa2_map = pisa_maps['cscd'],
-        ebins_name = 'reco_energy',
-        czbins_name = 'reco_coszen',
+        pisa2_map=pisa_maps['cscd'],
+        ebins_name='reco_energy',
+        czbins_name='reco_coszen',
         is_log=False
     )
 
@@ -803,8 +843,8 @@ def compare_pid_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
         texname=r'{\rm cscd}'
     )
     check_agreement(
-        testname='PISAV3-PISAV2 full pipeline through pid:%s cscd'
-            %(test_service),
+        testname=('PISAV3-PISAV2 full pipeline through pid:%s cscd'
+                  % (test_service)),
         thresh_ratio=ratio_test_threshold,
         ratio=max_diff_ratio,
         thresh_diff=diff_test_threshold,
@@ -823,8 +863,8 @@ def compare_pid_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
         texname=r'{\rm trck}'
     )
     check_agreement(
-        testname='PISAV3-PISAV2 full pipeline through pid:%s trck'
-            %(test_service),
+        testname=('PISAV3-PISAV2 full pipeline through pid:%s trck'
+                  % test_service),
         thresh_ratio=ratio_test_threshold,
         ratio=max_diff_ratio,
         thresh_diff=diff_test_threshold,
@@ -833,6 +873,7 @@ def compare_pid_full(cake_maps, pisa_maps, outdir, ratio_test_threshold,
 
 
 def parse_args():
+    """Parse command line args"""
     if FTYPE == np.float32:
         dflt_ratio_threshold = 5e-4
     elif FTYPE == np.float64:
@@ -889,6 +930,7 @@ def parse_args():
 
 
 def main():
+    """Main"""
     args = parse_args()
     set_verbosity(args.v)
 
@@ -914,10 +956,10 @@ def main():
         for syst in [None, 'atm_delta_index', 'nue_numu_ratio',
                      'nu_nubar_ratio', 'energy_scale']:
             pisa2file = os.path.join(
-                'tests', 'data', 'flux', 'PISAV2IPHonda2015SPLSolMaxFlux.json'
+                'tests', 'data', 'flux', 'PISAV2IPHonda2015SPLSolMaxFlux.json.bz2'
             )
             pisa2file = find_resource(pisa2file)
-            flux_pipeline = compare_flux(
+            compare_flux(
                 config=deepcopy(flux_config),
                 servicename='IP_Honda',
                 pisa2file=pisa2file,
@@ -929,10 +971,10 @@ def main():
 
         params.flux_mode.value = 'bisplrep'
         pisa2file = os.path.join(
-            'tests', 'data', 'flux', 'PISAV2bisplrepHonda2015SPLSolMaxFlux.json'
+            'tests', 'data', 'flux', 'PISAV2bisplrepHonda2015SPLSolMaxFlux.json.bz2'
         )
         pisa2file = find_resource(pisa2file)
-        flux_pipeline = compare_flux(
+        compare_flux(
             config=deepcopy(flux_config),
             servicename='bisplrep_Honda',
             pisa2file=pisa2file,
@@ -954,7 +996,7 @@ def main():
                 'tests', 'data', 'osc', 'PISAV2OscStageProb3Service.json'
             )
             pisa2file = find_resource(pisa2file)
-            osc_pipeline = compare_osc(
+            compare_osc(
                 config=deepcopy(osc_config),
                 servicename='prob3cpu',
                 pisa2file=pisa2file,
@@ -985,7 +1027,7 @@ def main():
                 'tests', 'data', 'osc', 'PISAV2OscStageProb3Service.json'
             )
             pisa2file = find_resource(pisa2file)
-            osc_pipeline = compare_osc(
+            compare_osc(
                 config=deepcopy(osc_config),
                 servicename='prob3gpu',
                 pisa2file=pisa2file,
@@ -1014,7 +1056,7 @@ def main():
         )
         pisa2file = find_resource(pisa2file)
         for syst in [None, 'aeff_scale']:
-            aeff_pipeline = compare_aeff(
+            compare_aeff(
                 config=deepcopy(aeff_config),
                 servicename='hist_1X585',
                 pisa2file=pisa2file,
@@ -1022,7 +1064,7 @@ def main():
                 outdir=args.outdir,
                 ratio_test_threshold=args.ratio_threshold,
                 diff_test_threshold=args.diff_threshold
-            )    
+            )
         aeff_settings = os.path.join(
             'tests', 'settings', 'pisa2_aeff_param_test.cfg'
         )
@@ -1036,7 +1078,7 @@ def main():
         )
         pisa2file = find_resource(pisa2file)
         for syst in [None, 'aeff_scale']:
-            aeff_pipeline = compare_aeff(
+            compare_aeff(
                 config=deepcopy(aeff_config),
                 servicename='param_1X60',
                 pisa2file=pisa2file,
@@ -1065,7 +1107,7 @@ def main():
             'tests', 'data', 'reco', 'PISAV2RecoStageHist1X585Service.json'
         )
         pisa2file = find_resource(pisa2file)
-        reco_pipeline = compare_reco(
+        compare_reco(
             config=deepcopy(reco_config),
             servicename='hist_1X585',
             pisa2file=pisa2file,
@@ -1083,7 +1125,7 @@ def main():
             'tests', 'data', 'reco', 'PISAV2RecoStageHist1X60Service.json'
         )
         pisa2file = find_resource(pisa2file)
-        reco_pipeline = compare_reco(
+        compare_reco(
             config=deepcopy(reco_config),
             servicename='hist_1X60',
             pisa2file=pisa2file,
@@ -1102,7 +1144,7 @@ def main():
         pisa2file = find_resource(pisa2file)
         for syst in [None, 'e_res_scale', 'cz_res_scale']:
             try:
-                reco_pipeline = compare_reco(
+                compare_reco(
                     config=deepcopy(reco_config),
                     servicename='param_1X60',
                     pisa2file=pisa2file,
@@ -1130,7 +1172,7 @@ def main():
             'tests', 'data', 'pid', 'PISAV2PIDStageHistV39Service.json'
         )
         pisa2file = find_resource(pisa2file)
-        pid_pipeline = compare_pid(
+        compare_pid(
             config=deepcopy(pid_config),
             servicename='hist_V39',
             pisa2file=pisa2file,
@@ -1147,7 +1189,7 @@ def main():
         )
         pisa2file = find_resource(pisa2file)
         try:
-            pid_pipeline = compare_pid(
+            compare_pid(
                 config=deepcopy(pid_config),
                 servicename='hist_1X585',
                 pisa2file=pisa2file,
@@ -1167,7 +1209,7 @@ def main():
             'tests', 'data', 'pid', 'PISAV2PIDStageParam1X60Service.json'
         )
         pisa2file = find_resource(pisa2file)
-        pid_pipeline = compare_pid(
+        compare_pid(
             config=deepcopy(pid_config),
             servicename='param_1X60',
             pisa2file=pisa2file,
