@@ -236,6 +236,14 @@ pisa.utils.resources module
     :undoc-members:
     :show-inheritance:
 
+pisa.utils.rooutils module
+--------------------------
+
+.. automodule:: pisa.utils.rooutils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.utils.spline module
 ------------------------
 

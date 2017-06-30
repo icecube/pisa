@@ -21,7 +21,7 @@ N different ones), e.g. `hole_ice` are specified together with a parameter
 
 To generate the fit file, the script `$PISA/pisa/utils/fit_discrerte_sys.py` can
 be executed together with a special configuration file. An example as used in
-the nutau analysis is found under `$PISA/resources/settings/discrete_sys_settings/nutau_holice_domeff_fits.ini`
+the nutau analysis is found under `$PISA/resources/settings/discrete_sys_settings/nutau_holice_domeff_fits.cfg`
 
 This config file specifies the discrete datasets for the fits, here an example:
 

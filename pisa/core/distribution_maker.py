@@ -7,6 +7,8 @@ plot a distribution from pipeline config file(s).
 
 """
 
+from __future__ import absolute_import
+
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
 import inspect
@@ -19,7 +21,7 @@ from pisa import ureg
 from pisa.core.map import MapSet
 from pisa.core.pipeline import Pipeline
 from pisa.core.param import ParamSet
-from pisa.utils.config_parser import BetterConfigParser
+from pisa.utils.config_parser import PISAConfigParser
 from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import set_verbosity, logging
@@ -61,7 +63,7 @@ class DistributionMaker(object):
         self._source_code_hash = None
 
         self._pipelines = []
-        if isinstance(pipelines, (basestring, BetterConfigParser, OrderedDict,
+        if isinstance(pipelines, (basestring, PISAConfigParser, OrderedDict,
                                   Pipeline)):
             pipelines = [pipelines]
 
@@ -131,7 +133,7 @@ class DistributionMaker(object):
         else:
             for pipeline in self:
                 possible_selections = pipeline.param_selections
-                if not len(possible_selections) == 0:
+                if possible_selections:
                     logging.warn("Although you didn't make a parameter "
                                  "selection, the following were available: %s."
                                  " This may cause issues.",
@@ -371,7 +373,7 @@ def main(return_outputs=False):
         fpath = expand(os.path.join(args.outdir, fname))
         to_file(outputs, fpath)
 
-    if args.outdir and len(plot_formats) > 0:
+    if args.outdir and plot_formats:
         my_plotter = Plotter(
             outdir=args.outdir,
             fmt=plot_formats, log=False,
