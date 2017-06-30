@@ -13,48 +13,54 @@ that stage. for en example config file, please consider
 Config File Structure
 =====================
 
-The config file is expected to contain something like the following, with the
-sections `[pipeline]` and corresponding `[stage:<...>]` required, in addition
-to `[binning]`:
+A pipeline config file is expected to contain something like the following,
+with the sections ``[pipeline]`` and corresponding ``[stage:stagename]``
+required, in addition to a ``[binning]`` section:
 
 .. code-block:: cfg
 
-    #include file_x.cfg
-    #include file_y.cfg
+    #include file_x.cfg as x
+    #include file_y.cfg as y
 
     [pipeline]
     order = stageA:serviceA, stageB:serviceB
 
     [binning]
+    #include generic_binning.cfg
+
     binning1.order = axis1, axis2
     binning1.axis1 = {'num_bins':40, 'is_log':True,
-                      'domain':[1,80] * units.GeV, 'tex': r'A_1'}
+                      'domain':[1,80] units.GeV, 'tex': r'A_1'}
     binning1.axis2 = {'num_bins':10, 'is_lin':True,
                       'domain':[1,5], 'tex': r'A_2'}
 
-    [stage:stageA]
+    [stage:stagename0]
     input_binning = bining1
     output_binning = binning1
     error_method = None
     debug_mode = False
 
-    param.p1 = 0.0 +/- 0.5 * units.deg
+    param.p1 = 0.0 +/- 0.5 units.deg
     param.p1.fixed = False
     param.p1.range = nominal + [-2.0, +2.0] * sigma
 
-    [stage:stageB]
+    [stage:stagename1]
     ...
 
-* `#include` statements can be used to include other cfg files; these must be
-  the first line(s) of the file.
-* `pipeline` is the top most section that defines the hierarchy of stages and
+* ``#include`` statements can be used to include other config files. The
+  #include statement must be the first non-whitespace on a line, and these
+  statements can be used anywhere within a config file.
+* ``#include resource as xyz`` statements behave similarly, but prepend the
+  included file's text with a setion header containing ``xyz`` in this case.
+* ``pipeline`` is the top-most section that defines the hierarchy of stages and
   what services to be instantiated.
-* `binning` can contain different binning definitions, that are then later
-  referred to from within the stage sections.
-* `stage` one such section per stage:service is necessary. It contains some
-  options that are common for all stages (`binning`, `error_method` and
-  `debug_mode`) as well as all the necessary arguments and parameters for a
-  given stage.
+* ``binning`` can contain different binning definitions, that are then later
+  referred to from within the ``stage.stage_name`` sections.
+* ``stage.stage_name`` one such section per stage:service is necessary. It
+  contains some options that are common for all stages (`binning`,
+  `error_method` and `debug_mode`) as well as all the necessary arguments and
+  parameters for a given stage.
+* Duplicate section headers and duplicate keys within a section are illegal.
 
 
 Param definitions
@@ -99,7 +105,7 @@ and this can be combined with the Gaussian-prior ``+/-`` notation:
     param.p1 = 12.5 +/- 2.3 * unit.GeV
 
 Additional arguments to a parameter are passed in with the ``.`` notation, for
-example ``param.<name>.fixed = False``, which makes it a free parameter in the
+example ``param.p1.fixed = False``, which makes p1 a free parameter in the
 fit (by default a parameter is fixed unless specified like this).
 
 Uniform and spline priors can also be set using the ``.prior`` attribute:
@@ -111,8 +117,7 @@ Uniform and spline priors can also be set using the ``.prior`` attribute:
 
     param.p2 = 12.5
     param.p2.prior = spline
-    param.p2.prior.data =
-
+    param.p2.prior.data = resource_loc
 
 If no prior is specified, it is taken to have no prior (or, equivalently, a
 uniform prior with no penalty). A uniform prior can be explicitly set or
@@ -173,23 +178,23 @@ default selection they must be separated by commas.
 """
 
 # TODO: consistency, etc.
-# 1. Can we specify two sections with same name in the config?
-# 2. Add explicit gaussian prior (NOT +/- notation)
-# 3. If param value is defined with +/- gaussian prior notation, and is ref'd
-#    elsewhere, does the other param get the prior? (Meanwhile, a ref'd param
-#    value does NOT get a prior if it's set via `.prior`.)
-# 4. If param value is ref'd that has +/- gaussian prior, but then another
-#    prior is set via `.prior`, which takes precedence (the latter *should*
-#    take precedence...).
-# 5. Multiple definitions of same param should explicitly fail or at least give
-#    warning (right now, it quietly accepts the last definition)
-
-# TODO: Make interoperable with pisa.utils.resources. I.e., able to work with
-# Python package resources, not just filesystem files.
-# TODO: Docstrings, Philipp!
-# TODO: add try: except: blocks around class instantiation calls to give
-# maximally useful error info to the user (spit out a good message, but then
-# re-raise the exception)
+# * Order-independent hashing of the PISAConfigParser object (recursively sort
+#   contents?). This is still a worse idea than hashing on instantiated PISA
+#   objects since things like meaningless whitespace will modify the hash of
+#   the config.
+# * Add explicit gaussian prior (should NOT just rely on +/- notation to make
+#   consistent with other priors)
+# * Furthermore, all priors should be able to be defined in one line, e.g.:
+#     p1.prior = guassian: std_dev = 1.2
+#     p2.prior = uniform
+#     p3.prior = spline: data = resource/location/config.cfg
+#     p4.prior = None
+# * Make interoperable with pisa.utils.resources. I.e., able to work with
+#   Python package resources, not just filesystem files.
+# * Docstrings
+# * TODO: add try: except: blocks around class instantiation calls to give
+#   maximally useful error info to the user (spit out a good message, but then
+#   re-raise the exception)
 
 
 from __future__ import absolute_import, division
@@ -210,6 +215,7 @@ from uncertainties import ufloat, ufloat_fromstr
 
 from pisa import ureg
 from pisa.utils.fileio import from_file
+from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
 
@@ -243,10 +249,30 @@ def parse_quantity(string):
     ----------
     string : string
 
+    Returns
+    -------
+    value : pint.quantity of uncertainties.core.AffineScalarFunc
+
     Examples
     --------
-    >>> print parse_quantity('1.2 +/- 0.7 * units.meter')
-    TODO
+    >>> quant = parse_quantity('1.2 +/- 0.7 * units.meter')
+    >>> print str(quant)
+    1.2+/-0.7 meter
+    >>> print '{:~}'.format(quant)
+    1.2+/-0.7 m
+    >>> print quant.magnitude
+    1.2+/-0.7
+    >>> print quant.units
+    meter
+    >>> print quant.nominal_value
+    1.2
+    >>> print quant.std_dev
+    0.7
+
+    Also note that spaces and the "*" are optional:
+
+    >>> print parse_quantity('1+/-1units.GeV')
+    1.0+/-1.0 gigaelectron_volt
 
     """
     value = string.replace(' ', '')
@@ -275,7 +301,7 @@ def parse_string_literal(string):
 
     Returns
     -------
-    bool, None, or str
+    val : bool, None, or str
 
     Examples
     --------
@@ -316,7 +342,7 @@ def split(string, sep=','):
 
     Returns
     -------
-    list of strings
+    lst : list of strings
 
     Examples
     --------
@@ -372,15 +398,40 @@ def interpret_param_subfields(subfields, selector=None, pname=None, attr=None):
 
 
 def parse_param(config, section, selector, fullname, pname, value):
+    """Parse a param specification from a PISA config file.
+
+    Note that if the param sepcification does not include ``fixed``,
+    ``prior``, and/or ``range``, the defaults for these are:
+    ``fixed = True``, ``prior = None``, and ``range = None``.
+
+    If a prior is specified explicitly via ``.prior``, this takes precendence,
+    but if no ``.prior`` is specified and the param's value is parsed to be a
+    :class:`uncertainties.AffineScalarFunc` (i.e. have `std_dev` attribute), a
+    Gaussian prior is constructed from that and then the AffineScalarFunc is
+    stripped out of the param's value (such that it is just a
+    :class:`~pint.quantity.Quantity`).
+
+    Parameters
+    ----------
+    config : pisa.utils.config_parser.PISAConfigParser
+    section : string
+    selector : string or None
+    fullname : string
+    pname : string
+    value : string
+
+    Returns
+    -------
+    param : pisa.core.param.Param
+
+    """
     # Note: imports placed here to avoid circular imports
     from pisa.core.param import Param
     from pisa.core.prior import Prior
-    # TODO: Are these defaults actually a good idea? Should all be explicitly
-    # specified?
     kwargs = dict(name=pname, is_fixed=True, prior=None, range=None)
     try:
         value = parse_quantity(value)
-        kwargs['value'] = value.n * value.units
+        kwargs['value'] = value.nominal_value * value.units
     except ValueError:
         value = parse_string_literal(value)
         kwargs['value'] = value
@@ -393,9 +444,10 @@ def parse_param(config, section, selector, fullname, pname, value):
         kwargs['unique_id'] = config.get(section, fullname + '.unique_id')
 
     if config.has_option(section, fullname + '.prior'):
-        if config.get(section, fullname + '.prior') == 'uniform':
+        prior = str(config.get(section, fullname + '.prior')).strip().lower()
+        if prior == 'uniform':
             kwargs['prior'] = Prior(kind='uniform')
-        elif config.get(section, fullname + '.prior') == 'spline':
+        elif prior == 'spline':
             priorname = pname
             if selector is not None:
                 priorname += '_' + selector
@@ -408,27 +460,37 @@ def parse_param(config, section, selector, fullname, pname, value):
             deg = data['deg']
             kwargs['prior'] = Prior(kind='spline', knots=knots, coeffs=coeffs,
                                     deg=deg)
-        elif 'gauss' in config.get(section, fullname + '.prior'):
+        elif prior == 'none':
+            kwargs['prior'] = None
+        elif 'gauss' in prior:
             raise Exception('Please use new style +/- notation for gaussian'
                             ' priors in config')
         else:
             raise Exception('Prior type unknown')
 
-    elif hasattr(value, 's') and value.s != 0:
-        kwargs['prior'] = Prior(kind='gaussian', mean=value.n * value.units,
-                                stddev=value.s * value.units)
+    elif hasattr(value, 'std_dev') and value.std_dev != 0:
+        kwargs['prior'] = Prior(kind='gaussian',
+                                mean=value.nominal_value * value.units,
+                                stddev=value.std_dev * value.units)
 
     if config.has_option(section, fullname + '.range'):
         range_ = config.get(section, fullname + '.range')
-        # Note: `nominal` and `sigma` are called out in the `range_` string
+        # NOTE: `nominal` and `sigma` are called out in the `range_` string
         if 'nominal' in range_:
-            nominal = value.n * value.units # pylint: disable=unused-variable
+            nominal = value.nominal_value * value.units # pylint: disable=unused-variable
         if 'sigma' in range_:
-            sigma = value.s * value.units # pylint: disable=unused-variable
+            sigma = value.std_dev * value.units # pylint: disable=unused-variable
         range_ = range_.replace('[', 'np.array([')
         range_ = range_.replace(']', '])')
         kwargs['range'] = eval(range_).to(value.units) # pylint: disable=eval-used
+        # Strip out uncertainties from value itself (as we will rely on the
+        # prior from here on out)
+        value = value.nominal_value * value.units
 
+    # Strip out any uncertainties from value itself (an explicit ``.prior``
+    # specification takes precedence over this)
+    if hasattr(value, 'std_dev'):
+        value = value.nominal_value * value.units
     try:
         param = Param(**kwargs)
     except:
@@ -576,7 +638,7 @@ def parse_pipeline_config(config):
             else:
                 try:
                     value = parse_quantity(value)
-                    value = value.n * value.units
+                    value = value.nominal_value * value.units
                 except ValueError:
                     value = parse_string_literal(value)
                 service_kwargs[fullname] = value
@@ -637,8 +699,26 @@ class MutableMultiFileIterator(object):
             else:
                 if isfile(resource):
                     fpath = abspath(expanduser(expandvars(fpname)))
+
+        if fpath is None:
+            try:
+                resource = find_resource(fpname)
+            except:
+                pass
+            else:
+                if isfile(resource):
+                    fpath = resource
+
+        if fpath is None:
+            self.fpaths_processed = []
+        else:
+            self.fpaths_processed = [fpath]
+
+        self.fps_processed = [fp]
+
         record = dict(fp=fp, fpname=fpname, fpath=fpath, lineno=0, line='')
         self._iter_stack.append(record)
+        self.file_hierarchy = OrderedDict([(fpname, OrderedDict())])
 
     def next(self):
         """Iterate through lines in the file(s).
@@ -689,16 +769,17 @@ class MutableMultiFileIterator(object):
             the file.
 
         """
+        fpath = None
         if fp is None:
             assert fpname
-            fpath = None
             resource = find_resource(fpname)
             if isfile(resource):
                 fpath = abspath(expanduser(expandvars(resource)))
-                if fpath in [r['fpath'] for r in self._iter_stack]:
+                if fpath in self.fpaths_processed:
                     self._cleanup()
                     raise ValueError(
-                        'Already processed "%s" at path "%s"' % (fpname, fpath)
+                        'Circular reference; already processed "%s" at path'
+                        ' "%s"' % (fpname, fpath)
                     )
             else:
                 self._cleanup()
@@ -711,7 +792,32 @@ class MutableMultiFileIterator(object):
                     fpname = fp_.name
                 else:
                     fpname = ''
-            fpath = fpname
+            try:
+                resource = find_resource(fpname)
+            except IOError:
+                pass
+            else:
+                if isfile(resource):
+                    fpath = resource
+            if fp in self.fps_processed:
+                self._cleanup()
+                raise ValueError(
+                    'Circular reference; already processed file pointer "%s"'
+                    ' at path "%s"' % (fp_, fpname)
+                )
+
+        if fpath is not None:
+            if fpath in self.fpaths_processed:
+                self._cleanup()
+                raise ValueError(
+                    'Circular reference; already processed "%s" at path'
+                    ' "%s"' % (fpname, fpath)
+                )
+            self.fpaths_processed.append(fpath)
+
+        self.fps_processed.append(fp)
+        if fpath is not None:
+            self.fpaths_processed.append(fpath)
 
         logging.trace('Switching to "%s" at path "%s"' % (fpname, fpath))
 
@@ -813,8 +919,7 @@ class PISAConfigParser(RawConfigParser):
             interpolation=ExtendedInterpolation(),
             empty_lines_in_values=False,
         )
-
-        # Ignore whitespace before and after the text of the section name
+        self.file_iterators = []
 
     def set(self, section, option, value=None):
         """Set an option.  Extends RawConfigParser.set by validating type and
@@ -834,6 +939,16 @@ class PISAConfigParser(RawConfigParser):
         """Enable case-sensitive options in .cfg files, and force all values to
         be ASCII strings."""
         return optionstr #.encode('ascii')
+
+    @property
+    def hash(self):
+        """int : Hash value of the contents (does not depend on order of
+        sections, but does depend on order of keys within each section)"""
+        return self.__hash__()
+
+    def __hash__(self):
+        return hash_obj([(sec, (self.items(sec)))
+                         for sec in sorted(self.sections())])
 
     @staticmethod
     def _get_include_info(line):
@@ -920,6 +1035,7 @@ class PISAConfigParser(RawConfigParser):
         e = None                              # None, or an exception
 
         file_iter = MutableMultiFileIterator(fp=fp, fpname=fpname)
+        self.file_iterators.append(file_iter)
         for record in file_iter:
             fpname = record['fpname']
             lineno = record['lineno']
@@ -939,7 +1055,7 @@ class PISAConfigParser(RawConfigParser):
                     if index == 0 or (index > 0 and line[index-1].isspace()):
                         comment_start = min(comment_start, index)
                 inline_prefixes = next_prefixes
-            # parse include statement
+            # parse #include statement
             include_info = self._get_include_info(line)
             if include_info:
                 file_iter.switch_to_file(fpname=include_info['file'])
@@ -949,7 +1065,7 @@ class PISAConfigParser(RawConfigParser):
                         fp=StringIO(as_header.decode('utf-8'))
                     )
                 continue
-            # strip full line comments (or expand #include statements)
+            # strip full line comments
             for prefix in self._comment_prefixes:
                 if line.strip().startswith(prefix):
                     comment_start = 0
