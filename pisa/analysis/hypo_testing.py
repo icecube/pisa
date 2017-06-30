@@ -1136,7 +1136,7 @@ class HypoTesting(Analysis):
             * h1_pipelines (list containing list per pipeline)
             * h1_param_selections
 
-        mininimzer_settings.ini : copy of the minimzer settings used
+        mininimzer_settings.cfg : copy of the minimzer settings used
 
         run_info_<datetime in microseconds, UTC>_<hostname>.info
             * fluctuate_data : bool
@@ -1146,11 +1146,11 @@ class HypoTesting(Analysis):
             * fid_start_ind (if fid fits to pseudodata)
             * num_fid_trials (if fid fits to pseudodata)
 
-        h0_pipeline0.ini
-        h0_pipeline1.ini
+        h0_pipeline0.cfg
+        h0_pipeline1.cfg
         ...
-        h1_pipeline0.ini
-        h1_pipeline1.ini
+        h1_pipeline0.cfg
+        h1_pipeline1.cfg
         ...
 
         Directory Structure
