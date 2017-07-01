@@ -58,16 +58,18 @@ def parse_args(description=__doc__, profile_scan=False,
                 metavar='DIR', type=str,
                 help='''Directory containing output of hypo_testing.py.'''
             )
-            group = parser.add_mutually_exclusive_group(required=True)
-            group.add_argument(
-                '--asimov', action='store_true',
-                help='''Analyze the Asimov trials in the specified 
-                directories.'''
-            )
-            group.add_argument(
-                '--llr', action='store_true',
-                help='''Analyze the LLR trials in the specified directories.'''
-            )
+            if not systtests:
+                group = parser.add_mutually_exclusive_group(required=True)
+                group.add_argument(
+                    '--asimov', action='store_true',
+                    help='''Analyze the Asimov trials in the specified
+                    directories.'''
+                )
+                group.add_argument(
+                    '--llr', action='store_true',
+                    help='''Analyze the LLR trials in the specified
+                    directories.'''
+                )
     else:
         parser.add_argument(
             '--infile', metavar='FILE', type=str, required=True,
@@ -443,14 +445,18 @@ class Postprocessor(object):
                 self.logdirs = logdir
             else:
                 self.logdir = logdir
+            self.expected_pickles = [
+                'data_sets.pckl',
+                'all_params.pckl'
+            ]
             if test_type == 'analysis' or test_type == 'injparamscan':
-                self.expected_pickles = [
-                    'data_sets.pckl',
-                    'all_params.pckl',
+                self.expected_pickles.append(
                     'minimiser_info.pckl'
-                ]
-                if test_type == 'injparamscan':
-                    self.expected_pickles.append('labels.pckl')
+                )
+            if test_type == 'injparamscan' or test_type == 'systtests':
+                self.expected_pickles.append(
+                    'labels.pckl'
+                )
             if test_type == 'injparamscan':
                 data_sets_list = []
                 wh_to_th_list = []
@@ -473,6 +479,8 @@ class Postprocessor(object):
             if test_type == 'analysis':
                 self.extract_fid_data()
                 self.extract_data()
+            if test_type == 'systtests':
+                self.organise_baseline_data()
         # Things to initialise for profile_scan
         elif analysis_type == 'profile_scan':
             self.scan_file_dict = from_file(scan_file)
@@ -649,6 +657,112 @@ class Postprocessor(object):
                             'deltam31']['vals']) - deltam21
 
     #### Hypo testing Specific Postprocessing functions ####
+
+    def extract_trials(self):
+        """Extract and aggregate analysis results."""
+        self.logdir = os.path.expanduser(os.path.expandvars(self.logdir))
+        logdir_content = os.listdir(self.logdir)
+        # For the standard hypo_testing analysis, this logdir_content
+        # will contain what we need it to and so we can proceed to
+        # extract the trials.
+        if self.test_type == 'analysis':
+            if 'config_summary.json' in logdir_content:
+                self.organise_trials(logdir_content=logdir_content)
+            else:
+                raise ValueError(
+                    'config_summary.json cannot be found in the specified '
+                    'logdir. It should have been created as part of the '
+                    'output of hypo_testing.py and so this postprocessing '
+                    'cannot be performed.'
+                )
+        elif self.test_type == 'injparamscan':
+            pickle_there = self.check_pickle_files(logdir_content)
+            if pickle_there:
+                self.load_from_pickle()
+            else:
+                toy_names = []
+                scan_variables = []
+                for folder in logdir_content:
+                    if '.pckl' not in folder and 'Plots' not in folder:
+                        bits = folder.split('toy')[1].split('_')
+                        toy_name = bits[1]
+                        toy_names.append(
+                            toy_name
+                        )
+                        scan_variable = None
+                        add_bit = True
+                        for bit in bits:
+                            try:
+                                float(bit)
+                                add_bit = False
+                            except:
+                                if not (bit == '') and not (bit == toy_name):
+                                    if add_bit:
+                                        if scan_variable is None:
+                                            scan_variable = bit
+                                        else:
+                                            scan_variable += '_%s'%bit
+                        scan_variables.append(scan_variable)
+                toy_names = np.array(toy_names)
+                scan_variables = np.array(scan_variables)
+                # Require all to be the same injected truth model
+                if not np.alltrue(toy_names == toy_names[0]):
+                    raise ValueError(
+                        'Not all output is for the same injected truth '
+                        'hypothesis. Got %s'%set(toy_names)
+                    )
+                # Require all to be scanning the same variable
+                if not np.alltrue(scan_variables == scan_variables[0]):
+                    raise ValueError(
+                        'Not all output is for the same scanned parameter. '
+                        'Got %s'%set(scan_variables)
+                    )
+                self.labels = {}
+                self.all_params = {}
+                self.data_sets = {}
+                self.minimiser_info = {}
+                for scandir in logdir_content:
+                    if '.pckl' not in scandir and 'Plots' not in scandir:
+                        self.scandir = os.path.join(self.logdir, scandir)
+                        scandir_content = os.listdir(self.scandir)
+                        if 'config_summary.json' in scandir_content:
+                            self.extract_scans()
+                        else:
+                            raise ValueError(
+                                'config_summary.json cannot be found in the '
+                                'specified scandir, %s. It should have been '
+                                'created as part of the output of '
+                                'hypo_testing.py and so this postprocessing '
+                                'cannot be performed.'%self.scandir
+                            )
+                # Pickle at the end so all of the scans are in the output
+                self.pickle_data()
+            self.organise_scans()
+        elif self.test_type == 'systtests':
+            pickle_there = self.check_pickle_files(logdir_content)
+            if pickle_there:
+                self.load_from_pickle()
+            else:
+                self.labels = {}
+                self.all_params = {}
+                self.data_sets = {}
+                for systdir in logdir_content:
+                    if '.pckl' not in systdir and 'Plots' not in systdir:
+                        self.systdir = os.path.join(self.logdir, systdir)
+                        systdir_content = os.listdir(self.systdir)
+                        if 'config_summary.json' in systdir_content:
+                            self.extract_systtests()
+                        else:
+                            raise ValueError(
+                                'config_summary.json cannot be found in the '
+                                'specified directory, %s. It should have been '
+                                'created as part of the output of '
+                                'hypo_testing.py and so this postprocessing '
+                                'cannot be performed.'%self.systdir
+                            )
+                # Pickle at the end so all of the truths/systematics
+                # are in the output
+                self.pickle_data()
 
     def organise_trials(self, logdir_content):
         """This will actually go in to the directory where the trials 
@@ -829,87 +943,334 @@ class Postprocessor(object):
         self.wh_to_th['minim_info'] = wh_to_th_minim_info
         self.th_to_wh['minim_info'] = th_to_wh_minim_info
 
-    def extract_trials(self):
-        """Extract and aggregate analysis results."""
-        self.logdir = os.path.expanduser(os.path.expandvars(self.logdir))
-        logdir_content = os.listdir(self.logdir)
-        # For the standard hypo_testing analysis, this logdir_content
-        # will contain what we need it to and so we can proceed to
-        # extract the trials.
-        if self.test_type == 'analysis':
-            if 'config_summary.json' in logdir_content:
-                self.organise_trials(logdir_content=logdir_content)
+    def extract_systtests(self):
+        """This will actually go in to all of the systtest directories and
+        pull out the fit results."""
+        config_summary_fpath = os.path.join(
+            self.systdir,
+            'config_summary.json'
+        )
+        cfg = from_file(config_summary_fpath)
+
+        self.data_is_data = cfg['data_is_data']
+        if self.data_is_data:
+            raise ValueError('Analysis should NOT have been performed '
+                             'on data since this script should only '
+                             'process output from MC studies.')
+
+        # Get naming scheme
+        labels = Labels(
+            h0_name=cfg['h0_name'],
+            h1_name=cfg['h1_name'],
+            data_name=cfg['data_name'],
+            data_is_data=self.data_is_data,
+            fluctuate_data=self.fluctuate_data,
+            fluctuate_fid=self.fluctuate_fid
+        )
+        # Special extraction for the baseline case of all systematics
+        if 'full_syst_baseline' in labels.dict['data_name']:
+            trueordering = labels.dict['data_name'].split('_')[0]
+            systematic = 'full_syst_baseline'
+            direction = None
+        else:
+            if 'fixed' in labels.dict['h0_name']:
+                if 'inj' in labels.dict['data_name']:
+                    testtype = 'fixwrong'
+                    trueordering = labels.dict['data_name'].split('_')[0]
+                    direction = labels.dict['data_name'].split('_')[-2]
+                    systematic = labels.dict['data_name'].split(
+                        '%s_inj_'%trueordering
+                    )[-1].split('_%s_wrong'%direction)[0]
+                else:
+                    testtype = 'nminusone'
+                    trueordering = labels.dict['data_name'].split('_')[0]
+                    hypo = labels.dict['h0_name'].split('_')[0]
+                    direction = None
+                    systematic = labels.dict['h0_name'].split(
+                        '%s_fixed_'%hypo
+                    )[-1].split('_baseline')[0]
             else:
-                raise ValueError(
-                    'config_summary.json cannot be found in the specified '
-                    'logdir. It should have been created as part of the '
-                    'output of hypo_testing.py and so this postprocessing '
-                    'cannot be performed.'
-                )
-        elif self.test_type == 'injparamscan':
-            pickle_there = self.check_pickle_files(logdir_content)
-            if pickle_there:
-                self.load_from_pickle()
-            else:
-                toy_names = []
-                scan_variables = []
-                for folder in logdir_content:
-                    if '.pckl' not in folder and 'Plots' not in folder:
-                        bits = folder.split('toy')[1].split('_')
-                        toy_name = bits[1]
-                        toy_names.append(
-                            toy_name
+                testtype = 'fitwrong'
+                trueordering = labels.dict['data_name'].split('_')[0]
+                direction = labels.dict['data_name'].split('_')[-2]
+                systematic = labels.dict['data_name'].split(
+                    '%s_inj_'%trueordering
+                )[-1].split('_%s_wrong'%direction)[0]
+        trueordering = 'toy_%s_asimov'%trueordering
+        if trueordering not in self.labels.keys():
+            self.labels[trueordering] = {}
+            self.all_params[trueordering] = {}
+            self.data_sets[trueordering] = {}
+        if systematic not in self.labels[trueordering].keys():
+            self.labels[trueordering][systematic] = {}
+            self.all_params[trueordering][systematic] = {}
+            self.data_sets[trueordering][systematic] = {}
+        if direction is not None:
+            if direction not in self.labels[trueordering][systematic].keys():
+                self.labels[trueordering][systematic][direction] = labels
+                self.all_params[trueordering][systematic][direction] = {}
+                self.data_sets[trueordering][systematic][direction] = {}
+        else:
+            self.labels[trueordering][systematic] = labels
+        # Get starting params
+        self.get_starting_params(cfg=cfg, trueordering=trueordering,
+                                 systematic=systematic, direction=direction)
+        self.get_data(trueordering=trueordering, systematic=systematic,
+                      direction=direction)
+
+    def systtest_fit_extract(self, fit_data, datakey, labels):
+        """Function to extract the fit information relevant to the
+        systematic tests."""
+        # Find which hypothesis is the best fit.
+        h0_fit = fit_data['h0_fit_to_%s'%datakey]
+        h1_fit = fit_data['h1_fit_to_%s'%datakey]
+        if h0_fit['metric_val'] > h1_fit['metric_val']:
+            bestfit = 'h1'
+            altfit = 'h0'
+        else:
+            bestfit = 'h0'
+            altfit = 'h1'
+        # Extract the relevant fits
+        best_to_alt_key = '%s_fit_to_%s_fid'%(bestfit,altfit)
+        best_to_alt_fit = fit_data[best_to_alt_key]['fid_asimov']
+        relevant_fit_data = {}
+        relevant_fit_data['best_to_alt_fit'] = best_to_alt_fit
+        relevant_fit_data['alt_to_best_fit'] = \
+            fit_data['%s_fit_to_%s'%(altfit,datakey)]
+        relevant_fit_data['best_to_best_fit'] = \
+            fit_data['%s_fit_to_%s'%(bestfit,datakey)]
+        # Since this is an MC study in Asimov, this _should_ also be
+        # the injected truth. But, it is possible that if a
+        # systematically wrong hypothesis has been injected that
+        # this is NOT the case.
+        truth_recovered = labels['%s_name'%bestfit] in labels['data_name'] or \
+                          labels['data_name'] in labels['%s_name'%bestfit]
+        relevant_fit_data['truth_recovered'] = truth_recovered
+        return relevant_fit_data
+
+    def make_systtest_plots(self):
+        """Makes the plots showing the significances from
+        the systematic tests"""
+        for injkey in self.data_sets.keys():
+            data = {}
+            for testsyst in self.data_sets[injkey].keys():
+                data[testsyst] = {}
+                if len(self.data_sets[injkey][testsyst].keys()) == 2:
+                    # This is the case of doing off-baseline tests
+                    testdatakey = injkey.split('_asimov')[0] + \
+                                  '_inj_%s_%s_wrong_asimov'%(testsyst,'nve')
+                    fitted_syst = self.data_sets[injkey][testsyst]['nve'][
+                        testdatakey]['h0_fit_to_%s'%testdatakey][
+                            'params'].keys()
+                    # If the number of fitted systematics equals the
+                    # total number of systematics then the wrong thing
+                    # was injected with the fitter being allowed to
+                    # correct for it.
+                    total_syst = self.data_sets[injkey].keys()
+                    if len(fitted_syst) == len(total_syst):
+                        self.systtest_type = 'fitwrong'
+                        raise ValueError(
+                            "Postprocessing for systematic tests where "
+                            "one systematic is injected at a systematically"
+                            " wrong value and the fitter is allowed to "
+                            "correct for it is not implemented yet."
                         )
-                        scan_variable = None
-                        add_bit = True
-                        for bit in bits:
-                            try:
-                                float(bit)
-                                add_bit = False
-                            except:
-                                if not (bit == '') and not (bit == toy_name):
-                                    if add_bit:
-                                        if scan_variable is None:
-                                            scan_variable = bit
-                                        else:
-                                            scan_variable += '_%s'%bit
-                        scan_variables.append(scan_variable)
-                toy_names = np.array(toy_names)
-                scan_variables = np.array(scan_variables)
-                # Require all to be the same injected truth model
-                if not np.alltrue(toy_names == toy_names[0]):
-                    raise ValueError(
-                        'Not all output is for the same injected truth '
-                        'hypothesis. Got %s'%set(toy_names)
+                    elif len(fitted_syst) == len(total_syst)-1:
+                        self.systtest_type = 'fixwrong'
+                        raise ValueError(
+                            "Postprocessing for systematic tests where "
+                            "one systematic is injected at a systematically"
+                            " wrong value without allowing the fitter to "
+                            "correct for it is not implemented yet."
+                        )
+                    else:
+                        raise ValueError(
+                            "The number of fitted systematics, %i, in "
+                            "the test should be either equal to the "
+                            "total number of systematics, %i, or 1 "
+                            "less than it."%(len(fitted_syst), len(total_syst))
+                        )
+                else:
+                    # Otherwise it's a standard N-1 test
+                    self.systtest_type = 'nminusone'
+                    data[testsyst] = self.systtest_fit_extract(
+                        fit_data=self.data_sets[injkey][testsyst][injkey],
+                        datakey=injkey,
+                        labels=self.labels[injkey][testsyst].dict
                     )
-                # Require all to be scanning the same variable
-                if not np.alltrue(scan_variables == scan_variables[0]):
-                    raise ValueError(
-                        'Not all output is for the same scanned parameter. '
-                        'Got %s'%set(scan_variables)
-                    )
-                self.labels = {}
-                self.all_params = {}
-                self.data_sets = {}
-                self.minimiser_info = {}
-                for scandir in logdir_content:
-                    if '.pckl' not in scandir and 'Plots' not in scandir:
-                        self.scandir = os.path.join(self.logdir, scandir)
-                        scandir_content = os.listdir(self.scandir)
-                        if 'config_summary.json' in scandir_content:
-                            self.extract_scans()
-                        else:
-                            raise ValueError(
-                                'config_summary.json cannot be found in the '
-                                'specified scandir, %s. It should have been '
-                                'created as part of the output of '
-                                'hypo_testing.py and so this postprocessing '
-                                'cannot be performed.'%self.scandir
-                            )
-                # Pickle at the end so all of the scans are in the output
-                self.pickle_data()
-            self.organise_scans()
-                
+            if self.systtest_type == 'nminusone':
+                self.make_nminusone_systtests_plots(
+                    data=data,
+                    injkey=injkey
+                )
+            else:
+                self.make_injwrong_systtests_plots(
+                    data=data,
+                    injkey=injkey
+                )
+
+    def make_injwrong_systtests_plots(self, data, injkey):
+        """Make the systematic test plots where a systematically
+        wrong hypothesis is injected."""
+        raise ValueError(
+            "Postprocessing for systematic tests where a systematically "
+            "wrong hypothesis is injected is not implemented yet."
+        )
+
+    def make_nminusone_systtests_plots(self, data, injkey):
+        """Make the N-1 test plots showing the importance of
+        the systematics."""
+        import matplotlib.pyplot as plt
+        plt.rcParams['text.usetex'] = True
+
+        mkdir(self.outdir)
+
+        maintitle = self.make_main_title(end='N-1 Systematic Test')
+        subtitle = r"For True %s\end{center}"%(
+            self.tex_axis_label(injkey.split('_')[1])
+        )
+
+        if not self.baseline_data[injkey]['truth_recovered']:
+            raise ValueError(
+                "The truth was NOT recovered in the baseline fit."
+            )
+        baseline_significance = self.calculate_deltachi2_significances(
+            wh_to_th_metrics=self.baseline_data[injkey][
+                'alt_to_best_fit']['metric_val'],
+            th_to_wh_metrics=self.baseline_data[injkey][
+                'best_to_alt_fit']['metric_val']
+        )
+        alt_to_best_metrics = []
+        best_to_alt_metrics = []
+        truth_recovered = []
+        for testsyst in data.keys():
+            alt_to_best_metrics.append(
+                data[testsyst]['alt_to_best_fit']['metric_val']
+            )
+            best_to_alt_metrics.append(
+                data[testsyst]['best_to_alt_fit']['metric_val']
+            )
+            truth_recovered.append(
+                data[testsyst]['truth_recovered']
+            )
+        alt_to_best_metrics = np.array(alt_to_best_metrics)
+        best_to_alt_metrics = np.array(best_to_alt_metrics)
+        truth_recovered = np.array(truth_recovered)
+        if not np.all(truth_recovered):
+            systnames = []
+            for systname in np.array(data.keys())[significances.argsort()]:
+                systnames.append(systname)
+            systnames = np.array(systnames)
+            raise ValueError(
+                "Truth not recovered in tests where %s were fixed."%
+                systnames[np.logical_not(truth_recovered)]
+            )
+        significances = self.calculate_deltachi2_significances(
+            wh_to_th_metrics=alt_to_best_metrics,
+            th_to_wh_metrics=best_to_alt_metrics
+        )
+        systnames = []
+        for systname in np.array(data.keys())[significances.argsort()]:
+            systnames.append(self.tex_axis_label(systname))
+        vrange = max(significances)-min(significances)
+        ylims = [min(significances)-0.1*vrange, max(significances)+0.1*vrange]
+        self.make_1D_graph(
+            xvals=np.linspace(0.5,len(significances)-0.5,len(significances)),
+            yvals=significances[significances.argsort()],
+            xlabel='Fixed Systematic',
+            nicexlabel=False,
+            xunits=None,
+            ylabel=r'Asimov Significance ($\sigma$)',
+            niceylabel=False,
+            yunits=None,
+            marker='x',
+            xlims=[0,len(significances)],
+            linestyle='',
+            color=self.plot_colour(injkey.split('_')[1]),
+            ylims=ylims
+        )
+        plt.xticks(
+            np.linspace(0.5,len(significances)-0.5,len(significances)),
+            systnames,
+            rotation=45,
+            horizontalalignment='right'
+        )
+        plt.grid(axis='y', zorder=0, linestyle='--')
+        plt.title(maintitle+r"\\"+subtitle, fontsize=16)
+        plt.tight_layout()
+        save_end = "nminusone_systematic_test"
+        self.save_plot(
+            outdir=self.outdir,
+            end=save_end,
+            truth=injkey.split('_')[1]
+        )
+        # Add a line showing the baseline significance
+        plt.axhline(
+            baseline_significance,
+            linestyle='--',
+            label='Baseline Asimov Significance',
+            color='k',
+            lw=2
+        )
+        plt.legend(loc='upper left')
+        save_end = "nminusone_systematic_test_w_baseline"
+        self.save_plot(
+            outdir=self.outdir,
+            end=save_end,
+            truth=injkey.split('_')[1]
+        )
+        plt.close()
+        # Do another plot with the baseline subtracted
+        corrected_significances = significances - baseline_significance
+        vrange = max(corrected_significances)-min(corrected_significances)
+        ylims = [min(corrected_significances)-0.1*vrange,
+                 max(corrected_significances)+0.1*vrange]
+        self.make_1D_graph(
+            xvals=np.linspace(0.5,len(significances)-0.5,len(significances)),
+            yvals=corrected_significances[significances.argsort()],
+            xlabel='Fixed Systematic',
+            nicexlabel=False,
+            xunits=None,
+            ylabel=r'Change in Asimov Significance ($\sigma$)',
+            niceylabel=False,
+            yunits=None,
+            marker='x',
+            xlims=[0,len(significances)],
+            linestyle='',
+            color=self.plot_colour(injkey.split('_')[1]),
+            ylims=ylims
+        )
+        plt.xticks(
+            np.linspace(0.5,len(significances)-0.5,len(significances)),
+            systnames,
+            rotation=45,
+            horizontalalignment='right'
+        )
+        plt.grid(axis='y', zorder=0, linestyle='--')
+        plt.title(maintitle+r"\\"+subtitle, fontsize=16)
+        plt.tight_layout()
+        save_end = "nminusone_systematic_test_baseline_subtracted"
+        self.save_plot(
+            outdir=self.outdir,
+            end=save_end,
+            truth=injkey.split('_')[1]
+        )
+        plt.close()
+
+    def organise_baseline_data(self):
+        """Stores the baseline fits in the systematic tests to self."""
+        self.baseline_data = {}
+        for injkey in self.data_sets.keys():
+            data = {}
+            baseline_result = self.data_sets[injkey].pop('full_syst_baseline')
+            datakey = baseline_result.keys()[0]
+            baseline_data = self.systtest_fit_extract(
+                fit_data=baseline_result[datakey],
+                datakey=datakey,
+                labels=self.labels[injkey]['full_syst_baseline'].dict
+            )
+            self.baseline_data[injkey] = baseline_data
+
     def extract_fit(self, fpath, keys=None):
         """Extract fit info from a file.
 
@@ -1209,7 +1570,8 @@ class Postprocessor(object):
         return data_params
 
     def calculate_deltachi2_significances(self, wh_to_th_metrics,
-                                          th_to_wh_metrics):
+                                          th_to_wh_metrics,
+                                          truth_recovered=None):
         """Calculates the Asimov significance from the sets of metrics."""
         if isinstance(wh_to_th_metrics, list):
             wh_to_th_metrics = np.array(wh_to_th_metrics)
@@ -1217,6 +1579,15 @@ class Postprocessor(object):
         num = wh_to_th_metrics + th_to_wh_metrics
         denom = 2 * np.sqrt(wh_to_th_metrics)
         significances = num/denom
+        if truth_recovered is not None:
+            truth_multiplier = []
+            for tr in truth_recovered:
+                if tr:
+                    truth_multiplier.append(1.0)
+                else:
+                    truth_multiplier.append(-1.0)
+            truth_multiplier = np.array(truth_multiplier)
+            significances *= truth_multiplier
         return significances
         
     def make_asimov_significance_plots(self):
@@ -3415,6 +3786,84 @@ class Postprocessor(object):
             
         return pickle_there
 
+    def check_systtests_pickle_files(self):
+        """Checks the pickles in the case of systtests analysis"""
+        # Make sure that there have been no more new scan points run since this
+        # last processing. To do this, get the number of output directories
+        # Compare this to the number in the pickle files.
+        self.num_systematics = {}
+        for basename in nsort(os.listdir(self.logdir)):
+            if 'pckl' in basename:
+                continue
+            basename_content = nsort(
+                os.listdir(os.path.join(self.logdir, basename))
+            )
+            # This means it is a directory containing something useful
+            if 'config_summary.json' in basename_content:
+                bits = basename.split('toy_')[-1].split('_')
+                toyname = None
+                add_bit = True
+                for bit in bits:
+                    if bit == '' or bit == 'inj':
+                        add_bit = False
+                    if add_bit:
+                        if toyname is None:
+                            toyname = bit
+                        else:
+                            toyname += '_%s'%bit
+                if '_full_syst_baseline' in toyname:
+                    toyname = toyname.split('_full_syst_baseline')[0]
+                toyname = 'toy_%s_asimov'%toyname
+                if toyname not in self.num_systematics.keys():
+                    self.num_systematics[toyname] = 0
+                if 'wrong' in basename:
+                    # Only want to include each systematic once, but
+                    # they will have two directions.
+                    if 'pve' in basename:
+                        self.num_systematics[toyname] += 1
+                else:
+                    self.num_systematics[toyname] += 1
+        data_sets = from_file(os.path.join(self.logdir,
+                                           'data_sets.pckl'))
+        if sorted(data_sets.keys()) != sorted(self.num_systematics.keys()):
+            logging.info(
+                'Found files I assume to be from a previous run of'
+                ' this processing script containing these truths: %s. '
+                'However, based on the directories in the overall '
+                'output directory there should be these truths: %s, so '
+                'they will be regenerated.'%(
+                    sorted(data_sets.keys()),
+                    sorted(self.num_systematics.keys())
+                )
+            )
+        pickle_there = True
+        for toyname in sorted(self.num_systematics.keys()):
+            if len(data_sets[toyname].keys()) != self.num_systematics[toyname]:
+                pickle_there = False
+        if pickle_there:
+            logging.info(
+                'Found files I assume to be from a previous run of'
+                ' this processing script containing %i sytematics. If '
+                'this seems incorrect please delete the files: '
+                'data_sets.pckl, all_params.pckl and labels.pckl '
+                'from the logdir you have provided.'%(
+                    self.num_systematics[self.num_systematics.keys()[0]])
+            )
+        else:
+            logging.info(
+                'Found files I assume to be from a previous run of'
+                ' this processing script containing %i systematics. '
+                'However, based on the number of directories in the overall '
+                'output directory there should be %i systematics in '
+                'these pickle files, so they will be regenerated.'%(
+                    len(data_sets[data_sets.keys()[0]].keys()),
+                    self.num_systematics[self.num_systematics.keys()[0]]
+                )
+            )
+            pickle_there = False
+
+        return pickle_there
+
     def check_pickle_files(self, logdir_content):
         """Checks for the expected pickle files in the output directory based
         on the analysis and test type. If they are there, it is made sure that
@@ -3429,6 +3878,8 @@ class Postprocessor(object):
                 pickle_there = self.check_analysis_pickle_files()
             elif self.test_type == 'injparamscan':
                 pickle_there = self.check_injparamscan_pickle_files()
+            elif self.test_type == 'systtests':
+                pickle_there = self.check_systtests_pickle_files()
         else:
             logging.info(
                 'Did not find all of the files - %s - expected to indicate '
@@ -3438,7 +3889,8 @@ class Postprocessor(object):
 
         return pickle_there
 
-    def get_set_file_nums(self, filedir, injparam=None):
+    def get_set_file_nums(self, filedir, injparam=None, trueordering=None,
+                          systematic=None, direction=None):
         """This function returns the set of file numbers that exist for all h0
         and h1 combination. This is needed to account for any failed or
         non-transferred jobs. i.e. for trial X you may not have all of the
@@ -3446,6 +3898,11 @@ class Postprocessor(object):
         file_nums = OrderedDict()
         if injparam is not None:
             wanted_labels = self.labels[injparam]
+        if trueordering is not None:
+            if direction is not None:
+                wanted_labels = self.labels[trueordering][systematic][direction]
+            else:
+                wanted_labels = self.labels[trueordering][systematic]
         else:
             wanted_labels = self.labels
         for fname in nsort(os.listdir(filedir)):
@@ -3474,7 +3931,8 @@ class Postprocessor(object):
         self.set_file_nums = set_file_nums
         self.num_trials = len(set_file_nums)
 
-    def get_starting_params(self, cfg, injparam=None):
+    def get_starting_params(self, cfg, injparam=None, trueordering=None,
+                            systematic=None, direction=None):
         """Extracts the h0, h1 and data (if possible) params from the config
         summary file."""
         all_params = {}
@@ -3519,21 +3977,40 @@ class Postprocessor(object):
                     = bits.group(4)
         if injparam is not None:
             self.all_params[injparam] = all_params
+        elif trueordering is not None:
+            if direction is not None:
+                self.all_params[trueordering][systematic][
+                    direction] = all_params
+            else:
+                self.all_params[trueordering][systematic] = all_params
         else:
             self.all_params = all_params
 
-    def get_data(self, injparam=None):
+    def get_data(self, injparam=None, trueordering=None,
+                 systematic=None, direction=None):
         """Get all of the data from the logdir"""
         data_sets = OrderedDict()
         minimiser_info = OrderedDict()
         if injparam is not None:
             content = nsort(os.listdir(self.scandir))
+        elif trueordering is not None:
+            content = nsort(os.listdir(self.systdir))
         else:
             content = nsort(os.listdir(self.logdir))
         for basename in content:
             if injparam is not None:
                 m = self.labels[injparam].subdir_re.match(basename)
                 wanted_labels = self.labels[injparam]
+            elif trueordering is not None:
+                if direction is not None:
+                    m = self.labels[trueordering][systematic][
+                        direction].subdir_re.match(basename)
+                    wanted_labels = self.labels[trueordering][
+                        systematic][direction]
+                else:
+                    m = self.labels[trueordering][
+                        systematic].subdir_re.match(basename)
+                    wanted_labels = self.labels[trueordering][systematic]
             else:
                 m = self.labels.subdir_re.match(basename)
                 wanted_labels = self.labels
@@ -3559,6 +4036,8 @@ class Postprocessor(object):
 
             if injparam is not None:
                 subdir = os.path.join(self.scandir, basename)
+            elif trueordering is not None:
+                subdir = os.path.join(self.systdir, basename)
             else:
                 subdir = os.path.join(self.logdir, basename)
 
@@ -3566,7 +4045,10 @@ class Postprocessor(object):
             # exist for all h0 an h1 combinations
             self.get_set_file_nums(
                 filedir=subdir,
-                injparam=injparam
+                injparam=injparam,
+                trueordering=trueordering,
+                systematic=systematic,
+                direction=direction
             )
             fnum = None
             
@@ -3630,28 +4112,37 @@ class Postprocessor(object):
         if injparam is not None:
             self.data_sets[injparam] = data_sets
             self.minimiser_info[injparam] = minimiser_info
+        elif trueordering is not None:
+            if direction is not None:
+                self.data_sets[trueordering][systematic][direction] = data_sets
+            else:
+                self.data_sets[trueordering][systematic]= data_sets
         else:
             self.data_sets = data_sets
             self.minimiser_info = minimiser_info
 
     def pickle_data(self):
         """Will pickle the data for easy access later."""
-        to_file(
-            self.data_sets,
-            os.path.join(self.logdir, 'data_sets.pckl')
-        )
-        to_file(
-            self.all_params,
-            os.path.join(self.logdir, 'all_params.pckl')
-        )
-        to_file(
-            self.labels,
-            os.path.join(self.logdir, 'labels.pckl')
-        )
-        to_file(
-            self.minimiser_info,
-            os.path.join(self.logdir, 'minimiser_info.pckl')
-        )
+        if 'data_sets.pckl' in self.expected_pickles:
+            to_file(
+                self.data_sets,
+                os.path.join(self.logdir, 'data_sets.pckl')
+            )
+        if 'all_params.pckl' in self.expected_pickles:
+            to_file(
+                self.all_params,
+                os.path.join(self.logdir, 'all_params.pckl')
+            )
+        if 'labels.pckl' in self.expected_pickles:
+            to_file(
+                self.labels,
+                os.path.join(self.logdir, 'labels.pckl')
+            )
+        if 'minimiser_info.pckl' in self.expected_pickles:
+            to_file(
+                self.minimiser_info,
+                os.path.join(self.logdir, 'minimiser_info.pckl')
+            )
 
     def load_from_pickle(self):
         """Load from the pickle files created by the function above in a
@@ -4489,7 +4980,8 @@ class Postprocessor(object):
             plt.subplots_adjust(left=0.10, right=0.90, top=0.85, bottom=0.11)
 
     def make_1D_graph(self, xvals, yvals, xlabel, xunits,
-                      ylabel, yunits, xlims='edges', ylims=None,
+                      ylabel, yunits, nicexlabel=True,
+                      niceylabel=True ,xlims='edges', ylims=None,
                       linestyle='-', color='darkblue', alpha=0.9,
                       xlabelsize='18', ylabelsize='18', marker=None,
                       plotlabel=None, subplotnum=None):
@@ -4514,11 +5006,9 @@ class Postprocessor(object):
             else:
                 plt.xlim(xlims)
         if xlabel is not None:
-            nice_xlabel = self.make_label(xlabel, xunits)
-            plt.xlabel(
-                nice_xlabel,
-                fontsize=xlabelsize
-            )
+            if nicexlabel:
+                xlabel = self.make_label(xlabel, xunits)
+            plt.xlabel(xlabel, fontsize=xlabelsize)
         if ylims is not None:
             if ylims[0] == ylims[1]:
                 plt.ylim(ylims[0]-0.1, ylims[0]+0.1)
@@ -4527,17 +5017,13 @@ class Postprocessor(object):
         if ylabel is not None:
             if subplotnum is not None:
                 if (subplotnum-1)%4 == 0:
-                    nice_ylabel = self.make_label(ylabel, yunits)
-                    plt.ylabel(
-                        nice_ylabel,
-                        fontsize=ylabelsize
-                    )
+                    if niceylabel:
+                        ylabel = self.make_label(ylabel, yunits)
+                    plt.ylabel(ylabel, fontsize=ylabelsize)
             else:
-                nice_ylabel = self.make_label(ylabel, yunits)
-                plt.ylabel(
-                    nice_ylabel,
-                    fontsize=ylabelsize
-                )
+                if niceylabel:
+                    ylabel = self.make_label(ylabel, yunits)
+                plt.ylabel(ylabel, fontsize=ylabelsize)
 
     def make_2D_hist_plot(self, zvals, xbins, ybins, xlabel,
                           ylabel, zlabel, xunits=None, yunits=None,
@@ -5279,10 +5765,6 @@ def main_injparamscan_postprocessing():
     The main result will be an Asimov sensitivity curve as a function of
     this inejcted parameter."""
 
-    # TODO:
-    #
-    # 1) Everything!
-
     init_args_d = parse_args(description=description,
                              injparamscan=True)
 
@@ -5329,11 +5811,36 @@ def main_injparamscan_postprocessing():
             )
         
 
-
 def main_systtests_postprocessing():
-    raise NotImplementedError(
-        "Postprocessing of hypo testing systematic tests not "
-        "implemented in this script yet.")
+    description = """Hypothesis testing: How do two hypotheses compare for
+    describing MC or data?
+
+    This script/module computes significances, etc. from the logfiles recorded
+    by the `hypo_testing_systtests.py` script. That is, looks at how the fits
+    change for three different N-1 tests:
+
+      1) Where one of the systematics is fixed to the baseline value.
+      2) Where one of the systematics is injected *off* baseline but fixed
+         *on* baseline in the hypotheses.
+      3) Same as 2, but the systematic is not fixed and so the minimiser is
+         allowed to try correct for the incorrect hypothesis."""
+
+    init_args_d = parse_args(description=description,
+                             systtests=True)
+
+    postprocessor = Postprocessor(
+        analysis_type='hypo_testing',
+        test_type='systtests',
+        logdir=init_args_d['dir'],
+        detector=init_args_d['detector'],
+        selection=init_args_d['selection'],
+        outdir=init_args_d['outdir'],
+        formats=init_args_d['formats'],
+        fluctuate_fid=False,
+        fluctuate_data=False
+    )
+
+    postprocessor.make_systtest_plots()
 
 
 if __name__ == '__main__':
