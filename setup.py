@@ -205,7 +205,6 @@ def do_setup():
         'settings/osc/*.md',
         'settings/pipeline/*.cfg',
         'settings/pipeline/*.md',
-        'settings/postprocess/*.json',
 
         'tests/data/aeff/*.json*',
         'tests/data/flux/*.json*',
