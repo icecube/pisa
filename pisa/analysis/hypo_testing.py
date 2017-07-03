@@ -26,13 +26,15 @@ import socket
 import string
 import sys
 import time
-import numpy as np
 from traceback import format_exception
+
+import numpy as np
 
 from pisa import ureg, _version, __version__
 from pisa.analysis.analysis import Analysis
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.map import MapSet
+from pisa.core.prior import Prior
 from pisa.utils.comparisons import normQuant
 from pisa.utils.fileio import from_file, get_valid_filename, mkdir, to_file
 from pisa.utils.hash import hash_obj
@@ -505,8 +507,8 @@ class HypoTesting(Analysis):
 
         # Storage for most recent Asimov (un-fluctuated) distributions
         self.toy_data_asimov_dist = None
-        self.h0_fid_asimov_dist = None
-        self.h1_fid_asimov_dist = None
+        self.h0_fid_asimov_dist = h0_fid_asimov_dist
+        self.h1_fid_asimov_dist = h1_fid_asimov_dist
 
         # Storage for most recent "data" (either un-fluctuated--if Asimov
         # analysis being run or if actual data is being used--or fluctuated--if
@@ -1487,21 +1489,33 @@ class HypoTesting(Analysis):
                 sort_keys=False)
 
     def set_param_ranges(self, selection, test_name, rangetuple, inj_units):
-        '''
-        Sets the parameter in hypo_testing selected by selection (if not None)
-        with name test_name to a range defined by rangetuple. This should have
-        the correct units even if the rangetuple units did not match those of
-        the original parameter and also will stay positive if the original
-        range did.
-        '''
+        """Give the parameter in hypo_testing selected by selection
+        (if not None) with name test_name a range defined by
+        rangetuple. This should have the correct units even if the
+        rangetuple units did not match those of the original parameter
+        and also will stay positive if the original range did.
+
+        Parameters
+        ----------
+        selection : string or None
+            Parameter selection e.g. nh or ih.
+
+        test_name : string
+            Parameter name e.g. theta23.
+
+        rangetuple : tuple
+            Tuple for the parameter range.
+
+        inj_units : string
+            Units for this parameter as defined in the config file, so
+            the tuple can be converted if needed.
+
+        """
         if selection is not None:
             self.h0_maker.select_params([selection])
             self.h1_maker.select_params([selection])
         if self.h0_maker.params[test_name].range is not None:
-            if self.h0_maker.params[test_name].range[0] >= 0:
-                enforce_positive = True
-            else:
-                enforce_positive = False
+            enforce_positive = self.h0_maker.params[test_name].range[0] >= 0
         else:
             enforce_positive = False
         # Convert the units if necessary
@@ -1530,11 +1544,9 @@ class HypoTesting(Analysis):
         else:
             self.data_maker.params[test_name].range = rangetuple
 
-    def log_and_do_fits(self):
-        '''
-        Sets up the logging and does an Asimov analysis. Used in the injected
-        parameter scans and the systematic tests.
-        '''
+    def do_asimov_fits(self):
+        """Set up the logging and does an Asimov analysis. Used in the
+        injected parameter scans and the systematic tests."""
         # Setup logging and things.
         self.setup_logging(reset_params=False)
         self.write_config_summary(reset_params=False)
@@ -1547,10 +1559,9 @@ class HypoTesting(Analysis):
         self.fit_hypos_to_fid()
 
     def reset_makers(self, data=True, h0=True, h1=True):
-        '''
-        Resets all 3 makers. Used in the injected parameter scans and the
-        systematic tests.
-        '''
+        """Reset the makers. Set the booleans to false if you don't
+        want to reset one or more of the makers. Used in the injected
+        parameter scans and the systematic tests."""
         if data:
             self.data_maker.params.reset_free()
         if h0:
@@ -1559,23 +1570,43 @@ class HypoTesting(Analysis):
             self.h1_maker.params.reset_free()
 
     def clear_data(self):
-        '''
-        Clears the data distributions so that they are regenerated. This is
+        """Clear the data distributions so that they are regenerated. This is
         needed for making multiple different data distributions (parameter
-        scans, systematics tests) with the same hypo_testing object.
-        '''
+        scans, systematics tests) with the same hypo_testing object."""
         self.data_dist = None
         self.toy_data_asimov_dist = None
 
-    def inj_param_scan(self, param_name, test_name, inj_vals,
-                       requested_vals, h0_name, h1_name, data_name):
-        '''
-        Performs the Asimov hypo testing analysis over some injected data
+    def asimov_inj_param_scan(self, param_name, test_name, inj_vals,
+                              requested_vals, h0_name, h1_name, data_name):
+        """Perform the Asimov hypo testing analysis over some injected data
         parameter. This will be the parameter specified by test_name and the
         injected values are in inj_vals. The requested vals from the command
         line are also given for making labels for all of the output
-        directories. 
-        '''
+        directories.
+
+        Parameters
+        ----------
+        param_name : string
+            The name of the parameter to do the scan over.
+
+        test_name : string
+            The name of the parameter as it is defined in the config files.
+            This is used, for example, when the scan is over sin2theta23,
+            but therefore it's a scan over theta23 in the config file.
+
+        inj_vals : list
+            The list of scan values to actually be used in the makers.
+
+        requested_vals : list
+            The list of scan values passed by the user. This may not be
+            the same as inj_vals in cases where, for example, the units
+            had to be changed or the scan is over some special variable
+            such as sin2theta23.
+
+        *_name : string
+            Same as for the HypoTesting class.
+
+        """
         # Scan over the injected values. We also loop over the requested vals
         # here in case they are different so that value can be put in labels
         for inj_val, requested_val in zip(inj_vals, requested_vals):
@@ -1608,7 +1639,7 @@ class HypoTesting(Analysis):
                     h0_name=h0_name,
                     h1_name=h1_name,
                     data_name=data_name+'_%s_%.4f'
-                    %(param_name,requested_val*1000.0),
+                    %(param_name, requested_val*1000.0),
                     data_is_data=False,
                     fluctuate_data=False,
                     fluctuate_fid=False
@@ -1618,26 +1649,35 @@ class HypoTesting(Analysis):
                     h0_name=h0_name,
                     h1_name=h1_name,
                     data_name=data_name+'_%s_%.4f'
-                    %(param_name,requested_val),
+                    %(param_name, requested_val),
                     data_is_data=False,
                     fluctuate_data=False,
                     fluctuate_fid=False
                 )
             # Setup logging and do the fits
-            self.log_and_do_fits()
+            self.do_asimov_fits()
             # At the end, reset the parameters in the maker
             self.reset_makers()
             # Also be sure to remove the data_dist and toy_data_asimov_dist
             # so that they are regenerated next time
             self.clear_data()
 
-    def nminusone_test(self, data_param, h0_name, h1_name, data_name):
-        '''
-        This function will perform the standard N-1 test. This function expects
-        h0_name, h1_name and data_name so that the labels can be redefined 
-        to make everything unique. It is also expected that this is used inside
-        of a loop where data_param is one of the data params.
-        '''
+    def asimov_nminusone_test(self, data_param, h0_name, h1_name, data_name):
+        """This function will perform the standard N-1 test. This
+        function expects h0_name, h1_name and data_name so that the
+        labels can be redefined to make everything unique. It is also
+        expected that this is used inside of a loop where data_param
+        is one of the data params.
+
+        Parameters
+        ----------
+        data_param : Param
+            The param to be fixed in the test.
+
+        *_name : string
+            Same as they in HypoTesting.
+
+        """
         self.labels = Labels(
             h0_name=h0_name + '_fixed_%s_baseline'%data_param.name,
             h1_name=h1_name + '_fixed_%s_baseline'%data_param.name,
@@ -1654,12 +1694,11 @@ class HypoTesting(Analysis):
             if h1_param.name == data_param.name:
                 h1_param.is_fixed = True
         # Setup logging and do the fits
-        self.log_and_do_fits()
+        self.do_asimov_fits()
 
-    def systematic_wrong_analysis(self, data_param, fit_wrong, direction,
+    def sys_wrong_asimov_analysis(self, data_param, fit_wrong, direction,
                                   h0_name, h1_name, data_name):
-        '''
-        This function will perform a modified version of the N-1 test. This
+        """This function will perform a modified version of the N-1 test. This
         differs in that here we do not assume the systematics take their
         baseline values but here see instead what happens with something
         systematically wrong. So, the data_param is shifted by 1 sigma or 10%
@@ -1672,13 +1711,29 @@ class HypoTesting(Analysis):
         exists inside of a loop over the parameters in the data_maker and this
         is for the systematic defined in data_param. This function also expects
         h0_name, h1_name and data_name so that the labels can be redefined to
-        make everything unique. 
-        '''
-        if direction != 'pve':
-            if direction != 'nve':
-                raise ValueError('Direction to shift systematic value must be '
-                                 'specified either as "pve" or "nve" for '
-                                 'positive and negative respectively')
+        make everything unique.
+
+        Parameters
+        ----------
+        data_param : Param
+            The param for which a systematically wrong value will be injected.
+
+        fit_wrong : bool
+            Whether or not this param will be fitted for or fixed to
+            the baseline (wrong) value.
+
+        direction : string
+            Either positive (pve) or negative (nve) and defines whether the
+            systematically wrong value is higher or lower than the baseline.
+
+        *_name : string
+            Same as for HypoTesting.
+
+        """
+        if direction not in ['pve', 'nve']:
+            raise ValueError('Direction to shift systematic value must be '
+                             'specified either as "pve" or "nve" for '
+                             'positive and negative respectively')
         # Calculate this wrong value based on the prior
         if hasattr(data_param, 'prior'):
             # Gaussian priors are easy - just do 1 sigma
@@ -1716,7 +1771,7 @@ class HypoTesting(Analysis):
                 h0_name=h0_name,
                 h1_name=h1_name,
                 data_name=data_name + '_inj_%s_%s_wrong'%(
-                    data_param.name,direction),
+                    data_param.name, direction),
                 data_is_data=False,
                 fluctuate_data=False,
                 fluctuate_fid=False
@@ -1726,19 +1781,45 @@ class HypoTesting(Analysis):
                 h0_name=h0_name + '_fixed_%s_baseline'%data_param.name,
                 h1_name=h1_name + '_fixed_%s_baseline'%data_param.name,
                 data_name=data_name + '_inj_%s_%s_wrong'%(
-                    data_param.name,direction),
+                    data_param.name, direction),
                 data_is_data=False,
                 fluctuate_data=False,
                 fluctuate_fid=False
             )
         # Setup logging and do the fits
-        self.log_and_do_fits()
+        self.do_asimov_fits()
 
-    def syst_tests(self, inject_wrong, fit_wrong, only_syst, do_baseline,
-                   h0_name, h1_name, data_name):
-        '''The function which actually does the syst tests. The one that will
+    def asimov_syst_tests(self, inject_wrong, fit_wrong, only_syst,
+                          do_baseline, h0_name, h1_name, data_name):
+        """The function which actually does the syst tests. The one that will
         actually be performed will be depending on whether inject_wrong is
-        true or not.'''
+        true or not.
+
+        Parameters
+        ----------
+        inject_wrong : bool
+            Whether the test is to inject a systematically wrong hypothesis
+            or stick on the baseline.
+
+        fit_wrong : bool
+            Whether the test will allow this wrong value to be fitted.
+
+        only_syst : list of strings
+            Allows for only certain systematic tests to be done if the name
+            is specified here. Useful if you need to quickly re-do just some
+            of the tests.
+
+        do_baseline : bool
+            Whether to get the baseline significance or not. In general
+            you want this to compare against since the impact of the
+            systematics is only quantifiable relative to the baseline.
+            However, this can be skipped to save time if you already
+            have this value.
+
+        *_name : string
+            Same as for HypoTesting
+
+        """
         if do_baseline:
             # Perform the baseline analysis so that the other results can
             # have a comparison line.
@@ -1751,7 +1832,7 @@ class HypoTesting(Analysis):
                 fluctuate_fid=False
             )
             # Setup logging and do the fits
-            self.log_and_do_fits()
+            self.do_asimov_fits()
             # Reset the makers
             self.reset_makers()
             # Also be sure to remove the data_dist and toy_data_asimov_dist
@@ -1761,16 +1842,13 @@ class HypoTesting(Analysis):
             logging.info("Baseline systematic fit will be skipped.")
         for data_param in self.data_maker.params.free:
             if only_syst is not None:
-                if data_param.name in only_syst:
-                    do_test = True
-                else:
-                    do_test = False
+                do_test = data_param.name in only_syst
             else:
                 do_test = True
             if do_test:
                 if inject_wrong:
                     # First inject this wrong up by one sigma
-                    self.systematic_wrong_analysis(
+                    self.sys_wrong_asimov_analysis(
                         data_param=data_param,
                         fit_wrong=fit_wrong,
                         direction='pve',
@@ -1783,7 +1861,7 @@ class HypoTesting(Analysis):
                     # Data must be cleared or else it won't be regenerated
                     self.clear_data()
                     # Then inject this wrong down by one sigma
-                    self.systematic_wrong_analysis(
+                    self.sys_wrong_asimov_analysis(
                         data_param=data_param,
                         fit_wrong=fit_wrong,
                         direction='nve',
@@ -1793,7 +1871,7 @@ class HypoTesting(Analysis):
                     )
                 else:
                     # Just do the standard N-1 test
-                    self.nminusone_test(
+                    self.asimov_nminusone_test(
                         data_param=data_param,
                         h0_name=h0_name,
                         h1_name=h1_name,
@@ -1811,17 +1889,16 @@ class HypoTesting(Analysis):
                 for h1_param in self.h1_maker.params:
                     if h1_param.name == data_param.name:
                         h1_param.is_fixed = False
-            
 
-class Hypotestingargparser(object):
-    """
-    Allows for clever usage of this script such that the standard analysis can
-    be run or one of the other Asimov-based tests. With this, the separate 
-    arguments for each way of running the script can be displated separately.
-    """
+
+class HypoTestingArgParser(object):
+    """Allows for clever usage of this script such that the standard
+    analysis can be run or one of the other Asimov-based tests. With
+    this, the separate arguments for each way of running the script
+    can be displated separately."""
     def __init__(self):
         parser = ArgumentParser(
-            description="""This script contains all of the functionality for 
+            description="""This script contains all of the functionality for
             hypothesis testing.""",
             usage="""hypo_testing.py <command> [<args>]
 
@@ -1855,7 +1932,7 @@ class Hypotestingargparser(object):
 
     def systtests(self):
         main_systtests()
-        
+
 
 def parse_args(description=__doc__, injparamscan=False, systtests=False):
     """Parse command line args.
@@ -1935,7 +2012,7 @@ def parse_args(description=__doc__, injparamscan=False, systtests=False):
         parser.add_argument(
             '--pipeline', required=True,
             type=str, action='append', metavar='PIPELINE_CFG',
-            help='''Settings for the generation of h0, h1 and data 
+            help='''Settings for the generation of h0, h1 and data
             distributions; repeat this argument to specify multiple
             pipelines.'''
         )
@@ -2020,7 +2097,7 @@ def parse_args(description=__doc__, injparamscan=False, systtests=False):
         parser.add_argument(
             '--fluctuate-data',
             action='store_true',
-            help='''Apply fluctuations to the data distribution. This should 
+            help='''Apply fluctuations to the data distribution. This should
             *not* be set for analyzing "real" (measured) data, and it is common
             to not use this feature even for Monte Carlo analysis. Note that if
             this is not set, --num-data-trials and --data-start-ind are forced
@@ -2141,15 +2218,15 @@ def parse_args(description=__doc__, injparamscan=False, systtests=False):
         parser.add_argument(
             '--inject_wrong',
             action='store_true',
-            help='''Inject a parameter to some systematically wrong value. This 
-            will be either +/- 1 sigma or +/- 10%% if such a definition is 
-            impossible. By default this parameter will be fixed unless the 
-            fit_wrong argument is also flagged.'''
+            help='''Inject a parameter to some systematically wrong value.
+            This will be either +/- 1 sigma or +/- 10%% if such a definition
+            is impossible. By default this parameter will be fixed unless
+            the fit_wrong argument is also flagged.'''
         )
         parser.add_argument(
             '--fit_wrong',
             action='store_true',
-            help='''In the case of injecting a systematically wrong hypothesis 
+            help='''In the case of injecting a systematically wrong hypothesis
             setting this argument will get the minimiser to try correct for it.
             If inject_wrong is set to false then this must also be set to 
             false or else the script will fail.'''
@@ -2311,9 +2388,9 @@ def main(return_outputs=False):
     if return_outputs:
         return hypo_testing
 
-    
+
 def main_injparamscan():
-    doc="""This will load the HypoTesting class and use it to do
+    doc = """This will load the HypoTesting class and use it to do
     an Asimov test across the space of one of the injected parameters. The
     user will define the parameter and pass a numpy-interpretable string to
     set the range of values. For example, one could scan over the space of
@@ -2363,7 +2440,7 @@ def main_injparamscan():
 
     # Instantiate the analysis object
     hypo_testing = HypoTesting(**init_args_d)
-    
+
     logging.info(
         'Scanning over %s between %.4f and %.4f with %i vals'
         %(param_name, min(inj_vals), max(inj_vals), len(inj_vals))
@@ -2477,15 +2554,15 @@ def main_injparamscan():
             if force_prior:
                 logging.warn("Parameter to be scanned, %s, has a %s prior that"
                              " you have requested to be left on. This will "
-                             "likely make the results wrong."%(test_name,
-                                hypo_testing.data_maker.params[
-                                   test_name].prior.kind))
+                             "likely make the results wrong."%(
+                                 test_name, hypo_testing.data_maker.params[
+                                     test_name].prior.kind))
             else:
                 logging.info("Parameter to be scanned, %s, has a %s prior. "
                              "This will be changed to a uniform prior (i.e. "
-                             "no prior) for this test."%(test_name,
-                                hypo_testing.data_maker.params[
-                                   test_name].prior.kind))
+                             "no prior) for this test."%(
+                                 test_name, hypo_testing.data_maker.params[
+                                     test_name].prior.kind))
                 uniformprior = Prior(kind='uniform')
                 hypo_testing.h0_maker.params[test_name].prior = uniformprior
                 hypo_testing.h1_maker.params[test_name].prior = uniformprior
@@ -2500,7 +2577,7 @@ def main_injparamscan():
                          "So nothing needs to be done."%test_name)
 
     # Everything is set up. Now do the scan.
-    hypo_testing.inj_param_scan(
+    hypo_testing.asimov_inj_param_scan(
         param_name=param_name,
         test_name=test_name,
         inj_vals=inj_vals,
@@ -2510,7 +2587,7 @@ def main_injparamscan():
         data_name=init_args_d['data_name']
     )
 
-    
+
 def main_systtests():
     doc = """This will load the HypoTesting class and use it to do a
     systematic study in Asimov. This will take some input pipeline
@@ -2540,10 +2617,10 @@ def main_systtests():
                          'for it.')
     else:
         if inject_wrong:
-            logging.info('Injecting a systematically wrong hypothesis but NOT ' 
-                         'allowing the minimiser to attempt to correct for it. '
-                         'Hypothesis maker will be FIXED at the baseline '
-                         'value.')
+            logging.info('Injecting a systematically wrong hypothesis but '
+                         'NOT allowing the minimiser to attempt to correct'
+                         ' for it. Hypothesis maker will be FIXED at the '
+                         'baseline value.')
         else:
             logging.info('A standard N-1 test will be performed where each '
                          'systematic is fixed to the baseline value '
@@ -2599,7 +2676,7 @@ def main_systtests():
     # Instantiate the analysis object
     hypo_testing = HypoTesting(**init_args_d)
     # Everything is set up so do the tests
-    hypo_testing.syst_tests(
+    hypo_testing.asimov_syst_tests(
         inject_wrong=inject_wrong,
         fit_wrong=fit_wrong,
         only_syst=only_syst,
@@ -2609,6 +2686,6 @@ def main_systtests():
         data_name=init_args_d['data_name']
     )
 
-    
+
 if __name__ == '__main__':
-    Hypotestingargparser()
+    HypoTestingArgParser()
