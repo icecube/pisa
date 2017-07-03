@@ -6,8 +6,6 @@ A class for doing postprocessing.
 
 """
 
-from argparse import ArgumentParser
-
 from collections import OrderedDict
 import os
 import re
@@ -18,355 +16,8 @@ from scipy.stats import spearmanr
 from pisa import ureg
 from pisa.analysis.hypo_testing import Labels
 from pisa.utils.fileio import from_file, mkdir, nsort, to_file
-from pisa.utils.log import logging, set_verbosity
+from pisa.utils.log import logging
 
-
-def parse_args(description=__doc__, profile_scan=False,
-               injparamscan=False, systtests=False,
-               hypo_testing_analysis=False):
-    """Parse command line args.
-
-    Returns
-    -------
-    init_args_d : dict
-
-    """
-    parser = ArgumentParser(description=description)
-
-    if not profile_scan:
-        if injparamscan:
-            parser.add_argument(
-                '-d', '--dir', required=True,
-                metavar='DIR', type=str, action='append',
-                help='''Directory containing output of hypo_testing.py.
-                Repeat this argument to plot multiple significance lines on
-                the same plot. Note that if you do then none of the fits or
-                the minimiser info will be plotted'''
-            )
-            parser.add_argument(
-                '-dl', '--dir_label', type=str, action='append',
-                help="""A unique name from which to identify each the above
-                directories can be identified. Repeat this argument for as
-                many times as you have directories. If no labels are
-                specified here they will be constructed using the truth
-                information in the files. So either specify one for
-                every directory or none at all."""
-            )
-        else:
-            parser.add_argument(
-                '-d', '--dir', required=True,
-                metavar='DIR', type=str,
-                help='''Directory containing output of hypo_testing.py.'''
-            )
-            if not systtests:
-                group = parser.add_mutually_exclusive_group(required=True)
-                group.add_argument(
-                    '--asimov', action='store_true',
-                    help='''Analyze the Asimov trials in the specified
-                    directories.'''
-                )
-                group.add_argument(
-                    '--llr', action='store_true',
-                    help='''Analyze the LLR trials in the specified
-                    directories.'''
-                )
-    else:
-        parser.add_argument(
-            '--infile', metavar='FILE', type=str, required=True,
-            help='''Output file of profile_scan.py to processs.'''
-        )
-        parser.add_argument(
-            '--best-fit-infile', metavar='FILE', type=str, default=None,
-            help='''Output file of profile_scan.py containing the best
-            fit to add to the plots, if available.'''
-        )
-        parser.add_argument(
-            '--projection-infile', metavar='FILE',
-            type=str, action='append', default=None,
-            help='''If you want to add projections to your plots e.g. 1D
-            projections to 2D plots you can specify them here. Repeat this
-            argument to specify multiple projections.'''
-        )
-        parser.add_argument(
-            '--other-contour', metavar='FILE',
-            type=str, action='append', default=None,
-            help='''If you want to add other contours to your plots e.g.
-            Other experiments then specify them here. This is expected to
-            be a json dictionary with the following keys: vars, contour,
-            label, color, linestyle and (optionally) the best_fit point.'''
-        )
-        parser.add_argument(
-            '--pseudo-experiments', metavar='DIR',
-            type=str, default=None,
-            help='''If you want to overlay pseudo experiment fits from
-            the hypo_testing.py script on to the contours to check
-            coverage, set the directory here. Note that this will overlay
-            all of the hX_hypo_to_hY_fid fit results on to the contour
-            so you can select the appropriate one after the script is run.'''
-        )
-    parser.add_argument(
-        '--detector', type=str, default='',
-        help='''Name of detector to put in histogram titles.'''
-    )
-    parser.add_argument(
-        '--selection', type=str, default='',
-        help='''Name of selection to put in histogram titles.'''
-    )
-    if hypo_testing_analysis:
-        parser.add_argument(
-            '-LLR', '--llr_plots', action='store_true', default=False,
-            help='''Flag to make the LLR plots. This will give the
-            actual analysis results.'''
-        )
-        parser.add_argument(
-            '-FM', '--fit_information', action='store_true', default=False,
-            help='''Flag to make tex files containing the
-            fiducial fit params and metric.'''
-        )
-        parser.add_argument(
-            '-MM', '--minim_information', action='store_true', default=False,
-            help='''Flag to make plots of the minimiser information i.e. status,
-            number of iterations, time taken etc.'''
-        )
-        parser.add_argument(
-            '-IP', '--individual_posteriors', action='store_true',
-            default=False,
-            help='''Flag to plot individual posteriors.'''
-        )
-        parser.add_argument(
-            '-CP', '--combined_posteriors', action='store_true', default=False,
-            help='''Flag to plot combined posteriors for each h0 and h1
-            combination.'''
-        )
-        parser.add_argument(
-            '-IOP', '--individual_overlaid_posteriors', action='store_true',
-            default=False,
-            help='''Flag to plot individual overlaid posteriors. Overlaid
-            here means that for a plot will be made with each of the h0
-            and h1 returned values on the same plot for each of the
-            fiducial h0 and h1 pseudos.'''
-        )
-        parser.add_argument(
-            '-COP', '--combined_overlaid_posteriors', action='store_true',
-            default=False,
-            help='''Flag to plot combined overlaid posteriors.'''
-        )
-        parser.add_argument(
-            '-IS', '--individual_scatter', action='store_true', default=False,
-            help='''Flag to plot individual 2D scatter plots of posteriors.'''
-        )
-        parser.add_argument(
-            '-CIS', '--combined_individual_scatter',
-            action='store_true', default=False,
-            help='''Flag to plot all 2D scatter plots of one systematic
-            with every other systematic on one plot for each h0 and h1
-            combination.'''
-        )
-        parser.add_argument(
-            '-CS', '--combined_scatter', action='store_true', default=False,
-            help='''Flag to plot all 2D scatter plots on one plot for each
-            h0 and h1 combination.'''
-        )
-        parser.add_argument(
-            '-CM', '--correlation_matrix', action='store_true', default=False,
-            help='''Flag to plot the correlation matrices for each h0 and h1
-            combination.'''
-        )
-        parser.add_argument(
-            '--threshold', type=float, default=0.0,
-            help='''Sets the threshold for which to remove 'outlier' trials.
-            Ideally this will not be needed at all, but it is there in case 
-            of e.g. failed minimiser. The higher this value, the more outliers
-            will be included. Do not set this parameter if you want all trials
-            to be included.'''
-        )
-        parser.add_argument(
-            '--extra-points', type=str, action='append',
-            help='''Extra lines to be added to the LLR plots. This is useful,
-            for example, when you wish to add specific LLR fit values to the
-            plot for comparison. These should be supplied as a single value
-            e.g. x1 or as a path to a file with the value provided in one
-            column that can be intepreted by numpy genfromtxt. Repeat this
-            argument in conjunction with the extra points label below to
-            specify multiple (and uniquely identifiable) sets of extra 
-            points.'''
-        )
-        parser.add_argument(
-            '--extra-points-labels', type=str, action='append',
-            help='''The label(s) for the extra points above.'''
-        )
-    elif injparamscan:
-        parser.add_argument(
-            '--inj-param-units', type=str, default=None,
-            help="""If you know the units that you injected the parameter
-            with and you expect that the script will not be able to find
-            this by looking at the fit parameters in the config file
-            (i.e. theta13 may be defined in degrees in the config file
-            but you injected it in radians) then use this argument to
-            explicitly set it for use in the plot labels."""
-        )
-        parser.add_argument(
-            '-SIG', '--significances', action='store_true', default=False,
-            help='''Flag to make the Asimov significance plots. This will
-            give the actual results of the study.'''
-        )
-        parser.add_argument(
-            '-MM', '--minim_information', action='store_true', default=False,
-            help='''Flag to make plots of the minimiser information i.e.
-            status, number of iterations, time taken etc.'''
-        )
-        parser.add_argument(
-            '-IF', '--individual_fits', action='store_true', default=False,
-            help='''Flag to make plots of all of the best fit parameters
-            separated by the fitted parameter.'''
-        )
-        parser.add_argument(
-            '-CF', '--combined_fits', action='store_true', default=False,
-            help='''Flag to make plots of all of the best fit parameters joined
-            together.'''
-        )
-        parser.add_argument(
-            '--extra-points', type=str, action='append', metavar='LIST',
-            help='''Extra points to be added to the plots. This is useful,
-            for example, when you wish to add LLR results to the plot.
-            These should be supplied as a list of tuples e.g.
-            "[(x1,y1),(x2,y2)]" or "[(x1,y1,y1err),(x2,y2,y2err)]" or 
-            "[(x1,y1,y1uperr,y1downerr),(x2,y2,y2uperr,y2downerr)]" or
-            as a path to a file with the values provided in columns that
-            can be intepreted by numpy genfromtxt. Repeat this argument in
-            conjunction with the extra points label below to specify
-            multiple (and uniquely identifiable) sets of extra points.'''
-        )
-        parser.add_argument(
-            '--extra-points-labels', type=str, action='append',
-            help='''The label(s) for the extra points above.'''
-        )
-    parser.add_argument(
-        '--outdir', metavar='DIR', type=str, default=None,
-        help='''Store all output plots to this directory. This will make
-        further subdirectories, if needed, to organise the output plots.'''
-    )
-    parser.add_argument(
-        '--pdf', action='store_true',
-        help='''Produce pdf plot(s).'''
-    )
-    parser.add_argument(
-        '--png', action='store_true',
-        help='''Produce png plot(s).'''
-    )
-    parser.add_argument(
-        '-v', action='count', default=None,
-        help='''set verbosity level'''
-    )
-    if profile_scan:
-        args = parser.parse_args(sys.argv[2:])
-    else:
-        args = parser.parse_args(sys.argv[3:])
-    init_args_d = vars(args)
-
-    set_verbosity(init_args_d.pop('v'))
-
-    init_args_d['formats'] = []
-    if args.png:
-        init_args_d['formats'].append('png')
-    if args.pdf:
-        init_args_d['formats'].append('pdf')
-
-    if len(init_args_d['formats']) > 0:
-        logging.info(
-            "Files will be saved in format(s) %s"%init_args_d['formats']
-        )
-    else:
-        raise ValueError('Must specify a plot file format, either --png or'
-                         ' --pdf (or both), when processing llr results.')
-
-    return init_args_d
-
-
-class Postprocessingargparser(object):
-    """
-    Allows for clever usage of this script such that all of the
-    postprocessing can be contained in this single script.
-    """
-    def __init__(self):
-        parser = ArgumentParser(
-            description="""This script contains all of the functionality for
-            processing the output of analyses""",
-            usage="""postprocess.py <command> [<subcommand>] [<args>]
-
-            There are two commands that can be issued:
-
-              hypo_testing    Processes output from some form of hypo_testing.
-              profile_scan    Processes output from some form of profile_scan.
-
-            Run postprocess.py <command> -h to see the different possible 
-            subcommands/arguments to each of these commands."""
-        )
-        parser.add_argument('command', help='Subcommand to run')
-        args = parser.parse_args(sys.argv[1:2])
-        expected_commands = ['hypo_testing', 'profile_scan']
-        if not hasattr(self, args.command):
-            raise ValueError(
-                "The command issued, %s, was not one of the expected commands"
-                " - %s."%(args.command, expected_commands)
-            )
-        else:
-            getattr(self, args.command)()
-
-    def hypo_testing(self):
-        """Does the main when the user selects hypo_testing"""
-        main_hypo_testing()
-
-    def profile_scan(self):
-        """Does the main when the user selects profile_scan"""
-        main_profile_scan()
-
-
-class Hypotestingpostprocessingargparser(object):
-    """
-    Allows for further clever usage of this script such that all of the
-    hypo_testing postprocessing can be contained in this single script.
-    """
-    def __init__(self):
-        parser = ArgumentParser(
-            description="""This script contains all of the functionality for
-            processing the output of hypo_testing analyses""",
-            usage="""postprocess.py hypo_testing [<subcommand>] [<args>]
-
-            There are three subcommands that can be issued:
-
-              analysis        Processes output from the standard hypothesis 
-                              testing analyses.
-              injparamscan    Processes output from a scan over some injected
-                              parameter in the data.
-              systtests       Processes output from tests on the impact of
-                              systematics on the analysis.
-
-            Run postprocess.py hypo_testing <subcommand> -h to see the
-            different possible arguments to each of these commands."""
-        )
-        parser.add_argument('subcommand', help='Subcommand to run')
-        args = parser.parse_args(sys.argv[2:3])
-        expected_commands = ['analysis', 'injparamscan', 'systtests']
-        if not hasattr(self, args.subcommand):
-            raise ValueError(
-                "The command issued, %s, was not one of the expected commands"
-                " - %s."%(args.subcommand, expected_commands)
-            )
-        else:
-            getattr(self, args.subcommand)()
-
-    def analysis(self):
-        """Does the main when the user selects hypo_testing analysis"""
-        main_analysis_postprocessing()
-
-    def injparamscan(self):
-        """Does the main when the user selects hypo_testing injparamscan"""
-        main_injparamscan_postprocessing()
-
-    def systtests(self):
-        """Does the main when the user selects hypo_testing systtests"""
-        main_systtests_postprocessing()
 
 class Postprocessor(object):
     """Class to contain all of the functions that are used by the various
@@ -382,8 +33,8 @@ class Postprocessor(object):
         Name for the type of test then done. This may be none, but may also be
         something along the line of `systematic_tests` etc.
     logdir : string
-        Path to logging directory where files are stored. This should
-        contain e.g. the "config_summary.json" file.
+        Path to logging directory where output files of hypo_testing analysis
+        are stored. This should contain e.g. the "config_summary.json" file.
     fluctuate_fid : bool
         Whether the trials you're interested in applied fluctuations to the
         fiducial-fit Asimov distributions. `fluctuate_fid` False is
@@ -392,6 +43,34 @@ class Postprocessor(object):
     fluctuate_data : bool
         Whether the trials you're interested in applied fluctuations to the
         (toy) data. This is invalid if actual data was processed.
+    scan_file : string 
+        Path to output file of profile_scan.
+    best_fit_file : string
+        Path to best fit output from profile_scan so the best fit point can
+        be easily labelled on the output plots.
+    extra_points : sequence
+        List of extra points to be added to the plots. The exact form of
+        these will depend on the postprocessing being done. For example,
+        in the hypo_testing analysis postprocessing this could be a set of
+        LLR points to put on the LLR plots as vertical lines. For the Asimov
+        analyses they could be significances derived from the LLR analysis
+        with appropriate errors.
+    extra_points_labels : sequence
+        A sequence of the same length as the extra points above so they can
+        all be identified. 
+    other_contours : sequence
+        A sequence of paths to files containing other contours to be
+        plotted on top of the current contour when using the profile
+        scan postprocessing.
+    projection_files : sequence
+        A list of paths to files containing 1D projections of your multi-D
+        profile scan. One must be passed for each dimension in your scan.
+    pseudo_experiments : string
+        Path to a logdir containing the output from hypo_testing analysis so
+        the pseudo-experiment results can be added on to the profile_scan
+        contour like a 2D scatter plot.
+    inj_param_units : string
+        The units used in the hypo_testing injparamscan for plots.
 
     Note that a single `logdir` can have different kinds of analyses run
     and results be logged within, so `fluctuate_fid` and `fluctuate_data`
@@ -403,9 +82,8 @@ class Postprocessor(object):
                  fluctuate_fid=None, fluctuate_data=None,
                  scan_file=None, best_fit_file=None,
                  extra_points=None, extra_points_labels=None,
-                 plot_settings_file=None, other_contours=None,
-                 projection_files=None, pseudo_experiments=None,
-                 inj_param_units=None):
+                 other_contours=None, projection_files=None,
+                 pseudo_experiments=None, inj_param_units=None):
         expected_analysis_types = ['hypo_testing', 'profile_scan', None]
         if analysis_type not in expected_analysis_types:
             raise ValueError(
@@ -524,7 +202,7 @@ class Postprocessor(object):
             self.get_scan_data()
 
     def store_extra_points(self, extra_points, extra_points_labels):
-        """Stores the extra points to self"""
+        """Store the extra points to self"""
         if extra_points is not None:
             if extra_points_labels is not None:
                 if len(extra_points) != len(extra_points_labels):
@@ -1020,7 +698,9 @@ class Postprocessor(object):
 
     def systtest_fit_extract(self, fit_data, datakey, labels):
         """Function to extract the fit information relevant to the
-        systematic tests."""
+        systematic tests for the given datakey. The labels are needed to
+        check that the truth was recovered as it may not be in these
+        systematic tests. This should be the .dict of the Labels object."""
         # Find which hypothesis is the best fit.
         h0_fit = fit_data['h0_fit_to_%s'%datakey]
         h1_fit = fit_data['h1_fit_to_%s'%datakey]
@@ -1112,6 +792,7 @@ class Postprocessor(object):
     def make_injwrong_systtests_plots(self, data, injkey):
         """Make the systematic test plots where a systematically
         wrong hypothesis is injected."""
+        # TODO
         raise ValueError(
             "Postprocessing for systematic tests where a systematically "
             "wrong hypothesis is injected is not implemented yet."
@@ -1134,7 +815,7 @@ class Postprocessor(object):
             raise ValueError(
                 "The truth was NOT recovered in the baseline fit."
             )
-        baseline_significance = self.calculate_deltachi2_significances(
+        baseline_significance = self.deltachi2_significance(
             wh_to_th_metrics=self.baseline_data[injkey][
                 'alt_to_best_fit']['metric_val'],
             th_to_wh_metrics=self.baseline_data[injkey][
@@ -1155,6 +836,10 @@ class Postprocessor(object):
             )
         alt_to_best_metrics = np.array(alt_to_best_metrics)
         best_to_alt_metrics = np.array(best_to_alt_metrics)
+        significances = self.deltachi2_significance(
+            wh_to_th_metrics=alt_to_best_metrics,
+            th_to_wh_metrics=best_to_alt_metrics
+        )
         truth_recovered = np.array(truth_recovered)
         if not np.all(truth_recovered):
             systnames = []
@@ -1165,16 +850,12 @@ class Postprocessor(object):
                 "Truth not recovered in tests where %s were fixed."%
                 systnames[np.logical_not(truth_recovered)]
             )
-        significances = self.calculate_deltachi2_significances(
-            wh_to_th_metrics=alt_to_best_metrics,
-            th_to_wh_metrics=best_to_alt_metrics
-        )
         systnames = []
         for systname in np.array(data.keys())[significances.argsort()]:
             systnames.append(self.tex_axis_label(systname))
         vrange = max(significances)-min(significances)
         ylims = [min(significances)-0.1*vrange, max(significances)+0.1*vrange]
-        self.make_1D_graph(
+        self.make_1d_graph(
             xvals=np.linspace(0.5,len(significances)-0.5,len(significances)),
             yvals=significances[significances.argsort()],
             xlabel='Fixed Systematic',
@@ -1225,7 +906,7 @@ class Postprocessor(object):
         vrange = max(corrected_significances)-min(corrected_significances)
         ylims = [min(corrected_significances)-0.1*vrange,
                  max(corrected_significances)+0.1*vrange]
-        self.make_1D_graph(
+        self.make_1d_graph(
             xvals=np.linspace(0.5,len(significances)-0.5,len(significances)),
             yvals=corrected_significances[significances.argsort()],
             xlabel='Fixed Systematic',
@@ -1258,7 +939,7 @@ class Postprocessor(object):
         plt.close()
 
     def organise_baseline_data(self):
-        """Stores the baseline fits in the systematic tests to self."""
+        """Store the baseline fits in the systematic tests to self."""
         self.baseline_data = {}
         for injkey in self.data_sets.keys():
             data = {}
@@ -1569,7 +1250,7 @@ class Postprocessor(object):
             data_params = None
         return data_params
 
-    def calculate_deltachi2_significances(self, wh_to_th_metrics,
+    def deltachi2_significance(self, wh_to_th_metrics,
                                           th_to_wh_metrics,
                                           truth_recovered=None):
         """Calculates the Asimov significance from the sets of metrics."""
@@ -1612,7 +1293,7 @@ class Postprocessor(object):
 
         for i in xrange(len(self.data_sets)):
 
-            significances = self.calculate_deltachi2_significances(
+            significances = self.deltachi2_significance(
                 wh_to_th_metrics=self.wh_to_th[i]['metrics'],
                 th_to_wh_metrics=self.th_to_wh[i]['metrics']
             )
@@ -1621,7 +1302,7 @@ class Postprocessor(object):
                 self.labels.keys()[i]].dict['data_name'].split('_')[0]
             plotlabel = 'True %s'%self.tex_axis_label(truth)
             
-            self.make_1D_graph(
+            self.make_1d_graph(
                 xvals=self.inj_param_vals,
                 yvals=significances,
                 xlabel=self.inj_param_name,
@@ -1665,7 +1346,7 @@ class Postprocessor(object):
         if self.extra_points is not None:
             yminextra, ymaxextra = self.add_extra_points()
             yminall = min(yminextra, minsig)
-            ymaxall = max(yminextra, maxsig)
+            ymaxall = max(ymaxextra, maxsig)
             vrange = ymaxall - yminall
             if yminall == 0:
                 plt.ylim(yminall, ymaxall+0.2*vrange)
@@ -1746,7 +1427,7 @@ class Postprocessor(object):
                     # Specify the subplot, if necessary
                     if combined:
                         plt.subplot(num_rows, 4, subplotnum)
-                    self.make_1D_graph(
+                    self.make_1d_graph(
                         xvals=self.inj_param_vals,
                         yvals=vals,
                         xlabel=self.inj_param_name,
@@ -1915,7 +1596,7 @@ class Postprocessor(object):
                             if combined and singlesyst:
                                 plt.subplot(num_rows, 4, subplotnum)
                             if do_plot:
-                                self.make_2D_scatter_plot(
+                                self.make_2d_scatter_plot(
                                     xdata=self.values[injkey][fhkey][
                                         xsystkey]['vals'],
                                     ydata=self.values[injkey][fhkey][
@@ -1969,7 +1650,7 @@ class Postprocessor(object):
                     all_corr_nparray = np.ma.masked_invalid(
                         np.array(all_corr_lists)
                     )
-                    self.make_2D_hist_plot(
+                    self.make_2d_hist_plot(
                         zvals=all_corr_nparray,
                         xbins=np.linspace(-0.5, len(systs)-0.5, len(systs)+1),
                         ybins=np.linspace(-0.5, len(systs)-0.5, len(systs)+1),
@@ -1996,7 +1677,7 @@ class Postprocessor(object):
                         end='correlation_matrix'
                     )
                     if pe:
-                        self.add_annotation_to_2D_hist(
+                        self.add_annotation_to_2d_hist(
                             annotations=all_corr_nparray
                         )
                         self.save_plot(
@@ -2061,7 +1742,7 @@ class Postprocessor(object):
                     # Specify the subplot, if necessary
                     if combined:
                         plt.subplot(num_rows, 4, subplotnum)
-                    self.make_1D_hist_plot(
+                    self.make_1d_hist_plot(
                         data=np.array(
                             self.values[injkey][fhkey][systkey]['vals']
                         ),
@@ -2197,7 +1878,7 @@ class Postprocessor(object):
                                            21)
                     for hypo, hcolor, hlabel in zip(hypos, hcolors, hlabels):
                         fhkey = '%s_fit_to_%s_fid'%(hypo, fid)
-                        self.make_1D_hist_plot(
+                        self.make_1d_hist_plot(
                             data=np.array(
                                 self.values[injkey][fhkey][systkey]['vals']
                             ),
@@ -2458,7 +2139,7 @@ class Postprocessor(object):
                         ]
                         for plot_data, plot_end in zip(data_to_plot,
                                                        data_to_plot_ends):
-                            self.make_1D_hist_plot(
+                            self.make_1d_hist_plot(
                                 data=plot_data,
                                 xlabel=self.tex_axis_label(plot_end),
                                 title=maintitle+r'\\'+fittitle,
@@ -2517,7 +2198,7 @@ class Postprocessor(object):
                     ylims = [float(min(plot_data))-0.1*vrange,
                              float(max(plot_data))+0.2*vrange]
 
-                    self.make_1D_graph(
+                    self.make_1d_graph(
                         xvals=self.inj_param_vals,
                         yvals=plot_data,
                         xlabel=self.inj_param_name,
@@ -4488,7 +4169,7 @@ class Postprocessor(object):
                     raise ValueError(
                         "Got projection variable %s which does "
                         "not match either of %s or %s"%(
-                            proj_bin_names[i], xlabel, ylabel)
+                            self.proj_bin_names[i], xlabel, ylabel)
                     )
         else:
             xxvals = None
@@ -4497,7 +4178,7 @@ class Postprocessor(object):
             yyvals = None
         return xxvals, xyvals, yxvals, yyvals
 
-    def plot_1D_scans(self, xvals=None, xlabel=None, xunits=None):
+    def plot_1d_scans(self, xvals=None, xlabel=None, xunits=None):
         """Makes the 1D scan plots. The x values as well as their
         labels/units can be specified here, or else they will be generated
         from what is stored in self"""
@@ -4520,7 +4201,7 @@ class Postprocessor(object):
                 data_key=data_key,
                 onedimensional=True
             )
-            self.make_1D_graph(
+            self.make_1d_graph(
                 xvals=xvals,
                 yvals=yvals,
                 xlabel=xlabel,
@@ -4551,7 +4232,7 @@ class Postprocessor(object):
             self.save_plot(outdir=self.outdir, end=save_end)
             plt.close()
 
-    def plot_2D_scans(self, xbins=None, xlabel=None, xunits=None, xcens=None,
+    def plot_2d_scans(self, xbins=None, xlabel=None, xunits=None, xcens=None,
                       ybins=None, ylabel=None, yunits=None, ycens=None):
         """Makes the 2D scan plots. The x and y bins as well as their
         labels/units can be specified here, or else they will be generated
@@ -4586,7 +4267,7 @@ class Postprocessor(object):
             zlabel, zunits, zvals = self.sort_scan_data(data_key=data_key)
             if zlabel == 'contour':
                 # Contour plots need bin centers...
-                self.make_2D_hist_plot(
+                self.make_2d_hist_plot(
                     zvals=zvals,
                     xbins=xcens,
                     ybins=ycens,
@@ -4606,7 +4287,7 @@ class Postprocessor(object):
                 )
                 plt.grid(zorder=0, linestyle='--')
             else:
-                self.make_2D_hist_plot(
+                self.make_2d_hist_plot(
                     zvals=zvals,
                     xbins=xbins,
                     ybins=ybins,
@@ -4651,7 +4332,7 @@ class Postprocessor(object):
                             plt.close()
                             # Need to re-make contour plot for both next
                             # pseudos and the next plots.
-                            self.make_2D_hist_plot(
+                            self.make_2d_hist_plot(
                                 zvals=zvals,
                                 xbins=xcens,
                                 ybins=ycens,
@@ -4709,7 +4390,7 @@ class Postprocessor(object):
                ((yxvals is not None) and (yyvals is not None)):
                 if zlabel == 'contour':
                     # Contour plots need bin centers...
-                    mainplot = self.make_2D_hist_plot(
+                    mainplot = self.make_2d_hist_plot(
                         zvals=zvals,
                         xbins=xcens,
                         ybins=ycens,
@@ -4733,7 +4414,7 @@ class Postprocessor(object):
                         size='xx-large'
                     )
                 else:
-                    mainplot = self.make_2D_hist_plot(
+                    mainplot = self.make_2d_hist_plot(
                         zvals=zvals,
                         xbins=xbins,
                         ybins=ybins,
@@ -4780,7 +4461,7 @@ class Postprocessor(object):
         plt.rcParams['text.usetex'] = True
         xdata = self.values[injkey][fhkey][xlabel]
         ydata = self.values[injkey][fhkey][ylabel]
-        self.make_2D_scatter_plot(
+        self.make_2d_scatter_plot(
             xdata=xdata['vals'],
             ydata=ydata['vals'],
             plot_cor=False,
@@ -4948,7 +4629,7 @@ class Postprocessor(object):
         fittitle += r"\end{center}"
         return fittitle
 
-    def make_1D_hist_plot(self, data, xlabel, title, ylabel, bins=10,
+    def make_1d_hist_plot(self, data, xlabel, title, ylabel, bins=10,
                           histtype='bar', color='darkblue', alpha=0.9,
                           xlabelsize='18', ylabelsize='18',
                           titlesize=16, label=None, subplots_adjust=True,
@@ -4979,7 +4660,7 @@ class Postprocessor(object):
         if subplots_adjust:
             plt.subplots_adjust(left=0.10, right=0.90, top=0.85, bottom=0.11)
 
-    def make_1D_graph(self, xvals, yvals, xlabel, xunits,
+    def make_1d_graph(self, xvals, yvals, xlabel, xunits,
                       ylabel, yunits, nicexlabel=True,
                       niceylabel=True ,xlims='edges', ylims=None,
                       linestyle='-', color='darkblue', alpha=0.9,
@@ -5025,7 +4706,7 @@ class Postprocessor(object):
                     ylabel = self.make_label(ylabel, yunits)
                 plt.ylabel(ylabel, fontsize=ylabelsize)
 
-    def make_2D_hist_plot(self, zvals, xbins, ybins, xlabel,
+    def make_2d_hist_plot(self, zvals, xbins, ybins, xlabel,
                           ylabel, zlabel, xunits=None, yunits=None,
                           zunits=None, cmap=None, xticks=None,
                           yticks=None, xxvals=None, xyvals=None,
@@ -5204,7 +4885,7 @@ class Postprocessor(object):
                     rotation=0
                 )
 
-    def add_annotation_to_2D_hist(self, annotations):
+    def add_annotation_to_2d_hist(self, annotations):
         """Adds annotations to bins of 2D hist. Expects to be able
         to import PathEffects and will fail if it can't."""
         import matplotlib.pyplot as plt
@@ -5226,7 +4907,7 @@ class Postprocessor(object):
                              foreground='k'
                          )])
 
-    def make_2D_scatter_plot(self, xdata, ydata, xlabel=None, xunits=None,
+    def make_2d_scatter_plot(self, xdata, ydata, xlabel=None, xunits=None,
                              ylabel=None, yunits=None, title=None,
                              subplotnum=None, num_rows=None,
                              plot_cor=True, set_range=True):
@@ -5607,241 +5288,3 @@ class Postprocessor(object):
                           "Returning standard."%label)
             markerstyle = 'x'
         return markerstyle
-
-def main_hypo_testing():
-    """Parses the args when the user selects hypo_testing"""
-    Hypotestingpostprocessingargparser()
-
-
-def main_profile_scan():
-    description = """A script for processing the output files of
-    profile_scan.py"""
-
-    init_args_d = parse_args(description=description,
-                             profile_scan=True)
-
-    if init_args_d['pseudo_experiments'] is not None:
-        fluctuate_fid = True
-        fluctuate_data = False
-    else:
-        fluctuate_fid = None
-        fluctuate_data = None
-
-    mkdir(init_args_d['outdir'])
-
-    postprocessor = Postprocessor(
-        analysis_type='profile_scan',
-        detector=init_args_d['detector'],
-        selection=init_args_d['selection'],
-        outdir=init_args_d['outdir'],
-        formats=init_args_d['formats'],
-        scan_file=init_args_d['infile'],
-        best_fit_file=init_args_d['best_fit_infile'],
-        projection_files=init_args_d['projection_infile'],
-        other_contours=init_args_d['other_contour'],
-        pseudo_experiments=init_args_d['pseudo_experiments'],
-        fluctuate_fid=fluctuate_fid,
-        fluctuate_data=fluctuate_data
-    )
-
-    # 1D profile scans
-    if len(postprocessor.all_bin_cens) == 1:
-        postprocessor.plot_1D_scans()
-
-    # 2D profile scans
-    elif len(postprocessor.all_bin_cens) == 2:
-        postprocessor.plot_2D_scans()
-
-        if (postprocessor.all_bin_names[0] == 'theta23') and \
-           (postprocessor.all_bin_names[1] == 'deltam31'):
-
-            postprocessor.add_deltam32_sin2theta23()
-            postprocessor.plot_2D_scans(
-                xlabel='sin2theta23',
-                xunits='dimensionless',
-                ylabel='deltam32'
-            )
-
-    else:
-        raise NotImplementedError(
-            "Postprocessing of profile scans in anything other than 1D or "
-            " 2D not implemented in this script."
-        )
-
-
-def main_analysis_postprocessing():
-    description = """Hypothesis testing: How do two hypotheses compare for
-    describing MC or data?
-
-    This computes significances, etc. from the logfiles recorded by the
-    `hypo_testing.py` script, for either Asimov or llr analysis. Plots and
-    tables are produced in the case of llr analysis."""
-
-    # TODO:
-    #
-    # 1) Some of the "combined" plots currently make it impossible to read the
-    #    axis labels. Come up with a better way of doing this. Could involve
-    #    making legends and just labelling the axes alphabetically.
-
-    init_args_d = parse_args(description=description,
-                             hypo_testing_analysis=True)
-
-    if init_args_d['asimov']:
-        # TODO - Something like the necessary function is there with
-        # calculate_deltachi2_significances but exactly how to output
-        # this should probably be thought about
-        raise NotImplementedError(
-            "Postprocessing of Asimov analysis not implemented yet."
-        )
-
-    # Otherwise: llr analysis
-    if init_args_d['outdir'] is None:
-        raise ValueError('Must specify --outdir when processing llr results.')
-
-    postprocessor = Postprocessor(
-        analysis_type='hypo_testing',
-        test_type='analysis',
-        logdir=init_args_d['dir'],
-        detector=init_args_d['detector'],
-        selection=init_args_d['selection'],
-        outdir=init_args_d['outdir'],
-        formats=init_args_d['formats'],
-        fluctuate_fid=True,
-        fluctuate_data=False,
-        extra_points=init_args_d['extra_points'],
-        extra_points_labels=init_args_d['extra_points_labels']
-    )
-
-    trial_nums = postprocessor.data_sets[
-        postprocessor.labels.dict['data']
-    ]['h0_fit_to_h1_fid'].keys()
-
-    if init_args_d['threshold'] != 0.0:
-        logging.info('Outlying trials will be removed with a '
-                     'threshold of %.2f', init_args_d['threshold'])
-        postprocessor.purge_outlying_trials(
-            trial_nums=np.array(trial_nums),
-            thresh=init_args_d['threshold']
-        )
-    else:
-        logging.info('All trials will be included in the analysis.')
-
-    if init_args_d['llr_plots']:
-        if len(trial_nums) != 1:
-            postprocessor.make_llr_plots()
-        else:
-            raise ValueError(
-                "llr plots were requested but only 1 trial "
-                "was found in the logdir."
-            )
-    if init_args_d['fit_information']:
-        postprocessor.make_fiducial_fit_files()
-    if init_args_d['minim_information']:
-        postprocessor.make_fit_information_plots()
-    if init_args_d['individual_posteriors']:
-        postprocessor.make_posterior_plots()
-    if init_args_d['combined_posteriors']:
-        postprocessor.make_posterior_plots(combined=True)
-    if init_args_d['individual_overlaid_posteriors']:
-        postprocessor.make_overlaid_posterior_plots()
-    if init_args_d['combined_overlaid_posteriors']:
-        postprocessor.make_overlaid_posterior_plots(combined=True)
-    if init_args_d['individual_scatter']:
-        postprocessor.make_scatter_plots()
-    if init_args_d['combined_individual_scatter']:
-        postprocessor.make_scatter_plots(combined=True, singlesyst=True)
-    if init_args_d['combined_scatter']:
-        postprocessor.make_scatter_plots(combined=True)
-    if init_args_d['correlation_matrix']:
-        postprocessor.make_scatter_plots(matrix=True)
-
-
-def main_injparamscan_postprocessing():
-    description = """Hypothesis testing: How do two hypotheses compare for
-    describing MC or data?
-
-    This computes significances, etc. from the logfiles recorded by the
-    `hypo_testing.py` script for a scan over some injected parameter.
-    The main result will be an Asimov sensitivity curve as a function of
-    this inejcted parameter."""
-
-    init_args_d = parse_args(description=description,
-                             injparamscan=True)
-
-    postprocessor = Postprocessor(
-        analysis_type='hypo_testing',
-        test_type='injparamscan',
-        logdir=init_args_d['dir'],
-        detector=init_args_d['detector'],
-        selection=init_args_d['selection'],
-        outdir=init_args_d['outdir'],
-        formats=init_args_d['formats'],
-        fluctuate_fid=False,
-        fluctuate_data=False,
-        extra_points=init_args_d['extra_points'],
-        extra_points_labels=init_args_d['extra_points_labels'],
-        inj_param_units=init_args_d['inj_param_units']
-    )
-
-    if len(postprocessor.data_sets) == 1:
-        if postprocessor.wh_to_th[0]['params'].keys() == ['bestfit', 'altit']:
-            if init_args_d['individual_fits'] or init_args_d['combined_fits']:
-                raise ValueError(
-                    "You have requested to make plots of the best fit "
-                    "points of the systematic parameters but this is "
-                    "not possible snce there are none included in "
-                    "this analysis."
-                )
-        if init_args_d['significances']:
-            postprocessor.make_asimov_significance_plots()
-        if init_args_d['minim_information']:
-            postprocessor.make_fit_information_plots()
-        if init_args_d['individual_fits']:
-            postprocessor.make_asimov_fit_parameter_plots()
-        if init_args_d['combined_fits']:
-            postprocessor.make_asimov_fit_parameter_plots(combined=True)
-    else:
-        if init_args_d['individual_fits'] or init_args_d['combned_fits'] or \
-           init_args_d['minim_information']:
-            raise ValueError(
-                "You have specified multiple input directories but have "
-                "also requested to make plots of the fit parameters or the "
-                "minimiser information. Multiple input directories are "
-                "only compatible with plotting the significances overlaid."
-            )
-        
-
-def main_systtests_postprocessing():
-    description = """Hypothesis testing: How do two hypotheses compare for
-    describing MC or data?
-
-    This script/module computes significances, etc. from the logfiles recorded
-    by the `hypo_testing_systtests.py` script. That is, looks at how the fits
-    change for three different N-1 tests:
-
-      1) Where one of the systematics is fixed to the baseline value.
-      2) Where one of the systematics is injected *off* baseline but fixed
-         *on* baseline in the hypotheses.
-      3) Same as 2, but the systematic is not fixed and so the minimiser is
-         allowed to try correct for the incorrect hypothesis."""
-
-    init_args_d = parse_args(description=description,
-                             systtests=True)
-
-    postprocessor = Postprocessor(
-        analysis_type='hypo_testing',
-        test_type='systtests',
-        logdir=init_args_d['dir'],
-        detector=init_args_d['detector'],
-        selection=init_args_d['selection'],
-        outdir=init_args_d['outdir'],
-        formats=init_args_d['formats'],
-        fluctuate_fid=False,
-        fluctuate_data=False
-    )
-
-    postprocessor.make_systtest_plots()
-
-
-if __name__ == '__main__':
-    Postprocessingargparser()
