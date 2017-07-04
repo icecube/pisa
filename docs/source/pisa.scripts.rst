@@ -20,6 +20,14 @@ pisa.scripts.compare module
     :undoc-members:
     :show-inheritance:
 
+pisa.scripts.convert_config_format module
+-----------------------------------------
+
+.. automodule:: pisa.scripts.convert_config_format
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.scripts.fit_discrete_sys module
 ------------------------------------
 

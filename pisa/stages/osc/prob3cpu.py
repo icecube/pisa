@@ -188,8 +188,9 @@ class prob3cpu(Stage):
 
         # TODO: can we pass kwargs to swig-ed C++ code?
         if self._barger_earth_model is not None:
+            earth_model = find_resource(self._barger_earth_model)
             self.barger_propagator = BargerPropagator(
-                find_resource(self._barger_earth_model),
+                earth_model.encode('ascii'),
                 self._barger_detector_depth
             )
         else:

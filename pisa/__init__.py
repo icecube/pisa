@@ -34,7 +34,7 @@ try:
     numba_jit(dummy_func)
 except Exception:
     #logging.debug('Failed to import or use numba', exc_info=True)
-    def numba_jit(*args, **kwargs):
+    def numba_jit(*args, **kwargs): # pylint: disable=unused-argument
         """Dummy decorator to replace `numba.jit` when Numba is not present"""
         def decorator(func):
             """Decorator that smply returns the function being decorated"""
@@ -84,8 +84,8 @@ __all__ = [
 __version__ = get_versions()['version']
 
 
-ureg = UnitRegistry()
-Q_ = ureg.Quantity
+ureg = UnitRegistry() # pylint: disable=invalid-name
+Q_ = ureg.Quantity # pylint: disable=invalid-name
 
 
 # Default value for FTYPE
@@ -150,11 +150,11 @@ based on by FTYPE)"""
 if FTYPE == np.float32:
     C_FTYPE = 'float'
     C_PRECISION_DEF = 'SINGLE_PRECISION'
-    sys.stderr.write('PISA running in single precision (FP32) mode.\n\n')
+    sys.stderr.write('PISA running in single precision (FP32) mode.\n')
 elif FTYPE == np.float64:
     C_FTYPE = 'double'
     C_PRECISION_DEF = 'DOUBLE_PRECISION'
-    sys.stderr.write('PISA running in double precision (FP64) mode.\n\n')
+    sys.stderr.write('PISA running in double precision (FP64) mode.\n')
 else:
     raise ValueError('FTYPE must be one of `np.float32` or `np.float64`. Got'
                      ' %s instead.' %FTYPE)

@@ -4,16 +4,16 @@ Utilities for hashing objects.
 """
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 import base64
 import cPickle as pickle
-#import dill
+from cPickle import PickleError, PicklingError
 import hashlib
 import struct
-from collections import Sequence
-from pickle import PickleError
+from collections import Iterable
 
+from backports.configparser import RawConfigParser
 import numpy as np
 
 from pisa.utils.log import logging, set_verbosity
@@ -108,34 +108,14 @@ def hash_obj(obj, hash_to='int', full_hash=True):
     if not isinstance(obj, basestring):
         try:
             pkl = pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
-        except (PickleError, TypeError):
-            # Iterate through each element if obj is a Sequence
-            if isinstance(obj, Sequence):
-                # Store hash of each element
-                hash_list = []
-                for ele in obj:
-                    # Try to get hash from property
-                    if hasattr(ele, 'hash'):
-                        hash_list.append(ele.hash)
-                    else:
-                        # Otherwise try to get hash using pickle
-                        try:
-                            a = pickle.dumps(ele, pickle.HIGHEST_PROTOCOL)
-                            hash_list.append(a)
-                        except (PickleError, TypeError):
-                            logging.error('Failed to pickle `ele` "%s" of '
-                                          'type "%s"' %(ele, type(ele)))
-                            raise
-                # Get hash values by pickling the hash list
-                try:
-                    pkl = pickle.dumps(hash_list, pickle.HIGHEST_PROTOCOL)
-                except (PickleError, TypeError):
-                    logging.error('Failed to pickle `hash_list` "%s" of type '
-                                  '"%s"' %(hash_list, type(hash_list)))
-                    raise
+        except (PickleError, PicklingError, TypeError):
+            # Recurse into an iterable that couldn't be pickled
+            if isinstance(obj, Iterable):
+                return hash_obj([hash_obj(subobj) for subobj in obj],
+                                **pass_on_kw)
             else:
-                logging.error('Failed to pickle `obj` "%s" of type "%s"'
-                              %(obj, type(obj)))
+                logging.error('Failed to pickle `obj` "%s" of type "%s"',
+                              obj, type(obj))
                 raise
         obj = pkl
 
