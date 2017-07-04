@@ -159,7 +159,7 @@ inf = np.inf # pylint: disable=invalid-name
 units = ureg # pylint: disable=invalid-name
 
 
-def parse_quantity(string):
+def parse_quantity(string, unc=True):
     """Parse a string into a pint/uncertainty quantity.
 
     Parameters
@@ -178,10 +178,13 @@ def parse_quantity(string):
     else:
         unit = None
     value = value.rstrip('*')
-    if '+/-' in value:
-        value = ufloat_fromstr(value)
+    if unc:
+        if '+/-' in value:
+            value = ufloat_fromstr(value)
+        else:
+            value = ufloat(float(value), 0)
     else:
-        value = ufloat(float(value), 0)
+        value = float(value)
     value *= ureg(unit)
     return value
 
@@ -332,8 +335,20 @@ def parse_param(config, section, selector, fullname, pname, value):
             kwargs['prior'] = Prior(kind='spline', knots=knots, coeffs=coeffs,
                                     deg=deg)
         elif 'gauss' in config.get(section, fullname + '.prior'):
-            raise Exception('Please use new style +/- notation for gaussian'
-                            ' priors in config')
+            logging.warn('You should use the new +/- style notation for'
+                         ' gaussian priors in config')
+            priorname = pname
+            if selector is not None:
+                priorname += '_' + selector
+            mean = parse_quantity(
+                config.get(section, fullname + '.prior.mean'), unc=False
+            )
+            stddev = parse_quantity(
+                config.get(section, fullname + '.prior.stddev'), unc=False
+            )
+            kwargs['prior'] = Prior(kind='gaussian', mean=mean, stddev=stddev)
+            #raise Exception('Please use new style +/- notation for gaussian'
+            #                ' priors in config')
         else:
             raise Exception('Prior type unknown')
 
