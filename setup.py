@@ -257,6 +257,7 @@ def do_setup():
             'numpy>=1.11',
         ],
         install_requires=[
+            'configparser',
             'scipy>=0.17',
             'dill',
             'h5py',
@@ -306,6 +307,7 @@ def do_setup():
                 # Scripts in scripts dir
                 'add_flux_to_events_file.py = pisa.scripts.add_flux_to_events_file:main',
                 'compare.py = pisa.scripts.compare:main',
+                'convert_config_format.py = pisa.scripts.convert_config_format:main',
                 'fit_discrete_sys.py = pisa.scripts.fit_discrete_sys:main',
                 'make_asymmetry_plots.py = pisa.scripts.make_asymmetry_plots:main',
                 'make_events_file.py = pisa.scripts.make_events_file:main',

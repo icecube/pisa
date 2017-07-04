@@ -253,8 +253,8 @@ def find_files(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
 
 def from_cfg(fname):
     """Load a PISA config file"""
-    from pisa.utils.config_parser import BetterConfigParser
-    config = BetterConfigParser()
+    from pisa.utils.config_parser import PISAConfigParser
+    config = PISAConfigParser()
     config.read(fname)
     return config
 

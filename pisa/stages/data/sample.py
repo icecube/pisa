@@ -10,24 +10,29 @@ https://wiki.icecube.wisc.edu/index.php/IC86_oscillations_event_selection
 """
 
 
-from operator import add
+from __future__ import absolute_import
+
 from copy import deepcopy
+from operator import add
 import re
 
 import numpy as np
 
-from pisa import ureg, Q_
-from pisa.core.stage import Stage
+from pisa import ureg
 from pisa.core.events import Data
 from pisa.core.map import MapSet
-from pisa.utils.flavInt import ALL_NUFLAVINTS, NuFlavIntGroup, FlavIntDataGroup
+from pisa.core.stage import Stage
 from pisa.utils.fileio import from_file
+from pisa.utils.flavInt import ALL_NUFLAVINTS, NuFlavIntGroup, FlavIntDataGroup
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 
 
-__all__ = ['sample']
+__all__ = ['SEP', 'sample']
+
+
+SEP = '|'
 
 
 class sample(Stage):
@@ -44,7 +49,7 @@ class sample(Stage):
 
             * dataset : string
                 Pick which systematic set to use (or nominal)
-                examples: 'nominal', 'neutrinos:dom_eff:1.05', 'muons:hole_ice:0.01'
+                examples: 'nominal', 'neutrinos|dom_eff|1.05', 'muons|hole_ice|0.01'
                 the nominal set will be used for the event types not specified
 
             * keep_criteria : None or string
@@ -122,7 +127,7 @@ class sample(Stage):
             output_binning = None
         self.output_events = output_events
 
-        super(self.__class__, self).__init__(
+        super(sample, self).__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
@@ -259,7 +264,7 @@ class sample(Stage):
             return string.replace(' ', '').split(',')
 
         nu_data = []
-        if dataset == 'neutrinos:gen_lvl':
+        if dataset == 'neutrinos%sgen_lvl' % SEP:
             gen_cfg      = from_file(config.get(dataset, 'gen_cfg_file'))
             name         = gen_cfg.get('general', 'name')
             datadir      = gen_cfg.get('general', 'datadir')
@@ -289,7 +294,7 @@ class sample(Stage):
             sys_list     = parse(config.get('neutrinos', 'sys_list'))
             base_prefix  = config.get('neutrinos', 'baseprefix')
             keep_keys    = parse(config.get('neutrinos', 'keep_keys'))
-            aliases      = config.items('neutrinos:aliases')
+            aliases      = config.items('neutrinos%saliases' % SEP)
             logging.info('Extracting neutrino dataset "{0}" from sample '
                          '"{1}"'.format(dataset, name))
             if base_prefix == 'None':
@@ -301,9 +306,9 @@ class sample(Stage):
                 if dataset == 'nominal':
                     prefixes = []
                     for sys in sys_list:
-                        ev_sys = 'neutrinos:' + sys
+                        ev_sys = 'neutrinos%s%s' % (SEP, sys)
                         nominal = config.get(ev_sys, 'nominal')
-                        ev_sys_nom = ev_sys + ':' + nominal
+                        ev_sys_nom = ev_sys + SEP + nominal
                         prefixes.append(config.get(ev_sys_nom, 'file_prefix'))
                     if len(set(prefixes)) > 1:
                         raise AssertionError(
@@ -340,16 +345,16 @@ class sample(Stage):
         sys_list     = parse(config.get('muons', 'sys_list'))
         base_prefix  = config.get('muons', 'baseprefix')
         keep_keys    = parse(config.get('muons', 'keep_keys'))
-        aliases      = config.items('muons:aliases')
+        aliases      = config.items('muons%saliases' % SEP)
         if base_prefix == 'None':
             base_prefix = ''
 
         if dataset == 'nominal':
             paths = []
             for sys in sys_list:
-                ev_sys = 'muons:' + sys
+                ev_sys = 'muons%s%s' % (SEP, sys)
                 nominal = config.get(ev_sys, 'nominal')
-                ev_sys_nom = ev_sys + ':' + nominal
+                ev_sys_nom = ev_sys + SEP + nominal
                 paths.append(config.get(ev_sys_nom, 'file_path'))
             if len(set(paths)) > 1:
                 raise AssertionError(
@@ -396,16 +401,16 @@ class sample(Stage):
         sys_list     = parse(config.get('noise', 'sys_list'))
         base_prefix  = config.get('noise', 'baseprefix')
         keep_keys    = parse(config.get('noise', 'keep_keys'))
-        aliases      = config.items('noise:aliases')
+        aliases      = config.items('noise%saliases' % SEP)
         if base_prefix == 'None':
             base_prefix = ''
 
         if dataset == 'nominal':
             paths = []
             for sys in sys_list:
-                ev_sys = 'noise:' + sys
+                ev_sys = 'noise%s%s' % (SEP, sys)
                 nominal = config.get(ev_sys, 'nominal')
-                ev_sys_nom = ev_sys + ':' + nominal
+                ev_sys_nom = ev_sys + SEP + nominal
                 paths.append(config.get(ev_sys_nom, 'file_path'))
             if len(set(paths)) > 1:
                 raise AssertionError(
