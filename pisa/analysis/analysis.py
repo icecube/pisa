@@ -191,6 +191,18 @@ def validate_minimizer_settings(minimizer_settings):
             logging.warn(eps_gt_msg, method, 'eps', val, warn_lim)
 
 
+def check_theta23(fit_info, return_octant=False):
+    """Checks the octant value in fit_info and returns it if wanted"""
+    octants = [0.0, 1.0]
+    theta23 = fit_info['params'].theta23.value
+    octant = ((theta23 % (360 * ureg.deg)) // (45 * ureg.deg)).magnitude
+    if octant not in octants:
+        raise ValueError("Fitted theta23 value was not in the "
+                         "first or second octant as expected.")
+    if return_octant:
+        return octant
+
+
 # TODO: move this to a central location prob. in utils
 class Counter(object):
     """Simple counter object for use as a minimizer callback."""
@@ -370,29 +382,22 @@ class Analysis(object):
 
                 # Check to make sure these two fits were either side of 45
                 # degrees.
-                maximal = 45.0*ureg.deg
-                old_theta23 = best_fit_info['params'].theta23.value
-                old_octant = (old_theta23.to(ureg.deg) - maximal).magnitude
-                new_theta23 = new_fit_info['params'].theta23.value
-                new_octant = (new_theta23.to(ureg.deg) - maximal).magnitude
+                old_octant = check_theta23(best_fit_info, return_octant=True)
+                new_octant = check_theta23(new_fit_info, return_octant=True)
 
-                if np.sign(old_octant) == np.sign(new_octant):
-                    logging.debug(
+                if old_octant == new_octant:
+                    logging.warning(
                         'Checking other octant was NOT successful since both '
-                        '%.2f and %.2f are in the same octant. Therefore try '
-                        'start the minimiser at a point further in to the '
-                        'opposite octant.'%(
-                            old_theta23.magnitude,new_theta23.magnitude)
+                        'fits have resulted in the same octant. Fit will be'
+                        ' tried again starting at a point further into '
+                        'the opposite octant.'
                     )
                     alternate_fits.append(new_fit_info)
-                    if old_octant < 0.0:
-                        better_theta23 = hypo_maker.params.theta23
+                    if old_octant > 0.0:
                         theta23.value = (55.0*ureg.deg).to(theta23.units)
                     else:
-                        better_theta23 = hypo_maker.params.theta23
                         theta23.value = (35.0*ureg.deg).to(theta23.units)
                     hypo_maker.update_params(theta23)
-                    print theta23
 
                     # Re-run minimizer starting at new point
                     new_fit_info = self.fit_hypo_inner(
@@ -404,6 +409,8 @@ class Analysis(object):
                         pprint=pprint,
                         blind=blind
                     )
+                    # Make sure the new octant is sensible
+                    check_theta23(new_fit_info)
 
                 # Take the one with the best fit
                 if metric in METRICS_TO_MAXIMIZE:
