@@ -428,7 +428,7 @@ class roounfold(Stage):
             pipeline_cfg = from_file(unfold_pipeline_cfg)
             pipeline_hash = pipeline_cfg
             sa_cfg = from_file(
-                pipeline_cfg.get('stage:data', 'param.data_sample_config')
+                pipeline_cfg.get('stage.data', 'param.data_sample_config')
             )
             template_maker = Pipeline(pipeline_cfg)
         elif isinstance(unfold_pipeline_cfg, Pipeline):
@@ -437,7 +437,7 @@ class roounfold(Stage):
                 unfold_pipeline_cfg.params['data_sample_config'].value
             )
             template_maker = unfold_pipeline_cfg
-        gen_cfg = from_file(sa_cfg.get('neutrinos:gen_lvl', 'gen_cfg_file'))
+        gen_cfg = from_file(sa_cfg.get('neutrinos|gen_lvl', 'gen_cfg_file'))
         this_hash = hash_obj([gen_cfg, pipeline_hash, self.output_str],
                              full_hash = self.full_hash)
         if self.gen_data_hash == this_hash:
