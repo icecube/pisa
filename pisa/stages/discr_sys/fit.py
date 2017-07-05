@@ -322,7 +322,7 @@ class fit(Stage):
                     deepcopy(self._data[fig]['weight_weight'])
 
             for sys in sys_list:
-                nominal = sample_config.get('neutrinos:' + sys, 'nominal')
+                nominal = sample_config.get('neutrinos|' + sys, 'nominal')
                 for fig in self._data.iterkeys():
                     fit_map = unp.nominal_values(fit_coeffs[sys][fig].hist)
 
@@ -512,7 +512,7 @@ class fit(Stage):
                 )
 
             for sys in sys_list:
-                ev_sys = 'neutrinos:' + sys
+                ev_sys = 'neutrinos|' + sys
                 runs = parse(config.get(ev_sys, 'runs')[1: -1])
                 nominal = config.get(ev_sys, 'nominal')
 
@@ -521,7 +521,7 @@ class fit(Stage):
                 for run in runs:
                     logging.info('Loading run {0} of systematic '
                                  '{1}'.format(run, sys))
-                    dataset_param.value = ev_sys + ':' + run
+                    dataset_param.value = ev_sys + '|' + run
                     template_maker.update_params(dataset_param)
                     template = template_maker.get_outputs(
                         idx=int(params['stop_after_stage'].m)
@@ -627,7 +627,7 @@ class fit(Stage):
                 )
 
             for sys in sys_list:
-                ev_sys = 'muons:' + sys
+                ev_sys = 'muons|' + sys
                 runs = parse(config.get(ev_sys, 'runs')[1: -1])
                 nominal = config.get(ev_sys, 'nominal')
 
@@ -636,7 +636,7 @@ class fit(Stage):
                 for run in runs:
                     logging.info('Loading run {0} of systematic '
                                  '{1}'.format(run, sys))
-                    dataset_param.value = ev_sys + ':' + run
+                    dataset_param.value = ev_sys + '|' + run
                     template_maker.update_params(dataset_param)
                     template = template_maker.get_outputs(
                         idx=int(params['stop_after_stage'].m)
