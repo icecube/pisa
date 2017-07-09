@@ -388,9 +388,9 @@ class Analysis(object):
         condMLEs = {}
         for value in values:
             logging.info('scan point %s'%value)
-            test = template_maker.params[p_name]
-            test.value = value
-            template_maker.update_params(test)
+            prm = template_maker.params[p_name]
+            prm.value = value
+            template_maker.update_params(prm)
             condMLE = self.find_best_fit(check_octant=check_octant)
             condMLE[p_name] = self.template_maker.params[p_name].value
             append_results(condMLEs,condMLE)
@@ -454,7 +454,9 @@ if __name__ == '__main__':
                         help='''Settings related to the optimizer used in the
                         LLR analysis.''')
     parser.add_argument('-sp', '--set-param', type=str, default='',
-                        help='Set a param to a certain value.')
+                        help='Set a param to a certain value for both hypo and data.')
+    parser.add_argument('-spd', '--set-param-data', type=str, default='',
+                        help='''Set a param to a certain value only for data ''')
     parser.add_argument('-fp', '--fix-param', type=str, default='',
                         help='''fix parameter''')
     parser.add_argument('-spf', '--fix-param-scan', type=str, default='',
@@ -502,22 +504,32 @@ if __name__ == '__main__':
             print "p_name,value= ", p_name, " ", value
             value = parse_quantity(value)
             value = value.n * value.units
-            test = template_maker.params[p_name]
-            test.value = value
-            template_maker.update_params(test)
+            prm = template_maker.params[p_name]
+            prm.value = value
+            template_maker.update_params(prm)
             if p_name in data_maker.params.names:
-                test = data_maker.params[p_name]
-                test.value = value
-                data_maker.update_params(test)
+                prm = data_maker.params[p_name]
+                prm.value = value
+                data_maker.update_params(prm)
         if not args.fix_param_scan == '':
             p_name,value = args.fix_param_scan.split("=")
             print "p_name,value= ", p_name, " ", value
             value = parse_quantity(value)
             value = value.n * value.units
-            test = template_maker.params[p_name]
-            test.value = value
-            template_maker.update_params(test)
+            prm = template_maker.params[p_name]
+            prm.value = value
+            template_maker.update_params(prm)
             template_maker.params.fix(p_name)
+
+        if not args.set_param_data == '':
+            p_name,value = args.set_param_data.split("=")
+            print "p_name,value= ", p_name, " ", value
+            value = parse_quantity(value)
+            value = value.n * value.units
+            prm = data_maker.params[p_name]
+            prm.value = value
+            data_maker.update_params(prm)
+            data_maker.params.fix(p_name)
 
         analysis = Analysis(data_maker=data_maker,
                             template_maker=template_maker,
@@ -542,7 +554,14 @@ if __name__ == '__main__':
                 elif args.mode == 'scan':
                     results.append(analysis.profile(args.var,eval(args.range), check_octant=not args.no_check_octant))
             elif args.function == 'fit':
-                results.append(analysis.find_best_fit(check_octant=not args.no_check_octant))
+                best_fit_result=analysis.find_best_fit(check_octant=not args.no_check_octant)
+                if not args.set_param_data == '':
+                    p_name,value = args.set_param_data.split("=")
+                    value = parse_quantity(value)
+                    value = value.n * value.units
+                    best_fit_result['data_'+p_name]=value
+                    print "save the fixed_param_data to output: ", p_name, " ", value
+                results.append(best_fit_result)
 
         to_file(results, args.outfile)
         logging.info('Done.')
