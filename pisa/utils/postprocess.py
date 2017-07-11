@@ -2445,10 +2445,7 @@ class Postprocessor(object):
                             finebinning[-1]-finebinwidth/2.0,
                             len(finebinning)-1
                         )
-                        if color == 'r':
-                            where = (finebincens < critical_value)
-                        elif color == 'b':
-                            where = (finebincens > critical_value)
+                        where = (finebincens > critical_value)
                         plt.fill_between(
                             finebincens,
                             0,
@@ -2603,14 +2600,12 @@ class Postprocessor(object):
             ## First for the preferred hypothesis based on the fiducial fit
             crit_p_value, unc_crit_p_value = self.calc_p_value(
                 llrdist=llralt,
-                critical_value=critical_value,
-                greater=True
+                critical_value=critical_value
             )
             ## Then for the alternate hypothesis based on the fiducial fit
             alt_crit_p_value, alt_unc_crit_p_value = self.calc_p_value(
                 llrdist=llrbest,
-                critical_value=critical_value,
-                greater=False
+                critical_value=critical_value
             )
             ## Combine these to give a cls value based on arXiv:1407.5052
             cls_value = (1 - alt_crit_p_value) / (1 - crit_p_value)
@@ -2624,7 +2619,6 @@ class Postprocessor(object):
             med_p_value, unc_med_p_value, median_error = self.calc_p_value(
                 llrdist=llralt,
                 critical_value=best_median,
-                greater=True,
                 median_p_value=True,
                 llrbest=llrbest
             )
@@ -2677,8 +2671,7 @@ class Postprocessor(object):
                     median_error),
                 critical_height=float(max(llrbesthist))/float(
                     plot_scaling_factor*llrhistmax),
-                llrhist=llralthist,
-                greater=True
+                llrhist=llralthist
             )
             plt.legend(loc='upper left')
             plt.title(plot_title)
@@ -2750,8 +2743,7 @@ class Postprocessor(object):
                     median_error),
                 critical_height=float(max(llrbesthist))/float(
                     plot_scaling_factor*llrhistmax),
-                llrhist=None,
-                greater=True
+                llrhist=None
             )
             plt.legend(loc='upper left')
             plt.title(plot_title)
@@ -2779,8 +2771,7 @@ class Postprocessor(object):
                 critical_value=None,
                 critical_label=None,
                 critical_height=None,
-                llrhist=None,
-                greater=True
+                llrhist=None
             )
             plt.legend(loc='upper left')
             plt.title(plot_title)
@@ -2812,8 +2803,7 @@ class Postprocessor(object):
                     median_error),
                 critical_height=float(max(llrbesthist))/float(
                     plot_scaling_factor*llrhistmax),
-                llrhist=None,
-                greater=True
+                llrhist=None
             )
             plt.legend(loc='upper left')
             plt.title(plot_title)
@@ -2841,8 +2831,7 @@ class Postprocessor(object):
                 critical_value=None,
                 critical_label=None,
                 critical_height=None,
-                llrhist=None,
-                greater=True
+                llrhist=None
             )
             plt.legend(loc='upper left')
             plt.title(plot_title)
@@ -2874,8 +2863,7 @@ class Postprocessor(object):
                     median_error),
                 critical_height=float(max(llrbesthist))/float(
                     plot_scaling_factor*llrhistmax),
-                llrhist=llralthist,
-                greater=True
+                llrhist=llralthist
             )
             plt.legend(loc='upper left')
             plt.title(plot_title)
@@ -2915,8 +2903,7 @@ class Postprocessor(object):
                 critical_label=r"Critical Value = %.4f"%(critical_value),
                 critical_height=float(max(llrbesthist))/float(
                     plot_scaling_factor*llrhistmax),
-                llrhist=llralthist,
-                greater=True
+                llrhist=llralthist
             )
             plt.legend(loc='upper left')
             plt.title(plot_title)
@@ -2957,8 +2944,7 @@ class Postprocessor(object):
                 critical_label=r"Critical Value = %.4f"%(critical_value),
                 critical_height=float(max(llrbesthist))/float(
                     plot_scaling_factor*llrhistmax),
-                llrhist=llrbesthist,
-                greater=False
+                llrhist=llrbesthist
             )
             plt.legend(loc='upper left')
             plt.title(plot_title)
