@@ -247,7 +247,7 @@ echo "Running hypo_testing.py, basic NMO Asimov analysis (not necessarily accura
 echo "Storing results to"
 echo "  $OUTDIR"
 echo "=============================================================================="
-PISA_FTYPE=float64 $PISA/pisa/analysis/hypo_testing.py \
+PISA_FTYPE=float64 $PISA/pisa/analysis/hypo_testing.py analysis \
 	--h0-pipeline settings/pipeline/example.cfg \
 	--h0-param-selections="ih" \
 	--h1-param-selections="nh" \
