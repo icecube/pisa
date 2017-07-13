@@ -471,7 +471,7 @@ if __name__ == '__main__':
                         help='''Settings related to the optimizer used in the
                         LLR analysis.''')
     parser.add_argument('--mode', type=str,
-                        choices=['H0', 'scan'], default='H0',
+                        choices=['H0', 'scan', 'feldman_cousins'], default='H0',
                         help='''just run significance or whole scan''')
     parser.add_argument('--range', type=str, default='np.linspace(0,2,11)*ureg.dimensionless',
                         help=''' scanning range''')
@@ -521,10 +521,12 @@ if __name__ == '__main__':
             template_maker.update_params(prm)
             template_maker.params.fix(p_name)
 
+        data_fixed_param=None
         if not args.set_param_data == '':
             p_name,value = args.set_param_data.split("=")
-            print "p_name,value= ", p_name, " ", value
+            print "set param ", p_name, "to  ", value, "for data"
             value = parse_quantity(value)
+            data_fixed_param={p_name:value.n}
             value = value.n * value.units
             prm = data_maker.params[p_name]
             prm.value = value
@@ -553,12 +555,17 @@ if __name__ == '__main__':
                     results.append(analysis.profile(args.var,[0.]*ureg.dimensionless, check_octant=not args.no_check_octant))
                 elif args.mode == 'scan':
                     results.append(analysis.profile(args.var,eval(args.range), check_octant=not args.no_check_octant))
+                elif args.mode == 'feldman_cousins':
+                    assert(data_fixed_param!=None)
+                    p_name, value = data_fixed_param.items()[0][0], data_fixed_param.items()[0][1]
+                    print "save the fixed_param_data to output: ", p_name, " ", value
+                    return_result=analysis.profile(p_name,[value], check_octant=not args.no_check_octant)
+                    return_result.append({'data_%s'%p_name:value})
+                    results.append(return_result)
             elif args.function == 'fit':
                 best_fit_result=analysis.find_best_fit(check_octant=not args.no_check_octant)
-                if not args.set_param_data == '':
-                    p_name,value = args.set_param_data.split("=")
-                    value = parse_quantity(value)
-                    value = value.n * value.units
+                if (data_fixed_param!=None):
+                    p_name, value = data_fixed_param.items()[0][0], data_fixed_param.items()[0][1]
                     best_fit_result['data_'+p_name]=value
                     print "save the fixed_param_data to output: ", p_name, " ", value
                 results.append(best_fit_result)
