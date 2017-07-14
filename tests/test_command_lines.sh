@@ -3,8 +3,25 @@
 BASEDIR=$(dirname "$0")
 PISA=$BASEDIR/..
 TMP=/tmp/pisa_tests
+export PISA_RESOURCES=${TMP}/pisa_resources
 mkdir -p $TMP
+mkdir -p $PISA_RESOURCES
 echo "PISA=$PISA"
+
+
+echo "=============================================================================="
+echo "Generating toy MC for use with test scripts"
+echo "=============================================================================="
+PISA_FTYPE=float32 make_toy_events.py --outdir ${PISA_RESOURCES}/events \
+	--num-events 1e5 \
+	--energy-range 1 80 \
+	--spectral-index 1 \
+	--coszen-range -1 1
+echo "------------------------------------------------------------------------------"
+echo "Finished creating toy MC events to be used with unit tests"
+echo "------------------------------------------------------------------------------"
+echo ""
+echo ""
 
 
 echo "=============================================================================="
