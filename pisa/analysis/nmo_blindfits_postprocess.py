@@ -54,32 +54,19 @@ def make_binned_chi2_plots(maps_binned, metric_name, total_metric,
                      " values will not be written on the bins.")
         pe = False
     all_metric_vals = np.array([])
-    for map_name in maps_binned.keys():
-        if 'MultiDimBinning' in maps_binned[map_name]['binning']:
-            binning_strings = re.findall(
-                'OneDimBinning\([^)]*\)',
-                maps_binned[map_name]['binning'].split('MultiDimBinning')[-1]
-            )
-            binning = []
-            for binning_string in binning_strings:
-                binning_dict = parse_binning_string(
-                    binning_string = binning_string
-                )
-                binning.append(OneDimBinning(**binning_dict))
-            binning = MultiDimBinning(binning)
-        else:
-            binning_dict = parse_binning_string(
-                binning_string = maps_binned[map_name]['binning']
-            )
-            binning = OneDimBinning(**binning_dict)
+    for map_binned in maps_binned['maps']:
+        binning = []
+        for binning_dict in map_binned['binning']['dimensions']:
+            binning.append(OneDimBinning(**binning_dict))
+        binning = MultiDimBinning(binning)
         total_map = Map(
-            name = map_name,
-            hist = maps_binned[map_name]['hist'],
+            name = map_binned['name'],
+            hist = map_binned['hist'],
             binning = binning
         )
         all_metric_vals = np.concatenate(
             [all_metric_vals,
-             maps_binned[map_name]['hist'].flatten()]
+             map_binned['hist'].flatten()]
         )
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10,6.5))
         pid_names = total_map.binning['pid'].bin_names
