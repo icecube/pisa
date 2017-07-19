@@ -4619,7 +4619,7 @@ class Postprocessor(object):
                           histtype='bar', color='darkblue', alpha=0.9,
                           xlabelsize='18', ylabelsize='18',
                           titlesize=16, label=None, subplots_adjust=True,
-                          subplotnum=None, lw=1):
+                          subplotnum=None, lw=1, subplotcols=4, normed=False):
         """Generic 1D histogram plotting function. Set subplots_adjust to
         True if the title goes over two lines and you need the plot to
         account for this."""
@@ -4634,11 +4634,12 @@ class Postprocessor(object):
             alpha=alpha,
             zorder=3,
             label=label,
-            lw=lw
+            lw=lw,
+            normed=normed
         )
         plt.xlabel(xlabel, size=xlabelsize)
         if subplotnum is not None:
-            if (subplotnum-1)%4 == 0:
+            if (subplotnum-1)%subplotcols == 0:
                 plt.ylabel(ylabel, size=ylabelsize)
         else:
             plt.ylabel(ylabel, size=ylabelsize)
@@ -5004,19 +5005,19 @@ class Postprocessor(object):
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         save_name = ""
-        if isinstance(self.labels, dict):
-            wanted_labels = self.labels[self.labels.keys()[0]]
-        else:
-            wanted_labels = self.labels
-        if truth is None:
-            if hasattr(self, 'labels') and \
-               not self.analysis_type == 'profile_scan':
+        if hasattr(self, 'labels') and \
+           not self.analysis_type == 'profile_scan':
+            if isinstance(self.labels, dict):
+                wanted_labels = self.labels[self.labels.keys()[0]]
+            else:
+                wanted_labels = self.labels
+            if truth is None:
                 if wanted_labels.dict['data_name'] == '':
                     save_name += "data_"
                 else:
                     save_name += "true_%s_"%wanted_labels.dict['data_name']
-        else:
-            save_name += "true_%s_"%truth    
+            else:
+                save_name += "true_%s_"%truth    
         if self.detector is not None:
             save_name += "%s_"%self.detector
         if self.selection is not None:
