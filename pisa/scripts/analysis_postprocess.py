@@ -402,17 +402,17 @@ def main_profile_scan():
 
     # 1D profile scans
     if len(postprocessor.all_bin_cens) == 1:
-        postprocessor.plot_1D_scans()
+        postprocessor.plot_1d_scans()
 
     # 2D profile scans
     elif len(postprocessor.all_bin_cens) == 2:
-        postprocessor.plot_2D_scans()
+        postprocessor.plot_2d_scans()
 
         if (postprocessor.all_bin_names[0] == 'theta23') and \
            (postprocessor.all_bin_names[1] == 'deltam31'):
 
             postprocessor.add_deltam32_sin2theta23()
-            postprocessor.plot_2D_scans(
+            postprocessor.plot_2d_scans(
                 xlabel='sin2theta23',
                 xunits='dimensionless',
                 ylabel='deltam32'
