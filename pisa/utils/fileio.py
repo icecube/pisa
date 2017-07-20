@@ -25,10 +25,10 @@ import numpy as np
 
 
 __all__ = ['PKL_EXTS', 'DILL_EXTS', 'CFG_EXTS', 'ZIP_EXTS', 'TXT_EXTS',
-           'NSORT_RE',
-           'expand', 'mkdir', 'get_valid_filename', 'nsort', 'find_files',
-           'from_cfg', 'from_pickle', 'to_pickle', 'from_dill', 'to_dill',
-           'from_file', 'to_file']
+           'NSORT_RE', 'FSORT_RE',
+           'expand', 'mkdir', 'get_valid_filename', 'nsort', 'fsort',
+           'find_files', 'from_cfg', 'from_pickle', 'to_pickle', 'from_dill',
+           'to_dill', 'from_file', 'to_file']
 
 
 PKL_EXTS = ['pickle', 'pckl', 'pkl', 'p']
@@ -38,6 +38,27 @@ ZIP_EXTS = ['bz2']
 TXT_EXTS = ['txt', 'dat']
 
 NSORT_RE = re.compile(r'(\d+)')
+UNSIGNED_FSORT_RE = re.compile(
+    r'''
+    (
+        (?:\d+(?:\.\d*){0,1}) # Digit(s) followed by opt. "." and opt. digits
+        |(?:\.\d+)            # Or starts with "." and must have digits after
+        (?:e[+-]?\d+){0,1}    # Opt.: followed by exponent: e12, e-12, e+0, etc.
+    )
+    ''',
+    re.IGNORECASE | re.VERBOSE
+)
+SIGNED_FSORT_RE = re.compile(
+    r'''
+    (
+        [+-]{0,1}             # Optional sign
+        (?:\d+(?:\.\d*){0,1}) # Digit(s) followed by opt. "." and opt. digits
+        |(?:\.\d+)            # Or starts with "." but must have digits after
+        (?:e[+-]?\d+){0,1}    # Opt.: exponent: e12, e-12, e+0, etc.
+    )
+    ''',
+    re.IGNORECASE | re.VERBOSE
+)
 
 
 def expand(path, exp_user=True, exp_vars=True, absolute=False):
@@ -158,16 +179,58 @@ def get_valid_filename(s):
 
 
 def nsort(l):
-    """Numbers in string sorted by value, not by alpha order.
+    """Integer numbers in string sorted by value, not by alpha order. Useful
+    for sorting version strings, etc..
 
-    Code from nedbatchelder.com/blog/200712/human_sorting.html#comments
+    Code adapted from nedbatchelder.com/blog/200712/human_sorting.html#comments
+
+    Parameters
+    ----------
+    l : sequence of strings
+
+    Returns
+    -------
+    sorted_l : sequence of strings
 
     """
-    return sorted(
-        l,
-        key=lambda a: zip(NSORT_RE.split(a)[0::2],
-                          [int(i) for i in NSORT_RE.split(a)[1::2]])
-    )
+    def field_splitter(s):
+        spl = NSORT_RE.split(s)
+        non_numbers = spl[0::2]
+        numbers = (int(i) for i in spl[1::2])
+        return zip(non_numbers, numbers)
+
+    return sorted(l, key=field_splitter)
+
+
+def fsort(l, signed=True):
+    """Floating point numbers in strings are sorted by value, not by alpha
+    order. Note, however, that + and - are ignored.
+
+    Code adapted from nedbatchelder.com/blog/200712/human_sorting.html#comments
+
+    Parameters
+    ----------
+    l : sequence of strings
+    signed : bool
+        Whether to include a "+" or "-" preceeding a number in its value to be
+        sorted. One might specify False if "-" is used exclusively as a
+        separator in the string.
+
+    Returns
+    -------
+    sorted_l : sequence of strings
+
+    """
+    def field_splitter(s):
+        if signed:
+            spl = SIGNED_FSORT_RE.split(s)
+        else:
+            spl = UNSIGNED_FSORT_RE.split(s)
+        non_numbers = spl[0::2]
+        numbers = (float(i) for i in spl[1::2])
+        return zip(non_numbers, numbers)
+
+    return sorted(l, key=field_splitter)
 
 
 def find_files(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
