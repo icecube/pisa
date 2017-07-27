@@ -4,7 +4,7 @@
 * `backgrounds/` - Contains files relating to the backgrounds in analyses.
 * `cache/` - Where the stages will store their cache by default.
 * `cross_sections/` - Contains files relating to the implementation of cross-sections in the `xsec` stage.
-* `debug/` - Where the output of running stages in debug` mode will go.
+* `debug/` - Where the output of running stages in debug mode will go.
 * `events/` - Contains HDF5 files with neutrino simulations.
 * `flux/` - Contains files used by the `flux` stages e.g. the Honda tables.
 * `osc/` - Contains files used by the `osc` stages e.g. the Earth density files.
