@@ -38,13 +38,13 @@ She wrote her own fitter to perform these tasks. You can evaluate her ezFit anal
 
 # $PISA/pisa
 
-* `analysis` - Directory containing all of the code relating to performing analyses.
-* `core` - Directory containing all of the code relating to the core objects and how they function.
-* `images` - Directory containing the example PISA simulation chain image.
-* `resources` - Directory containing all of the input files e.g. `.cfg` files for configuring pipelines/minimisers, `.json` files containing transforms to be used in the stages, `.hdf5` files containing events etc.
-* `scripts` - Directory containing several scripts that may be useful while using PISA.
-* `stages` - Directory containing all of the code relating to the stages and how they perform their transformations.
-* `utils` - Directory containing all of the other code used by the rest of PISA e.g. statistics functions etc.
+* `analysis/` - Directory containing all of the code relating to performing analyses.
+* `core/` - Directory containing all of the code relating to the core objects and how they function.
+* `images/` - Directory containing the example PISA simulation chain image.
+* `resources/` - Directory containing all of the input files e.g. `.cfg` files for configuring pipelines/minimisers, `.json` files containing transforms to be used in the stages, `.hdf5` files containing events etc.
+* `scripts/` - Directory containing several scripts that may be useful while using PISA.
+* `stages/` - Directory containing all of the code relating to the stages and how they perform their transformations.
+* `utils/` - Directory containing all of the other code used by the rest of PISA e.g. statistics functions etc.
 * `__init__.py`
 * `_version.py`
 * `general_conventions.md`
