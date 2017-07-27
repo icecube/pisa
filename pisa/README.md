@@ -35,3 +35,18 @@ The original drawing is [here](https://docs.google.com/drawings/edit?id=1RxQj8rP
 
 An excellent (and far more detailed) description of the analysis process is maintained by Elim Cheung with particular application to IceCube/DeepCore atmospheric neutrino measurements [here](http://umdgrb.umd.edu/~elims/Fitter/Basics).
 She wrote her own fitter to perform these tasks. You can evaluate her ezFit analysis software as an alternative to (or as a complementary tool for comparing results with) PISA [here](http://code.icecube.wisc.edu/projects/icecube/browser/IceCube/sandbox/elims/ezfit).
+
+# $PISA/pisa
+
+* `analysis` - Directory containing all of the code relating to performing analyses.
+* `core` - Directory containing all of the code relating to the core objects and how they function.
+* `images` - Directory containing the example PISA simulation chain image.
+* `resources` - Directory containing all of the input files e.g. `.cfg` files for configuring pipelines/minimisers, `.json` files containing transforms to be used in the stages, `.hdf5` files containing events etc.
+* `scripts` - Directory containing several scripts that may be useful while using PISA.
+* `stages` - Directory containing all of the code relating to the stages and how they perform their transformations.
+* `utils` - Directory containing all of the other code used by the rest of PISA e.g. statistics functions etc.
+* `__init__.py`
+* `_version.py`
+* `general_conventions.md`
+* `glossary.md`
+* `units_and_uncertainties.md`
