@@ -9,7 +9,7 @@ Visit the project Wiki for the latest documentation (not yet folded into the cod
 
 A compilation of the README files in to a set of documentation using Sphinx can be found at: http://icecube.wisc.edu/~peller/pisa_docs/index.html
 
-# Directory
+# $PISA
 
 * `docs/` - Directory containing the output of Sphinx auto-generating the documentation.
 * `images/` - Directory containing the git fork button.
