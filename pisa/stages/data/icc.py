@@ -202,6 +202,7 @@ class icc(Stage):
 
         conversion = self.params.atm_muon_scale.value.m_as('dimensionless') / ureg('common_year').to('seconds').m
         logging.info('nominal ICC rate at %.6E Hz'%(self.icc_bg_hist.sum()*conversion))
+        logging.info('nominal ICC events: %.2f'%np.sum(self.icc_bg_hist * self.params.atm_muon_scale.value.m_as('dimensionless') * self.params.livetime.value.m_as('common_year')))
 
         if alt_icc_bg_file is not None:
             if self.params.kde_hist.value:
