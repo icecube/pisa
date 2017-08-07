@@ -406,12 +406,14 @@ class prob3cpu(Stage):
             ) - rdetector*coszen
         return path
     
-    def calc_probs(self, true_e_scale, events_dict):
+
+    def calc_probs(self, kNuBar, kFlav, true_e_scale, true_energy,true_coszen, prob_e, prob_mu, **kwargs):
+
         """
         Calculate oscillation probabilities in the case of vacuum oscillations
         Here we use Prob3 but only because it has already implemented the 
         vacuum oscillations and so makes life easier. This is for the case of
-        event-by-event calculations, nto for PISA maps.
+        event-by-event calculations, not for PISA maps.
         """
         if self.calc_transforms:
             raise ValueError("You have initialised prob3cpu for the case of "
@@ -433,8 +435,6 @@ class prob3cpu(Stage):
             mAtm = deltam31
         else:
             mAtm = deltam31 - deltam21
-        prob_e = []
-        prob_mu = []
         if self._barger_earth_model is None:
             logging.info("Calculating vacuum oscillations")
             # Set up the distance to the detector. Radius of Earth is 6371km and
@@ -443,8 +443,7 @@ class prob3cpu(Stage):
             prop_height = self.params.prop_height.m_as('km')
             rdetector = 6371.0 - depth
             # Probability is separately calculated for each event
-            for i, (en, cz) in enumerate(zip(events_dict['true_energy'],
-                                             events_dict['true_coszen'])):
+            for i, (en, cz) in enumerate(zip(true_energy,true_coszen)):
                 en *= true_e_scale
                 path = self.calc_path(
                     coszen=cz,
@@ -456,13 +455,9 @@ class prob3cpu(Stage):
                     sin2th12Sq,sin2th13Sq,sin2th23Sq,deltam21,
                     mAtm,deltacp,en,kSquared,events_dict['kNuBar']
                 )
-                # kFlav is zero-start indexed, whereas Prob3 wants it from 1
-                prob_e.append(self.barger_propagator.GetVacuumProb(
-                    1, events_dict['kFlav']+1, en, path
-                ))
-                prob_mu.append(self.barger_propagator.GetVacuumProb(
-                    2, events_dict['kFlav']+1, en, path
-                ))
+                # kFlav is zero-start indexed (as the GPU Prob3 version wants it(, whereas Prob3 CPU wants it from 1
+                prob_e[i] = self.barger_propagator.GetVacuumProb(1, kFlav+1, en, path)
+                prob_mu[i] = self.barger_propagator.GetVacuumProb(2, kFlav+1, en, path)
         else:
             logging.info("Calculating matter oscillations")
             YeI = self.params.YeI.m_as('dimensionless')
@@ -470,26 +465,20 @@ class prob3cpu(Stage):
             YeM = self.params.YeM.m_as('dimensionless')
             depth = self.params.detector_depth.m_as('km')
             prop_height = self.params.prop_height.m_as('km')
+
             # Probability is separately calculated for each event
-            for i, (en, cz) in enumerate(zip(events_dict['true_energy'],
-                                             events_dict['true_coszen'])):
+            for i, (en, cz) in enumerate(zip(true_energy,true_coszen)):
                 en *= true_e_scale
                 self.barger_propagator.SetMNS(
                     sin2th12Sq,sin2th13Sq,sin2th23Sq,deltam21,
-                    mAtm,deltacp,en,kSquared,events_dict['kNuBar']
+                    mAtm,deltacp,en,kSquared,kNuBar
                 )
                 self.barger_propagator.DefinePath(
                     float(cz), prop_height, YeI, YeO, YeM
                 )
-                self.barger_propagator.propagate(events_dict['kNuBar'])
-                prob_e.append(self.barger_propagator.GetProb(
-                    0, events_dict['kFlav']
-                ))
-                prob_mu.append(self.barger_propagator.GetProb(
-                    1, events_dict['kFlav']
-                ))
-        events_dict['prob_e'] = prob_e
-        events_dict['prob_mu'] = prob_mu
+                self.barger_propagator.propagate(kNuBar)
+                prob_e[i] = self.barger_propagator.GetProb(0, kFlav)
+                prob_mu[i] = self.barger_propagator.GetProb(1, kFlav)
             
     def validate_params(self, params):
         if params['earth_model'].value is None:

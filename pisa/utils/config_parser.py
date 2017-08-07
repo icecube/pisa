@@ -353,7 +353,8 @@ def split(string, sep=','):
     ['one', 'two', 'three']
 
     """
-    return [x.strip().lower() for x in str.split(str(string), sep)]
+    #return [ x.strip().lower() for x in str.split(str(string), sep)]
+    return [ parse_string_literal(x.strip().lower()) for x in str.split(str(string), sep)]
 
 
 def interpret_param_subfields(subfields, selector=None, pname=None, attr=None):

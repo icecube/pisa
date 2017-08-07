@@ -923,6 +923,14 @@ class Map(object):
         return self.hist.size
 
     @property
+    def num_entries(self):
+        """int : total number of weighted entries in all bins"""
+        hist = np.ma.masked_invalid(self.hist)
+        return np.sum(hist)
+
+
+
+    @property
     def serializable_state(self):
         state = OrderedDict()
         state['name'] = self.name

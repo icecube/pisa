@@ -662,8 +662,9 @@ class Stage(object):
     def check_outputs(self, outputs):
         if set(outputs.names) != set(self.output_names):
             raise ValueError(
-                "Outputs: " + str(outputs.names) +
-                "\nStage outputs: " + str(self.output_names)
+                "Outputs found do not match expected outputs for this stage:\n" +
+                "  Outputs found: " + str(outputs.names) + "\n"
+                "  Expected stage outputs: " + str(self.output_names)
             )
 
     def select_params(self, selections, error_on_missing=False):
