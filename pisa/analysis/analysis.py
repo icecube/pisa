@@ -917,6 +917,7 @@ class Analysis(object):
             `debug_mode` will be set to 2.
 
         """
+
         if debug_mode not in (0, 1, 2):
             debug_mode = 2
 
@@ -961,6 +962,9 @@ class Analysis(object):
                         for (i, pname) in enumerate(param_names)]
         else:
             steplist = [[(param_names[0], val) for val in values[0]]]
+
+        #Number of steps must be > 0
+        assert len(steplist) > 0
 
         points_acc = []
         if only_points is not None:
