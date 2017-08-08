@@ -109,7 +109,7 @@ class weight_new(Stage):
     All floats (arrays) on GPU are of type FTYPE, currently double precision
 
     """
-    def __init__(self, params, output_binning, disk_cache=None,
+    def __init__(self, params, output_binning, use_gpu=False, disk_cache=None,
                  memcache_deepcopy=True, error_method=None, output_names=None,
                  outputs_cache_depth=20, debug_mode=None):
 
@@ -156,13 +156,14 @@ class weight_new(Stage):
             'hist_pid_scale',
             'kde',
             'mc_cuts',
-            'use_gpu',
         )
 
         expected_params = (self.osc_params + self.flux_params +
                            self.other_params + self.true_params)
 
         output_names = split(output_names)
+
+        self.use_gpu = use_gpu
 
         super(self.__class__, self).__init__(
             use_transforms=False,
@@ -180,7 +181,7 @@ class weight_new(Stage):
         #User specifies this using the 'use_gpu' param
         #A special case is that if no Earth model is provided (e.g. oscillations are in vacuum), then the oscillations
         #are performed using a CPU (everything else is still done using a GPU) #TODO why is this???
-        if self.params.use_gpu.value:
+        if self.use_gpu:
             if self.params.earth_model.value is None:
                 self.use_gpu_for_osc = False
             else :
@@ -189,7 +190,7 @@ class weight_new(Stage):
             self.use_gpu_for_osc = False
 
         #If using GPUs, init CUDA
-        if self.params.use_gpu.value:
+        if self.use_gpu:
             import pycuda.autoinit #This performs initialisation tasks #TODO Is it OK that this goes out of scope???
 
         #Grab histgramming tools of choice
@@ -199,10 +200,14 @@ class weight_new(Stage):
             self.kde_histogramdd = kde_histogramdd
         else:
             #Use a regular histogram, either computed on a GPU or locally
-            if self.params.use_gpu.value:
+            if self.use_gpu:
                 from pisa.utils.gpu_hist import GPUHist
                 self.GPUHist = GPUHist
             #TODO CPU
+
+        #Register attributes that will be used from hashes
+        self.include_attrs_for_hashes('use_gpu')
+
 
     def validate_params(self, params):
         # Not a good idea to scale nutau norm, without the NC events being oscillated
@@ -215,6 +220,7 @@ class weight_new(Stage):
         #Check can find Earth model (a text file)
         if params.earth_model.value is not None:
             find_resource(params.earth_model.value)
+
 
     def _compute_nominal_outputs(self):
 
@@ -231,7 +237,7 @@ class weight_new(Stage):
             #Want the 'oscillation' and 'true' params
             if (param.name in self.osc_params) or (param.name in self.true_params) or (param.name == 'nutau_norm'): #TODO shoudl nutau_norm be in osc_params????
                 #Handle a few differences between the prob3gpu and prob3cpu interfaces #TODO Can these be merged?
-                if self.params.use_gpu.value: 
+                if self.use_gpu: 
                     #Skip stuff NOT required by prob3gpu
                     pass #Currently nothing...
                 else:
@@ -264,7 +270,7 @@ class weight_new(Stage):
         )
 
         # Instantiate weight calculator (differs depending on whether using CPU or GPU code) #TODO Make into a common class
-        if self.params.use_gpu.value: from pisa.stages.mc.GPUWeight import CPUWeight as WeightCalculator
+        if self.use_gpu: from pisa.stages.mc.GPUWeight import CPUWeight as WeightCalculator
         else : from pisa.stages.mc.CPUWeight import CPUWeight as WeightCalculator
         self.weight_calc = WeightCalculator()
 
@@ -286,7 +292,7 @@ class weight_new(Stage):
         if self.params.kde.value:
             assert self.error_method == None
         else:
-            if self.params.use_gpu.value: 
+            if self.use_gpu: 
                 # GPU histogramer
                 bin_edges = deepcopy(self.bin_edges)
                 bin_edges[self.e_bin_number] *= FTYPE(self.params.hist_e_scale.value.m_as('dimensionless'))
@@ -455,7 +461,7 @@ class weight_new(Stage):
                     self.events_dict[flav]['host']['distanceInLayer'] = dist
 
         end_t = time.time()
-        logging.debug( 'Output data formatted%s in %.4f ms'% ( (" and Earth layers calculated" if self.params.use_gpu.value else "") , (end_t - start_t) * 1000) )
+        logging.debug( 'Output data formatted%s in %.4f ms'% ( (" and Earth layers calculated" if self.use_gpu else "") , (end_t - start_t) * 1000) )
 
 
         #
@@ -463,7 +469,7 @@ class weight_new(Stage):
         #
 
         #If using GPU, copy the data arrays across to it
-        if self.params.use_gpu.value: 
+        if self.use_gpu: 
             import pycuda.driver as cuda
             start_t = time.time()
             for flav in self.flavint_strings:
@@ -513,7 +519,7 @@ class weight_new(Stage):
                 gt_p1_mask = reco_cz > 1
 
             #If using GPU, write these reco values to the data arrays on the GPU
-            if self.params.use_gpu.value: 
+            if self.use_gpu: 
                 self.update_device_arrays(flav, 'reco_energy')
                 self.update_device_arrays(flav, 'reco_coszen')
 
@@ -621,7 +627,7 @@ class weight_new(Stage):
         for flav in self.flavint_strings:
 
             #Specify which data array should be used in the calculations ('host' if running on CPU, 'device' if on GPU)
-            data_array = self.events_dict[flav]['device'] if self.params.use_gpu.value else self.events_dict[flav]['host']
+            data_array = self.events_dict[flav]['device'] if self.use_gpu else self.events_dict[flav]['host']
 
             # Calculate osc probs, filling the device arrays with probabilities
             if recalc_osc:
@@ -646,7 +652,7 @@ class weight_new(Stage):
 
                         #If running on a GPU in general but using CPU for the oscillations part, need to update the device arrays
                         #TODO doe the values need copying to the host BEFORE? Maybe not because it is first here, but this is super future-proof...
-                        if self.params.use_gpu.value :
+                        if self.use_gpu :
                             self.update_device_arrays(flav, 'prob_e')
                             self.update_device_arrays(flav, 'prob_mu')
 
@@ -717,7 +723,7 @@ class weight_new(Stage):
             start_t = time.time()
 
             #If using a GPU, copy back weights
-            if self.params.use_gpu.value: 
+            if self.use_gpu: 
                 self.get_device_arrays(variables=['weight'])
 
             for flav in self.flavint_strings:
@@ -756,7 +762,7 @@ class weight_new(Stage):
                 bin_edges[self.pid_bin_number][1] *= FTYPE(self.params.hist_pid_scale.value.m_as('dimensionless'))
 
             #Histogram on GPU case (use GPUHist class)
-            if self.params.use_gpu.value:
+            if self.use_gpu:
 
                 self.histogrammer.update_bin_edges(*bin_edges)
 
