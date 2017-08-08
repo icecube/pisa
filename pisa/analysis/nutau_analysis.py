@@ -298,6 +298,7 @@ class Analysis(object):
                 # clear the line
                 print ''
             print '\naverage template generation time during minimizer run: %.4f ms'%((end_t - start_t) * 1000./self.n_minimizer_calls)
+            avg_tmp_time = (end_t - start_t) * 1000./self.n_minimizer_calls
             best_fit_vals = minim_result.x
             metric_val = minim_result.fun
             template = self.template_maker.get_outputs()
@@ -313,6 +314,7 @@ class Analysis(object):
                 dict_flags['grad'] = minim_result.jac
             dict_flags['funcalls'] = minim_result.nfev
             dict_flags['nit'] = minim_result.nit
+            dict_flags['avg_tmp_time'] = avg_tmp_time
             if dict_flags['warnflag'] > 0:
                 logging.warning(str(dict_flags))
 
@@ -340,6 +342,7 @@ class Analysis(object):
         best_fit = {}
         best_fit[self.metric] = metric_val
         best_fit['warnflag'] = dict_flags['warnflag']
+        best_fit['avg_tmp_time'] = dict_flags['avg_tmp_time']
         best_fit['all_metrics'] = all_metrics
         if not self.blind:
             for pname in self.template_maker.params.free.names:
