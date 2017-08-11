@@ -78,6 +78,10 @@ class gpu(Stage):
                 scale factor for true energy
             mc_cuts : cut expr
                 e.g. '(true_coszen <= 0.5) & (true_energy <= 70)'
+            part : float
+                only use part of the MC sample, number between 0 and 1
+                if e.g. set to 0.1, then only 10% of events will be used, and their weights scaled up by a factor of 10x
+                the asignement of events is random
 
     Notes
     -----
@@ -161,6 +165,7 @@ class gpu(Stage):
             'hist_pid_scale',
             'kde',
             'mc_cuts',
+            'part',
         )
 
         expected_params = (self.osc_params + self.flux_params +
@@ -381,6 +386,18 @@ class gpu(Stage):
             #cut = np.zeros_like(self.events_dict[flav]['host']['weighted_aeff'])
             #cut[9::10] = 1
             #self.events_dict[flav]['host']['weighted_aeff']*=cut
+
+            part = self.params.part.value 
+            if part < 1.0 and part > 0.0:
+                s = np.random.rand(len(self.events_dict[flav]['host']['weighted_aeff']))
+                f = np.where(s < part, 1./part, 0.)
+                self.events_dict[flav]['host']['weighted_aeff']*=f
+                logging.warning('Selecting %s%% of sample'%(part*100))
+            elif part == 1.0:
+                pass
+            else:
+                logging.error('Cannot specify part of %s of sample, value must be within (0.0, 1.0]!'%part)
+
             for var in empty:
                 if (self.params.no_nc_osc and
                         ((flav in ['nue_nc', 'nuebar_nc'] and var == 'prob_e')
