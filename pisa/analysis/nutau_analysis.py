@@ -315,6 +315,7 @@ class Analysis(object):
             dict_flags['funcalls'] = minim_result.nfev
             dict_flags['nit'] = minim_result.nit
             dict_flags['avg_tmp_time'] = avg_tmp_time
+            dict_flags['n_minimizer_calls'] = self.n_minimizer_calls
             if dict_flags['warnflag'] > 0:
                 logging.warning(str(dict_flags))
 
@@ -343,6 +344,8 @@ class Analysis(object):
         best_fit[self.metric] = metric_val
         best_fit['warnflag'] = dict_flags['warnflag']
         best_fit['avg_tmp_time'] = dict_flags['avg_tmp_time']
+        best_fit['n_minimizer_calls'] = dict_flags['n_minimizer_calls']
+        best_fit['funcalls'] = dict_flags['funcalls']
         best_fit['all_metrics'] = all_metrics
         if not self.blind:
             for pname in self.template_maker.params.free.names:
