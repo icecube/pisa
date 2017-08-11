@@ -676,8 +676,9 @@ class Plotter(object):
         else:
             return 20
 
-    def plot_low_level_quantities(self, mc_arrays, icc_arrays, data_arrays, param_to_plot, fig_name, outdir, title, data_type='pseudo', logy=False, save_ratio=False, **kwargs):
+    def plot_quantities(self, mc_arrays, icc_arrays, data_arrays, param_to_plot, fig_name, outdir, title, data_type='pseudo', logy=False, save_ratio=False, **kwargs):
 
+        # get data param (data could be MC simulated "data" or real data)
         if data_arrays is not None:
             if data_type=='pseudo':
                 data_param = np.array([])
@@ -704,7 +705,7 @@ class Plotter(object):
             plt.setp(ax1.get_xticklabels(), visible=False)
         else:
             plt.setp(ax1.get_xticklabels(), visible=True)
-        file_name += '_low_level_%s'% (param_to_plot)
+        file_name += '_%s'% (param_to_plot)
         nbins=30
         if mc_arrays is not None:
             mc_param_all = np.array([])
