@@ -91,8 +91,7 @@ class data(Stage):
 
         # get data with cuts defined as 'analysis' in data_proc_params.json
         fields = ['reco_energy', 'pid', 'reco_coszen']
-        #cut_events = self.get_fields(fields, cuts='analysis',
-        cut_events = self.get_fields(fields, cuts=['analysis','extra_cuts'],
+        cut_events = self.get_fields(fields, cuts=['analysis'],
                         run_setting_file='events/mc_sim_run_settings.json')
         hist, _ = np.histogramdd(sample = np.array(
             [cut_events[bin_name] for bin_name in self.bin_names]
@@ -167,4 +166,5 @@ class data(Stage):
         return_data = {}
         for key in fields:
             return_data[key] = cut_data[key][all_cuts]
+        #print "data no evts in get_fields", len(return_data[key])
         return return_data
