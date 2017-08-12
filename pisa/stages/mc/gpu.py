@@ -798,31 +798,32 @@ class gpu(Stage):
         if self.params.mc_cuts.value is not None:
             logging.info('applying the following cuts to events: %s'%self.params.mc_cuts.value)
             evts = all_evts.applyCut(self.params.mc_cuts.value)
-        fields_add_first = []
-        fields_add_later = []
+        fields_from_device = []
+        fields_from_evt_file = []
+        fields_from_calculation = []
         for param in fields:
-            if (param not in evts[self.flavs[0]].keys()) and (param not in self.events_dict[self.flavs[0]]['device'].keys()):
-                fields_add_later.append(param)
+            if param in self.events_dict[self.flavs[0]]['device'].keys():
+                fields_from_device.append(param)
+            elif param in evts[self.flavs[0]].keys():
+                fields_from_evt_file.append(param)
             else:
-                fields_add_first.append(param)
-        for param in fields_add_later:
+                fields_from_calculation.append(param)
+        for param in fields_from_calculation:
             if param in ['l_over_e', 'path_length']:
-                if 'reco_energy' not in fields_add_first:
-                    fields_add_first.append('reco_energy')
-                if 'reco_coszen' not in fields_add_first:
-                    fields_add_first.append('reco_coszen')
+                if 'reco_energy' not in fields_from_device:
+                    fields_from_device.append('reco_energy')
+                if 'reco_coszen' not in fields_from_device:
+                    fields_from_device.append('reco_coszen')
         return_events = {}
         sum_evts=0
-        self.get_device_arrays(fields_add_first)
+        self.get_device_arrays(fields_from_device)
         for flav in self.flavs:
             return_events[flav] = {}
-            for var in fields_add_first:
-                if var in self.events_dict[flav]['host'].keys():
-                    return_events[flav][var] = deepcopy(self.events_dict[flav]['host'][var])
-                else:
-                    # some low level variables not saved to self.events_dict, so read it from event file
-                    return_events[flav][var] = evts[flav][var]
-            if len(fields_add_later)!=0:
+            for var in fields_from_device:
+                return_events[flav][var] = deepcopy(self.events_dict[flav]['host'][var])
+            for var in fields_from_evt_file:
+                return_events[flav][var] = evts[flav][var]
+            if len(fields_from_calculation)!=0:
                 layer = Layers(self.params.earth_model.value)
                 return_events[flav]['path_length'] = np.array([layer.DefinePath(reco_cz) for reco_cz in return_events[flav]['reco_coszen']])
                 return_events[flav]['l_over_e'] = return_events[flav]['path_length']/return_events[flav]['reco_energy']
