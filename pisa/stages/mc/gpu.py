@@ -772,65 +772,70 @@ class gpu(Stage):
             logging.info('%s : %.4f %%'%(map.name, np.sum(unp.nominal_values(map.hist))/total_nevt))
         return MapSet(maps, name='gpu_mc')
 
+    def get_fields_2(self, fields):
+        ''' Return a dictionary with the input fields for each flavor.'''
+        #print "self.events_dict[flav]['host'].keys", self.events_dict['nue_cc']['host'].keys()
+        self._compute_outputs()
+        self.get_device_arrays()
+        nt=0
+        return_events={}
+        for flav in self.flavs:
+            return_events[flav]={}
+            print flav, " ",np.sum(self.events_dict[flav]['host']['weight'])
+            for key in fields:
+                return_events[flav][key] = self.events_dict[flav]['host'][key]
+            f=1.0
+            if 'nutau' in flav:
+                f *= self.params.nutau_norm.value.m_as('dimensionless')
+            if flav in ['nutau_cc', 'nutaubar_cc']:
+                f *= self.params.nutau_cc_norm.value.m_as('dimensionless')
+            return_events[flav]['weight']*=f
+            nt+=np.sum(return_events[flav]['weight'])
+        print "nt", nt
+        return return_events
+
     def get_fields(self, fields):
         ''' Return a dictionary with the input fields for each flavor.'''
-        self._compute_nominal_outputs()
         self._compute_outputs()
+        self.get_device_arrays()
         all_evts = Events(self.params.events_file.value)
         if self.params.mc_cuts.value is not None:
             logging.info('applying the following cuts to events: %s'%self.params.mc_cuts.value)
             evts = all_evts.applyCut(self.params.mc_cuts.value)
-        #print "self.flavs ", self.flavs
-        fields_add_later = []
         fields_add_first = []
+        fields_add_later = []
         for param in fields:
-            if (param not in evts[self.flavs[0]].keys()) and (param not in self.events_dict[self.flavs[0]]['device'].keys()):
+            if (param not in evts[self.flavs[0]].keys()):
                 fields_add_later.append(param)
-                if param in ['l_over_e', 'path_length']:
-                    if 'reco_energy' not in fields_add_first:
-                        fields_add_first.append('reco_energy')
-                    if 'reco_coszen' not in fields_add_first:
-                        fields_add_first.append('reco_coszen')
             else:
                 fields_add_first.append(param)
-        cut_events = {}
+        for param in fields_add_later:
+            if param in ['l_over_e', 'path_length']:
+                if 'reco_energy' not in fields_add_first:
+                    fields_add_first.append('reco_energy')
+                if 'reco_coszen' not in fields_add_first:
+                    fields_add_first.append('reco_coszen')
         return_events = {}
         sum_evts=0
+        print "flavs ", self.flavs
         for flav in self.flavs:
-            #cuts = np.ones(len(evts[flav]['true_energy']), dtype=bool)
-            #for name, edge in zip(self.bin_names, self.bin_edges):
-            #    #print "self.bin_names, self.bin_edges", self.bin_names, self.bin_edges
-            #    bin_cut = np.logical_and(evts[flav][name]<= edge[-1], evts[flav][name]>= edge[0])
-            #    cuts = np.logical_and(cuts,bin_cut)
-            cut_events[flav] = {}
+            return_events[flav] = {}
             for var in fields_add_first:
-                if var in self.events_dict[flav]['device'].keys():
-                    #print "var in device: ", var
-                    buff = np.full(self.events_dict[flav]['n_evts'],
-                               fill_value=np.nan, dtype=FTYPE)
-                    cuda.memcpy_dtoh(buff, self.events_dict[flav]['device'][var])
-                    cut_events[flav][var] = buff
-                    #cut_events[flav][var] = cut_events[flav][var][cuts]
+                if var in self.events_dict[flav]['host'].keys():
+                    return_events[flav][var] = deepcopy(self.events_dict[flav]['host'][var])
                 else:
-                    cut_events[flav][var] = evts[flav][var]
+                    # some low level variables not saved to self.events_dict, so read it from event file
+                    return_events[flav][var] = evts[flav][var]
             if len(fields_add_later)!=0:
-                for param in fields_add_later:
-                    assert(param in ['l_over_e', 'path_length'])
                 layer = Layers(self.params.earth_model.value)
-                assert('reco_coszen' in cut_events[flav].keys())
-                cut_events[flav]['path_length'] = np.array([layer.DefinePath(reco_cz) for reco_cz in cut_events[flav]['reco_coszen']])
-                if 'l_over_e' in fields_add_later:
-                    cut_events[flav]['l_over_e'] = cut_events[flav]['path_length']/cut_events[flav]['reco_energy']
-                    #cut_events[flav][var] = cut_events[flav][var][cuts]
-
-            return_events[flav]={}
-            cuts = np.ones(len(cut_events[flav][fields_add_first[0]]), dtype=bool)
-            for name, edge in zip(self.bin_names, self.bin_edges):
-                #print "self.bin_names, self.bin_edges", self.bin_names, self.bin_edges
-                bin_cut = np.logical_and(cut_events[flav][name]<= edge[-1], cut_events[flav][name]>= edge[0])
-                cuts = np.logical_and(cuts,bin_cut)
-            for key in cut_events[flav].keys():
-                return_events[flav][key] = cut_events[flav][key][cuts]
+                return_events[flav]['path_length'] = np.array([layer.DefinePath(reco_cz) for reco_cz in return_events[flav]['reco_coszen']])
+                return_events[flav]['l_over_e'] = return_events[flav]['path_length']/return_events[flav]['reco_energy']
+            f=1.0
+            if 'nutau' in flav:
+                f *= self.params.nutau_norm.value.m_as('dimensionless')
+            if flav in ['nutau_cc', 'nutaubar_cc']:
+                f *= self.params.nutau_cc_norm.value.m_as('dimensionless')
+            return_events[flav]['weight']*=f
             sum_evts+=np.sum(return_events[flav]['weight'])
         print "in get_fields, sum_evts:", sum_evts
         return return_events
