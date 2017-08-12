@@ -774,14 +774,12 @@ class gpu(Stage):
 
     def get_fields_2(self, fields):
         ''' Return a dictionary with the input fields for each flavor.'''
-        #print "self.events_dict[flav]['host'].keys", self.events_dict['nue_cc']['host'].keys()
         self._compute_outputs()
         self.get_device_arrays()
         nt=0
         return_events={}
         for flav in self.flavs:
             return_events[flav]={}
-            print flav, " ",np.sum(self.events_dict[flav]['host']['weight'])
             for key in fields:
                 return_events[flav][key] = self.events_dict[flav]['host'][key]
             f=1.0
@@ -791,13 +789,11 @@ class gpu(Stage):
                 f *= self.params.nutau_cc_norm.value.m_as('dimensionless')
             return_events[flav]['weight']*=f
             nt+=np.sum(return_events[flav]['weight'])
-        print "nt", nt
         return return_events
 
     def get_fields(self, fields):
         ''' Return a dictionary with the input fields for each flavor.'''
         self._compute_outputs()
-        self.get_device_arrays()
         all_evts = Events(self.params.events_file.value)
         if self.params.mc_cuts.value is not None:
             logging.info('applying the following cuts to events: %s'%self.params.mc_cuts.value)
@@ -805,7 +801,7 @@ class gpu(Stage):
         fields_add_first = []
         fields_add_later = []
         for param in fields:
-            if (param not in evts[self.flavs[0]].keys()):
+            if (param not in evts[self.flavs[0]].keys()) and (param not in self.events_dict[self.flavs[0]]['device'].keys()):
                 fields_add_later.append(param)
             else:
                 fields_add_first.append(param)
@@ -817,7 +813,7 @@ class gpu(Stage):
                     fields_add_first.append('reco_coszen')
         return_events = {}
         sum_evts=0
-        print "flavs ", self.flavs
+        self.get_device_arrays(fields_add_first)
         for flav in self.flavs:
             return_events[flav] = {}
             for var in fields_add_first:
@@ -837,5 +833,4 @@ class gpu(Stage):
                 f *= self.params.nutau_cc_norm.value.m_as('dimensionless')
             return_events[flav]['weight']*=f
             sum_evts+=np.sum(return_events[flav]['weight'])
-        print "in get_fields, sum_evts:", sum_evts
         return return_events
