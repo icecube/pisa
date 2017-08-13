@@ -793,6 +793,7 @@ class gpu(Stage):
 
     def get_fields(self, fields):
         ''' Return a dictionary with the input fields for each flavor.'''
+        self._compute_nominal_outputs()
         self._compute_outputs()
         all_evts = Events(self.params.events_file.value)
         if self.params.mc_cuts.value is not None:
