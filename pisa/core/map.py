@@ -46,8 +46,8 @@ from pisa.utils.random_numbers import get_random_state
 from pisa.utils import stats
 
 
-__all__ = ['type_error', 'reduceToHist', 'rebin', 'Map', 'MapSet', 'test_Map',
-           'test_MapSet']
+__all__ = ['type_error', 'reduceToHist', 'rebin', 'valid_nominal_values', 
+    'Map', 'MapSet', 'test_Map', 'test_MapSet']
 
 
 # TODO: inconsistent treatment of metrics in *chi2*, *llh*, and metric* methods
@@ -190,6 +190,12 @@ def _new_obj(original_function):
             return np.asscalar(new_state['hist'])
         return Map(**new_state)
     return decorate(original_function, new_function)
+
+
+
+def valid_nominal_values(data_array):
+    """Get the the nominal values that are valid for an array"""
+    return np.ma.masked_invalid( unp.nominal_values(data_array) )
 
 
 # TODO: implement strategies for decreasing dimensionality (i.e.
@@ -603,7 +609,7 @@ class Map(object):
             to_plot = self.squeeze()
         assert len(to_plot.binning) == 2
 
-        hist = np.ma.masked_invalid(to_plot.hist)
+        hist = valid_nominal_values(to_plot.hist)
         islog = False
         if symm:
             if cmap is None:
@@ -925,10 +931,7 @@ class Map(object):
     @property
     def num_entries(self):
         """int : total number of weighted entries in all bins"""
-        hist = np.ma.masked_invalid(self.hist)
-        return np.sum(hist)
-
-
+        return np.sum( valid_nominal_values(self.hist) )
 
     @property
     def serializable_state(self):

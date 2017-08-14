@@ -635,6 +635,9 @@ class Data(FlavIntDataGroup):
             fig_to_process += ['muons']
         if self.contains_noise:
             fig_to_process += ['noise']
+
+        logging.info("Applying cut to %s : %s" % (fig_to_process,keep_criteria) )
+
         fig_processed = []
         remaining_data = {}
         for fig in fig_to_process:

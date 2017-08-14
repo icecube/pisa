@@ -662,7 +662,7 @@ class Stage(object):
     def check_outputs(self, outputs):
         if set(outputs.names) != set(self.output_names):
             raise ValueError(
-                "Outputs found do not match expected outputs for this stage:\n" +
+                "'%s' : Outputs found do not match expected outputs for this stage:\n"%self.stage_name +
                 "  Outputs found: " + str(outputs.names) + "\n"
                 "  Expected stage outputs: " + str(self.output_names)
             )
