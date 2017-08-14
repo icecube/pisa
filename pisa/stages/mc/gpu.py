@@ -18,6 +18,7 @@ from pisa.core.param import ParamSet
 from pisa.core.stage import Stage
 from pisa.stages.mc.GPUWeight import GPUWeight
 from pisa.stages.osc.prob3gpu import prob3gpu
+from pisa.stages.osc.calc_layers import Layers
 from pisa.utils.comparisons import normQuant
 from pisa.utils.config_parser import split
 from pisa.utils.hash import hash_obj
@@ -77,6 +78,10 @@ class gpu(Stage):
                 scale factor for true energy
             mc_cuts : cut expr
                 e.g. '(true_coszen <= 0.5) & (true_energy <= 70)'
+            part : float
+                only use part of the MC sample, number between 0 and 1
+                if e.g. set to 0.1, then only 10% of events will be used, and their weights scaled up by a factor of 10x
+                the asignement of events is random
 
     Notes
     -----
@@ -160,6 +165,7 @@ class gpu(Stage):
             'hist_pid_scale',
             'kde',
             'mc_cuts',
+            'part',
         )
 
         expected_params = (self.osc_params + self.flux_params +
@@ -380,6 +386,18 @@ class gpu(Stage):
             #cut = np.zeros_like(self.events_dict[flav]['host']['weighted_aeff'])
             #cut[9::10] = 1
             #self.events_dict[flav]['host']['weighted_aeff']*=cut
+
+            part = self.params.part.value 
+            if part < 1.0 and part > 0.0:
+                s = np.random.rand(len(self.events_dict[flav]['host']['weighted_aeff']))
+                f = np.where(s < part, 1./part, 0.)
+                self.events_dict[flav]['host']['weighted_aeff']*=f
+                logging.warning('Selecting %s%% of sample'%(part*100))
+            elif part == 1.0:
+                pass
+            else:
+                logging.error('Cannot specify part of %s of sample, value must be within (0.0, 1.0]!'%part)
+
             for var in empty:
                 if (self.params.no_nc_osc and
                         ((flav in ['nue_nc', 'nuebar_nc'] and var == 'prob_e')
@@ -736,7 +754,7 @@ class gpu(Stage):
                                 binning=self.output_binning))
             # This is a special case where we always want the error to be the
             # same....so for the first Mapet it is taken from the calculation,
-            # and every following time it is just euqal to the first one
+            # and every following time it is just equal to the first one
             elif self.error_method == 'fixed_sumw2':
                 if self.fixed_error == None:
                     self.fixed_error = {}
@@ -753,3 +771,68 @@ class gpu(Stage):
         for map in maps:
             logging.info('%s : %.4f %%'%(map.name, np.sum(unp.nominal_values(map.hist))/total_nevt))
         return MapSet(maps, name='gpu_mc')
+
+    def get_fields_2(self, fields):
+        ''' Return a dictionary with the input fields for each flavor.'''
+        self._compute_outputs()
+        self.get_device_arrays()
+        nt=0
+        return_events={}
+        for flav in self.flavs:
+            return_events[flav]={}
+            for key in fields:
+                return_events[flav][key] = self.events_dict[flav]['host'][key]
+            f=1.0
+            if 'nutau' in flav:
+                f *= self.params.nutau_norm.value.m_as('dimensionless')
+            if flav in ['nutau_cc', 'nutaubar_cc']:
+                f *= self.params.nutau_cc_norm.value.m_as('dimensionless')
+            return_events[flav]['weight']*=f
+            nt+=np.sum(return_events[flav]['weight'])
+        return return_events
+
+    def get_fields(self, fields):
+        ''' Return a dictionary with the input fields for each flavor.'''
+        self._compute_nominal_outputs()
+        self._compute_outputs()
+        all_evts = Events(self.params.events_file.value)
+        if self.params.mc_cuts.value is not None:
+            logging.info('applying the following cuts to events: %s'%self.params.mc_cuts.value)
+            evts = all_evts.applyCut(self.params.mc_cuts.value)
+        fields_from_device = []
+        fields_from_evt_file = []
+        fields_from_calculation = []
+        for param in fields:
+            if param in self.events_dict[self.flavs[0]]['device'].keys():
+                fields_from_device.append(param)
+            elif param in evts[self.flavs[0]].keys():
+                fields_from_evt_file.append(param)
+            else:
+                fields_from_calculation.append(param)
+        for param in fields_from_calculation:
+            if param in ['l_over_e', 'path_length']:
+                if 'reco_energy' not in fields_from_device:
+                    fields_from_device.append('reco_energy')
+                if 'reco_coszen' not in fields_from_device:
+                    fields_from_device.append('reco_coszen')
+        return_events = {}
+        sum_evts=0
+        self.get_device_arrays(fields_from_device)
+        for flav in self.flavs:
+            return_events[flav] = {}
+            for var in fields_from_device:
+                return_events[flav][var] = deepcopy(self.events_dict[flav]['host'][var])
+            for var in fields_from_evt_file:
+                return_events[flav][var] = evts[flav][var]
+            if len(fields_from_calculation)!=0:
+                layer = Layers(self.params.earth_model.value)
+                return_events[flav]['path_length'] = np.array([layer.DefinePath(reco_cz) for reco_cz in return_events[flav]['reco_coszen']])
+                return_events[flav]['l_over_e'] = return_events[flav]['path_length']/return_events[flav]['reco_energy']
+            f=1.0
+            if 'nutau' in flav:
+                f *= self.params.nutau_norm.value.m_as('dimensionless')
+            if flav in ['nutau_cc', 'nutaubar_cc']:
+                f *= self.params.nutau_cc_norm.value.m_as('dimensionless')
+            return_events[flav]['weight']*=f
+            sum_evts+=np.sum(return_events[flav]['weight'])
+        return return_events

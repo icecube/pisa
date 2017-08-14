@@ -11,6 +11,10 @@ from pisa.core.stage import Stage
 from pisa.utils.comparisons import normQuant
 from pisa.utils.log import logging
 from pisa.utils.resources import find_resource
+import copy
+import pisa.utils.mcSimRunSettings as MCSRS
+import pisa.utils.dataProcParams as DPP
+from pisa.stages.osc.calc_layers import Layers
 
 
 class icc(Stage):
@@ -22,12 +26,8 @@ class icc(Stage):
     params : ParamSet
         icc_bg_file : string
             path pointing to the hdf5 file containing the events
-        pid_bound : float
-            boundary between cascade and track channel
-        pid_remo : float
-            lower cutoff value, below which events get rejected
-        sim_ver: string
-            indicating the sim version, wither 4digit, 5digit or dima
+        proc_ver: string
+            indicating the proc version, for example msu_4digit, msu_5digit
         bdt_cut : float
             further cut applied to events for the atm. muon rejections BDT
         livetime : time quantity
@@ -37,8 +37,6 @@ class icc(Stage):
             alternate selection/model, used to generate shape uncertainty terms
         atm_muon_scale: float
             scale factor to be apllied to outputs
-        use_def1 : bool
-            whether ICC definition 1 is used
         fixed_scale_factor : float
             scale fixed errors
 
@@ -55,13 +53,13 @@ class icc(Stage):
         expected_params = (
             'atm_muon_scale',
             'icc_bg_file',
-            'use_def1',
-            'sim_ver',
+            'proc_ver',
             'livetime',
             'bdt_cut',
             'alt_icc_bg_file',
             'kde_hist',
-            'fixed_scale_factor'
+            'fixed_scale_factor',
+            'earth_model'
         )
 
         output_names = ('total')
@@ -83,6 +81,16 @@ class icc(Stage):
             from pisa.utils.kde_hist import kde_histogramdd
             self.kde_histogramdd = kde_histogramdd
 
+        self.bin_names = self.output_binning.names
+        self.bin_edges = []
+        for name in self.bin_names:
+            if 'energy' in  name:
+                bin_edges = self.output_binning[name].bin_edges.to('GeV').magnitude
+            else:
+                bin_edges = self.output_binning[name].bin_edges.magnitude
+            self.bin_edges.append(bin_edges)
+
+
     def _compute_nominal_outputs(self):
         '''
         load events, perform sanity check and put them into histograms,
@@ -95,92 +103,19 @@ class icc(Stage):
             alt_icc_bg_file = self.params.alt_icc_bg_file.value
         else:
             alt_icc_bg_file = None
-        sim_ver = self.params.sim_ver.value
-        use_def1 = self.params.use_def1.value
         bdt_cut = self.params.bdt_cut.m_as('dimensionless')
 
-        self.bin_names = self.output_binning.names
-        self.bin_edges = []
-        for name in self.bin_names:
-            if 'energy' in  name:
-                bin_edges = self.output_binning[name].bin_edges.to('GeV').magnitude
-            else:
-                bin_edges = self.output_binning[name].bin_edges.magnitude
-            self.bin_edges.append(bin_edges)
-
-        # the rest of this function is PISA v2 legacy code...
-        logging.info('Initializing BackgroundServiceICC...')
-        logging.info('Opening file: %s'%(icc_bg_file))
-
-        try:
-            bg_file = h5py.File(find_resource(icc_bg_file),'r')
-            if alt_icc_bg_file is not None:
-                alt_bg_file = h5py.File(find_resource(alt_icc_bg_file),'r')
-        except IOError,e:
-            logging.error("Unable to open icc_bg_file %s"%icc_bg_file)
-            logging.error(e)
-            sys.exit(1)
-
-        # sanity check
-        santa_doms = bg_file['IC86_Dunkman_L6_SANTA_DirectDOMs']['value']
-        l3 = bg_file['IC86_Dunkman_L3']['value']
-        l4 = bg_file['IC86_Dunkman_L4']['result']
-        l5 = bg_file['IC86_Dunkman_L5']['bdt_score']
-        l6 = bg_file['IC86_Dunkman_L6']
-        if use_def1:
-            l4_pass = np.all(l4==1)
-        else:
-            if sim_ver in ['5digit', 'dima']:
-                l4_invVICH = bg_file['IC86_Dunkman_L4']['result_invertedVICH']
-                l4_pass = np.all(np.logical_or(l4==1, l4_invVICH==1))
-            else:
-                logging.info(
-                    'For the old simulation, def.2 background not done yet,'
-                    ' so still use def1 for it.'
-                )
-                l4_pass = np.all(l4==1)
-        assert (np.all(santa_doms>=3) and np.all(l3 == 1) and l4_pass and
-                np.all(l5 >= 0.1))
-        corridor_doms_over_threshold = l6['corridor_doms_over_threshold']
-
-        inverted_corridor_cut = corridor_doms_over_threshold > 1
-        assert (np.all(inverted_corridor_cut) and
-                np.all(l6['santa_direct_doms'] >= 3) and
-                np.all(l6['mn_start_contained'] == 1.) and
-                np.all(l6['mn_stop_contained'] == 1.))
-
-        #load events
-        if sim_ver == '4digit':
-            variable ='IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino'
-        elif sim_ver in ['5digit', 'dima']:
-            variable = 'IC86_Dunkman_L6_PegLeg_MultiNest8D_NumuCC'
-        else:
-            raise ValueError('Only allow sim_ver  4digit, 5 digit or dima!')
-        reco_energy_all = np.array(bg_file[variable]['energy'])
-        reco_coszen_all = np.array(np.cos(bg_file[variable]['zenith']))
-        pid_all = np.array(bg_file['IC86_Dunkman_L6']['delta_LLH'])
+        # get data with cuts defined as 'icc_def2' in data_proc_params.json
+        fields = ['reco_energy', 'pid', 'reco_coszen']
+        cut_events = self.get_fields(fields, icc_file_name = icc_bg_file,
+                cuts='icc_def2',
+                run_setting_file='events/mc_sim_run_settings.json',
+                data_proc_file='events/data_proc_params.json')
         if alt_icc_bg_file is not None:
-            alt_reco_energy_all = np.array(alt_bg_file[variable]['energy'])
-            alt_reco_coszen_all = np.array(np.cos(alt_bg_file[variable]['zenith']))
-            alt_pid_all = np.array(alt_bg_file['IC86_Dunkman_L6']['delta_LLH'])
-            alt_l5 = alt_bg_file['IC86_Dunkman_L5']['bdt_score']
-
-        # Cut: Only keep bdt score >= 0.2 (from MSU latest result, make data/MC
-        # agree much better)
-        cut_events = {}
-        cut = l5>=bdt_cut
-        cut_events['reco_energy'] = reco_energy_all[cut]
-        cut_events['reco_coszen'] = reco_coszen_all[cut]
-        cut_events['pid'] = pid_all[cut]
-
-        if alt_icc_bg_file is not None:
-            # Cut: Only keep bdt score >= 0.2 (from MSU latest result, make
-            # data/MC agree much better)
-            alt_cut_events = {}
-            alt_cut = alt_l5>=bdt_cut
-            alt_cut_events['reco_energy'] = alt_reco_energy_all[alt_cut]
-            alt_cut_events['reco_coszen'] = alt_reco_coszen_all[alt_cut]
-            alt_cut_events['pid'] = alt_pid_all[alt_cut]
+            alt_cut_events = self.get_fields(fields, icc_file_name = alt_icc_bg_file,
+                    cuts='icc_def3',
+                    run_setting_file='events/mc_sim_run_settings.json',
+                    data_proc_file='events/data_proc_params.json')
 
         logging.info("Creating a ICC background hists...")
         # make histo
@@ -202,7 +137,6 @@ class icc(Stage):
 
         conversion = self.params.atm_muon_scale.value.m_as('dimensionless') / ureg('common_year').to('seconds').m
         logging.info('nominal ICC rate at %.6E Hz'%(self.icc_bg_hist.sum()*conversion))
-        logging.info('nominal ICC events: %.2f'%np.sum(self.icc_bg_hist * self.params.atm_muon_scale.value.m_as('dimensionless') * self.params.livetime.value.m_as('common_year')))
 
         if alt_icc_bg_file is not None:
             if self.params.kde_hist.value:
@@ -220,7 +154,9 @@ class icc(Stage):
             else:
                 self.alt_icc_bg_hist,_ = np.histogramdd(sample = np.array([alt_cut_events[bin_name] for bin_name in self.bin_names]).T, bins=self.bin_edges)
             # only interested in shape difference, not rate
-            scale = self.icc_bg_hist.sum()/self.alt_icc_bg_hist.sum()
+            scale = 1
+            if alt_icc_bg_file is not None:
+                scale = self.icc_bg_hist.sum()/self.alt_icc_bg_hist.sum()
             self.alt_icc_bg_hist *= scale
 
     def _compute_outputs(self, inputs=None):
@@ -258,3 +194,72 @@ class icc(Stage):
             maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), binning=self.output_binning)]
 
         return MapSet(maps, name='icc')
+
+    def get_fields(self, fields, icc_file_name, cuts='icc_def2', run_setting_file='events/mc_sim_run_settings.json',
+                        data_proc_file='events/data_proc_params.json'):
+        """ Return icc events' fields with the chosen icc background definition.
+
+        Paramaters
+        ----------
+        fields: list of strings
+            the quantities to return, for example: ['reco_energy', 'pid', 'reco_coszen']
+        icc_file_name: string
+            the icc hdf5 file name
+        cuts: string
+            definition for icc, for example: 'icc_def1', 'icc_def2', 'icc_def3', see their defs in data_proc_params.json
+
+        """
+        # get data
+        proc_version = self.params.proc_ver.value
+        bdt_cut = self.params.bdt_cut.value.m_as('dimensionless')
+        data_proc_params = DPP.DataProcParams(
+                detector='deepcore',
+                proc_ver=proc_version,
+                data_proc_params=find_resource(data_proc_file))
+        run_settings = MCSRS.DetMCSimRunsSettings(find_resource(run_setting_file), detector='deepcore')
+        data = data_proc_params.getData(find_resource(icc_file_name), run_settings=run_settings, file_type='data')
+
+        # get fields that'll be used for applying cuts or fields that'll have cuts applied
+        fields_for_cuts = copy.deepcopy(fields)
+        for param in ['reco_energy', 'reco_coszen', 'pid']:
+            if param not in fields:
+                fields_for_cuts.append(param)
+        if 'dunkman_L5' in data.keys():
+            fields_for_cuts.append('dunkman_L5')
+
+        # get fields not in data.keys() and will be added after applying cuts, e.g. 'l_over_e' and 'path_length'
+        fields_add_later = []
+        for param in fields:
+            if param not in data.keys():
+                fields_for_cuts.remove(param)
+                fields_add_later.append(param)
+
+        # apply cuts, defined in 'cuts', plus cuts on bins
+        cut_data = data_proc_params.applyCuts(data, cuts=cuts, return_fields=fields_for_cuts)
+        # apply bdt_score cut if needed
+        if cut_data.has_key('dunkman_L5'):
+            if bdt_cut is not None:
+                bdt_score = cut_data['dunkman_L5']
+                all_cuts = bdt_score>=bdt_cut
+        else:
+            all_cuts = np.ones(len(cut_data['reco_energy']), dtype=bool)
+        for bin_name, bin_edge in zip(self.bin_names, self.bin_edges):
+            bin_cut = np.logical_and(cut_data[bin_name]<= bin_edge[-1], cut_data[bin_name]>= bin_edge[0])
+            all_cuts = np.logical_and(all_cuts, bin_cut)
+
+        # get fields_add_later
+        if len(fields_add_later)!=0:
+            for param in fields_add_later:
+                assert(param in ['l_over_e', 'path_length'])
+            layer = Layers(self.params.earth_model.value)
+            cut_data['path_length'] = np.array([layer.DefinePath(reco_cz) for reco_cz in cut_data['reco_coszen']])
+            if 'l_over_e' in fields_add_later:
+                cut_data['l_over_e'] = cut_data['path_length']/cut_data['reco_energy']
+
+        return_data = {}
+        for key in fields:
+            return_data[key] = cut_data[key][all_cuts]
+        # weight is just atm_muon_scale*livetime, will be needed for plotting
+        scale = self.params.atm_muon_scale.value.m_as('dimensionless') * self.params.livetime.value.m_as('common_year')
+        return_data['weight'] = scale
+        return return_data
