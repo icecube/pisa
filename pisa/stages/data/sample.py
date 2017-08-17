@@ -30,7 +30,7 @@ from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 
 
-__all__ = ['SEP', 'sample']
+__all__ = ['SEP', 'sample','split','parse_event_type_names']
 
 
 SEP = '|'
@@ -40,6 +40,42 @@ SEP = '|'
 #TODO Try to merge with pisa.utils.config_parser.split, but currently gives problems due to the lower case forcing
 def split(string):
     return string.replace(' ', '').split(',')
+
+
+#Function for parsing event type names from the config file
+#Handle any aliases here, such as 'all_nu'
+def parse_event_type_names(names,return_flags=False) :
+
+    #Split into list if has not already been done
+    if isinstance(names,str) or isinstance(names,unicode) :
+        names = split(names)
+
+    #Parse the names
+    parsed_names = []
+    for name in names :
+        if 'all_nu' in name:
+            parsed_names.extend( [str(NuFlavIntGroup(f)) for f in ALL_NUFLAVINTS] )
+        else :
+            parsed_names.append(name)
+    parsed_names = [ n.lower() for n in parsed_names ]
+
+    #Set some flags
+    muons = False
+    noise = False
+    neutrinos = False
+    for name in parsed_names:
+        if 'muons' in name:
+            muons = True
+        elif 'noise' in name:
+            noise = True
+        elif name.startswith("nu"):
+            neutrinos = True
+        else :
+            raise ValueError("Unrecognised event type '%s' found"%name)
+
+    if return_flags : return parsed_names,muons,noise,neutrinos
+    else : return parsed_names
+
 
 class sample(Stage):
     """data service to load in events from an event sample.
@@ -100,30 +136,8 @@ class sample(Stage):
             'data_sample_config', 'dataset', 'keep_criteria',
         )
 
-        self.neutrinos = False
-        self.muons = False
-        self.noise = False
-
-        output_names = output_names.replace(' ', '').split(',')
-        clean_outnames = []
-        self._output_nu_groups = []
-        for name in output_names:
-            if 'muons' in name:
-                self.muons = True
-                clean_outnames.append(name)
-            elif 'noise' in name:
-                self.noise = True
-                clean_outnames.append(name)
-            elif 'all_nu' in name:
-                self.neutrinos = True
-                self._output_nu_groups = \
-                    [NuFlavIntGroup(f) for f in ALL_NUFLAVINTS]
-            else:
-                self.neutrinos = True
-                self._output_nu_groups.append(NuFlavIntGroup(name))
-
-        if self.neutrinos:
-            clean_outnames += [str(f) for f in self._output_nu_groups]
+        output_names,self.muons,self.noise,self.neutrinos = parse_event_type_names(output_names,return_flags=True)
+        self._output_nu_groups = [ NuFlavIntGroup(name) for name in output_names ]
 
         if not isinstance(output_events, bool):
             raise AssertionError(
@@ -138,7 +152,7 @@ class sample(Stage):
             use_transforms=False,
             params=params,
             expected_params=expected_params,
-            output_names=clean_outnames,
+            output_names=output_names,
             error_method=error_method,
             debug_mode=debug_mode,
             disk_cache=disk_cache,
@@ -243,12 +257,6 @@ class sample(Stage):
             nu_data = self.load_neutrino_events(
                 config=self.config, dataset=dataset
             )
-            if self.fix_truth_variable_names :
-                for flavint in nu_data.keys() :
-                    for var in self.truth_variables :
-                        if var in nu_data[flavint] :
-                            new_var = self.truth_variable_prefix + var
-                            nu_data[flavint][new_var] = nu_data[flavint].pop(var)
             events.append(nu_data)
 
         if self.muons:
@@ -261,10 +269,6 @@ class sample(Stage):
             muon_events = self.load_muon_events(
                 config=self.config, dataset=dataset
             )
-            if self.fix_truth_variable_names :
-                for var in muon_events :
-                    new_var = self.truth_variable_prefix + var
-                    muon_events[new_var] = muon_events.pop(var)
             events.append(muon_events)
 
         if self.noise:
@@ -279,6 +283,14 @@ class sample(Stage):
             )
             events.append(noise_events)
         self._data = reduce(add, events)
+
+        #If requested, add fix the truth variable names
+        if self.fix_truth_variable_names :
+            for event_key in self._data.metadata["flavints_joined"] :
+                for var in self.truth_variables :
+                    if var in self._data[event_key] :
+                        new_var = self.truth_variable_prefix + var
+                        self._data[event_key][new_var] = self._data[event_key].pop(var)
 
         self.sample_hash = this_hash
         self._data.metadata['sample_hash'] = this_hash

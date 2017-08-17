@@ -226,7 +226,7 @@ class CPUWeight(object):
             raise ValueError("I got the nu/nubar number of %.2f which I don't"
                              " understand. Should be non-zero"%kNuBar)
                 
-    def calc_flux(self, n_evts, weighted_aeff, true_energy, true_coszen,
+    def calc_flux(self, true_energy, true_coszen,
                 neutrino_nue_flux, neutrino_numu_flux,
                 neutrino_oppo_nue_flux, neutrino_oppo_numu_flux,
                 scaled_nue_flux, scaled_numu_flux,
@@ -324,16 +324,15 @@ class CPUWeight(object):
             )
         )
 
-
-    def calc_weight(self, n_evts, weighted_aeff, true_energy, true_coszen,
+ 
+    def calc_weight(self, weighted_aeff,
                     scaled_nue_flux_shape, scaled_numu_flux_shape,
                     nue_flux_norm, numu_flux_norm,
                     linear_fit_MaCCQE, quad_fit_MaCCQE,
                     linear_fit_MaCCRES, quad_fit_MaCCRES,
-                    prob_e, prob_mu, pid, weight,
+                    prob_e, prob_mu, weight,
                     livetime, aeff_scale,
                     Genie_Ma_QE, Genie_Ma_RES,
-                    true_e_scale,
                     **kwargs):
         nue_flux = scaled_nue_flux_shape * nue_flux_norm
         numu_flux = scaled_numu_flux_shape * numu_flux_norm
@@ -351,7 +350,7 @@ class CPUWeight(object):
             aeff_RES * 
             ( (nue_flux * prob_e) + (numu_flux * prob_mu) )
         )
-        
+
 
     def calc_sum(self, n_evts, x, out):
         x[0] = np.sum(x)
