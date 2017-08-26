@@ -9,6 +9,7 @@ from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.config_parser import split
 from pisa.utils.fileio import from_file
 from pisa.utils.profiler import profile
+from pisa.utils.log import logging
 
 
 # TODO: the below logic does not generalize to muons, but probably should
@@ -71,7 +72,18 @@ class hyperplane(Stage):
         """Load the fit results from the file and make some check
         compatibility"""
         self.fit_results = from_file(self.params['fit_results_file'].value)
-        assert set(self.input_names) == set(self.fit_results['map_names'])
+        if not set(self.input_names) == set(self.fit_results['map_names']):
+            for name in self.input_names:
+                if not name in self.fit_results['map_names']:
+                    #check if there is somethingi uniquely compatible
+                    compatible_names = [mapname in name for mapname in self.fit_results['map_names']]
+                    if sum(compatible_names) == 1:
+                        # compatible
+                        compatible_name = self.fit_results['map_names'][compatible_names.index(True)]
+                        self.fit_results[name] = self.fit_results[compatible_name]
+                        logging.warning('Substituting hyperplane parameterization %s for %s'%(compatible_name,name))
+                    else:
+                        logging.error('No compatible map for %s found!'%name)
         assert set(sys_list) == set(self.fit_results['sys_list'])
         self.sys_list = self.fit_results['sys_list'] 
 
