@@ -8,6 +8,7 @@ from matplotlib.offsetbox import AnchoredText
 import matplotlib.ticker
 import scipy.stats as STATS
 import os
+import math
 from copy import deepcopy
 
 class PlotterNutau(Plotter):
@@ -59,7 +60,7 @@ class PlotterNutau(Plotter):
         if param_to_plot=='dunkman_L5':
             return 'bdt score'
         elif param_to_plot=='l_over_e':
-            return r'$\mathrm{L_{reco}/E_{reco}}$'+' [km/GeV]'
+            return r'$\mathrm{L_{reco}/E_{reco}}$'+' (km/GeV)'
         elif param_to_plot=='reco_energy':
             return r'$\mathrm{E_{reco}}$'+' [GeV]'
         elif param_to_plot=='reco_coszen':
@@ -67,6 +68,37 @@ class PlotterNutau(Plotter):
         else:
             return param_to_plot.replace('_',' ')
 
+    def get_flavor_label(self, group_mc_flavs):
+        output_label=[None]*len(group_mc_flavs)
+        for i,flav in enumerate(group_mc_flavs):
+            if 'nue' in flav:
+                output_label[i]=r'$\nu_e'
+            if 'numu' in flav:
+                output_label[i]=r'$\nu_{\mu}'
+            if 'nutau' in flav:
+                output_label[i]=r'$\nu_{\tau}'
+            if flav=='nu_nc':
+                output_label[i]=r'$\mathrm{\nu_{all}}'
+            if flav=='muon':
+                output_label[i]=r'$\mathrm{atm.} \mu$'
+            if flav!='muon':
+                interaction=flav.split('_')[1]
+                if interaction=='cc':
+                    output_label[i]+=r'\, \rm{CC}$'
+                if interaction=='nc':
+                    output_label[i]+=r'\, \rm{NC}$'
+        return output_label
+
+        if param_to_plot=='dunkman_L5':
+            return 'bdt score'
+        elif param_to_plot=='l_over_e':
+            return r'$\mathrm{L_{reco}/E_{reco}}$'+' (km/GeV)'
+        elif param_to_plot=='reco_energy':
+            return r'$\mathrm{E_{reco}}$'+' [GeV]'
+        elif param_to_plot=='reco_coszen':
+            return r'$\mathrm{cos(zenith)_{reco}}$'
+        else:
+            return param_to_plot.replace('_',' ')
 
     def get_x_range(self, param_to_plot):
         x_ranges = {'santa_direct_doms': (0,45),
@@ -102,7 +134,8 @@ class PlotterNutau(Plotter):
 
     def plot_variables(self, mc_arrays, icc_arrays, data_arrays, param_to_plot, fig_name, outdir, title, data_type='pseudo', logy=False, save_ratio=False, group_mc=True, group_mc_flavs=['nu_nc', 'numu_cc', 'nue_cc', 'nutau_cc'], extra=[], **kwargs):
         print "Plotting ", param_to_plot
-        psu_blue='#1E407C'
+        psublue='#1E407C'
+        psulightblue='#5f74e2'
         # get data param (data could be MC simulated "data" or real data)
         if data_arrays is not None:
             if data_type=='pseudo':
@@ -128,6 +161,7 @@ class PlotterNutau(Plotter):
         ax1 = plt.subplot2grid((4, 1), (0, 0), rowspan=3)
         if data_arrays is not None and self.ratio:
             plt.setp(ax1.get_xticklabels(), visible=False)
+            ax1.get_xaxis().set_tick_params(direction='in')
         else:
             plt.setp(ax1.get_xticklabels(), visible=True)
         file_name += '_%s'% (param_to_plot)
@@ -184,7 +218,7 @@ class PlotterNutau(Plotter):
             print "no mc or icc"
         else:
             x = (x_edges[:-1]+x_edges[1:])/2.0
-            ax1.hist(x, weights=best_y, bins=x_edges, histtype='step', lw=2.5, color=psu_blue, label='total', **kwargs)
+            ax1.hist(x, weights=best_y, bins=x_edges, histtype='step', lw=2.5, color=psublue, label='total', **kwargs)
 
         if extra!=[]:
             [mc_param_all_h0, mc_weight_all_h0, mc_sumw2_all_h0, icc_param_h0, icc_weight_h0, x_edges_h0] = extra
@@ -203,7 +237,13 @@ class PlotterNutau(Plotter):
             if group_mc_flavs==['nu_nc', 'numu_cc', 'nue_cc', 'nutau_cc']:
                 colors = ['lightgreen', 'lightskyblue', 'burlywood',  'r', 'gainsboro']
             if group_mc_flavs==['nue_nc', 'nue_cc', 'numu_nc', 'numu_cc', 'nutau_nc', 'nutau_cc']:
-                colors = ['darkorange', 'lightgreen', 'blue', 'lightskyblue', 'burlywood',  'r', 'gainsboro']
+                #colors = ['blueviolet', 'lavender', 'cornflowerblue', 'lightskyblue', 'darkorange',  'r', 'gainsboro']
+                #colors = ['lime', 'limegreen', 'cornflowerblue', 'lightskyblue', 'darkorange',  'r', 'gainsboro']
+                colors = ['green', 'lightgreen', 'deepskyblue', 'lightskyblue', 'darkorange',  'r', 'gainsboro']
+            if group_mc_flavs==['nue_nc', 'numu_nc', 'nutau_nc', 'nutau_cc', 'nue_cc', 'numu_cc']:
+                colors = ['gainsboro', 'green', 'deepskyblue', 'darkorange', 'r', 'lightgreen', 'lightskyblue']
+            #if group_mc_flavs==['nue_nc', 'numu_nc', 'nue_cc', 'numu_cc', 'nutau_nc', 'nutau_cc']:
+            #    colors = ['blueviolet', 'lightgreen', 'burlywood', 'lightskyblue', 'darkorange',  'r', 'gainsboro']
             for i, group in enumerate(group_mc_flavs):
                 group_mc_params[group]=[]
                 group_mc_weight[group]=[]
@@ -230,8 +270,14 @@ class PlotterNutau(Plotter):
                 #ax1.hist(x, weights=mc_group_y[group], bins=x_edges, histtype='step', lw=1.5, color=colors[i], label=group, **kwargs)
                 #plt.errorbar(x, mc_group_y[group], yerr=np.array(group_mc_sumw2[group]), fmt='.',color=colors[i])
                 #plt.legend()
-            mc_group_y.append(icc_y*icc_arrays['weight'])
-            ax1.hist([x]*len(mc_group_y), weights=mc_group_y, bins=x_edges, lw=1.5, color=colors[0:len(mc_group_y)], label=group_mc_flavs+['muon'], histtype='bar', stacked=True, **kwargs)
+            if logy:
+                mc_group_y.insert(0,icc_y*icc_arrays['weight'])
+            else:
+                mc_group_y.append(icc_y*icc_arrays['weight'])
+            flavor_label=self.get_flavor_label(group_mc_flavs+['muon'])
+            if logy:
+                flavor_label=self.get_flavor_label(['muon']+group_mc_flavs)
+            ax1.hist([x]*len(mc_group_y), weights=mc_group_y, bins=x_edges, lw=1.5, color=colors[0:len(mc_group_y)], label=flavor_label, histtype='bar', stacked=True, **kwargs)
             if extra!=[]:
                 ax1.hist(x, weights=best_y_h0, bins=x_edges, histtype='step', lw=1.5, color='cyan', **kwargs)
 
@@ -247,17 +293,36 @@ class PlotterNutau(Plotter):
             plt.errorbar(x, data_y, yerr=np.sqrt(data_y), fmt='.', marker='.', markersize=4, color='k', label='data',capthick=1, capsize=3)
             #print "     in plotter, data total ", np.sum(data_y)
             if group_mc_flavs==['nu_nc', 'numu_cc', 'nue_cc', 'nutau_cc']:
-                plt.legend(loc=9,ncol=4,frameon=True)
+                plt.legend(loc=1,ncol=4,frameon=True, columnspacing=0.9)
             else:
-                plt.legend(loc=9,ncol=4,frameon=False)
+                plt.legend(loc=1,ncol=3,frameon=False)
 
             if self.ratio:
                 assert(mc_arrays!=None or icc_arrays!=None)
                 ax2=plt.subplot2grid((4,1), (3,0),sharex=ax1)
-                fig.subplots_adjust(hspace=0)
-                ax2.axhline(y=1,linewidth=1, color='k')
+                fig.subplots_adjust(hspace=0.1)
+                ax2.get_xaxis().set_tick_params(direction='in')
+                ax2.xaxis.set_ticks_position('both')
+                ax2.axhline(y=1,linewidth=1, color=psublue)
                 ratio_best_to_data = np.zeros(len(best_y))
-                ratio_error=np.zeros(len(best_y))
+                ratio_best_to_best = np.zeros(len(best_y))
+                ratio_best_to_data_err=np.zeros(len(best_y))
+                ratio_best_to_best_err=np.zeros(len(best_y))
+
+                # plot ratio of best fit to best fit errorbar
+                for i in range(0, len(data_y)):
+                    if best_y[i]==0:
+                        ratio_best_to_best_err[i]=1
+                    else:
+                        ratio_best_to_best_err[i]=math.sqrt(2*best_sumw2[i])/best_y[i]
+                bin_width=np.abs(x_edges[1:]-x_edges[:-1])
+                ax2.bar(x, 2*ratio_best_to_best_err,
+                    bottom=np.ones(len(ratio_best_to_best_err))-ratio_best_to_best_err, width=bin_width,
+                    linewidth=0, color=psulightblue, label='best fit', alpha=0.4
+                    #linewidth=0, color=psulightblue, label=r'$\rm{\sigma_{best fit}}$', alpha=0.25
+                )
+
+                # plot ratio of data to best fit errorbar
                 #cut_nonzero = data_y!=0
                 #data_y = data_y[cut_nonzero]
                 #best_y = best_y[cut_nonzero]
@@ -267,19 +332,29 @@ class PlotterNutau(Plotter):
                     if data_y[i]==0:
                         if best_y[i]==0:
                             ratio_best_to_data[i]=1
-                            ratio_error[i]=1
+                            ratio_best_to_data_err[i]=1
                         else:
                             ratio_best_to_data[i]=0
-                            ratio_error[i]=1
+                            ratio_best_to_data_err[i]=1
                     else:
-                        ratio_best_to_data[i] = best_y[i]/data_y[i]
-                        ratio_error[i] = np.sqrt(best_sumw2[i]+(best_y[i]**2)/data_y[i])/data_y[i]
-                        #ratio_best_to_data[i] = data_y[i]/best_y[i]
-                        #ratio_error[i] = np.sqrt(data_y[i]+((data_y[i]**2)*best_sumw2[i]))/best_y[i]
+                        # ratio best to data 
+                        #ratio_best_to_data[i] = best_y[i]/data_y[i]
+                        #ratio_best_to_data_err[i] = np.sqrt(best_sumw2[i]+(best_y[i]**2)/data_y[i])/data_y[i]
 
-                ax2.errorbar(x, ratio_best_to_data, yerr=ratio_error, fmt='.',marker='.',markersize=4, color=psu_blue,capthick=1,capsize=3)
-                ax2.set_ylim([0.7,1.3])
-                ax2.set_ylabel('best fit / data')
+                        # ratio data to best
+                        ratio_best_to_data[i] = data_y[i]/best_y[i]
+                        ratio_best_to_data_err[i] = np.sqrt(data_y[i]+((data_y[i]**2)*best_sumw2[i]/(best_y[i]**2)))/best_y[i]
+
+                ax2.errorbar(x, ratio_best_to_data, yerr=ratio_best_to_data_err, fmt='.',marker='.',markersize=4, color='black',capthick=1,capsize=3, label='data')
+                #ax2.errorbar(x, ratio_best_to_data, yerr=ratio_best_to_data_err, fmt='.',marker='.',markersize=4, color='black',capthick=1,capsize=3, label=r'$\rm{\sigma_{data}}$')
+
+                ax2.legend(loc=2,ncol=2,frameon=False,prop={'size':10})
+
+                ax2.set_ylim([0.75,1.35])
+                #ax2.set_ylim([0.8,1.2])
+                #ax2.set_ylabel('best fit / data')
+                #ax2.set_ylabel('data / best fit')
+                ax2.set_ylabel('ratio to best fit')
 
                 #chi2
                 cut_nonzero = best_y!=0
@@ -311,20 +386,23 @@ class PlotterNutau(Plotter):
                 #        verticalalignment=vertical_align,
                 #        transform=ax1.transAxes)
 
-        ax1.set_ylabel('Number of events')
+        ax1.set_ylabel('number of events')
         if logy:
-            plt.gca().set_yscale('log')
+            ax1.set_yscale("log")
         if param_to_plot=='pid':
             plt.gca().set_xscale('symlog')
         elif param_to_plot=='l_over_e':
             plt.gca().set_xscale('log')
             #ax1.set_ylim([0,4000])
         plt.xlabel(self.get_x_label(param_to_plot))
-        ax1.set_ylim([0,max(np.max(best_y),np.max(data_y))*1.3])
-        plt.grid()
+        if logy:
+            ax1.set_ylim([0.3,max(np.max(best_y),100000)])
+        else:
+            ax1.set_ylim([0,max(np.max(best_y),np.max(data_y))*1.5])
+        a_text = AnchoredText('IceCube\nPreliminary', loc=2, frameon=False)
+        ax1.add_artist(a_text)
+        #plt.grid()
         if title!='':
-            #a_text = AnchoredText(title, loc=9, frameon=False)
-            #ax.add_artist(a_text)
             ax1.set_title(title)
         if not os.path.isdir(outdir):
             fileio.mkdir(outdir)
