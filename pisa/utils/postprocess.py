@@ -136,6 +136,7 @@ class Postprocessor(object):
                     'labels.pckl'
                 )
             if test_type == 'injparamscan':
+                labels_list = []
                 data_sets_list = []
                 wh_to_th_list = []
                 th_to_wh_list = []
@@ -144,11 +145,13 @@ class Postprocessor(object):
                 for logdir in self.logdirs:
                     self.logdir = logdir
                     self.extract_trials()
+                    labels_list.append(self.labels)
                     data_sets_list.append(self.data_sets)
                     wh_to_th_list.append(self.wh_to_th)
                     th_to_wh_list.append(self.th_to_wh)
                     self.get_inj_param_vals()
                     self.set_inj_param_units(inj_param_units=inj_param_units)
+                self.labels = labels_list
                 self.data_sets = data_sets_list
                 self.wh_to_th = wh_to_th_list
                 self.th_to_wh = th_to_wh_list
@@ -1190,6 +1193,7 @@ class Postprocessor(object):
             inj_param_name = inj_params[0].split(
                 '_%.4f'%inj_param_vals[0]
             )[0]
+            inj_param_vals = sorted(inj_param_vals)
             if self.inj_param_name != inj_param_name:
                 raise ValueError(
                     "You have requested to plot multiple scan directories "
@@ -1298,8 +1302,8 @@ class Postprocessor(object):
                 th_to_wh_metrics=self.th_to_wh[i]['metrics']
             )
 
-            truth = self.labels[
-                self.labels.keys()[i]].dict['data_name'].split('_')[0]
+            truth = self.labels[i][
+                self.labels.keys()[0]].dict['data_name'].split('_')[0]
             plotlabel = 'True %s'%self.tex_axis_label(truth)
             
             self.make_1d_graph(
@@ -3565,7 +3569,7 @@ class Postprocessor(object):
         file_nums = OrderedDict()
         if injparam is not None:
             wanted_labels = self.labels[injparam]
-        if trueordering is not None:
+        elif trueordering is not None:
             if direction is not None:
                 wanted_labels = self.labels[trueordering][systematic][direction]
             else:
@@ -5088,6 +5092,7 @@ class Postprocessor(object):
         pretty_labels = {}
         pretty_labels["atm_muon_scale"] = r"Muon Background Scale"
         pretty_labels["nue_numu_ratio"] = r"$\nu_e/\nu_{\mu}$ Ratio"
+        pretty_labels["nu_nc_norm"] = r"$\nu$ NC Scale"
         pretty_labels["nu_nubar_ratio"] = r"$\nu/\bar{\nu}$ Ratio"
         pretty_labels["barr_uphor_ratio"] = r"Barr Up/Horizontal Ratio"
         pretty_labels["barr_nu_nubar_ratio"] = r"Barr $\nu/\bar{\nu}$ Ratio"
@@ -5155,6 +5160,8 @@ class Postprocessor(object):
         pretty_labels["true io, llr"] = r"True Inverted Ordering, LLR"
         pretty_labels["e_res_scale"] = r"Energy Resolution Scale"
         pretty_labels["cz_res_scale"] = r"$\cos\theta_Z$ Resolution Scale"
+        pretty_labels["livetime"] = r"Livetime"
+        pretty_labels["julian_year"] = r"Years"
         if label not in pretty_labels.keys():
             logging.warn("I have no nice label for %s. "
                          "Returning as is."%label)
