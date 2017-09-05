@@ -13,12 +13,11 @@ containers but that get passed down to operate on the contained data.
 """
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 from collections import OrderedDict, Iterable, Mapping, Sequence
 from copy import deepcopy, copy
 from fnmatch import fnmatch
-from functools import wraps
 from itertools import izip, permutations
 from operator import add, getitem, setitem
 import os
@@ -26,6 +25,7 @@ import re
 import shutil
 import tempfile
 
+from decorator import decorate
 import numpy as np
 from scipy.stats import poisson, norm
 import uncertainties
@@ -144,7 +144,7 @@ def rebin(hist, orig_binning, new_binning, normalize_values=True):
     orig_dim_indices = []
     new_dim_indices = []
     for new_dim_idx, new_dim in enumerate(new_binning):
-        orig_dim_idx = orig_binning.index(new_dim.basename, use_basenames=True)
+        orig_dim_idx = orig_binning.index(new_dim.name, use_basenames=False)
 
         new_dim_indices.append(new_dim_idx)
         orig_dim_indices.append(orig_dim_idx)
@@ -171,17 +171,25 @@ def rebin(hist, orig_binning, new_binning, normalize_values=True):
 
 def _new_obj(original_function):
     """Decorator to deepcopy unaltered states into new Map object."""
-    @wraps(original_function)
-    def new_function(self, *args, **kwargs):
+    def new_function(*args, **kwargs):
+        """Augmented function to replace `original_function`. Note that this
+        docstring and the function signature will be overwritten by those from
+        `original_function` upon the call to `decorate` below."""
+        # pylint: disable=protected-access
+        func = args[0]
+        self = args[1]
+        args = args[2:]
         new_state = OrderedDict()
-        state_updates = original_function(self, *args, **kwargs)
+        state_updates = func(self, *args, **kwargs)
         for slot in self._state_attrs:
             if state_updates is not None and state_updates.has_key(slot):
                 new_state[slot] = state_updates[slot]
             else:
-                new_state[slot] = deepcopy(self.__getattr__(slot))
+                new_state[slot] = deepcopy(getattr(self, slot))
+        if len(new_state['binning']) == 0:
+            return np.asscalar(new_state['hist'])
         return Map(**new_state)
-    return new_function
+    return decorate(original_function, new_function)
 
 
 # TODO: implement strategies for decreasing dimensionality (i.e.
@@ -276,10 +284,10 @@ class Map(object):
     def __init__(self, name, hist, binning, error_hist=None, hash=None,
                  tex=None, full_comparison=False):
         # Set Read/write attributes via their defined setters
-        super(self.__class__, self).__setattr__('_name', name)
-        super(self.__class__, self).__setattr__('_tex', tex)
-        super(self.__class__, self).__setattr__('_hash', hash)
-        super(self.__class__, self).__setattr__('_full_comparison',
+        super(Map, self).__setattr__('_name', name)
+        super(Map, self).__setattr__('_tex', tex)
+        super(Map, self).__setattr__('_hash', hash)
+        super(Map, self).__setattr__('_full_comparison',
                                                 full_comparison)
 
         if not isinstance(binning, MultiDimBinning):
@@ -293,9 +301,9 @@ class Map(object):
         self.parent_indexer = None
 
         # Do the work here to set read-only attributes
-        super(self.__class__, self).__setattr__('_binning', binning)
+        super(Map, self).__setattr__('_binning', binning)
         binning.assert_array_fits(hist)
-        super(self.__class__, self).__setattr__(
+        super(Map, self).__setattr__(
             '_hist', np.ascontiguousarray(hist)
         )
         if error_hist is not None:
@@ -348,6 +356,25 @@ class Map(object):
     def _repr_pretty_(self, p, cycle):
         """Method used by e.g. ipython/Jupyter for formatting"""
         return self.__pretty__(p, cycle)
+
+    def item(self, *args):
+        """Call ``item(*args)`` method on the contained `hist`, returning a
+        single Python scalar corresponding to `*args`. See help for
+        :method:`numpy.ndarray.item` for more info.
+
+        Note that this method is called by :method:`numpy.asscalar`.
+
+        Parameters
+        ----------
+        *args
+            Passed to :method:`numpy.ndarray.item`
+
+        Returns
+        -------
+        z : Standard Python scalar object
+
+        """
+        return self.hist.item(*args)
 
     def slice(self, **kwargs):
         """Slice the map, where each argument is the name of a dimension.
@@ -421,7 +448,7 @@ class Map(object):
     def set_poisson_errors(self):
         """Approximate poisson errors using sqrt(n)."""
         nom_values = self.nominal_values
-        super(self.__class__, self).__setattr__(
+        super(Map, self).__setattr__(
             '_hist',
             unp.uarray(nom_values, np.sqrt(nom_values))
         )
@@ -439,12 +466,12 @@ class Map(object):
 
         """
         if error_hist is None:
-            super(self.__class__, self).__setattr__(
+            super(Map, self).__setattr__(
                 '_hist', self.nominal_values
             )
             return
         self.assert_compat(error_hist)
-        super(self.__class__, self).__setattr__(
+        super(Map, self).__setattr__(
             '_hist',
             unp.uarray(self._hist, np.ascontiguousarray(error_hist))
         )
@@ -525,8 +552,18 @@ class Map(object):
     def plot(self, evtrate=True, symm=False, logz=False, fig=None, ax=None,
              title=None, outdir=None, fname=None, backend='pdf', fmt='pdf',
              cmap=None, fig_kw=None, plt_kw=None, vmax=None, clabel=None,
-             clabelsize=None, xlabelsize=None, ylabelsize=None, titlesize=None):
-        """Simple plot of a map"""
+             clabelsize=None, xlabelsize=None, ylabelsize=None,
+             titlesize=None):
+        """Simple plot of a 2D map.
+
+        Returns
+        -------
+        fig : :class:`matplotlib.figure.Figure` object
+        ax : :class:`matplotlib.axes.Axes` object
+        pcmesh : :class:`matplotlib.collections.QuadMesh`
+        cbar : :class:`matplotlib.colorbar.Colorbar`
+
+        """
         import matplotlib as mpl
         if (backend is not None
                 and mpl.get_backend().lower() != backend.lower()):
@@ -537,7 +574,6 @@ class Map(object):
 
         cmap_div = plt.cm.RdBu_r
         cmap_div.set_bad(color=(0.5, 0.9, 0.5), alpha=1)
-
 
         tex = self.name if self.tex is None else self.tex
 
@@ -561,9 +597,13 @@ class Map(object):
 
         # TODO: allow plotting of N-dimensional arrays: 1D should be simple; >
         # 2D by arraying them as 2D slices in the smallest dimension(s)
-        assert len(self.binning) == 2
+        if len(self.binning) == 2:
+            to_plot = self
+        else:
+            to_plot = self.squeeze()
+        assert len(to_plot.binning) == 2
 
-        hist = np.ma.masked_invalid(self.hist)
+        hist = np.ma.masked_invalid(to_plot.hist)
         islog = False
         if symm:
             if cmap is None:
@@ -580,14 +620,14 @@ class Map(object):
                 vmin_ = np.nanmin(hist)
             vmax_ = np.nanmax(hist)
 
-        x = self.binning.dims[0].bin_edges.magnitude
-        y = self.binning.dims[1].bin_edges.magnitude
+        x = to_plot.binning.dims[0].bin_edges.magnitude
+        y = to_plot.binning.dims[1].bin_edges.magnitude
 
-        if self.binning.dims[0].is_log:
+        if to_plot.binning.dims[0].is_log:
             xticks = 2**(np.arange(np.ceil(np.log2(min(x))),
                                    np.floor(np.log2(max(x)))+1))
             x = np.log10(x)
-        if self.binning.dims[1].is_log:
+        if to_plot.binning.dims[1].is_log:
             yticks = 2**(np.arange(np.ceil(np.log2(min(y))),
                                    np.floor(np.log2(max(y)))+1))
             y = np.log10(y)
@@ -609,8 +649,8 @@ class Map(object):
             else:
                 cbar.set_label(label=clabel)
 
-        xlabel = '$%s$' % self.binning.dims[0].label
-        ylabel = '$%s$' % self.binning.dims[1].label
+        xlabel = '$%s$' % to_plot.binning.dims[0].label
+        ylabel = '$%s$' % to_plot.binning.dims[1].label
 
         if xlabelsize is not None:
             ax.set_xlabel(xlabel, size=xlabelsize)
@@ -627,21 +667,21 @@ class Map(object):
         ax.set_xlim(np.min(x), np.max(x))
         ax.set_ylim(np.min(y), np.max(y))
 
-        if self.binning.dims[0].is_log:
+        if to_plot.binning.dims[0].is_log:
             ax.set_xticks(np.log10(xticks))
             ax.set_xticklabels([str(int(xt)) for xt in xticks])
-        if self.binning.dims[1].is_log:
+        if to_plot.binning.dims[1].is_log:
             ax.set_yticks(np.log10(yticks))
             ax.set_yticklabels([str(int(yt)) for yt in yticks])
 
         if outdir is not None:
             if fname is None:
-                fname = self.name
+                fname = to_plot.name
             path = os.path.join([outdir, get_valid_filename(fname+'.'+fmt)])
             logging.debug('>>>> Plot for inspection saved at %s', path)
             fig.savefig(os.path.join(*path))
 
-        return ax, pcmesh, cbar
+        return fig, ax, pcmesh, cbar
 
     @_new_obj
     def reorder_dimensions(self, order):
@@ -660,13 +700,17 @@ class Map(object):
 
         See Also
         --------
-        rebin : modify Map by splitting or combining adjacent bins
-        downsample : modify Map by combining adjacent bins
+        rebin
+            Modify Map (and its binning) by splitting or combining adjacent
+            bins
+
+        downsample
+            Modify Map (and its binning) by combining adjacent bins
 
         """
         new_binning = self.binning.reorder_dimensions(order)
-        orig_order = range(len(self.binning))
-        new_order = [self.binning.index(b, use_basenames=True)
+        orig_order = list(range(len(self.binning)))
+        new_order = [self.binning.index(b, use_basenames=False)
                      for b in new_binning]
         # TODO: should this be a deepcopy rather than a simple veiw of the
         # original hist (the result of np.moveaxis)?
@@ -689,14 +733,15 @@ class Map(object):
         return {'hist': new_hist, 'binning': new_binning}
 
     @_new_obj
-    def sum(self, axis, keepdims=False):
+    def sum(self, axis=None, keepdims=False):
         """Sum over dimensions corresponding to `axis` specification. Similar
         in behavior to `numpy.sum` method.
 
         Parameters
         ----------
-        axis : str, int, or sequence thereof
-            Dimensions to be summed over.
+        axis : None; or str, int, or sequence thereof
+            Dimension(s) to be summed over. If None, sum over _all_ dimensions.
+
         keepdims : bool
             If True, marginalizes out (removes) the specified dimensions. If
             False, the binning in the summed dimension(s) is expanded to the
@@ -705,9 +750,15 @@ class Map(object):
 
         Returns
         -------
-        Map
+        s : Map or scalar
+            If all contained dimensiosn are summed over and `keepdims` is
+            False, a scalar is returned. Otherwise, a Map is returned with
+            dimensions marginalized out in the sum removed if `keepdims` is
+            False.
 
         """
+        if axis is None:
+            axis = self.binning.names
         if isinstance(axis, (basestring, int)):
             axis = [axis]
         # Note that the tuple is necessary here (I think...)
@@ -722,6 +773,32 @@ class Map(object):
             else:
                 new_binning.append(dim)
         return {'hist': new_hist, 'binning': new_binning}
+
+    def project(self, axis, keepdims=False):
+        """Project all dimensions onto a single `axis`.
+
+        Parameters
+        ----------
+        axis : string or int
+            Dimensions to be projected onto.
+        keepdims : bool
+            If True, marginalizes out (removes) the _un_specified dimensions.
+            If False, the binning in the summed dimension(s) includes
+            the full range of the binning for each dimension in the original
+            Map. Note that if you want to remove all _singleton_ dimensions
+            (which could include the `axis` specified here), call the
+            `squeeze` method on the result of `project`.
+
+        Returns
+        -------
+        projection : Map
+
+        """
+        keep_index = self.binning.index(axis)
+        sum_indices = list(range(len(self.binning.dims)))
+        sum_indices.remove(keep_index)
+
+        return self.sum(axis=sum_indices, keepdims=keepdims)
 
     @_new_obj
     def rebin(self, new_binning):
@@ -752,7 +829,8 @@ class Map(object):
         return {'hist': new_hist, 'binning': new_binning}
 
     def downsample(self, *args, **kwargs):
-        """Downsample by integer factors.
+        """Downsample by integer factor(s), summing together merged bins'
+        values.
 
         See pisa.utils.binning.MultiDimBinning.downsample for args/kwargs
         details.
@@ -988,10 +1066,10 @@ class Map(object):
         """Only allow setting attributes defined in slots"""
         if attr not in self._slots:
             raise ValueError('Attribute "%s" not allowed to be set.' % attr)
-        super(self.__class__, self).__setattr__(attr, value)
+        super(Map, self).__setattr__(attr, value)
 
     def __getattr__(self, attr):
-        return super(self.__class__, self).__getattribute__(attr)
+        return super(Map, self).__getattribute__(attr)
 
     def _slice_or_index(self, idx):
         """Slice or index into the map. Indexing single element in self.hist
@@ -1072,7 +1150,7 @@ class Map(object):
         spliton_dim = self.binning.dims[dim_index]
 
         # Move the dimension we're going to split on to be the first dim
-        new_order = range(len(self.binning))
+        new_order = list(range(len(self.binning)))
         new_order.pop(dim_index)
         new_order = [dim_index] + new_order
         rearranged_map = self.reorder_dimensions(new_order)
@@ -1087,14 +1165,14 @@ class Map(object):
             if isinstance(bin, (int, basestring)):
                 bin_indices = [spliton_dim.index(bin)]
             elif isinstance(bin, slice):
-                bin_indices = range(len(spliton_dim))[bin]
+                bin_indices = list(range(len(spliton_dim)))[bin]
             elif bin is Ellipsis:
-                bin_indices = range(len(spliton_dim))
+                bin_indices = list(range(len(spliton_dim)))
 
             if len(bin_indices) == 1:
                 singleton = True
         else:
-            bin_indices = range(len(spliton_dim))
+            bin_indices = list(range(len(spliton_dim)))
 
         maps = []
         for bin_index in bin_indices:
@@ -1147,18 +1225,21 @@ class Map(object):
         ----------
         expected_values : numpy.ndarray or Map of same dimension as this
 
+        binned : bool
+
         Returns
         -------
         total_llh : float or binned_llh if binned=True
 
         """
         expected_values = reduceToHist(expected_values)
+
         if binned:
             return stats.llh(actual_values=self.hist,
                              expected_values=expected_values)
-        else:
-            return np.sum(stats.llh(actual_values=self.hist,
-                                    expected_values=expected_values))
+
+        return np.sum(stats.llh(actual_values=self.hist,
+                                expected_values=expected_values))
 
     def conv_llh(self, expected_values, binned=False):
         """Calculate the total convoluted log-likelihood value between this map
@@ -1170,18 +1251,21 @@ class Map(object):
         ----------
         expected_values : numpy.ndarray or Map of same dimension as this
 
+        binned : bool
+
         Returns
         -------
         total_conv_llh : float or binned_conv_llh if binned=True
 
         """
         expected_values = reduceToHist(expected_values)
+
         if binned:
             return stats.conv_llh(actual_values=self.hist,
                                   expected_values=expected_values)
-        else:
-            return np.sum(stats.conv_llh(actual_values=self.hist,
-                                         expected_values=expected_values))
+
+        return np.sum(stats.conv_llh(actual_values=self.hist,
+                                     expected_values=expected_values))
 
     def barlow_llh(self, expected_values, binned=False):
         """Calculate the total barlow log-likelihood value between this map and
@@ -1194,6 +1278,8 @@ class Map(object):
         ----------
         expected_values : numpy.ndarray or Map of same dimension as this
 
+        binned : bool
+
         Returns
         -------
         total_barlow_llh : float or binned_barlow_llh if binned=True
@@ -1205,12 +1291,13 @@ class Map(object):
             expected_values = reduceToHist(expected_values)
         elif isinstance(expected_values, Iterable):
             expected_values = [reduceToHist(x) for x in expected_values]
+
         if binned:
             return stats.barlow_llh(actual_values=self.hist,
                                     expected_values=expected_values)
-        else:
-            return np.sum(stats.barlow_llh(actual_values=self.hist,
-                                           expected_values=expected_values))
+
+        return np.sum(stats.barlow_llh(actual_values=self.hist,
+                                       expected_values=expected_values))
 
     def mod_chi2(self, expected_values, binned=False):
         """Calculate the total modified chi2 value between this map and the map
@@ -1220,7 +1307,9 @@ class Map(object):
 
         Parameters
         ----------
-        expected_values : numpy.ndarray or Map of same dimension as this
+        expected_values : numpy.ndarray or Map of same dimension as this.
+
+        binned : bool
 
         Returns
         -------
@@ -1228,12 +1317,13 @@ class Map(object):
 
         """
         expected_values = reduceToHist(expected_values)
+
         if binned:
             return stats.mod_chi2(actual_values=self.hist,
                                   expected_values=expected_values)
-        else:
-            return np.sum(stats.mod_chi2(actual_values=self.hist,
-                                         expected_values=expected_values))
+
+        return np.sum(stats.mod_chi2(actual_values=self.hist,
+                                     expected_values=expected_values))
 
     def chi2(self, expected_values, binned=False):
         """Calculate the total chi-squared value between this map and the map
@@ -1245,18 +1335,21 @@ class Map(object):
         ----------
         expected_values : numpy.ndarray or Map of same dimension as this
 
+        binned : bool
+
         Returns
         -------
         total_chi2 : float or binned_chi2 if binned=True
 
         """
         expected_values = reduceToHist(expected_values)
+
         if binned:
             return stats.chi2(actual_values=self.hist,
                               expected_values=expected_values)
-        else:
-            return np.sum(stats.chi2(actual_values=self.hist,
-                                     expected_values=expected_values))
+
+        return np.sum(stats.chi2(actual_values=self.hist,
+                                 expected_values=expected_values))
 
     def metric_total(self, expected_values, metric):
         # TODO: should this use reduceToHist as in chi2 and llh above?
@@ -1278,7 +1371,7 @@ class Map(object):
     def name(self, value):
         """map name"""
         assert isinstance(value, basestring)
-        return super(self.__class__, self).__setattr__('_name', value)
+        return super(Map, self).__setattr__('_name', value)
 
     @property
     def tex(self):
@@ -1292,32 +1385,37 @@ class Map(object):
         assert value is None or isinstance(value, basestring)
         if value is not None:
             value = strip_outer_dollars(value)
-        return super(self.__class__, self).__setattr__('_tex', value)
+        return super(Map, self).__setattr__('_tex', value)
 
     @property
     def hash(self):
+        """int or None : Hash value"""
         return self._hash
 
     @hash.setter
     def hash(self, value):
         """Hash must be an immutable type (i.e., have a __hash__ method)"""
         assert hasattr(value, '__hash__')
-        super(self.__class__, self).__setattr__('_hash', value)
+        super(Map, self).__setattr__('_hash', value)
 
     @property
     def hist(self):
+        """numpy.ndarray : Histogram array underlying the Map"""
         return self._hist
 
     @property
     def nominal_values(self):
+        """numpy.ndarray : Bin values stripped of uncertainties"""
         return unp.nominal_values(self._hist)
 
     @property
     def std_devs(self):
+        """numpy.ndarray : Uncertainties (standard deviations) per bin"""
         return unp.std_devs(self._hist)
 
     @property
     def binning(self):
+        """pisa.core.binning.MultiDimBinning : Map's binning"""
         return self._binning
 
     @property
@@ -1328,7 +1426,7 @@ class Map(object):
     @full_comparison.setter
     def full_comparison(self, value):
         assert isinstance(value, bool)
-        super(self.__class__, self).__setattr__('_full_comparison', value)
+        super(Map, self).__setattr__('_full_comparison', value)
 
     # Common mathematical operators
 
@@ -1437,6 +1535,13 @@ class Map(object):
 
     @_new_obj
     def log(self):
+        """Take natural logarithm of map's values, returning a new map.
+
+        Returns
+        -------
+        log_map : Map
+
+        """
         state_updates = {
             #'name': "log(%s)" % self.name,
             #'tex': r"\ln\left( %s \right)" % self.tex,
@@ -1446,6 +1551,13 @@ class Map(object):
 
     @_new_obj
     def log10(self):
+        """Take base-10 logarithm of map's values, returning a new map.
+
+        Returns
+        -------
+        log10_map : Map
+
+        """
         state_updates = {
             #'name': "log10(%s)" % self.name,
             #'tex': r"\log_{10}\left( %s \right)" % self.tex,
@@ -1524,8 +1636,7 @@ class Map(object):
     def __rdiv__(self, other):
         if isinstance(other, Map):
             return other / self
-        else:
-            return self.__rdiv(other)
+        return self.__rdiv(other)
 
     @_new_obj
     def __rdiv(self, other):
@@ -1551,8 +1662,7 @@ class Map(object):
     def __rsub__(self, other):
         if isinstance(other, Map):
             return other - self
-        else:
-            return self.__rsub(other)
+        return self.__rsub(other)
 
     @_new_obj
     def __rsub(self, other):
@@ -1574,6 +1684,13 @@ class Map(object):
 
     @_new_obj
     def sqrt(self):
+        """Take square root of map's values, returning a new map.
+
+        Returns
+        -------
+        sqrt_map : Map
+
+        """
         state_updates = {
             #'name': "sqrt(%s)" % self.name,
             #'tex': r"\sqrt{%s}" % self.tex,
@@ -1659,15 +1776,13 @@ class MapSet(object):
             else:
                 maps_.append(Map(**m))
 
-        super(self.__class__, self).__setattr__('maps', maps_)
-        super(self.__class__, self).__setattr__('name', name)
-        super(self.__class__, self).__setattr__('tex', tex)
-        super(self.__class__, self).__setattr__(
+        super(MapSet, self).__setattr__('maps', maps_)
+        super(MapSet, self).__setattr__('name', name)
+        super(MapSet, self).__setattr__('tex', tex)
+        super(MapSet, self).__setattr__(
             'collate_by_name', collate_by_name
         )
-        super(self.__class__, self).__setattr__(
-            'collate_by_num', not collate_by_name
-        )
+        super(MapSet, self).__setattr__('collate_by_num', not collate_by_name)
         self.hash = hash
 
     def __repr__(self):
@@ -1715,6 +1830,7 @@ class MapSet(object):
 
     @property
     def serializable_state(self):
+        """OrderedDict : all state needed to reconstruct object"""
         state = OrderedDict()
         state['maps'] = [m.serializable_state for m in self]
         state['name'] = self.name
@@ -2049,11 +2165,13 @@ class MapSet(object):
 
     @property
     def name(self):
-        return super(self.__class__, self).__getattribute__('_name')
+        """string : name of the map (legal Python name)"""
+        return super(MapSet, self).__getattribute__('_name')
 
     @name.setter
     def name(self, name):
-        return super(self.__class__, self).__setattr__('_name', name)
+        """string : name of the map (legal Python name)"""
+        return super(MapSet, self).__setattr__('_name', name)
 
     @property
     def hash(self):
@@ -2083,13 +2201,32 @@ class MapSet(object):
 
     @property
     def names(self):
+        """list of strings : name of each map"""
         return [mp.name for mp in self]
 
     @property
     def hashes(self):
+        """list of int : hash of each map"""
         return [mp.hash for mp in self]
 
     def hash_maps(self, map_names=None):
+        """Generate a hash on the contained maps (i.e. exclude state pertaining
+        only to the MapSet itself, but include all state pertaining to the
+        contained Maps).
+
+        Parameters
+        ----------
+        map_names : None or sequence of strings
+            If sequence of strings, use these as the map names instead of any
+            names contained.
+
+        Returns
+        -------
+        hash : None or int
+            If any contained map hashes to None, the resulting hash will also
+            be None.
+
+        """
         if map_names is None:
             map_names = [m.name for m in self]
         hashes = [m.hash for m in self if m.name in map_names]
@@ -2151,7 +2288,6 @@ class MapSet(object):
             return self.collate_with_names(val_per_map)
 
         # Rename for clarity
-        method_name = attr
         method_per_map = val_per_map
 
         # Create a set of args for *each* map in this map set: If an arg is a
@@ -2316,8 +2452,37 @@ class MapSet(object):
                       name=self.name, tex=self.tex,
                       collate_by_name=self.collate_by_name)
 
+    def project(self, axis, keepdims=False):
+        """Per-map projections onto single axis. See Map.project for more
+        detailed help.
+
+        Parameters
+        ----------
+        axis : string or int
+        keepdims : bool
+
+        Returns
+        -------
+        projection : MapSet
+            Each map in this MapSet projected onto `axis`.
+
+        See Also
+        --------
+        sum
+            Sum over specified dimension(s)
+
+        Map.project
+            Method called for each map in this MapSet to perform the actual
+            projection.
+
+        """
+        return MapSet(maps=[m.project(axis=axis, keepdims=keepdims)
+                            for m in self],
+                      name=self.name, tex=self.tex,
+                      collate_by_name=self.collate_by_name)
+
     def reorder_dimensions(self, order):
-        """Return a new MultiDimBinning object with dimensions ordered
+        """Return a new MapSet object with dimensions ordered
         according to `order`.
 
         Parameters
@@ -2339,7 +2504,7 @@ class MapSet(object):
 
         Returns
         -------
-        MultiDimBinning object with reordred dimensions.
+        MapSet object with reordred dimensions.
 
         Raises
         ------

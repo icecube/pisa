@@ -94,7 +94,7 @@ PISA_FTYPE=float64 $PISA/pisa/scripts/compare.py \
 	--test settings/pipeline/example_gpu.cfg \
 	--test-label 'gpu' \
 	--outdir $OUTDIR \
-	--pdf --png -v
+	--png -v
 
 
 OUTDIR_IH=$TMP/ih_pipeline
@@ -106,8 +106,8 @@ echo "==========================================================================
 PISA_FTYPE=float64 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example.cfg \
 	--select "ih" \
-	-d $OUTDIR_IH \
-	--pdf --png -v
+	--outdir $OUTDIR_IH \
+	--png -v
 
 OUTDIR_NH=$TMP/nh_pipeline
 echo "=============================================================================="
@@ -118,8 +118,8 @@ echo "==========================================================================
 PISA_FTYPE=float64 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example.cfg \
 	--select "nh" \
-	-d $OUTDIR_NH \
-	--pdf --png -v
+	--outdir $OUTDIR_NH \
+	--png -v
 
 OUTDIR_NH_DIST_MAKER=$TMP/nh_dist_maker
 echo "=============================================================================="
@@ -130,8 +130,8 @@ echo "==========================================================================
 PISA_FTYPE=float64 $PISA/pisa/core/distribution_maker.py \
 	-p settings/pipeline/example.cfg \
 	--select "nh" \
-	-d $OUTDIR_NH_DIST_MAKER \
-	--pdf --png -v
+	--outdir $OUTDIR_NH_DIST_MAKER \
+	--png -v
 
 OUTDIR=$TMP/compare_nh_to_ih
 echo "=============================================================================="
@@ -145,7 +145,7 @@ $PISA/pisa/scripts/compare.py \
 	--test $OUTDIR_NH/*.json.bz2 \
 	--test-label 'nh' \
 	--outdir $OUTDIR \
-	--pdf --png -v
+	--png -v
 
 
 OUTDIR_NH_FP32_CPU=$TMP/nh_pipeline_fp32_cpu
@@ -157,7 +157,7 @@ echo "==========================================================================
 PISA_FTYPE=float32 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example.cfg \
 	--select "nh" \
-	-d $OUTDIR_NH_FP32_CPU \
+	--outdir $OUTDIR_NH_FP32_CPU \
 	-v
 
 OUTDIR_NH_FP32_GPU=$TMP/nh_pipeline_fp32_gpu
@@ -169,7 +169,7 @@ echo "==========================================================================
 PISA_FTYPE=float32 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example_gpu.cfg \
 	--select "nh" \
-	-d $OUTDIR_NH_FP32_GPU \
+	--outdir $OUTDIR_NH_FP32_GPU \
 	-v
 
 OUTDIR_NH_FP64_GPU=$TMP/nh_pipeline_fp64_gpu
@@ -181,7 +181,7 @@ echo "==========================================================================
 PISA_FTYPE=float64 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example_gpu.cfg \
 	--select "nh" \
-	-d $OUTDIR_NH_FP64_GPU \
+	--outdir $OUTDIR_NH_FP64_GPU \
 	-v
 
 OUTDIR=$TMP/compare_fp32_cpu_to_fp64_cpu
@@ -196,7 +196,7 @@ $PISA/pisa/scripts/compare.py \
 	--test $OUTDIR_NH_FP32_CPU/*.json.bz2 \
 	--test-label 'fp32_cpu' \
 	--outdir $OUTDIR \
-	--pdf --png -v
+	--png -v
 
 OUTDIR=$TMP/compare_fp32_gpu_to_fp64_cpu
 echo "=============================================================================="
@@ -210,7 +210,7 @@ $PISA/pisa/scripts/compare.py \
 	--test $OUTDIR_NH_FP32_GPU/*.json.bz2 \
 	--test-label 'fp32_gpu' \
 	--outdir $OUTDIR \
-	--pdf --png -v
+	--png -v
 
 OUTDIR=$TMP/compare_fp64_gpu_to_fp64_cpu
 echo "=============================================================================="
@@ -224,7 +224,7 @@ $PISA/pisa/scripts/compare.py \
 	--test $OUTDIR_NH_FP64_GPU/*.json.bz2 \
 	--test-label 'fp64_gpu' \
 	--outdir $OUTDIR \
-	--pdf --png -v
+	--png -v
 
 OUTDIR=$TMP/compare_fp32_gpu_to_fp64_gpu
 echo "=============================================================================="
@@ -238,7 +238,7 @@ $PISA/pisa/scripts/compare.py \
 	--test $OUTDIR_NH_FP32_GPU/*.json.bz2 \
 	--test-label 'fp32_gpu' \
 	--outdir $OUTDIR \
-	--pdf --png -v
+	--png -v
 
 
 OUTDIR=$TMP/hypo_testing_test
@@ -253,7 +253,7 @@ PISA_FTYPE=float64 $PISA/pisa/analysis/hypo_testing.py \
 	--h1-param-selections="nh" \
 	--data-param-selections="nh" \
 	--data-is-mc \
-	--minimizer-settings settings/minimizer/bfgs_settings_fac1e11_eps1e-4_mi20.json \
+	--min-settings settings/minimizer/l-bfgs-b_ftol2e-5_gtol1e-5_eps1e-4_maxiter200.json \
 	--metric=chi2 \
 	--logdir $OUTDIR \
 	--pprint -v --allow-dirty

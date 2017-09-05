@@ -8,7 +8,7 @@ Common tools for performing an analysis collected into a single class
 """
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 from collections import OrderedDict
 from copy import deepcopy
@@ -18,7 +18,6 @@ import sys
 import time
 
 import numpy as np
-import pint
 import scipy.optimize as optimize
 
 from pisa import FTYPE, ureg
@@ -34,7 +33,7 @@ __all__ = ['MINIMIZERS_USING_SYMM_GRAD',
            'Counter', 'Analysis']
 
 
-MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b',)
+MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b', 'slsqp')
 """Minimizers that use symmetrical steps on either side of a point to compute
 gradients. See https://github.com/scipy/scipy/issues/4916"""
 
@@ -129,16 +128,15 @@ def validate_minimizer_settings(minimizer_settings):
 
     missing = set(must_have).difference(set(options))
     excess = set(options).difference(set(may_have))
-    if len(missing) > 0:
+    if missing:
         raise ValueError('Missing the following options for %s minimizer: %s'
                          % (method, missing))
-    if len(excess) > 0:
+    if excess:
         raise ValueError('Excess options for %s minimizer: %s'
                          % (method, excess))
 
     eps_msg = '%s minimizer option %s(=%e) is < %d * %s_EPS(=%e)'
     eps_gt_msg = '%s minimizer option %s(=%e) is > %e'
-    scale_msg = '%s minimizer option %s(=%e) is > %d * %s(=%e)'
     fp64_eps = np.finfo(np.float64).eps
 
     if method == 'l-bfgs-b':
@@ -180,9 +178,11 @@ def validate_minimizer_settings(minimizer_settings):
         val = options['eps']
         err_lim, warn_lim = 1, 10
         if val < err_lim * fp64_eps:
-            raise ValueError(eps_msg % (method, 'eps', val, 1, 'FP64', fp64_eps))
+            raise ValueError(eps_msg % (method, 'eps', val, 1, 'FP64',
+                                        fp64_eps))
         if val < warn_lim * ftype_eps:
-            logging.warn(eps_msg, method, 'eps', val, warn_lim, 'FP64', fp64_eps)
+            logging.warn(eps_msg, method, 'eps', val, warn_lim, 'FP64',
+                         fp64_eps)
 
         err_lim, warn_lim = 0.25, 0.1
         if val > err_lim:
@@ -434,7 +434,7 @@ class Analysis(object):
         sign = -1 if metric in METRICS_TO_MAXIMIZE else +1
 
         # Get starting free parameter values
-        x0 = hypo_maker.params.free._rescaled_values
+        x0 = hypo_maker.params.free._rescaled_values # pylint: disable=protected-access
 
         minimizer_method = minimizer_settings['method']['value'].lower()
         if minimizer_method in MINIMIZERS_USING_SYMM_GRAD:
@@ -491,7 +491,7 @@ class Analysis(object):
             unt = []
             for p in free_p:
                 u = r.sub('', format(p.value, '~')).replace(' ', '')[0:10]
-                if len(u) > 0:
+                if u:
                     u = '(' + u + ')'
                 unt.append(u.center(12))
             hdr += ' '.join(unt)
@@ -539,7 +539,7 @@ class Analysis(object):
         # minimized state, so set the values now (also does conversion of
         # values from [0,1] back to physical range)
         rescaled_pvals = optimize_result.pop('x')
-        hypo_maker._set_rescaled_free_params(rescaled_pvals)
+        hypo_maker._set_rescaled_free_params(rescaled_pvals) # pylint: disable=protected-access
 
         # Record the Asimov distribution with the optimal param values
         hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
@@ -568,6 +568,7 @@ class Analysis(object):
             params=hypo_maker.params, metric=metric, other_metrics=other_metrics
         )
         fit_info['minimizer_time'] = minimizer_time * ureg.sec
+        fit_info['num_distributions_generated'] = counter.count
         fit_info['minimizer_metadata'] = metadata
         fit_info['fit_history'] = fit_history
         # If blind replace hypo_asimov_dist with none object
@@ -625,6 +626,7 @@ class Analysis(object):
             params=hypo_maker.params, metric=metric, other_metrics=other_metrics
         )
         fit_info['minimizer_time'] = 0 * ureg.sec
+        fit_info['num_distributions_generated'] = 0
         fit_info['minimizer_metadata'] = OrderedDict()
         fit_info['hypo_asimov_dist'] = hypo_asimov_dist
         return fit_info
@@ -632,8 +634,22 @@ class Analysis(object):
     @staticmethod
     def get_detailed_metric_info(data_dist, hypo_asimov_dist, params, metric,
                                  other_metrics=None):
-        # Get the best-fit metric value for each of the output distributions
-        # and for each of the `other_metrics` specified.
+        """Get detailed fit information, including e.g. maps that yielded the
+        metric.
+
+        Parameters
+        ----------
+        data_dist
+        hypo_asimov_dist
+        params
+        metric
+        other_metrics
+
+        Returns
+        -------
+        detailed_metric_info : OrderedDict
+
+        """
         if other_metrics is None:
             other_metrics = []
         elif isinstance(other_metrics, basestring):
@@ -709,7 +725,7 @@ class Analysis(object):
         sign = -1 if metric in METRICS_TO_MAXIMIZE else +1
 
         # Set param values from the scaled versions the minimizer works with
-        hypo_maker._set_rescaled_free_params(scaled_param_vals)
+        hypo_maker._set_rescaled_free_params(scaled_param_vals) # pylint: disable=protected-access
 
         # Get the Asimov map set
         try:
@@ -951,8 +967,10 @@ class Analysis(object):
             assert len(only_points) == 1 or len(only_points) % 2 == 0
             if len(only_points) == 1:
                 points_acc = only_points
-            for i in xrange(0, len(only_points)-1, 2):
-                points_acc.extend(range(only_points[i], only_points[i+1]+1))
+            for i in range(0, len(only_points)-1, 2):
+                points_acc.extend(
+                    list(range(only_points[i], 1 + only_points[i + 1]))
+                )
 
         # Instead of introducing another multitude of tests above, check here
         # whether the lists of steps all have the same length in case `outer`
@@ -972,7 +990,7 @@ class Analysis(object):
         results = {'steps': {}, 'results': []}
         results['steps'] = {pname: [] for pname in param_names}
         for i, pos in enumerate(loopfunc(*steplist)):
-            if len(points_acc) > 0 and i not in points_acc:
+            if points_acc and i not in points_acc:
                 continue
 
             msg = ''
@@ -981,7 +999,7 @@ class Analysis(object):
                 results['steps'][pname].append(val)
                 if isinstance(val, float):
                     msg += '%s = %.2f '%(pname, val)
-                elif isinstance(val, pint.quantity._Quantity):
+                elif isinstance(val, ureg.Quantity):
                     msg += '%s = %.2f '%(pname, val.magnitude)
                 else:
                     raise TypeError("val is of type %s which I don't know "
@@ -991,7 +1009,7 @@ class Analysis(object):
             hypo_maker.update_params(params)
 
             # TODO: consistent treatment of hypo_param_selections and scanning
-            if not profile or len(hypo_maker.params.free) == 0:
+            if not profile or not hypo_maker.params.free:
                 logging.info('Not optimizing since `profile` set to False or'
                              ' no free parameters found...')
                 best_fit = self.nofit_hypo(
@@ -1004,7 +1022,7 @@ class Analysis(object):
                 )
             else:
                 logging.info('Starting optimization since `profile` requested.')
-                best_fit, alternate_fits = self.fit_hypo(
+                best_fit, _ = self.fit_hypo(
                     data_dist=data_dist,
                     hypo_maker=hypo_maker,
                     hypo_param_selections=hypo_param_selections,

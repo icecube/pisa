@@ -15,19 +15,20 @@ provide basic operations with the binning.
 #       takes 70 ms while
 #           `coords = [c for c in mdb.itercoords()]`
 #       takes 10 seconds.
+# TODO: Create non-validated version of OneDimBinning.__init__ to make
+#       iterbins() fast
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 from collections import Iterable, Mapping, OrderedDict, Sequence, namedtuple
 from copy import copy, deepcopy
 from functools import wraps
-from itertools import izip, product
+from itertools import chain, izip, product
 from operator import mul
 import re
 
 import numpy as np
-import pint
 
 from pisa import FTYPE, EPSILON, HASH_SIGFIGS, ureg
 from pisa.utils.comparisons import isbarenumeric, normQuant, recursiveEquality
@@ -97,7 +98,7 @@ def _new_obj(original_function):
         """<< docstring will be inherited from wrapped function >>"""
         new_state = OrderedDict()
         state_updates = original_function(cls, *args, **kwargs)
-        for attr in cls._hash_attrs:
+        for attr in cls._hash_attrs: # pylint: disable=protected-access
             if attr in state_updates:
                 new_state[attr] = state_updates[attr]
             else:
@@ -200,16 +201,17 @@ class OneDimBinning(object):
 
     def __init__(self, name, tex=None, bin_edges=None, units=None, domain=None,
                  num_bins=None, is_lin=None, is_log=None, bin_names=None):
+        # Basic validation and translation of args; note that iterables are
+        # converted to sequences later on
         if not isinstance(name, basestring):
-            raise TypeError('`name` must be basestring; got "%s".' %type(name))
+            raise TypeError('`name` must be a string; got "%s".' %type(name))
         if domain is not None:
             assert isinstance(domain, Iterable)
-            assert len(domain) == 2
         if bin_names is not None:
             if isinstance(bin_names, basestring):
                 bin_names = (bin_names,)
             if (isinstance(bin_names, Iterable)
-                    and all(isinstance(n, basestring) and len(n) > 0
+                    and all(isinstance(n, basestring) and n
                             for n in bin_names)):
                 bin_names = tuple(bin_names)
             else:
@@ -217,6 +219,13 @@ class OneDimBinning(object):
                     '`bin_names` must either be None or an iterable of'
                     ' nonzero-length strings.'
                 )
+        if bin_edges is not None:
+            assert isinstance(bin_edges, Iterable)
+        if is_lin is not None:
+            assert isinstance(is_lin, bool)
+        if is_log is not None:
+            assert isinstance(is_log, bool)
+
         self._normalize_values = True
         self._name = make_valid_python_name(name)
         if self._name != name:
@@ -243,66 +252,80 @@ class OneDimBinning(object):
         self._hash = None
         self._edges_hash = None
 
-        # If None, leave this and try to get units from bin_edges or domain
-        # (and if nothing has units in the end, *then* make quantity have the
-        # units 'dimensionless')
-        if units is not None and not isinstance(units, pint.unit._Unit):
-            units = ureg(units)
+        # Figure out the units (if any) for each quantity passed in. Precedence
+        # for units is:
+        #   1. `units`
+        #   2. `bin_edges`
+        #   3. `domain`
+        #   4. default to units of `ureg.dimensionless`
 
-        # Temporarily strip units (if any were provided) to make constructing
-        # bins consistent (in particular, log(x) isn't valid if x has units),
-        # then reattach units after bin_edges has been defined. Default units
-        # are "dimensionless".
-        if isinstance(bin_edges, pint.quantity._Quantity):
-            if units is not None:
-                if bin_edges.dimensionality != units.dimensionality:
-                    raise ValueError('All units specified must be compatible.')
-                # Explicitly-passed units have precedence, so convert to those
-                bin_edges.ito(units)
-            units = bin_edges.units
-            bin_edges = bin_edges.magnitude
+        if units is not None:
+            if isinstance(units, ureg.Quantity):
+                units = units.units
+            elif not isinstance(units, ureg.Unit):
+                units = ureg.Unit(units)
+            units_dimensionality = units.dimensionality
 
-        if (domain is not None and
-                (isinstance(domain[0], pint.quantity._Quantity) or
-                 isinstance(domain[1], pint.quantity._Quantity))):
-            if domain[0].dimensionality != domain[1].dimensionality:
-                raise ValueError(
-                    'Incompatible units: '
-                    ' `domain` limits have units of (%s) and (%s).'
-                    %(domain[0].dimensionality, domain[1].dimensionality)
-                )
-            # TODO: hack to test simple unit equality by converting to string
-            # (probably an issue with unit registries?)
-            if str(domain[0].units) != str(domain[1].units):
-                logging.warn(
-                    'Different (but compatible) units used to specify `domain`'
-                    ' limits: (%s) and (%s).', domain[0].units, domain[1].units
-                )
-            if units is not None:
-                if domain[0].dimensionality != units.dimensionality:
-                    raise ValueError(
-                        'Incompatible units: units passed/deduced are (%s) but'
-                        ' `domain` has units of (%s).'
-                        %(units.dimensionality, domain[0].dimensionality)
-                    )
-                if str(units) != str(domain[0].units) \
-                        or str(units) != str(domain[1].units):
-                    logging.warn(
-                        'Different (but compatible) units deduced/passed vs.'
-                        ' units used to specify `domain` limits:'
-                        ' (%s) vs. (%s and %s).',
-                        units, domain[0].units, domain[1].units
-                    )
-                # Explicitly-passed AND bin_edges' units have precedence, so
-                # convert to wihichever of those has been populated to `units`
-                domain = [d.ito(units) for d in domain]
+        dimensionless_bin_edges = None
+
+        if bin_edges is not None:
+            if isinstance(bin_edges, ureg.Quantity):
+                be_units = bin_edges.units
+                if units is None:
+                    units = be_units
+                else:
+                    if be_units.dimensionality != units_dimensionality:
+                        raise ValueError(
+                            '`bin_edges` units %s are incompatible with units'
+                            ' %s.' % (be_units, units)
+                        )
+                    if be_units != units:
+                        logging.warn('`bin_edges` are specified in units of %s'
+                                     ' but `units` is specified as %s.'
+                                     ' Converting `bin_edges` to the latter.',
+                                     be_units, units)
+                        bin_edges.ito(units)
+                dimensionless_bin_edges = bin_edges.magnitude
+
+            elif bin_edges is not None:
+                dimensionless_bin_edges = np.asarray(bin_edges)
+                bin_edges = None
+
+        dimensionless_domain = None
+
+        if domain is not None:
+            if isinstance(domain, ureg.Quantity):
+                domain_units = domain.units
+                if units is None:
+                    units = domain_units
+                else:
+                    if domain_units.dimensionality != units_dimensionality:
+                        raise ValueError(
+                            '`domain` units %s are incmompatible with units'
+                            ' %s.' % (domain_units, units)
+                        )
+                    if domain_units != units:
+                        logging.warn('`domain` units %s will be converted to'
+                                     ' %s.', domain_units, units)
+                        domain.ito(units)
+                dimensionless_domain = domain.magnitude
+
             else:
-                units = domain[0].units
-            # Strip units off of domain
-            domain = np.array([d.magnitude for d in domain])
+                domain_lower_is_quant = isinstance(domain[0], ureg.Quantity)
+                domain_upper_is_quant = isinstance(domain[1], ureg.Quantity)
+                assert domain_lower_is_quant == domain_upper_is_quant
+                if domain_lower_is_quant:
+                    assert domain[0].dimensionality == domain[1].dimensionality
+                    if domain[1].units != domain[0].units:
+                        domain[1] = domain[1].to(domain[0].units)
+                    dimensionless_domain = (domain[0].magnitude,
+                                            domain[1].magnitude)
+                else:
+                    dimensionless_domain = tuple(domain)
+                    domain = None
 
-        # Now if no units have been discovered from the input args, default to
-        # units of 'dimensionless'
+        # If no units have been discovered from the input args, assign default
+        # units
         if units is None:
             units = ureg.dimensionless
 
@@ -312,49 +335,64 @@ class OneDimBinning(object):
             raise ValueError('`is_log=%s` contradicts `is_lin=%s`'
                              % (is_log, is_lin))
 
-        # If no bin edges specified, the number of bins, domain, and either
-        # log or linear spacing are all required to generate bins
-        if bin_edges is None:
-            assert num_bins is not None and domain is not None \
-                    and (is_log or is_lin), '%s, %s' %(num_bins, domain)
+        if dimensionless_bin_edges is None:
+            if (num_bins is None
+                    or dimensionless_domain is None
+                    or not (is_lin or is_log)):
+                raise ValueError(
+                    'If not specifying bin edges explicitly, `domain` and'
+                    ' `num_bins` must be specified and one of `is_lin` or'
+                    ' `is_log` (but not both) must be `True`.'
+                )
             if is_log:
                 is_lin = False
-                bin_edges = np.logspace(np.log10(domain[0]),
-                                        np.log10(domain[1]),
-                                        num_bins + 1)
+                dimensionless_bin_edges = np.logspace(
+                    np.log10(dimensionless_domain[0]),
+                    np.log10(dimensionless_domain[1]),
+                    num_bins + 1
+                )
             elif is_lin:
                 is_log = False
-                bin_edges = np.linspace(domain[0], domain[1], num_bins + 1)
+                dimensionless_bin_edges = np.linspace(
+                    dimensionless_domain[0],
+                    dimensionless_domain[1],
+                    num_bins + 1
+                )
+        elif dimensionless_domain is not None:
+            assert dimensionless_domain[0] == dimensionless_bin_edges[0]
+            assert dimensionless_domain[1] == dimensionless_bin_edges[-1]
 
-        elif domain is not None:
-            assert domain[0] == bin_edges[0] and domain[1] == bin_edges[-1]
-
-        bin_edges = np.array(bin_edges)
         if is_lin:
-            assert self.is_bin_spacing_lin(bin_edges), str(bin_edges)
+            if not self.is_bin_spacing_lin(dimensionless_bin_edges):
+                raise ValueError('`is_lin` is True but `bin_edges` are not'
+                                 ' linearly spaced.')
             is_log = False
         elif is_log:
-            assert self.is_binning_ok(bin_edges, is_log=True), str(bin_edges)
+            if not self.is_binning_ok(dimensionless_bin_edges, is_log=True):
+                raise ValueError('`is_log` is True but `bin_edges` are not'
+                                 ' logarithmically spaced.')
             is_lin = False
         else:
-            is_lin = self.is_bin_spacing_lin(bin_edges)
+            is_lin = self.is_bin_spacing_lin(dimensionless_bin_edges)
             try:
-                is_log = self.is_bin_spacing_log(bin_edges)
+                is_log = self.is_bin_spacing_log(dimensionless_bin_edges)
             except ValueError:
                 is_log = False
 
-        #if not is_lin and not is_log:
-        #    is_log = self.is_bin_spacing_log(bin_edges)
+        if dimensionless_domain is None:
+            dimensionless_domain = (dimensionless_bin_edges[0],
+                                    dimensionless_bin_edges[-1])
 
-        # (Re)attach units to bin edges
-        self._bin_edges = bin_edges * units
+        if bin_edges is None:
+            self._bin_edges = dimensionless_bin_edges * units
+        else:
+            self._bin_edges = bin_edges
 
-        # (Re)define domain and attach units
-        self._domain = None
+        if domain is None:
+            self._domain = dimensionless_domain * units
+        else:
+            self._domain = domain
 
-        # Store units for convenience
-        if isinstance(units, pint.quantity._Quantity):
-            units = units.units
         self._units = units
 
         # Derive rest of unspecified parameters from bin_edges or enforce
@@ -400,7 +438,7 @@ class OneDimBinning(object):
 
         edge_str = (
             'with edges at ['
-            + ', '.join([str(e) for e in self.bin_edges.m])
+            + ', '.join(str(e) for e in self.bin_edges.m)
             + '] '
             + format(self.bin_edges.u, '~')
         ).strip()
@@ -421,7 +459,7 @@ class OneDimBinning(object):
 
         if self.bin_names is not None:
             descr += (', bin_names=['
-                      + ', '.join([("'%s'"%n) for n in self.bin_names])
+                      + ', '.join(("'%s'"%n) for n in self.bin_names)
                       + ']')
 
         return (self.__class__.__name__
@@ -431,10 +469,9 @@ class OneDimBinning(object):
     def __pretty__(self, p, cycle):
         """Method used by the `pretty` library for formatting"""
         if cycle:
-            p.text('%s(...)' %self.__class__.__name__)
+            p.text('%s(...)' % self.__class__.__name__)
         else:
-            p.begin_group(4, '%s(name=' %self.__class__.__name__)
-            p.text(str(self))
+            p.begin_group(4, '%s' % self)
             p.end_group(4, ')')
 
     def _repr_pretty_(self, p, cycle):
@@ -549,7 +586,7 @@ class OneDimBinning(object):
             Faster but only returns edges of bins, not OneDimBinning objects.
 
         """
-        return (self[i] for i in xrange(len(self)))
+        return (self[i] for i in range(len(self)))
 
     def iteredgetuples(self):
         """Return an iterator over each bin's edges. The elments returned by
@@ -715,11 +752,11 @@ class OneDimBinning(object):
     def range(self):
         """float : range of the binning, (max-min) bin edges"""
         domain = self.domain
-        return domain[-1] - self.domain[0]
+        return domain[1] - domain[0]
 
     @property
     def units(self):
-        """pint.units : units of the bins' edges"""
+        """pint.Unit : units of the bins' edges"""
         return self._units
 
     @property
@@ -857,7 +894,7 @@ class OneDimBinning(object):
         if isinstance(other, OneDimBinning):
             return MultiDimBinning([self, other])
         elif isinstance(other, MultiDimBinning):
-            return MultiDimBinning([self] + [d for d in other])
+            return MultiDimBinning(chain([self], other))
         return OneDimBinning(name=self.name, tex=self.tex,
                              bin_edges=self.bin_edges * other)
 
@@ -869,11 +906,11 @@ class OneDimBinning(object):
         if isinstance(other, OneDimBinning):
             return MultiDimBinning([self, other])
         elif isinstance(other, MultiDimBinning):
-            return MultiDimBinning([self] + [d for d in other])
+            return MultiDimBinning(chain([self], other))
 
         if isbarenumeric(other):
             other = other * ureg.dimensionless
-        if isinstance(other, pint.quantity._Quantity):
+        if isinstance(other, ureg.Quantity):
             new_bin_edges = self.bin_edges + other
             return OneDimBinning(name=self.name, tex=self.tex,
                                  bin_edges=new_bin_edges)
@@ -902,21 +939,18 @@ class OneDimBinning(object):
         bool
 
         """
-        bin_edges = np.array(bin_edges)
+        bin_edges = np.asarray(bin_edges)
         if len(bin_edges) < 3:
             raise ValueError('%d bin edge(s) passed; require at least 3 to'
                              ' determine nature of bin spacing.'
                              % len(bin_edges))
-        if 0 in bin_edges:
-            return False
         with np.errstate(divide='raise', over='raise', under='raise',
                          invalid='raise'):
             try:
                 log_spacing = bin_edges[1:] / bin_edges[:-1]
-                assert np.all(np.isfinite(log_spacing))
             except (AssertionError, FloatingPointError, ZeroDivisionError):
                 return False
-        if np.any(np.abs(log_spacing - log_spacing[0]) > EPSILON):
+        if any(np.abs(ls - log_spacing[0]) > EPSILON for ls in log_spacing[1:]):
             return False
         return True
 
@@ -1068,7 +1102,18 @@ class OneDimBinning(object):
 
         Returns
         -------
-        OneDimBinning object
+        new_binning : OneDimBinning
+            New binning, oversampled from the current binning.
+
+        Raises
+        ------
+        ValueError if illegal value is specified for `factor`
+
+        Notes
+        -----
+        Bin names are _not_ preserved for any `factor` except 1 since it is
+        ambiguous how names should be propagated. If you wish to have bin
+        names after oversampling, assign them afterwards.
 
         """
         if factor < 1 or factor != int(factor):
@@ -1123,6 +1168,12 @@ class OneDimBinning(object):
         ------
         ValueError if illegal value is specified for `factor`
 
+        Notes
+        -----
+        Bin names are _not_ preserved for any `factor` except 1 since it is
+        ambiguous how names should be propagated. If you wish to have bin
+        names after downsampling, assign them afterwards.
+
         """
         if int(factor) != float(factor):
             raise ValueError('Floating point `factor` is non-integral.')
@@ -1154,7 +1205,7 @@ class OneDimBinning(object):
             getattr(self, attr).ito(units)
 
     @_new_obj
-    def to(self, units):
+    def to(self, units): # pylint: disable=invalid-name
         """Convert bin edges' units to `units`.
 
         Parameters
@@ -1172,7 +1223,7 @@ class OneDimBinning(object):
         return {'bin_edges': self.bin_edges.to(ureg(str(units)))}
 
     def __getattr__(self, attr):
-        return super(self.__class__, self).__getattribute__(attr)
+        return super(OneDimBinning, self).__getattribute__(attr)
 
     # TODO: make this actually grab the bins specified (and be able to grab
     # disparate bins, whether or not they are adjacent)... i.e., fill in all
@@ -1228,7 +1279,7 @@ class OneDimBinning(object):
 
         # Convert index/indices to positive-number sequence
         if isinstance(index, slice):
-            index = range(*index.indices(mylen))
+            index = list(range(*index.indices(mylen)))
         if isinstance(index, int):
             index = [index]
 
@@ -1239,7 +1290,7 @@ class OneDimBinning(object):
                 if isinstance(bin_index, str):
                     raise ValueError('Slicing by seq of names currently not'
                                      ' supported')
-            if len(index) == 0:
+            if not index:
                 raise ValueError('`index` "%s" results in no bins being'
                                  ' specified.' %orig_index)
             if len(index) > 1 and not np.all(np.diff(index) == 1):
@@ -1352,9 +1403,7 @@ class MultiDimBinning(object):
 
     """
     def __init__(self, dimensions):
-        # Import here to avoid circular imports during module instantiation
-        from pisa.core.map import Map
-        self.__Map = Map
+        self.__map_class = None
 
         if isinstance(dimensions, OneDimBinning):
             dimensions = [dimensions]
@@ -1407,9 +1456,9 @@ class MultiDimBinning(object):
     def __pretty__(self, p, cycle):
         """Method used by the `pretty` library for formatting"""
         if cycle:
-            p.text('%s(...)' %self.__class__.__name__)
+            p.text('%s(...)' % self.__class__.__name__)
         else:
-            p.begin_group(4, '%s([' %self.__class__.__name__)
+            p.begin_group(4, '%s([' % self.__class__.__name__)
             for n, dim in enumerate(self):
                 p.breakable()
                 p.pretty(dim)
@@ -1428,6 +1477,13 @@ class MultiDimBinning(object):
     def __setstate__(self, state):
         """Method invoked during unpickling"""
         self.__init__(**state)
+
+    @property
+    def _map_class(self):
+        if self.__map_class is None:
+            from pisa.core.map import Map
+            self.__map_class = Map
+        return self.__map_class
 
     def to_json(self, filename, **kwargs):
         """Serialize the state to a JSON file that can be instantiated as a new
@@ -1496,14 +1552,14 @@ class MultiDimBinning(object):
         """Identical binning but with dimensions named by their basenames.
         Note that the `tex` properties for the dimensions are not carried over
         into the new binning."""
-        return MultiDimBinning([d.basename_binning for d in self])
+        return MultiDimBinning(d.basename_binning for d in self)
 
     @property
     def finite_binning(self):
         """Identical binning but with infinities in bin edges replaced by
         largest/smallest floating-point numbers representable with the current
         pisa.FTYPE."""
-        return MultiDimBinning([d.finite_binning for d in self])
+        return MultiDimBinning(d.finite_binning for d in self)
 
     @property
     def dimensions(self):
@@ -1551,7 +1607,7 @@ class MultiDimBinning(object):
     def normalize_values(self):
         """bool : Normalize quantities' units prior to hashing"""
         nv = [dim.normalize_values for dim in self]
-        if not all([x == nv[0] for x in nv]):
+        if not all(x == nv[0] for x in nv):
             raise ValueError(
                 'Contained dimensions have `normalize_values` both True and'
                 ' False. Set `normalize_values` to either True or False on'
@@ -1681,7 +1737,7 @@ class MultiDimBinning(object):
         pisa.core.events.keepEventsInBins
 
         """
-        crit = '(%s)' %(' & '.join([dim.inbounds_criteria for dim in self]))
+        crit = '(%s)' %(' & '.join(dim.inbounds_criteria for dim in self))
         return crit
 
     def index(self, dim, use_basenames=False):
@@ -1756,7 +1812,7 @@ class MultiDimBinning(object):
         if isinstance(dims, (basestring, int)):
             dims = [dims]
 
-        keep_idx = range(len(self))
+        keep_idx = list(range(len(self)))
         for dim in dims:
             idx = self.index(dim)
             keep_idx.remove(idx)
@@ -1977,7 +2033,7 @@ class MultiDimBinning(object):
             useful when using e.g. `enumerate(iterbins)`
 
         """
-        return (self.index2coord(i) for i in xrange(self.size))
+        return (self.index2coord(i) for i in range(self.size))
 
     def index2coord(self, index):
         """Convert a flat index into an N-dimensional bin coordinate.
@@ -2053,14 +2109,15 @@ class MultiDimBinning(object):
         indices = []
         for dim in order:
             try:
-                idx = self.index(dim, use_basenames=True)
+                idx = self.index(dim, use_basenames=False)
             except ValueError:
                 continue
             indices.append(idx)
         if set(indices) != set(range(len(self))):
             raise ValueError(
                 'Invalid `order`: Only a subset of the dimensions present'
-                ' were specified. `order`=%s; dimensions=%s' %(order, self)
+                ' were specified. `order`=%s, but dimensions=%s'
+                %(order, self.names)
             )
         if use_deepcopy:
             new_dimensions = [deepcopy(self._dimensions[n]) for n in indices]
@@ -2095,7 +2152,7 @@ class MultiDimBinning(object):
         return True
 
     def oversample(self, *args, **kwargs):
-        """Return a Binning object oversampled relative to this binning.
+        """Return a MultiDimBinning object oversampled relative to this one.
 
         Parameters
         ----------
@@ -2104,17 +2161,86 @@ class MultiDimBinning(object):
             one factor (one arg)--which will be broadcast to all dimensions--or
             there must be as many factors (args) as there are dimensions.
             If positional args are specified (i.e., non-kwargs), then kwargs
-            are forbidden.
+            are forbidden. For more detailed control, use keyword arguments to
+            specify the dimension(s) to be oversampled and their factors.
 
         **kwargs : name=factor pairs
+            Dimensions not specified default to oversample factor of 1 (i.e.,
+            no oversampling)
+
+        Returns
+        -------
+        new_binning : MultiDimBinning
+            New binning, oversampled from the current binning.
 
         Notes
         -----
-        Can either specify oversmapling by passing in args (ordered values, no
-        keywords) or kwargs (order doesn't matter, but uses keywords), but not
-        both.
+        You can either specify oversmapling by passing in args (ordered values,
+        no keywords) or kwargs (order doesn't matter, but uses keywords), but
+        not both.
+
+        Specifying simple args (no keywords) requires either a single scalar
+        (in which case all dimensions will be oversampled by the same factor)
+        or one scalar per dimension (which oversamples the dimensions in the
+        order specified).
+
+        Specifying keyword args is far more explicit (and general), where each
+        dimension's oversampling can be specified by name=factor pairs, but not
+        every dimension must be specified (where no oversampling is applied to
+        unspecified dimensions).
+
+        See Also
+        --------
+        downsample
+            Similar to this, but downsample the MultiDimBinning
+
+        OneDimBinning.oversample
+            Oversample a OneDimBinning object; this method is called to
+            actually perform the oversampling for each dimension within this
+            MultiDimBinning object
+
+        OneDimBinning.downsample
+            Same but downsample for OneDimBinning
+
+        Examples
+        --------
+        >>> x = OneDimBinning('x', bin_edges=[0, 1, 2])
+        >>> y = OneDimBinning('y', bin_edges=[0, 20])
+        >>> mdb = x * y
+
+        The following are all equivalent:
+
+        >>> print mdb.oversample(2)
+        MultiDimBinning(
+                OneDimBinning('x', 4 equally-sized bins spanning [0.0, 2.0]),
+                OneDimBinning('y', 2 equally-sized bins spanning [0.0, 20.0])
+        )
+        >>> print mdb.oversample(2, 2)
+        MultiDimBinning(
+                OneDimBinning('x', 4 equally-sized bins spanning [0.0, 2.0]),
+                OneDimBinning('y', 2 equally-sized bins spanning [0.0, 20.0])
+        )
+        >>> print mdb.oversample(x=2, y=2)
+        MultiDimBinning(
+                OneDimBinning('x', 4 equally-sized bins spanning [0.0, 2.0]),
+                OneDimBinning('y', 2 equally-sized bins spanning [0.0, 20.0])
+        )
+
+        But with kwargs, you can specify only the dimensions you want to
+        oversample, and the other dimension(s) remain unchanged:
+
+        >>> print mdb.oversample(y=5)
+        MultiDimBinning([
+                OneDimBinning('x', 2 equally-sized bins spanning [0, 2])),
+                OneDimBinning('y', 5 equally-sized bins spanning [0.0, 20.0]))])
 
         """
+        if args:
+            assert len(args) in [1, len(self)]
+        elif kwargs:
+            for name in self.names:
+                if name not in kwargs:
+                    kwargs[name] = 1
         factors = self._args_kwargs_to_list(*args, **kwargs)
         new_binning = [dim.oversample(f)
                        for dim, f in izip(self._dimensions, factors)]
@@ -2134,13 +2260,36 @@ class MultiDimBinning(object):
 
         **kwargs : name=factor pairs
 
+        Returns
+        -------
+        new_binning : MultiDimBinning
+            New binning, downsampled from the current binning.
+
         Notes
         -----
         Can either specify downsampling by passing in args (ordered values, no
         keywords) or kwargs (order doesn't matter, but uses keywords), but not
         both.
 
+        See Also
+        --------
+        oversample
+            Oversample (upsample) a the MultiDimBinning
+
+        OneDimBinning.downsample
+            The method actually called to perform the downsampling for each
+            OneDimBinning within this MultiDimBinning object.
+
+        OneDimBinning.oversample
+            Same, but oversample (upsample) a OneDimBinning object
+
         """
+        if args:
+            assert len(args) in [1, len(self)]
+        elif kwargs:
+            for name in self.names:
+                if name not in kwargs:
+                    kwargs[name] = 1
         factors = self._args_kwargs_to_list(*args, **kwargs)
         new_binning = [dim.downsample(f)
                        for dim, f in izip(self._dimensions, factors)]
@@ -2204,7 +2353,7 @@ class MultiDimBinning(object):
         MultiDimBinning with only non-singleton dimensions
 
         """
-        return MultiDimBinning([d for d in self if len(d) > 1])
+        return MultiDimBinning(d for d in self if len(d) > 1)
 
     def _args_kwargs_to_list(self, *args, **kwargs):
         """Take either args or kwargs (but not both) and convert into a simple
@@ -2236,7 +2385,7 @@ class MultiDimBinning(object):
         for dim, units in izip(self.iterdims(), units_list):
             dim.ito(units)
 
-    def to(self, *args, **kwargs):
+    def to(self, *args, **kwargs): # pylint: disable=invalid-name
         """Convert the contained dimensions to the passed units. Unspecified
         dimensions will be omitted.
 
@@ -2307,8 +2456,9 @@ class MultiDimBinning(object):
         meshgrid = self.meshgrid(entity='bin_widths', attach_units=False)
         volumes = reduce(lambda x, y: x*y, meshgrid)
         if attach_units:
-            return (
-                volumes * reduce(lambda x, y: x*y, (ureg(str(d.units)) for d in self.iterdims()))
+            volumes *= reduce(
+                lambda x, y: x*y,
+                (ureg(str(d.units)) for d in self.iterdims())
             )
         return volumes
 
@@ -2343,7 +2493,7 @@ class MultiDimBinning(object):
         if 'dtype' not in kwargs:
             kwargs['dtype'] = FTYPE
         hist = np.empty(self.shape, **kwargs)
-        return self.__Map(name=name, hist=hist, binning=self, **map_kw)
+        return self._map_class(name=name, hist=hist, binning=self, **map_kw)
 
     def zeros(self, name, map_kw=None, **kwargs):
         """Return a numpy ndarray filled with 0's with same dimensions as this
@@ -2373,7 +2523,7 @@ class MultiDimBinning(object):
         if 'dtype' not in kwargs:
             kwargs['dtype'] = FTYPE
         hist = np.zeros(self.shape, **kwargs)
-        return self.__Map(name=name, hist=hist, binning=self, **map_kw)
+        return self._map_class(name=name, hist=hist, binning=self, **map_kw)
 
     def ones(self, name, map_kw=None, **kwargs):
         """Return a numpy ndarray filled with 1's with same dimensions as this
@@ -2403,7 +2553,7 @@ class MultiDimBinning(object):
         if 'dtype' not in kwargs:
             kwargs['dtype'] = FTYPE
         hist = np.ones(self.shape, **kwargs)
-        return self.__Map(name=name, hist=hist, binning=self, **map_kw)
+        return self._map_class(name=name, hist=hist, binning=self, **map_kw)
 
     def full(self, fill_value, name, map_kw=None, **kwargs):
         """Return a map whose `hist` is filled with `fill_value` of same
@@ -2436,7 +2586,7 @@ class MultiDimBinning(object):
         if 'dtype' not in kwargs:
             kwargs['dtype'] = FTYPE
         hist = np.full(self.shape, fill_value, **kwargs)
-        return self.__Map(name=name, hist=hist, binning=self, **map_kw)
+        return self._map_class(name=name, hist=hist, binning=self, **map_kw)
 
     def __contains__(self, x):
         if isinstance(x, OneDimBinning):
@@ -2450,15 +2600,18 @@ class MultiDimBinning(object):
             return False
         return recursiveEquality(self.hashable_state, other.hashable_state)
 
+    # TODO: remove this method, as it should just be considered an outer
+    # product to increase dimensionality (i.e. the "*" operator, or __mul__
+    # makes more sense than "+" or __add__)?
     def __add__(self, other):
         other = MultiDimBinning(other)
-        return MultiDimBinning([d for d in self] + [d for d in other])
+        return MultiDimBinning(chain(self, other))
 
     def __mul__(self, other):
         if isinstance(other, (Mapping, OneDimBinning)):
             other = [other]
         other = MultiDimBinning(other)
-        return MultiDimBinning([d for d in self] + [d for d in other])
+        return MultiDimBinning(chain(self, other))
 
     # TODO: should __getattr__ raise its own exception if the attr is not found
     # as a dimension rather than call parent's __getattribute__ method, since
@@ -2471,7 +2624,7 @@ class MultiDimBinning(object):
         except (KeyError, ValueError):
             # If that failed, re-run parent's __getattribute__ which will raise
             # an appropriate exception
-            return super(self.__class__, self).__getattribute__(attr)
+            return super(MultiDimBinning, self).__getattribute__(attr)
 
     # TODO: refine handling of ellipsis such that the following work as in
     # Numpy:
@@ -2547,10 +2700,13 @@ class MultiDimBinning(object):
 
 def test_OneDimBinning():
     """Unit tests for OneDimBinning class"""
+    # pylint: disable=line-too-long
     import cPickle as pickle
     import os
     import shutil
     import tempfile
+    # needed so that eval(repr(b)) works
+    from numpy import array # pylint: disable=unused-variable
     import dill
 
     b1 = OneDimBinning(name='true_energy', num_bins=40, is_log=True,
@@ -2562,6 +2718,7 @@ def test_OneDimBinning():
     b3 = OneDimBinning(name='reco_energy', num_bins=40, is_log=True,
                        domain=[1, 80]*ureg.GeV, tex=r'E_{\rm reco}',
                        bin_names=[str(i) for i in range(40)])
+
     # Test label
     _ = b1.label
     _ = b1.label
@@ -2631,11 +2788,11 @@ def test_OneDimBinning():
                   != normQuant(b4.bin_edges, sigfigs=None))
 
     # Normalize function should take care of this
-    assert np.all(normQuant(b3.bin_edges, sigfigs=HASH_SIGFIGS)
-                  == normQuant(b4.bin_edges, sigfigs=HASH_SIGFIGS)), \
+    assert np.all(normQuant(b3.bin_edges, sigfigs=HASH_SIGFIGS, full_norm=True)
+                  == normQuant(b4.bin_edges, sigfigs=HASH_SIGFIGS, full_norm=True)), \
             'normQuant(b3.bin_edges)=\n%s\nnormQuant(b4.bin_edges)=\n%s' \
-            %(normQuant(b3.bin_edges, HASH_SIGFIGS),
-              normQuant(b4.bin_edges, HASH_SIGFIGS))
+            %(normQuant(b3.bin_edges, sigfigs=HASH_SIGFIGS, full_norm=True),
+              normQuant(b4.bin_edges, sigfigs=HASH_SIGFIGS, full_norm=True))
 
     # And the hashes should be equal, reflecting the latter result
     assert b3.hash == b4.hash, \
@@ -2653,6 +2810,7 @@ def test_OneDimBinning():
     testdir = tempfile.mkdtemp()
     try:
         for b in [b1, b2, b3, b4]:
+            assert eval(repr(b)) == b, repr(b) # pylint: disable=eval-used
             b_file = os.path.join(testdir, 'one_dim_binning.json')
             b.to_json(b_file, warn=False)
             b_ = OneDimBinning.from_json(b_file)
@@ -2694,6 +2852,8 @@ def test_MultiDimBinning():
     import shutil
     import tempfile
     import time
+    # needed so that eval(repr(mdb)) works
+    from numpy import array # pylint: disable=unused-variable
     import dill
 
     b1 = OneDimBinning(name='energy', num_bins=40, is_log=True,
@@ -2701,6 +2861,9 @@ def test_MultiDimBinning():
     b2 = OneDimBinning(name='coszen', num_bins=40, is_lin=True,
                        domain=[-1, 1])
     mdb = MultiDimBinning([b1, b2])
+
+    assert eval(repr(mdb)) == mdb # pylint: disable=eval-used
+
     _ = hash_obj(mdb)
     _ = mdb.hash
     _ = hash(mdb)

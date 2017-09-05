@@ -3,6 +3,9 @@ Define globals available to all modules in PISA
 
 """
 
+
+from __future__ import absolute_import
+
 from collections import namedtuple, OrderedDict
 import os
 import sys
@@ -20,19 +23,21 @@ except Exception:
     pass #logging.debug('Failed to import or use pycuda', exc_info=True)
 else:
     PYCUDA_AVAIL = True
+    del driver
 
 NUMBA_AVAIL = False
 def dummy_func(x):
+    """Decorate to to see if Numba actually works"""
     x += 1
 try:
     from numba import jit as numba_jit
     numba_jit(dummy_func)
 except Exception:
     #logging.debug('Failed to import or use numba', exc_info=True)
-    def numba_jit(*args, **kwargs):
-        """Dummy decorator to replace Numba's `jit`"""
+    def numba_jit(*args, **kwargs): # pylint: disable=unused-argument
+        """Dummy decorator to replace `numba.jit` when Numba is not present"""
         def decorator(func):
-            """Decorator that gets the actual function being decorated"""
+            """Decorator that smply returns the function being decorated"""
             return func
         return decorator
 else:
@@ -41,14 +46,16 @@ else:
 NUMBA_CUDA_AVAIL = False
 try:
     from numba import cuda
-    assert len(cuda.gpus) > 0, 'No GPUs detected'
+    assert cuda.gpus, 'No GPUs detected'
     cuda.jit('void(float64)')(dummy_func)
 except Exception:
-    pass #logging.debug('Failed to import or use numba.cuda', exc_info=True)
+    pass
 else:
     NUMBA_CUDA_AVAIL = True
 finally:
     if 'cuda' in globals() or 'cuda' in locals():
+        if NUMBA_CUDA_AVAIL:
+            cuda.close()
         del cuda
 
 
@@ -63,7 +70,8 @@ __all__ = [
     # Utilities that should be accessed centrally to avoid hassle
     'numba_jit',
 
-    # Python standard library  names so that `eval(repr(x)) == x`
+    # Python standard library and Numpy names so that `eval(repr(x)) == x` for
+    # all types defined in PISA
     'array', 'inf', 'namedtuple', 'OrderedDict',
 
     # Constants
@@ -76,8 +84,8 @@ __all__ = [
 __version__ = get_versions()['version']
 
 
-ureg = UnitRegistry()
-Q_ = ureg.Quantity
+ureg = UnitRegistry() # pylint: disable=invalid-name
+Q_ = ureg.Quantity # pylint: disable=invalid-name
 
 
 # Default value for FTYPE
@@ -142,11 +150,11 @@ based on by FTYPE)"""
 if FTYPE == np.float32:
     C_FTYPE = 'float'
     C_PRECISION_DEF = 'SINGLE_PRECISION'
-    sys.stderr.write('PISA running in single precision (FP32) mode.\n\n')
+    sys.stderr.write('PISA running in single precision (FP32) mode.\n')
 elif FTYPE == np.float64:
     C_FTYPE = 'double'
     C_PRECISION_DEF = 'DOUBLE_PRECISION'
-    sys.stderr.write('PISA running in double precision (FP64) mode.\n\n')
+    sys.stderr.write('PISA running in double precision (FP64) mode.\n')
 else:
     raise ValueError('FTYPE must be one of `np.float32` or `np.float64`. Got'
                      ' %s instead.' %FTYPE)

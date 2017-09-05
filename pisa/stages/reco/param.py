@@ -1,8 +1,10 @@
 # PISA author: Lukas Schulte
 #              schulte@physik.uni-bonn.de
 #
-# CAKE author: Steven Wren
-#              steven.wren@icecube.wisc.edu
+# CAKE authors: Steven Wren
+#               steven.wren@icecube.wisc.edu
+#               Thomas Ehrhardt
+#               tehrhardt@icecube.wisc.edu
 #
 # date:   2017-03-08
 
@@ -15,24 +17,287 @@ transforms.
 
 
 from __future__ import division
+from copy import deepcopy
 
+from collections import Mapping, OrderedDict
 import itertools
 import numpy as np
 from scipy.stats import norm
 from scipy import stats
-from collections import OrderedDict
 
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
+from pisa.core.binning import basename
 from pisa.utils.fileio import from_file
 from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
-from pisa.utils.comparisons import recursiveEquality, EQUALITY_PREC
+from pisa.utils.comparisons import recursiveEquality, EQUALITY_PREC, isscalar
 
 
-__all__ = ['param']
+__all__ = ['load_reco_param', 'param']
 
+
+def load_reco_param(source):
+    """Load reco parameterisation (energy-dependent) from file or dictionary.
+
+    Parameters
+    ----------
+    source : string or mapping
+        Source of the parameterization. If string, treat as file path or
+        resource location and load from the file; this must yield a mapping. If
+        `source` is a mapping, it is used directly. See notes below on format.
+
+    Returns
+    -------
+    reco_params : OrderedDict
+        Keys are stringified flavintgroups and values are dicts of strings
+        representing the different reco dimensions and lists of distribution
+        properties. These latter have a 'fraction', a 'dist' and a 'kwargs' key.
+        The former two hold callables, while the latter holds a dict of
+        key-callable pairs ('loc', 'scale'), which can be evaluated at the desired
+        energies and passed into the respective `scipy.stats` distribution.
+        The distributions for a given dimension will be superimposed according
+        to their relative weights to form the reco kernels (via integration)
+        when called with energy values (parameterisations are functions of
+        energy only!).
+
+    Notes
+    -----
+    The mapping passed via `source` or loaded therefrom must have the format:
+        {
+            <flavintgroup_string>:
+                {
+                    <dimension_string>:[
+                        {
+                            "dist": dist_id,
+                            "fraction": val,
+                            "kwargs": {
+                                "loc": val,
+                                "scale": val,
+                                ...
+                            }
+                        },
+                    ...
+                    ]
+                },
+            <flavintgroup_string>:
+                ...
+        }
+
+    `flavintgroup_string`s must be parsable by
+    pisa.utils.flavInt.NuFlavIntGroup. Note that the `transform_groups` defined
+    in a pipeline config file using this must match the groupings defined
+    above.
+
+    `dimension_string`s denote the observables/dimensions whose reco error
+    distribution is parameterised (`"energy"` or `"coszen"`).
+
+    `dist_id` needs to be a string identifying a probability distribution/statistical
+    function provided by `scipy.stats`. No implicit assumptions about the
+    distribution will be made if the `"dist"` key is missing.
+
+    `"fraction"` holds the relative weight of the distribution. For a given
+    dimension, the sum of all fractions present must be 1.
+
+    Valid kwargs for distributions must at least include `"loc"` and `"scale"` -
+    these will be passed into the respective `scipy.stats` function.
+
+    `val`s can be one of the following:
+        - Callable with one argument
+        - String such that `eval(val)` yields a callable with one argument
+    """
+    if not (source is None or isinstance(source, (basestring, Mapping))):
+        raise TypeError('`source` must be string, mapping, or None')
+
+    if isinstance(source, basestring):
+        orig_dict = from_file(source)
+
+    elif isinstance(source, Mapping):
+        orig_dict = source
+
+    else:
+        raise TypeError('Cannot load reco parameterizations from a %s'
+                        % type(source))
+
+    valid_dimensions = ('coszen', 'energy')
+    required_keys = ('dist', 'fraction', 'kwargs')
+
+    # Build dict of parameterizations (each a callable) per flavintgroup
+    reco_params = OrderedDict()
+    for flavint_key, dim_dict in orig_dict.iteritems():
+        flavintgroup = NuFlavIntGroup(flavint_key)
+        reco_params[flavintgroup] = {}
+        for dimension in dim_dict.iterkeys():
+            dim_dist_list = []
+
+            if not isinstance(dimension, basestring):
+                raise TypeError("The dimension needs to be given as a string!"
+                                " Allowed: %s."%valid_dimensions)
+
+            if dimension not in valid_dimensions:
+                raise ValueError("Dimension '%s' not recognised!"%dimension)
+
+            for dist_dict in dim_dict[dimension]:
+                dist_spec_dict = {}
+
+                # allow reading in even if kwargs not present - computation of
+                # transform will fail because "loc" and "scale" hard-coded
+                # requirement
+                for required in required_keys:
+                    if required not in dist_dict:
+                        raise ValueError("Found distribution property dict "
+                                         "without required '%s' key for "
+                                         "%s - %s!"
+                                         %(required, flavintgroup, dimension))
+
+                for k in dist_dict.iterkeys():
+                    if k not in required_keys:
+                        logging.warn("Unrecognised key in distribution"
+                                     " property dict: '%s'"%k)
+
+                dist_spec = dist_dict['dist']
+
+                if not isinstance(dist_spec, basestring):
+                    raise TypeError(" The resolution function needs to be"
+                                    " given as a string!")
+
+                if not dist_spec:
+                    raise ValueError("Empty string found for resolution"
+                                     " function!")
+
+                try:
+                    dist = getattr(stats, dist_spec.lower())
+                except AttributeError:
+                    try:
+                        import scipy
+                        sp_ver_str = scipy.__version__
+                    except:
+                        sp_ver_str = "N/A"
+                    raise AttributeError("'%s' is not a valid distribution"
+                                         " from scipy.stats (your scipy"
+                                         " version: '%s')."
+                                         %(dist_spec.lower(), sp_ver_str))
+                logging.debug("Found %s - %s resolution function: '%s'"
+                              %(flavintgroup, dimension, dist.name))
+
+                dist_spec_dict['dist'] = dist
+
+                frac = dist_dict['fraction']
+
+                if isinstance(frac, basestring):
+                    frac_func = eval(frac)
+
+                elif callable(frac):
+                    frac_func = frac
+
+                else:
+                    raise TypeError(
+                        "Expected 'fraction' to be either a string"
+                        " that can be interpreted by eval or a callable."
+                        " Got '%s'." % type(frac)
+                    )
+
+                dist_spec_dict['fraction'] = frac_func
+
+                kwargs = dist_dict['kwargs']
+
+                if not isinstance(kwargs, dict):
+                    raise TypeError(
+                        "'kwargs' must hold a dictionary. Got '%s' instead."
+                        % type(kwargs)
+                    )
+
+                dist_spec_dict['kwargs'] = kwargs
+                for kwarg, kwarg_spec in kwargs.iteritems():
+
+                    if isinstance(kwarg_spec, basestring):
+                        kwarg_eval = eval(kwarg_spec)
+
+                    elif callable(kwarg_spec) or isscalar(kwarg_spec):
+                        kwarg_eval = kwarg_spec
+
+                    else:
+                        raise TypeError(
+                            "Expected kwarg '%s' spec to be either a string"
+                            " that can be interpreted by eval, a callable or"
+                            " a scalar. Got '%s'." % type(kwarg_spec)
+                        )
+
+                    dist_spec_dict['kwargs'][kwarg] = kwarg_eval
+
+                dim_dist_list.append(dist_spec_dict)
+
+            reco_params[flavintgroup][dimension] = dim_dist_list
+
+    return reco_params
+
+def get_physical_bounds(dim):
+    """Returns the boundaries of the physical region for the various
+    dimensions"""
+    dim = basename(dim)
+
+    if dim == "coszen":
+        trunc_low = -1.
+        trunc_high = 1.
+
+    elif dim == "energy":
+        trunc_low = 0.
+        trunc_high = None
+
+    elif dim == "azimuth":
+        trunc_low = 0.
+        trunc_high = 2*np.pi
+
+    else:
+        raise ValueError("No physical bounds for dimension '%s' available."%dim)
+
+    return trunc_low, trunc_high
+
+def get_trunc_cdf(rv, dim):
+    """Returns the value of the distribution `rv`'s cdf at the physical
+    boundaries in the requested dimension (e.g., coszen or energy)"""
+    trunc_low, trunc_high = get_physical_bounds(dim=dim)
+    cdf_low = rv.cdf(trunc_low) if trunc_low is not None else 0.
+    cdf_high = rv.cdf(trunc_high) if trunc_high is not None else 1.
+
+    return cdf_low, cdf_high
+
+def truncate_and_renormalise_dist(rv, frac, bin_edges, dim):
+    """Renormalises the part of the distribution `rv` which spans the physical
+    domain to 1 (where `frac` is an overall normalisation factor of the
+    distribution)"""
+    cdf_low, cdf_high = get_trunc_cdf(rv=rv, dim=dim)
+    cdfs = frac*rv.cdf(bin_edges)/(cdf_high-cdf_low)
+
+    return cdfs
+
+def truncate_and_renormalise_superposition(weighted_integrals_physical_domain,
+                                           binwise_cdf_summed):
+    """Renormalise the combined distribution - characterised by
+    its binwise quantiles `binwise_cdf_summed` - resulting from a superposition
+    of n invidiual distributions with relative weights n_i to integrate to 1
+    over the physical domain. `weighted_integrals_physical_domain` is the list
+    of n_i-weighted integrals of the constituting distributions."""
+    return binwise_cdf_summed/np.sum(weighted_integrals_physical_domain)
+
+def perform_coszen_flipback(cz_kern_cdf, flipback_mask, keep):
+    """
+    Performs the flipback by mirroring back in any probability quantiles
+    that go beyond the physical bounds in coszen. Independent of whether
+    the output binning is upgoing, downgoing or allsky, mirror back in
+    any density that goes beyond -1 as well as +1.
+    """
+    flipback = np.where(flipback_mask)[0]
+
+    flipup = flipback[:int(len(flipback)/2)]
+    flipdown = flipback[int(len(flipback)/2):]
+    no_flipback = np.where(np.logical_not(flipback_mask))[0]
+
+    cz_kern_cdf = (cz_kern_cdf[flipup][::-1] + cz_kern_cdf[flipdown][::-1] +
+                   cz_kern_cdf[no_flipback])[keep-int(len(flipback)/2)]
+
+    return cz_kern_cdf
 
 # TODO: the below logic does not generalize to muons, but probably should
 # (rather than requiring an almost-identical version just for muons). For
@@ -54,30 +319,26 @@ class param(Stage):
     params : ParamSet
         Must exclusively have parameters:
 
-        reco_events : string or Events
-            PISA events file to use to derive transforms, or a string
-            specifying the resource location of the same.
-
-        reco_weights_name : None or string
-            Column in the events file to use for Monte Carlo weighting of the
-            events
+        reco_paramfile : string
+            Source of the parameterization. File path or resource location; must
+            yield a mapping. See `load_reco_param()`.
 
         res_scale_ref : string
-            One of "mean", "median", or "zero". This is the reference point
-            about which resolutions are scaled. "zero" scales about the
-            zero-error point (i.e., the bin midpoint), "mean" scales about the
-            mean of the events in the bin, and "median" scales about the median
-            of the events in the bin.
+            This is the reference point about which every resolution distribution
+            is scaled. "zero" scales about the zero-error point (i.e., the bin
+            midpoint). No other reference points implemented.
 
         e_res_scale : float
-            A scaling factor for energy resolutions.
+            A scaling factor for energy resolutions (cf. `res_scale_ref`).
 
         cz_res_scale : float
-            A scaling factor for coszen resolutions.
+            A scaling factor for coszen resolutions (cf. `res_scale_ref`).
 
         e_reco_bias : float
+            A shift of each energy resolution function's `loc` parameter.
 
         cz_reco_bias : float
+            A shift of each coszen resolution function's `loc` parameter.
 
     particles : string
         Must be one of 'neutrinos' or 'muons' (though only neutrinos are
@@ -95,6 +356,13 @@ class param(Stage):
         to specify this string
 
     sum_grouped_flavints : bool
+        Whether to sum the event-rate maps for the flavint groupings
+        specified by `transform_groups`. If this is done, the output map names
+        will be the group names (as well as the names of any flavor/interaction
+        types not grouped together). Otherwise, the output map names will be
+        the same as the input map names. Combining grouped flavints' is
+        computationally faster and results in fewer maps, but it may be
+        desirable to not do so for, e.g., debugging.
 
     input_binning : MultiDimBinning or convertible thereto
         Input binning is in true variables, with names prefixed by "true_".
@@ -104,6 +372,27 @@ class param(Stage):
         Output binning is in reconstructed variables, with names (traditionally
         in PISA but not necessarily) prefixed by "reco_". Each must match a
         corresponding dimension in `input_binning`.
+
+    only_physics_domain_sum : bool
+        Set to `True` in order to truncate the superposition of distributions
+        at the physical boundaries of cosine zenith and energy, and renormalise
+        its area to 1, so as to not smear events into unphysical regions.
+
+    only_physics_domain_distwise : bool
+        Set to `True` in order to truncate the individual distributions
+        at the physical boundaries of cosine zenith and energy, and renormalise
+        their areas to 1, before they are superimposed according to their
+        respective relative weights. Has the same effect as
+        `only_physics_domain_sum` in the case of a single distribution in any
+        dimension.
+
+    coszen_flipback : bool
+        Mirror back in "probability" that would otherwise leak into unphysical
+        regions in cosine zenith. This will be applied to a cosine zenith range
+        of [-3, +3], so there is no mirroring "back-and-forth" between the
+        physical cosine zenith boundaries. Not compatible with either one of the
+        preferred `only_physics_domain_*` options, which means no correction of
+        the energy resolution functions will be made.
 
     transforms_cache_depth : int >= 0
 
@@ -128,12 +417,18 @@ class param(Stage):
     """
     def __init__(self, params, particles, input_names, transform_groups,
                  sum_grouped_flavints, input_binning, output_binning,
-                 coszen_flipback=None, error_method=None,
-                 transforms_cache_depth=20, outputs_cache_depth=20,
-                 memcache_deepcopy=True, debug_mode=None):
+                 only_physics_domain_sum, only_physics_domain_distwise,
+                 coszen_flipback, error_method=None, transforms_cache_depth=20,
+                 outputs_cache_depth=20, memcache_deepcopy=False,
+                 debug_mode=None):
         assert particles in ['neutrinos', 'muons']
         self.particles = particles
+        """Whether stage is instantiated to process neutrinos or muons"""
+
         self.transform_groups = flavintGroupsFromString(transform_groups)
+        """Particle/interaction types to group for computing transforms"""
+
+        assert isinstance(sum_grouped_flavints, bool)
         self.sum_grouped_flavints = sum_grouped_flavints
 
         # All of the following params (and no more) must be passed via the
@@ -143,8 +438,6 @@ class param(Stage):
             'res_scale_ref', 'e_res_scale', 'cz_res_scale',
             'e_reco_bias', 'cz_reco_bias'
         )
-
-        self.coszen_flipback = coszen_flipback
 
         if isinstance(input_names, basestring):
             input_names = (''.join(input_names.split(' '))).split(',')
@@ -156,6 +449,41 @@ class param(Stage):
                 output_names = [str(g) for g in self.transform_groups]
             else:
                 output_names = input_names
+        elif self.particles == 'muons':
+            raise NotImplementedError
+        else:
+            raise ValueError('Particle type `%s` is not valid'
+                             % self.particles)
+
+        logging.trace('transform_groups = %s', self.transform_groups)
+        logging.trace('output_names = %s', ' :: '.join(output_names))
+
+        if only_physics_domain_sum and only_physics_domain_distwise:
+            raise ValueError(
+                "Either choose truncation of the superposition at the"
+                " physical boundaries or truncation of the individual"
+                " distributions, but not both!"
+                )
+
+        self.only_physics_domain_sum = only_physics_domain_sum
+
+        self.only_physics_domain_distwise = only_physics_domain_distwise
+
+        only_physics_domain = (only_physics_domain_sum or
+                               only_physics_domain_distwise)
+
+        if only_physics_domain and coszen_flipback:
+            raise ValueError(
+                "Truncating parameterisations at physical boundaries"
+                " and flipping back at coszen = +-1 at the same time is"
+                " not allowed! Please decide on only one of these."
+                )
+
+        self.only_physics_domain = only_physics_domain
+        """Whether one of the physics domain restrictions has been requested"""
+
+        self.coszen_flipback = coszen_flipback
+        """Whether to flipback coszen error distributions at +1 and -1"""
 
         # Invoke the init method from the parent class, which does a lot of
         # work for you.
@@ -174,9 +502,15 @@ class param(Stage):
             debug_mode=debug_mode
         )
 
+        self._reco_param_hash = None
+
         self.include_attrs_for_hashes('particles')
         self.include_attrs_for_hashes('transform_groups')
         self.include_attrs_for_hashes('sum_grouped_flavints')
+        self.include_attrs_for_hashes('only_physics_domain')
+        self.include_attrs_for_hashes('only_physics_domain_sum')
+        self.include_attrs_for_hashes('only_physics_domain_distwise')
+        self.include_attrs_for_hashes('coszen_flipback')
 
     def validate_binning(self):
         # Right now this can only deal with 2D energy / coszenith binning
@@ -191,7 +525,6 @@ class param(Stage):
                set(self.output_binning.basename_binning.names), \
                "input and output binning must both be 2D in energy / coszenith!"
 
-
         if self.coszen_flipback is None:
             raise ValueError(
                         "coszen_flipback should be set to True or False since"
@@ -199,122 +532,38 @@ class param(Stage):
                   )
 
         if self.coszen_flipback:
-            if not self.output_binning.basename_binning['coszen'].is_lin:
+            coszen_output_binning = self.output_binning.basename_binning['coszen']
+
+            if not coszen_output_binning.is_lin:
                 raise ValueError(
                             "coszen_flipback is set to True but zenith output"
                             " binning is not linear - incompatible settings!"
                       )
-            domain_in = self.input_binning.basename_binning['coszen'].domain
-            domain_out = self.output_binning.basename_binning['coszen'].domain
-            if (domain_out[0] != -1. or domain_out[1] > 0.):
+            coszen_step_out = (coszen_output_binning.range.magnitude/
+                               coszen_output_binning.size)
+
+            if not recursiveEquality(int(1/coszen_step_out), 1/coszen_step_out):
                 raise ValueError(
-                            "coszen_flipback currently only compatible with"
-                            " upgoing output domain (including coszen = -1)!"
-                            " Your choice: %s"%domain_out
+                            "coszen_flipback requires an integer number of"
+                            " coszen output binning steps to fit into a range"
+                            " of integer length."
                       )
 
-    def process_reco_dist_params(self, param_dict):
-        """
-        Ensure consistency between specified reconstruction function(s)
-        and their corresponding parameters.
-        """
-        def select_dist_param_key(allowed, param_dict, unsel=None):
-            """
-            Evaluates whether 'param_dict' contains exactly
-            one of the keys from 'allowed', and returns it if so.
-            If none or more than one is found, raises exception.
-            `unsel` (if a set) is updated with non-allowed/
-            unselected keys.
-            """
-            logging.trace("  Searching for one of '%s'."%str(allowed))
-            allowed_here = set(allowed)
-            search_keys = set(param_dict.keys())
-            search_found = allowed_here & search_keys
-            diff = search_keys.difference(search_found)
-            if len(search_found) == 0:
-                raise ValueError("No parameter from "+
-                                 str(tuple(allowed_here))+" found!")
-            elif len(search_found) > 1:
-                raise ValueError("Please remove one of "+
-                                 str(tuple(allowed_here))+" !")
-            param_str_sel = search_found.pop()
-            logging.trace("  Found and selected '%s'."%param_str_sel)
-            try:
-                unsel.update(diff)
-            except:
-                pass
-            return param_str_sel
-
-        allowed_dist_params = ['loc','scale','fraction']
-        # Prepare for detection of parameter ids that are never selected
-        sometime_sel = []; sometime_unsel = set()
-        # First, get list of distributions to be superimposed
-        dists = param_dict['dist'].split("+")
-        ndist = len(dists)
-        # Need to retain order of specification for correct assignment of
-        # distributions' parameters
-        dist_type_count = OrderedDict()
-        for dist_type in dists:
-            dist_type_count[dist_type] = dist_type_count.get(dist_type, 0) + 1
-        param_dict.pop('dist')
-        dist_param_dict = {}
-        tot_dist_count = 1
-        # For each distribution type, find all distributions' 'scale' and 'loc'
-        # parameterisations and store in a list of dictionaries
-        # (with length `this_dist_type_count`)
-        for dist_str, this_dist_type_count in dist_type_count.items():
-            dist_str = "".join(dist_str.split())
-            dist_param_dict[dist_str] = []
-            for i in xrange(1, this_dist_type_count+1):
-                logging.trace(" Collecting parameters for resolution"
-                              " function #%d of type '%s'."%(i, dist_str))
-                this_dist_dict = {}
-                # Also explicitly require a 'fraction' to be present always
-                for param in allowed_dist_params:
-                    if ndist == 1:
-                        # There's greater flexibility in this case
-                        allowed_here = (param, param+"_"+dist_str,
-                                        param+"%s"%tot_dist_count,
-                                        param+"_"+dist_str+"%s"%i)
-                    else:
-                        allowed_here = (param+"%s"%tot_dist_count,
-                                        param+"_"+dist_str+"%s"%i)
-                    param_str = select_dist_param_key(allowed_here,
-                                                      param_dict,
-                                                      sometime_unsel)
-                    # Keep track of the parameter id that got selected
-                    sometime_sel += [param_str]
-                    # Select the corresponding entry
-                    this_dist_dict[param] = param_dict[param_str]
-                # Add to list of distribution properties for each distribution
-                # of this type
-                dist_param_dict[dist_str].append(this_dist_dict)
-                tot_dist_count += 1
-        # Find the parameter ids that are present in the parameterisation
-        # dictionary, but which never got selected, and warn the user about those
-        never_sel = sometime_unsel.difference(set(sometime_sel))
-        if len(never_sel) > 0:
-            logging.warn("Unused distribution parameter identifiers detected: "+
-                         str(tuple(never_sel)))
-        return dist_param_dict
-
-    def check_reco_dist_consistency(self, dist_param_dict):
+    def check_reco_dist_consistency(self, dist_list):
         """Enforces correct normalisation of resolution functions."""
         logging.trace(" Verifying correct normalisation of resolution function.")
-        # Obtain list of all distributions (one list of dicts for a distribution
-        # of a certain type). The sum of their relative weights should yield 1.
-        dist_dicts = np.array(dist_param_dict.values())
-        frac_sum = np.zeros_like(dist_dicts[0][0]['fraction'])
-        for dist_type in dist_dicts:
-            for dist_dict in dist_type:
-                frac_sum += dist_dict['fraction']
+        # Obtain list of all distributions. The sum of their relative weights
+        # should yield 1.
+        frac_sum = np.zeros_like(dist_list[0]['fraction'])
+        for dist_dict in dist_list:
+            frac_sum += dist_dict['fraction']
         if not recursiveEquality(frac_sum, np.ones_like(frac_sum)):
             err_msg = ("Total normalisation of resolution function is off"
                        " (fractions do not add up to 1).")
             raise ValueError(err_msg)
         return True
 
-    def read_param_string(self, param_func_dict):
+    def evaluate_reco_param(self):
         """
         Evaluates the parameterisations for the requested binning and stores
         this in a useful way for eventually constructing the reco kernels.
@@ -322,130 +571,70 @@ class param(Stage):
         evals = self.input_binning['true_energy'].weighted_centers.magnitude
         n_e = len(self.input_binning['true_energy'].weighted_centers.magnitude)
         n_cz = len(self.input_binning['true_coszen'].weighted_centers.magnitude)
-        param_dict = {}
-        for flavour in param_func_dict.keys():
-            param_dict[flavour] = {}
-            for dimension in param_func_dict[flavour].keys():
-                parameters = {}
-                try:
-                    reco_dist_str = \
-                        param_func_dict[flavour][dimension]['dist'].lower()
-                    logging.debug("Will use %s %s resolution function '%s'"
-                                  %(flavour, dimension, reco_dist_str))
-                except KeyError:
-                    # For backward compatibility, assume double Gauss if key
-                    # is not present.
-                    logging.warn("No resolution function specified for %s %s."
-                                 " Trying sum of two Gaussians."
-                                 %(flavour, dimension))
-                    reco_dist_str = "norm+norm"
-                except AttributeError:
-                    raise AttributeError("The resolution function needs to be"
-                                         " given as a string!")
-                if not reco_dist_str:
-                    raise ValueError("Empty string found for resolution"
-                                     " function! Cannot proceed.")
-                parameters['dist'] = reco_dist_str
-                for par, funcstring in param_func_dict[
-                        flavour][dimension].items():
-                    par = par.lower()
-                    if par == 'dist':
-                        continue
-                    try:
-                        # This should contain a lambda function
-                        function = eval(funcstring)
-                        # Evaluate the function at the given energies and repeat
-                        vals = function(evals)
-                    except:
-                        raise RuntimeError("Failed to parse parameterisation"
-                                           " for '%s' (found '%s'). This needs"
-                                           " to be a string containing a valid"
-                                           " python function."
-                                           %(par, funcstring))
-                    parameters[par] = np.repeat(vals,n_cz).reshape((n_e,n_cz))
-                dist_param_dict = self.process_reco_dist_params(parameters)
+        eval_dict = deepcopy(self.param_dict)
+        for flavintgroup, dim_dict in eval_dict.iteritems():
+            for dim, dist_list in dim_dict.iteritems():
+                for dist_prop_dict in dist_list:
+                    for dist_prop in dist_prop_dict.iterkeys():
+                        if dist_prop == 'dist':
+                            continue
+                        if callable(dist_prop_dict[dist_prop]):
+                            func = dist_prop_dict[dist_prop]
+                            vals = func(evals)
+                            dist_prop_dict[dist_prop] =\
+                                np.repeat(vals,n_cz).reshape((n_e,n_cz))
+                        elif isinstance(dist_prop_dict[dist_prop], dict):
+                            assert dist_prop == 'kwargs'
+                            for kwarg in dist_prop_dict['kwargs'].iterkeys():
+                                func = dist_prop_dict['kwargs'][kwarg]
+                                vals = func(evals)
+                                dist_prop_dict['kwargs'][kwarg] =\
+                                    np.repeat(vals,n_cz).reshape((n_e,n_cz))
                 # Now check for consistency, to not have to loop over all dict
                 # entries again at a later point in time
-                self.check_reco_dist_consistency(dist_param_dict)
-                param_dict[flavour][dimension] = dist_param_dict
-        return param_dict
-
-    def load_reco_param(self, reco_param):
-        """
-        Load reco parameterisations from file or dictionary. This will be 
-        checked that it matches the dimensionality of the input binning.
-        """
-        this_hash = hash_obj(reco_param)
-        if (hasattr(self, '_energy_param_hash') and
-            this_hash == self._energy_param_hash):
-            return
-        if isinstance(reco_param, basestring):
-            param_func_dict = from_file(reco_param)
-        elif isinstance(reco_param, dict):
-            param_func_dict = reco_param
-        else:
-            raise TypeError(
-                "Expecting either a path to a file or a dictionary provided "
-                "as the store of the parameterisations. Got '%s'."
-                %type(reco_param)
-            )
-        # Test that there are reco parameterisations for every input dimension.
-        for flav in param_func_dict.keys():
-            dims = param_func_dict[flav].keys()
-            for basename in self.input_binning.basenames:
-                if basename not in dims:
-                    raise ValueError(
-                        "A binning dimension, '%s', exists in the inputs "
-                        "that does not have a corresponding reconstruction "
-                        "parameterisation. That only has %s."%(basename, dims)
-                    )
-        param_dict = self.read_param_string(param_func_dict)
-        self.param_dict = param_dict
-        self._param_hash = this_hash
+                self.check_reco_dist_consistency(dist_list)
+        return eval_dict
 
     def make_cdf(self, bin_edges, enval, enindex, czindex, czval, dist_params):
         """
         General make function for the cdf needed to construct the kernels.
         """
-        for dist_str in dist_params.keys():
-            try:
-                dist = getattr(stats, dist_str)
-            except AttributeError:
-                try:
-                    import scipy
-                    sp_ver_str = scipy.__version__
-                except:
-                    sp_ver_str = "N/A"
-                raise AttributeError("'%s' is not a valid distribution from"
-                                     " scipy.stats (your scipy version: '%s')."
-                                     %(dist_str, sp_ver_str))
-            binwise_cdfs = []
-            for this_dist_dict in dist_params[dist_str]:
-                loc = this_dist_dict['loc'][enindex,czindex]
-                scale = this_dist_dict['scale'][enindex,czindex]
-                frac = this_dist_dict['fraction'][enindex,czindex]
-                # now add error to true parameter value
-                loc = loc + czval if czval is not None else loc + enval
-                # unfortunately, creating all dists of same type with
-                # different parameters and evaluating cdfs doesn't seem
-                # to work, so do it one-by-one
-                rv = dist(loc=loc, scale=scale)
-                # truncate each distribution at the physical boundaries,
-                # i.e., renormalise so that integral between boundaries yields 1.
-                if czval is None:
-                    trunc_low = 0.
-                    trunc_high = None
-                else:
-                    trunc_low = -1.
-                    trunc_high = 1.
-                cdf_low = rv.cdf(trunc_low) if trunc_low is not None else 0.
-                cdf_high = rv.cdf(trunc_high) if trunc_high is not None else 1.
-                cdfs = frac*rv.cdf(bin_edges)/(cdf_high-cdf_low)
-                binwise_cdfs.append(cdfs[1:] - cdfs[:-1])
-            # the following would be nice:
-            # cdfs = dist(loc=loc_list, scale=scale_list).cdf(bin_edges)
-            # binwise_cdfs = [cdf[1:]-cdf[:-1] for cdf in cdfs]
+        dim = "coszen" if czval is not None else "energy"
+
+        weighted_physical_int = []
+        binwise_cdfs = []
+        for this_dist_dict in dist_params:
+            dist_kwargs = {}
+            for dist_prop, prop_vals in this_dist_dict['kwargs'].iteritems():
+                dist_kwargs[dist_prop] = prop_vals[enindex, czindex]
+            frac = this_dist_dict['fraction'][enindex,czindex]
+
+            # now add error to true parameter value
+            dist_kwargs['loc'] += czval if czval is not None else enval
+            rv = this_dist_dict['dist'](**dist_kwargs)
+            cdfs = frac*rv.cdf(bin_edges)
+
+            if self.only_physics_domain_sum:
+                cdf_low, cdf_high = get_trunc_cdf(rv=rv, dim=dim)
+                int_weighted_physical = frac*(cdf_high-cdf_low)
+                weighted_physical_int.append(int_weighted_physical)
+
+            if self.only_physics_domain_distwise:
+                cdfs = truncate_and_renormalise_dist(
+                           rv=rv, frac=frac, bin_edges=bin_edges, dim=dim
+                       )
+
+            binwise_cdfs.append(cdfs[1:] - cdfs[:-1])
+
         binwise_cdf_summed = np.sum(binwise_cdfs, axis=0)
+
+        if self.only_physics_domain_sum:
+            binwise_cdf_summed = \
+                truncate_and_renormalise_superposition(
+                    weighted_integrals_physical_domain=weighted_physical_int,
+                    binwise_cdf_summed=binwise_cdf_summed
+                )
+
         return binwise_cdf_summed
 
     def scale_and_shift_reco_dists(self):
@@ -456,20 +645,21 @@ class param(Stage):
         cz_res_scale = self.params.cz_res_scale.value.m_as('dimensionless')
         e_reco_bias = self.params.e_reco_bias.value.m_as('GeV')
         cz_reco_bias = self.params.cz_reco_bias.value.m_as('dimensionless')
-        for flavour in self.param_dict.keys():
+        eval_dict_mod = deepcopy(self.eval_dict)
+        for flavintgroup in eval_dict_mod.iterkeys():
             for (dim, dim_scale, dim_bias) in \
               (('energy', e_res_scale, e_reco_bias),
                ('coszen', cz_res_scale, cz_reco_bias)):
-                for dist in self.param_dict[flavour][dim].keys():
-                    for i,flav_dim_dist_dict in \
-                      enumerate(self.param_dict[flavour][dim][dist]):
-                        for param in flav_dim_dist_dict.keys():
-                            if param == 'scale':
-                                flav_dim_dist_dict[param] *= dim_scale
-                            elif param == 'loc':
-                                flav_dim_dist_dict[param] += dim_bias
+                for i,flav_dim_dist_dict in \
+                  enumerate(eval_dict_mod[flavintgroup][dim]):
+                    for param in flav_dim_dist_dict["kwargs"].keys():
+                        if param == 'scale':
+                            flav_dim_dist_dict["kwargs"][param] *= dim_scale
+                        elif param == 'loc':
+                            flav_dim_dist_dict["kwargs"][param] += dim_bias
+        return eval_dict_mod
         
-    def apply_reco_scales_and_biases(self):
+    def reco_scales_and_biases_applicable(self):
         """
         Wrapper function for applying the resolution scales and biases to all
         distributions. Performs consistency check, then calls the function
@@ -481,19 +671,59 @@ class param(Stage):
         # loop over all sub-dictionaries with distribution parameters to check
         # whether all parameters to which the systematics will be applied are
         # really present, raise exception if not
-        for flav in self.param_dict.keys():
-            for dim in self.param_dict[flav].keys():
-                for dist in self.param_dict[flav][dim].keys():
-                    for flav_dim_dist_dict in self.param_dict[flav][dim][dist]:
-                        param_view = flav_dim_dist_dict.viewkeys()
-                        if not entries_to_mod & param_view == entries_to_mod:
-                            raise ValueError(
-                            "Couldn't find all of "+str(tuple(entries_to_mod))+
-                            " in chosen reco parameterisation, but required for"
-                            " applying reco scale and bias. Got %s for %s %s."
-                            %(flav_dim_dist_dict.keys(), flav, dim))
-        # everything seems to be fine, so rescale and shift distributions
-        self.scale_and_shift_reco_dists()
+        for flavintgroup in self.eval_dict.keys():
+            for dim in self.eval_dict[flavintgroup].keys():
+                for flav_dim_dist_dict in self.eval_dict[flavintgroup][dim]:
+                    param_view = flav_dim_dist_dict["kwargs"].viewkeys()
+                    if not entries_to_mod & param_view == entries_to_mod:
+                        raise ValueError(
+                        "Couldn't find all of "+str(tuple(entries_to_mod))+
+                        " in chosen reco parameterisation, but required for"
+                        " applying reco scale and bias. Got %s for %s %s."
+                        %(flav_dim_dist_dict["kwargs"].keys(), flavintgroup, dim))
+        return
+
+    def extend_binning_for_coszen(self, ext_low=-3., ext_high=+3.):
+        """
+        Check whether `coszen_flipback` can be applied to the stage's
+        coszen output binning and return an extended binning spanning [-3, +3]
+        if that is the case.
+        """
+        logging.trace("Preparing binning for flipback of reco kernel at"
+                      " coszen boundaries of physical range.")
+
+        cz_edges_out = self.output_binning['reco_coszen'].bin_edges.magnitude
+        coszen_range = self.output_binning['reco_coszen'].range.magnitude
+        n_cz_out = self.output_binning['reco_coszen'].size
+        coszen_step = coszen_range/n_cz_out
+        # we need to check for possible contributions from (-3, -1) and
+        # (1, 3) in coszen
+        assert ext_high > ext_low
+        ext_range = ext_high - ext_low
+        extended = np.linspace(ext_low, ext_high, int(ext_range/coszen_step) + 1)
+
+        # We cannot flipback if we don't have -1 & +1 as (part of extended)
+        # bin edges. This could happen if 1 is a multiple of the output bin
+        # size, but the original edges themselves are not a multiple of that
+        # size.
+        for bound in (-1., +1.):
+            comp = [recursiveEquality(bound, e) for e in extended]
+            assert np.any(comp)
+
+        # Perform one final check: original edges subset of extended ones?
+        for coszen in cz_edges_out:
+            comp = [recursiveEquality(coszen, e) for e in extended]
+            assert np.any(comp)
+
+        # Binning seems fine - we can proceed
+        ext_cent = (extended[1:] + extended[:-1])/2.
+        flipback_mask = ((ext_cent < -1. ) | (ext_cent > +1.))
+        keep = np.where((ext_cent > cz_edges_out[0]) &
+                            (ext_cent < cz_edges_out[-1]))[0]
+        cz_edges_out = extended
+        logging.trace("  -> temporary coszen bin edges:\n%s"%cz_edges_out)
+
+        return cz_edges_out, flipback_mask, keep
 
     def _compute_transforms(self):
         """
@@ -508,8 +738,42 @@ class param(Stage):
         res_scale_ref = self.params.res_scale_ref.value.strip().lower()
         assert res_scale_ref in ['zero'] # TODO: , 'mean', 'median']
 
-        self.load_reco_param(self.params['reco_paramfile'].value)
-        self.apply_reco_scales_and_biases()
+        reco_param_source = self.params.reco_paramfile.value
+
+        if reco_param_source is None:
+            raise ValueError(
+                'non-None reco parameterization params.reco_paramfile'
+                ' must be provided'
+            )
+
+        reco_param_hash = hash_obj(reco_param_source)
+
+        if (self._reco_param_hash is None
+                or reco_param_hash != self._reco_param_hash):
+            reco_param = load_reco_param(reco_param_source)
+
+            # Transform groups are implicitly defined by the contents of the
+            # reco paramfile's keys
+            implicit_transform_groups = reco_param.keys()
+
+            # Make sure these match transform groups specified for the stage
+            if set(implicit_transform_groups) != set(self.transform_groups):
+                raise ValueError(
+                    'Transform groups (%s) defined implicitly by'
+                    ' %s reco parameterizations do not match those'
+                    ' defined as the stage\'s `transform_groups` (%s).'
+                    % (implicit_transform_groups, reco_param_source,
+                       self.transform_groups)
+                )
+
+            self.param_dict = reco_param
+            self._reco_param_hash = reco_param_hash
+
+            self.eval_dict = self.evaluate_reco_param()
+            self.reco_scales_and_biases_applicable()
+
+        # everything seems to be fine, so rescale and shift distributions
+        eval_dict = self.scale_and_shift_reco_dists()
 
         # Computational units must be the following for compatibility with
         # events file
@@ -539,22 +803,18 @@ class param(Stage):
         n_cz_in = len(cz_centers_in)
         n_e_out = len(en_edges_out)-1
         n_cz_out = len(cz_edges_out)-1
+
         if self.coszen_flipback:
-            logging.trace("Preparing binning for flipback of reco kernel at"
-                          " lower coszen boundary.")
-            coszen_range = self.output_binning['reco_coszen'].range.magnitude
-            cz_edges_out = np.append(cz_edges_out[:-1]-coszen_range, cz_edges_out)
-            logging.trace(" -> temporary coszen bin edges:\n%s"%cz_edges_out)
+            cz_edges_out, flipback_mask, keep = \
+                self.extend_binning_for_coszen(ext_low=-3., ext_high=+3.)
 
         xforms = []
         for xform_flavints in self.transform_groups:
             logging.debug("Working on %s reco kernel..." %xform_flavints)
-            repr_flavint = xform_flavints[0]
-            if 'nc' in str(repr_flavint):
-                this_params = self.param_dict['nuall_nc']
-            else:
-                this_params = self.param_dict[str(repr_flavint)]
+
+            this_params = eval_dict[xform_flavints]
             reco_kernel = np.zeros((n_e_in, n_cz_in, n_e_out, n_cz_out))
+
             for (i,j) in itertools.product(range(n_e_in), range(n_cz_in)):
                 e_kern_cdf = self.make_cdf(
                     bin_edges=en_edges_out,
@@ -572,9 +832,11 @@ class param(Stage):
                     czindex=j,
                     dist_params=this_params['coszen']
                 )
+
                 if self.coszen_flipback:
-                    cz_kern_cdf = cz_kern_cdf[:int(len(cz_edges_out)/2)][::-1] + \
-                        cz_kern_cdf[int(len(cz_edges_out)/2):]
+                    cz_kern_cdf = perform_coszen_flipback(
+                                      cz_kern_cdf, flipback_mask, keep
+                                  )
 
                 reco_kernel[i,j] = np.outer(e_kern_cdf, cz_kern_cdf)
 
@@ -599,10 +861,10 @@ class param(Stage):
 
             if self.input_binning.basenames[0] == "coszen":
                 # The reconstruction kernel has been set up with energy as its
-                # first dimension, so transpose if it is applied to an input
+                # first dimension, so swap axes if it is applied to an input
                 # binning where 'coszen' is the first
-                logging.trace(" Transposing kernel, since 'coszen' has been"
-                              " detected as the first dimension.")
+                logging.trace(" Swapping kernel dimensions since 'coszen' has"
+                              " been requested as the first.")
                 reco_kernel = np.swapaxes(reco_kernel, 0, 1)
                 reco_kernel = np.swapaxes(reco_kernel, 2, 3)
 
@@ -610,12 +872,12 @@ class param(Stage):
             if self.sum_grouped_flavints:
                 xform_input_names = []
                 for input_name in self.input_names:
-                    input_flavs = NuFlavIntGroup(input_name)
-                    if len(set(xform_flavints).intersection(input_flavs)) > 0:
-                        xform_input_names.append(input_name)
+                    if set(NuFlavIntGroup(input_name)).isdisjoint(xform_flavints):
+                        continue
+                    xform_input_names.append(input_name)
 
                 for output_name in self.output_names:
-                    if not output_name in xform_flavints:
+                    if output_name not in xform_flavints:
                         continue
                     xform = BinnedTensorTransform(
                         input_names=xform_input_names,
@@ -626,23 +888,28 @@ class param(Stage):
                         sum_inputs=self.sum_grouped_flavints
                     )
                     xforms.append(xform)
+            # If *not* combining grouped flavints:
+            # Copy the transform for each input flavor, regardless if the
+            # transform is computed from a combination of flavors.
             else:
-                # NOTES:
-                # * Output name is same as input name
-                # * Use `self.input_binning` and `self.output_binning` so maps
-                #   are returned in user-defined units (rather than
-                #   computational units, which are attached to the non-`self`
-                #   versions of these binnings).
                 for input_name in self.input_names:
-                    if input_name not in xform_flavints:
+                    if set(NuFlavIntGroup(input_name)).isdisjoint(xform_flavints):
                         continue
-                    xform = BinnedTensorTransform(
-                        input_names=input_name,
-                        output_name=input_name,
-                        input_binning=self.input_binning,
-                        output_binning=self.output_binning,
-                        xform_array=reco_kernel,
-                    )
-                    xforms.append(xform)
+                    for output_name in self.output_names:
+                        if (output_name not in NuFlavIntGroup(input_name)
+                                or output_name not in xform_flavints):
+                            continue
+                        logging.trace('  input: %s, output: %s, xform: %s',
+                                      input_name, output_name, xform_flavints)
+
+                        xform = BinnedTensorTransform(
+                            input_names=input_name,
+                            output_name=output_name,
+                            input_binning=self.input_binning,
+                            output_binning=self.output_binning,
+                            xform_array=reco_kernel,
+                            sum_inputs=self.sum_grouped_flavints
+                        )
+                        xforms.append(xform)
 
         return TransformSet(transforms=xforms)

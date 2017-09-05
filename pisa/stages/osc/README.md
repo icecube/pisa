@@ -1,4 +1,4 @@
-# Stage 2: Oscillations
+# Stage: Oscillations
 
 The purpose of this stage is to modify the modelled atmospheric neutrino flux by applying the appropriate oscillation probability in each energy and zenith bin through the earth, for each flavour.
 At the end of the stage, the oscillated neutrino flux for each flavour is given.

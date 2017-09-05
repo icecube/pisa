@@ -2,7 +2,13 @@
 
 ### Quickstart
 
-In Ubuntu you can peform the following steps to perform a clean, full (all optional dependencies included), editable install of PISA on your local PC; test the installation; and run a quick analysis.
+See [github.com/jllanfranchi/pisa/wiki/installation_specific_examples](https://github.com/jllanfranchi/pisa/wiki/installation_specific_examples) for users' recipes for installing PISA under various circumstances.
+Please add notes there and/or add your own recipe if your encounter a unique installation issue.
+Also, for instructions on running PISA on Open Science Grid (OSG) nodes, see [github.com/jllanfranchi/pisa/wiki/Running-PISA-on-GRID-nodes-with-access-to-CVMFS](https://github.com/jllanfranchi/pisa/wiki/Running-PISA-on-GRID-nodes-with-access-to-CVMFS)
+
+One example is listed here for a personal computer running Ubuntu (and using the bash shell).
+This includes a clean, full (all optional dependencies included), editable install of PISA on your local PC; tests of the installation; and running a quick analysis.
+Note that if you are not using the bash shell, you may have to adapt the syntax below (e.g., zsh requires that you escape the square brackets).
 
 ```bash
 # Install required and optional system packages
@@ -16,8 +22,7 @@ source my_virtual_env/bin/activate
 mkdir my_virtual_env/src
 
 # Obtain the PISA sourcecode (must have access to the WIPACrepo/pisa repo)
-git clone https://github.com/jllanfranchi/pisa.git --branch cake \
-    --single-branch my_virtual_env/src/pisa
+git clone https://github.com/jllanfranchi/pisa.git --branch cake my_virtual_env/src/pisa
 
 # Install PISA and its python package dependencies (optional dependency
 # categories are in brackets). Note that sometimes an install issue with the
@@ -27,15 +32,15 @@ pip install -e my_virtual_env/src/pisa/[cuda,numba,develop] \
     -r my_virtual_env/src/pisa/requirements.txt
 
 # Define the precision you want GPU code to run in (single or double)
-export PISA_FTYPE=single
+export PISA_FTYPE=double
 
 # Run the physics tests (append --ignore-cuda-errors if no CUDA support)
-test_consistency_with_pisa2.py -v
+my_virtual_env/src/pisa/tests/test_consistency_with_pisa2.py -v
 
 # EXAMPLE: Run a Monte Carlo pipeline to produce, store, and plot its expected
 # distributions at the output of each stage
-pipeline.py --settings settings/pipeline/example.cfg \
-    --dir /tmp/pipeline_output --intermediate --pdf -v
+pipeline.py --pipeline settings/pipeline/example.cfg \
+    --outdir /tmp/pipeline_output --intermediate --pdf -v
 
 # EXAMPLE: Run the Asimov NMO analysis; leave off "_gpu" to run CPU-only
 # version
@@ -45,7 +50,7 @@ hypo_testing.py --logdir /tmp/test \
     --h1-param-selections="nh" \
     --data-param-selections="nh" \
     --data-is-mc \
-    --minimizer-settings settings/minimizer/bfgs_settings_fac1e11_eps1e-4_mi20.json \
+    --min-method l-bfgs-b \
     --metric=chi2 \
     --pprint -v
 
@@ -65,8 +70,8 @@ Although the selection of maintained packages is smaller than if you use the `pi
 
 The other advantage to these distributions is that they easily install without system administrative privileges (and install in a user directory) and come with the non-Python binary libraries upon which many Python modules rely, making them ideal for setup on e.g. clusters.
 
-* **Note**: Make sure that your `PATH` variable points to e.g. `<anaconda_install_dr>/bin` and *not* your system Python directory. To check this, type: `echo $PATH`; to udpate it, add `export PATH=<anaconda_install_dir>/bin:$PIATH` to your .bashrc file.
-* Python 2.7.x can also be found from the Python website [https://www.python.org/downloads](https://www.python.org/downloads/) or pre-packaged for almost any OS.
+* **Note**: Make sure that your `PATH` variable points to e.g. `<anaconda_install_dr>/bin` and *not* your system Python directory. To check this, type: `echo $PATH`; to udpate it, add `export PATH=<anaconda_install_dir>/bin:$PATH` to your .bashrc file.
+* Python 2.7.x can also be found from the Python website [python.org/downloads](https://www.python.org/downloads/) or pre-packaged for almost any OS.
 
 
 ### Required Dependencies
@@ -94,13 +99,15 @@ Also note that Python, SWIG, HDF5, and pip support come pre-packaged or as `cond
     `sudo apt-get install libhdf5-10`
 
 Required Python modules that are installed automatically when you use the pip command detailed later:
+* [configparser](https://pypi.python.org/pypi/configparser)
 * [cython](http://cython.org)
+* [decorator](https://pypi.python.org/pypi/decorator)
 * [dill](http://trac.mystic.cacr.caltech.edu/project/pathos/wiki/dill.html)
 * [h5py](http://www.h5py.org)
 * [line_profiler](https://pypi.python.org/pypi/line_profiler): detailed profiling output<br>
-* [matplotlib](http://matplotlib.org)
+* [matplotlib](http://matplotlib.org) >= 2.0 required
 * [numpy](http://www.numpy.org) version >= 1.11.0 required
-* [pint](https://pint.readthedocs.org); at present this must be installed from its github source, as there is a bug not yet fixed in a release; specifying `-r requirements.txt` to `pip` will automatically install pint from the correct source (https://github.com/hgrecco/pint.git@c5925bfdab09c75a26bb70cd29fb3d34eed56a5f#egg=pint)
+* [pint](https://pint.readthedocs.org) >= 0.8 required
 * [scipy](http://www.scipy.org) version >= 0.17 required
 * [setuptools](https://setuptools.readthedocs.io) version >= 0.18 required
 * [simplejson](https://github.com/simplejson/simplejson) version >= 3.2.0 required
@@ -129,9 +136,11 @@ Optional dependencies. Some of these must be installed manually prior to install
     `sudo apt-get install root-system libroot-bindings-python*`
 * [numba](http://numba.pydata.org) Just-in-time compilation of decorated Python functions to native machine code via LLVM. This can accelerate certain routines significantly. If not using Anaconda to install, you must have LLVM installed already on your system (see above).
   * Installed alongside PISA if you specify option `['numba']` to `pip`
+* [Pylint](http://www.pylint.org): Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.<br>
+  * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [PyCUDA](https://mathema.tician.de/software/pycuda): run certain routines on Nvidia CUDA GPUs (must have compute 2.0 or greater capability)<br>
   * Installed alongside PISA if you specify option `['cuda']` to `pip`
-* [Sphinx](http://www.sphinx-doc.org/en/stable/) version > 1.3
+* [Sphinx](http://www.sphinx-doc.org/en/stable/) version >= 1.3
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [recommonmark](http://recommonmark.readthedocs.io/en/latest/) Translator to allow markdown docs/docstrings to be used; plugin for Sphinx. (Required to compile PISA's documentation.)
   * Installed alongside PISA if you specify option `['develop']` to `pip`
@@ -203,10 +212,10 @@ When you want to share your changes with `jllanfranchi/pisa`, you can then submi
 * Navigate to the [PISA github page](https://github.com/jllanfranchi/pisa) and fork the repository by clicking on the ![fork](images/ForkButton.png) button.
 * Clone the repository into the `$PISA` directory via one of the following commands (`<github username>` is your Github username):
   * either SSH access to repo:<br>
-`git clone git@github.com:<github username>/pisa.git --branch <brnnchname> --single-branch $PISA
+`git clone git@github.com:<github username>/pisa.git $PISA
 `
   * or HTTPS access to repo:<br>
-`git clone https://github.com/<github username>/pisa.git --branch <brnnchname> --single-branch $PISA`
+`git clone https://github.com/<github username>/pisa.git $PISA`
 
 
 #### Using but not developing PISA: Cloning
@@ -215,9 +224,9 @@ If you just wish to pull changes from github (and not submit any changes back), 
 
 * Clone the repository into the `$PISA` directory via one of the following commands:
   * either SSH access to repo:<br>
-`git clone git@github.com:jllanfranchi/pisa.git --branch cake --single-branch $PISA`
+`git clone git@github.com:jllanfranchi/pisa.git $PISA`
   * or HTTPS access to repo:<br>
-`git clone https://github.com/jllanfranchi/pisa.git --branch cake --single-branch $PISA`
+`git clone https://github.com/jllanfranchi/pisa.git $PISA`
 
 
 ### Ensuring a Clean Install: Using Virtualenv
@@ -285,9 +294,14 @@ __Notes:__
 
 ### Reinstall PISA
 
+Sometimes a change within PISA requires re-installation (particularly if a compiled module changes, the below forces re-compilation).
+
 ```bash
 pip install --editable $PISA -r $PISA/requirements.txt --force-reinstall
 ```
+
+Note that if files change names or locations, though, the above can still not be enough.
+In this case, the old files have to be removed manually (along with any associated `.pyc` files, as Python will use these even if the `.py` files have been removed).
 
 ### Compiling the Documentation
 
@@ -324,15 +338,24 @@ test_consistency_with_pisa2.py -v
 
 ### Running a Basic Analysis
 
-To make sure that an analysis can run, you can run the Asimov analysis of neutrion mass ordering (NMO) with the following command:
+To make sure that an analysis can be run, try running an Asimov analysis of neutrino mass ordering (NMO) with the following (this takes about one minute on a laptop; note, though, that the result is not terribly accurate due to the use of coarse binning and low Monte Carlo statistics):
 ```bash
-hypo_testing.py --logdir /tmp/test \
-    --h0-pipeline settings/pipeline/example_gpu.cfg \
+export PISA_FTYPE=fp64
+hypo_testing.py --logdir /tmp/nmo_test \
+    --h0-pipeline settings/pipeline/example.cfg \
     --h0-param-selections="ih" \
     --h1-param-selections="nh" \
     --data-param-selections="nh" \
     --data-is-mc \
-    --minimizer-settings settings/minimizer/bfgs_settings_fac1e11_eps1e-4_mi20.json \
-    --metric="chi2" \
+    --min-method slsqp \
+    --metric=chi2 \
     --pprint -v
+```
+
+The above command sets the null hypothesis (h0) to be the inverted hierarchy (ih) and the hypothesis to be tested (h1) to the normal hierarchy (nh).
+Meanwhile, the Asimov dataset is derived from the normal hierarchy.
+
+The significance for distinguishing NH from IH in this case (with the crude but fast settings specified) is shown by typing the follwoing command (which should output something close to 4.3):
+```bash
+hypo_testing_postprocess.py --asimov --detector "pingu_v39" --dir /tmp/nmo_test/hypo*
 ```
