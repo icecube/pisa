@@ -42,3 +42,17 @@ Some examples are given to facilitate understanding.
               * [OneDimBinning](/pisa/core/binning.py) d0 (e.g. true/reco_energy)
               * [OneDimBinning](/pisa/core/binning.py) d1 (e.g. true/reco_coszen)
               * [OneDimBinning](/pisa/core/binning.py) ...
+
+# $PISA/pisa/core
+
+* `images/` - Contains images designed to illustrate the architecture of a stage, how it fits in to the pipeline and the overall distribution maker.
+* `__init__.py`
+* `binning.py` - A class for dealing with binning so that features like the name, units, whether it is logarithmic etc. can be stored.
+* `distribution_maker.py` - A class for dealing with how to go from a pipeline to actual output that can be fed to an analysis or whatever is needed. This can deal with combining multiple pipelines.
+* `events.py` - A storage container for the raw events that can be then used to create _something_ e.g. a `Map` or a `Transform`.
+* `map.py` - A storage container for the output histograms so that much more information can be easily kept with it e.g. name, binning, errors, units etc.
+* `param.py` - Defines the behaviour of parameters i.e. the name, expected values, any priors, whether they are to be varied in an analysis etc.
+* `pipeline.py` - Gives structure to the stages and organises them based on pipeline `cfg` files. 
+* `prior.py` - Defines the generic form of a prior i.e. the type and how the penalty is calculated.
+* `stage.py` - Defines the generic form of a stage i.e. loading from pipelines, how to cache results etc.
+* `transform.py` - Defines the generic form of the transforms used to get between stages i.e. take the input (if any), do _something_ to it and then get an output. 

@@ -186,6 +186,8 @@ def _new_obj(original_function):
                 new_state[slot] = state_updates[slot]
             else:
                 new_state[slot] = deepcopy(getattr(self, slot))
+        if len(new_state['binning']) == 0:
+            return np.asscalar(new_state['hist'])
         return Map(**new_state)
     return decorate(original_function, new_function)
 
@@ -354,6 +356,25 @@ class Map(object):
     def _repr_pretty_(self, p, cycle):
         """Method used by e.g. ipython/Jupyter for formatting"""
         return self.__pretty__(p, cycle)
+
+    def item(self, *args):
+        """Call ``item(*args)`` method on the contained `hist`, returning a
+        single Python scalar corresponding to `*args`. See help for
+        :method:`numpy.ndarray.item` for more info.
+
+        Note that this method is called by :method:`numpy.asscalar`.
+
+        Parameters
+        ----------
+        *args
+            Passed to :method:`numpy.ndarray.item`
+
+        Returns
+        -------
+        z : Standard Python scalar object
+
+        """
+        return self.hist.item(*args)
 
     def slice(self, **kwargs):
         """Slice the map, where each argument is the name of a dimension.
@@ -712,14 +733,15 @@ class Map(object):
         return {'hist': new_hist, 'binning': new_binning}
 
     @_new_obj
-    def sum(self, axis, keepdims=False):
+    def sum(self, axis=None, keepdims=False):
         """Sum over dimensions corresponding to `axis` specification. Similar
         in behavior to `numpy.sum` method.
 
         Parameters
         ----------
-        axis : str, int, or sequence thereof
-            Dimensions to be summed over.
+        axis : None; or str, int, or sequence thereof
+            Dimension(s) to be summed over. If None, sum over _all_ dimensions.
+
         keepdims : bool
             If True, marginalizes out (removes) the specified dimensions. If
             False, the binning in the summed dimension(s) is expanded to the
@@ -728,9 +750,15 @@ class Map(object):
 
         Returns
         -------
-        Map
+        s : Map or scalar
+            If all contained dimensiosn are summed over and `keepdims` is
+            False, a scalar is returned. Otherwise, a Map is returned with
+            dimensions marginalized out in the sum removed if `keepdims` is
+            False.
 
         """
+        if axis is None:
+            axis = self.binning.names
         if isinstance(axis, (basestring, int)):
             axis = [axis]
         # Note that the tuple is necessary here (I think...)
@@ -754,10 +782,12 @@ class Map(object):
         axis : string or int
             Dimensions to be projected onto.
         keepdims : bool
-            If True, marginalizes out (removes) the specified dimensions. If
-            False, the binning in the summed dimension(s) is expanded to the
-            full range of the binning for each dimension over which the sum is
-            performed.
+            If True, marginalizes out (removes) the _un_specified dimensions.
+            If False, the binning in the summed dimension(s) includes
+            the full range of the binning for each dimension in the original
+            Map. Note that if you want to remove all _singleton_ dimensions
+            (which could include the `axis` specified here), call the
+            `squeeze` method on the result of `project`.
 
         Returns
         -------
