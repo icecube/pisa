@@ -988,7 +988,8 @@ class Postprocessor(object):
         """Returns the fid from the fiducial/fit-hypothesis key"""
         return fhkey.split('_')[-2]
 
-    def extract_paramval(self, injparams, systkey, fhkey=None, paramlabel=None):
+    def extract_paramval(self, injparams, systkey, fhkey=None,
+                         paramlabel=None, smalllabel=False):
         """Extract a value from a set of parameters and modify it based on the
         hypothesis/fiducial fit being considered. The label associated with this
         is then modified accordingly."""
@@ -1007,11 +1008,13 @@ class Postprocessor(object):
                 if 'no' in hypo_label:
                     if np.sign(paramval) != 1:
                         paramval = -1*float(injparams[systkey].split(' ')[0])
-                        paramlabel += r' ($\times-1$)'
+                        if not smalllabel:
+                            paramlabel += r' ($\times-1$)'
                 elif 'io' in hypo_label:
                     if np.sign(paramval) != -1:
                         paramval = -1*float(injparams[systkey].split(' ')[0])
-                        paramlabel += r' ($\times-1$)'
+                        if not smalllabel:
+                            paramlabel += r' ($\times-1$)'
 
             if (np.abs(paramval) < 1e-2) and (paramval != 0.0):
                 paramlabel += ' = %.2e'%paramval
@@ -1934,7 +1937,8 @@ class Postprocessor(object):
                     )
                     plt.close()
 
-    def make_prior_label(self, kind, stddev=None, maximum=None):
+    def make_prior_label(self, kind, stddev=None, maximum=None,
+                         smalllabel=False):
         """Makes a label for showing priors on plots"""
         if kind == 'gaussian':
             if (stddev is None) or (maximum is None):
@@ -1943,18 +1947,27 @@ class Postprocessor(object):
                     "both a maximum and a standard deviation."
                 )
             if (np.abs(stddev) < 1e-2) and (stddev != 0.0):
-                priorlabel = (r'Gaussian Prior ' + \
-                              r'($%.3e\pm%.3e$)'%(maximum, stddev))
+                if smalllabel:
+                    priorlabel = (r'GP ' + \
+                                  r'($%.3e\pm%.3e$)'%(maximum, stddev))
+                else:
+                    priorlabel = (r'Gaussian Prior ' + \
+                                  r'($%.3e\pm%.3e$)'%(maximum, stddev))
             else:
-                priorlabel = (r'Gaussian Prior ' + \
-                              r'($%.3g\pm%.3g$)'%(maximum, stddev))
+                if smalllabel:
+                    priorlabel = (r'GP ' + \
+                                  r'($%.3g\pm%.3g$)'%(maximum, stddev))
+                else:
+                    priorlabel = (r'Gaussian Prior ' + \
+                                  r'($%.3g\pm%.3g$)'%(maximum, stddev))
         else:
             raise ValueError(
                 "Only gaussian priors are currently implemented. Got %s."%kind
             )
         return priorlabel
 
-    def add_prior_region(self, systkey, injkey=None, fhkey=None):
+    def add_prior_region(self, systkey, injkey=None, fhkey=None,
+                         smalllabel=False):
         """Add a shaded region to show the 1 sigma band of the prior"""
         import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
@@ -1968,7 +1981,8 @@ class Postprocessor(object):
                 priorlabel = self.make_prior_label(
                     kind='gaussian',
                     stddev=stddev,
-                    maximum=maximum
+                    maximum=maximum,
+                    smalllabel=smalllabel
                 )
                 plt.axhspan(
                     maximum-stddev,
@@ -2003,7 +2017,8 @@ class Postprocessor(object):
                         priorlabel = self.make_prior_label(
                             kind='gaussian',
                             stddev=stddev,
-                            maximum=maximum
+                            maximum=maximum,
+                            smalllabel=smalllabel
                         )
                         plt.axvspan(
                             maximum-stddev,
@@ -2020,7 +2035,7 @@ class Postprocessor(object):
                         if plt.xlim()[1] > currentxlim[1]:
                             plt.xlim(plt.xlim()[0], currentxlim[1])
 
-    def add_inj_fid_lines(self, injkey, systkey, fhkey):
+    def add_inj_fid_lines(self, injkey, systkey, fhkey, smalllabel=False):
         """Add lines to show the injected and fiducial fit lines
         where appropriate"""
         import matplotlib.pyplot as plt
@@ -2032,12 +2047,21 @@ class Postprocessor(object):
         # Add injected and hypothesis fit lines
         if data_params is not None:
             if systkey in data_params.keys():
-                injval, injlabelproper = self.extract_paramval(
-                    injparams=data_params,
-                    systkey=systkey,
-                    fhkey=fhkey,
-                    paramlabel='Injected Value'
-                )
+                if smalllabel:
+                    injval, injlabelproper = self.extract_paramval(
+                        injparams=data_params,
+                        systkey=systkey,
+                        fhkey=fhkey,
+                        paramlabel='IV',
+                        smalllabel=True
+                    )
+                else:
+                    injval, injlabelproper = self.extract_paramval(
+                        injparams=data_params,
+                        systkey=systkey,
+                        fhkey=fhkey,
+                        paramlabel='Injected Value'
+                    )
                 plt.axvline(
                     injval,
                     color='r',
@@ -2050,23 +2074,47 @@ class Postprocessor(object):
         else:
             injval = None
         if self.get_fid_from_fiducial_hypo_key(fhkey=fhkey) == 'h0':
-            fitval, fitlabelproper = self.extract_paramval(
-                injparams=h0_params,
-                systkey=systkey,
-                fhkey=fhkey,
-                paramlabel='%s Fiducial Fit'%self.tex_axis_label(
-                    self.labels.dict['h0_name']
+            if smalllabel:
+                fitval, fitlabelproper = self.extract_paramval(
+                    injparams=h0_params,
+                    systkey=systkey,
+                    fhkey=fhkey,
+                    paramlabel='%s FF'%self.tex_axis_label(
+                        self.labels.dict['h0_name'],
+                        smalllabel=True
+                    ),
+                    smalllabel=True
                 )
-            )
+            else:
+                fitval, fitlabelproper = self.extract_paramval(
+                    injparams=h0_params,
+                    systkey=systkey,
+                    fhkey=fhkey,
+                    paramlabel='%s Fiducial Fit'%self.tex_axis_label(
+                        self.labels.dict['h0_name']
+                    )
+                )
         elif self.get_fid_from_fiducial_hypo_key(fhkey=fhkey) == 'h1':
-            fitval, fitlabelproper = self.extract_paramval(
-                injparams=h1_params,
-                systkey=systkey,
-                fhkey=fhkey,
-                paramlabel='%s Fiducial Fit'%self.tex_axis_label(
-                    self.labels.dict['h1_name']
+            if smalllabel:
+                fitval, fitlabelproper = self.extract_paramval(
+                    injparams=h1_params,
+                    systkey=systkey,
+                    fhkey=fhkey,
+                    paramlabel='%s FF'%self.tex_axis_label(
+                        self.labels.dict['h1_name'],
+                        smalllabel=True
+                    ),
+                    smalllabel=True
                 )
-            )
+            else:
+                fitval, fitlabelproper = self.extract_paramval(
+                    injparams=h1_params,
+                    systkey=systkey,
+                    fhkey=fhkey,
+                    paramlabel='%s Fiducial Fit'%self.tex_axis_label(
+                        self.labels.dict['h1_name']
+                    )
+                )
         else:
             raise ValueError("I got a hypothesis %s. Expected h0 or h1 only."
                              %self.get_fid_from_fiducial_hypo_key(fhkey=fhkey))
@@ -3957,7 +4005,14 @@ class Postprocessor(object):
         for step_variable in all_steps.keys():
             bin_cens = []
             if isinstance(all_steps[step_variable][0][1], list):
-                all_bin_units.append(all_steps[step_variable][0][1][0][0])
+                if len(all_steps[step_variable][0][1]) == 0:
+                    logging.warn(
+                        "No units have been found for the scan "
+                        "parameter. Making it dimensionless."
+                    )
+                    all_bin_units.append('dimensionless')
+                else:
+                    all_bin_units.append(all_steps[step_variable][0][1][0][0])
             else:
                 all_bin_units.append('dimensionless')
             for val in all_steps[step_variable]:
@@ -5078,7 +5133,7 @@ class Postprocessor(object):
             nice_label += ' (%s)'%self.tex_axis_label(units)
         return nice_label
 
-    def tex_axis_label(self, label):
+    def tex_axis_label(self, label, smalllabel=False):
         """Takes the labels used in the objects and turns them in to something
         nice for plotting. This can never truly be exhaustive, but it
         definitely does the trick. If something looks ugly add it to this
@@ -5101,6 +5156,7 @@ class Postprocessor(object):
         pretty_labels["delta_index"] = r"Atmospheric Index Change"
         pretty_labels["theta13"] = r"$\theta_{13}$"
         pretty_labels["theta23"] = r"$\theta_{23}$"
+        pretty_labels["deltacp"] = r"$\delta_{\mathrm{CP}}$"
         pretty_labels["gamma"] = r"$\Gamma$"
         pretty_labels["sin2theta23"] = r"$\sin^2\theta_{23}$"
         pretty_labels["deltam31"] = r"$\Delta m^2_{31}$"
@@ -5127,8 +5183,12 @@ class Postprocessor(object):
         pretty_labels["delta_conv_llh"] = r"$\Delta$ Convoluted Likelihood"
         pretty_labels["delta_chi2"] = r"$\Delta\chi^2$"
         pretty_labels["delta_mod_chi2"] = r"$\Delta$ $\chi^2_{\mathrm{mod}}$"
-        pretty_labels["no"] = r"Normal Ordering"
-        pretty_labels["io"] = r"Inverted Ordering"
+        if smalllabel:
+            pretty_labels["no"] = r"NO"
+            pretty_labels["io"] = r"IO"
+        else:
+            pretty_labels["no"] = r"Normal Ordering"
+            pretty_labels["io"] = r"Inverted Ordering"
         pretty_labels["nomsw"] = r"Normal Ordering, Matter Oscillations"
         pretty_labels["iomsw"] = r"Inverted Ordering, Matter Oscillations"
         pretty_labels["novacuum"] = r"Normal Ordering, Vacuum Oscillations"
