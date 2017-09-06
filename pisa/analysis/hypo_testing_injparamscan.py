@@ -394,15 +394,19 @@ def main():
                     hypo_testing.h0_maker.params[test_name].units
                 )
             newrangetuple = (newminrangeval, newmaxrangeval)
-            hypo_testing.h0_maker.params[test_name].range = newrangetuple
-            hypo_testing.h1_maker.params[test_name].range = newrangetuple
+            for pipeline in hypo_testing.h0_maker:
+                pipeline.params[test_name].range = newrangetuple
+            for pipeline in hypo_testing.h1_maker:
+                pipeline.params[test_name].range = newrangetuple
         else:
             if enforce_positive and norangetuple[0] < 0:
                 norangetuple = (0.0 * ureg(inj_units),
                                 max(no_inj_vals)*ureg(inj_units) + \
                                 0.5*norangediff)
-            hypo_testing.h0_maker.params[test_name].range = norangetuple
-            hypo_testing.h1_maker.params[test_name].range = norangetuple
+            for pipeline in hypo_testing.h0_maker:
+                pipeline.params[test_name].range = norangetuple
+            for pipeline in hypo_testing.h1_maker:
+                pipeline.params[test_name].range = norangetuple
         # Select the IO (or ih) parameters in the cofig file
         hypo_testing.h0_maker.select_params(['ih'])
         hypo_testing.h1_maker.select_params(['ih'])
@@ -426,15 +430,19 @@ def main():
                     hypo_testing.h0_maker.params[test_name].units
                 )
             newrangetuple = (newminrangeval, newmaxrangeval)
-            hypo_testing.h0_maker.params[test_name].range = newrangetuple
-            hypo_testing.h1_maker.params[test_name].range = newrangetuple
+            for pipeline in hypo_testing.h0_maker:
+                pipeline.params[test_name].range = newrangetuple
+            for pipeline in hypo_testing.h1_maker:
+                pipeline.params[test_name].range = newrangetuple
         else:
             if enforce_positive and iorangetuple[0] < 0:
                 iorangetuple = (0.0 * ureg(inj_units),
                                 max(io_inj_vals)*ureg(inj_units) + \
                                 0.5*iorangediff)
-            hypo_testing.h0_maker.params[test_name].range = iorangetuple
-            hypo_testing.h1_maker.params[test_name].range = iorangetuple
+            for pipeline in hypo_testing.h0_maker:
+                pipeline.params[test_name].range = iorangetuple
+            for pipeline in hypo_testing.h1_maker:
+                pipeline.params[test_name].range = iorangetuple
         # BE SURE TO SELECT THE PROPER ONES AGAIN AT THE END
         hypo_testing.h0_maker.select_params(init_args_d['h0_param_selections'])
         hypo_testing.h1_maker.select_params(init_args_d['h1_param_selections'])
@@ -454,8 +462,11 @@ def main():
                     hypo_testing.h1_maker.params[test_name].units
                 )
                 newrangetuple = (newminrangeval, newmaxrangeval)
-                hypo_testing.h1_maker.params[test_name].range = newrangetuple
+                for pipeline in hypo_testing.h1_maker:
+                    pipeline.params[test_name].range = newrangetuple
             else:
+                for pipeline in hypo_testing.h1_maker:
+                    pipeline.params[test_name].range = norangetuple
                 hypo_testing.h1_maker.params[test_name].range = norangetuple
         else:
             if hypo_testing.h1_maker.params[test_name].units != inj_units:
@@ -466,9 +477,11 @@ def main():
                     hypo_testing.h1_maker.params[test_name].units
                 )
                 newrangetuple = (newminrangeval, newmaxrangeval)
-                hypo_testing.h1_maker.params[test_name].range = newrangetuple
+                for pipeline in hypo_testing.h1_maker:
+                    pipeline.params[test_name].range = newrangetuple
             else:
-                hypo_testing.h1_maker.params[test_name].range = iorangetuple
+                for pipeline in hypo_testing.h1_maker:
+                    pipeline.params[test_name].range = iorangetuple
         if np.sign(
                 hypo_testing.data_maker.params[test_name].value.magnitude) == 1:
             if hypo_testing.data_maker.params[test_name].units != inj_units:
@@ -479,9 +492,11 @@ def main():
                     hypo_testing.data_maker.params[test_name].units
                 )
                 newrangetuple = (newminrangeval, newmaxrangeval)
-                hypo_testing.data_maker.params[test_name].range = newrangetuple
+                for pipeline in hypo_testing.data_maker:
+                    pipeline.params[test_name].range = newrangetuple
             else:
-                hypo_testing.data_maker.params[test_name].range = norangetuple
+                for pipeline in hypo_testing.data_maker:
+                    pipeline.params[test_name].range = norangetuple
         else:
             if hypo_testing.data_maker.params[test_name].units != inj_units:
                 newminrangeval = iorangetuple[0].to(
@@ -491,9 +506,11 @@ def main():
                     hypo_testing.data_maker.params[test_name].units
                 )
                 newrangetuple = (newminrangeval, newmaxrangeval)
-                hypo_testing.data_maker.params[test_name].range = newrangetuple
+                for pipeline in hypo_testing.data_maker:
+                    pipeline.params[test_name].range = newrangetuple
             else:
-                hypo_testing.data_maker.params[test_name].range = iorangetuple
+                for pipeline in hypo_testing.data_maker:
+                    pipeline.params[test_name].range = iorangetuple
     # Otherwise it's way simpler...
     else:
         if hypo_testing.h0_maker.params[test_name].range is not None:
@@ -523,12 +540,12 @@ def main():
                     hypo_testing.h0_maker.params[test_name].units
                 )
             rangetuple = (minrangeval, maxrangeval)
-        hypo_testing.h0_maker.params[test_name].range\
-            = rangetuple
-        hypo_testing.h1_maker.params[test_name].range\
-            = rangetuple
-        hypo_testing.data_maker.params[test_name].range\
-            = rangetuple
+        for pipeline in hypo_testing.h0_maker:
+            pipeline.params[test_name].range = rangetuple
+        for pipeline in hypo_testing.h1_maker:
+            pipeline.params[test_name].range = rangetuple
+        for pipeline in hypo_testing.data_maker:
+            pipeline.params[test_name].range = rangetuple
 
     if hypo_testing.data_maker.params[test_name].prior is not None:
         if hypo_testing.data_maker.params[test_name].prior.kind != 'uniform':
@@ -567,15 +584,19 @@ def main():
             inj_val['no'] = inj_val['no'].to(
                 hypo_testing.h0_maker.params[test_name].units
             )
-            hypo_testing.h0_maker.params[test_name].value = inj_val['no']
-            hypo_testing.h1_maker.params[test_name].value = inj_val['no']
+            for pipeline in hypo_testing.h0_maker:
+                pipeline.params[test_name].value = inj_val['no']
+            for pipeline in hypo_testing.h1_maker:
+                pipeline.params[test_name].value = inj_val['no']
             hypo_testing.h0_maker.select_params(['ih'])
             hypo_testing.h1_maker.select_params(['ih'])
             inj_val['io'] = inj_val['io'].to(
                 hypo_testing.h0_maker.params[test_name].units
             )
-            hypo_testing.h0_maker.params[test_name].value = inj_val['io']
-            hypo_testing.h1_maker.params[test_name].value = inj_val['io']
+            for pipeline in hypo_testing.h0_maker:
+                pipeline.params[test_name].value = inj_val['io']
+            for pipeline in hypo_testing.h1_maker:
+                pipeline.params[test_name].value = inj_val['io']
             hypo_testing.h0_maker.select_params(
                 init_args_d['h0_param_selections']
             )
@@ -584,17 +605,22 @@ def main():
             )
             if np.sign(hypo_testing.data_maker.params[
                     test_name].value.magnitude) == 1:
-                hypo_testing.data_maker.params[test_name].value = inj_val['no']
+                for pipeline in hypo_testing.data_maker:
+                    pipeline.params[test_name].value = inj_val['no']
             else:
-                hypo_testing.data_maker.params[test_name].value = inj_val['io']
+                for pipeline in hypo_testing.h0_maker:
+                    pipeline.params[test_name].value = inj_val['io']
         # This is easy if there's just one of them
         else:
             # Make sure the units are right
             inj_val = inj_val.to(hypo_testing.h0_maker.params[test_name].units)
             # Then set the value in all of the makers
-            hypo_testing.h0_maker.params[test_name].value = inj_val
-            hypo_testing.h1_maker.params[test_name].value = inj_val
-            hypo_testing.data_maker.params[test_name].value = inj_val
+            for pipeline in hypo_testing.h0_maker:
+                pipeline.params[test_name].value = inj_val
+            for pipeline in hypo_testing.h1_maker:
+                pipeline.params[test_name].value = inj_val
+            for pipeline in hypo_testing.data_maker:
+                pipeline.params[test_name].value = inj_val
         # Make names reflect parameter value
         if param_name == 'deltam3l':
             hypo_testing.labels = Labels(
