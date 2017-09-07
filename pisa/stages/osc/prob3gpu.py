@@ -356,6 +356,8 @@ class prob3gpu(Stage):
                 'deltacp', 'deltam21', 'deltam31',
                 'theta12', 'theta13', 'theta23',
                 'no_nc_osc', 'true_e_scale',
+                'eps_ee', 'eps_emu', 'eps_etau', 'eps_mumu', 'eps_mutau',
+                'eps_tautau',
             )
 
         # Define the names of objects that are required by this stage (objects
@@ -647,13 +649,16 @@ class prob3gpu(Stage):
         return numLayers, densityInLayer, distanceInLayer
 
     def update_MNS(self, theta12, theta13, theta23,
-                   deltam21, deltam31, deltacp):
+                   deltam21, deltam31, deltacp, eps_ee, eps_emu, eps_etau,
+                   eps_mumu, eps_mutau, eps_tautau):
         """
         Returns an oscillation probability map dictionary calculated
         at the values of the input parameters:
           deltam21, deltam31, theta12, theta13, theta23, deltacp
           * theta12, theta13, theta23 - in [rad]
           * deltam21, deltam31 - in [eV^2]
+          * eps_ee, eps_emu, eps_etau, eps_mumu, eps_mutau,
+            eps_tautau - dimensionless
         """
 
         assert(not self.calc_transforms)
@@ -671,16 +676,24 @@ class prob3gpu(Stage):
         #if mAtm < 0.0: mAtm -= deltam21;
 
         self.osc = OscParams(deltam21, mAtm, sin12, sin13, sin23, deltacp)
+        self.nsi = NSIParams(eps_ee=eps_ee, eps_emu=eps_emu, eps_etau=eps_etau,
+                             eps_mumu=eps_mumu, eps_mutau=eps_mutau,
+                             eps_tautau=eps_tautau)
+
         dm_mat = self.osc.dm_matrix
         mix_mat = self.osc.mix_matrix
+        nsi_eps_mat = self.nsi.eps_matrix
 
-        logging.debug("dm_mat: \n %s"%str(dm_mat))
-        logging.debug("mix[re]: \n %s"%str(mix_mat[:,:,0]))
+        logging.info("dm_mat: \n %s"%str(dm_mat))
+        logging.info("mix[re]: \n %s"%str(mix_mat[:,:,0]))
+        logging.info('nsi_mat: \n %s' %str(nsi_eps_mat))
 
         self.d_dm_mat = cuda.mem_alloc(FTYPE(dm_mat).nbytes)
         self.d_mix_mat = cuda.mem_alloc(FTYPE(mix_mat).nbytes)
+        self.d_nsi_eps_mat = cuda.mem_alloc(FTYPE(nsi_eps_mat).nbytes)
         cuda.memcpy_htod(self.d_dm_mat, FTYPE(dm_mat))
         cuda.memcpy_htod(self.d_mix_mat, FTYPE(mix_mat))
+        cuda.memcpy_htod(self.d_nsi_eps_mat, FTYPE(nsi_eps_mat))
 
     def calc_probs(self, kNuBar, kFlav, n_evts, true_e_scale, true_energy, numLayers,
                    densityInLayer, distanceInLayer, prob_e, prob_mu, **kwargs):
@@ -696,6 +709,7 @@ class prob3gpu(Stage):
             prob_mu,
             self.d_dm_mat,
             self.d_mix_mat,
+            self.d_nsi_eps_mat,
             n_evts,
             np.int32(kNuBar),
             np.int32(kFlav),
