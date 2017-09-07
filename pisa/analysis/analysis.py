@@ -33,7 +33,7 @@ __all__ = ['MINIMIZERS_USING_SYMM_GRAD',
            'Counter', 'Analysis']
 
 
-MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b',)
+MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b', 'slsqp')
 """Minimizers that use symmetrical steps on either side of a point to compute
 gradients. See https://github.com/scipy/scipy/issues/4916"""
 
@@ -568,6 +568,7 @@ class Analysis(object):
             params=hypo_maker.params, metric=metric, other_metrics=other_metrics
         )
         fit_info['minimizer_time'] = minimizer_time * ureg.sec
+        fit_info['num_distributions_generated'] = counter.count
         fit_info['minimizer_metadata'] = metadata
         fit_info['fit_history'] = fit_history
         # If blind replace hypo_asimov_dist with none object
@@ -625,6 +626,7 @@ class Analysis(object):
             params=hypo_maker.params, metric=metric, other_metrics=other_metrics
         )
         fit_info['minimizer_time'] = 0 * ureg.sec
+        fit_info['num_distributions_generated'] = 0
         fit_info['minimizer_metadata'] = OrderedDict()
         fit_info['hypo_asimov_dist'] = hypo_asimov_dist
         return fit_info
@@ -1020,7 +1022,7 @@ class Analysis(object):
                 )
             else:
                 logging.info('Starting optimization since `profile` requested.')
-                best_fit, alternate_fits = self.fit_hypo(
+                best_fit, _ = self.fit_hypo(
                     data_dist=data_dist,
                     hypo_maker=hypo_maker,
                     hypo_param_selections=hypo_param_selections,

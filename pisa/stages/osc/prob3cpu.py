@@ -188,8 +188,9 @@ class prob3cpu(Stage):
 
         # TODO: can we pass kwargs to swig-ed C++ code?
         if self._barger_earth_model is not None:
+            earth_model = find_resource(self._barger_earth_model)
             self.barger_propagator = BargerPropagator(
-                find_resource(self._barger_earth_model),
+                earth_model.encode('ascii'),
                 self._barger_detector_depth
             )
         else:
@@ -478,7 +479,7 @@ class prob3cpu(Stage):
                     mAtm,deltacp,en,kSquared,events_dict['kNuBar']
                 )
                 self.barger_propagator.DefinePath(
-                    cz, prop_height, YeI, YeO, YeM
+                    float(cz), prop_height, YeI, YeO, YeM
                 )
                 self.barger_propagator.propagate(events_dict['kNuBar'])
                 prob_e.append(self.barger_propagator.GetProb(

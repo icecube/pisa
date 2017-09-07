@@ -137,7 +137,10 @@ class Plotter(object):
         and then re-selected. It will write over existing text.
 
         """
-        stamp = tex_join('\n', self.stamp, text)
+        if self.stamp != '':
+            stamp = tex_join('\n', self.stamp, text)
+        else:
+            stamp = text
         if self.loc == 'inside':
             a_text = AnchoredText(dollars(stamp), loc=2, frameon=False,
                                   **kwargs)
@@ -404,8 +407,9 @@ class Plotter(object):
             )
         else:
             x, y = np.meshgrid(bin_edges[0], bin_edges[1])
-            _ = plt.pcolormesh(x, y, np.ma.masked_invalid(zmap.T),
-                               vmin=vmin, vmax=vmax, cmap=cmap, **kwargs)
+            pcol = plt.pcolormesh(x, y, np.ma.masked_invalid(zmap.T),
+                               vmin=vmin, vmax=vmax, cmap=cmap, linewidth=0, rasterized=True, **kwargs)
+            pcol.set_edgecolor('face')
 
         if self.annotate:
             for i in range(len(bin_centers[0])):

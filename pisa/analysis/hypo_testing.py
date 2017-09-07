@@ -651,10 +651,10 @@ class HypoTesting(Analysis):
                 for line in format_exception(*exc_l):
                     for sl in line.splitlines():
                         logging.error(' '*4 + sl)
-                raise exc_l
+                raise exc_l[0], exc_l[1], exc_l[2]
 
             if exc[0] is not None:
-                raise exc
+                raise exc[0], exc[1], exc[2]
 
     def generate_data(self):
         logging.info('Generating %s distributions.', self.labels.data_disp)
@@ -1136,7 +1136,7 @@ class HypoTesting(Analysis):
             * h1_pipelines (list containing list per pipeline)
             * h1_param_selections
 
-        mininimzer_settings.ini : copy of the minimzer settings used
+        mininimzer_settings.cfg : copy of the minimzer settings used
 
         run_info_<datetime in microseconds, UTC>_<hostname>.info
             * fluctuate_data : bool
@@ -1146,11 +1146,11 @@ class HypoTesting(Analysis):
             * fid_start_ind (if fid fits to pseudodata)
             * num_fid_trials (if fid fits to pseudodata)
 
-        h0_pipeline0.ini
-        h0_pipeline1.ini
+        h0_pipeline0.cfg
+        h0_pipeline1.cfg
         ...
-        h1_pipeline0.ini
-        h1_pipeline1.ini
+        h1_pipeline0.cfg
+        h1_pipeline1.cfg
         ...
 
         Directory Structure
@@ -1457,7 +1457,8 @@ class HypoTesting(Analysis):
 
     def log_fit(self, fit_info, dirpath, label):
         serialize = ['metric', 'metric_val', 'params', 'minimizer_time',
-                     'detailed_metric_info', 'minimizer_metadata']
+                     'detailed_metric_info', 'minimizer_metadata',
+                     'num_distributions_generated']
         if self.store_minimizer_history:
             serialize.append('fit_history')
 

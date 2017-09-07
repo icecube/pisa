@@ -144,7 +144,7 @@ def rebin(hist, orig_binning, new_binning, normalize_values=True):
     orig_dim_indices = []
     new_dim_indices = []
     for new_dim_idx, new_dim in enumerate(new_binning):
-        orig_dim_idx = orig_binning.index(new_dim.basename, use_basenames=True)
+        orig_dim_idx = orig_binning.index(new_dim.name, use_basenames=False)
 
         new_dim_indices.append(new_dim_idx)
         orig_dim_indices.append(orig_dim_idx)
@@ -186,6 +186,8 @@ def _new_obj(original_function):
                 new_state[slot] = state_updates[slot]
             else:
                 new_state[slot] = deepcopy(getattr(self, slot))
+        if len(new_state['binning']) == 0:
+            return np.asscalar(new_state['hist'])
         return Map(**new_state)
     return decorate(original_function, new_function)
 
@@ -354,6 +356,25 @@ class Map(object):
     def _repr_pretty_(self, p, cycle):
         """Method used by e.g. ipython/Jupyter for formatting"""
         return self.__pretty__(p, cycle)
+
+    def item(self, *args):
+        """Call ``item(*args)`` method on the contained `hist`, returning a
+        single Python scalar corresponding to `*args`. See help for
+        :method:`numpy.ndarray.item` for more info.
+
+        Note that this method is called by :method:`numpy.asscalar`.
+
+        Parameters
+        ----------
+        *args
+            Passed to :method:`numpy.ndarray.item`
+
+        Returns
+        -------
+        z : Standard Python scalar object
+
+        """
+        return self.hist.item(*args)
 
     def slice(self, **kwargs):
         """Slice the map, where each argument is the name of a dimension.
@@ -531,8 +552,18 @@ class Map(object):
     def plot(self, evtrate=True, symm=False, logz=False, fig=None, ax=None,
              title=None, outdir=None, fname=None, backend='pdf', fmt='pdf',
              cmap=None, fig_kw=None, plt_kw=None, vmax=None, clabel=None,
-             clabelsize=None, xlabelsize=None, ylabelsize=None, titlesize=None):
-        """Simple plot of a map"""
+             clabelsize=None, xlabelsize=None, ylabelsize=None,
+             titlesize=None):
+        """Simple plot of a 2D map.
+
+        Returns
+        -------
+        fig : :class:`matplotlib.figure.Figure` object
+        ax : :class:`matplotlib.axes.Axes` object
+        pcmesh : :class:`matplotlib.collections.QuadMesh`
+        cbar : :class:`matplotlib.colorbar.Colorbar`
+
+        """
         import matplotlib as mpl
         if (backend is not None
                 and mpl.get_backend().lower() != backend.lower()):
@@ -543,7 +574,6 @@ class Map(object):
 
         cmap_div = plt.cm.RdBu_r
         cmap_div.set_bad(color=(0.5, 0.9, 0.5), alpha=1)
-
 
         tex = self.name if self.tex is None else self.tex
 
@@ -567,9 +597,13 @@ class Map(object):
 
         # TODO: allow plotting of N-dimensional arrays: 1D should be simple; >
         # 2D by arraying them as 2D slices in the smallest dimension(s)
-        assert len(self.binning) == 2
+        if len(self.binning) == 2:
+            to_plot = self
+        else:
+            to_plot = self.squeeze()
+        assert len(to_plot.binning) == 2
 
-        hist = np.ma.masked_invalid(self.hist)
+        hist = np.ma.masked_invalid(to_plot.hist)
         islog = False
         if symm:
             if cmap is None:
@@ -586,14 +620,14 @@ class Map(object):
                 vmin_ = np.nanmin(hist)
             vmax_ = np.nanmax(hist)
 
-        x = self.binning.dims[0].bin_edges.magnitude
-        y = self.binning.dims[1].bin_edges.magnitude
+        x = to_plot.binning.dims[0].bin_edges.magnitude
+        y = to_plot.binning.dims[1].bin_edges.magnitude
 
-        if self.binning.dims[0].is_log:
+        if to_plot.binning.dims[0].is_log:
             xticks = 2**(np.arange(np.ceil(np.log2(min(x))),
                                    np.floor(np.log2(max(x)))+1))
             x = np.log10(x)
-        if self.binning.dims[1].is_log:
+        if to_plot.binning.dims[1].is_log:
             yticks = 2**(np.arange(np.ceil(np.log2(min(y))),
                                    np.floor(np.log2(max(y)))+1))
             y = np.log10(y)
@@ -615,8 +649,8 @@ class Map(object):
             else:
                 cbar.set_label(label=clabel)
 
-        xlabel = '$%s$' % self.binning.dims[0].label
-        ylabel = '$%s$' % self.binning.dims[1].label
+        xlabel = '$%s$' % to_plot.binning.dims[0].label
+        ylabel = '$%s$' % to_plot.binning.dims[1].label
 
         if xlabelsize is not None:
             ax.set_xlabel(xlabel, size=xlabelsize)
@@ -633,21 +667,21 @@ class Map(object):
         ax.set_xlim(np.min(x), np.max(x))
         ax.set_ylim(np.min(y), np.max(y))
 
-        if self.binning.dims[0].is_log:
+        if to_plot.binning.dims[0].is_log:
             ax.set_xticks(np.log10(xticks))
             ax.set_xticklabels([str(int(xt)) for xt in xticks])
-        if self.binning.dims[1].is_log:
+        if to_plot.binning.dims[1].is_log:
             ax.set_yticks(np.log10(yticks))
             ax.set_yticklabels([str(int(yt)) for yt in yticks])
 
         if outdir is not None:
             if fname is None:
-                fname = self.name
+                fname = to_plot.name
             path = os.path.join([outdir, get_valid_filename(fname+'.'+fmt)])
             logging.debug('>>>> Plot for inspection saved at %s', path)
             fig.savefig(os.path.join(*path))
 
-        return ax, pcmesh, cbar
+        return fig, ax, pcmesh, cbar
 
     @_new_obj
     def reorder_dimensions(self, order):
@@ -666,13 +700,17 @@ class Map(object):
 
         See Also
         --------
-        rebin : modify Map by splitting or combining adjacent bins
-        downsample : modify Map by combining adjacent bins
+        rebin
+            Modify Map (and its binning) by splitting or combining adjacent
+            bins
+
+        downsample
+            Modify Map (and its binning) by combining adjacent bins
 
         """
         new_binning = self.binning.reorder_dimensions(order)
         orig_order = list(range(len(self.binning)))
-        new_order = [self.binning.index(b, use_basenames=True)
+        new_order = [self.binning.index(b, use_basenames=False)
                      for b in new_binning]
         # TODO: should this be a deepcopy rather than a simple veiw of the
         # original hist (the result of np.moveaxis)?
@@ -695,14 +733,15 @@ class Map(object):
         return {'hist': new_hist, 'binning': new_binning}
 
     @_new_obj
-    def sum(self, axis, keepdims=False):
+    def sum(self, axis=None, keepdims=False):
         """Sum over dimensions corresponding to `axis` specification. Similar
         in behavior to `numpy.sum` method.
 
         Parameters
         ----------
-        axis : str, int, or sequence thereof
-            Dimensions to be summed over.
+        axis : None; or str, int, or sequence thereof
+            Dimension(s) to be summed over. If None, sum over _all_ dimensions.
+
         keepdims : bool
             If True, marginalizes out (removes) the specified dimensions. If
             False, the binning in the summed dimension(s) is expanded to the
@@ -711,9 +750,15 @@ class Map(object):
 
         Returns
         -------
-        Map
+        s : Map or scalar
+            If all contained dimensiosn are summed over and `keepdims` is
+            False, a scalar is returned. Otherwise, a Map is returned with
+            dimensions marginalized out in the sum removed if `keepdims` is
+            False.
 
         """
+        if axis is None:
+            axis = self.binning.names
         if isinstance(axis, (basestring, int)):
             axis = [axis]
         # Note that the tuple is necessary here (I think...)
@@ -737,10 +782,12 @@ class Map(object):
         axis : string or int
             Dimensions to be projected onto.
         keepdims : bool
-            If True, marginalizes out (removes) the specified dimensions. If
-            False, the binning in the summed dimension(s) is expanded to the
-            full range of the binning for each dimension over which the sum is
-            performed.
+            If True, marginalizes out (removes) the _un_specified dimensions.
+            If False, the binning in the summed dimension(s) includes
+            the full range of the binning for each dimension in the original
+            Map. Note that if you want to remove all _singleton_ dimensions
+            (which could include the `axis` specified here), call the
+            `squeeze` method on the result of `project`.
 
         Returns
         -------
@@ -782,7 +829,8 @@ class Map(object):
         return {'hist': new_hist, 'binning': new_binning}
 
     def downsample(self, *args, **kwargs):
-        """Downsample by integer factors.
+        """Downsample by integer factor(s), summing together merged bins'
+        values.
 
         See pisa.utils.binning.MultiDimBinning.downsample for args/kwargs
         details.
@@ -1367,6 +1415,7 @@ class Map(object):
 
     @property
     def binning(self):
+        """pisa.core.binning.MultiDimBinning : Map's binning"""
         return self._binning
 
     @property
@@ -1486,6 +1535,13 @@ class Map(object):
 
     @_new_obj
     def log(self):
+        """Take natural logarithm of map's values, returning a new map.
+
+        Returns
+        -------
+        log_map : Map
+
+        """
         state_updates = {
             #'name': "log(%s)" % self.name,
             #'tex': r"\ln\left( %s \right)" % self.tex,
@@ -1495,6 +1551,13 @@ class Map(object):
 
     @_new_obj
     def log10(self):
+        """Take base-10 logarithm of map's values, returning a new map.
+
+        Returns
+        -------
+        log10_map : Map
+
+        """
         state_updates = {
             #'name': "log10(%s)" % self.name,
             #'tex': r"\log_{10}\left( %s \right)" % self.tex,
@@ -1621,6 +1684,13 @@ class Map(object):
 
     @_new_obj
     def sqrt(self):
+        """Take square root of map's values, returning a new map.
+
+        Returns
+        -------
+        sqrt_map : Map
+
+        """
         state_updates = {
             #'name': "sqrt(%s)" % self.name,
             #'tex': r"\sqrt{%s}" % self.tex,
@@ -1760,6 +1830,7 @@ class MapSet(object):
 
     @property
     def serializable_state(self):
+        """OrderedDict : all state needed to reconstruct object"""
         state = OrderedDict()
         state['maps'] = [m.serializable_state for m in self]
         state['name'] = self.name
@@ -2094,10 +2165,12 @@ class MapSet(object):
 
     @property
     def name(self):
+        """string : name of the map (legal Python name)"""
         return super(MapSet, self).__getattribute__('_name')
 
     @name.setter
     def name(self, name):
+        """string : name of the map (legal Python name)"""
         return super(MapSet, self).__setattr__('_name', name)
 
     @property
@@ -2128,13 +2201,32 @@ class MapSet(object):
 
     @property
     def names(self):
+        """list of strings : name of each map"""
         return [mp.name for mp in self]
 
     @property
     def hashes(self):
+        """list of int : hash of each map"""
         return [mp.hash for mp in self]
 
     def hash_maps(self, map_names=None):
+        """Generate a hash on the contained maps (i.e. exclude state pertaining
+        only to the MapSet itself, but include all state pertaining to the
+        contained Maps).
+
+        Parameters
+        ----------
+        map_names : None or sequence of strings
+            If sequence of strings, use these as the map names instead of any
+            names contained.
+
+        Returns
+        -------
+        hash : None or int
+            If any contained map hashes to None, the resulting hash will also
+            be None.
+
+        """
         if map_names is None:
             map_names = [m.name for m in self]
         hashes = [m.hash for m in self if m.name in map_names]
@@ -2390,7 +2482,7 @@ class MapSet(object):
                       collate_by_name=self.collate_by_name)
 
     def reorder_dimensions(self, order):
-        """Return a new MultiDimBinning object with dimensions ordered
+        """Return a new MapSet object with dimensions ordered
         according to `order`.
 
         Parameters
@@ -2412,7 +2504,7 @@ class MapSet(object):
 
         Returns
         -------
-        MultiDimBinning object with reordred dimensions.
+        MapSet object with reordred dimensions.
 
         Raises
         ------

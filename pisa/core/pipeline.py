@@ -28,7 +28,7 @@ from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
 from pisa.core.stage import Stage
 from pisa.core.transform import TransformSet
-from pisa.utils.config_parser import BetterConfigParser, parse_pipeline_config
+from pisa.utils.config_parser import PISAConfigParser, parse_pipeline_config
 from pisa.utils.fileio import mkdir
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging, set_verbosity
@@ -61,21 +61,21 @@ class Pipeline(object):
 
     Parameters
     ----------
-    config : string, OrderedDict, or BetterConfigParser
+    config : string, OrderedDict, or PISAConfigParser
         If string, interpret as resource location; send to the
         `config_parser.parse_pipeline_config()` method to get a config
         OrderedDict. If `OrderedDict`, use directly as pipeline configuration.
 
     """
     def __init__(self, config):
-        if isinstance(config, (basestring, BetterConfigParser)):
+        if isinstance(config, (basestring, PISAConfigParser)):
             config = parse_pipeline_config(config=config)
         elif isinstance(config, OrderedDict):
             pass
         else:
             raise TypeError(
                 '`config` passed is of type %s but must be string,'
-                ' BetterConfigParser, or OrderedDict' % type(config).__name__
+                ' PISAConfigParser, or OrderedDict' % type(config).__name__
             )
 
         self._stages = []
@@ -550,11 +550,11 @@ def main(return_outputs=False):
         mkdir(args.outdir)
     else:
         if args.pdf or args.png:
-            raise ValueError('No --dir provided, so cannot save images.')
+            raise ValueError('No --outdir provided, so cannot save images.')
 
     # Most basic parsing of the pipeline config (parsing only to this level
     # allows for simple strings to be specified as args for updating)
-    bcp = BetterConfigParser()
+    bcp = PISAConfigParser()
     bcp.read(args.pipeline)
 
     # Update the config with any args specified on command line
@@ -646,10 +646,19 @@ def main(return_outputs=False):
 
         formats = OrderedDict(png=args.png, pdf=args.pdf)
         if isinstance(stage.outputs, Data):
+            # TODO(shivesh): plots made here will use the most recent
+            # "pisa_weight" column and so all stages will have identical plots
+            # (one workaround is to turn on "memcache_deepcopy")
+            # TODO(shivesh): intermediate stages have no output binning
+            if stage.output_binning is None:
+                logging.debug('Skipping plot of intermediate stage '
+                              '{0}'.format(stage))
+                continue
             outputs = stage.outputs.histogram_set(
                 binning=stage.output_binning,
                 nu_weights_col='pisa_weight',
                 mu_weights_col='pisa_weight',
+                noise_weights_col='pisa_weight',
                 mapset_name=stg_svc,
                 errors=True
             )

@@ -20,14 +20,6 @@ pisa.utils.barlow module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.betterConfigParser module
-------------------------------------
-
-.. automodule:: pisa.utils.betterConfigParser
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pisa.utils.cache module
 -----------------------
 
@@ -196,14 +188,6 @@ pisa.utils.mcSimRunSettings module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.miscFunctions module
--------------------------------
-
-.. automodule:: pisa.utils.miscFunctions
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pisa.utils.parallel module
 --------------------------
 
@@ -248,6 +232,14 @@ pisa.utils.resources module
 ---------------------------
 
 .. automodule:: pisa.utils.resources
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.utils.rooutils module
+--------------------------
+
+.. automodule:: pisa.utils.rooutils
     :members:
     :undoc-members:
     :show-inheritance:

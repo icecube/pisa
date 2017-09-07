@@ -20,6 +20,14 @@ pisa.scripts.compare module
     :undoc-members:
     :show-inheritance:
 
+pisa.scripts.convert_config_format module
+-----------------------------------------
+
+.. automodule:: pisa.scripts.convert_config_format
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.scripts.fit_discrete_sys module
 ------------------------------------
 
@@ -56,6 +64,14 @@ pisa.scripts.make_systematic_variation_plots module
 ---------------------------------------------------
 
 .. automodule:: pisa.scripts.make_systematic_variation_plots
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.scripts.make_toy_events module
+-----------------------------------
+
+.. automodule:: pisa.scripts.make_toy_events
     :members:
     :undoc-members:
     :show-inheritance:

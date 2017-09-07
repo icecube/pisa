@@ -22,7 +22,6 @@ from pisa.core.events import Data
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
 from pisa.core.stage import Stage
-from pisa.utils.comparisons import normQuant
 from pisa.utils.flavInt import ALL_NUFLAVINTS
 from pisa.utils.flavInt import NuFlavInt, NuFlavIntGroup
 from pisa.utils.flux_weights import load_2D_table, calculate_flux_weights
@@ -46,10 +45,6 @@ class weight(Stage):
         Parameters which set everything besides the binning
 
         Parameters required by this service are
-            * output_events_mc : bool
-                Flag to specify whether the service output returns a
-                MapSet or the Data
-
             * livetime : ureg.Quantity
                 Desired lifetime.
 
@@ -62,6 +57,8 @@ class weight(Stage):
 
             * Flux related parameters:
                 For more information see `$PISA/pisa/stages/flux/honda.py`
+                - flux_reweight : bool
+                    Flag to specifiy whether to reweight the flux.
                 - flux_file
                 - atm_delta_index
                 - nue_numu_ratio
@@ -78,7 +75,8 @@ class weight(Stage):
                 For more information see `$PISA/pisa/stage/osc/prob3gpu.py`
                 - oscillate : bool
                     Flag to specifiy whether to include the effects of neutrino
-                    oscillation.
+                    oscillation. `flux_reweight` option must be set to "True"
+                    for oscillations reweighting.
                 - earth_model
                 - YeI
                 - YeM
@@ -94,6 +92,7 @@ class weight(Stage):
                 - no_nc_osc : bool
                     Flag to turn off oscillations for the neutral current
                     interactions.
+                - true_e_scale
 
     input_names : string
         Specifies the string representation of the NuFlavIntGroup(s) that
@@ -105,6 +104,10 @@ class weight(Stage):
     output_names : string
         Specifies the string representation of the NuFlavIntGroup(s) which will
         be produced as an output.
+
+    output_events : bool
+        Flag to specify whether the service output returns a MapSet
+        or the full information about each event
 
     error_method : None, bool, or string
         If None, False, or empty string, the stage does not compute errors for
@@ -121,19 +124,30 @@ class weight(Stage):
 
     """
     def __init__(self, params, output_binning, input_names, output_names,
-                 error_method=None, debug_mode=None, disk_cache=None,
-                 memcache_deepcopy=True, outputs_cache_depth=20):
+                 output_events=True, error_method=None, debug_mode=None,
+                 disk_cache=None, memcache_deepcopy=True,
+                 outputs_cache_depth=20):
         self.sample_hash = None
-        """Hash of event sample"""
+        """Hash of input event sample."""
+        self.weight_hash = None
+        """Hash of reweighted event sample."""
+        self.xsec_hash = None
+        """Hash of reweighted xsec values."""
+        self.flux_cache_hash = None
+        """Hash of cached flux values."""
+        self.flux_hash = None
+        """Hash of reweighted flux values."""
+        self.osc_hash = None
+        """Hash of reweighted osc flux values."""
 
         self.weight_params = (
-            'output_events_mc',
             'kde_hist',
             'livetime',
         )
 
         self.nu_params = (
             'oscillate',
+            'flux_reweight',
             'cache_flux'
         )
 
@@ -168,7 +182,8 @@ class weight(Stage):
             'deltam21',
             'deltam31',
             'deltacp',
-            'no_nc_osc'
+            'no_nc_osc',
+            'true_e_scale'
         )
 
         self.atm_muon_params = (
@@ -198,10 +213,6 @@ class weight(Stage):
         self.neutrinos = False
         self.muons = False
         self.noise = False
-
-        self.xsec_hash = None
-        self.flux_hash = None
-        self.osc_hash = None
 
         input_names = input_names.replace(' ', '').split(',')
         clean_innames = []
@@ -237,6 +248,15 @@ class weight(Stage):
         if self.neutrinos:
             clean_outnames += [str(f) for f in self._output_nu_groups]
 
+        if not isinstance(output_events, bool):
+            raise AssertionError(
+                'output_events must be of type bool, instead it is supplied '
+                'with type {0}'.format(type(output_events))
+            )
+        if output_events:
+            output_binning = None
+        self.output_events = output_events
+
         super(weight, self).__init__(
             use_transforms=False,
             params=params,
@@ -257,7 +277,7 @@ class weight(Stage):
                 'disable this in your configuration file by setting kde_hist '
                 'to False.'
             )
-            if self.params['output_events_mc'].value:
+            if self.output_events:
                 logging.warn(
                     'Warning - You have selected to apply KDE smoothing to '
                     'the output histograms but have also selected that the '
@@ -276,72 +296,19 @@ class weight(Stage):
     @profile
     def _compute_outputs(self, inputs=None):
         """Compute histograms for output channels."""
+        logging.debug('Entering weight._compute_outputs')
         if not isinstance(inputs, Data):
             raise AssertionError('inputs is not a Data object, instead is '
                                  'type {0}'.format(type(inputs)))
-        self._data = deepcopy(inputs)
+        self.sample_hash = deepcopy(inputs.metadata['sample_hash'])
+        logging.trace('{0} weight sample_hash = '
+                      '{1}'.format(inputs.metadata['name'], self.sample_hash))
+        logging.trace('{0} weight weight_hash = '
+                      '{1}'.format(inputs.metadata['name'], self.weight_hash))
+        self._data = inputs
+        self.reweight()
 
-        # TODO(shivesh): muons + noise reweighting
-        if self.neutrinos:
-            # XSec reweighting
-            xsec_weights = self.compute_xsec_weights()
-            for fig in self._data.iterkeys():
-                self._data[fig]['pisa_weight'] *= xsec_weights[fig]
-
-            # Flux reweighting
-            flux_weights = self.compute_flux_weights(attach_units=True)
-            if not self.params['oscillate'].value:
-
-                # No oscillations
-                for fig in self._data.iterkeys():
-                    flav_pdg = NuFlavInt(fig).flav.code
-                    pisa_weight = self._data[fig]['pisa_weight']
-                    if flav_pdg == 12:
-                        pisa_weight *= flux_weights[fig]['nue_flux']
-                    elif flav_pdg == 14:
-                        pisa_weight *= flux_weights[fig]['numu_flux']
-                    elif flav_pdg == -12:
-                        pisa_weight *= flux_weights[fig]['nuebar_flux']
-                    elif flav_pdg == -14:
-                        pisa_weight *= flux_weights[fig]['numubar_flux']
-                    elif abs(flav_pdg) == 16:
-                        # attach units of flux from nue
-                        pisa_weight *= 0. * flux_weights[fig]['nue_flux'].u
-            else:
-                # Oscillations
-                osc_weights = self.compute_osc_weights(flux_weights)
-                for fig in self._data.iterkeys():
-                    self._data[fig]['pisa_weight'] *= osc_weights[fig]
-
-            # Livetime reweighting
-            livetime = self.params['livetime'].value
-            for fig in self._data.iterkeys():
-                self._data[fig]['pisa_weight'] *= livetime
-                self._data[fig]['pisa_weight'].ito('dimensionless')
-
-        if self.muons:
-            # Livetime reweighting
-            livetime = self.params['livetime'].value
-            self._data.muons['pisa_weight'] *= livetime
-            self._data.muons['pisa_weight'].ito('dimensionless')
-            # Scaling
-            atm_muon_scale = self.params['atm_muon_scale'].value
-            self._data.muons['pisa_weight'] *= atm_muon_scale
-            # Primary CR systematic
-            cr_rw_scale = self.params['delta_gamma_mu'].value
-            rw_variable = self.params['delta_gamma_mu_variable'].value
-            rw_array = self.prim_unc_spline(self._data.muons[rw_variable])
-            # Reweighting term is positive-only by construction, so normalise
-            # it by shifting the whole array down by a normalisation factor
-            norm = sum(rw_array) / len(rw_array)
-            cr_rw_array = rw_array-norm
-            self._data.muons['pisa_weight'] *= (1+cr_rw_scale*cr_rw_array)
-
-        self._data.metadata['params_hash'] = self.params.values_hash
-        self._data.update_hash()
-        self.sample_hash = self._data.hash
-
-        if self.params['output_events_mc'].value:
+        if self.output_events:
             return self._data
 
         outputs = []
@@ -432,12 +399,170 @@ class weight(Stage):
                     )
                 )
 
+        if self.noise:
+            if self.params['kde_hist'].value:
+                for bin_name in self.output_binning.names:
+                    if 'coszen' in bin_name:
+                        coszen_name = bin_name
+                kde_hist = self.kde_histogramdd(
+                    sample=np.array([
+                        self._data['noise'][bin_name] for bin_name in \
+                        self.output_binning.names]).T,
+                    binning=self.output_binning,
+                    weights=self._data['noise']['pisa_weight'],
+                    coszen_name=coszen_name,
+                    use_cuda=False,
+                    bw_method='silverman',
+                    alpha=0.3,
+                    oversample=10,
+                    coszen_reflection=0.5,
+                    adaptive=True
+                )
+                outputs.append(
+                    Map(
+                        name='noise',
+                        hist=kde_hist,
+                        error_hist=np.sqrt(kde_hist),
+                        binning=self.output_binning,
+                        tex=text2tex('noise')
+                    )
+                )
+            else:
+                outputs.append(
+                    self._data.histogram(
+                        kinds='noise',
+                        binning=self.output_binning,
+                        weights_col='pisa_weight',
+                        errors=True,
+                        name='noise',
+                        tex=text2tex('noise')
+                    )
+                )
+
         return MapSet(maps=outputs, name=self._data.metadata['name'])
+
+    def reweight(self):
+        """Main rewighting function."""
+        this_hash = hash_obj(
+            [self.sample_hash, self.params.values_hash],
+            full_hash = self.full_hash
+        )
+        if this_hash == self.weight_hash:
+            return
+
+        if self.neutrinos:
+            for fig in self._data.iterkeys():
+                self._data[fig]['weight_weight'] = \
+                    deepcopy(self._data[fig]['sample_weight'])
+
+            # XSec reweighting
+            xsec_weights = self.compute_xsec_weights()
+            for fig in self._data.iterkeys():
+                self._data[fig]['weight_weight'] *= xsec_weights[fig]
+
+            # Flux reweighting
+            if not self.params['flux_reweight'].value and \
+               self.params['oscillate'].value:
+                raise AssertionError(
+                    '`oscillate` flag is set to "True" when `flux_reweight` '
+                    'flag is set to "False". Oscillations reweighting requires '
+                    'the `flux_reweight` flag to be set to "True".'
+                )
+            if self.params['flux_reweight'].value:
+                flux_weights = self.compute_flux_weights(attach_units=True)
+                if not self.params['oscillate'].value:
+                    # No oscillations
+                    for fig in self._data.iterkeys():
+                        flav_pdg = NuFlavInt(fig).flavCode()
+                        p_reweight = self._data[fig]['weight_weight']
+                        if flav_pdg == 12:
+                            p_reweight *= flux_weights[fig]['nue_flux']
+                        elif flav_pdg == 14:
+                            p_reweight *= flux_weights[fig]['numu_flux']
+                        elif flav_pdg == -12:
+                            p_reweight *= flux_weights[fig]['nuebar_flux']
+                        elif flav_pdg == -14:
+                            p_reweight *= flux_weights[fig]['numubar_flux']
+                        elif abs(flav_pdg) == 16:
+                            # attach units of flux from nue
+                            p_reweight *= 0. * flux_weights[fig]['nue_flux'].u
+                else:
+                    # Oscillations
+                    osc_weights = self.compute_osc_weights(flux_weights)
+                    for fig in self._data.iterkeys():
+                        self._data[fig]['weight_weight'] *= osc_weights[fig]
+
+            # Livetime reweighting
+            livetime = self.params['livetime'].value
+            for fig in self._data.iterkeys():
+                logging.debug(
+                    'Rate for {0} = '.format(fig).ljust(25) +
+                    r'{0:.3f}{1:~}'.format(
+                        np.sum(self._data[fig]['weight_weight'].m_as('mHz')),
+                        ureg('mHz')
+                    ).rjust(6)
+                )
+                self._data[fig]['weight_weight'] *= livetime
+                self._data[fig]['weight_weight'].ito('dimensionless')
+
+            for fig in self._data.iterkeys():
+                self._data[fig]['pisa_weight'] = \
+                    deepcopy(self._data[fig]['weight_weight'])
+
+        if self.muons:
+            self._data.muons['weight_weight'] = \
+                deepcopy(self._data.muons['sample_weight'])
+
+            # Livetime reweighting
+            livetime = self.params['livetime'].value
+            self._data.muons['weight_weight'] *= livetime
+            self._data.muons['weight_weight'].ito('dimensionless')
+
+            # Scaling
+            atm_muon_scale = self.params['atm_muon_scale'].value
+            self._data.muons['weight_weight'] *= atm_muon_scale
+
+            # Primary CR systematic
+            cr_rw_scale = self.params['delta_gamma_mu'].value
+            rw_variable = self.params['delta_gamma_mu_variable'].value
+            rw_array = self.prim_unc_spline(self._data.muons[rw_variable])
+
+            # Reweighting term is positive-only by construction, so normalise
+            # it by shifting the whole array down by a normalisation factor
+            norm = sum(rw_array)/len(rw_array)
+            cr_rw_array = rw_array-norm
+            self._data.muons['weight_weight'] *= (1+cr_rw_scale*cr_rw_array)
+
+            self._data.muons['pisa_weight'] = \
+                deepcopy(self._data.muons['weight_weight'])
+
+        if self.noise:
+            # TODO(shivesh): not working properly
+            self._data.noise['weight_weight'] = \
+                deepcopy(self._data.noise['sample_weight'])
+
+            # Livetime reweighting
+            livetime = self.params['livetime'].value
+            self._data.noise['weight_weight'] *= livetime
+            self._data.noise['weight_weight'].ito('dimensionless')
+
+            # Scaling
+            norm_noise = self.params['norm_noise'].value
+            self._data.noise['weight_weight'] *= norm_noise
+
+            self._data.noise['pisa_weight'] = \
+                deepcopy(self._data.noise['weight_weight'])
+
+        self.weight_hash = this_hash
+        self._data.metadata['weight_hash'] = self.weight_hash
+        self._data.update_hash()
 
     def compute_xsec_weights(self):
         """Reweight to take into account xsec systematics."""
-        this_hash = normQuant([self.params[name].value
-                               for name in self.xsec_params])
+        this_hash = hash_obj(
+            [self.params[name].value for name in self.xsec_params] +
+            [self.sample_hash], full_hash=self.full_hash
+        )
         if self.xsec_hash == this_hash:
             return self._xsec_weights
 
@@ -452,8 +577,10 @@ class weight(Stage):
 
     def compute_flux_weights(self, attach_units=False):
         """Neutrino fluxes via `honda` service."""
-        this_hash = normQuant([self.params[name].value
-                               for name in self.flux_params])
+        this_hash = hash_obj(
+            [self.params[name].value for name in self.flux_params] +
+            [self.sample_hash], full_hash=self.full_hash
+        )
         out_units = ureg('1 / (GeV s m**2 sr)')
         if self.flux_hash == this_hash:
             if attach_units:
@@ -481,15 +608,19 @@ class weight(Stage):
                 d['numubar_flux'] = self._data[fig]['numubar_flux']
                 flux_weights[fig] = d
         elif self.params['cache_flux'].value:
-            this_cache_hash = normQuant([self._data.metadata['name'],
-                                         self._data.metadata['sample'],
-                                         self._data.metadata['cuts'],
-                                         self.params['flux_file'].value])
-            this_cache_hash = hash_obj(this_cache_hash)
+            this_cache_hash = hash_obj(
+                [self._data.metadata['name'], self._data.metadata['sample'],
+                 self._data.metadata['cuts'], self.params['flux_file'].value],
+                full_hash=self.full_hash
+            )
 
-            if this_cache_hash in self.disk_cache:
+            if self.flux_cache_hash == this_cache_hash:
+                flux_weights = deepcopy(self._cached_fw)
+            elif this_cache_hash in self.disk_cache:
                 logging.info('Loading flux values from cache.')
-                flux_weights = self.disk_cache[this_cache_hash]
+                self._cached_fw = self.disk_cache[this_cache_hash]
+                flux_weights = deepcopy(self._cached_fw)
+                self.flux_cache_hash = this_cache_hash
             else:
                 flux_weights = self._compute_flux_weights(
                     self._data, ParamSet(p for p in self.params
@@ -538,6 +669,11 @@ class weight(Stage):
                 nuebar_flux, numubar_flux, self.params['nue_numu_ratio'].m
             )
 
+            flux_weights[fig]['nue_flux'] = nue_flux
+            flux_weights[fig]['numu_flux'] = numu_flux
+            flux_weights[fig]['nuebar_flux'] = nuebar_flux
+            flux_weights[fig]['numubar_flux'] = numubar_flux
+
         self.flux_hash = this_hash
         self._flux_weights = flux_weights
         if attach_units:
@@ -551,8 +687,10 @@ class weight(Stage):
 
     def compute_osc_weights(self, flux_weights):
         """Neutrino oscillations calculation via Prob3."""
-        this_hash = normQuant([self.params[name].value
-                               for name in self.flux_params + self.osc_params])
+        this_hash = hash_obj(
+            [self.params[name].value for name in self.flux_params +
+             self.osc_params] + [self.sample_hash], full_hash=self.full_hash
+        )
         if self.osc_hash == this_hash:
             return self._osc_weights
         osc_weights = self._compute_osc_weights(
@@ -582,10 +720,13 @@ class weight(Stage):
             else:
                 nu_diff_DIS = params['nubar_diff_DIS'].m
                 nu_diff_norm = params['nubar_diff_norm'].m
-            xsec_weights[fig] = (
-                (1 - nu_diff_norm * nu_diff_DIS) *
-                np.power(nu_data[fig]['GENIE_x'], -nu_diff_DIS)
-            )
+
+            with np.errstate(divide='ignore', invalid='ignore'):
+                xsec_weights[fig] = (
+                    (1 - nu_diff_norm * nu_diff_DIS) *
+                    np.power(nu_data[fig]['GENIE_x'], -nu_diff_DIS)
+                )
+            xsec_weights[fig][~np.isfinite(xsec_weights[fig])] = 0.
 
             # High W hadronization systematic
             hadron_DIS = params['hadron_DIS'].m
@@ -643,6 +784,7 @@ class weight(Stage):
         deltam21 = params['deltam21'].m_as('eV**2')
         deltam31 = params['deltam31'].m_as('eV**2')
         deltacp = params['deltacp'].m_as('rad')
+        true_e_scale = params['true_e_scale'].m_as('dimensionless')
 
         osc = prob3gpu(
             params=params,
@@ -704,7 +846,7 @@ class weight(Stage):
                 continue
 
             osc.calc_probs(
-                kNuBar, kFlav, osc_data[fig]['n_evts'],
+                kNuBar, kFlav, osc_data[fig]['n_evts'], true_e_scale,
                 **osc_data[fig]['device']
             )
 
@@ -727,8 +869,8 @@ class weight(Stage):
         orig_ratio = flux_a / flux_b
         orig_sum = flux_a + flux_b
 
-        scaled_a = orig_sum / (1 + ratio_scale*orig_ratio)
-        scaled_b = ratio_scale*orig_ratio * scaled_a
+        scaled_b = orig_sum / (1 + ratio_scale*orig_ratio)
+        scaled_a = ratio_scale*orig_ratio * scaled_b
         return scaled_a, scaled_b
 
     def make_prim_unc_spline(self):
@@ -748,12 +890,14 @@ class weight(Stage):
         you should check both if it seems reasonable and it is still negligible
         if you use it with a different event sample.
         """
-        if 'true' not in self.params['delta_gamma_mu_variable'].value:
-            raise ValueError(
-                'Variable to construct spline should be a truth variable. '
-                'You have put %s in your configuration file.'
-                % self.params['delta_gamma_mu_variable'].value
-            )
+        # TODO(shivesh): "energy"/"coszen" on its own is taken to be the truth
+        # TODO(shivesh): what does "true" muon correspond to - the deposited muon?
+        # if 'true' not in self.params['delta_gamma_mu_variable'].value:
+        #     raise ValueError(
+        #         'Variable to construct spline should be a truth variable. '
+        #         'You have put %s in your configuration file.'
+        #         % self.params['delta_gamma_mu_variable'].value
+        #     )
 
         bare_variable = self.params['delta_gamma_mu_variable']\
                             .value.split('true_')[-1]
@@ -802,12 +946,12 @@ class weight(Stage):
     def validate_params(self, params):
         pq = ureg.Quantity
         param_types = [
-            ('output_events_mc', bool),
             ('kde_hist', bool),
             ('livetime', pq)
         ]
         if self.neutrinos:
             param_types.extend([
+                ('flux_reweight', bool),
                 ('oscillate', bool),
                 ('cache_flux', bool),
                 ('nu_diff_DIS', pq),
@@ -834,7 +978,8 @@ class weight(Stage):
                 ('deltam21', pq),
                 ('deltam31', pq),
                 ('deltacp', pq),
-                ('no_nc_osc', bool)
+                ('no_nc_osc', bool),
+                ('true_e_scale', pq)
             ])
         if self.muons:
             param_types.extend([
