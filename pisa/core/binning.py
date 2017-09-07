@@ -2109,7 +2109,7 @@ class MultiDimBinning(object):
         indices = []
         for dim in order:
             try:
-                idx = self.index(dim, use_basenames=False)
+                idx = self.index(dim, use_basenames=True)
             except ValueError:
                 continue
             indices.append(idx)
