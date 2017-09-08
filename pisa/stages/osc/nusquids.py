@@ -3,13 +3,25 @@ TODO(shivesh): more docs
 This oscillation service provides a wrapper for nuSQuIDS which is a
 neutrino oscillation software using SQuIDS.
 
+This service has a prerequisite package called nuSQuIDS, built with the python
+bindings. This package along with its documentation can be found at:
 https://github.com/arguelles/nuSQuIDS
+
+For convenience the prerequisites of nuSQuIDS are listed below:
+    - gsl (>= 1.15): http://www.gnu.org/software/gsl/
+    - hdf5 with c bindings: http://www.hdfgroup.org/HDF5/
+    - C++ compiler with C++11 support
+    - SQUIDS (>= 1.2): https://github.com/jsalvado/SQuIDS/
+additionally the following python bindings are needed:
+    - boost (>= 1.54): http://www.boost.org/
+    - numpy: http://www.numpy.org/
+    - matplotlib: http://matplotlib.org/
 """
 
 
 from __future__ import absolute_import, division
 
-from collections import OrderedDict
+import multiprocessing
 
 import numpy as np
 from uncertainties import unumpy as unp
@@ -19,7 +31,6 @@ import nuSQUIDSpy as nsq
 from pisa import FTYPE, ureg
 from pisa.core.map import Map, MapSet
 from pisa.core.stage import Stage
-from pisa.utils.resources import open_resource
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 
@@ -36,7 +47,19 @@ class nusquids(Stage):
         Parameters which set everything besides the binning
 
         Parameters required by this service are
-            * TODO(shivesh)
+        * oversample : ureg.Quantity
+            For each bin, split evenly into a given number of sub-bins and
+            evaluate the oscillation probabilities for each sub-bin. Then
+            average over the sub-bins to obtain the oscillated result for the
+            bin.
+
+        * Oscillation related parameters:
+            - deltacp
+            - deltam21
+            - deltam31
+            - theta12
+            - theta13
+            - theta23
 
     input_names : string
         Specifies the string representation of the NuFlavIntGroup(s) that
@@ -71,8 +94,8 @@ class nusquids(Stage):
                  memcache_deepcopy=True, outputs_cache_depth=20):
 
         expected_params = (
-            'detector_depth', 'prop_height', 'deltacp', 'deltam21', 'deltam31',
-            'theta12', 'theta13', 'theta23',
+            'oversample', 'deltacp', 'deltam21', 'deltam31', 'theta12',
+            'theta13', 'theta23',
         )
 
         # Define the names of objects that are required by this stage (objects
@@ -116,25 +139,31 @@ class nusquids(Stage):
         # TODO(shivesh): static function
         # TODO(shivesh): hashing
         binning = self.input_binning.basename_binning
-        binning = binning.reorder_dimensions(('coszen', 'energy'))
+        binning = binning.reorder_dimensions(
+            ('coszen', 'energy'), use_basenames=True
+        )
         cz_binning = binning['coszen']
         en_binning = binning['energy']
 
         units = nsq.Const()
 
         interactions = False
-        en_min = en_binning.bin_edges.min().m_as('GeV') * units.GeV
-        en_max = en_binning.bin_edges.max().m_as('GeV') * units.GeV
         cz_min = cz_binning.bin_edges.min().m_as('radian')
         cz_max = cz_binning.bin_edges.max().m_as('radian')
-        en_grid = en_binning.weighted_centers.m_as('GeV') * units.GeV
-        cz_grid = cz_binning.weighted_centers.m_as('radian')
+        en_min = en_binning.bin_edges.min().m_as('GeV') * units.GeV
+        en_max = en_binning.bin_edges.max().m_as('GeV') * units.GeV
+        cz_centers = cz_binning.weighted_centers.m_as('radian')
+        en_centers = en_binning.weighted_centers.m_as('GeV') * units.GeV
+        cz_grid = np.array([cz_min] + cz_centers.tolist() + [cz_max])
+        en_grid = np.array([en_min] + en_centers.tolist() + [en_max])
         nu_flavours = 3
 
         nuSQ = nsq.nuSQUIDSAtm(
             cz_grid, en_grid, nu_flavours, nsq.NeutrinoType.both,
             interactions
         )
+
+        nuSQ.Set_EvalThreads(multiprocessing.cpu_count())
 
         theta12 = self.params['theta12'].value.m_as('radian')
         theta13 = self.params['theta13'].value.m_as('radian')
@@ -158,49 +187,67 @@ class nusquids(Stage):
         nuSQ.Set_rel_error(1.0e-10)
         nuSQ.Set_abs_error(1.0e-10)
 
-        initial_state = np.full(cz_binning.shape+en_binning.shape+(2, 3), np.nan)
+        # Pad the edges of the energy, coszen space to cover the entire grid range
+        cz_shape = cz_binning.shape[0]+2
+        en_shape = en_binning.shape[0]+2
+        shape = (cz_shape, en_shape) + (2, 3)
+        initial_state = np.full(shape, np.nan)
+
+        def pad_inputs(x):
+            return np.pad(unp.nominal_values(x.hist), 1, 'edge')
         # Third index is selecting nu(0), nubar(1)
         # Fourth index is selecting flavour nue(0), numu(1), nutau(2)
-        initial_state[:, :, 0, 0] = unp.nominal_values(inputs['nue'].hist)
-        initial_state[:, :, 1, 0] = unp.nominal_values(inputs['nuebar'].hist)
-        initial_state[:, :, 0, 1] = unp.nominal_values(inputs['numu'].hist)
-        initial_state[:, :, 1, 1] = unp.nominal_values(inputs['numubar'].hist)
-        initial_state[:, :, 0, 2] = np.zeros(inputs['nue'].hist.shape)
-        initial_state[:, :, 1, 2] = np.zeros(inputs['nue'].hist.shape)
+        initial_state[:, :, 0, 0] = pad_inputs(inputs['nue'])
+        initial_state[:, :, 1, 0] = pad_inputs(inputs['nuebar'])
+        initial_state[:, :, 0, 1] = pad_inputs(inputs['numu'])
+        initial_state[:, :, 1, 1] = pad_inputs(inputs['numubar'])
+        initial_state[:, :, 0, 2] = np.zeros(pad_inputs(inputs['nue']).shape)
+        initial_state[:, :, 1, 2] = np.zeros(pad_inputs(inputs['nue']).shape)
 
         if np.any(np.isnan(initial_state)):
             raise AssertionError('nan entries in initial_state: '
                                  '{0}'.format(initial_state))
         nuSQ.Set_initial_state(initial_state, nsq.Basis.flavor)
 
-        nuSQ.Set_ProgressBar(True);
+        # TODO(shivesh): use verbosity level to set this
+        nuSQ.Set_ProgressBar(True)
         nuSQ.EvolveState()
 
-        fs = {'nue': np.full(binning.shape, np.nan),
-              'nuebar': np.full(binning.shape, np.nan),
-              'numu': np.full(binning.shape, np.nan),
-              'numubar': np.full(binning.shape, np.nan),
-              'nutau': np.full(binning.shape, np.nan),
-              'nutaubar': np.full(binning.shape, np.nan)}
-        for cz_idx, cz_bin in enumerate(cz_binning.weighted_centers.m_as('radians')):
-            for e_idx, en_bin in enumerate(en_binning.weighted_centers.m_as('GeV')):
+        os = self.params['oversample'].value.m
+        os_binning = binning.oversample(os)
+        os_cz_binning = os_binning['coszen']
+        os_en_binning = os_binning['energy']
+        os_cz_centers = os_cz_binning.weighted_centers.m_as('radians')
+        os_en_centers = os_en_binning.weighted_centers.m_as('GeV')
+
+        fs = {}
+        for nu in self.output_names:
+            fs[nu] = np.full(os_binning.shape, np.nan)
+
+        for icz, cz_bin in enumerate(os_cz_centers):
+            for ie, en_bin in enumerate(os_en_centers):
                 en_bin_u = en_bin * units.GeV
-                fs['nue'][cz_idx][e_idx] = nuSQ.EvalFlavor(0, cz_bin, en_bin_u, 0)
-                fs['nuebar'][cz_idx][e_idx] = nuSQ.EvalFlavor(0, cz_bin, en_bin_u, 1)
-                fs['numu'][cz_idx][e_idx] = nuSQ.EvalFlavor(1, cz_bin, en_bin_u, 0)
-                fs['numubar'][cz_idx][e_idx] = nuSQ.EvalFlavor(1, cz_bin, en_bin_u, 1)
-                fs['nutau'][cz_idx][e_idx] = nuSQ.EvalFlavor(2, cz_bin, en_bin_u, 0)
-                fs['nutaubar'][cz_idx][e_idx] = nuSQ.EvalFlavor(2, cz_bin, en_bin_u, 1)
+                fs['nue'][icz][ie] = nuSQ.EvalFlavor(0, cz_bin, en_bin_u, 0)
+                fs['nuebar'][icz][ie] = nuSQ.EvalFlavor(0, cz_bin, en_bin_u, 1)
+                fs['numu'][icz][ie] = nuSQ.EvalFlavor(1, cz_bin, en_bin_u, 0)
+                fs['numubar'][icz][ie] = nuSQ.EvalFlavor(1, cz_bin, en_bin_u, 1)
+                fs['nutau'][icz][ie] = nuSQ.EvalFlavor(2, cz_bin, en_bin_u, 0)
+                fs['nutaubar'][icz][ie] = nuSQ.EvalFlavor(2, cz_bin, en_bin_u, 1)
+
+        out_binning = self.input_binning.reorder_dimensions(('coszen',
+                                                             'energy'),
+                                                            use_basenames=True)
+        os_out_binning = out_binning.oversample(os)
 
         outputs = []
-        out_binning = self.input_binning.reorder_dimensions(('coszen', 'energy'))
         for key in fs.iterkeys():
             if np.any(np.isnan(fs[key])):
                 raise AssertionError(
                     'Invalid value computed for {0} oscillated output: '
-                    '{1}'.format(key, fs[key])
+                    '\n{1}'.format(key, fs[key])
                 )
-            map = Map(name=key, binning=out_binning, hist=fs[key])
+            map = Map(name=key, binning=os_out_binning, hist=fs[key])
+            map = map.downsample(os) / float(os)
             map = map.reorder_dimensions(self.input_binning)
             outputs.append(map)
 
@@ -209,8 +256,7 @@ class nusquids(Stage):
     def validate_params(self, params):
         pq = ureg.Quantity
         param_types = [
-            ('detector_depth', pq),
-            ('prop_height', pq),
+            ('oversample', pq),
             ('theta12', pq),
             ('theta13', pq),
             ('theta23', pq),
