@@ -295,7 +295,7 @@ class fit(Stage):
         fit_coeffs = self.calculate_fit_coeffs()
 
         sample_config = from_file(self.params['discr_sys_sample_config'].value)
-        degree = self.params['poly_degree'].value
+        degree = int(self.params['poly_degree'].value)
         force_through_nominal = self.params['force_through_nominal'].value
 
         if force_through_nominal:
@@ -477,7 +477,7 @@ class fit(Stage):
 
         config = from_file(params['discr_sys_sample_config'].value)
 
-        degree = params['poly_degree'].value
+        degree = int(params['poly_degree'].value)
         force_through_nominal = params['force_through_nominal'].value
 
         if force_through_nominal:
