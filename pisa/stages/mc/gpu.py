@@ -17,7 +17,7 @@ from pisa.core.stage import Stage
 from pisa.stages.mc.GPUWeight import GPUWeight
 from pisa.stages.osc.prob3gpu import prob3gpu
 from pisa.utils.comparisons import normQuant
-from pisa.utils.config_parser import split
+from pisa.utils.format import split
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.resources import find_resource
@@ -162,7 +162,7 @@ class gpu(Stage):
         expected_params = (self.osc_params + self.flux_params +
                            self.other_params + self.true_params)
 
-        output_names = split(output_names)
+        output_names = split(output_names, sep=',')
 
         super(self.__class__, self).__init__(
             use_transforms=False,
