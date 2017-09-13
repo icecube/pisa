@@ -181,13 +181,16 @@ class mceq(Stage):
             flux[nu] = np.array(flux[nu])
 
         smoothing = self.params['smoothing'].value.m
-        en_centers = en_binning.weighted_centers.m
+        en_centers = en_binning.weighted_centers.m_as('GeV')
         spline_flux = self.bivariate_spline(
             flux, cz_centers, e_grid, smooth=smoothing
         )
         ev_flux = self.bivariate_evaluate(
             spline_flux, cz_centers, en_centers
-        ) * ureg('cm**-2 s**-2 sr**-1 GeV**-1')
+        )
+
+        for nu in ev_flux:
+            ev_flux[nu] = ev_flux[nu] *  ureg('cm**-2 s**-1 sr**-1 GeV**-1')
 
         mapset = []
         for nu in ev_flux.iterkeys():
