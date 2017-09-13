@@ -124,7 +124,7 @@ class weight_tom(Stage):
                  output_events=True, error_method=None, debug_mode=None,
                  disk_cache=None, memcache_deepcopy=True,
                  outputs_cache_depth=20, use_gpu=False, cache_flux=True,
-                 kde_hist=False):
+                 kde_hist=False, perfect_pid=False):
 
         self.sample_hash = None #Input event sample hash
         self.weight_hash = None
@@ -209,6 +209,7 @@ class weight_tom(Stage):
         self.use_gpu = use_gpu
         self.cache_flux = cache_flux
         self.kde_hist = kde_hist
+        self.perfect_pid = perfect_pid
 
         #Get the names of all expected inputs and outputs
         input_names,self.muons,self.noise,self.neutrinos = parse_event_type_names(input_names,return_flags=True)
@@ -410,6 +411,9 @@ class weight_tom(Stage):
             #If no other PID provided, use reconstructed tracklength
             self.add_tracklength_pid_to_events()
 
+            #TODO REMOVE
+            if self.perfect_pid : self.add_perfect_pid_to_events()
+
             if self.neutrinos :
 
                 #Add flux to neutrino events if required #TODO Maybe handle this more like Shivesh has, but for now keeping things as cloe to Philipp as possible
@@ -488,6 +492,23 @@ class weight_tom(Stage):
 
                 else :
                     raise ValueError("'pid' variable already exists in '%s' events, which is not expected for GRECO" % event_type )   
+
+
+    def add_perfect_pid_to_events(self) :
+
+        logging.warning("Using 'perfect pid'")
+
+        #Loop over ALL events types, e.g. all nu flavor-interaction combinations, plus muons and noise
+        for event_type in self._data.metadata['flavints_joined'] : #TODO is there somewhere better to get all present types from?
+
+            #Write PID based on truth particle type #TODO Coincident events?
+            if event_type.endswith("_nc") : self._data[event_type]['pid'] = np.full(self._data[event_type]['reco_energy'].shape,0.)
+            elif event_type.startswith("nue") and event_type.endswith("_cc") : self._data[event_type]['pid'] = np.full(self._data[event_type]['reco_energy'].shape,1.)
+            elif event_type.startswith("numu") and event_type.endswith("_cc") : self._data[event_type]['pid'] = np.full(self._data[event_type]['reco_energy'].shape,2.)
+            elif event_type.startswith("nutau") and event_type.endswith("_cc") : self._data[event_type]['pid'] = np.full(self._data[event_type]['reco_energy'].shape,3.)
+            elif "muon" in event_type : self._data[event_type]['pid'] = np.full(self._data[event_type]['reco_energy'].shape,4.)
+            elif "noise" in event_type : self._data[event_type]['pid'] = np.full(self._data[event_type]['reco_energy'].shape,5.)
+            else : raise ValueError( "Unrecognised event type : %s" % event_type )
 
 
     def add_bar_fluxes_to_events(self) : #TODO Merge with compute_flux_weights
