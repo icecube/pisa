@@ -215,6 +215,7 @@ from uncertainties import ufloat, ufloat_fromstr
 
 from pisa import ureg
 from pisa.utils.fileio import from_file
+from pisa.utils.format import split
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
@@ -325,35 +326,6 @@ def parse_string_literal(string):
     if string.strip().lower() == 'none':
         return None
     return string
-
-
-def split(string, sep=','):
-    """Parse a string containing a comma-separated list as a Python list of
-    strings. Each resulting string is forced to be lower-case and surrounding
-    whitespace is stripped.
-
-    Parameters
-    ----------
-    string : string
-        The string to be split
-
-    sep : string
-        Separator to look for
-
-    Returns
-    -------
-    lst : list of strings
-
-    Examples
-    --------
-    >>> print split(' One, TWO, three ')
-    ['one', 'two', 'three']
-
-    >>> print split('one:two:three', sep=':')
-    ['one', 'two', 'three']
-
-    """
-    return [x.strip().lower() for x in str.split(str(string), sep)]
 
 
 def interpret_param_subfields(subfields, selector=None, pname=None, attr=None):
@@ -535,8 +507,9 @@ def parse_pipeline_config(config):
     binning_dict = {}
     for name, value in config['binning'].items():
         if name.endswith('.order'):
-            order = split(config.get('binning', name))
-            binning, _ = split(name, sep='.')
+            order = split(config.get('binning', name), sep=',',
+                          force_case='lower')
+            binning, _ = split(name, sep='.', force_case='lower')
             bins = []
             for bin_name in order:
                 kwargs = eval( # pylint: disable=eval-used
@@ -549,11 +522,13 @@ def parse_pipeline_config(config):
     section = 'pipeline'
 
     # Get and parse the order of the stages (and which services implement them)
-    order = [split(x, STAGE_SEP) for x in split(config.get(section, 'order'))]
+    order = [split(x, sep=STAGE_SEP, force_case='lower')
+             for x in split(config.get(section, 'order'), sep=',')]
 
     param_selections = []
     if config.has_option(section, 'param_selections'):
-        param_selections = split(config.get(section, 'param_selections'))
+        param_selections = split(config.get(section, 'param_selections'),
+                                 sep=',', force_case='lower')
 
     # Parse [stage.<stage_name>] sections and store to stage_dicts
     stage_dicts = OrderedDict()
@@ -1145,7 +1120,7 @@ class PISAConfigParser(RawConfigParser):
                         # list of all bogus lines
                         e = self._handle_error(e, fpname, lineno, line)
         # if any parsing errors occurred, raise an exception
-        if e:
+        if e is not None:
             raise e
         self._join_multiline_values()
 
