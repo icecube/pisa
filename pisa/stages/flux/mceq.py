@@ -2,15 +2,30 @@
 This flux service provides flux tables from the MCEq (Matrix Cascade Equation)
 package.
 
+This service has a prerequisite package called MCEq.
+This package along with its documentation can be found at:
 https://github.com/afedynitch/MCEq
 http://arxiv.org/abs/1503.00544
+
+For convenience the prerequisites of MCEq are listed below:
+    - python-2.7
+    - numpy
+    - scipy
+    - numba
+    - matplotlib
+    - jupyter notebook (optional, but needed for examples)
+    - progressbar
+Additional dependencies are required for the C implementation of the
+NRLMSISE-00 atmosphere:
+    - a C compiler (GNU gcc, for example)
+    - make
+    - ctypes
 """
 
 
 from __future__ import absolute_import, division
 
 from collections import OrderedDict
-from copy import deepcopy
 
 import scipy.interpolate as interpolate
 
@@ -22,13 +37,10 @@ import CRFluxModels as pm
 
 from pisa import FTYPE, ureg
 from pisa.core.map import Map, MapSet
-from pisa.core.param import ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.format import split
-from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-from pisa.utils.resources import open_resource
 
 
 __all__ = ['mceq']
