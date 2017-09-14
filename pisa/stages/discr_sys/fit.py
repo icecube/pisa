@@ -194,8 +194,8 @@ class fit(Stage):
                 'output_events must be of type bool, instead it is supplied '
                 'with type {0}'.format(type(output_events))
             )
+        self.fit_binning = deepcopy(output_binning)
         if output_events:
-            self.fit_binning = deepcopy(output_binning)
             output_binning = None
         self.output_events = output_events
 
