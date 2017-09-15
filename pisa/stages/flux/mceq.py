@@ -200,7 +200,7 @@ class mceq(Stage):
 
     @staticmethod
     def bivariate_spline(flux_dict, cz_centers, en_centers, smooth=0.02):
-        """Spline the flux in an integral preserving way."""
+        """Spline the flux."""
         logging.debug('Entering mceq.bivariate_spline')
         Cz, logE = np.meshgrid(cz_centers, np.log10(en_centers))
 
