@@ -62,15 +62,23 @@ class mceq(Stage):
 
             * primary_model : basestring
                 Primary flux model
+                Default options are listed in the CRFluxModels docs:
+                https://crfluxmodels.readthedocs.io/en/latest/index.html#module-CRFluxModels
 
             * density_model : basestring
                 Density model of Earth's atmosphere
+                Default options are listed in the MCEq docs:
+                https://mceq.readthedocs.io/en/latest/physics.html#module-MCEq.density_profiles
 
             * location : basestring
                 Location to evaluate the fluxes
+                Default options are listed in the MCEq docs:
+                https://mceq.readthedocs.io/en/latest/physics.html#MCEq.density_profiles.CorsikaAtmosphere.init_parameters
 
             * season : basestring
                 Season in which to evaluate the fluxes
+                Default options are listed in the MCEq docs:
+                https://mceq.readthedocs.io/en/latest/physics.html#MCEq.density_profiles.CorsikaAtmosphere.init_parameters
 
             * smoothing : ureg.Quantity
                 Amount of smoothing to apply to splines
