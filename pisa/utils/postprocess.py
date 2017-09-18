@@ -4711,7 +4711,7 @@ class Postprocessor(object):
                       niceylabel=True ,xlims='edges', ylims=None,
                       linestyle='-', color='darkblue', alpha=0.9,
                       xlabelsize='18', ylabelsize='18', marker=None,
-                      plotlabel=None, subplotnum=None):
+                      plotlabel=None, subplotnum=None, linewidth=1):
         """Generic 1D graph plotting function. The x limits will be set as
         the edges of the xvals unless overwritten. Set this to None to
         leave it as matplotlib dictates. The y limits will be left alone
@@ -4725,7 +4725,8 @@ class Postprocessor(object):
             color=color,
             alpha=alpha,
             marker=marker,
-            label=plotlabel
+            label=plotlabel,
+            linewidth=linewidth
         )
         if xlims is not None:
             if xlims == 'edges':
