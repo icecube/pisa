@@ -141,6 +141,7 @@ class weight_tom(Stage):
             "aeff_scale",
             'true_e_scale',
             "nutau_cc_norm",
+            'nu_nc_norm',
             'reco_e_res_raw',
             'reco_e_scale_raw',
             'reco_cz_res_raw',
@@ -1251,19 +1252,27 @@ class weight_tom(Stage):
 
 
             #
-            # Apply nutau normalisation
+            # Apply normalisations
             #
 
+            #Loop over hists
             for fig in self._data_arrays.keys() :
 
+                scale = 1.0
+
                 #Apply nutau normalisation params
-                f = 1.0
                 if fig in ['nutau_cc', 'nutaubar_cc']:
-                    f *= self.params.nutau_cc_norm.value.m_as('dimensionless')  #TODO Is it a problem is nutau_CC and nutau norm are both applied?
+                    scale *= self.params.nutau_cc_norm.value.m_as('dimensionless')  #TODO Is it a problem is nutau_CC and nutau norm are both applied?
                 if 'nutau' in fig:
-                    f *= self.params.nutau_norm.value.m_as('dimensionless') #TODO Is this also being passed to prob3??? Is this the applied twice?
-                nu_hists[fig] *= f
-                if sumw2_errors : nu_sumw2[fig] *= (f*f)
+                    scale *= self.params.nutau_norm.value.m_as('dimensionless') #TODO Is this also being passed to prob3??? Is this the applied twice?
+
+                #Apply NC norm
+                if '_nc' in fig:
+                    scale *= self.params.nu_nc_norm.value.m_as('dimensionless')
+
+                #Scale the histogram according to the total norm
+                nu_hists[fig] *= scale
+                if sumw2_errors : nu_sumw2[fig] *= (scale*scale)
 
 
             #
@@ -1617,6 +1626,7 @@ class weight_tom(Stage):
             ('hist_e_scale', pq),
             ('hist_pid_scale', pq),
             ('nutau_cc_norm',pq),
+            ('nu_nc_norm',pq),
             ('reco_e_res_raw',pq),
             ('reco_e_scale_raw',pq),
             ('reco_cz_res_raw',pq),
