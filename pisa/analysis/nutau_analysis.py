@@ -282,7 +282,7 @@ class Analysis(object):
         if skip:
             best_fit_vals = x0
             metric_val = self._minimizer_callable(x0, False)
-            dict_flags = {'warnflag':0, 'task':'skip', 'funcalls':0, 'nit':0}
+            dict_flags = {'warnflag':0, 'task':'skip', 'funcalls':0, 'nit':0, 'avg_tmp_time':0, 'n_minimizer_calls':0}
         else:
             start_t = time.time()
             minim_result = opt.minimize(fun=self._minimizer_callable,
