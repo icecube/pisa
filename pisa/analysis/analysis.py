@@ -778,7 +778,7 @@ class Analysis(object):
             fit_history.append(
                 [metric_val] + [v.value.m for v in hypo_maker.params.free]
             )
-
+            
         return sign*metric_val
 
     def _minimizer_callback(self, xk):
@@ -1022,7 +1022,7 @@ class Analysis(object):
                     hypo_param_selections=hypo_param_selections,
                     hypo_asimov_dist=hypo_maker.get_outputs(return_sum=True),
                     metric=metric,
-                    **kwargs
+                    **dict([(k,v) for k,v in kwargs.items() if k not in ["pprint","reset_free","check_octant"]])
                 )
             else:
                 logging.info('Starting optimization since `profile` requested.')
