@@ -139,7 +139,8 @@ class PlotterNutau(Plotter):
         else:
             return 20
 
-    def plot_variables(self, mc_arrays, icc_arrays, data_arrays, param_to_plot, fig_name, outdir, title, data_type='pseudo', logy=False, save_ratio=False, group_mc=True, group_mc_flavs=['nu_nc', 'numu_cc', 'nue_cc', 'nutau_cc'], extra=[], signal='CC+NC',**kwargs):
+    def plot_variables(self, mc_arrays, icc_arrays, data_arrays, param_to_plot, fig_name, outdir, title, data_type='pseudo', logy=False, save_ratio=False, group_mc=True, group_mc_flavs=['nu_nc', 'numu_cc', 'nue_cc', 'nutau_cc'], extra=[], signal='CC+NC',thin=False,**kwargs):
+        print "thin ", thin
         print "Plotting ", param_to_plot
         # get data param (data could be MC simulated "data" or real data)
         if data_arrays is not None:
@@ -162,8 +163,10 @@ class PlotterNutau(Plotter):
 
         #print "IN PLOTTER, param ", param_to_plot
         file_name = fig_name    # fig name
-        #fig=plt.figure()
-        fig = plt.figure(figsize=(4.5, 5.0))
+        if thin:
+            fig = plt.figure(figsize=(4.5, 5.0))
+        else:
+            fig=plt.figure()
         ax1 = plt.subplot2grid((4, 1), (0, 0), rowspan=3)
         if data_arrays is not None and self.ratio:
             plt.setp(ax1.get_xticklabels(), visible=False)
@@ -308,8 +311,10 @@ class PlotterNutau(Plotter):
             x = (x_edges[:-1]+x_edges[1:])/2.0
             plt.errorbar(x, data_y, yerr=np.sqrt(data_y), fmt='.', marker='.', markersize=4, color='k', label=r'$\rm{Data}$',capthick=1, capsize=3)
             #print "     in plotter, data total ", np.sum(data_y)
-            ax1.legend(loc=1,ncol=3,frameon=True, columnspacing=0.8, handlelength=2, prop={'size':10})
-
+            if thin:
+                ax1.legend(loc=1,ncol=2,frameon=True, columnspacing=0.8, handlelength=1.5, prop={'size':9})
+            else:
+                ax1.legend(loc=1,ncol=3,frameon=True, columnspacing=0.8, handlelength=2, prop={'size':10})
             if self.ratio:
                 assert(mc_arrays!=None or icc_arrays!=None)
                 ax2=plt.subplot2grid((4,1), (3,0),sharex=ax1)
@@ -374,10 +379,12 @@ class PlotterNutau(Plotter):
                     ax1.arrow(2,4500,1, 0, alpha=0.4)
                     ax1.arrow(2,4500,-1,0, alpha=0.4)
                     ax1.annotate('track', xy=(2, 4500), textcoords='data')
-                    ax2.legend(loc=(0.4, 0.68),ncol=2,frameon=True,prop={'size':9},columnspacing=0.5, handlelength=2)
+                    ax2_legend_pos_x = 0.4
                 else:
-                    ax2.legend(loc=(0.5, 0.68),ncol=2,frameon=True,prop={'size':9},columnspacing=0.5, handlelength=2)
-
+                    ax2_legend_pos_x = 0.5
+                if thin:
+                    ax2_legend_pos_x = 0.3
+                ax2.legend(loc=(ax2_legend_pos_x, 0.68),ncol=2,frameon=True,prop={'size':9},columnspacing=0.5, handlelength=2)
                 ax2.set_ylim([0.75,1.35])
                 #ax2.set_ylim([0.8,1.2])
                 #ax2.set_ylabel('best fit / data')
@@ -414,12 +421,20 @@ class PlotterNutau(Plotter):
                 #        verticalalignment=vertical_align,
                 #        transform=ax1.transAxes)
 
+        if thin:
+            fig.subplots_adjust(hspace=0.1, wspace=0.1, top=0.9, bottom=0.16, left=0.15, right=0.95)
+
         ax1.set_ylabel(r'$\rm{Number \ of \ Events}$',fontsize=12)
+
+        if thin:
+            ymax = max(np.max(best_y),np.max(data_y))*1.7
+        else:
+            ymax = max(np.max(best_y),np.max(data_y))*1.5
         if logy:
             ax1.set_yscale("log")
             ax1.set_ylim([0.3,max(np.max(best_y),100000)])
         else:
-            ax1.set_ylim([0,max(np.max(best_y),np.max(data_y))*1.5])
+            ax1.set_ylim([0, ymax])
         if param_to_plot=='pid':
             plt.gca().set_xscale('symlog')
             #plt.gca().set_xscale('log')
