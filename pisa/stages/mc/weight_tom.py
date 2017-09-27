@@ -282,9 +282,17 @@ class weight_tom(Stage):
                 from pisa.utils.gpu_hist import GPUHist
                 self.GPUHist = GPUHist
 
-        #Register attributes that will be used from hashes
+        #Register attributes that will be used for hashes
         self.include_attrs_for_hashes('use_gpu')
         self.include_attrs_for_hashes('sample_hash')
+
+
+        #TODO REMOVE
+
+        foo_params = ParamSet( p for p in self.params if p.name in ["theta23","livetime"] )
+        hash_params = hash_obj( [foo_params], full_hash=self.full_hash )
+        hash_param_vals = hash_obj( [ p.value for p in foo_params ], full_hash=self.full_hash )
+
 
 
     def _compute_nominal_outputs(self):
@@ -398,7 +406,7 @@ class weight_tom(Stage):
             raise AssertionError('inputs is not a Data object, instead is '
                                  'type {0}'.format(type(inputs)))
 
-        #Check input data has changed
+        #Check if input data has changed
         new_sample_hash = deepcopy(inputs.metadata['sample_hash'])
         if new_sample_hash != self.sample_hash :
 
@@ -428,8 +436,12 @@ class weight_tom(Stage):
                 #TODO Enforce once only, maybe my moving to better way of copying to GPU
                 self.populate_nu_data_arrays()
 
+            #TODO store new sample hash now thing shave been changed... Or does "Data.update_hash" already handle this????
+
         #Store the latest hash
         self.sample_hash = new_sample_hash
+        self._data.metadata['sample_hash'] = self.sample_hash #Note that sample itself uis being changed above (adding flux, etc), so restoring the hash
+
         logging.trace('{0} weight sample_hash = {1}'.format(self._data.metadata['name'], self.sample_hash))
         logging.trace('{0} weight weight_hash = {1}'.format(self._data.metadata['name'], self.weight_hash)) #TODO Do I need to update the weight hash somewhere??
 
@@ -621,7 +633,7 @@ class weight_tom(Stage):
         #If nothing has changed, then no need to re-calculate the weights
         #Note that individual re-weighting subfunctions called within this function
         #each check whether they need to be recalculated indivdually
-        this_hash = hash_obj( [self.sample_hash, self.params.values_hash], full_hash = self.full_hash) #TODO weight hash? maybe not, as this is an output, not an input
+        this_hash = self._get_params_hash(self.params)
         if this_hash == self.weight_hash:
             return
 
@@ -683,7 +695,7 @@ class weight_tom(Stage):
         if flux_recalculated or osc_recalculated : #TODO xsec #TODO hash data_arrays output variables instead?
 
             #Perform calculation
-            weight_params = ParamSet( p for p in self.params if p.name in ["livetime","aeff_scale","Genie_Ma_QE","Genie_Ma_RES","XXXX","XXXX"] )
+            weight_params = ParamSet( p for p in self.params if p.name in ["livetime","aeff_scale","Genie_Ma_QE","Genie_Ma_RES"] )
             self.compute_weights(weight_params)
 
             #Write final weight to data structure
@@ -706,8 +718,7 @@ class weight_tom(Stage):
         #
 
         #Get current state of all inputs to this calculation
-        this_hash = hash_obj( [params] + [self.sample_hash], full_hash=self.full_hash )
-
+        this_hash = self._get_params_hash(params)
         #TODO Should these hashes also include the input eents variables relevent to the calculation???
 
         #If nothing has changed, then there is nothing to do
@@ -807,7 +818,7 @@ class weight_tom(Stage):
         #
 
         #Get current state of all inputs to this calculation
-        this_hash = hash_obj( [params] + [self.sample_hash], full_hash=self.full_hash )
+        this_hash = self._get_params_hash(params)
 
         #If nothing has changed, nothing to do
         if self.flux_hash == this_hash:
@@ -860,7 +871,7 @@ class weight_tom(Stage):
         #
 
         #Get current state of all inputs to this calculation
-        this_hash = hash_obj( [params] + [self.sample_hash], full_hash=self.full_hash )
+        this_hash = self._get_params_hash(params)
 
         #If nothing has changed, nothing to do
         if self.weight_calc_hash == this_hash:
@@ -912,8 +923,7 @@ class weight_tom(Stage):
         #
 
         #Get current state of all inputs to this calculation
-        this_hash = hash_obj( [params] + [self.sample_hash], full_hash=self.full_hash )
-
+        this_hash = self._get_params_hash(params)
         #TODO Should these hashes also include the input eents variables relevent to the calculation???
 
         #If nothing has changed, then there is nothing to do
@@ -977,8 +987,7 @@ class weight_tom(Stage):
         #
 
         #Get current state of all inputs to this calculation
-        this_hash = hash_obj( [params] + [self.sample_hash], full_hash=self.full_hash )
-
+        this_hash = self._get_params_hash(params)
         #TODO Should these hashes also include the input eents variables relevent to the calculation???
 
         #If nothing has changed, then there is nothing to do
@@ -1230,8 +1239,6 @@ class weight_tom(Stage):
 
             #TODO What is this? Should I be using it?
             #trans_nu_data = self._data.transform_groups(self._output_nu_groups)
-            #print "+++ _output_nu_groups = %s" % self._output_nu_groups
-            #print "+++ trans_nu_data = %s" % trans_nu_data
 
             #Loop over flavor/interaction combinations
             for fig in self._data_arrays.keys() :
@@ -1686,6 +1693,10 @@ class weight_tom(Stage):
                 )
 
 
+    def _get_params_hash(self,params) :
+        #Create a hash of the param values, as well as the sample hash
+        #TODO should params.normalize values be set to True such that "nearly identical" values are treated as the same in the hash?
+        return hash_obj( [self.sample_hash, self.params.values_hash], full_hash = self.full_hash) #TODO weight hash? maybe not, as this is an output, not an input
 
 
 
