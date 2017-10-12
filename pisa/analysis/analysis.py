@@ -479,7 +479,10 @@ class Analysis(object):
         # Using scipy.optimize.minimize allows a whole host of minimizers to be
         # used.
         counter = Counter()
+        
         fit_history = []
+        fit_history.append( [metric] + [v.name for v in hypo_maker.params.free])
+
         start_t = time.time()
 
         if pprint and not blind:
