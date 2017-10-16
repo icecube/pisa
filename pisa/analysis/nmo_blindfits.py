@@ -31,7 +31,7 @@ import os
 from pisa import ureg
 from pisa.analysis.analysis import Analysis
 from pisa.core.distribution_maker import DistributionMaker
-from pisa.utils.fileio import from_file, to_file
+from pisa.utils.fileio import from_file, to_file, normcheckpath
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.random_numbers import get_random_state
 from pisa.utils.resources import find_resource
@@ -121,24 +121,6 @@ def parse_args():
         help='set verbosity level'
     )
     return parser.parse_args()
-
-
-# TODO: make this work with Python package resources, not merely absolute
-# paths! ... e.g. hash on the file or somesuch?
-# TODO: move to a central loc prob. in utils
-def normcheckpath(path, checkdir=False):
-    normpath = find_resource(path)
-    if checkdir:
-        kind = 'dir'
-        check = os.path.isdir
-    else:
-        kind = 'file'
-        check = os.path.isfile
-
-    if not check(normpath):
-        raise IOError('Path "%s" which resolves to "%s" is not a %s.'
-                      %(path, normpath, kind))
-    return normpath
 
 
 def main():

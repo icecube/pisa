@@ -26,7 +26,8 @@ import numpy as np
 
 __all__ = ['PKL_EXTS', 'DILL_EXTS', 'CFG_EXTS', 'ZIP_EXTS', 'TXT_EXTS',
            'NSORT_RE', 'UNSIGNED_FSORT_RE', 'SIGNED_FSORT_RE',
-           'expand', 'mkdir', 'get_valid_filename', 'nsort', 'fsort',
+           'expand', 'mkdir', 'check_file_exists', 'normcheckpath',
+           'get_valid_filename', 'nsort', 'fsort',
            'find_files', 'from_cfg', 'from_pickle', 'to_pickle', 'from_dill',
            'to_dill', 'from_file', 'to_file']
 
@@ -131,6 +132,45 @@ def check_file_exists(fname, overwrite=True, warn=True):
         else:
             raise Exception("Refusing to overwrite path '%s'", fpath)
     return fpath
+
+
+# TODO: make this work with Python package resources, not merely absolute
+# paths! ... e.g. hash on the file or somesuch?
+def normcheckpath(path, checkdir=False):
+    """Try to find a resource and perform type check (directory or file)
+    depending on user input. Raise IOError if check fails.
+
+    Parameters
+    ----------
+    path : string
+        Resource path
+    checkdir : bool
+        Whether to check if resource is a directory (and not a file).
+
+    Returns
+    -------
+    normpath : string
+        Path (relative or absolute, depending on whether and how
+        `PISA_RESOURCES` is set) to the file or directory
+
+    Raises
+    ------
+    IOError if `path` is not of the required type (directory if `checkdir` is
+    `True` and file if `checkdir` is `False`)
+
+    """
+    normpath = resources.find_resource(path)
+    if checkdir:
+        kind = 'directory'
+        check = os.path.isdir
+    else:
+        kind = 'file'
+        check = os.path.isfile
+
+    if not check(normpath):
+        raise IOError('Path "%s" which resolves to "%s" is not a %s.'
+                      %(path, normpath, kind))
+    return normpath
 
 
 def mkdir(d, mode=0o0750, warn=True):
