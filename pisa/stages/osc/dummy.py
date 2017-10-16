@@ -16,6 +16,7 @@ documentation.
 
 import numpy as np
 
+from pisa.core.binning import MultiDimBinning
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.hash import hash_obj
@@ -69,11 +70,12 @@ class dummy(Stage):
 
     """
     def __init__(self, params, input_binning, output_binning,
-                 transforms_cache_depth=20, outputs_cache_depth=20):
+                 memcache_deepcopy, error_method, transforms_cache_depth,
+                 outputs_cache_depth, debug_mode=None):
         # All of the following params (and no more) must be passed via the
         # `params` argument.
         expected_params = (
-            'oversample_e', 'oversample_cz', 'earth_model',
+            'earth_model', 'nutau_norm',
             'YeI', 'YeM', 'YeO', 'deltacp', 'deltam21', 'deltam31',
             'detector_depth', 'prop_height', 'theta12', 'theta13',
             'theta23'
@@ -94,17 +96,18 @@ class dummy(Stage):
         # work for you.
         super(self.__class__, self).__init__(
             use_transforms=True,
-            stage_name='osc',
-            service_name='dummy',
             params=params,
             expected_params=expected_params,
             input_names=input_names,
             output_names=output_names,
+            error_method=error_method,
             disk_cache=None,
             outputs_cache_depth=outputs_cache_depth,
+            memcache_deepcopy=memcache_deepcopy,
             transforms_cache_depth=transforms_cache_depth,
             input_binning=input_binning,
-            output_binning=output_binning
+            output_binning=output_binning,
+            debug_mode=debug_mode
         )
 
         # There might be other things to do at init time than what Stage does,
@@ -113,6 +116,50 @@ class dummy(Stage):
         # then get called from init (so that if anyone else wants to do the
         # same "real work" after object instantiation, (s)he can do so easily
         # by invoking that same method).
+        self.calc_transforms = (input_binning is not None
+                                and output_binning is not None)
+        if self.calc_transforms:
+            self.compute_binning_constants()
+
+    def compute_binning_constants(self):
+        # Only works if energy and coszen are in input_binning
+        if 'true_energy' not in self.input_binning \
+                or 'true_coszen' not in self.input_binning:
+            raise ValueError(
+                'Input binning must contain both "true_energy" and'
+                ' "true_coszen" dimensions.'
+            )
+
+        # Not handling rebinning (or oversampling)
+        assert self.input_binning == self.output_binning
+
+        # Get the energy/coszen (ONLY) weighted centers here, since these
+        # are actually used in the oscillations computation. All other
+        # dimensions are ignored. Since these won't change so long as the
+        # binning doesn't change, attache these to self.
+        self.ecz_binning = MultiDimBinning([
+            self.input_binning.true_energy.to('GeV'),
+            self.input_binning.true_coszen.to('dimensionless')
+        ])
+        e_centers, cz_centers = self.ecz_binning.weighted_centers
+        self.e_centers = e_centers.magnitude
+        self.cz_centers = cz_centers.magnitude
+
+        self.num_czbins = self.input_binning.true_coszen.num_bins
+        self.num_ebins = self.input_binning.true_energy.num_bins
+
+        self.e_dim_num = self.input_binning.names.index('true_energy')
+        self.cz_dim_num = self.input_binning.names.index('true_coszen')
+
+        self.extra_dim_nums = range(self.input_binning.num_dims)
+        [self.extra_dim_nums.remove(d) for d in (self.e_dim_num,
+                                                 self.cz_dim_num)]
+
+    def create_transforms_datastructs(self):
+        xform_shape = [3, 2] + list(self.input_binning.shape)
+        nu_xform = np.empty(xform_shape)
+        antinu_xform = np.empty(xform_shape)
+        return nu_xform, antinu_xform
 
     def _compute_transforms(self):
         """Compute new oscillation transforms."""
@@ -122,41 +169,79 @@ class dummy(Stage):
         np.random.seed(seed)
 
         # Read parameters in in the units used for computation
-        theta23 = self.params.theta23.value.to('rad').magnitude
-        logging.trace('theta23 = %s --> %s rad'
-                      %(self.params.theta23.value, theta23))
+        theta12 = self.params.theta12.m_as('rad')
+        theta13 = self.params.theta13.m_as('rad')
+        theta23 = self.params.theta23.m_as('rad')
+        deltam21 = self.params.deltam21.m_as('eV**2')
+        deltam31 = self.params.deltam31.m_as('eV**2')
+        deltacp = self.params.deltacp.m_as('rad')
+        prop_height = self.params.prop_height.m_as('km')
+        nutau_norm = self.params.nutau_norm.m_as('dimensionless')
 
+        total_bins = int(len(self.e_centers)*len(self.cz_centers))
+        # We use 18 since we have 3*3 possible oscillations for each of
+        # neutrinos and antineutrinos.
+        prob_list = np.random.random(total_bins*18)
+
+       # Slice up the transform arrays into views to populate each transform
+        dims = ['true_energy', 'true_coszen']
+        xform_dim_indices = [0, 1]
+        users_dim_indices = [self.input_binning.index(d) for d in dims]
+        xform_shape = [2] + [self.input_binning[d].num_bins for d in dims]
+
+        # TODO: populate explicitly by flavor, don't assume any particular
+        # ordering of the outputs names!
         transforms = []
-        for flav in ['nue', 'numu', 'nutau', 'nuebar', 'numubar',
-                     'nutaubar']:
-            # Only particles oscillate to particles
-            if 'bar' not in flav:
-                xform_input_names = ['nue', 'numu']
-            # and only antiparticles oscillate to antiparticles
+        for out_idx, output_name in enumerate(self.output_names):
+            xform = np.empty(xform_shape)
+            if out_idx < 3:
+                # Neutrinos
+                xform[0] = np.array([
+                    prob_list[out_idx + 18*i*self.num_czbins
+                              : out_idx + 18*(i+1)*self.num_czbins
+                              : 18]
+                    for i in range(0, self.num_ebins)
+                ])
+                xform[1] = np.array([
+                    prob_list[out_idx+3 + 18*i*self.num_czbins
+                              : out_idx+3 + 18*(i+1)*self.num_czbins
+                              : 18]
+                    for i in range(0, self.num_ebins)
+                ])
+                input_names = self.input_names[0:2]
+
             else:
-                xform_input_names = ['nuebar', 'numubar']
+                # Antineutrinos
+                xform[0] = np.array([
+                    prob_list[out_idx+6 + 18*i*self.num_czbins
+                              : out_idx+6 + 18*(i+1)*self.num_czbins
+                              : 18]
+                    for i in range(0, self.num_ebins)
+                ])
+                xform[1] = np.array([
+                    prob_list[out_idx+9 + 18*i*self.num_czbins
+                              : out_idx+9 + 18*(i+1)*self.num_czbins
+                              : 18]
+                    for i in range(0, self.num_ebins)
+                ])
+                input_names = self.input_names[2:4]
 
-            # Dimensions are same as input binning but with added dim for
-            # multiple inputs (concatenation of inputs is on last dimension --
-            # see BinnedTensorTransform -- so this dimension goes last)
-            dimensionality = list(self.input_binning.shape) + \
-                    [len(xform_input_names)]
-
-            # Produce a random transform for demonstration only
-            #xform_array = np.random.rand(*dimensionality)
-            xform_array = np.ones(dimensionality)*1.1
-
-            # Construct the BinnedTensorTransform
-            xform = BinnedTensorTransform(
-                input_names=xform_input_names,
-                output_name=flav,
-                input_binning=self.input_binning,
-                output_binning=self.output_binning,
-                xform_array=xform_array
+            xform = np.moveaxis(
+                xform,
+                source=[0] + [i+1 for i in xform_dim_indices],
+                destination=[0] + [i+1 for i in users_dim_indices]
             )
-            transforms.append(xform)
+            if nutau_norm != 1 and output_name in ['nutau', 'nutaubar']:
+                xform *= nutau_norm
+            transforms.append(
+                BinnedTensorTransform(
+                    input_names=input_names,
+                    output_name=output_name,
+                    input_binning=self.input_binning,
+                    output_binning=self.output_binning,
+                    xform_array=xform
+                )
+            )
+        
 
-        # TODO: make TransformSet a mutable sequence (list-like), and so do
-        # the append directly rather than create a list first and then pass
-        # this to instantiation of a trnasform set
         return TransformSet(transforms=transforms)
