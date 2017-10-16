@@ -25,7 +25,6 @@ from pisa import ureg
 from pisa.analysis.hypo_testing import HypoTesting, Labels, prepare_init_args
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.prior import Prior
-from pisa.utils.fileio import normcheckpath
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
 from pisa.utils.stats import ALL_METRICS
