@@ -91,7 +91,7 @@ class icc(Stage):
             self.bin_edges.append(bin_edges)
 
 
-    def _compute_nominal_outputs(self):
+    def _compute_nominal_outputs(self, no_reco=False):
         '''
         load events, perform sanity check and put them into histograms,
         if alt_bg file is specified, also put these events into separate histograms,
@@ -108,11 +108,13 @@ class icc(Stage):
         # get data with cuts defined as 'icc_def2' in data_proc_params.json
         fields = ['reco_energy', 'pid', 'reco_coszen']
         cut_events = self.get_fields(fields, icc_file_name = icc_bg_file,
+                no_reco=no_reco,
                 cuts='icc_def2',
                 run_setting_file='events/mc_sim_run_settings.json',
                 data_proc_file='events/data_proc_params.json')
         if alt_icc_bg_file is not None:
             alt_cut_events = self.get_fields(fields, icc_file_name = alt_icc_bg_file,
+                    no_reco=no_reco,
                     cuts='icc_def3',
                     run_setting_file='events/mc_sim_run_settings.json',
                     data_proc_file='events/data_proc_params.json')
@@ -195,7 +197,7 @@ class icc(Stage):
 
         return MapSet(maps, name='icc')
 
-    def get_fields(self, fields, icc_file_name, cuts='icc_def2', run_setting_file='events/mc_sim_run_settings.json',
+    def get_fields(self, fields, icc_file_name, no_reco=False, cuts='icc_def2', run_setting_file='events/mc_sim_run_settings.json',
                         data_proc_file='events/data_proc_params.json'):
         """ Return icc events' fields with the chosen icc background definition.
 
@@ -221,9 +223,10 @@ class icc(Stage):
 
         # get fields that'll be used for applying cuts or fields that'll have cuts applied
         fields_for_cuts = copy.deepcopy(fields)
-        for param in ['reco_energy', 'reco_coszen', 'pid']:
-            if param not in fields:
-                fields_for_cuts.append(param)
+        if no_reco==False:
+            for param in ['reco_energy', 'reco_coszen', 'pid']:
+                if param not in fields:
+                    fields_for_cuts.append(param)
         if 'dunkman_L5' in data.keys():
             fields_for_cuts.append('dunkman_L5')
 
@@ -242,15 +245,17 @@ class icc(Stage):
                 bdt_score = cut_data['dunkman_L5']
                 all_cuts = bdt_score>=bdt_cut
         else:
-            all_cuts = np.ones(len(cut_data['reco_energy']), dtype=bool)
-        for bin_name, bin_edge in zip(self.bin_names, self.bin_edges):
-            bin_cut = np.logical_and(cut_data[bin_name]<= bin_edge[-1], cut_data[bin_name]>= bin_edge[0])
-            all_cuts = np.logical_and(all_cuts, bin_cut)
+            all_cuts = np.ones(len(cut_data['true_energy']), dtype=bool)
+        if no_reco==False:
+            for bin_name, bin_edge in zip(self.bin_names, self.bin_edges):
+                bin_cut = np.logical_and(cut_data[bin_name]<= bin_edge[-1], cut_data[bin_name]>= bin_edge[0])
+                all_cuts = np.logical_and(all_cuts, bin_cut)
 
         # get fields_add_later
         if len(fields_add_later)!=0:
             for param in fields_add_later:
                 assert(param in ['l_over_e', 'path_length'])
+                assert(no_reco==False)
             layer = Layers(self.params.earth_model.value)
             cut_data['path_length'] = np.array([layer.DefinePath(reco_cz) for reco_cz in cut_data['reco_coszen']])
             if 'l_over_e' in fields_add_later:

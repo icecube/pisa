@@ -459,8 +459,8 @@ if __name__ == '__main__':
                         metavar='JSONFILE', required=True,
                         help='''Settings related to the optimizer used in the
                         LLR analysis.''')
-    parser.add_argument('-sp', '--set-param', type=str, default='',
-                        help='Set a param to a certain value for both hypo and data.')
+    parser.add_argument('-sp', '--set-param', type=str, default=None,
+                        help='Set a param to a certain value for both hypo and data.', action='append')
     parser.add_argument('-spd', '--set-param-data', type=str, default='',
                         help='''Set a param to a certain value only for data ''')
     parser.add_argument('-fp', '--fix-param', type=str, default='',
@@ -506,17 +506,22 @@ if __name__ == '__main__':
         if not args.fix_param == '':
             template_maker.params.fix(args.fix_param)
         if not args.set_param == '':
-            p_name,value = args.set_param.split("=")
-            print "p_name,value= ", p_name, " ", value
-            value = parse_quantity(value)
-            value = value.n * value.units
-            prm = template_maker.params[p_name]
-            prm.value = value
-            template_maker.update_params(prm)
-            if p_name in data_maker.params.names:
-                prm = data_maker.params[p_name]
+            for one_set_param in args.set_param:
+                p_name,value = one_set_param.split("=")
+                print "set_parm ", p_name, " to  ", value
+                value = parse_quantity(value)
+                value = value.n * value.units
+                prm = template_maker.params[p_name]
+                print "old", p_name,".value for template= ", prm.value
                 prm.value = value
-                data_maker.update_params(prm)
+                template_maker.update_params(prm)
+                print "new ", p_name,".value for template= ", prm.value
+                if p_name in data_maker.params.names:
+                    prm = data_maker.params[p_name]
+                    print "old", p_name,".value for data= ", prm.value
+                    prm.value = value
+                    print "new", p_name,".value for data= ", prm.value
+                    data_maker.update_params(prm)
         if not args.fix_param_scan == '':
             p_name,value = args.fix_param_scan.split("=")
             print "p_name,value= ", p_name, " ", value
