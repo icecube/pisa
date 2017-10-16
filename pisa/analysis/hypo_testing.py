@@ -43,8 +43,7 @@ from pisa.utils.stats import ALL_METRICS
 from pisa.utils.timing import timediffstamp, timestamp
 
 
-__all__ = ['Labels', 'HypoTesting',
-           'parse_args', 'main']
+__all__ = ['Labels', 'HypoTesting', 'parse_args', 'prepare_init_args', 'main']
 
 
 class Labels(object):
@@ -1772,10 +1771,10 @@ def parse_args(description=__doc__):
 
 
 def prepare_init_args(init_args_d, makers):
-    """ Normalize and convert `*_pipeline` filenames; store to `*_maker`
-    (which is argument naming convention that HypoTesting init accepts);
-    parse param selections and store to `*_param_selections`. Modifies
-    `init_args_d` in-place.
+    """Process dictionary of initialization arguments for accordance with
+    HypoTesting init conventions: normalize and convert `*_pipeline` filenames
+    store to `*_maker`; parse param selections and store to `*_param_selections`.
+    Note that this method modifies `init_args_d` in-place.
 
     Parameters
     ----------
