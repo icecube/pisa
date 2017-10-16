@@ -188,9 +188,12 @@ class PlotterNutau(Plotter):
                 mc_sumw2_all = np.append(mc_sumw2_all, sumw2)
 
             # get rid of nans
+            print "before cut len mc_weight_all ", len(mc_weight_all)
             nan_cut=np.logical_not(np.isnan(mc_param_all))
             mc_param_all = mc_param_all[nan_cut]
             mc_weight_all= mc_weight_all[nan_cut]
+            print "len mc_weight_all ", len(mc_weight_all)
+            print "np.sum(mc_weight_all) = ", np.sum(mc_weight_all)
             mc_sumw2_all = mc_sumw2_all[nan_cut]
 
             x_range = self.get_x_range(param_to_plot)
@@ -220,9 +223,9 @@ class PlotterNutau(Plotter):
         else:
             best_y = mc_y
             best_sumw2 = mc_sumw2
-        #print "     in plotter best fit MC (no icc) ", np.sum(mc_y)
+        print "     in plotter best fit MC (no icc) ", np.sum(mc_y)
         #print "     in plotter best fit icc ", np.sum(icc_y * icc_arrays['weight'])
-        #print "     in plotter best fit MC+icc: ", np.sum(best_y)
+        print "     in plotter best fit MC+icc: ", np.sum(best_y)
         if np.all(best_y==0):
             print "no mc or icc"
         else:
@@ -251,6 +254,8 @@ class PlotterNutau(Plotter):
                 colors = ['green', 'lightgreen', 'deepskyblue', 'lightskyblue', 'gainsboro', 'darkorange', 'r']
             #if group_mc_flavs==['nue_nc', 'numu_nc', 'nue_cc', 'numu_cc', 'nutau_nc', 'nutau_cc']:
             #    colors = ['blueviolet', 'lightgreen', 'burlywood', 'lightskyblue', 'darkorange', 'r', 'gainsboro']
+            if icc_arrays is None:
+                colors.remove('gainsboro')
             for i, group in enumerate(group_mc_flavs):
                 group_mc_params[group]=[]
                 group_mc_weight[group]=[]
@@ -279,15 +284,16 @@ class PlotterNutau(Plotter):
                 #plt.legend()
             # get flav labels
             all_flavs = deepcopy(group_mc_flavs)
-            if logy:
-                all_flavs.insert(0,icc_y*icc_arrays['weight'])
-            else:
-                if group_mc_flavs==['nu_nc', 'numu_cc', 'nue_cc', 'nutau_cc']:
-                    mc_group_y.insert(3,icc_y*icc_arrays['weight'])
-                    all_flavs.insert(3, 'muon')
-                if group_mc_flavs==['nue_nc', 'nue_cc', 'numu_nc', 'numu_cc', 'nutau_nc', 'nutau_cc']:
-                    mc_group_y.insert(4,icc_y*icc_arrays['weight'])
-                    all_flavs.insert(4, 'muon')
+            if icc_arrays is not None:
+                if logy:
+                    all_flavs.insert(0,icc_y*icc_arrays['weight'])
+                else:
+                    if group_mc_flavs==['nu_nc', 'numu_cc', 'nue_cc', 'nutau_cc']:
+                        mc_group_y.insert(3,icc_y*icc_arrays['weight'])
+                        all_flavs.insert(3, 'muon')
+                    if group_mc_flavs==['nue_nc', 'nue_cc', 'numu_nc', 'numu_cc', 'nutau_nc', 'nutau_cc']:
+                        mc_group_y.insert(4,icc_y*icc_arrays['weight'])
+                        all_flavs.insert(4, 'muon')
             flavor_label=self.get_flavor_label(all_flavs)
             ax1.hist([x]*len(mc_group_y), weights=mc_group_y, bins=x_edges, lw=1.5, color=colors[0:len(mc_group_y)], label=flavor_label, histtype='bar', stacked=True, **kwargs)
             if extra!=[]:
@@ -310,7 +316,8 @@ class PlotterNutau(Plotter):
                 print "len best_y", len(best_y)
             x = (x_edges[:-1]+x_edges[1:])/2.0
             plt.errorbar(x, data_y, yerr=np.sqrt(data_y), fmt='.', marker='.', markersize=4, color='k', label=r'$\rm{Data}$',capthick=1, capsize=3)
-            #print "     in plotter, data total ", np.sum(data_y)
+            print "     in plotter, data total ", np.sum(data_y)
+            print "     in plotter, best_y total ", np.sum(best_y)
             if thin:
                 ax1.legend(loc=1,ncol=2,frameon=True, columnspacing=0.8, handlelength=1.5, prop={'size':9})
             else:
@@ -456,7 +463,10 @@ class PlotterNutau(Plotter):
         plt.savefig(plot_name+'.pdf')
         plt.savefig(plot_name+'.png')
         plt.clf()
-        return [mc_param_all, mc_weight_all, mc_sumw2_all, icc_param, icc_arrays['weight'], x_edges]
+        if icc_arrays is not None:
+            return [mc_param_all, mc_weight_all, mc_sumw2_all, icc_param, icc_arrays['weight'], x_edges]
+        else:
+            return [mc_param_all, mc_weight_all, mc_sumw2_all, [], [], x_edges]
 
        # if (data_arrays is not None) and self.ratio:
        #     plt.figure()
