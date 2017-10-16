@@ -505,7 +505,7 @@ if __name__ == '__main__':
 
         if not args.fix_param == '':
             template_maker.params.fix(args.fix_param)
-        if not args.set_param == '':
+        if args.set_param is not None:
             for one_set_param in args.set_param:
                 p_name,value = one_set_param.split("=")
                 print "set_parm ", p_name, " to  ", value
