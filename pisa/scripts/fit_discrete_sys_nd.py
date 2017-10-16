@@ -43,8 +43,9 @@ def parse_args():
         help='settings for the generation of templates'
     )
     parser.add_argument(
-        '-sp', '--set-param', type=str, default='',
-        help='Set a param to a certain value.'
+        '-sp', '--set-param', type=str, default=None,
+        help='Set a param to a certain value.',
+        action='append'
     )
     parser.add_argument(
         '--tag', type=str, default='deepcore',
@@ -83,17 +84,18 @@ def main():
     # Instantiate template maker
     template_maker = Pipeline(args.template_settings)
 
-    if not args.set_param == '':
-        p_name, value = args.set_param.split("=")
-        print "p_name,value= ", p_name, " ", value
-        value = parse_quantity(value)
-        value = value.n * value.units
-        print "value ", value
-        test = template_maker.params[p_name]
-        print "test.value = ", test.value
-        test.value = value
-        print "test.value = ", test.value
-        template_maker.update_params(test)
+    if args.set_param is not None:
+        print "args.set_param", args.set_param
+        for one_set_param in args.set_param:
+            p_name, value = one_set_param.split("=")
+            print "p_name,value= ", p_name, " ", value
+            value = parse_quantity(value)
+            value = value.n * value.units
+            test = template_maker.params[p_name]
+            print "old ", p_name,".value = ", test.value
+            test.value = value
+            print "new ", p_name,".value = ", test.value
+            template_maker.update_params(test)
 
     sys_parameter_points = []
     sys_mapsets = []
