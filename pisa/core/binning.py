@@ -2062,7 +2062,7 @@ class MultiDimBinning(object):
         return self.coord(*coord[::-1])
 
     # TODO: examples!
-    def reorder_dimensions(self, order, use_deepcopy=False):
+    def reorder_dimensions(self, order, use_deepcopy=False, use_basenames=False):
         """Return a new MultiDimBinning object with dimensions ordered
         according to `order`.
 
@@ -2109,7 +2109,7 @@ class MultiDimBinning(object):
         indices = []
         for dim in order:
             try:
-                idx = self.index(dim, use_basenames=False)
+                idx = self.index(dim, use_basenames=use_basenames)
             except ValueError:
                 continue
             indices.append(idx)

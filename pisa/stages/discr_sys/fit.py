@@ -194,8 +194,8 @@ class fit(Stage):
                 'output_events must be of type bool, instead it is supplied '
                 'with type {0}'.format(type(output_events))
             )
+        self.fit_binning = deepcopy(output_binning)
         if output_events:
-            self.fit_binning = deepcopy(output_binning)
             output_binning = None
         self.output_events = output_events
 
@@ -587,8 +587,12 @@ class fit(Stage):
                     hists = [fracdiff_mapset_dict[run][fig].hist for run in runs]
                     zip_hists = np.dstack(hists)
                     for idx in np.ndindex(fit_binning.shape):
-                        y_values = unp.nominal_values(zip_hists[idx])
-                        y_sigma = unp.std_devs(zip_hists[idx])
+                        y_values = []
+                        y_sigma = []
+                        for run in fracdiff_mapset_dict:
+                            y_values.append(unp.nominal_values(fracdiff_mapset_dict[run][fig].hist[idx]))
+                            y_sigma.append(unp.std_devs(fracdiff_mapset_dict[run][fig].hist[idx]))
+
                         if np.any(y_sigma):
                             popt, pcov = curve_fit(
                                 fit_func, delta_runs, y_values, sigma=y_sigma,
@@ -686,8 +690,11 @@ class fit(Stage):
                 hists = [fracdiff_map_dict[run].hist for run in runs]
                 zip_hists = np.dstack(hists)
                 for idx in np.ndindex(fit_binning.shape):
-                    y_values = unp.nominal_values(zip_hists[idx])
-                    y_sigma = unp.std_devs(zip_hists[idx])
+                    y_values = [] 
+                    y_sigma = []
+                    for run in fracdiff_mapset_dict:
+                        y_values.append(unp.nominal_values(fracdiff_mapset_dict[run][fig].hist[idx]))
+                        y_sigma.append(unp.std_devs(fracdiff_mapset_dict[run][fig].hist[idx]))
                     if np.any(y_sigma):
                         popt, pcov = curve_fit(
                             fit_func, delta_runs, y_values, sigma=y_sigma,
