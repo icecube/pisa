@@ -33,7 +33,8 @@ from pisa.analysis.analysis import Analysis
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.map import MapSet
 from pisa.utils.comparisons import normQuant
-from pisa.utils.fileio import from_file, get_valid_filename, mkdir, to_file
+from pisa.utils.fileio import from_file, get_valid_filename, mkdir, to_file,\
+normcheckpath
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.random_numbers import get_random_state
@@ -42,8 +43,7 @@ from pisa.utils.stats import ALL_METRICS
 from pisa.utils.timing import timediffstamp, timestamp
 
 
-__all__ = ['Labels', 'HypoTesting',
-           'parse_args', 'normcheckpath', 'main']
+__all__ = ['Labels', 'HypoTesting', 'parse_args', 'prepare_init_args', 'main']
 
 
 class Labels(object):
@@ -1770,22 +1770,49 @@ def parse_args(description=__doc__):
     return init_args_d
 
 
-# TODO: make this work with Python package resources, not merely absolute
-# paths! ... e.g. hash on the file or somesuch?
-# TODO: move to a central loc prob. in utils
-def normcheckpath(path, checkdir=False):
-    normpath = find_resource(path)
-    if checkdir:
-        kind = 'dir'
-        check = os.path.isdir
-    else:
-        kind = 'file'
-        check = os.path.isfile
+def prepare_init_args(init_args_d, makers):
+    """Process dictionary of initialization arguments for accordance with
+    HypoTesting init conventions: normalize and convert `*_pipeline` filenames
+    store to `*_maker`; parse param selections and store to `*_param_selections`.
+    Note that this method modifies `init_args_d` in-place.
 
-    if not check(normpath):
-        raise IOError('Path "%s" which resolves to "%s" is not a %s.'
-                      %(path, normpath, kind))
-    return normpath
+    Parameters
+    ----------
+    init_args_d : dict
+        Initialization arguments for `HypoTesting` class.
+
+    makers : string or sequence of strings
+        Hypothesis/data IDs to search for.
+
+    """
+    if not isinstance(init_args_d, Mapping):
+        raise TypeError("Need a mapping instead of '%s'!"%init_args_d)
+    try:
+        makers = iter(makers)
+    except:
+        raise TypeError("Object '%s' of type '%s' is not iterable!"%
+                        (makers, type(makers)))
+    for maker in makers:
+        if not isinstance(maker, basestring):
+            raise TypeError("Expected hypothesis/data identification string."
+                            " Got type '%s' instead!"%type(maker))
+        try:
+            filenames = init_args_d.pop(maker + '_pipeline')
+            filenames = sorted(
+                [normcheckpath(fname) for fname in filenames]
+            )
+        except:
+            filenames = None
+        init_args_d[maker + '_maker'] = filenames
+
+        ps_name = maker + '_param_selections'
+        try:
+            ps_str = init_args_d[ps_name]
+            ps_list = [x.strip().lower() for x in ps_str.split(',')]
+        except:
+            ps_str = None
+            ps_list = None
+        init_args_d[ps_name] = ps_list
 
 
 def main(return_outputs=False):
@@ -1808,23 +1835,7 @@ def main(return_outputs=False):
     # HypoTesting object via dictionary's `pop()` method.
     init_args_d = parse_args()
 
-    # Normalize and convert `*_pipeline` filenames; store to `*_maker`
-    # (which is argument naming convention that HypoTesting init accepts).
-    for maker in ['h0', 'h1', 'data']:
-        filenames = init_args_d.pop(maker + '_pipeline')
-        if filenames is not None:
-            filenames = sorted(
-                [normcheckpath(fname) for fname in filenames]
-            )
-        init_args_d[maker + '_maker'] = filenames
-
-        ps_name = maker + '_param_selections'
-        ps_str = init_args_d[ps_name]
-        if ps_str is None:
-            ps_list = None
-        else:
-            ps_list = [x.strip().lower() for x in ps_str.split(',')]
-        init_args_d[ps_name] = ps_list
+    prepare_init_args(init_args_d=init_args_d, makers=['h0', 'h1', 'data'])
 
     # Instantiate the analysis object
     hypo_testing = HypoTesting(**init_args_d)
