@@ -21,9 +21,8 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import os
 
 from pisa import ureg
-from pisa.analysis.hypo_testing import HypoTesting, Labels
+from pisa.analysis.hypo_testing import HypoTesting, Labels, prepare_init_args
 from pisa.core.distribution_maker import DistributionMaker
-from pisa.utils.fileio import normcheckpath
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
 from pisa.utils.stats import ALL_METRICS
@@ -335,33 +334,13 @@ def main():
             logging.info('Will evaluate other metrics %s' %other_metrics)
         init_args_d['other_metrics'] = other_metrics
 
-    # Normalize and convert `*_pipeline` filenames; store to `*_maker`
-    # (which is argument naming convention that HypoTesting init accepts).
-    for maker in ['h0', 'h1', 'data']:
-        try:
-            filenames = init_args_d.pop(maker + '_pipeline')
-        except:
-            filenames = None
-        if filenames is not None:
-            filenames = sorted(
-                [normcheckpath(fname) for fname in filenames]
-            )
-        init_args_d[maker + '_maker'] = filenames
+    prepare_init_args(init_args_d=init_args_d, makers=['h0', 'h1', 'data'])
 
-        ps_name = maker + '_param_selections'
-        try:
-            ps_str = init_args_d[ps_name]
-        except:
-            ps_str = None
-        if ps_str is None:
-            ps_list = None
-        else:
-            ps_list = [x.strip().lower() for x in ps_str.split(',')]
-        init_args_d[ps_name] = ps_list
-
+    # TODO: could go in prepare_init_args?
     init_args_d['fluctuate_data'] = False
     init_args_d['fluctuate_fid'] = False
 
+    # TODO: isn't the following stuff done by HypoTesting's __init__()?
     init_args_d['data_maker'] = init_args_d['h0_maker']
     init_args_d['h1_maker'] = init_args_d['h0_maker']
 
