@@ -43,8 +43,9 @@ def parse_args():
         help='settings for the generation of templates'
     )
     parser.add_argument(
-        '-sp', '--set-param', type=str, default='',
-        help='Set a param to a certain value.'
+        '-sp', '--set-param', type=str, default=None,
+        help='Set a param to a certain value.',
+        action='append'
     )
     parser.add_argument(
         '--tag', type=str, default='deepcore',
@@ -87,6 +88,7 @@ def main():
         degree = cfg.getint(sys, 'degree')
         force_through_nominal = cfg.getboolean(sys, 'force_through_nominal')
         runs = eval(cfg.get(sys, 'runs'))
+        print "runs ", runs
         smooth = cfg.get(sys, 'smooth')
 
         x_values = np.array(sorted(runs))
@@ -104,16 +106,16 @@ def main():
         template_maker = Pipeline(args.template_settings)
 
         if not args.set_param == '':
-            p_name, value = args.set_param.split("=")
-            print "p_name,value= ", p_name, " ", value
-            value = parse_quantity(value)
-            value = value.n * value.units
-            print "value ", value
-            test = template_maker.params[p_name]
-            print "test.value = ", test.value
-            test.value = value
-            print "test.value = ", test.value
-            template_maker.update_params(test)
+            for one_set_param in args.set_param:
+                p_name, value = one_set_param.split("=")
+                print "p_name,value= ", p_name, " ", value
+                value = parse_quantity(value)
+                value = value.n * value.units
+                param = template_maker.params[p_name]
+                print "old ", p_name, "value = ", param.value
+                param.value = value
+                print "new ", p_name, "value = ", param.value
+                template_maker.update_params(param)
 
         inputs = {}
         map_names = None
