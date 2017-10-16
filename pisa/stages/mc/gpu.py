@@ -202,7 +202,7 @@ class gpu(Stage):
         if params.hist_pid_scale.is_fixed == False or params.hist_pid_scale.value != 1.0:
             assert (params.kde.value == False), 'The hist_epid_scale can only be used with histograms, not KDEs!'
 
-    def _compute_nominal_outputs(self):
+    def _compute_nominal_outputs(self, no_reco=False):
         # Store hashes for caching that is done inside the stage
         self.osc_hash = None
         self.flux_hash = None
@@ -287,9 +287,9 @@ class gpu(Stage):
             self.histogrammer = self.GPUHist(*bin_edges)
 
         # load events
-        self.load_events()
+        self.load_events(no_reco)
 
-    def load_events(self):
+    def load_events(self, no_reco=False):
         # --- Load events
         # open Events file
         evts = Events(self.params.events_file.value)
@@ -369,6 +369,10 @@ class gpu(Stage):
                 except KeyError:
                     # If variable doesn't exist (e.g. axial mass coeffs, just
                     # fill in ones) only warn first time
+                    #print "var doesn't exist ", var
+                    #if var in ['reco_energy', 'reco_coszen', 'pid']:
+                    if var in ['reco_energy', 'reco_coszen']:
+                        continue
                     if flav == self.flavs[0]:
                         logging.warning('replacing variable %s by ones'%var)
                     self.events_dict[flav]['host'][var] = np.ones_like(
@@ -378,6 +382,7 @@ class gpu(Stage):
             self.events_dict[flav]['n_evts'] = np.uint32(
                 len(self.events_dict[flav]['host'][variables[0]])
             )
+            #print "self.events_dict[flav]['n_evts']", self.events_dict[flav]['n_evts']
             #select even 50%
             #self.events_dict[flav]['host']['weighted_aeff'][::2] = 0
             #select odd 50%
@@ -441,7 +446,8 @@ class gpu(Stage):
         logging.debug('copy done in %.4f ms'%((end_t - start_t) * 1000))
 
         # Apply raw reco sys
-        self.apply_reco()
+        if no_reco==False:
+            self.apply_reco()
 
     def apply_reco(self):
         """Apply raw reco systematics (to use as inputs to polyfit stage)"""
@@ -505,7 +511,7 @@ class gpu(Stage):
         cuda.memcpy_dtoh(out, d_out)
         return out[0]
 
-    def _compute_outputs(self, inputs=None):
+    def _compute_outputs(self, inputs=None, no_reco=False):
         logging.debug('retreive weighted histo')
 
         # Get hash to decide whether expensive stuff needs to be recalculated
@@ -632,6 +638,10 @@ class gpu(Stage):
         logging.debug('GPU calc done in %.4f ms for %s events'
                       %(((end_t - start_t) * 1000), tot))
 
+        if no_reco==True:
+            self.get_device_arrays(variables=['weight', 'sumw2'])
+            return
+
         if self.params.kde.value:
             start_t = time.time()
             #copy back weights
@@ -748,6 +758,8 @@ class gpu(Stage):
         for name, hist in out_hists.items():
             logging.info('%s : %.2f events'%(name, np.sum(hist)))
             total_nevt += np.sum(hist)
+            if total_nevt==0:
+                print "total_nevt=0, for ", name
             if self.error_method == 'sumw2':
                 maps.append(Map(name=name, hist=hist,
                                 error_hist=np.sqrt(out_sumw2[name]),
@@ -768,8 +780,11 @@ class gpu(Stage):
                                 binning=self.output_binning))
 
         logging.info('total : %.2f events'%total_nevt)
+        total_nevt=0
         for map in maps:
+            total_nevt+=np.sum(unp.nominal_values(map.hist))
             logging.info('%s : %.4f %%'%(map.name, np.sum(unp.nominal_values(map.hist))/total_nevt))
+        #print " after binning total_nevt", total_nevt
         return MapSet(maps, name='gpu_mc')
 
     def get_fields_2(self, fields):
@@ -791,10 +806,10 @@ class gpu(Stage):
             nt+=np.sum(return_events[flav]['weight'])
         return return_events
 
-    def get_fields(self, fields):
+    def get_fields(self, fields, no_reco=False):
         ''' Return a dictionary with the input fields for each flavor.'''
-        self._compute_nominal_outputs()
-        self._compute_outputs()
+        self._compute_nominal_outputs(no_reco=no_reco)
+        self._compute_outputs(no_reco=no_reco)
         all_evts = Events(self.params.events_file.value)
         if self.params.mc_cuts.value is not None:
             logging.info('applying the following cuts to events: %s'%self.params.mc_cuts.value)
@@ -811,10 +826,15 @@ class gpu(Stage):
                 fields_from_calculation.append(param)
         for param in fields_from_calculation:
             if param in ['l_over_e', 'path_length']:
-                if 'reco_energy' not in fields_from_device:
-                    fields_from_device.append('reco_energy')
-                if 'reco_coszen' not in fields_from_device:
-                    fields_from_device.append('reco_coszen')
+                if no_reco:
+                    fields_from_calculation.remove(param)
+                    print "No reco info"
+                else:
+                    if 'reco_energy' not in fields_from_device:
+                        fields_from_device.append('reco_energy')
+                    if 'reco_coszen' not in fields_from_device:
+                        fields_from_device.append('reco_coszen')
+        #print "fields_from_calculation: ", fields_from_calculation
         return_events = {}
         sum_evts=0
         self.get_device_arrays(fields_from_device)
@@ -835,4 +855,5 @@ class gpu(Stage):
                 f *= self.params.nutau_cc_norm.value.m_as('dimensionless')
             return_events[flav]['weight']*=f
             sum_evts+=np.sum(return_events[flav]['weight'])
+        #print "in gpu get_fields(); sum_evets = ", sum_evts
         return return_events
