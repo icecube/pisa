@@ -2,26 +2,20 @@
 # date:   March 20, 2016
 
 
-import copy
-from itertools import product
-
 import numpy as np
 
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
-from pisa.core.events import Events
-from pisa.utils.flavInt import flavintGroupsFromString
-from pisa.utils.hash import hash_obj
-from pisa.utils.log import logging, set_verbosity
-from pisa.utils.profiler import profile
 from pisa.utils.fileio import from_file
-from pisa.utils.config_parser import split
+from pisa.utils.format import split
+from pisa.utils.profiler import profile
 
 
 # TODO: the below logic does not generalize to muons, but probably should
 # (rather than requiring an almost-identical version just for muons). For
 # example, an input arg can dictate neutrino or muon, which then sets the
 # input_names and output_names.
+
 
 class polyfits(Stage):
     """
@@ -48,7 +42,7 @@ class polyfits(Stage):
             #'reco_cz_res', 'reco_cz_res_file',
         )
 
-        input_names = split(input_names)
+        input_names = split(input_names, sep=',')
         output_names = input_names
 
         # Invoke the init method from the parent class, which does a lot of
@@ -66,19 +60,26 @@ class polyfits(Stage):
             input_binning=input_binning,
             output_binning=output_binning
         )
+        self.fit_results = None
+        self.pnames = None
 
-    def _compute_nominal_transforms(self):
+    def load_discr_sys(self, pnames):
         """Load the fit results from the file and make some check
         compatibility"""
-        self.pnames = [pname for pname in self.params.names if not
-            pname.endswith('_file')]
         self.fit_results = {}
-        for pname in self.pnames:
+        for pname in pnames:
             self.fit_results[pname] = from_file(
                 self.params[pname+'_file'].value
             )
             assert self.input_names == self.fit_results[pname]['map_names']
-            #assert self.input_binning.hash == self.fit_results[pname]['binning_hash']
+        self.pnames = pnames
+
+    def _compute_nominal_transforms(self):
+        # TODO: what is the mysterious logic here?
+        pnames = [pname for pname in self.params.names if not
+                  pname.endswith('_file')]
+        if self.fit_results is None or pnames != self.pnames:
+            self.load_discr_sys(pnames)
 
     @profile
     def _compute_transforms(self):
@@ -91,15 +92,14 @@ class polyfits(Stage):
             for pname in self.pnames:
                 p_value = (self.params[pname].magnitude -
                            self.fit_results[pname]['nominal'])
-                exec(self.fit_results[pname]['function'])
+                fit_fun = eval(self.fit_results[pname]['function'])
                 fit_params = self.fit_results[pname][name]
                 shape = fit_params.shape[:-1]
                 if transform is None:
                     transform = np.ones(shape)
                 for idx in np.ndindex(*shape):
                     # At every point evaluate the function
-                    transform[idx] *= fit_fun(p_value,
-                            *fit_params[idx])
+                    transform[idx] *= fit_fun(p_value, *fit_params[idx])
 
             xform = BinnedTensorTransform(
                 input_names=(name),

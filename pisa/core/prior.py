@@ -4,24 +4,30 @@
 #
 # date:   March 22, 2016
 #
+"""
+Prior class for use in pisa.core.Param objects
+"""
 
-import collections
-from copy import deepcopy
+
+from __future__ import absolute_import, division
+
+from collections import Iterable, OrderedDict
 from numbers import Number
 from operator import setitem
 
 import numpy as np
-from scipy.interpolate import splev, interp1d
+from scipy.interpolate import splev, splrep, interp1d
 from scipy.optimize import fminbound
 
 import pint
-from pisa import ureg, Q_
-from pisa.utils.comparisons import recursiveEquality
-from pisa.utils import fileio
-from pisa.utils.log import logging
+from pisa import ureg
+from pisa.utils.comparisons import isbarenumeric, recursiveEquality
+from pisa.utils.fileio import from_file
+from pisa.utils.log import logging, set_verbosity
 
 
-__all__ = ['Prior', 'plot_prior', 'get_prior_bounds']
+__all__ = ['Prior', 'plot_prior', 'get_prior_bounds',
+           'test_Prior', 'test_Prior_plot']
 
 
 # TODO: uniform prior should take a constant, such that e.g. discrete parameter
@@ -166,11 +172,11 @@ class Prior(object):
         return recursiveEquality(self.state, other.state)
 
     def __ne__(self, other):
-        return not self == other
+        return not self.__eq__(other)
 
     @property
     def state(self):
-        state = collections.OrderedDict()
+        state = OrderedDict()
         for attr in self._state_attrs:
             setitem(state, attr, getattr(self, attr))
         return state
@@ -184,38 +190,35 @@ class Prior(object):
         self.llh = llh
         self.max_at = np.nan
         self.max_at_str = 'no maximum'
-        self.valid_range = (-np.inf, np.inf)
+        self.valid_range = (-np.inf * ureg(self.units),
+                            np.inf * ureg(self.units))
         self._str = lambda s: 'uniform prior, llh_offset=%s' %self.llh_offset
 
     def __init_jeffreys(self, A, B, m):
+        """Calculate jeffreys prior as defined in Sivia p.125"""
         self.kind = 'jeffreys'
         if isinstance(A, Number):
             A = A * ureg.dimensionless
         if isinstance(B, Number):
             B = B * ureg.dimensionless
-        if isinstance(m, Number):
-            m = m * ureg.dimensionless
         assert A.dimensionality == B.dimensionality
-        assert A.dimensionality == m.dimensionality
-        self._state_attrs.extend(['A', 'B', 'm'])
-        if isinstance(A, pint.quantity._Quantity):
+        self._state_attrs.extend(['A', 'B'])
+        if isinstance(A, ureg.Quantity):
             self.units = str(A.units)
-            assert isinstance(B, pint.quantity._Quantity), '%s' %type(B)
+            assert isinstance(B, ureg.Quantity), '%s' %type(B)
             B = B.to(self.units)
-            m = m.to(self.units)
         self.A = A
         self.B = B
-        self.m = m
         def llh(x):
             x = self.__strip(self.__convert(x))
             A = self.__strip(self.A)
             B = self.__strip(self.B)
-            m = self.__strip(self.m)
-            return - np.log(x) + np.log(m)
+            return - np.log(x) + np.log(np.log(B)-np.log(A))
         self.llh = llh
         self.max_at = self.A
         self.max_at_str = self.__stringify(self.max_at)
-        self.valid_range = (self.A, self.B)
+        self.valid_range = (self.A * ureg(self.units),
+                            self.B * ureg(self.units))
         self._str = lambda s: "jeffreys' prior, range [%s,%s]"%(self.A, self.B)
 
     def __init_gaussian(self, mean, stddev):
@@ -226,9 +229,9 @@ class Prior(object):
         assert mean.dimensionality == stddev.dimensionality
         self._state_attrs.extend(['mean', 'stddev'])
         self.kind = 'gaussian'
-        if isinstance(mean, pint.quantity._Quantity):
+        if isinstance(mean, ureg.Quantity):
             self.units = str(mean.units)
-            assert isinstance(stddev, pint.quantity._Quantity), \
+            assert isinstance(stddev, ureg.Quantity), \
                     str(type(stddev))
             stddev = stddev.to(self.units)
         self.mean = mean
@@ -241,15 +244,18 @@ class Prior(object):
         self.llh = llh
         self.max_at = self.mean
         self.max_at_str = self.__stringify(self.max_at)
-        self.valid_range = (-np.inf, np.inf)
-        self._str = lambda s: 'gaussian prior: stddev=%s%s, maximum at %s%s' %(self.__stringify(self.stddev), self.units_str, self.__stringify(self.mean), self.units_str)
+        self.valid_range = (-np.inf * ureg(self.units),
+                            np.inf * ureg(self.units))
+        self._str = lambda s: 'gaussian prior: stddev=%s%s, maximum at %s%s' \
+                %(self.__stringify(self.stddev), self.units_str,
+                  self.__stringify(self.mean), self.units_str)
 
     def __init_linterp(self, param_vals, llh_vals):
-        if not isinstance(param_vals, pint.quantity._Quantity):
+        if not isinstance(param_vals, ureg.Quantity):
             param_vals = param_vals * ureg.dimensionless
         self._state_attrs.extend(['param_vals', 'llh_vals'])
         self.kind = 'linterp'
-        if isinstance(param_vals, pint.quantity._Quantity):
+        if isinstance(param_vals, ureg.Quantity):
             self.units = str(param_vals.units)
         self.interp = interp1d(param_vals, llh_vals, kind='linear', copy=True,
                                bounds_error=True, assume_sorted=False)
@@ -261,19 +267,22 @@ class Prior(object):
         self.llh = llh
         self.max_at = self.param_vals[self.llh_vals == np.max(self.llh_vals)]
         self.max_at_str = ', '.join([self.__stringify(v) for v in self.max_at])
-        self.valid_range = \
-                (np.min(self.param_vals), np.max(self.param_vals)) * self.units
-        self._str = lambda s: 'linearly-interpolated prior: valid in [%s, %s]%s, maxima at (%s)%s' %(self.__stringify(np.min(self.param_vals)), self.__stringify(np.max(self.param_vals)), self.units_str, self.max_at_str, self.units_str)
+        self.valid_range = (np.min(self.param_vals) * ureg(self.units),
+                            np.max(self.param_vals) * ureg(self.units))
+        self._str = lambda s: 'linearly-interpolated prior: valid in [%s, %s]%s, maxima at (%s)%s' \
+                %(self.__stringify(np.min(self.param_vals)),
+                  self.__stringify(np.max(self.param_vals)), self.units_str,
+                  self.max_at_str, self.units_str)
 
     def __init_spline(self, knots, coeffs, deg, units=None):
-        if not isinstance(knots, pint.quantity._Quantity):
+        if not isinstance(knots, ureg.Quantity):
             if units is None:
                 knots = knots * ureg.dimensionless
             else:
                 knots = ureg.Quantity(np.asarray(knots), units)
         self._state_attrs.extend(['knots', 'coeffs', 'deg', 'units'])
         self.kind = 'spline'
-        if isinstance(knots, pint.quantity._Quantity):
+        if isinstance(knots, ureg.Quantity):
             self.units = str(knots.units)
         self.knots = knots
         self.coeffs = coeffs
@@ -283,24 +292,29 @@ class Prior(object):
             return splev(x, tck=(self.__strip(self.knots), coeffs, deg), ext=2)
         self.llh = llh
         self.max_at = fminbound(
-            func=self.attach_units_to_args(self.chi2),
+            func=self.__attach_units_to_args(self.chi2),
             x1=np.min(self.__strip(self.knots)),
             x2=np.max(self.__strip(self.knots)),
         )
         if self.units is not None:
             self.max_at = self.max_at * ureg(self.units)
         self.max_at_str = self.__stringify(self.max_at)
-        self.valid_range = (np.min(self.knots), np.max(self.knots))
-        self._str = lambda s: 'spline prior: deg=%d, valid in [%s, %s]%s; max at %s%s' %(self.deg, self.__stringify(np.min(self.knots)), self.__stringify(np.max(self.knots)), self.units_str, self.max_at_str, self.units_str)
+        self.valid_range = (np.min(self.knots) * ureg(self.units),
+                            np.max(self.knots) * ureg(self.units))
+        self._str = lambda s: 'spline prior: deg=%d, valid in [%s, %s]%s; max at %s%s' \
+                %(self.deg, self.__stringify(np.min(self.knots)),
+                  self.__stringify(np.max(self.knots)), self.units_str,
+                  self.max_at_str, self.units_str)
 
     def __check_units(self, param_val):
         if self.units is None:
-            if (isinstance(param_val, pint.quantity._Quantity) and not
-                param_val.dimensionality == ureg.dimensionless.dimensionality):
+            if (isinstance(param_val, ureg.Quantity)
+                    and param_val.dimensionality
+                    != ureg.dimensionless.dimensionality):
                 raise TypeError('Passed a value with units (%s), but this'
                                 ' prior has no units.' %param_val.units)
         else:
-            if not isinstance(param_val, pint.quantity._Quantity):
+            if not isinstance(param_val, ureg.Quantity):
                 raise TypeError('Passed a value without units, but this prior'
                                 ' has units (%s).' %self.units)
             if param_val.dimensionality != ureg(self.units).dimensionality:
@@ -310,19 +324,20 @@ class Prior(object):
 
     def __convert(self, x):
         if self.units is None:
-            if (isinstance(x, pint.quantity._Quantity) and not
-                x.dimensionality == ureg.dimensionless.dimensionality):
+            if (isinstance(x, ureg.Quantity)
+                    and x.dimensionality != ureg.dimensionless.dimensionality):
                 raise TypeError('No units on prior, so cannot understand'
                                 ' passed value (with units): %s' %x)
             return x
-        if not isinstance(x, pint.quantity._Quantity):
+        if not isinstance(x, ureg.Quantity):
             raise TypeError('Units %s must be present on param values (got'
-                            ' %s, type %s instead).' %(self.units, x,
-                                                        type(x)))
+                            ' %s, type %s instead).'
+                            % (self.units, x, type(x)))
         return x.to(self.units)
 
-    def __strip(self, x):
-        if isinstance(x, pint.quantity._Quantity):
+    @staticmethod
+    def __strip(x):
+        if isinstance(x, ureg.Quantity):
             return x.magnitude
         return x
 
@@ -331,7 +346,8 @@ class Prior(object):
             x = x.to(self.units).magnitude
         return format(x, '0.4e')
 
-    def attach_units_to_args(self, func):
+    # TODO: proper function wrapping, including @wraps decorator
+    def __attach_units_to_args(self, func):
         def newfunc(*args):
             if self.units is None:
                 return func(*args)
@@ -373,14 +389,14 @@ def plot_prior(obj, param=None, x_xform=None, ax1=None, ax2=None, **plt_kwargs):
     mpl.use('pdf')
     import matplotlib.pyplot as plt
     if isinstance(obj, basestring):
-        obj = fileio.from_file(obj)
+        obj = from_file(obj)
     if param is not None and param in obj:
         obj = obj[param]
     if 'prior' in obj:
         obj = obj['prior']
 
     prior = Prior(**obj)
-    logging.info('Plotting Prior: %s' %prior)
+    logging.info('Plotting Prior: %s', prior)
     x0 = prior.valid_range[0]
     x1 = prior.valid_range[1]
     if prior.kind == 'gaussian':
@@ -419,40 +435,56 @@ def plot_prior(obj, param=None, x_xform=None, ax1=None, ax2=None, **plt_kwargs):
     return ax1, ax2
 
 
-def get_prior_bounds(obj, param=None, stddev=[1.0]):
+def get_prior_bounds(obj, param=None, stddev=1.0):
     """Obtain confidence regions for CL corresponding to given number of
     stddevs from parameter prior.
 
     Parameters
     ----------
-    obj : str or dict
+    obj : string or Mapping
         if str, interpret as path from which to load a dict
         if dict, can be:
             template settings dict; must supply `param` to choose which to plot
             params dict; must supply `param` to choose which to plot
             prior dict
-    param
+
+    param : Param
         Name of param for which to get bounds;
         necessary if obj is either template settings or params
-    stddev
-        List of number of stddevs
+
+    stddev : float or Iterable of floats
+        number of stddevs
+
 
     Returns
     -------
-    bounds
-        A dictionary mapping stddev to the corresponding bounds
+    bounds : OrderedDict
+        A dictionary mapping the passed `stddev` values to the corresponding
+        bounds
+
     """
-    bounds = {s: [] for s in stddev}
+    if isbarenumeric(stddev):
+        stddev = [stddev]
+    elif isinstance(stddev, Iterable):
+        stddev = list(stddev)
+
+    bounds = OrderedDict()
+    for s in stddev:
+        bounds[s] = []
+
     if isinstance(obj, basestring):
-        obj = fileio.from_file(obj)
+        obj = from_file(obj)
+
     if 'params' in obj:
         obj = obj['params']
     if param is not None and param in obj:
         obj = obj[param]
     if 'prior' in obj:
         obj = obj['prior']
+
     prior = Prior(**obj)
-    logging.info('Getting confidence region from prior: %s' %prior)
+
+    logging.debug('Getting confidence region from prior: %s', prior)
     x0 = prior.valid_range[0]
     x1 = prior.valid_range[1]
     x = ureg.Quantity(np.linspace(x0, x1, 10000), prior.units)
@@ -468,9 +500,10 @@ def get_prior_bounds(obj, param=None, stddev=[1.0]):
 
 
 # TODO enumerate all the cases rather than picking just a few.
-def test_Prior():
-    from scipy.interpolate import splrep, splev
 
+# pylint: disable=unused-variable
+def test_Prior():
+    """Unit tests for Prior class"""
     uniform = Prior(kind='uniform', llh_offset=1.5)
     gaussian = Prior(kind='gaussian', mean=10, stddev=1)
     x = np.linspace(-10, 10, 100)
@@ -480,7 +513,8 @@ def test_Prior():
     param_vals = np.linspace(-10, 10, 100)
     llh_vals = x**2
     knots, coeffs, deg = splrep(param_vals, llh_vals)
-    spline = Prior(kind='spline', knots=knots*ureg.foot, coeffs=coeffs, deg=deg)
+    spline = Prior(kind='spline', knots=knots*ureg.foot, coeffs=coeffs,
+                   deg=deg)
     param_upsamp = np.linspace(-10, 10, 1000)*ureg.foot
     llh_upsamp = splev(param_upsamp, tck=(knots, coeffs, deg), ext=2)
     assert all(spline.llh(param_upsamp) == llh_upsamp)
@@ -530,21 +564,35 @@ def test_Prior():
     else:
         assert False
 
-    print '<< PASSED : test_Prior >>'
+    logging.info('<< PASSED : test_Prior >>')
 
 # TODO: FIX ME
 def test_Prior_plot(ts_fname, param_name='theta23'):
-    """Produce plots roughly like NuFIT's 1D chi-squared projections"""
+    """Produce plots roughly like NuFIT's 1D chi-squared projections.
+
+    Parameters
+    ----------
+    ts_fname : string
+    param_name : string
+
+
+    Returns
+    -------
+    ax1, ax2 : Matplotlib.axis
+        The plot axes are returned for further manipulation
+
+    """
     import matplotlib as mpl
     mpl.use('pdf')
     import matplotlib.pyplot as plt
     stddev = [1, 2, 3, 4, 5]
-    chi2 =  [s**2 for s in stddev]
+    chi2 = [s**2 for s in stddev]
 
-    ts = fileio.from_file(resources.find_resource(ts_fname))
+    ts = from_file(ts_fname)
     f1 = plt.figure(1) #,figsize=(8,14),dpi=60)
     f2 = plt.figure(2) #,figsize=(8,14),dpi=60)
-    f1.clf();f2.clf()
+    f1.clf()
+    f2.clf()
     ax1 = f1.add_subplot(111)
     ax2 = f2.add_subplot(111)
 
@@ -600,8 +648,9 @@ def test_Prior_plot(ts_fname, param_name='theta23'):
     for c2 in chi2:
         ax2.plot(xlim, [c2, c2], 'k-', lw=1.0, alpha=0.4)
 
-    plt.draw();plt.show()
+    return ax1, ax2
 
 
 if __name__ == '__main__':
+    set_verbosity(1)
     test_Prior()

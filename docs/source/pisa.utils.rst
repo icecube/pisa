@@ -12,10 +12,10 @@ pisa.utils.PIDSpec module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.betterConfigParser module
-------------------------------------
+pisa.utils.barlow module
+------------------------
 
-.. automodule:: pisa.utils.betterConfigParser
+.. automodule:: pisa.utils.barlow
     :members:
     :undoc-members:
     :show-inheritance:
@@ -52,10 +52,10 @@ pisa.utils.config_parser module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.const module
------------------------
+pisa.utils.coords module
+------------------------
 
-.. automodule:: pisa.utils.const
+.. automodule:: pisa.utils.coords
     :members:
     :undoc-members:
     :show-inheritance:
@@ -84,18 +84,18 @@ pisa.utils.fileio module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.fit_discrete_sys module
-----------------------------------
-
-.. automodule:: pisa.utils.fit_discrete_sys
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pisa.utils.flavInt module
 -------------------------
 
 .. automodule:: pisa.utils.flavInt
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.utils.flux_weights module
+------------------------------
+
+.. automodule:: pisa.utils.flux_weights
     :members:
     :undoc-members:
     :show-inheritance:
@@ -112,6 +112,14 @@ pisa.utils.gaussians module
 ---------------------------
 
 .. automodule:: pisa.utils.gaussians
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.utils.gaussians_cython module
+----------------------------------
+
+.. automodule:: pisa.utils.gaussians_cython
     :members:
     :undoc-members:
     :show-inheritance:
@@ -156,10 +164,10 @@ pisa.utils.jsons module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.kde module
----------------------
+pisa.utils.kde_hist module
+--------------------------
 
-.. automodule:: pisa.utils.kde
+.. automodule:: pisa.utils.kde_hist
     :members:
     :undoc-members:
     :show-inheritance:
@@ -180,26 +188,10 @@ pisa.utils.mcSimRunSettings module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.miscFunctions module
--------------------------------
+pisa.utils.parallel module
+--------------------------
 
-.. automodule:: pisa.utils.miscFunctions
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.utils.physics module
--------------------------
-
-.. automodule:: pisa.utils.physics
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.utils.plot_brazil_new module
----------------------------------
-
-.. automodule:: pisa.utils.plot_brazil_new
+.. automodule:: pisa.utils.parallel
     :members:
     :undoc-members:
     :show-inheritance:
@@ -212,10 +204,10 @@ pisa.utils.plotter module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.proc module
-----------------------
+pisa.utils.postprocess module
+-----------------------------
 
-.. automodule:: pisa.utils.proc
+.. automodule:: pisa.utils.postprocess
     :members:
     :undoc-members:
     :show-inheritance:
@@ -244,34 +236,10 @@ pisa.utils.resources module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.seed module
-----------------------
+pisa.utils.rooutils module
+--------------------------
 
-.. automodule:: pisa.utils.seed
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.utils.slice_smooth_aeff module
------------------------------------
-
-.. automodule:: pisa.utils.slice_smooth_aeff
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.utils.smooth_aeff module
------------------------------
-
-.. automodule:: pisa.utils.smooth_aeff
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.utils.smooth_pid module
-----------------------------
-
-.. automodule:: pisa.utils.smooth_pid
+.. automodule:: pisa.utils.rooutils
     :members:
     :undoc-members:
     :show-inheritance:
@@ -280,6 +248,14 @@ pisa.utils.spline module
 ------------------------
 
 .. automodule:: pisa.utils.spline
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.utils.spline_smooth module
+-------------------------------
+
+.. automodule:: pisa.utils.spline_smooth
     :members:
     :undoc-members:
     :show-inheritance:
@@ -320,6 +296,14 @@ pisa.utils.timing module
 ------------------------
 
 .. automodule:: pisa.utils.timing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.utils.vbwkde module
+------------------------
+
+.. automodule:: pisa.utils.vbwkde
     :members:
     :undoc-members:
     :show-inheritance:

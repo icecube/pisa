@@ -1,6 +1,5 @@
-#ifndef _mosc3_
-#define _mosc3_
-
+#ifndef __mosc3__
+#define __mosc3__
 	
 
 extern "C" {
@@ -27,17 +26,5 @@ extern "C" {
 
  void   get_vacuum_probability(int ,double ,double ,double[][3] );
 }
- 
+
 #endif
-
-
-
-
-
-
-
-
-
-
-
-	

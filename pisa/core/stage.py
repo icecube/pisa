@@ -1,24 +1,31 @@
 # Authors
+"""
+Stage base class designed to be inherited by PISA services, such that all basic
+functionality is built-in.
+
+"""
+
 
 from collections import Iterable, Mapping, Sequence
 from copy import deepcopy
 import inspect
 import os
 
+from pisa import CACHE_DIR
 from pisa.core.events import Events
-from pisa.core.map import MapSet
-from pisa.core.param import Param, ParamSelector, ParamSet
+from pisa.core.map import Map, MapSet
+from pisa.core.param import Param, ParamSelector
 from pisa.core.transform import TransformSet
 from pisa.utils.cache import DiskCache, MemoryCache
 from pisa.utils.comparisons import normQuant
 from pisa.utils.fileio import mkdir
 from pisa.utils.hash import hash_obj
-from pisa.utils.log import logging, set_verbosity
-from pisa.utils.profiler import line_profile, profile
+from pisa.utils.log import logging
+from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
 
 
-__all__ = ['Stage']
+__all__ = ['arg_str_seq_none', 'Stage']
 
 
 # TODO: mode for not propagating errors. Probably needs hooks here, but meat of
@@ -29,7 +36,7 @@ def arg_str_seq_none(inputs, name):
 
     Parameters
     ----------
-    inputs : None, string, or sequence of strings
+    inputs : None, string, or iterable of strings
         Input value(s) provided by caller
     name : string
         Name of input, used for producing a meaningful error message
@@ -46,7 +53,7 @@ def arg_str_seq_none(inputs, name):
     if isinstance(inputs, basestring):
         inputs = [inputs]
     elif isinstance(inputs, (Iterable, Sequence)):
-        inputs = [i for i in inputs]
+        inputs = list(inputs)
     elif inputs is None:
         pass
     else:
@@ -77,12 +84,26 @@ class Stage(object):
 
     output_names : None or list of strings
 
-    disk_cache : None, str, or DiskCache
-        If None, no disk cache is available.
-        If str, represents a path with which to instantiate a utils.DiskCache
-        object. Must be concurrent-access-safe (across threads and processes).
+    disk_cache : None, bool, string, or DiskCache
+      * If None or False, no disk cache is available.
+      * If True, a disk cache is generated at the path
+        `CACHE_DIR/<stage_name>/<service_name>.sqlite` where CACHE_DIR is
+        defined in pisa.__init__
+      * If string, this is interpreted as a path. If an absolute path is
+        provided (e.g. "/home/myuser/mycache.sqlite'), this locates the disk
+        cache file exactly, while a relative path (e.g.,
+        "relative/dir/mycache.sqlite") is taken relative to the CACHE_DIR; the
+        aforementioned example will be turned into
+        `CACHE_DIR/relative/dir/mycache.sqlite`.
+      * If a DiskCache object is passed, it will be used directly
 
     memcache_deepcopy : bool
+        Whether to deepcopy objects prior to storing to the memory cache and
+        upon loading these objects from the memory cache. Setting to True
+        ensures no modification of mutable objects stored to a memory cache
+        will affect other logic relying on that object remaining unchanged.
+        However, this comes at the cost of more memory used and slower
+        operations.
 
     outputs_cache_depth : int >= 0
 
@@ -149,7 +170,6 @@ class Stage(object):
                  memcache_deepcopy=True, transforms_cache_depth=10,
                  outputs_cache_depth=0, input_binning=None,
                  output_binning=None, debug_mode=None):
-
         # Allow for string inputs, but have to populate into lists for
         # consistent interfacing to one or multiple of these things
         expected_params = arg_str_seq_none(expected_params, 'expected_params')
@@ -178,6 +198,7 @@ class Stage(object):
 
         self.input_binning = input_binning
         self.output_binning = output_binning
+        self.validate_binning()
         self._source_code_hash = None
 
         # Storage of latest transforms and outputs; default to empty
@@ -200,6 +221,9 @@ class Stage(object):
 
         self.nominal_transforms_cache = None
         """Memory cache object for storing nominal transforms"""
+
+        self.full_hash = True
+        """Whether to do full hashing if true, otherwise do fast hashing"""
 
         self.transforms_cache = MemoryCache(
             max_depth=self.transforms_cache_depth, is_lru=True,
@@ -227,7 +251,7 @@ class Stage(object):
         """Disk cache object"""
 
         self.disk_cache_path = None
-        """Path to disk cache file for this stage/service."""
+        """Path to disk cache file for this stage/service (or None)."""
 
         param_selector_keys = set([
             'regular_params', 'selector_param_sets', 'selections'
@@ -247,15 +271,15 @@ class Stage(object):
         self.validate_params(p)
         self._params = p
 
-        if bool(debug_mode) == False:
-            self._debug_mode = None
-        else:
+        if bool(debug_mode):
             self._debug_mode = debug_mode
-
-        if bool(error_method) == False:
-            self._error_method = None
         else:
+            self._debug_mode = None
+
+        if bool(error_method):
             self._error_method = error_method
+        else:
+            self._error_method = None
 
         # Include each attribute here for hashing if it is defined and its
         # value is not None
@@ -272,6 +296,10 @@ class Stage(object):
                 self.include_attrs_for_hashes(attr)
             except ValueError():
                 pass
+
+        self.inputs = None
+        self.events = None
+        self.nominal_transforms = None
 
         # Define useful flags and values for debugging behavior after running
 
@@ -300,6 +328,7 @@ class Stage(object):
         self.transforms_hash = None
         self.nominal_outputs_hash = None
         self.outputs_hash = None
+        self.instantiate_disk_cache()
 
     @profile
     def get_nominal_transforms(self, nominal_transforms_hash):
@@ -413,17 +442,18 @@ class Stage(object):
         # Compute nominal transforms; if feature is not used, this doesn't
         # actually do much of anything. To do more than this, override the
         # `_compute_nominal_transforms` method.
-        nominal_transforms, nominal_transforms_hash = \
-                self.get_nominal_transforms(
-                    nominal_transforms_hash=nominal_transforms_hash
-                )
+        _, nominal_transforms_hash = (
+            self.get_nominal_transforms(
+                nominal_transforms_hash=nominal_transforms_hash
+            )
+        )
 
         # Generate hash from param values
         if transforms_hash is None:
             transforms_hash = self._derive_transforms_hash(
                 nominal_transforms_hash=nominal_transforms_hash
             )
-        logging.trace('transforms_hash: %s' %transforms_hash)
+        logging.trace('transforms_hash: %s' %str(transforms_hash))
 
         # Load and return existing transforms if in the cache
         if self.transforms_cache is not None \
@@ -469,10 +499,13 @@ class Stage(object):
         nominal_outputs, hash
 
         """
-        if self.nominal_outputs_hash is None \
-           or self.nominal_outputs_hash != self._derive_nominal_outputs_hash():
+        if nominal_outputs_hash is None:
+            nominal_outputs_hash = self._derive_nominal_outputs_hash()
+
+        if (self.nominal_outputs_hash is None
+                or self.nominal_outputs_hash != nominal_outputs_hash):
             self._compute_nominal_outputs()
-            self.nominal_outputs_hash = self._derive_nominal_outputs_hash()
+            self.nominal_outputs_hash = nominal_outputs_hash
 
     @profile
     def get_outputs(self, inputs=None):
@@ -510,7 +543,7 @@ class Stage(object):
         # usually be so)
 
         # Keep inputs for internal use and for inspection later
-        self.inputs = {} if inputs is None else inputs
+        self.inputs = inputs
 
         outputs_hash, transforms_hash, nominal_transforms_hash = \
                 self._derive_outputs_hash()
@@ -530,7 +563,6 @@ class Stage(object):
             logging.trace('Loading outputs from cache.')
             outputs = self.outputs_cache[outputs_hash]
         else:
-            self.outputs_computed = True
             logging.trace('Need to compute outputs...')
 
             if self.use_transforms:
@@ -541,8 +573,13 @@ class Stage(object):
 
             logging.trace('... now computing outputs.')
             outputs = self._compute_outputs(inputs=self.inputs)
-            outputs.hash = outputs_hash
             self.check_outputs(outputs)
+
+            if isinstance(outputs, (Map, MapSet)):
+                outputs = outputs.rebin(self.output_binning)
+
+            outputs.hash = outputs_hash
+            self.outputs_computed = True
 
             # Store output to cache
             if self.outputs_cache is not None and outputs_hash is not None:
@@ -553,18 +590,28 @@ class Stage(object):
 
         # Attach sideband objects (i.e., inputs not specified in
         # `self.input_names`) to the "augmented" output object
-        names_in_inputs = set([i.name for i in self.inputs])
+        if self.inputs is None:
+            names_in_inputs = set()
+        else:
+            names_in_inputs = set(self.inputs.names)
         unused_input_names = names_in_inputs.difference(self.input_names)
 
         if len(unused_input_names) == 0:
             return outputs
 
+        # TODO: update logic for Data object, generic sideband objects
         # Create a new output container different from `outputs` but copying
         # the contents, for purposes of attaching the sideband objects found.
-        augmented_outputs = MapSet(outputs)
-        [augmented_outputs.append(inputs[name]) for name in unused_input_names]
+        if isinstance(outputs, MapSet):
+            augmented_outputs = MapSet(outputs)
+            for name in unused_input_names:
+                augmented_outputs.append(inputs[name])
 
-        return augmented_outputs
+            return augmented_outputs
+        else:
+            raise TypeError('Outputs are %s, but must currently be a MapSet in'
+                            ' the case that the input includes sideband'
+                            ' objects.' % type(outputs))
 
     @profile
     def _check_params(self, params):
@@ -613,17 +660,27 @@ class Stage(object):
 
     @profile
     def check_outputs(self, outputs):
-        assert set(outputs.names) == set(self.output_names), \
-                "Outputs: " + str(outputs.names) + \
+        if set(outputs.names) != set(self.output_names):
+            raise ValueError(
+                "Outputs: " + str(outputs.names) +
                 "\nStage outputs: " + str(self.output_names)
+            )
 
     def select_params(self, selections, error_on_missing=False):
+        """Apply the `selections` to contained ParamSet.
+
+        Parameters
+        ----------
+        selections : string or iterable
+        error_on_missing : bool
+
+        """
         try:
             self._param_selector.select_params(
                 selections, error_on_missing=True
             )
         except KeyError:
-            msg = 'None of the selections %s found in this pipeline.' \
+            msg = 'Not all of the selections %s found in this stage.' \
                     %(selections,)
             if error_on_missing:
                 #logging.error(msg)
@@ -634,61 +691,106 @@ class Stage(object):
                           %(selections, self.params))
 
     def load_events(self, events):
+        """Load events from path given by `events`. Stored as `self.events`.
+
+        Parameters
+        ----------
+        events : string or Events object
+            If string, load events from that location. If Events object,
+            deepcopy to obtain `self.events`
+
+        """
         if isinstance(events, Param):
             events = events.value
         elif isinstance(events, basestring):
             events = find_resource(events)
-        this_hash = hash_obj(events)
+        this_hash = hash_obj(events, full_hash=self.full_hash)
         if self._events_hash is not None and this_hash == self._events_hash:
             return
-        logging.debug('Extracting events from Events obj or file: %s' %events)
-        self.events = Events(events)
-        self._events_hash = this_hash
+        logging.debug('Extracting events from Events obj or file: %s', events)
+        events_obj = Events(events)
+        events_hash = this_hash
+
+        self.events = events_obj
+        self._events_hash = events_hash
 
     def cut_events(self, keep_criteria):
+        """Apply a cut to `self.events`, keeping only events that pass
+        `keep_criteria`.
+
+        Parameters
+        ----------
+        keep_criteria : string
+             See pisa.core.Events.applyCut for more info on specifying this.
+
+        """
         if isinstance(keep_criteria, Param):
             keep_criteria = keep_criteria.value
+
         if keep_criteria is not None:
-            self.remaining_events = deepcopy(self.events)
-            self.remaining_events.applyCut(keep_criteria=keep_criteria)
-        else:
-            self.remaining_events = self.events
+            events = self.events.applyCut(keep_criteria=keep_criteria)
+            events_hash = hash_obj(events, full_hash=self.full_hash)
+
+            self.events = events
+            self._events_hash = events_hash
 
     def instantiate_disk_cache(self):
+        """Instantiate a disk cache for use by the stage."""
         if isinstance(self.disk_cache, DiskCache):
+            self.disk_cache_path = self.disk_cache.path
             return
+
+        if self.disk_cache is False or self.disk_cache is None:
+            self.disk_cache = None
+            self.disk_cache_path = None
+            return
+
         if isinstance(self.disk_cache, basestring):
-            self.disk_cache_path = self.disk_cache
-        elif self.disk_cache is None:
-            cache_root_dir = find_resource('cache')
-            dirs = [cache_root_dir, self.stage_name]
-            dirpath = os.path.join(*dirs)
+            dirpath, filename = os.path.split(
+                os.path.expandvars(os.path.expanduser(self.disk_cache))
+            )
+            if os.path.isabs(dirpath):
+                self.disk_cache_path = os.path.join(dirpath, filename)
+            else:
+                self.disk_cache_path = os.path.join(
+                    CACHE_DIR, dirpath, filename
+                )
+        elif self.disk_cache is True:
+            dirs = [CACHE_DIR, self.stage_name]
+            dirpath = os.path.expandvars(os.path.expanduser(
+                os.path.join(*dirs)
+            ))
             if self.service_name is not None and self.service_name != '':
                 filename = self.service_name + '.sqlite'
             else:
-                filename = 'geeric.sqlite'
-            mkdir(dirpath)
+                filename = 'generic.sqlite'
+            mkdir(dirpath, warn=False)
             self.disk_cache_path = os.path.join(dirpath, filename)
         else:
             raise ValueError("Don't know what to do with a %s."
-                             %type(self.disk_cache))
+                             % type(self.disk_cache))
+
         self.disk_cache = DiskCache(self.disk_cache_path, max_depth=10,
                                     is_lru=False)
 
     @property
     def params(self):
+        """Params"""
         return self._params
 
     @property
     def param_selections(self):
+        """Param selections"""
         return sorted(deepcopy(self._param_selector.param_selections))
 
     @property
     def input_names(self):
+        """Names of input objects (e.g. names of input maps)"""
         return deepcopy(self._input_names)
 
     @property
     def output_names(self):
+        """Names of output objects (e.g. names of output maps)"""
         return deepcopy(self._output_names)
 
     @property
@@ -699,17 +801,24 @@ class Stage(object):
         an object stored to disk that were produced by a Stage.
         """
         if self._source_code_hash is None:
-            self._source_code_hash = hash_obj(inspect.getsource(self.__class__))
+            self._source_code_hash = hash_obj(
+                inspect.getsource(self.__class__),
+                full_hash=self.full_hash
+            )
         return self._source_code_hash
 
     @property
-    def state_hash(self):
+    def hash(self):
         """Combines source_code_hash and params.hash for checking/tagging
         provenance of persisted (on-disk) objects."""
-        objects_to_hash = [self.source_code_hash, self.params.state_hash]
+        objects_to_hash = [self.source_code_hash, self.params.hash]
         for attr in self._attrs_to_hash:
-            objects_to_hash.append(hash_obj(getattr(self, attr)))
-        return hash_obj(objects_to_hash)
+            objects_to_hash.append(hash_obj(getattr(self, attr),
+                                            full_hash=self.full_hash))
+        return hash_obj(objects_to_hash, full_hash=self.full_hash)
+
+    def __hash__(self):
+        return self.hash
 
     def include_attrs_for_hashes(self, attrs):
         """Include a class attribute or attributes to be included when
@@ -741,7 +850,8 @@ class Stage(object):
                                  ' attrs to hash.' %(attr, attrs))
 
         # Include the attribute names
-        [self._attrs_to_hash.add(attr) for attr in attrs]
+        for attr in attrs:
+            self._attrs_to_hash.add(attr)
 
     @property
     def debug_mode(self):
@@ -801,23 +911,27 @@ class Stage(object):
                     val = getattr(self, attr)
                     if hasattr(val, 'hash'):
                         attr_hash = val.hash
-                    else:
+                    elif self.full_hash:
                         norm_val = normQuant(val)
-                        attr_hash = hash_obj(val)
+                        attr_hash = hash_obj(norm_val,
+                                             full_hash=self.full_hash)
+                    else:
+                        attr_hash = hash_obj(val, full_hash=self.full_hash)
                     id_subobjects.append(attr_hash)
 
                 # Generate the "sub-hash"
-                if any([(h == None) for h in id_subobjects]):
+                if any([(h is None) for h in id_subobjects]):
                     sub_hash = None
                 else:
-                    sub_hash = hash_obj(id_subobjects)
+                    sub_hash = hash_obj(id_subobjects,
+                                        full_hash=self.full_hash)
                 id_objects.append(sub_hash)
 
         # If any hashes are missing (i.e, None), invalidate the entire hash
         if self.outputs_cache is None or any([(h is None) for h in id_objects]):
             outputs_hash = None
         else:
-            outputs_hash = hash_obj(id_objects)
+            outputs_hash = hash_obj(id_objects, full_hash=self.full_hash)
 
         return outputs_hash, transforms_hash, nominal_transforms_hash
 
@@ -845,16 +959,18 @@ class Stage(object):
             val = getattr(self, attr)
             if hasattr(val, 'hash'):
                 attr_hash = val.hash
-            else:
+            elif self.full_hash:
                 norm_val = normQuant(val)
-                attr_hash = hash_obj(val)
+                attr_hash = hash_obj(norm_val, full_hash=self.full_hash)
+            else:
+                attr_hash = hash_obj(val, full_hash=self.full_hash)
             id_objects.append(attr_hash)
 
         # If any hashes are missing (i.e, None), invalidate the entire hash
-        if any([(h == None) for h in id_objects]):
+        if any([(h is None) for h in id_objects]):
             transforms_hash = None
         else:
-            transforms_hash = hash_obj(id_objects)
+            transforms_hash = hash_obj(id_objects, full_hash=self.full_hash)
 
         return transforms_hash, nominal_transforms_hash
 
@@ -901,18 +1017,20 @@ class Stage(object):
             val = getattr(self, attr)
             if hasattr(val, 'hash'):
                 attr_hash = val.hash
-            else:
+            elif self.full_hash:
                 norm_val = normQuant(val)
-                attr_hash = hash_obj(val)
+                attr_hash = hash_obj(norm_val, full_hash=self.full_hash)
+            else:
+                attr_hash = hash_obj(val, full_hash=self.full_hash)
             id_objects.append(attr_hash)
         id_objects.append(self.source_code_hash)
 
         # If any hashes are missing (i.e, None), invalidate the entire hash
-        if any([(h == None) for h in id_objects]):
+        if any([(h is None) for h in id_objects]):
             nominal_transforms_hash = None
         else:
-            nominal_transforms_hash = hash_obj(id_objects)
-
+            nominal_transforms_hash = hash_obj(id_objects,
+                                               full_hash=self.full_hash)
         return nominal_transforms_hash
 
     def _derive_nominal_outputs_hash(self):
@@ -927,13 +1045,13 @@ class Stage(object):
 
     def _compute_transforms(self):
         """Stages that apply transforms to inputs should override this method
-        for deriving the transform. No-input stages should leave this as-is,
-        simply returning None."""
+        for deriving the transform. No-input stages should leave this as-is."""
         return TransformSet([])
 
     def _compute_nominal_outputs(self):
         return None
 
+    @profile
     def _compute_outputs(self, inputs):
         """Override this method for no-input stages which do not use transforms.
         Input stages that compute a TransformSet needn't override this, as the
@@ -943,4 +1061,10 @@ class Stage(object):
     def validate_params(self, params):
         """Override this method to test if params are valid; e.g., check range
         and dimensionality."""
+        return
+
+    def validate_binning(self):
+        """Override this method to test if the input and output binning
+        (e.g., dimensionality, domains, separately or in combination)
+        conform to the transform applied by the stage."""
         return

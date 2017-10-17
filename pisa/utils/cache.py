@@ -1,17 +1,27 @@
+# Author: J.L. Lanfranchi
+# Email:  jll1062+pisa@phys.psu.edu
+"""
+MemoryCache and DiskCache classes to store long-to-compute results.
 
-import copy
+"""
+
+
 from collections import OrderedDict
-#import cPickle as pickle
-import dill
+import copy
 import os
 import re
 import sqlite3
+import shutil
+import tempfile
 import time
+
+import pickle
 
 from pisa.utils.log import logging, set_verbosity
 
 
-__all__ = ['MemoryCache', 'DiskCache']
+__all__ = ['MemoryCache', 'DiskCache',
+           'test_MemoryCache', 'test_DiskCache']
 
 
 class MemoryCache(object):
@@ -112,7 +122,7 @@ class MemoryCache(object):
         return reversed(self.__cache)
 
     def clear(self):
-        return clear(self.__cache)
+        return self.__cache.clear()
 
     def get(self, key, dflt=None):
         if key in self.__cache:
@@ -223,8 +233,19 @@ class DiskCache(object):
         self.__max_depth = max_depth
         self.__is_lru = is_lru
 
+    @property
+    def path(self):
+        return self.__db_fpath
+
     def __instantiate_db(self):
         exists = True if os.path.isfile(self.__db_fpath) else False
+
+        # Create the directory in with the database file will be created
+        if not exists:
+            dirpath, _ = os.path.split(self.__db_fpath)
+            if not os.path.isdir(dirpath) and dirpath != '':
+                os.makedirs(dirpath)
+
         conn = self.__connect()
         try:
             if exists:
@@ -271,27 +292,31 @@ class DiskCache(object):
         if not isinstance(key, int):
             raise KeyError('`key` must be int, got "%s"' % type(key))
         conn = self.__connect()
-        t1 = time.time();logging.trace('conn: %0.4f' % (t1 - t0))
+        t1 = time.time()
+        logging.trace('conn: %0.4f' % (t1 - t0))
         try:
             if self.__is_lru:
                 # Update accesstime
                 sql = "UPDATE cache SET accesstime = ? WHERE hash = ?"
                 conn.execute(sql, (self.now, key))
-                t2 = time.time();logging.trace('update: % 0.4f' % (t2 - t1))
+                t2 = time.time()
+                logging.trace('update: % 0.4f' % (t2 - t1))
             t2 = time.time()
 
             # Retrieve contents
             sql = "SELECT data FROM cache WHERE hash = ?"
             cursor = conn.execute(sql, (key,))
-            t3 = time.time();logging.trace('select: % 0.4f' % (t3 - t2))
+            t3 = time.time()
+            logging.trace('select: % 0.4f' % (t3 - t2))
             tmp = cursor.fetchone()
             if tmp is None:
                 raise KeyError(str(key))
             data = tmp[0]
-            t4 = time.time();logging.trace('fetch: % 0.4f' % (t4 - t3))
-            #data = pickle.loads(bytes(data))
-            data = dill.loads(bytes(data))
-            t5 = time.time();logging.trace('loads: % 0.4f' % (t5 - t4))
+            t4 = time.time()
+            logging.trace('fetch: % 0.4f' % (t4 - t3))
+            data = pickle.loads(bytes(data))
+            t5 = time.time()
+            logging.trace('loads: % 0.4f' % (t5 - t4))
         finally:
             conn.commit()
             conn.close()
@@ -305,23 +330,27 @@ class DiskCache(object):
             )
         t0 = time.time()
         assert isinstance(key, int)
-        #data = sqlite3.Binary(pickle.dumps(obj, pickle.HIGHEST_PROTOCOL))
-        data = sqlite3.Binary(dill.dumps(obj, dill.HIGHEST_PROTOCOL))
-        t1 = time.time();logging.trace('dumps: % 0.4f' % (t1 - t0))
+        data = sqlite3.Binary(pickle.dumps(obj, pickle.HIGHEST_PROTOCOL))
+        t1 = time.time()
+        logging.trace('dumps: % 0.4f' % (t1 - t0))
 
         conn = self.__connect()
-        t2 = time.time();logging.trace('conn: % 0.4f' % (t2 - t1))
+        t2 = time.time()
+        logging.trace('conn: % 0.4f' % (t2 - t1))
         try:
             t = time.time()
             sql = "INSERT INTO cache (hash, accesstime, data) VALUES (?, ?, ?)"
             conn.execute(sql, (key, self.now, data))
-            t1 = time.time();logging.trace('insert: % 0.4f' % (t1 - t))
+            t1 = time.time()
+            logging.trace('insert: % 0.4f' % (t1 - t))
             conn.commit()
-            t2 = time.time();logging.trace('commit: % 0.4f' % (t2 - t1))
+            t2 = time.time()
+            logging.trace('commit: % 0.4f' % (t2 - t1))
 
             # Remove oldest-accessed rows in excess of limit
             n_to_remove = len(self) - self.__max_depth
-            t3 = time.time();logging.trace('len: % 0.4f' % (t3 - t2))
+            t3 = time.time()
+            logging.trace('len: % 0.4f' % (t3 - t2))
             if n_to_remove <= 0:
                 return
 
@@ -330,14 +359,17 @@ class DiskCache(object):
             sql = ("SELECT accesstime FROM cache ORDER BY accesstime ASC LIMIT"
                    " 1 OFFSET ?")
             cursor = conn.execute(sql, (n_to_remove,))
-            t4 = time.time();logging.trace('select old: % 0.4f' % (t4 - t3))
+            t4 = time.time()
+            logging.trace('select old: % 0.4f' % (t4 - t3))
             nth_access_time, = cursor.fetchone()
-            t5 = time.time();logging.trace('fetch: % 0.4f' % (t5 - t4))
+            t5 = time.time()
+            logging.trace('fetch: % 0.4f' % (t5 - t4))
 
             # Remove all elements that old or older
             sql = "DELETE FROM cache WHERE accesstime < ?"
             conn.execute(sql, (nth_access_time,))
-            t6 = time.time();logging.trace('delete: % 0.4f' % (t6 - t5))
+            t6 = time.time()
+            logging.trace('delete: % 0.4f' % (t6 - t5))
         except:
             t = time.time()
             conn.rollback()
@@ -357,7 +389,7 @@ class DiskCache(object):
         conn = self.__connect()
         try:
             sql = "DELETE FROM cache WHERE hash = ?"
-            cursor = conn.execute(sql, (key,))
+            conn.execute(sql, (key,))
         except:
             conn.rollback()
             raise
@@ -379,7 +411,7 @@ class DiskCache(object):
         rslt = dflt
         try:
             rslt = self.__getitem__(key)
-        except:
+        except KeyError:
             pass
         return rslt
 
@@ -443,6 +475,7 @@ class DiskCache(object):
 
 # TODO: augment test
 def test_MemoryCache():
+    """Unit tests for MemoryCache class"""
     mc = MemoryCache(max_depth=3, is_lru=True)
     assert 0 not in mc
     mc[0] = 'zero'
@@ -463,32 +496,34 @@ def test_MemoryCache():
         y = mc[4]
         assert (y == x_ref) == deepcopy
 
-    print '<< PASSED : test_MemoryCache >>'
+    logging.info('<< PASSED : test_MemoryCache >>')
 
 
 # TODO: augment test
 def test_DiskCache():
-    tmp_fname = '/tmp/DiskCache.sqlite'
+    """Unit tests for DiskCache class"""
+    testdir = tempfile.mkdtemp()
     try:
-        os.path.remove(tmp_fname)
-    except:
-        pass
-    dc = DiskCache(db_fpath=tmp_fname, max_depth=3, is_lru=False)
-    assert 0 not in dc
-    dc[0] = 'zero'
-    assert dc[0] == 'zero'
-    dc[1] = 'one'
-    dc[2] = 'two'
-    dc[3] = 'three'
-    assert 0 not in dc
-    assert dc[3] == 'three'
-    try:
-        os.path.remove(tmp_fname)
-    except:
-        pass
-    print '<< PASSED : test_DiskCache >>'
+        # Testing that subfolders get created, hence the long pathname
+        tmp_fname = os.path.join(
+            testdir, 'subfolder1/subfolder2/DiskCache.sqlite'
+        )
+        dc = DiskCache(db_fpath=tmp_fname, max_depth=3, is_lru=False)
+        assert 0 not in dc
+        dc[0] = 'zero'
+        assert dc[0] == 'zero'
+        dc[1] = 'one'
+        dc[2] = 'two'
+        dc[3] = 'three'
+        assert 0 not in dc
+        assert dc[3] == 'three'
+    finally:
+        shutil.rmtree(testdir, ignore_errors=True)
+
+    logging.info('<< PASSED : test_DiskCache >>')
 
 
 if __name__ == "__main__":
+    set_verbosity(1)
     test_MemoryCache()
     test_DiskCache()

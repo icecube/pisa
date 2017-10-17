@@ -4,7 +4,7 @@ import sys
 import h5py
 import numpy as np
 
-from pisa import ureg, Q_
+from pisa import ureg, Q_, FTYPE
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.core.map import Map, MapSet
 from pisa.core.stage import Stage
@@ -39,6 +39,8 @@ class icc(Stage):
             scale factor to be apllied to outputs
         use_def1 : bool
             whether ICC definition 1 is used
+        fixed_scale_factor : float
+            scale fixed errors
 
     Notes
     -----
@@ -57,7 +59,9 @@ class icc(Stage):
             'sim_ver',
             'livetime',
             'bdt_cut',
-            'alt_icc_bg_file'
+            'alt_icc_bg_file',
+            'kde_hist',
+            'fixed_scale_factor'
         )
 
         output_names = ('evts')
@@ -75,6 +79,9 @@ class icc(Stage):
             debug_mode=debug_mode
         )
 
+        if self.params.kde_hist.value:
+            from pisa.utils.kde_hist import kde_histogramdd
+            self.kde_histogramdd = kde_histogramdd
 
     def _compute_nominal_outputs(self):
         '''
@@ -84,7 +91,7 @@ class icc(Stage):
         '''
         # get params
         icc_bg_file = self.params.icc_bg_file.value
-        if self.error_method in ['sumw2+shape', 'fixed_sumw2+shape']:
+        if 'shape' in self.error_method:
             alt_icc_bg_file = self.params.alt_icc_bg_file.value
         else:
             alt_icc_bg_file = None
@@ -177,9 +184,40 @@ class icc(Stage):
 
         logging.info("Creating a ICC background hists...")
         # make histo
-        self.icc_bg_hist,_ = np.histogramdd(sample = np.array([cut_events[bin_name] for bin_name in self.bin_names]).T, bins=self.bin_edges)
+        if self.params.kde_hist.value:
+            self.icc_bg_hist = self.kde_histogramdd(
+                        np.array([cut_events[bin_name] for bin_name in self.bin_names]).T,
+                        binning=self.output_binning,
+                        coszen_name='reco_coszen',
+                        use_cuda=True,
+                        bw_method='silverman',
+                        alpha=0.3,
+                        oversample=10,
+                        coszen_reflection=0.5,
+                        adaptive=True
+                    )
+        else:
+            self.icc_bg_hist,_ = np.histogramdd(sample = np.array([cut_events[bin_name] for bin_name in self.bin_names]).T, bins=self.bin_edges)
+
+
+        conversion = self.params.atm_muon_scale.value.m_as('dimensionless') / ureg('common_year').to('seconds').m
+        logging.info('nominal ICC rate at %.6E Hz'%(self.icc_bg_hist.sum()*conversion))
+
         if alt_icc_bg_file is not None:
-            self.alt_icc_bg_hist,_ = np.histogramdd(sample = np.array([alt_cut_events[bin_name] for bin_name in self.bin_names]).T, bins=self.bin_edges)
+            if self.params.kde_hist.value:
+                self.alt_icc_bg_hist = self.kde_histogramdd(
+                    np.array([alt_cut_events[bin_name] for bin_name in self.bin_names]).T,
+                    binning=self.output_binning,
+                    coszen_name='reco_coszen',
+                    use_cuda=True,
+                    bw_method='silverman',
+                    alpha=0.3,
+                    oversample=10,
+                    coszen_reflection=0.5,
+                    adaptive=True
+                )
+            else:
+                self.alt_icc_bg_hist,_ = np.histogramdd(sample = np.array([alt_cut_events[bin_name] for bin_name in self.bin_names]).T, bins=self.bin_edges)
             # only interested in shape difference, not rate
             scale = self.icc_bg_hist.sum()/self.alt_icc_bg_hist.sum()
             self.alt_icc_bg_hist *= scale
@@ -197,14 +235,23 @@ class icc(Stage):
         fixed_scale = self.params.atm_muon_scale.nominal_value.m_as('dimensionless')
         scale *= self.params.livetime.value.m_as('common_year')
         fixed_scale *= self.params.livetime.value.m_as('common_year')
+        fixed_scale *= self.params.fixed_scale_factor.value.m_as('dimensionless')
 
         if self.error_method == 'sumw2':
             maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), error_hist=(np.sqrt(self.icc_bg_hist) * scale) ,binning=self.output_binning)]
         elif self.error_method == 'sumw2+shape':
             error = scale * np.sqrt(self.icc_bg_hist + (self.icc_bg_hist - self.alt_icc_bg_hist)**2 )
             maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), error_hist=error ,binning=self.output_binning)]
+        elif self.error_method == 'shape':
+            error = scale * np.abs(self.icc_bg_hist - self.alt_icc_bg_hist)
+        elif self.error_method == 'fixed_shape':
+            error = fixed_scale * np.abs(self.icc_bg_hist - self.alt_icc_bg_hist)
+            maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), error_hist=error ,binning=self.output_binning)]
         elif self.error_method == 'fixed_sumw2+shape':
             error = fixed_scale * np.sqrt(self.icc_bg_hist + (self.icc_bg_hist - self.alt_icc_bg_hist)**2 )
+            maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), error_hist=error ,binning=self.output_binning)]
+        elif self.error_method == 'fixed_doublesumw2+shape':
+            error = fixed_scale * np.sqrt(2*self.icc_bg_hist + (self.icc_bg_hist - self.alt_icc_bg_hist)**2 )
             maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), error_hist=error ,binning=self.output_binning)]
         else:
             maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), binning=self.output_binning)]

@@ -6,18 +6,144 @@
 Utilities for interpreting and returning formatted strings.
 """
 
+
+from __future__ import absolute_import, division
+
 from itertools import imap
 import numbers
 import re
 
 import numpy as np
-import pint
 
-from pisa import ureg, Q_
+from pisa import FTYPE, ureg
+from pisa.utils.flavInt import NuFlavIntGroup
+from pisa.utils.log import logging, set_verbosity
 
 
-__all__ = ['list2hrlist', 'hrlist2list', 'hrlol2lol', 'hrbool2bool', 'engfmt',
-           'text2tex', 'int2hex', 'hash2hex']
+__all__ = ['WHITESPACE_RE', 'NUMBER_RESTR', 'NUMBER_RE',
+           'HRGROUP_RESTR', 'HRGROUP_RE', 'IGNORE_CHARS_RE',
+           'TEX_BACKSLASH_CHARS', 'TEX_SPECIAL_CHARS_MAPPING',
+           'list2hrlist', 'hrlist2list', 'hrlol2lol', 'hrbool2bool', 'engfmt',
+           'text2tex', 'tex_join', 'tex_rm', 'default_map_tex', 'is_tex',
+           'int2hex', 'hash2hex',
+           'strip_outer_dollars', 'strip_outer_parens',
+           'make_valid_python_name']
+
+
+WHITESPACE_RE = re.compile(r'\s')
+NUMBER_RESTR = r'((?:-|\+){0,1}[0-9.]+(?:e(?:-|\+)[0-9.]+){0,1})'
+"""RE str for matching signed, unsigned, and sci.-not. ("1e10") numbers."""
+
+NUMBER_RE = re.compile(NUMBER_RESTR, re.IGNORECASE)
+"""Regex for matching signed, unsigned, and sci.-not. ("1e10") numbers."""
+
+# Optional range, e.g., --10 (which means "to negative 10"); in my
+# interpretation, the "to" number should be *INCLUDED* in the list
+# If there's a range, optional stepsize, e.g., --10 (which means
+# "to negative 10")
+HRGROUP_RESTR = (
+    NUMBER_RESTR
+    + r'(?:-' + NUMBER_RESTR
+    + r'(?:\:' + NUMBER_RESTR + r'){0,1}'
+    + r'){0,1}'
+)
+HRGROUP_RE = re.compile(HRGROUP_RESTR, re.IGNORECASE)
+
+# Characters to ignore are anything EXCEPT the characters we use
+# (the caret ^ inverts the set in the character class)
+IGNORE_CHARS_RE = re.compile(r'[^0-9e:.,;+-]', re.IGNORECASE)
+
+TEX_BACKSLASH_CHARS = '%$#_{}'
+TEX_SPECIAL_CHARS_MAPPING = {
+    '~': r'\textasciitilde',
+    '^': r'\textasciicircum',
+    ' ': r'\;',
+    'sin': r'\sin',
+    'cos': r'\cos',
+    'tan': r'\tan',
+    #'sqrt': r'\sqrt{\,}'
+    #'sqrt': r'\surd'
+}
+
+
+def split(string, sep, force_case=None, parse_func=None):
+    """Parse a string containing a separated list.
+
+    * Before splitting the list, the string has extraneous whitespace removed
+      from either end.
+    * The strings that result after the split can have their case forced or be
+      left alone.
+    * Whitespace surrounding (but not falling between non-whitespace) in each
+      resulting string is removed.
+    * After all of the above, the value can be parsed further by a
+      user-supplied `parse_func`.
+
+    Note that repeating a separator without intervening values yields
+    empty-string values.
+
+
+    Parameters
+    ----------
+    string : string
+        The string to be split
+
+    sep : string
+        Separator to look for
+
+    force_case : None, 'lower', or 'upper'
+        Whether to force the case of the resulting items: None does not change
+        the case, while 'lower' or 'upper' change the case.
+
+    parse_func : None or callable
+        If a callable is supplied, each item in the list, after the basic
+        parsing, is processed by `parse_func`.
+
+    Returns
+    -------
+    lst : list of objects
+        The types of the items in the list depend upon `parse_func` if it is
+        supplied; otherwise, all items are strings.
+
+    Examples
+    --------
+    >>> print split(' One, TWO, three ', sep=',', force_case='lower')
+    ['one', 'two', 'three']
+
+    >>> print split('One:TWO:three', sep=':')
+    ['One', 'TWO', 'three']
+
+    >>> print split('one  two  three', sep=' ')
+    ['one', '', 'two', '' , 'three']
+
+    >>> print split('1 2 3', sep=' ', parse_func=int)
+    [1, 2, 3]
+
+    >>> from ast import literal_eval
+    >>> print split('True; False; None; (1, 2, 3)', sep=',',
+    >>>             parse_func=literal_eval)
+    [True, False, None, (1, 2, 3)]
+
+    """
+    funcs = []
+    if force_case == 'lower':
+        funcs.append(str.lower)
+    elif force_case == 'upper':
+        funcs.append(str.upper)
+
+    if parse_func is not None:
+        if not callable(parse_func):
+            raise TypeError('`parse_func` must be callable; got %s instead.'
+                            % type(parse_func))
+        funcs.append(parse_func)
+
+    if not funcs:
+        aggfunc = lambda x: x
+    elif len(funcs) == 1:
+        aggfunc = funcs[0]
+    elif len(funcs) == 2:
+        aggfunc = lambda x: funcs[1](funcs[0](x))
+
+    return [aggfunc(x.strip()) for x in str.split(str(string).strip(), sep)]
 
 
 # TODO: allow for scientific notation input to hr*2list, etc.
@@ -100,7 +226,7 @@ def list2hrlist(lst):
     if isinstance(lst, numbers.Number):
         lst = [lst]
     lst = sorted(lst)
-    rtol = np.finfo(float).resolution
+    rtol = np.finfo(FTYPE).resolution
     n = len(lst)
     result = []
     scan = 0
@@ -126,31 +252,11 @@ def list2hrlist(lst):
     return ','.join(result)
 
 
-# This regex matches signed, unsigned, and scientific-notation (e.g.
-# "1e10") numbers.
-number_restr = r'((?:-|\+){0,1}[0-9.]+(?:e(?:-|\+)[0-9.]+){0,1})'
-number_re = re.compile(number_restr, re.IGNORECASE)
-
-# Optional range, e.g., --10 (which means "to negative 10"); in my
-# interpretation, the "to" number should be *INCLUDED* in the list
-# If there's a range, optional stepsize, e.g., --10 (which means "to negative 10")
-hrgroup_restr = (
-        number_restr +
-        r'(?:-' + number_restr +
-        r'(?:\:' + number_restr + r'){0,1}' +
-        r'){0,1}'
-)
-hrgroup_re = re.compile(hrgroup_restr, re.IGNORECASE)
-
-# Characters to ignore are anything EXCEPT the characters we use
-# (the caret ^ inverts the set in the character class)
-ignore_chars_re =  re.compile(r'[^0-9e:.,;+-]', re.IGNORECASE)
-
-def hrgroup2list(hrgroup):
+def _hrgroup2list(hrgroup):
     def isint(num):
         """Test whether a number is *functionally* an integer"""
         try:
-            return int(num) == float(num)
+            return int(num) == FTYPE(num)
         except ValueError:
             return False
 
@@ -160,14 +266,14 @@ def hrgroup2list(hrgroup):
                 return int(num)
         except (ValueError, TypeError):
             pass
-        return float(num)
+        return FTYPE(num)
 
     # Strip all whitespace, brackets, parens, and other ignored characters from
     # the group string
-    hrgroup = ignore_chars_re.sub('', hrgroup)
+    hrgroup = IGNORE_CHARS_RE.sub('', hrgroup)
     if (hrgroup is None) or (hrgroup == ''):
         return []
-    numstrs = hrgroup_re.match(hrgroup).groups()
+    numstrs = HRGROUP_RE.match(hrgroup).groups()
     range_start = num2floatOrInt(numstrs[0])
 
     # If no range is specified, just return the number
@@ -190,7 +296,6 @@ def hrgroup2list(hrgroup):
         )),
         a_min=0, a_max=np.inf
     )
-    print n_steps, range_start, range_stop, step_size
     lst = np.linspace(range_start, range_start + n_steps*step_size, n_steps+1)
     if all_ints:
         lst = lst.astype(np.int)
@@ -198,7 +303,6 @@ def hrgroup2list(hrgroup):
     return lst.tolist()
 
 
-ws_re = re.compile(r'\s')
 def hrlist2list(hrlst):
     """Convert human-readable string specifying a list of numbers to a Python
     list of numbers.
@@ -212,11 +316,12 @@ def hrlist2list(hrlst):
     lst : list of numbers
 
     """
-    groups = re.split(r'[,; _]+', ws_re.sub('', hrlst))
+    groups = re.split(r'[,; _]+', WHITESPACE_RE.sub('', hrlst))
     lst = []
-    if len(groups) == 0:
+    if not groups:
         return lst
-    [lst.extend(hrgroup2list(g)) for g in groups]
+    for group in groups:
+        lst.extend(_hrgroup2list(group))
     return lst
 
 
@@ -277,6 +382,22 @@ def hrlol2lol(hrlol):
 
 
 def hrbool2bool(s):
+    """Convert a string that a user might input to indicate a boolean value of
+    either True or False and convert to the appropriate Python bool.
+
+    * Note first that the case used in the string is ignored
+    * 't', 'true', '1', 'yes', and 'one' all map to True
+    * 'f', 'false', '0', 'no', and 'zero' all map to False
+
+    Parameters
+    ----------
+    s : string
+
+    Returns
+    -------
+    b : bool
+
+    """
     s = str(s).strip()
     if s.lower() in ['t', 'true', '1', 'yes', 'one']:
         return True
@@ -304,9 +425,9 @@ def engfmt(n, sigfigs=3, decimals=None, sign_always=False):
         only negative numbers are prefixed with a sign ("-")
 
     """
-    prefixes = {-18:'a', -15:'f', -12:'p', -9:'n', -6:'u', -3:'m', 0:'',
-                3:'k', 6:'M', 9:'G', 12:'T', 15:'P', 18:'E'}
-    if isinstance(n, pint.quantity._Quantity):
+    prefixes = {-18: 'a', -15: 'f', -12: 'p', -9: 'n', -6: 'u', -3: 'm', 0: '',
+                3: 'k', 6: 'M', 9: 'G', 12: 'T', 15: 'P', 18: 'E'}
+    if isinstance(n, ureg.Quantity):
         units = n.units
         n = n.magnitude
     else:
@@ -341,9 +462,7 @@ def engfmt(n, sigfigs=3, decimals=None, sign_always=False):
     if pfx_mag not in prefixes or not units.dimensionless:
         if pfx_mag == 0:
             return str.strip('{0:s} {1:~} '.format(num_str, units))
-        else:
-            return str.strip('{0:s}e{1:d} {2:~} '.format(num_str, pfx_mag,
-                                                         units))
+        return str.strip('{0:s}e{1:d} {2:~} '.format(num_str, pfx_mag, units))
 
     # Dimensionless quantities are treated separately since Pint apparently
     # can't handle prefixed-dimensionless (e.g., simply "1 k", "2.2 M", etc.,
@@ -362,12 +481,82 @@ def append_results(results_dict, result_dict):
 
 def ravel_results(results):
     for key, val in results.items():
-        if hasattr(val[0],'m'):
+        if hasattr(val[0], 'm'):
             results[key] = np.array([v.m for v in val]) * val[0].u
 
-
+# TODO: mathrm vs. rm?
 def text2tex(txt):
-    return txt.replace('_', r'\_')
+    """Convert common characters so they show up the same as TeX"""
+    if txt is None:
+        return ''
+
+    if is_tex(txt):
+        return strip_outer_dollars(txt)
+
+    nfig = NuFlavIntGroup(txt)
+    if nfig:
+        return nfig.tex
+
+    for c in TEX_BACKSLASH_CHARS:
+        txt = txt.replace(c, r'\%s'%c)
+
+    for c, v in TEX_SPECIAL_CHARS_MAPPING.iteritems():
+        txt = txt.replace(c, '{%s}'%v)
+
+    # A single character is taken to be a variable name, and so do not make
+    # roman, just wrap in braces (to avoid interference with other characters)
+    # and return
+    if len(txt) == 1:
+        return '%s' % txt
+
+    return r'{\rm %s}' % txt
+
+
+def tex_join(sep, *args):
+    strs = [strip_outer_dollars(text2tex(a))
+            for a in args if a is not None and a != '']
+    if not strs:
+        return ''
+    return str.join(sep, strs)
+
+
+def tex_rm(s):
+    return r'{\rm %s}' % strip_outer_dollars(s)
+
+
+def dollars(s):
+    stripped = strip_outer_dollars(s)
+    out_lines = []
+    for line in stripped.split('\n'):
+        stripped_line = strip_outer_dollars(line)
+        if stripped_line == '':
+            out_lines.append('')
+        else:
+            out_lines.append('$%s$' % stripped_line)
+    return '\n'.join(out_lines)
+
+
+def is_tex(s):
+    if s is None:
+        return False
+    for c in TEX_BACKSLASH_CHARS:
+        if '\\'+c in s:
+            return True
+    for seq in TEX_SPECIAL_CHARS_MAPPING.values():
+        if seq in s:
+            return True
+    for seq in [r'\rm', r'\mathrm', r'\theta', r'\phi']:
+        if seq in s:
+            return True
+    if strip_outer_dollars(s) != s:
+        return True
+    return False
+
+
+def default_map_tex(map):
+    if map.tex is None or map.tex == '':
+        return r'{\rm %s}' % text2tex(map.name)
+    return strip_outer_dollars(map.tex)
 
 
 def int2hex(i, bits, signed):
@@ -410,15 +599,68 @@ def hash2hex(hash, bits=64):
     elif isinstance(hash, int):
         hex_hash = int2hex(hash, bits=bits, signed=True)
     else:
-        raise ValueError('Unhandled `hash` type %s' %type(hash))
+        raise TypeError('Unhandled `hash` type %s' %type(hash))
     return hex_hash
 
 
+def strip_outer_dollars(value):
+    if value is None:
+        return '{}'
+    value = value.strip()
+    m = re.match(r'^\$(.*)\$$', value)
+    if m is not None:
+        value = m.groups()[0]
+    return value
+
+
+def strip_outer_parens(value):
+    if value is None:
+        return ''
+    value = value.strip()
+    m = re.match(r'^\{\((.*)\)\}$', value)
+    if m is not None:
+        value = m.groups()[0]
+    m = re.match(r'^\((.*)\)$', value)
+    if m is not None:
+        value = m.groups()[0]
+    return value
+
+
+# TODO: this is relatively slow (and is called in constructors that are used
+# frequently, e.g. OneDimBinning, MultiDimBinning); can we speed it up any?
+RE_INVALID_CHARS = re.compile('[^0-9a-zA-Z_]')
+RE_LEADING_INVALID = re.compile('^[^a-zA-Z_]+')
+def make_valid_python_name(name):
+    """Make a name a valid Python identifier.
+
+    From user Triptych at http://stackoverflow.com/questions/3303312
+
+    """
+    # Remove invalid characters
+    name = RE_INVALID_CHARS.sub('', name)
+    # Remove leading characters until we find a letter or underscore
+    name = RE_LEADING_INVALID.sub('', name)
+    return name
+
+
+def test_hrlist_formatter():
+    """Unit tests for hrlist_formatter"""
+    logging.debug(str((hrlist_formatter(start=0, end=10, step=1))))
+    logging.debug(str((hrlist_formatter(start=0, end=10, step=2))))
+    logging.debug(str((hrlist_formatter(start=0, end=3, step=8))))
+    logging.debug(str((hrlist_formatter(start=0.1, end=3.1, step=1.0))))
+    logging.info('<< PASSED : test_hrlist_formatter >>')
+
+
+def test_list2hrlist():
+    """Unit tests for list2hrlist"""
+    logging.debug(str((list2hrlist([0, 1]))))
+    logging.debug(str((list2hrlist([0, 1, 2]))))
+    logging.debug(str((list2hrlist([0.1, 1.1, 2.1, 3.1]))))
+    logging.info('<< PASSED : test_list2hrlist >>')
+
+
 if __name__ == '__main__':
-    print hrlist_formatter(start=0, end=10, step=1)
-    print hrlist_formatter(start=0, end=10, step=2)
-    print hrlist_formatter(start=0, end=3, step=8)
-    print hrlist_formatter(start=0.1, end=3.1, step=1.0)
-    print list2hrlist([0, 1])
-    print list2hrlist([0, 1, 2])
-    print list2hrlist([0.1, 1.1, 2.1, 3.1])
+    set_verbosity(1)
+    test_hrlist_formatter()
+    test_list2hrlist()

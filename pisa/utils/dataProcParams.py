@@ -10,7 +10,9 @@ parameters (e.g., PINGU's V5 processing).
 """
 
 
-from collections import OrderedDict, Sequence
+from __future__ import division
+
+from collections import Mapping, OrderedDict, Sequence
 from itertools import izip
 import os
 import re
@@ -29,14 +31,16 @@ from pisa.utils.log import logging, set_verbosity
 from pisa.utils import resources
 
 
-__all__ = ['DataProcParams']
+__all__ = ['MULTI_PART_FIELDS', 'NU_PDG_CODES',
+           'DataProcParams']
 
 
 MULTI_PART_FIELDS = [
     'I3MCTree',
 ]
 
-NU_PDG_CODES = [-12,12,-14,14,-16,16]
+NU_PDG_CODES = [-12, 12, -14, 14, -16, 16]
+
 
 class DataProcParams(dict):
     """Class for importing, working with, and storing data processing
@@ -214,6 +218,7 @@ class DataProcParams(dict):
         ["cuts_step_1", "cuts_step_2"]
     then the following is a valid "pass_if" expression:
         "(reco_zenith > pi/2) & (cuts_step_1 == 1) & (cuts_step_2 == 1)"
+
     """
     def __init__(self, detector, proc_ver, data_proc_params=None):
         if data_proc_params is None:
@@ -260,10 +265,10 @@ class DataProcParams(dict):
         # Add generic cuts
         self['cuts'].update({
             # Cut for particles only (no anti-particles)
-            str(NuFlav(12).barNoBar()).lower():
+            str(NuFlav(12).bar_code).lower():
                 {'fields': ['nu_code'], 'pass_if': 'nu_code > 0'},
             # Cut for anti-particles only (no particles)
-            str(NuFlav(-12).barNoBar()).lower():
+            str(NuFlav(-12).bar_code).lower():
                 {'fields': ['nu_code'], 'pass_if': 'nu_code < 0'},
             # Cut for charged-current interactions only
             str(IntType('cc')).lower():
@@ -538,15 +543,16 @@ class DataProcParams(dict):
     def subselect(data, fields, indices=None):
         if isinstance(data, FlavIntData):
             outdata = FlavIntData()
-            for flavint in data.flavints():
+            for flavint in data.flavints:
                 outdata[flavint] = DataProcParams.subselect(data[flavint],
                                                             fields=fields,
                                                             indices=indices)
-        elif isinstance(data, collections.Mapping):
+        elif isinstance(data, Mapping):
             if indices is None:
-                return {k:v for k,v in data.iteritems() if k in fields}
+                return {k:v for k, v in data.iteritems() if k in fields}
             else:
-                return {k:v[indices] for k,v in data.iteritems() if k in fields}
+                return {k:v[indices]
+                        for k, v in data.iteritems() if k in fields}
 
     def applyCuts(self, data, cuts, boolean_op='&', return_fields=None):
         """Perform `cuts` on `data` and return a dict containing
@@ -561,7 +567,7 @@ class DataProcParams(dict):
         """
         if isinstance(data, FlavIntData):
             outdata = FlavIntData()
-            for flavint in data.flavints():
+            for flavint in data.flavints:
                 outdata[flavint] = self.applyCuts(
                     data[flavint], cuts=cuts, boolean_op=boolean_op,
                     return_fields=return_fields

@@ -14,9 +14,9 @@ for PINGU, sorting the reconstructed nue CC, numu CC, nutau CC, and NC events
 into the track and cascade channels.
 
 This service in particular takes in events from a PISA HDF5 file to transform
-a set of input map into a set of track and cascade maps.
+a set of input maps into a set of track and cascade maps.
 
-For each particle "signature", a histogram in the input binning dimensions is
+For each particle "signature," a histogram in the input binning dimensions is
 created, which gives the PID probabilities in each bin. The input maps are
 transformed according to these probabilities to provide an output containing a
 map for track-like events ('trck') and shower-like events ('cscd'), which is
@@ -25,8 +25,9 @@ then returned.
 """
 
 
+from __future__ import division
+
 from collections import OrderedDict
-from copy import deepcopy
 from itertools import product
 
 import numpy as np
@@ -34,11 +35,8 @@ import numpy as np
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.core.events import Events
-from pisa.utils.dataProcParams import DataProcParams
-from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup, ALL_NUFLAVINTS
-from pisa.utils.hash import hash_obj
+from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
 from pisa.utils.log import logging
-from pisa.utils.PIDSpec import PIDSpec
 from pisa.utils.profiler import profile
 
 
@@ -66,15 +64,8 @@ class hist(Stage):
             * pid_events : Events or filepath
                 Events object or file path to HDF5 file containing events
 
-            * transform_events_keep_criteria : None, string, or sequence of strings
-                A string to pass to Events.applyCut method as an initial
-                down-selection of the events (this is the keep criteria). For
-                example, in PINGU only MC-true upgoing events are kept and so
-                this `transform_events_keep_criteria` would be the string:
-                    "true_coszen <= 1"
-
-            * pid_spec : PIDSpec
-                String, e.g.
+            * pid_spec : string
+                String that evaluates to a PID specification. E.g.:
                     "[('cscd', 'pid <= 0.55'), ('trck', 'pid > 0.55')]"
                 This is parsed out into a Python sequence of tuples, where
                 the first element of the tuple is identifies the signature and
@@ -85,6 +76,13 @@ class hist(Stage):
                 Specify the name of the node whose data will be used as weights
                 to create the reco and pid variables histogram. If NoneType is
                 given then events will not be weighted.
+
+            * transform_events_keep_criteria : None, string, or sequence of strings
+                A string to pass to Events.applyCut method as an initial
+                down-selection of the events (this is the keep criteria). For
+                example, in PINGU only MC-true upgoing events are kept and so
+                this `transform_events_keep_criteria` would be the string:
+                    "true_coszen <= 1"
 
     particles
 
@@ -102,11 +100,6 @@ class hist(Stage):
     output_binning : MultiDimBinning
 
     error_method : None, bool, or string
-
-    disk_cache : None, str, or DiskCache
-        If None, no disk cache is available.
-        If str, represents a path with which to instantiate a utils.DiskCache
-        object. Must be concurrent-access-safe (across threads and processes).
 
     transforms_cache_depth : int >= 0
 
@@ -210,9 +203,9 @@ class hist(Stage):
     # TODO: add sum_grouped_flavints instantiation arg
     def __init__(self, params, particles, input_names, transform_groups,
                  input_binning, output_binning, memcache_deepcopy,
-                 error_method=None, disk_cache=None, transforms_cache_depth=20,
-                 outputs_cache_depth=20, debug_mode=None):
-        assert particles in ['neutrinos', 'muons']
+                 error_method, transforms_cache_depth,
+                 outputs_cache_depth, debug_mode=None):
+        assert particles in ['muons', 'neutrinos']
         self.particles = particles
         """Whether stage is instantiated to process neutrinos or muons"""
 
@@ -225,7 +218,9 @@ class hist(Stage):
         # All of the following params (and no more) must be passed via
         # the `params` argument.
         expected_params = (
-            'pid_events', 'transform_events_keep_criteria', 'pid_spec',
+            'pid_events',
+            'transform_events_keep_criteria',
+            'pid_spec',
             'pid_weights_name'
         )
 
@@ -244,7 +239,6 @@ class hist(Stage):
             input_names=input_names,
             output_names=output_names,
             error_method=error_method,
-            disk_cache=disk_cache,
             outputs_cache_depth=outputs_cache_depth,
             transforms_cache_depth=transforms_cache_depth,
             memcache_deepcopy=memcache_deepcopy,
@@ -257,17 +251,10 @@ class hist(Stage):
         self.include_attrs_for_hashes('particles')
         self.include_attrs_for_hashes('transform_groups')
 
-    @profile
-    def _compute_nominal_transforms(self):
-        """Compute new PID transforms."""
-        logging.debug('Updating pid.hist PID histograms...')
-
-        # TODO(shivesh): As of now, events do not have units as far as PISA
-        # is concerned
-
+    def validate_binning(self):
         # Works only if either energy, coszen or azimuth is in input_binning
-        bin_names = ('reco_energy', 'reco_coszen', 'reco_azimuth')
-        if set(self.input_binning.names).isdisjoint(bin_names):
+        dim_names = ('reco_energy', 'reco_coszen', 'reco_azimuth')
+        if set(self.input_binning.names).isdisjoint(dim_names):
             raise ValueError(
                 'Input binning must contain either one or a combination of'
                 ' "reco_energy", "reco_coszen" or "reco_azimuth" dimensions.'
@@ -277,6 +264,14 @@ class hist(Stage):
         # objects; implement this! (and then this assert statement can go away)
         assert self.input_binning == self.output_binning
 
+    @profile
+    def _compute_nominal_transforms(self):
+        """Compute new PID transforms."""
+        logging.debug('Updating pid.hist PID histograms...')
+
+        # TODO(shivesh): As of now, events do not have units as far as PISA
+        # is concerned
+
         self.load_events(self.params.pid_events)
         self.cut_events(self.params.transform_events_keep_criteria)
 
@@ -284,88 +279,59 @@ class hist(Stage):
         # already, and it should be done here (or in a nominal transform,
         # etc.). See below about taking this step when we move to directly
         # using the I3-HDF5 files.
-        events_file_combined_flavints = tuple([
-            NuFlavIntGroup(s)
-            for s in self.remaining_events.metadata['flavints_joined']
-        ])
+        #events_file_combined_flavints = tuple([
+        #    NuFlavIntGroup(s)
+        #    for s in self.events.metadata['flavints_joined']
+        #])
 
         # TODO: take events object as an input instead of as a param that
         # specifies a file? Or handle both cases?
 
-        data_proc_params = DataProcParams(
-            detector=self.remaining_events.metadata['detector'],
-            proc_ver=self.remaining_events.metadata['proc_ver']
-        )
-
         pid_spec = OrderedDict(eval(self.params.pid_spec.value))
-        #PIDSpec(
-        #    detector=self.remaining_events.metadata['detector'],
-        #    geom=self.remaining_events.metadata['geom'],
-        #    proc_ver=self.remaining_events.metadata['proc_ver'],
-        #    pid_spec_ver=self.params.pid_ver.value,
-        #    pid_specs=self.params.pid_spec_source.value
-        #)
-        #u_out_names = map(unicode, self.output_channels)
         if set(pid_spec.keys()) != set(self.output_channels):
             msg = 'PID criteria from `pid_spec` {0} does not match {1}'
             raise ValueError(msg.format(pid_spec.keys(), self.output_channels))
 
-        #if set(u_out_names) != set(pid_spec.get_signatures()):
-        #    msg = 'PID criteria from `pid_spec` {0} does not match {1}'
-        #    raise ValueError(msg.format(pid_spec.get_signatures(),
-        #                                u_out_names))
-
         # TODO: add importance weights, error computation
 
         logging.debug("Separating events by PID...")
-        #var_names = self.input_binning.names
-        #if self.params.pid_weights_name.value is not None:
-        #    var_names += [self.params.pid_weights_name.value]
-
-        ## TODO: switch to simply use Events.applyCut method
-        #separated_events = pid_spec.applyPID(
-        #    events=self.remaining_events,
-        #    return_fields=var_names
-        #)
-
         separated_events = OrderedDict()
         for sig in self.output_channels:
-            this_sig_events = deepcopy(self.remaining_events)
-            this_sig_events.applyCut(pid_spec[sig])
+            this_sig_events = self.events.applyCut(pid_spec[sig])
             separated_events[sig] = this_sig_events
 
         # Derive transforms by combining flavints that behave similarly, but
         # apply the derived transforms to the input flavints separately
         # (leaving combining these together to later)
         transforms = []
-        for flav_int_group in self.transform_groups:
-            logging.debug("Working on %s PID" %flav_int_group)
+        for flavint_group in self.transform_groups:
+            logging.debug("Working on %s PID", flavint_group)
 
-            repr_flav_int = flav_int_group[0]
+            repr_flavint = flavint_group[0]
 
             # TODO(shivesh): errors
             # TODO(shivesh): total histo check?
             sig_histograms = {}
             total_histo = np.zeros(self.output_binning.shape)
-            for repr_flav_int in flav_int_group:
-                hist = self.remaining_events.histogram(
-                    kinds=repr_flav_int,
+            for repr_flavint in flavint_group:
+                histo = self.events.histogram(
+                    kinds=repr_flavint,
                     binning=self.output_binning,
                     weights_col=self.params.pid_weights_name.value,
                     errors=None
                 ).hist
-                total_histo += hist
+                total_histo += histo
 
             for sig in self.output_channels:
                 sig_histograms[sig] = np.zeros(self.output_binning.shape)
-                for repr_flav_int in flav_int_group:
-                    this_sig_hist = separated_events[sig].histogram(
-                        kinds=repr_flav_int,
+                for repr_flavint in flavint_group:
+                    this_sig_histo = separated_events[sig].histogram(
+                        kinds=repr_flavint,
                         binning=self.output_binning,
                         weights_col=self.params.pid_weights_name.value,
                         errors=None
                     ).hist
-                    sig_histograms[sig] += this_sig_hist
+                    sig_histograms[sig] += this_sig_histo
 
             for sig in self.output_channels:
                 with np.errstate(divide='ignore', invalid='ignore'):
@@ -377,8 +343,8 @@ class hist(Stage):
                         'Group "%s", PID signature "%s" has %d bins with no'
                         ' events (and hence the ability to separate events'
                         ' by PID cannot be ascertained). These are being'
-                        ' masked off from any further computations.'
-                        % (flav_int_group, sig, num_invalid)
+                        ' masked off from any further computations.',
+                        flavint_group, sig, num_invalid
                     )
                     # TODO: this caused buggy event propagation for some
                     # reason; check and re-introduced the masked array idea
@@ -391,7 +357,7 @@ class hist(Stage):
 
                 # Copy this transform to use for each input in the group
                 for input_name in self.input_names:
-                    if input_name not in flav_int_group:
+                    if input_name not in flavint_group:
                         continue
                     xform = BinnedTensorTransform(
                         input_names=input_name,
@@ -412,7 +378,8 @@ class hist(Stage):
         """
         return self.nominal_transforms
 
-    def suffix_channel(self, flavint, channel):
+    @staticmethod
+    def suffix_channel(flavint, channel):
         return '%s_%s' % (flavint, channel)
 
     def validate_params(self, params):

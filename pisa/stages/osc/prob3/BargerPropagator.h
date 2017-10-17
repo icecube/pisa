@@ -1,5 +1,5 @@
-#ifndef _BargerPropagator_
-#define _BargerPropagator_
+#ifndef __BargerPropagator__
+#define __BargerPropagator__
 
 #include "EarthDensity.h"
 #include "NeutrinoPropagator.h"

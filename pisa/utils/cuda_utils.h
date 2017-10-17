@@ -1,7 +1,5 @@
-#ifndef UTILS_H__
-#define UTILS_H__
-
-#include "constants.h"
+#ifndef __UTILS_H__
+#define __UTILS_H__
 
 /*
 #define checkCudaErrors(val) check( (val), #val, __FILE__, __LINE__)
@@ -33,11 +31,14 @@ __device__ double atomicAdd_custom(double* address, double val)
 
   return __longlong_as_double(old);
 }
-#else
+#endif
+
+#ifdef SINGLE_PRECISION
 __device__ float atomicAdd_custom(float* address, float val)
 {
   return atomicAdd(address, val);
 }
 #endif
+
 
 #endif

@@ -5,14 +5,15 @@
 #
 # date:    2016-09-18
 """
-The purpose of this stage is to simulate the classification of events seen by a detector into different PID "channels."
+The purpose of this stage is to simulate the classification of events seen by a
+detector into different PID "channels."
 
 For example, in PINGU, this separates reconstructed nue CC (+ nuebar CC),
 numu CC (+ numubar CC), nutau CC (+ nutaubar CC), and all NC events into
 separate 'trck' and 'cscd' distributions.
 
 This service in particular takes in events from a PISA HDF5 file to transform
-a set of input maps into a set of maps, one each per PID signature.
+a set of input maps into a set of track and cascade maps.
 
 For each particle "signature," a histogram in the input binning dimensions is
 created, which gives the PID probabilities in each bin. The input maps are
@@ -23,6 +24,9 @@ then returned.
 """
 
 
+from __future__ import division
+
+from collections import OrderedDict
 from itertools import product
 
 import numpy as np
@@ -30,13 +34,12 @@ import numpy as np
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.core.events import Events
-from pisa.utils.dataProcParams import DataProcParams
-from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup, ALL_NUFLAVINTS
-from pisa.utils.hash import hash_obj
+from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
 from pisa.utils.log import logging
-from pisa.utils.PIDSpec import PIDSpec
 from pisa.utils.profiler import profile
-from pisa.utils.resources import find_resource
+
+
+__all__ = ['smooth']
 
 
 class smooth(Stage):
@@ -63,14 +66,13 @@ class smooth(Stage):
             * pid_events : Events or filepath
                 Events object or file path to HDF5 file containing events
 
-            * pid_specs : Mapping, preferably OrderedDict
-                Mapping (OrderedDict) has following format:
-                    {'<pid sig0 name>': '<criteria str>',
-                     '<pid sig1 name>': '<criteria str>', ...}
-                The order of signatures is important only for smoothing, where
-                the first N-1 are smoothed but the final signature's value in a
-                given bin is the difference between 1 and the sum of all other
-                signatures' values in that bin.
+            * pid_spec : string
+                String that evaluates to a PID specification. E.g.:
+                    "[('cscd', 'pid <= 0.55'), ('trck', 'pid > 0.55')]"
+                This is parsed out into a Python sequence of tuples, where
+                the first element of the tuple is identifies the signature and
+                the second is the string criteria to pass to the
+                Events.applyCut method.
 
             * pid_weights_name: str or NoneType
                 Specify the name of the node whose data will be used as weights
@@ -110,14 +112,6 @@ class smooth(Stage):
         of given binning(s) must match to a reco variable in `pid_events`.
 
     output_binning : MultiDimBinning
-
-    reco_input_binning : MultiDimBinning
-        What binning is used at the input of the reconstructions stage? (I.e.,
-        what are the limits of the MC-true variables that enter into reco?)
-        This is necessary such that the same "cuts" (binning true variables
-        effectively cuts out any events that do not fall within the binning)
-        are applied to true variables so the same events are used to compute
-        the PID transforms.
 
     error_method : None, bool, or string
 
@@ -190,13 +184,10 @@ class smooth(Stage):
 
     """
     # TODO: add sum_grouped_flavints instantiation arg
-    def __init__(self, params, particles, input_names, transform_groups,
-                 input_binning, output_binning, reco_input_binning,
-                 smoothing_method, memcache_deepcopy, transforms_cache_depth,
-                 outputs_cache_depth,
-                 #smooth_emin=1*ureg.GeV, smooth_emax=80*ureg.GeV,
-                 #smooth_n_ebins=300, smooth_n_czbins=200,
-                 disk_cache=None, error_method=None, debug_mode=None):
+    def __init__(self, params, particles, input_names,
+                 transform_groups, input_binning, output_binning,
+                 error_method, memcache_deepcopy, transforms_cache_depth,
+                 outputs_cache_depth, debug_mode=None):
         assert particles in ['muons', 'neutrinos']
         self.particles = particles
         """Whether stage is instantiated to process neutrinos or muons"""
@@ -204,11 +195,16 @@ class smooth(Stage):
         self.transform_groups = flavintGroupsFromString(transform_groups)
         """Particle/interaction types to group for computing transforms"""
 
+        # TODO
+        #self.sum_grouped_flavints = sum_grouped_flavints
+
         # All of the following params (and no more) must be passed via
         # the `params` argument.
         expected_params = (
-            'pid_events', 'pid_ver', 'pid_specs', 'pid_weights_name',
-            'transform_events_keep_criteria'
+            'pid_events',
+            'transform_events_keep_criteria',
+            'pid_spec',
+            'pid_weights_name'
         )
 
         if isinstance(input_names, basestring):
@@ -226,7 +222,6 @@ class smooth(Stage):
             input_names=input_names,
             output_names=output_names,
             error_method=error_method,
-            disk_cache=disk_cache,
             outputs_cache_depth=outputs_cache_depth,
             transforms_cache_depth=transforms_cache_depth,
             memcache_deepcopy=memcache_deepcopy,
@@ -239,14 +234,7 @@ class smooth(Stage):
         self.include_attrs_for_hashes('particles')
         self.include_attrs_for_hashes('transform_groups')
 
-    @profile
-    def _compute_nominal_transforms(self):
-        """Compute new PID transforms."""
-        logging.debug('Updating pid.hist PID histograms...')
-
-        # TODO(shivesh): As of now, events do not have units as far as PISA
-        # is concerned
-
+    def validate_binning(self):
         # Works only if either energy, coszen or azimuth is in input_binning
         dim_names = ('reco_energy', 'reco_coszen', 'reco_azimuth')
         if set(self.input_binning.names).isdisjoint(dim_names):
@@ -259,94 +247,78 @@ class smooth(Stage):
         # objects; implement this! (and then this assert statement can go away)
         assert self.input_binning == self.output_binning
 
+    @profile
+    def _compute_nominal_transforms(self):
+        """Compute new PID transforms."""
+        logging.debug('Updating pid.hist PID histograms...')
+
+        # TODO(shivesh): As of now, events do not have units as far as PISA
+        # is concerned
+
         self.load_events(self.params.pid_events)
-        self.cut_events(self.params.transform_events_keep_criteria
+        self.cut_events(self.params.transform_events_keep_criteria)
 
         # TODO: in future, the events file will not have these combined
         # already, and it should be done here (or in a nominal transform,
         # etc.). See below about taking this step when we move to directly
         # using the I3-HDF5 files.
-        events_file_combined_flavints = tuple([
-            NuFlavIntGroup(s)
-            for s in self.remaining_events.metadata['flavints_joined']
-        ])
+        #events_file_combined_flavints = tuple([
+        #    NuFlavIntGroup(s)
+        #    for s in self.events.metadata['flavints_joined']
+        #])
 
         # TODO: take events object as an input instead of as a param that
         # specifies a file? Or handle both cases?
 
-        # TODO: include here the logic from the make_events_file.py script so
-        # we can go directly from a (reasonably populated) icetray-converted
-        # HDF5 file (or files) to a nominal transform, rather than having to
-        # rely on the intermediate step of converting that HDF5 file (or files)
-        # to a PISA HDF5 file that has additional column(s) in it to account
-        # for the combinations of flavors, interaction types, and/or simulation
-        # runs. Parameters can include which groupings to use to formulate an
-        # output.
-
-        pid_spec = PIDSpec(
-            detector=self.remaining_events.metadata['detector'],
-            geom=self.remaining_events.metadata['geom'],
-            proc_ver=self.remaining_events.metadata['proc_ver'],
-            pid_spec_ver=self.params['pid_ver'].value,
-            pid_specs=self.params['pid_spec_source'].value
-        )
-        u_out_names = map(unicode, self.output_channels)
-        if set(u_out_names) != set(pid_spec.get_signatures()):
+        pid_spec = OrderedDict(eval(self.params.pid_spec.value))
+        if set(pid_spec.keys()) != set(self.output_channels):
             msg = 'PID criteria from `pid_spec` {0} does not match {1}'
-            raise ValueError(msg.format(pid_spec.get_signatures(),
-                                        u_out_names))
+            raise ValueError(msg.format(pid_spec.keys(), self.output_channels))
 
         # TODO: add importance weights, error computation
 
         logging.debug("Separating events by PID...")
-        var_names = self.input_binning.names
-        if self.params.pid_weights_name.value is not None:
-            var_names += [self.params.pid_weights_name.value]
-        separated_events = pid_spec.applyPID(
-            events=self.remaining_events,
-            return_fields=var_names
-        )
-
-        # These get used in innermost loop, so produce it just once here
-        all_bin_edges = [dim.bin_edges.magnitude
-                         for dim in self.output_binning.dimensions]
+        separated_events = OrderedDict()
+        for sig in self.output_channels:
+            this_sig_events = self.events.applyCut(pid_spec[sig])
+            separated_events[sig] = this_sig_events
 
         # Derive transforms by combining flavints that behave similarly, but
         # apply the derived transforms to the input flavints separately
         # (leaving combining these together to later)
-
         transforms = []
-        for flav_int_group in self.transform_groups:
-            logging.debug("Working on %s PID" %flav_int_group)
+        for flavint_group in self.transform_groups:
+            logging.debug("Working on %s PID", flavint_group)
 
-            repr_flav_int = flav_int_group[0]
+            repr_flavint = flavint_group[0]
 
             # TODO(shivesh): errors
             # TODO(shivesh): total histo check?
-            raw_histo = {}
+            sig_histograms = {}
             total_histo = np.zeros(self.output_binning.shape)
-            for sig in self.output_channels:
-                raw_histo[sig] = {}
-                flav_sigdata = separated_events[repr_flav_int][sig]
-                reco_params = [flav_sigdata[n]
-                               for n in self.output_binning.names]
-
-                if self.params['pid_weights_name'].value is not None:
-                    weights = flav_sigdata[self.params['pid_weights_name'].value]
-                else:
-                    weights = None
-
-                raw_histo[sig], _ = np.histogramdd(
-                    sample=reco_params,
-                    weights=weights,
-                    bins=all_bin_edges
-                )
-                total_histo += raw_histo[sig]
+            for repr_flavint in flavint_group:
+                histo = self.events.histogram(
+                    kinds=repr_flavint,
+                    binning=self.output_binning,
+                    weights_col=self.params.pid_weights_name.value,
+                    errors=None
+                ).hist
+                total_histo += histo
 
             for sig in self.output_channels:
-                # Get fraction of each PID per bin
+                sig_histograms[sig] = np.zeros(self.output_binning.shape)
+                for repr_flavint in flavint_group:
+                    this_sig_histo = separated_events[sig].histogram(
+                        kinds=repr_flavint,
+                        binning=self.output_binning,
+                        weights_col=self.params.pid_weights_name.value,
+                        errors=None
+                    ).hist
+                    sig_histograms[sig] += this_sig_histo
+
+            for sig in self.output_channels:
                 with np.errstate(divide='ignore', invalid='ignore'):
-                    xform_array = raw_histo[sig] / total_histo
+                    xform_array = sig_histograms[sig] / total_histo
 
                 num_invalid = np.sum(~np.isfinite(xform_array))
                 if num_invalid > 0:
@@ -354,8 +326,8 @@ class smooth(Stage):
                         'Group "%s", PID signature "%s" has %d bins with no'
                         ' events (and hence the ability to separate events'
                         ' by PID cannot be ascertained). These are being'
-                        ' masked off from any further computations.'
-                        % (flav_int_group, sig, num_invalid)
+                        ' masked off from any further computations.',
+                        flavint_group, sig, num_invalid
                     )
                     # TODO: this caused buggy event propagation for some
                     # reason; check and re-introduced the masked array idea
@@ -368,7 +340,7 @@ class smooth(Stage):
 
                 # Copy this transform to use for each input in the group
                 for input_name in self.input_names:
-                    if input_name not in flav_int_group:
+                    if input_name not in flavint_group:
                         continue
                     xform = BinnedTensorTransform(
                         input_names=input_name,
@@ -389,21 +361,18 @@ class smooth(Stage):
         """
         return self.nominal_transforms
 
-    def suffix_channel(self, flavint, channel):
+    @staticmethod
+    def suffix_channel(flavint, channel):
         return '%s_%s' % (flavint, channel)
 
     def validate_params(self, params):
         # do some checks on the parameters
 
         # Check type of pid_events
-        assert isinstance(params['pid_events'].value, (basestring, Events))
-
-        # Check type of pid_ver, pid_spec_source
-        assert isinstance(params['pid_ver'].value, basestring)
-        assert isinstance(params['pid_spec_source'].value, basestring)
+        assert isinstance(params.pid_events.value, (basestring, Events))
 
         # Check the groupings of the pid_events file
-        events = Events(params['pid_events'].value)
+        events = Events(params.pid_events.value)
         should_be_joined = sorted([
             NuFlavIntGroup('nue_cc + nuebar_cc'),
             NuFlavIntGroup('numu_cc + numubar_cc'),

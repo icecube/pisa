@@ -1,23 +1,34 @@
 #! /usr/bin/env python
 # authors: J.Lanfranchi/P.Eller
 # date:   March 20, 2016
+"""
+DistributionMaker class definition and a simple script to generate, save, and
+plot a distribution from pipeline config file(s).
 
+"""
 
-from collections import OrderedDict, Sequence
-import importlib
+from __future__ import absolute_import
+
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from collections import OrderedDict
 import inspect
-from itertools import product
+from itertools import izip, product
+import os
+
+import numpy as np
 
 from pisa import ureg
+from pisa.core.map import MapSet
 from pisa.core.pipeline import Pipeline
 from pisa.core.param import ParamSet
-from pisa.utils.betterConfigParser import BetterConfigParser
+from pisa.utils.config_parser import PISAConfigParser
+from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.hash import hash_obj
-from pisa.utils.log import logging, set_verbosity
+from pisa.utils.log import set_verbosity, logging
 from pisa.utils.random_numbers import get_random_state
 
 
-__all__ = ['DistributionMaker']
+__all__ = ['DistributionMaker', 'test_DistributionMaker', 'parse_args', 'main']
 
 
 class DistributionMaker(object):
@@ -26,7 +37,7 @@ class DistributionMaker(object):
 
     Parameters
     ----------
-    pipelines : Pipeline or convertible thereto, or sequence thereof
+    pipelines : Pipeline or convertible thereto, or iterable thereof
         A new pipline is instantiated with each object passed. Legal objects
         are already-instantiated Pipelines and anything interpret-able by the
         Pipeline init method.
@@ -52,7 +63,7 @@ class DistributionMaker(object):
         self._source_code_hash = None
 
         self._pipelines = []
-        if isinstance(pipelines, (basestring, BetterConfigParser, OrderedDict,
+        if isinstance(pipelines, (basestring, PISAConfigParser, OrderedDict,
                                   Pipeline)):
             pipelines = [pipelines]
 
@@ -67,30 +78,66 @@ class DistributionMaker(object):
     def __iter__(self):
         return iter(self._pipelines)
 
-    def get_outputs(self, sum=False, **kwargs):
+    def get_outputs(self, return_sum=False, sum_map_name='total',
+                    sum_map_tex_name='Total', **kwargs):
+        """Compute and return the outputs.
+
+        Parameters
+        ----------
+        return_sum : bool
+            If True, add up all Maps in all MapSets returned by all pipelines.
+            The result will be a single Map contained in a MapSet.
+            If False, return a list where each element is the full MapSet
+            returned by each pipeline in the DistributionMaker.
+
+        **kwargs
+            Passed on to each pipeline's `get_outputs1` method.
+
+        Returns
+        -------
+        MapSet if `return_sum=True` or list of MapSets if `return_sum=False`
+
+        """
         outputs = [pipeline.get_outputs(**kwargs) for pipeline in self]
-        if sum:
-            outputs = reduce(lambda x,y: sum(x) + sum(y), outputs)
+        if return_sum:
+            if len(outputs) > 1:
+                outputs = reduce(lambda x, y: sum(x) + sum(y), outputs)
+            else:
+                outputs = sum(sum(outputs))
+            outputs.name = sum_map_name
+            outputs.tex = sum_map_tex_name
+            outputs = MapSet(outputs)
         return outputs
 
     def update_params(self, params):
-        [pipeline.update_params(params) for pipeline in self]
+        for pipeline in self:
+            pipeline.update_params(params)
 
     def select_params(self, selections, error_on_missing=True):
         successes = 0
-        for pipeline in self:
-            try:
-                pipeline.select_params(selections, error_on_missing=True)
-            except KeyError:
-                pass
-            else:
-                successes += 1
+        if selections is not None:
+            for pipeline in self:
+                try:
+                    pipeline.select_params(selections, error_on_missing=True)
+                except KeyError:
+                    pass
+                else:
+                    successes += 1
 
-        if error_on_missing and successes == 0:
-            raise KeyError(
-                'None of the selections %s found in any pipeline in this'
-                ' distribution maker' %(selections,)
-            )
+            if error_on_missing and successes == 0:
+                raise KeyError(
+                    'None of the stages from any pipeline in this distribution'
+                    ' maker has all of the selections %s available.'
+                    %(selections,)
+                )
+        else:
+            for pipeline in self:
+                possible_selections = pipeline.param_selections
+                if possible_selections:
+                    logging.warn("Although you didn't make a parameter "
+                                 "selection, the following were available: %s."
+                                 " This may cause issues.",
+                                 possible_selections)
 
     @property
     def pipelines(self):
@@ -99,13 +146,15 @@ class DistributionMaker(object):
     @property
     def params(self):
         params = ParamSet()
-        [params.extend(pipeline.params) for pipeline in self.pipelines]
+        for pipeline in self:
+            params.extend(pipeline.params)
         return params
 
     @property
     def param_selections(self):
         selections = set()
-        [selections.update(pipeline.param_selections) for pipeline in self]
+        for pipeline in self:
+            selections.update(pipeline.param_selections)
         return sorted(selections)
 
     @property
@@ -120,8 +169,8 @@ class DistributionMaker(object):
         return self._source_code_hash
 
     @property
-    def state_hash(self):
-        return hash_obj([self.source_code_hash] + [s.state_hash for s in self])
+    def hash(self):
+        return hash_obj([self.source_code_hash] + [p.hash for p in self])
 
     def set_free_params(self, values):
         """Set free parameters' values.
@@ -131,10 +180,15 @@ class DistributionMaker(object):
         values : list of quantities
 
         """
-        for name, value in zip(self.params.free.names, values):
-            for pipeline in self.pipeline:
-                if name in [p.name for p in pipeline.params.free]:
-                    pipeline.params.free.value = value
+        for name, value in izip(self.params.free.names, values):
+            for pipeline in self:
+                if name in pipeline.params.free.names:
+                    pipeline.params[name] = value
+                elif name in pipeline.params.names:
+                    raise AttributeError(
+                        'Trying to set value for "%s", a parameter that is'
+                        ' fixed in at least one pipeline' %name
+                    )
 
     def randomize_free_params(self, random_state=None):
         if random_state is None:
@@ -147,32 +201,38 @@ class DistributionMaker(object):
 
     def reset_all(self):
         """Reset both free and fixed parameters to their nominal values."""
-        [p.params.reset_all() for p in self]
+        for p in self:
+            p.params.reset_all()
 
     def reset_free(self):
         """Reset only free parameters to their nominal values."""
-        [p.params.reset_free() for p in self]
+        for p in self:
+            p.params.reset_free()
 
     def set_nominal_by_current_values(self):
         """Define the nominal values as the parameters' current values."""
-        [p.params.set_nominal_by_current_values() for p in self]
+        for p in self:
+            p.params.set_nominal_by_current_values()
 
     def _set_rescaled_free_params(self, rvalues):
-        """Set free param values given a simple list of (0,1) rescaled,
+        """Set free param values given a simple list of [0,1]-rescaled,
         dimensionless values
 
         """
         names = self.params.free.names
-        for pipeline in self.pipelines:
-            fp = pipeline.params.free
-            fp_names = fp.names
-            for name, rvalue in zip(names, rvalues):
-                if name in fp_names:
+        for pipeline in self:
+            for name, rvalue in izip(names, rvalues):
+                if name in pipeline.params.free.names:
                     pipeline.params[name]._rescaled_value = rvalue
-            #pipeline.update_params(fp)
+                elif name in pipeline.params.names:
+                    raise AttributeError(
+                        'Trying to set value for "%s", a parameter that is'
+                        ' fixed in at least one pipeline' %name
+                    )
 
 
 def test_DistributionMaker():
+    """Unit tests for DistributionMaker"""
     #
     # Test: select_params and param_selections
     #
@@ -200,76 +260,134 @@ def test_DistributionMaker():
     for new_hier, new_mat in product(hierarchies, materials):
         new_YeO = YeO[new_mat]
 
-        assert dm.param_selections == sorted([current_hier, current_mat]), str(dm.params.param_selections)
-        assert dm.params.theta23.value == t23[current_hier], str(dm.params.theta23)
+        assert dm.param_selections == sorted([current_hier, current_mat]), \
+                str(dm.params.param_selections)
+        assert dm.params.theta23.value == t23[current_hier], \
+                str(dm.params.theta23)
         assert dm.params.YeO.value == YeO[current_mat], str(dm.params.YeO)
 
         # Select just the hierarchy
         dm.select_params(new_hier)
-        assert dm.param_selections == sorted([new_hier, current_mat]), str(dm.param_selections)
-        assert dm.params.theta23.value == t23[new_hier], str(dm.params.theta23)
-        assert dm.params.YeO.value == YeO[current_mat], str(dm.params.YeO)
+        assert dm.param_selections == sorted([new_hier, current_mat]), \
+                str(dm.param_selections)
+        assert dm.params.theta23.value == t23[new_hier], \
+                str(dm.params.theta23)
+        assert dm.params.YeO.value == YeO[current_mat], \
+                str(dm.params.YeO)
 
         # Select just the material
         dm.select_params(new_mat)
-        assert dm.param_selections == sorted([new_hier, new_mat]), str(dm.param_selections)
-        assert dm.params.theta23.value == t23[new_hier], str(dm.params.theta23)
-        assert dm.params.YeO.value == YeO[new_mat], str(dm.params.YeO)
+        assert dm.param_selections == sorted([new_hier, new_mat]), \
+                str(dm.param_selections)
+        assert dm.params.theta23.value == t23[new_hier], \
+                str(dm.params.theta23)
+        assert dm.params.YeO.value == YeO[new_mat], \
+                str(dm.params.YeO)
 
         # Reset both to "current"
         dm.select_params([current_mat, current_hier])
-        assert dm.param_selections == sorted([current_hier, current_mat]), str(dm.param_selections)
-        assert dm.params.theta23.value == t23[current_hier], str(dm.params.theta23)
-        assert dm.params.YeO.value == YeO[current_mat], str(dm.params.YeO)
+        assert dm.param_selections == sorted([current_hier, current_mat]), \
+                str(dm.param_selections)
+        assert dm.params.theta23.value == t23[current_hier], \
+                str(dm.params.theta23)
+        assert dm.params.YeO.value == YeO[current_mat], \
+                str(dm.params.YeO)
 
         # Select both hierarchy and material
         dm.select_params([new_mat, new_hier])
-        assert dm.param_selections == sorted([new_hier, new_mat]), str(dm.param_selections)
-        assert dm.params.theta23.value == t23[new_hier], str(dm.params.theta23)
-        assert dm.params.YeO.value == YeO[new_mat], str(dm.params.YeO)
+        assert dm.param_selections == sorted([new_hier, new_mat]), \
+                str(dm.param_selections)
+        assert dm.params.theta23.value == t23[new_hier], \
+                str(dm.params.theta23)
+        assert dm.params.YeO.value == YeO[new_mat], \
+                str(dm.params.YeO)
 
         current_hier = new_hier
         current_mat = new_mat
 
 
-
-if __name__ == '__main__':
-    from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-    import numpy as np
-    from pisa.utils.fileio import expandPath, from_file, to_file
-    from pisa.utils.config_parser import parse_pipeline_config
-    from pisa.utils.plotter import Plotter
-
-    parser = ArgumentParser()
+def parse_args():
+    """Get command line arguments"""
+    parser = ArgumentParser(
+        description='''Generate, store, and plot a distribution from pipeline
+        configuration file(s).''',
+        formatter_class=ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument(
         '-p', '--pipeline', type=str, required=True,
         metavar='CONFIGFILE', action='append',
         help='''Settings file for each pipeline (repeat for multiple).'''
     )
     parser.add_argument(
+        '--select', metavar='PARAM_SELECTIONS', nargs='+', default=None,
+        help='''Param selectors (separated by spaces) to use to override any
+        defaults in the config file.'''
+    )
+    parser.add_argument(
+        '--return-sum', action='store_true',
+        help='''Return a sum of the MapSets output by the distribution maker's
+        pipelines as a single map (as opposed to a list of MapSets, one per
+        pipeline)'''
+    )
+    parser.add_argument(
         '--outdir', type=str, action='store',
         help='Directory into which to store the output'
+    )
+    parser.add_argument(
+        '--pdf', action='store_true',
+        help='''Produce pdf plot(s).'''
+    )
+    parser.add_argument(
+        '--png', action='store_true',
+        help='''Produce png plot(s).'''
     )
     parser.add_argument(
         '-v', action='count', default=None,
         help='Set verbosity level'
     )
     args = parser.parse_args()
+    return args
 
+
+def main(return_outputs=False):
+    """Main; call as script with `return_outputs=False` or interactively with
+    `return_outputs=True`"""
+    from pisa.utils.plotter import Plotter
+    args = parse_args()
     set_verbosity(args.v)
+    plot_formats = []
+    if args.pdf:
+        plot_formats.append('pdf')
+    if args.png:
+        plot_formats.append('png')
 
     distribution_maker = DistributionMaker(pipelines=args.pipeline)
-    outputs = distribution_maker.get_outputs()
+    if args.select is not None:
+        distribution_maker.select_params(args.select)
+
+    outputs = distribution_maker.get_outputs(return_sum=args.return_sum)
     if args.outdir:
         # TODO: unique filename: append hash (or hash per pipeline config)
         fname = 'distribution_maker_outputs.json.bz2'
-        fpath = expandPath(os.path.join(args.outdir, fname))
+        mkdir(args.outdir)
+        fpath = expand(os.path.join(args.outdir, fname))
         to_file(outputs, fpath)
+
+    if args.outdir and plot_formats:
         my_plotter = Plotter(
-            stamp='PISA cake test',
             outdir=args.outdir,
-            fmt='pdf', log=False,
+            fmt=plot_formats, log=False,
             annotate=False
         )
-        my_plotter.ratio = True
-        my_plotter.plot_2d_array(outputs, fname='dist_output', cmap='OrRd')
+        for num, output in enumerate(outputs):
+            my_plotter.plot_2d_array(
+                output,
+                fname='dist_output_%d' % num
+            )
+
+    if return_outputs:
+        return distribution_maker, outputs
+
+
+if __name__ == '__main__':
+    distribution_maker, outputs = main(return_outputs=True)

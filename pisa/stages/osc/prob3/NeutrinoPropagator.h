@@ -1,5 +1,5 @@
-#ifndef _NeutrinoPropagator_
-#define _NeutrinoPropagator_
+#ifndef __NeutrinoPropagator__
+#define __NeutrinoPropagator__
 
 #include <iostream>
 

@@ -2,39 +2,91 @@
 #         jll1062+pisa@phys.psu.edu
 #
 # date:   2015-06-13
-"""Generic file I/O, dispatching specific file readers/writers as necessary"""
+"""
+Generic file I/O, dispatching specific file readers/writers as necessary
 
+"""
+
+
+from __future__ import absolute_import
 
 import cPickle
 import os
 import re
-import unicodedata
 
 import dill
 
-from pisa.utils.betterConfigParser import BetterConfigParser
 from pisa.utils import hdf
 from pisa.utils import jsons
-from pisa.utils.log import logging
+from pisa.utils import log
 from pisa.utils import resources
 
 import numpy as np
 
-__all__ = ['expandPath', 'mkdir', 'get_valid_filename', 'nsort', 'findFiles',
-            'from_cfg', 'from_pickle', 'to_pickle', 'from_dill', 'to_dill',
-            'from_file', 'to_file']
 
-JSON_EXTS = ['json', 'json.bz2']
-HDF5_EXTS = ['hdf', 'h5', 'hdf5']
+__all__ = ['PKL_EXTS', 'DILL_EXTS', 'CFG_EXTS', 'ZIP_EXTS', 'TXT_EXTS',
+           'NSORT_RE', 'UNSIGNED_FSORT_RE', 'SIGNED_FSORT_RE',
+           'expand', 'mkdir', 'get_valid_filename', 'nsort', 'fsort',
+           'find_files', 'from_cfg', 'from_pickle', 'to_pickle', 'from_dill',
+           'to_dill', 'from_file', 'to_file']
+
+
 PKL_EXTS = ['pickle', 'pckl', 'pkl', 'p']
 DILL_EXTS = ['dill']
 CFG_EXTS = ['ini', 'cfg']
 ZIP_EXTS = ['bz2']
-TXT_EXTS = ['txt','dat']
+TXT_EXTS = ['txt', 'dat']
+
+NSORT_RE = re.compile(r'(\d+)')
+UNSIGNED_FSORT_RE = re.compile(
+    r'''
+    (
+        (?:\d+(?:\.\d*){0,1}) # Digit(s) followed by opt. "." and opt. digits
+        |(?:\.\d+)            # Or starts with "." and must have digits after
+        (?:e[+-]?\d+){0,1}    # Opt.: followed by exponent: e12, e-12, e+0, etc.
+    )
+    ''',
+    re.IGNORECASE | re.VERBOSE
+)
+SIGNED_FSORT_RE = re.compile(
+    r'''
+    (
+        [+-]{0,1}             # Optional sign
+        (?:\d+(?:\.\d*){0,1}) # Digit(s) followed by opt. "." and opt. digits
+        |(?:\.\d+)            # Or starts with "." but must have digits after
+        (?:e[+-]?\d+){0,1}    # Opt.: exponent: e12, e-12, e+0, etc.
+    )
+    ''',
+    re.IGNORECASE | re.VERBOSE
+)
 
 
-def expandPath(path, exp_user=True, exp_vars=True, absolute=False):
-    """Convenience function for expanding a path"""
+def expand(path, exp_user=True, exp_vars=True, absolute=False):
+    """Convenience function for expanding a path
+
+    Parameters
+    ----------
+    path : string
+        Path to be expanded.
+
+    exp_user : bool
+        Expand special home dir spec character, tilde: "~".
+
+    exp_vars : bool
+        Expand the string using environment variables. E.g.
+        "$HOME/${vardir}/xyz" will have "$HOME" and "${vardir}$" replaced by
+        the values stored in "HOME" and "vardir".
+
+    absolute : bool
+        Make a relative path (e.g. "../xyz") absolute, referenced from system
+        root directory, "/dir/sbudir/xyz".
+
+    Returns
+    -------
+    exp_path : string
+        Expanded path
+
+    """
     if exp_user:
         path = os.path.expanduser(path)
     if exp_vars:
@@ -44,7 +96,44 @@ def expandPath(path, exp_user=True, exp_vars=True, absolute=False):
     return path
 
 
-def mkdir(d, mode=0750, warn=True):
+def check_file_exists(fname, overwrite=True, warn=True):
+    """See if a file exists, warning, raising an exception, or doing neither if
+    it already exists.
+
+    Note that while this function can warn or raise an exception indicating the
+    file will be overwritten, this function does not actually overwrite any
+    files.
+
+    Parameters
+    ----------
+    fname : string
+        File name or path to try to find.
+
+    overwrite : bool
+        Whether it's okay for the file to be overwritten if it exists. Note
+        that this function does not actually overwrite the file.
+
+    warn : bool
+        Whether to warn the user that the file will be overwritten if it
+        exists. Note that this function does not actually overwrite the file.
+
+    Returns
+    -------
+    fpath : string
+        Expanded path of the `fname` passed in.
+
+    """
+    fpath = expand(fname)
+    if os.path.exists(fpath):
+        if overwrite:
+            if warn:
+                log.logging.warn("Overwriting file at '%s'", fpath)
+        else:
+            raise Exception("Refusing to overwrite path '%s'", fpath)
+    return fpath
+
+
+def mkdir(d, mode=0o0750, warn=True):
     """Simple wrapper around os.makedirs to create a directory but not raise an
     exception if the dir already exists
 
@@ -61,13 +150,13 @@ def mkdir(d, mode=0750, warn=True):
     try:
         os.makedirs(d, mode=mode)
     except OSError as err:
-        if err[0] == 17:
+        if err.errno == 17:
             if warn:
-                logging.warn('Directory "%s" already exists' %d)
+                log.logging.warn('Directory "%s" already exists', d)
         else:
             raise err
     else:
-        logging.info('Created directory "%s"' %d)
+        log.logging.info('Created directory "%s"', d)
 
 
 def get_valid_filename(s):
@@ -89,19 +178,92 @@ def get_valid_filename(s):
     return re.sub(r'(?u)[^-\w.]', '', s)
 
 
-NSORT_RE = re.compile("(\\d+)")
 def nsort(l):
-    """Numbers sorted by value, not by alpha order.
+    """Sort a sequence of strings containing integer number fields by the
+    value of those numbers, rather than by simple alpha order. Useful
+    for sorting e.g. version strings, etc..
 
-    Code from
-    nedbatchelder.com/blog/200712/human_sorting.html#comments
+    Code adapted from nedbatchelder.com/blog/200712/human_sorting.html#comments
+
+    Parameters
+    ----------
+    l : sequence of strings
+
+    Returns
+    -------
+    sorted_l : sequence of strings
+
+    Examples
+    --------
+    >>> l = ['f1.10.0.txt', 'f1.01.2.txt', 'f1.1.1.txt', 'f9.txt', 'f10.txt']
+    >>> nsort(l)
+    ['f1.1.1.txt', 'f1.01.2.txt', 'f1.10.0.txt', 'f9.txt', 'f10.txt']
+
+    See Also
+    --------
+    fsort
+        Sort sequence of strings with floating-point numbers in the strings.
+
     """
-    return sorted(l, key=lambda a: zip(NSORT_RE.split(a)[0::2],
-                                       map(int, NSORT_RE.split(a)[1::2])))
+    def _field_splitter(s):
+        spl = NSORT_RE.split(s)
+        non_numbers = spl[0::2]
+        numbers = (int(i) for i in spl[1::2])
+        return zip(non_numbers, numbers)
+
+    return sorted(l, key=_field_splitter)
 
 
-def findFiles(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
-              file_sorter=nsort):
+def fsort(l, signed=True):
+    """Sort a sequence of strings with one or more floating point number fields
+    in using the floating point value(s) (and intervening strings are treated
+    as normally done). Note that + and - preceding a number are included in the
+    floating point value unless `signed=False`.
+
+    Code adapted from nedbatchelder.com/blog/200712/human_sorting.html#comments
+
+    Parameters
+    ----------
+    l : sequence of strings
+    signed : bool
+        Whether to include a "+" or "-" preceeding a number in its value to be
+        sorted. One might specify False if "-" is used exclusively as a
+        separator in the string.
+
+    Returns
+    -------
+    sorted_l : sequence of strings
+
+    Examples
+    --------
+    >>> l = ['a-0.1.txt', 'a-0.01.txt', 'a-0.05.txt']
+    >>> fsort(l, signed=True)
+    ['a-0.1.txt', 'a-0.05.txt', 'a-0.01.txt']
+
+    >>> fsort(l, signed=False)
+    ['a-0.01.txt', 'a-0.05.txt', 'a-0.1.txt']
+
+    See Also
+    --------
+    nsort
+        Sort using integer-only values of numbers; good for e.g. version
+        numbers, where periods are separators rather than decimal points.
+
+    """
+    def _field_splitter(s):
+        if signed:
+            spl = SIGNED_FSORT_RE.split(s)
+        else:
+            spl = UNSIGNED_FSORT_RE.split(s)
+        non_numbers = spl[0::2]
+        numbers = (float(i) for i in spl[1::2])
+        return zip(non_numbers, numbers)
+
+    return sorted(l, key=_field_splitter)
+
+
+def find_files(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
+               file_sorter=nsort):
     """Find files by re or name recursively w/ ordering.
 
     Code adapted from
@@ -111,50 +273,57 @@ def findFiles(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
     ----------
     root : str
         Root directory at which to start searching for files
+
     regex : str or re.SRE_Pattern
         Only yield files matching `regex`.
+
     fname : str
         Only yield files matching `fname`
+
     recurse : bool
         Whether to search recursively down from the root directory
+
     dir_sorter
         Function that takes a list and returns a sorted version of it, for
         purposes of sorting directories
+
     file_sorter
         Function as specified for `dir_sorter` but used for sorting file names
+
 
     Yields
     ------
     fullfilepath : str
     basename : str
     match : re.SRE_Match or None
+
     """
-    root = os.path.expandvars(os.path.expanduser(root))
+    root = expand(root)
     if isinstance(regex, basestring):
         regex = re.compile(regex)
 
     # Define a function for accepting a filename as a match
     if regex is None:
         if fname is None:
-            def validfilefunc(fn):
+            def _validfilefunc(fn):
                 return True, None
         else:
-            def validfilefunc(fn):
+            def _validfilefunc(fn):
                 if fn == fname:
                     return True, None
                 return False, None
     else:
-        def validfilefunc(fn):
+        def _validfilefunc(fn):
             match = regex.match(fn)
             if match and (len(match.groups()) == regex.groups):
                 return True, match
             return False, None
 
     if recurse:
-        for rootdir, dirs, files in os.walk(root):
+        for rootdir, dirs, files in os.walk(root, followlinks=True):
             for basename in file_sorter(files):
-                fullfilepath = os.path.join(root, basename)
-                is_valid, match = validfilefunc(basename)
+                fullfilepath = os.path.join(rootdir, basename)
+                is_valid, match = _validfilefunc(basename)
                 if is_valid:
                     yield fullfilepath, basename, match
             for dirname in dir_sorter(dirs):
@@ -162,39 +331,40 @@ def findFiles(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
                 for basename in file_sorter(os.listdir(fulldirpath)):
                     fullfilepath = os.path.join(fulldirpath, basename)
                     if os.path.isfile(fullfilepath):
-                        is_valid, match = validfilefunc(basename)
+                        is_valid, match = _validfilefunc(basename)
                         if is_valid:
                             yield fullfilepath, basename, match
     else:
         for basename in file_sorter(os.listdir(root)):
             fullfilepath = os.path.join(root, basename)
             #if os.path.isfile(fullfilepath):
-            is_valid, match = validfilefunc(basename)
+            is_valid, match = _validfilefunc(basename)
             if is_valid:
                 yield fullfilepath, basename, match
 
 
 def from_cfg(fname):
-    config = BetterConfigParser()
+    """Load a PISA config file"""
+    from pisa.utils.config_parser import PISAConfigParser
+    config = PISAConfigParser()
     config.read(fname)
     return config
 
 
 def from_pickle(fname):
+    """Load from a Python pickle file"""
     return cPickle.load(file(fname, 'rb'))
 
 
-def to_pickle(obj, fname, overwrite=True):
-    fpath = os.path.expandvars(os.path.expanduser(fname))
-    if os.path.exists(fpath):
-        if overwrite:
-            logging.warn('Overwriting file at ' + fpath)
-        else:
-            raise Exception('Refusing to overwrite path ' + fpath)
+def to_pickle(obj, fname, overwrite=True, warn=True):
+    """Save object to a pickle file"""
+    check_file_exists(fname=fname, overwrite=overwrite, warn=warn)
     return cPickle.dump(obj, file(fname, 'wb'),
                         protocol=cPickle.HIGHEST_PROTOCOL)
 
+
 def from_txt(fname, as_array=False):
+    """Load from a text (txt) file"""
     if as_array:
         with open(fname, 'r') as f:
             a = f.readlines()
@@ -205,21 +375,21 @@ def from_txt(fname, as_array=False):
             a = f.read()
     return a
 
+
 def to_txt(obj, fname):
+    """Save object to a text (txt) file"""
     with open(fname, 'w') as f:
         f.write(obj)
 
+
 def from_dill(fname):
+    """Load from a `dill` file"""
     return dill.load(file(fname, 'rb'))
 
 
-def to_dill(obj, fname, overwrite=True):
-    fpath = os.path.expandvars(os.path.expanduser(fname))
-    if os.path.exists(fpath):
-        if overwrite:
-            logging.warn('Overwriting file at ' + fpath)
-        else:
-            raise Exception('Refusing to overwrite path ' + fpath)
+def to_dill(obj, fname, overwrite=True, warn=True):
+    """Save an object to a `dill` file."""
+    check_file_exists(fname=fname, overwrite=overwrite, warn=warn)
     return dill.dump(obj, file(fname, 'wb'), protocol=dill.HIGHEST_PROTOCOL)
 
 
@@ -255,12 +425,12 @@ def from_file(fname, fmt=None, **kwargs):
         rootname, inner_ext = os.path.splitext(rootname)
         inner_ext = inner_ext.replace('.', '').lower()
         zip_ext = ext
-        ext = inner_ext + '.' + zip_ext
+        ext = inner_ext
 
     fname = resources.find_resource(fname)
-    if ext in JSON_EXTS:
+    if ext in jsons.JSON_EXTS:
         return jsons.from_json(fname, **kwargs)
-    if ext in HDF5_EXTS:
+    if ext in hdf.HDF5_EXTS:
         return hdf.from_hdf(fname, **kwargs)
     if ext in PKL_EXTS:
         return from_pickle(fname, **kwargs)
@@ -271,11 +441,11 @@ def from_file(fname, fmt=None, **kwargs):
     if ext in TXT_EXTS:
         return from_txt(fname, **kwargs)
     errmsg = 'File "%s": unrecognized extension "%s"' % (fname, ext)
-    logging.error(errmsg)
-    raise TypeError(errmsg)
+    log.logging.error(errmsg)
+    raise ValueError(errmsg)
 
 
-def to_file(obj, fname, fmt=None, **kwargs):
+def to_file(obj, fname, fmt=None, overwrite=True, warn=True, **kwargs):
     """Dispatch correct file writer based on fmt (if specified) or guess
     based on file name's extension"""
     if fmt is None:
@@ -290,19 +460,24 @@ def to_file(obj, fname, fmt=None, **kwargs):
         rootname, inner_ext = os.path.splitext(rootname)
         inner_ext = inner_ext.replace('.', '').lower()
         zip_ext = ext
-        ext = inner_ext + '.' + zip_ext
+        ext = inner_ext
 
-    if ext in JSON_EXTS:
-        return jsons.to_json(obj, fname, **kwargs)
-    elif ext in HDF5_EXTS:
-        return hdf.to_hdf(obj, fname, **kwargs)
+    if ext in jsons.JSON_EXTS:
+        return jsons.to_json(obj, fname, overwrite=overwrite, warn=warn,
+                             **kwargs)
+    elif ext in hdf.HDF5_EXTS:
+        return hdf.to_hdf(obj, fname, overwrite=overwrite, warn=warn, **kwargs)
     elif ext in PKL_EXTS:
-        return to_pickle(obj, fname, **kwargs)
+        return to_pickle(obj, fname, overwrite=overwrite, warn=warn, **kwargs)
     elif ext in DILL_EXTS:
-        return to_dill(obj, fname, **kwargs)
+        return to_dill(obj, fname, overwrite=overwrite, warn=warn, **kwargs)
     elif ext in TXT_EXTS:
-        return to_txt(obj, fname, **kwargs)
+        if kwargs:
+            raise ValueError('Following additional keyword arguments not'
+                             ' accepted when writing to text file: %s' %
+                             kwargs.keys())
+        return to_txt(obj, fname)
     else:
         errmsg = 'Unrecognized file type/extension: ' + ext
-        logging.error(errmsg)
+        log.logging.error(errmsg)
         raise TypeError(errmsg)

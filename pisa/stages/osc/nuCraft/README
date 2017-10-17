@@ -14,10 +14,92 @@ As this is purely Python, installation is not necessary; you can just import
 the project and get started.
 Documentation can be found in the docstrings, with some additional explanations
 in inline comments.
-
+A paper describing details of the implementation has been submitted to Computer
+Physics Communications for publication, with a preprint available at
+   
+   http://arxiv.org/abs/1409.1387.
+   
 If any questions remain, please contact
-  
+   
    mwallraff#physik.rwth-aachen.de
+
+
+
+ External dependencies:
+------------------------
+
+NuCraft heavily relies on NumPy and SciPy. It has been tested with several
+versions of NumPy, beginning at 1.5.1, and SciPy, beginning at 0.8.0. It is
+possible that it will work well with earlier versions of both packages.
+NuCraft is compatible with both Python 2 (2.6+) and Python 3 (tested with 3.3).
+It will not work with versions earlier than 2.6 without modifications, but it
+might work with earlier versions of Python 3.
+
+The example script example-standAlone.py also relies on matplotlib for plotting,
+and it uses TeX inside matplotlib so that dvipng needs to be installed (optional
+requirement of matplotlib).
+
+
+
+ Program Structure:
+--------------------
+
+The structure of nuCraft is fairly easy. The project consists of two classes,
+NuCraft and EarthModel. For usage, an instance of NuCraft has to be created with
+a set of oscillation parameters, which optionally accepts an instance of
+EarthModel at creation for custom Earth density profiles (see next section), a
+custom value of the depth of the detector below the ground, and a custom value
+for the production height of the neutrino in the atmosphere that is only used if
+advanced handling of the atmosphere is disabled later on.
+For actual calculations, nuCraft has the two methods CalcWeights and
+CalcWeightsLegacy. For the detailed difference between them, have a look at the
+paper; in the mean time, do not use the legacy version, it is almost always
+worse.
+CalcWeights is the only method that should be relevant for normal users. It
+accepts the actual particle quantities relevant for oscillations and returns the
+oscillation probabilities. For supported input formats and parameters, please
+have a look at the docstrings, or see the example script.
+
+
+
+ Using non-standard Earth models:
+----------------------------------
+
+The default Earth model used by nuCraft is the Preliminary Reference Earth Model
+PREM (http://dx.doi.org/10.1016/0031-9201(81)90046-7), which is usually loaded
+out of the dictionary 'models' in the class EarthModel. If you want to use other
+density models, you can either add them to that dictionary, or you can load them
+form a text file. The example file EarthModelPrem.txt is shipped with nuCraft as
+a template.
+Data from files is read in through the ast.literal_eval method. It works
+similar to the built-in eval function, but is designed to be inherently safe.
+Nonetheless, a check has been kept in place to raise an exception if there are
+any underscores in the input file, as all known non-trivial exploits of the
+standard eval function require double underscores. If you encounter this
+exception, chances are good that there is merily an underscore in the comments;
+remove it, and everything should work.
+
+If you want to use nuCraft for reactor neutrino experiments or other not
+spherically symmetric mass density distributions, you have to do some simple
+modifications to the code:
+
+First, you have create a suitable Earth model for your needs. In case of reactor
+neutrinos, you might want to use a matter profile that does not depend on the
+distance to the center of Earth, but on the travelled distance. In that case,
+substitute profX with an array containing distances, profY with corresponding
+matter densities, and set EarthModel.y to (0.4957, 0.4957, 0.4957) (assuming
+that the neutrino travelled only through mantle and crust).
+Now, EarthModel.profInt is not a function of radius anymore, so go to lines 582
+to 586 and substitute profInt(r) by profInt(l).
+Similarly, you can modify EarthModel such that EarthModel.profInt depends on
+multiple parameters, e.g., radius and zenith angle, and modify the same lines to
+call it correctly.
+For reactor neutrinos, don't forget to turn the atmospheric handling to 0 (fixed
+altitude) and set NuCraft.detectorDepth and NuCraft.atmHeight to 0.
+Alternatively, you can modify NuCraft.InteractionAlt to model the neutrino
+production region inside the reactor to smear out very-short-baseline effects.
+
+Feel free to write a mail if you need assistance.
 
 
 
@@ -37,4 +119,5 @@ If any questions remain, please contact
   the Akhmedov/Rassaque/Smirnov paper arxiv:1205.7071; can also be used as test
 - __init__.py
   package initiation file, required to facilitate proper importing
+
 

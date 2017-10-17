@@ -1,4 +1,4 @@
-# Stage 5: Particle ID
+# Stage: Particle ID
 
 The purpose of this stage is to simulate the event classification of
 PINGU, sorting the reconstructed nue CC, numu CC, nutau CC, and NC
@@ -6,8 +6,7 @@ events into the track and cascade channels.
 
 ## Services
 
-There exists three services for this particular stage: `hist`, `param` and
-`kernel`.
+There exists two services for this particular stage: `hist` and `param`.
 
 ### hist
 This service utilises pre-computed particle ID scores in its determination of
@@ -22,6 +21,21 @@ Specifications given as input to this service give the pid score value which is
 used as the minimum cut-off to distinguish an event as belonging to this
 channel, the events which have pid score's under this cut-off value are instead
 classified as belonging to the other channel(s).
+
+### param
+This service uses parameterisations to know what fraction of events to classify in to each channel. Currently this is supported as a function of energy only. The information is stored in a `.json` file of the form:
+
+```
+{
+  flav_int: {
+    "trck": lambda E function,
+    "cscd": 1 - trck function
+  },
+  etc...
+}
+```
+
+The provided flav_int are expected to be `numu_cc`, `nue_cc`, `nutau_cc` and `nuall_nc`. It is expected that the difference between `nu` and `nubar` is negligible. The lambda functions are parsed using `eval` and so the syntax used in your functions must be loaded in the `param.py` file and must also match that i.e. since `numpy` is imported as `np` it must be written as such in your `.json` file.
 
 Related links:
 * [2013-11-20, Status of Particle Identification on PINGU, JP](https://wikispaces.psu.edu/download/attachments/173476942/20131120_jpamdandre_PINGUPID.pdf?version=1&modificationDate=1384959568000&api=v2)

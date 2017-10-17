@@ -1,5 +1,5 @@
-#ifndef _EarthDensity_
-#define _EarthDensity_
+#ifndef __EarthDensity__
+#define __EarthDensity__
 
 #include <map>
 #include <vector>
@@ -146,6 +146,3 @@ class EarthDensity
 
 
 #endif
-
-
-

@@ -2,8 +2,8 @@
   $Id: mosc.h,v 1.1.1.1 2008-07-03 23:38:06 skrep Exp $
 ***********************************************************************/
 
-#ifndef MOSCHINCLUDED
-#define MOSCHINCLUDED
+#ifndef __MOSCHINCLUDED__
+#define __MOSCHINCLUDED__
 
 typedef enum nu_type {
   data_type, 
@@ -40,4 +40,4 @@ void setmass(double dms21, double dms23, double dmVacVac[][3]);
   standard_type,
   barger_type} MatrixType;
 
-#endif /* MOSCHINCLUDED */
+#endif /* __MOSCHINCLUDED__ */

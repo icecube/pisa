@@ -10,20 +10,21 @@
 Create the transforms that map from true energy and coszen
 to the reconstructed parameters. Provides reco event rate maps using these
 transforms.
+
 """
 
 
 from __future__ import division
-
-from copy import deepcopy
 
 import numpy as np
 
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
-from pisa.utils.hash import hash_obj
-from pisa.utils.log import logging, set_verbosity
+from pisa.utils.log import logging
+
+
+__all__ = ['hist']
 
 
 # TODO: the below logic does not generalize to muons, but probably should
@@ -168,7 +169,6 @@ class hist(Stage):
         )
 
         # Can do these now that binning has been set up in call to Stage's init
-        self.validate_binning()
         self.include_attrs_for_hashes('particles')
         self.include_attrs_for_hashes('transform_groups')
         self.include_attrs_for_hashes('sum_grouped_flavints')
@@ -176,9 +176,9 @@ class hist(Stage):
     def validate_binning(self):
         input_basenames = set(self.input_binning.basenames)
         output_basenames = set(self.output_binning.basenames)
-        #assert set(['energy', 'coszen']) == input_basenames
         for base_d in input_basenames:
-            assert base_d in output_basenames
+            assert base_d in output_basenames, \
+                   "'%s' in input but not in output binning!"%base_d
 
     def _compute_transforms(self):
         """Generate reconstruction "smearing kernels" by histogramming true and
@@ -233,24 +233,24 @@ class hist(Stage):
 
             repr_flavint = xform_flavints[0]
 
-            true_energy = self.remaining_events[repr_flavint]['true_energy']
-            true_coszen = self.remaining_events[repr_flavint]['true_coszen']
-            reco_energy = self.remaining_events[repr_flavint]['reco_energy']
-            reco_coszen = self.remaining_events[repr_flavint]['reco_coszen']
+            true_energy = self.events[repr_flavint]['true_energy']
+            true_coszen = self.events[repr_flavint]['true_coszen']
+            reco_energy = self.events[repr_flavint]['reco_energy']
+            reco_coszen = self.events[repr_flavint]['reco_coszen']
             e_reco_err = reco_energy - true_energy
             cz_reco_err = reco_coszen - true_coszen
 
             if self.params.res_scale_ref.value.strip().lower() == 'zero':
-                self.remaining_events[repr_flavint]['reco_energy'] = (
+                self.events[repr_flavint]['reco_energy'] = (
                     true_energy + e_reco_err * e_res_scale + e_reco_bias
                 )
-                self.remaining_events[repr_flavint]['reco_coszen'] = (
+                self.events[repr_flavint]['reco_coszen'] = (
                     true_coszen + cz_reco_err * cz_res_scale + cz_reco_bias
                 )
 
             # True (input) + reco {+ PID} (output)-dimensional histogram
             # is the basis for the transformation
-            reco_kernel = self.remaining_events.histogram(
+            reco_kernel = self.events.histogram(
                 kinds=xform_flavints,
                 binning=input_binning * output_binning,
                 weights_col=self.params.reco_weights_name.value,
@@ -273,7 +273,7 @@ class hist(Stage):
             # Truth-only (N-dimensional) histogram will be used for
             # normalization (so transform is in terms of fraction-of-events in
             # input--i.e. truth--bin). Sum over the input dimensions.
-            true_event_counts = self.remaining_events.histogram(
+            true_event_counts = self.events.histogram(
                 kinds=xform_flavints,
                 binning=input_binning,
                 weights_col=self.params.reco_weights_name.value,
@@ -302,7 +302,9 @@ class hist(Stage):
             # Apply the normalization to the kernels
             reco_kernel *= norm_factors
 
-            assert np.all(reco_kernel >= 0), 'number of elements less than 0 = %d' % np.sum(reco_kernel < 0)
+            assert np.all(reco_kernel >= 0), \
+                    'number of elements less than 0 = %d' \
+                    % np.sum(reco_kernel < 0)
             sum_over_axes = tuple(range(-len(self.output_binning), 0))
             totals = np.sum(reco_kernel, axis=sum_over_axes)
             assert np.all(totals <= 1+1e-14), 'max = ' + str(np.max(totals)-1)
@@ -317,7 +319,7 @@ class hist(Stage):
                         xform_input_names.append(input_name)
 
                 for output_name in self.output_names:
-                    if not output_name in xform_flavints:
+                    if output_name not in xform_flavints:
                         continue
                     xform = BinnedTensorTransform(
                         input_names=xform_input_names,

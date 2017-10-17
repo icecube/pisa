@@ -27,15 +27,17 @@ If you wish to upgrade PISA and/or its dependencies:
 """
 
 
-from distutils.command.build import build as _build
-from setuptools.command.build_ext import build_ext as _build_ext
+from __future__ import absolute_import
+
+from distutils.command.build import build
 import os
-from setuptools import setup, Extension
 import shutil
 import subprocess
 import sys
 import tempfile
 
+from setuptools.command.build_ext import build_ext
+from setuptools import setup, Extension, find_packages
 import versioneer
 
 
@@ -44,81 +46,83 @@ import versioneer
 # needs to be done at run-time).
 
 # TODO: address some/all of the following in the `setup()` method?
-# * entry_points
 # * package_data
 # * include_package_data
 # * eager_resources
 
 
 def setup_cc():
+    """Set env var CC=cc if it is undefined"""
     if 'CC' not in os.environ or os.environ['CC'].strip() == '':
         os.environ['CC'] = 'cc'
 
 
-def has_cuda():
-    # pycuda is present if it can be imported
+def check_cuda():
+    """pycuda is considered to be present if it can be imported"""
     try:
-        import pycuda.driver as cuda
-    except:
-        CUDA = False
+        import pycuda.driver
+    except Exception:
+        cuda = False
     else:
-        CUDA = True
-    return CUDA
+        cuda = True
+    return cuda
 
 
-def has_openmp():
-    # OpenMP is present if a test program can compile with -fopenmp flag
-    # (e.g. Apple's compiler apparently doesn't support OpenMP, but gcc does)
-    # nathan12343's solution: http://stackoverflow.com/questions/16549893
-    OPENMP = False
-
-    setup_cc()
-
-    # see http://openmp.org/wp/openmp-compilers/
-    omp_test = \
-    r"""
-    #include <omp.h>
-    #include <stdio.h>
-    int main() {
-    #pragma omp parallel
+# See http://openmp.org/wp/openmp-compilers/
+OMP_TEST_PROGRAM = \
+r"""
+#include <omp.h>
+#include <stdio.h>
+int main() {
+#pragma omp parallel
     printf("Hello from thread %d, nthreads %d\n", omp_get_thread_num(), omp_get_num_threads());
-    }
+}"""
+
+
+def check_openmp():
+    """OpenMP is present if a test program can compile with -fopenmp flag (e.g.
+    some versions of Clang / gcc don't support OpenMP).
+
+    Source: http://stackoverflow.com/questions/16549893
+
     """
+    openmp = False
+    setup_cc()
     tmpfname = r'test.c'
     tmpdir = tempfile.mkdtemp()
     curdir = os.getcwd()
     os.chdir(tmpdir)
     cc = os.environ['CC']
     try:
-        with open(tmpfname, 'w', 0) as file:
-            file.write(omp_test)
+        with open(tmpfname, 'w', 0) as f:
+            f.write(OMP_TEST_PROGRAM)
         with open(os.devnull, 'w') as fnull:
             returncode = subprocess.call([cc, '-fopenmp', tmpfname],
                                          stdout=fnull, stderr=fnull)
         # Successful build (possibly with warnings) means we can use OpenMP
-        OPENMP = (returncode == 0)
+        openmp = returncode == 0
     finally:
         # Restore directory location and clean up
         os.chdir(curdir)
         shutil.rmtree(tmpdir)
-    return OPENMP
+    return openmp
 
 
-class build(_build):
+class CustomBuild(build):
     """Define custom build order, so that the python interface module created
     by SWIG is staged in build_py.
 
     """
     # different order: build_ext *before* build_py
     sub_commands = [
-        ('build_ext',     _build.has_ext_modules),
-        ('build_py',      _build.has_pure_modules),
-        ('build_clib',    _build.has_c_libraries),
-        ('build_scripts', _build.has_scripts)
+        ('build_ext', build.has_ext_modules),
+        ('build_py', build.has_pure_modules),
+        ('build_clib', build.has_c_libraries),
+        ('build_scripts', build.has_scripts)
     ]
 
 
-class build_ext(_build_ext):
+class CustomBuildExt(build_ext):
     """Replace default build_ext to allow for numpy install before setup.py
     needs it to include its dir.
 
@@ -126,23 +130,19 @@ class build_ext(_build_ext):
 
     """
     def finalize_options(self):
-        _build_ext.finalize_options(self)
+        build_ext.finalize_options(self)
         __builtins__.__NUMPY_SETUP__ = False
         import numpy
         self.include_dirs.append(numpy.get_include())
 
 
-if __name__ == '__main__':
+def do_setup():
+    """Perform the setup process"""
     setup_cc()
     sys.stdout.write('Using compiler %s\n' %os.environ['CC'])
 
-    CUDA = has_cuda()
-    if not CUDA:
-        sys.stderr.write('WARNING: Could not import pycuda; PISA may not be'
-                         ' able to support CUDA (GPU) accelerations.\n')
-
-    OPENMP = has_openmp()
-    if not OPENMP:
+    has_openmp = check_openmp()
+    if not has_openmp:
         sys.stderr.write(
             'WARNING: Could not compile test program with -fopenmp;'
             ' installing PISA without OpenMP support.\n'
@@ -151,6 +151,9 @@ if __name__ == '__main__':
     # Collect (build-able) external modules and package_data
     ext_modules = []
     package_data = {}
+
+    # Include documentation files wherever they may be
+    package_data[''] = ['*.md', '*.rst']
 
     # Prob3 oscillation code (pure C++, no CUDA)
     prob3cpu_module = Extension(
@@ -171,10 +174,12 @@ if __name__ == '__main__':
     ext_modules.append(prob3cpu_module)
 
     package_data['pisa.resources'] = [
-        'aeff/*.json',
-        'cross_sections/cross_sections.json',
+        'aeff/*.json*',
+        'cross_sections/*json*',
+        'discr_sys/*.json*',
+
         'events/*.hdf5',
-        'events/*.json',
+        'events/*.json*',
         'events/deepcore_ic86/MSU/1XXX/Joined/*.hdf5',
         'events/deepcore_ic86/MSU/1XXX/UnJoined/*.hdf5',
         'events/deepcore_ic86/MSU/1XXXX/Joined/*.hdf5',
@@ -182,48 +187,57 @@ if __name__ == '__main__':
         'events/deepcore_ic86/MSU/icc/*.hdf5',
         'events/pingu_v36/*.hdf5',
         'events/pingu_v39/*.hdf5',
+
         'flux/*.d',
         'osc/*.hdf5',
         'osc/*.dat',
-        'pid/*.json',
-        'priors/*.json',
-        'reco/*.json',
+        'pid/*.json*',
+        'priors/*.json*',
+        'priors/*.md',
+        'reco/*.json*',
+
+        'settings/binning/*.cfg',
         'settings/discrete_sys/*.cfg',
         'settings/logging/logging.json',
-        'settings/minimizer/*.json',
+        'settings/mc/*.cfg',
+        'settings/minimizer/*.json*',
+        'settings/osc/*.cfg',
+        'settings/osc/*.md',
         'settings/pipeline/*.cfg',
-        'discr_sys/*.json',
-        'tests/data/aeff/*.json',
-        'tests/data/flux/*.json',
-        'tests/data/full/*.json',
-        'tests/data/osc/*.json',
-        'tests/data/pid/*.json',
-        'tests/data/reco/*.json',
+        'settings/pipeline/*.md',
+
+        'tests/data/aeff/*.json*',
+        'tests/data/flux/*.json*',
+        'tests/data/full/*.json*',
+        'tests/data/osc/*.json*',
+        'tests/data/pid/*.json*',
+        'tests/data/reco/*.json*',
         'tests/data/xsec/*.root',
-        'tests/data/oscfit/*.json',
+        'tests/data/oscfit/*.json*',
         'tests/settings/*.cfg'
     ]
 
-    if OPENMP:
-        gaussians_module = Extension(
-            'pisa.utils.gaussians',
-            ['pisa/utils/gaussians.pyx'],
+    extra_compile_args = ['-O3', '-ffast-math', '-msse3']
+    extra_link_args = ['-ffast-math', '-msse2']
+    if has_openmp:
+        gaussians_cython_module = Extension(
+            'pisa.utils.gaussians_cython',
+            ['pisa/utils/gaussians_cython.pyx'],
             libraries=['m'],
-            extra_compile_args=[
-                '-fopenmp', '-O2'
-            ],
-            extra_link_args=['-fopenmp']
+            extra_compile_args=extra_compile_args + ['-fopenmp'],
+            extra_link_args=extra_link_args + ['-fopenmp'],
         )
     else:
-        gaussians_module = Extension(
-            'pisa.utils.gaussians',
-            ['pisa/utils/gaussians.pyx'],
-            extra_compile_args=['-O2'],
-            libraries=['m']
+        gaussians_cython_module = Extension(
+            'pisa.utils.gaussians_cython',
+            ['pisa/utils/gaussians_cython.pyx'],
+            libraries=['m'],
+            extra_compile_args=extra_compile_args,
+            extra_link_args=extra_link_args
         )
-    ext_modules.append(gaussians_module)
+    ext_modules.append(gaussians_cython_module)
 
-    cmdclasses = {'build': build, 'build_ext': build_ext}
+    cmdclasses = {'build': CustomBuild, 'build_ext': CustomBuildExt}
     cmdclasses.update(versioneer.get_cmdclass())
 
     # Now do the actual work
@@ -238,73 +252,75 @@ if __name__ == '__main__':
         python_requires='>=2.7',
         setup_requires=[
             'pip>=1.8',
-            'setuptools>18.5', # versioneer requires >18.5; 18.0 req from (?)
+            'setuptools>18.5', # versioneer requires >18.5
             'cython',
-            'numpy>=1.11.0',
+            'numpy>=1.11',
         ],
         install_requires=[
-            'scipy>=0.17.0',
+            'configparser',
+            'scipy>=0.17',
             'dill',
             'h5py',
             'line_profiler',
-            'matplotlib',
-            'pint',
-            'simplejson>=3.2.0',
+            'matplotlib>=2.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
+            'pint>=0.8', # earlier versions buggy
+            'kde',
+            'simplejson>=3.2',
             'tables',
-            'uncertainties'
+            'uncertainties',
+            'decorator'
         ],
         extras_require={
-            'cuda':  [
+            'cuda': [
                 'pycuda'
             ],
-            'numba':  [
-                'enum34',
-                'numba'
+            'numba': [
+                'llvmlite>=0.16', # fastmath jit flag
+                'numba>=0.31' # fastmath jit flag
             ],
             'develop': [
-                'sphinx>1.3',
+                'pylint>=1.7',
                 'recommonmark',
-                'versioneer'
+                'sphinx>=1.3',
+                'sphinx_rtd_theme',
+                'versioneer',
             ]
         },
-        packages=[
-            'pisa',
-            'pisa.analysis',
-            'pisa.core',
-            'pisa.resources',
-            'pisa.stages',
-            'pisa.stages.aeff',
-            'pisa.stages.data',
-            'pisa.stages.flux',
-            'pisa.stages.mc',
-            'pisa.stages.osc',
-            'pisa.stages.osc.prob3cuda',
-            'pisa.stages.osc.nuCraft',
-            'pisa.stages.osc.prob3',
-            'pisa.stages.pid',
-            'pisa.stages.reco',
-            'pisa.stages.discr_sys',
-            'pisa.stages.xsec',
-            'pisa.resources',
-            'pisa.utils'
-        ],
-        scripts=[
-            'pisa/analysis/hypo_testing.py',
-            'pisa/analysis/hypo_testing_postprocess.py',
-            'pisa/analysis/profile_llh_analysis.py',
-            'pisa/analysis/profile_llh_postprocess.py',
-            'pisa/core/distribution_maker.py',
-            'pisa/core/pipeline.py',
-            'pisa/scripts/fit_discrete_sys.py',
-            'pisa/scripts/fit_discrete_sys_pid.py',
-            'pisa/scripts/make_events_file.py',
-            'pisa/scripts/test_changes_with_combined_pidreco.py',
-            'pisa/scripts/test_consistency_with_pisa2.py',
-            'pisa/scripts/test_consistency_with_oscfit.py'
-        ],
+        packages=find_packages(),
         ext_modules=ext_modules,
         package_data=package_data,
         # Cannot be compressed due to c, pyx, and cu source files that need to
         # be compiled and are inaccessible in zip
-        zip_safe=False
+        zip_safe=False,
+        entry_points={
+            'console_scripts': [
+                # Scripts in analysis dir
+                'hypo_testing.py = pisa.analysis.hypo_testing:main',
+                'hypo_testing_postprocess.py = pisa.analysis.hypo_testing_postprocess:main',
+                'profile_llh_analysis.py = pisa.analysis.profile_llh_analysis:main',
+                'profile_llh_postprocess.py = pisa.analysis.profile_llh_postprocess:main',
+
+                # Scripts in core dir
+                'distribution_maker.py = pisa.core.distribution_maker:main',
+                'pipeline.py = pisa.core.pipeline:main',
+
+                # Scripts in scripts dir
+                'add_flux_to_events_file.py = pisa.scripts.add_flux_to_events_file:main',
+                'compare.py = pisa.scripts.compare:main',
+                'convert_config_format.py = pisa.scripts.convert_config_format:main',
+                'fit_discrete_sys.py = pisa.scripts.fit_discrete_sys:main',
+                'make_asymmetry_plots.py = pisa.scripts.make_asymmetry_plots:main',
+                'make_events_file.py = pisa.scripts.make_events_file:main',
+                'make_nufit_theta23_spline_priors.py = pisa.scripts.make_nufit_theta23_spline_priors:main',
+                'make_toy_events.py = pisa.scripts.make_toy_events:main'
+            ]
+        }
     )
+    if not check_cuda():
+        sys.stderr.write('WARNING: Could not import pycuda; attempt will be '
+                         ' made to install, but if this fails, PISA may not be'
+                         ' able to support CUDA (GPU) accelerations.\n')
+
+
+if __name__ == '__main__':
+    do_setup()

@@ -2,10 +2,13 @@ pip>=1.8
 cython
 dill
 numpy>=1.11.0
+configparser
 scipy>=0.17.0
 simplejson>=3.2.0
-git+https://github.com/hgrecco/pint.git@c5925bfdab09c75a26bb70cd29fb3d34eed56a5f#egg=pint
+pint>=0.8
+svn+http://code.icecube.wisc.edu/svn/sandbox/schoenen/kde/releases/V00-01-01#egg=kde
 h5py
 line_profiler
-matplotlib
+matplotlib>=2.0
 uncertainties
+decorator

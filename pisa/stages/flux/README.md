@@ -1,4 +1,4 @@
-# Stage 1: Flux
+# Stage: Flux
 
 The purpose of this stage is to get the expected flux produced in the atmosphere for different particles at different energies and angles.
 It is therefore possible to reweight a dataset using the effective area to investigate uncertainties from using different flux models.

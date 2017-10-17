@@ -1,6 +1,8 @@
 """
 Classes to store and handle the evaluation of splines.
 """
+
+
 from __future__ import division
 
 import inspect
@@ -13,12 +15,6 @@ from pisa.utils.profiler import profile
 
 
 __all__ = ['Spline', 'CombinedSpline']
-
-
-HASH_SIGFIGS = 12
-"""Round to this many significant figures for hashing numbers, such that
-machine precision doesn't cause effectively equivalent numbers to hash
-differently."""
 
 
 class Spline(object):
@@ -60,7 +56,7 @@ class Spline(object):
         self._hash = hash
 
         if tex is None:
-            tex = flavInt.NuFlavIntGroup(name).tex()
+            tex = flavInt.NuFlavIntGroup(name).tex
 
         # Ensure eval_spl has correct structure
         eval_args = inspect.getargspec(eval_spl).args
@@ -342,8 +338,7 @@ class CombinedSpline(flavInt.FlavIntData):
 
 def test_Spline():
     # TODO(shivesh): tests
-    spl = Spline('numu')
-    print spl
+    pass
 
 
 if __name__ == '__main__':

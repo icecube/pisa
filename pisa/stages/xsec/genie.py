@@ -7,14 +7,15 @@ in order to obtain the relavant cross-sections. Example pipeline settings file
 can be found in
 $PISA/pisa/resources/settings/pipeline/xsec.cfg
 """
+
+
 from itertools import product
 from operator import add
 
 import numpy as np
-import pint; ureg = pint.UnitRegistry()
+import pint
 
-import ROOT
-
+from pisa import ureg
 from pisa.core.stage import Stage
 from pisa.core.map import Map
 from pisa.core.transform import BinnedTensorTransform, TransformSet
@@ -23,9 +24,12 @@ from pisa.utils.flavInt import flavintGroupsFromString, ALL_NUINT_TYPES
 from pisa.utils.flavInt import NuFlavInt, NuFlavIntGroup, FlavIntData
 from pisa.utils.spline import Spline, CombinedSpline
 from pisa.utils.hash import hash_obj
-from pisa.utils.log import logging
+from pisa.utils.log import logging, set_verbosity
 from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
+
+
+__all__ = ['genie', 'test_standard_plots', 'test_per_e_plot']
 
 
 class genie(Stage):
@@ -147,7 +151,7 @@ class genie(Stage):
             transform_groups = flavintGroupsFromString(transform_groups)
             output_names = []
             for grp in transform_groups:
-                flavints = [str(g) for g in grp.flavints()]
+                flavints = [str(g) for g in grp.flavints]
                 if set(flavints).intersection(all_names) \
                    and str(grp) not in output_names:
                     output_names.append(str(grp))
@@ -202,8 +206,10 @@ class genie(Stage):
                 )
 
                 def x(idx):
-                    if idx == e_idx: return xsec_map.hist
-                    else: return range(input_binning.shape[idx])
+                    if idx == e_idx:
+                        return xsec_map.hist
+                    else:
+                        return range(input_binning.shape[idx])
                 num_dims = input_binning.num_dims
                 xsec_trns = np.meshgrid(*map(x, range(num_dims)),
                                         indexing='ij')[e_idx]
@@ -212,21 +218,21 @@ class genie(Stage):
                 xsec_transforms[NuFlavInt(flavint)] = xsec_trns
 
         nominal_transforms = []
-        for flav_int_group in self.transform_groups:
-            flav_names = [str(flav) for flav in flav_int_group.flavs()]
+        for flavint_group in self.transform_groups:
+            flav_names = [str(flav) for flav in flavint_group.flavs]
             for input_name in self.input_names:
                 if input_name not in flav_names:
                     continue
 
                 xform_array = []
-                for flav_int in flav_int_group.flavints():
-                    if flav_int in xsec_transforms:
-                        xform_array.append(xsec_transforms[flav_int])
+                for flavint in flavint_group.flavints:
+                    if flavint in xsec_transforms:
+                        xform_array.append(xsec_transforms[flavint])
                 xform_array = reduce(add, xform_array)
 
                 xform = BinnedTensorTransform(
                     input_names=input_name,
-                    output_name=str(flav_int_group),
+                    output_name=str(flavint_group),
                     input_binning=input_binning,
                     output_binning=self.output_binning,
                     xform_array=xform_array
@@ -238,7 +244,7 @@ class genie(Stage):
     def load_xsec_splines(self):
         """Load the cross-sections splines from the ROOT file."""
         xsec_file = self.params['xsec_file'].value
-        this_hash = hash_obj(xsec_file)
+        this_hash = hash_obj(xsec_file, full_hash=self.full_hash)
         if this_hash == self.xsec_hash:
             self.xsec.reset()
             return
@@ -252,6 +258,10 @@ class genie(Stage):
     def get_combined_xsec(fpath, ver=None):
         """Load the cross-section values from a ROOT file and instantiate a
         CombinedSpline object."""
+        # NOTE: ROOT import here as it is optional but still want to import
+        # module for e.g. building docs
+        import ROOT
+
         fpath = find_resource(fpath)
         logging.info('Loading GENIE ROOT cross-section file {0}'.format(fpath))
 
@@ -300,7 +310,6 @@ class genie(Stage):
             nu_xsec_hist = nu_xsec.to(out_units).magnitude
             return Map(hist=nu_xsec_hist, binning=binning, **kwargs)
 
-
         def validate_spl(binning):
             if np.all(binning.true_energy.midpoints.m > 1E3):
                 raise ValueError('Energy value {0} out of range in array '
@@ -327,7 +336,8 @@ class genie(Stage):
     def _ev_param(parameter):
         if isinstance(parameter, basestring):
             return eval(parameter)
-        else: return parameter
+        else:
+            return parameter
 
     def validate_params(self, params):
         assert isinstance(params['xsec_file'].value, basestring)
@@ -342,9 +352,10 @@ def test_standard_plots(xsec_file, outdir='./'):
     from pisa.utils.plotter import Plotter
     xsec = genie.get_combined_xsec(xsec_file)
 
-    e_bins = MultiDimBinning(OneDimBinning(name='true_energy', tex=r'E$_\nu$',
-                                           num_bins=150, domain=(1E-1, 1E3)*ureg.GeV,
-                                           is_log=True))
+    e_bins = MultiDimBinning(
+        [OneDimBinning(name='true_energy', tex=r'E_\nu', num_bins=150,
+                       domain=(1E-1, 1E3)*ureg.GeV, is_log=True)]
+    )
     xsec.compute_maps(e_bins)
 
     logging.info('Making plots for genie xsec_maps')
@@ -359,9 +370,10 @@ def test_per_e_plot(xsec_file, outdir='./'):
     from pisa.utils.plotter import Plotter
     xsec = genie.get_combined_xsec(xsec_file)
 
-    e_bins = MultiDimBinning(OneDimBinning(name='true_energy', tex=r'E$_\nu$',
-                                           num_bins=200, domain=(1E-1, 1E3)*ureg.GeV,
-                                           is_log=True))
+    e_bins = MultiDimBinning(
+        [OneDimBinning(name='true_energy', tex=r'E_\nu', num_bins=200,
+                       domain=(1E-1, 1E3)*ureg.GeV, is_log=True)]
+    )
     xsec.compute_maps(e_bins)
     xsec.scale_maps(1./e_bins.true_energy.bin_widths)
 
@@ -372,9 +384,9 @@ def test_per_e_plot(xsec_file, outdir='./'):
     maps = xsec.return_mapset()
     plot_obj.plot_xsec(maps, ylim=(3.5E-41, 3E-40))
 
+
 if __name__ == '__main__':
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-    from pisa.utils.log import set_verbosity
     set_verbosity(3)
 
     parser = ArgumentParser(description='Test genie xsec service',

@@ -5,21 +5,24 @@
 #
 # date:   October 24, 2015
 """
-Generate a PISA-standard-format events HDF5 file from HDF5 file(s) generated
-from I3 files by the icecube.hdfwriter.I3HDFTableService
+Take simulated (and reconstructed) HDF5 file(s) (as converted from I3 by
+icecube.hdfwriter.I3HDFTableService) as input and writes out a simplified HDF5
+file for use with PISA.
 """
+
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
 from copy import deepcopy
 import os
+import sys
 
 import numpy as np
 
 from pisa.core.events import Events
 from pisa.utils.dataProcParams import DataProcParams
 from pisa.utils.format import list2hrlist
-from pisa.utils.fileio import expandPath, mkdir, to_file
+from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.flavInt import (FlavIntData, NuFlav, NuFlavIntGroup,
                                 ALL_NUFLAVINTS, ALL_NUINT_TYPES, xlateGroupsStr)
 from pisa.utils.log import logging, set_verbosity
@@ -27,7 +30,23 @@ from pisa.utils.mcSimRunSettings import DetMCSimRunsSettings
 from pisa.utils.resources import find_resource
 
 
-__all__ = ['makeEventsFile', 'powerLawIntegral']
+__all__ = ['EXAMPLE', 'CMSQ_TO_MSQ', 'EXTRACT_FIELDS', 'OUTPUT_FIELDS',
+           'powerLawIntegral', 'makeEventsFile',
+           'parse_args', 'main']
+
+
+EXAMPLE = """
+Example command-line usage:
+
+make_events_file.py
+    --det "PINGU"
+    --proc "V5.1"
+    --run 390 ~/data/390/icetray_hdf5/*.hdf5
+    --run 389 ~/data/389/icetray_hdf5/*.hdf5
+    --run 388 ~/data/388/icetray_hdf5/*.hdf5
+    -vv
+    --outdir /tmp/events/
+"""
 
 
 CMSQ_TO_MSQ = 1.0e-4
@@ -62,7 +81,7 @@ def powerLawIntegral(E0, E1, gamma):
     import sympy as sym
     E = sym.Symbol('E')
     I = sym.integrate(E**(-gamma), E)
-    return I.evalf(subs={E:E1}) - I.evalf(subs={E:E0})
+    return I.evalf(subs={E: E1}) - I.evalf(subs={E: E0})
 
 
 def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
@@ -178,7 +197,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
     bin_edges = set()
 
     runs_by_flavint = FlavIntData()
-    for flavint in runs_by_flavint.flavints():
+    for flavint in runs_by_flavint.flavints:
         runs_by_flavint[flavint] = []
 
     #ngen_flavint_by_run = {run:FlavIntData() for run in runs}
@@ -199,7 +218,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
     #        ngen_flavint_by_run[run][flavint] = \
     #                xsec.get_xs_ratio_integral(
     #                    flavintgrp0=flavint,
-    #                    flavintgrp1=flavint.flav(),
+    #                    flavintgrp1=flavint.flav,
     #                    e_range=e_range,
     #                    gamma=gamma,
     #                    average=True
@@ -227,7 +246,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
     detector_geom = run_settings[runs[0]]['geom']
 
     # Create Events object to store data
-    evts = events.Events()
+    evts = Events()
     evts.metadata.update({
         'detector': run_settings.detector,
         'proc_ver': data_proc_params.proc_ver,
@@ -247,7 +266,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
             cuts.append(ccut)
 
     orig_outdir = outdir
-    outdir = expandPath(outdir)
+    outdir = expand(outdir)
     logging.info('Output dir spec\'d: %s', orig_outdir)
     if outdir != orig_outdir:
         logging.info('Output dir expands to: %s', outdir)
@@ -288,7 +307,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
     # The data structure looks like:
     #   extracted_data[group #][interaction type][field name] = list of data
     if extract_fields is None:
-        extracted_data =  [
+        extracted_data = [
             {
                 inttype: {} for inttype in ALL_NUINT_TYPES
             }
@@ -297,7 +316,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
     else:
         extracted_data = [
             {
-                inttype: {field:[] for field in extract_fields}
+                inttype: {field: [] for field in extract_fields}
                 for inttype in ALL_NUINT_TYPES
             }
             for _ in flavintgrp_names
@@ -307,7 +326,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
     # CClseparately from NC because aeff's for CC & NC add, whereas
     # aeffs intra-CC should be weighted-averaged (as for intra-NC)
     ngen = [
-        {inttype:{} for inttype in ALL_NUINT_TYPES}
+        {inttype: {} for inttype in ALL_NUINT_TYPES}
         for _ in flavintgrp_names
     ]
 
@@ -327,7 +346,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
                 data = data_proc_params.getData(fname,
                                                 run_settings=run_settings)
             except (ValueError, KeyError, IOError):
-                logging.warn('Bad file encountered: %s' %fname)
+                logging.warn('Bad file encountered: %s', fname)
                 bad_files.append(fname)
                 continue
 
@@ -351,8 +370,8 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
 
             # Loop through all flavints spec'd for run
             for run_flavint in rs_run['flavints']:
-                barnobar = run_flavint.barNoBar()
-                int_type = run_flavint.intType()
+                barnobar = run_flavint.bar_code
+                int_type = run_flavint.intType
 
                 # Retrieve this-interaction-type- & this-barnobar-only events
                 # that also pass cuts. (note that cut names are strings)
@@ -369,11 +388,11 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
                         continue
 
                     # Instantiate a field for particles and antiparticles,
-                    # keyed by the output of the barNoBar() method for each
+                    # keyed by the output of the bar_code property for each
                     if not run in ngen[grp_n][int_type]:
                         ngen[grp_n][int_type][run] = {
-                            NuFlav(12).barNoBar(): 0,
-                            NuFlav(-12).barNoBar(): 0,
+                            NuFlav(12).bar_code: 0,
+                            NuFlav(-12).bar_code: 0,
                         }
 
                     # Record count only if it hasn't already been recorded
@@ -397,15 +416,16 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
                                 intonly_cut_data[f]
                             )
                     else:
-                        [extracted_data[grp_n][int_type][f].extend(
-                            intonly_cut_data[f])
-                         for f in extract_fields]
-        logging.info('File count for run %s: %d' %(run, file_count))
+                        for f in extract_fields:
+                            extracted_data[grp_n][int_type][f].extend(
+                                intonly_cut_data[f]
+                            )
+        logging.info('File count for run %s: %d', run, file_count)
     to_file(bad_files, '/tmp/bad_files.json')
 
     if ((output_fields is None
          and (extract_fields is None or 'one_weight' in extract_fields))
-        or 'weighted_aeff' in output_fields):
+            or 'weighted_aeff' in output_fields):
         fmtfields = (' '*12+'flavint_group',
                      'int type',
                      '     run',
@@ -418,15 +438,15 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
         logging.info(fmt % fmtfields)
         logging.info(lines)
         for grp_n, flavint_group in enumerate(flavint_groupings):
-            for int_type in set([fi.intType() for fi in
-                                 flavint_group.flavints()]):
+            for int_type in set([fi.intType for fi in
+                                 flavint_group.flavints]):
                 ngen_it_tot = 0
                 for run, run_counts in ngen[grp_n][int_type].iteritems():
                     for barnobar, barnobar_counts in run_counts.iteritems():
                         ngen_it_tot += barnobar_counts
                         logging.info(
                             fmt %
-                            (flavint_group.simpleStr(), int_type, str(run),
+                            (flavint_group.simple_str(), int_type, str(run),
                              barnobar, int(barnobar_counts), int(ngen_it_tot))
                         )
                 # Convert data to numpy array
@@ -445,16 +465,16 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
 
     # Report file count per run
     for run, count in filecount.items():
-        logging.info('Files read, run %s: %d' % (run, count))
+        logging.info('Files read, run %s: %d', run, count)
         ref_num_i3_files = run_settings[run]['num_i3_files']
         if count != ref_num_i3_files:
             logging.warn('Run %s, Number of files read (%d) != number of '
-                         'source I3 files (%d), which may indicate an error.' %
-                         (run, count, ref_num_i3_files))
+                         'source I3 files (%d), which may indicate an error.',
+                         run, count, ref_num_i3_files)
 
     # Generate output data
     for flavint in ALL_NUFLAVINTS:
-        int_type = flavint.intType()
+        int_type = flavint.intType
         for grp_n, flavint_group in enumerate(flavint_groupings):
             if not flavint in flavint_group:
                 logging.trace('flavint %s not in flavint_group %s, passing.' %
@@ -504,22 +524,8 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
 
 def parse_args():
     """Get command line arguments"""
-
     parser = ArgumentParser(
-        description='''Takes the simulated (and reconstructed) HDF5 file(s) (as
-        converted from I3 by icecube.hdfwriter.I3HDFTableService) as input and
-        writes out a simplified HDF5 file for use in the aeff and reco stages
-        of the template maker.
-
-        Example:
-            $PISA/pisa/i3utils/make_events_file.py \
-                --det "PINGU" \
-                --proc "V5.1" \
-                --run 390 ~/data/390/source_hdf5/*.hdf5 \
-                --run 389 ~/data/389/source_hdf5/*.hdf5 \
-                --run 388 ~/data/388/source_hdf5/*.hdf5 \
-                -vv \
-                --outdir /tmp/events/''',
+        description=__doc__ + EXAMPLE,
         formatter_class=ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
@@ -669,7 +675,7 @@ def parse_args():
     return args
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
     set_verbosity(args.verbose)
 
@@ -689,7 +695,7 @@ if __name__ == "__main__":
         data_proc_params=find_resource(args.data_proc_params)
     )
 
-    logging.info('Using detector %s, processing version %s.' % (det, proc))
+    logging.info('Using detector %s, processing version %s.', det, proc)
 
     extract_fields = deepcopy(EXTRACT_FIELDS)
     output_fields = deepcopy(OUTPUT_FIELDS)
@@ -737,3 +743,7 @@ if __name__ == "__main__":
             extract_fields=None, #extract_fields,
             output_fields=None, #output_fields,
         )
+
+
+if __name__ == "__main__":
+    main()

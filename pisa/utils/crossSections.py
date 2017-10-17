@@ -9,6 +9,9 @@ Define CrossSections class for importing, working with, and storing neutrino
 cross sections
 """
 
+
+from __future__ import division
+
 from copy import deepcopy
 import os, sys
 
@@ -16,7 +19,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from pisa.utils.resources import find_resource
-from pisa.utils.fileio import expandPath, from_file, to_file
+from pisa.utils.fileio import expand, from_file, to_file
 from pisa.utils import flavInt
 from pisa.utils.log import logging, set_verbosity
 
@@ -304,7 +307,7 @@ class CrossSections(flavInt.FlavIntData):
         """
         if flavintgroup is None:
             flavintgroups = [flavInt.NuFlavIntGroup(fi)
-                             for fi in self.flavints()]
+                             for fi in self.flavints]
         else:
             flavintgroups = [flavInt.NuFlavIntGroup(flavintgroup)]
 
@@ -336,13 +339,13 @@ class CrossSections(flavInt.FlavIntData):
         """
         flavintgroup = flavInt.NuFlavIntGroup(flavintgroup)
         # Trivial case: nothing to combine
-        if len(flavintgroup.flavints()) == 1:
-            return self[flavintgroup.flavints()[0]]
+        if len(flavintgroup.flavints) == 1:
+            return self[flavintgroup.flavints[0]]
 
-        cc_flavints = flavintgroup.ccFlavInts()
-        nc_flavints = flavintgroup.ncFlavInts()
+        cc_flavints = flavintgroup.cc_flavints
+        nc_flavints = flavintgroup.nc_flavints
         if cc_flavints and nc_flavints:
-            assert flavintgroup.ccFlavs() == flavintgroup.ncFlavs(), \
+            assert flavintgroup.cc_flavs == flavintgroup.nc_flavs, \
                     'Combining CC and NC but CC flavors do not match NC flavors'
         cc_avg_xs = 0
         if cc_flavints:
@@ -526,20 +529,20 @@ class CrossSections(flavInt.FlavIntData):
 
         energy = self.energy
         nc_n = cc_n = 0
-        for flavint in list(flavInt.ALL_NUFLAVINTS.particles()) + \
-                list(flavInt.ALL_NUFLAVINTS.antiParticles()):
+        for flavint in list(flavInt.ALL_NUFLAVINTS.particles) + \
+                list(flavInt.ALL_NUFLAVINTS.antiparticles):
             # Convert from [m^2] to [1e-38 cm^2]
             xs = self[flavint] * 1e38 * 1e4
-            if flavint.isCC():
+            if flavint.cc:
                 ax1.plot(energy, xs/energy,
                          alpha=alpha,
-                         label=flavInt.tex(flavint.flav(), d=1),
+                         label=flavInt.tex(flavint.flav, d=1),
                          **ls[cc_n%len(ls)])
                 cc_n += 1
             else:
                 ax2.plot(energy, xs/energy,
                          alpha=alpha,
-                         label=flavInt.tex(flavint.flav(), d=1),
+                         label=flavInt.tex(flavint.flav, d=1),
                          **ls[nc_n%len(ls)])
                 nc_n += 1
 
@@ -571,60 +574,69 @@ class CrossSections(flavInt.FlavIntData):
 
 
 def test_CrossSections(outdir=None):
-    import tempfile
-    set_verbosity(2)
+    from shutil import rmtree
+    from tempfile import mkdtemp
+
+    remove_dir = False
     if outdir is None:
-        outdir = tempfile.mkdtemp()
+        remove_dir = True
+        outdir = mkdtemp()
 
-    # "Standard" location of cross sections file in PISA; retrieve 2.6.4 for
-    # testing purposes
-    pisa_xs_file = 'cross_sections/cross_sections.json'
-    xs = CrossSections(ver='genie_2.6.4', xsec=pisa_xs_file)
-
-    # Location of the root file to use (not included in PISA at the moment)
-    test_dir = expandPath(os.path.join('$PISA', 'tests', 'cross_sections'))
-    #ROOT_xs_file = os.path.join(test_dir, 'genie_2.6.4_simplified.root')
-    ROOT_xs_file = find_resource(os.path.join(
-        'tests', 'data', 'xsec', 'genie_2.6.4_simplified.root'
-    ))
-
-    # Make sure that the XS newly-imported from ROOT match those stored in PISA
-    if os.path.isfile(ROOT_xs_file):
-        xs_from_root = CrossSections.newFromROOT(ROOT_xs_file,
-                                                 ver='genie_2.6.4')
-        logging.info('Found and loaded ROOT source cross sections file %s'
-                     % ROOT_xs_file)
-        #assert xs_from_root.allclose(xs, rtol=1e-7)
-
-    # Check XS ratio for numu_cc to numu_cc + numu_nc (user must inspect)
-    kg0 = flavInt.NuFlavIntGroup('numu_cc')
-    kg1 = flavInt.NuFlavIntGroup('numu_nc')
-    logging.info('\\int_1^80 xs(numu_cc) E^{-1} dE = %e' %
-                 xs.get_xs_ratio_integral(kg0, None, e_range=[1, 80], gamma=1))
-    logging.info('(int E^{-gamma} * (sigma_numu_cc)/'
-                 'int(sigma_(numu_cc+numu_nc)) dE) /'
-                 ' (int E^{-gamma} dE) = %e' %
-                 xs.get_xs_ratio_integral(kg0, kg0+kg1, e_range=[1, 80],
-                                          gamma=1, average=True))
-    # Check that XS ratio for numu_cc+numu_nc to the same is 1.0
-    assert xs.get_xs_ratio_integral(kg0+kg1, kg0+kg1, e_range=[1, 80], gamma=1,
-                                    average=True) == 1.0
-
-    # Check via plot that the
-
-    # Plot all cross sections stored in PISA xs file
     try:
-        alldata = from_file(pisa_xs_file)
-        xs_versions = alldata.keys()
-        for ver in xs_versions:
-            xs = CrossSections(ver=ver, xsec=pisa_xs_file)
-            xs.plot(save=os.path.join(
-                outdir, 'pisa_' + ver + '_nuxCCNC_H2O_cross_sections.pdf'
-            ))
-    except ImportError as exc:
-        logging.debug('Could not plot; possible that matplotlib not'
-                      'installed. ImportError: %s' % exc)
+        # "Standard" location of cross sections file in PISA; retrieve 2.6.4 for
+        # testing purposes
+        pisa_xs_file = 'cross_sections/cross_sections.json'
+        xs = CrossSections(ver='genie_2.6.4', xsec=pisa_xs_file)
+
+        # Location of the root file to use (not included in PISA at the moment)
+        test_dir = expand(os.path.join('$PISA', 'tests', 'cross_sections'))
+        #ROOT_xs_file = os.path.join(test_dir, 'genie_2.6.4_simplified.root')
+        ROOT_xs_file = find_resource(os.path.join(
+            'tests', 'data', 'xsec', 'genie_2.6.4_simplified.root'
+        ))
+
+        # Make sure that the XS newly-imported from ROOT match those stored in PISA
+        if os.path.isfile(ROOT_xs_file):
+            xs_from_root = CrossSections.newFromROOT(ROOT_xs_file,
+                                                     ver='genie_2.6.4')
+            logging.info('Found and loaded ROOT source cross sections file %s'
+                         % ROOT_xs_file)
+            #assert xs_from_root.allclose(xs, rtol=1e-7)
+
+        # Check XS ratio for numu_cc to numu_cc + numu_nc (user must inspect)
+        kg0 = flavInt.NuFlavIntGroup('numu_cc')
+        kg1 = flavInt.NuFlavIntGroup('numu_nc')
+        logging.info('\\int_1^80 xs(numu_cc) E^{-1} dE = %e' %
+                     xs.get_xs_ratio_integral(kg0, None, e_range=[1, 80], gamma=1))
+        logging.info('(int E^{-gamma} * (sigma_numu_cc)/'
+                     'int(sigma_(numu_cc+numu_nc)) dE) /'
+                     ' (int E^{-gamma} dE) = %e' %
+                     xs.get_xs_ratio_integral(kg0, kg0+kg1, e_range=[1, 80],
+                                              gamma=1, average=True))
+        # Check that XS ratio for numu_cc+numu_nc to the same is 1.0
+        assert xs.get_xs_ratio_integral(kg0+kg1, kg0+kg1, e_range=[1, 80], gamma=1,
+                                        average=True) == 1.0
+
+        # Check via plot that the
+
+        # Plot all cross sections stored in PISA xs file
+        try:
+            alldata = from_file(pisa_xs_file)
+            xs_versions = alldata.keys()
+            for ver in xs_versions:
+                xs = CrossSections(ver=ver, xsec=pisa_xs_file)
+                xs.plot(save=os.path.join(
+                    outdir, 'pisa_' + ver + '_nuxCCNC_H2O_cross_sections.pdf'
+                ))
+        except ImportError as exc:
+            logging.debug('Could not plot; possible that matplotlib not'
+                          'installed. ImportError: %s' % exc)
+
+    finally:
+        if remove_dir:
+            rmtree(outdir)
 
 
 if __name__ == "__main__":
+    set_verbosity(1)
     test_CrossSections()
