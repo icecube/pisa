@@ -204,8 +204,6 @@ def load_2D_table(flux_file, enpow=1, returnTable=False):
         raise ValueError('Azimuth-averaged tables are expected')
     if 'honda' not in flux_file:
         if 'bartol' in flux_file:
-            logging.warn('WARNING - Usage of the Bartol files in '
-                         'integral-preserving mode will give WRONG results.')
             if returnTable:
                 spline_dict, flux_dict = load_2D_Bartol_table(flux_file,
                                                               enpow=enpow,
