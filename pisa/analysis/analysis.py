@@ -605,14 +605,27 @@ class Analysis(object):
         """
         fit_info = OrderedDict()
         fit_info['metric'] = metric
-        fit_info['metric_val'] = data_dist.metric_total(
-            expected_values=hypo_asimov_dist,
-            metric=metric
-        )
 
         # NOTE: Select params but *do not* reset to nominal values to record
         # the current (presumably already optimal) param values
         hypo_maker.select_params(hypo_param_selections)
+
+        # Assess the fit: whether the data came from the hypo_asimov_dist
+        try:
+            metric_val = (
+                data_dist.metric_total(expected_values=hypo_asimov_dist,
+                                       metric=metric)
+                + hypo_maker.params.priors_penalty(metric=metric)
+            )
+        except:
+            if not blind:
+                logging.error(
+                    'Failed when computing metric with free params %s',
+                    hypo_maker.params.free
+                )
+            raise
+
+        fit_info['metric_val'] = metric_val
 
         if blind:
             # Okay, if blind analysis is being performed, reset the values so
