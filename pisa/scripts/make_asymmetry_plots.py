@@ -35,7 +35,7 @@ __all__ = ['plot_asymmetry', 'parse_args', 'normcheckpath', 'main']
 
 
 def plot_asymmetry(h0_map, h0_name, h1_map, h1_name, fulltitle, savename,
-                   outdir, ftype='pdf'):
+                   outdir, atype='asymmetry', ftype='pdf'):
     matplotlib.rcParams['font.family'] = 'sans-serif'
     matplotlib.rcParams['mathtext.fontset'] = 'stixsans'
 
@@ -43,9 +43,17 @@ def plot_asymmetry(h0_map, h0_name, h1_map, h1_name, fulltitle, savename,
     fig, axes = plt.subplots(nrows=1, ncols=3, gridspec_kw=gridspec_kw,
                              sharex=False, sharey=False, figsize=(15, 5))
 
-    asymmetry_hist = (h1_map.hist-h0_map.hist) / np.sqrt(h0_map.hist)
+    if atype == 'asymmetry':
+        asymmetry_hist = (h1_map.hist-h0_map.hist) / np.sqrt(h0_map.hist)
+    elif atype == 'difference':
+        asymmetry_hist = (h1_map.hist-h0_map.hist)
+    elif atype == 'fraction':
+        asymmetry_hist = (h1_map.hist-h0_map.hist) / h0_map.hist
+    elif atype == 'percentage':
+        asymmetry_hist = (h1_map.hist-h0_map.hist) / h0_map.hist * 100.0
+        
     asymmetry_to_plot = Map(
-        name='asymmetry',
+        name=atype,
         hist=asymmetry_hist,
         binning=h0_map.binning
     )
@@ -76,7 +84,7 @@ def plot_asymmetry(h0_map, h0_name, h1_map, h1_name, fulltitle, savename,
     asymmetry_to_plot.plot(
         fig=fig,
         ax=axes[2],
-        title='Asymmetry',
+        title='%s'%atype,
         symm=True,
         cmap=plt.cm.seismic
     )
@@ -85,7 +93,7 @@ def plot_asymmetry(h0_map, h0_name, h1_map, h1_name, fulltitle, savename,
     plt.suptitle(fulltitle, size='xx-large')
     if savename != '' and savename[-1] != '_':
         savename += '_'
-    fname = '%s%s_%s_asymmetry.pdf' % (savename, h0_name, h1_name)
+    fname = '%s%s_%s_%s.pdf' % (savename, h0_name, h1_name, atype)
     fname = fname.replace(' ', '_')
     mkdir(outdir, warn=False)
     fig.savefig(os.path.join(outdir, fname))
@@ -154,6 +162,23 @@ def parse_args():
         help='Name of selection to put in histogram titles'
     )
     parser.add_argument(
+        '--atype',
+        type=str, default='asymmetry',
+        help='''Type of asymmetry to plot. Choices are: asymmetry,
+        difference, fraction and percentage. Asymmetry (default) is
+        the Akhmedov (h1-h0)/sqrt(h0). Difference is (h1-h0). Fraction
+        is (h1-h0)/h0 and percentage is fraction * 100.0.'''
+    )
+    parser.add_argument(
+        '--return-bits',
+        action='store_true',
+        help='''Flag this if you want the asymmetry plots to be between
+        the separated outputs of the config files. If this is not flagged
+        then the outputs will be summed together in to a 'total' map.
+        If PID is used as a stage rather than a binning dimension then
+        this should be flagged.'''
+    )
+    parser.add_argument(
         '--allow-dirty',
         action='store_true',
         help='''Warning: Use with caution. (Allow for run despite dirty
@@ -200,6 +225,8 @@ def main():
 
     detector = init_args_d.pop('detector')
     selection = init_args_d.pop('selection')
+    atype = init_args_d.pop('atype')
+    return_total = not init_args_d.pop('return_bits')
 
     # Normalize and convert `*_pipeline` filenames; store to `*_maker`
     # (which is argument naming convention that HypoTesting init accepts).
@@ -241,9 +268,14 @@ def main():
     for h0_pipeline in h0_maker.pipelines:
         # Need a special case where PID is a separate stage
         if 'pid' in h0_pipeline.stage_names:
+            if return_total:
+                raise ValueError(
+                    "PID is a separate stage but you have requested"
+                    " return_total in the arguments to this script."
+                )
             return_h0_sum = False
         else:
-            return_h0_sum = True
+            return_h0_sum = return_total
     h0_maps = h0_maker.get_outputs(return_sum=return_h0_sum)
 
     # Assume just a singular pipeline used here.
@@ -256,15 +288,28 @@ def main():
     for h1_pipeline in h1_maker.pipelines:
         # Need a special case where PID is a separate stage
         if 'pid' in h1_pipeline.stage_names:
+            if return_total:
+                raise ValueError(
+                    "PID is a separate stage but you have requested"
+                    " return_total in the arguments to this script."
+                )
             return_h1_sum = False
         else:
-            return_h1_sum = True
+            return_h1_sum = return_total
     h1_maps = h1_maker.get_outputs(return_sum=return_h1_sum)
 
     # Assume just a singular pipeline used here.
     # Not sure how else to deal with PID as a separate stage.
     if not return_h1_sum:
         h1_maps = h1_maps[0]
+
+    if not sorted(h0_maps.names) == sorted(h1_maps.names):
+        raise ValueError(
+            "The output names of your h0 and h1 pipelines "
+            "do not agree - %s and %s."%(
+                sorted(h0_maps.names), sorted(h1_maps.names)
+            )
+        )
 
     det_sel = []
     if detector.strip() != '':
@@ -297,7 +342,8 @@ def main():
             h1_name='%s' % args.h1_name,
             fulltitle='%sevents identified as track' % det_sel_plot_label,
             savename='%strck' % det_sel_file_label,
-            outdir=args.logdir
+            outdir=args.logdir,
+            atype=atype
         )
 
         plot_asymmetry(
@@ -308,52 +354,84 @@ def main():
             fulltitle=('%sevents identified as cascade'
                        % det_sel_plot_label),
             savename='%scscd' % det_sel_file_label,
-            outdir=args.logdir
+            outdir=args.logdir,
+            atype=atype
         )
 
     # Otherwise, PID is assumed to be a binning dimension
+    elif 'pid' in h0_maps[h0_maps.names[0]].binning.names:
+
+        for map_name in h0_maps.names:
+            h0_map = h0_maps[map_name]
+            h0_map.set_errors(error_hist=None)
+
+            h1_map = h1_maps[map_name]
+            h1_map.set_errors(error_hist=None)
+
+            pid_names = h0_map.binning['pid'].bin_names
+            if pid_names != h1_map.binning['pid'].bin_names:
+                raise ValueError(
+                    "h0 and h1 maps must have same PID bin names"
+                    " in order to make the asymmetry plots"
+                )
+            if pid_names is None:
+                logging.warn(
+                    "There are no names given for the PID bins, thus "
+                    "they will just be numbered in both the the plot "
+                    "save names and titles."
+                )
+                pid_names = [
+                    x for x in range(0, h0_map.binning['pid'].num_bins)
+                ]
+
+            for pid_name in pid_names:
+                    
+                h0_to_plot = h0_map.split(
+                    dim='pid',
+                    bin=pid_name
+                )
+                
+                h1_to_plot = h1_map.split(
+                    dim='pid',
+                    bin=pid_name
+                )
+
+                if isinstance(pid_name, int):
+                    pid_name = 'PID Bin %i' % (pid_name)
+
+                plot_asymmetry(
+                    h0_map=h0_to_plot,
+                    h1_map=h1_to_plot,
+                    h0_name='%s' % args.h0_name,
+                    h1_name='%s' % args.h1_name,
+                    fulltitle=('%sevents identified as %s'
+                               % (det_sel_plot_label, pid_name)),
+                    savename=('%s_%s%s' % (map_name,
+                                           det_sel_file_label,
+                                           pid_name)),
+                    outdir=args.logdir,
+                    atype=atype
+                )
+
     else:
 
-        h0_map = h0_maps['total']
-        h0_map.set_errors(error_hist=None)
-
-        h1_map = h1_maps['total']
-        h1_map.set_errors(error_hist=None)
-
-        pid_names = h0_map.binning['pid'].bin_names
-        if pid_names != h1_map.binning['pid'].bin_names:
-            raise ValueError('h0 and h1 maps must have same PID bin names in '
-                             'order to make the asymmetry plots')
-        if pid_names is None:
-            logging.warn('There are no names given for the PID bins, thus '
-                         'they will just be numbered in both the the plot '
-                         'save names and titles.')
-            pid_names = [x for x in range(0, h0_map.binning['pid'].num_bins)]
-
-        for pid_name in pid_names:
-
-            h0_to_plot = h0_map.split(
-                dim='pid',
-                bin=pid_name
-            )
-
-            h1_to_plot = h1_map.split(
-                dim='pid',
-                bin=pid_name
-            )
-
-            if isinstance(pid_name, int):
-                pid_name = 'PID Bin %i' % (pid_name)
+        for map_name in h0_maps.names:
+            
+            h0_map = h0_maps[map_name]
+            h0_map.set_errors(error_hist=None)
+            
+            h1_map = h1_maps[map_name]
+            h1_map.set_errors(error_hist=None)
 
             plot_asymmetry(
-                h0_map=h0_to_plot,
-                h1_map=h1_to_plot,
+                h0_map=h0_map,
+                h1_map=h1_map,
                 h0_name='%s' % args.h0_name,
                 h1_name='%s' % args.h1_name,
-                fulltitle=('%sevents identified as %s'
-                           % (det_sel_plot_label, pid_name)),
-                savename=('%s%s' % (det_sel_file_label, pid_name)),
-                outdir=args.logdir
+                fulltitle=('%sevents'%(det_sel_plot_label)),
+                savename=('%s_%s' % (map_name, det_sel_file_label)),
+                outdir=args.logdir,
+                atype=atype
             )
 
 

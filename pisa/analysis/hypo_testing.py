@@ -28,10 +28,13 @@ import sys
 import time
 from traceback import format_exception
 
+import numpy as np
+
 from pisa import ureg, _version, __version__
 from pisa.analysis.analysis import Analysis
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.map import MapSet
+from pisa.core.prior import Prior
 from pisa.utils.comparisons import normQuant
 from pisa.utils.fileio import from_file, get_valid_filename, mkdir, to_file
 from pisa.utils.hash import hash_obj
@@ -504,8 +507,8 @@ class HypoTesting(Analysis):
 
         # Storage for most recent Asimov (un-fluctuated) distributions
         self.toy_data_asimov_dist = None
-        self.h0_fid_asimov_dist = None
-        self.h1_fid_asimov_dist = None
+        self.h0_fid_asimov_dist = h0_fid_asimov_dist
+        self.h1_fid_asimov_dist = h1_fid_asimov_dist
 
         # Storage for most recent "data" (either un-fluctuated--if Asimov
         # analysis being run or if actual data is being used--or fluctuated--if
@@ -1312,7 +1315,9 @@ class HypoTesting(Analysis):
         summary['data_name'] = self.labels.data_name
         summary['data_is_data'] = self.data_is_data
         summary['data_hash'] = self.data_hash
-        summary['data_param_selections'] = ','.join(self.data_param_selections)
+        if not self.data_is_data:
+            summary['data_param_selections'] = ','.join(
+                self.data_param_selections)
         summary['data_params_hash'] = self.data_maker.params.hash
         summary['data_params'] = [str(p) for p in self.data_maker.params]
         summary['data_pipelines'] = self.summarize_dist_maker(self.data_maker)
@@ -1483,8 +1488,453 @@ class HypoTesting(Analysis):
         to_file(info, os.path.join(dirpath, label + '.json.bz2'),
                 sort_keys=False)
 
+    def set_param_ranges(self, selection, test_name, rangetuple, inj_units):
+        """Give the parameter in hypo_testing selected by selection
+        (if not None) with name test_name a range defined by
+        rangetuple. This should have the correct units even if the
+        rangetuple units did not match those of the original parameter
+        and also will stay positive if the original range did.
 
-def parse_args(description=__doc__):
+        Parameters
+        ----------
+        selection : string or None
+            Parameter selection e.g. nh or ih.
+
+        test_name : string
+            Parameter name e.g. theta23.
+
+        rangetuple : tuple
+            Tuple for the parameter range.
+
+        inj_units : string
+            Units for this parameter as defined in the config file, so
+            the tuple can be converted if needed.
+
+        """
+        if selection is not None:
+            self.h0_maker.select_params([selection])
+            self.h1_maker.select_params([selection])
+        if self.h0_maker.params[test_name].range is not None:
+            enforce_positive = self.h0_maker.params[test_name].range[0] >= 0
+        else:
+            enforce_positive = False
+        # Convert the units if necessary
+        if self.h0_maker.params[test_name].units != inj_units:
+            newminrangeval = rangetuple[0].to(
+                self.h0_maker.params[test_name].units
+            )
+            newmaxrangeval = rangetuple[1].to(
+                self.h0_maker.params[test_name].units
+            )
+            rangetuple = (newminrangeval, newmaxrangeval)
+        # Make the lower end equal to zero if it needs to be
+        if enforce_positive and rangetuple[0] < 0:
+            newminrangeval = 0.0 * ureg(inj_units)
+            newminrangeval = newminrangeval.to(
+                self.h0_maker.params[test_name].units
+            )
+            rangetuple = (newminrangeval, rangetuple[1])
+        self.h0_maker.params[test_name].range = rangetuple
+        self.h1_maker.params[test_name].range = rangetuple
+        if selection is not None:
+            # Only modify the data maker range if the signs match
+            if np.sign(self.data_maker.params[test_name].value.magnitude) \
+               == np.sign(rangetuple[1].magnitude):
+                self.data_maker.params[test_name].range = rangetuple
+        else:
+            self.data_maker.params[test_name].range = rangetuple
+
+    def do_asimov_fits(self):
+        """Set up the logging and does an Asimov analysis. Used in the
+        injected parameter scans and the systematic tests."""
+        # Setup logging and things.
+        self.setup_logging(reset_params=False)
+        self.write_config_summary(reset_params=False)
+        self.write_minimizer_settings()
+        self.write_run_info()
+        # Now do the fits
+        self.generate_data()
+        self.fit_hypos_to_data()
+        self.produce_fid_data()
+        self.fit_hypos_to_fid()
+
+    def reset_makers(self, data=True, h0=True, h1=True):
+        """Reset the makers. Set the booleans to false if you don't
+        want to reset one or more of the makers. Used in the injected
+        parameter scans and the systematic tests."""
+        if data:
+            self.data_maker.params.reset_free()
+        if h0:
+            self.h0_maker.params.reset_free()
+        if h1:
+            self.h1_maker.params.reset_free()
+
+    def clear_data(self):
+        """Clear the data distributions so that they are regenerated. This is
+        needed for making multiple different data distributions (parameter
+        scans, systematics tests) with the same hypo_testing object."""
+        self.data_dist = None
+        self.toy_data_asimov_dist = None
+
+    def asimov_inj_param_scan(self, param_name, test_name, inj_vals,
+                              requested_vals, h0_name, h1_name, data_name):
+        """Perform the Asimov hypo testing analysis over some injected data
+        parameter. This will be the parameter specified by test_name and the
+        injected values are in inj_vals. The requested vals from the command
+        line are also given for making labels for all of the output
+        directories.
+
+        Parameters
+        ----------
+        param_name : string
+            The name of the parameter to do the scan over.
+
+        test_name : string
+            The name of the parameter as it is defined in the config files.
+            This is used, for example, when the scan is over sin2theta23,
+            but therefore it's a scan over theta23 in the config file.
+
+        inj_vals : list
+            The list of scan values to actually be used in the makers.
+
+        requested_vals : list
+            The list of scan values passed by the user. This may not be
+            the same as inj_vals in cases where, for example, the units
+            had to be changed or the scan is over some special variable
+            such as sin2theta23.
+
+        *_name : string
+            Same as for the HypoTesting class.
+
+        """
+        # Scan over the injected values. We also loop over the requested vals
+        # here in case they are different so that value can be put in labels
+        for inj_val, requested_val in zip(inj_vals, requested_vals):
+            # Be sure to inject the right value!
+            if isinstance(inj_val, dict):
+                for hierarchy in ['nh', 'ih']:
+                    self.h0_maker.select_params([hierarchy])
+                    self.h1_maker.select_params([hierarchy])
+                    inj_val[hierarchy] = inj_val[hierarchy].to(
+                        self.h0_maker.params[test_name].units
+                    )
+                    self.h0_maker.params[test_name].value = inj_val[hierarchy]
+                    self.h1_maker.params[test_name].value = inj_val[hierarchy]
+                    if np.sign(self.data_maker.params[
+                            test_name].value.magnitude) == 1:
+                        self.data_maker.params[test_name].value = inj_val['nh']
+                    else:
+                        self.data_maker.params[test_name].value = inj_val['ih']
+            # This is easy if there's just one of them
+            else:
+                # Make sure the units are right
+                inj_val = inj_val.to(self.h0_maker.params[test_name].units)
+                # Then set the value in all of the makers
+                self.h0_maker.params[test_name].value = inj_val
+                self.h1_maker.params[test_name].value = inj_val
+                self.data_maker.params[test_name].value = inj_val
+            # Make names reflect parameter value
+            if param_name == 'deltam3l':
+                self.labels = Labels(
+                    h0_name=h0_name,
+                    h1_name=h1_name,
+                    data_name=data_name+'_%s_%.4f'
+                    %(param_name, requested_val*1000.0),
+                    data_is_data=False,
+                    fluctuate_data=False,
+                    fluctuate_fid=False
+                )
+            else:
+                self.labels = Labels(
+                    h0_name=h0_name,
+                    h1_name=h1_name,
+                    data_name=data_name+'_%s_%.4f'
+                    %(param_name, requested_val),
+                    data_is_data=False,
+                    fluctuate_data=False,
+                    fluctuate_fid=False
+                )
+            # Setup logging and do the fits
+            self.do_asimov_fits()
+            # At the end, reset the parameters in the maker
+            self.reset_makers()
+            # Also be sure to remove the data_dist and toy_data_asimov_dist
+            # so that they are regenerated next time
+            self.clear_data()
+
+    def asimov_nminusone_test(self, data_param, h0_name, h1_name, data_name):
+        """This function will perform the standard N-1 test. This
+        function expects h0_name, h1_name and data_name so that the
+        labels can be redefined to make everything unique. It is also
+        expected that this is used inside of a loop where data_param
+        is one of the data params.
+
+        Parameters
+        ----------
+        data_param : Param
+            The param to be fixed in the test.
+
+        *_name : string
+            Same as they in HypoTesting.
+
+        """
+        self.labels = Labels(
+            h0_name=h0_name + '_fixed_%s_baseline'%data_param.name,
+            h1_name=h1_name + '_fixed_%s_baseline'%data_param.name,
+            data_name=data_name,
+            data_is_data=False,
+            fluctuate_data=False,
+            fluctuate_fid=False
+        )
+        # This is a standard N-1 test, so fix the parameter in the hypo makers.
+        for h0_param in self.h0_maker.params.free:
+            if h0_param.name == data_param.name:
+                h0_param.is_fixed = True
+        for h1_param in self.h1_maker.params.free:
+            if h1_param.name == data_param.name:
+                h1_param.is_fixed = True
+        # Setup logging and do the fits
+        self.do_asimov_fits()
+
+    def sys_wrong_asimov_analysis(self, data_param, fit_wrong, direction,
+                                  h0_name, h1_name, data_name):
+        """This function will perform a modified version of the N-1 test. This
+        differs in that here we do not assume the systematics take their
+        baseline values but here see instead what happens with something
+        systematically wrong. So, the data_param is shifted by 1 sigma or 10%
+        off baseline. The direction of this shift should be specified pve or
+        nve in the direction argument (meaning positive or negative). Then one
+        can allow the minimiser to correct for this by specifying fit_wrong. If
+        this is false then the hypothesis maker will be fixed to the baseline
+        in this parameter i.e. a systematically wrong hypothesis to what is
+        injected. As with the N-1 test below it is assumed that this function
+        exists inside of a loop over the parameters in the data_maker and this
+        is for the systematic defined in data_param. This function also expects
+        h0_name, h1_name and data_name so that the labels can be redefined to
+        make everything unique.
+
+        Parameters
+        ----------
+        data_param : Param
+            The param for which a systematically wrong value will be injected.
+
+        fit_wrong : bool
+            Whether or not this param will be fitted for or fixed to
+            the baseline (wrong) value.
+
+        direction : string
+            Either positive (pve) or negative (nve) and defines whether the
+            systematically wrong value is higher or lower than the baseline.
+
+        *_name : string
+            Same as for HypoTesting.
+
+        """
+        if direction not in ['pve', 'nve']:
+            raise ValueError('Direction to shift systematic value must be '
+                             'specified either as "pve" or "nve" for '
+                             'positive and negative respectively')
+        # Calculate this wrong value based on the prior
+        if hasattr(data_param, 'prior'):
+            # Gaussian priors are easy - just do 1 sigma
+            if data_param.prior.kind == 'gaussian':
+                if direction == 'pve':
+                    data_param.value \
+                        = data_param.value + data_param.prior.stddev
+                else:
+                    data_param.value \
+                        = data_param.value - data_param.prior.stddev
+            # Special case for 0 since 0 +/- 10% is still zero
+            elif data_param.value == 0.0:
+                if direction == 'pve':
+                    data_param.value = 1.0
+                else:
+                    data_param.value = -1.0
+            # Else do 10%
+            else:
+                if direction == 'pve':
+                    data_param.value = 1.1 * data_param.value
+                else:
+                    data_param.value = 0.9 * data_param.value
+        # If we are not allowing the fit to correct for this, it must be
+        # fixed in the hypo makers.
+        if not fit_wrong:
+            for h0_param in self.h0_maker.params.free:
+                if h0_param.name == data_param.name:
+                    h0_param.is_fixed = True
+            for h1_param in self.h1_maker.params.free:
+                if h1_param.name == data_param.name:
+                    h1_param.is_fixed = True
+        # Set up labels so that each file comes out unique
+        if fit_wrong:
+            self.labels = Labels(
+                h0_name=h0_name,
+                h1_name=h1_name,
+                data_name=data_name + '_inj_%s_%s_wrong'%(
+                    data_param.name, direction),
+                data_is_data=False,
+                fluctuate_data=False,
+                fluctuate_fid=False
+            )
+        else:
+            self.labels = Labels(
+                h0_name=h0_name + '_fixed_%s_baseline'%data_param.name,
+                h1_name=h1_name + '_fixed_%s_baseline'%data_param.name,
+                data_name=data_name + '_inj_%s_%s_wrong'%(
+                    data_param.name, direction),
+                data_is_data=False,
+                fluctuate_data=False,
+                fluctuate_fid=False
+            )
+        # Setup logging and do the fits
+        self.do_asimov_fits()
+
+    def asimov_syst_tests(self, inject_wrong, fit_wrong, only_syst,
+                          do_baseline, h0_name, h1_name, data_name):
+        """The function which actually does the syst tests. The one that will
+        actually be performed will be depending on whether inject_wrong is
+        true or not.
+
+        Parameters
+        ----------
+        inject_wrong : bool
+            Whether the test is to inject a systematically wrong hypothesis
+            or stick on the baseline.
+
+        fit_wrong : bool
+            Whether the test will allow this wrong value to be fitted.
+
+        only_syst : list of strings
+            Allows for only certain systematic tests to be done if the name
+            is specified here. Useful if you need to quickly re-do just some
+            of the tests.
+
+        do_baseline : bool
+            Whether to get the baseline significance or not. In general
+            you want this to compare against since the impact of the
+            systematics is only quantifiable relative to the baseline.
+            However, this can be skipped to save time if you already
+            have this value.
+
+        *_name : string
+            Same as for HypoTesting
+
+        """
+        if do_baseline:
+            # Perform the baseline analysis so that the other results can
+            # have a comparison line.
+            self.labels = Labels(
+                h0_name=h0_name,
+                h1_name=h1_name,
+                data_name=data_name + '_full_syst_baseline',
+                data_is_data=False,
+                fluctuate_data=False,
+                fluctuate_fid=False
+            )
+            # Setup logging and do the fits
+            self.do_asimov_fits()
+            # Reset the makers
+            self.reset_makers()
+            # Also be sure to remove the data_dist and toy_data_asimov_dist
+            # so that they are regenerated next time
+            self.clear_data()
+        else:
+            logging.info("Baseline systematic fit will be skipped.")
+        for data_param in self.data_maker.params.free:
+            if only_syst is not None:
+                do_test = data_param.name in only_syst
+            else:
+                do_test = True
+            if do_test:
+                if inject_wrong:
+                    # First inject this wrong up by one sigma
+                    self.sys_wrong_asimov_analysis(
+                        data_param=data_param,
+                        fit_wrong=fit_wrong,
+                        direction='pve',
+                        h0_name=h0_name,
+                        h1_name=h1_name,
+                        data_name=data_name
+                    )
+                    # At the end, reset the parameters in the maker
+                    self.reset_makers()
+                    # Data must be cleared or else it won't be regenerated
+                    self.clear_data()
+                    # Then inject this wrong down by one sigma
+                    self.sys_wrong_asimov_analysis(
+                        data_param=data_param,
+                        fit_wrong=fit_wrong,
+                        direction='nve',
+                        h0_name=h0_name,
+                        h1_name=h1_name,
+                        data_name=data_name
+                    )
+                else:
+                    # Just do the standard N-1 test
+                    self.asimov_nminusone_test(
+                        data_param=data_param,
+                        h0_name=h0_name,
+                        h1_name=h1_name,
+                        data_name=data_name
+                    )
+                # At the end, reset the parameters in the maker
+                self.reset_makers()
+                # Also be sure to remove the data_dist and
+                # toy_data_asimov_dist so they are regenerated next time
+                self.clear_data()
+                # Also unfix the hypo maker parameters
+                for h0_param in self.h0_maker.params:
+                    if h0_param.name == data_param.name:
+                        h0_param.is_fixed = False
+                for h1_param in self.h1_maker.params:
+                    if h1_param.name == data_param.name:
+                        h1_param.is_fixed = False
+
+
+class HypoTestingArgParser(object):
+    """Allows for clever usage of this script such that the standard
+    analysis can be run or one of the other Asimov-based tests. With
+    this, the separate arguments for each way of running the script
+    can be displated separately."""
+    def __init__(self):
+        parser = ArgumentParser(
+            description="""This script contains all of the functionality for
+            hypothesis testing.""",
+            usage="""hypo_testing.py <command> [<args>]
+
+            There are three commands that can be issued:
+
+              analysis        Does the standard hypothesis testing analyses.
+              injparamscan    Performs a scan over some injected parameter in 
+                              the data.
+              systtests       Performs tests on the impact of systematics on
+                              the analysis.
+
+            Run hypo_testing.py <command> -h to see the different possible
+            arguments to each of these commands."""
+        )
+        parser.add_argument('command', help='Subcommand to run')
+        args = parser.parse_args(sys.argv[1:2])
+        expected_commands = ['analysis', 'injparamscan', 'systtests']
+        if not hasattr(self, args.command):
+            raise ValueError(
+                "The command issued, %s, was not one of the expected commands"
+                " - %s."%(args.command, expected_commands)
+            )
+        else:
+            getattr(self, args.command)()
+
+    def analysis(self):
+        hypo_testing = main(return_outputs=True)
+
+    def injparamscan(self):
+        main_injparamscan()
+
+    def systtests(self):
+        main_systtests()
+
+
+def parse_args(description=__doc__, injparamscan=False, systtests=False):
     """Parse command line args.
 
     Returns
@@ -1532,24 +1982,40 @@ def parse_args(description=__doc__):
         help='''Fit both ordering hypotheses. This should only be flagged if
         the ordering is NOT the discrete hypothesis being tested'''
     )
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        '--data-is-data', action='store_true',
-        help='''Data pipeline is based upon actual, measured data. The naming
-        scheme for stored results is chosen accordingly.'''
-    )
-    group.add_argument(
-        '--data-is-mc', action='store_true',
-        help='''Data pipeline is based upon Monte Carlo simulation, and not
-        actual data. The naming scheme for stored results is chosen
-        accordingly. If this is selected, --fluctuate-data is forced off.'''
-    )
-    parser.add_argument(
-        '--h0-pipeline', required=True,
-        type=str, action='append', metavar='PIPELINE_CFG',
-        help='''Settings for the generation of hypothesis h0
-        distributions; repeat this argument to specify multiple pipelines.'''
-    )
+    # Data cannot be data for MC studies e.g. injected parameter scans so these
+    # arguments are redundant there.
+    if (not injparamscan) and (not systtests):
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument(
+            '--data-is-data', action='store_true',
+            help='''Data pipeline is based upon actual, measured data. The
+            naming scheme for stored results is chosen accordingly.'''
+        )
+        group.add_argument(
+            '--data-is-mc', action='store_true',
+            help='''Data pipeline is based upon Monte Carlo simulation, and not
+            actual data. The naming scheme for stored results is chosen
+            accordingly. If this is selected, --fluctuate-data is forced off.'''
+        )
+    # For the MC tests (injected parameter scan, systematic tests etc.) you
+    # must have the same pipeline for h0, h1 and data. So this argument is
+    # instead replaced with a generic pipeline argument.
+    if (not injparamscan) and (not systtests):
+        parser.add_argument(
+            '--h0-pipeline', required=True,
+            type=str, action='append', metavar='PIPELINE_CFG',
+            help='''Settings for the generation of hypothesis h0
+            distributions; repeat this argument to specify multiple
+            pipelines.'''
+        )
+    else:
+        parser.add_argument(
+            '--pipeline', required=True,
+            type=str, action='append', metavar='PIPELINE_CFG',
+            help='''Settings for the generation of h0, h1 and data
+            distributions; repeat this argument to specify multiple
+            pipelines.'''
+        )
     parser.add_argument(
         '--h0-param-selections',
         type=str, default=None, metavar='PARAM_SELECTOR_LIST',
@@ -1565,16 +2031,20 @@ def parse_args(description=__doc__):
         be careful to use a name that appropriately identifies the
         hypothesis.'''
     )
-    parser.add_argument(
-        '--h1-pipeline',
-        type=str, action='append', default=None, metavar='PIPELINE_CFG',
-        help='''Settings for the generation of hypothesis h1 distributions;
-        repeat this argument to specify multiple pipelines. If omitted, the
-        same settings as specified for --h0-pipeline are used to generate
-        hypothesis h1 distributions (and so you have to use the
-        --h1-param-selections argument to generate a hypotheses distinct
-        from hypothesis h0 but still use h0's distribution maker).'''
-    )
+    # For the MC tests (injected parameter scan, systematic tests etc.) you
+    # must have the same pipeline for h0, h1 and data. So this argument is
+    # hidden.
+    if (not injparamscan) and (not systtests):
+        parser.add_argument(
+            '--h1-pipeline',
+            type=str, action='append', default=None, metavar='PIPELINE_CFG',
+            help='''Settings for the generation of hypothesis h1 distributions;
+            repeat this argument to specify multiple pipelines. If omitted, the
+            same settings as specified for --h0-pipeline are used to generate
+            hypothesis h1 distributions (and so you have to use the
+            --h1-param-selections argument to generate a hypotheses distinct
+            from hypothesis h0 but still use h0's distribution maker).'''
+        )
     parser.add_argument(
         '--h1-param-selections',
         type=str, default=None, metavar='PARAM_SELECTOR_LIST',
@@ -1590,14 +2060,18 @@ def parse_args(description=__doc__):
         be careful to use a name that appropriately identifies the
         hypothesis.'''
     )
-    parser.add_argument(
-        '--data-pipeline',
-        type=str, action='append', default=None, metavar='PIPELINE_CFG',
-        help='''Settings for the generation of "data" distributions; repeat
-        this argument to specify multiple pipelines. If omitted, the same
-        settings as specified for --h0-pipeline are used to generate data
-        distributions (i.e., data is assumed to come from hypothesis h0.'''
-    )
+    # For the MC tests (injected parameter scan, systematic tests etc.) you
+    # must have the same pipeline for h0, h1 and data. So this argument is
+    # hidden.
+    if (not injparamscan) and (not systtests):
+        parser.add_argument(
+            '--data-pipeline',
+            type=str, action='append', default=None, metavar='PIPELINE_CFG',
+            help='''Settings for the generation of "data" distributions; repeat
+            this argument to specify multiple pipelines. If omitted, the same
+            settings as specified for --h0-pipeline are used to generate data
+            distributions (i.e., data is assumed to come from hypothesis h0.'''
+        )
     parser.add_argument(
         '--data-param-selections',
         type=str, default=None, metavar='PARAM_SELECTOR_LIST',
@@ -1617,22 +2091,25 @@ def parse_args(description=__doc__):
         on the actual process, so it's important that you be careful to use a
         name that appropriately identifies the hypothesis.'''
     )
-    parser.add_argument(
-        '--fluctuate-data',
-        action='store_true',
-        help='''Apply fluctuations to the data distribution. This should *not*
-        be set for analyzing "real" (measured) data, and it is common to not
-        use this feature even for Monte Carlo analysis. Note that if this is
-        not set, --num-data-trials and --data-start-ind are forced to 1 and 0,
-        respectively.'''
-    )
-    parser.add_argument(
-        '--fluctuate-fid',
-        action='store_true',
-        help='''Apply fluctuations to the fiducaial distributions. If this flag
-        is not set, --num-fid-trials and --fid-start-ind are forced to 1 and 0,
-        respectively.'''
-    )
+    # For the injected parameter scan and systematic studies, only the Asimov
+    # analysis should be used, so these arguments are not needed.
+    if (not injparamscan) and (not systtests):
+        parser.add_argument(
+            '--fluctuate-data',
+            action='store_true',
+            help='''Apply fluctuations to the data distribution. This should
+            *not* be set for analyzing "real" (measured) data, and it is common
+            to not use this feature even for Monte Carlo analysis. Note that if
+            this is not set, --num-data-trials and --data-start-ind are forced
+            to 1 and 0, respectively.'''
+        )
+        parser.add_argument(
+            '--fluctuate-fid',
+            action='store_true',
+            help='''Apply fluctuations to the fiducaial distributions. If this
+            flag is not set, --num-fid-trials and --fid-start-ind are forced to
+            1 and 0, respectively.'''
+        )
     parser.add_argument(
         '--metric',
         type=str, required=True, metavar='METRIC', choices=ALL_METRICS,
@@ -1647,40 +2124,45 @@ def parse_args(description=__doc__):
         be either 'all' or one of %s. Repeat this argument (or use 'all') to
         specify multiple metrics.''' % (ALL_METRICS,)
     )
-    parser.add_argument(
-        '--num-data-trials',
-        type=int, default=1,
-        help='''When performing Monte Carlo analysis, set to > 1 to produce
-        multiple pseudodata distributions from the data distribution maker's
-        Asimov distribution. This is overridden if --fluctuate-data is not
-        set (since each data distribution will be identical if it is not
-        fluctuated). This is typically left at 1 (i.e., the Asimov distribution
-        is assumed to be representative.'''
-    )
-    parser.add_argument(
-        '--data-start-ind',
-        type=int, default=0,
-        help='''Fluctated data set index.'''
-    )
-    parser.add_argument(
-        '--num-fid-trials',
-        type=int, default=1,
-        help='''Number of fiducial pseudodata trials to run. In our experience,
-        it takes ~10^3-10^5 fiducial psuedodata trials to achieve low
-        uncertainties on the resulting significance, though that exact number
-        will vary based upon the details of an analysis.'''
-    )
-    parser.add_argument(
-        '--fid-start-ind',
-        type=int, default=0,
-        help='''Fluctated fiducial data index.'''
-    )
-    parser.add_argument(
-        '--blind',
-        action='store_true',
-        help='''Blinded analysis. Do not show parameter values or store to
-        logfiles.'''
-    )
+    if (not injparamscan) and (not systtests):
+        parser.add_argument(
+            '--num-data-trials',
+            type=int, default=1,
+            help='''When performing Monte Carlo analysis, set to > 1 to produce
+            multiple pseudodata distributions from the data distribution maker's
+            Asimov distribution. This is overridden if --fluctuate-data is not
+            set (since each data distribution will be identical if it is not
+            fluctuated). This is typically left at 1 (i.e., the Asimov
+            distribution is assumed to be representative.'''
+        )
+        parser.add_argument(
+            '--data-start-ind',
+            type=int, default=0,
+            help='''Fluctated data set index.'''
+        )
+        parser.add_argument(
+            '--num-fid-trials',
+            type=int, default=1,
+            help='''Number of fiducial pseudodata trials to run. In our
+            experience, it takes ~10^3-10^5 fiducial psuedodata trials to 
+            achieve low uncertainties on the resulting significance, though
+            that exact number will vary based upon the details of an 
+            analysis.'''
+        )
+        parser.add_argument(
+            '--fid-start-ind',
+            type=int, default=0,
+            help='''Fluctated fiducial data index.'''
+        )
+    # A blind analysis only makes sense when the possibility of actually
+    # analysing data is available.
+    if (not injparamscan) and (not systtests):
+        parser.add_argument(
+            '--blind',
+            action='store_true',
+            help='''Blinded analysis. Do not show parameter values or store to
+            logfiles.'''
+        )
     parser.add_argument(
         '--allow-dirty',
         action='store_true',
@@ -1699,6 +2181,72 @@ def parse_args(description=__doc__):
         help='''Do not store minimizer history (steps). This behavior is also
         enforced if --blind is specified.'''
     )
+    # Add in the arguments specific to the injected parameter scan.
+    if injparamscan:
+        parser.add_argument(
+            '--param_name',
+            type=str, metavar='NAME', required=True,
+            help='''Name of param to scan over. This must be in the config
+            files defined above. One exception is that you can define this as
+            `sin2theta23` and it will be interpreted not as theta23 values but
+            as the square of the sine of theta23 values instead.'''
+        )
+        parser.add_argument(
+            '--inj_vals',
+            type=str, required=True,
+            help='''List of values to inject as true points in the parameter
+            defined above. Must be something that numpy can interpret. In this
+            script, numpy is imported as np so please use np in your string. An
+            example would be np.linspace(0.35,0.65,31).'''
+        )
+        parser.add_argument(
+            '--inj_units',
+            type=str, required=True,
+            help='''A string to be able to deal with the units in the parameter
+            scan and make sure that they match those in the config files. Even
+            if the parameter is dimensionless this must be stated.'''
+        )
+        parser.add_argument(
+            '--use-inj-prior', action='store_true',
+            help='''Generally, one should not use a prior on the parameter of
+            interest here since the Asimov analysis breaks down with the use of
+            non-central prior i.e. injecting a truth that differs from the
+            centre of the prior. Flag this to force the prior to be left on.'''
+        )
+    # Add in the arguments specific to the systematic tests.
+    if systtests:
+        parser.add_argument(
+            '--inject_wrong',
+            action='store_true',
+            help='''Inject a parameter to some systematically wrong value.
+            This will be either +/- 1 sigma or +/- 10%% if such a definition
+            is impossible. By default this parameter will be fixed unless
+            the fit_wrong argument is also flagged.'''
+        )
+        parser.add_argument(
+            '--fit_wrong',
+            action='store_true',
+            help='''In the case of injecting a systematically wrong hypothesis
+            setting this argument will get the minimiser to try correct for it.
+            If inject_wrong is set to false then this must also be set to 
+            false or else the script will fail.'''
+        )
+        parser.add_argument(
+            '--only_syst', default=None,
+            type=str, action='append', metavar='PARAM_NAME',
+            help='''Specify the name of one of the systematics in the file to
+            run the test for this systematic. Repeat this argument to specify
+            multiple systematics. If none are provided, the test will be run
+            over all systematics in the pipeline.'''
+        )
+        parser.add_argument(
+            '--skip_baseline',
+            action='store_true',
+            help='''Skip the baseline systematic test i.e. the one where none
+            of them are fixed and/or modified. In most cases you will want this
+            for comparison but if you are only interested in the effect of
+            shifting certain systematics then this step can be skipped.'''
+        )
     parser.add_argument(
         '--pprint',
         action='store_true',
@@ -1709,7 +2257,7 @@ def parse_args(description=__doc__):
         '-v', action='count', default=None,
         help='set verbosity level'
     )
-    args = parser.parse_args()
+    args = parser.parse_args(sys.argv[2:])
     assert args.min_settings is not None or args.min_method is not None
     init_args_d = vars(args)
 
@@ -1748,7 +2296,12 @@ def parse_args(description=__doc__):
     init_args_d['check_octant'] = not init_args_d.pop('no_octant_check')
     init_args_d['check_ordering'] = init_args_d.pop('ordering_check')
 
-    init_args_d['data_is_data'] = not init_args_d.pop('data_is_mc')
+    if (not injparamscan) and (not systtests):
+        init_args_d['data_is_data'] = not init_args_d.pop('data_is_mc')
+    else:
+        init_args_d['data_is_data'] = False
+        init_args_d['fluctuate_data'] = False
+        init_args_d['fluctuate_fid'] = False
 
     init_args_d['store_minimizer_history'] = (
         not init_args_d.pop('no_min_history')
@@ -1836,6 +2389,303 @@ def main(return_outputs=False):
         return hypo_testing
 
 
-# pylint: disable=invalid-name
+def main_injparamscan():
+    doc = """This will load the HypoTesting class and use it to do
+    an Asimov test across the space of one of the injected parameters. The
+    user will define the parameter and pass a numpy-interpretable string to
+    set the range of values. For example, one could scan over the space of
+    theta23 by using a string such as `numpy.linspace(0.35,0.65,31)` which
+    will then be evaluated to figure out a space of theta23 to inject and
+    run Asimov tests."""
+    init_args_d = parse_args(description=doc, injparamscan=True)
+
+    # Normalize and convert `*_pipeline` filenames; store to `*_maker`
+    # (which is argument naming convention that HypoTesting init accepts).
+    # For this test, pipeline is required so we don't need the try arguments
+    # or the checks on it being None
+    filenames = init_args_d.pop('pipeline')
+    filenames = sorted(
+        [normcheckpath(fname) for fname in filenames]
+    )
+    init_args_d['h0_maker'] = filenames
+    # However, we do need them for the selections, since they can be different
+    for maker in ['h0', 'h1', 'data']:
+        ps_name = maker + '_param_selections'
+        ps_str = init_args_d[ps_name]
+        if ps_str is None:
+            ps_list = None
+        else:
+            ps_list = [x.strip().lower() for x in ps_str.split(',')]
+        init_args_d[ps_name] = ps_list
+
+    init_args_d['data_maker'] = init_args_d['h0_maker']
+    init_args_d['h1_maker'] = init_args_d['h0_maker']
+    init_args_d['h0_maker'] = DistributionMaker(init_args_d['h0_maker'])
+    init_args_d['h1_maker'] = DistributionMaker(init_args_d['h1_maker'])
+    init_args_d['h1_maker'].select_params(init_args_d['h1_param_selections'])
+    init_args_d['data_maker'] = DistributionMaker(init_args_d['data_maker'])
+    if init_args_d['data_param_selections'] is None:
+        init_args_d['data_param_selections'] = \
+            init_args_d['h0_param_selections']
+        init_args_d['data_name'] = init_args_d['h0_name']
+    init_args_d['data_maker'].select_params(
+        init_args_d['data_param_selections']
+    )
+
+    # Remove final parameters that don't want to be passed to HypoTesting
+    param_name = init_args_d.pop('param_name')
+    inj_vals = eval(init_args_d.pop('inj_vals'))
+    inj_units = init_args_d.pop('inj_units')
+    force_prior = init_args_d.pop('use_inj_prior')
+
+    # Instantiate the analysis object
+    hypo_testing = HypoTesting(**init_args_d)
+
+    logging.info(
+        'Scanning over %s between %.4f and %.4f with %i vals'
+        %(param_name, min(inj_vals), max(inj_vals), len(inj_vals))
+    )
+    # Modify parameters if necessary
+    if param_name == 'sin2theta23':
+        requested_vals = inj_vals
+        inj_vals = np.arcsin(np.sqrt(inj_vals))
+        logging.info(
+            'Converting to theta23 values. Equivalent range is %.4f to %.4f '
+            'radians, or %.4f to %.4f degrees'
+            %(min(inj_vals), max(inj_vals),
+              min(inj_vals)*180/np.pi, max(inj_vals)*180/np.pi)
+        )
+        test_name = 'theta23'
+        inj_units = 'radians'
+    elif param_name == 'deltam31':
+        raise ValueError('Need to implement a test where it ensures the sign '
+                         'of the requested values matches those in truth and '
+                         'the hypo makers (else it makes no sense). For now, '
+                         'please select deltam3l instead.')
+    elif param_name == 'deltam3l':
+        # Ensure all values are the same sign, else it doesn't make any sense
+        if not np.alltrue(np.sign(inj_vals)):
+            raise ValueError("Not all requested values to inject are the same "
+                             "sign. This doesn't make any sense given that you"
+                             " have requested to inject different values of "
+                             "deltam3l.")
+        logging.info('Parameter requested was deltam3l - will convert assuming'
+                     ' that this is always the largest of the two splittings '
+                     'i.e. deltam3l = deltam31 for deltam3l > 0 and deltam3l '
+                     '= deltam32 for deltam3l < 0.')
+        inj_sign = np.sign(inj_vals)[0]
+        requested_vals = inj_vals
+        test_name = 'deltam31'
+        deltam21_val = hypo_testing.data_maker.params['deltam21'].value.to(
+            inj_units
+        ).magnitude
+        if inj_sign == 1:
+            no_inj_vals = requested_vals
+            io_inj_vals = (requested_vals - deltam21_val) * -1.0
+        else:
+            io_inj_vals = requested_vals
+            no_inj_vals = (requested_vals * -1.0) + deltam21_val
+        inj_vals = []
+        for no_inj_val, io_inj_val in zip(no_inj_vals, io_inj_vals):
+            o_vals = {}
+            o_vals['nh'] = no_inj_val
+            o_vals['ih'] = io_inj_val
+            inj_vals.append(o_vals)
+    else:
+        test_name = param_name
+        requested_vals = inj_vals
+
+    unit_inj_vals = []
+    for inj_val in inj_vals:
+        if isinstance(inj_val, dict):
+            o_vals = {}
+            for ivkey in inj_val.keys():
+                o_vals[ivkey] = inj_val[ivkey]*ureg(inj_units)
+            unit_inj_vals.append(o_vals)
+        else:
+            unit_inj_vals.append(inj_val*ureg(inj_units))
+    inj_vals = unit_inj_vals
+
+    # Extend the ranges of the distribution makers so that they reflect the
+    # range of the scan. This is a pain if there are different values depending
+    # on the ordering. Need to extend the ranges of both values in the
+    # hypothesis maker since the hypotheses may minimise over the ordering,
+    # and could then go out of range.
+
+    # Also, some parameters CANNOT go negative or else things won't work.
+    # To account for this, check if parameters lower value was positive and,
+    # if so, enforce that it is positive now.
+    if isinstance(inj_vals[0], dict):
+        # Calculate ranges for both parameters
+        norangediff = max(no_inj_vals) - min(no_inj_vals)
+        norangediff = norangediff*ureg(inj_units)
+        norangetuple = (min(no_inj_vals)*ureg(inj_units) - 0.5*norangediff,
+                        max(no_inj_vals)*ureg(inj_units) + 0.5*norangediff)
+        iorangediff = max(io_inj_vals) - min(io_inj_vals)
+        iorangediff = iorangediff*ureg(inj_units)
+        iorangetuple = (min(io_inj_vals)*ureg(inj_units) - 0.5*iorangediff,
+                        max(io_inj_vals)*ureg(inj_units) + 0.5*iorangediff)
+        # Do it for both hierarchies
+        for hierarchy, rangetuple in zip(['nh', 'ih'],
+                                         [norangetuple, iorangetuple]):
+            hypo_testing.set_param_ranges(
+                selection=hierarchy,
+                test_name=test_name,
+                rangetuple=rangetuple,
+                inj_units=inj_units
+            )
+        # Select the proper params again
+        hypo_testing.h0_maker.select_params(init_args_d['h0_param_selections'])
+        hypo_testing.h1_maker.select_params(init_args_d['h1_param_selections'])
+    # Otherwise it's way simpler...
+    else:
+        rangediff = max(inj_vals) - min(inj_vals)
+        rangetuple = (min(inj_vals) - 0.5*rangediff,
+                      max(inj_vals) + 0.5*rangediff)
+        hypo_testing.set_param_ranges(
+            selection=None,
+            test_name=test_name,
+            rangetuple=rangetuple,
+            inj_units=inj_units
+        )
+
+    if hypo_testing.data_maker.params[test_name].prior is not None:
+        if hypo_testing.data_maker.params[test_name].prior.kind != 'uniform':
+            if force_prior:
+                logging.warn("Parameter to be scanned, %s, has a %s prior that"
+                             " you have requested to be left on. This will "
+                             "likely make the results wrong."%(
+                                 test_name, hypo_testing.data_maker.params[
+                                     test_name].prior.kind))
+            else:
+                logging.info("Parameter to be scanned, %s, has a %s prior. "
+                             "This will be changed to a uniform prior (i.e. "
+                             "no prior) for this test."%(
+                                 test_name, hypo_testing.data_maker.params[
+                                     test_name].prior.kind))
+                uniformprior = Prior(kind='uniform')
+                hypo_testing.h0_maker.params[test_name].prior = uniformprior
+                hypo_testing.h1_maker.params[test_name].prior = uniformprior
+    else:
+        if force_prior:
+            raise ValueError("Parameter to be scanned, %s, does not have a "
+                             "prior but you have requested to force one to be"
+                             " left on. Something is potentially wrong."
+                             %test_name)
+        else:
+            logging.info("Parameter to be scanned, %s, does not have a prior. "
+                         "So nothing needs to be done."%test_name)
+
+    # Everything is set up. Now do the scan.
+    hypo_testing.asimov_inj_param_scan(
+        param_name=param_name,
+        test_name=test_name,
+        inj_vals=inj_vals,
+        requested_vals=requested_vals,
+        h0_name=init_args_d['h0_name'],
+        h1_name=init_args_d['h1_name'],
+        data_name=init_args_d['data_name']
+    )
+
+
+def main_systtests():
+    doc = """This will load the HypoTesting class and use it to do a
+    systematic study in Asimov. This will take some input pipeline
+    configuration and then turn each one of the systematics off in turn, doing
+    a new hypothesis test each time. The user will have the option to fix this
+    systematic to either the baseline or some shifted value (+/- 1 sigma, or
+    appropriate). One also has the ability in the case of the latter to still
+    fit with this systematically incorrect hypothesis."""
+    init_args_d = parse_args(description=doc, systtests=True)
+
+    # NOTE: Removing extraneous args that won't get passed to instantiate the
+    # HypoTesting object via dictionary's `pop()` method.
+    inject_wrong = init_args_d.pop('inject_wrong')
+    fit_wrong = init_args_d.pop('fit_wrong')
+    only_syst = init_args_d.pop('only_syst')
+    do_baseline = not init_args_d.pop('skip_baseline')
+    if fit_wrong:
+        if not inject_wrong:
+            raise ValueError('You have specified to fit the systematically '
+                             'wrong hypothesis but have not specified to '
+                             'actually generate a systematically wrong '
+                             'hypothesis. If you want to flag "fit_wrong" '
+                             'please also flag "inject_wrong"')
+        else:
+            logging.info('Injecting a systematically wrong hypothesis while '
+                         'also allowing the minimiser to attempt to correct '
+                         'for it.')
+    else:
+        if inject_wrong:
+            logging.info('Injecting a systematically wrong hypothesis but '
+                         'NOT allowing the minimiser to attempt to correct'
+                         ' for it. Hypothesis maker will be FIXED at the '
+                         'baseline value.')
+        else:
+            logging.info('A standard N-1 test will be performed where each '
+                         'systematic is fixed to the baseline value '
+                         'one-by-one.')
+
+    # Normalize and convert `pipeline` filenames; store to `*_maker`
+    # (which is argument naming convention that HypoTesting init accepts).
+    # For this test, pipeline is required so we don't need the try arguments
+    # or the checks on it being None
+    filenames = init_args_d.pop('pipeline')
+    filenames = sorted(
+        [normcheckpath(fname) for fname in filenames]
+    )
+    init_args_d['h0_maker'] = filenames
+    # However, we do need them for the selections, since they can be different
+    for maker in ['h0', 'h1', 'data']:
+        ps_name = maker + '_param_selections'
+        ps_str = init_args_d[ps_name]
+        if ps_str is None:
+            ps_list = None
+        else:
+            ps_list = [x.strip().lower() for x in ps_str.split(',')]
+        init_args_d[ps_name] = ps_list
+
+    init_args_d['data_maker'] = init_args_d['h0_maker']
+    init_args_d['h1_maker'] = init_args_d['h0_maker']
+    init_args_d['h0_maker'] = DistributionMaker(init_args_d['h0_maker'])
+    init_args_d['h1_maker'] = DistributionMaker(init_args_d['h1_maker'])
+    init_args_d['h1_maker'].select_params(init_args_d['h1_param_selections'])
+    init_args_d['data_maker'] = DistributionMaker(init_args_d['data_maker'])
+    if init_args_d['data_param_selections'] is None:
+        init_args_d['data_param_selections'] = \
+            init_args_d['h0_param_selections']
+        init_args_d['data_name'] = init_args_d['h0_name']
+    init_args_d['data_maker'].select_params(
+        init_args_d['data_param_selections']
+    )
+
+    if only_syst is not None:
+        for syst in only_syst:
+            if syst not in init_args_d['h0_maker'].params.free.names:
+                raise ValueError(
+                    "Systematic test requested to be performed on systematic "
+                    "%s but it does not appear in the free parameters of the "
+                    "pipeline passed to the script - %s."%(
+                        syst, init_args_d['h0_maker'].params.free.names)
+                )
+        logging.info(
+            "Performing chosen systematic test on just the following "
+            "systematics - %s."%(only_syst)
+        )
+
+    # Instantiate the analysis object
+    hypo_testing = HypoTesting(**init_args_d)
+    # Everything is set up so do the tests
+    hypo_testing.asimov_syst_tests(
+        inject_wrong=inject_wrong,
+        fit_wrong=fit_wrong,
+        only_syst=only_syst,
+        do_baseline=do_baseline,
+        h0_name=init_args_d['h0_name'],
+        h1_name=init_args_d['h1_name'],
+        data_name=init_args_d['data_name']
+    )
+
+
 if __name__ == '__main__':
-    hypo_testing = main(return_outputs=True)
+    HypoTestingArgParser()
