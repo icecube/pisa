@@ -194,8 +194,8 @@ class fit(Stage):
                 'output_events must be of type bool, instead it is supplied '
                 'with type {0}'.format(type(output_events))
             )
+        self.fit_binning = deepcopy(output_binning)
         if output_events:
-            self.fit_binning = deepcopy(output_binning)
             output_binning = None
         self.output_events = output_events
 
@@ -295,7 +295,7 @@ class fit(Stage):
         fit_coeffs = self.calculate_fit_coeffs()
 
         sample_config = from_file(self.params['discr_sys_sample_config'].value)
-        degree = self.params['poly_degree'].value
+        degree = int(self.params['poly_degree'].value)
         force_through_nominal = self.params['force_through_nominal'].value
 
         if force_through_nominal:
@@ -322,7 +322,7 @@ class fit(Stage):
                     deepcopy(self._data[fig]['weight_weight'])
 
             for sys in sys_list:
-                nominal = sample_config.get('neutrinos:' + sys, 'nominal')
+                nominal = sample_config.get('neutrinos|' + sys, 'nominal')
                 for fig in self._data.iterkeys():
                     fit_map = unp.nominal_values(fit_coeffs[sys][fig].hist)
 
@@ -477,7 +477,7 @@ class fit(Stage):
 
         config = from_file(params['discr_sys_sample_config'].value)
 
-        degree = params['poly_degree'].value
+        degree = int(params['poly_degree'].value)
         force_through_nominal = params['force_through_nominal'].value
 
         if force_through_nominal:
@@ -512,7 +512,7 @@ class fit(Stage):
                 )
 
             for sys in sys_list:
-                ev_sys = 'neutrinos:' + sys
+                ev_sys = 'neutrinos|' + sys
                 runs = parse(config.get(ev_sys, 'runs')[1: -1])
                 nominal = config.get(ev_sys, 'nominal')
 
@@ -521,7 +521,7 @@ class fit(Stage):
                 for run in runs:
                     logging.info('Loading run {0} of systematic '
                                  '{1}'.format(run, sys))
-                    dataset_param.value = ev_sys + ':' + run
+                    dataset_param.value = ev_sys + '|' + run
                     template_maker.update_params(dataset_param)
                     template = template_maker.get_outputs(
                         idx=int(params['stop_after_stage'].m)
@@ -587,8 +587,12 @@ class fit(Stage):
                     hists = [fracdiff_mapset_dict[run][fig].hist for run in runs]
                     zip_hists = np.dstack(hists)
                     for idx in np.ndindex(fit_binning.shape):
-                        y_values = unp.nominal_values(zip_hists[idx])
-                        y_sigma = unp.std_devs(zip_hists[idx])
+                        y_values = []
+                        y_sigma = []
+                        for run in fracdiff_mapset_dict:
+                            y_values.append(unp.nominal_values(fracdiff_mapset_dict[run][fig].hist[idx]))
+                            y_sigma.append(unp.std_devs(fracdiff_mapset_dict[run][fig].hist[idx]))
+
                         if np.any(y_sigma):
                             popt, pcov = curve_fit(
                                 fit_func, delta_runs, y_values, sigma=y_sigma,
@@ -627,7 +631,7 @@ class fit(Stage):
                 )
 
             for sys in sys_list:
-                ev_sys = 'muons:' + sys
+                ev_sys = 'muons|' + sys
                 runs = parse(config.get(ev_sys, 'runs')[1: -1])
                 nominal = config.get(ev_sys, 'nominal')
 
@@ -636,7 +640,7 @@ class fit(Stage):
                 for run in runs:
                     logging.info('Loading run {0} of systematic '
                                  '{1}'.format(run, sys))
-                    dataset_param.value = ev_sys + ':' + run
+                    dataset_param.value = ev_sys + '|' + run
                     template_maker.update_params(dataset_param)
                     template = template_maker.get_outputs(
                         idx=int(params['stop_after_stage'].m)
@@ -686,8 +690,11 @@ class fit(Stage):
                 hists = [fracdiff_map_dict[run].hist for run in runs]
                 zip_hists = np.dstack(hists)
                 for idx in np.ndindex(fit_binning.shape):
-                    y_values = unp.nominal_values(zip_hists[idx])
-                    y_sigma = unp.std_devs(zip_hists[idx])
+                    y_values = [] 
+                    y_sigma = []
+                    for run in fracdiff_mapset_dict:
+                        y_values.append(unp.nominal_values(fracdiff_mapset_dict[run][fig].hist[idx]))
+                        y_sigma.append(unp.std_devs(fracdiff_mapset_dict[run][fig].hist[idx]))
                     if np.any(y_sigma):
                         popt, pcov = curve_fit(
                             fit_func, delta_runs, y_values, sigma=y_sigma,

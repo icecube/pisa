@@ -654,10 +654,10 @@ class HypoTesting(Analysis):
                 for line in format_exception(*exc_l):
                     for sl in line.splitlines():
                         logging.error(' '*4 + sl)
-                raise exc_l
+                raise exc_l[0], exc_l[1], exc_l[2]
 
             if exc[0] is not None:
-                raise exc
+                raise exc[0], exc[1], exc[2]
 
     def generate_data(self):
         logging.info('Generating %s distributions.', self.labels.data_disp)
