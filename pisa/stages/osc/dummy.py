@@ -75,7 +75,7 @@ class dummy(Stage):
         # All of the following params (and no more) must be passed via the
         # `params` argument.
         expected_params = (
-            'earth_model', 'nutau_norm',
+            'earth_model',
             'YeI', 'YeM', 'YeO', 'deltacp', 'deltam21', 'deltam31',
             'detector_depth', 'prop_height', 'theta12', 'theta13',
             'theta23'
@@ -155,12 +155,6 @@ class dummy(Stage):
         [self.extra_dim_nums.remove(d) for d in (self.e_dim_num,
                                                  self.cz_dim_num)]
 
-    def create_transforms_datastructs(self):
-        xform_shape = [3, 2] + list(self.input_binning.shape)
-        nu_xform = np.empty(xform_shape)
-        antinu_xform = np.empty(xform_shape)
-        return nu_xform, antinu_xform
-
     def _compute_transforms(self):
         """Compute new oscillation transforms."""
         # This is done just to produce different set of transforms for
@@ -168,15 +162,8 @@ class dummy(Stage):
         seed = hash_obj(self.params.values, hash_to='int') % (2**32-1)
         np.random.seed(seed)
 
-        # Read parameters in in the units used for computation
+        # Read parameters in in the units used for computation, e.g.
         theta12 = self.params.theta12.m_as('rad')
-        theta13 = self.params.theta13.m_as('rad')
-        theta23 = self.params.theta23.m_as('rad')
-        deltam21 = self.params.deltam21.m_as('eV**2')
-        deltam31 = self.params.deltam31.m_as('eV**2')
-        deltacp = self.params.deltacp.m_as('rad')
-        prop_height = self.params.prop_height.m_as('km')
-        nutau_norm = self.params.nutau_norm.m_as('dimensionless')
 
         total_bins = int(len(self.e_centers)*len(self.cz_centers))
         # We use 18 since we have 3*3 possible oscillations for each of
@@ -231,8 +218,7 @@ class dummy(Stage):
                 source=[0] + [i+1 for i in xform_dim_indices],
                 destination=[0] + [i+1 for i in users_dim_indices]
             )
-            if nutau_norm != 1 and output_name in ['nutau', 'nutaubar']:
-                xform *= nutau_norm
+        
             transforms.append(
                 BinnedTensorTransform(
                     input_names=input_names,
@@ -242,6 +228,6 @@ class dummy(Stage):
                     xform_array=xform
                 )
             )
-        
+
 
         return TransformSet(transforms=transforms)
