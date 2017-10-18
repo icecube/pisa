@@ -72,8 +72,8 @@ class dummy(Stage):
     def __init__(self, params, input_binning, output_binning,
                  memcache_deepcopy, error_method, transforms_cache_depth,
                  outputs_cache_depth, debug_mode=None):
-        # All of the following params (and no more) must be passed via the
-        # `params` argument.
+        # Here we provide the exhaustive list of params that can and must be
+        # passed via the `params` argument.
         expected_params = (
             'earth_model',
             'YeI', 'YeM', 'YeO', 'deltacp', 'deltam21', 'deltam31',
@@ -116,23 +116,27 @@ class dummy(Stage):
         # then get called from init (so that if anyone else wants to do the
         # same "real work" after object instantiation, (s)he can do so easily
         # by invoking that same method).
+
+        # we could for example enable the stage to provide a weight for
+        # a single event, which the user would tell it by deactivating
+        # both the input and output binning
         self.calc_transforms = (input_binning is not None
                                 and output_binning is not None)
+
+        # we could want to keep track of binning related constants relevant
+        # to this oscillation service's calculations
         if self.calc_transforms:
             self.compute_binning_constants()
+        else:
+            # this dummy service has no idea what it is supposed to do with
+            # no binning provided, so abort
+            raise ValueError("This service can only calculate binned transforms!"
+                             " Please provide input and output binning.")
 
     def compute_binning_constants(self):
-        # Only works if energy and coszen are in input_binning
-        if 'true_energy' not in self.input_binning \
-                or 'true_coszen' not in self.input_binning:
-            raise ValueError(
-                'Input binning must contain both "true_energy" and'
-                ' "true_coszen" dimensions.'
-            )
-
-        # Not handling rebinning (or oversampling)
-        assert self.input_binning == self.output_binning
-
+        """Compute some constants related to the binning.
+        Just for illustrating a few properties of the
+        binning one might want to evaluate."""
         # Get the energy/coszen (ONLY) weighted centers here, since these
         # are actually used in the oscillations computation. All other
         # dimensions are ignored. Since these won't change so long as the
@@ -151,78 +155,79 @@ class dummy(Stage):
         self.e_dim_num = self.input_binning.names.index('true_energy')
         self.cz_dim_num = self.input_binning.names.index('true_coszen')
 
+        # Illustrate how to find input binning dimensions which the transforms
+        # created by this service will not depend on.
         self.extra_dim_nums = range(self.input_binning.num_dims)
         [self.extra_dim_nums.remove(d) for d in (self.e_dim_num,
                                                  self.cz_dim_num)]
 
+    # In the following: methods called upon initialization of the `stage` parent
+    # class that are commonly overriden (cf. `pisa/core/stage.py` for an exhaustive
+    # list)
+    def validate_binning(self):
+        """This can be used to make sure the binning
+        satisfies desired criteria."""
+        # Our dummy service is set up such that it can only deal with 2D energy/
+        # coszenith binning
+        if set(self.input_binning.names) != set(['true_coszen','true_energy']):
+            raise ValueError(
+                "Input binning must be 2D true energy / coszenith binning. "
+                "Got %s."%(self.input_binning.names)
+            )
+
+        # We do not handle rebinning (or oversampling), so we require the
+        # output binning to correspond to the input binning
+        assert self.input_binning == self.output_binning
+
+    def validate_params(self, params):
+        """This can be used to validate types, values, etc.
+        of `params`."""
+        # perform some action on `params`
+        pass
+
+    def create_dummy_osc_probs(self):
+        """Here we generate the data structures that will be
+        used as transforms representing oscillation
+        probabilities."""
+        # We have three neutrino flavors appearing through oscillations from
+        # two in the initial flux, for both neutrinos and anti-neutrinos. These
+        # are evaluated on a grid with dimension set by the input binning shape.
+        xform_shape = [2] + list(self.input_binning.shape)
+        # Here, the probabilities are random numbers between 0 and 1
+        xform = np.random.rand(*xform_shape)
+        return xform
+
     def _compute_transforms(self):
         """Compute new oscillation transforms."""
-        # This is done just to produce different set of transforms for
-        # different set of parameters
+        # The seed is created from parameter values to produce different sets
+        # of transforms for different sets of parameters
         seed = hash_obj(self.params.values, hash_to='int') % (2**32-1)
         np.random.seed(seed)
 
         # Read parameters in in the units used for computation, e.g.
-        theta12 = self.params.theta12.m_as('rad')
+        theta23 = self.params.theta23.m_as('rad')
 
-        total_bins = int(len(self.e_centers)*len(self.cz_centers))
-        # We use 18 since we have 3*3 possible oscillations for each of
-        # neutrinos and antineutrinos.
-        prob_list = np.random.random(total_bins*18)
-
-       # Slice up the transform arrays into views to populate each transform
-        dims = ['true_energy', 'true_coszen']
-        xform_dim_indices = [0, 1]
-        users_dim_indices = [self.input_binning.index(d) for d in dims]
-        xform_shape = [2] + [self.input_binning[d].num_bins for d in dims]
-
-        # TODO: populate explicitly by flavor, don't assume any particular
-        # ordering of the outputs names!
         transforms = []
         for out_idx, output_name in enumerate(self.output_names):
-            xform = np.empty(xform_shape)
             if out_idx < 3:
-                # Neutrinos
-                xform[0] = np.array([
-                    prob_list[out_idx + 18*i*self.num_czbins
-                              : out_idx + 18*(i+1)*self.num_czbins
-                              : 18]
-                    for i in range(0, self.num_ebins)
-                ])
-                xform[1] = np.array([
-                    prob_list[out_idx+3 + 18*i*self.num_czbins
-                              : out_idx+3 + 18*(i+1)*self.num_czbins
-                              : 18]
-                    for i in range(0, self.num_ebins)
-                ])
+                # neutrinos (-> input names are neutrinos)
                 input_names = self.input_names[0:2]
-
             else:
-                # Antineutrinos
-                xform[0] = np.array([
-                    prob_list[out_idx+6 + 18*i*self.num_czbins
-                              : out_idx+6 + 18*(i+1)*self.num_czbins
-                              : 18]
-                    for i in range(0, self.num_ebins)
-                ])
-                xform[1] = np.array([
-                    prob_list[out_idx+9 + 18*i*self.num_czbins
-                              : out_idx+9 + 18*(i+1)*self.num_czbins
-                              : 18]
-                    for i in range(0, self.num_ebins)
-                ])
+                # anti-neutrinos (-> input names are anti-neutrinos)
                 input_names = self.input_names[2:4]
 
-            xform = np.moveaxis(
-                xform,
-                source=[0] + [i+1 for i in xform_dim_indices],
-                destination=[0] + [i+1 for i in users_dim_indices]
-            )
-        
+            # generate the "oscillation probabilities"
+            xform = self.create_dummy_osc_probs()
+
+            # create object of type `BinnedTensorTransform` and attach
+            # to list of transforms with correct set of input names for the
+            # output name in question
             transforms.append(
                 BinnedTensorTransform(
                     input_names=input_names,
                     output_name=output_name,
+                    # we have already made sure that input and output binnings
+                    # are identical
                     input_binning=self.input_binning,
                     output_binning=self.output_binning,
                     xform_array=xform
