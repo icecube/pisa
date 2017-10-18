@@ -107,13 +107,13 @@ class icc(Stage):
 
         # get data with cuts defined as 'icc_def2' in data_proc_params.json
         fields = ['reco_energy', 'pid', 'reco_coszen']
-        cut_events = self.get_fields(fields, icc_file_name = icc_bg_file,
+        cut_events = self.get_fields(fields, event_file = icc_bg_file,
                 no_reco=no_reco,
                 cuts='icc_def2',
                 run_setting_file='events/mc_sim_run_settings.json',
                 data_proc_file='events/data_proc_params.json')
         if alt_icc_bg_file is not None:
-            alt_cut_events = self.get_fields(fields, icc_file_name = alt_icc_bg_file,
+            alt_cut_events = self.get_fields(fields, event_file = alt_icc_bg_file,
                     no_reco=no_reco,
                     cuts='icc_def3',
                     run_setting_file='events/mc_sim_run_settings.json',
@@ -197,7 +197,7 @@ class icc(Stage):
 
         return MapSet(maps, name='icc')
 
-    def get_fields(self, fields, icc_file_name, no_reco=False, cuts='icc_def2', run_setting_file='events/mc_sim_run_settings.json',
+    def get_fields(self, fields, event_file, no_reco=False, cuts='icc_def2', run_setting_file='events/mc_sim_run_settings.json',
                         data_proc_file='events/data_proc_params.json'):
         """ Return icc events' fields with the chosen icc background definition.
 
@@ -205,7 +205,7 @@ class icc(Stage):
         ----------
         fields: list of strings
             the quantities to return, for example: ['reco_energy', 'pid', 'reco_coszen']
-        icc_file_name: string
+        event_file: string
             the icc hdf5 file name
         cuts: string
             definition for icc, for example: 'icc_def1', 'icc_def2', 'icc_def3', see their defs in data_proc_params.json
@@ -219,7 +219,7 @@ class icc(Stage):
                 proc_ver=proc_version,
                 data_proc_params=find_resource(data_proc_file))
         run_settings = MCSRS.DetMCSimRunsSettings(find_resource(run_setting_file), detector='deepcore')
-        data = data_proc_params.getData(find_resource(icc_file_name), run_settings=run_settings, file_type='data')
+        data = data_proc_params.getData(find_resource(event_file), run_settings=run_settings, file_type='data')
 
         # get fields that'll be used for applying cuts or fields that'll have cuts applied
         fields_for_cuts = copy.deepcopy(fields)
@@ -261,10 +261,11 @@ class icc(Stage):
             if 'l_over_e' in fields_add_later:
                 cut_data['l_over_e'] = cut_data['path_length']/cut_data['reco_energy']
 
-        return_data = {}
+        output_data = {}
         for key in fields:
-            return_data[key] = cut_data[key][all_cuts]
+            output_data[key] = cut_data[key][all_cuts]
+            len_after_cut = len(output_data[key])
         # weight is just atm_muon_scale*livetime, will be needed for plotting
         scale = self.params.atm_muon_scale.value.m_as('dimensionless') * self.params.livetime.value.m_as('common_year')
-        return_data['weight'] = scale
-        return return_data
+        output_data['weight'] = scale*np.ones(len_after_cut)
+        return output_data
