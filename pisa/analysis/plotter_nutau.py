@@ -114,7 +114,8 @@ class PlotterNutau(Plotter):
                 'CausalVetoHits': (0, 9),
                 'pid': (-3.60329646, 400),
                 'linefit_speed': (0,0.5),
-                'dunkman_L5': (0.2,0.7),
+                #'dunkman_L5': (0.2,0.7),
+                'dunkman_L5': (-0.5,0.7),
                 'cog_q1_z': (-475, -174),
                 'DCFiducialPE': (0,200),
                 'rt_fid_charge': (0,200),
@@ -139,7 +140,7 @@ class PlotterNutau(Plotter):
         else:
             return 20
 
-    def plot_variables(self, mc_arrays, icc_arrays, data_arrays, param_to_plot, fig_name, outdir, title, data_type='pseudo', logy=False, save_ratio=False, group_mc=True, group_mc_flavs=['nu_nc', 'numu_cc', 'nue_cc', 'nutau_cc'], extra=[], signal='CC+NC',thin=False,**kwargs):
+    def plot_variables(self, mc_arrays, muon_arrays, data_arrays, param_to_plot, fig_name, outdir, title, data_type='pseudo', logy=False, save_ratio=False, group_mc=True, group_mc_flavs=['nu_nc', 'numu_cc', 'nue_cc', 'nutau_cc'], extra=[], signal='CC+NC',thin=False,**kwargs):
         print "thin ", thin
         print "Plotting ", param_to_plot
         # get data param (data could be MC simulated "data" or real data)
@@ -188,12 +189,12 @@ class PlotterNutau(Plotter):
                 mc_sumw2_all = np.append(mc_sumw2_all, sumw2)
 
             # get rid of nans
-            print "before cut len mc_weight_all ", len(mc_weight_all)
+            #print "before cut len mc_weight_all ", len(mc_weight_all)
             nan_cut=np.logical_not(np.isnan(mc_param_all))
             mc_param_all = mc_param_all[nan_cut]
             mc_weight_all= mc_weight_all[nan_cut]
-            print "len mc_weight_all ", len(mc_weight_all)
-            print "np.sum(mc_weight_all) = ", np.sum(mc_weight_all)
+            #print "len mc_weight_all ", len(mc_weight_all)
+            #print "np.sum(mc_weight_all) = ", np.sum(mc_weight_all)
             mc_sumw2_all = mc_sumw2_all[nan_cut]
 
             x_range = self.get_x_range(param_to_plot)
@@ -212,33 +213,37 @@ class PlotterNutau(Plotter):
 
 
         # add icc background
-        if icc_arrays is not None:
-            icc_param = icc_arrays[param_to_plot]
+        if muon_arrays is not None:
+            muon_param = muon_arrays[param_to_plot]
+            #print "len muon_param ", len(muon_param)
+            #print "len muon_arrays['weight']", len(muon_arrays['weight'])
             if x_edges is None:
-                icc_y, x_edges = np.histogram(icc_param, bins=nbins, **kwargs)
+                muon_y, x_edges = np.histogram(muon_param, weights=muon_arrays['weight'], bins=nbins, **kwargs)
             else:
-                icc_y, x_edges = np.histogram(icc_param, bins=x_edges, **kwargs)
-            best_y = mc_y + icc_y * icc_arrays['weight']
-            best_sumw2 = mc_sumw2 + icc_y * (icc_arrays['weight']**2)
+                muon_y, x_edges = np.histogram(muon_param, weights=muon_arrays['weight'], bins=x_edges, **kwargs)
+                muon_sumw2, x_edges = np.histogram(muon_param, weights=muon_arrays['weight']**2, bins=x_edges, **kwargs)
+            best_y = mc_y + muon_y
+            best_sumw2 = mc_sumw2 + muon_sumw2
+            muon_y_2, x_edges = np.histogram(muon_param, bins=x_edges, **kwargs)
         else:
             best_y = mc_y
             best_sumw2 = mc_sumw2
-        print "     in plotter best fit MC (no icc) ", np.sum(mc_y)
-        #print "     in plotter best fit icc ", np.sum(icc_y * icc_arrays['weight'])
-        print "     in plotter best fit MC+icc: ", np.sum(best_y)
+        #print "     in plotter best fit MC (no muon) ", np.sum(mc_y)
+        #print "     in plotter best fit muon ", np.sum(muon_y * muon_arrays['weight'])
+        #print "     in plotter best fit MC+muon: ", np.sum(best_y)
         if np.all(best_y==0):
-            print "no mc or icc"
+            print "no mc or muon"
         else:
             x = (x_edges[:-1]+x_edges[1:])/2.0
             ax1.hist(x, weights=best_y, bins=x_edges, histtype='step', lw=2.5, color=psublue, label=r'$\rm{Total}$', **kwargs)
 
         if extra!=[]:
-            [mc_param_all_h0, mc_weight_all_h0, mc_sumw2_all_h0, icc_param_h0, icc_weight_h0, x_edges_h0] = extra
+            [mc_param_all_h0, mc_weight_all_h0, mc_sumw2_all_h0, muon_param_h0, icc_weight_h0, x_edges_h0] = extra
             mc_y_h0, _ = np.histogram(mc_param_all_h0, weights=mc_weight_all_h0, bins=x_edges, range=x_range, **kwargs)
             mc_sumw2_h0, _ = np.histogram(mc_param_all_h0, weights=mc_sumw2_all_h0, bins=x_edges, **kwargs)
-            icc_y_h0, _ = np.histogram(icc_param_h0, bins=x_edges, **kwargs)
-            best_y_h0 = mc_y_h0 + icc_y_h0 * icc_weight_h0
-            best_sumw2_h0 = mc_sumw2_h0 + icc_y_h0 * (icc_weight_h0**2)
+            muon_y_h0, _ = np.histogram(muon_param_h0, bins=x_edges, **kwargs)
+            best_y_h0 = mc_y_h0 + muon_y_h0 * icc_weight_h0
+            best_sumw2_h0 = mc_sumw2_h0 + muon_y_h0 * (icc_weight_h0**2)
 
         if group_mc:
             group_mc_params = {}
@@ -254,7 +259,7 @@ class PlotterNutau(Plotter):
                 colors = ['green', 'lightgreen', 'deepskyblue', 'lightskyblue', 'gainsboro', 'darkorange', 'r']
             #if group_mc_flavs==['nue_nc', 'numu_nc', 'nue_cc', 'numu_cc', 'nutau_nc', 'nutau_cc']:
             #    colors = ['blueviolet', 'lightgreen', 'burlywood', 'lightskyblue', 'darkorange', 'r', 'gainsboro']
-            if icc_arrays is None:
+            if muon_arrays is None:
                 colors.remove('gainsboro')
             for i, group in enumerate(group_mc_flavs):
                 group_mc_params[group]=[]
@@ -274,25 +279,26 @@ class PlotterNutau(Plotter):
                         group_mc_weight[group].extend(mc_arrays[flav]['weight'])
             for i, group in enumerate(group_mc_flavs):
                 if x_edges is None:
-                    mc_group_y[group], x_edges = np.histogram(group_mc_params[group], bins=nbins, weights=group_mc_weight[group],**kwargs)
+                    mc_group_y[i], x_edges = np.histogram(group_mc_params[group], bins=nbins, weights=group_mc_weight[group],**kwargs)
                 else:
                     #mc_group_y[group], x_edges = np.histogram(group_mc_params[group], bins=x_edges, weights=group_mc_weight[group],**kwargs)
                     mc_group_y[i], x_edges = np.histogram(group_mc_params[group], bins=x_edges, weights=group_mc_weight[group],**kwargs)
                 x = (x_edges[:-1]+x_edges[1:])/2.0
+
                 #ax1.hist(x, weights=mc_group_y[group], bins=x_edges, histtype='step', lw=1.5, color=colors[i], label=group, **kwargs)
                 #plt.errorbar(x, mc_group_y[group], yerr=np.array(group_mc_sumw2[group]), fmt='.',color=colors[i])
                 #plt.legend()
             # get flav labels
             all_flavs = deepcopy(group_mc_flavs)
-            if icc_arrays is not None:
+            if muon_arrays is not None:
                 if logy:
-                    all_flavs.insert(0,icc_y*icc_arrays['weight'])
+                    all_flavs.insert(0,muon_y)
                 else:
                     if group_mc_flavs==['nu_nc', 'numu_cc', 'nue_cc', 'nutau_cc']:
-                        mc_group_y.insert(3,icc_y*icc_arrays['weight'])
+                        mc_group_y.insert(3,muon_y)
                         all_flavs.insert(3, 'muon')
                     if group_mc_flavs==['nue_nc', 'nue_cc', 'numu_nc', 'numu_cc', 'nutau_nc', 'nutau_cc']:
-                        mc_group_y.insert(4,icc_y*icc_arrays['weight'])
+                        mc_group_y.insert(4,muon_y)
                         all_flavs.insert(4, 'muon')
             flavor_label=self.get_flavor_label(all_flavs)
             ax1.hist([x]*len(mc_group_y), weights=mc_group_y, bins=x_edges, lw=1.5, color=colors[0:len(mc_group_y)], label=flavor_label, histtype='bar', stacked=True, **kwargs)
@@ -316,14 +322,14 @@ class PlotterNutau(Plotter):
                 print "len best_y", len(best_y)
             x = (x_edges[:-1]+x_edges[1:])/2.0
             plt.errorbar(x, data_y, yerr=np.sqrt(data_y), fmt='.', marker='.', markersize=4, color='k', label=r'$\rm{Data}$',capthick=1, capsize=3)
-            print "     in plotter, data total ", np.sum(data_y)
-            print "     in plotter, best_y total ", np.sum(best_y)
+            #print "     in plotter, data total ", np.sum(data_y)
+            #print "     in plotter, best_y total ", np.sum(best_y)
             if thin:
                 ax1.legend(loc=1,ncol=2,frameon=True, columnspacing=0.8, handlelength=1.5, prop={'size':9})
             else:
                 ax1.legend(loc=1,ncol=3,frameon=True, columnspacing=0.8, handlelength=2, prop={'size':10})
             if self.ratio:
-                assert(mc_arrays!=None or icc_arrays!=None)
+                assert(mc_arrays!=None or muon_arrays!=None)
                 ax2=plt.subplot2grid((4,1), (3,0),sharex=ax1)
                 fig.subplots_adjust(hspace=0.1)
                 ax2.get_xaxis().set_tick_params(direction='in')
@@ -463,8 +469,8 @@ class PlotterNutau(Plotter):
         plt.savefig(plot_name+'.pdf')
         plt.savefig(plot_name+'.png')
         plt.clf()
-        if icc_arrays is not None:
-            return [mc_param_all, mc_weight_all, mc_sumw2_all, icc_param, icc_arrays['weight'], x_edges]
+        if muon_arrays is not None:
+            return [mc_param_all, mc_weight_all, mc_sumw2_all, muon_param, muon_arrays['weight'], x_edges]
         else:
             return [mc_param_all, mc_weight_all, mc_sumw2_all, [], [], x_edges]
 
