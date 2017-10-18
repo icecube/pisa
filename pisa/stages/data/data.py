@@ -108,7 +108,7 @@ class data(Stage):
         """
         return self.template
 
-    def get_fields(self, fields, cuts='analysis', run_setting_file='events/mc_sim_run_settings.json'):
+    def get_fields(self, fields, cuts='analysis', run_setting_file='events/mc_sim_run_settings.json', no_reco=False):
         """ Return data events' fields
 
         Paramaters
@@ -157,6 +157,7 @@ class data(Stage):
         # get fields_add_later
         if fields_add_later!=[]:
             for param in fields_add_later:
+                # right now only works with the below 2 params
                 assert(param in ['l_over_e', 'path_length'])
             layer = Layers(self.params.earth_model.value)
             cut_data['path_length'] = np.array([layer.DefinePath(reco_cz) for reco_cz in cut_data['reco_coszen']])
@@ -166,5 +167,4 @@ class data(Stage):
         return_data = {}
         for key in fields:
             return_data[key] = cut_data[key][all_cuts]
-        #print "data no evts in get_fields", len(return_data[key])
         return return_data
