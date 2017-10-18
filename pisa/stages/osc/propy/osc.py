@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from numba import jit
 
@@ -8,7 +9,9 @@ tau=2
 tworttwoGf = 1.52588e-4
 LoEfac = 2.534
 
-@jit
+nopython=True
+
+@jit(nopython=nopython)
 def getHVac2Enu( Mix,  dmVacVac, HVac2Enu):
     '''
     Calculate vacuum Hamiltonian in flavor basis for neutrino or 
@@ -17,9 +20,9 @@ def getHVac2Enu( Mix,  dmVacVac, HVac2Enu):
     dmVacDiag = np.zeros((3,3)) + np.zeros((3,3)) * 1j
     dmVacDiag[1,1] = dmVacVac[1,0]
     dmVacDiag[2,2] = dmVacVac[2,0]
-    HVac2Enu = Mix.dot(dmVacDiag).dot(Mix.conj().T)
+    HVac2Enu = np.dot(np.dot(Mix,dmVacDiag),np.conjugate(Mix).T)
 
-@jit
+@jit(nopython=nopython)
 def getHNSI(rho, NSIEps, antitype):
     '''
     Calculate effective non-standard interaction Hamiltonian in flavor basis 
@@ -31,7 +34,7 @@ def getHNSI(rho, NSIEps, antitype):
     HNSI = HNSI.real + np.zeros((3,3)) * 1j
     return HNSI
 
-@jit
+@jit(nopython=nopython)
 def getHMat(rho, NSIEps, antitype):
     '''
     Calculate full matter Hamiltonian in flavor basis 
@@ -43,7 +46,7 @@ def getHMat(rho, NSIEps, antitype):
     a = rho * tworttwoGf * antitype / 2.
 
     HSI = np.zeros((3,3)) + np.zeros((3,3)) * 1j
-    HSI[elec,elec] = a
+    HSI[elec,elec] = a + 0j
 
     # Obtain effective non-standard matter interaction Hamiltonian
     HNSI = getHNSI(rho, NSIEps, antitype)
@@ -51,7 +54,7 @@ def getHMat(rho, NSIEps, antitype):
     # This is where the full matter Hamiltonian is created
     return HSI + HNSI
 
-@jit
+@jit(nopython=nopython)
 def getM(Enu, rho, dmVacVac, dmMatMat, dmMatVac, HMat):
     '''
     Compute the matter-mass vector M, dM = M_i-M_j and dMimj
@@ -103,8 +106,10 @@ def getM(Enu, rho, dmVacVac, dmMatMat, dmMatVac, HMat):
 
     tmp = max(0., tmp)
 
-    theta = np.array([np.arctan2(np.sqrt(tmp), q) / 3.] * 3)
-    thetaV = np.array([np.arctan2(np.sqrt(tmpV), qV) / 3.] * 3)
+    res = np.arctan2(np.sqrt(tmp), q) / 3.
+    theta = np.array([res, res, res])
+    resV = np.arctan2(np.sqrt(tmpV), qV) / 3.
+    thetaV = np.array([resV, resV, resV])
     a = (2./3.)*np.pi
     theta[0] += a
     thetaV[0] += a
@@ -130,7 +135,7 @@ def getM(Enu, rho, dmVacVac, dmMatMat, dmMatVac, HMat):
               dmMatMat[i,j] = mMat[i] - mMat[j]
               dmMatVac[i,j] = mMat[i] - dmVacVac[j,0]
 
-@jit
+@jit(nopython=nopython)
 def getA(L, E, rho, Mix,  dmMatVac, dmMatMat, HMatMassEigenstateBasis, phase_offset):
     '''
     getA (take into account generic potential matrix (=Hamiltonian))
@@ -151,9 +156,9 @@ def getA(L, E, rho, Mix,  dmMatVac, dmMatMat, HMatMassEigenstateBasis, phase_off
 
     # Compute the product with the mixing matrices 
     # is this correct?
-    return Mix.dot(X).dot(Mix.conj().T)
+    return np.dot(np.dot(Mix,X),np.conjugate(Mix).T)
 
-@jit
+@jit(nopython=nopython)
 def get_product(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis, product):
     twoEHmM = np.zeros((3,3,3)) + np.zeros((3,3,3)) * 1j
     twoEHmM[:,:,0] = 2. * E * HMatMassEigenstateBasis
@@ -165,11 +170,11 @@ def get_product(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis, product)
             twoEHmM[n,n,j] -= dmMatVac[j,n]
 
     # Calculate the product in eq.(10) of twoEHmM for j!=k 
-    product[:,:,0] = (twoEHmM[:,:,1].dot(twoEHmM[:,:,2])) / (dmMatMat[0,1] * dmMatMat[0,2])
-    product[:,:,1] = (twoEHmM[:,:,2].dot(twoEHmM[:,:,0])) / (dmMatMat[1,2] * dmMatMat[1,0])
-    product[:,:,2] = (twoEHmM[:,:,0].dot(twoEHmM[:,:,1])) / (dmMatMat[2,0] * dmMatMat[2,1])
+    product[:,:,0] = (np.dot(twoEHmM[:,:,1],twoEHmM[:,:,2])) / (dmMatMat[0,1] * dmMatMat[0,2])
+    product[:,:,1] = (np.dot(twoEHmM[:,:,2],twoEHmM[:,:,0])) / (dmMatMat[1,2] * dmMatMat[1,0])
+    product[:,:,2] = (np.dot(twoEHmM[:,:,0],twoEHmM[:,:,1])) / (dmMatMat[2,0] * dmMatMat[2,1])
 
-@jit
+@jit(nopython=nopython)
 def convert_from_mass_eigenstate(state, pure, mixNuType):
     mass = np.zeros((3)) + np.zeros((3)) * 1j
     lstate  = state - 1
@@ -178,9 +183,9 @@ def convert_from_mass_eigenstate(state, pure, mixNuType):
         mass[i] = 1. if lstate == i else 0.
     # note: mixNuType is already taking into account whether we're considering
     # nu or anti-nu
-    pure = mixNuType.dot(mass)
+    pure = np.dot(mixNuType, mass)
 
-@jit
+@jit(nopython=nopython)
 def get_transition_matrix(nutype, Enu, rho, Len,
                            phase_offset,
                            mixNuType,  nsi_eps,
@@ -207,7 +212,7 @@ def get_transition_matrix(nutype, Enu, rho, Len,
     # Now we transform the matter (TODO: matter? full?) Hamiltonian back into the
     # mass eigenstate basis so we don't need to compute products of the effective
     # mixing matrix elements explicitly 
-    HMatMassEigenstateBasis = mixNuType.conj().T.dot(HMat).dot(mixNuType)
+    HMatMassEigenstateBasis = np.dot(np.dot(np.conjugate(mixNuType).T,HMat),mixNuType)
 
     # We can now proceed to calculating the transition amplitude from the Hamiltonian
     # in the mass basis and the effective mass splittings 

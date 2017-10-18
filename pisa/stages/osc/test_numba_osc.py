@@ -4,7 +4,10 @@ from  propy.osc import *
 from pisa.stages.osc.osc_params import *
 from numba import jit, vectorize, guvectorize, float64, complex64, int32, float32, complex128
 
-@guvectorize([(float64[:,:], complex128[:,:], float64[:,:], int32[:], int32[:], int32, float64[:], int32[:], float64[:], float64[:], float64[:,:])], '(a,b),(c,d),(e,f),(),(),(),(),(),(g),(h)->(a,b)')
+nopython=False
+
+#@guvectorize([(float64[:,:], complex128[:,:], float64[:,:], int32, int32, int32, float64, int32[:], float64[:], float64[:], float64[:,:])], '(a,b),(c,d),(e,f),(),(),(),(),(),(g),(h)->(a,b)', nopython=nopython)#, target='parallel')A
+@guvectorize([(float64[:,:], complex128[:,:], float64[:,:], int32, int32, int32, float64, int32[:], float64[:], float64[:], float64[:,:])], '(a,b),(c,d),(e,f),(),(),(),(),(),(g),(h)->(a,b)', nopython=nopython)#, target='parallel')A
 def propagateArray(dm,
                    mix,
                    nsi_eps,
@@ -25,7 +28,7 @@ def propagateArray(dm,
     #          (kNuBar > 0 for nu, < 0 for anti-nu)
     #        * kNuBar is passed in, so could already pass in the correct form
     #          of mixing matrix, i.e., possibly conjugated
-    if (kNuBar[0] > 0):
+    if (kNuBar > 0):
         # in this case the mixing matrix is left untouched
         mixNuType = mix
     
@@ -33,7 +36,7 @@ def propagateArray(dm,
         # here we need to complex conjugate all entries
         # (note that this only changes calculations with non-zero deltacp)
         #print('mix: ',mix)
-        mixNuType = mix.conj().T
+        mixNuType = np.conjugate(mix).T
 
     HVac2Enu = np.zeros((3,3)) + np.zeros((3,3)) * 1j
 
@@ -41,7 +44,7 @@ def propagateArray(dm,
 
     RawInputPsi = np.zeros((3)) + np.zeros((3)) * 1j
 
-    layers = numberOfLayers[0]
+    layers = numberOfLayers
     #print('layers = ',layers)
     for i in range(layers):
         density = densityInLayer[i]
@@ -91,7 +94,7 @@ dm = OP.dm_matrix
 
 nsi_eps = np.zeros((3,3))
 
-nevts = 10
+nevts = 1000
 
 # input arrays
 # nu /nu-bar
