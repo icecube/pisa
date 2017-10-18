@@ -5,14 +5,14 @@ import copy
 class DistributionMakerNutau(DistributionMaker):
 
     def get_variables(self, variables, no_reco=False, apply_sys_to_mc=True, return_stages=['mc','icc'], pid_selection=''):
-        # Note: only works with mc, icc and/or data stages
+        # Note: only works with mc, icc (or corsika) and/or data stages
 
         #print "apply_sys_to_mc ", apply_sys_to_mc
         pipelines = self._pipelines
         mc_stage = None
         combine_stage = None
         sys_stage = None
-        icc_stage = None
+        muon_stage = None
         data_stage = None
         for i in range(0, len(pipelines)):
             pipe = pipelines[i]
@@ -25,8 +25,8 @@ class DistributionMakerNutau(DistributionMaker):
             if 'discr_sys' in pipeline_stage_names:
                 sys_stage = pipelines[i]['discr_sys']
             if 'data' in pipeline_stage_names:
-                if pipelines[i]['data'].service_name == 'icc':
-                    icc_stage = pipelines[i]['data'] 
+                if pipelines[i]['data'].service_name == 'icc' or pipelines[i]['data'].service_name == 'corsika':
+                    muon_stage = pipelines[i]['data'] 
                 if pipelines[i]['data'].service_name == 'data':
                     data_stage = pipelines[i]['data'] 
 
@@ -42,10 +42,13 @@ class DistributionMakerNutau(DistributionMaker):
             data_params = None
 
         # params for icc 
-        if icc_stage is not None and 'icc' in return_stages:
-            icc_params = icc_stage.get_fields(fields=variables, no_reco=no_reco, icc_file_name = icc_stage.params.icc_bg_file.value)
+        if muon_stage is not None:
+            if 'icc' in return_stages:
+                muon_params = muon_stage.get_fields(fields=variables, no_reco=no_reco, event_file = muon_stage.params.icc_bg_file.value)
+            if 'corsika' in return_stages:
+                muon_params = muon_stage.get_fields(fields=variables, no_reco=no_reco, event_file = muon_stage.params.corsika_file.value)
         else:
-            icc_params = None
+            muon_params = None
 
         # params for mc 
         if mc_stage is not None and 'mc' in return_stages:
@@ -111,16 +114,14 @@ class DistributionMakerNutau(DistributionMaker):
                     data_cut = pid_copy>=2.0
                 for key in data_params.keys():
                     data_params[key] = data_params[key][data_cut]
-            if icc_params is not None:
-                pid_copy = copy.deepcopy(icc_params['pid'])
+            if muon_params is not None:
+                pid_copy = copy.deepcopy(muon_params['pid'])
                 if pid_selection=='cscd':
-                    icc_cut = np.logical_and(pid_copy>=-3, pid_copy<2.0)
+                    pid_cut = np.logical_and(pid_copy>=-3, pid_copy<2.0)
                 if pid_selection=='trck':
-                    icc_cut = pid_copy>=2.0
-                for key in icc_params.keys():
-                    if key=='weight':
-                        continue
-                    icc_params[key] = icc_params[key][icc_cut]
+                    pid_cut = pid_copy>=2.0
+                for key in muon_params.keys():
+                    muon_params[key] = muon_params[key][pid_cut]
             if mc_params is not None:
                 for flav in mc_params.keys():
                     pid_copy = copy.deepcopy(mc_params[flav]['pid'])
@@ -131,4 +132,4 @@ class DistributionMakerNutau(DistributionMaker):
                     for key in mc_params[flav].keys():
                         mc_params[flav][key] = mc_params[flav][key][mc_cut]
 
-        return mc_params, icc_params, data_params
+        return mc_params, muon_params, data_params
