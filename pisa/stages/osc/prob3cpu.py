@@ -6,6 +6,8 @@ from __future__ import division
 
 import numpy as np
 
+from scipy.interpolate import RectBivariateSpline
+
 from pisa.core.binning import MultiDimBinning
 from pisa.core.param import ParamSet, ParamSelector
 from pisa.core.stage import Stage
@@ -81,15 +83,8 @@ class prob3cpu(Stage):
     """
     def __init__(self, params, input_binning, output_binning,
                  memcache_deepcopy, error_method, transforms_cache_depth,
-                 outputs_cache_depth, debug_mode=None):
-
-        expected_params = (
-            'earth_model', 'YeI', 'YeM', 'YeO',
-            'detector_depth', 'prop_height',
-            'deltacp', 'deltam21', 'deltam31',
-            'theta12', 'theta13', 'theta23',
-            'nutau_norm'
-        )
+                 outputs_cache_depth, debug_mode=None, 
+                 use_spline=False, spline_binning=None):
 
         # Define the names of objects that are required by this stage (objects
         # will have the attribute `name`: i.e., obj.name)
@@ -107,7 +102,7 @@ class prob3cpu(Stage):
         super(self.__class__, self).__init__(
             use_transforms=True,
             params=params,
-            expected_params=expected_params,
+            expected_params=self.expected_params(),
             input_names=input_names,
             output_names=output_names,
             error_method=error_method,
@@ -127,6 +122,25 @@ class prob3cpu(Stage):
                                 and output_binning is not None)
         if self.calc_transforms:
             self.compute_binning_constants()
+
+
+        #If user specified that a spline should be used for speeding up the calculations, initialise this here
+        self.use_spline = use_spline
+        if self.use_spline : 
+            if spline_binning is None :
+                raise Exception("Must provide 'spline_binning' when splining oscillation probabilities")
+            self.init_osc_splines(spline_binning)
+
+
+    #Static function to return expcted params (static so other modules can grab these without an instance)
+    @staticmethod
+    def expected_params() :
+            return ('earth_model', 'YeI', 'YeM', 'YeO',
+            'detector_depth', 'prop_height',
+            'deltacp', 'deltam21', 'deltam31',
+            'theta12', 'theta13', 'theta23',
+            'nutau_norm')
+
 
     def compute_binning_constants(self):
         # Only works if energy and coszen are in input_binning
@@ -410,15 +424,52 @@ class prob3cpu(Stage):
     def calc_probs(self, kNuBar, kFlav, true_e_scale, true_energy,true_coszen, prob_e, prob_mu, **kwargs):
 
         """
-        Calculate oscillation probabilities in the case of vacuum oscillations
-        Here we use Prob3 but only because it has already implemented the 
-        vacuum oscillations and so makes life easier. This is for the case of
-        event-by-event calculations, not for PISA maps.
+        Calculate oscillation probabilities event-by-event
+        Both vacuum oscillations and propagation through matter are handled
+        Both event-by-event calculation and pre-computed splines can be used
         """
+
+        #Check user called the correct function
         if self.calc_transforms:
             raise ValueError("You have initialised prob3cpu for the case of "
                              "PISA maps and so this is the wrong function for"
                              " calculating the probabilities.")
+
+
+        #Choose between spline or full event-by-event calculation
+        if self.use_spline :
+
+            #Check spline has been produced
+            if self.prob_e_splines[kFlav][kNuBar] is None :
+                raise Exception("Cannot calculate probabilty using spline : Spline has not been generated yet")
+
+            #Extract probabilities for these events from the spline
+            np.copyto( prob_e, self.prob_e_splines[kFlav][kNuBar].ev(true_energy,true_coszen) ) #Use copyto to fill np array from another (using '=' sets the pointer reference without changing the underlying object)
+            np.copyto( prob_mu, self.prob_mu_splines[kFlav][kNuBar].ev(true_energy,true_coszen) ) 
+
+
+        else :
+
+            #Calculate probability for every event individually
+            self._calc_probs(kNuBar=kNuBar, 
+                            kFlav=kFlav, 
+                            true_e_scale=true_e_scale, 
+                            true_energy=true_energy, 
+                            true_coszen=true_coszen, 
+                            prob_e=prob_e, 
+                            prob_mu=prob_mu, 
+                            **kwargs)
+
+
+
+    def _calc_probs(self, kNuBar, kFlav, true_e_scale, true_energy,true_coszen, prob_e, prob_mu, **kwargs):
+
+        """
+        Calculate oscillation probabilities event-by-event
+        Both vacuum oscillations and propagation through matter are handled
+        Users should call `calc_probs`, not this function directly
+        """
+
         self.setup_barger_propagator()
         # Set up oscillation parameters needed to initialise MNS matrix
         kSquared = True
@@ -467,8 +518,11 @@ class prob3cpu(Stage):
             prop_height = self.params.prop_height.m_as('km')
 
             # Probability is separately calculated for each event
-            for i, (en, cz) in enumerate(zip(true_energy,true_coszen)):
-                en *= true_e_scale
+            #for i, (en, cz) in enumerate(zip(true_energy,true_coszen)):
+            for i in np.ndindex(true_energy.shape):
+                en = true_energy[i] * true_e_scale
+                cz = true_coszen[i]
+                #en *= true_e_scale
                 self.barger_propagator.SetMNS(
                     sin2th12Sq,sin2th13Sq,sin2th23Sq,deltam21,
                     mAtm,deltacp,en,kSquared,kNuBar
@@ -479,7 +533,72 @@ class prob3cpu(Stage):
                 self.barger_propagator.propagate(kNuBar)
                 prob_e[i] = self.barger_propagator.GetProb(0, kFlav)
                 prob_mu[i] = self.barger_propagator.GetProb(1, kFlav)
-            
+
+
+
+    def init_osc_splines(self,spline_binning) :
+
+        #Initialise everything we are going to need to generate oscillation prbability splines
+
+        #TODO enforce energy bins > 0 (get NaN for E=0)
+        #TODO enforce grid dims > spline k
+
+        #Store the bins
+        self.spline_binning = spline_binning
+
+        #Get [E,coszen] grid
+        self.spline_true_energy_grid, self.spline_true_coszen_grid = np.meshgrid(self.spline_binning["true_energy"].bin_edges,
+                                                                                self.spline_binning["true_coszen"].bin_edges,
+                                                                                indexing='ij')
+
+        #Create empty probability grids to fill (default to NaN so get errors if not filled correctly)
+        self.prob_e_grid = np.full( self.spline_true_energy_grid.shape, np.NaN )
+        self.prob_mu_grid = np.full( self.spline_true_energy_grid.shape, np.NaN )
+
+        #Define nu/nubar and flavors #TODO (Tom) Get from somwhere else, e.g. flavInt.py
+        kNuBar_vals = [-1,1]
+        kFlav_vals = [0,1,2]
+
+        #Create container for splines that we are about to generate
+        #Outer key is flavor, inner key is nu/nubar
+        self.prob_e_splines = dict([ ( kFlav, dict([ (kNuBar,None) for kNuBar in kNuBar_vals]) ) for kFlav in kFlav_vals ])
+        self.prob_mu_splines = dict([ ( kFlav, dict([ (kNuBar,None) for kNuBar in kNuBar_vals]) ) for kFlav in kFlav_vals ])
+
+
+    def generate_osc_splines(self,true_e_scale) :
+
+        #TODO (Tom)-> helper function so can generically use in CPU or GPU code
+        #TODO (Tom) Add logic in this class to determine whether splines need regereating? Currently is the resonsiblity of the calling code (such as weight.py)
+
+        #TODO (Tom) Handle true_e_scale
+        if not np.isclose(true_e_scale,1.) : raise NotImplementedError("generate_osc_splines cannot currently handle true_e_scale != 1., this needs implementing")
+
+        #Scale energy parameters
+        #TODO (Tom) test this
+        scaled_true_energy_grid = true_e_scale * self.spline_true_energy_grid
+        scaled_true_e_bins = true_e_scale * self.spline_binning["true_energy"].bin_edges
+
+        #Loop over nu vs nubar and nu flavors
+        kFlav_vals = self.prob_e_splines.keys()
+        for kFlav in kFlav_vals :
+            kNuBar_vals = self.prob_e_splines[kFlav].keys()
+            for kNuBar in kNuBar_vals :
+
+                #Calculate probabilites for grid
+                self._calc_probs( kNuBar=kNuBar, 
+                                kFlav=kFlav, 
+                                true_e_scale=true_e_scale, 
+                                true_energy=scaled_true_energy_grid, 
+                                true_coszen=self.spline_true_coszen_grid, 
+                                prob_e=self.prob_e_grid, 
+                                prob_mu=self.prob_mu_grid )
+
+                # Spline it for smoothing
+                self.prob_e_splines[kFlav][kNuBar] = RectBivariateSpline( scaled_true_e_bins, self.spline_binning["true_coszen"].bin_edges, self.prob_e_grid )
+                self.prob_mu_splines[kFlav][kNuBar] = RectBivariateSpline( scaled_true_e_bins, self.spline_binning["true_coszen"].bin_edges, self.prob_mu_grid )
+
+
+
     def validate_params(self, params):
         if params['earth_model'].value is None:
             if params['YeI'].value is not None:

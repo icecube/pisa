@@ -124,7 +124,8 @@ class weight_tom(Stage):
                  output_events=True, error_method=None, debug_mode=None,
                  disk_cache=None, memcache_deepcopy=True,
                  outputs_cache_depth=20, use_gpu=False, cache_flux=True,
-                 kde_hist=False, perfect_pid=False):
+                 kde_hist=False, perfect_pid=False,
+                 spline_osc_probs=False, osc_spline_binning=None):
 
         self.sample_hash = None #Input event sample hash
         self.weight_hash = None
@@ -152,16 +153,12 @@ class weight_tom(Stage):
             'hist_pid_scale',
         )
 
-        '''
         self.xsec_params = (
             'nu_diff_DIS',
             'nu_diff_norm',
             'nubar_diff_DIS',
             'nubar_diff_norm',
-            'hadron_DIS'
-        )
-        '''
-        self.xsec_params = (
+            'hadron_DIS',
             'Genie_Ma_QE',
             'Genie_Ma_RES',
         )
@@ -191,14 +188,14 @@ class weight_tom(Stage):
             'deltam31',
             'deltacp',
             'no_nc_osc',
-            'nutau_norm', #TODO nutau_cc_norm somewhere???
+            'nutau_norm',
         )
 
         self.atm_muon_params = (
             'atm_muon_scale',
-            'delta_gamma_mu_file',
-            'delta_gamma_mu_spline_kind',
-            'delta_gamma_mu_variable',
+            'delta_gamma_mu_file', #TODO (Tom) -> kwarg?
+            'delta_gamma_mu_spline_kind', #TODO (Tom) -> kwarg?
+            'delta_gamma_mu_variable', #TODO (Tom) -> kwarg?
             'delta_gamma_mu'
         )
 
@@ -252,12 +249,12 @@ class weight_tom(Stage):
         )
 
         if self.muons:
-            self.prim_unc_spline = self.make_prim_unc_spline()
+            self.muon_prim_unc_spline = self.make_muon_prim_unc_spline()
 
         #Determine whether to use GPU or CPU for the data processing (re-weighting due to flux, oscillations, etc)
         #User specifies this using the 'use_gpu' param
         #A special case is that if no Earth model is provided (e.g. oscillations are in vacuum), then the oscillations
-        #are performed using a CPU (everything else is still done using a GPU) #TODO why is this???
+        #are performed using a CPU (everything else is still done using a GPU)
         if self.use_gpu:
             if self.params.earth_model.value is None:
                 self.use_gpu_for_osc = False
@@ -282,17 +279,15 @@ class weight_tom(Stage):
                 from pisa.utils.gpu_hist import GPUHist
                 self.GPUHist = GPUHist
 
+        #Handle oscillation splining
+        self.spline_osc_probs = spline_osc_probs
+        self.osc_spline_binning = osc_spline_binning
+        logging.info("Using spline for oscillation calculations")
+
         #Register attributes that will be used for hashes
         self.include_attrs_for_hashes('use_gpu')
+        self.include_attrs_for_hashes('spline_osc_probs')
         self.include_attrs_for_hashes('sample_hash')
-
-
-        #TODO REMOVE
-
-        foo_params = ParamSet( p for p in self.params if p.name in ["theta23","livetime"] )
-        hash_params = hash_obj( [foo_params], full_hash=self.full_hash )
-        hash_param_vals = hash_obj( [ p.value for p in foo_params ], full_hash=self.full_hash )
-
 
 
     def _compute_nominal_outputs(self):
@@ -312,7 +307,7 @@ class weight_tom(Stage):
         self.noise_hash = None
 
         # Reset fixed errors
-        self.fixed_error = None #TODO remove once shift to latest histogramming tools???
+        self.fixed_error = None #TODO (Tom) remove once shift to latest histogramming tools???
 
 
         #
@@ -326,7 +321,7 @@ class weight_tom(Stage):
             #via the 'use_gpu' flag, so in general use this choice for the oscillations
             #A special case however is that if no Earth model is provided (e.g. 
             #oscillations are in vacuum), then the oscillations are performed using a 
-            #CPU (everything else is still done using a GPU) #TODO why is this???
+            #CPU (everything else is still done using a GPU)
             self.use_gpu_for_osc = self.use_gpu and ( self.params.earth_model.value is not None )
 
             # Get param subset wanted for oscillations class
@@ -351,6 +346,8 @@ class weight_tom(Stage):
                 memcache_deepcopy=False,
                 transforms_cache_depth=0,
                 outputs_cache_depth=0,
+                use_spline=self.spline_osc_probs,
+                spline_binning=self.osc_spline_binning,
             )
 
 
@@ -358,7 +355,7 @@ class weight_tom(Stage):
         # Prepare weight calculator
         #
 
-        # Instantiate weight calculator (differs depending on whether using CPU or GPU code) #TODO Make into a common class
+        # Instantiate weight calculator (differs depending on whether using CPU or GPU code) #TODO (Tom) Make into a common class?
         if self.use_gpu: from pisa.stages.mc.GPUWeight import CPUWeight as WeightCalculator
         else : from pisa.stages.mc.CPUWeight import CPUWeight as WeightCalculator
         self.weight_calc = WeightCalculator()
@@ -426,15 +423,15 @@ class weight_tom(Stage):
             if self.neutrinos :
 
                 #Add flux to neutrino events if required #TODO Maybe handle this more like Shivesh has, but for now keeping things as cloe to Philipp as possible
-                self.add_bar_fluxes_to_events()
+                self._add_flux_to_events()
 
                 #Calculate weighted effective area if required (used by neutrino weight calculation)
-                self.add_weighted_aeff_to_events()
+                self._add_weighted_aeff_to_events()
 
                 #Write the nu variable relevent to re-weighting calculations to data arrays on the host (CPU) 
                 #and if required the device (GPU) 
                 #TODO Enforce once only, maybe my moving to better way of copying to GPU
-                self.populate_nu_data_arrays()
+                self._populate_nu_data_arrays()
 
             #TODO store new sample hash now thing shave been changed... Or does "Data.update_hash" already handle this????
 
@@ -456,7 +453,7 @@ class weight_tom(Stage):
 
 
 
-    def add_weighted_aeff_to_events(self) : 
+    def _add_weighted_aeff_to_events(self) : 
 
         #The weighting code (GPU/CPUWeight.calc_weight) uses the a parameter 'weighted_aeff'
         #to determine the weight (taking into account the flux, oscillations and xsec effects)
@@ -486,7 +483,7 @@ class weight_tom(Stage):
     def add_tracklength_pid_to_events(self) :
 
         #GRECO uses the reconstructed tracklength of an event for PID
-        if str(self._data.metadata["name"]).lower() == "greco" : #TODO make a varibale in the greco.cfg file for this instead
+        if str(self._data.metadata["name"]).lower() == "greco" : #TODO make a variable in the greco.cfg file for this instead
 
             logging.info("Using 'tracklength' for 'pid'")
 
@@ -524,9 +521,12 @@ class weight_tom(Stage):
             else : raise ValueError( "Unrecognised event type : %s" % event_type )
 
 
-    def add_bar_fluxes_to_events(self) : #TODO Merge with compute_flux_weights
+    def _add_flux_to_events(self) :
 
-        # This is used to add flux values to events, in the format required by our 
+        # This is used to add flux values to events
+        # In some cases theflux has already have been added upstream (e.g. 
+        # in a hdf5 file), in which case nothing will be done here
+        # The flux is being added in a format that is compatible with our 
         # implementation of the Barr 2006 flux uncertainties
 
         #Check if data already contains flux
@@ -555,14 +555,14 @@ class weight_tom(Stage):
                     flux_weights = deepcopy(self._cached_fw)
                     self.flux_cache_hash = this_cache_hash
                 else:
-                    flux_weights = self._compute_flux_weights_barr(
+                    flux_weights = self._compute_flux_weights(
                         self._data, ParamSet(p for p in self.params
                                              if p.name in self.flux_params)
                     )
 
             #If not caching, need to calculate the fluxes
             else:
-                flux_weights = self._compute_flux_weights_barr(
+                flux_weights = self._compute_flux_weights(
                 self._data, ParamSet(p for p in self.params
                                      if p.name in self.flux_params)
             )
@@ -584,10 +584,11 @@ class weight_tom(Stage):
 
 
     @staticmethod
-    def _compute_flux_weights_barr(nu_data, params):
+    def _compute_flux_weights(nu_data, params) : #TODO (Tom) Merge with `compute_flux_weights`, basically doing the same thing
 
         """Neutrino fluxes via integral preserving spline."""
-        logging.info('Computing flux values in the format required for the Barr parameterisation (may take some time...)')
+
+        logging.info('Computing flux values for events (may take some time...)')
 
         logging.debug("Loading flux table : %s" % params['flux_file'].value)
         spline_dict = load_2D_table(params['flux_file'].value)
@@ -653,7 +654,7 @@ class weight_tom(Stage):
         self._data.update_hash()
 
 
-    def reweight_neutrinos(self) : #TODO Merge
+    def reweight_neutrinos(self) :
 
 
         #
@@ -675,24 +676,29 @@ class weight_tom(Stage):
         #    self._data[fig]['weight_weight'] *= xsec_weights[fig]
         '''
 
-        # Flux systematics calculation
+        #Flux systematics calculation
         flux_params = ParamSet( p for p in self.params if p.name in (list(self.flux_params)+["true_e_scale"]) )
         flux_recalculated = self.compute_nu_flux_weights(flux_params)
 
-        # Oscillations calculation
+        #Oscillations calculation
         osc_params = ParamSet( p for p in self.params if p.name in (list(self.osc_params)+["true_e_scale"]) )
         osc_recalculated = self.compute_nu_osc_probabilities(osc_params)
 
+        #DIS cross-section reweighting
+        #Note that this function actually modifies the weights directly, whereas the the weight modifications for the 
+        #osc and flux functions are handled below in `compute_weights`
+        dis_xsec_params = ParamSet( p for p in self.params if p.name in ["nu_diff_DIS","nu_diff_norm","nubar_diff_DIS","nubar_diff_norm","hadron_DIS"] ) 
+        xsec_recalculated = self.compute_nu_dis_xsec_weights(dis_xsec_params)
 
-
+        
         #
         # Calculate new weights
         #
 
-        #TODO Use Shivesh style calculation here...
+        #TODO (Tom) Use Shivesh style calculation here...
 
         #Only if any of the preceeding steps werre performed
-        if flux_recalculated or osc_recalculated : #TODO xsec #TODO hash data_arrays output variables instead?
+        if flux_recalculated or osc_recalculated or xsec_recalculated : #TODO (Tom) hash data_arrays output variables instead?
 
             #Perform calculation
             weight_params = ParamSet( p for p in self.params if p.name in ["livetime","aeff_scale","Genie_Ma_QE","Genie_Ma_RES"] )
@@ -701,7 +707,7 @@ class weight_tom(Stage):
             #Write final weight to data structure
             for fig in self._data.iterkeys():
                 if self.use_gpu : self.update_host_arrays(fig) #Copy data back from GPU to here...
-                self._data[fig]['pisa_weight'] = self._data_arrays[fig]['host']["weight"] #.ito('dimensionless') #TODO attach units
+                self._data[fig]['pisa_weight'] = self._data_arrays[fig]['host']["weight"] #.ito('dimensionless') #TODO (Tom) attach units
 
 
 
@@ -719,7 +725,6 @@ class weight_tom(Stage):
 
         #Get current state of all inputs to this calculation
         this_hash = self._get_params_hash(params)
-        #TODO Should these hashes also include the input eents variables relevent to the calculation???
 
         #If nothing has changed, then there is nothing to do
         if self.osc_hash == this_hash:
@@ -733,7 +738,6 @@ class weight_tom(Stage):
         #Grab required params
         true_e_scale = params.true_e_scale.value.m_as('dimensionless')
 
-        #TODO What does this do?
         if self.use_gpu_for_osc:
             theta12 = params.theta12.value.m_as('rad')
             theta13 = params.theta13.value.m_as('rad')
@@ -742,6 +746,10 @@ class weight_tom(Stage):
             deltam31 = params.deltam31.value.m_as('eV**2')
             deltacp = params.deltacp.value.m_as('rad')
             self.osc.update_MNS(theta12, theta13, theta23, deltam21, deltam31, deltacp)
+
+        #Calculate oscillation splines for this new set of oscillation parameters
+        if self.spline_osc_probs :
+            self.osc.generate_osc_splines(true_e_scale=true_e_scale)
 
         #Loop over flavor/interaction combinations
         for fig in self._data.keys() :
@@ -760,23 +768,25 @@ class weight_tom(Stage):
                 #Get the prob3 flavor and nu/nubar codes for this neutrino flavor
                 kFlav,kNuBar = NuFlavInt(fig).flav.prob3_codes
 
-
                 #Calculate the oscillation probabilities using prob3, handling differences between GPU and CPU implementations
                 if self.use_gpu_for_osc:
 
-                    #TODO re-init output GPU arrays???
+                    #TODO (Tom) re-init output GPU arrays???
+
+                    if self.spline_osc_probs :
+                        raise Exception("Oscillation probability splines not yet implemented for GPU case")
 
                     #Calculate probabilities, using appropriate args for GPU case
                     self.osc.calc_probs(
                         kNuBar=kNuBar,
                         kFlav=kFlav,
-                        n_evts=n_evts, #TODO Check this isn't modified
+                        n_evts=n_evts,
                         true_e_scale=true_e_scale,
                         **self._data_arrays[fig]["device"] #Use data array on device
                     )
 
                 else :
-
+                
                     #Calculate probabilities, using appropriate args for CPU case
                     self.osc.calc_probs(
                         kNuBar=kNuBar,
@@ -787,19 +797,14 @@ class weight_tom(Stage):
 
                     #If running on a GPU in general but using CPU for the oscillations part, need to update the device arrays
                     if self.use_gpu :
-                        self.update_device_arrays(flav, 'prob_e')
-                        self.update_device_arrays(flav, 'prob_mu')
+                        self.update_device_arrays(fig, 'prob_e')
+                        self.update_device_arrays(fig, 'prob_mu')
 
-
-            #TODO Do this outside of this function (need flux too)
-            '''
-            osc_weights[fig] = (flux_weights[fig]['nue'+p+'_flux']*prob_e
-                                + flux_weights[fig]['numu'+p+'_flux']*prob_mu)
-            '''
 
         #Store the new hash
         self.osc_hash = this_hash
 
+        #Done. Let the calling function know a new calculation has been performed
         return True
 
 
@@ -811,7 +816,7 @@ class weight_tom(Stage):
         #Note that nothing is returned, instead the results can be found in self._data_arrays in
         #the variables listed in self.flux_output_variables
 
-        #TODO attach_units????
+        #TODO (Tom) attach_units????
 
         #
         # Check if anything to do
@@ -861,6 +866,82 @@ class weight_tom(Stage):
         #Store the new hash
         self.flux_hash = this_hash
 
+        #Done. Let the calling function know a new calculation has been performed
+        return True
+
+
+
+    def compute_nu_dis_xsec_weights(self,params) :
+
+        #Compute weight modifications due to DIS cross-section uncertainty
+
+        #Note that uncertainties due to GENIE axial mass (quasi-elastic or
+        #resonance) are handled separately by CPU/GPUWeight.calc_weight
+        #TODO (Tom) Merge these in a more consistent way
+
+        #TODO (Tom) Make a GPU version of this code?
+
+
+        #
+        # Check if anything to do
+        #
+
+        #Get current state of all inputs to this calculation
+        this_hash = self._get_params_hash(params)
+
+        #If nothing has changed, then there is nothing to do
+        if self.xsec_hash == this_hash:
+            return False
+
+
+        #
+        # Calculate DIS cross-section weight modifications
+        #
+
+        #Get param values
+        nu_diff_DIS = params.nu_diff_DIS.value.m
+        nu_diff_norm = params.nu_diff_norm.value.m
+        nubar_diff_DIS = params.nubar_diff_DIS.value.m
+        nubar_diff_norm = params.nubar_diff_norm.value.m
+        hadron_DIS = params.hadron_DIS.value.m
+
+        #Loop over neutrino flavour-interaction combinations
+        for fig in self._data.keys() :
+
+            # Differential xsec systematic
+            if 'bar' not in fig:
+                nu_diff_DIS_to_use = nu_diff_DIS
+                nu_diff_norm_to_use = nu_diff_norm
+            else:
+                nu_diff_DIS_to_use = nubar_diff_DIS
+                nu_diff_norm_to_use = nubar_diff_norm
+
+            with np.errstate(divide='ignore', invalid='ignore'):
+                xsec_weights = (
+                    (1 - nu_diff_norm_to_use * nu_diff_DIS_to_use) *
+                    np.power(self._data[fig]['GENIE_x'], -nu_diff_DIS_to_use)
+                )
+            xsec_weights[~np.isfinite(xsec_weights)] = 0. #TODO (Tom) REPORT WHEN THIS HAPPENS
+
+            # High W hadronization systematic
+            if hadron_DIS != 0.:
+                xsec_weights *= (
+                    1. / (1 + (2*hadron_DIS * np.exp(
+                        -self._data[fig]['GENIE_y'] / hadron_DIS
+                    )))
+                )
+
+            #Update event weight
+            #This is running on host (CPU), so need to handle copy from/to GPU is using one
+            if self.use_gpu : self.update_host_arrays(fig,"weight") #Get weight from GPU
+            self._data_arrays[fig]['host']["weight"] * xsec_weights #Apply weight modifications
+            if self.use_gpu : self.update_device_arrays(fig,"weight") #Copy new weight to GPU
+
+
+        #Store the new hash
+        self.xsec_hash = this_hash
+
+        #Done. Let the calling function know a new calculation has been performed
         return True
 
 
@@ -890,7 +971,7 @@ class weight_tom(Stage):
         nue_flux_norm = 1.
         numu_flux_norm = 1.
 
-        #Combine all information to calculate new weights #TODO Move to Shivesh's style here
+        #Combine all information to calculate new weights #TODO (Tom) Move to Shivesh's style here
         for fig in self._data.iterkeys():
             data_array = self._data_arrays[fig]['device'] if self.use_gpu else self._data_arrays[fig]['host'] #Choose data based on CPU vs GPU selection
             self.weight_calc.calc_weight(
@@ -906,6 +987,7 @@ class weight_tom(Stage):
         #Store the new hash
         self.weight_calc_hash = this_hash
 
+        #Done. Let the calling function know a new calculation has been performed
         return True
 
 
@@ -924,7 +1006,6 @@ class weight_tom(Stage):
 
         #Get current state of all inputs to this calculation
         this_hash = self._get_params_hash(params)
-        #TODO Should these hashes also include the input eents variables relevent to the calculation???
 
         #If nothing has changed, then there is nothing to do
         if self.muon_hash == this_hash:
@@ -935,7 +1016,7 @@ class weight_tom(Stage):
         # Calculate weights
         #
 
-        #TODO GPU implementation?
+        #TODO (Tom) GPU implementation?
 
         #Start from sample weight
         weights = deepcopy(self._data.muons['sample_weight'])
@@ -952,8 +1033,8 @@ class weight_tom(Stage):
 
         # Primary CR systematic
         cr_rw_scale = params.delta_gamma_mu.value.m_as('dimensionless')
-        rw_variable = str(params.delta_gamma_mu_variable.value)#TODO kwarg?
-        rw_array = self.prim_unc_spline(self._data.muons[rw_variable])
+        rw_variable = str(params.delta_gamma_mu_variable.value)
+        rw_array = self.muon_prim_unc_spline(self._data.muons[rw_variable])
 
         # Reweighting term is positive-only by construction, so normalise
         # it by shifting the whole array down by a normalisation factor
@@ -962,7 +1043,7 @@ class weight_tom(Stage):
         weights *= (1+cr_rw_scale*cr_rw_array)
 
         #Set weights as dimensionless
-        #weights.ito('dimensionless') #TODO?
+        #weights.ito('dimensionless') #TODO (Tom) ?
 
         #Copy weights to events
         self._data.muons['pisa_weight'] = deepcopy(weights)
@@ -988,7 +1069,6 @@ class weight_tom(Stage):
 
         #Get current state of all inputs to this calculation
         this_hash = self._get_params_hash(params)
-        #TODO Should these hashes also include the input eents variables relevent to the calculation???
 
         #If nothing has changed, then there is nothing to do
         if self.noise_hash == this_hash:
@@ -999,7 +1079,7 @@ class weight_tom(Stage):
         # Calculate weights
         #
 
-        #TODO GPU implementation?
+        #TODO (Tom) GPU implementation?
 
         #Start from sample weight
         weights = deepcopy(self._data.noise['sample_weight'])
@@ -1026,7 +1106,7 @@ class weight_tom(Stage):
         return True
 
 
-    def populate_nu_data_arrays(self) :
+    def _populate_nu_data_arrays(self) :
 
         # This function fills arrays with the data required for all the reweighting calculations
         # This includes input data required from the events, as well as placeholders for output
@@ -1085,7 +1165,7 @@ class weight_tom(Stage):
                 'weight',
             ]
 
-        #Also define some optional input variables #TODO Clean up once move to new xsec re-weighting
+        #Also define some optional input variables
         self.optional_input_variables = [
                 'linear_fit_MaCCQE',
                 'quad_fit_MaCCQE',
@@ -1136,7 +1216,7 @@ class weight_tom(Stage):
                 else :
                     host_array[var] = np.zeros(n_evts, dtype=FTYPE)
 
-            #For optional variables, either copy them if they exists or fill with 0. if not
+            #For optional variables, either copy them if they exists or fill with 0 if not
             self.optional_input_variables
             for var in self.optional_input_variables :
                 if var in self._data[fig] :
@@ -1162,7 +1242,7 @@ class weight_tom(Stage):
         # Fill the device arrays
         #
 
-        #If using GPU, copy the data arrays across to it #TODO be selective if only some re-weighting done on GPU???
+        #If using GPU, copy the data arrays across to it #TODO (Tom) be selective if only some re-weighting done on GPU???
         if self.use_gpu : 
             import pycuda.driver as cuda
             start_t = time.time()
@@ -1178,7 +1258,7 @@ class weight_tom(Stage):
         # Apply raw reco sys
         #
 
-        #TODO???
+        #TODO (Tom) Is this functionality used in event-by-event mode???
 
 
 
@@ -1210,7 +1290,7 @@ class weight_tom(Stage):
 
         output_maps = []
 
-        #TODO Handling of the error hsit could be nicer...
+        #TODO (Tom) Handling of the error hsit could be nicer...
 
         #
         # Neutrinos
@@ -1235,23 +1315,20 @@ class weight_tom(Stage):
             if self.kde_hist : nu_err_hists = {}
 
             #The weight variable in the data arrays is named 'weight'
-            weight_var='weight'
-
-            #TODO What is this? Should I be using it?
-            #trans_nu_data = self._data.transform_groups(self._output_nu_groups)
+            weight_var = 'weight'
 
             #Loop over flavor/interaction combinations
             for fig in self._data_arrays.keys() :
 
                 #Fill histogram based using the method quested by the user
                 #Make sure to pass the correct data array (e.g. either the one on the CPU or the GPU)
-                #Using data from the data arrays used during the calculations #TODO Use event data (weight is written back)?
+                #Using data from the data arrays used during the calculations #TODO (Tom) Use event data (weight is written back)?
                 if self.kde_hist:
                     hist,err_hist = self.fill_kde_hist(self._data_arrays[fig]["host"],weight_var=weight_var)
                     nu_err_hists[fig] = err_hist
                 else :
                     if self.use_gpu:
-                        hist,sumw2 = self.fill_hist_using_gpu(self._data_arrays[fig]["device"],weight_var=weight_var)
+                        hist,sumw2 = self.fill_hist_use_gpu(self._data_arrays[fig]["device"],weight_var=weight_var)
                     else :
                         hist,sumw2 = self.fill_hist_using_cpu(self._data_arrays[fig]["host"],weight_var=weight_var)
                     if sumw2_errors : nu_sumw2[fig] = sumw2
@@ -1267,11 +1344,11 @@ class weight_tom(Stage):
 
                 scale = 1.0
 
-                #Apply nutau normalisation params
+                #Apply nutau normalisation params #TODO Instead apply nornalisation to event weights??
                 if fig in ['nutau_cc', 'nutaubar_cc']:
-                    scale *= self.params.nutau_cc_norm.value.m_as('dimensionless')  #TODO Is it a problem is nutau_CC and nutau norm are both applied?
+                    scale *= self.params.nutau_cc_norm.value.m_as('dimensionless')
                 if 'nutau' in fig:
-                    scale *= self.params.nutau_norm.value.m_as('dimensionless') #TODO Is this also being passed to prob3??? Is this the applied twice?
+                    scale *= self.params.nutau_norm.value.m_as('dimensionless') #TODO (Tom) Is this also being passed to prob3??? Is this then applied twice?
 
                 #Apply NC norm
                 if '_nc' in fig:
@@ -1324,7 +1401,7 @@ class weight_tom(Stage):
                 hist,err_hist = self.fill_kde_hist(self._data['muons'],weight_var=weight_var)
             else :
                 if self.use_gpu:
-                    hist,sumw2 = self.fill_hist_using_gpu(self._data['muons'],weight_var=weight_var)
+                    hist,sumw2 = self.fill_hist_use_gpu(self._data['muons'],weight_var=weight_var)
                 else :
                     hist,sumw2 = self.fill_hist_using_cpu(self._data['muons'],weight_var=weight_var)
                 err_hist = np.sqrt(sumw2) if sumw2_errors else None
@@ -1358,7 +1435,7 @@ class weight_tom(Stage):
                 hist,err_hist = self.fill_kde_hist(self._data['noise'],weight_var=weight_var)
             else :
                 if self.use_gpu:
-                    hist,sumw2 = self.fill_hist_using_gpu(self._data['noise'],weight_var=weight_var)
+                    hist,sumw2 = self.fill_hist_use_gpu(self._data['noise'],weight_var=weight_var)
                 else :
                     hist,sumw2 = self.fill_hist_using_cpu(self._data['noise'],weight_var=weight_var)
                 err_hist = np.sqrt(sumw2) if sumw2_errors else None
@@ -1394,7 +1471,6 @@ class weight_tom(Stage):
             sample.append(data_array[bin_name])
 
         kde_hist = self.kde_histogramdd(
-            #sample=np.array([trans_nu_data[bin_name] for bin_name in self.output_binning.names]).T,
             sample=np.array(sample).T,
             binning=self.output_binning,
             weights=data_array[weight_var],
@@ -1412,7 +1488,7 @@ class weight_tom(Stage):
         return hist,err_hist
 
 
-    def fill_hist_using_gpu(self,data_array,weight_var="weight") :
+    def fill_hist_use_gpu(self,data_array,weight_var="weight") :
 
         start_t = time.time()
 
@@ -1506,7 +1582,6 @@ class weight_tom(Stage):
         return hist,sumw2
 
 
-
     def get_num_events(self,fig) :
         #Get the number of events for this fig (use the length of the array for any variable, as each is filled once per event)
         return len(self._data[fig]["true_energy"])
@@ -1552,7 +1627,7 @@ class weight_tom(Stage):
         return scaled_a, scaled_b
 
 
-    def make_prim_unc_spline(self):
+    def make_muon_prim_unc_spline(self):
         """
         Create the spline which will be used to re-weight muons based on the
         uncertainties arising from cosmic rays.
@@ -1640,11 +1715,11 @@ class weight_tom(Stage):
         ]
         if self.neutrinos:
             param_types.extend([
-#                ('nu_diff_DIS', pq),
-#                ('nu_diff_norm', pq),
-#                ('nubar_diff_DIS', pq),
-#                ('nubar_diff_norm', pq),
-#                ('hadron_DIS', pq),
+                ('nu_diff_DIS', pq),
+                ('nu_diff_norm', pq),
+                ('nubar_diff_DIS', pq),
+                ('nubar_diff_norm', pq),
+                ('hadron_DIS', pq),
                 ('Genie_Ma_QE', pq),
                 ('Genie_Ma_RES', pq),
                 ('flux_file', basestring),
@@ -1695,550 +1770,8 @@ class weight_tom(Stage):
 
     def _get_params_hash(self,params) :
         #Create a hash of the param values, as well as the sample hash
-        #TODO should params.normalize values be set to True such that "nearly identical" values are treated as the same in the hash?
-        return hash_obj( [self.sample_hash, self.params.values_hash], full_hash = self.full_hash) #TODO weight hash? maybe not, as this is an output, not an input
+        #TODO (Tom) should params.normalize values be set to True such that "nearly identical" values are treated as the same in the hash?
+        return hash_obj( [self.sample_hash, self.params.values_hash], full_hash = self.full_hash) #TODO (Tom) weight hash? maybe not, as this is an output, not an input
 
 
-
-
-#######################################
-#######################################
-#######################################
-#TOOD REMOVE STUFF BELOW HERE
-#######################################
-#######################################
-#######################################
-
-
-
-
-    def compute_xsec_weights(self): #TODO Switch from Philipp's method to this one (Shivesh's)????
-        """Reweight to take into account xsec systematics."""
-        this_hash = hash_obj(
-            [self.params[name].value for name in self.xsec_params] +
-            [self.sample_hash], full_hash=self.full_hash
-        )
-        if self.xsec_hash == this_hash:
-            return self._xsec_weights
-
-        xsec_weights = self._compute_xsec_weights(
-            self._data, ParamSet(p for p in self.params
-                                 if p.name in self.xsec_params)
-        )
-
-        self.xsec_hash = this_hash
-        self._xsec_weights = xsec_weights
-        return xsec_weights
-
-
-    @staticmethod
-    def _compute_xsec_weights(nu_data, params):
-        """Reweight to take into account xsec systematics."""
-        logging.debug('Reweighting xsec systematics')
-
-        xsec_weights = OrderedDict()
-        for fig in nu_data.iterkeys():
-            # Differential xsec systematic
-            if 'bar' not in fig:
-                nu_diff_DIS = params['nu_diff_DIS'].m
-                nu_diff_norm = params['nu_diff_norm'].m
-            else:
-                nu_diff_DIS = params['nubar_diff_DIS'].m
-                nu_diff_norm = params['nubar_diff_norm'].m
-
-            with np.errstate(divide='ignore', invalid='ignore'):
-                xsec_weights[fig] = (
-                    (1 - nu_diff_norm * nu_diff_DIS) *
-                    np.power(nu_data[fig]['GENIE_x'], -nu_diff_DIS)
-                )
-            xsec_weights[fig][~np.isfinite(xsec_weights[fig])] = 0.
-
-            # High W hadronization systematic
-            hadron_DIS = params['hadron_DIS'].m
-            if hadron_DIS != 0.:
-                xsec_weights[fig] *= (
-                    1. / (1 + (2*hadron_DIS * np.exp(
-                        -nu_data[fig]['GENIE_y'] / hadron_DIS
-                    )))
-                )
-        return xsec_weights
-
-    @staticmethod
-    def _compute_flux_weights(nu_data, params):
-        """Neutrino fluxes via integral preserving spline."""
-        logging.debug('Computing flux values')
-        spline_dict = load_2D_table(params['flux_file'].value)
-
-        flux_weights = OrderedDict()
-        for fig in nu_data.iterkeys():
-            flux_weights[fig] = OrderedDict()
-            logging.debug('Computing flux values for flavour {0}'.format(fig))
-            flux_weights[fig]['nue_flux'] = calculate_flux_weights(
-                nu_data[fig]['energy'], nu_data[fig]['coszen'],
-                spline_dict['nue']
-            )
-            flux_weights[fig]['numu_flux'] = calculate_flux_weights(
-                nu_data[fig]['energy'], nu_data[fig]['coszen'],
-                spline_dict['numu']
-            )
-            flux_weights[fig]['nuebar_flux'] = calculate_flux_weights(
-                nu_data[fig]['energy'], nu_data[fig]['coszen'],
-                spline_dict['nuebar']
-            )
-            flux_weights[fig]['numubar_flux'] = calculate_flux_weights(
-                nu_data[fig]['energy'], nu_data[fig]['coszen'],
-                spline_dict['numubar']
-            )
-
-        return flux_weights
-
-    @staticmethod
-    def _compute_osc_weights(nu_data, params, flux_weights):
-        """Neutrino oscillations calculation via Prob3."""
-        # Import oscillations calculator only if needed
-        import pycuda.driver as cuda
-        import pycuda.autoinit
-        from pisa.stages.osc.prob3gpu import prob3gpu
-        logging.debug('Computing oscillation weights')
-        # Read parameters in, convert to the units used internally for
-        # computation, and then strip the units off. Note that this also
-        # enforces compatible units (but does not sanity-check the numbers).
-        theta12 = params['theta12'].m_as('rad')
-        theta13 = params['theta13'].m_as('rad')
-        theta23 = params['theta23'].m_as('rad')
-        deltam21 = params['deltam21'].m_as('eV**2')
-        deltam31 = params['deltam31'].m_as('eV**2')
-        deltacp = params['deltacp'].m_as('rad')
-        true_e_scale = params['true_e_scale'].m_as('dimensionless')
-
-        osc = prob3gpu(
-            params=params,
-            input_binning=None,
-            output_binning=None,
-            error_method=None,
-            memcache_deepcopy=False,
-            transforms_cache_depth=0,
-            outputs_cache_depth=0
-        )
-
-        osc_data = OrderedDict()
-        for fig in nu_data.iterkeys():
-            if 'nc' in fig and params['no_nc_osc'].value:
-                continue
-            osc_data[fig] = OrderedDict()
-            energy_array = nu_data[fig]['energy'].astype(FTYPE)
-            coszen_array = nu_data[fig]['coszen'].astype(FTYPE)
-            n_evts = np.uint32(len(energy_array))
-            osc_data[fig]['n_evts'] = n_evts
-
-            device = OrderedDict()
-            device['true_energy'] = energy_array
-            device['prob_e'] = np.zeros(n_evts, dtype=FTYPE)
-            device['prob_mu'] = np.zeros(n_evts, dtype=FTYPE)
-            out_layers_n = ('numLayers', 'densityInLayer', 'distanceInLayer')
-            out_layers = osc.calc_layers(coszen_array)
-            device.update(dict(zip(out_layers_n, out_layers)))
-
-            osc_data[fig]['device'] = OrderedDict()
-            for key in device.iterkeys():
-                osc_data[fig]['device'][key] = (
-                    cuda.mem_alloc(device[key].nbytes)
-                )
-                cuda.memcpy_htod(osc_data[fig]['device'][key], device[key])
-
-        osc.update_MNS(theta12, theta13, theta23, deltam21, deltam31, deltacp)
-
-        osc_weights = OrderedDict()
-        for fig in nu_data.iterkeys():
-            flavint = NuFlavInt(fig)
-            pdg = abs(flavint.flav.code)
-            kNuBar = 1 if flavint.particle else -1
-            p = '' if flavint.particle else 'bar'
-            if pdg == 12:
-                kFlav = 0
-            elif pdg == 14:
-                kFlav = 1
-            elif pdg == 16:
-                kFlav = 2
-
-            if 'nc' in fig and params['no_nc_osc'].value:
-                if kFlav == 0:
-                    osc_weights[fig] = flux_weights[fig]['nue'+p+'_flux']
-                elif kFlav == 1:
-                    osc_weights[fig] = flux_weights[fig]['numu'+p+'_flux']
-                elif kFlav == 2:
-                    osc_weights[fig] = 0.
-                continue
-
-            osc.calc_probs(
-                kNuBar, kFlav, osc_data[fig]['n_evts'], true_e_scale,
-                **osc_data[fig]['device']
-            )
-
-            prob_e = np.zeros(osc_data[fig]['n_evts'], dtype=FTYPE)
-            prob_mu = np.zeros(osc_data[fig]['n_evts'], dtype=FTYPE)
-            cuda.memcpy_dtoh(prob_e, osc_data[fig]['device']['prob_e'])
-            cuda.memcpy_dtoh(prob_mu, osc_data[fig]['device']['prob_mu'])
-
-            for key in osc_data[fig]['device']:
-                osc_data[fig]['device'][key].free()
-
-            osc_weights[fig] = (flux_weights[fig]['nue'+p+'_flux']*prob_e
-                                + flux_weights[fig]['numu'+p+'_flux']*prob_mu)
-
-        return osc_weights
-
-
-    def compute_flux_weights(self, attach_units=False):
-        """Neutrino fluxes via `honda` service."""
-        this_hash = hash_obj(
-            [self.params[name].value for name in self.flux_params] +
-            [self.sample_hash], full_hash=self.full_hash
-        )
-        out_units = ureg('1 / (GeV s m**2 sr)')
-        if self.flux_hash == this_hash:
-            if attach_units:
-                flux_weights = OrderedDict()
-                for fig in self._flux_weights.iterkeys():
-                    flux_weights[fig] = OrderedDict()
-                    for flav in self._flux_weights[fig].iterkeys():
-                        flux_weights[fig][flav] = \
-                                self._flux_weights[fig][flav]*out_units
-                return flux_weights
-            return self._flux_weights
-
-        data_contains_flux = all(
-            ['nue_flux' in fig and 'numu_flux' in fig and 'nuebar_flux' in fig
-             and 'numubar_flux' in fig for fig in self._data.itervalues()]
-        )
-        if data_contains_flux:
-            logging.info('Loading flux values from data.')
-            flux_weights = OrderedDict()
-            for fig in self._data.iterkeys():
-                d = OrderedDict()
-                d['nue_flux'] = self._data[fig]['nue_flux']
-                d['numu_flux'] = self._data[fig]['numu_flux']
-                d['nuebar_flux'] = self._data[fig]['nuebar_flux']
-                d['numubar_flux'] = self._data[fig]['numubar_flux']
-                flux_weights[fig] = d
-        elif self.cache_flux:
-            this_cache_hash = hash_obj(
-                [self._data.metadata['name'], self._data.metadata['sample'],
-                 self._data.metadata['cuts'], self.params['flux_file'].value],
-                full_hash=self.full_hash
-            )
-
-            if self.flux_cache_hash == this_cache_hash:
-                flux_weights = deepcopy(self._cached_fw)
-            elif this_cache_hash in self.disk_cache:
-                logging.info('Loading flux values from cache.')
-                self._cached_fw = self.disk_cache[this_cache_hash]
-                flux_weights = deepcopy(self._cached_fw)
-                self.flux_cache_hash = this_cache_hash
-            else:
-                flux_weights = self._compute_flux_weights(
-                    self._data, ParamSet(p for p in self.params
-                                         if p.name in self.flux_params)
-                )
-        else:
-            flux_weights = self._compute_flux_weights(
-                self._data, ParamSet(p for p in self.params
-                                     if p.name in self.flux_params)
-            )
-
-        if self.cache_flux:
-            if this_cache_hash not in self.disk_cache:
-                logging.info('Caching flux values to disk.')
-                self.disk_cache[this_cache_hash] = flux_weights
-
-        # TODO(shivesh): Barr flux systematics
-        for fig in flux_weights:
-            nue_flux = flux_weights[fig]['nue_flux']
-            numu_flux = flux_weights[fig]['numu_flux']
-            nuebar_flux = flux_weights[fig]['nuebar_flux']
-            numubar_flux = flux_weights[fig]['numubar_flux']
-
-            norm_nc = 1.0
-            if 'nc' in fig:
-                norm_nc = self.params['norm_nc'].m
-            norm_numu = self.params['norm_numu'].m
-            atm_index = np.power(
-                self._data[fig]['energy'], self.params['atm_delta_index'].m
-            )
-            nue_flux *= atm_index * norm_nc
-            numu_flux *= atm_index * norm_nc * norm_numu
-            nuebar_flux *= atm_index * norm_nc
-            numubar_flux *= atm_index * norm_nc * norm_numu
-
-            nue_flux, nuebar_flux = self.apply_ratio_scale(
-                nue_flux, nuebar_flux, self.params['nu_nubar_ratio'].m
-            )
-            numu_flux, numubar_flux = self.apply_ratio_scale(
-                numu_flux, numubar_flux, self.params['nu_nubar_ratio'].m
-            )
-            nue_flux, numu_flux = self.apply_ratio_scale(
-                nue_flux, numu_flux, self.params['nue_numu_ratio'].m
-            )
-            nuebar_flux, numubar_flux = self.apply_ratio_scale(
-                nuebar_flux, numubar_flux, self.params['nue_numu_ratio'].m
-            )
-
-            flux_weights[fig]['nue_flux'] = nue_flux
-            flux_weights[fig]['numu_flux'] = numu_flux
-            flux_weights[fig]['nuebar_flux'] = nuebar_flux
-            flux_weights[fig]['numubar_flux'] = numubar_flux
-
-        self.flux_hash = this_hash
-        self._flux_weights = flux_weights
-        if attach_units:
-            fw_units = OrderedDict()
-            for fig in flux_weights.iterkeys():
-                fw_units[fig] = OrderedDict()
-                for flav in flux_weights[fig].iterkeys():
-                    fw_units[fig][flav] = flux_weights[fig][flav]*out_units
-            return fw_units
-        return flux_weights
-
-
-    def compute_osc_weights(self, flux_weights):
-        """Neutrino oscillations calculation via Prob3."""
-        this_hash = hash_obj(
-            [self.params[name].value for name in self.flux_params +
-             self.osc_params] + [self.sample_hash], full_hash=self.full_hash
-        )
-        if self.osc_hash == this_hash:
-            return self._osc_weights
-        osc_weights = self._compute_osc_weights(
-            self._data, ParamSet(p for p in self.params
-                                 if p.name in self.osc_params), flux_weights
-        )
-
-        for fig in osc_weights:
-            if 'tau' in fig:
-                osc_weights[fig] *= self.params['nutau_norm'].m
-
-        self.osc_hash = this_hash
-        self._osc_weights = osc_weights
-        return self._osc_weights
-
-
-
-
-
-    def apply_reco(self):
-        """Apply raw reco systematics (to use as inputs to polyfit stage)"""
-        for flav in self.flavint_strings:
-            # Apply energy reco sys
-            f = self.params.reco_e_res_raw.value.m_as('dimensionless')
-            g = self.params.reco_e_scale_raw.value.m_as('dimensionless')
-            self.nu_events_processing_dict[flav]['host']['reco_energy'] = (
-                g * ((1.-f) * self.nu_events_processing_dict[flav]['host']['true_energy']
-                     + f * self.nu_events_processing_dict[flav]['host']['reco_energy'])
-            ).astype(FTYPE)
-
-            # Apply coszen reco sys
-            f = self.params.reco_cz_res_raw.value.m_as('dimensionless')
-            self.nu_events_processing_dict[flav]['host']['reco_coszen'] = (
-                (1.-f) * self.nu_events_processing_dict[flav]['host']['true_coszen']
-                + f * self.nu_events_processing_dict[flav]['host']['reco_coszen']
-            ).astype(FTYPE)
-
-            # Make sure everything is within -1 <= coszen <= 1, otherwise
-            # reflect
-            reco_cz = self.nu_events_processing_dict[flav]['host']['reco_coszen']
-            lt_m1_mask = reco_cz < -1
-            gt_p1_mask = reco_cz > 1
-            while np.any(lt_m1_mask + gt_p1_mask):
-                reco_cz[gt_p1_mask] = 2 - reco_cz[gt_p1_mask]
-                reco_cz[lt_m1_mask] = -2 - reco_cz[lt_m1_mask]
-                lt_m1_mask = reco_cz < -1
-                gt_p1_mask = reco_cz > 1
-
-            #If using GPU, write these reco values to the data arrays on the GPU
-            if self.use_gpu: 
-                self.update_device_arrays_old(flav, 'reco_energy')
-                self.update_device_arrays_old(flav, 'reco_coszen')
-
-
-
-    def format_nu_data_for_processing(self) :
-
-        #TODO This is very clunky, and only really used to shoehorn Philipp's stuff into here, I prefer the way it is done in Shivesh's osc reweighting function, update to be more like this...
-
-        #
-        # Define data format
-        #
-
-        if self.neutrinos:
-
-            #Define the variables that events are expected to contain for the weighting code to follow
-            required_event_variables = [
-                'true_energy',
-                'true_coszen',
-                'reco_energy',
-                'reco_coszen',
-                'neutrino_nue_flux',
-                'neutrino_numu_flux',
-                'neutrino_oppo_nue_flux',
-                'neutrino_oppo_numu_flux',
-                'weighted_aeff',
-            ]
-            optional_event_variables = [
-                'linear_fit_MaCCQE',
-                'quad_fit_MaCCQE',
-                'linear_fit_MaCCRES',
-                'quad_fit_MaCCRES',
-                'pid', #TODO Should this be mandatory???
-            ]
-
-            #Define variables that will be filled during the re-weighting
-            #Initially these will be created as empty arrays (e.g. on the GPUs) and filled as we go
-            output_event_variables = [
-                'prob_e',
-                'prob_mu',
-                'weight',
-                'scaled_nue_flux',
-                'scaled_numu_flux',
-                'scaled_nue_flux_shape',
-                'scaled_numu_flux_shape'
-            ]
-
-            #Also add error method to this if relevent
-            if self.error_method in ['sumw2', 'fixed_sumw2']:
-                output_event_variables += ['sumw2']
-
-            #TODO can probably remove this and just directly call Data.keys wherever
-            self.flavint_strings = self._data.keys()
-
-
-            #
-            # Create data arrays on CPU and/or GPU containing the neutrino data
-            #
-
-            # This creates the data arrays that will be processed by the oscillation code (prob3)
-            # This will include the event data, nu flavor, and possibly Earth layers
-            # Here the arrays created are referred to as the 'host' arrays, and reside on this machine
-            # If running on a CPU, the 'host' copy of the arrays will be the only copy, and will be used 
-            # for processing
-            # If running on a GPU, will also make a 'device' copy (copied from the 'device' copy) shortly
-
-            # setup all arrays that need to be put on GPU
-            logging.debug('read in events and copy to GPU')
-            start_t = time.time()
-            self.nu_events_processing_dict = {}
-            for flavint in self.flavint_strings :
-
-                #Get the prob3 flavor and nu/nubar codes for this neutrino flavor
-                kFlav,kNuBar = NuFlavInt(flavint).flav.prob3_codes
-
-                self.nu_events_processing_dict[flavint] = {}
-                # neutrinos: 1, anti-neutrinos: -1
-                self.nu_events_processing_dict[flavint]['kNuBar'] = kNuBar
-                # electron: 0, muon: 1, tau: 2
-                self.nu_events_processing_dict[flavint]['kFlav'] = kFlav
-
-                # Create fill arrays on the 'host', e.g. this machine (the 'device')
-                self.nu_events_processing_dict[flavint]['host'] = {}
-                for var in required_event_variables:
-                    if var not in self._data[flavint] :
-                        raise KeyError("Required variable '%s' missing for '%s'" % (var,flavint))
-                    self.nu_events_processing_dict[flavint]['host'][var] = ( self._data[flavint][var].astype(FTYPE) )
-                for var in optional_event_variables:
-                    if var in self._data[flavint] :
-                        self.nu_events_processing_dict[flavint]['host'][var] = ( self._data[flavint][var].astype(FTYPE) )
-                    else :
-                        # If variable doesn't exist (e.g. axial mass coeffs, just fill in ones) only warn first time
-                        if flavint == self.flavint_strings[0]:
-                            logging.warning('replacing variable %s by ones'%var)
-                        self.nu_events_processing_dict[flavint]['host'][var] = np.ones_like(
-                            self._data[flavint]['true_energy'],
-                            dtype=FTYPE
-                        )
-
-                self.nu_events_processing_dict[flavint]['n_evts'] = np.uint32(
-                    len(self.nu_events_processing_dict[flavint]['host'][required_event_variables[0]])
-                )
-                for var in output_event_variables:
-                    if (self.params.no_nc_osc and
-                            ((flavint in ['nue_nc', 'nuebar_nc'] and var == 'prob_e')
-                             or (flavint in ['numu_nc', 'numubar_nc']
-                                 and var == 'prob_mu'))):
-                        # In case of not oscillating NC events, we can set the
-                        # probabilities of nue->nue and numu->numu at 1, and
-                        # nutau->nutau at 0
-                        self.nu_events_processing_dict[flavint]['host'][var] = np.ones(
-                            self.nu_events_processing_dict[flavint]['n_evts'], dtype=FTYPE
-                        )
-                    else:
-                        self.nu_events_processing_dict[flavint]['host'][var] = np.zeros(
-                            self.nu_events_processing_dict[flavint]['n_evts'], dtype=FTYPE
-                        )
-
-                # Calulate the layers of the Earth (every particle crosses a number of layers in the
-                # earth with different densities, and for a given length these depend only on the earth
-                # model (PREM) and the true coszen of an event. Therefore we can calculate these for 
-                # once and are done
-                # Note: prob3cpu handles this in a different way (entirely internally, no need to call
-                # this function), so only do this in GPU mode
-                if self.use_gpu_for_osc: 
-                        nlayers, dens, dist = self.osc.calc_layers(
-                            self.nu_events_processing_dict[flavint]['host']['true_coszen']
-                        )
-                        self.nu_events_processing_dict[flavint]['host']['numLayers'] = nlayers
-                        self.nu_events_processing_dict[flavint]['host']['densityInLayer'] = dens
-                        self.nu_events_processing_dict[flavint]['host']['distanceInLayer'] = dist
-
-            end_t = time.time()
-            logging.debug( 'Output data formatted%s in %.4f ms'% ( (" and Earth layers calculated" if self.use_gpu else "") , (end_t - start_t) * 1000) )
-
-
-            #
-            # Copy data arrays to GPU
-            #
-
-            #If using GPU, copy the data arrays across to it
-            if self.use_gpu: 
-                import pycuda.driver as cuda
-                start_t = time.time()
-                for flav in self.flavint_strings:
-                    #Copy all data from the local ('host') events array on this machine to the GPU ('device') copy of the array
-                    self.nu_events_processing_dict[flav]['device'] = {} 
-                    for key, val in self.nu_events_processing_dict[flav]['host'].items():
-                        self.nu_events_processing_dict[flav]['device'][key] = cuda.mem_alloc(val.nbytes)
-                        cuda.memcpy_htod(self.nu_events_processing_dict[flav]['device'][key], val)
-                end_t = time.time()
-                logging.debug('copy of events to GPU device done in %.4f ms'%((end_t - start_t) * 1000))
-
-
-        #
-        # Apply raw reco sys
-        #
-
-        self.apply_reco()
-
-
-
-    def update_device_arrays_old(self, flav, var):
-        """Helper function to update device arrays from the host arrays"""
-        import pycuda.driver as cuda
-        self.nu_events_processing_dict[flav]['device'][var].free()
-        self.nu_events_processing_dict[flav]['device'][var] = cuda.mem_alloc(
-            self.nu_events_processing_dict[flav]['host'][var].nbytes
-        )
-        cuda.memcpy_htod(
-            self.nu_events_processing_dict[flav]['device'][var],
-            self.nu_events_processing_dict[flav]['host'][var]
-        )
-
-
-    def get_device_arrays(self, variables=['weight']):
-        """Copy back event by event information from the device dict into the host dict"""
-        import pycuda.driver as cuda
-        for flav in self.flavint_strings:
-            for var in variables:
-                buff = np.full(self.nu_events_processing_dict[flav]['n_evts'],
-                               fill_value=np.nan, dtype=FTYPE)
-                cuda.memcpy_dtoh(buff, self.nu_events_processing_dict[flav]['device'][var])
-                assert np.all(np.isfinite(buff))
-                self.nu_events_processing_dict[flav]['host'][var] = buff
 
