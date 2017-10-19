@@ -44,7 +44,7 @@ pipeline.py --pipeline settings/pipeline/example.cfg \
 
 # EXAMPLE: Run the Asimov NMO analysis; leave off "_gpu" to run CPU-only
 # version
-hypo_testing.py --logdir /tmp/test \
+hypo_testing.py --logdir /tmp/test analysis \
     --h0-pipeline settings/pipeline/example_gpu.cfg \
     --h0-param-selections="ih" \
     --h1-param-selections="nh" \
@@ -341,7 +341,7 @@ test_consistency_with_pisa2.py -v
 To make sure that an analysis can be run, try running an Asimov analysis of neutrino mass ordering (NMO) with the following (this takes about one minute on a laptop; note, though, that the result is not terribly accurate due to the use of coarse binning and low Monte Carlo statistics):
 ```bash
 export PISA_FTYPE=fp64
-hypo_testing.py --logdir /tmp/nmo_test \
+hypo_testing.py --logdir /tmp/nmo_test analysis \
     --h0-pipeline settings/pipeline/example.cfg \
     --h0-param-selections="ih" \
     --h1-param-selections="nh" \
