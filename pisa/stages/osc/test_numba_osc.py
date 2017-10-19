@@ -93,7 +93,8 @@ dm = OP.dm_matrix
 
 nsi_eps = np.zeros((3,3)) + np.zeros((3,3)) * 1j
 
-nevts = int(1e3)
+points = 1000
+nevts = points**2
 
 # input arrays
 # nu /nu-bar
@@ -101,18 +102,23 @@ kNuBar = np.ones(nevts, dtype=np.int32)
 # flavours
 kFlav = np.ones(nevts, dtype=np.int32)
 
-energy = np.logspace(0,3,nevts)
+energy_points = np.logspace(0,3,points)
+cz_points = np.linspace(-1,1,points)
 
-myLayers = Layers('/home/peller/pisa/pisa/resources/osc/PREM_4layer.dat', 2, 20)
+energy, cz = np.meshgrid(energy_points, cz_points)
+
+energy = energy.ravel()
+cz = cz.ravel()
+
+myLayers = Layers('/home/peller/pisa/pisa/resources/osc/PREM_12layer.dat', 2, 20)
 myLayers.setElecFrac(0.4656, 0.4656, 0.4957)
 
-cz = -np.ones((nevts))
 myLayers.calcLayers(cz)
 
 #for now just preten they are all the same dimension
 numberOfLayers = myLayers.n_layers
-densityInLayer = myLayers.density.reshape((nevts,numberOfLayers[0]+1))
-distanceInLayer = myLayers.distance.reshape((nevts,numberOfLayers[0]+1))
+densityInLayer = myLayers.density.reshape((nevts,myLayers.max_layers))
+distanceInLayer = myLayers.distance.reshape((nevts,myLayers.max_layers))
 #print('nlayers: ',myLayers.n_layers)
 #print('density: ',myLayers.density)
 #print('distance: ',myLayers.distance)
@@ -150,10 +156,28 @@ import matplotlib as mpl
 mpl.use('Agg')
 from matplotlib import pyplot as plt
 
+
+pmap = Probability[:,1,1].reshape((points, points))
+
+pcol = plt.pcolormesh(energy_points, cz_points, pmap,
+                                        vmin=0, vmax=1, cmap='RdBu', linewidth=0, rasterized=True)
 ax = plt.gca()
-ax.plot(energy, Probability[:,1,0], color='g')
-ax.plot(energy, Probability[:,1,1], color='b')
-ax.plot(energy, Probability[:,1,2], color='r')
 ax.set_xscale('log')
-ax.set_ylim((0,1))
-plt.savefig('osc_test.png')
+
+plt.savefig('osc_test_map.png')
+
+
+#ax = plt.gca()
+#ax.plot(energy, Probability[:,1,0], color='g')
+#ax.plot(energy, Probability[:,1,1], color='b')
+#ax.plot(energy, Probability[:,1,2], color='r')
+#ax.set_xscale('log')
+#ax.set_ylim((0,1))
+#plt.savefig('osc_test.png')
+
+
+
+
+
+
+
