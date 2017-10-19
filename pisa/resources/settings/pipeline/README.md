@@ -9,3 +9,4 @@ This directory should contain everything needed to help you set up your pipeline
   * `example_gpu.cfg` - Demonstrates the simplest `hist` pipeline but with the oscillations stage running on a gpu.
   * `example_vbwkde.cfg` - Demonstrates the use of the variable-bandwidth kernel density estimation for computing the `reco` transformations.
   * `example_xsec.cfg` - Demonstrates the use of the `xsec` stage instead of the `aeff` stage.
+  * `dummy_pipeline.cfg` - Demonstrates a simple pipeline using just the flux/dummy and osc/dummy file
