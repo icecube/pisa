@@ -4,22 +4,31 @@ from  propy.osc import *
 from pisa.stages.osc.osc_params import *
 from numba import jit, vectorize, guvectorize, float64, complex64, int32, float32, complex128
 
-nopython=False
+#nopython=False
+nopython=True
 
-#@guvectorize([(float64[:,:], complex128[:,:], float64[:,:], int32, int32, int32, float64, int32[:], float64[:], float64[:], float64[:,:])], '(a,b),(c,d),(e,f),(),(),(),(),(),(g),(h)->(a,b)', nopython=nopython)#, target='parallel')A
-@guvectorize([(float64[:,:], complex128[:,:], float64[:,:], int32, int32, int32, float64, int32[:], float64[:], float64[:], float64[:,:])], '(a,b),(c,d),(e,f),(),(),(),(),(),(g),(h)->(a,b)', nopython=nopython)#, target='parallel')A
+@guvectorize([(float64[:,:], complex128[:,:], float64[:,:], int32, int32, float64, int32, float64[:], float64[:], float64[:,:])], '(a,b),(c,d),(e,f),(),(),(),(),(g),(h)->(a,b)', nopython=nopython)#, target='parallel')A
 def propagateArray(dm,
                    mix,
                    nsi_eps,
                    kNuBar,
                    kFlav,
-                   maxLayers,
                    energy,
                    numberOfLayers,
                    densityInLayer,
                    distanceInLayer,
                    Probability):
 
+    print('dm',dm)
+    print('mix',mix)
+    print('nsi',nsi_eps)
+    print('knubar',kNuBar)
+    print('kflav',kFlav)
+    print('E',energy)
+    print('nlayers',numberOfLayers)
+    print('density',densityInLayer)
+    print('dist',distanceInLayer)
+    print('prob',Probability)
     kUseMassEstates = False
     #print('knubar = ',kNuBar)
     #print('mix = ',mix)
@@ -75,7 +84,7 @@ def propagateArray(dm,
             RawInputPsi[i] = 1.0
 
         #// calculate 'em all here, from legacy code...
-        OutputPsi = TransitionProduct.dot(RawInputPsi)
+        OutputPsi = np.dot(TransitionProduct,RawInputPsi)
         Probability[i][0] += abs(OutputPsi[0])
         Probability[i][1] += abs(OutputPsi[1])
         Probability[i][2] += abs(OutputPsi[2])
@@ -94,7 +103,7 @@ dm = OP.dm_matrix
 
 nsi_eps = np.zeros((3,3))
 
-nevts = 1000
+nevts = 10
 
 # input arrays
 # nu /nu-bar
@@ -105,7 +114,6 @@ kFlav = np.ones(nevts, dtype=np.int32)
 energy = np.linspace(1,10,nevts)
 
 # Layers
-maxLayers = np.int32(1)
 numberOfLayers = np.ones((nevts), dtype=np.int32)
 densityInLayer = np.ones((nevts,1))
 distanceInLayer = np.ones((nevts,1))
@@ -123,7 +131,6 @@ propagateArray(
                nsi_eps,
                kNuBar,
                kFlav,
-               maxLayers,
                energy,
                numberOfLayers,
                densityInLayer,
