@@ -16,3 +16,4 @@ In this directory, you can find the following pipeline config files:
   * `example_vacuum.cfg` - simple "staged approach" but oscillations set to those in vacuum (as opposed to oscillations through Earth, as calculated elsewhere)
   * `example_vbwkde.cfg` - "staged approach" with smoothing of reco resolutions (including PID) via bandwidth KDE (VBWKDE, also known as adaptive KDE)
   * `example_xsec.cfg` - "staged approach" but replacing the `aeff` stage with `xsec`; no reco or PID stages are used
+  * `dummy_pipeline.cfg` - Demonstrates a simple pipeline using just the flux/dummy and osc/dummy file

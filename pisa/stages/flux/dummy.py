@@ -9,8 +9,8 @@ from pisa.utils.hash import hash_obj
 
 class dummy(Stage):
     """
-    This is a Flux Service just for testing purposes, generating a random map
-    m1 and a map containing ones as m2; the parameter `test` is required.
+    This is a Flux Service just for testing purposes, generating a random map; 
+    the parameter `test` is required.
     """
     def __init__(self, params, output_binning, error_method,
                  outputs_cache_depth, memcache_deepcopy, disk_cache=None,
