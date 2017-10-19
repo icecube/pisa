@@ -1,7 +1,8 @@
 from __future__ import print_function
 import numpy as np
-from  propy.osc import *
-from pisa.stages.osc.osc_params import *
+from propy.osc import *
+from pisa.stages.osc.osc_params import OscParams
+from pisa.stages.osc.layers import Layers
 from numba import jit, vectorize, guvectorize, float64, complex64, int32, float32, complex128
 import time
 
@@ -44,18 +45,13 @@ def propagateArray(dm,
     else:
         # here we need to complex conjugate all entries
         # (note that this only changes calculations with non-zero deltacp)
-        #print('mix: ',mix)
         mixNuType = np.conjugate(mix).T
-
-    #HVac2Enu = np.zeros((3,3)) + np.zeros((3,3)) * 1j
 
     HVac2Enu = getHVac2Enu(mixNuType, dm)
 
     RawInputPsi = np.zeros((3)) + np.zeros((3)) * 1j
 
-    layers = numberOfLayers
-    #print('layers = ',layers)
-    for i in range(layers):
+    for i in range(numberOfLayers):
         density = densityInLayer[i]
         distance = distanceInLayer[i]
         TransitionMatrix = get_transition_matrix(kNuBar,
@@ -67,7 +63,6 @@ def propagateArray(dm,
                                nsi_eps,
                                HVac2Enu,
                                dm)
-        #print('Transition Matrix: ',TransitionMatrix)
         if (i==0):
             TransitionProduct = TransitionMatrix
         else:
@@ -75,8 +70,6 @@ def propagateArray(dm,
         
     # loop on neutrino types, and compute probability for neutrino i:
     # We actually don't care about nutau -> anything since the flux there is zero!
-    #print('Transition Product: ',TransitionProduct)
-    #print('Unitary? ',np.dot(np.conjugate(TransitionProduct).T,TransitionProduct))
     for i in range(2):
         for j in range(3):
             RawInputPsi[j] = 0.0 + 0.0j
@@ -92,21 +85,15 @@ def propagateArray(dm,
         Probability[i][1] += OutputPsi[1].real**2 + OutputPsi[1].imag**2
         Probability[i][2] += OutputPsi[2].real**2 + OutputPsi[2].imag**2
 
-    #prob_e = Probability[0][kFlav]
-    #prob_mu = Probability[1][kFlav]
-    #print 'prob_e: ', prob_e
-    #print 'prob_mu: ', prob_mu
 
-
-
-OP = OscParams(7.5e-5, 2.5e-3, 0.55, 0.14, 0.7, 0.)
+OP = OscParams(7.5e-5, 2.524e-3, np.sqrt(0.306), np.sqrt(0.02166), np.sqrt(0.441), 261/180.*np.pi)
 
 mix = OP.mix_matrix[:,:,0] + OP.mix_matrix[:,:,1] * 1j
 dm = OP.dm_matrix
 
 nsi_eps = np.zeros((3,3)) + np.zeros((3,3)) * 1j
 
-nevts = 10000
+nevts = int(1e3)
 
 # input arrays
 # nu /nu-bar
@@ -114,13 +101,29 @@ kNuBar = np.ones(nevts, dtype=np.int32)
 # flavours
 kFlav = np.ones(nevts, dtype=np.int32)
 
-energy = np.logspace(-1,2,nevts)
+energy = np.logspace(0,3,nevts)
+
+myLayers = Layers('/home/peller/pisa/pisa/resources/osc/PREM_4layer.dat', 2, 20)
+myLayers.setElecFrac(0.4656, 0.4656, 0.4957)
+
+cz = -np.ones((nevts))
+myLayers.calcLayers(cz)
+
+#for now just preten they are all the same dimension
+numberOfLayers = myLayers.n_layers
+densityInLayer = myLayers.density.reshape((nevts,numberOfLayers[0]+1))
+distanceInLayer = myLayers.distance.reshape((nevts,numberOfLayers[0]+1))
+#print('nlayers: ',myLayers.n_layers)
+#print('density: ',myLayers.density)
+#print('distance: ',myLayers.distance)
+#print('max: ',myLayers.max_layers)
 
 # Layers
-nlay = 1
-numberOfLayers = nlay * np.ones((nevts), dtype=np.int32)
-densityInLayer = np.ones((nevts,nlay))
-distanceInLayer = 1000 * np.ones((nevts,nlay))
+#nlay = 1
+#numberOfLayers = nlay * np.ones((nevts), dtype=np.int32)
+#densityInLayer = np.ones((nevts,nlay))
+#distanceInLayer = 12700 * np.ones((nevts,nlay))
+#print(distanceInLayer)
 
 # empty arrays to be filled
 Probability = np.zeros((nevts,3,3))
@@ -139,7 +142,6 @@ propagateArray(
                distanceInLayer,
                Probability)
 end_t = time.time()
-#print(Probability)
 print ('%.2f s for %i events'%((end_t-start_t),nevts))
 
 
