@@ -88,9 +88,9 @@ def propagateArray(dm,
 
         #// calculate 'em all here, from legacy code...
         OutputPsi = np.dot(TransitionProduct,RawInputPsi)
-        Probability[i][0] += abs(OutputPsi[0])
-        Probability[i][1] += abs(OutputPsi[1])
-        Probability[i][2] += abs(OutputPsi[2])
+        Probability[i][0] += OutputPsi[0].real**2 + OutputPsi[0].imag**2
+        Probability[i][1] += OutputPsi[1].real**2 + OutputPsi[1].imag**2
+        Probability[i][2] += OutputPsi[2].real**2 + OutputPsi[2].imag**2
 
     #prob_e = Probability[0][kFlav]
     #prob_mu = Probability[1][kFlav]
@@ -106,7 +106,7 @@ dm = OP.dm_matrix
 
 nsi_eps = np.zeros((3,3)) + np.zeros((3,3)) * 1j
 
-nevts = 100
+nevts = 10000
 
 # input arrays
 # nu /nu-bar
@@ -114,7 +114,7 @@ kNuBar = np.ones(nevts, dtype=np.int32)
 # flavours
 kFlav = np.ones(nevts, dtype=np.int32)
 
-energy = np.logspace(0,2,nevts)
+energy = np.logspace(-1,2,nevts)
 
 # Layers
 nlay = 1
@@ -153,4 +153,5 @@ ax.plot(energy, Probability[:,1,0], color='g')
 ax.plot(energy, Probability[:,1,1], color='b')
 ax.plot(energy, Probability[:,1,2], color='r')
 ax.set_xscale('log')
+ax.set_ylim((0,1))
 plt.savefig('osc_test.png')

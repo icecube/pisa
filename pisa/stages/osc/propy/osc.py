@@ -19,8 +19,8 @@ def getHVac2Enu( Mix,  dmVacVac):
     antineutrino (need complex conjugate mixing matrix) of energy Enu.
     '''
     dmVacDiag = np.zeros((3,3)) + np.zeros((3,3)) * 1j
-    dmVacDiag[1,1] = dmVacVac[1,0]
-    dmVacDiag[2,2] = dmVacVac[2,0]
+    dmVacDiag[1,1] = dmVacVac[1,0] + 0j
+    dmVacDiag[2,2] = dmVacVac[2,0] + 0j
     return np.dot(np.dot(Mix,dmVacDiag),np.conjugate(Mix).T)
 
 @jit(nopython=nopython, cache=cache)
@@ -73,52 +73,51 @@ def getM(Enu, rho, dmVacVac, dmMatMat, dmMatVac, HMat):
 
     HEEHMuMuHTauTau = (HMat[elec,elec]*HMat[muon,muon]*HMat[tau,tau]).real
 
-    c1 = (HMat[elec,elec].real * (HMat[muon,muon] + HMat[tau,tau])).real \
-         -(HMat[elec,elec].imag * (HMat[muon,muon] + HMat[tau,tau])).imag \
+    c1 =   (HMat[elec,elec].real * (HMat[muon,muon] + HMat[tau,tau])).real \
+         - (HMat[elec,elec].imag * (HMat[muon,muon] + HMat[tau,tau])).imag \
          + (HMat[muon,muon].real * HMat[tau,tau]).real \
+         - (HMat[muon,muon].imag * HMat[tau,tau]).imag \
          - HEMuModulusSq \
          - HMuTauModulusSq \
          - HETauModulusSq
 
-    c0 = HMat[elec,elec].real * HMuTauModulusSq \
+    c0 =   HMat[elec,elec].real * HMuTauModulusSq \
          + HMat[muon,muon].real * HETauModulusSq \
-         + HMat[tau,tau].real * HEMuModulusSq \
-         - 2.0 * ReHEMuHMuTauHTauE \
+         + HMat[tau,tau].real   * HEMuModulusSq \
+         - 2. * ReHEMuHMuTauHTauE \
          - HEEHMuMuHTauTau
 
     c2 = - np.trace(HMat.real)
 
-    c2V = (-1.0/(2.0*Enu))*(dmVacVac[1,0] + dmVacVac[2,0])
+    c2V = (-1. / (2. * Enu)) * (dmVacVac[1,0] + dmVacVac[2,0])
 
-    p = c2*c2 - 3.0*c1
-    pV = (1.0/(2.0*Enu*2.0*Enu))*(dmVacVac[1,0]*dmVacVac[1,0] +
-                              dmVacVac[2,0]*dmVacVac[2,0] - 
-                              dmVacVac[1,0]*dmVacVac[2,0])
+    p = c2 * c2 - 3. * c1
+    pV = (1. / (2. * Enu * 2. * Enu)) * (dmVacVac[1,0] * dmVacVac[1,0] +
+                                         dmVacVac[2,0] * dmVacVac[2,0] - 
+                                         dmVacVac[1,0] * dmVacVac[2,0])
     p = max(0., p)
 
-    q = -27.0*c0/2.0 - c2*c2*c2 + 9.0*c1*c2/2.0
-    qV = (1.0/(2.0*Enu*2.0*Enu*2.0*Enu))*(
-        (dmVacVac[1,0] + dmVacVac[2,0])*(dmVacVac[1,0] + dmVacVac[2,0])*
-        (dmVacVac[1,0] + dmVacVac[2,0]) - (9.0/2.0)*dmVacVac[1,0]*dmVacVac[2,0]*
-        (dmVacVac[1,0] + dmVacVac[2,0]))
+    q = -27. * c0 / 2.0 - c2 * c2 * c2 + 9. * c1 * c2 / 2.
+    qV = (1. / (2. * Enu * 2. * Enu * 2. * Enu)) * (
+                                                   (dmVacVac[1,0] + dmVacVac[2,0]) * 
+                                                   (dmVacVac[1,0] + dmVacVac[2,0]) *
+                                                   (dmVacVac[1,0] + dmVacVac[2,0]) -
+                                                   (9. / 2.) * dmVacVac[1,0] * dmVacVac[2,0] *
+                                                   (dmVacVac[1,0] + dmVacVac[2,0]))
 
-    tmp = p*p*p - q*q
-    tmpV = pV*pV*pV - qV*qV
+    tmp = p * p * p - q * q
+    tmpV = pV * pV * pV - qV * qV
 
     tmp = max(0., tmp)
 
+    a = (2. / 3.) * np.pi
     res = np.arctan2(np.sqrt(tmp), q) / 3.
-    theta = np.array([res, res, res])
+    theta = np.array([res + a, res - a, res])
     resV = np.arctan2(np.sqrt(tmpV), qV) / 3.
-    thetaV = np.array([resV, resV, resV])
-    a = (2./3.)*np.pi
-    theta[0] += a
-    thetaV[0] += a
-    theta[1] -= a
-    thetaV[1] -= a
+    thetaV = np.array([resV + a, resV - a, resV])
 
-    mMatU = 2.0*Enu*((2.0/3.0)*np.sqrt(p)*np.cos(theta) - c2/3.0 + dmVacVac[0,0])
-    mMatV = 2.0*Enu*((2.0/3.0)*np.sqrt(pV)*np.cos(thetaV) - c2V/3.0 + dmVacVac[0,0])
+    mMatU = 2. * Enu * ((2. / 3.) * np.sqrt(p) *  np.cos(theta)  - c2 / 3.  + dmVacVac[0,0])
+    mMatV = 2. * Enu * ((2. / 3.) * np.sqrt(pV) * np.cos(thetaV) - c2V / 3. + dmVacVac[0,0])
     mMat = np.zeros((3))
 
     # Sort according to which reproduce the vaccum eigenstates 
@@ -147,20 +146,21 @@ def getA(L, E, rho, Mix,  dmMatVac, dmMatMat, HMatMassEigenstateBasis, phase_off
     product = np.zeros((3,3,3)) + np.zeros((3,3,3)) * 1j
 
     if (phase_offset==0.0):
-        get_product(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis, product)
+        product = get_product(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis)
 
     for k in range(3):
-        arg = -LoEfac*dmMatVac[k,0]*L/E
+        arg = - LoEfac * dmMatVac[k,0] * L / E
         if ( k==2 ):
             arg += phase_offset 
-        X += (np.cos(arg) - 1j*np.sin(arg)) * product[:,:,k]
+        X += (np.cos(arg) + 1j*np.sin(arg)) * product[:,:,k]
 
     # Compute the product with the mixing matrices 
     # is this correct?
     return np.dot(np.dot(Mix,X),np.conjugate(Mix).T)
 
 @jit(nopython=nopython, cache=cache)
-def get_product(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis, product):
+def get_product(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis):
+    product = np.zeros((3,3,3)) + np.zeros((3,3,3)) * 1j
     twoEHmM = np.zeros((3,3,3)) + np.zeros((3,3,3)) * 1j
     twoEHmM[:,:,0] = 2. * E * HMatMassEigenstateBasis
     twoEHmM[:,:,1] = twoEHmM[:,:,0]
@@ -174,6 +174,7 @@ def get_product(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis, product)
     product[:,:,0] = (np.dot(twoEHmM[:,:,1],twoEHmM[:,:,2])) / (dmMatMat[0,1] * dmMatMat[0,2])
     product[:,:,1] = (np.dot(twoEHmM[:,:,2],twoEHmM[:,:,0])) / (dmMatMat[1,2] * dmMatMat[1,0])
     product[:,:,2] = (np.dot(twoEHmM[:,:,0],twoEHmM[:,:,1])) / (dmMatMat[2,0] * dmMatMat[2,1])
+    return product
 
 @jit(nopython=nopython, cache=cache)
 def convert_from_mass_eigenstate(state, pure, mixNuType):
