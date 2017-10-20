@@ -1,4 +1,4 @@
-# authors: J.Lanfranchi/P.Eller
+# authors: J.Lanfranchi, P.Eller, J. Weldert
 # date:   March 20, 2016
 """
 This is a dummy oscillations service, provided as a template others can use to
@@ -14,16 +14,17 @@ documentation.
 
 """
 
+from __future__ import absolute_import
+
 import numpy as np
 
 from pisa.core.binning import MultiDimBinning
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.hash import hash_obj
-from pisa.utils.log import logging, set_verbosity
 
 
-class dummy(Stage):
+class dummy(Stage): # pylint: disable=invalid-name
     """Example stage with maps as inputs and outputs, and no disk cache. E.g.,
     histogrammed oscillations stages will work like this.
 
@@ -94,7 +95,7 @@ class dummy(Stage):
 
         # Invoke the init method from the parent class, which does a lot of
         # work for you.
-        super(self.__class__, self).__init__(
+        super(dummy, self).__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,
@@ -130,8 +131,9 @@ class dummy(Stage):
         else:
             # this dummy service has no idea what it is supposed to do with
             # no binning provided, so abort
-            raise ValueError("This service can only calculate binned transforms!"
-                             " Please provide input and output binning.")
+            raise ValueError("This service can only calculate binned"
+                             " transforms! Please provide input and output"
+                             " binning.")
 
     def compute_binning_constants(self):
         """Compute some constants related to the binning.
@@ -162,14 +164,14 @@ class dummy(Stage):
                                                  self.cz_dim_num)]
 
     # In the following: methods called upon initialization of the `stage` parent
-    # class that are commonly overriden (cf. `pisa/core/stage.py` for an exhaustive
-    # list)
+    # class that are commonly overriden (cf. `pisa/core/stage.py` for an
+    # exhaustive list)
     def validate_binning(self):
         """This can be used to make sure the binning
         satisfies desired criteria."""
         # Our dummy service is set up such that it can only deal with 2D energy/
         # coszenith binning
-        if set(self.input_binning.names) != set(['true_coszen','true_energy']):
+        if set(self.input_binning.names) != set(['true_coszen', 'true_energy']):
             raise ValueError(
                 "Input binning must be 2D true energy / coszenith binning. "
                 "Got %s."%(self.input_binning.names)

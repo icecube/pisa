@@ -1,15 +1,19 @@
+"""
+Define flux service `dummy` which generates a random map for testing purposes
+"""
+
+from __future__ import absolute_import
 
 import numpy as np
-import pint
-ureg = pint.UnitRegistry()
 
+from pisa import ureg
 from pisa.core.stage import Stage
 from pisa.core.map import Map, MapSet
 from pisa.utils.hash import hash_obj
 
-class dummy(Stage):
+class dummy(Stage): # pylint: disable=invalid-name
     """
-    This is a Flux Service just for testing purposes, generating a random map; 
+    This is a Flux Service just for testing purposes, generating a random map;
     the parameter `test` is required.
     """
     def __init__(self, params, output_binning, error_method,
@@ -33,7 +37,7 @@ class dummy(Stage):
         # there are no "inputs" used by this stage. (Of course there are
         # parameters, and files with info, but no maps or MC events are used
         # and transformed directly by this stage to produce its output.)
-        super(self.__class__, self).__init__(
+        super(dummy, self).__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
@@ -68,7 +72,7 @@ class dummy(Stage):
         for output_name in self.output_names:
             # Generate the fake per-bin "fluxes", modified by the parameter
             hist = np.random.random(self.output_binning.shape) * height
-                                           
+
             # Put the "fluxes" into a Map object, give it the output_name
             m = Map(name=output_name, hist=hist, binning=self.output_binning)
 
