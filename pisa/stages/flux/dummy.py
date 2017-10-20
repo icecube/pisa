@@ -1,26 +1,29 @@
+"""
+Define flux service `dummy` which generates a random map for testing purposes
+"""
+
+from __future__ import absolute_import
 
 import numpy as np
-import pint
-ureg = pint.UnitRegistry()
 
+from pisa import ureg
 from pisa.core.stage import Stage
 from pisa.core.map import Map, MapSet
 from pisa.utils.hash import hash_obj
 
-
-class dummy(Stage):
+class dummy(Stage): # pylint: disable=invalid-name
     """
-    This is a Flux Service just for testing purposes, generating a random map
-    m1 and a map containing ones as m2; the parameter `test` is required.
+    This is a Flux Service just for testing purposes, generating a random map;
+    the parameter `test` is required.
     """
-    def __init__(self, params, output_binning, disk_cache=None,
-                 memcaching_enabled=True, propagate_errors=True,
-                 outputs_cache_depth=20):
+    def __init__(self, params, output_binning, error_method,
+                 outputs_cache_depth, memcache_deepcopy, disk_cache=None,
+                 debug_mode=None):
         # All of the following params (and no more) must be passed via the
         # `params` argument.
         expected_params = (
             'atm_delta_index', 'energy_scale', 'nu_nubar_ratio',
-            'nue_numu_ratio', 'test', 'example_file', 'oversample_e',
+            'nue_numu_ratio', 'oversample_e', 'test',
             'oversample_cz'
         )
 
@@ -34,18 +37,17 @@ class dummy(Stage):
         # there are no "inputs" used by this stage. (Of course there are
         # parameters, and files with info, but no maps or MC events are used
         # and transformed directly by this stage to produce its output.)
-        super(self.__class__, self).__init__(
+        super(dummy, self).__init__(
             use_transforms=False,
-            stage_name='flux',
-            service_name='dummy',
             params=params,
             expected_params=expected_params,
             output_names=output_names,
+            error_method=error_method,
             disk_cache=disk_cache,
-            memcaching_enabled=memcaching_enabled,
-            propagate_errors=propagate_errors,
+            memcache_deepcopy=memcache_deepcopy,
             outputs_cache_depth=outputs_cache_depth,
-            output_binning=output_binning
+            output_binning=output_binning,
+            debug_mode=debug_mode
         )
 
         # There might be other things to do at init time than what Stage does,
@@ -69,7 +71,7 @@ class dummy(Stage):
         output_maps = []
         for output_name in self.output_names:
             # Generate the fake per-bin "fluxes", modified by the parameter
-            hist = np.ones(self.output_binning.shape) * height
+            hist = np.random.random(self.output_binning.shape) * height
 
             # Put the "fluxes" into a Map object, give it the output_name
             m = Map(name=output_name, hist=hist, binning=self.output_binning)
