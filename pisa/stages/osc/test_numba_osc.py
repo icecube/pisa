@@ -9,7 +9,7 @@ import time
 #nopython=False
 nopython=True
 
-@guvectorize([(float64[:,:], complex128[:,:], complex128[:,:], int32, int32, float64, int32, float64[:], float64[:], float64[:,:])], '(a,b),(c,d),(e,f),(),(),(),(),(g),(h)->(a,b)', nopython=nopython, target='parallel', cache=True)
+@guvectorize([(float64[:,:], complex128[:,:], complex128[:,:], int32, int32, float64, int32, float64[:], float64[:], float64[:,:])], '(a,b),(c,d),(e,f),(),(),(),(),(g),(h)->(a,b)', nopython=nopython, target='cpu', cache=True)
 def propagateArray(dm,
                    mix,
                    nsi_eps,
@@ -93,7 +93,7 @@ dm = OP.dm_matrix
 
 nsi_eps = np.zeros((3,3)) + np.zeros((3,3)) * 1j
 
-points = 1000
+points = 100
 nevts = points**2
 
 # input arrays
@@ -110,7 +110,11 @@ energy, cz = np.meshgrid(energy_points, cz_points)
 energy = energy.ravel()
 cz = cz.ravel()
 
-myLayers = Layers('/home/peller/pisa/pisa/resources/osc/PREM_12layer.dat', 2, 20)
+earth_model = '/home/peller/cake/pisa/resources/osc/PREM_12layer.dat'
+det_depth = 2
+atm_height = 20
+
+myLayers = Layers(earth_model, det_depth, atm_height)
 myLayers.setElecFrac(0.4656, 0.4656, 0.4957)
 
 myLayers.calcLayers(cz)
@@ -177,7 +181,50 @@ plt.savefig('osc_test_map.png')
 
 
 
+# do the same with old barger
+from pisa.stages.osc.prob3.BargerPropagator import BargerPropagator
+prob_e = []
+prob_mu = []
+
+barger_propagator = BargerPropagator(earth_model, det_depth)
+barger_propagator.UseMassEigenstates(False)
+start_t= time.time()
+for c,e,kNu,kF in zip(cz,energy,kNuBar,kFlav):
+    barger_propagator.SetMNS(
+                        0.306,0.02166,0.441,7.5e-5,
+                        2.524e-3,261/180.*np.pi,e,True,int(kNu)
+                    )
+    barger_propagator.DefinePath(
+        c, atm_height, 0.4656, 0.4656, 0.4957
+    )
+    barger_propagator.propagate(int(kNu))
+    prob_e.append(barger_propagator.GetProb(
+        0, int(kF)
+    ))
+    prob_mu.append(barger_propagator.GetProb(
+        1, int(kF)
+    ))
+
+end_t = time.time()
+print ('%.2f s for %i events'%((end_t-start_t),nevts))
+prob_mu = np.array(prob_mu)
+pmap2 = prob_mu.reshape((points, points))
+
+pcol = plt.pcolormesh(energy_points, cz_points, pmap2,
+                                        vmin=0, vmax=1, cmap='RdBu', linewidth=0, rasterized=True)
+ax = plt.gca()
+ax.set_xscale('log')
+
+plt.savefig('osc_test_map_barger.png')
 
 
+# diff map
 
+pcol = plt.pcolormesh(energy_points, cz_points, pmap2-pmap,
+                                        cmap='RdBu', linewidth=0, rasterized=True)
 
+print('max diff = ',np.max(np.abs(pmap2-pmap)))
+ax = plt.gca()
+ax.set_xscale('log')
+
+plt.savefig('osc_test_map_diff.png')
