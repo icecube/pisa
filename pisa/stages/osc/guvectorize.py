@@ -1,46 +1,67 @@
 from __future__ import print_function
 from numba import jit, vectorize, guvectorize, float64, complex64, int32, float32
 import numpy as np
+import time
+import inspect
 
-@jit(int32(complex64, int32))
-def mandelbrot(c,maxiter):
-    nreal = 0
-    real = 0
-    imag = 0
-    for n in range(maxiter):
-        nreal = real*real - imag*imag + c.real
-        imag = 2* real*imag + c.imag
-        real = nreal;
-        if real * real + imag * imag > 4.0:
-            return n
-    return 0
+target='cuda'
+#target='parallel'
+#target='cpu'
 
-@guvectorize([(complex64[:], int32[:], int32[:])], '(n),()->(n)',target='parallel')
-def mandelbrot_numpy(c, maxit, output):
-    maxiter = maxit[0]
-    for i in range(c.shape[0]):
-        output[i] = mandelbrot(c[i],maxiter)
-        
-def mandelbrot_set2(xmin,xmax,ymin,ymax,width,height,maxiter):
-    r1 = np.linspace(xmin, xmax, width, dtype=np.float32)
-    r2 = np.linspace(ymin, ymax, height, dtype=np.float32)
-    c = r1 + r2[:,None]*1j
-    n3 = mandelbrot_numpy(c,maxiter)
-    return (r1,r2,n3.T) 
+if target == 'cuda':
+    from numba import cuda
+else:
+    cuda = lambda: None
+    cuda.jit = lambda x: x
 
+def magic(f):
+    '''
+    Decorator to assign the right jit for different targets
+    In case of non-cuda targets, all instances of `cuda.local.array`
+    are replaced by `np.empty`. This is a dirty fix, hopefully in the
+    near future numba will support numpy array allocation and this will
+    not be necessary anymore
+    '''
+    if target == 'cuda':
+        return cuda.jit(f, device=True)
+    else:
+        source = inspect.getsource(f).splitlines()
+        assert source[0] == '@magic'
+        source = '\n'.join(source[1:])
+        source += '\n'
+        source = source.replace('cuda.local.array', 'np.empty')
+        exec(source)
+        fun = eval(f.__name__)
+        return jit(fun, nopython=True)
 
-@guvectorize(['void(float64[:,:], float64, int32[:], int32[:])'], '(a,b),(),(f)->()', nopython=False)
-def sum_row(mix, bla, inp, out):
+@magic
+def dot(A, B, C):
+    for n in range(C.shape[0]):
+        for m in range(C.shape[1]):
+            for i in range(A.shape[1]):
+                for j in range(B.shape[0]):
+                    C[n,m] = A[n,i] * B[j,m]
+
+@magic
+def sum_row_kernel(mix, bla, inp, out):
+    C = cuda.local.array(shape=(3,3), dtype=float64)
+    dot(mix, mix, C)
     tmp = 0.
     for i in range(inp.shape[0]):
         tmp += inp[i]
-    print(mix, bla, inp, out)
-    #out = tmp * bla
-    out[0] = tmp * bla
-    #out = tmp
+    out[0] = tmp - C[1,2] + 3
 
-mix = np.ones((3,3))
-inp = np.arange(30, dtype=np.int32).reshape(10, 3)
-out = np.empty(10, dtype=np.int32)
-sum_row(mix, 42., inp, out)
+@guvectorize(['void(float64[:,:], float64, int32[:], int32[:])'], '(a,b),(),(f)->()', target=target)
+def sum_row(mix, bla, inp, out):
+    sum_row_kernel(mix, bla, inp, out)
+
+mix = np.ones((3,3), dtype=np.float64)
+n = 100000000
+inp = np.arange(3*n, dtype=np.int32).reshape(n, 3)
+out = np.empty((n), dtype=np.int32)
+start_t = time.time()
+sum_row(mix, 42., inp, out=out)
+end_t = time.time()
+print ('took %.5f'%(end_t - start_t))
 print(out)
+
