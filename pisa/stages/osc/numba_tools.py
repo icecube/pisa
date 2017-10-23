@@ -42,15 +42,25 @@ def conjugate_transpose(A, B):
             B[i,j] = A[j,i].conjugate()
 
 @myjit
-def dot(A, B, C):
+def MdotM(A, B, C):
     '''
     dot-product of two 2d arrays
     C = A * B
     '''
-    for j in range(B.shape[0]):
-        for i in range(A.shape[1]):
+    for j in range(B.shape[1]):
+        for i in range(A.shape[0]):
             for n in range(C.shape[0]):
                 C[i,j] += A[i,n] * B[n,j]
+
+@myjit
+def Mdotv(A, v, w):
+    '''
+    dot-product of a 2d array and a vector
+    w = A * v
+    '''
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            w[j] += A[i,j] * v[j]
 
 @myjit
 def zero(A):
