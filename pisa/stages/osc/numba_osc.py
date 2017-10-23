@@ -1,24 +1,28 @@
 from __future__ import print_function
 import numpy as np
-from numba import jit
+from numba_tools import *
+from numba import jit, guvectorize, float64, complex64, int32, float32, complex128, complex64
+import time
+import math, cmath
 
-
-nopython=True
-cache=True
-
-@jit(nopython=nopython, cache=cache)
-def getHVac2Enu( Mix,  dmVacVac):
+@myjit
+def getHVac2Enu(Mix, dmVacVac, HVac2Enu):
     '''
     Calculate vacuum Hamiltonian in flavor basis for neutrino or 
     antineutrino (need complex conjugate mixing matrix) of energy Enu.
     '''
-    dmVacDiag = np.zeros((3,3)) + np.zeros((3,3)) * 1j
+    dmVacDiag = cuda.local.array(shape=Mix.shape, dtype=Mix.dtype)
+    zero(dmVacDiag)
     dmVacDiag[1,1] = dmVacVac[1,0] + 0j
     dmVacDiag[2,2] = dmVacVac[2,0] + 0j
-    return np.dot(np.dot(Mix,dmVacDiag),np.conjugate(Mix).T)
+    MixConjTranspose = cuda.local.array(shape=Mix.shape, dtype=Mix.dtype)
+    tmp = cuda.local.array(shape=Mix.shape, dtype=Mix.dtype)
+    conjugate_transpose(Mix, MixConjTranspose)
+    dot(dmVacDiag, MixConjTranspose, tmp)
+    dot(Mix, tmp, HVac2Enu)
 
-@jit(nopython=nopython, cache=cache)
-def getHMat(rho, NSIEps, antitype):
+@myjit
+def getHMat(rho, NSIEps, antitype, HNSI, HMat):
     '''
     Calculate full matter Hamiltonian in flavor basis 
 
@@ -31,19 +35,17 @@ def getHMat(rho, NSIEps, antitype):
 
     # standard matter interaction Hamiltonian
     a = rho * tworttwoGf * antitype / 2.
-    HSI = np.zeros((3,3)) + np.zeros((3,3)) * 1j
-    HSI[0,0] = a + 0j
+
+    HMat[0,0] = a + 0j
 
     # Obtain effective non-standard matter interaction Hamiltonian
     NSIRhoScale = 3. #// assume 3x electron density for "NSI"-quark (e.g., d) density
     fact = NSIRhoScale * a
-    HNSI = fact * NSIEps
+    for i in HMap.shape[0]:
+        for j in HMap.shape[1]:
+            HMat[i,j] += fact * NSIEps[i,j]
 
-    # This is where the full matter Hamiltonian is created
-    # only real NSI for now
-    return HSI + HNSI.real
-
-@jit(nopython=nopython, cache=cache)
+@myjit
 def getM(Enu, rho, dmVacVac, dmMatMat, dmMatVac, HMat):
     '''
     Compute the matter-mass vector M, dM = M_i-M_j and dMimj
@@ -74,7 +76,7 @@ def getM(Enu, rho, dmVacVac, dmMatMat, dmMatVac, HMat):
          - 2. * ReHEMuHMuTauHTauE \
          - ReHEEHMuMuHTauTau
 
-    c2 = - np.trace(HMat.real)
+    c2 = - HMat[0,0].real - HMat[1,1].real - HMat[2,2].real
 
     twoE = 2. * Enu
     twoESq = twoE * twoE
@@ -100,22 +102,30 @@ def getM(Enu, rho, dmVacVac, dmMatMat, dmMatVac, HMat):
 
     tmp = max(0., tmp)
 
-    a = (2. / 3.) * np.pi
-    res = np.arctan2(np.sqrt(tmp), q) / 3.
-    theta = np.array([res + a, res - a, res])
-    resV = np.arctan2(np.sqrt(tmpV), qV) / 3.
-    thetaV = np.array([resV + a, resV - a, resV])
+    theta = cuda.loacl.array(shape=(dmVacVac.shape[0]), dtype=dmVacVac.dtype)
+    thetaV = cuda.loacl.array(shape=(dmVacVac.shape[0]), dtype=dmVacVac.dtype)
+    mMat = cuda.loacl.array(shape=(dmVacVac.shape[0]), dtype=dmVacVac.dtype)
 
-    mMatU = 2. * Enu * ((2. / 3.) * np.sqrt(p) *  np.cos(theta)  - c2 / 3.  + dmVacVac[0,0])
-    mMatV = 2. * Enu * ((2. / 3.) * np.sqrt(pV) * np.cos(thetaV) - c2V / 3. + dmVacVac[0,0])
-    mMat = np.zeros((3))
+    a = (2. / 3.) * math.pi
+    res = math.atan2(math.sqrt(tmp), q) / 3.
+    theta[0] = res + a
+    theta[1] = res - a
+    theta[2] = res
+    resV = math.atan2(math.sqrt(tmpV), qV) / 3.
+    thetaV[0] = resV + a
+    thetaV[1] = resV - a
+    thetaV[2] = resV
+    
+    for i in range(theta.shape[0]):
+        mMatU[i] = 2. * Enu * ((2. / 3.) * math.sqrt(p) *  math.cos(theta[i])  - c2 / 3.  + dmVacVac[0,0])
+        mMatV[i] = 2. * Enu * ((2. / 3.) * math.sqrt(pV) * math.cos(thetaV[i]) - c2V / 3. + dmVacVac[0,0])
 
     # Sort according to which reproduce the vaccum eigenstates 
     for i in range(3):
-        tmpV = np.fabs(dmVacVac[i,0]-mMatV[0])
+        tmpV = abs(dmVacVac[i,0]-mMatV[0])
         k = 0
         for j in range(3):
-            tmp = np.fabs(dmVacVac[i,0]-mMatV[j])
+            tmp = abs(dmVacVac[i,0]-mMatV[j])
             if tmp < tmpV:
                 k = j
                 tmpV = tmp
@@ -125,83 +135,93 @@ def getM(Enu, rho, dmVacVac, dmMatMat, dmMatVac, HMat):
               dmMatMat[i,j] = mMat[i] - mMat[j]
               dmMatVac[i,j] = mMat[i] - dmVacVac[j,0]
 
-@jit(nopython=nopython, cache=cache)
-def getA(L, E, rho, Mix,  dmMatVac, dmMatMat, HMatMassEigenstateBasis, phase_offset):
+@myjit
+def getA(L, E, rho, Mix,  dmMatVac, dmMatMat, HMatMassEigenstateBasis, phase_offset, TransitionMatrix):
     '''
     getA (take into account generic potential matrix (=Hamiltonian))
     Calculate the transition amplitude matrix A (equation 10)
     '''
     LoEfac = 2.534
 
-    X = np.zeros((3,3)) + np.zeros((3,3)) * 1j
+    X = cuda.local.array(shape=Mix.shape, dtype=Mix.dtype)
+    zero(X)
+    product = cuda.local.array(shape=(3,3,3), dtype=Mix.dtype)
 
     if phase_offset == 0.0:
-        product = get_product(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis)
-    else:
-        # what is this case? Should this even exist?
-        product = np.zeros((3,3,3)) + np.zeros((3,3,3)) * 1j
+        get_product(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis, product)
+        # what if phase_offset != 0.0??
 
     for k in range(3):
         arg = - LoEfac * dmMatVac[k,0] * L / E
         if k == 2:
             arg += phase_offset 
-        X += np.exp(arg * 1j) * product[:,:,k]
+        X += cmath.exp(arg * 1j) * product[:,:,k]
 
     # Compute the product with the mixing matrices 
-    # is this correct?
-    return np.dot(np.dot(Mix,X),np.conjugate(Mix).T)
+    tmp = cuda.local.array(shape=Mix.shape, dtype=Mix.dtype)
+    conjugate_transpose(Mix, MixConjTranspose)
+    dot(X, MixConjTranspose, tmp)
+    dot(Mix, tmp, TransitionMatrix)
 
-@jit(nopython=nopython, cache=cache)
-def get_product(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis):
-    product = np.zeros((3,3,3)) + np.zeros((3,3,3)) * 1j
-    twoEHmM = np.zeros((3,3,3)) + np.zeros((3,3,3)) * 1j
-    twoEHmM[:,:,0] = 2. * E * HMatMassEigenstateBasis
-    twoEHmM[:,:,1] = twoEHmM[:,:,0]
-    twoEHmM[:,:,2] = twoEHmM[:,:,0]
+@myjit
+def get_product(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis, product):
+    twoEHmM = cuda.local.array(shape=product.shape, dtype=product.dtype)
+    for i in range(product.shape[0]):
+        for j in range(product.shape[1]):
+            for k in range(product.shape[2]):
+                twoEHmM[i,j,k] = 2. * E * HMatMassEigenstateBasis[i,j]  
 
     for n in range(3):
         for j in range(3):
             twoEHmM[n,n,j] -= dmMatVac[j,n]
 
     # Calculate the product in eq.(10) of twoEHmM for j!=k 
-    product[:,:,0] = (np.dot(twoEHmM[:,:,1],twoEHmM[:,:,2])) / (dmMatMat[0,1] * dmMatMat[0,2])
-    product[:,:,1] = (np.dot(twoEHmM[:,:,2],twoEHmM[:,:,0])) / (dmMatMat[1,2] * dmMatMat[1,0])
-    product[:,:,2] = (np.dot(twoEHmM[:,:,0],twoEHmM[:,:,1])) / (dmMatMat[2,0] * dmMatMat[2,1])
-    return product
+    for i in range(product.shape[0]):
+        for j in range(product.shape[1]):
+            for k in range(product.shape[2]):
+                product[i,j,0] = twoEHmM[i,k,1] * twoEHmM[k,j,2]
+                product[i,j,1] = twoEHmM[i,k,2] * twoEHmM[k,j,0]
+                product[i,j,2] = twoEHmM[i,k,0] * twoEHmM[k,j,1]
+            product[i,j,0] /= (dmMatMat[0,1] * dmMatMat[0,2])
+            product[i,j,1] /= (dmMatMat[1,2] * dmMatMat[1,0])
+            product[i,j,2] /= (dmMatMat[2,0] * dmMatMat[2,1])
 
-@jit(nopython=nopython, cache=cache)
+@myjit
 def convert_from_mass_eigenstate(state, pure, mixNuType):
     '''
     untested!
     '''
-    mass = np.zeros((3)) + np.zeros((3)) * 1j
+    mass = cuda.local.array(size=pure.size, dtype=pure.dtype)
     lstate  = state - 1
 
     for i in range(3):
         mass[i] = 1. if lstate == i else 0.
     # note: mixNuType is already taking into account whether we're considering
     # nu or anti-nu
-    pure = np.dot(mixNuType, mass)
+    dot(mixNuType, mass, pure)
 
-@jit(nopython=nopython, cache=cache)
+@myjit
 def get_transition_matrix(nutype, Enu, rho, Len,
                            phase_offset,
                            mixNuType,  nsi_eps,
-                           HVac2Enu,  dm):
+                           HVac2Enu,  dm, TransitionMatrix):
     '''
     Calculate neutrino flavour transition amplitude matrix for neutrino (nutype > 0)
     or antineutrino (nutype < 0) with energy Enu travernp.sing layer of matter of
     uniform density rho with thickness Len.
     '''
-    dmMatVac = np.zeros((3,3))
-    dmMatMat = np.zeros((3,3))
+    dmMatVac = cuda.local.array(size=dm.size, dtype=dm.dtype)
+    dmMatMat = cuda.local.array(size=dm.size, dtype=dm.dtype)
 
     # Compute the matter potential including possible non-standard interactions
     # in the flavor basis 
-    HMat = getHMat(rho, nsi_eps, nutype)
+    getHMat(rho, nsi_eps, nutype, HMat)
 
     # Get the full Hamiltonian by adding together matter and vacuum parts 
-    HFull = HVac2Enu / (2. * Enu) + HMat
+    HFull = cuda.local.array(size=HMat.size, dtype=HMat.dtype)
+    for i in range(HMat.shape[0]):
+        for j in range(HMat.shape[1]):
+            HFull[i,j] = HVac2Enu[i,j] / (2. * Enu) + HMat[i,j]
 
     # Calculate modified mass eigenvalues in matter from the full Hamiltonian and
     # the vacuum mass splittings 
@@ -210,8 +230,102 @@ def get_transition_matrix(nutype, Enu, rho, Len,
     # Now we transform the matter (TODO: matter? full?) Hamiltonian back into the
     # mass eigenstate basis so we don't need to compute products of the effective
     # mixing matrix elements explicitly 
-    HMatMassEigenstateBasis = np.dot(np.dot(np.conjugate(mixNuType).T,HMat),mixNuType)
+    tmp = cuda.local.array(shape=mixNuType.shape, dtype=mixNuType.dtype)
+    zero(tmp)
+    HMatMassEigenstateBasis = cuda.local.array(shape=mixNuType.shape, dtype=mixNuType.dtype)
+    zero(HMatMassEigenstateBasis)
+    mixNuTypeConjTranspose = cuda.local.array(shape=mixNuType.shape, dtype=mixNuType.dtype)
+    conjugate_transpose(mixNuType, mixNuTypeConjTranspose)
+    dot(HMat, mixNuType, tmp)
+    dot(mixNuTypeConjTranspose, tmp, HMatMassEigenstateBasis)
 
     # We can now proceed to calculating the transition amplitude from the Hamiltonian
     # in the mass basis and the effective mass splittings 
-    return getA(Len, Enu, rho, mixNuType, dmMatVac, dmMatMat, HMatMassEigenstateBasis, phase_offset)
+    getA(Len, Enu, rho, mixNuType, dmMatVac, dmMatMat, HMatMassEigenstateBasis, phase_offset, TransitionMatrix)
+
+@myjit
+def propagateArray_kernel(dm,
+                   mix,
+                   nsi_eps,
+                   kNuBar,
+                   kFlav,
+                   energy,
+                   numberOfLayers,
+                   densityInLayer,
+                   distanceInLayer,
+                   Probability):
+
+    # 3x3 complex
+    HVac2Enu = cuda.local.array(shape=mix.shape, dtype=mix.dtype)
+    zero(HVac2Enu)
+    mixNuType = cuda.local.array(shape=mix.shape, dtype=mix.dtype)
+    zero(mixNuType)
+    TransitionProduct = cuda.local.array(size=mix.size, dtype=mix.dtype)
+    zero(TransitionProduct)
+    TransitionMatrix = cuda.local.array(size=mix.size, dtype=mix.dtype)
+    zero(TransitionMatrix)
+    tmp = cuda.local.array(size=mix.size, dtype=mix.dtype)
+    zero(tmp)
+
+    # 3-vector complex
+    RawInputPsi = cuda.local.array(size=(mix.size[0]), dtype=mix.dtype)
+    OutputPsi = cuda.local.array(size=(mix.size[0]), dtype=mix.dtype)
+
+    kUseMassEstates = False
+
+    #TODO: * ensure convention below is respected in MC reweighting
+    #          (kNuBar > 0 for nu, < 0 for anti-nu)
+    #        * kNuBar is passed in, so could already pass in the correct form
+    #          of mixing matrix, i.e., possibly conjugated
+    if (kNuBar > 0):
+        # in this case the mixing matrix is left untouched
+        copy(mix, mixNuType)
+    
+    else:
+        # here we need to complex conjugate all entries
+        # (note that this only changes calculations with non-zero deltacp)
+        conjugate_transpose(mix, mixNuType)
+
+    getHVac2Enu(mixNuType, dm, HVac2Enu)
+
+
+    for i in range(numberOfLayers):
+        density = densityInLayer[i]
+        distance = distanceInLayer[i]
+        get_transition_matrix(kNuBar,
+                               energy,
+                               density,
+                               distance,
+                               0.0,
+                               mixNuType,
+                               nsi_eps,
+                               HVac2Enu,
+                               dm,
+                               TransitionMatrix)
+        if (i==0):
+            copy(TransitionMatrix, TransitionProduct)
+        else:
+            dot(TransitionMatrix,TransitionProduct, tmp)
+            copy(tmp, TransitionProduct)
+        
+    # loop on neutrino types, and compute probability for neutrino i:
+    # We actually don't care about nutau -> anything since the flux there is zero!
+    for i in range(2):
+        for j in range(3):
+            RawInputPsi[j] = 0. + 0.j
+            # zero out here?
+            OutputPsi[j] = 0. +0.j
+
+        if( kUseMassEstates ):
+            convert_from_mass_eigenstate(i+1, RawInputPsi, mixNuType)
+        else:
+            RawInputPsi[i] = 1. + 0.j
+
+        dot(TransitionProduct, RawInputPsi, OutputPsi)
+        Probability[i][0] += OutputPsi[0].real**2 + OutputPsi[0].imag**2
+        Probability[i][1] += OutputPsi[1].real**2 + OutputPsi[1].imag**2
+        Probability[i][2] += OutputPsi[2].real**2 + OutputPsi[2].imag**2
+
+@guvectorize([(float64[:,:], complex128[:,:], complex128[:,:], int32, int32, float64, int32, float64[:], float64[:], float64[:,:])], '(a,b),(c,d),(e,f),(),(),(),(),(g),(h)->(a,b)', target=target)
+def propagateArray(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability):
+    propagateArray_kernel(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability)
