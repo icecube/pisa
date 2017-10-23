@@ -33,6 +33,7 @@ from pisa.utils.resources import open_resource
 from pisa.utils.comparisons import normQuant
 from pisa.scripts.make_events_file import CMSQ_TO_MSQ
 from pisa.stages.data.sample import parse_event_type_names
+from pisa.stages.osc.prob3 import prob3
 
 __all__ = ['weight_tom']
 
@@ -174,22 +175,8 @@ class weight_tom(Stage):
 #            'norm_nc'
         )
 
-        self.osc_params = (
-            'earth_model',
-            'YeI',
-            'YeO',
-            'YeM',
-            'detector_depth',
-            'prop_height',
-            'theta12',
-            'theta13',
-            'theta23',
-            'deltam21',
-            'deltam31',
-            'deltacp',
-            'no_nc_osc',
-            'nutau_norm',
-        )
+        self.osc_params = prob3.get_expected_params(calc_binned_transforms=False)
+        self.osc_params += ('nutau_norm',)
 
         self.atm_muon_params = (
             'atm_muon_scale',
@@ -251,18 +238,6 @@ class weight_tom(Stage):
         if self.muons:
             self.muon_prim_unc_spline = self.make_muon_prim_unc_spline()
 
-        #Determine whether to use GPU or CPU for the data processing (re-weighting due to flux, oscillations, etc)
-        #User specifies this using the 'use_gpu' param
-        #A special case is that if no Earth model is provided (e.g. oscillations are in vacuum), then the oscillations
-        #are performed using a CPU (everything else is still done using a GPU)
-        if self.use_gpu:
-            if self.params.earth_model.value is None:
-                self.use_gpu_for_osc = False
-            else :
-                self.use_gpu_for_osc = False
-        else :
-            self.use_gpu_for_osc = False
-
         #If using GPUs, init CUDA
         if self.use_gpu:
             import pycuda.autoinit #This performs initialisation tasks #TODO Is it OK that this goes out of scope???
@@ -316,28 +291,12 @@ class weight_tom(Stage):
 
         if self.neutrinos:
 
-            #Determine whether to use GPU or CPU for the oscillations calculations
-            #User can specify whether to run the general re-weighting using GPU or CPU 
-            #via the 'use_gpu' flag, so in general use this choice for the oscillations
-            #A special case however is that if no Earth model is provided (e.g. 
-            #oscillations are in vacuum), then the oscillations are performed using a 
-            #CPU (everything else is still done using a GPU)
-            self.use_gpu_for_osc = self.use_gpu and ( self.params.earth_model.value is not None )
-
-            # Get param subset wanted for oscillations class
-            osc_params_subset = []
-            for param in self.params:
-                if param.name in self.osc_params :
-                    #There are a few params that probgpu wants that prob3cpu does not
-                    if not self.use_gpu: 
-                        if param.name == 'no_nc_osc' : continue
-                        if param.name == 'true_e_scale' : continue
-                    osc_params_subset.append(param)
+            # Get param subset wanted for oscillations calculation
+            expected_osc_param_names = prob3.get_expected_params(calc_binned_transforms=False)
+            osc_params_subset = [ param for param in self.params if param.name in expected_osc_param_names ]
             osc_params_subset = ParamSet(osc_params_subset)
 
-            #Import prob3 implementation based on CPU vs GPU choice, then instantiate
-            if self.use_gpu_for_osc: from pisa.stages.osc.prob3gpu import prob3gpu as prob3
-            else : from pisa.stages.osc.prob3cpu import prob3cpu as prob3
+            #Instantiate prob3 toolset
             self.osc = prob3(
                 params=osc_params_subset,
                 input_binning=None,
@@ -348,6 +307,7 @@ class weight_tom(Stage):
                 outputs_cache_depth=0,
                 use_spline=self.spline_osc_probs,
                 spline_binning=self.osc_spline_binning,
+                use_gpu=self.use_gpu,
             )
 
 
@@ -355,7 +315,7 @@ class weight_tom(Stage):
         # Prepare weight calculator
         #
 
-        # Instantiate weight calculator (differs depending on whether using CPU or GPU code) #TODO (Tom) Make into a common class?
+        # Instantiate weight calculator (differs depending on whether using CPU or GPU code) #TODO (Tom) Merge these into a common class
         if self.use_gpu: from pisa.stages.mc.GPUWeight import CPUWeight as WeightCalculator
         else : from pisa.stages.mc.CPUWeight import CPUWeight as WeightCalculator
         self.weight_calc = WeightCalculator()
@@ -738,14 +698,14 @@ class weight_tom(Stage):
         #Grab required params
         true_e_scale = params.true_e_scale.value.m_as('dimensionless')
 
-        if self.use_gpu_for_osc:
-            theta12 = params.theta12.value.m_as('rad')
-            theta13 = params.theta13.value.m_as('rad')
-            theta23 = params.theta23.value.m_as('rad')
-            deltam21 = params.deltam21.value.m_as('eV**2')
-            deltam31 = params.deltam31.value.m_as('eV**2')
-            deltacp = params.deltacp.value.m_as('rad')
-            self.osc.update_MNS(theta12, theta13, theta23, deltam21, deltam31, deltacp)
+        #Update ths MNS matrix in prob3 (note that this only actually does anything when using a GPU)
+        theta12 = params.theta12.value.m_as('rad')
+        theta13 = params.theta13.value.m_as('rad')
+        theta23 = params.theta23.value.m_as('rad')
+        deltam21 = params.deltam21.value.m_as('eV**2')
+        deltam31 = params.deltam31.value.m_as('eV**2')
+        deltacp = params.deltacp.value.m_as('rad')
+        self.osc.update_MNS(theta12, theta13, theta23, deltam21, deltam31, deltacp)
 
         #Calculate oscillation splines for this new set of oscillation parameters
         if self.spline_osc_probs :
@@ -768,37 +728,23 @@ class weight_tom(Stage):
                 #Get the prob3 flavor and nu/nubar codes for this neutrino flavor
                 kFlav,kNuBar = NuFlavInt(fig).flav.prob3_codes
 
-                #Calculate the oscillation probabilities using prob3, handling differences between GPU and CPU implementations
-                if self.use_gpu_for_osc:
+                #Get data array on either host or device, depending on whether using GPU or CPU
+                data_array = self._data_arrays[fig]["device"] if self.use_gpu else self._data_arrays[fig]["host"]
 
-                    #TODO (Tom) re-init output GPU arrays???
+                #Calculate the oscillation probabilities using prob3
+                self.osc.calc_probs(
+                    kNuBar=kNuBar,
+                    kFlav=kFlav,
+                    n_evts=n_evts,
+                    true_e_scale=true_e_scale,
+                    **data_array
+                )
 
-                    if self.spline_osc_probs :
-                        raise Exception("Oscillation probability splines not yet implemented for GPU case")
-
-                    #Calculate probabilities, using appropriate args for GPU case
-                    self.osc.calc_probs(
-                        kNuBar=kNuBar,
-                        kFlav=kFlav,
-                        n_evts=n_evts,
-                        true_e_scale=true_e_scale,
-                        **self._data_arrays[fig]["device"] #Use data array on device
-                    )
-
-                else :
-                
-                    #Calculate probabilities, using appropriate args for CPU case
-                    self.osc.calc_probs(
-                        kNuBar=kNuBar,
-                        kFlav=kFlav,
-                        true_e_scale=true_e_scale,
-                        **self._data_arrays[fig]["host"] #Use data array on host
-                    )
-
-                    #If running on a GPU in general but using CPU for the oscillations part, need to update the device arrays
-                    if self.use_gpu :
-                        self.update_device_arrays(fig, 'prob_e')
-                        self.update_device_arrays(fig, 'prob_mu')
+                #If running on a GPU in general but using CPU for the oscillations part, need to update the device arrays
+                #This can be the case for vacuum oscillations
+                if self.use_gpu and not self.osc.use_gpu :
+                    self.update_device_arrays(fig, 'prob_e')
+                    self.update_device_arrays(fig, 'prob_mu')
 
 
         #Store the new hash
@@ -1229,10 +1175,8 @@ class weight_tom(Stage):
             # earth with different densities, and for a given length these depend only on the earth
             # model (PREM) and the true coszen of an event. Therefore we can calculate these for 
             # once and are done
-            # Note: prob3cpu handles this in a different way (entirely internally, no need to call
-            # this function), so only do this in GPU mode
-            if self.use_gpu_for_osc: 
-                nlayers, density, dist = self.osc.calc_layers(data_array['host']['true_coszen'])
+            nlayers, density, dist = self.osc.calc_layers(host_array['true_coszen'])
+            if nlayers is not None :
                 host_array['numLayers'] = nlayers
                 host_array['densityInLayer'] = density
                 host_array['distanceInLayer'] = dist
@@ -1772,6 +1716,3 @@ class weight_tom(Stage):
         #Create a hash of the param values, as well as the sample hash
         #TODO (Tom) should params.normalize values be set to True such that "nearly identical" values are treated as the same in the hash?
         return hash_obj( [self.sample_hash, self.params.values_hash], full_hash = self.full_hash) #TODO (Tom) weight hash? maybe not, as this is an output, not an input
-
-
-
