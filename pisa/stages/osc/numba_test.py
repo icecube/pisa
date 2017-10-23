@@ -1,26 +1,31 @@
 import numpy as np
 import time
 
-from numba_tools import *
-dtype = float64
-Ndim=3
+#from numba_tools import *
+from numba_osc import *
 
 @myjit
 def sum_row_kernel(mix, bla, inp, out):
-    C = cuda.local.array(shape=(Ndim,Ndim), dtype=dtype)
-    #C = cuda.local.array(shape=(3,3), dtype=mix.dtype)
+    C = cuda.local.array(shape=(3,3), dtype=ftype)
+    D = cuda.local.array(shape=(3), dtype=ctype)
+    E = cuda.local.array(shape=(3), dtype=ctype)
     zero(C)
-    #C = mix + mix
-    dot(mix, mix, C)
+    MdotM(mix, mix, C)
+    D[0] = 0.+2.j
+    D[1] = 1.+2.j
+    D[2] = 1.+2.j
+    Mdotv(C,D,E) 
     bla *= 0.1
-    out[0] = C[1,1] * bla.real
+    out[0] = E[1].real * bla.real
 
 @guvectorize(['void(float64[:,:], complex128, int32[:], int32[:])'], '(a,b),(),(f)->()', target=target)
 def sum_row(mix, bla, inp, out):
     sum_row_kernel(mix, bla, inp, out)
 
+print 'ftype=',ftype
+
 mix = np.ones((3,3), dtype=np.float64)
-n = 10000000
+n = 1000
 inp = np.arange(3*n, dtype=np.int32).reshape(n, 3)
 out = np.empty((n), dtype=np.int32)
 start_t = time.time()

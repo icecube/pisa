@@ -1,6 +1,6 @@
 from __future__ import print_function
 import numpy as np
-from numba_osc import propagateArray
+from numba_osc import *
 from pisa.stages.osc.osc_params import OscParams
 from pisa.stages.osc.layers import Layers
 import time
@@ -39,9 +39,12 @@ distanceInLayer = myLayers.distance.reshape((nevts,myLayers.max_layers))
 # empty arrays to be filled
 Probability = np.zeros((nevts,3,3))
 
+@guvectorize([(float64[:,:], complex128[:,:], complex128[:,:], int32, int32, float64, int32, float64[:], float64[:], float64[:,:])], '(a,b),(c,d),(e,f),(),(),(),(),(g),(h)->(a,b)', target=target, nopython=True)
+def propagateArray(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability):
+    propagateArray_kernel(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability)
+
 start_t = time.time()
-propagateArray(
-               dm,
+propagateArray(dm,
                mix,
                nsi_eps,
                kNuBar,
@@ -50,7 +53,7 @@ propagateArray(
                numberOfLayers,
                densityInLayer,
                distanceInLayer,
-               Probability)
+               out=Probability)
 end_t = time.time()
 print ('%.2f s for %i events'%((end_t-start_t),nevts))
 
