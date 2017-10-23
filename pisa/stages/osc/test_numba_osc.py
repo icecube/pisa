@@ -11,7 +11,7 @@ mix = OP.mix_matrix[:,:,0] + OP.mix_matrix[:,:,1] * 1j
 dm = OP.dm_matrix
 nsi_eps = np.zeros((3,3)) + np.zeros((3,3)) * 1j
 
-points = 100
+points = 800
 nevts = points**2
 
 # input arrays
@@ -39,7 +39,7 @@ distanceInLayer = myLayers.distance.reshape((nevts,myLayers.max_layers))
 # empty arrays to be filled
 Probability = np.zeros((nevts,3,3))
 
-@guvectorize([(float64[:,:], complex128[:,:], complex128[:,:], int32, int32, float64, int32, float64[:], float64[:], float64[:,:])], '(a,b),(c,d),(e,f),(),(),(),(),(g),(h)->(a,b)', target=target, nopython=True)
+@guvectorize([(float64[:,:], complex128[:,:], complex128[:,:], int32, int32, float64, int32, float64[:], float64[:], float64[:,:])], '(a,b),(c,d),(e,f),(),(),(),(),(g),(h)->(a,b)', target=target)
 def propagateArray(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability):
     propagateArray_kernel(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability)
 
@@ -57,7 +57,9 @@ propagateArray(dm,
 end_t = time.time()
 print ('%.2f s for %i events'%((end_t-start_t),nevts))
 
-print(Probability[:,1,1])
+time.sleep(2)
+
+#print(Probability[:,1,1])
 
 # do the same with Ol' Bargy
 from pisa.stages.osc.prob3.BargerPropagator import BargerPropagator

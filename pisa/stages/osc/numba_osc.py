@@ -5,16 +5,17 @@ import inspect
 from numba import jit, vectorize, guvectorize, float64, complex64, int32, float32, complex128
 import math, cmath
 
-ctype=np.complex128
-ftype=np.float64
-
-#target='cuda'
+target='cuda'
 #target='parallel'
-target='cpu'
+#target='cpu'
 
 if target == 'cuda':
     from numba import cuda
+    ctype=complex128
+    ftype=float64
 else:
+    ctype=np.complex128
+    ftype=np.float64
     cuda = lambda: None
     cuda.jit = lambda x: x
 
@@ -30,14 +31,11 @@ def myjit(f):
         return cuda.jit(f, device=True)
     else:
         source = inspect.getsource(f).splitlines()
-        #print(source)
         assert '@myjit' in source[0]
         source = '\n'.join(source[1:])+'\n'
         source = source.replace('cuda.local.array', 'np.empty')
-        #print source
         exec(source)
         fun = eval(f.__name__)
-        #return jit(fun, nopython=False)
         return jit(fun, nopython=True)
 
 @myjit
@@ -136,7 +134,7 @@ def test_getHVac2Enu():
     dmVacVac = np.ones(shape=(3,3), dtype=ftype)
     HVac2Enu = np.ones(shape=(3,3), dtype=ctype)
     getHVac2Enu(Mix, dmVacVac, HVac2Enu)
-    print(HVac2Enu)
+    #print(HVac2Enu)
 
 @myjit
 def getHMat(rho, NSIEps, antitype, HMat):
@@ -168,7 +166,7 @@ def test_getHMat():
     NSIEps = np.ones(shape=(3,3), dtype=ctype)
     HMat = np.ones(shape=(3,3), dtype=ctype)
     getHMat(rho, NSIEps, antitype, HMat)
-    print(HMat)
+    #print(HMat)
 
 @myjit
 def getM(Enu, rho, dmVacVac, dmMatMat, dmMatVac, HMat):
@@ -272,8 +270,8 @@ def test_getM():
     dmMatVac = np.ones(shape=(3,3), dtype=ctype)
     HMat = np.ones(shape=(3,3), dtype=ctype)
     getM(Enu, rho, dmVacVac, dmMatMat, dmMatVac, HMat)
-    print(dmMatMat)
-    print(dmMatVac)
+    #print(dmMatMat)
+    #print(dmMatVac)
 
 @myjit
 def getProduct(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis, product):
@@ -312,7 +310,7 @@ def test_getProduct():
     HMatMassEigenstateBasis = np.ones(shape=(3,3), dtype=ctype)
     product = np.ones(shape=(3,3,3), dtype=ctype)
     getProduct(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis, product)
-    print(product)
+    #print(product)
 
 @myjit
 def getA(L, E, rho, Mix,  dmMatVac, dmMatMat, HMatMassEigenstateBasis, phase_offset, TransitionMatrix):
@@ -358,7 +356,7 @@ def test_getA():
     phase_offset = 0.
     TransitionMatrix = np.ones(shape=(3,3), dtype=ctype)
     getA(L, E, rho, Mix,  dmMatVac, dmMatMat, HMatMassEigenstateBasis, phase_offset, TransitionMatrix)
-    print(TransitionMatrix)
+    #print(TransitionMatrix)
 
 
 @myjit
@@ -380,7 +378,7 @@ def test_convert_from_mass_eigenstate():
     pure = np.ones(shape=(3), dtype=ctype)
     mixNuType = np.ones(shape=(3,3), dtype=ctype)
     convert_from_mass_eigenstate(state, pure, mixNuType)
-    print(mixNuType)
+    #print(mixNuType)
 
 @myjit
 def get_transition_matrix(nutype, Enu, rho, Len,
@@ -451,7 +449,7 @@ def test_get_transition_matrix():
                            phase_offset,
                            mixNuType,  nsi_eps,
                            HVac2Enu,  dm, TransitionMatrix)
-    print(TransitionMatrix)
+    #print(TransitionMatrix)
 
 @myjit
 def propagateArray_kernel(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability):
@@ -467,6 +465,7 @@ def propagateArray_kernel(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayer
     zero(TransitionMatrix)
     tmp = cuda.local.array(shape=(3,3), dtype=ctype)
     zero(tmp)
+    zero(Probability)
 
     # 3-vector complex
     RawInputPsi = cuda.local.array(shape=(3), dtype=ctype)
@@ -545,7 +544,7 @@ def test_propagateArray_kernel():
     distanceInLayer = np.ones(shape=(numberOfLayers), dtype=ftype)
     Probability = np.ones(shape=(3,3), dtype=ftype)
     propagateArray_kernel(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability)
-    print(Probability)
+    #print(Probability)
 
 
 if __name__=='__main__':
