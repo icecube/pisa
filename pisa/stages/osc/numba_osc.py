@@ -60,6 +60,13 @@ def MdotM(A, B, C):
             for n in range(C.shape[0]):
                 C[i,j] += A[i,n] * B[n,j]
 
+def test_MdotM():
+    A = np.linspace(1.,8.,9).reshape(3,3)
+    B = np.linspace(1.,8.,9).reshape(3,3)
+    C = np.zeros((3,3))
+    MdotM(A, B, C)
+    assert np.array_equal(C,np.dot(A,B))
+
 @myjit
 def Mdotv(A, v, w):
     '''
@@ -68,7 +75,14 @@ def Mdotv(A, v, w):
     '''
     for i in range(A.shape[0]):
         for j in range(A.shape[1]):
-            w[j] += A[i,j] * v[j]
+            w[i] += A[i,j] * v[j]
+
+def test_Mdotv():
+    A = np.linspace(1.,8.,9).reshape(3,3)
+    v = np.linspace(1.,3.,3)
+    w = np.zeros((3))
+    Mdotv(A, v, w)
+    assert np.array_equal(w,np.dot(A,v))
 
 @myjit
 def zero(A):
@@ -79,6 +93,11 @@ def zero(A):
         for j in range(A.shape[1]):
             A[i,j] = 0.
 
+def test_zero():
+    A = np.ones((3,3))
+    zero(A)
+    assert np.array_equal(A, np.zeros((3,3)))
+
 @myjit
 def copy(A, B):
     '''
@@ -88,7 +107,11 @@ def copy(A, B):
         for j in range(A.shape[1]):
             B[i,j] = A[i,j]
 
-
+def test_copy():
+    A = np.ones((3,3))
+    B = np.zeros((3,3))
+    copy(A, B)
+    assert np.array_equal(A, B)
 
 @myjit
 def getHVac2Enu(Mix, dmVacVac, HVac2Enu):
@@ -374,6 +397,7 @@ def get_transition_matrix(nutype, Enu, rho, Len,
 
     # Get the full Hamiltonian by adding together matter and vacuum parts 
     HFull = cuda.local.array(shape=(3,3), dtype=ctype)
+    zero(HFull)
     for i in range(HMat.shape[0]):
         for j in range(HMat.shape[1]):
             HFull[i,j] = HVac2Enu[i,j] / (2. * Enu) + HMat[i,j]
@@ -439,6 +463,10 @@ def propagateArray_kernel(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayer
     # 3-vector complex
     RawInputPsi = cuda.local.array(shape=(3), dtype=ctype)
     OutputPsi = cuda.local.array(shape=(3), dtype=ctype)
+    for i in range(3):
+        RawInputPsi[i] = 0.
+        OutputPsi[i] = 0.
+
 
     kUseMassEstates = False
 
@@ -511,7 +539,11 @@ def test_propagateArray_kernel():
 
 
 if __name__=='__main__':
-
+    
+    test_MdotM()
+    test_Mdotv()
+    test_zero()
+    test_copy()
     test_getHVac2Enu()
     print('test successfull')
     test_getHMat()

@@ -94,7 +94,7 @@ pmap = Probability[:,1,1].reshape((points, points))
 pmap2 = prob_mu.reshape((points, points))
 # numba
 pcol = plt.pcolormesh(energy_points, cz_points, pmap,
-                                        vmin=0, vmax=1, cmap='RdBu', linewidth=0, rasterized=True)
+                                        cmap='RdBu', linewidth=0, rasterized=True)
 ax = plt.gca()
 ax.set_xscale('log')
 plt.savefig('osc_test_map.png')
