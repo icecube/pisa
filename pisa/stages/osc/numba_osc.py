@@ -136,6 +136,7 @@ def test_getHVac2Enu():
     dmVacVac = np.ones(shape=(3,3), dtype=ftype)
     HVac2Enu = np.ones(shape=(3,3), dtype=ctype)
     getHVac2Enu(Mix, dmVacVac, HVac2Enu)
+    print(HVac2Enu)
 
 @myjit
 def getHMat(rho, NSIEps, antitype, HMat):
@@ -167,6 +168,7 @@ def test_getHMat():
     NSIEps = np.ones(shape=(3,3), dtype=ctype)
     HMat = np.ones(shape=(3,3), dtype=ctype)
     getHMat(rho, NSIEps, antitype, HMat)
+    print(HMat)
 
 @myjit
 def getM(Enu, rho, dmVacVac, dmMatMat, dmMatVac, HMat):
@@ -270,6 +272,8 @@ def test_getM():
     dmMatVac = np.ones(shape=(3,3), dtype=ctype)
     HMat = np.ones(shape=(3,3), dtype=ctype)
     getM(Enu, rho, dmVacVac, dmMatMat, dmMatVac, HMat)
+    print(dmMatMat)
+    print(dmMatVac)
 
 @myjit
 def getProduct(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis, product):
@@ -292,9 +296,9 @@ def getProduct(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis, product):
     for i in range(product.shape[0]):
         for j in range(product.shape[1]):
             for k in range(product.shape[2]):
-                product[i,j,0] += twoEHmM[i,k,1] * twoEHmM[k,j,2]
-                product[i,j,1] += twoEHmM[i,k,2] * twoEHmM[k,j,0]
-                product[i,j,2] += twoEHmM[i,k,0] * twoEHmM[k,j,1]
+                product[i,j,0] += (twoEHmM[i,k,1] * twoEHmM[k,j,2])
+                product[i,j,1] += (twoEHmM[i,k,2] * twoEHmM[k,j,0])
+                product[i,j,2] += (twoEHmM[i,k,0] * twoEHmM[k,j,1])
             product[i,j,0] /= (dmMatMat[0,1] * dmMatMat[0,2])
             product[i,j,1] /= (dmMatMat[1,2] * dmMatMat[1,0])
             product[i,j,2] /= (dmMatMat[2,0] * dmMatMat[2,1])
@@ -308,6 +312,7 @@ def test_getProduct():
     HMatMassEigenstateBasis = np.ones(shape=(3,3), dtype=ctype)
     product = np.ones(shape=(3,3,3), dtype=ctype)
     getProduct(L, E, rho, dmMatVac, dmMatMat, HMatMassEigenstateBasis, product)
+    print(product)
 
 @myjit
 def getA(L, E, rho, Mix,  dmMatVac, dmMatMat, HMatMassEigenstateBasis, phase_offset, TransitionMatrix):
@@ -331,11 +336,12 @@ def getA(L, E, rho, Mix,  dmMatVac, dmMatMat, HMatMassEigenstateBasis, phase_off
             arg += phase_offset 
         for i in range(3):
             for j in range(3):
-                X[i,j] += cmath.exp(arg * 1j) * product[i,j,k]
+                X[i,j] += cmath.exp(arg * 1.j) * product[i,j,k]
 
     # Compute the product with the mixing matrices 
     tmp = cuda.local.array(shape=(3,3), dtype=ctype)
     zero(tmp)
+    zero(TransitionMatrix)
     MixConjTranspose = cuda.local.array(shape=(3,3), dtype=ctype)
     conjugate_transpose(Mix, MixConjTranspose)
     MdotM(X, MixConjTranspose, tmp)
@@ -352,6 +358,7 @@ def test_getA():
     phase_offset = 0.
     TransitionMatrix = np.ones(shape=(3,3), dtype=ctype)
     getA(L, E, rho, Mix,  dmMatVac, dmMatMat, HMatMassEigenstateBasis, phase_offset, TransitionMatrix)
+    print(TransitionMatrix)
 
 
 @myjit
@@ -373,6 +380,7 @@ def test_convert_from_mass_eigenstate():
     pure = np.ones(shape=(3), dtype=ctype)
     mixNuType = np.ones(shape=(3,3), dtype=ctype)
     convert_from_mass_eigenstate(state, pure, mixNuType)
+    print(mixNuType)
 
 @myjit
 def get_transition_matrix(nutype, Enu, rho, Len,
@@ -401,7 +409,6 @@ def get_transition_matrix(nutype, Enu, rho, Len,
     for i in range(HMat.shape[0]):
         for j in range(HMat.shape[1]):
             HFull[i,j] = HVac2Enu[i,j] / (2. * Enu) + HMat[i,j]
-
 
 
     # Calculate modified mass eigenvalues in matter from the full Hamiltonian and
@@ -444,6 +451,7 @@ def test_get_transition_matrix():
                            phase_offset,
                            mixNuType,  nsi_eps,
                            HVac2Enu,  dm, TransitionMatrix)
+    print(TransitionMatrix)
 
 @myjit
 def propagateArray_kernel(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability):
@@ -502,6 +510,7 @@ def propagateArray_kernel(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayer
         if (i==0):
             copy(TransitionMatrix, TransitionProduct)
         else:
+            zero(tmp)
             MdotM(TransitionMatrix,TransitionProduct, tmp)
             copy(tmp, TransitionProduct)
         
@@ -531,11 +540,12 @@ def test_propagateArray_kernel():
     kNuBar = 1
     kFlav = 1
     energy = 1.
-    numberOfLayers = 3
+    numberOfLayers = 10
     densityInLayer = np.ones(shape=(numberOfLayers), dtype=ftype)
     distanceInLayer = np.ones(shape=(numberOfLayers), dtype=ftype)
     Probability = np.ones(shape=(3,3), dtype=ftype)
     propagateArray_kernel(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability)
+    print(Probability)
 
 
 if __name__=='__main__':

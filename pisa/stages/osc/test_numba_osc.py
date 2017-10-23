@@ -57,6 +57,7 @@ propagateArray(dm,
 end_t = time.time()
 print ('%.2f s for %i events'%((end_t-start_t),nevts))
 
+print(Probability[:,1,1])
 
 # do the same with Ol' Bargy
 from pisa.stages.osc.prob3.BargerPropagator import BargerPropagator
