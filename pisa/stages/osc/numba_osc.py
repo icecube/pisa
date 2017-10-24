@@ -5,9 +5,9 @@ import inspect
 from numba import jit, vectorize, guvectorize, float64, complex64, int32, float32, complex128
 import math, cmath
 
-#target='cuda'
+target='cuda'
 #target='parallel'
-target='cpu'
+#target='cpu'
 
 if target == 'cuda':
     from numba import cuda
@@ -55,13 +55,14 @@ def matrix_dot_matrix(A, B, C):
     '''
     for j in range(B.shape[1]):
         for i in range(A.shape[0]):
+            C[i,j] = 0.
             for n in range(C.shape[0]):
                 C[i,j] += A[i,n] * B[n,j]
 
 def test_matrix_dot_matrix():
     A = np.linspace(1., 8., 9).reshape(3,3)
     B = np.linspace(1., 8., 9).reshape(3,3)
-    C = np.clear_matrixs((3,3))
+    C = np.zeros((3,3))
     matrix_dot_matrix(A, B, C)
     assert np.array_equal(C, np.dot(A, B))
 
@@ -72,13 +73,14 @@ def matrix_dot_vector(A, v, w):
     w = A * v
     '''
     for i in range(A.shape[0]):
+        w[i] = 0.
         for j in range(A.shape[1]):
             w[i] += A[i,j] * v[j]
 
 def test_matrix_dot_vector():
     A = np.linspace(1., 8., 9).reshape(3,3)
     v = np.linspace(1., 3., 3)
-    w = np.clear_matrixs((3))
+    w = np.zeros((3))
     matrix_dot_vector(A, v, w)
     assert np.array_equal(w, np.dot(A, v))
 
@@ -94,7 +96,7 @@ def clear_matrix(A):
 def test_clear_matrix():
     A = np.ones((3,3))
     clear_matrix(A)
-    assert np.array_equal(A, np.clear_matrixs((3,3)))
+    assert np.array_equal(A, np.zeros((3,3)))
 
 @myjit
 def copy_matrix(A, B):
@@ -107,37 +109,37 @@ def copy_matrix(A, B):
 
 def test_copy_matrix():
     A = np.ones((3,3))
-    B = np.clear_matrixs((3,3))
+    B = np.zeros((3,3))
     copy_matrix(A, B)
     assert np.array_equal(A, B)
 
 @myjit
-def get_HVac2energy(Mix, delta_M_vac_vac, HVac2energy):
+def get_H_vac(Mix, delta_M_vac_vac, H_vac):
     '''
     Calculate vacuum Hamiltonian in flavor basis for neutrino or 
-    antineutrino (need complex conjugate mixing matrix) of energy E.
+    antineutrino (need complex conjugate mixing matrix), not containing
+    the 1/(2*energy) term!
     '''
     delta_MVacDiag = cuda.local.array(shape=(3,3), dtype=ctype)
     MixConjTranspose = cuda.local.array(shape=(3,3), dtype=ctype)
     tmp = cuda.local.array(shape=(3,3), dtype=ctype)
 
     clear_matrix(delta_MVacDiag)
-    clear_matrix(tmp)
 
     delta_MVacDiag[1,1] = delta_M_vac_vac[1,0] + 0j
     delta_MVacDiag[2,2] = delta_M_vac_vac[2,0] + 0j
 
     conjugate_transpose(Mix, MixConjTranspose)
     matrix_dot_matrix(delta_MVacDiag, MixConjTranspose, tmp)
-    matrix_dot_matrix(Mix, tmp, HVac2energy)
+    matrix_dot_matrix(Mix, tmp, H_vac)
 
-def test_get_HVac2energy():
+def test_get_H_vac():
     Mix = np.ones(shape=(3,3), dtype=ctype)
     delta_M_vac_vac = np.ones(shape=(3,3), dtype=ftype)
 
-    HVac2energy = np.ones(shape=(3,3), dtype=ctype)
-    get_HVac2energy(Mix, delta_M_vac_vac, HVac2energy)
-    #print(HVac2energy)
+    H_vac = np.ones(shape=(3,3), dtype=ctype)
+    get_H_vac(Mix, delta_M_vac_vac, H_vac)
+    #print(H_vac)
 
 @myjit
 def get_H_mat(rho, nsi_eps, antitype, H_mat):
@@ -146,13 +148,13 @@ def get_H_mat(rho, nsi_eps, antitype, H_mat):
 
     in the following, `a` is just the standard effective matter potential
     induced by charged-current weak interactions with electrons
-    (modulo a factor of 2E)
     Calculate effective non-standard interaction Hamiltonian in flavor basis 
     '''
     # 2*sqrt(2)*Gfermi in (eV^2-cm^3)/(mole-GeV)
     tworttwoGf = 1.52588e-4
 
     # standard matter interaction Hamiltonian
+    clear_matrix(H_mat)
     a = rho * tworttwoGf * antitype / 2.
     H_mat[0,0] = a + 0j
 
@@ -173,7 +175,7 @@ def test_get_H_mat():
     #print(H_mat)
 
 @myjit
-def get_M(energy, rho, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_vac, H_mat):
+def get_delta_Ms(energy, rho, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_vac, H_mat):
     '''
     Compute the matter-mass vector M, dM = M_i-M_j and dMimj
 
@@ -269,7 +271,7 @@ def get_M(energy, rho, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_vac, H_mat)
               delta_M_mat_mat[i,j] = mMat[i] - mMat[j]
               delta_M_mat_vac[i,j] = mMat[i] - delta_M_vac_vac[j,0]
 
-def test_get_M():
+def test_get_delta_Ms():
     energy = 1.
     # not needed here??
     rho = 1.
@@ -278,7 +280,7 @@ def test_get_M():
     delta_M_mat_vac = np.ones(shape=(3,3), dtype=ctype)
     H_mat = np.ones(shape=(3,3), dtype=ctype)
 
-    get_M(energy, rho, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_vac, H_mat)
+    get_delta_Ms(energy, rho, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_vac, H_mat)
     #print(delta_M_mat_mat)
     #print(delta_M_mat_vac)
 
@@ -326,9 +328,9 @@ def test_getProduct():
     #print(product)
 
 @myjit
-def get_A(baseline, energy, rho, Mix, delta_M_mat_vac, delta_M_mat_mat, H_matmass_eigenstate_basis, transition_matrix):
+def get_transition_amplitude_matrix(baseline, energy, rho, Mix, delta_M_mat_vac, delta_M_mat_mat, H_matmass_eigenstate_basis, transition_matrix):
     '''
-    get_A (take into account generic potential matrix (=Hamiltonian))
+    get_transition_amplitude_matrix (take into account generic potential matrix (=Hamiltonian))
     Calculate the transition amplitude matrix A (equation 10)
     '''
     X = cuda.local.array(shape=(3,3), dtype=ctype)
@@ -337,7 +339,6 @@ def get_A(baseline, energy, rho, Mix, delta_M_mat_vac, delta_M_mat_mat, H_matmas
     MixConjTranspose = cuda.local.array(shape=(3,3), dtype=ctype)
 
     clear_matrix(X)
-    clear_matrix(tmp)
     clear_matrix(transition_matrix)
 
     getProduct(baseline, energy, rho, delta_M_mat_vac, delta_M_mat_mat, H_matmass_eigenstate_basis, product)
@@ -356,7 +357,7 @@ def get_A(baseline, energy, rho, Mix, delta_M_mat_vac, delta_M_mat_mat, H_matmas
     matrix_dot_matrix(X, MixConjTranspose, tmp)
     matrix_dot_matrix(Mix, tmp, transition_matrix)
 
-def test_get_A():
+def test_get_transition_amplitude_matrix():
     baseline = 1.
     energy = 1.
     rho = 1.
@@ -366,7 +367,7 @@ def test_get_A():
     H_matmass_eigenstate_basis = np.ones(shape=(3,3), dtype=ctype)
     transition_matrix = np.ones(shape=(3,3), dtype=ctype)
 
-    get_A(baseline, energy, rho, Mix,  delta_M_mat_vac, delta_M_mat_mat, H_matmass_eigenstate_basis, transition_matrix)
+    get_transition_amplitude_matrix(baseline, energy, rho, Mix,  delta_M_mat_vac, delta_M_mat_mat, H_matmass_eigenstate_basis, transition_matrix)
     #print(transition_matrix)
 
 
@@ -396,7 +397,7 @@ def test_convert_from_mass_eigenstate():
 @myjit
 def get_transition_matrix(antitype, energy, rho, baseline,
                            mixNuType,  nsi_eps,
-                           HVac2energy,  delta_M, transition_matrix):
+                           H_vac,  delta_M, transition_matrix):
     '''
     Calculate neutrino flavour transition amplitude matrix for neutrino (antitype > 0)
     or antineutrino (antitype < 0) with energy energy travernp.sing layer of matter of
@@ -405,17 +406,10 @@ def get_transition_matrix(antitype, energy, rho, baseline,
     H_mat = cuda.local.array(shape=(3,3), dtype=ctype)
     delta_M_mat_vac = cuda.local.array(shape=(3,3), dtype=ctype)
     delta_M_mat_mat = cuda.local.array(shape=(3,3), dtype=ctype)
-    HFull = cuda.local.array(shape=(3,3), dtype=ctype)
+    H_full = cuda.local.array(shape=(3,3), dtype=ctype)
     tmp = cuda.local.array(shape=(3,3), dtype=ctype)
     H_matmass_eigenstate_basis = cuda.local.array(shape=(3,3), dtype=ctype)
     mixNuTypeConjTranspose = cuda.local.array(shape=(3,3), dtype=ctype)
-
-    clear_matrix(H_mat)
-    clear_matrix(delta_M_mat_vac)
-    clear_matrix(delta_M_mat_mat)
-    clear_matrix(HFull)
-    clear_matrix(tmp)
-    clear_matrix(H_matmass_eigenstate_basis)
 
     # Compute the matter potential including possible non-standard interactions
     # in the flavor basis 
@@ -424,11 +418,11 @@ def get_transition_matrix(antitype, energy, rho, baseline,
     # Get the full Hamiltonian by adding together matter and vacuum parts 
     for i in range(3):
         for j in range(3):
-            HFull[i,j] = HVac2energy[i,j] / (2.*energy) + H_mat[i,j]
+            H_full[i,j] = H_vac[i,j] / (2.*energy) + H_mat[i,j]
 
     # Calculate modified mass eigenvalues in matter from the full Hamiltonian and
     # the vacuum mass splittings 
-    get_M(energy, rho, delta_M, delta_M_mat_mat, delta_M_mat_vac, HFull)
+    get_delta_Ms(energy, rho, delta_M, delta_M_mat_mat, delta_M_mat_vac, H_full)
 
     # Now we transform the matter (TODO: matter? full?) Hamiltonian back into the
     # mass eigenstate basis so we don't need to compute products of the effective
@@ -439,7 +433,7 @@ def get_transition_matrix(antitype, energy, rho, baseline,
 
     # We can now proceed to calculating the transition amplitude from the Hamiltonian
     # in the mass basis and the effective mass splittings 
-    get_A(baseline, energy, rho, mixNuType, delta_M_mat_vac, delta_M_mat_mat, H_matmass_eigenstate_basis, transition_matrix)
+    get_transition_amplitude_matrix(baseline, energy, rho, mixNuType, delta_M_mat_vac, delta_M_mat_mat, H_matmass_eigenstate_basis, transition_matrix)
 
 def test_get_transition_matrix():
     antitype = 1
@@ -448,31 +442,27 @@ def test_get_transition_matrix():
     baseline = 1.
     mixNuType = np.ones(shape=(3,3), dtype=ctype)
     nsi_eps = np.ones(shape=(3,3), dtype=ctype)
-    HVac2energy = np.ones(shape=(3,3), dtype=ctype)
+    H_vac = np.ones(shape=(3,3), dtype=ctype)
     m = np.linspace(0,1,9, dtype=ftype)
     delta_M = m.reshape(3,3)
     transition_matrix = np.ones(shape=(3,3), dtype=ctype)
 
     get_transition_matrix(antitype, energy, rho, baseline,
                            mixNuType,  nsi_eps,
-                           HVac2energy,  delta_M, transition_matrix)
+                           H_vac,  delta_M, transition_matrix)
     #print(transition_matrix)
 
 @myjit
 def propagate_array_kernel(delta_M, mix, nsi_eps, antitype, flav, energy, n_layers, density_in_layer, distance_in_layer, osc_probs):
 
     # 3x3 complex
-    HVac2energy = cuda.local.array(shape=(3,3), dtype=ctype)
+    H_vac = cuda.local.array(shape=(3,3), dtype=ctype)
     mixNuType = cuda.local.array(shape=(3,3), dtype=ctype)
     transition_product = cuda.local.array(shape=(3,3), dtype=ctype)
     transition_matrix = cuda.local.array(shape=(3,3), dtype=ctype)
     tmp = cuda.local.array(shape=(3,3), dtype=ctype)
 
-    clear_matrix(HVac2energy)
-    clear_matrix(mixNuType)
-    clear_matrix(transition_product)
-    clear_matrix(transition_matrix)
-    clear_matrix(tmp)
+    clear_matrix(H_vac)
     clear_matrix(osc_probs)
 
     # 3-vector complex
@@ -498,7 +488,7 @@ def propagate_array_kernel(delta_M, mix, nsi_eps, antitype, flav, energy, n_laye
         # (note that this only changes calculations with non-clear_matrix deltacp)
         conjugate_transpose(mix, mixNuType)
 
-    get_HVac2energy(mixNuType, delta_M, HVac2energy)
+    get_H_vac(mixNuType, delta_M, H_vac)
 
 
     for i in range(n_layers):
@@ -510,13 +500,12 @@ def propagate_array_kernel(delta_M, mix, nsi_eps, antitype, flav, energy, n_laye
                                distance,
                                mixNuType,
                                nsi_eps,
-                               HVac2energy,
+                               H_vac,
                                delta_M,
                                transition_matrix)
         if i == 0:
             copy_matrix(transition_matrix, transition_product)
         else:
-            clear_matrix(tmp)
             matrix_dot_matrix(transition_matrix,transition_product, tmp)
             copy_matrix(tmp, transition_product)
         
@@ -525,8 +514,6 @@ def propagate_array_kernel(delta_M, mix, nsi_eps, antitype, flav, energy, n_laye
     for i in range(2):
         for j in range(3):
             raw_input_psi[j] = 0.
-            # clear_matrix out here?
-            output_psi[j] = 0.
 
         if use_mass_eigenstates:
             convert_from_mass_eigenstate(i+1, raw_input_psi, mixNuType)
@@ -561,15 +548,15 @@ if __name__=='__main__':
     test_matrix_dot_vector()
     test_clear_matrix()
     test_copy_matrix()
-    test_get_HVac2energy()
+    test_get_H_vac()
     print('test successfull')
     test_get_H_mat()
     print('test successfull')
-    test_get_M()
+    test_get_delta_Ms()
     print('test successfull')
     test_getProduct()
     print('test successfull')
-    test_get_A()
+    test_get_transition_matrix()
     print('test successfull')
     test_convert_from_mass_eigenstate()
     print('test successfull')
