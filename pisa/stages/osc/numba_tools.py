@@ -1,4 +1,21 @@
+'''Numba tools
+
+This is a colection of functions used for numba functions
+that work for targets cpu as well as cuda
+'''
 from __future__ import print_function
+
+__all__ = ['myjit',
+           'conjugate_transpose',
+           'matrix_dot_matrix',
+           'matrix_dot_vector',
+           'clear_matrix',
+           'copy_matrix'
+           ]
+__version__ = '0.1'
+__author__ = 'Philipp Eller (pder3@psu.edu)'
+
+
 import numpy as np
 import inspect
 from numba import jit, float64, complex64, int32, float32, complex128
@@ -8,7 +25,7 @@ from pisa import FTYPE
 
 target='cuda'
 #target='parallel'
-#target='cpu'
+target='cpu'
 
 if target == 'cuda':
     from numba import cuda

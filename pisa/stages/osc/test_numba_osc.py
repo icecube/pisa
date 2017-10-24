@@ -21,7 +21,7 @@ delta_M_vac_diag[1,1] = dm[1,0]
 delta_M_vac_diag[2,2] = dm[2,0]
 H_vac = np.dot(np.dot(mix,delta_M_vac_diag),mix.conj().T)
 
-points = 1000
+points = 100
 nevts = points**2
 
 # input arrays

@@ -1,11 +1,22 @@
+'''Neutrino flavour oscillation in matter calculation
+Based on the original prob3++ implementation of Roger Wendell
+http://www.phy.duke.edu/~raw22/public/Prob3++/ (2012)
+'''
+
 from __future__ import print_function, division
+
+__all__ = ['get_transition_matrix',
+           'propagate_array_kernel',
+           ]
+__version__ = '0.1'
+__author__ = 'Philipp Eller (pder3@psu.edu)'
+
+import math, cmath
 
 import numpy as np
 from numba import jit, float64, complex64, int32, float32, complex128
-import math, cmath
 
 from numba_tools import *
-
 
 #@myjit
 #def get_H_vac(mix_nubar, delta_M_vac_vac, H_vac):
@@ -74,11 +85,11 @@ def get_H_mat(rho, nsi_eps, nubar, H_mat):
 
     # 2*sqrt(2)*Gfermi in (eV^2-cm^3)/(mole-GeV)
     tworttwoGf = 1.52588e-4
-    a = rho * tworttwoGf * nubar / 2.
+    a = 0.5 * rho * tworttwoGf * nubar
 
     # standard matter interaction Hamiltonian
     clear_matrix(H_mat)
-    H_mat[0,0] = a + 0j
+    H_mat[0,0] = a
 
     # Obtain effective non-standard matter interaction Hamiltonian
     nsi_rho_scale = 3. #// assume 3x electron density for "NSI"-quark (e.g., d) density
@@ -121,6 +132,8 @@ def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_va
     neutrino or anti-neutrino (type already taken into account in Hamiltonian)
     of energy energy. 
 
+    - only god knows what happens in this function, somehow it seems to work
+
     '''
 
     real_product_a = (H_mat[0,1] * H_mat[1,2] * H_mat[2,0]).real
@@ -148,20 +161,21 @@ def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_va
 
     c2 = - H_mat[0,0].real - H_mat[1,1].real - H_mat[2,2].real
 
-    one_over_two_e = 1./(2.*energy)
+    one_over_two_e = 0.5 / energy
+    one_third = 1./3.
+    two_third = 2./3.
 
     x = delta_M_vac_vac[1,0]
     y = delta_M_vac_vac[2,0]
 
-    c2_v = -one_over_two_e * (x + y)
+    c2_v = - one_over_two_e * (x + y)
 
     p = c2**2 - 3.*c1
     p_v = one_over_two_e**2 * (x**2 + y**2 - x*y)
     p = max(0., p)
 
-    q = -27. * c0/2. - c2**3 + 9. * c1*c2 / 2.
-
-    q_v = one_over_two_e**3 * (x + y) * ((x + y)**2 - (9./2.) * x * y)
+    q = -13.5*c0 - c2**3 + 4.5*c1*c2
+    q_v = one_over_two_e**3 * (x + y) * ((x + y)**2 - 4.5*x*y)
 
     tmp = p**3 - q**2
     tmp_v = p_v**3 - q_v**2
@@ -174,22 +188,22 @@ def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_va
     m_mat_u = cuda.local.array(shape=(3), dtype=ftype)
     m_mat_v = cuda.local.array(shape=(3), dtype=ftype)
 
-    a = (2./3.) * math.pi
-    res = math.atan2(math.sqrt(tmp), q) / 3.
+    a = two_third * math.pi
+    res = math.atan2(math.sqrt(tmp), q) * one_third
     theta[0] = res + a
     theta[1] = res - a
     theta[2] = res
-    res_v = math.atan2(math.sqrt(tmp_v), q_v) / 3.
+    res_v = math.atan2(math.sqrt(tmp_v), q_v) * one_third
     theta_v[0] = res_v + a
     theta_v[1] = res_v - a
     theta_v[2] = res_v
 
-    b = (2./3.) * math.sqrt(p)
-    b_v = (2./3.) * math.sqrt(p_v)
+    b = two_third * math.sqrt(p)
+    b_v = two_third * math.sqrt(p_v)
 
     for i in range(3):
-        m_mat_u[i] = 2. * energy * (b * math.cos(theta[i]) - c2/3. + delta_M_vac_vac[0,0])
-        m_mat_v[i] = 2. * energy * (b_v * math.cos(theta_v[i]) - c2_v/3. + delta_M_vac_vac[0,0])
+        m_mat_u[i] = 2. * energy * (b * math.cos(theta[i]) - c2*one_third + delta_M_vac_vac[0,0])
+        m_mat_v[i] = 2. * energy * (b_v * math.cos(theta_v[i]) - c2_v*one_third + delta_M_vac_vac[0,0])
 
     # Sort according to which reproduce the vaccum eigenstates 
     for i in range(3):
@@ -446,9 +460,10 @@ def get_transition_matrix(nubar,
     get_H_mat(rho, nsi_eps, nubar, H_mat)
 
     # Get the full Hamiltonian by adding together matter and vacuum parts 
+    one_over_two_e = 0.5 / energy
     for i in range(3):
         for j in range(3):
-            H_full[i,j] = H_vac[i,j] / (2.*energy) + H_mat[i,j]
+            H_full[i,j] = H_vac[i,j] * one_over_two_e + H_mat[i,j]
 
     # Calculate modified mass eigenvalues in matter from the full Hamiltonian and
     # the vacuum mass splittings 
