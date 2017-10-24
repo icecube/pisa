@@ -1,26 +1,29 @@
 from __future__ import print_function
+
+import time
 import numpy as np
 from numba import guvectorize
-from numba_osc import *
+
 from pisa import FTYPE
 from pisa.stages.osc.osc_params import OscParams
 from pisa.stages.osc.layers import Layers
-import time
+from prob3numba.numba_osc import *
+from prob3numba.numba_tools import *
 
+# Set up some mixing parameters
 OP = OscParams(7.5e-5, 2.524e-3, np.sqrt(0.306), np.sqrt(0.02166), np.sqrt(0.441), 261/180.*np.pi)
-
 mix = OP.mix_matrix[:,:,0] + OP.mix_matrix[:,:,1] * 1j
 dm = OP.dm_matrix
 nsi_eps = np.zeros((3,3), dtype=FTYPE) + np.zeros((3,3), dtype=FTYPE) * 1j
 
 complex_ftype = np.complex128 if FTYPE == np.float64 else np.complex64
-
 #calculate H_vac already here
 delta_M_vac_diag = np.zeros(shape=(3,3), dtype=complex_ftype)
 delta_M_vac_diag[1,1] = dm[1,0]
 delta_M_vac_diag[2,2] = dm[2,0]
 H_vac = np.dot(np.dot(mix,delta_M_vac_diag),mix.conj().T)
 
+# number of points for E x CZ grid
 points = 100
 nevts = points**2
 
@@ -29,24 +32,25 @@ nevts = points**2
 kNuBar = np.ones(nevts, dtype=np.int32)
 # flavours
 kFlav = np.ones(nevts, dtype=np.int32)
+
 energy_points = np.logspace(0,3,points, dtype=FTYPE)
 cz_points = np.linspace(-1,1,points, dtype=FTYPE)
 energy, cz = np.meshgrid(energy_points, cz_points)
 energy = energy.ravel()
 cz = cz.ravel()
 
-earth_model = '/home/peller/cake/pisa/resources/osc/PREM_12layer.dat'
+# calc layers
+earth_model = '/home/peller/cake/pisa/resources/osc/PREM_59layer.dat'
 det_depth = 2
 atm_height = 20
 myLayers = Layers(earth_model, det_depth, atm_height)
 myLayers.setElecFrac(0.4656, 0.4656, 0.4957)
 myLayers.calcLayers(cz)
-
 numberOfLayers = myLayers.n_layers
 densityInLayer = myLayers.density.reshape((nevts,myLayers.max_layers))
 distanceInLayer = myLayers.distance.reshape((nevts,myLayers.max_layers))
 
-# empty arrays to be filled
+# empty array to be filled
 Probability = np.zeros((nevts,3,3), dtype=FTYPE)
 
 if FTYPE == np.float64:
@@ -71,20 +75,22 @@ propagate_array(dm,
                distanceInLayer,
                out=Probability)
 end_t = time.time()
-print ('%.2f s for %i events'%((end_t-start_t),nevts))
+numba_time = end_t - start_t
+print ('%.2f s for %i events'%(numba_time,nevts))
 
+# add some sleep because of timing inconsistency
 time.sleep(2)
 
-#print(Probability[:,1,1])
-
-# do the same with Ol' Bargy
+# do the same with good Ol' Bargy
 from pisa.stages.osc.prob3.BargerPropagator import BargerPropagator
 prob_e = []
 prob_mu = []
 
 barger_propagator = BargerPropagator(earth_model, det_depth)
 barger_propagator.UseMassEigenstates(False)
-start_t= time.time()
+prob_e = []
+prob_mu = []
+start_t = time.time()
 for c,e,kNu,kF in zip(cz,energy,kNuBar,kFlav):
     barger_propagator.SetMNS(
                         0.306,
@@ -107,32 +113,31 @@ for c,e,kNu,kF in zip(cz,energy,kNuBar,kFlav):
         1, int(kF)
     ))
 end_t = time.time()
-print ('%.2f s for %i events'%((end_t-start_t),nevts))
-prob_mu = np.array(prob_mu)
+cpp_time = end_t - start_t
+print ('%.2f s for %i events'%(cpp_time,nevts))
+print ('ratio numba/cpp: %.3f'%(numba_time/cpp_time))
 
-# plot maps
+prob_mu = np.array(prob_mu)
+pmap = Probability[:,1,1].reshape((points, points))
+pmap2 = prob_mu.reshape((points, points))
+print('max diff = ',np.max(np.abs(pmap2-pmap)))
+
+# plot isome maps
 import matplotlib as mpl
 # Headless mode; must set prior to pyplot import
 mpl.use('Agg')
 from matplotlib import pyplot as plt
-pmap = Probability[:,1,1].reshape((points, points))
-pmap2 = prob_mu.reshape((points, points))
-# numba
+# numba map
 pcol = plt.pcolormesh(energy_points, cz_points, pmap,
                                         cmap='RdBu', linewidth=0, rasterized=True)
 ax = plt.gca()
 ax.set_xscale('log')
-plt.savefig('osc_test_map.png')
+plt.savefig('osc_test_map_numba.png')
 # barger
 pcol = plt.pcolormesh(energy_points, cz_points, pmap2,
-                                        vmin=0, vmax=1, cmap='RdBu', linewidth=0, rasterized=True)
-ax = plt.gca()
-ax.set_xscale('log')
+                                        cmap='RdBu', linewidth=0, rasterized=True)
 plt.savefig('osc_test_map_barger.png')
 # diff map
 pcol = plt.pcolormesh(energy_points, cz_points, pmap2-pmap,
                                         cmap='RdBu', linewidth=0, rasterized=True)
-print('max diff = ',np.max(np.abs(pmap2-pmap)))
-ax = plt.gca()
-ax.set_xscale('log')
 plt.savefig('osc_test_map_diff.png')

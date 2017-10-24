@@ -10,7 +10,11 @@ __all__ = ['myjit',
            'matrix_dot_matrix',
            'matrix_dot_vector',
            'clear_matrix',
-           'copy_matrix'
+           'copy_matrix',
+           'target',
+           'cuda',
+           'ctype',
+           'ftype'
            ]
 __version__ = '0.1'
 __author__ = 'Philipp Eller (pder3@psu.edu)'
@@ -23,7 +27,7 @@ import math, cmath
 
 from pisa import FTYPE
 
-target='cuda'
+#target='cuda'
 #target='parallel'
 target='cpu'
 
