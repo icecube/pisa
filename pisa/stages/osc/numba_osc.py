@@ -5,9 +5,9 @@ import inspect
 from numba import jit, vectorize, guvectorize, float64, complex64, int32, float32, complex128
 import math, cmath
 
-target='cuda'
+#target='cuda'
 #target='parallel'
-#target='cpu'
+target='cpu'
 
 if target == 'cuda':
     from numba import cuda
@@ -326,7 +326,7 @@ def test_getProduct():
     #print(product)
 
 @myjit
-def get_A(baseline, energy, rho, Mix, delta_M_mat_vac, delta_M_mat_mat, H_matmass_eigenstate_basis, phase_offset, transition_matrix):
+def get_A(baseline, energy, rho, Mix, delta_M_mat_vac, delta_M_mat_mat, H_matmass_eigenstate_basis, transition_matrix):
     '''
     get_A (take into account generic potential matrix (=Hamiltonian))
     Calculate the transition amplitude matrix A (equation 10)
@@ -340,17 +340,13 @@ def get_A(baseline, energy, rho, Mix, delta_M_mat_vac, delta_M_mat_mat, H_matmas
     clear_matrix(tmp)
     clear_matrix(transition_matrix)
 
-    if phase_offset == 0.:
-        getProduct(baseline, energy, rho, delta_M_mat_vac, delta_M_mat_mat, H_matmass_eigenstate_basis, product)
-    # what if phase_offset != 0.0??
+    getProduct(baseline, energy, rho, delta_M_mat_vac, delta_M_mat_mat, H_matmass_eigenstate_basis, product)
 
     # (1/2)*(1/(h_bar*c)) in units of GeV/(eV^2-km)
     hbar_c_factor = 2.534
 
     for k in range(3):
         arg = - delta_M_mat_vac[k,0] * (baseline / energy) * hbar_c_factor
-        if k == 2:
-            arg += phase_offset 
         for i in range(3):
             for j in range(3):
                 X[i,j] += cmath.exp(arg * 1.j) * product[i,j,k]
@@ -368,10 +364,9 @@ def test_get_A():
     delta_M_mat_mat = np.ones(shape=(3,3), dtype=ctype)
     delta_M_mat_vac = np.ones(shape=(3,3), dtype=ctype)
     H_matmass_eigenstate_basis = np.ones(shape=(3,3), dtype=ctype)
-    phase_offset = 0.
     transition_matrix = np.ones(shape=(3,3), dtype=ctype)
 
-    get_A(baseline, energy, rho, Mix,  delta_M_mat_vac, delta_M_mat_mat, H_matmass_eigenstate_basis, phase_offset, transition_matrix)
+    get_A(baseline, energy, rho, Mix,  delta_M_mat_vac, delta_M_mat_mat, H_matmass_eigenstate_basis, transition_matrix)
     #print(transition_matrix)
 
 
@@ -400,7 +395,6 @@ def test_convert_from_mass_eigenstate():
 
 @myjit
 def get_transition_matrix(antitype, energy, rho, baseline,
-                           phase_offset,
                            mixNuType,  nsi_eps,
                            HVac2energy,  delta_M, transition_matrix):
     '''
@@ -445,14 +439,13 @@ def get_transition_matrix(antitype, energy, rho, baseline,
 
     # We can now proceed to calculating the transition amplitude from the Hamiltonian
     # in the mass basis and the effective mass splittings 
-    get_A(baseline, energy, rho, mixNuType, delta_M_mat_vac, delta_M_mat_mat, H_matmass_eigenstate_basis, phase_offset, transition_matrix)
+    get_A(baseline, energy, rho, mixNuType, delta_M_mat_vac, delta_M_mat_mat, H_matmass_eigenstate_basis, transition_matrix)
 
 def test_get_transition_matrix():
     antitype = 1
     energy = 1.
     rho = 1.
     baseline = 1.
-    phase_offset = 0.
     mixNuType = np.ones(shape=(3,3), dtype=ctype)
     nsi_eps = np.ones(shape=(3,3), dtype=ctype)
     HVac2energy = np.ones(shape=(3,3), dtype=ctype)
@@ -461,7 +454,6 @@ def test_get_transition_matrix():
     transition_matrix = np.ones(shape=(3,3), dtype=ctype)
 
     get_transition_matrix(antitype, energy, rho, baseline,
-                           phase_offset,
                            mixNuType,  nsi_eps,
                            HVac2energy,  delta_M, transition_matrix)
     #print(transition_matrix)
@@ -516,7 +508,6 @@ def propagate_array_kernel(delta_M, mix, nsi_eps, antitype, flav, energy, n_laye
                                energy,
                                density,
                                distance,
-                               0.0,
                                mixNuType,
                                nsi_eps,
                                HVac2energy,
