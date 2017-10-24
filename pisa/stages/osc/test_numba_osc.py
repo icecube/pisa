@@ -1,5 +1,6 @@
 from __future__ import print_function
 import numpy as np
+from numba import guvectorize
 from numba_osc import *
 from pisa.stages.osc.osc_params import OscParams
 from pisa.stages.osc.layers import Layers
