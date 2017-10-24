@@ -2,6 +2,7 @@ from __future__ import print_function
 import numpy as np
 from numba import guvectorize
 from numba_osc import *
+from pisa import FTYPE
 from pisa.stages.osc.osc_params import OscParams
 from pisa.stages.osc.layers import Layers
 import time
@@ -10,7 +11,15 @@ OP = OscParams(7.5e-5, 2.524e-3, np.sqrt(0.306), np.sqrt(0.02166), np.sqrt(0.441
 
 mix = OP.mix_matrix[:,:,0] + OP.mix_matrix[:,:,1] * 1j
 dm = OP.dm_matrix
-nsi_eps = np.zeros((3,3)) + np.zeros((3,3)) * 1j
+nsi_eps = np.zeros((3,3), dtype=FTYPE) + np.zeros((3,3), dtype=FTYPE) * 1j
+
+complex_ftype = np.complex128 if FTYPE == np.float64 else np.complex64
+
+#calculate H_vac already here
+delta_M_vac_diag = np.zeros(shape=(3,3), dtype=complex_ftype)
+delta_M_vac_diag[1,1] = dm[1,0]
+delta_M_vac_diag[2,2] = dm[2,0]
+H_vac = np.dot(np.dot(mix,delta_M_vac_diag),mix.conj().T)
 
 points = 100
 nevts = points**2
@@ -20,13 +29,13 @@ nevts = points**2
 kNuBar = np.ones(nevts, dtype=np.int32)
 # flavours
 kFlav = np.ones(nevts, dtype=np.int32)
-energy_points = np.logspace(0,3,points)
-cz_points = np.linspace(-1,1,points)
+energy_points = np.logspace(0,3,points, dtype=FTYPE)
+cz_points = np.linspace(-1,1,points, dtype=FTYPE)
 energy, cz = np.meshgrid(energy_points, cz_points)
 energy = energy.ravel()
 cz = cz.ravel()
 
-earth_model = '/home/peller/cake/pisa/resources/osc/PREM_12layer.dat'
+earth_model = '/home/peller/cake/pisa/resources/osc/PREM_4layer.dat'
 det_depth = 2
 atm_height = 20
 myLayers = Layers(earth_model, det_depth, atm_height)
@@ -38,15 +47,21 @@ densityInLayer = myLayers.density.reshape((nevts,myLayers.max_layers))
 distanceInLayer = myLayers.distance.reshape((nevts,myLayers.max_layers))
 
 # empty arrays to be filled
-Probability = np.zeros((nevts,3,3))
+Probability = np.zeros((nevts,3,3), dtype=FTYPE)
 
-@guvectorize([(float64[:,:], complex128[:,:], complex128[:,:], int32, int32, float64, int32, float64[:], float64[:], float64[:,:])], '(a,b),(c,d),(e,f),(),(),(),(),(g),(h)->(a,b)', target=target)
-def propagate_array(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability):
-    propagate_array_kernel(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability)
+if FTYPE == np.float64:
+    signature = '(f8[:,:], c16[:,:], c16[:,:], c16[:,:], i4, i4, f8, i4, f8[:], f8[:], f8[:,:])'
+else:
+    signature = '(f4[:,:], c8[:,:], c8[:,:], c8[:,:], i4, i4, f4, i4, f4[:], f4[:], f4[:,:])'
+
+@guvectorize([signature], '(a,b),(c,d),(e,f),(g,h),(),(),(),(),(i),(j)->(a,b)', target=target)
+def propagate_array(dm, mix, H_vac, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability):
+    propagate_array_kernel(dm, mix, H_vac, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability)
 
 start_t = time.time()
 propagate_array(dm,
                mix,
+               H_vac,
                nsi_eps,
                kNuBar,
                kFlav,
@@ -72,11 +87,17 @@ barger_propagator.UseMassEigenstates(False)
 start_t= time.time()
 for c,e,kNu,kF in zip(cz,energy,kNuBar,kFlav):
     barger_propagator.SetMNS(
-                        0.306,0.02166,0.441,7.5e-5,
-                        2.524e-3,261/180.*np.pi,e,True,int(kNu)
+                        0.306,
+                        0.02166,
+                        0.441,7.5e-5,
+                        2.524e-3,
+                        261/180.*np.pi,
+                        float(e),
+                        True,
+                        int(kNu)
                     )
     barger_propagator.DefinePath(
-        c, atm_height, 0.4656, 0.4656, 0.4957
+        float(c), atm_height, 0.4656, 0.4656, 0.4957
     )
     barger_propagator.propagate(int(kNu))
     prob_e.append(barger_propagator.GetProb(

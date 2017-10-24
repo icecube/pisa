@@ -4,17 +4,27 @@ import inspect
 from numba import jit, float64, complex64, int32, float32, complex128
 import math, cmath
 
-#target='cuda'
+from pisa import FTYPE
+
+target='cuda'
 #target='parallel'
-target='cpu'
+#target='cpu'
 
 if target == 'cuda':
     from numba import cuda
-    ctype = complex128
-    ftype = float64
+    if FTYPE == np.float64:
+        ctype = complex128
+        ftype = float64
+    elif FTYPE == np.float32:
+        ctype = complex64
+        ftype = float32
 else:
-    ctype = np.complex128
-    ftype = np.float64
+    if FTYPE == np.float64:
+        ctype = np.complex128
+        ftype = np.float64
+    elif FTYPE == np.float32:
+        ctype = np.complex64
+        ftype = np.float32
     cuda = lambda: None
     cuda.jit = lambda x: x
 

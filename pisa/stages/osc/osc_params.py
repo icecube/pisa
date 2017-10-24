@@ -9,6 +9,8 @@ from __future__ import division
 
 import numpy as np
 
+from pisa import FTYPE
+
 class OscParams(object):
     """
     Holds neutrino oscillation parameters, i.e., mixing angles, squared-mass
@@ -131,7 +133,7 @@ class OscParams(object):
     @property
     def mix_matrix(self):
         """Neutrino mixing matrix"""
-        mix = np.zeros((3,3,2))
+        mix = np.zeros((3,3,2), dtype=FTYPE)
 
         sd = np.sin(self._deltacp)
         cd = np.cos(self._deltacp)
@@ -166,8 +168,8 @@ class OscParams(object):
     @property
     def dm_matrix(self):
         """Neutrino mass splitting matrix in vacuum"""
-        dmVacVac = np.zeros((3,3))
-        mVac = np.zeros(3)
+        dmVacVac = np.zeros((3,3), dtype=FTYPE)
+        mVac = np.zeros(3, dtype=FTYPE)
         delta = 5.0e-9
 
         mVac[0] = 0.0

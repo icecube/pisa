@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division
 
 import numpy as np
 from numba import jit, float64, complex64, int32, float32, complex128
@@ -7,52 +7,53 @@ import math, cmath
 from numba_tools import *
 
 
-@myjit
-def get_H_vac(mix_nubar, delta_M_vac_vac, H_vac):
-    ''' Calculate vacuum Hamiltonian in flavor basis for neutrino or antineutrino
-
-    Parameters:
-    -----------
-    mix_nubar : complex 2d-array
-        Mixing matrix (comjugate transpose for anti-neutrinos)
-
-    delta_M_vac_vac: 2d-array
-        Matrix of mass splittings
-
-    H_vac: complex 2d-array (empty)
-        Hamiltonian in vacuum, modulo a factor 2 * energy
-
-    Notes
-    ------
-    The Hailtonian does not contain the energy dependent factor of
-    1/(2 * E), as it will be added later
-
-    '''
-    delta_M_vac_diag = cuda.local.array(shape=(3,3), dtype=ctype)
-    mix_nubar_conj_transpose = cuda.local.array(shape=(3,3), dtype=ctype)
-    tmp = cuda.local.array(shape=(3,3), dtype=ctype)
-
-    clear_matrix(delta_M_vac_diag)
-
-    delta_M_vac_diag[1,1] = delta_M_vac_vac[1,0] + 0j
-    delta_M_vac_diag[2,2] = delta_M_vac_vac[2,0] + 0j
-
-    conjugate_transpose(mix_nubar, mix_nubar_conj_transpose)
-    matrix_dot_matrix(delta_M_vac_diag, mix_nubar_conj_transpose, tmp)
-    matrix_dot_matrix(mix_nubar, tmp, H_vac)
-
-def test_get_H_vac():
-    mix = np.ones(shape=(3,3), dtype=ctype)
-    delta_M_vac_vac = np.ones(shape=(3,3), dtype=ftype)
-
-    H_vac = np.ones(shape=(3,3), dtype=ctype)
-    get_H_vac(mix, delta_M_vac_vac, H_vac)
-    #print(H_vac)
+#@myjit
+#def get_H_vac(mix_nubar, delta_M_vac_vac, H_vac):
+#    ''' Calculate vacuum Hamiltonian in flavor basis for neutrino or antineutrino
+#
+#    Parameters:
+#    -----------
+#    mix_nubar : complex 2d-array
+#        Mixing matrix (comjugate transpose for anti-neutrinos)
+#
+#    delta_M_vac_vac: 2d-array
+#        Matrix of mass splittings
+#
+#    H_vac: complex 2d-array (empty)
+#        Hamiltonian in vacuum, modulo a factor 2 * energy
+#
+#    Notes
+#    ------
+#    The Hailtonian does not contain the energy dependent factor of
+#    1/(2 * E), as it will be added later
+#
+#    '''
+#
+#    delta_M_vac_diag = cuda.local.array(shape=(3,3), dtype=ctype)
+#    mix_nubar_conj_transpose = cuda.local.array(shape=(3,3), dtype=ctype)
+#    tmp = cuda.local.array(shape=(3,3), dtype=ctype)
+#
+#    clear_matrix(delta_M_vac_diag)
+#
+#    delta_M_vac_diag[1,1] = delta_M_vac_vac[1,0] + 0j
+#    delta_M_vac_diag[2,2] = delta_M_vac_vac[2,0] + 0j
+#
+#    conjugate_transpose(mix_nubar, mix_nubar_conj_transpose)
+#    matrix_dot_matrix(delta_M_vac_diag, mix_nubar_conj_transpose, tmp)
+#    matrix_dot_matrix(mix_nubar, tmp, H_vac)
+#
+#def test_get_H_vac():
+#    mix = np.ones(shape=(3,3), dtype=ctype)
+#    delta_M_vac_vac = np.ones(shape=(3,3), dtype=ftype)
+#    H_vac = np.ones(shape=(3,3), dtype=ctype)
+#
+#    get_H_vac(mix, delta_M_vac_vac, H_vac)
+#    #print(H_vac)
 
 
 @myjit
 def get_H_mat(rho, nsi_eps, nubar, H_mat):
-    ''' Calculate full matter Hamiltonian in flavor basis 
+    ''' Calculate matter Hamiltonian in flavor basis 
 
     Parameters:
     -----------
@@ -94,6 +95,7 @@ def test_get_H_mat():
 
     get_H_mat(rho, nsi_eps, nubar, H_mat)
     #print(H_mat)
+
 
 @myjit
 def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_vac):
@@ -146,26 +148,27 @@ def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_va
 
     c2 = - H_mat[0,0].real - H_mat[1,1].real - H_mat[2,2].real
 
+    #one_over_two_e = 1./(2.*energy)
     twoE = 2.*energy
     twoE_sq = twoE * twoE
     twoE_cu = twoE_sq * twoE
 
-    c2V = (-1./twoE) * (delta_M_vac_vac[1,0] + delta_M_vac_vac[2,0])
+    c2V = -(1./twoE) * (delta_M_vac_vac[1,0] + delta_M_vac_vac[2,0])
 
     p = c2*c2 - 3.*c1
     pV = (1./twoE_sq) * (delta_M_vac_vac[1,0] * delta_M_vac_vac[1,0]
-                         + delta_M_vac_vac[2,0] * delta_M_vac_vac[2,0]
-                         - delta_M_vac_vac[1,0] * delta_M_vac_vac[2,0]
-                        )
+                              + delta_M_vac_vac[2,0] * delta_M_vac_vac[2,0]
+                              - delta_M_vac_vac[1,0] * delta_M_vac_vac[2,0]
+                              )
     p = max(0., p)
 
     q = -27. * c0/2. - c2*c2*c2 + 9. * c1*c2 / 2.
     qV = (1./twoE_cu) * ((delta_M_vac_vac[1,0] + delta_M_vac_vac[2,0])
-                          * (delta_M_vac_vac[1,0] + delta_M_vac_vac[2,0])
-                          * (delta_M_vac_vac[1,0] + delta_M_vac_vac[2,0])
-                          - (9./2.) * delta_M_vac_vac[1,0] * delta_M_vac_vac[2,0]
-                          * (delta_M_vac_vac[1,0] + delta_M_vac_vac[2,0])
-                         )
+                              * (delta_M_vac_vac[1,0] + delta_M_vac_vac[2,0])
+                              * (delta_M_vac_vac[1,0] + delta_M_vac_vac[2,0])
+                              - (9./2.) * delta_M_vac_vac[1,0] * delta_M_vac_vac[2,0]
+                              * (delta_M_vac_vac[1,0] + delta_M_vac_vac[2,0])
+                             )
 
     tmp = p*p*p - q*q
     tmpV = pV*pV*pV - qV*qV
@@ -173,10 +176,10 @@ def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_va
     tmp = max(0., tmp)
 
     theta = cuda.local.array(shape=(3), dtype=ftype)
-    thetaV = cuda.local.array(shape=(3), dtype=ftype)
-    mMat = cuda.local.array(shape=(3), dtype=ftype)
-    mMatU = cuda.local.array(shape=(3), dtype=ftype)
-    mMatV = cuda.local.array(shape=(3), dtype=ftype)
+    theta_v = cuda.local.array(shape=(3), dtype=ftype)
+    m_mat = cuda.local.array(shape=(3), dtype=ftype)
+    m_mat_u = cuda.local.array(shape=(3), dtype=ftype)
+    m_mat_v = cuda.local.array(shape=(3), dtype=ftype)
 
 
     a = (2./3.) * math.pi
@@ -184,32 +187,32 @@ def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_va
     theta[0] = res + a
     theta[1] = res - a
     theta[2] = res
-    resV = math.atan2(math.sqrt(tmpV), qV) / 3.
-    thetaV[0] = resV + a
-    thetaV[1] = resV - a
-    thetaV[2] = resV
+    res_v = math.atan2(math.sqrt(tmpV), qV) / 3.
+    theta_v[0] = res_v + a
+    theta_v[1] = res_v - a
+    theta_v[2] = res_v
     
     for i in range(3):
-        mMatU[i] = 2.*energy * ((2./3.) * math.sqrt(p) * math.cos(theta[i])
+        m_mat_u[i] = 2. * energy * ((2./3.) * math.sqrt(p) * math.cos(theta[i])
                                 - c2/3. + delta_M_vac_vac[0,0])
-        mMatV[i] = 2.*energy * ((2./3.) * math.sqrt(pV) * math.cos(thetaV[i])
+        m_mat_v[i] = 2. * energy * ((2./3.) * math.sqrt(pV) * math.cos(theta_v[i])
                                 - c2V/3. + delta_M_vac_vac[0,0])
 
     # Sort according to which reproduce the vaccum eigenstates 
     for i in range(3):
-        tmpV = abs(delta_M_vac_vac[i,0] - mMatV[0])
+        tmpV = abs(delta_M_vac_vac[i,0] - m_mat_v[0])
         k = 0
         for j in range(3):
-            tmp = abs(delta_M_vac_vac[i,0] - mMatV[j])
+            tmp = abs(delta_M_vac_vac[i,0] - m_mat_v[j])
             if tmp < tmpV:
                 k = j
                 tmpV = tmp
-        mMat[i] = mMatU[k]
+        m_mat[i] = m_mat_u[k]
 
     for i in range(3):
         for j in range(3):
-              delta_M_mat_mat[i,j] = mMat[i] - mMat[j]
-              delta_M_mat_vac[i,j] = mMat[i] - delta_M_vac_vac[j,0]
+              delta_M_mat_mat[i,j] = m_mat[i] - m_mat[j]
+              delta_M_mat_vac[i,j] = m_mat[i] - delta_M_vac_vac[j,0]
 
 def test_get_delta_Ms():
     energy = 1.
@@ -219,6 +222,7 @@ def test_get_delta_Ms():
     H_mat = np.ones(shape=(3,3), dtype=ctype)
 
     get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_vac)
+
 
 @myjit
 def get_product(energy,
@@ -278,6 +282,7 @@ def test_get_product():
                 H_mat_mass_eigenstate_basis,
                 product)
 
+
 @myjit
 def get_transition_amplitude_matrix(baseline,
                                     energy,
@@ -304,7 +309,7 @@ def get_transition_amplitude_matrix(baseline,
     
     H_mat_mass_eigenstate_basis : 2-d array
 
-    transition_matrix : 2d-array
+    transition_matrix : 2d-array (empty)
     
     Notes
     -----
@@ -368,7 +373,7 @@ def convert_from_mass_eigenstate(state, mix_nubar, psi):
 
     mix_nubar : 2d-array
 
-    psi : 1d-array
+    psi : 1d-array (empty)
 
 
     Notes
@@ -424,7 +429,7 @@ def get_transition_matrix(nubar,
 
     delta_M : 2d-array
 
-    transition_matrix : 2d-array
+    transition_matrix : 2d-array (empty)
     
     Notes
     -----
@@ -499,6 +504,7 @@ def test_get_transition_matrix():
 @myjit
 def propagate_array_kernel(delta_M,
                            mix,
+                           H_vac,
                            nsi_eps,
                            nubar,
                            flav,
@@ -529,18 +535,18 @@ def propagate_array_kernel(delta_M,
 
     distance_in_layer : 1d-array
 
-    osc_probs : 2d-array
+    osc_probs : 2d-array (empty)
 
     '''
 
     # 3x3 complex
-    H_vac = cuda.local.array(shape=(3,3), dtype=ctype)
+    #H_vac = cuda.local.array(shape=(3,3), dtype=ctype)
     mix_nubar = cuda.local.array(shape=(3,3), dtype=ctype)
     transition_product = cuda.local.array(shape=(3,3), dtype=ctype)
     transition_matrix = cuda.local.array(shape=(3,3), dtype=ctype)
     tmp = cuda.local.array(shape=(3,3), dtype=ctype)
 
-    clear_matrix(H_vac)
+    #clear_matrix(H_vac)
     clear_matrix(osc_probs)
 
     # 3-vector complex
@@ -563,7 +569,7 @@ def propagate_array_kernel(delta_M,
         # (note that this only changes calculations with non-clear_matrix deltacp)
         conjugate_transpose(mix, mix_nubar)
 
-    get_H_vac(mix_nubar, delta_M, H_vac)
+    #get_H_vac(mix_nubar, delta_M, H_vac)
 
 
     for i in range(n_layers):
