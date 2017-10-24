@@ -9,12 +9,11 @@ def sum_row_kernel(mix, bla, inp, out):
     C = cuda.local.array(shape=(3,3), dtype=ftype)
     D = cuda.local.array(shape=(3), dtype=ctype)
     E = cuda.local.array(shape=(3), dtype=ctype)
-    zero(C)
-    MdotM(mix, mix, C)
+    matrix_dot_matrix(mix, mix, C)
     D[0] = 0.+2.j
     D[1] = 1.+2.j
     D[2] = 1.+2.j
-    Mdotv(C,D,E) 
+    matrix_dot_vector(C,D,E) 
     bla *= 0.1
     out[0] = E[1].real * bla.real
 

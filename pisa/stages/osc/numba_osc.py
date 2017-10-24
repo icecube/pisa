@@ -38,7 +38,10 @@ def myjit(f):
         source = source.replace('cuda.local.array', 'np.empty')
         exec(source)
         fun = eval(f.__name__)
-        return jit(fun, nopython=True)
+        newfun = jit(fun, nopython=True)
+        # needs to be exported to globals
+        globals()[f.__name__] = newfun
+        return newfun
 
 @myjit
 def conjugate_transpose(A, B):

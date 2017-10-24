@@ -11,7 +11,7 @@ mix = OP.mix_matrix[:,:,0] + OP.mix_matrix[:,:,1] * 1j
 dm = OP.dm_matrix
 nsi_eps = np.zeros((3,3)) + np.zeros((3,3)) * 1j
 
-points = 200
+points = 1000
 nevts = points**2
 
 # input arrays
