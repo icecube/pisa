@@ -40,11 +40,11 @@ distanceInLayer = myLayers.distance.reshape((nevts,myLayers.max_layers))
 Probability = np.zeros((nevts,3,3))
 
 @guvectorize([(float64[:,:], complex128[:,:], complex128[:,:], int32, int32, float64, int32, float64[:], float64[:], float64[:,:])], '(a,b),(c,d),(e,f),(),(),(),(),(g),(h)->(a,b)', target=target)
-def propagateArray(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability):
-    propagateArray_kernel(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability)
+def propagate_array(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability):
+    propagate_array_kernel(dm, mix, nsi_eps, kNuBar, kFlav, energy, numberOfLayers, densityInLayer, distanceInLayer, Probability)
 
 start_t = time.time()
-propagateArray(dm,
+propagate_array(dm,
                mix,
                nsi_eps,
                kNuBar,
