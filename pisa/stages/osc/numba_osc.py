@@ -174,7 +174,6 @@ def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_va
     m_mat_u = cuda.local.array(shape=(3), dtype=ftype)
     m_mat_v = cuda.local.array(shape=(3), dtype=ftype)
 
-
     a = (2./3.) * math.pi
     res = math.atan2(math.sqrt(tmp), q) / 3.
     theta[0] = res + a
@@ -184,12 +183,13 @@ def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_va
     theta_v[0] = res_v + a
     theta_v[1] = res_v - a
     theta_v[2] = res_v
-    
+
+    b = (2./3.) * math.sqrt(p)
+    b_v = (2./3.) * math.sqrt(p_v)
+
     for i in range(3):
-        m_mat_u[i] = 2. * energy * ((2./3.) * math.sqrt(p) * math.cos(theta[i])
-                                - c2/3. + delta_M_vac_vac[0,0])
-        m_mat_v[i] = 2. * energy * ((2./3.) * math.sqrt(p_v) * math.cos(theta_v[i])
-                                - c2_v/3. + delta_M_vac_vac[0,0])
+        m_mat_u[i] = 2. * energy * (b * math.cos(theta[i]) - c2/3. + delta_M_vac_vac[0,0])
+        m_mat_v[i] = 2. * energy * (b_v * math.cos(theta_v[i]) - c2_v/3. + delta_M_vac_vac[0,0])
 
     # Sort according to which reproduce the vaccum eigenstates 
     for i in range(3):
@@ -329,9 +329,10 @@ def get_transition_amplitude_matrix(baseline,
 
     for k in range(3):
         arg = - delta_M_mat_vac[k,0] * (baseline / energy) * hbar_c_factor
+        c = cmath.exp(arg * 1.j)
         for i in range(3):
             for j in range(3):
-                X[i,j] += cmath.exp(arg * 1.j) * product[i,j,k]
+                X[i,j] += c * product[i,j,k]
 
     # Compute the product with the mixing matrices 
     conjugate_transpose(mix, mix_conj_transpose)

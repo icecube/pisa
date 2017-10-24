@@ -21,7 +21,7 @@ delta_M_vac_diag[1,1] = dm[1,0]
 delta_M_vac_diag[2,2] = dm[2,0]
 H_vac = np.dot(np.dot(mix,delta_M_vac_diag),mix.conj().T)
 
-points = 100
+points = 1000
 nevts = points**2
 
 # input arrays
@@ -35,7 +35,7 @@ energy, cz = np.meshgrid(energy_points, cz_points)
 energy = energy.ravel()
 cz = cz.ravel()
 
-earth_model = '/home/peller/cake/pisa/resources/osc/PREM_4layer.dat'
+earth_model = '/home/peller/cake/pisa/resources/osc/PREM_12layer.dat'
 det_depth = 2
 atm_height = 20
 myLayers = Layers(earth_model, det_depth, atm_height)
