@@ -148,30 +148,23 @@ def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_va
 
     c2 = - H_mat[0,0].real - H_mat[1,1].real - H_mat[2,2].real
 
-    #one_over_two_e = 1./(2.*energy)
-    twoE = 2.*energy
-    twoE_sq = twoE * twoE
-    twoE_cu = twoE_sq * twoE
+    one_over_two_e = 1./(2.*energy)
 
-    c2V = -(1./twoE) * (delta_M_vac_vac[1,0] + delta_M_vac_vac[2,0])
+    x = delta_M_vac_vac[1,0]
+    y = delta_M_vac_vac[2,0]
 
-    p = c2*c2 - 3.*c1
-    pV = (1./twoE_sq) * (delta_M_vac_vac[1,0] * delta_M_vac_vac[1,0]
-                              + delta_M_vac_vac[2,0] * delta_M_vac_vac[2,0]
-                              - delta_M_vac_vac[1,0] * delta_M_vac_vac[2,0]
-                              )
+    c2_v = -one_over_two_e * (x + y)
+
+    p = c2**2 - 3.*c1
+    p_v = one_over_two_e**2 * (x**2 + y**2 - x*y)
     p = max(0., p)
 
-    q = -27. * c0/2. - c2*c2*c2 + 9. * c1*c2 / 2.
-    qV = (1./twoE_cu) * ((delta_M_vac_vac[1,0] + delta_M_vac_vac[2,0])
-                              * (delta_M_vac_vac[1,0] + delta_M_vac_vac[2,0])
-                              * (delta_M_vac_vac[1,0] + delta_M_vac_vac[2,0])
-                              - (9./2.) * delta_M_vac_vac[1,0] * delta_M_vac_vac[2,0]
-                              * (delta_M_vac_vac[1,0] + delta_M_vac_vac[2,0])
-                             )
+    q = -27. * c0/2. - c2**3 + 9. * c1*c2 / 2.
 
-    tmp = p*p*p - q*q
-    tmpV = pV*pV*pV - qV*qV
+    q_v = one_over_two_e**3 * (x + y) * ((x + y)**2 - (9./2.) * x * y)
+
+    tmp = p**3 - q**2
+    tmp_v = p_v**3 - q_v**2
 
     tmp = max(0., tmp)
 
@@ -187,7 +180,7 @@ def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_va
     theta[0] = res + a
     theta[1] = res - a
     theta[2] = res
-    res_v = math.atan2(math.sqrt(tmpV), qV) / 3.
+    res_v = math.atan2(math.sqrt(tmp_v), q_v) / 3.
     theta_v[0] = res_v + a
     theta_v[1] = res_v - a
     theta_v[2] = res_v
@@ -195,18 +188,18 @@ def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_va
     for i in range(3):
         m_mat_u[i] = 2. * energy * ((2./3.) * math.sqrt(p) * math.cos(theta[i])
                                 - c2/3. + delta_M_vac_vac[0,0])
-        m_mat_v[i] = 2. * energy * ((2./3.) * math.sqrt(pV) * math.cos(theta_v[i])
-                                - c2V/3. + delta_M_vac_vac[0,0])
+        m_mat_v[i] = 2. * energy * ((2./3.) * math.sqrt(p_v) * math.cos(theta_v[i])
+                                - c2_v/3. + delta_M_vac_vac[0,0])
 
     # Sort according to which reproduce the vaccum eigenstates 
     for i in range(3):
-        tmpV = abs(delta_M_vac_vac[i,0] - m_mat_v[0])
+        tmp_v = abs(delta_M_vac_vac[i,0] - m_mat_v[0])
         k = 0
         for j in range(3):
             tmp = abs(delta_M_vac_vac[i,0] - m_mat_v[j])
-            if tmp < tmpV:
+            if tmp < tmp_v:
                 k = j
-                tmpV = tmp
+                tmp_v = tmp
         m_mat[i] = m_mat_u[k]
 
     for i in range(3):
