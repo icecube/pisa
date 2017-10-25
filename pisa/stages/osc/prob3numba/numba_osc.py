@@ -7,6 +7,7 @@ from __future__ import print_function, division
 
 __all__ = ['get_transition_matrix',
            'osc_probs_layers_kernel',
+           'osc_probs_vacuum_kernel',
            ]
 __version__ = '0.1'
 __author__ = 'Philipp Eller (pder@psu.edu)'
@@ -466,6 +467,40 @@ def test_get_transition_matrix():
                           transition_matrix)
     #print(transition_matrix)
 
+@myjit
+def osc_probs_vacuum_kernel(delta_M,
+                           mix,
+                           energy,
+                           distance_in_layer,
+                           osc_probs):
+   
+    clear_matrix(osc_probs)
+
+    # sum up length from all layers
+    baseline = 0.
+    for i in range(distance_in_layer.shape[0]):
+        baseline += distance_in_layer[i]
+
+    # make more precise 20081003 rvw
+    l_over_e = 1.26693281 * baseline / energy
+    s21 = math.sin(delta_M[1,0] * l_over_e)
+    s32 = math.sin(delta_M[2,0] * l_over_e)       
+    s31 = math.sin((delta_M[2,1] + delta_M[3,2]) * l_over_e) 
+
+    # does anybody understand this loop?
+    # ista = abs(*nutype) - 1
+    for ista in range(3):
+        for iend in range(2):
+            osc_probs[ista,iend] = ((mix[ista,0].real * mix[ista,1].real * s21)**2
+                                     + (mix[ista,1].real * mix[ista,2].real * s32)**2
+                                     + (mix[ista,2].real * mix[ista,0].real * s31)**2
+                                    )
+            if iend == ista:
+                osc_probs[ista,iend] = 1. -4. * osc_probs[ista,iend]
+            else:
+                osc_probs[ista,iend] = -4. * osc_probs[ista,iend]
+
+        osc_probs[ista,2] = 1. - osc_probs[ista,0] - osc_probs[ista,1]
 
 @myjit
 def osc_probs_layers_kernel(delta_M,
@@ -501,6 +536,16 @@ def osc_probs_layers_kernel(delta_M,
     distance_in_layer : 1d-array
 
     osc_probs : 2d-array (empty)
+
+
+    Notes
+    -----
+
+    !!! Right now, because of CUDA, the maximum number of layers
+    is hard coded and set to 120 (59Layer PREM + Atmosphere).
+    This is used for cached layer computation, where earth layer, which
+    are typically traversed twice (it's symmetric) are not recalculated
+    but rather cached..
 
     '''
 

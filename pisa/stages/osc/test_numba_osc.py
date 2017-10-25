@@ -19,7 +19,7 @@ nsi_eps = np.zeros_like(mix)
 
 
 # number of points for E x CZ grid
-points = 300
+points = 100
 nevts = points**2
 
 # input arrays
@@ -45,15 +45,22 @@ distanceInLayer = myLayers.distance.reshape((nevts,myLayers.max_layers))
 
 # empty array to be filled
 Probability = np.zeros((nevts,3,3), dtype=FTYPE)
+Probability_vacuum = np.zeros((nevts,3,3), dtype=FTYPE)
 
 if FTYPE == np.float64:
     signature = '(f8[:,:], c16[:,:], c16[:,:], c16[:,:], i4, f8, f8[:], f8[:], f8[:,:])'
+    signature_vac = '(f8[:,:], c16[:,:], f8, f8[:], f8[:,:])'
 else:
     signature = '(f4[:,:], c8[:,:], c8[:,:], c8[:,:], i4, f4, f4[:], f4[:], f4[:,:])'
+    signature_vac = '(f4[:,:], c8[:,:], f4, f4[:], f4[:,:])'
 
 @guvectorize([signature], '(a,b),(c,d),(e,f),(g,h),(),(),(i),(j)->(a,b)', target=target)
 def propagate_array(dm, mix, H_vac, nsi_eps, nubar, energy, densityInLayer, distanceInLayer, Probability):
     osc_probs_layers_kernel(dm, mix, H_vac, nsi_eps, nubar, energy, densityInLayer, distanceInLayer, Probability)
+
+@guvectorize([signature_vac], '(a,b),(c,d),(),(i)->(a,b)', target=target)
+def propagate_array_vacuum(dm, mix, energy, distanceInLayer, Probability):
+    osc_probs_vacuum_kernel(dm, mix, energy, distanceInLayer, Probability)
 
 start_t = time.time()
 propagate_array(dm,
@@ -68,6 +75,16 @@ propagate_array(dm,
 end_t = time.time()
 numba_time = end_t - start_t
 print ('%.2f s for %i events'%(numba_time,nevts))
+
+start_t = time.time()
+propagate_array_vacuum(dm,
+               mix,
+               energy,
+               distanceInLayer,
+               out=Probability_vacuum)
+end_t = time.time()
+numba_vac_time = end_t - start_t
+print ('%.2f s for %i events'%(numba_vac_time,nevts))
 
 # add some sleep because of timing inconsistency
 time.sleep(2)
@@ -112,6 +129,7 @@ print ('ratio numba/cpp: %.3f'%(numba_time/cpp_time))
 
 prob_mu = np.array(prob_mu)
 pmap = Probability[:,1,1].reshape((points, points))
+pmap_vac = Probability_vacuum[:,1,1].reshape((points, points))
 pmap2 = prob_mu.reshape((points, points))
 print('max diff = ',np.max(np.abs(pmap2-pmap)))
 
@@ -126,6 +144,14 @@ pcol = plt.pcolormesh(energy_points, cz_points, pmap,
 ax = plt.gca()
 ax.set_xscale('log')
 plt.savefig('osc_test_map_numba.png')
+# vacuum
+pcol = plt.pcolormesh(energy_points, cz_points, pmap_vac,
+                                        cmap='RdBu', linewidth=0, rasterized=True)
+plt.savefig('osc_test_map_numba_vacuum.png')
+# matter effects
+pcol = plt.pcolormesh(energy_points, cz_points, pmap - pmap_vac,
+                                        cmap='RdBu', linewidth=0, rasterized=True)
+plt.savefig('osc_test_map_numba_matter_vs_vacuum.png')
 # barger
 pcol = plt.pcolormesh(energy_points, cz_points, pmap2,
                                         cmap='RdBu', linewidth=0, rasterized=True)
