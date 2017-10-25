@@ -20,23 +20,6 @@ from numba_tools import *
 
 #@myjit
 #def get_H_vac(mix_nubar, delta_M_vac_vac, H_vac):
-#    ''' Calculate vacuum Hamiltonian in flavor basis for neutrino or antineutrino
-#
-#    Parameters:
-#    -----------
-#    mix_nubar : complex 2d-array
-#        Mixing matrix (comjugate transpose for anti-neutrinos)
-#
-#    delta_M_vac_vac: 2d-array
-#        Matrix of mass splittings
-#
-#    H_vac: complex 2d-array (empty)
-#        Hamiltonian in vacuum, modulo a factor 2 * energy
-#
-#    Notes
-#    ------
-#    The Hailtonian does not contain the energy dependent factor of
-#    1/(2 * E), as it will be added later
 #
 #    '''
 #
@@ -516,9 +499,7 @@ def propagate_array_kernel(delta_M,
                            H_vac,
                            nsi_eps,
                            nubar,
-                           flav,
                            energy,
-                           n_layers,
                            density_in_layer,
                            distance_in_layer,
                            osc_probs):
@@ -533,8 +514,6 @@ def propagate_array_kernel(delta_M,
     nsi_eps : 2d-array
 
     nubar : int
-
-    flav : int
 
     energy : float
 
@@ -580,25 +559,28 @@ def propagate_array_kernel(delta_M,
 
     #get_H_vac(mix_nubar, delta_M, H_vac)
 
-
-    for i in range(n_layers):
+    first_layer = True
+    for i in range(distance_in_layer.shape[0]):
         density = density_in_layer[i]
         distance = distance_in_layer[i]
-        get_transition_matrix(nubar,
-                              energy,
-                              density,
-                              distance,
-                              mix_nubar,
-                              nsi_eps,
-                              H_vac,
-                              delta_M,
-                              transition_matrix,
-                              )
-        if i == 0:
-            copy_matrix(transition_matrix, transition_product)
-        else:
-            matrix_dot_matrix(transition_matrix,transition_product, tmp)
-            copy_matrix(tmp, transition_product)
+        # only do something if distance > 0.
+        if distance > 0.:
+            get_transition_matrix(nubar,
+                                  energy,
+                                  density,
+                                  distance,
+                                  mix_nubar,
+                                  nsi_eps,
+                                  H_vac,
+                                  delta_M,
+                                  transition_matrix,
+                                  )
+            if first_layer:
+                copy_matrix(transition_matrix, transition_product)
+                first_layer = False
+            else:
+                matrix_dot_matrix(transition_matrix,transition_product, tmp)
+                copy_matrix(tmp, transition_product)
         
     # loop on neutrino types, and compute probability for neutrino i:
     # We actually don't care about nutau -> anything since the flux there is zero!
@@ -622,7 +604,6 @@ def test_propagate_array_kernel():
     M = np.linspace(0,1,9, dtype=ftype)
     delta_M = M.reshape(3,3)
     nubar = 1
-    flav = 1
     energy = 1.
     n_layers = 10
     density_in_layer = np.ones(shape=(n_layers), dtype=ftype)
@@ -633,9 +614,7 @@ def test_propagate_array_kernel():
                            mix,
                            nsi_eps,
                            nubar,
-                           flav,
                            energy,
-                           n_layers,
                            density_in_layer,
                            distance_in_layer,
                            osc_probs)
