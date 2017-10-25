@@ -169,22 +169,6 @@ class OscParams(object):
         return self.mix_matrix[:,:,0] + self.mix_matrix[:,:,1] * 1.j
 
     @property
-    def H_vac(self):
-        ''' Calculate vacuum Hamiltonian in flavor basis for neutrino or antineutrino
-
-        Notes
-        ------
-        The Hailtonian does not contain the energy dependent factor of
-        1/(2 * E), as it will be added later
-        '''
-
-        mix = self.mix_matrix_complex
-        delta_M_vac_diag = np.zeros_like(mix)
-        delta_M_vac_diag[1,1] = self.dm_matrix[1,0]
-        delta_M_vac_diag[2,2] = self.dm_matrix[2,0]
-        return np.dot(np.dot(mix,delta_M_vac_diag),mix.conj().T)
-
-    @property
     def dm_matrix(self):
         """Neutrino mass splitting matrix in vacuum"""
         dmVacVac = np.zeros((3,3), dtype=FTYPE)

@@ -19,6 +19,48 @@ from numba import jit, float64, complex64, int32, float32, complex128
 
 from numba_tools import *
 
+@myjit
+def get_H_vac(mix_nubar, delta_M_vac_vac, H_vac):
+    ''' Calculate vacuum Hamiltonian in flavor basis for neutrino or antineutrino
+
+    Parameters:
+    -----------
+    mix_nubar : complex 2d-array
+        Mixing matrix (comjugate transpose for anti-neutrinos)
+
+    delta_M_vac_vac: 2d-array
+        Matrix of mass splittings
+
+    H_vac: complex 2d-array (empty)
+        Hamiltonian in vacuum, modulo a factor 2 * energy
+
+    Notes
+    ------
+    The Hailtonian does not contain the energy dependent factor of
+    1/(2 * E), as it will be added later
+
+    '''
+    delta_M_vac_diag = cuda.local.array(shape=(3,3), dtype=ctype)
+    mix_nubar_conj_transpose = cuda.local.array(shape=(3,3), dtype=ctype)
+    tmp = cuda.local.array(shape=(3,3), dtype=ctype)
+
+    clear_matrix(delta_M_vac_diag)
+
+    delta_M_vac_diag[1,1] = delta_M_vac_vac[1,0] + 0j
+    delta_M_vac_diag[2,2] = delta_M_vac_vac[2,0] + 0j
+
+    conjugate_transpose(mix_nubar, mix_nubar_conj_transpose)
+    matrix_dot_matrix(delta_M_vac_diag, mix_nubar_conj_transpose, tmp)
+    matrix_dot_matrix(mix_nubar, tmp, H_vac)
+
+def test_get_H_vac():
+    mix = np.ones(shape=(3,3), dtype=ctype)
+    delta_M_vac_vac = np.ones(shape=(3,3), dtype=ftype)
+
+    H_vac = np.ones(shape=(3,3), dtype=ctype)
+    get_H_vac(mix, delta_M_vac_vac, H_vac)
+    #print(H_vac)
+
 
 @myjit
 def get_H_mat(rho, nsi_eps, nubar, H_mat):
@@ -27,10 +69,13 @@ def get_H_mat(rho, nsi_eps, nubar, H_mat):
     Parameters:
     -----------
     rho : float
+        density
 
     nsi_eps : complex 2-d array
+        Non-standard interaction terms
 
     nubar : int
+        +1 for neutrinos, -1 for antineutrinos
 
     H_mat : complex 2d-array (empty)
 
@@ -76,12 +121,13 @@ def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_va
         Neutrino energy
 
     H_mat : complex 2d-array
+        matter hamiltonian
 
     delta_M_vac_vac : 2d array
 
-    delta_M_mat_mat : 2d-array (empty)
+    delta_M_mat_mat : complex 2d-array (empty)
 
-    delta_M_mat_vac : 2d-array (empty)
+    delta_M_mat_vac : complex 2d-array (empty)
 
 
     Notes
@@ -200,12 +246,13 @@ def get_product(energy,
     ----------
 
     energy : float
+        Neutrino energy
 
-    delta_M_mat_vac : 2d-array
+    delta_M_mat_vac : complex 2d-array
 
-    delta_M_mat_mat : 2d-array
+    delta_M_mat_mat : complex 2d-array
 
-    H_mat_mass_eigenstate_basis : 2d-array
+    H_mat_mass_eigenstate_basis : complex 2d-array
 
     product : 3d-array (empty)
 
@@ -263,10 +310,13 @@ def get_transition_amplitude_matrix(baseline,
     ----------
 
     baseline : float
+        baseline traversed
 
     energy : float
+        neutrino energy
 
-    mix : 2d-array
+    mix : complex 2d-array
+        Mixing matrix, already conjugated for antineutrinos
 
     delta_M_mat_vac : 2d-array
 
@@ -388,6 +438,7 @@ def get_transition_matrix(nubar,
     baseline : float
 
     mix_nubar : 2d-array
+        Mixing matrix, already conjugated if antineutrino
 
     nsi_eps : 2d-array
 
@@ -473,6 +524,35 @@ def osc_probs_vacuum_kernel(delta_M,
                            energy,
                            distance_in_layer,
                            osc_probs):
+    ''' Calculate vacumm mixing probabilities
+
+    Parameters
+    ----------
+
+    delta_M : 2d-array
+        Mass splitting matrix
+
+    mix : complex 2d-array
+        PMNS mixing matrix
+
+    energy : float
+        Neutrino energy
+
+    distance_in_layer : 1d-array
+        Baselines (will be summed up)
+
+    osc_probs : 2d-array (empty)
+        Returned oscillation probabilities in the form:
+        osc_prob[i,j] = probability of flavor i to oscillate into flavor j
+        with 0 = electron, 1 = muon, 3 = tau
+
+
+    Notes
+    -----
+
+    This is largely unvalidated so far
+
+    '''
    
     clear_matrix(osc_probs)
 
@@ -505,7 +585,6 @@ def osc_probs_vacuum_kernel(delta_M,
 @myjit
 def osc_probs_layers_kernel(delta_M,
                            mix,
-                           H_vac,
                            nsi_eps,
                            nubar,
                            energy,
@@ -520,22 +599,33 @@ def osc_probs_layers_kernel(delta_M,
     ----------
 
     delta_M : 2d-array
+        Mass splitting matrix
 
     mix : 2d-array
+        PMNS mixing matrix
+
+    H_vac : complex 2-d array
+        Hamiltonian in vacuum, without the 1/2E term
 
     nsi_eps : 2d-array
+        Non-standard interactions (set to 3x3 zeros for only standard oscillations)
 
     nubar : int
+        1 for neutrinos, -1 for antineutrinos
 
     energy : float
-
-    n_layers : int
+        Neutrino energy
 
     density_in_layer : 1d-array
+        density per layer
 
     distance_in_layer : 1d-array
+        distance per layer traversed
 
     osc_probs : 2d-array (empty)
+        Returned oscillation probabilities in the form:
+        osc_prob[i,j] = probability of flavor i to oscillate into flavor j
+        with 0 = electron, 1 = muon, 3 = tau
 
 
     Notes
@@ -550,13 +640,13 @@ def osc_probs_layers_kernel(delta_M,
     '''
 
     # 3x3 complex
-    #H_vac = cuda.local.array(shape=(3,3), dtype=ctype)
+    H_vac = cuda.local.array(shape=(3,3), dtype=ctype)
     mix_nubar = cuda.local.array(shape=(3,3), dtype=ctype)
     transition_product = cuda.local.array(shape=(3,3), dtype=ctype)
     transition_matrix = cuda.local.array(shape=(3,3), dtype=ctype)
     tmp = cuda.local.array(shape=(3,3), dtype=ctype)
 
-    #clear_matrix(H_vac)
+    clear_matrix(H_vac)
     clear_matrix(osc_probs)
 
     # 3-vector complex
@@ -582,6 +672,8 @@ def osc_probs_layers_kernel(delta_M,
         # (note that this only changes calculations with non-clear_matrix deltacp)
         conjugate_transpose(mix, mix_nubar)
 
+
+    get_H_vac(mix_nubar, delta_M, H_vac)
 
     if cache:
         # allocate array to store all the transition matrices

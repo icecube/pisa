@@ -14,7 +14,6 @@ from prob3numba.numba_tools import *
 OP = OscParams(7.5e-5, 2.524e-3, np.sqrt(0.306), np.sqrt(0.02166), np.sqrt(0.441), 261/180.*np.pi)
 mix = OP.mix_matrix_complex
 dm = OP.dm_matrix
-H_vac = OP.H_vac
 nsi_eps = np.zeros_like(mix)
 
 
@@ -48,15 +47,15 @@ Probability = np.zeros((nevts,3,3), dtype=FTYPE)
 Probability_vacuum = np.zeros((nevts,3,3), dtype=FTYPE)
 
 if FTYPE == np.float64:
-    signature = '(f8[:,:], c16[:,:], c16[:,:], c16[:,:], i4, f8, f8[:], f8[:], f8[:,:])'
+    signature = '(f8[:,:], c16[:,:], c16[:,:], i4, f8, f8[:], f8[:], f8[:,:])'
     signature_vac = '(f8[:,:], c16[:,:], f8, f8[:], f8[:,:])'
 else:
-    signature = '(f4[:,:], c8[:,:], c8[:,:], c8[:,:], i4, f4, f4[:], f4[:], f4[:,:])'
+    signature = '(f4[:,:], c8[:,:], c8[:,:], i4, f4, f4[:], f4[:], f4[:,:])'
     signature_vac = '(f4[:,:], c8[:,:], f4, f4[:], f4[:,:])'
 
-@guvectorize([signature], '(a,b),(c,d),(e,f),(g,h),(),(),(i),(j)->(a,b)', target=target)
-def propagate_array(dm, mix, H_vac, nsi_eps, nubar, energy, densityInLayer, distanceInLayer, Probability):
-    osc_probs_layers_kernel(dm, mix, H_vac, nsi_eps, nubar, energy, densityInLayer, distanceInLayer, Probability)
+@guvectorize([signature], '(a,b),(c,d),(e,f),(),(),(g),(h)->(a,b)', target=target)
+def propagate_array(dm, mix, nsi_eps, nubar, energy, densityInLayer, distanceInLayer, Probability):
+    osc_probs_layers_kernel(dm, mix, nsi_eps, nubar, energy, densityInLayer, distanceInLayer, Probability)
 
 @guvectorize([signature_vac], '(a,b),(c,d),(),(i)->(a,b)', target=target)
 def propagate_array_vacuum(dm, mix, energy, distanceInLayer, Probability):
@@ -65,7 +64,6 @@ def propagate_array_vacuum(dm, mix, energy, distanceInLayer, Probability):
 start_t = time.time()
 propagate_array(dm,
                mix,
-               H_vac,
                nsi_eps,
                nubar,
                energy,
