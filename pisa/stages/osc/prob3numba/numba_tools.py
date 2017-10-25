@@ -17,7 +17,7 @@ __all__ = ['myjit',
            'ftype'
            ]
 __version__ = '0.1'
-__author__ = 'Philipp Eller (pder3@psu.edu)'
+__author__ = 'Philipp Eller (pde3@psu.edu)'
 
 
 import numpy as np

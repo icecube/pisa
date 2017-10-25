@@ -33,7 +33,7 @@ energy = energy.ravel()
 cz = cz.ravel()
 
 # calc layers
-earth_model = '/home/peller/cake/pisa/resources/osc/PREM_12layer.dat'
+earth_model = '/home/peller/cake/pisa/resources/osc/PREM_59layer.dat'
 det_depth = 2
 atm_height = 20
 myLayers = Layers(earth_model, det_depth, atm_height)
@@ -53,7 +53,7 @@ else:
 
 @guvectorize([signature], '(a,b),(c,d),(e,f),(g,h),(),(),(i),(j)->(a,b)', target=target)
 def propagate_array(dm, mix, H_vac, nsi_eps, nubar, energy, densityInLayer, distanceInLayer, Probability):
-    propagate_array_kernel(dm, mix, H_vac, nsi_eps, nubar, energy, densityInLayer, distanceInLayer, Probability)
+    osc_probs_layers_kernel(dm, mix, H_vac, nsi_eps, nubar, energy, densityInLayer, distanceInLayer, Probability)
 
 start_t = time.time()
 propagate_array(dm,

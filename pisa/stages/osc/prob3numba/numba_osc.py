@@ -6,10 +6,10 @@ http://www.phy.duke.edu/~raw22/public/Prob3++/ (2012)
 from __future__ import print_function, division
 
 __all__ = ['get_transition_matrix',
-           'propagate_array_kernel',
+           'osc_probs_layers_kernel',
            ]
 __version__ = '0.1'
-__author__ = 'Philipp Eller (pder3@psu.edu)'
+__author__ = 'Philipp Eller (pder@psu.edu)'
 
 import math, cmath
 
@@ -17,32 +17,6 @@ import numpy as np
 from numba import jit, float64, complex64, int32, float32, complex128
 
 from numba_tools import *
-
-#@myjit
-#def get_H_vac(mix_nubar, delta_M_vac_vac, H_vac):
-#
-#    '''
-#
-#    delta_M_vac_diag = cuda.local.array(shape=(3,3), dtype=ctype)
-#    mix_nubar_conj_transpose = cuda.local.array(shape=(3,3), dtype=ctype)
-#    tmp = cuda.local.array(shape=(3,3), dtype=ctype)
-#
-#    clear_matrix(delta_M_vac_diag)
-#
-#    delta_M_vac_diag[1,1] = delta_M_vac_vac[1,0] + 0j
-#    delta_M_vac_diag[2,2] = delta_M_vac_vac[2,0] + 0j
-#
-#    conjugate_transpose(mix_nubar, mix_nubar_conj_transpose)
-#    matrix_dot_matrix(delta_M_vac_diag, mix_nubar_conj_transpose, tmp)
-#    matrix_dot_matrix(mix_nubar, tmp, H_vac)
-#
-#def test_get_H_vac():
-#    mix = np.ones(shape=(3,3), dtype=ctype)
-#    delta_M_vac_vac = np.ones(shape=(3,3), dtype=ftype)
-#    H_vac = np.ones(shape=(3,3), dtype=ctype)
-#
-#    get_H_vac(mix, delta_M_vac_vac, H_vac)
-#    #print(H_vac)
 
 
 @myjit
@@ -494,7 +468,7 @@ def test_get_transition_matrix():
 
 
 @myjit
-def propagate_array_kernel(delta_M,
+def osc_probs_layers_kernel(delta_M,
                            mix,
                            H_vac,
                            nsi_eps,
@@ -503,7 +477,10 @@ def propagate_array_kernel(delta_M,
                            density_in_layer,
                            distance_in_layer,
                            osc_probs):
-    '''
+    ''' Calculate oscillation probabilities
+
+    given layers of length and density
+
     Parameters
     ----------
 
@@ -543,6 +520,9 @@ def propagate_array_kernel(delta_M,
 
     use_mass_eigenstates = False
 
+    cache = True
+    #cache = False
+
     # TODO:
     # * ensure convention below is respected in MC reweighting
     #   (nubar > 0 for nu, < 0 for anti-nu)
@@ -557,30 +537,95 @@ def propagate_array_kernel(delta_M,
         # (note that this only changes calculations with non-clear_matrix deltacp)
         conjugate_transpose(mix, mix_nubar)
 
-    #get_H_vac(mix_nubar, delta_M, H_vac)
 
-    first_layer = True
-    for i in range(distance_in_layer.shape[0]):
-        density = density_in_layer[i]
-        distance = distance_in_layer[i]
-        # only do something if distance > 0.
-        if distance > 0.:
-            get_transition_matrix(nubar,
-                                  energy,
-                                  density,
-                                  distance,
-                                  mix_nubar,
-                                  nsi_eps,
-                                  H_vac,
-                                  delta_M,
-                                  transition_matrix,
-                                  )
-            if first_layer:
-                copy_matrix(transition_matrix, transition_product)
-                first_layer = False
+    if cache:
+        # allocate array to store all the transition matrices
+        #transition_matrices = cuda.local.array(shape=(distance_in_layer.shape[0],3,3), dtype=ctype)
+        # doesn't work in cuda...needs fixed shape
+        transition_matrices = cuda.local.array(shape=(120,3,3), dtype=ctype)
+
+        # loop over layers
+        for i in range(distance_in_layer.shape[0]):
+            density = density_in_layer[i]
+            distance = distance_in_layer[i]
+            if distance > 0.:
+                layer_matrix_index = -1
+                # chaeck if exists
+                for j in range(i):
+                    #if density_in_layer[j] == density and distance_in_layer[j] == distance:
+                    if (abs(density_in_layer[j] - density) < 1e-5) and (abs(distance_in_layer[j] - distance) < 1e-5):
+                        layer_matrix_index = j
+
+                # use from cached
+                if layer_matrix_index >= 0:
+                    for j in range(3):
+                        for k in range(3):
+                            transition_matrices[i,j,k] = transition_matrices[layer_matrix_index,j,k]
+
+                # only calculate if necessary
+                else:
+                    get_transition_matrix(nubar,
+                                          energy,
+                                          density,
+                                          distance,
+                                          mix_nubar,
+                                          nsi_eps,
+                                          H_vac,
+                                          delta_M,
+                                          transition_matrix,
+                                          )
+                    # copy
+                    for j in range(3):
+                        for k in range(3):
+                            transition_matrices[i,j,k] = transition_matrix[j,k]
             else:
-                matrix_dot_matrix(transition_matrix,transition_product, tmp)
-                copy_matrix(tmp, transition_product)
+                # identity matrix
+                for j in range(3):
+                    for k in range(3):
+                        if j == k:
+                            transition_matrix[j,k] = 0.
+                        else:
+                            transition_matrix[j,k] = 1.
+
+        # now multiply them all
+        first_layer = True
+        for i in range(distance_in_layer.shape[0]):
+            distance = distance_in_layer[i]
+            if distance > 0.:
+                for j in range(3):
+                    for k in range(3):
+                        transition_matrix[j,k] = transition_matrices[i,j,k]
+                if first_layer:
+                    copy_matrix(transition_matrix, transition_product)
+                    first_layer = False
+                else:
+                    matrix_dot_matrix(transition_matrix,transition_product, tmp)
+                    copy_matrix(tmp, transition_product)
+
+    else:
+        # non-cache loop
+        first_layer = True
+        for i in range(distance_in_layer.shape[0]):
+            density = density_in_layer[i]
+            distance = distance_in_layer[i]
+            # only do something if distance > 0.
+            if distance > 0.:
+                get_transition_matrix(nubar,
+                                      energy,
+                                      density,
+                                      distance,
+                                      mix_nubar,
+                                      nsi_eps,
+                                      H_vac,
+                                      delta_M,
+                                      transition_matrix,
+                                      )
+                if first_layer:
+                    copy_matrix(transition_matrix, transition_product)
+                    first_layer = False
+                else:
+                    matrix_dot_matrix(transition_matrix,transition_product, tmp)
+                    copy_matrix(tmp, transition_product)
         
     # loop on neutrino types, and compute probability for neutrino i:
     # We actually don't care about nutau -> anything since the flux there is zero!
@@ -598,7 +643,7 @@ def propagate_array_kernel(delta_M,
         osc_probs[i][1] += output_psi[1].real**2 + output_psi[1].imag**2
         osc_probs[i][2] += output_psi[2].real**2 + output_psi[2].imag**2
 
-def test_propagate_array_kernel():
+def test_osc_probs_layers_kernel():
     mix = np.ones(shape=(3,3), dtype=ctype)
     nsi_eps = np.ones(shape=(3,3), dtype=ctype)
     M = np.linspace(0,1,9, dtype=ftype)
@@ -610,7 +655,7 @@ def test_propagate_array_kernel():
     distance_in_layer = np.ones(shape=(n_layers), dtype=ftype)
     osc_probs = np.ones(shape=(3,3), dtype=ftype)
 
-    propagate_array_kernel(delta_M,
+    osc_probs_layers_kernel(delta_M,
                            mix,
                            nsi_eps,
                            nubar,
@@ -630,4 +675,4 @@ if __name__=='__main__':
     test_get_transition_matrix()
     test_convert_from_mass_eigenstate()
     test_get_transition_matrix()
-    test_propagate_array_kernel()
+    test_osc_probs_layers_kernel()
