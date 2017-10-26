@@ -286,37 +286,11 @@ class weight_tom(Stage):
 
 
         #
-        # Prepare oscillation calculation tools
-        #
-
-        if self.neutrinos:
-
-            # Get param subset wanted for oscillations calculation
-            expected_osc_param_names = prob3.get_expected_params(calc_binned_transforms=False)
-            osc_params_subset = [ param for param in self.params if param.name in expected_osc_param_names ]
-            osc_params_subset = ParamSet(osc_params_subset)
-
-            #Instantiate prob3 toolset
-            self.osc = prob3(
-                params=osc_params_subset,
-                input_binning=None,
-                output_binning=None,
-                error_method=None,
-                memcache_deepcopy=False,
-                transforms_cache_depth=0,
-                outputs_cache_depth=0,
-                use_spline=self.spline_osc_probs,
-                spline_binning=self.osc_spline_binning,
-                use_gpu=self.use_gpu,
-            )
-
-
-        #
         # Prepare weight calculator
         #
 
         # Instantiate weight calculator (differs depending on whether using CPU or GPU code) #TODO (Tom) Merge these into a common class
-        if self.use_gpu: from pisa.stages.mc.GPUWeight import CPUWeight as WeightCalculator
+        if self.use_gpu: from pisa.stages.mc.GPUWeight import GPUWeight as WeightCalculator
         else : from pisa.stages.mc.CPUWeight import CPUWeight as WeightCalculator
         self.weight_calc = WeightCalculator()
 
@@ -369,6 +343,32 @@ class weight_tom(Stage):
 
             #Found new data
             self._data = inputs
+
+            #
+            # Prepare oscillation calculation tools
+            #
+
+            if self.neutrinos:
+
+                # Get param subset wanted for oscillations calculation
+                expected_osc_param_names = prob3.get_expected_params(calc_binned_transforms=False)
+                osc_params_subset = [ param for param in self.params if param.name in expected_osc_param_names ]
+                osc_params_subset = ParamSet(osc_params_subset)
+
+                #Instantiate prob3 toolset
+                self.osc = prob3(
+                    params=osc_params_subset,
+                    input_binning=None,
+                    output_binning=None,
+                    error_method=None,
+                    memcache_deepcopy=False,
+                    transforms_cache_depth=0,
+                    outputs_cache_depth=0,
+                    use_spline=self.spline_osc_probs,
+                    spline_binning=self.osc_spline_binning,
+                    use_gpu=self.use_gpu,
+                )
+
 
             #
             # Pre-process the data
@@ -714,8 +714,8 @@ class weight_tom(Stage):
         #Loop over flavor/interaction combinations
         for fig in self._data.keys() :
 
-            #Get the number of events (use an arbitrary variable)
-            n_evts = self.get_num_events(fig)
+            #Get the number of events
+            n_evts = np.uint32(self.get_num_events(fig))
 
             #If not calculating oscillations for NC interactions, skip this
             #(leaving prob_e and prob_mu as the default value of 1. in the data arrays)
@@ -791,6 +791,9 @@ class weight_tom(Stage):
         #Loop over flavor/interaction combinations
         for fig in self._data.keys() :
 
+            #Get the number of events
+            n_evts = np.uint32(self.get_num_events(fig))
+
             #Get the prob3 flavor and nu/nubar codes for this neutrino flavor
             kFlav,kNuBar = NuFlavInt(fig).flav.prob3_codes
 
@@ -799,6 +802,7 @@ class weight_tom(Stage):
 
             #Calculate the flux weights modifications
             self.weight_calc.calc_flux(
+                n_evts=n_evts,
                 nue_numu_ratio=nue_numu_ratio,
                 nu_nubar_ratio=nu_nubar_ratio,
                 kNuBar=kNuBar,
@@ -914,19 +918,23 @@ class weight_tom(Stage):
         aeff_scale = params.aeff_scale.value.m_as('dimensionless')
         Genie_Ma_QE = params.Genie_Ma_QE.value.m_as('dimensionless')
         Genie_Ma_RES = params.Genie_Ma_RES.value.m_as('dimensionless')
+        true_e_scale = params.Genie_Ma_RES.value.m_as('dimensionless')
         nue_flux_norm = 1.
         numu_flux_norm = 1.
 
         #Combine all information to calculate new weights #TODO (Tom) Move to Shivesh's style here
         for fig in self._data.iterkeys():
             data_array = self._data_arrays[fig]['device'] if self.use_gpu else self._data_arrays[fig]['host'] #Choose data based on CPU vs GPU selection
+            n_evts = np.uint32(self.get_num_events(fig))
             self.weight_calc.calc_weight(
+                n_evts=n_evts,
                 livetime=livetime,
                 nue_flux_norm=nue_flux_norm,
                 numu_flux_norm=numu_flux_norm,
                 aeff_scale=aeff_scale,
                 Genie_Ma_QE=Genie_Ma_QE,
                 Genie_Ma_RES=Genie_Ma_RES,
+                true_e_scale=true_e_scale, #TODO Why is this used by GPU case but not CPU? Overlap with flux/prob calc?
                 **data_array
             )
 
@@ -1071,7 +1079,6 @@ class weight_tom(Stage):
         #
         # The array is populated only once at the start of calculation for efficiency reasons,
         # but the outputs are overwritten at each calculation
-
 
         #
         # Determine which variables are required
@@ -1272,7 +1279,7 @@ class weight_tom(Stage):
                     nu_err_hists[fig] = err_hist
                 else :
                     if self.use_gpu:
-                        hist,sumw2 = self.fill_hist_use_gpu(self._data_arrays[fig]["device"],weight_var=weight_var)
+                        hist,sumw2 = self.fill_hist_using_gpu(self._data_arrays[fig]["device"],n_events=self.get_num_events(fig),weight_var=weight_var)
                     else :
                         hist,sumw2 = self.fill_hist_using_cpu(self._data_arrays[fig]["host"],weight_var=weight_var)
                     if sumw2_errors : nu_sumw2[fig] = sumw2
@@ -1344,12 +1351,14 @@ class weight_tom(Stage):
             if self.kde_hist:
                 hist,err_hist = self.fill_kde_hist(self._data['muons'],weight_var=weight_var)
             else :
+                ''' #TODO (Tom) muons are currently entirely handled on CPUs (even hists, as no data arrays are populated), but should add GPU capability in future (including more generic histogramming tools, possibly using numba)
                 if self.use_gpu:
-                    hist,sumw2 = self.fill_hist_use_gpu(self._data['muons'],weight_var=weight_var)
+                    hist,sumw2 = self.fill_hist_using_gpu(self._data['muons'],n_events=len(self._data['muons']),weight_var=weight_var)
                 else :
                     hist,sumw2 = self.fill_hist_using_cpu(self._data['muons'],weight_var=weight_var)
+                '''
+                hist,sumw2 = self.fill_hist_using_cpu(self._data['muons'],weight_var=weight_var)
                 err_hist = np.sqrt(sumw2) if sumw2_errors else None
-
             #Store as a map
             output_maps.append(
                 Map(name='muons',
@@ -1378,10 +1387,13 @@ class weight_tom(Stage):
             if self.kde_hist:
                 hist,err_hist = self.fill_kde_hist(self._data['noise'],weight_var=weight_var)
             else :
-                if self.use_gpu:
-                    hist,sumw2 = self.fill_hist_use_gpu(self._data['noise'],weight_var=weight_var)
+                '''
+                if self.use_gpu: #TODO (Tom) noise is currently entirely handled on CPUs (even hists, as no data arrays are populated), but should add GPU capability in future (including more generic histogramming tools, possibly using numba)
+                    hist,sumw2 = self.fill_hist_using_gpu(self._data['noise'],n_events=len(self._data['noise']),weight_var=weight_var)
                 else :
                     hist,sumw2 = self.fill_hist_using_cpu(self._data['noise'],weight_var=weight_var)
+                '''
+                hist,sumw2 = self.fill_hist_using_cpu(self._data['noise'],weight_var=weight_var)
                 err_hist = np.sqrt(sumw2) if sumw2_errors else None
 
             #Store as a map
@@ -1432,7 +1444,7 @@ class weight_tom(Stage):
         return hist,err_hist
 
 
-    def fill_hist_use_gpu(self,data_array,weight_var="weight") :
+    def fill_hist_using_gpu(self,data_array,n_events,weight_var="weight") :
 
         start_t = time.time()
 
@@ -1444,11 +1456,13 @@ class weight_tom(Stage):
 
         sumw2 = None
 
+        n_events = np.int32(n_events)
+
         # Handle 2D vs 3D cases
         if len(bin_names) == 2 :
 
                 hist = self.gpu_histogrammer.get_hist(
-                    self.get_num_events(fig),
+                    n_events = n_events,
                     d_x = data_array[bin_names[0]],
                     d_y = data_array[bin_names[1]],
                     d_w = data_array[weight_var]
@@ -1456,7 +1470,7 @@ class weight_tom(Stage):
 
                 if self.error_method in ['sumw2', 'fixed_sumw2']:
                     sumw2 = self.gpu_histogrammer.get_hist(
-                        self.get_num_events(fig),
+                        n_events = n_events,
                         d_x=data_array[bin_names[0]],
                         d_y=data_array[bin_names[1]],
                         d_w=data_array[weight_var]
@@ -1465,7 +1479,7 @@ class weight_tom(Stage):
         elif len(bin_names) == 3 :
 
                 hist = self.gpu_histogrammer.get_hist(
-                    self.get_num_events(fig),
+                    n_events = n_events,
                     d_x=data_array[bin_names[0]],
                     d_y=data_array[bin_names[1]],
                     d_z=data_array[bin_names[2]],
@@ -1474,7 +1488,7 @@ class weight_tom(Stage):
 
                 if self.error_method in ['sumw2', 'fixed_sumw2']:
                     sumw2 = self.gpu_histogrammer.get_hist(
-                        self.get_num_events(fig),
+                        n_events = n_events,
                         d_x=data_array[bin_names[0]],
                         d_y=data_array[bin_names[1]],
                         d_z=data_array[bin_names[2]],
@@ -1535,18 +1549,25 @@ class weight_tom(Stage):
 
         # Get the output binning for this stage, apply any scalings defined in the 
         # params, and return the bin edges for use in external histogramming tools
+        # This also takes care of units, and returns striped down information 
+        # relative to the overall binning class (e.g. just lists of edge magnitudes)
 
         scaled_bin_edges = []
 
         #Loop over binning dimensions
         for dim in self.output_binning.dimensions :
 
-            #Get the edges
+            #Get the edges for this dimension
             bin_edges = deepcopy(dim.bin_edges)
+
+            #Get dimension in appropriates units, and strip off the units to give bare magnitude
+            if 'energy' in dim.name.lower() :
+                bin_edges = bin_edges.to('GeV').magnitude.astype(FTYPE) #Enforce GeV as our base unit
+            else :
+                bin_edges = bin_edges.magnitude.astype(FTYPE)
 
             #Perform scaling
             if 'energy' in dim.name.lower() :
-                bin_edges = bin_edges.to('GeV').magnitude.astype(FTYPE)
                 bin_edges *= FTYPE(self.params.hist_e_scale.value.m_as('dimensionless'))
             elif 'pid' in dim.name.lower() :
                 bin_edges *= FTYPE(self.params.hist_pid_scale.value.m_as('dimensionless'))
@@ -1556,8 +1577,9 @@ class weight_tom(Stage):
         #Check got something
         assert len(scaled_bin_edges) > 0
 
-        return tuple(scaled_bin_edges)
-
+        #Return the edges (note that the order of the dimensins is preserved)
+        return scaled_bin_edges
+        #return tuple(scaled_bin_edges)
 
 
     @staticmethod

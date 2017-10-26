@@ -4,6 +4,8 @@
 
 from __future__ import division
 
+import os, sys
+
 import numpy as np
 
 from scipy.interpolate import RectBivariateSpline
@@ -18,6 +20,8 @@ from pisa.stages.osc.prob3cc.BargerPropagator import BargerPropagator
 from pisa.utils.comparisons import normQuant
 from pisa.utils.profiler import profile
 from pisa.utils.log import logging
+from pisa.stages.osc.layers import Layers
+from pisa.stages.osc.osc_params import OscParams
 
 
 __all__ = ['prob3']
@@ -463,6 +467,8 @@ class prob3(Stage):
 
         if self.use_gpu :
 
+            import pycuda.driver as cuda
+
             """Compute oscillation transforms using grid_propagator GPU code."""
 
             # Read parameters in, convert to the units used internally for
@@ -525,6 +531,7 @@ class prob3(Stage):
                 ne_bin_centers // block_size[1] + 1,
                 2
             )
+
             self.propGrid(d_smooth_maps,
                           d_dm_mat, d_mix_mat,
                           self.d_e_centers, self.d_cz_centers,
@@ -785,7 +792,7 @@ class prob3(Stage):
         return path
     
 
-    def calc_probs(self, kNuBar, kFlav, true_e_scale, true_energy,true_coszen, prob_e, prob_mu, **kwargs):
+    def calc_probs(self, kNuBar, kFlav, n_evts, true_e_scale, true_energy,true_coszen, prob_e, prob_mu, **kwargs):
 
         """
         Calculate oscillation probabilities event-by-event
@@ -813,6 +820,7 @@ class prob3(Stage):
             #Calculate probability for every event individually
             self._calc_probs_inner(kNuBar=kNuBar, 
                             kFlav=kFlav, 
+                            n_evts=n_evts,
                             true_e_scale=true_e_scale, 
                             true_energy=true_energy, 
                             true_coszen=true_coszen, 
@@ -822,7 +830,8 @@ class prob3(Stage):
 
 
 
-    def _calc_probs_inner(self, kNuBar, kFlav, true_e_scale, true_energy,true_coszen, prob_e, prob_mu, **kwargs):
+    def _calc_probs_inner(self, kNuBar, kFlav, n_evts, true_e_scale, true_energy,true_coszen, prob_e, prob_mu, **kwargs):
+
 
         """
         Calculate oscillation probabilities event-by-event
@@ -834,7 +843,12 @@ class prob3(Stage):
         # GPU case
         #
 
-        if self.use_gpu : #TODO vacuum???
+        if self.use_gpu : 
+
+            #Get relevent kwarghs
+            numLayers = kwargs.pop("numLayers")
+            densityInLayer = kwargs.pop("densityInLayer")
+            distanceInLayer = kwargs.pop("distanceInLayer")
 
             bdim = (32, 1, 1)
             dx, mx = divmod(n_evts, bdim[0])
@@ -932,6 +946,10 @@ class prob3(Stage):
 
     def _init_osc_splines(self,spline_binning) :
 
+        #TODO GPU prob3 code can only handle 1D input arrays, need to udate this to handle that case
+        if self.use_gpu :
+          raise Exception("Oscillation probability splining not yet supported for GPUs")
+
         #Initialise everything we are going to need to generate oscillation prbability splines
 
         #TODO enforce energy bins > 0 (get NaN for E=0)
@@ -941,13 +959,13 @@ class prob3(Stage):
         self.spline_binning = spline_binning
 
         #Get [E,coszen] grid
-        self.spline_true_energy_grid, self.spline_true_coszen_grid = np.meshgrid(self.spline_binning["true_energy"].bin_edges,
-                                                                                self.spline_binning["true_coszen"].bin_edges,
+        self.spline_true_energy_grid, self.spline_true_coszen_grid = np.meshgrid(self.spline_binning["true_energy"].bin_edges.astype(FTYPE),
+                                                                                self.spline_binning["true_coszen"].bin_edges.astype(FTYPE),
                                                                                 indexing='ij')
 
         #Create empty probability grids to fill (default to NaN so get errors if not filled correctly)
-        self.prob_e_grid = np.full( self.spline_true_energy_grid.shape, np.NaN )
-        self.prob_mu_grid = np.full( self.spline_true_energy_grid.shape, np.NaN )
+        self.prob_e_grid = np.full( self.spline_true_energy_grid.shape, np.NaN, dtype=FTYPE )
+        self.prob_mu_grid = np.full( self.spline_true_energy_grid.shape, np.NaN, dtype=FTYPE )
 
         #Define nu/nubar and flavors #TODO (Tom) Get from somwhere else, e.g. flavInt.py
         kNuBar_vals = [-1,1]
@@ -957,6 +975,16 @@ class prob3(Stage):
         #Outer key is flavor, inner key is nu/nubar
         self.prob_e_splines = dict([ ( kFlav, dict([ (kNuBar,None) for kNuBar in kNuBar_vals]) ) for kFlav in kFlav_vals ])
         self.prob_mu_splines = dict([ ( kFlav, dict([ (kNuBar,None) for kNuBar in kNuBar_vals]) ) for kFlav in kFlav_vals ])
+
+        #For GPU case, need to copy grid point values to device
+        #TODO 
+
+
+        #Store anything else that we will need later
+        self.spline_prob_calc_args = dict()
+        if self.use_gpu : #GPU case needs pre-computed layer information
+          raise Exception("TODO Need to caluclate layers 'per flavor'") #TODO
+          self.spline_prob_calc_args['numLayers'],self.spline_prob_calc_args['densityInLayer'],self.spline_prob_calc_args['distanceInLayer'] = self.calc_layers(self.spline_binning["true_coszen"].bin_edges.astype(FTYPE))
 
 
     def generate_osc_splines(self,true_e_scale) :
@@ -981,11 +1009,13 @@ class prob3(Stage):
                 #Calculate probabilites for grid
                 self._calc_probs_inner( kNuBar=kNuBar, 
                                 kFlav=kFlav, 
+                                n_evts=np.int32(len(scaled_true_energy_grid)),
                                 true_e_scale=true_e_scale, 
                                 true_energy=scaled_true_energy_grid, 
                                 true_coszen=self.spline_true_coszen_grid, 
                                 prob_e=self.prob_e_grid, 
-                                prob_mu=self.prob_mu_grid ) #TODO Need other args for GPU case?
+                                prob_mu=self.prob_mu_grid,
+                                **self.spline_prob_calc_args )
 
                 # Spline it for smoothing
                 self.prob_e_splines[kFlav][kNuBar] = RectBivariateSpline( scaled_true_e_bins, self.spline_binning["true_coszen"].bin_edges, self.prob_e_grid )
@@ -1000,6 +1030,10 @@ class prob3(Stage):
 
 
     def _initialize_kernel(self):
+
+        #Perform CUDA imports here (so that we don't need CUDA when using CPUs)
+        import pycuda.autoinit
+        import pycuda.compiler 
 
         """Initialize 1) the grid_propagator class, 2) the device arrays that
         will be passed to the `propagateGrid()` kernel, and 3) the kernel
@@ -1027,6 +1061,8 @@ class prob3(Stage):
 
 
     def _prepare_device_arrays(self):
+
+        import pycuda.driver as cuda
 
         self.layers.calcLayers(self.cz_centers)
         self.maxLayers = self.layers.max_layers
@@ -1079,6 +1115,8 @@ class prob3(Stage):
         #Only used in GPU mode
         if not self.use_gpu : return
 
+        import pycuda.driver as cuda
+
         sin2th12Sq = np.sin(theta12)**2
         sin2th13Sq = np.sin(theta13)**2
         sin2th23Sq = np.sin(theta23)**2
@@ -1129,7 +1167,7 @@ class prob3(Stage):
         self.layers.setElecFrac(YeI, YeO, YeM)
 
         self.layers.calcLayers(coszen)
-        self.maxLayers = self.layers.max_layers
+        self.maxLayers = self.layers.max_layers #Note that max layers depends on earth model obly (e.g. do not need to store a different value per flav-int)
 
         numLayers = self.layers.n_layers
         densityInLayer = self.layers.density
