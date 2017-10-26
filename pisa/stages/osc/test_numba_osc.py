@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import time
 import numpy as np
-from numba import guvectorize
+from numba import guvectorize, SmartArray
 
 from pisa import FTYPE
 from pisa.stages.osc.osc_params import OscParams
@@ -18,7 +18,7 @@ nsi_eps = np.zeros_like(mix)
 
 
 # number of points for E x CZ grid
-points = 100
+points = 1000
 nevts = points**2
 
 # input arrays
@@ -29,6 +29,9 @@ energy_points = np.logspace(0,3,points, dtype=FTYPE)
 cz_points = np.linspace(-1,1,points, dtype=FTYPE)
 energy, cz = np.meshgrid(energy_points, cz_points)
 energy = energy.ravel()
+
+energy = SmartArray(energy)
+
 cz = cz.ravel()
 
 # calc layers
@@ -39,47 +42,73 @@ myLayers = Layers(earth_model, det_depth, atm_height)
 myLayers.setElecFrac(0.4656, 0.4656, 0.4957)
 myLayers.calcLayers(cz)
 numberOfLayers = myLayers.n_layers
-densityInLayer = myLayers.density.reshape((nevts,myLayers.max_layers))
-distanceInLayer = myLayers.distance.reshape((nevts,myLayers.max_layers))
+densities = myLayers.density.reshape((nevts,myLayers.max_layers))
+densities = SmartArray(densities)
+distances = myLayers.distance.reshape((nevts,myLayers.max_layers))
+distances = SmartArray(distances)
 
 # empty array to be filled
-Probability = np.zeros((nevts,3,3), dtype=FTYPE)
-Probability_vacuum = np.zeros((nevts,3,3), dtype=FTYPE)
+probability = np.zeros((nevts,3,3), dtype=FTYPE)
+probability = SmartArray(probability)
+probability_vacuum = np.zeros((nevts,3,3), dtype=FTYPE)
 
 if FTYPE == np.float64:
     signature = '(f8[:,:], c16[:,:], c16[:,:], i4, f8, f8[:], f8[:], f8[:,:])'
-    signature_vac = '(f8[:,:], c16[:,:], f8, f8[:], f8[:,:])'
+    signature_vac = '(f8[:,:], c16[:,:], i4, f8, f8[:], f8[:,:])'
 else:
     signature = '(f4[:,:], c8[:,:], c8[:,:], i4, f4, f4[:], f4[:], f4[:,:])'
-    signature_vac = '(f4[:,:], c8[:,:], f4, f4[:], f4[:,:])'
+    signature_vac = '(f4[:,:], c8[:,:], i4, f4, f4[:], f4[:,:])'
 
 @guvectorize([signature], '(a,b),(c,d),(e,f),(),(),(g),(h)->(a,b)', target=target)
-def propagate_array(dm, mix, nsi_eps, nubar, energy, densityInLayer, distanceInLayer, Probability):
-    osc_probs_layers_kernel(dm, mix, nsi_eps, nubar, energy, densityInLayer, distanceInLayer, Probability)
+def propagate_array(dm, mix, nsi_eps, nubar, energy, densities, distances, probability):
+    osc_probs_layers_kernel(dm, mix, nsi_eps, nubar, energy, densities, distances, probability)
 
-@guvectorize([signature_vac], '(a,b),(c,d),(),(i)->(a,b)', target=target)
-def propagate_array_vacuum(dm, mix, energy, distanceInLayer, Probability):
-    osc_probs_vacuum_kernel(dm, mix, energy, distanceInLayer, Probability)
+@guvectorize([signature_vac], '(a,b),(c,d),(),(),(i)->(a,b)', target=target)
+def propagate_array_vacuum(dm, mix, nubar, energy, distances, probability):
+    osc_probs_vacuum_kernel(dm, mix, nubar, energy, distances, probability)
 
+
+if target == 'cuda':
+    where='gpu'
+else:
+    where='host'
+# first loop
 start_t = time.time()
 propagate_array(dm,
                mix,
                nsi_eps,
                nubar,
-               energy,
-               densityInLayer,
-               distanceInLayer,
-               out=Probability)
+               energy.get(where),
+               densities.get(where),
+               distances.get(where),
+               out=probability.get(where))
 end_t = time.time()
+numba_time = end_t - start_t
+print ('%.2f s for %i events first loop'%(numba_time,nevts))
+probability.mark_changed(where)
+# second loop
+start_t = time.time()
+propagate_array(dm,
+               mix,
+               nsi_eps,
+               nubar,
+               energy.get(where),
+               densities.get(where),
+               distances.get(where),
+               out=probability.get(where))
+probability.mark_changed(where)
+end_t = time.time()
+
 numba_time = end_t - start_t
 print ('%.2f s for %i events'%(numba_time,nevts))
 
 start_t = time.time()
 propagate_array_vacuum(dm,
                mix,
+               nubar,
                energy,
-               distanceInLayer,
-               out=Probability_vacuum)
+               distances,
+               out=probability_vacuum)
 end_t = time.time()
 numba_vac_time = end_t - start_t
 print ('%.2f s for %i events'%(numba_vac_time,nevts))
@@ -126,8 +155,8 @@ print ('%.2f s for %i events'%(cpp_time,nevts))
 print ('ratio numba/cpp: %.3f'%(numba_time/cpp_time))
 
 prob_mu = np.array(prob_mu)
-pmap = Probability[:,1,1].reshape((points, points))
-pmap_vac = Probability_vacuum[:,1,1].reshape((points, points))
+pmap = probability.get('host')[:,1,1].reshape((points, points))
+pmap_vac = probability_vacuum[:,1,1].reshape((points, points))
 pmap2 = prob_mu.reshape((points, points))
 print('max diff = ',np.max(np.abs(pmap2-pmap)))
 

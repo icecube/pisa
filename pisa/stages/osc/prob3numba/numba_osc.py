@@ -20,15 +20,18 @@ from numba import jit, float64, complex64, int32, float32, complex128
 from numba_tools import *
 
 @myjit
-def get_H_vac(mix_nubar, delta_M_vac_vac, H_vac):
+def get_H_vac(mix_nubar, mix_nubar_conj_transp, dm_vac_vac, H_vac):
     ''' Calculate vacuum Hamiltonian in flavor basis for neutrino or antineutrino
 
     Parameters:
     -----------
     mix_nubar : complex 2d-array
-        Mixing matrix (comjugate transpose for anti-neutrinos)
+        Mixing matrix (comjugate for anti-neutrinos)
 
-    delta_M_vac_vac: 2d-array
+    mix_nubar_conj_transp : comjugate 2d-array
+        conjugate transpose of mixing matrix
+
+    dm_vac_vac: 2d-array
         Matrix of mass splittings
 
     H_vac: complex 2d-array (empty)
@@ -40,25 +43,23 @@ def get_H_vac(mix_nubar, delta_M_vac_vac, H_vac):
     1/(2 * E), as it will be added later
 
     '''
-    delta_M_vac_diag = cuda.local.array(shape=(3,3), dtype=ctype)
-    mix_nubar_conj_transpose = cuda.local.array(shape=(3,3), dtype=ctype)
+    dm_vac_diag = cuda.local.array(shape=(3,3), dtype=ctype)
     tmp = cuda.local.array(shape=(3,3), dtype=ctype)
 
-    clear_matrix(delta_M_vac_diag)
+    clear_matrix(dm_vac_diag)
 
-    delta_M_vac_diag[1,1] = delta_M_vac_vac[1,0] + 0j
-    delta_M_vac_diag[2,2] = delta_M_vac_vac[2,0] + 0j
+    dm_vac_diag[1,1] = dm_vac_vac[1,0] + 0j
+    dm_vac_diag[2,2] = dm_vac_vac[2,0] + 0j
 
-    conjugate_transpose(mix_nubar, mix_nubar_conj_transpose)
-    matrix_dot_matrix(delta_M_vac_diag, mix_nubar_conj_transpose, tmp)
+    matrix_dot_matrix(dm_vac_diag, mix_nubar_conj_transp, tmp)
     matrix_dot_matrix(mix_nubar, tmp, H_vac)
 
 def test_get_H_vac():
     mix = np.ones(shape=(3,3), dtype=ctype)
-    delta_M_vac_vac = np.ones(shape=(3,3), dtype=ftype)
-
+    dm_vac_vac = np.ones(shape=(3,3), dtype=ftype)
     H_vac = np.ones(shape=(3,3), dtype=ctype)
-    get_H_vac(mix, delta_M_vac_vac, H_vac)
+
+    get_H_vac(mix, mix.conj().T, dm_vac_vac, H_vac)
     #print(H_vac)
 
 
@@ -88,7 +89,9 @@ def get_H_mat(rho, nsi_eps, nubar, H_mat):
 
     # 2*sqrt(2)*Gfermi in (eV^2-cm^3)/(mole-GeV)
     tworttwoGf = 1.52588e-4
-    a = 0.5 * rho * tworttwoGf * nubar
+    a = 0.5 * rho * tworttwoGf
+    if nubar == -1:
+        a = -a
 
     # standard matter interaction Hamiltonian
     clear_matrix(H_mat)
@@ -112,7 +115,7 @@ def test_get_H_mat():
 
 
 @myjit
-def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_vac):
+def get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac):
     '''Compute the matter-mass vector M, dM = M_i-M_j and dMimj
 
     Parameters
@@ -123,11 +126,11 @@ def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_va
     H_mat : complex 2d-array
         matter hamiltonian
 
-    delta_M_vac_vac : 2d array
+    dm_vac_vac : 2d array
 
-    delta_M_mat_mat : complex 2d-array (empty)
+    dm_mat_mat : complex 2d-array (empty)
 
-    delta_M_mat_vac : complex 2d-array (empty)
+    dm_mat_vac : complex 2d-array (empty)
 
 
     Notes
@@ -169,8 +172,8 @@ def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_va
     one_third = 1./3.
     two_third = 2./3.
 
-    x = delta_M_vac_vac[1,0]
-    y = delta_M_vac_vac[2,0]
+    x = dm_vac_vac[1,0]
+    y = dm_vac_vac[2,0]
 
     c2_v = - one_over_two_e * (x + y)
 
@@ -206,15 +209,15 @@ def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_va
     b_v = two_third * math.sqrt(p_v)
 
     for i in range(3):
-        m_mat_u[i] = 2. * energy * (b * math.cos(theta[i]) - c2*one_third + delta_M_vac_vac[0,0])
-        m_mat_v[i] = 2. * energy * (b_v * math.cos(theta_v[i]) - c2_v*one_third + delta_M_vac_vac[0,0])
+        m_mat_u[i] = 2. * energy * (b * math.cos(theta[i]) - c2*one_third + dm_vac_vac[0,0])
+        m_mat_v[i] = 2. * energy * (b_v * math.cos(theta_v[i]) - c2_v*one_third + dm_vac_vac[0,0])
 
     # Sort according to which reproduce the vaccum eigenstates 
     for i in range(3):
-        tmp_v = abs(delta_M_vac_vac[i,0] - m_mat_v[0])
+        tmp_v = abs(dm_vac_vac[i,0] - m_mat_v[0])
         k = 0
         for j in range(3):
-            tmp = abs(delta_M_vac_vac[i,0] - m_mat_v[j])
+            tmp = abs(dm_vac_vac[i,0] - m_mat_v[j])
             if tmp < tmp_v:
                 k = j
                 tmp_v = tmp
@@ -222,23 +225,23 @@ def get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_va
 
     for i in range(3):
         for j in range(3):
-              delta_M_mat_mat[i,j] = m_mat[i] - m_mat[j]
-              delta_M_mat_vac[i,j] = m_mat[i] - delta_M_vac_vac[j,0]
+              dm_mat_mat[i,j] = m_mat[i] - m_mat[j]
+              dm_mat_vac[i,j] = m_mat[i] - dm_vac_vac[j,0]
 
-def test_get_delta_Ms():
+def test_get_dms():
     energy = 1.
-    delta_M_vac_vac = np.ones(shape=(3,3), dtype=ftype)
-    delta_M_mat_mat = np.ones(shape=(3,3), dtype=ctype)
-    delta_M_mat_vac = np.ones(shape=(3,3), dtype=ctype)
+    dm_vac_vac = np.ones(shape=(3,3), dtype=ftype)
+    dm_mat_mat = np.ones(shape=(3,3), dtype=ctype)
+    dm_mat_vac = np.ones(shape=(3,3), dtype=ctype)
     H_mat = np.ones(shape=(3,3), dtype=ctype)
 
-    get_delta_Ms(energy, H_mat, delta_M_vac_vac, delta_M_mat_mat, delta_M_mat_vac)
+    get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac)
 
 
 @myjit
 def get_product(energy,
-                delta_M_mat_vac,
-                delta_M_mat_mat,
+                dm_mat_vac,
+                dm_mat_mat,
                 H_mat_mass_eigenstate_basis,
                 product):
     '''
@@ -248,9 +251,9 @@ def get_product(energy,
     energy : float
         Neutrino energy
 
-    delta_M_mat_vac : complex 2d-array
+    dm_mat_vac : complex 2d-array
 
-    delta_M_mat_mat : complex 2d-array
+    dm_mat_mat : complex 2d-array
 
     H_mat_mass_eigenstate_basis : complex 2d-array
 
@@ -265,7 +268,7 @@ def get_product(energy,
             for k in range(3):
                 H_minus_M[i,j,k] = 2. * energy * H_mat_mass_eigenstate_basis[i,j]
                 if i == j:
-                    H_minus_M[i,j,k] -= delta_M_mat_vac[k,j]
+                    H_minus_M[i,j,k] -= dm_mat_vac[k,j]
                 #also, cler product
                 product[i,j,k] = 0.
 
@@ -276,21 +279,21 @@ def get_product(energy,
                 product[i,j,0] += (H_minus_M[i,k,1] * H_minus_M[k,j,2])
                 product[i,j,1] += (H_minus_M[i,k,2] * H_minus_M[k,j,0])
                 product[i,j,2] += (H_minus_M[i,k,0] * H_minus_M[k,j,1])
-            product[i,j,0] /= (delta_M_mat_mat[0,1] * delta_M_mat_mat[0,2])
-            product[i,j,1] /= (delta_M_mat_mat[1,2] * delta_M_mat_mat[1,0])
-            product[i,j,2] /= (delta_M_mat_mat[2,0] * delta_M_mat_mat[2,1])
+            product[i,j,0] /= (dm_mat_mat[0,1] * dm_mat_mat[0,2])
+            product[i,j,1] /= (dm_mat_mat[1,2] * dm_mat_mat[1,0])
+            product[i,j,2] /= (dm_mat_mat[2,0] * dm_mat_mat[2,1])
 
 def test_get_product():
     baseline = 1.
     energy = 1.
-    delta_M_mat_mat = np.ones(shape=(3,3), dtype=ctype)
-    delta_M_mat_vac = np.ones(shape=(3,3), dtype=ctype)
+    dm_mat_mat = np.ones(shape=(3,3), dtype=ctype)
+    dm_mat_vac = np.ones(shape=(3,3), dtype=ctype)
     H_mat_mass_eigenstate_basis = np.ones(shape=(3,3), dtype=ctype)
     product = np.ones(shape=(3,3,3), dtype=ctype)
 
     get_product(energy,
-                delta_M_mat_vac,
-                delta_M_mat_mat,
+                dm_mat_vac,
+                dm_mat_mat,
                 H_mat_mass_eigenstate_basis,
                 product)
 
@@ -298,9 +301,10 @@ def test_get_product():
 @myjit
 def get_transition_amplitude_matrix(baseline,
                                     energy,
-                                    mix,
-                                    delta_M_mat_vac,
-                                    delta_M_mat_mat,
+                                    mix_nubar,
+                                    mix_nubar_conj_transp,
+                                    dm_mat_vac,
+                                    dm_mat_mat,
                                     H_mat_mass_eigenstate_basis,
                                     transition_matrix):
     '''
@@ -315,12 +319,15 @@ def get_transition_amplitude_matrix(baseline,
     energy : float
         neutrino energy
 
-    mix : complex 2d-array
+    mix_nubar : complex 2d-array
         Mixing matrix, already conjugated for antineutrinos
 
-    delta_M_mat_vac : 2d-array
+    mix_nubar_conj_transp : comjugate 2d-array
+        conjugate transpose of mixing matrix
 
-    delta_M_mat_mat : 2d-array
+    dm_mat_vac : 2d-array
+
+    dm_mat_mat : 2d-array
     
     H_mat_mass_eigenstate_basis : 2-d array
 
@@ -335,14 +342,13 @@ def get_transition_amplitude_matrix(baseline,
     X = cuda.local.array(shape=(3,3), dtype=ctype)
     product = cuda.local.array(shape=(3,3,3), dtype=ctype)
     tmp = cuda.local.array(shape=(3,3), dtype=ctype)
-    mix_conj_transpose = cuda.local.array(shape=(3,3), dtype=ctype)
 
     clear_matrix(X)
     clear_matrix(transition_matrix)
 
     get_product(energy,
-                delta_M_mat_vac,
-                delta_M_mat_mat,
+                dm_mat_vac,
+                dm_mat_mat,
                 H_mat_mass_eigenstate_basis,
                 product)
 
@@ -350,31 +356,31 @@ def get_transition_amplitude_matrix(baseline,
     hbar_c_factor = 2.534
 
     for k in range(3):
-        arg = - delta_M_mat_vac[k,0] * (baseline / energy) * hbar_c_factor
+        arg = - dm_mat_vac[k,0] * (baseline / energy) * hbar_c_factor
         c = cmath.exp(arg * 1.j)
         for i in range(3):
             for j in range(3):
                 X[i,j] += c * product[i,j,k]
 
-    # Compute the product with the mixing matrices 
-    conjugate_transpose(mix, mix_conj_transpose)
-    matrix_dot_matrix(X, mix_conj_transpose, tmp)
-    matrix_dot_matrix(mix, tmp, transition_matrix)
+    # Compute the product with the mix_nubaring matrices 
+    matrix_dot_matrix(X, mix_nubar_conj_transp, tmp)
+    matrix_dot_matrix(mix_nubar, tmp, transition_matrix)
 
 def test_get_transition_amplitude_matrix():
     baseline = 1.
     energy = 1.
     mix = np.ones(shape=(3,3), dtype=ctype)
-    delta_M_mat_mat = np.ones(shape=(3,3), dtype=ctype)
-    delta_M_mat_vac = np.ones(shape=(3,3), dtype=ctype)
+    dm_mat_mat = np.ones(shape=(3,3), dtype=ctype)
+    dm_mat_vac = np.ones(shape=(3,3), dtype=ctype)
     H_mat_mass_eigenstate_basis = np.ones(shape=(3,3), dtype=ctype)
     transition_matrix = np.ones(shape=(3,3), dtype=ctype)
 
     get_transition_amplitude_matrix(baseline,
                                     energy,
                                     mix,
-                                    delta_M_mat_vac,
-                                    delta_M_mat_mat,
+                                    mix.conj().T,
+                                    dm_mat_vac,
+                                    dm_mat_mat,
                                     H_mat_mass_eigenstate_basis,
                                     transition_matrix)
 
@@ -422,11 +428,12 @@ def get_transition_matrix(nubar,
                           rho,
                           baseline,
                           mix_nubar,
+                          mix_nubar_conj_transp,
                           nsi_eps,
                           H_vac,
-                          delta_M,
+                          dm,
                           transition_matrix):
-    ''' Calculate neutrino flavour transition amplitude matrixi
+    ''' Calculate neutrino flavour transition amplitude matrix
     
     Parameters
     ----------
@@ -440,11 +447,14 @@ def get_transition_matrix(nubar,
     mix_nubar : 2d-array
         Mixing matrix, already conjugated if antineutrino
 
+    mix_nubar_conj_transp : comjugate 2d-array
+        conjugate transpose of mixing matrix
+
     nsi_eps : 2d-array
 
     H_vac : 2d-array
 
-    delta_M : 2d-array
+    dm : 2d-array
 
     transition_matrix : 2d-array (empty)
     
@@ -457,12 +467,11 @@ def get_transition_matrix(nubar,
     '''
 
     H_mat = cuda.local.array(shape=(3,3), dtype=ctype)
-    delta_M_mat_vac = cuda.local.array(shape=(3,3), dtype=ctype)
-    delta_M_mat_mat = cuda.local.array(shape=(3,3), dtype=ctype)
+    dm_mat_vac = cuda.local.array(shape=(3,3), dtype=ctype)
+    dm_mat_mat = cuda.local.array(shape=(3,3), dtype=ctype)
     H_full = cuda.local.array(shape=(3,3), dtype=ctype)
     tmp = cuda.local.array(shape=(3,3), dtype=ctype)
     H_mat_mass_eigenstate_basis = cuda.local.array(shape=(3,3), dtype=ctype)
-    mix_nubar_conj_transpose = cuda.local.array(shape=(3,3), dtype=ctype)
 
     # Compute the matter potential including possible non-standard interactions
     # in the flavor basis 
@@ -476,22 +485,22 @@ def get_transition_matrix(nubar,
 
     # Calculate modified mass eigenvalues in matter from the full Hamiltonian and
     # the vacuum mass splittings 
-    get_delta_Ms(energy, H_full, delta_M, delta_M_mat_mat, delta_M_mat_vac)
+    get_dms(energy, H_full, dm, dm_mat_mat, dm_mat_vac)
 
     # Now we transform the matter (TODO: matter? full?) Hamiltonian back into the
     # mass eigenstate basis so we don't need to compute products of the effective
     # mixing matrix elements explicitly 
-    conjugate_transpose(mix_nubar, mix_nubar_conj_transpose)
     matrix_dot_matrix(H_mat, mix_nubar, tmp)
-    matrix_dot_matrix(mix_nubar_conj_transpose, tmp, H_mat_mass_eigenstate_basis)
+    matrix_dot_matrix(mix_nubar_conj_transp, tmp, H_mat_mass_eigenstate_basis)
 
     # We can now proceed to calculating the transition amplitude from the Hamiltonian
     # in the mass basis and the effective mass splittings 
     get_transition_amplitude_matrix(baseline,
                                     energy,
                                     mix_nubar,
-                                    delta_M_mat_vac,
-                                    delta_M_mat_mat,
+                                    mix_nubar_conj_transp,
+                                    dm_mat_vac,
+                                    dm_mat_mat,
                                     H_mat_mass_eigenstate_basis,
                                     transition_matrix)
 
@@ -504,7 +513,7 @@ def test_get_transition_matrix():
     nsi_eps = np.ones(shape=(3,3), dtype=ctype)
     H_vac = np.ones(shape=(3,3), dtype=ctype)
     m = np.linspace(0,1,9, dtype=ftype)
-    delta_M = m.reshape(3,3)
+    dm = m.reshape(3,3)
     transition_matrix = np.ones(shape=(3,3), dtype=ctype)
 
     get_transition_matrix(nubar,
@@ -512,15 +521,17 @@ def test_get_transition_matrix():
                           rho,
                           baseline,
                           mix_nubar,
+                          mix_nubar.conj().T,
                           nsi_eps,
                           H_vac,
-                          delta_M,
+                          dm,
                           transition_matrix)
     #print(transition_matrix)
 
 @myjit
-def osc_probs_vacuum_kernel(delta_M,
+def osc_probs_vacuum_kernel(dm,
                            mix,
+                           nubar,
                            energy,
                            distance_in_layer,
                            osc_probs):
@@ -529,11 +540,14 @@ def osc_probs_vacuum_kernel(delta_M,
     Parameters
     ----------
 
-    delta_M : 2d-array
+    dm : 2d-array
         Mass splitting matrix
 
     mix : complex 2d-array
         PMNS mixing matrix
+
+    nubar : int
+        +1 for neutrinos, -1 for antineutrinos
 
     energy : float
         Neutrino energy
@@ -553,8 +567,12 @@ def osc_probs_vacuum_kernel(delta_M,
     This is largely unvalidated so far
 
     '''
+
+    # no need to conjugate mix matrix, as we anyway only need real part
+    # can this be right?
    
     clear_matrix(osc_probs)
+    osc_probs_local = cuda.local.array(shape=(3,3), dtype=ftype)
 
     # sum up length from all layers
     baseline = 0.
@@ -563,27 +581,35 @@ def osc_probs_vacuum_kernel(delta_M,
 
     # make more precise 20081003 rvw
     l_over_e = 1.26693281 * baseline / energy
-    s21 = math.sin(delta_M[1,0] * l_over_e)
-    s32 = math.sin(delta_M[2,0] * l_over_e)       
-    s31 = math.sin((delta_M[2,1] + delta_M[3,2]) * l_over_e) 
+    s21 = math.sin(dm[1,0] * l_over_e)
+    s32 = math.sin(dm[2,0] * l_over_e)       
+    s31 = math.sin((dm[2,1] + dm[3,2]) * l_over_e) 
 
     # does anybody understand this loop?
     # ista = abs(*nutype) - 1
     for ista in range(3):
         for iend in range(2):
-            osc_probs[ista,iend] = ((mix[ista,0].real * mix[ista,1].real * s21)**2
+            osc_probs_local[ista,iend] = ((mix[ista,0].real * mix[ista,1].real * s21)**2
                                      + (mix[ista,1].real * mix[ista,2].real * s32)**2
                                      + (mix[ista,2].real * mix[ista,0].real * s31)**2
                                     )
             if iend == ista:
-                osc_probs[ista,iend] = 1. -4. * osc_probs[ista,iend]
+                osc_probs_local[ista,iend] = 1. -4. * osc_probs_local[ista,iend]
             else:
-                osc_probs[ista,iend] = -4. * osc_probs[ista,iend]
+                osc_probs_local[ista,iend] = -4. * osc_probs_local[ista,iend]
 
-        osc_probs[ista,2] = 1. - osc_probs[ista,0] - osc_probs[ista,1]
+        osc_probs_local[ista,2] = 1. - osc_probs_local[ista,0] - osc_probs_local[ista,1]
+
+    # is this necessary?
+    if nubar > 0 :
+        copy_matrix(osc_probs_local, osc_probs)
+    else:
+        for i in range(3):
+            for j in range(3):
+                osc_probs[i,j] = osc_probs_local[j,i]
 
 @myjit
-def osc_probs_layers_kernel(delta_M,
+def osc_probs_layers_kernel(dm,
                            mix,
                            nsi_eps,
                            nubar,
@@ -598,7 +624,7 @@ def osc_probs_layers_kernel(delta_M,
     Parameters
     ----------
 
-    delta_M : 2d-array
+    dm : 2d-array
         Mass splitting matrix
 
     mix : 2d-array
@@ -642,6 +668,7 @@ def osc_probs_layers_kernel(delta_M,
     # 3x3 complex
     H_vac = cuda.local.array(shape=(3,3), dtype=ctype)
     mix_nubar = cuda.local.array(shape=(3,3), dtype=ctype)
+    mix_nubar_conj_transp = cuda.local.array(shape=(3,3), dtype=ctype)
     transition_product = cuda.local.array(shape=(3,3), dtype=ctype)
     transition_matrix = cuda.local.array(shape=(3,3), dtype=ctype)
     tmp = cuda.local.array(shape=(3,3), dtype=ctype)
@@ -670,10 +697,12 @@ def osc_probs_layers_kernel(delta_M,
     else:
         # here we need to complex conjugate all entries
         # (note that this only changes calculations with non-clear_matrix deltacp)
-        conjugate_transpose(mix, mix_nubar)
+        conjugate(mix, mix_nubar)
+
+    conjugate_transpose(mix_nubar, mix_nubar_conj_transp)
 
 
-    get_H_vac(mix_nubar, delta_M, H_vac)
+    get_H_vac(mix_nubar, mix_nubar_conj_transp, dm, H_vac)
 
     if cache:
         # allocate array to store all the transition matrices
@@ -706,9 +735,10 @@ def osc_probs_layers_kernel(delta_M,
                                           density,
                                           distance,
                                           mix_nubar,
+                                          mix_nubar_conj_transp,
                                           nsi_eps,
                                           H_vac,
-                                          delta_M,
+                                          dm,
                                           transition_matrix,
                                           )
                     # copy
@@ -752,9 +782,10 @@ def osc_probs_layers_kernel(delta_M,
                                       density,
                                       distance,
                                       mix_nubar,
+                                      mix_nubar_conj_transp,
                                       nsi_eps,
                                       H_vac,
-                                      delta_M,
+                                      dm,
                                       transition_matrix,
                                       )
                 if first_layer:
@@ -784,7 +815,7 @@ def test_osc_probs_layers_kernel():
     mix = np.ones(shape=(3,3), dtype=ctype)
     nsi_eps = np.ones(shape=(3,3), dtype=ctype)
     M = np.linspace(0,1,9, dtype=ftype)
-    delta_M = M.reshape(3,3)
+    dm = M.reshape(3,3)
     nubar = 1
     energy = 1.
     n_layers = 10
@@ -792,7 +823,7 @@ def test_osc_probs_layers_kernel():
     distance_in_layer = np.ones(shape=(n_layers), dtype=ftype)
     osc_probs = np.ones(shape=(3,3), dtype=ftype)
 
-    osc_probs_layers_kernel(delta_M,
+    osc_probs_layers_kernel(dm,
                            mix,
                            nsi_eps,
                            nubar,
@@ -807,7 +838,7 @@ if __name__=='__main__':
     assert target == 'cpu', "Cannot test functions on GPU, set target='cpu'"
     test_get_H_vac()
     test_get_H_mat()
-    test_get_delta_Ms()
+    test_get_dms()
     test_get_product()
     test_get_transition_matrix()
     test_convert_from_mass_eigenstate()

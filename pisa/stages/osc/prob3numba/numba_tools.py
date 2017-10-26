@@ -7,6 +7,7 @@ from __future__ import print_function
 
 __all__ = ['myjit',
            'conjugate_transpose',
+           'conjugate',
            'matrix_dot_matrix',
            'matrix_dot_vector',
            'clear_matrix',
@@ -27,9 +28,9 @@ import math, cmath
 
 from pisa import FTYPE
 
-#target='cuda'
+target='cuda'
 #target='parallel'
-target='cpu'
+#target='cpu'
 
 if target == 'cuda':
     from numba import cuda
@@ -84,6 +85,18 @@ def conjugate_transpose(A, B):
     for i in range(A.shape[0]):
         for j in range(A.shape[1]):
             B[i,j] = A[j,i].conjugate()
+
+@myjit
+def conjugate(A, B):
+    '''
+    A : 2d array
+    B : 2d array
+
+    B is the conjugate of A
+    '''
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            B[i,j] = A[i,j].conjugate()
 
 @myjit
 def matrix_dot_matrix(A, B, C):
