@@ -27,6 +27,8 @@ from pisa.utils.format import arg_str_seq_none
 
 
 __all__ = ['Stage']
+__author__ = 'Justin Lanfranchi'
+__version__ = 'Cake'
 
 
 # TODO: mode for not propagating errors. Probably needs hooks here, but meat of
@@ -146,9 +148,6 @@ class Stage(BaseStage):
                                              input_names=input_names,
                                              output_names=output_names,
                                              debug_mode=debug_mode,
-                                             input_specs=None,
-                                             eval_specs=None,
-                                             output_specs=None,
                                              )
 
 
@@ -430,6 +429,10 @@ class Stage(BaseStage):
                 or self.nominal_outputs_hash != nominal_outputs_hash):
             self._compute_nominal_outputs()
             self.nominal_outputs_hash = nominal_outputs_hash
+
+    # for PI compatibility
+    def apply(self, inputs=None):
+        return self.get_outputs(inputs=inputs)
 
     @profile
     def get_outputs(self, inputs=None):

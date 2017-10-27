@@ -629,9 +629,22 @@ def parse_pipeline_config(config):
                 param_selector.update(param, selector=infodict['selector'])
 
             # If it's not a param spec but contains 'binning', assume it's a
-            # binning spec
+            # binning spec for CAKE stages
             elif 'binning' in fullname:
                 service_kwargs[fullname] = binning_dict[value]
+
+            # it's gonna be a PI stage
+            elif '_spec' in fullname:
+                value = parse_string_literal(value)
+                # is it None?
+                if value is None:
+                    service_kwargs[fullname] = value
+                # is it evts?
+                elif value == 'evnts':
+                    service_kwargs[fullname] = value
+                # so it gotta be a binning
+                else:
+                    service_kwargs[fullname] = binning_dict[value]
 
             # Otherwise it's some other stage instantiation argument; identify
             # this by its full name and try to interpret and instantiate a

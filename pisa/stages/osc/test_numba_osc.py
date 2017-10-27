@@ -17,22 +17,6 @@ dm = OP.dm_matrix
 nsi_eps = np.zeros_like(mix)
 
 
-# number of points for E x CZ grid
-points = 1000
-nevts = points**2
-
-# input arrays
-# nu /nu-bar
-nubar = np.ones(nevts, dtype=np.int32)
-
-energy_points = np.logspace(0,3,points, dtype=FTYPE)
-cz_points = np.linspace(-1,1,points, dtype=FTYPE)
-energy, cz = np.meshgrid(energy_points, cz_points)
-energy = energy.ravel()
-
-energy = SmartArray(energy)
-
-cz = cz.ravel()
 
 # calc layers
 earth_model = '/home/peller/cake/pisa/resources/osc/PREM_59layer.dat'

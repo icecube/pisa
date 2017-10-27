@@ -27,6 +27,7 @@ from pisa.core.events import Data
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
 from pisa.core.stage import Stage
+from pisa.core.pi_stage import PiStage
 from pisa.core.transform import TransformSet
 from pisa.utils.config_parser import PISAConfigParser, parse_pipeline_config
 from pisa.utils.fileio import mkdir
@@ -83,6 +84,8 @@ class Pipeline(object):
         self._init_stages()
         self._source_code_hash = None
 
+        self._version = None
+
     def index(self, stage_id):
         """Return the index in the pipeline of `stage_id`.
 
@@ -126,9 +129,11 @@ class Pipeline(object):
         for stage in self:
             if stage.stage_name == attr:
                 return stage
-        raise AttributeError('"%s" is not a stage in this pipeline or "%s" is'
-                             ' a property of Pipeline that failed to execute.'
-                             %(attr, attr))
+        #else:
+        #    return object.__getattr__(self, attr)
+        #raise AttributeError('"%s" is not a stage in this pipeline or "%s" is'
+        #                     ' a property of Pipeline that failed to execute.'
+        #                     %(attr, attr))
 
     def _init_stages(self):
         """Stage factory: Instantiate stages specified by self.config.
@@ -159,16 +164,41 @@ class Pipeline(object):
 
                 # Instantiate service
                 service = cls(**settings)
-                if not isinstance(service, Stage):
+
+                cake_stage = isinstance(service, Stage)
+                pi_stage = isinstance(service, PiStage)
+
+                if not (cake_stage or pi_stage):
                     raise TypeError(
                         'Trying to create service "%s" for stage #%d (%s),'
                         ' but object %s instantiated from class %s is not a'
-                        ' %s type but instead is of type %s.'
-                        % (service_name, stage_num, stage_name, service, cls,
-                           Stage, type(service))
+                        ' PISA Stage type but instead is of type %s.'
+                        %(service_name, stage_num, stage_name, service, cls,
+                           type(service))
+                        )
+
+                # first stage can determine type of pipeline
+                if self._version is None:
+                    self._version = 'cake' if cake_stage else 'pi'
+                
+                elif self._version == 'cake' and pi_stage:
+                    raise TypeError(
+                        'Trying to use the PISA Pi Stage in '
+                        'a PISA cake pipeline.'
                     )
 
+                elif self._version == 'pi' and cake_stage:
+                    raise TypeError(
+                        'Trying to use the PISA cake Stage in '
+                        'a PISA Pi pipeline.'
+                    )
+
+
                 # Append service to pipeline
+
+                # run setup on service
+                service.setup()
+
                 stages.append(service)
 
             except:
@@ -258,7 +288,7 @@ class Pipeline(object):
                           stage.stage_name, stage.service_name)
             try:
                 logging.trace('>>> BEGIN: get_outputs')
-                outputs = stage.get_outputs(inputs=inputs)
+                outputs = stage.apply(inputs=inputs)
                 logging.trace('>>> END  : get_outputs')
             except:
                 logging.error('Error occurred computing outputs in stage %s /'
@@ -632,7 +662,7 @@ def main(return_outputs=False):
                 input_maps.append(input_map)
             inputs = MapSet(maps=input_maps, name='ones', hash=1)
 
-        outputs = stage.get_outputs(inputs=inputs)
+        outputs = stage.apply(inputs=inputs)
 
     for stage in pipeline[indices]:
         if not args.outdir:

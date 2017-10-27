@@ -19,6 +19,7 @@ from pisa.utils.format import arg_str_seq_none
 
 
 __all__ = ['BaseStage']
+__author__ = 'Justin Lanfranchi'
 
 
 class BaseStage(object):
@@ -39,15 +40,6 @@ class BaseStage(object):
     input_names : None or list of strings
 
     output_names : None or list of strings
-
-    error_method : None, bool, or string
-        If None, False, or empty string, the stage does not compute errors for
-        the transforms and does not apply any (additional) error to produce its
-        outputs. (If the inputs already have errors, these are propagated.)
-
-        Otherwise, this specifies the method by which the stage should compute
-        errors for the transforms to be applied in producing outputs from the
-        stage.
 
     debug_mode : None, bool, or string
         If None, False, or empty string, the stage runs normally.
@@ -72,9 +64,6 @@ class BaseStage(object):
                  input_names=None,
                  output_names=None, 
                  debug_mode=None,
-                 input_specs=None,
-                 eval_specs=None,
-                 output_specs=None,
                  ):
 
         # Allow for string inputs, but have to populate into lists for
@@ -146,6 +135,16 @@ class BaseStage(object):
         #        pass
 
         self.inputs = None
+
+
+    def setup(self):
+        pass
+
+    def coumpute(self):
+        pass
+
+    def apply(self, inputs=None):
+        return None
 
 
     def select_params(self, selections, error_on_missing=False):
