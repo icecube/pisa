@@ -84,13 +84,13 @@ class PiStage(BaseStage):
             elif self.apply_specs == 'events':
                 if self.events is None:
                     raise TypeError('Cannot apply to events with no events present')
-                # run apply_atomic on events array
+                # run apply_kernel on events array
 
             elif isinstance(self.apply_specs, MultiDimBinning):
                 if self.events is None:
                     raise TypeError('Cannot return Map with no inputs and no events present')
                 else:
-                    # run apply_atomic on events array and a private output array
+                    # run apply_kernel on events array and a private output array
                     # ToDo: private weights array (or should it be normal weights array?)
                     binning = self.apply_specs
                     bin_edges = bin_edges = [edges.magnitude for edges in binning.bin_edges]

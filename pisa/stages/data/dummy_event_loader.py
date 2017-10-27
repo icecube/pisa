@@ -56,7 +56,7 @@ class dummy_event_loader(PiStage):
         # args to load into apply function
         self.apply_args = ['event_weights']
         # can be python, numba and numba-cuda
-        self.atomic_support = ['python']
+        self.kernel_support = ['python']
     
 
     def setup(self):
@@ -99,6 +99,6 @@ class dummy_event_loader(PiStage):
         self.events = {'numu': numu}
 
     @staticmethod
-    def apply_atomic(event_weight, weight):
+    def apply_kernel(event_weight, weight):
         weight[0] = event_weight
 
