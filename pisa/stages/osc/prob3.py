@@ -301,7 +301,8 @@ class prob3(Stage):
                  memcache_deepcopy, error_method, transforms_cache_depth,
                  outputs_cache_depth, debug_mode=None, 
                  use_spline=False, spline_binning=None,
-                 use_gpu=False, gpu_id=None):
+                 use_gpu=False, gpu_id=None, **kwargs):
+        # ToDo: added **kwargs for dealing with NSI params for the moment
 
         # If no binning provided then we want to use this to calculate
         # probabilities for events instead of transforms for maps.
@@ -338,7 +339,7 @@ class prob3(Stage):
 
         # Invoke the init method from the parent class (Stage), which does a
         # lot of work (caching, providing public interfaces, etc.)
-        super(self.__class__, self).__init__(
+        super(prob3, self).__init__(
             use_transforms=True,
             params=params,
             expected_params=self.get_expected_params(self.calc_binned_transforms),

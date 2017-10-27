@@ -9,6 +9,7 @@ Utilities for interpreting and returning formatted strings.
 
 from __future__ import absolute_import, division
 
+from collections import Iterable, Mapping, Sequence
 from itertools import imap
 import numbers
 import re
@@ -27,7 +28,9 @@ __all__ = ['WHITESPACE_RE', 'NUMBER_RESTR', 'NUMBER_RE',
            'text2tex', 'tex_join', 'tex_rm', 'default_map_tex', 'is_tex',
            'int2hex', 'hash2hex',
            'strip_outer_dollars', 'strip_outer_parens',
-           'make_valid_python_name']
+           'make_valid_python_name',
+           'arg_str_seq_none',
+           ]
 
 
 WHITESPACE_RE = re.compile(r'\s')
@@ -64,6 +67,35 @@ TEX_SPECIAL_CHARS_MAPPING = {
     #'sqrt': r'\sqrt{\,}'
     #'sqrt': r'\surd'
 }
+
+def arg_str_seq_none(inputs, name):
+    """Simple input handler.
+
+    Parameters
+    ----------
+    inputs : None, string, or iterable of strings
+        Input value(s) provided by caller
+    name : string
+        Name of input, used for producing a meaningful error message
+
+    Returns
+    -------
+    inputs : None, or list of strings
+
+    Raises
+    ------
+    TypeError if unrecognized type
+
+    """
+    if isinstance(inputs, basestring):
+        inputs = [inputs]
+    elif isinstance(inputs, (Iterable, Sequence)):
+        inputs = list(inputs)
+    elif inputs is None:
+        pass
+    else:
+        raise TypeError('Input %s: Unhandled type %s' % (name, type(inputs)))
+    return inputs
 
 
 def split(string, sep, force_case=None, parse_func=None):
