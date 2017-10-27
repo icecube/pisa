@@ -47,10 +47,17 @@ class dummy_event_loader(PiStage):
                                                 apply_specs=apply_specs,
                                                 )
 
-        # that stage doesn't act on anything, it rather just loads events
+        # that stage doesn't act on anything, it rather just loads events -> this inot base class
         assert input_specs is None
         assert calc_specs is None
         #assert apply_specs is None
+
+        self.compute_args = None
+        # args to load into apply function
+        self.apply_args = ['event_weights']
+        # can be python, numba and numba-cuda
+        self.atomic_support = ['python']
+    
 
     def setup(self):
 
@@ -75,10 +82,12 @@ class dummy_event_loader(PiStage):
         nubar = SmartArray(nubar)
 
         # event_weights
-        event_weights = np.ones(nevts, dtype=FTYPE)
+        #event_weights = np.ones(nevts, dtype=FTYPE)
+        event_weights = np.random.rand(nevts).astype(FTYPE)
         event_weights = SmartArray(event_weights)
-        weights = SmartArray(np.copy(event_weights))
         
+        weights = SmartArray(np.empty(nevts, dtype))
+
         numu = {'true_energy' : energy,
                 'true_coszen' : cz,
                 'nubar' : nubar,
@@ -89,9 +98,7 @@ class dummy_event_loader(PiStage):
         assert self.events is None
         self.events = {'numu': numu}
 
-    #def compute(self):
-    #    pass
-
-    #def apply(self):
-    #    pass
+    @staticmethod
+    def apply_atomic(event_weight, weight):
+        weight[0] = event_weight
 
