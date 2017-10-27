@@ -24,6 +24,7 @@ from pisa.core.map import MapSet
 from pisa.core.stage import Stage
 from pisa.utils.fileio import from_file
 from pisa.utils.flavInt import ALL_NUFLAVINTS, NuFlavIntGroup, FlavIntDataGroup
+from pisa.utils.format import split
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
@@ -97,7 +98,7 @@ class sample(Stage):
         self.muons = False
         self.noise = False
 
-        output_names = output_names.replace(' ', '').split(',')
+        output_names = split(output_names, sep=',')
         clean_outnames = []
         self._output_nu_groups = []
         for name in output_names:
@@ -212,9 +213,7 @@ class sample(Stage):
             return
 
         name = self.config.get('general', 'name')
-        def parse(string):
-            return string.replace(' ', '').split(',')
-        event_types = parse(self.config.get('general', 'event_type'))
+        event_types = split(self.config.get('general', 'event_type'), sep=',')
 
         events = []
         if self.neutrinos:
@@ -260,18 +259,15 @@ class sample(Stage):
 
     @staticmethod
     def load_neutrino_events(config, dataset):
-        def parse(string):
-            return string.replace(' ', '').split(',')
-
         nu_data = []
         if dataset == 'neutrinos%sgen_lvl' % SEP:
             gen_cfg      = from_file(config.get(dataset, 'gen_cfg_file'))
             name         = gen_cfg.get('general', 'name')
             datadir      = gen_cfg.get('general', 'datadir')
-            event_types  = parse(gen_cfg.get('general', 'event_type'))
-            weights      = parse(gen_cfg.get('general', 'weights'))
+            event_types  = split(gen_cfg.get('general', 'event_type'), sep=',')
+            weights      = split(gen_cfg.get('general', 'weights'), sep=',')
             weight_units = gen_cfg.get('general', 'weight_units')
-            keep_keys    = parse(gen_cfg.get('general', 'keep_keys'))
+            keep_keys    = split(gen_cfg.get('general', 'keep_keys'), sep=',')
             aliases      = gen_cfg.items('aliases')
             logging.info('Extracting neutrino dataset "{0}" from generator '
                          'level sample "{1}"'.format(dataset, name))
@@ -288,12 +284,12 @@ class sample(Stage):
                 nu_data.append(flav_fidg)
         else:
             name         = config.get('general', 'name')
-            flavours     = parse(config.get('neutrinos', 'flavours'))
-            weights      = parse(config.get('neutrinos', 'weights'))
+            flavours     = split(config.get('neutrinos', 'flavours'), sep=',')
+            weights      = split(config.get('neutrinos', 'weights'), sep=',')
             weight_units = config.get('neutrinos', 'weight_units')
-            sys_list     = parse(config.get('neutrinos', 'sys_list'))
+            sys_list     = split(config.get('neutrinos', 'sys_list'), sep=',')
             base_prefix  = config.get('neutrinos', 'baseprefix')
-            keep_keys    = parse(config.get('neutrinos', 'keep_keys'))
+            keep_keys    = split(config.get('neutrinos', 'keep_keys'), sep=',')
             aliases      = config.items('neutrinos%saliases' % SEP)
             logging.info('Extracting neutrino dataset "{0}" from sample '
                          '"{1}"'.format(dataset, name))
@@ -337,14 +333,12 @@ class sample(Stage):
 
     @staticmethod
     def load_muon_events(config, dataset):
-        def parse(string):
-            return string.replace(' ', '').split(',')
         name         = config.get('general', 'name')
         weight       = config.get('muons', 'weight')
         weight_units = config.get('muons', 'weight_units')
-        sys_list     = parse(config.get('muons', 'sys_list'))
+        sys_list     = split(config.get('muons', 'sys_list'), sep=',')
         base_prefix  = config.get('muons', 'baseprefix')
-        keep_keys    = parse(config.get('muons', 'keep_keys'))
+        keep_keys    = split(config.get('muons', 'keep_keys'), sep=',')
         aliases      = config.items('muons%saliases' % SEP)
         if base_prefix == 'None':
             base_prefix = ''
@@ -393,14 +387,12 @@ class sample(Stage):
 
     @staticmethod
     def load_noise_events(config, dataset):
-        def parse(string):
-            return string.replace(' ', '').split(',')
         name         = config.get('general', 'name')
         weight       = config.get('noise', 'weight')
         weight_units = config.get('noise', 'weight_units')
-        sys_list     = parse(config.get('noise', 'sys_list'))
+        sys_list     = split(config.get('noise', 'sys_list'), sep=',')
         base_prefix  = config.get('noise', 'baseprefix')
-        keep_keys    = parse(config.get('noise', 'keep_keys'))
+        keep_keys    = split(config.get('noise', 'keep_keys'), sep=',')
         aliases      = config.items('noise%saliases' % SEP)
         if base_prefix == 'None':
             base_prefix = ''

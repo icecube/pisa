@@ -6,8 +6,8 @@ import numpy as np
 
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
-from pisa.utils.config_parser import split
 from pisa.utils.fileio import from_file
+from pisa.utils.format import split
 from pisa.utils.profiler import profile
 
 
@@ -42,7 +42,7 @@ class polyfits(Stage):
             #'reco_cz_res', 'reco_cz_res_file',
         )
 
-        input_names = split(input_names)
+        input_names = split(input_names, sep=',')
         output_names = input_names
 
         # Invoke the init method from the parent class, which does a lot of
@@ -71,7 +71,13 @@ class polyfits(Stage):
             self.fit_results[pname] = from_file(
                 self.params[pname+'_file'].value
             )
-            assert self.input_names == self.fit_results[pname]['map_names']
+            if sorted(self.input_names) != sorted(
+                    self.fit_results[pname]['map_names']):
+                raise ValueError(
+                    "Expected input names - %s. Got %s."%(
+                        self.input_names,
+                        self.fit_results[pname]['map_names'])
+                )
         self.pnames = pnames
 
     def _compute_nominal_transforms(self):
