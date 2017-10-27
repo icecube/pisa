@@ -50,7 +50,7 @@ class dummy_event_loader(PiStage):
         # that stage doesn't act on anything, it rather just loads events
         assert input_specs is None
         assert calc_specs is None
-        assert apply_specs is None
+        #assert apply_specs is None
 
     def setup(self):
 
@@ -77,11 +77,13 @@ class dummy_event_loader(PiStage):
         # event_weights
         event_weights = np.ones(nevts, dtype=FTYPE)
         event_weights = SmartArray(event_weights)
+        weights = SmartArray(np.copy(event_weights))
         
         numu = {'true_energy' : energy,
                 'true_coszen' : cz,
                 'nubar' : nubar,
                 'event_weights' : event_weights,
+                'weights' : weights,
                 }
 
         assert self.events is None

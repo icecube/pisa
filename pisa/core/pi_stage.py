@@ -4,8 +4,11 @@ Stage class designed to be inherited by PISA Pi services, such that all basic
 functionality is built-in.
 
 """
+import numpy as np
 
 from pisa.core.base_stage import BaseStage
+from pisa.core.binning import MultiDimBinning
+from pisa.core.map import Map, MapSet
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 
@@ -62,6 +65,9 @@ class PiStage(BaseStage):
                                       debug_mode=debug_mode,
                                       )
 
+        self.input_specs = input_specs
+        self.calc_specs = calc_specs
+        self.apply_specs = apply_specs
         self.events = events
 
     def setup(self):
@@ -71,7 +77,29 @@ class PiStage(BaseStage):
         pass
 
     def apply(self, inputs=None):
-        pass
+        if inputs is None:
+            if self.apply_specs is None:
+                pass
+            elif isinstance(self.apply_specs, MultiDimBinning):
+                if self.events is None:
+                    raise TypeError('Cannot return Map with no inputs and no events present')
+                else:
+                    binning = self.apply_specs
+                    bin_edges = bin_edges = [edges.magnitude for edges in binning.bin_edges]
+                    binning_cols = binning.names
+
+                    maps = []
+                    for name, evts in self.events.items():
+                        sample = [evts[colname] for colname in binning_cols]
+                        hist, _ = np.histogramdd(sample=sample,
+                                                 weights=evts['weights'],
+                                                 bins=bin_edges,
+                                                 )
+
+                        maps.append(Map(name=name, hist=hist, binning=binning))
+                    self.outputs = MapSet(name='bla', maps=maps)
+                    return self.outputs
+                # histogram events
 
 
     #def get_outputs(self, inputs=None):
