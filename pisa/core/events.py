@@ -290,16 +290,24 @@ class Events(FlavIntData):
         >>> events = events.applyCut("np.log10(true_energy) >= 0")
 
         """
+
         if keep_criteria in self.metadata['cuts']:
+            return
+
+        #Nothing to do if no cuts specified
+        if keep_criteria is None :
             return
 
         assert isinstance(keep_criteria, basestring)
 
-        flavints_to_process = self.flavints
+        flavints_to_process = self.present_flavints #Only get the flavints for which we have data
         flavints_processed = []
         remaining_data = {}
         for flavint in flavints_to_process:
+
+            #Get the evets for this flavor/interaction
             data_dict = self[flavint]
+
             field_names = data_dict.keys()
 
             # TODO: handle unicode:
@@ -319,7 +327,8 @@ class Events(FlavIntData):
             remaining_data[flavint] = (
                 {k: v[mask] for k, v in self[flavint].iteritems()}
             )
-            flavints_processed.append(flavint)
+
+            flavints_processed.append(flavint) #
 
         remaining_events = Events()
         remaining_events.metadata.update(deepcopy(self.metadata))
@@ -366,6 +375,31 @@ class Events(FlavIntData):
         remaining_events.metadata['cuts'] = all_cuts
 
         return remaining_events
+
+
+    #This returns a tuple of the flavints that are present in the events
+    @property
+    def present_flavints(self):
+
+        present_flavints_list = []
+
+        #Loop over a tuple of all possible flav/int combinations
+        for flavint in self.flavints:
+
+            # If a particular flavor/interaction combination is not present in the events, then
+            # self[flavint] will be set to np.nan
+            # Check this here, using a try block to catch exceptions throw if the data is actually
+            # there (in which case it is a dict, and np.isnan will raise an exception as cannot
+            # take a dit as input)
+            found_data_for_this_flavint = True
+            try :
+                if np.isnan(self[flavint]) : found_data_for_this_flavint = False
+            except TypeError : 
+                pass
+            if found_data_for_this_flavint :
+                present_flavints_list.append(flavint)
+
+        return tuple(present_flavints_list)
 
 
 class Data(FlavIntDataGroup):
@@ -601,6 +635,9 @@ class Data(FlavIntDataGroup):
             fig_to_process += ['muons']
         if self.contains_noise:
             fig_to_process += ['noise']
+
+        logging.info("Applying cut to %s : %s" % (fig_to_process,keep_criteria) )
+
         fig_processed = []
         remaining_data = {}
         for fig in fig_to_process:

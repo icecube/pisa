@@ -204,20 +204,17 @@ from io import StringIO
 from os.path import abspath, expanduser, expandvars, isfile, join
 import re
 import sys
-import warnings
 
 from backports.configparser import (
     RawConfigParser, ExtendedInterpolation, DuplicateOptionError,
     SectionProxy, MissingSectionHeaderError, DuplicateSectionError
 )
 from backports.configparser.helpers import open as c_open
-from backports.configparser.helpers import PY2
 import numpy as np
 from uncertainties import ufloat, ufloat_fromstr
 
 from pisa import ureg
 from pisa.utils.fileio import from_file
-from pisa.utils.format import split
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
@@ -328,6 +325,36 @@ def parse_string_literal(string):
     if string.strip().lower() == 'none':
         return None
     return string
+
+
+def split(string, sep=','):
+    """Parse a string containing a comma-separated list as a Python list of
+    strings. Each resulting string is forced to be lower-case and surrounding
+    whitespace is stripped.
+
+    Parameters
+    ----------
+    string : string
+        The string to be split
+
+    sep : string
+        Separator to look for
+
+    Returns
+    -------
+    lst : list of strings
+
+    Examples
+    --------
+    >>> print split(' One, TWO, three ')
+    ['one', 'two', 'three']
+
+    >>> print split('one:two:three', sep=':')
+    ['one', 'two', 'three']
+
+    """
+    #return [ x.strip().lower() for x in str.split(str(string), sep)]
+    return [ parse_string_literal(x.strip().lower()) for x in str.split(str(string), sep)]
 
 
 def interpret_param_subfields(subfields, selector=None, pname=None, attr=None):
@@ -509,9 +536,8 @@ def parse_pipeline_config(config):
     binning_dict = {}
     for name, value in config['binning'].items():
         if name.endswith('.order'):
-            order = split(config.get('binning', name), sep=',',
-                          force_case='lower')
-            binning, _ = split(name, sep='.', force_case='lower')
+            order = split(config.get('binning', name))
+            binning, _ = split(name, sep='.')
             bins = []
             for bin_name in order:
                 kwargs = eval( # pylint: disable=eval-used
@@ -524,13 +550,11 @@ def parse_pipeline_config(config):
     section = 'pipeline'
 
     # Get and parse the order of the stages (and which services implement them)
-    order = [split(x, sep=STAGE_SEP, force_case='lower')
-             for x in split(config.get(section, 'order'), sep=',')]
+    order = [split(x, STAGE_SEP) for x in split(config.get(section, 'order'))]
 
     param_selections = []
     if config.has_option(section, 'param_selections'):
-        param_selections = split(config.get(section, 'param_selections'),
-                                 sep=',', force_case='lower')
+        param_selections = split(config.get(section, 'param_selections'))
 
     # Parse [stage.<stage_name>] sections and store to stage_dicts
     stage_dicts = OrderedDict()
@@ -680,7 +704,7 @@ class MutableMultiFileIterator(object):
         if fpath is None:
             try:
                 resource = find_resource(fpname)
-            except IOError:
+            except:
                 pass
             else:
                 if isfile(resource):
@@ -940,8 +964,7 @@ class PISAConfigParser(RawConfigParser):
 
     def read(self, filenames, encoding=None):
         """Override `read` method to interpret `filenames` as PISA resource
-        locations, then call overridden `read` method. Also, IOError fails
-        here, whereas it is ignored in RawConfigParser.
+        locations, then call overridden `read` method.
 
         For further help on this method and its arguments, see
         :method:`~backports.configparser.configparser.read`
@@ -951,38 +974,10 @@ class PISAConfigParser(RawConfigParser):
             filenames = [filenames]
         resource_locations = []
         for filename in filenames:
-            resource_location = find_resource(filename)
-            if not isfile(resource_location):
-                raise ValueError(
-                    '"%s" is not a file or could not be located' % filename
-                )
-            resource_locations.append(resource_location)
+            resource_locations.append(find_resource(filename))
 
-        filenames = resource_locations
-
-        # NOTE: From here on, most of the `read` method is copied, but
-        # ignoring IOError exceptions is removed here. Python copyrights apply.
-
-        if PY2 and isinstance(filenames, bytes):
-            # we allow for a little unholy magic for Python 2 so that
-            # people not using unicode_literals can still use the library
-            # conveniently
-            warnings.warn(
-                "You passed a bytestring as `filenames`. This will not work"
-                " on Python 3. Use `cp.read_file()` or switch to using Unicode"
-                " strings across the board.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            filenames = [filenames]
-        elif isinstance(filenames, str):
-            filenames = [filenames]
-        read_ok = []
-        for filename in filenames:
-            with c_open(filename, encoding=encoding) as fp:
-                self._read(fp, filename)
-            read_ok.append(filename)
-        return read_ok
+        return super(PISAConfigParser, self).read(filenames=resource_locations,
+                                                  encoding=encoding)
 
     # NOTE: the `_read` method is copy-pasted (then modified slightly) from
     # Python's backports.configparser (version 3.5.0), and so any copyright
@@ -1151,7 +1146,7 @@ class PISAConfigParser(RawConfigParser):
                         # list of all bogus lines
                         e = self._handle_error(e, fpname, lineno, line)
         # if any parsing errors occurred, raise an exception
-        if e is not None:
+        if e:
             raise e
         self._join_multiline_values()
 

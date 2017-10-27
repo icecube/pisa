@@ -364,13 +364,13 @@ class OneDimBinning(object):
 
         if is_lin:
             if not self.is_bin_spacing_lin(dimensionless_bin_edges):
-                raise ValueError('`is_lin` is True but `bin_edges` are not'
-                                 ' linearly spaced.')
+                raise ValueError('%s : `is_lin` is True but `bin_edges` are not'
+                                 ' linearly spaced.'%self._name)
             is_log = False
         elif is_log:
             if not self.is_binning_ok(dimensionless_bin_edges, is_log=True):
-                raise ValueError('`is_log` is True but `bin_edges` are not'
-                                 ' logarithmically spaced.')
+                raise ValueError('%s : `is_log` is True but `bin_edges` are not'
+                                 ' logarithmically spaced.'%self._name)
             is_lin = False
         else:
             is_lin = self.is_bin_spacing_lin(dimensionless_bin_edges)

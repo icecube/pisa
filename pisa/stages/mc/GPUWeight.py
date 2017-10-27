@@ -19,6 +19,8 @@ class GPUWeight(object):
 
     """
 
+    #TODO (Tom) `flux` CUDA function here takes weighted_aeff as an argument, which I don't think it should as this is modified later in calc_weights. It is commented out in `flux` though so right now thre is not problem, but really we should remove this arg...
+
     KERNEL_TEMPLATE = '''//CUDA//
     #define %(C_PRECISION_DEF)s
     #define fType %(C_FTYPE)s

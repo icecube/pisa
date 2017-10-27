@@ -12,6 +12,7 @@ https://wiki.icecube.wisc.edu/index.php/IC86_oscillations_event_selection
 
 from __future__ import absolute_import
 
+from os import path
 from copy import deepcopy
 from operator import add
 import re
@@ -24,16 +25,56 @@ from pisa.core.map import MapSet
 from pisa.core.stage import Stage
 from pisa.utils.fileio import from_file
 from pisa.utils.flavInt import ALL_NUFLAVINTS, NuFlavIntGroup, FlavIntDataGroup
-from pisa.utils.format import split
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 
 
-__all__ = ['SEP', 'sample']
+__all__ = ['SEP', 'sample','split','parse_event_type_names']
 
 
 SEP = '|'
+
+
+
+#TODO Try to merge with pisa.utils.config_parser.split, but currently gives problems due to the lower case forcing
+def split(string):
+    return string.replace(' ', '').split(',')
+
+
+#Function for parsing event type names from the config file
+#Handle any aliases here, such as 'all_nu'
+def parse_event_type_names(names,return_flags=False) :
+
+    #Split into list if has not already been done
+    if isinstance(names,str) or isinstance(names,unicode) :
+        names = split(names)
+
+    #Parse the names
+    parsed_names = []
+    for name in names :
+        if 'all_nu' in name:
+            parsed_names.extend( [str(NuFlavIntGroup(f)) for f in ALL_NUFLAVINTS] )
+        else :
+            parsed_names.append(name)
+    parsed_names = [ n.lower() for n in parsed_names ]
+
+    #Set some flags
+    muons = False
+    noise = False
+    neutrinos = False
+    for name in parsed_names:
+        if 'muons' in name:
+            muons = True
+        elif 'noise' in name:
+            noise = True
+        elif name.startswith("nu"):
+            neutrinos = True
+        else :
+            raise ValueError("Unrecognised event type '%s' found"%name)
+
+    if return_flags : return parsed_names,muons,noise,neutrinos
+    else : return parsed_names
 
 
 class sample(Stage):
@@ -86,7 +127,8 @@ class sample(Stage):
     def __init__(self, params, output_binning, output_names,
                  output_events=True, error_method=None, debug_mode=None,
                  disk_cache=None, memcache_deepcopy=True,
-                 transforms_cache_depth=20, outputs_cache_depth=20):
+                 transforms_cache_depth=20, outputs_cache_depth=20,
+                 fix_truth_variable_names=False):
         self.sample_hash = None
         """Hash of event sample"""
 
@@ -94,30 +136,8 @@ class sample(Stage):
             'data_sample_config', 'dataset', 'keep_criteria',
         )
 
-        self.neutrinos = False
-        self.muons = False
-        self.noise = False
-
-        output_names = split(output_names, sep=',')
-        clean_outnames = []
-        self._output_nu_groups = []
-        for name in output_names:
-            if 'muons' in name:
-                self.muons = True
-                clean_outnames.append(name)
-            elif 'noise' in name:
-                self.noise = True
-                clean_outnames.append(name)
-            elif 'all_nu' in name:
-                self.neutrinos = True
-                self._output_nu_groups = \
-                    [NuFlavIntGroup(f) for f in ALL_NUFLAVINTS]
-            else:
-                self.neutrinos = True
-                self._output_nu_groups.append(NuFlavIntGroup(name))
-
-        if self.neutrinos:
-            clean_outnames += [str(f) for f in self._output_nu_groups]
+        output_names,self.muons,self.noise,self.neutrinos = parse_event_type_names(output_names,return_flags=True)
+        self._output_nu_groups = [ NuFlavIntGroup(name) for name in output_names ]
 
         if not isinstance(output_events, bool):
             raise AssertionError(
@@ -132,7 +152,7 @@ class sample(Stage):
             use_transforms=False,
             params=params,
             expected_params=expected_params,
-            output_names=clean_outnames,
+            output_names=output_names,
             error_method=error_method,
             debug_mode=debug_mode,
             disk_cache=disk_cache,
@@ -142,13 +162,22 @@ class sample(Stage):
             output_binning=output_binning
         )
 
+        #User can specify that truth variables have their names prefixed with "truth_"
+        self.fix_truth_variable_names = fix_truth_variable_names
+        self.truth_variables = ["energy","coszen"]
+        self.truth_variable_prefix = "true_"
+
         self._compute_outputs()
 
     @profile
     def _compute_outputs(self, inputs=None):
+
         """Apply basic cuts and compute histograms for output channels."""
+
         logging.debug('Entering sample._compute_outputs')
+
         self.config = from_file(self.params['data_sample_config'].value)
+
         name = self.config.get('general', 'name')
         logging.trace('{0} sample sample_hash = '
                       '{1}'.format(name, self.sample_hash))
@@ -213,7 +242,9 @@ class sample(Stage):
             return
 
         name = self.config.get('general', 'name')
-        event_types = split(self.config.get('general', 'event_type'), sep=',')
+        event_types = split(self.config.get('general', 'event_type'))
+
+        logging.info( "Event types in data sample '%s': %s" % (name,[str(e) for e in event_types]) )
 
         events = []
         if self.neutrinos:
@@ -253,21 +284,30 @@ class sample(Stage):
             events.append(noise_events)
         self._data = reduce(add, events)
 
+        #If requested, add fix the truth variable names
+        if self.fix_truth_variable_names :
+            for event_key in self._data.metadata["flavints_joined"] :
+                for var in self.truth_variables :
+                    if var in self._data[event_key] :
+                        new_var = self.truth_variable_prefix + var
+                        self._data[event_key][new_var] = self._data[event_key].pop(var)
+
         self.sample_hash = this_hash
         self._data.metadata['sample_hash'] = this_hash
         self._data.update_hash()
 
     @staticmethod
     def load_neutrino_events(config, dataset):
+
         nu_data = []
         if dataset == 'neutrinos%sgen_lvl' % SEP:
             gen_cfg      = from_file(config.get(dataset, 'gen_cfg_file'))
             name         = gen_cfg.get('general', 'name')
             datadir      = gen_cfg.get('general', 'datadir')
-            event_types  = split(gen_cfg.get('general', 'event_type'), sep=',')
-            weights      = split(gen_cfg.get('general', 'weights'), sep=',')
+            event_types  = split(gen_cfg.get('general', 'event_type'))
+            weights      = split(gen_cfg.get('general', 'weights'))
             weight_units = gen_cfg.get('general', 'weight_units')
-            keep_keys    = split(gen_cfg.get('general', 'keep_keys'), sep=',')
+            keep_keys    = split(gen_cfg.get('general', 'keep_keys'))
             aliases      = gen_cfg.items('aliases')
             logging.info('Extracting neutrino dataset "{0}" from generator '
                          'level sample "{1}"'.format(dataset, name))
@@ -283,13 +323,14 @@ class sample(Stage):
                 )
                 nu_data.append(flav_fidg)
         else:
+
             name         = config.get('general', 'name')
-            flavours     = split(config.get('neutrinos', 'flavours'), sep=',')
-            weights      = split(config.get('neutrinos', 'weights'), sep=',')
+            flavours     = split(config.get('neutrinos', 'flavours'))
+            weights      = split(config.get('neutrinos', 'weights'))
             weight_units = config.get('neutrinos', 'weight_units')
-            sys_list     = split(config.get('neutrinos', 'sys_list'), sep=',')
+            sys_list     = split(config.get('neutrinos', 'sys_list'))
             base_prefix  = config.get('neutrinos', 'baseprefix')
-            keep_keys    = split(config.get('neutrinos', 'keep_keys'), sep=',')
+            keep_keys    = split(config.get('neutrinos', 'keep_keys'))
             aliases      = config.items('neutrinos%saliases' % SEP)
             logging.info('Extracting neutrino dataset "{0}" from sample '
                          '"{1}"'.format(dataset, name))
@@ -316,8 +357,7 @@ class sample(Stage):
                     file_prefix = flav + prefixes[0]
                 else:
                     file_prefix = flav + config.get(dataset, 'file_prefix')
-                events_file = config.get('general', 'datadir') + \
-                    base_prefix + file_prefix
+                events_file = path.join( config.get('general', 'datadir'), base_prefix + file_prefix )
 
                 flav_fidg = sample.load_from_nu_file(
                     events_file, all_flavints, weights[idx], weight_units,
@@ -336,9 +376,9 @@ class sample(Stage):
         name         = config.get('general', 'name')
         weight       = config.get('muons', 'weight')
         weight_units = config.get('muons', 'weight_units')
-        sys_list     = split(config.get('muons', 'sys_list'), sep=',')
+        sys_list     = split(config.get('muons', 'sys_list'))
         base_prefix  = config.get('muons', 'baseprefix')
-        keep_keys    = split(config.get('muons', 'keep_keys'), sep=',')
+        keep_keys    = split(config.get('muons', 'keep_keys'))
         aliases      = config.items('muons%saliases' % SEP)
         if base_prefix == 'None':
             base_prefix = ''
@@ -390,9 +430,9 @@ class sample(Stage):
         name         = config.get('general', 'name')
         weight       = config.get('noise', 'weight')
         weight_units = config.get('noise', 'weight_units')
-        sys_list     = split(config.get('noise', 'sys_list'), sep=',')
+        sys_list     = split(config.get('noise', 'sys_list'))
         base_prefix  = config.get('noise', 'baseprefix')
-        keep_keys    = split(config.get('noise', 'keep_keys'), sep=',')
+        keep_keys    = split(config.get('noise', 'keep_keys'))
         aliases      = config.items('noise%saliases' % SEP)
         if base_prefix == 'None':
             base_prefix = ''

@@ -523,7 +523,10 @@ class Analysis(object):
         # Using scipy.optimize.minimize allows a whole host of minimizers to be
         # used.
         counter = Counter()
+        
         fit_history = []
+        fit_history.append( [metric] + [v.name for v in hypo_maker.params.free])
+
         start_t = time.time()
 
         if pprint and not blind:
@@ -835,7 +838,7 @@ class Analysis(object):
             fit_history.append(
                 [metric_val] + [v.value.m for v in hypo_maker.params.free]
             )
-
+            
         return sign*metric_val
 
     def _minimizer_callback(self, xk):
@@ -974,6 +977,7 @@ class Analysis(object):
             `debug_mode` will be set to 2.
 
         """
+
         if debug_mode not in (0, 1, 2):
             debug_mode = 2
 
@@ -1018,6 +1022,9 @@ class Analysis(object):
                         for (i, pname) in enumerate(param_names)]
         else:
             steplist = [[(param_names[0], val) for val in values[0]]]
+
+        #Number of steps must be > 0
+        assert len(steplist) > 0
 
         points_acc = []
         if only_points is not None:
@@ -1075,7 +1082,7 @@ class Analysis(object):
                     hypo_param_selections=hypo_param_selections,
                     hypo_asimov_dist=hypo_maker.get_outputs(return_sum=True),
                     metric=metric,
-                    **kwargs
+                    **dict([(k,v) for k,v in kwargs.items() if k not in ["pprint","reset_free","check_octant"]])
                 )
             else:
                 logging.info('Starting optimization since `profile` requested.')

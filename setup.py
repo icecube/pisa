@@ -157,16 +157,16 @@ def do_setup():
 
     # Prob3 oscillation code (pure C++, no CUDA)
     prob3cpu_module = Extension(
-        name='pisa.stages.osc.prob3._BargerPropagator',
+        name='pisa.stages.osc.prob3cc._BargerPropagator',
         sources=[
-            'pisa/stages/osc/prob3/BargerPropagator.i',
-            'pisa/stages/osc/prob3/BargerPropagator.cc',
-            'pisa/stages/osc/prob3/EarthDensity.cc',
-            'pisa/stages/osc/prob3/mosc.c',
-            'pisa/stages/osc/prob3/mosc3.c'
+            'pisa/stages/osc/prob3cc/BargerPropagator.i',
+            'pisa/stages/osc/prob3cc/BargerPropagator.cc',
+            'pisa/stages/osc/prob3cc/EarthDensity.cc',
+            'pisa/stages/osc/prob3cc/mosc.c',
+            'pisa/stages/osc/prob3cc/mosc3.c'
         ],
         include_dirs=[
-            'pisa/stages/osc/prob3/'
+            'pisa/stages/osc/prob3cc/'
         ],
         extra_compile_args=['-Wall', '-O3', '-fPIC'],
         swig_opts=['-c++'],
