@@ -4,6 +4,8 @@ from numba import SmartArray
 from pisa import *
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
+from pisa.core.binning import MultiDimBinning
+from pisa.core.map import Map, MapSet
 
 
 class dummy_event_loader(PiStage):
@@ -86,7 +88,7 @@ class dummy_event_loader(PiStage):
         event_weights = np.random.rand(nevts).astype(FTYPE)
         event_weights = SmartArray(event_weights)
         
-        weights = SmartArray(np.empty(nevts, dtype))
+        weights = SmartArray(np.empty(nevts, dtype=FTYPE))
 
         numu = {'true_energy' : energy,
                 'true_coszen' : cz,
@@ -98,7 +100,59 @@ class dummy_event_loader(PiStage):
         assert self.events is None
         self.events = {'numu': numu}
 
-    @staticmethod
-    def apply_kernel(event_weight, weight):
-        weight[0] = event_weight
+    #@staticmethod
+    #def apply_kernel(event_weight, weight):
+    #    weight[0] = event_weight
 
+    #def apply_vectorizer(self):
+    #    if self.apply_specs == 'events':
+    #        for name, val in self.events.items():
+    #            self.apply_to_arrays(val['true_energy'], val['true_coszen'], val['weights'])
+    #    elif isinstance(self.apply_specs, MultiDimBinning):
+    #        if self.events is None:
+    #            raise TypeError('Cannot return Map with no inputs and no events present')
+    #        else:
+    #            e = self.apply_specs['true_energy'].bin_centers.m
+    #            cz = self.apply_specs['ture_coszen'].bin_centers.m
+    #            apply_e_vals, apply_cz_vas = 
+
+    #def get_apply_array(self, name, key):
+    #    if self.apply_specs is None:
+    #        return None
+    #    elif self.apply_specs == 'events':
+    #        return self.events[name][key]
+    #    elif isinstance(self.apply_specs, MultiDimBinning):
+
+
+
+
+    def apply(self, inputs=None):
+        if inputs is None:
+            if self.apply_specs is None:
+                pass
+
+            elif self.apply_specs == 'events':
+                if self.events is None:
+                    raise TypeError('Cannot apply to events with no events present')
+                # nothing else to do
+            elif isinstance(self.apply_specs, MultiDimBinning):
+                if self.events is None:
+                    raise TypeError('Cannot return Map with no inputs and no events present')
+                else:
+                    # run apply_kernel on events array and a private output array
+                    # ToDo: private weights array (or should it be normal weights array?)
+                    binning = self.apply_specs
+                    bin_edges = [edges.magnitude for edges in binning.bin_edges]
+                    binning_cols = binning.names
+
+                    maps = []
+                    for name, evts in self.events.items():
+                        sample = [evts[colname].get('host') for colname in binning_cols]
+                        hist, _ = np.histogramdd(sample=sample,
+                                                 weights=evts['weights'].get('host'),
+                                                 bins=bin_edges,
+                                                 )
+
+                        maps.append(Map(name=name, hist=hist, binning=binning))
+        self.outputs = MapSet(maps)
+        return self.outputs
