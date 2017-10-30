@@ -105,13 +105,13 @@ class pi_prob3(PiStage):
         elif isinstance(self.calc_specs, MultiDimBinning):
             # set up the map grid
             self.grid_values = {}
-            print self.calc_specs
             e = self.calc_specs['true_energy'].weighted_centers.m.astype(FTYPE)
             cz = self.calc_specs['true_coszen'].weighted_centers.m.astype(FTYPE)
             nevts = len(e) * len(cz)
             e_vals, cz_vals = np.meshgrid(e, cz)
             self.grid_values['true_energy'] = SmartArray(e_vals.ravel())
             self.grid_values['true_coszen'] = SmartArray(cz_vals.ravel())
+            self.grid_values['nubar'] = 1
             myLayers.calcLayers(self.grid_values['true_coszen'].get('host'))
             numberOfLayers = myLayers.n_layers
             densities = myLayers.density.reshape((nevts,myLayers.max_layers))
@@ -126,26 +126,33 @@ class pi_prob3(PiStage):
 
     def compute(self):
 
+        if target == 'cuda':
+            where='gpu'
+        else:
+            where='host'
+
         if self.calc_specs == 'events':
             for name, val in self.events.items():
                 propagate_array(self.dm,
                                 self.mix,
                                 self.nsi_eps,
                                 val['nubar'],
-                                val['energy'].get(where),
+                                val['true_energy'].get(where),
                                 val['densities'].get(where),
                                 val['distances'].get(where),
                                 out=val['probability'].get(where))
+                val['probability'].mark_changed(where)
 
         elif isinstance(self.calc_specs, MultiDimBinning):
             propagate_array(self.dm,
                             self.mix,
                             self.nsi_eps,
                             self.grid_values['nubar'],
-                            self.grid_values['energy'].get(where),
+                            self.grid_values['true_energy'].get(where),
                             self.grid_values['densities'].get(where),
                             self.grid_values['distances'].get(where),
                             out=self.grid_values['probability'].get(where))
+            self.grid_values['probability'].mark_changed(where)
 
     #@staticmethod
     #def apply_kernel(event_weight, weight):
@@ -174,7 +181,27 @@ class pi_prob3(PiStage):
 
 
     def apply(self, inputs=None):
-        pass
+
+        self.compute()
+
+        if isinstance(self.apply_specs, MultiDimBinning):
+            maps = []
+            assert self.calc_specs == self.apply_specs, 'cannot do different binnings yet'
+            flavs = ['e', 'mu', 'tau']
+            hists = self.grid_values['probability'].get('host')
+            print hists
+            n_e = self.apply_specs['true_energy'].num_bins
+            n_cz = self.apply_specs['true_coszen'].num_bins
+            for i in range(3):
+                for j in range(3):
+                    hist = hists[:,i,j]
+                    hist = hist.reshape(n_e, n_cz)
+                    maps.append(Map(name='prob_%s_to_%s'%(flavs[i],flavs[j]), hist=hist, binning=self.apply_specs))
+            self.outputs = MapSet(maps)
+            return self.outputs
+
+
+
         #if inputs is None:
         #    if self.apply_specs is None:
         #        pass

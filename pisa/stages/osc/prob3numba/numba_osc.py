@@ -796,8 +796,7 @@ def osc_probs_layers_kernel(dm,
                     copy_matrix(tmp, transition_product)
         
     # loop on neutrino types, and compute probability for neutrino i:
-    # We actually don't care about nutau -> anything since the flux there is zero!
-    for i in range(2):
+    for i in range(3):
         for j in range(3):
             raw_input_psi[j] = 0.
 
