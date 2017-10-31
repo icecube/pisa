@@ -12,7 +12,6 @@ __all__ = ['myjit',
            'matrix_dot_vector',
            'clear_matrix',
            'copy_matrix',
-           'target',
            'cuda',
            'ctype',
            'ftype'
@@ -26,13 +25,9 @@ import inspect
 from numba import jit, float64, complex64, int32, float32, complex128
 import math, cmath
 
-from pisa import FTYPE
+from pisa import FTYPE, TARGET
 
-target='cuda'
-#target='parallel'
-#target='cpu'
-
-if target == 'cuda':
+if TARGET == 'cuda':
     from numba import cuda
     if FTYPE == np.float64:
         ctype = complex128
@@ -60,7 +55,7 @@ def myjit(f):
     near future numba will support numpy array allocation and this will
     not be necessary anymore
     '''
-    if target == 'cuda':
+    if TARGET == 'cuda':
         return cuda.jit(f, device=True)
     else:
         source = inspect.getsource(f).splitlines()
@@ -168,7 +163,7 @@ def test_copy_matrix():
 
 if __name__=='__main__':
     
-    assert target == 'cpu', "Cannot test functions on GPU, set target='cpu'"
+    assert TARGET == 'cpu', "Cannot test functions on GPU, set PISA_TARGET to 'cpu'"
     test_matrix_dot_matrix()
     test_matrix_dot_vector()
     test_clear_matrix()

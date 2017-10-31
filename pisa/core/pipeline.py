@@ -708,7 +708,8 @@ def main(return_outputs=False):
                 my_plotter.ratio = True
                 my_plotter.plot_2d_array(
                     outputs,
-                    fname=stg_svc + '__output'
+                    fname=stg_svc + '__output',
+                    cmap='RdBu',
                 )
         except ValueError as exc:
             logging.error('Failed to save plot to format %s. See exception'

@@ -16,6 +16,7 @@ from pint import UnitRegistry
 
 from ._version import get_versions
 
+
 PYCUDA_AVAIL = False
 try:
     from pycuda import driver
@@ -77,7 +78,7 @@ __all__ = [
     # Constants
     'PYCUDA_AVAIL', 'NUMBA_AVAIL', 'NUMBA_CUDA_AVAIL', 'OMP_NUM_THREADS',
     'FTYPE', 'HASH_SIGFIGS', 'EPSILON', 'C_FTYPE', 'C_PRECISION_DEF',
-    'CACHE_DIR'
+    'CACHE_DIR', 'TARGET',
 ]
 
 
@@ -112,6 +113,42 @@ if 'PISA_FTYPE' in os.environ:
             %(PISA_FTYPE, FLOAT32_STRINGS, FLOAT64_STRINGS)
         )
 del FLOAT32_STRINGS, FLOAT64_STRINGS
+
+# set default target
+if NUMBA_CUDA_AVAIL:
+    TARGET = 'cuda'
+else:
+    TARGET = 'cpu'
+
+cpu_targets = ['cpu', 'numba']
+gpu_targets = ['cuda', 'gpu', 'numba-cuda']
+
+if 'PISA_TARGET' in os.environ:
+    PISA_TARGET = os.environ['PISA_TARGET']
+    if PISA_TARGET.strip().lower() in gpu_targets:
+        if not NUMBA_CUDA_AVAIL:
+            sys.stderr.write('\n')
+            raise ValueError(
+                'Environment var PISA_TARGET="%s" set, even though numba-cuda is not available\n'
+                %(PISA_TARGET)
+            )
+        else:
+            TARGET = 'cuda'
+    elif PISA_TARGET.strip().lower() in cpu_targets:
+        TARGET = 'cpu'
+    else:
+        sys.stderr.write('\n')
+        raise ValueError(
+            'Environment var PISA_TARGTE="%s" is unrecognized.\n'
+            '--> For cpu set PISA_FTYPE to one of %s\n'
+            '--> For gpu set PISA_FTYPE to one of %s\n'
+            %(PISA_TARGET, cpu_targets, gpu_targets)
+        )
+
+del cpu_targets, gpu_targets
+
+
+# or overwrite with env var
 
 
 # Define HASH_SIGFIGS to set hashing precision based on FTYPE above; value here
@@ -158,6 +195,12 @@ elif FTYPE == np.float64:
 else:
     raise ValueError('FTYPE must be one of `np.float32` or `np.float64`. Got'
                      ' %s instead.' %FTYPE)
+
+if TARGET == 'cpu':
+    sys.stderr.write('PISA running on CPU only.\n')
+elif TARGET == 'cuda':
+    sys.stderr.write('PISA running on CPU+GPU.\n')
+
 
 # Default to single thread, then try to read from env
 OMP_NUM_THREADS = 1

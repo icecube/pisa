@@ -8,6 +8,8 @@ from __future__ import print_function, division
 __all__ = ['get_transition_matrix',
            'osc_probs_layers_kernel',
            'osc_probs_vacuum_kernel',
+           'propagate_array',
+           'propagate_array_vacuum'
            ]
 __version__ = '0.1'
 __author__ = 'Philipp Eller (pder@psu.edu)'
@@ -15,8 +17,9 @@ __author__ = 'Philipp Eller (pder@psu.edu)'
 import math, cmath
 
 import numpy as np
-from numba import jit, float64, complex64, int32, float32, complex128
+from numba import jit, float64, complex64, int32, float32, complex128, guvectorize
 
+from pisa import FTYPE, TARGET
 from numba_tools import *
 
 @myjit
@@ -831,10 +834,27 @@ def test_osc_probs_layers_kernel():
                            distance_in_layer,
                            osc_probs)
 
+# define numba functions
+
+if FTYPE == np.float64:
+    signature = '(f8[:,:], c16[:,:], c16[:,:], i4, f8, f8[:], f8[:], f8[:,:])'
+    signature_vac = '(f8[:,:], c16[:,:], i4, f8, f8[:], f8[:,:])'
+else:
+    signature = '(f4[:,:], c8[:,:], c8[:,:], i4, f4, f4[:], f4[:], f4[:,:])'
+    signature_vac = '(f4[:,:], c8[:,:], i4, f4, f4[:], f4[:,:])'
+
+@guvectorize([signature], '(a,b),(c,d),(e,f),(),(),(g),(h)->(a,b)', target=TARGET)
+def propagate_array(dm, mix, nsi_eps, nubar, energy, densities, distances, probability):
+    osc_probs_layers_kernel(dm, mix, nsi_eps, nubar, energy, densities, distances, probability)
+
+@guvectorize([signature_vac], '(a,b),(c,d),(),(),(i)->(a,b)', target=TARGET)
+def propagate_array_vacuum(dm, mix, nubar, energy, distances, probability):
+    osc_probs_vacuum_kernel(dm, mix, nubar, energy, distances, probability)
+
 
 if __name__=='__main__':
     
-    assert target == 'cpu', "Cannot test functions on GPU, set target='cpu'"
+    assert TARGET == 'cpu', "Cannot test functions on GPU, set PISA_TARGET to 'cpu'"
     test_get_H_vac()
     test_get_H_mat()
     test_get_dms()
