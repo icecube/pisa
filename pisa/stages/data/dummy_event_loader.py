@@ -32,7 +32,9 @@ class dummy_event_loader(PiStage):
                  apply_specs=None,
                  ):
 
-        expected_params = ('n_events')
+        expected_params = ('n_events',
+                           'seed',
+                           )
         input_names = ()
         output_names = ()
 
@@ -54,35 +56,38 @@ class dummy_event_loader(PiStage):
 
     def setup(self):
 
-        # create some dumb events
+        # create some random events
 
-        # number of points for E x CZ grid
         n_events = int(self.params.n_events.value.m)
 
-        # input arrays
-        # E and CZ
-        energy = np.power(10, np.random.rand(n_events).astype(FTYPE) * 3)
-        cz = np.random.rand(n_events).astype(FTYPE) * 2 - 1
-        # nubar
-        nubar = np.ones(n_events, dtype=np.int32)
-        # weights
-        event_weights = np.random.rand(n_events).astype(FTYPE)
-        weights = np.ones(n_events, dtype=FTYPE)
-        flux_nue = np.zeros(n_events, dtype=FTYPE)
-        flux_numu = np.ones(n_events, dtype=FTYPE)
+        seed = int(self.params.seed.value.m)
+        np.random.seed(seed)
 
-        
-        numu = {'true_energy' : SmartArray(energy),
-                'true_coszen' : SmartArray(cz),
-                'nubar' : SmartArray(nubar),
-                'event_weights' : SmartArray(event_weights),
-                'weights' : SmartArray(weights),
-                'flux_nue' : SmartArray(flux_nue),
-                'flux_numu' : SmartArray(flux_numu),
-                }
+        for name in ['nue', 'numu', 'nutau']:
+            # input arrays
+            # E and CZ
+            energy = np.power(10, np.random.rand(n_events).astype(FTYPE) * 3)
+            cz = np.random.rand(n_events).astype(FTYPE) * 2 - 1
+            # nubar
+            nubar = np.ones(n_events, dtype=np.int32)
+            # weights
+            event_weights = np.random.rand(n_events).astype(FTYPE)
+            weights = np.ones(n_events, dtype=FTYPE)
+            flux_nue = np.zeros(n_events, dtype=FTYPE)
+            flux_numu = np.ones(n_events, dtype=FTYPE)
 
-        # add the events
-        self.events['numu'] = numu
+            
+            arrays = {'true_energy' : SmartArray(energy),
+                      'true_coszen' : SmartArray(cz),
+                      'nubar' : SmartArray(nubar),
+                      'event_weights' : SmartArray(event_weights),
+                      'weights' : SmartArray(weights),
+                      'flux_nue' : SmartArray(flux_nue),
+                      'flux_numu' : SmartArray(flux_numu),
+                      }
+
+            # add the events
+            self.events[name] = arrays
 
 
     def apply(self, inputs=None):

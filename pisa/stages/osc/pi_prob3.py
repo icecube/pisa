@@ -4,12 +4,13 @@ from numba import guvectorize, SmartArray
 from pisa import *
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
+from pisa.utils.profiler import profile
 from pisa.core.binning import MultiDimBinning
 from pisa.core.map import Map, MapSet
 from pisa.stages.osc.osc_params import OscParams
 from pisa.stages.osc.layers import Layers
-from prob3numba.numba_osc import *
-from prob3numba.numba_tools import *
+from pisa.stages.osc.prob3numba.numba_osc import *
+from pisa.stages.osc.prob3numba.numba_tools import *
 
 
 class pi_prob3(PiStage):
@@ -95,7 +96,7 @@ class pi_prob3(PiStage):
             cz = self.calc_specs['true_coszen'].weighted_centers.m.astype(FTYPE)
             nevts = len(e) * len(cz)
             e_vals, cz_vals = np.meshgrid(e, cz)
-            myLayers.calcLayers(self.grid_values['true_coszen'].get('host'))
+            myLayers.calcLayers(cz_vals.ravel())
             numberOfLayers = myLayers.n_layers
             densities = myLayers.density.reshape((nevts,myLayers.max_layers))
             distances = myLayers.distance.reshape((nevts,myLayers.max_layers))
@@ -111,7 +112,7 @@ class pi_prob3(PiStage):
             self.grid_values['probability_nu'] = SmartArray(probability_nu)
 
 
-
+    @profile
     def calc_probs(self, nubar, e_array, rho_array, len_array, out):
         ''' wrapper to execute osc. calc '''
         propagate_array(self.dm,
@@ -176,19 +177,50 @@ class pi_prob3(PiStage):
                     raise NotImplementedError
 
                 elif self.input_mode == 'events':
+                    # histogram events and then do map thing
                     raise NotImplementedError
 
 
             elif self.apply_mode == 'events':
-                assert self.inputs is None, 'This would ignore the input maps, not working right now'
-                # do LUT
-                raise NotImplementedError
-                if self.input_mode is None:
+                if self.input_mode == 'events':
+                    # un-histogram weights
+                    binning = self.calc_specs
+                    bin_edges = [edges.magnitude for edges in binning.bin_edges]
+                    binning_cols = binning.names
+                    # redirect inputs to outputs
+                    self.outputs = self.inputs
+                    for name, evts in self.events.items():
+                        sample = [evts[colname].get('host') for colname in binning_cols]
+                        if 'tau' in name:
+                            end_flav = 2
+                        elif 'mu' in name:
+                            end_flav = 1
+                        else:
+                            end_flav = 0
+                        # ToDo nu/nubar
+                        hist = self.grid_values['probability_nu'].get('host')[:,0,end_flav]
+                        n_e = self.calc_specs['true_energy'].num_bins
+                        n_cz = self.calc_specs['true_coszen'].num_bins
+                        hist = hist.reshape(n_e, n_cz)
+                        prob_e = lookup(sample=sample,
+                                        hist=hist,
+                                        bin_edges=bin_edges
+                                        )
+                        hist = self.grid_values['probability_nu'].get('host')[:,1,end_flav]
+                        hist = hist.reshape(n_e, n_cz)
+                        prob_mu = lookup(sample=sample,
+                                        hist=hist,
+                                        bin_edges=bin_edges
+                                        )
+                        weights = evts['weights'].get('host')
+                        weights *= prob_e * evts['flux_nue'].get('host') + prob_mu * evts['flux_numu'].get('host')
+                        evts['weights'].mark_changed('host')
+                    return None
+
                     raise NotImplementedError
                 elif self.input_mode == 'binned':
                     raise NotImplementedError
-
-                elif self.input_mode == 'events':
+                elif self.input_mode is None:
                     raise NotImplementedError
 
 
@@ -196,20 +228,11 @@ class pi_prob3(PiStage):
             if self.apply_mode == 'events':
                 # redirect inputs to outputs
                 self.outputs = self.inputs
-                print self.events
 
                 for name, evts in self.events.items():
-                    # this is shitty, needs to change
-                    if 'tau' in name:
-                        end_flav = 2
-                    elif 'mu' in name:
-                        end_flav = 1
-                    else:
-                        end_flav = 0
-                    # calc weight from initial flux * probability it oscillated into event's flavour
-                    # we can define a function that does that on CPU or GPU later
-                    evts['weight'] = evts['flux_nue'].get('host') * evts['probability'].get('host')[:,0,end_flav] + evts['flux_numu'].get('host') * evts['probability'].get('host')[:,1,end_flav]
-                    evts['weight'].mark_changed('host')
+                    weights = evts['weights'].get('host')
+                    weights *= self.array_weights(name, evts)
+                    evts['weights'].mark_changed('host')
                 return None
 
             elif self.apply_mode == 'binned':
@@ -218,16 +241,9 @@ class pi_prob3(PiStage):
                     binning = self.apply_specs
                     bin_edges = [edges.magnitude for edges in binning.bin_edges]
                     binning_cols = binning.names
-
                     maps = []
                     for name, evts in self.events.items():
-                        if 'tau' in name:
-                            end_flav = 2
-                        elif 'mu' in name:
-                            end_flav = 1
-                        else:
-                            end_flav = 0
-                        hist_weights = evts['flux_nue'].get('host') * evts['probability'].get('host')[:,0,end_flav] + evts['flux_numu'].get('host') * evts['probability'].get('host')[:,1,end_flav]
+                        hist_weights = self.array_weights(name, evts)
                         sample = [evts[colname].get('host') for colname in binning_cols]
                         hist, _ = np.histogramdd(sample=sample,
                                                  weights=hist_weights,
@@ -242,3 +258,44 @@ class pi_prob3(PiStage):
                     raise NotImplementedError
         return self.outputs
 
+    def array_weights(self, name, evts):
+        # this is shitty, needs to change
+        # calc weight from initial flux * probability it oscillated into event's flavour
+        # we can define a function that does that on CPU or GPU later
+        if 'tau' in name:
+            end_flav = 2
+        elif 'mu' in name:
+            end_flav = 1
+        else:
+            end_flav = 0
+        return evts['flux_nue'].get('host') * evts['probability'].get('host')[:,0,end_flav] + evts['flux_numu'].get('host') * evts['probability'].get('host')[:,1,end_flav]
+
+def lookup(sample, hist, bin_edges):
+    '''
+    the inverse of histograming
+    2d method right now
+    and of course this is super inefficient
+    '''
+    out = np.empty_like(sample[0])
+    assert len(sample) == 2, 'can only do 2d at the moment'
+    for i in xrange(len(sample[0])):
+        idx_x = find_index(sample[0][i], bin_edges[0])
+        idx_y = find_index(sample[1][i], bin_edges[1])
+        out[i] = hist[idx_x,idx_y]
+    return out
+
+
+def find_index(x, bin_edges):
+    ''' binary search '''
+    first = 0
+    last = len(bin_edges) - 2
+    while (first <= last):
+        i = int((first + last)/2)
+        if x >= bin_edges[i]:
+            if (x < bin_edges[i+1]) or (x < bin_edges[-1] and i == len(bin_edges) - 2):
+                break
+            else:
+                first = i + 1
+        else:
+            last = i - 1
+    return i

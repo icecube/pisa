@@ -146,7 +146,7 @@ class Pipeline(object):
 
         """
         stages = []
-        events = {}
+        events = OrderedDict()
         for stage_num, ((stage_name, service_name), settings) \
                 in enumerate(self.config.items()):
             try:
