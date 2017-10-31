@@ -640,8 +640,8 @@ def parse_pipeline_config(config):
                 if value is None:
                     service_kwargs[fullname] = value
                 # is it evts?
-                elif value == 'evnts':
-                    service_kwargs[fullname] = value
+                elif value in ['evnts', 'events']:
+                    service_kwargs[fullname] = 'events'
                 # so it gotta be a binning
                 else:
                     service_kwargs[fullname] = binning_dict[value]

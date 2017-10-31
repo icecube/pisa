@@ -14,7 +14,8 @@ __all__ = ['myjit',
            'copy_matrix',
            'cuda',
            'ctype',
-           'ftype'
+           'ftype',
+           'WHERE',
            ]
 __version__ = '0.1'
 __author__ = 'Philipp Eller (pde3@psu.edu)'
@@ -27,6 +28,7 @@ import math, cmath
 
 from pisa import FTYPE, TARGET
 
+# the `WHERE` variable is for usage with smart arrays
 if TARGET == 'cuda':
     from numba import cuda
     if FTYPE == np.float64:
@@ -35,6 +37,7 @@ if TARGET == 'cuda':
     elif FTYPE == np.float32:
         ctype = complex64
         ftype = float32
+    WHERE='gpu'
 else:
     if FTYPE == np.float64:
         ctype = np.complex128
@@ -44,6 +47,7 @@ else:
         ftype = np.float32
     cuda = lambda: None
     cuda.jit = lambda x: x
+    WHERE='host'
 
 def myjit(f):
     '''

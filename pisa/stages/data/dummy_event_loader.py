@@ -32,7 +32,7 @@ class dummy_event_loader(PiStage):
                  apply_specs=None,
                  ):
 
-        expected_params = ('n_points')
+        expected_params = ('n_events')
         input_names = ()
         output_names = ()
 
@@ -49,110 +49,69 @@ class dummy_event_loader(PiStage):
                                                 apply_specs=apply_specs,
                                                 )
 
-        # that stage doesn't act on anything, it rather just loads events -> this inot base class
-        assert input_specs is None
-        assert calc_specs is None
-        #assert apply_specs is None
-
-        self.compute_args = None
-        # args to load into apply function
-        self.apply_args = ['event_weights']
-        # can be python, numba and numba-cuda
-        self.kernel_support = ['python']
-    
+        # doesn't calculate anything
+        assert self.calc_mode is None
 
     def setup(self):
 
         # create some dumb events
 
         # number of points for E x CZ grid
-        points = int(self.params.n_points.value.m)
-        nevts = points**2
+        n_events = int(self.params.n_events.value.m)
 
         # input arrays
         # E and CZ
-        energy_points = np.logspace(0,3,points, dtype=FTYPE)
-        cz_points = np.linspace(-1,1,points, dtype=FTYPE)
-        energy, cz = np.meshgrid(energy_points, cz_points)
-        energy = energy.ravel()
-        energy = SmartArray(energy)
-        cz = cz.ravel()
-        cz = SmartArray(cz)
+        energy = np.power(10, np.random.rand(n_events).astype(FTYPE) * 3)
+        cz = np.random.rand(n_events).astype(FTYPE) * 2 - 1
+        # nubar
+        nubar = np.ones(n_events, dtype=np.int32)
+        # weights
+        event_weights = np.random.rand(n_events).astype(FTYPE)
+        weights = np.ones(n_events, dtype=FTYPE)
+        flux_nue = np.zeros(n_events, dtype=FTYPE)
+        flux_numu = np.ones(n_events, dtype=FTYPE)
 
-        # nu /nu-bar
-        nubar = np.ones(nevts, dtype=np.int32)
-        nubar = SmartArray(nubar)
-
-        # event_weights
-        #event_weights = np.ones(nevts, dtype=FTYPE)
-        event_weights = np.random.rand(nevts).astype(FTYPE)
-        event_weights = SmartArray(event_weights)
         
-        weights = SmartArray(np.empty(nevts, dtype=FTYPE))
-
-        numu = {'true_energy' : energy,
-                'true_coszen' : cz,
-                'nubar' : nubar,
-                'event_weights' : event_weights,
-                'weights' : weights,
+        numu = {'true_energy' : SmartArray(energy),
+                'true_coszen' : SmartArray(cz),
+                'nubar' : SmartArray(nubar),
+                'event_weights' : SmartArray(event_weights),
+                'weights' : SmartArray(weights),
+                'flux_nue' : SmartArray(flux_nue),
+                'flux_numu' : SmartArray(flux_numu),
                 }
 
-        assert self.events is None
-        self.events = {'numu': numu}
-
-    #@staticmethod
-    #def apply_kernel(event_weight, weight):
-    #    weight[0] = event_weight
-
-    #def apply_vectorizer(self):
-    #    if self.apply_specs == 'events':
-    #        for name, val in self.events.items():
-    #            self.apply_to_arrays(val['true_energy'], val['true_coszen'], val['weights'])
-    #    elif isinstance(self.apply_specs, MultiDimBinning):
-    #        if self.events is None:
-    #            raise TypeError('Cannot return Map with no inputs and no events present')
-    #        else:
-    #            e = self.apply_specs['true_energy'].bin_centers.m
-    #            cz = self.apply_specs['ture_coszen'].bin_centers.m
-    #            apply_e_vals, apply_cz_vas = 
-
-    #def get_apply_array(self, name, key):
-    #    if self.apply_specs is None:
-    #        return None
-    #    elif self.apply_specs == 'events':
-    #        return self.events[name][key]
-    #    elif isinstance(self.apply_specs, MultiDimBinning):
-
-
+        # add the events
+        self.events['numu'] = numu
 
 
     def apply(self, inputs=None):
         if inputs is None:
-            if self.apply_specs is None:
-                pass
+            if self.apply_mode is None:
+                # nothing to be applied
+                self.outputs = self.inputs
 
-            elif self.apply_specs == 'events':
-                if self.events is None:
-                    raise TypeError('Cannot apply to events with no events present')
-                # nothing else to do
-            elif isinstance(self.apply_specs, MultiDimBinning):
-                if self.events is None:
-                    raise TypeError('Cannot return Map with no inputs and no events present')
-                else:
-                    # run apply_kernel on events array and a private output array
-                    # ToDo: private weights array (or should it be normal weights array?)
-                    binning = self.apply_specs
-                    bin_edges = [edges.magnitude for edges in binning.bin_edges]
-                    binning_cols = binning.names
+            elif self.apply_mode == 'events':
+                self.outputs = self.inputs
+                # apply weights
+                for name, val in self.events.items():
+                    val['weights'] = val['weights'].get('host') * val['event_weights'].get('host')
 
-                    maps = []
-                    for name, evts in self.events.items():
-                        sample = [evts[colname].get('host') for colname in binning_cols]
-                        hist, _ = np.histogramdd(sample=sample,
-                                                 weights=evts['weights'].get('host'),
-                                                 bins=bin_edges,
-                                                 )
+            elif self.apply_mode == 'binned':
+                # run apply_kernel on events array and a private output array
+                # ToDo: private weights array (or should it be normal weights array?)
+                binning = self.apply_specs
+                bin_edges = [edges.magnitude for edges in binning.bin_edges]
+                binning_cols = binning.names
 
-                        maps.append(Map(name=name, hist=hist, binning=binning))
-        self.outputs = MapSet(maps)
+                maps = []
+                for name, evts in self.events.items():
+                    sample = [evts[colname].get('host') for colname in binning_cols]
+                    hist, _ = np.histogramdd(sample=sample,
+                                             weights=evts['weights'].get('host'),
+                                             bins=bin_edges,
+                                             )
+
+                    maps.append(Map(name=name, hist=hist, binning=binning))
+                self.outputs = MapSet(maps)
         return self.outputs

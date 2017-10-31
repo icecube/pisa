@@ -70,6 +70,36 @@ class PiStage(BaseStage):
         self.apply_specs = apply_specs
         self.events = events
 
+        if isinstance(self.input_specs, MultiDimBinning):
+            self.input_mode = 'binned'
+        elif self.input_specs == 'events':
+            self.input_mode = 'events'
+        elif self.input_specs is None:
+            self.input_mode = None
+        else:
+            raise ValueError('Not understood input_specs %s'%input_specs)
+
+        if isinstance(self.calc_specs, MultiDimBinning):
+            self.calc_mode = 'binned'
+        elif self.calc_specs == 'events':
+            self.calc_mode = 'events'
+        elif self.calc_specs is None:
+            self.calc_mode = None
+        else:
+            raise ValueError('Not understood calc_specs %s'%calc_specs)
+
+        if isinstance(self.apply_specs, MultiDimBinning):
+            self.apply_mode = 'binned'
+        elif self.apply_specs == 'events':
+            self.apply_mode = 'events'
+            if self.events == {}:
+                raise ValueError('Cannot do apply mode `events` with no events present')
+        elif self.apply_specs is None:
+            self.apply_mode = None
+        else:
+            raise ValueError('Not understood apply_specs %s'%apply_specs)
+
+
     def setup(self):
         pass
 

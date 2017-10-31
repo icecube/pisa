@@ -146,6 +146,7 @@ class Pipeline(object):
 
         """
         stages = []
+        events = {}
         for stage_num, ((stage_name, service_name), settings) \
                 in enumerate(self.config.items()):
             try:
@@ -196,6 +197,10 @@ class Pipeline(object):
 
                 # Append service to pipeline
 
+                if self._version == 'pi':
+                    service.events = events
+                # add events object
+                
                 # run setup on service
                 service.setup()
 
