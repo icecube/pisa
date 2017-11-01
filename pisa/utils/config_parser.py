@@ -634,7 +634,7 @@ def parse_pipeline_config(config):
                 service_kwargs[fullname] = binning_dict[value]
 
             # it's gonna be a PI stage
-            elif '_spec' in fullname:
+            elif '_specs' in fullname:
                 value = parse_string_literal(value)
                 # is it None?
                 if value is None:

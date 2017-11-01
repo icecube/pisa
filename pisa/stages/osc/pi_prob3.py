@@ -34,7 +34,7 @@ class pi_prob3(PiStage):
                  debug_mode=None,
                  input_specs=None,
                  calc_specs=None,
-                 apply_specs=None,
+                 output_specs=None,
                  ):
 
         expected_params = ()
@@ -51,12 +51,12 @@ class pi_prob3(PiStage):
                                        debug_mode=debug_mode,
                                        input_specs=input_specs,
                                        calc_specs=calc_specs,
-                                       apply_specs=apply_specs,
+                                       output_specs=output_specs,
                                        )
 
         #assert input_specs is not None
         assert calc_specs is not None
-        assert apply_specs is not None
+        assert output_specs is not None
 
 
     def setup(self):
@@ -127,7 +127,6 @@ class pi_prob3(PiStage):
         out.mark_changed(WHERE)
 
     def compute(self):
-
         if self.calc_mode == 'events':
             for name, val in self.events.items():
                 self.calc_probs(val['nubar'],
@@ -152,24 +151,24 @@ class pi_prob3(PiStage):
         if not self.calc_mode is None:
             self.compute()
         
-        if self.apply_mode is None:
+        if self.output_mode is None:
             return self.inputs
 
         if self.calc_mode == 'binned':
-            if self.apply_mode == 'binned':
-                assert self.calc_specs == self.apply_specs, 'cannot do different binnings yet'
+            if self.output_mode == 'binned':
+                assert self.calc_specs == self.output_specs, 'cannot do different binnings yet'
                 if self.input_mode is None:
                     maps = []
                     flavs = ['e', 'mu', 'tau']
                     hists = self.grid_values['probability_nu'].get('host')
                     print hists
-                    n_e = self.apply_specs['true_energy'].num_bins
-                    n_cz = self.apply_specs['true_coszen'].num_bins
+                    n_e = self.output_specs['true_energy'].num_bins
+                    n_cz = self.output_specs['true_coszen'].num_bins
                     for i in range(3):
                         for j in range(3):
                             hist = hists[:,i,j]
                             hist = hist.reshape(n_e, n_cz)
-                            maps.append(Map(name='prob_%s_to_%s'%(flavs[i],flavs[j]), hist=hist, binning=self.apply_specs))
+                            maps.append(Map(name='prob_%s_to_%s'%(flavs[i],flavs[j]), hist=hist, binning=self.output_specs))
                     self.outputs = MapSet(maps)
                     return self.outputs
 
@@ -181,7 +180,7 @@ class pi_prob3(PiStage):
                     raise NotImplementedError
 
 
-            elif self.apply_mode == 'events':
+            elif self.output_mode == 'events':
                 if self.input_mode == 'events':
                     # un-histogram weights
                     binning = self.calc_specs
@@ -225,7 +224,7 @@ class pi_prob3(PiStage):
 
 
         if self.calc_mode == 'events':
-            if self.apply_mode == 'events':
+            if self.output_mode == 'events':
                 # redirect inputs to outputs
                 self.outputs = self.inputs
 
@@ -235,10 +234,10 @@ class pi_prob3(PiStage):
                     evts['weights'].mark_changed('host')
                 return None
 
-            elif self.apply_mode == 'binned':
+            elif self.output_mode == 'binned':
                 if self.input_mode is None:
                     # histogram event weights
-                    binning = self.apply_specs
+                    binning = self.output_specs
                     bin_edges = [edges.magnitude for edges in binning.bin_edges]
                     binning_cols = binning.names
                     maps = []
@@ -278,13 +277,10 @@ def lookup(sample, hist, bin_edges):
     '''
     out = np.empty_like(sample[0])
     assert len(sample) == 2, 'can only do 2d at the moment'
-    for i in xrange(len(sample[0])):
-        idx_x = find_index(sample[0][i], bin_edges[0])
-        idx_y = find_index(sample[1][i], bin_edges[1])
-        out[i] = hist[idx_x,idx_y]
+    lookup_vectorized_2d(sample[0], sample[1], hist, bin_edges[0], bin_edges[1], out=out)
     return out
 
-
+@myjit
 def find_index(x, bin_edges):
     ''' binary search '''
     first = 0
@@ -299,3 +295,16 @@ def find_index(x, bin_edges):
         else:
             last = i - 1
     return i
+
+if FTYPE == np.float64:
+    signature = '(f8, f8, f8[:,:], f8[:], f8[:], f8[:])'
+else:
+    signature = '(f4, f4, f4[:,:], f4[:], f4[:], f4[:])'
+
+@guvectorize([signature], '(),(),(i,j),(k),(l)->()',target=TARGET)
+def lookup_vectorized_2d(sample_x, sample_y, hist, bin_edges_x, bin_edges_y, out):
+    idx_x = find_index(sample_x, bin_edges_x)
+    idx_y = find_index(sample_y, bin_edges_y)
+    out[0] = hist[idx_x,idx_y]
+
+

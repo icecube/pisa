@@ -29,7 +29,7 @@ class dummy_event_loader(PiStage):
                  debug_mode=None,
                  input_specs=None,
                  calc_specs=None,
-                 apply_specs=None,
+                 output_specs=None,
                  ):
 
         expected_params = ('n_events',
@@ -48,7 +48,7 @@ class dummy_event_loader(PiStage):
                                                 debug_mode=debug_mode,
                                                 input_specs=input_specs,
                                                 calc_specs=calc_specs,
-                                                apply_specs=apply_specs,
+                                                output_specs=output_specs,
                                                 )
 
         # doesn't calculate anything
@@ -92,20 +92,23 @@ class dummy_event_loader(PiStage):
 
     def apply(self, inputs=None):
         if inputs is None:
-            if self.apply_mode is None:
+            if self.output_mode is None:
                 # nothing to be applied
                 self.outputs = self.inputs
 
-            elif self.apply_mode == 'events':
+            elif self.output_mode == 'events':
                 self.outputs = self.inputs
                 # apply weights
                 for name, val in self.events.items():
-                    val['weights'] = val['weights'].get('host') * val['event_weights'].get('host')
 
-            elif self.apply_mode == 'binned':
-                # run apply_kernel on events array and a private output array
+                    weights = val['weights'].get('host')
+                    weights *= val['event_weights'].get('host')
+                    val['weights'].mark_changed('host')
+
+            elif self.output_mode == 'binned':
+                # run output_kernel on events array and a private output array
                 # ToDo: private weights array (or should it be normal weights array?)
-                binning = self.apply_specs
+                binning = self.output_specs
                 bin_edges = [edges.magnitude for edges in binning.bin_edges]
                 binning_cols = binning.names
 

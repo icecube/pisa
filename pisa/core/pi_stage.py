@@ -35,14 +35,14 @@ class PiStage(BaseStage):
 
     output_names : None or list of strings
 
-    input_spec : binning or 'evts' or None
+    input_specs : binning or 'evts' or None
         Specify the inputs (i.e. what did the last stage output, or None)
 
-    calc_spec : binning or 'evts' or None
+    calc_specs : binning or 'evts' or None
         Specify in what to do the calculation
 
-    apply_spec : binning or 'evts' or None
-        Specify onto what to applt to generate the outputs
+    output_specs : binning or 'evts' or None
+        Specify how to generate the outputs
 
     """
     def __init__(self,
@@ -54,7 +54,7 @@ class PiStage(BaseStage):
                  debug_mode=None,
                  input_specs=None,
                  calc_specs=None,
-                 apply_specs=None,
+                 output_specs=None,
                  ):
 
         # init base class!
@@ -67,7 +67,7 @@ class PiStage(BaseStage):
 
         self.input_specs = input_specs
         self.calc_specs = calc_specs
-        self.apply_specs = apply_specs
+        self.output_specs = output_specs
         self.events = events
 
         if isinstance(self.input_specs, MultiDimBinning):
@@ -88,16 +88,16 @@ class PiStage(BaseStage):
         else:
             raise ValueError('Not understood calc_specs %s'%calc_specs)
 
-        if isinstance(self.apply_specs, MultiDimBinning):
-            self.apply_mode = 'binned'
-        elif self.apply_specs == 'events':
-            self.apply_mode = 'events'
+        if isinstance(self.output_specs, MultiDimBinning):
+            self.output_mode = 'binned'
+        elif self.output_specs == 'events':
+            self.output_mode = 'events'
             if self.events == {}:
                 raise ValueError('Cannot do apply mode `events` with no events present')
-        elif self.apply_specs is None:
-            self.apply_mode = None
+        elif self.output_specs is None:
+            self.output_mode = None
         else:
-            raise ValueError('Not understood apply_specs %s'%apply_specs)
+            raise ValueError('Not understood output_specs %s'%output_specs)
 
 
     def setup(self):
