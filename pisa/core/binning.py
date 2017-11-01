@@ -288,7 +288,7 @@ class OneDimBinning(object):
                 dimensionless_bin_edges = bin_edges.magnitude
 
             elif bin_edges is not None:
-                dimensionless_bin_edges = np.asarray(bin_edges)
+                dimensionless_bin_edges = np.asarray(bin_edges).astype(FTYPE)
                 bin_edges = None
 
         dimensionless_domain = None
@@ -349,14 +349,16 @@ class OneDimBinning(object):
                 dimensionless_bin_edges = np.logspace(
                     np.log10(dimensionless_domain[0]),
                     np.log10(dimensionless_domain[1]),
-                    num_bins + 1
+                    num_bins + 1,
+                    dtype=FTYPE,
                 )
             elif is_lin:
                 is_log = False
                 dimensionless_bin_edges = np.linspace(
                     dimensionless_domain[0],
                     dimensionless_domain[1],
-                    num_bins + 1
+                    num_bins + 1,
+                    dtype=FTYPE,
                 )
         elif dimensionless_domain is not None:
             assert dimensionless_domain[0] == dimensionless_bin_edges[0]
