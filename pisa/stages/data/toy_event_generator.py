@@ -42,7 +42,7 @@ class toy_event_generator(PiStage):
         output_names = ()
 
         # init base class!
-        super(dummy_event_loader, self).__init__(
+        super(toy_event_generator, self).__init__(
                                                 events=events,
                                                 params=params,
                                                 expected_params=expected_params,
@@ -69,6 +69,9 @@ class toy_event_generator(PiStage):
             true_energy = np.power(10, np.random.rand(n_events).astype(FTYPE) * 3)
             true_coszen = np.random.rand(n_events).astype(FTYPE) * 2 - 1
             nubar = -1 if 'bar' in name else -1
+            if 'e' in name: flav = 0
+            if 'mu' in name: flav = 1
+            if 'tau' in name: flav = 2
             event_weights = np.random.rand(n_events).astype(FTYPE)
             weights = np.ones(n_events, dtype=FTYPE)
             flux_nue = np.zeros(n_events, dtype=FTYPE)
@@ -79,6 +82,7 @@ class toy_event_generator(PiStage):
             container.add_array_data('true_energy', true_energy)
             container.add_array_data('true_coszen', true_coszen)
             container.add_scalar_data('nubar', nubar)
+            container.add_scalar_data('flav', flav)
             container.add_array_data('event_weights', event_weights)
             container.add_array_data('weights', weights)
             container.add_array_data('flux_nue', flux_nue)

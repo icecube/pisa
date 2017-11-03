@@ -839,9 +839,11 @@ def test_osc_probs_layers_kernel():
 if FTYPE == np.float64:
     signature = '(f8[:,:], c16[:,:], c16[:,:], i4, f8, f8[:], f8[:], f8[:,:])'
     signature_vac = '(f8[:,:], c16[:,:], i4, f8, f8[:], f8[:,:])'
+    signature_fill = '(f8[:,:], i4, i4, f8[:])'
 else:
     signature = '(f4[:,:], c8[:,:], c8[:,:], i4, f4, f4[:], f4[:], f4[:,:])'
     signature_vac = '(f4[:,:], c8[:,:], i4, f4, f4[:], f4[:,:])'
+    signature_fill = '(f4[:,:], i4, i4, f4[:])'
 
 @guvectorize([signature], '(a,b),(c,d),(e,f),(),(),(g),(h)->(a,b)', target=TARGET)
 def propagate_array(dm, mix, nsi_eps, nubar, energy, densities, distances, probability):
@@ -851,6 +853,10 @@ def propagate_array(dm, mix, nsi_eps, nubar, energy, densities, distances, proba
 def propagate_array_vacuum(dm, mix, nubar, energy, distances, probability):
     osc_probs_vacuum_kernel(dm, mix, nubar, energy, distances, probability)
 
+@guvectorize([signature_fill], '(a,b),(),()->()', target=TARGET)
+def fill_probs(probability, initial_flav, flav, out):
+    out[0] = probability[initial_flav,flav]
+    
 
 if __name__=='__main__':
     

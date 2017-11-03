@@ -26,6 +26,9 @@ class ContainerSet(object):
     
 
     def get_containers(self, name):
+        '''
+        that's a bit dumb, needs to get better
+        '''
         if name == 'nu':
             names_we_want = ['nu', 'nue', 'numu', 'nutau']
         elif name == 'nubar':
@@ -42,6 +45,12 @@ class ContainerSet(object):
 
     def __iter__(self):
         return iter(self.containers)
+
+    def get_mapset(self, key):
+        maps = []
+        for container in self:
+            maps.append(container.get_map(key))
+        return MapSet(name=self.name, maps=maps)
 
 
 class Container(object):
@@ -68,6 +77,7 @@ class Container(object):
     def __init__(self, name, code=None):
         self.name = name
         self.code = code
+        self.array_length = None
         self.scalar_data = OrderedDict()
         self.array_data = OrderedDict()
         self.binned_data = OrderedDict()
@@ -86,12 +96,13 @@ class Container(object):
         data : ndarray
 
         '''
+
         if isinstance(data, np.ndarray):
-            self.array_data[key] = SmartArray(data)
-        elif isinstance(data, SmartArray):
-            self.array_data[key] = data
-        else:
-            raise TypeError('type %s of data not supported'%type(data))
+            data = SmartArray(data)
+        if self.array_length is None:
+            self.array_length = data.get('host').shape[0]
+        assert data.get('host').shape[-1] == self.array_length
+        self.array_data[key] = data
 
     def add_binned_data(self, key, data, flat=False):
         ''' add data to binned_data
@@ -130,6 +141,8 @@ class Container(object):
 
         right now CPU only
 
+        ToDo: make work for n-dim
+
         '''
         weights = self.array_data[key].get('host')
         sample = [self.array_data[n].get('host') for n in binning.names]
@@ -150,6 +163,8 @@ class Container(object):
     def binned_to_array(self, key):
         '''
         augmented binned data to array data
+
+        ToDo: make work for n-dim
         '''
         binning, hist = self.binned_data[key]
         sample = [self.array_data[n] for n in binning.names]
@@ -169,14 +184,17 @@ class Container(object):
         '''
         if out_binning is not None:
             # check if key is binning dimension
-            if key in out_binning.bin_names:
-                # unroll
-                grid = out_binning.meshgrid(entity='weighted_centers', attach_units=False)
-                return SmartArray(grid[binning.index(key)])
+            if key in out_binning.names:
+                return self.unroll_binning(key, out_binning)
         binning, data = self.binned_data[key]
         if out_binning is not None:
             assert binning == out_binning, 'no rebinning methods availabkle yet'
         return data
+
+    @staticmethod
+    def unroll_binning(key, binning):
+        grid = binning.meshgrid(entity='weighted_centers', attach_units=False)
+        return SmartArray(grid[binning.index(key)])
 
 
     def get_hist(self, key):
@@ -201,7 +219,7 @@ class Container(object):
         hist = self.get_hist[key].get('host')
         binning = self.get_binning[key]
         assert hist.ndim == binning.num_dims
-        return Map(name=key, hist=hist, binning=binning)
+        return Map(name=self.name, hist=hist, binning=binning)
 
 
 def histogram(sample, weights, binning):
@@ -289,6 +307,8 @@ if __name__ == '__main__':
     binning_y = OneDimBinning(name='y', num_bins=10, is_lin=True, domain=[0,100])
     binning = MultiDimBinning([binning_x, binning_y])
     #print binning.names
+    print container.get_binned_data('x', binning).get('host')
+    print Container.unroll_binning('x', binning).get('host')
 
     # array
     print 'original array'
