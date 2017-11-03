@@ -28,8 +28,8 @@ class PiStage(BaseStage):
     Parameters
     ----------
 
-    events : Events or None
-        object to be passed along in any case
+    data : ContainerSet or None
+        object to be passed along
 
     input_names : None or list of strings
 
@@ -46,7 +46,7 @@ class PiStage(BaseStage):
 
     """
     def __init__(self,
-                 events=None,
+                 data=None,
                  params=None,
                  expected_params=None,
                  input_names=None,
@@ -68,7 +68,7 @@ class PiStage(BaseStage):
         self.input_specs = input_specs
         self.calc_specs = calc_specs
         self.output_specs = output_specs
-        self.events = events
+        self.data = data
 
         if isinstance(self.input_specs, MultiDimBinning):
             self.input_mode = 'binned'
@@ -92,8 +92,6 @@ class PiStage(BaseStage):
             self.output_mode = 'binned'
         elif self.output_specs == 'events':
             self.output_mode = 'events'
-            if self.events == {}:
-                raise ValueError('Cannot do apply mode `events` with no events present')
         elif self.output_specs is None:
             self.output_mode = None
         else:

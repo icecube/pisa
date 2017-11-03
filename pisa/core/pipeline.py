@@ -29,6 +29,7 @@ from pisa.core.param import ParamSet
 from pisa.core.stage import Stage
 from pisa.core.pi_stage import PiStage
 from pisa.core.transform import TransformSet
+from pisa.core.container import ContainerSet
 from pisa.utils.config_parser import PISAConfigParser, parse_pipeline_config
 from pisa.utils.fileio import mkdir
 from pisa.utils.hash import hash_obj
@@ -146,7 +147,7 @@ class Pipeline(object):
 
         """
         stages = []
-        events = OrderedDict()
+        data = ContainerSet('events')
         for stage_num, ((stage_name, service_name), settings) \
                 in enumerate(self.config.items()):
             try:
@@ -198,7 +199,7 @@ class Pipeline(object):
                 # Append service to pipeline
 
                 if self._version == 'pi':
-                    service.events = events
+                    service.data = data
                 # add events object
                 
                 # run setup on service

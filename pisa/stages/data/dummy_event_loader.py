@@ -6,6 +6,7 @@ from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.core.binning import MultiDimBinning
 from pisa.core.map import Map, MapSet
+from pisa.core.container import Container, ContainerSet
 
 
 class dummy_event_loader(PiStage):
@@ -64,6 +65,7 @@ class dummy_event_loader(PiStage):
         np.random.seed(seed)
 
         for name in ['nue', 'numu', 'nutau']:
+            my_container = Container(name)
             # input arrays
             # E and CZ
             energy = np.power(10, np.random.rand(n_events).astype(FTYPE) * 3)
@@ -76,18 +78,15 @@ class dummy_event_loader(PiStage):
             flux_nue = np.zeros(n_events, dtype=FTYPE)
             flux_numu = np.ones(n_events, dtype=FTYPE)
 
+            my_container.add_array_data('true_energy', energy)
+            my_container.add_array_data('true_coszen', cz)
+            my_container.add_scalar_data(1, nubar)
+            my_container.add_array_data('event_weights', event_weights)
+            my_container.add_array_data('weights', weights)
+            my_container.add_array_data('flux_nue', flux_nue)
+            my_container.add_array_data('flux_numu', flux_numu)
             
-            arrays = {'true_energy' : SmartArray(energy),
-                      'true_coszen' : SmartArray(cz),
-                      'nubar' : SmartArray(nubar),
-                      'event_weights' : SmartArray(event_weights),
-                      'weights' : SmartArray(weights),
-                      'flux_nue' : SmartArray(flux_nue),
-                      'flux_numu' : SmartArray(flux_numu),
-                      }
-
-            # add the events
-            self.events[name] = arrays
+            self.data.add_container(my_container)
 
 
     def apply(self, inputs=None):
