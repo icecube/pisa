@@ -1,8 +1,9 @@
 import numpy as np
 import time
 
-from numba_tools import *
 from numba import guvectorize, SmartArray
+
+from pisa.utils.numba_tools import *
 
 @myjit
 def sum_row_kernel(mix, bla, inp, out):

@@ -10,7 +10,7 @@ from pisa.core.map import Map, MapSet
 from pisa.stages.osc.osc_params import OscParams
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.prob3numba.numba_osc import *
-from pisa.stages.osc.prob3numba.numba_tools import *
+from pisa.utils.numba_tools import *
 
 
 class pi_prob3(PiStage):

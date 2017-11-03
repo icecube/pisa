@@ -4,7 +4,9 @@ import numpy as np
 from numba import guvectorize, SmartArray
 
 from pisa import FTYPE, TARGET
-from pisa.map import Map
+from pisa.core.binning import OneDimBinning, MultiDimBinning
+from pisa.core.map import Map
+from pisa.utils.numba_tools import myjit
 
 
 class ContainerSet(object):
@@ -37,6 +39,9 @@ class ContainerSet(object):
         else:
             names_we_want = [name]
         return [c for c in self.containers if c.name in names_we_want]
+
+    def __iter__(self):
+        return iter(self.containers)
 
 
 class Container(object):
@@ -81,14 +86,14 @@ class Container(object):
         data : ndarray
 
         '''
-        elif isinstance(data, np.ndarray):
+        if isinstance(data, np.ndarray):
             self.array_data[key] = SmartArray(data)
         elif isinstance(data, SmartArray):
             self.array_data[key] = data
         else:
             raise TypeError('type %s of data not supported'%type(data))
 
-    def add_binned_data(self, key, data):
+    def add_binned_data(self, key, data, flat=False):
         ''' add data to binned_data
 
         key : string
@@ -103,35 +108,51 @@ class Container(object):
         elif isinstance(data, tuple):
             binning, array = data
             assert isinstance(binning , MultiDimBinning)
-            if isinstance(array, SmartArray):
-                array = array.get('host')
-            if not isinstance(array, np.ndarray):
-                raise TypeError('given array is not an np.ndarray or numba Smart array')
-            # first dimesnions must match
-            assert array.shape[:binning.num_dims] == binning.shape
-            flat_shape = [-1] + [d for d in array.shape[binning.num_dims:-1]]
-            flat_array = array.reshape(flat_shape)
-            flat_array = SmartArray(flat_array)
+            if flat:
+                flat_array = data
+            else:
+                if isinstance(array, SmartArray):
+                    array = array.get('host')
+                if not isinstance(array, np.ndarray):
+                    raise TypeError('given array is not an np.ndarray or numba Smart array')
+                # first dimesnions must match
+                assert array.shape[:binning.num_dims] == binning.shape
+                flat_shape = [-1] + [d for d in array.shape[binning.num_dims:-1]]
+                flat_array = array.reshape(flat_shape)
+            if not isinstance(flat_array, SmartArray):
+                flat_array = SmartArray(flat_array)
             self.binned_data[key] = (binning, flat_array)
 
 
-    def array_to_binned(self, key, binning):
+    def array_to_binned(self, key, binning, normed=True):
         '''
         histogramm data array into binned data
+
+        right now CPU only
+
         '''
-        weights = self.array_data[key]
-        sample = [self.array_data[n] for n in binning.bin_names]
-
-
-        # ToDo: add_flat_binned_data
-        self.add_binned_data(key, (binning, histogramm(sample, weights, binning)))
+        weights = self.array_data[key].get('host')
+        sample = [self.array_data[n].get('host') for n in binning.names]
+        bin_edges = binning.bin_edges
+        hist, edges = np.histogramdd(sample=sample,
+                                     weights=weights,
+                                     bins=bin_edges,
+                                     )
+        if normed:
+            norm_hist, edges = np.histogramdd(sample=sample,
+                                     bins=bin_edges,
+                                     )
+            with np.errstate(divide='ignore', invalid='ignore'):
+                hist /= norm_hist
+                hist[~np.isfinite(hist)] = 0.  # -inf inf NaN
+        self.add_binned_data(key, (binning, hist))
 
     def binned_to_array(self, key):
         '''
         augmented binned data to array data
         '''
         binning, hist = self.binned_data[key]
-        sample = [self.array_data[n] for n in binning.bin_names]
+        sample = [self.array_data[n] for n in binning.names]
         self.add_array_data(key, lookup(sample, hist, binning))
 
     def scalar_to_array(self, key):
@@ -154,7 +175,7 @@ class Container(object):
                 return SmartArray(grid[binning.index(key)])
         binning, data = self.binned_data[key]
         if out_binning is not None:
-            assert binning = out_binning, 'no rebinning methods availabkle yet'
+            assert binning == out_binning, 'no rebinning methods availabkle yet'
         return data
 
 
@@ -183,7 +204,7 @@ class Container(object):
         return Map(name=key, hist=hist, binning=binning)
 
 
-def histogram(sample, weights, binning)
+def histogram(sample, weights, binning):
     '''
     histograming
     2d method right now
@@ -191,9 +212,10 @@ def histogram(sample, weights, binning)
     '''
     assert binning.num_dims == 2, 'can only do 2d at the moment'
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
-    hist = np.empty(binning.shape, dtype=FTYPE)
-    histogram_vectorized_2d(sample[0], sample[1], weights, bin_edges[0], bin_edges[1], out=hist)
-    return hist
+    flat_hist = np.zeros(binning.size, dtype=FTYPE)
+    print flat_hist
+    histogram_vectorized_2d(sample[0], sample[1], flat_hist, bin_edges[0], bin_edges[1], out=weights)
+    return flat_hist
 
 def lookup(sample, flat_hist, binning):
     '''
@@ -229,27 +251,56 @@ def find_index(x, bin_edges):
     return i
 
 if FTYPE == np.float64:
-    signature = '(f8, f8, f8[:,:], f8[:], f8[:], f8[:])'
+    signature = '(f8, f8, f8[:], f8[:], f8[:], f8[:])'
 else:
-    signature = '(f4, f4, f4[:,:], f4[:], f4[:], f4[:])'
+    signature = '(f4, f4, f4[:], f4[:], f4[:], f4[:])'
 
 @guvectorize([signature], '(),(),(j),(k),(l)->()',target=TARGET)
-def lookup_vectorized_2d(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, out):
+def lookup_vectorized_2d(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights):
     idx_x = find_index(sample_x, bin_edges_x)
     idx_y = find_index(sample_y, bin_edges_y)
     idx = idx_x*(len(bin_edges_y)-1) + idx_y
-    out[0] = flat_hist[idx]
+    weights[0] = flat_hist[idx]
 
-if FTYPE == np.float64:
-    signature = '(f8, f8, f8, f8[:], f8[:], f8[:,:])'
-else:
-    signature = '(f4, f4, f4, f4[:], f4[:], f4[:,:])'
-
-@guvectorize([signature], '(),(),(),(k),(l)->(i,j)',target=TARGET)
-def histogram_vectorized_2d(sample_x, sample_y, weights, bin_edges_x, bin_edges_y, out):
-    idx_x = find_index(sample_x, bin_edges_x)
-    idx_y = find_index(sample_y, bin_edges_y)
-    out[idx_x,idx_y] = weights[0]
+#@guvectorize([signature], '(),(),(j),(k),(l)->()',target=TARGET)
+#def histogram_vectorized_2d(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights):
+#    idx_x = find_index(sample_x, bin_edges_x)
+#    idx_y = find_index(sample_y, bin_edges_y)
+#    idx = idx_x*(len(bin_edges_y)-1) + idx_y
+#    flat_hist[idx] += weights[0]
 
 
+if __name__ == '__main__':
+
+
+    n_evts = 10000
+    x = np.arange(n_evts, dtype=FTYPE)
+    y = np.arange(n_evts, dtype=FTYPE)
+    w = np.ones(n_evts, dtype=FTYPE)
+    w *= np.random.rand(n_evts)
+    
+    container = Container('test')
+    container.add_array_data('x', x)
+    container.add_array_data('y', y)
+    container.add_array_data('w', w)
+
+
+    binning_x = OneDimBinning(name='x', num_bins=10, is_lin=True, domain=[0,100])
+    binning_y = OneDimBinning(name='y', num_bins=10, is_lin=True, domain=[0,100])
+    binning = MultiDimBinning([binning_x, binning_y])
+    #print binning.names
+
+    # array
+    print 'original array'
+    print container.get_array_data('w').get('host')
+    container.array_to_binned('w', binning)
+    # binned
+    print 'binned'
+    print container.get_binned_data('w').get('host')
+    print container.get_hist('w')
+
+    print 'augmented again'
+    # augment
+    container.binned_to_array('w')
+    print container.get_array_data('w').get('host')
 
