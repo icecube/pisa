@@ -86,10 +86,12 @@ class pi_prob3(PiStage):
                 distances = myLayers.distance.reshape((container.array_length, myLayers.max_layers))
                 # empty array to be filled
                 probability = np.zeros((container.array_length, 3, 3), dtype=FTYPE)
-                osc_probs = np.zeros((container.array_length, 2), dtype=FTYPE)
+                prob_e = np.zeros((container.array_length), dtype=FTYPE)
+                prob_mu = np.zeros((container.array_length), dtype=FTYPE)
                 container.add_array_data('densities', densities)
-                container.add_array_data('distance', distance)
-                container.add_array_data('osc_probs', osc_probs)
+                container.add_array_data('distances', distances)
+                container.add_array_data('prob_e', prob_e)
+                container.add_array_data('prob_mu', prob_mu)
                 container.add_array_data('probability', probability)
 
         elif self.calc_mode == 'binned':
@@ -198,14 +200,14 @@ class pi_prob3(PiStage):
         for container in self.data:
             if apply_binned:
                 w = container.get_binned_data('weights').get('host')
-                w *= (container.get_binned_data('flux_e').get('host') * container.get_binned_data('prob_e') 
-                      + container.get_binned_data('flux_mu').get('host') * container.get_binned_data('prob_mu'))
-                w = container.get_binned_data('weights').mark_changed('host')
+                w *= (container.get_binned_data('flux_e').get('host') * container.get_binned_data('prob_e').get('host') 
+                      + container.get_binned_data('flux_mu').get('host') * container.get_binned_data('prob_mu').get('host'))
+                container.get_binned_data('weights').mark_changed('host')
             else:
                 w = container.get_array_data('weights').get('host')
-                w *= (container.get_array_data('flux_e').get('host') * container.get_array_data('prob_e') 
-                      + container.get_array_data('flux_mu').get('host') * container.get_array_data('prob_mu'))
-                w = container.get_array_data('weights').mark_changed('host')
+                w *= (container.get_array_data('flux_e').get('host') * container.get_array_data('prob_e').get('host') 
+                      + container.get_array_data('flux_mu').get('host') * container.get_array_data('prob_mu').get('host'))
+                container.get_array_data('weights').mark_changed('host')
 
         if apply_binned and self.output_mode == 'events':
             for container in self.data:

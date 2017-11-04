@@ -9,7 +9,8 @@ __all__ = ['get_transition_matrix',
            'osc_probs_layers_kernel',
            'osc_probs_vacuum_kernel',
            'propagate_array',
-           'propagate_array_vacuum'
+           'propagate_array_vacuum',
+           'fill_probs',
            ]
 __version__ = '0.1'
 __author__ = 'Philipp Eller (pder@psu.edu)'

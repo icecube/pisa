@@ -101,7 +101,7 @@ class Container(object):
             data = SmartArray(data)
         if self.array_length is None:
             self.array_length = data.get('host').shape[0]
-        assert data.get('host').shape[-1] == self.array_length
+        assert data.get('host').shape[0] == self.array_length
         self.array_data[key] = data
 
     def add_binned_data(self, key, data, flat=False):
