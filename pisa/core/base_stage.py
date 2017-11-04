@@ -143,7 +143,7 @@ class BaseStage(object):
     def coumpute(self):
         pass
 
-    def apply(self, inputs=None):
+    def apply(self):
         return None
 
 

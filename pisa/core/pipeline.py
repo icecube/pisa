@@ -80,12 +80,12 @@ class Pipeline(object):
                 ' PISAConfigParser, or OrderedDict' % type(config).__name__
             )
 
+        self.pisa_version = None
+
         self._stages = []
         self._config = config
         self._init_stages()
         self._source_code_hash = None
-
-        self._version = None
 
     def index(self, stage_id):
         """Return the index in the pipeline of `stage_id`.
@@ -131,7 +131,7 @@ class Pipeline(object):
             if stage.stage_name == attr:
                 return stage
         #else:
-        #    return object.__getattr__(self, attr)
+        #    return .__getattr__(self, attr)
         #raise AttributeError('"%s" is not a stage in this pipeline or "%s" is'
         #                     ' a property of Pipeline that failed to execute.'
         #                     %(attr, attr))
@@ -180,16 +180,16 @@ class Pipeline(object):
                         )
 
                 # first stage can determine type of pipeline
-                if self._version is None:
-                    self._version = 'cake' if cake_stage else 'pi'
+                if self.pisa_version is None:
+                    self.pisa_version = 'cake' if cake_stage else 'pi'
                 
-                elif self._version == 'cake' and pi_stage:
+                elif self.pisa_version == 'cake' and pi_stage:
                     raise TypeError(
                         'Trying to use the PISA Pi Stage in '
                         'a PISA cake pipeline.'
                     )
 
-                elif self._version == 'pi' and cake_stage:
+                elif self.pisa_version == 'pi' and cake_stage:
                     raise TypeError(
                         'Trying to use the PISA cake Stage in '
                         'a PISA Pi pipeline.'
@@ -198,7 +198,7 @@ class Pipeline(object):
 
                 # Append service to pipeline
 
-                if self._version == 'pi':
+                if self.pisa_version == 'pi':
                     service.data = data
                 # add events object
                 
@@ -294,7 +294,10 @@ class Pipeline(object):
                           stage.stage_name, stage.service_name)
             try:
                 logging.trace('>>> BEGIN: get_outputs')
-                outputs = stage.apply(inputs=inputs)
+                if self.pisa_version == 'pi':
+                    outputs = stage.apply()
+                else:
+                    outputs = stage.apply(inputs=inputs)
                 logging.trace('>>> END  : get_outputs')
             except:
                 logging.error('Error occurred computing outputs in stage %s /'

@@ -133,6 +133,8 @@ class Container(object):
             if not isinstance(flat_array, SmartArray):
                 flat_array = SmartArray(flat_array)
             self.binned_data[key] = (binning, flat_array)
+        else:
+            raise TypeError('unknown dataformat')
 
 
     def array_to_binned(self, key, binning, normed=True):
@@ -173,6 +175,9 @@ class Container(object):
     def scalar_to_array(self, key):
         raise NotImplementedError()
 
+    def get_scalar_data(self, key):
+        return self.scalar_data[key]
+
     def get_array_data(self, key):
         return self.array_data[key]
 
@@ -194,7 +199,7 @@ class Container(object):
     @staticmethod
     def unroll_binning(key, binning):
         grid = binning.meshgrid(entity='weighted_centers', attach_units=False)
-        return SmartArray(grid[binning.index(key)])
+        return SmartArray(grid[binning.index(key)].ravel())
 
 
     def get_hist(self, key):

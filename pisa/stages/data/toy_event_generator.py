@@ -25,7 +25,7 @@ class toy_event_generator(PiStage):
 
     """
     def __init__(self,
-                 events=None,
+                 data=None,
                  params=None,
                  input_names=None,
                  output_names=None,
@@ -43,7 +43,7 @@ class toy_event_generator(PiStage):
 
         # init base class!
         super(toy_event_generator, self).__init__(
-                                                events=events,
+                                                data=data,
                                                 params=params,
                                                 expected_params=expected_params,
                                                 input_names=input_names,
