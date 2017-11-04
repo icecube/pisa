@@ -14,16 +14,37 @@ class ContainerSet(object):
     Class to hold a set of container objects
     '''
 
-    def __init__(self, name, containers=None):
+    def __init__(self, name, containers=None, data_specs=None):
         self.name = name
         if containers is None:
             self.containers = []
         else:
             self.containers = containers
+        self.data_specs = data_specs
 
     def add_container(self, container):
         self.containers.append(container)
     
+    @property
+    def data_mode(self):
+        if self.data_specs == 'events':
+            return 'events'
+        elif isinstance(self.data_specs, MultiDimBinning):
+            return 'binned'
+        elif self.data_specs is None:
+            return None
+
+    @property
+    def data_specs(self):
+        return self._data_specs
+
+    @data_specs.setter
+    def data_specs(self, data_specs):
+        if not (data_specs == 'events' or isinstance(data_specs, MultiDimBinning) or data_specs is None):
+            raise ValueError('cannot understand data_specs %s'%data_specs)
+        self._data_specs = data_specs
+        for container in self:
+            container.data_specs = self._data_specs
 
     def get_containers(self, name):
         '''
@@ -74,13 +95,23 @@ class Container(object):
 
     '''
 
-    def __init__(self, name, code=None):
+    def __init__(self, name, code=None, data_specs=None):
         self.name = name
         self.code = code
         self.array_length = None
         self.scalar_data = OrderedDict()
         self.array_data = OrderedDict()
         self.binned_data = OrderedDict()
+        self.data_specs = data_specs
+
+    @property
+    def data_mode(self):
+        if self.data_specs == 'events':
+            return 'events'
+        elif isinstance(self.data_specs, MultiDimBinning):
+            return 'binned'
+        elif self.data_specs is None:
+            return None
 
     def add_scalar_data(self, key, data):
         self.scalar_data[key] = data
@@ -134,6 +165,20 @@ class Container(object):
         else:
             raise TypeError('unknown dataformat')
 
+
+    def __getitem__(self, key):
+        '''
+        retriev data in a given data_specs
+        '''
+        assert self.data_specs is not None, 'Need to set data_specs to use simple getitem method'
+
+        try:
+            if self.data_specs == 'events':
+                return self.get_array_data(key)
+            elif isinstance(self.data_specs, MultiDimBinning):
+                return self.get_binned_data(key, self.data_specs)
+        except KeyError:
+            return self.get_scalar_data(key)
 
     def array_to_binned(self, key, binning, normed=True):
         '''
@@ -234,7 +279,6 @@ def histogram(sample, weights, binning):
     assert binning.num_dims == 2, 'can only do 2d at the moment'
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
     flat_hist = np.zeros(binning.size, dtype=FTYPE)
-    print flat_hist
     histogram_vectorized_2d(sample[0], sample[1], flat_hist, bin_edges[0], bin_edges[1], out=weights)
     return flat_hist
 

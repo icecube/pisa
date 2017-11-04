@@ -78,8 +78,9 @@ class pi_prob3(PiStage):
         
 
         if self.calc_mode == 'events':
+            self.data.data_specs = self.calc_specs
             for container in self.data:
-                true_coszen = container.get_array_data('true_coszen').get('host')
+                true_coszen = container['true_coszen'].get('host')
                 myLayers.calcLayers(true_coszen)
                 # calc layers
                 densities = myLayers.density.reshape((container.array_length, myLayers.max_layers))
@@ -95,6 +96,7 @@ class pi_prob3(PiStage):
                 container.add_array_data('probability', probability)
 
         elif self.calc_mode == 'binned':
+            self.data.data_specs = self.calc_specs
             true_coszen = Container.unroll_binning('true_coszen', self.calc_specs).get('host')
             myLayers.calcLayers(true_coszen)
             size = self.calc_specs.size
@@ -119,29 +121,31 @@ class pi_prob3(PiStage):
 
     def compute(self):
         if self.calc_mode == 'events':
+            self.data.data_specs = self.calc_specs
             for container in self.data:
-                self.calc_probs(container.get_scalar_data('nubar'),
-                                container.get_array_data('true_energy'),
-                                container.get_array_data('densities'),
-                                container.get_array_data('distances'),
-                                out=container.get_array_data('probability'),
+                self.calc_probs(container['nubar'],
+                                container['true_energy'],
+                                container['densities'],
+                                container['distances'],
+                                out=container['probability'],
                                 )
 
-                fill_probs(container.get_array_data('probability').get(WHERE),
+                fill_probs(container['probability'].get(WHERE),
                            0,
-                           container.get_scalar_data('flav'),
-                           out=container.get_array_data('prob_e').get(WHERE),
+                           container['flav'],
+                           out=container['prob_e'].get(WHERE),
                            )
-                fill_probs(container.get_array_data('probability').get(WHERE),
+                fill_probs(container['probability'].get(WHERE),
                            1,
-                           container.get_scalar_data('flav'),
-                           out=container.get_array_data('prob_mu').get(WHERE),
+                           container['flav'],
+                           out=container['prob_mu'].get(WHERE),
                            )
 
-                container.get_array_data('prob_e').mark_changed(WHERE)
-                container.get_array_data('prob_mu').mark_changed(WHERE)
+                container['prob_e'].mark_changed(WHERE)
+                container['prob_mu'].mark_changed(WHERE)
 
         elif self.calc_mode == 'binned':
+            self.data.data_specs = self.calc_specs
             true_energy = Container.unroll_binning('true_energy', self.calc_specs)
             for probs, nubar in zip([self.grid_probabilities_nu, self.grid_probabilities_nubar],[1,-1]):
                 self.calc_probs(nubar,
@@ -153,8 +157,8 @@ class pi_prob3(PiStage):
 
             # probabilities into container
             for container in self.data:
-                nubar = container.get_scalar_data('nubar')
-                flav = container.get_scalar_data('flav')
+                nubar = container['nubar']
+                flav = container['flav']
                 if nubar > 0:
                     probs = self.grid_probabilities_nu.get('host')
                 else:
@@ -167,10 +171,12 @@ class pi_prob3(PiStage):
     def apply(self, inputs=None):
         self.compute()
 
-        apply_binned = False
+        #apply_binned = False
+        self.data.data_specs = 'events'
 
         if self.input_mode == 'binned' and self.calc_mode == 'binned':
-            apply_binned = True
+            #apply_binned = True
+            self.data.data_specs = self.calc_specs
 
         if self.input_mode == 'binned' and self.calc_mode == 'events' and self.output_mode == 'events':
             for container in self.data:
@@ -182,14 +188,16 @@ class pi_prob3(PiStage):
             for container in self.data:
                 container.array_to_binned('prob_e', self.input_specs)
                 container.array_to_binned('prob_mu', self.input_specs)
-            apply_binned = True
+            self.data.data_specs = self.calc_specs
+            #apply_binned = True
         
         if self.input_mode == 'events' and self.calc_mode == 'binned' and self.output_mode == 'binned':
             for container in self.data:
                 container.array_to_binned('flux_e', self.input_specs)
                 container.array_to_binned('flux_mu', self.input_specs)
                 container.array_to_binned('weights', self.input_specs)
-            apply_binned = True
+            self.data.data_specs = self.calc_specs
+            #apply_binned = True
 
         if self.input_mode == 'events' and self.calc_mode == 'binned' and self.output_mode == 'events':
             for container in self.data:
@@ -198,22 +206,22 @@ class pi_prob3(PiStage):
         
         # apply
         for container in self.data:
-            if apply_binned:
-                w = container.get_binned_data('weights').get('host')
-                w *= (container.get_binned_data('flux_e').get('host') * container.get_binned_data('prob_e').get('host') 
-                      + container.get_binned_data('flux_mu').get('host') * container.get_binned_data('prob_mu').get('host'))
-                container.get_binned_data('weights').mark_changed('host')
-            else:
-                w = container.get_array_data('weights').get('host')
-                w *= (container.get_array_data('flux_e').get('host') * container.get_array_data('prob_e').get('host') 
-                      + container.get_array_data('flux_mu').get('host') * container.get_array_data('prob_mu').get('host'))
-                container.get_array_data('weights').mark_changed('host')
+            #if apply_binned:
+            w = container['weights'].get('host')
+            w *= (container['flux_e'].get('host') * container['prob_e'].get('host') 
+                  + container['flux_mu'].get('host') * container['prob_mu'].get('host'))
+            container['weights'].mark_changed('host')
+            #else:
+            #    w = container.get_array_data('weights').get('host')
+            #    w *= (container.get_array_data('flux_e').get('host') * container.get_array_data('prob_e').get('host') 
+            #          + container.get_array_data('flux_mu').get('host') * container.get_array_data('prob_mu').get('host'))
+            #    container.get_array_data('weights').mark_changed('host')
 
-        if apply_binned and self.output_mode == 'events':
+        if self.data.data_mode == 'binned' and self.output_mode == 'events':
             for container in self.data:
                 container.binned_to_array('weights')
 
-        if not apply_binned and self.output_mode == 'binned':
+        if self.data.data_mode == 'events' and self.output_mode == 'binned':
             for container in self.data:
                 container.array_to_binned('weight', self.output_specs)
 
