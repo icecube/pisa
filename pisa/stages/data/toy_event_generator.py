@@ -68,7 +68,7 @@ class toy_event_generator(PiStage):
             # generate
             true_energy = np.power(10, np.random.rand(n_events).astype(FTYPE) * 3)
             true_coszen = np.random.rand(n_events).astype(FTYPE) * 2 - 1
-            nubar = -1 if 'bar' in name else -1
+            nubar = -1 if 'bar' in name else 1
             if 'e' in name: flav = 0
             if 'mu' in name: flav = 1
             if 'tau' in name: flav = 2
