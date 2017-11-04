@@ -85,8 +85,8 @@ class toy_event_generator(PiStage):
             container.add_scalar_data('flav', flav)
             container.add_array_data('event_weights', event_weights)
             container.add_array_data('weights', weights)
-            container.add_array_data('flux_nue', flux_nue)
-            container.add_array_data('flux_numu', flux_numu)
+            container.add_array_data('flux_e', flux_nue)
+            container.add_array_data('flux_mu', flux_numu)
             self.data.add_container(container)
 
 

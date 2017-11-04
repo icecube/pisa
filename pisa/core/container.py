@@ -119,13 +119,11 @@ class Container(object):
         elif isinstance(data, tuple):
             binning, array = data
             assert isinstance(binning , MultiDimBinning)
+            if isinstance(array, SmartArray):
+                array = array.get('host')
             if flat:
-                flat_array = data
+                flat_array = array
             else:
-                if isinstance(array, SmartArray):
-                    array = array.get('host')
-                if not isinstance(array, np.ndarray):
-                    raise TypeError('given array is not an np.ndarray or numba Smart array')
                 # first dimesnions must match
                 assert array.shape[:binning.num_dims] == binning.shape
                 flat_shape = [-1] + [d for d in array.shape[binning.num_dims:-1]]
