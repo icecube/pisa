@@ -5,7 +5,7 @@ from numba import guvectorize, SmartArray
 
 from pisa import FTYPE, TARGET
 from pisa.core.binning import OneDimBinning, MultiDimBinning
-from pisa.core.map import Map
+from pisa.core.map import Map, MapSet
 from pisa.utils.numba_tools import myjit
 
 
@@ -219,8 +219,8 @@ class Container(object):
         '''
         return binned data in the form of a PISA map
         '''
-        hist = self.get_hist[key].get('host')
-        binning = self.get_binning[key]
+        hist = self.get_hist(key)
+        binning = self.get_binning(key)
         assert hist.ndim == binning.num_dims
         return Map(name=self.name, hist=hist, binning=binning)
 
