@@ -93,7 +93,7 @@ def test_abs2rel():
                    scale=1, abs_obj_shift=1)
     assert xrel[0] == -3 and xrel[-1] == 1
 
-    logging.info('<< PASSED : test_abs2rel >>')
+    logging.info('<< PASS : test_abs2rel >>')
 
 
 def test_rel2abs():
@@ -103,7 +103,7 @@ def test_rel2abs():
                   abs_obj_shift=19)
     xrel = abs2rel(xabs, **kwargs)
     assert np.allclose(rel2abs(abs2rel(xabs, **kwargs), **kwargs), xabs)
-    logging.info('<< PASSED : test_rel2abs >>')
+    logging.info('<< PASS : test_rel2abs >>')
 
 
 

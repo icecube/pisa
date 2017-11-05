@@ -315,7 +315,7 @@ def test_hdf():
     finally:
         rmtree(temp_dir)
 
-    logging.info('<< PASSED : test_hdf >>')
+    logging.info('<< PASS : test_hdf >>')
 
 
 if __name__ == "__main__":

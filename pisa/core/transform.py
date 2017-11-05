@@ -980,7 +980,7 @@ def test_BinnedTensorTransform():
     finally:
         shutil.rmtree(testdir, ignore_errors=True)
 
-    logging.info('<< PASSED : test_BinnedTensorTransform >>')
+    logging.info('<< PASS : test_BinnedTensorTransform >>')
 
     xforms = TransformSet(
         name='scaling',
@@ -1007,7 +1007,7 @@ def test_BinnedTensorTransform():
     finally:
         shutil.rmtree(testdir, ignore_errors=True)
 
-    logging.info('<< PASSED : test_TransformSet >>')
+    logging.info('<< PASS : test_TransformSet >>')
 
 
 if __name__ == "__main__":

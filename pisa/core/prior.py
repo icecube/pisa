@@ -564,7 +564,7 @@ def test_Prior():
     else:
         assert False
 
-    logging.info('<< PASSED : test_Prior >>')
+    logging.info('<< PASS : test_Prior >>')
 
 # TODO: FIX ME
 def test_Prior_plot(ts_fname, param_name='theta23'):

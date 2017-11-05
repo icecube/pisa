@@ -2778,7 +2778,7 @@ def test_Map():
 
     deepcopy(m_orig)
 
-    logging.info(str(('<< PASSED : test_Map >>')))
+    logging.info(str(('<< PASS : test_Map >>')))
 
 
 # TODO: add tests for llh, chi2 methods
@@ -2965,7 +2965,7 @@ def test_MapSet():
         for p in permutations(ms[0].binning.dimensions):
             ms.reorder_dimensions(p)
 
-    logging.info('<< PASSED : test_MapSet >>')
+    logging.info('<< PASS : test_MapSet >>')
 
 
 if __name__ == "__main__":

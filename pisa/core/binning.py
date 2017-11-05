@@ -2842,7 +2842,7 @@ def test_OneDimBinning():
     finally:
         shutil.rmtree(testdir, ignore_errors=True)
 
-    logging.info('<< PASSED >> test_OneDimBinning')
+    logging.info('<< PASS : test_OneDimBinning >>')
 
 
 def test_MultiDimBinning():
@@ -3052,7 +3052,7 @@ def test_MultiDimBinning():
     tprofile.info('Time to iterate over %d bins: %.6f sec',
                   mdb_3d_reco.size, time.time() - t0)
 
-    logging.info('<< PASSED >> test_MultiDimBinning')
+    logging.info('<< PASS : test_MultiDimBinning >>')
 
 
 if __name__ == "__main__":

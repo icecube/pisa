@@ -1201,7 +1201,7 @@ def test_Param():
     param2 = deepcopy(p2)
     assert param2 == p2
 
-    logging.info('<< PASSED : test_Param >>')
+    logging.info('<< PASS : test_Param >>')
 
 
 # TODO: add tests for reset() and reset_all() methods
@@ -1335,7 +1335,7 @@ def test_ParamSet():
     logging.debug(str((param_set2)))
     assert param_set2 == param_set
 
-    logging.info('<< PASSED : test_ParamSet >>')
+    logging.info('<< PASS : test_ParamSet >>')
 
 
 def test_ParamSelector():
@@ -1469,7 +1469,7 @@ def test_ParamSelector():
     param_selector2 = deepcopy(param_selector)
     assert param_selector2 == param_selector
 
-    logging.info('<< PASSED : test_ParamSelector >>')
+    logging.info('<< PASS : test_ParamSelector >>')
 
 
 if __name__ == "__main__":

@@ -179,7 +179,7 @@ def test_hash_obj():
         assert a2_h_part != a0_h_part
         assert a2_h_part != a1_h_part
 
-    logging.info('<< PASSED : test_hash_obj >>')
+    logging.info('<< PASS : test_hash_obj >>')
 
 # TODO: test_hash_file function requires a "standard" file to test on
 def test_hash_file():
@@ -187,7 +187,7 @@ def test_hash_file():
     logging.debug(file_hash)
     file_hash = hash_file('../utils/hash.py', full_hash=False)
     logging.debug(file_hash)
-    logging.info('<< PASSED : test_hash_file >>')
+    logging.info('<< PASS : test_hash_file >>')
 
 
 if __name__ == "__main__":

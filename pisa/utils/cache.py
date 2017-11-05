@@ -496,7 +496,7 @@ def test_MemoryCache():
         y = mc[4]
         assert (y == x_ref) == deepcopy
 
-    logging.info('<< PASSED : test_MemoryCache >>')
+    logging.info('<< PASS : test_MemoryCache >>')
 
 
 # TODO: augment test
@@ -520,7 +520,7 @@ def test_DiskCache():
     finally:
         shutil.rmtree(testdir, ignore_errors=True)
 
-    logging.info('<< PASSED : test_DiskCache >>')
+    logging.info('<< PASS : test_DiskCache >>')
 
 
 if __name__ == "__main__":

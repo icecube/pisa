@@ -649,7 +649,7 @@ def test_hrlist_formatter():
     logging.debug(str((hrlist_formatter(start=0, end=10, step=2))))
     logging.debug(str((hrlist_formatter(start=0, end=3, step=8))))
     logging.debug(str((hrlist_formatter(start=0.1, end=3.1, step=1.0))))
-    logging.info('<< PASSED : test_hrlist_formatter >>')
+    logging.info('<< PASS : test_hrlist_formatter >>')
 
 
 def test_list2hrlist():
@@ -657,7 +657,7 @@ def test_list2hrlist():
     logging.debug(str((list2hrlist([0, 1]))))
     logging.debug(str((list2hrlist([0, 1, 2]))))
     logging.debug(str((list2hrlist([0.1, 1.1, 2.1, 3.1]))))
-    logging.info('<< PASSED : test_list2hrlist >>')
+    logging.info('<< PASS : test_list2hrlist >>')
 
 
 if __name__ == '__main__':

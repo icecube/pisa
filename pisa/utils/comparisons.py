@@ -635,7 +635,7 @@ def test_isscalar():
     p_u_fl = ufloat(1, 1) * ureg.GeV
     for x in [u_fl, p_fl, p_u_fl]:
         assert isscalar(x), str(x) + ' should evaluate to scalar'
-    logging.info('<< PASSED : test_isscalar >>')
+    logging.info('<< PASS : test_isscalar >>')
 
 
 def test_recursiveEquality():
@@ -697,7 +697,7 @@ def test_recursiveEquality():
     assert recursiveEquality(-np.inf, -np.inf)
     assert not recursiveEquality(np.inf, -np.inf)
     assert not recursiveEquality(np.inf, np.nan)
-    logging.info('<< PASSED : test_recursiveEquality >>')
+    logging.info('<< PASS : test_recursiveEquality >>')
 
 
 def test_normQuant():
@@ -753,7 +753,7 @@ def test_normQuant():
 
     # Dict of dicts
     _ = normQuant({'x': {'1': 1, '2': 2}, 'y': {'3': 3, '4': 4}})
-    logging.info('<< PASSED : test_normQuant >>')
+    logging.info('<< PASS : test_normQuant >>')
 
 
 if __name__ == '__main__':

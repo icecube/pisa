@@ -1089,7 +1089,7 @@ def test_Events():
         assert np.min(events[fi]['true_energy']) < 30
 
     logging.info(
-        '<< PASSED : test_Events >> (note:'
+        '<< PASS : test_Events >> (note:'
         ' "[   ERROR] Events object is in an inconsistent state. Reverting cut'
         ' for all flavInts." message above **is expected**.)')
 
@@ -1190,7 +1190,7 @@ def test_Data():
     d3_com = d3.transform_groups(['nue+nuebar+numu+numubar'])
     logging.debug(str((d3_com)))
 
-    logging.info('<< PASSED : test_Data >>')
+    logging.info('<< PASS : test_Data >>')
 
 
 if __name__ == "__main__":

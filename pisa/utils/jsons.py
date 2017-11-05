@@ -249,7 +249,7 @@ def test_NumpyEncoderDecoder():
     finally:
         rmtree(temp_dir)
 
-    sys.stdout.write('<< PASSED : test_NumpyEncoderDecoder >>\n')
+    sys.stdout.write('<< PASS : test_NumpyEncoderDecoder >>\n')
 
 
 if __name__ == '__main__':

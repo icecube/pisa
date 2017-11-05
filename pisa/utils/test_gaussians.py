@@ -50,7 +50,7 @@ def test_gaussian():
                 % (np.max(np.abs(outbuf/refbuf-1)), EQUALITY_PREC*10, mu,
                    sigma)
             )
-    logging.info('<< PASSED : test_gaussian >>')
+    logging.info('<< PASS : test_gaussian >>')
 
 
 def test_gaussians():
@@ -82,7 +82,7 @@ def test_gaussians():
             ' allowed tolerance of %s.'
             % (__name__, maxfractdiff, EQUALITY_PREC*10)
         )
-    logging.info('<< PASSED : test_gaussians >>')
+    logging.info('<< PASS : test_gaussians >>')
 
 # TODO: looping over number of threads doesn't work since it is no longer an
 # argument to `gaussians`!
