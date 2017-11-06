@@ -39,6 +39,7 @@ class pi_prob3(PiStage):
                  ):
 
         expected_params = ()
+
         input_names = ()
         output_names = ()
 
@@ -48,16 +49,16 @@ class pi_prob3(PiStage):
 
         # what are the keys used from the inputs during apply
         input_keys = ('weights',
-                           'flux_e',
-                           'flux_mu',
-                           )
+                      'flux_e',
+                      'flux_mu',
+                      )
         # what are keys added or altered in the calculation used during apply 
         calc_keys = ('prob_e',
-                          'prob_mu',
-                          )
+                     'prob_mu',
+                     )
         # what keys are added or altered for the outputs during apply
         output_keys = ('weights',
-                           )
+                       )
 
         # init base class
         super(pi_prob3, self).__init__(
@@ -94,9 +95,10 @@ class pi_prob3(PiStage):
         self.data.data_specs = self.calc_specs
 
         if self.calc_mode == 'binned':
-            # speed up calculation by linking together
+            # speed up calculation by adding links
             self.data.link_containers('nu', ['nue', 'numu', 'nutau'])
             self.data.link_containers('nubar', ['nue_bar', 'numu_bar', 'nutau_bar'])
+
         for container in self.data:
             true_coszen = container['true_coszen'].get('host')
             myLayers.calcLayers(true_coszen)
@@ -111,6 +113,8 @@ class pi_prob3(PiStage):
 
         # don't forget to un-link everything again
         self.data.unlink_containers()
+
+        # populate important arrays
         for container in self.data:
             prob_e = np.zeros((container.size), dtype=FTYPE)
             prob_mu = np.zeros((container.size), dtype=FTYPE)
@@ -133,9 +137,11 @@ class pi_prob3(PiStage):
 
     def compute(self):
 
+        # set the correct data mode 
         self.data.data_specs = self.calc_specs
+
         if self.calc_mode == 'binned':
-            # speed up calculation
+            # speed up calculation by adding links
             self.data.link_containers('nu', ['nue', 'numu', 'nutau'])
             self.data.link_containers('nubar', ['nue_bar', 'numu_bar', 'nutau_bar'])
 
@@ -151,11 +157,13 @@ class pi_prob3(PiStage):
         self.data.unlink_containers()
 
         for container in self.data:
+            # initial electrons (0)
             fill_probs(container['probability'].get(WHERE),
                        0,
                        container['flav'],
                        out=container['prob_e'].get(WHERE),
                        )
+            # initial muons (1)
             fill_probs(container['probability'].get(WHERE),
                        1,
                        container['flav'],
@@ -167,10 +175,9 @@ class pi_prob3(PiStage):
 
     def apply_function(self):
 
+        # update the outputted weights
         for container in self.data:
-            print 'apply to ', container.name
             w = container['weights'].get('host')
             w *= (container['flux_e'].get('host') * container['prob_e'].get('host') 
                   + container['flux_mu'].get('host') * container['prob_mu'].get('host'))
             container['weights'].mark_changed('host')
-
