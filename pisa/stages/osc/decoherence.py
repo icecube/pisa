@@ -12,7 +12,7 @@ from pisa import FTYPE, C_FTYPE, C_PRECISION_DEF
 from pisa.core.binning import MultiDimBinning
 from pisa.utils.resources import find_resource
 from pisa.utils.log import logging
-from pisa.stages.osc.prob3newer import prob3base
+from pisa.stages.osc.prob3new import prob3base
 from pisa import ureg
 
 
