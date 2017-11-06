@@ -43,7 +43,7 @@ desired effect that "essentially equal" things evaluate to be equal."""
 
 
 
-#TODO REMOVE
+#TODO Turn into usage instructions
 '''
 #GPU case
 
