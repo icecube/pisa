@@ -61,8 +61,7 @@ class pi_prob3(PiStage):
                        )
 
         # init base class
-        super(pi_prob3, self).__init__(
-                                       data=data,
+        super(pi_prob3, self).__init__(data=data,
                                        params=params,
                                        expected_params=expected_params,
                                        input_names=input_names,
@@ -94,32 +93,32 @@ class pi_prob3(PiStage):
         # set the correct data mode 
         self.data.data_specs = self.calc_specs
 
+        # --- calculate the layers ---
         if self.calc_mode == 'binned':
             # speed up calculation by adding links
-            self.data.link_containers('nu', ['nue', 'numu', 'nutau'])
-            self.data.link_containers('nubar', ['nue_bar', 'numu_bar', 'nutau_bar'])
+            # as layers don't care about flavour
+            self.data.link_containers('nu', ['nue', 'numu', 'nutau', 'nue_bar', 'numu_bar', 'nutau_bar'])
 
         for container in self.data:
-            true_coszen = container['true_coszen'].get('host')
-            myLayers.calcLayers(true_coszen)
-            # calc layers
-            densities = myLayers.density.reshape((container.size, myLayers.max_layers))
-            distances = myLayers.distance.reshape((container.size, myLayers.max_layers))
-            # empty array to be filled
-            probability = np.zeros((container.size, 3, 3), dtype=FTYPE)
-            container['densities'] = densities
-            container['distances'] = distances
-            container['probability'] = probability
+            myLayers.calcLayers(container['true_coszen'].get('host'))
+            container['densities'] = myLayers.density.reshape((container.size, myLayers.max_layers))
+            container['distances'] = myLayers.distance.reshape((container.size, myLayers.max_layers))
 
         # don't forget to un-link everything again
         self.data.unlink_containers()
 
-        # populate important arrays
+        # --- setup empty arrays ---
+        if self.calc_mode == 'binned':
+            self.data.link_containers('nu', ['nue', 'numu', 'nutau'])
+            self.data.link_containers('nubar', ['nue_bar', 'numu_bar', 'nutau_bar'])
         for container in self.data:
-            prob_e = np.zeros((container.size), dtype=FTYPE)
-            prob_mu = np.zeros((container.size), dtype=FTYPE)
-            container['prob_e'] = prob_e
-            container['prob_mu'] = prob_mu
+            container['probability'] = np.empty((container.size, 3, 3), dtype=FTYPE)
+        self.data.unlink_containers()
+
+        # setup more arrays
+        for container in self.data:
+            container['prob_e'] = np.empty((container.size), dtype=FTYPE)
+            container['prob_mu'] = np.empty((container.size), dtype=FTYPE) 
 
     @profile
     def calc_probs(self, nubar, e_array, rho_array, len_array, out):
