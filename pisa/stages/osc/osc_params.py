@@ -37,12 +37,22 @@ class OscParams(object):
         else:
             self.dm_atm = dm_atm
 
+
+    @staticmethod
+    def M_pmns_shape() :
+        return (3,3,2)
+
+    @staticmethod
+    def M_mass_shape() :
+        return (3,3)
+
+
     @property
     def M_pmns(self):
 
         # real part [...,0]
         # imaginary part [...,1]
-        Mix = np.zeros((3,3,2))
+        Mix = np.zeros(self.M_pmns_shape())
 
         sd = np.sin(self.deltacp)
         cd = np.cos(self.deltacp)
@@ -74,7 +84,7 @@ class OscParams(object):
 
     @property
     def M_mass(self):
-        dmVacVac = np.zeros((3,3))
+        dmVacVac = np.zeros(self.M_mass_shape())
         mVac = np.zeros(3)
         delta = 5.0e-9
 
