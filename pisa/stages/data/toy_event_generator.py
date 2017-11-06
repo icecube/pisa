@@ -91,11 +91,13 @@ class toy_event_generator(PiStage):
 
 
 
-    def apply(self):
+    def apply_function(self):
         # reset weights
         # todo: check logic
         self.data.data_specs = 'events'
         for container in self.data:
             weights = container['weights'].get('host')
-            weigths = container['event_weights'].get('host')
-            weights = container['weights'].mark_changed('host')
+            new_weights = container['event_weights'].get('host')
+            # we need to re-assign the array!
+            weights[:] = new_weights[:]
+            container['weights'].mark_changed('host')
