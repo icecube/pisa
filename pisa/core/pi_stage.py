@@ -55,6 +55,9 @@ class PiStage(BaseStage):
                  input_specs=None,
                  calc_specs=None,
                  output_specs=None,
+                 input_keys=(),
+                 calc_keys=(),
+                 output_keys=(),
                  ):
 
         # init base class!
@@ -97,6 +100,9 @@ class PiStage(BaseStage):
         else:
             raise ValueError('Not understood output_specs %s'%output_specs)
 
+        self.input_keys = input_keys
+        self.calc_keys = calc_keys
+        self.output_keys = output_keys
 
     def setup(self):
         pass
@@ -104,3 +110,48 @@ class PiStage(BaseStage):
     def compute(self):
         pass
 
+    def apply(self):
+        self.compute()
+
+        self.data.data_specs = 'events'
+
+        if self.input_mode == 'binned' and self.calc_mode == 'binned':
+            self.data.data_specs = self.calc_specs
+
+        if self.input_mode == 'binned' and self.calc_mode == 'events' and self.output_mode == 'events':
+            for container in self.data:
+                for key in self.input_keys:
+                    container.binned_to_array(key)
+        
+        if self.input_mode == 'binned' and self.calc_mode == 'events' and self.output_mode == 'binned':
+            for container in self.data:
+                for key in self.calc_keys:
+                    container.array_to_binned(key, self.input_specs)
+            self.data.data_specs = self.calc_specs
+        
+        if self.input_mode == 'events' and self.calc_mode == 'binned' and self.output_mode == 'binned':
+            for container in self.data:
+                for key in self.input_keys:
+                    container.array_to_binned(key, self.calc_specs)
+            self.data.data_specs = self.calc_specs
+
+        if self.input_mode == 'events' and self.calc_mode == 'binned' and self.output_mode == 'events':
+            for container in self.data:
+                for key in self.calc_keys:
+                    container.binned_to_array(key)
+
+        # run apply function 
+        self.apply_function()
+
+        if self.data.data_mode == 'binned' and self.output_mode == 'events':
+            for container in self.data:
+                for key in self.output_keys:
+                    container.binned_to_array(key)
+
+        if self.data.data_mode == 'events' and self.output_mode == 'binned':
+            for container in self.data:
+                for key in self.output_keys:
+                    container.array_to_binned(key, self.output_specs)
+
+    def apply_function(self):
+        pass

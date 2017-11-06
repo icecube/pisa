@@ -6,7 +6,8 @@ from numba import guvectorize, SmartArray
 from pisa import FTYPE, TARGET
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.core.map import Map, MapSet
-from pisa.utils.numba_tools import myjit
+from pisa.utils.numba_tools import myjit, WHERE
+from pisa.utils.log import logging
 
 
 class ContainerSet(object):
@@ -16,6 +17,7 @@ class ContainerSet(object):
 
     def __init__(self, name, containers=None, data_specs=None):
         self.name = name
+        self.linked_containers = []
         if containers is None:
             self.containers = []
         else:
@@ -46,26 +48,49 @@ class ContainerSet(object):
         for container in self:
             container.data_specs = self._data_specs
 
-    def get_containers(self, name):
+    @property
+    def names(self):
+        return [c.name for c in self.containers]
+
+    def link_containers(self, key, names):
         '''
-        that's a bit dumb, needs to get better
+        Parameters
+        ----------
+
+        key : str
+            name of linked object
+
+        names : list
+            name of containers to be linked under the given key
+
+        when containers are linked, they are treated as a single (virtual) container for binned data
         '''
-        if name == 'nu':
-            names_we_want = ['nu', 'nue', 'numu', 'nutau']
-        elif name == 'nubar':
-            names_we_want = ['nubar', 'nue_bar', 'nmu_bar', 'nutau_bar']
-        elif name == 'e':
-            names_we_want = ['nue', 'nue_bar']
-        elif name == 'mu':
-            names_we_want = ['numu', 'numu_bar']
-        elif name == 'tau':
-            names_we_want = ['nutau', 'nutau_bar']
-        else:
-            names_we_want = [name]
-        return [c for c in self.containers if c.name in names_we_want]
+        containers = [self.__getitem__(name) for name in names]
+        logging.info('Linking containers %s into %s'%(names, key))
+        new_container = VirtualContainer(key, containers)
+        self.linked_containers.append(new_container)
+
+
+    def unlink_containers(self):
+        '''
+        Parameters
+        ----------
+
+        unlink all container
+        '''
+        logging.info('Unlinking all containers')
+        for c in self.linked_containers:
+            c.unlink()
+        self.linked_containers = []
+
+    def __getitem__(self, key):
+        if key in self.names:
+            return self.containers[self.names.index(key)]
 
     def __iter__(self):
-        return iter(self.containers)
+        # only iterate over non-linked containers and virtual ones
+        containers_to_be_iterated = [c for c in self.containers if not c.linked] + self.linked_containers
+        return iter(containers_to_be_iterated)
 
     def get_mapset(self, key):
         maps = []
@@ -73,6 +98,68 @@ class ContainerSet(object):
             maps.append(container.get_map(key))
         return MapSet(name=self.name, maps=maps)
 
+class VirtualContainer(object):
+    '''
+    Class providing a virtual container for linked individual containers
+    '''
+
+    def __init__(self, name, containers):
+        self.name = name
+        # check and set link flag
+        for container in containers:
+            assert container.linked is False, 'Cannot link container %s since it is already linked'%container.name
+            container.linked = True
+        self.containers = containers
+
+    def unlink(self):
+        # reset link flag
+        for container in self:
+            container.linked = False
+
+    def __iter__(self):
+        return iter(self.containers)
+
+    #def add_scalar_data(self, key, data):
+    #    for container in self:
+    #        container.add_scalar_data(key, data)
+
+    #def add_array_data(self, key, data):
+    #    raise AttributeError('Cannot operate on array data in linked containers!')
+
+    #def add_binned_data(self, key, data, flat=False):
+    #    self.containers[0].add_binned_data(key, data, flat)
+    #    for container in self.containers[1:]:
+    #        container.binned_data[key] = self.containers[0].binned_data[key] 
+
+    #def get_scalar_data(self, key):
+    #    scalars = [c.get_scalar_data(key) for c in self]
+    #    # make sure they all are identical
+    #    assert len(set(scalars)) == 1
+    #    return self.containers[0].get_scalar_data[key]
+
+    #def get_array_data(self, key):
+    #    raise AttributeError('Cannot operate on array data in linked containers!')
+
+    #def get_binned_data(self, key, out_binning=None):
+    #    # should we perform check that all are identicl first?
+    #    # for now just return first
+    #    return self.containers[0].get_binned_data(key, out_binning)
+
+    def __getitem__(self, key):
+        # should we check they're all the same?
+        return self.containers[0][key]
+
+    def __setitem__(self, key, value):
+        self.containers[0][key] = value
+        for container in self.containers[1:]:
+            if not hasattr(value, '__len__'):
+                container.scalar_data[key] = self.containers[0].scalar_data[key] 
+            else:
+                container.binned_data[key] = self.containers[0].binned_data[key] 
+
+    @property
+    def size(self):
+        return self.containers[0].size
 
 class Container(object):
     '''
@@ -103,6 +190,7 @@ class Container(object):
         self.array_data = OrderedDict()
         self.binned_data = OrderedDict()
         self.data_specs = data_specs
+        self.linked = False
 
     @property
     def data_mode(self):
@@ -112,6 +200,14 @@ class Container(object):
             return 'binned'
         elif self.data_specs is None:
             return None
+
+    @ property
+    def size(self):
+        assert self.data_mode is not None
+        if self.data_mode == 'events':
+            return self.array_length
+        else:
+            return self.data_specs.size
 
     def add_scalar_data(self, key, data):
         self.scalar_data[key] = data
@@ -135,12 +231,15 @@ class Container(object):
         assert data.get('host').shape[0] == self.array_length
         self.array_data[key] = data
 
-    def add_binned_data(self, key, data, flat=False):
+    def add_binned_data(self, key, data, flat=True):
         ''' add data to binned_data
 
         key : string
 
         data : PISA Map or (array, binning)-tuple
+
+        flat : bool
+            is the data already flattened
 
         '''
         if isinstance(data, Map):
@@ -168,7 +267,7 @@ class Container(object):
 
     def __getitem__(self, key):
         '''
-        retriev data in a given data_specs
+        retriev data in the set data_specs
         '''
         assert self.data_specs is not None, 'Need to set data_specs to use simple getitem method'
 
@@ -179,6 +278,19 @@ class Container(object):
                 return self.get_binned_data(key, self.data_specs)
         except KeyError:
             return self.get_scalar_data(key)
+
+    def __setitem__(self, key, value):
+        '''
+        set data in the set data_specs
+        '''
+        if not hasattr(value, '__len__'):
+            self.add_scalar_data((key, value))
+        else:
+            assert self.data_mode is not None, 'Need to set data_specs to use simple getitem method'
+            if self.data_mode == 'events':
+                self.add_array_data(key, value)
+            elif self.data_mode == 'binned':
+                self.add_binned_data(key, (self.data_specs, value))
 
     def array_to_binned(self, key, binning, normed=True):
         '''
@@ -291,8 +403,9 @@ def lookup(sample, flat_hist, binning):
     assert binning.num_dims == 2, 'can only do 2d at the moment'
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
     # todo: directly return smart array
-    array = np.empty_like(sample[0])
-    lookup_vectorized_2d(sample[0], sample[1], flat_hist, bin_edges[0], bin_edges[1], out=array)
+    array = SmartArray(np.empty_like(sample[0]))
+    lookup_vectorized_2d(sample[0].get(WHERE), sample[1].get(WHERE), flat_hist.get(WHERE), bin_edges[0], bin_edges[1], out=array.get(WHERE))
+    array.mark_changed(WHERE)
     return array
 
 @myjit
