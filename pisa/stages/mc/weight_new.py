@@ -23,7 +23,7 @@ from pisa.core.events import Data, Events
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
 from pisa.core.stage import Stage
-from pisa.utils.flavInt import ALL_NUFLAVINTS, NuFlavInt, NuFlavIntGroup
+from pisa.utils.flavInt import ALL_NUFLAVINTS, NuFlav, NuFlavInt, NuFlavIntGroup
 from pisa.utils.flux_weights import load_2D_table, calculate_flux_weights
 from pisa.utils.format import text2tex
 from pisa.utils.hash import hash_obj
@@ -33,8 +33,9 @@ from pisa.utils.resources import open_resource
 from pisa.utils.comparisons import normQuant
 from pisa.scripts.make_events_file import CMSQ_TO_MSQ
 from pisa.stages.data.sample import parse_event_type_names
-from pisa.stages.osc.prob3_new import prob3calc #TODO (Tom) prob3new -> prob3
+from pisa.stages.osc.prob3_new import prob3wrapper #TODO (Tom) prob3new -> prob3
 from pisa.stages.osc.decoherence import decoherence
+from pisa.stages.osc.osc_spline import OscSpline
 
 __all__ = ['weight_new']
 
@@ -210,6 +211,8 @@ class weight_new(Stage):
         self.cache_flux = cache_flux
         self.kde_hist = kde_hist
         self.decoherence = decoherence
+        self.spline_osc_probs = spline_osc_probs
+        self.osc_spline_binning = osc_spline_binning
 
         #Handle nuances when decoherence is included in oscillations model
         if self.decoherence :
@@ -272,11 +275,6 @@ class weight_new(Stage):
             if self.use_gpu:
                 from pisa.utils.gpu_hist import GPUHist
                 self.GPUHist = GPUHist
-
-        #Handle oscillation splining
-        self.spline_osc_probs = spline_osc_probs
-        self.osc_spline_binning = osc_spline_binning
-        logging.info("Using spline for oscillation calculations")
 
         #Register attributes that will be used for hashes
         self.include_attrs_for_hashes('use_gpu')
@@ -380,17 +378,20 @@ class weight_new(Stage):
                         YeM=self.params.YeM.value,
                     )
                 else :
-                    self.osc = prob3calc(
+                    self.osc = prob3wrapper(
                         earth_model=self.params.earth_model.value,
                         detector_depth=self.params.detector_depth.value,
                         prop_height=self.params.prop_height.value,
                         YeI=self.params.YeI.value,
                         YeO=self.params.YeO.value,
                         YeM=self.params.YeM.value,
-                        use_spline=self.spline_osc_probs,
-                        spline_binning=self.osc_spline_binning,
                         use_gpu=self.use_gpu,
                     )
+
+                #Instantiate oscillation spline tools if required
+                if self.spline_osc_probs :
+                    self.osc_spline = OscSpline(binning=self.osc_spline_binning,osc_calculator=self.osc,use_gpu=self.use_gpu)
+                    logging.info("Using spline for oscillation calculations")
 
 
             #
@@ -695,7 +696,7 @@ class weight_new(Stage):
 
 
         #
-        # Calculate oscillation probabilities
+        # Set oscillation parameters
         #
 
         #Grab required params
@@ -729,31 +730,54 @@ class weight_new(Stage):
                                 deltam31=params.deltam31.value, 
                                 deltacp=params.deltacp.value )
 
+        #
+        # Get oscillation splines
+        #
+
         #Calculate oscillation splines for this new set of oscillation parameters
+        #(if the user requested to use splines)
         if self.spline_osc_probs :
-            self.osc.generate_osc_splines(true_e_scale=true_e_scale) #TODO Make this part of set_params? Need to think about true_e_scale in general
+            self.osc_spline.generate_splines(true_e_scale=true_e_scale) 
+
+
+        #
+        # Calculate oscillation probabilities
+        #
 
         #Loop over flavor/interaction combinations
         for fig in self._data.keys() :
-
-            #Get the number of events
-            n_evts = np.uint32(self.get_num_events(fig))
 
             #If not calculating oscillations for NC interactions, skip this
             #(leaving prob_e and prob_mu as the default value of 1. in the data arrays)
             if 'nc' in fig and params.no_nc_osc.value:
                  continue
 
-            #Otherwise perform oscillation calculations
+            #Get flav-int from string TODO use FlavInt directly as the map key
+            flavint = NuFlavInt(fig)
+
+            #Get data array on either host or device, depending on whether using GPU or CPU
+            data_array = self._data_arrays[fig]["device"] if self.use_gpu else self._data_arrays[fig]["host"]
+
+            #Spline case
+            if self.spline_osc_probs :
+
+                #Evaluate the spline at the E,coszen value for each event
+                self.osc_spline.eval(
+                    flav=flavint.flav,
+                    true_e_scale=true_e_scale,
+                    **data_array
+                )
+
+            #Event-by-event calculation case
             else :
 
+                #Get the number of events
+                n_evts = np.uint32(self.get_num_events(fig))
+
                 #Get the prob3 flavor and nu/nubar codes for this neutrino flavor
-                kFlav,kNuBar = NuFlavInt(fig).flav.prob3_codes
+                kFlav,kNuBar = flavint.flav.prob3_codes
 
-                #Get data array on either host or device, depending on whether using GPU or CPU
-                data_array = self._data_arrays[fig]["device"] if self.use_gpu else self._data_arrays[fig]["host"]
-
-                #Calculate the oscillation probabilities using prob3
+                #Calculate the oscillation probabilities
                 self.osc.calc_probs(
                     kNuBar=kNuBar,
                     kFlav=kFlav,
@@ -762,11 +786,11 @@ class weight_new(Stage):
                     **data_array
                 )
 
-                #If running on a GPU in general but using CPU for the oscillations part, need to update the device arrays
-                #This can be the case for vacuum oscillations
-                if self.use_gpu and not self.osc.use_gpu :
-                    self.update_device_arrays(fig, 'prob_e')
-                    self.update_device_arrays(fig, 'prob_mu')
+            #If running on a GPU in general but using CPU for the oscillations part, need to update the device arrays
+            #This can be the case for vacuum oscillations
+            if self.use_gpu and not self.osc.use_gpu :
+                self.update_device_arrays(fig, 'prob_e')
+                self.update_device_arrays(fig, 'prob_mu')
 
 
         #Store the new hash
