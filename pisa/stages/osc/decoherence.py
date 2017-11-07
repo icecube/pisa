@@ -79,7 +79,7 @@ class decoherence(prob3base) :
         L = np.full(true_coszen.shape,np.NaN) 
         for index in np.ndindex(true_coszen.shape) : 
             L[index] = self.calc_path_length(true_coszen[index])
-        L *= ureg["km"] #calc_layers returns results in [km]
+        L = L * ureg["km"] #calc_layers returns results in [km] (warning, don't use '*=', doesn't do what you'd expect with some pint versions)
 
         #Note: Ignoring nu/nubar distinction here, as matter effects and CP violation phase are not implemented
 
