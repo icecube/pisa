@@ -1,3 +1,11 @@
+'''
+Class to hold generic data in container.
+The data can be unbinned or binned or scalar, while 
+translation methods between such different representations
+are provided.
+
+The data lives in SmartArrays on both CPU and GPU
+'''
 from collections import OrderedDict
 
 import numpy as np
@@ -29,6 +37,10 @@ class ContainerSet(object):
     
     @property
     def data_mode(self):
+        '''
+        The data mode can be 'events', 'binned' or None,
+        depending on the set data_specs
+        '''
         if self.data_specs == 'events':
             return 'events'
         elif isinstance(self.data_specs, MultiDimBinning):
@@ -42,6 +54,19 @@ class ContainerSet(object):
 
     @data_specs.setter
     def data_specs(self, data_specs):
+        '''
+
+        Parameters
+        ----------
+
+        data_specs : str, MultiDimBinning or None
+
+        Data specs should be set to retreive the right representation
+        i.e. the representation one is working in at the moment
+
+        This property is meant to be changed while working with a ContainerSet
+
+        '''
         if not (data_specs == 'events' or isinstance(data_specs, MultiDimBinning) or data_specs is None):
             raise ValueError('cannot understand data_specs %s'%data_specs)
         self._data_specs = data_specs
@@ -88,11 +113,22 @@ class ContainerSet(object):
             return self.containers[self.names.index(key)]
 
     def __iter__(self):
-        # only iterate over non-linked containers and virtual ones
+        '''
+        iterate over individual non-linked containers and virtual containers for the ones that are linked together
+        '''
+
         containers_to_be_iterated = [c for c in self.containers if not c.linked] + self.linked_containers
         return iter(containers_to_be_iterated)
 
     def get_mapset(self, key):
+        '''
+        Parameters
+        ----------
+
+        key : str
+
+        For a given key, get a PISA MapSet
+        '''
         maps = []
         for container in self:
             maps.append(container.get_map(key))
@@ -101,6 +137,14 @@ class ContainerSet(object):
 class VirtualContainer(object):
     '''
     Class providing a virtual container for linked individual containers
+
+    It should just behave like a normal container
+
+    For reading, it just uses one container as a representative (no checkng at the mment
+    if the others actually contain the same data)
+
+    For writting, it creates one object that is added to all containers
+
     '''
 
     def __init__(self, name, containers):
@@ -119,32 +163,6 @@ class VirtualContainer(object):
     def __iter__(self):
         return iter(self.containers)
 
-    #def add_scalar_data(self, key, data):
-    #    for container in self:
-    #        container.add_scalar_data(key, data)
-
-    #def add_array_data(self, key, data):
-    #    raise AttributeError('Cannot operate on array data in linked containers!')
-
-    #def add_binned_data(self, key, data, flat=False):
-    #    self.containers[0].add_binned_data(key, data, flat)
-    #    for container in self.containers[1:]:
-    #        container.binned_data[key] = self.containers[0].binned_data[key] 
-
-    #def get_scalar_data(self, key):
-    #    scalars = [c.get_scalar_data(key) for c in self]
-    #    # make sure they all are identical
-    #    assert len(set(scalars)) == 1
-    #    return self.containers[0].get_scalar_data[key]
-
-    #def get_array_data(self, key):
-    #    raise AttributeError('Cannot operate on array data in linked containers!')
-
-    #def get_binned_data(self, key, out_binning=None):
-    #    # should we perform check that all are identicl first?
-    #    # for now just return first
-    #    return self.containers[0].get_binned_data(key, out_binning)
-
     def __getitem__(self, key):
         # should we check they're all the same?
         return self.containers[0][key]
@@ -161,13 +179,13 @@ class VirtualContainer(object):
     def size(self):
         return self.containers[0].size
 
+
+
 class Container(object):
     '''
     Class to hold data in the form of event arrays and/or maps
 
-    if maps are needed, a binning must be set
-
-    contained maps must have the same binning (is this a good idea?)
+    for maps, a binning must be provided set
 
     Parameters
     ----------
@@ -178,7 +196,10 @@ class Container(object):
         binning, if binned data is used
 
     code : int
-        could hold for example a PDG code 
+        could hold for example a PDG code
+
+    data_specs : str, MultiDimBinning or None
+        the representation one is working in at the moment
 
     '''
 
@@ -203,6 +224,9 @@ class Container(object):
 
     @ property
     def size(self):
+        '''
+        length of event arrays or number of bins for binned data
+        '''
         assert self.data_mode is not None
         if self.data_mode == 'events':
             return self.array_length
@@ -210,6 +234,16 @@ class Container(object):
             return self.data_specs.size
 
     def add_scalar_data(self, key, data):
+        '''
+        Parameters
+        ----------
+
+        key : string
+            identifier
+
+        data : number
+
+        '''
         self.scalar_data[key] = data
 
     def add_array_data(self, key, data):
@@ -239,7 +273,7 @@ class Container(object):
         data : PISA Map or (array, binning)-tuple
 
         flat : bool
-            is the data already flattened
+            is the data already flattened (i.e. the binning dimesnions unrolled)
 
         '''
         if isinstance(data, Map):
@@ -330,6 +364,15 @@ class Container(object):
     def scalar_to_array(self, key):
         raise NotImplementedError()
 
+    def scalar_to_binned(self, key):
+        raise NotImplementedError()
+
+    def array_to_scalar(self, key):
+        raise NotImplementedError()
+
+    def binned_to_scalar(self, key):
+        raise NotImplementedError()
+
     def get_scalar_data(self, key):
         return self.scalar_data[key]
 
@@ -359,7 +402,7 @@ class Container(object):
 
     def get_hist(self, key):
         '''
-        return reshaped data as normal hist
+        return reshaped data as normal n-dimensional histogram
         '''
         binning, data = self.binned_data[key]
         data = data.get('host')
@@ -368,7 +411,7 @@ class Container(object):
 
     def get_binning(self, key):
         '''
-        return binning
+        return binning of an entry
         '''
         return self.binned_data[key][0]
 
@@ -439,13 +482,6 @@ def lookup_vectorized_2d(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y
     idx_y = find_index(sample_y, bin_edges_y)
     idx = idx_x*(len(bin_edges_y)-1) + idx_y
     weights[0] = flat_hist[idx]
-
-#@guvectorize([signature], '(),(),(j),(k),(l)->()',target=TARGET)
-#def histogram_vectorized_2d(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights):
-#    idx_x = find_index(sample_x, bin_edges_x)
-#    idx_y = find_index(sample_y, bin_edges_y)
-#    idx = idx_x*(len(bin_edges_y)-1) + idx_y
-#    flat_hist[idx] += weights[0]
 
 
 if __name__ == '__main__':
