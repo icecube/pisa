@@ -295,8 +295,11 @@ class Pipeline(object):
             try:
                 logging.trace('>>> BEGIN: get_outputs')
                 if self.pisa_version == 'pi':
-                    outputs = stage.apply()
-                    stage.outputs = outputs
+                    stage.apply()
+                    try:
+                        outputs = stage.get_outputs()
+                    except:
+                        outputs = None
                 else:
                     outputs = stage.apply(inputs=inputs)
                 logging.trace('>>> END  : get_outputs')

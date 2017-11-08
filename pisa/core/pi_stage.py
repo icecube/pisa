@@ -35,14 +35,23 @@ class PiStage(BaseStage):
 
     output_names : None or list of strings
 
-    input_specs : binning or 'evts' or None
+    input_specs : binning or 'events' or None
         Specify the inputs (i.e. what did the last stage output, or None)
 
-    calc_specs : binning or 'evts' or None
+    calc_specs : binning or 'events' or None
         Specify in what to do the calculation
 
-    output_specs : binning or 'evts' or None
+    output_specs : binning or 'events' or None
         Specify how to generate the outputs
+
+    input_keys : tuple of str
+        keys of input data the stage needs
+
+    calc_keys : tuple of str
+        output keys of the calculation (not intermediate results)
+
+    output_keys : tuple of str
+        keys of the output data (usually 'weights')
 
     """
     def __init__(self,
@@ -60,7 +69,7 @@ class PiStage(BaseStage):
                  output_keys=(),
                  ):
 
-        # init base class!
+        # init base class
         super(PiStage, self).__init__(params=params,
                                       expected_params=expected_params,
                                       input_names=input_names,
@@ -104,6 +113,10 @@ class PiStage(BaseStage):
         self.calc_keys = calc_keys
         self.output_keys = output_keys
 
+
+        # cake compatibility
+        self.outputs = None
+
     def setup(self):
         pass
 
@@ -114,6 +127,9 @@ class PiStage(BaseStage):
         self.compute()
 
         self.data.data_specs = 'events'
+
+        if self.input_mode is None and self.calc_mode is None and self.output_mode == 'events':
+            pass
 
         if self.input_mode == 'binned' and self.calc_mode == 'binned':
             self.data.data_specs = self.calc_specs
@@ -155,3 +171,13 @@ class PiStage(BaseStage):
 
     def apply_function(self):
         pass
+
+
+    def get_outputs(self):
+        '''
+        function for cake style outputs
+        '''
+        # output keys need to be exactly 1 to generate pisa cake style mapset
+        assert len(self.output_keys) == 1
+        self.outputs = self.data.get_mapset(self.output_keys[0])
+        return self.outputs

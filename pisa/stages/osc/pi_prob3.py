@@ -97,7 +97,10 @@ class pi_prob3(PiStage):
         if self.calc_mode == 'binned':
             # speed up calculation by adding links
             # as layers don't care about flavour
-            self.data.link_containers('nu', ['nue', 'numu', 'nutau', 'nue_bar', 'numu_bar', 'nutau_bar'])
+            self.data.link_containers('nu', ['nue_cc', 'numu_cc', 'nutau_cc',
+                                             'nue_nc', 'numu_nc', 'nutau_nc',
+                                             'nuebar_cc', 'numubar_cc', 'nutaubar_cc',
+                                             'nuebar_nc', 'numubar_nc', 'nutaubar_nc'])
 
         for container in self.data:
             myLayers.calcLayers(container['true_coszen'].get('host'))
@@ -109,8 +112,10 @@ class pi_prob3(PiStage):
 
         # --- setup empty arrays ---
         if self.calc_mode == 'binned':
-            self.data.link_containers('nu', ['nue', 'numu', 'nutau'])
-            self.data.link_containers('nubar', ['nue_bar', 'numu_bar', 'nutau_bar'])
+            self.data.link_containers('nu', ['nue_cc', 'numu_cc', 'nutau_cc',
+                                             'nue_nc', 'numu_nc', 'nutau_nc'])
+            self.data.link_containers('nubar', ['nuebar_cc', 'numubar_cc', 'nutaubar_cc',
+                                                'nuebar_nc', 'numubar_nc', 'nutaubar_nc'])
         for container in self.data:
             container['probability'] = np.empty((container.size, 3, 3), dtype=FTYPE)
         self.data.unlink_containers()
@@ -141,8 +146,10 @@ class pi_prob3(PiStage):
 
         if self.calc_mode == 'binned':
             # speed up calculation by adding links
-            self.data.link_containers('nu', ['nue', 'numu', 'nutau'])
-            self.data.link_containers('nubar', ['nue_bar', 'numu_bar', 'nutau_bar'])
+            self.data.link_containers('nu', ['nue_cc', 'numu_cc', 'nutau_cc',
+                                             'nue_nc', 'numu_nc', 'nutau_nc'])
+            self.data.link_containers('nubar', ['nuebar_cc', 'numubar_cc', 'nutaubar_cc',
+                                                'nuebar_nc', 'numubar_nc', 'nutaubar_nc'])
 
         for container in self.data:
             self.calc_probs(container['nubar'],
@@ -176,7 +183,19 @@ class pi_prob3(PiStage):
 
         # update the outputted weights
         for container in self.data:
-            w = container['weights'].get('host')
-            w *= (container['flux_e'].get('host') * container['prob_e'].get('host') 
-                  + container['flux_mu'].get('host') * container['prob_mu'].get('host'))
-            container['weights'].mark_changed('host')
+            apply_probs(container['flux_e'].get(WHERE),
+                        container['flux_mu'].get(WHERE),
+                        container['prob_e'].get(WHERE),
+                        container['prob_mu'].get(WHERE),
+                        out=container['weights'].get(WHERE))
+            container['weights'].mark_changed(WHERE)
+
+
+# vectorized function to apply flux x osc_probs
+if FTYPE == np.float64:
+    signature = '(f8, f8, f8, f8, f8[:])'
+else:
+    signature = '(f4, f4, f4, f4, f4[:])'
+@guvectorize([signature], '(),(),(),()->()', target=TARGET)
+def apply_probs(flux_e, flux_mu, prob_e, prob_mu, out):
+    out[0] *= (flux_e * prob_e) + (flux_mu * prob_mu)

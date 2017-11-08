@@ -17,8 +17,10 @@ class toy_event_generator(PiStage):
     ----------
 
     n_events : int
+        Number of events to be generated per output name
 
     seed : int
+        Seed to be used for random
 
     Notes
     -----
@@ -38,10 +40,7 @@ class toy_event_generator(PiStage):
         expected_params = ('n_events',
                            'seed',
                            )
-        input_names = ()
-        output_names = ()
-
-        # init base class!
+        # init base class
         super(toy_event_generator, self).__init__(
                                                 data=data,
                                                 params=params,
@@ -63,8 +62,7 @@ class toy_event_generator(PiStage):
         seed = int(self.params.seed.value.m)
         np.random.seed(seed)
 
-        for name in ['nue', 'numu', 'nutau', 'nue_bar', 'numu_bar', 'nutau_bar']:
-            
+        for name in self.output_names:
             # generate
             true_energy = np.power(10, np.random.rand(n_events).astype(FTYPE) * 3)
             true_coszen = np.random.rand(n_events).astype(FTYPE) * 2 - 1
@@ -92,9 +90,6 @@ class toy_event_generator(PiStage):
 
 
     def apply_function(self):
-        # reset weights
-        # todo: check logic
-        self.data.data_specs = 'events'
         for container in self.data:
             weights = container['weights'].get('host')
             new_weights = container['event_weights'].get('host')
