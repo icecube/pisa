@@ -296,6 +296,7 @@ class Pipeline(object):
                 logging.trace('>>> BEGIN: get_outputs')
                 if self.pisa_version == 'pi':
                     outputs = stage.apply()
+                    stage.outputs = outputs
                 else:
                     outputs = stage.apply(inputs=inputs)
                 logging.trace('>>> END  : get_outputs')
@@ -683,49 +684,51 @@ def main(return_outputs=False):
         if args.transforms and stage.use_transforms:
             stage.transforms.to_json(fbase + '__transforms.json.bz2')
 
-        formats = OrderedDict(png=args.png, pdf=args.pdf)
-        if isinstance(stage.outputs, Data):
-            # TODO(shivesh): plots made here will use the most recent
-            # "pisa_weight" column and so all stages will have identical plots
-            # (one workaround is to turn on "memcache_deepcopy")
-            # TODO(shivesh): intermediate stages have no output binning
-            if stage.output_binning is None:
-                logging.debug('Skipping plot of intermediate stage '
-                              '{0}'.format(stage))
-                continue
-            outputs = stage.outputs.histogram_set(
-                binning=stage.output_binning,
-                nu_weights_col='pisa_weight',
-                mu_weights_col='pisa_weight',
-                noise_weights_col='pisa_weight',
-                mapset_name=stg_svc,
-                errors=True
-            )
-        elif isinstance(stage.outputs, (MapSet, TransformSet)):
-            outputs = stage.outputs
-
-        try:
-            for fmt, enabled in formats.items():
-                if not enabled:
+        # also only plot if args intermediate or last stage
+        if args.intermediate or stage == pipeline[indices][-1]:
+            formats = OrderedDict(png=args.png, pdf=args.pdf)
+            if isinstance(stage.outputs, Data):
+                # TODO(shivesh): plots made here will use the most recent
+                # "pisa_weight" column and so all stages will have identical plots
+                # (one workaround is to turn on "memcache_deepcopy")
+                # TODO(shivesh): intermediate stages have no output binning
+                if stage.output_binning is None:
+                    logging.debug('Skipping plot of intermediate stage '
+                                  '{0}'.format(stage))
                     continue
-                my_plotter = Plotter(
-                    stamp='Event rate',
-                    outdir=args.outdir,
-                    fmt=fmt, log=False,
-                    annotate=args.annotate
+                outputs = stage.outputs.histogram_set(
+                    binning=stage.output_binning,
+                    nu_weights_col='pisa_weight',
+                    mu_weights_col='pisa_weight',
+                    noise_weights_col='pisa_weight',
+                    mapset_name=stg_svc,
+                    errors=True
                 )
-                my_plotter.ratio = True
-                my_plotter.plot_2d_array(
-                    outputs,
-                    fname=stg_svc + '__output',
-                    cmap='RdBu',
-                )
-        except ValueError as exc:
-            logging.error('Failed to save plot to format %s. See exception'
-                          ' message below', fmt)
-            traceback.format_exc()
-            logging.exception(exc)
-            logging.warning("I can't go on, I'll go on.")
+            elif isinstance(stage.outputs, (MapSet, TransformSet)):
+                outputs = stage.outputs
+
+            try:
+                for fmt, enabled in formats.items():
+                    if not enabled:
+                        continue
+                    my_plotter = Plotter(
+                        stamp='Event rate',
+                        outdir=args.outdir,
+                        fmt=fmt, log=False,
+                        annotate=args.annotate
+                    )
+                    my_plotter.ratio = True
+                    my_plotter.plot_2d_array(
+                        outputs,
+                        fname=stg_svc + '__output',
+                        cmap='RdBu',
+                    )
+            except ValueError as exc:
+                logging.error('Failed to save plot to format %s. See exception'
+                              ' message below', fmt)
+                traceback.format_exc()
+                logging.exception(exc)
+                logging.warning("I can't go on, I'll go on.")
 
     if return_outputs:
         return pipeline, outputs
