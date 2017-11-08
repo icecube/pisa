@@ -91,7 +91,7 @@ class ContainerSet(object):
         when containers are linked, they are treated as a single (virtual) container for binned data
         '''
         containers = [self.__getitem__(name) for name in names]
-        logging.info('Linking containers %s into %s'%(names, key))
+        logging.debug('Linking containers %s into %s'%(names, key))
         new_container = VirtualContainer(key, containers)
         self.linked_containers.append(new_container)
 
@@ -103,7 +103,7 @@ class ContainerSet(object):
 
         unlink all container
         '''
-        logging.info('Unlinking all containers')
+        logging.debug('Unlinking all containers')
         for c in self.linked_containers:
             c.unlink()
         self.linked_containers = []
@@ -293,7 +293,7 @@ class Container(object):
                 flat_shape = [-1] + [d for d in array.shape[binning.num_dims:-1]]
                 flat_array = array.reshape(flat_shape)
             if not isinstance(flat_array, SmartArray):
-                flat_array = SmartArray(flat_array)
+                flat_array = SmartArray(flat_array.astype(FTYPE))
             self.binned_data[key] = (binning, flat_array)
         else:
             raise TypeError('unknown dataformat')
@@ -335,6 +335,7 @@ class Container(object):
         ToDo: make work for n-dim
 
         '''
+        logging.debug('Transforming %s array to binned data'%(key))
         weights = self.array_data[key].get('host')
         sample = [self.array_data[n].get('host') for n in binning.names]
         bin_edges = binning.bin_edges
@@ -343,13 +344,15 @@ class Container(object):
                                      bins=bin_edges,
                                      )
         if normed:
+            weights = self.array_data['event_weights'].get('host')
             norm_hist, edges = np.histogramdd(sample=sample,
+                                     weights=weights,
                                      bins=bin_edges,
                                      )
             with np.errstate(divide='ignore', invalid='ignore'):
                 hist /= norm_hist
                 hist[~np.isfinite(hist)] = 0.  # -inf inf NaN
-        self.add_binned_data(key, (binning, hist))
+        self.add_binned_data(key, (binning, hist), flat=False)
 
     def binned_to_array(self, key):
         '''
@@ -357,6 +360,7 @@ class Container(object):
 
         ToDo: make work for n-dim
         '''
+        logging.debug('Transforming %s binned to array data'%(key))
         binning, hist = self.binned_data[key]
         sample = [self.array_data[n] for n in binning.names]
         self.add_array_data(key, lookup(sample, hist, binning))
