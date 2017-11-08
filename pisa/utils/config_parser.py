@@ -646,6 +646,10 @@ def parse_pipeline_config(config):
                 else:
                     service_kwargs[fullname] = binning_dict[value]
 
+            # it's a list on in/output names list
+            elif fullname.endswith('_names'):
+                value = split(value)
+                service_kwargs[fullname] = value
             # Otherwise it's some other stage instantiation argument; identify
             # this by its full name and try to interpret and instantiate a
             # Python object using the string
