@@ -121,6 +121,7 @@ else:
     TARGET = 'cpu'
 
 cpu_targets = ['cpu', 'numba']
+parallel_targets = ['parallel', 'multicore']
 gpu_targets = ['cuda', 'gpu', 'numba-cuda']
 
 if 'PISA_TARGET' in os.environ:
@@ -136,16 +137,19 @@ if 'PISA_TARGET' in os.environ:
             TARGET = 'cuda'
     elif PISA_TARGET.strip().lower() in cpu_targets:
         TARGET = 'cpu'
+    elif PISA_TARGET.strip().lower() in parallel_targets:
+        TARGET = 'parallel'
     else:
         sys.stderr.write('\n')
         raise ValueError(
             'Environment var PISA_TARGTE="%s" is unrecognized.\n'
             '--> For cpu set PISA_FTYPE to one of %s\n'
+            '--> For parallel set PISA_FTYPE to one of %s\n'
             '--> For gpu set PISA_FTYPE to one of %s\n'
-            %(PISA_TARGET, cpu_targets, gpu_targets)
+            %(PISA_TARGET, cpu_targets, parallel_targets, gpu_targets)
         )
 
-del cpu_targets, gpu_targets
+del cpu_targets, gpu_targets, parallel_targets
 
 
 # or overwrite with env var
@@ -198,6 +202,8 @@ else:
 
 if TARGET == 'cpu':
     sys.stderr.write('PISA running on CPU only.\n')
+if TARGET == 'parallel':
+    sys.stderr.write('PISA running on CPU only, multicore.\n')
 elif TARGET == 'cuda':
     sys.stderr.write('PISA running on CPU+GPU.\n')
 
