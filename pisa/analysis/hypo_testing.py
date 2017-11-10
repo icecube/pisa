@@ -42,7 +42,7 @@ from pisa.utils.log import logging, set_verbosity
 from pisa.utils.random_numbers import get_random_state
 from pisa.utils.resources import find_resource
 from pisa.utils.stats import ALL_METRICS
-from pisa.utils.timing import timediffstamp, timestamp
+from pisa.utils.format import timediff, timestamp
 
 
 __all__ = ['Labels', 'HypoTesting',
@@ -619,8 +619,8 @@ class HypoTesting(Analysis):
                     if total_complete > 0:
                         sec_per_fid = dt / total_complete
                         time_to_go = sec_per_fid * trials_to_go
-                        ts_remaining = timediffstamp(time_to_go, sec_decimals=0,
-                                                     hms_always=True)
+                        ts_remaining = timediff(time_to_go, sec_decimals=0,
+                                                hms_always=True)
 
                     logging.info(
                         ('Working on {data_disp} set ID %d / {fid_disp} set ID'
@@ -1431,8 +1431,8 @@ class HypoTesting(Analysis):
         self.stop_datetime = timestamp(utc=True, winsafe=True)
         self.stop_time = time.time()
         self.analysis_runtime = self.stop_time - self.analysis_start_time
-        dt_stamp = timediffstamp(self.analysis_runtime, hms_always=True,
-                                 sec_decimals=0)
+        dt_stamp = timediff(self.analysis_runtime, hms_always=True,
+                            sec_decimals=0)
 
         run_info = []
         run_info.append('stop_datetime = %s' %self.stop_datetime)
