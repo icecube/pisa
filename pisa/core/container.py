@@ -482,7 +482,7 @@ def find_index(x, bin_edges):
     while (first <= last):
         i = int((first + last)/2)
         if x >= bin_edges[i]:
-            if (x < bin_edges[i+1]) or (x < bin_edges[-1] and i == len(bin_edges) - 1):
+            if (x < bin_edges[i+1]) or (x <= bin_edges[-1] and i == len(bin_edges) - 1):
                 break
             else:
                 first = i + 1
@@ -502,15 +502,15 @@ def lookup_vectorized_2d(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y
     idx = idx_x*(len(bin_edges_y)-1) + idx_y
     weights[0] = flat_hist[idx]
 
-#('(float32[:], float32[:], float32[:], float32[:], float32[:]. float32[:])')
 @cuda.jit
 def histogram_2d_kernel(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights):
     i = cuda.grid(1)
     if i < weights.size:
-        idx_x = find_index(sample_x[i], bin_edges_x)
-        idx_y = find_index(sample_y[i], bin_edges_y)
-        idx = idx_x * (bin_edges_y.size - 1) + idx_y
-        cuda.atomic.add(flat_hist, idx, weights[i])
+        if sample_x[i] >= bin_edges_x[0] and sample_x[i] <= bin_edges_x[-1] and sample_y[i] >= bin_edges_y[0] and sample_y[i] <= bin_edges_y[-1]:
+            idx_x = find_index(sample_x[i], bin_edges_x)
+            idx_y = find_index(sample_y[i], bin_edges_y)
+            idx = idx_x * (bin_edges_y.size - 1) + idx_y
+            cuda.atomic.add(flat_hist, idx, weights[i])
 
 if __name__ == '__main__':
 
