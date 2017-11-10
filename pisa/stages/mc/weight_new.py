@@ -1229,7 +1229,7 @@ class weight_new(Stage):
             # model (PREM) and the true coszen of an event. Therefore we can calculate these for 
             # once and are done
             if not self.decoherence :
-                nlayers, density, dist = self.osc.calc_layers(host_array['true_coszen'])
+                nlayers, density, dist = self.osc.calc_path_layers(host_array['true_coszen'])
                 if nlayers is not None : #TODO Just store anyway?
                     host_array['numLayers'] = nlayers
                     host_array['densityInLayer'] = density

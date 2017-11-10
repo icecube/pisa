@@ -175,7 +175,6 @@ class prob3base(object) :
         self.earth_model = earth_model
         self.detector_depth = detector_depth
         self.prop_height = prop_height
-        self.earth_model = earth_model
         self.YeI = YeI
         self.YeO = YeO
         self.YeM = YeM
@@ -187,10 +186,10 @@ class prob3base(object) :
           if self.YeM is None : raise Exception("Must provide 'YeM' when using an Earth model")
 
         #Flag indicating whether oscillation params have been set
-        self.params_are_set = False
+        self._params_are_set = False
 
         #Flag indicating whether layers have been calculated
-        self.layers_are_computed = False
+        self._layers_are_computed = False
 
 
     def set_params(self, theta12, theta13, theta23,
@@ -200,7 +199,7 @@ class prob3base(object) :
         # Set the params
         #
 
-        self.params_are_set = True
+        self._params_are_set = True
 
         self.theta12 = theta12
         self.theta13 = theta13
@@ -264,14 +263,14 @@ class prob3base(object) :
 
         #Record the max layers
         #Note that max layers depends on earth model only (e.g. do not need to store a different value per flav-int)
-        self.max_layers = self.layers.max_layers
+        self.max_layers = layers.max_layers
 
         #Extract the layers information we actually need, taking care with types so can place nicely with the GPU arrays
-        num_layers = self.layers.n_layers.astype(np.int32)
-        density_in_layer = self.layers.density.astype(FTYPE)
-        distance_in_layer = self.layers.distance.astype(FTYPE)
+        num_layers = layers.n_layers.astype(np.int32)
+        density_in_layer = layers.density.astype(FTYPE)
+        distance_in_layer = layers.distance.astype(FTYPE)
 
-        self.layers_are_computed = True
+        self._layers_are_computed = True
 
         return num_layers, density_in_layer, distance_in_layer
 
@@ -344,7 +343,7 @@ class prob3cpu(prob3base) :
         # by the solar mixing (should be positive)
         # to feed the core libraries the correct value of m32."
         #if mAtm < 0.0: mAtm -= deltam21;
-        if not self.params_are_set :
+        if not self._params_are_set :
           raise Exception("Cannot get deltamatm : User must provide params using 'set_params' method")
         if self.deltam31.magnitude < 0.0:
             return self.deltam31
@@ -441,7 +440,7 @@ class prob3cpu(prob3base) :
         """
 
         #Check that params have been set
-        if not self.params_are_set :
+        if not self._params_are_set :
           raise Exception("Cannot calculate probabilities : User must provide params using 'set_params' method")
 
         #Check inputs
@@ -849,11 +848,11 @@ class prob3gpu :
         #TODO These two options are not the highest performance cases, but would make it easy to call this code externally for e.g. oscillogram plotting
 
         #Check that params have been set
-        if not self.params_are_set :
+        if not self._params_are_set :
           raise Exception("Cannot calculate probabilities : User must provide params using 'set_params' method")
 
         #Check that layers have been computed
-        if not self.layers_are_computed :
+        if not self._layers_are_computed :
           raise Exception("Cannot calculate probabilities : User must calculate layers using 'calc_path_layers' method")
 
         #TODO Check inputs are GPU arrays
@@ -890,7 +889,7 @@ class prob3gpu :
 
 #This basically just exposes one single interface to the user, with a toggle
 #to choose between CPU and GPU for the engine
-#This is made a litle ticky by the quite different calculation architecture 
+#This is made a litle tricky by the quite different calculation architecture 
 #in thw two implementations
 
 class prob3wrapper(object) :
@@ -927,6 +926,26 @@ class prob3wrapper(object) :
                 YeO=YeO, 
                 YeM=YeM
             )
+
+
+    #Expose members of the calculator
+    @property
+    def earth_model(self) : return self.prob3.earth_model
+
+    @property
+    def detector_depth(self) : return self.prob3.detector_depth
+
+    @property
+    def prop_height(self) : return self.prob3.prop_height
+
+    @property
+    def YeI(self) : return self.prob3.YeI
+
+    @property
+    def YeO(self) : return self.prob3.YeO
+
+    @property
+    def YeM(self) : return self.prob3.YeM
 
 
     #Call the 'calc_probs' function of the underlying calculator
