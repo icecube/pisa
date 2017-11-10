@@ -74,7 +74,7 @@ class pi_simple(PiStage):
         assert self.calc_mode is not None
         assert self.output_mode is not None
 
-    def setup(self):
+    def setup_function(self):
 
         self.data.data_specs = self.calc_specs
 
@@ -89,7 +89,7 @@ class pi_simple(PiStage):
 
         self.data.unlink_containers()
 
-    def compute(self):
+    def compute_function(self):
 
         self.data.data_specs = self.calc_specs
         nue_numu_ratio = self.params.nue_numu_ratio.value.m_as('dimensionless')

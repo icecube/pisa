@@ -118,9 +118,26 @@ class PiStage(BaseStage):
         self.outputs = None
 
     def setup(self):
+        self.setup_function()
+        # invalidate param hash:
+        self.param_hash = -1
+
+    def setup_function(self):
+        # to be implemented by stage
         pass
 
     def compute(self):
+        # simplest caching algorithm....just don't compute if params didn't change
+        if len(self.params) > 0:
+            new_param_hash = self.params.values_hash
+            if not new_param_hash == self.param_hash:
+                self.compute_function()
+                self.param_hash = new_param_hash
+            else:
+                logging.trace('cached output')
+
+    def compute_function(self):
+        # to be implemented by stage
         pass
 
     def apply(self):
@@ -170,6 +187,7 @@ class PiStage(BaseStage):
                     container.array_to_binned(key, self.output_specs)
 
     def apply_function(self):
+        # to be implemented by stage
         pass
 
 

@@ -4,6 +4,7 @@ from numba import SmartArray
 from pisa import *
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
+from pisa.utils.numba_tools import equal_and_scale, WHERE
 from pisa.core.binning import MultiDimBinning
 from pisa.core.map import Map, MapSet
 from pisa.core.container import Container, ContainerSet
@@ -56,7 +57,7 @@ class toy_event_generator(PiStage):
         # doesn't calculate anything
         assert self.calc_mode is None
 
-    def setup(self):
+    def setup_function(self):
 
         n_events = int(self.params.n_events.value.m)
         seed = int(self.params.seed.value.m)
@@ -90,9 +91,9 @@ class toy_event_generator(PiStage):
 
 
     def apply_function(self):
+        # reset weights
         for container in self.data:
-            weights = container['weights'].get('host')
-            new_weights = container['event_weights'].get('host')
-            # we need to re-assign the array!
-            weights[:] = new_weights[:]
-            container['weights'].mark_changed('host')
+            equal_and_scale(1.,
+                            container['event_weights'].get(WHERE),
+                            out=container['weights'].get(WHERE))
+            container['weights'].mark_changed(WHERE)

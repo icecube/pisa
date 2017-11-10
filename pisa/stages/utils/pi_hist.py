@@ -5,6 +5,7 @@ from pisa import *
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
+from pisa.utils.numba_tools import multiply_and_scale, WHERE
 from pisa.core.binning import MultiDimBinning
 from pisa.core.map import Map, MapSet
 
@@ -67,6 +68,7 @@ class pi_hist(PiStage):
         assert self.output_mode is 'binned'
 
 
+    @profile
     def apply(self):
         
         self.data.data_specs = self.input_specs
@@ -75,13 +77,14 @@ class pi_hist(PiStage):
         if self.input_mode == 'binned':
             for container in self.data:
                 container.array_to_binned('event_weights', self.output_specs, averaged=False)
-                weights = container['weights'].get('host')
-                weights *= container['event_weights'].get('host')
-                container['weights'].mark_changed('host')
+                multiply_and_scale(1.,
+                                   container['event_weights'],get(WHERE),
+                                   out=container['weights'].get(WHERE))
+                container['weights'].mark_changed(WHERE)
 
         elif self.input_mode == 'events':
             for container in self.data:
-                weights = container['weights'].get('host')
-                weights *= container['event_weights'].get('host')
-                container['weights'].mark_changed('host')
+                multiply_and_scale(1.,
+                                   container['event_weights'].get(WHERE),
+                                   out=container['weights'].get(WHERE))
                 container.array_to_binned('weights', self.output_specs, averaged=False)

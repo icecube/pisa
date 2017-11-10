@@ -5,6 +5,7 @@ from pisa import *
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
+from pisa.utils.numba_tools import WHERE, multiply_and_scale
 from pisa.core.binning import MultiDimBinning
 from pisa.core.map import Map, MapSet
 
@@ -74,6 +75,7 @@ class pi_aeff(PiStage):
         # but it could if for example some smoothing will be performed!
 
 
+    @profile
     def apply_function(self):
 
         # read out 
@@ -82,10 +84,13 @@ class pi_aeff(PiStage):
         nutau_cc_norm = self.params.nutau_cc_norm.m_as('dimensionless')
 
         for container in self.data:
-            w = container['weights'].get('host')
-            aeff = container['weighted_aeff'].get('host')
-            factor = aeff_scale * livetime_s
+            scale = aeff_scale * livetime_s
             if container.name in ['nutau_cc', 'nutaubar_cc']:
-                factor *= nutau_cc_norm
-            w *= aeff * factor
-            container['weights'].mark_changed('host')
+                scale *= nutau_cc_norm
+            multiply_and_scale(scale,
+                               container['weighted_aeff'].get(WHERE),
+                               out=container['weights'].get(WHERE),
+                               )
+            container['weights'].mark_changed(WHERE)
+
+

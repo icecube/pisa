@@ -16,6 +16,7 @@ __all__ = ['myjit',
            'ctype',
            'ftype',
            'WHERE',
+           'multiply_and_scale',
            ]
 __version__ = '0.1'
 __author__ = 'Philipp Eller (pde3@psu.edu)'
@@ -23,7 +24,7 @@ __author__ = 'Philipp Eller (pde3@psu.edu)'
 
 import numpy as np
 import inspect
-from numba import jit, float64, complex64, int32, float32, complex128
+from numba import jit, float64, complex64, int32, float32, complex128, guvectorize
 import math, cmath
 
 from pisa import FTYPE, TARGET
@@ -164,6 +165,19 @@ def test_copy_matrix():
     assert np.array_equal(A, B)
 
 
+# vectorized function to apply
+# must be outside class
+if FTYPE == np.float64:
+    signature = '(f8, f8, f8[:])'
+else:
+    signature = '(f4, f4, f4[:])'
+@guvectorize([signature], '(),()->()', target=TARGET)
+def multiply_and_scale(scale, value, out):
+    out[0] *= scale * value
+
+@guvectorize([signature], '(),()->()', target=TARGET)
+def equal_and_scale(scale, value, out):
+    out[0] = scale * value
 
 if __name__=='__main__':
     

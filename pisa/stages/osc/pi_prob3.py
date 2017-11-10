@@ -102,7 +102,7 @@ class pi_prob3(PiStage):
         assert self.output_mode is not None
 
 
-    def setup(self):
+    def setup_function(self):
 
         # object for oscillation parameters
         self.osc_params = OscParams()
@@ -167,7 +167,7 @@ class pi_prob3(PiStage):
                         )
         out.mark_changed(WHERE)
 
-    def compute(self):
+    def compute_function(self):
 
         # set the correct data mode 
         self.data.data_specs = self.calc_specs
