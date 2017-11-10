@@ -60,6 +60,7 @@ def test_Timer():
     """Unit tests for Timer class"""
     with Timer(verbose=True):
         time.sleep(0.1)
+    logging.info('<< PASS : test_Timer >>')
 
 
 if __name__ == '__main__':
