@@ -9,7 +9,7 @@ The data lives in SmartArrays on both CPU and GPU
 from collections import OrderedDict
 
 import numpy as np
-from numba import guvectorize, SmartArray
+from numba import guvectorize, SmartArray, cuda, float32
 
 from pisa import FTYPE, TARGET
 from pisa.core.binning import OneDimBinning, MultiDimBinning
@@ -336,23 +336,12 @@ class Container(object):
 
         '''
         logging.debug('Transforming %s array to binned data'%(key))
-        weights = self.array_data[key].get('host')
-        sample = [self.array_data[n].get('host') for n in binning.names]
-        bin_edges = binning.bin_edges
-        hist, edges = np.histogramdd(sample=sample,
-                                     weights=weights,
-                                     bins=bin_edges,
-                                     )
-        if normed:
-            weights = self.array_data['event_weights'].get('host')
-            norm_hist, edges = np.histogramdd(sample=sample,
-                                     weights=weights,
-                                     bins=bin_edges,
-                                     )
-            with np.errstate(divide='ignore', invalid='ignore'):
-                hist /= norm_hist
-                hist[~np.isfinite(hist)] = 0.  # -inf inf NaN
-        self.add_binned_data(key, (binning, hist), flat=False)
+        weights = self.array_data[key]
+        sample = [self.array_data[n] for n in binning.names]
+
+        hist =  histogram(sample, weights, binning, normed)
+
+        self.add_binned_data(key, (binning, hist))
 
     def binned_to_array(self, key):
         '''
@@ -429,17 +418,43 @@ class Container(object):
         return Map(name=self.name, hist=hist, binning=binning)
 
 
-def histogram(sample, weights, binning):
+def histogram(sample, weights, binning, normed):
     '''
     histograming
     2d method right now
     and of course this is super inefficient
     '''
-    assert binning.num_dims == 2, 'can only do 2d at the moment'
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
-    flat_hist = np.zeros(binning.size, dtype=FTYPE)
-    histogram_vectorized_2d(sample[0], sample[1], flat_hist, bin_edges[0], bin_edges[1], out=weights)
-    return flat_hist
+    if not TARGET == 'cuda':
+        #bin_edges = binning.bin_edges
+
+        sample = [s.get('host') for s in sample]
+
+        hist, edges = np.histogramdd(sample=sample,
+                                     weights=weights.get('host'),
+                                     bins=bin_edges,
+                                     )
+        if normed:
+            weights = self.array_data['event_weights'].get('host')
+            norm_hist, edges = np.histogramdd(sample=sample,
+                                     weights=weights.get('host'),
+                                     bins=bin_edges,
+                                     )
+            with np.errstate(divide='ignore', invalid='ignore'):
+                hist /= norm_hist
+                hist[~np.isfinite(hist)] = 0.  # -inf inf NaN
+        return hist.ravel()
+
+    else:
+        assert binning.num_dims == 2, 'can only do 2d at the moment'
+        flat_hist = np.zeros(binning.size, dtype=FTYPE)
+        size = len(weights)
+        d_flat_hist = cuda.to_device(flat_hist)
+        d_bin_edges_x = cuda.to_device(bin_edges[0])
+        d_bin_edges_y = cuda.to_device(bin_edges[1])
+        histogram_2d_kernel[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), d_flat_hist, d_bin_edges_x, d_bin_edges_y, weights.get('gpu'))
+        d_flat_hist.to_host()
+        return flat_hist
 
 def lookup(sample, flat_hist, binning):
     '''
@@ -463,11 +478,11 @@ def find_index(x, bin_edges):
     
     '''
     first = 0
-    last = len(bin_edges) - 2
+    last = len(bin_edges) - 1
     while (first <= last):
         i = int((first + last)/2)
         if x >= bin_edges[i]:
-            if (x < bin_edges[i+1]) or (x < bin_edges[-1] and i == len(bin_edges) - 2):
+            if (x < bin_edges[i+1]) or (x < bin_edges[-1] and i == len(bin_edges) - 1):
                 break
             else:
                 first = i + 1
@@ -487,6 +502,15 @@ def lookup_vectorized_2d(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y
     idx = idx_x*(len(bin_edges_y)-1) + idx_y
     weights[0] = flat_hist[idx]
 
+#('(float32[:], float32[:], float32[:], float32[:], float32[:]. float32[:])')
+@cuda.jit
+def histogram_2d_kernel(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights):
+    i = cuda.grid(1)
+    if i < weights.size:
+        idx_x = find_index(sample_x[i], bin_edges_x)
+        idx_y = find_index(sample_y[i], bin_edges_y)
+        idx = idx_x * (bin_edges_y.size - 1) + idx_y
+        cuda.atomic.add(flat_hist, idx, weights[i])
 
 if __name__ == '__main__':
 

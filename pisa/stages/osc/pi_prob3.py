@@ -12,6 +12,7 @@ from pisa.stages.osc.osc_params import OscParams
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.prob3numba.numba_osc import *
 from pisa.utils.numba_tools import *
+from pisa.utils.resources import find_resource
 
 
 class pi_prob3(PiStage):
@@ -20,6 +21,18 @@ class pi_prob3(PiStage):
 
     Paramaters
     ----------
+    detector_depth : float
+    earth_model : PREM file path
+    prop_height : quantity (dimensionless)
+    YeI : quantity (dimensionless)
+    YeO : quantity (dimensionless)
+    YeM : quantity (dimensionless)
+    theta12 : quantity (angle)
+    theta13 : quantity (angle)
+    theta23 : quantity (angle)
+    deltam21 : quantity (mass^2)
+    deltam31 : quantity (mass^2)
+    deltacp : quantity (angle)
 
     None
 
@@ -38,14 +51,23 @@ class pi_prob3(PiStage):
                  output_specs=None,
                  ):
 
-        expected_params = ()
+        expected_params = (
+            'detector_depth',
+            'earth_model',
+            'prop_height',
+            'YeI',
+            'YeO',
+            'YeM',
+            'theta12',
+            'theta13',
+            'theta23',
+            'deltam21',
+            'deltam31',
+            'deltacp',
+        )
 
         input_names = ()
         output_names = ()
-
-        assert input_specs is not None
-        assert calc_specs is not None
-        assert output_specs is not None
 
         # what are the keys used from the inputs during apply
         input_keys = ('weights',
@@ -75,20 +97,26 @@ class pi_prob3(PiStage):
                                        output_keys=output_keys,
                                        )
 
+        assert self.input_mode is not None
+        assert self.calc_mode is not None
+        assert self.output_mode is not None
+
+
     def setup(self):
 
-        # Set up some dumb mixing parameters
-        OP = OscParams(7.5e-5, 2.524e-3, np.sqrt(0.306), np.sqrt(0.02166), np.sqrt(0.441), 261/180.*np.pi)
-        self.mix = OP.mix_matrix_complex
-        self.dm = OP.dm_matrix
-        self.nsi_eps = np.zeros_like(self.mix)
+        # object for oscillation parameters
+        self.osc_params = OscParams()
 
         # setup the layers
-        earth_model = '/home/peller/cake/pisa/resources/osc/PREM_59layer.dat'
-        det_depth = 2
-        atm_height = 20
-        myLayers = Layers(earth_model, det_depth, atm_height)
-        myLayers.setElecFrac(0.4656, 0.4656, 0.4957)
+        #if self.params.earth_model.value is not None:
+        earth_model = find_resource(self.params.earth_model.value) #TODO Remove, don't think it is actually needed (probably done with prob3gpu/cpu)
+        YeI = self.params.YeI.value.m_as('dimensionless')
+        YeO = self.params.YeO.value.m_as('dimensionless')
+        YeM = self.params.YeM.value.m_as('dimensionless')
+        prop_height = self.params.prop_height.value.m_as('km')
+        detector_depth = self.params.detector_depth.value.m_as('km')
+        self.layers = Layers(earth_model, detector_depth, prop_height)
+        self.layers.setElecFrac(YeI, YeO, YeM)
 
         # set the correct data mode 
         self.data.data_specs = self.calc_specs
@@ -103,9 +131,9 @@ class pi_prob3(PiStage):
                                              'nuebar_nc', 'numubar_nc', 'nutaubar_nc'])
 
         for container in self.data:
-            myLayers.calcLayers(container['true_coszen'].get('host'))
-            container['densities'] = myLayers.density.reshape((container.size, myLayers.max_layers))
-            container['distances'] = myLayers.distance.reshape((container.size, myLayers.max_layers))
+            self.layers.calcLayers(container['true_coszen'].get('host'))
+            container['densities'] = self.layers.density.reshape((container.size, self.layers.max_layers))
+            container['distances'] = self.layers.distance.reshape((container.size, self.layers.max_layers))
 
         # don't forget to un-link everything again
         self.data.unlink_containers()
@@ -120,7 +148,7 @@ class pi_prob3(PiStage):
             container['probability'] = np.empty((container.size, 3, 3), dtype=FTYPE)
         self.data.unlink_containers()
 
-        # setup more arrays
+        # setup more empty arrays
         for container in self.data:
             container['prob_e'] = np.empty((container.size), dtype=FTYPE)
             container['prob_mu'] = np.empty((container.size), dtype=FTYPE) 
@@ -128,9 +156,9 @@ class pi_prob3(PiStage):
     @profile
     def calc_probs(self, nubar, e_array, rho_array, len_array, out):
         ''' wrapper to execute osc. calc '''
-        propagate_array(self.dm,
-                        self.mix,
-                        self.nsi_eps,
+        propagate_array(self.osc_params.dm_matrix,
+                        self.osc_params.mix_matrix_complex,
+                        self.osc_params.nsi_eps,
                         nubar,
                         e_array.get(WHERE),
                         rho_array.get(WHERE),
@@ -150,6 +178,15 @@ class pi_prob3(PiStage):
                                              'nue_nc', 'numu_nc', 'nutau_nc'])
             self.data.link_containers('nubar', ['nuebar_cc', 'numubar_cc', 'nutaubar_cc',
                                                 'nuebar_nc', 'numubar_nc', 'nutaubar_nc'])
+
+        # --- update mixing params ---
+        self.osc_params.theta12 = self.params.theta12.value.m_as('rad')
+        self.osc_params.theta13 = self.params.theta13.value.m_as('rad')
+        self.osc_params.theta23 = self.params.theta23.value.m_as('rad')
+        self.osc_params.dm21 = self.params.deltam21.value.m_as('eV**2')
+        self.osc_params.dm31 = self.params.deltam31.value.m_as('eV**2')
+        self.osc_params.deltacp = self.params.deltacp.value.m_as('rad')
+
 
         for container in self.data:
             self.calc_probs(container['nubar'],
@@ -191,7 +228,8 @@ class pi_prob3(PiStage):
             container['weights'].mark_changed(WHERE)
 
 
-# vectorized function to apply flux x osc_probs
+# vectorized function to apply (flux * prob)
+# must be outside class
 if FTYPE == np.float64:
     signature = '(f8, f8, f8, f8, f8[:])'
 else:

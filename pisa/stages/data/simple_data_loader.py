@@ -80,6 +80,9 @@ class simple_data_loader(PiStage):
             # load
             true_energy = evts[name]['true_energy'].astype(FTYPE)
             true_coszen = evts[name]['true_coszen'].astype(FTYPE)
+            reco_energy = evts[name]['reco_energy'].astype(FTYPE)
+            reco_coszen = evts[name]['reco_coszen'].astype(FTYPE)
+            pid = evts[name]['pid'].astype(FTYPE)
             # this determination of flavour is the worst possible coding, ToDo
             nubar = -1 if 'bar' in name else 1
             if 'e' in name: flav = 0
@@ -88,20 +91,23 @@ class simple_data_loader(PiStage):
             weighted_aeff = evts[name]['weighted_aeff'].astype(FTYPE)
             event_weights = np.ones_like(true_energy)
             weights = np.ones_like(true_energy)
-            flux_nue = evts[name]['neutrino_nue_flux'].astype(FTYPE)
-            flux_numu = evts[name]['neutrino_numu_flux'].astype(FTYPE)
+            neutrino_nue_flux = evts[name]['neutrino_nue_flux'].astype(FTYPE)
+            neutrino_numu_flux = evts[name]['neutrino_numu_flux'].astype(FTYPE)
 
             # make container
             container = Container(name)
             container.add_array_data('true_energy', true_energy)
             container.add_array_data('true_coszen', true_coszen)
+            container.add_array_data('reco_energy', reco_energy)
+            container.add_array_data('reco_coszen', reco_coszen)
+            container.add_array_data('pid', pid)
             container.add_scalar_data('nubar', nubar)
             container.add_scalar_data('flav', flav)
             container.add_array_data('event_weights', event_weights)
             container.add_array_data('weights', weights)
             container.add_array_data('weighted_aeff', weighted_aeff)
-            container.add_array_data('flux_e', flux_nue)
-            container.add_array_data('flux_mu', flux_numu)
+            container.add_array_data('neutrino_nue_flux', neutrino_nue_flux)
+            container.add_array_data('neutrino_numu_flux', neutrino_numu_flux)
             self.data.add_container(container)
 
 

@@ -54,25 +54,17 @@ class OscParams(object):
         Antisymmetric matrix of squared-mass differences in vacuum
 
     """
-    def __init__(self, dm_solar, dm_atm, sin12, sin13, sin23, deltacp):
-        """Set oscillation parameters and mass splittings"""
-        self.sin12 = sin12
-        self.sin13 = sin13
-        self.sin23 = sin23
+    def __init__(self):
 
-        self.deltacp = deltacp
+        self._sin12 = 0.
+        self._sin13 = 0.
+        self._sin23 = 0.
+        self._deltacp = 0.
+        self.dm21 = 0.
+        self.dm31 = 0.
+        self.nsi_eps = np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3,3), dtype=FTYPE)
 
-        # Comment BargerPropagator.cc:
-        # "For the inverted Hierarchy, adjust the input
-        # by the solar mixing (should be positive)
-        # to feed the core libraries the correct value of m32."
-        # TODO: Should we enforce `dm_solar` be positive, or warn at least?
-        self.dm_solar = dm_solar
-        if dm_atm < 0.0:
-            self.dm_atm = dm_atm - dm_solar
-        else:
-            self.dm_atm = dm_atm
-
+    # --- theta12 ---
     @property
     def sin12(self):
         """Sine of 1-2 mixing angle"""
@@ -80,9 +72,18 @@ class OscParams(object):
 
     @sin12.setter
     def sin12(self, value):
-        assert (value*value <= 1)
+        assert (abs(value) <= 1)
         self._sin12 = value
 
+    @property
+    def theta12(self, value):
+        return np.arcsin(self.sin12)
+
+    @theta12.setter
+    def theta12(self, value):
+        self.sin12 = np.sin(value)
+
+    # --- theta13 ---
     @property
     def sin13(self):
         """Sine of 1-3 mixing angle"""
@@ -90,9 +91,18 @@ class OscParams(object):
 
     @sin13.setter
     def sin13(self, value):
-        assert (value*value <= 1)
+        assert (abs(value) <= 1)
         self._sin13 = value
 
+    @property
+    def theta13(self, value):
+        return np.arcsin(self.sin13)
+
+    @theta13.setter
+    def theta13(self, value):
+        self.sin13 = np.sin(value)
+
+    # --- theta13 ---
     @property
     def sin23(self):
         """Sine of 2-3 mixing angle"""
@@ -100,9 +110,18 @@ class OscParams(object):
 
     @sin23.setter
     def sin23(self, value):
-        assert (value*value <= 1)
+        assert (abs(value) <= 1)
         self._sin23 = value
 
+    @property
+    def theta23(self, value):
+        return np.arcsin(self.sin23)
+
+    @theta23.setter
+    def theta23(self, value):
+        self.sin23 = np.sin(value)
+
+    # --- deltaCP ---
     @property
     def deltacp(self):
         """CPV phase"""
@@ -110,56 +129,69 @@ class OscParams(object):
 
     @deltacp.setter
     def deltacp(self, value):
+        assert value >= 0. and value <= 2*np.pi
         self._deltacp = value
 
+    # --- NSI epsilons ---
     @property
-    def dm_solar(self):
-        """'Solar' mass splitting"""
-        return self._dm_solar
+    def eps_ee(self):
+        """nue-nue NSI coupling parameter"""
+        return self.nsi_eps[0, 0].real
 
-    @dm_solar.setter
-    def dm_solar(self, value):
-        self._dm_solar = value
+    @eps_ee.setter
+    def eps_ee(self, value):
+        self.nsi_eps[0,0] = value + 1.j * self.nsi_eps[0,0].imag
 
     @property
-    def dm_atm(self):
-        """'Atmospheric' mass splitting"""
-        return self._dm_atm
+    def eps_emu(self):
+        """nue-numu NSI coupling parameter"""
+        return self.nsi_eps[1, 0].real
 
-    @dm_atm.setter
-    def dm_atm(self, value):
-        self._dm_atm = value
+    @eps_emu.setter
+    def eps_emu(self, value):
+        self.nsi_eps[1,0] = value + 1.j * self.nsi_eps[1,0].imag
+        self.nsi_eps[0,1] = value + 1.j * self.nsi_eps[0,1].imag
+
+    @property
+    def eps_etau(self):
+        """nue-nutau NSI coupling parameter"""
+        return self.nsi_eps[2, 0].real()
+
+    @eps_etau.setter
+    def eps_etau(self, value):
+        self.nsi_eps[2,0] = value + 1.j * self.nsi_eps[2,0].imag
+        self.nsi_eps[0,2] = value + 1.j * self.nsi_eps[0,2].imag
 
     @property
     def mix_matrix(self):
         """Neutrino mixing matrix"""
         mix = np.zeros((3,3,2), dtype=FTYPE)
 
-        sd = np.sin(self._deltacp)
-        cd = np.cos(self._deltacp)
+        sd = np.sin(self.deltacp)
+        cd = np.cos(self.deltacp)
 
-        c12 = np.sqrt(1.0-self._sin12*self._sin12)
-        c23 = np.sqrt(1.0-self._sin23*self._sin23)
-        c13 = np.sqrt(1.0-self._sin13*self._sin13)
+        c12 = np.sqrt(1.-self.sin12**2)
+        c23 = np.sqrt(1.-self.sin23**2)
+        c13 = np.sqrt(1.-self.sin13**2)
 
-        mix[0][0][0] = c12*c13
-        mix[0][0][1] = 0.0
-        mix[0][1][0] = self._sin12*c13
-        mix[0][1][1] = 0.0
-        mix[0][2][0] = self._sin13*cd
-        mix[0][2][1] = -self._sin13*sd
-        mix[1][0][0] = -self._sin12*c23-c12*self._sin23*self._sin13*cd
-        mix[1][0][1] = -c12*self._sin23*self._sin13*sd
-        mix[1][1][0] = c12*c23-self._sin12*self._sin23*self._sin13*cd
-        mix[1][1][1] = -self._sin12*self._sin23*self._sin13*sd
-        mix[1][2][0] = self._sin23*c13
-        mix[1][2][1] = 0.0
-        mix[2][0][0] = self._sin12*self._sin23-c12*c23*self._sin13*cd
-        mix[2][0][1] = -c12*c23*self._sin13*sd
-        mix[2][1][0] = -c12*self._sin23-self._sin12*c23*self._sin13*cd
-        mix[2][1][1] = -self._sin12*c23*self._sin13*sd
-        mix[2][2][0] = c23*c13
-        mix[2][2][1] = 0.0
+        mix[0][0][0] = c12 * c13
+        mix[0][0][1] = 0.
+        mix[0][1][0] = self.sin12 * c13
+        mix[0][1][1] = 0.
+        mix[0][2][0] = self.sin13 * cd
+        mix[0][2][1] = - self.sin13 * sd
+        mix[1][0][0] = - self.sin12 * c23 - c12 * self.sin23 * self.sin13 * cd
+        mix[1][0][1] = - c12 * self.sin23 * self.sin13 * sd
+        mix[1][1][0] = c12 * c23 - self.sin12 * self.sin23 * self.sin13 * cd
+        mix[1][1][1] = - self.sin12 * self.sin23 * self.sin13 * sd
+        mix[1][2][0] = self.sin23 * c13
+        mix[1][2][1] = 0.
+        mix[2][0][0] = self.sin12 * self.sin23 - c12 * c23 * self.sin13 * cd
+        mix[2][0][1] = - c12 * c23 * self.sin13 * sd
+        mix[2][1][0] = - c12 * self.sin23 - self.sin12 * c23 * self.sin13 * cd
+        mix[2][1][1] = - self.sin12 * c23 * self.sin13 * sd
+        mix[2][2][0] = c23 * c13
+        mix[2][2][1] = 0.
 
         return mix
 
@@ -173,26 +205,26 @@ class OscParams(object):
         """Neutrino mass splitting matrix in vacuum"""
         dmVacVac = np.zeros((3,3), dtype=FTYPE)
         mVac = np.zeros(3, dtype=FTYPE)
-        delta = 5.0e-9
+        delta = 5.e-9
 
-        mVac[0] = 0.0
-        mVac[1] = self._dm_solar
-        mVac[2] = self._dm_solar+self._dm_atm
+        mVac[0] = 0.
+        mVac[1] = self.dm21
+        mVac[2] = self.dm31
 
         # Break any degeneracies
-        if self._dm_solar == 0.0:
+        if mVac[1] == 0.:
             mVac[0] -= delta
-        if self._dm_atm == 0.0:
+        if mVac[2] == 0.:
             mVac[2] += delta
 
         dmVacVac[0][0] = 0.
         dmVacVac[1][1] = 0.
         dmVacVac[2][2] = 0.
-        dmVacVac[0][1] = mVac[0]-mVac[1]
-        dmVacVac[1][0] = -dmVacVac[0][1]
-        dmVacVac[0][2] = mVac[0]-mVac[2]
-        dmVacVac[2][0] = -dmVacVac[0][2]
-        dmVacVac[1][2] = mVac[1]-mVac[2]
-        dmVacVac[2][1] = -dmVacVac[1][2]
+        dmVacVac[0][1] = mVac[0] - mVac[1]
+        dmVacVac[1][0] = - dmVacVac[0][1]
+        dmVacVac[0][2] = mVac[0] - mVac[2]
+        dmVacVac[2][0] = - dmVacVac[0][2]
+        dmVacVac[1][2] = mVac[1] - mVac[2]
+        dmVacVac[2][1] = - dmVacVac[1][2]
 
         return dmVacVac
