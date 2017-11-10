@@ -4,10 +4,11 @@ import copy
 
 class DistributionMakerNutau(DistributionMaker):
 
-    def get_variables(self, variables, no_reco=False, apply_sys_to_mc=True, return_stages=['mc','icc'], pid_selection=''):
+    def get_variables(self, variables, no_reco=False, apply_sys_to_mc=True, muon_cuts='icc_def2', data_cuts='analysis', muon_proc='events/data_proc_params.json', data_proc='events/data_proc_params.json', return_stages=['mc','icc'], pid_selection=''):
         # Note: only works with mc, icc (or corsika) and/or data stages
-
-        #print "apply_sys_to_mc ", apply_sys_to_mc
+        print "muon_cuts= ", muon_cuts, ", data_cuts=", data_cuts 
+        print "muon_proc_file = ", muon_proc
+        print "data_proc_file = ", data_proc
         pipelines = self._pipelines
         mc_stage = None
         combine_stage = None
@@ -37,16 +38,17 @@ class DistributionMakerNutau(DistributionMaker):
 
         # params for data
         if data_stage is not None and 'data' in return_stages:
-            data_params = data_stage.get_fields(fields=variables, no_reco=no_reco)
+            #data_params = data_stage.get_fields(fields=variables, no_reco=no_reco, cuts=data_cuts, data_proc_file=data_proc)
+            data_params = data_stage.get_fields(fields=variables, no_reco=no_reco, cuts=data_cuts)
         else:
             data_params = None
 
         # params for icc 
         if muon_stage is not None:
             if 'icc' in return_stages:
-                muon_params = muon_stage.get_fields(fields=variables, no_reco=no_reco, event_file = muon_stage.params.icc_bg_file.value)
+                muon_params = muon_stage.get_fields(fields=variables, no_reco=no_reco, cuts = muon_cuts, event_file = muon_stage.params.icc_bg_file.value, data_proc_file=muon_proc)
             if 'corsika' in return_stages:
-                muon_params = muon_stage.get_fields(fields=variables, no_reco=no_reco, event_file = muon_stage.params.corsika_file.value)
+                muon_params = muon_stage.get_fields(fields=variables, no_reco=no_reco, cuts = muon_cuts, event_file = muon_stage.params.corsika_file.value, data_proc_file=muon_proc)
         else:
             muon_params = None
 
@@ -62,6 +64,7 @@ class DistributionMakerNutau(DistributionMaker):
             for param in mc_variables_add:
                 if param not in mc_variables:
                     mc_variables.append(param)
+            #print "in distribution_maker_nutau, mc_variables ", mc_variables
             mc_params = mc_stage.get_fields(fields=mc_variables, no_reco=no_reco)
             if apply_sys_to_mc:
                 if combine_stage is not None:
@@ -131,5 +134,4 @@ class DistributionMakerNutau(DistributionMaker):
                         mc_cut = pid_copy>=2.0
                     for key in mc_params[flav].keys():
                         mc_params[flav][key] = mc_params[flav][key][mc_cut]
-
         return mc_params, muon_params, data_params
