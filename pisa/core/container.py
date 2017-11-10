@@ -434,11 +434,33 @@ class Container(object):
         return Map(name=self.name, hist=hist, binning=binning)
 
 
+# --- maybe put the below in a different module(s) ---
+
+
 def histogram(sample, weights, binning, averaged):
     '''
     histograming
-    2d method right now
-    and of course this is super inefficient
+
+    Paramters
+    ---------
+
+    sample : list of SmartArrays
+
+    weights : SmartArray
+
+    binning : PISA MultiDimBinning
+
+    averaged : bool
+            if True, the histogram entries are averages of the numbers that
+            end up in a given bin. This for example must be used when oscillation
+            probabilities are translated.....otherwise we end up with probability*count
+            per bin
+        
+    Notes
+    -----
+
+    There are a lot of ToDos here, this method is far from being optimal
+
     '''
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
     if not TARGET == 'cuda':
@@ -497,8 +519,19 @@ def histogram(sample, weights, binning, averaged):
 def lookup(sample, flat_hist, binning):
     '''
     the inverse of histograming
-    2d method right now
-    and of course this is super inefficient
+
+    Paramters
+    --------
+
+    sample : list of SmartArrays
+
+    flat_hist : SmartArrays
+
+    binning : PISA MultiDimBinning
+
+    Notes
+    -----
+    this is only a 2d method right now
     '''
     assert binning.num_dims == 2, 'can only do 2d at the moment'
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
@@ -512,7 +545,8 @@ def lookup(sample, flat_hist, binning):
 def find_index(x, bin_edges):
     ''' simple binary search
     
-    ToDo: support lin and log binnings
+    ToDo: support lin and log binnings with
+    direct trnasformations instead of search
     
     '''
     first = 0
@@ -535,10 +569,14 @@ else:
 
 @guvectorize([signature], '(),(),(j),(k),(l)->()',target=TARGET)
 def lookup_vectorized_2d(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights):
+    '''
+    Vectorized gufunc to perform the lookup
+    '''
     idx_x = find_index(sample_x, bin_edges_x)
     idx_y = find_index(sample_y, bin_edges_y)
     idx = idx_x*(len(bin_edges_y)-1) + idx_y
     weights[0] = flat_hist[idx]
+
 
 # ToDo: can we do just n-dimensional?
 # Furthermore: optimize using shared memory
@@ -577,8 +615,8 @@ def histogram_3d_kernel(sample_x, sample_y, sample_z, flat_hist, bin_edges_x, bi
             else:
                 cuda.atomic.add(flat_hist, idx, weights[i])
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
 
     n_evts = 10000
     x = np.arange(n_evts, dtype=FTYPE)
