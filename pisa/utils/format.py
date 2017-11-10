@@ -925,7 +925,7 @@ def format_num(value,
 
         if exponent is not None:
             if fmt in ('eng', 'sipre'):
-                assert exponent in SI_PREFIX_TO_ORDER_OF_MAG or exponent in ORDER_OF_MAG_TO_SI_PREFIX
+                assert exponent in SI_PREFIX_TO_ORDER_OF_MAG or exponent in ORDER_OF_MAG_TO_SI_PREFIX, str(exponent)
             elif fmt == 'binpre':
                 assert exponent in BIN_PREFIX_TO_POWER_OF_1024 or exponent in POWER_OF_1024_TO_BIN_PREFIX
             if not isinstance(exponent, basestring) and not isinstance(exponent, Integral):
@@ -1360,10 +1360,12 @@ def timediff(dt_sec, hms_always=False, sec_decimals=3):
         # decimal places
         if (h == 0) and (m == 0) and not hms_always:
             nearest_si_order_of_mag = (
-                decimal.Decimal.from_float(dt_sec).adjusted() // 3
+                (decimal.Decimal.from_float(dt_sec).adjusted() // 3) * 3
             )
-            sec_str = format_num(dt_sec, precision=nearest_si_order_of_mag-3,
-                                 exponent=nearest_si_order_of_mag, fmt='sipre')
+            sec_str = format_num(dt_sec,
+                                 precision=10**(nearest_si_order_of_mag-3),
+                                 exponent=nearest_si_order_of_mag,
+                                 fmt='sipre')
             return sec_str + 's'
         # Otherwise, round seconds to sec_decimals decimal digits
         s = np.round(s, sec_decimals)
