@@ -43,7 +43,7 @@ class pi_aeff(PiStage):
         output_names = ()
 
         # what are the keys used from the inputs during apply
-        input_keys = ('weights',
+        input_keys = ('weighted_aeff',
                       )
         # what are keys added or altered in the calculation used during apply 
         calc_keys = ()
