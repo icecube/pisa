@@ -1,4 +1,11 @@
-# $PISA/pisa/resources
+# pisa.resources
+
+Location to store default resources for PISA.
+
+Note that for resources outside of the standard resources, you can use a separate directory and set the `PISA_RESOURCES` environment variable in your shell pointing to that directory.
+
+
+## Directory Listing
 
 * `aeff/` - Contains files used by the `aeff` stages e.g. parameterised effective areas.
 * `backgrounds/` - Contains files relating to the backgrounds in analyses.
@@ -13,5 +20,4 @@
 * `reco/` - Contains files used by the `reco` stages e.g. parameterised reconstruction kernels.
 * `settings/` - Containing settings files used by the pipelines.
 * `tests/` - Contains all files relating to the tests in `$PISA/tests`.
-* `.gitignore`
-* `__init__.py`
+* `__init__.py` - File that makes `resources` directory behave as a Python module

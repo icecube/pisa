@@ -1,4 +1,10 @@
-# Core object hierarchy
+# pisa.core
+
+Module containing all core PISA objects
+
+
+## Summary of Core PISA Objects
+
 This is a summary of the hierarchy of the objects instantiated by the pisa.core
 classes. Indentation indicates that the object lives in the class above.
 
@@ -43,7 +49,8 @@ Some examples are given to facilitate understanding.
               * [OneDimBinning](/pisa/core/binning.py) d1 (e.g. true/reco_coszen)
               * [OneDimBinning](/pisa/core/binning.py) ...
 
-# $PISA/pisa/core
+
+## Directory Listing
 
 * `images/` - Contains images designed to illustrate the architecture of a stage, how it fits in to the pipeline and the overall distribution maker.
 * `__init__.py`
