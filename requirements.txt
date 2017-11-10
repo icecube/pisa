@@ -12,3 +12,4 @@ line_profiler
 matplotlib>=2.0
 uncertainties
 decorator
+numba>=0.35
