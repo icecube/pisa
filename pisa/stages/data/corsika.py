@@ -96,7 +96,7 @@ class corsika(Stage):
         cut_events = self.get_fields(fields, event_file = corsika_file,
                 no_reco=no_reco,
                 #cuts='analysis',
-                cuts='level4_and_icc_def2',
+                cuts='l34_and_icc_def2',
                 run_setting_file='events/mc_sim_run_settings.json',
                 data_proc_file='events/data_proc_params.json')
 
@@ -147,8 +147,7 @@ class corsika(Stage):
 
         return MapSet(maps, name='corsika')
 
-    def get_fields(self, fields, event_file, no_reco=False, cuts='analysis', run_setting_file='events/mc_sim_run_settings.json',
-                        data_proc_file='events/data_proc_params.json'):
+    def get_fields(self, fields, event_file, no_reco=False, cuts='analysis', run_setting_file='events/mc_sim_run_settings.json', data_proc_file='events/data_proc_params.json'):
         """ Return corsika events' fields with the chosen corsika background definition.
 
         Paramaters
@@ -172,13 +171,17 @@ class corsika(Stage):
 
         # get fields that'll be used for applying cuts or fields that'll have cuts applied
         fields_for_cuts = copy.deepcopy(fields)
+        if 'corsika_weight' not in fields:
+            fields_for_cuts.append('corsika_weight')
         if no_reco==False:
-            for param in ['reco_energy', 'reco_coszen', 'pid', 'corsika_weight']:
+            for param in ['reco_energy', 'reco_coszen', 'pid']:
                 if param not in fields:
                     fields_for_cuts.append(param)
         # apply cuts, defined in 'cuts', plus cuts on bins
         cut_data = data_proc_params.applyCuts(data, cuts=cuts, return_fields=fields_for_cuts)
-        all_cuts = np.ones(len(cut_data['reco_energy']), dtype=bool)
+        for field in fields:
+            len_cut_data = len(cut_data[field])
+        all_cuts = np.ones(len_cut_data, dtype=bool)
         if no_reco==False:
             for bin_name, bin_edge in zip(self.bin_names, self.bin_edges):
                 bin_cut = np.logical_and(cut_data[bin_name]<= bin_edge[-1], cut_data[bin_name]>= bin_edge[0])
