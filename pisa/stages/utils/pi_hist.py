@@ -74,7 +74,7 @@ class pi_hist(PiStage):
 
         if self.input_mode == 'binned':
             for container in self.data:
-                container.array_to_binned('event_weights', self.output_specs, normed=False)
+                container.array_to_binned('event_weights', self.output_specs, averaged=False)
                 weights = container['weights'].get('host')
                 weights *= container['event_weights'].get('host')
                 container['weights'].mark_changed('host')
@@ -84,4 +84,4 @@ class pi_hist(PiStage):
                 weights = container['weights'].get('host')
                 weights *= container['event_weights'].get('host')
                 container['weights'].mark_changed('host')
-                container.array_to_binned('weights', self.output_specs, normed=False)
+                container.array_to_binned('weights', self.output_specs, averaged=False)

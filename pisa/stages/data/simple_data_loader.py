@@ -116,8 +116,8 @@ class simple_data_loader(PiStage):
         # reset weights
         for container in self.data:
             weights = container['weights'].get('host')
-            #new_weights = container['event_weights'].get('host')
-            new_weights = container['weighted_aeff'].get('host')
+            new_weights = container['event_weights'].get('host')
+            #new_weights = container['weighted_aeff'].get('host')
             # we need to re-assign the array!
             weights[:] = new_weights[:]
             container['weights'].mark_changed('host')
