@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Utilities for simple timing and displaying time/date and time-deltas.
+Utilities for simple timing.
 
 See Also: pisa.utils.profile module, which contains decorators for timing
 functions and methods.

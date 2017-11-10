@@ -1,3 +1,8 @@
+"""
+Smooth an array by splining it and resampling from the spline
+"""
+
+
 import numpy as np
 from pisa.utils.log import logging
 from scipy.interpolate import splrep, splev, interp1d
