@@ -83,16 +83,6 @@ class decoherence(prob3base) :
 
         #Note: Ignoring nu/nubar distinction here, as matter effects and CP violation phase are not implemented
 
-        #Get deltam32
-        #TODO Do this properly
-        #TODO Do this properly
-        #TODO Do this properly
-        #TODO Do this properly
-        #TODO Do this properly
-        #TODO Do this properly
-        deltam32 = self.deltam31
-
-
         #Electron neutrino case
         if kFlav == 0 :
 
@@ -109,12 +99,8 @@ class decoherence(prob3base) :
             prob_e.fill(0.)
 
             #Calculate numu survival probability
-            numu_survial_prob = 1. - self._calc_numu_disappearance_prob(theta23=self.theta23,
-                                                                        deltam32=deltam32,
-                                                                        gamma32=self.gamma32,
-                                                                        E=true_e_scale*true_energy,
-                                                                        L=L)
-            np.copyto(prob_mu,numu_survial_prob)
+            numu_survival_prob = 1. - self._calc_numu_disappearance_prob( E=true_e_scale*true_energy, L=L )
+            np.copyto(prob_mu,numu_survival_prob)
 
 
         #Tau neutrino case
@@ -123,12 +109,8 @@ class decoherence(prob3base) :
             #For nu_tau case, in this 2-flavor approximation there is zero probability of becoming a nu_e
             prob_e.fill(0.)
 
-            #In 2-flavor approx, numu appearance is due to nutau disappearance
-            nutau_disappearance_prob = 1. - self._calc_numu_disappearance_prob(theta23=self.theta23,
-                                                                        deltam32=deltam32,
-                                                                        gamma32=self.gamma32,
-                                                                        E=true_e_scale*true_energy,
-                                                                        L=L)
+            #In 2-flavor approx, just use the inverse of the numu case
+            nutau_disappearance_prob = self._calc_numu_disappearance_prob( E=true_e_scale*true_energy, L=L )
             np.copyto(prob_mu,nutau_disappearance_prob)
 
         else :
@@ -136,7 +118,7 @@ class decoherence(prob3base) :
 
 
 
-    def _calc_numu_disappearance_prob(self,theta23,deltam32,gamma32,E,L) : #TODO staticmethod?
+    def _calc_numu_disappearance_prob(self,E,L) :
 
         #Define two-flavor decoherence approximation equation
         #Eq. 2 from arxiv:1702.04738
@@ -149,11 +131,20 @@ class decoherence(prob3base) :
         E = E if hasattr(E,"units") else E * ureg["GeV"]
         L = L if hasattr(L,"units") else L * ureg["km"]
 
+        #Get deltam32
+        #TODO Do this properly
+        #TODO Do this properly
+        #TODO Do this properly
+        #TODO Do this properly
+        #TODO Do this properly
+        #TODO Do this properly
+        deltam32 = self.deltam31
+
         #Calculate normalisation term
-        norm_term = 0.5 * ( np.sin( 2. * theta23.m_as("rad") )**2 )
+        norm_term = 0.5 * ( np.sin( 2. * self.theta23.m_as("rad") )**2 )
 
         #Calculate decoherence term
-        decoh_term = np.exp( -gamma32.m_as("eV") * ( L.m_as("m")/1.97e-7 ) ) #Convert L from [m] to natural units
+        decoh_term = np.exp( -self.gamma32.m_as("eV") * ( L.m_as("m")/1.97e-7 ) ) #Convert L from [m] to natural units
 
         #Calculate oscillation term
         osc_term = np.cos( ( 2. * 1.27 * deltam32.m_as("eV**2") * L.m_as("km") ) / ( E.m_as("GeV") ) )
