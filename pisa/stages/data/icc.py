@@ -240,12 +240,12 @@ class icc(Stage):
         # apply cuts, defined in 'cuts', plus cuts on bins
         cut_data = data_proc_params.applyCuts(data, cuts=cuts, return_fields=fields_for_cuts)
         # apply bdt_score cut if needed
-        if cut_data.has_key('dunkman_L5'):
-            if bdt_cut is not None:
-                bdt_score = cut_data['dunkman_L5']
-                all_cuts = bdt_score>=bdt_cut
+        if cut_data.has_key('dunkman_L5') and bdt_cut is not None:
+            all_cuts = cut_data['dunkman_L5']>=bdt_cut
         else:
-            all_cuts = np.ones(len(cut_data['true_energy']), dtype=bool)
+            for field in fields:
+                len_cut_data = len(cut_data[field])
+            all_cuts = np.ones(len_cut_data, dtype=bool)
         if no_reco==False:
             for bin_name, bin_edge in zip(self.bin_names, self.bin_edges):
                 bin_cut = np.logical_and(cut_data[bin_name]<= bin_edge[-1], cut_data[bin_name]>= bin_edge[0])
