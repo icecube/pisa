@@ -110,7 +110,7 @@ class pi_simple(PiStage):
                                          container['neutrino_numu_flux'].get(WHERE),
                                          out=container['flux_mu'].get(WHERE),
                                          )
-            container['flux_e'].mark_changed(WHERE)
+            container['flux_mu'].mark_changed(WHERE)
 
         self.data.unlink_containers()
 
