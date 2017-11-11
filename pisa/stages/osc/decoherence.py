@@ -6,6 +6,7 @@ from __future__ import division
 
 import os, sys, copy
 
+import math, cmath
 import numpy as np
 
 from pisa import FTYPE, C_FTYPE, C_PRECISION_DEF
@@ -21,14 +22,17 @@ __all__ = ['prob3','prob3cpu','prob3gpu','prob3wrapper','ArrayVariable']
 class decoherence(prob3base) :
 
     def __init__(self, earth_model, detector_depth, prop_height, 
-                      YeI=None, YeO=None, YeM=None) :
+                      YeI=None, YeO=None, YeM=None,
+                      two_flavor=False) :
 
         #Haven't implemented matter effects yet
         if earth_model is not None :
             raise Exception("Matter effects not yet implemented for decoherence")
 
         #Warn about simple 2 flavour approximation
-        #TODO
+        self.two_flavor = two_flavor
+        if self.two_flavor : 
+            logging.warn("Using 2-flavor approximation for decoherence oscillation probability calcualtion")
 
         #Call base class contructor
         super(self.__class__, self).__init__(
@@ -54,19 +58,22 @@ class decoherence(prob3base) :
         self.gamma31 = gamma31
         self.gamma32 = gamma32
 
-        #Enforce >= 0. for decoherence parameters
-        if self.gamma21.m_as("GeV") < 0. : raise Exception("Decoherence parameter gamma21 must be >= 0.") 
-        if self.gamma31.m_as("GeV") < 0. : raise Exception("Decoherence parameter gamma31 must be >= 0.") 
-        if self.gamma32.m_as("GeV") < 0. : raise Exception("Decoherence parameter gamma32 must be >= 0.") 
+        #Enforce >= 0. for decoherence parameters #TODO Think abou this...
+        #if self.gamma21.m_as("GeV") < 0. : raise Exception("Decoherence parameter gamma21 must be >= 0.") 
+        #if self.gamma31.m_as("GeV") < 0. : raise Exception("Decoherence parameter gamma31 must be >= 0.") 
+        #if self.gamma32.m_as("GeV") < 0. : raise Exception("Decoherence parameter gamma32 must be >= 0.") 
 
         #Otherwise use base class function for all standard oscillation params
-        return super(self.__class__, self).set_params(theta12=theta12, 
-                                                        theta13=theta13, 
-                                                        theta23=theta23,
-                                                        deltam21=deltam21, 
-                                                        deltam31=deltam31, 
-                                                        deltacp=deltacp )
+        super(self.__class__, self).set_params(theta12=theta12, 
+                                                theta13=theta13, 
+                                                theta23=theta23,
+                                                deltam21=deltam21, 
+                                                deltam31=deltam31, 
+                                                deltacp=deltacp )
 
+        #Get deltam32
+        #TODO Do this properly
+        self.deltam32 = self.deltam31
 
 
 
@@ -86,7 +93,7 @@ class decoherence(prob3base) :
         #Electron neutrino case
         if kFlav == 0 :
 
-            #For nu_e case, in this 2-flavor approiximation we are essential neglecting nu_e oscillations
+            #For nu_e case, in this approiximation we are essential neglecting nu_e oscillations
             #If a particle starts as a nu_e, it stays as a nu_e
             prob_e.fill(1.)
             prob_mu.fill(0.)
@@ -95,30 +102,35 @@ class decoherence(prob3base) :
         #Muon neutrino case
         elif kFlav == 1 :
 
-            #For nu_mu case, in this 2-flavor approximation there is zero probability of becoming a nu_e
+            #For nu_mu case, in this approximation there is zero probability of becoming a nu_e
             prob_e.fill(0.)
 
             #Calculate numu survival probability
-            numu_survival_prob = 1. - self._calc_numu_disappearance_prob( E=true_e_scale*true_energy, L=L )
+            numu_survival_prob = self.calc_numu_disappearance_prob( E=true_e_scale*true_energy, L=L )
             np.copyto(prob_mu,numu_survival_prob)
-
 
         #Tau neutrino case
         elif kFlav == 2 :
 
-            #For nu_tau case, in this 2-flavor approximation there is zero probability of becoming a nu_e
+            #For nu_tau case, in this approximation there is zero probability of becoming a nu_e
             prob_e.fill(0.)
 
-            #In 2-flavor approx, just use the inverse of the numu case
-            nutau_disappearance_prob = self._calc_numu_disappearance_prob( E=true_e_scale*true_energy, L=L )
+            #Currently just using the inverse of the numu case
+            nutau_disappearance_prob = self.calc_numu_disappearance_prob( E=true_e_scale*true_energy, L=L )
             np.copyto(prob_mu,nutau_disappearance_prob)
-
+         
         else :
             raise Exception( "Unrecognised kFlav value %i" % kFlav )
 
 
 
-    def _calc_numu_disappearance_prob(self,E,L) :
+
+    def calc_numu_disappearance_prob(self,E,L) :
+        if self.two_flavor : return self._calc_numu_disappearance_prob_2flav(E,L)
+        else : return self._calc_numu_disappearance_prob_3flav(E,L)
+
+
+    def _calc_numu_disappearance_prob_2flav(self,E,L) :
 
         #Define two-flavor decoherence approximation equation
         #Eq. 2 from arxiv:1702.04738
@@ -131,15 +143,6 @@ class decoherence(prob3base) :
         E = E if hasattr(E,"units") else E * ureg["GeV"]
         L = L if hasattr(L,"units") else L * ureg["km"]
 
-        #Get deltam32
-        #TODO Do this properly
-        #TODO Do this properly
-        #TODO Do this properly
-        #TODO Do this properly
-        #TODO Do this properly
-        #TODO Do this properly
-        deltam32 = self.deltam31
-
         #Calculate normalisation term
         norm_term = 0.5 * ( np.sin( 2. * self.theta23.m_as("rad") )**2 )
 
@@ -147,7 +150,93 @@ class decoherence(prob3base) :
         decoh_term = np.exp( -self.gamma32.m_as("eV") * ( L.m_as("m")/1.97e-7 ) ) #Convert L from [m] to natural units
 
         #Calculate oscillation term
-        osc_term = np.cos( ( 2. * 1.27 * deltam32.m_as("eV**2") * L.m_as("km") ) / ( E.m_as("GeV") ) )
+        osc_term = np.cos( ( 2. * 1.27 * self.deltam32.m_as("eV**2") * L.m_as("km") ) / ( E.m_as("GeV") ) )
 
         return norm_term * ( 1. - (decoh_term*osc_term) )
+
+
+    def _updateMatrix(self, theta12, theta13, theta23):
+
+        """Updates the PMNS matrix and its complex conjugate.
+        
+        Must be called by the class each time one of the PMNS matrix parameters are changed.
+        """
+
+        zero = 0.0
+        c12  =  math.cos( theta12.m_as("rad") )
+        c13  =  math.cos( theta13.m_as("rad") )
+        c23  =  math.cos( theta23.m_as("rad") )
+        s12  =  math.sin( theta12.m_as("rad") )
+        s13  =  math.sin( theta13.m_as("rad") )
+        s23  =  math.sin( theta23.m_as("rad") )
+        eid  = 0.0 # e^( i * delta_cp)
+        emid = 0.0 # e^(-i * delta_cp)
+        
+        matrix      = [[zero,zero,zero],[zero,zero,zero],[zero,zero,zero]]
+        anti_matrix = [[zero,zero,zero],[zero,zero,zero],[zero,zero,zero]]
+        
+        matrix[0][0] = c12 * c13
+        matrix[0][1] = s12 * c13
+        matrix[0][2] = s13 * emid
+        
+        matrix[1][0] = (zero - s12*c23 ) - ( c12*s23*s13*eid )
+        matrix[1][1] = ( c12*c23 ) - ( s12*s23*s13*eid )
+        matrix[1][2] = s23*c13
+        
+        matrix[2][0] = ( s12*s23 ) - ( c12*c23*s13*eid)
+        matrix[2][1] = ( zero - c12*s23 ) - ( s12*c23*s13*eid )
+        matrix[2][2] = c23*c13
+        
+        for i in range(3):
+            for j in range(3):
+                anti_matrix[i][j] = matrix[i][j].conjugate()
+
+        return matrix, anti_matrix
+
+
+    #def _calc_numu_disappearance_prob_3flav(self, theta12, theta13, theta23, deltam21, deltam31, deltam32, gamma21, gamma31, gamma32, E, L):
+    def _calc_numu_disappearance_prob_3flav(self, E, L):
+            
+        #Returns the oscillation probability.
+            
+        # Oscillations with E = 0 or don't really make sense,
+        # but if you're plotting graphs these are the values you'll want.
+
+        E = E if hasattr(E,"units") else E * ureg["GeV"]
+        L = L if hasattr(L,"units") else L * ureg["km"]
+
+        U = self._updateMatrix(self.theta12, self.theta13, self.theta23)[0] # Use PMNS matrix
+        
+        # No decoherence 
+        #s = complex(0.0,0.0)
+
+        #for x in range(3):
+        #   s += U[a][x].conjugate() * U[b][x] * cmath.exp( (-i*m2[x]*L)/(2.0*E) )
+        
+        #return pow(abs(s), 2)
+        
+        
+        # Decoherence
+        Gamma = np.zeros([3,3])
+        Gamma[1][0] = self.gamma21.m_as("GeV")
+        Gamma[2][0] = self.gamma31.m_as("GeV")
+        Gamma[2][1] = self.gamma32.m_as("GeV")
+                    
+                
+        #if( E[i_e][i_l] == 0.0 or L[i_e][i_l] == 0.0 ):
+        #   return 1.0          
+        delta_jk = np.zeros([3,3])
+        delta_jk[1][0] = self.deltam21.m_as("eV**2") 
+        delta_jk[2][0] = self.deltam31.m_as("eV**2")
+        delta_jk[2][1] = self.deltam32.m_as("eV**2")
+
+        prob_dec = np.zeros(np.shape(E))
+        
+        for i_j in range(3):
+            for i_k in range(3):
+                if i_j > i_k:
+                    prob_dec += abs(U[2][i_j])**2 * abs(U[2][i_k])**2 * (1.0 - np.exp( - Gamma[i_j][i_k] * L.m_as("km") * 5.07e+18) * np.cos(delta_jk[i_j][i_k] * 1.0e-18 / (2.0 * E.m_as("GeV")) * L.m_as("km") * 5.07e+18))
+        prob_array = 2.0 * prob_dec.real    
+        
+        return prob_array
 
