@@ -303,10 +303,8 @@ def test_get_product():
 
 
 @myjit
-def get_transition_amplitude_matrix(baseline,
+def get_transition_matrix_massbasis(baseline,
                                     energy,
-                                    mix_nubar,
-                                    mix_nubar_conj_transp,
                                     dm_mat_vac,
                                     dm_mat_mat,
                                     H_mat_mass_eigenstate_basis,
@@ -323,12 +321,6 @@ def get_transition_amplitude_matrix(baseline,
     energy : float
         neutrino energy
 
-    mix_nubar : complex 2d-array
-        Mixing matrix, already conjugated for antineutrinos
-
-    mix_nubar_conj_transp : comjugate 2d-array
-        conjugate transpose of mixing matrix
-
     dm_mat_vac : 2d-array
 
     dm_mat_mat : 2d-array
@@ -336,6 +328,7 @@ def get_transition_amplitude_matrix(baseline,
     H_mat_mass_eigenstate_basis : 2-d array
 
     transition_matrix : 2d-array (empty)
+        in mass eigenstate basis
     
     Notes
     -----
@@ -343,11 +336,8 @@ def get_transition_amplitude_matrix(baseline,
     - take into account generic potential matrix (=Hamiltonian)
 
     '''
-    X = cuda.local.array(shape=(3,3), dtype=ctype)
     product = cuda.local.array(shape=(3,3,3), dtype=ctype)
-    tmp = cuda.local.array(shape=(3,3), dtype=ctype)
 
-    clear_matrix(X)
     clear_matrix(transition_matrix)
 
     get_product(energy,
@@ -364,13 +354,10 @@ def get_transition_amplitude_matrix(baseline,
         c = cmath.exp(arg * 1.j)
         for i in range(3):
             for j in range(3):
-                X[i,j] += c * product[i,j,k]
+                transition_matrix[i,j] += c * product[i,j,k]
 
-    # Compute the product with the mix_nubaring matrices 
-    matrix_dot_matrix(X, mix_nubar_conj_transp, tmp)
-    matrix_dot_matrix(mix_nubar, tmp, transition_matrix)
 
-def test_get_transition_amplitude_matrix():
+def test_get_transition_matrix_massbasis():
     baseline = 1.
     energy = 1.
     mix = np.ones(shape=(3,3), dtype=ctype)
@@ -379,10 +366,8 @@ def test_get_transition_amplitude_matrix():
     H_mat_mass_eigenstate_basis = np.ones(shape=(3,3), dtype=ctype)
     transition_matrix = np.ones(shape=(3,3), dtype=ctype)
 
-    get_transition_amplitude_matrix(baseline,
+    get_transition_matrix_massbasis(baseline,
                                     energy,
-                                    mix,
-                                    mix.conj().T,
                                     dm_mat_vac,
                                     dm_mat_mat,
                                     H_mat_mass_eigenstate_basis,
@@ -461,6 +446,7 @@ def get_transition_matrix(nubar,
     dm : 2d-array
 
     transition_matrix : 2d-array (empty)
+        in mass eigenstate basis
     
     Notes
     -----
@@ -499,10 +485,8 @@ def get_transition_matrix(nubar,
 
     # We can now proceed to calculating the transition amplitude from the Hamiltonian
     # in the mass basis and the effective mass splittings 
-    get_transition_amplitude_matrix(baseline,
+    get_transition_matrix_massbasis(baseline,
                                     energy,
-                                    mix_nubar,
-                                    mix_nubar_conj_transp,
                                     dm_mat_vac,
                                     dm_mat_mat,
                                     H_mat_mass_eigenstate_basis,
@@ -799,6 +783,10 @@ def osc_probs_layers_kernel(dm,
                     matrix_dot_matrix(transition_matrix,transition_product, tmp)
                     copy_matrix(tmp, transition_product)
         
+    # convrt to flavour eigenstate basis
+    matrix_dot_matrix(transition_product, mix_nubar_conj_transp, tmp)
+    matrix_dot_matrix(mix_nubar, tmp, transition_product)
+
     # loop on neutrino types, and compute probability for neutrino i:
     for i in range(3):
         for j in range(3):
