@@ -530,6 +530,7 @@ def parse_pipeline_config(config):
                         " '%s' binning entry:\n'%s'"
                         %(bin_name, binning, def_raw)
                     )
+		    raise
                 try:
                     bins.append(OneDimBinning(bin_name, **kwargs))
                 except:
