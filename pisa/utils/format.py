@@ -8,6 +8,7 @@ Utilities for interpreting and returning formatted strings.
 
 from __future__ import absolute_import, division, print_function
 
+from collections import OrderedDict
 import decimal
 from itertools import imap
 from numbers import Integral, Number
@@ -27,14 +28,16 @@ __all__ = ['WHITESPACE_RE', 'NUMBER_RESTR', 'NUMBER_RE', 'HRGROUP_RESTR',
            'TEX_SPECIAL_CHARS_MAPPING', 'SI_PREFIX_TO_ORDER_OF_MAG',
            'ORDER_OF_MAG_TO_SI_PREFIX', 'BIN_PREFIX_TO_POWER_OF_1024',
            'POWER_OF_1024_TO_BIN_PREFIX',
-           'list2hrlist', 'hrlist2list', 'hrlol2lol', 'hrbool2bool', 'engfmt',
-           'text2tex', 'tex_join', 'tex_rm', 'default_map_tex', 'is_tex',
+           'split', 'hr_range_formatter', 'test_hr_range_formatter',
+           'list2hrlist', 'test_list2hrlist', 'hrlist2list',
+           'hrlol2lol', 'hrbool2bool', 'engfmt',
+           'text2tex', 'tex_join', 'tex_dollars', 'default_map_tex', 'is_tex',
            'int2hex', 'hash2hex',
            'strip_outer_dollars', 'strip_outer_parens',
-           'make_valid_python_name', 'sep_three_tens', 'format_num',
+           'make_valid_python_name', 'sep_three_tens',
+           'format_num',
            'test_format_num',
-           'timediff', 'timestamp', 'test_timestamp',
-           'test_timediff']
+           'timediff', 'test_timediff', 'timestamp', 'test_timestamp']
 
 
 __author__ = 'J.L. Lanfranchi, jll1062+pisa@phys.psu.edu'
@@ -75,29 +78,51 @@ TEX_SPECIAL_CHARS_MAPPING = {
     #'sqrt': r'\surd'
 }
 
-ORDER_OF_MAG_TO_SI_PREFIX = {
-    -24: 'y', -21: 'z', -18: 'a', -15: 'f',
-    -6: 'μ', -3: 'm', -9: 'n', -12: 'p',
-    0: '',
-    3: 'k', 6: 'M', 9: 'G', 12: 'T', 15: 'P',
-    18: 'E', 21: 'Z', 24: 'Y'
-}
+ORDER_OF_MAG_TO_SI_PREFIX = OrderedDict([
+    (-24, 'y'),
+    (-21, 'z'),
+    (-18, 'a'),
+    (-15, 'f'),
+    (-6, 'μ'),
+    (-3, 'm'),
+    (-9, 'n'),
+    (-12, 'p'),
+    (0, ''),
+    (3, 'k'),
+    (6, 'M'),
+    (9, 'G'),
+    (12, 'T'),
+    (15, 'P'),
+    (18, 'E'),
+    (21, 'Z'),
+    (24, 'Y')
+])
 """Mapping of powers-of-10 to SI prefixes (orders-of-magnitude)"""
 
-SI_PREFIX_TO_ORDER_OF_MAG = {v: k for k, v in ORDER_OF_MAG_TO_SI_PREFIX.items()}
+SI_PREFIX_TO_ORDER_OF_MAG = OrderedDict()
 """Mapping of SI prefixes to powers-of-10"""
+for K, V in ORDER_OF_MAG_TO_SI_PREFIX.items():
+    SI_PREFIX_TO_ORDER_OF_MAG[V] = K
+# Allow "u" to map to -6 (micro) as well
+SI_PREFIX_TO_ORDER_OF_MAG['u'] = -6
 
-SI_PREFIX_TO_ORDER_OF_MAG['u'] = -6 # Allow 'u' for "micro"
-
-
-POWER_OF_1024_TO_BIN_PREFIX = {
-    0: '', 1: 'Ki', 2: 'Mi', 3: 'Gi', 4: 'Ti', 5: 'Pi', 6: 'Ei', 7: 'Zi',
-    8: 'Yi'
-}
+POWER_OF_1024_TO_BIN_PREFIX = OrderedDict([
+    (0, ''),
+    (1, 'Ki'),
+    (2, 'Mi'),
+    (3, 'Gi'),
+    (4, 'Ti'),
+    (5, 'Pi'),
+    (6, 'Ei'),
+    (7, 'Zi'),
+    (8, 'Yi')
+])
 """Mapping from powers-of-1024 to binary prefixes"""
 
-BIN_PREFIX_TO_POWER_OF_1024 = {v: k for k, v in POWER_OF_1024_TO_BIN_PREFIX.items()}
+BIN_PREFIX_TO_POWER_OF_1024 = OrderedDict()
 """Mapping from binary prefixes to powerorders-of-1024"""
+for K, V in POWER_OF_1024_TO_BIN_PREFIX.items():
+    BIN_PREFIX_TO_POWER_OF_1024[V] = K
 
 
 def split(string, sep, force_case=None, parse_func=None):
@@ -182,7 +207,7 @@ def split(string, sep, force_case=None, parse_func=None):
 
 # TODO: allow for scientific notation input to hr*2list, etc.
 
-def hrlist_formatter(start, end, step):
+def hr_range_formatter(start, end, step):
     """Format a range (sequence) in a simple and human-readable format by
     specifying the range's starting number, ending number (inclusive), and step
     size.
@@ -206,13 +231,13 @@ def hrlist_formatter(start, end, step):
 
     Examples
     --------
-    >>> hrlist_formatter(start=0, end=10, step=1)
+    >>> hr_range_formatter(start=0, end=10, step=1)
     '0-10'
-    >>> hrlist_formatter(start=0, end=10, step=2)
+    >>> hr_range_formatter(start=0, end=10, step=2)
     '0-10:2'
-    >>> hrlist_formatter(start=0, end=3, step=8)
+    >>> hr_range_formatter(start=0, end=3, step=8)
     '0-3:8'
-    >>> hrlist_formatter(start=0.1, end=3.1, step=1.0)
+    >>> hr_range_formatter(start=0.1, end=3.1, step=1.0)
     '0.1-3.1:1'
 
     """
@@ -225,6 +250,15 @@ def hrlist_formatter(start, end, step):
     if int(start) == start and int(end) == end and step == 1:
         return '{}-{}'.format(start, end)
     return '{}-{}:{}'.format(start, end, step)
+
+
+def test_hr_range_formatter():
+    """Unit tests for hr_range_formatter"""
+    logging.debug(str((hr_range_formatter(start=0, end=10, step=1))))
+    logging.debug(str((hr_range_formatter(start=0, end=10, step=2))))
+    logging.debug(str((hr_range_formatter(start=0, end=3, step=8))))
+    logging.debug(str((hr_range_formatter(start=0.1, end=3.1, step=1.0))))
+    logging.info('<< PASS : test_hr_range_formatter >>')
 
 
 def list2hrlist(lst):
@@ -272,11 +306,11 @@ def list2hrlist(lst):
             continue
         for j in xrange(scan+2, n-1):
             if not np.isclose(lst[j+1] - lst[j], step, rtol=rtol):
-                result.append(hrlist_formatter(lst[scan], lst[j], step))
+                result.append(hr_range_formatter(lst[scan], lst[j], step))
                 scan = j+1
                 break
         else:
-            result.append(hrlist_formatter(lst[scan], lst[-1], step))
+            result.append(hr_range_formatter(lst[scan], lst[-1], step))
             return ','.join(result)
     if n - scan == 1:
         result.append(str(lst[scan]))
@@ -284,6 +318,14 @@ def list2hrlist(lst):
         result.append(','.join(imap(str, lst[scan:])))
 
     return ','.join(result)
+
+
+def test_list2hrlist():
+    """Unit tests for list2hrlist"""
+    logging.debug(str((list2hrlist([0, 1]))))
+    logging.debug(str((list2hrlist([0, 1, 2]))))
+    logging.debug(str((list2hrlist([0.1, 1.1, 2.1, 3.1]))))
+    logging.info('<< PASS : test_list2hrlist >>')
 
 
 def _hrgroup2list(hrgroup):
@@ -294,7 +336,8 @@ def _hrgroup2list(hrgroup):
         except ValueError:
             return False
 
-    def num2floatOrInt(num):
+    def num_to_float_or_int(num):
+        """Return int if number is effectively int, otherwise return float"""
         try:
             if isint(num):
                 return int(num)
@@ -308,17 +351,17 @@ def _hrgroup2list(hrgroup):
     if (hrgroup is None) or (hrgroup == ''):
         return []
     num_str = HRGROUP_RE.match(hrgroup).groups()
-    range_start = num2floatOrInt(num_str[0])
+    range_start = num_to_float_or_int(num_str[0])
 
     # If no range is specified, just return the number
     if num_str[1] is None:
         return [range_start]
 
-    range_stop = num2floatOrInt(num_str[1])
+    range_stop = num_to_float_or_int(num_str[1])
     if num_str[2] is None:
         step_size = 1 if range_stop >= range_start else -1
     else:
-        step_size = num2floatOrInt(num_str[2])
+        step_size = num_to_float_or_int(num_str[2])
     all_ints = isint(range_start) and isint(step_size)
 
     # Make an *INCLUSIVE* list (as best we can considering floating point mumbo
@@ -459,8 +502,6 @@ def engfmt(n, sigfigs=3, decimals=None, sign_always=False):
         only negative numbers are prefixed with a sign ("-")
 
     """
-    prefixes = {-18: 'a', -15: 'f', -12: 'p', -9: 'n', -6: 'u', -3: 'm', 0: '',
-                3: 'k', 6: 'M', 9: 'G', 12: 'T', 15: 'P', 18: 'E'}
     if isinstance(n, ureg.Quantity):
         units = n.units
         n = n.magnitude
@@ -502,7 +543,7 @@ def engfmt(n, sigfigs=3, decimals=None, sign_always=False):
     # can't handle prefixed-dimensionless (e.g., simply "1 k", "2.2 M", etc.,
     # with no units attached).
     #if units.dimensionless:
-    return  '{0:s} {1:s}'.format(num_str, prefixes[pfx_mag])
+    return  '{0:s} {1:s}'.format(num_str, ORDER_OF_MAG_TO_SI_PREFIX[pfx_mag])
 
 
 def append_results(results_dict, result_dict):
@@ -547,6 +588,8 @@ def text2tex(txt):
 
 
 def tex_join(sep, *args):
+    """Join TeX-formatted strings together into one, each separated by `sep`.
+    Also, this strips surrounding '$' from each string before joining."""
     strs = [strip_outer_dollars(text2tex(a))
             for a in args if a is not None and a != '']
     if not strs:
@@ -554,11 +597,7 @@ def tex_join(sep, *args):
     return str.join(sep, strs)
 
 
-def tex_rm(s):
-    return r'{\rm %s}' % strip_outer_dollars(s)
-
-
-def dollars(s):
+def tex_dollars(s):
     stripped = strip_outer_dollars(s)
     out_lines = []
     for line in stripped.split('\n'):
@@ -691,23 +730,6 @@ def make_valid_python_name(name):
     # Remove leading characters until we find a letter or underscore
     name = RE_LEADING_INVALID.sub('', name)
     return name
-
-
-def test_hrlist_formatter():
-    """Unit tests for hrlist_formatter"""
-    logging.debug(str((hrlist_formatter(start=0, end=10, step=1))))
-    logging.debug(str((hrlist_formatter(start=0, end=10, step=2))))
-    logging.debug(str((hrlist_formatter(start=0, end=3, step=8))))
-    logging.debug(str((hrlist_formatter(start=0.1, end=3.1, step=1.0))))
-    logging.info('<< PASS : test_hrlist_formatter >>')
-
-
-def test_list2hrlist():
-    """Unit tests for list2hrlist"""
-    logging.debug(str((list2hrlist([0, 1]))))
-    logging.debug(str((list2hrlist([0, 1, 2]))))
-    logging.debug(str((list2hrlist([0.1, 1.1, 2.1, 3.1]))))
-    logging.info('<< PASS : test_list2hrlist >>')
 
 
 def sep_three_tens(strval, direction, sep=None):
@@ -906,15 +928,20 @@ def format_num(value,
                 precision = decimal.Decimal(precision)
                 order_of_precision = precision.adjusted()
         else:
-            assert precision is None, "can't specify both `sigfigs` and `precision`"
+            if precision is not None:
+                raise ValueError('You cannot specify both `sigfigs` and'
+                                 ' `precision`')
             if not isinstance(sigfigs, Integral):
                 assert float(sigfigs) == int(sigfigs), \
                         '`sigfigs`=%s not an int' % sigfigs
                 sigfigs = int(sigfigs)
             assert sigfigs > 0, '`sigfigs`=%s is not > 0' % sigfigs
 
-        assert sci_thresh[0] >= sci_thresh[1], \
-                '(`sci_thresh[0]`=%s) must be >= (`sci_thresh[1]`=%s)' % sci_thresh
+        if sci_thresh[0] < sci_thresh[1]:
+            raise ValueError(
+                '(`sci_thresh[0]`=%s) must be >= (`sci_thresh[1]`=%s)'
+                % sci_thresh
+            )
         assert all(isinstance(s, Integral) for s in sci_thresh), str(sci_thresh)
 
         if isinstance(fmt, basestring):
@@ -925,10 +952,31 @@ def format_num(value,
 
         if exponent is not None:
             if fmt in ('eng', 'sipre'):
-                assert exponent in SI_PREFIX_TO_ORDER_OF_MAG or exponent in ORDER_OF_MAG_TO_SI_PREFIX, str(exponent)
+                if (exponent not in SI_PREFIX_TO_ORDER_OF_MAG
+                        and exponent not in ORDER_OF_MAG_TO_SI_PREFIX):
+                    raise ValueError(
+                        'For `fmt`="{}", `exponent` is {}, but must either be'
+                        ' an SI prefix {} or a power of 10 corresponding to'
+                        ' these {}.'.format(fmt,
+                                            exponent,
+                                            SI_PREFIX_TO_ORDER_OF_MAG.keys(),
+                                            ORDER_OF_MAG_TO_SI_PREFIX.keys())
+                    )
             elif fmt == 'binpre':
-                assert exponent in BIN_PREFIX_TO_POWER_OF_1024 or exponent in POWER_OF_1024_TO_BIN_PREFIX
-            if not isinstance(exponent, basestring) and not isinstance(exponent, Integral):
+                if (exponent not in BIN_PREFIX_TO_POWER_OF_1024
+                        and exponent not in POWER_OF_1024_TO_BIN_PREFIX):
+                    raise ValueError(
+                        'For `fmt`="{}", `exponent` is {}, but must either be'
+                        ' an IEC binary prefix {} or a power of 1024'
+                        ' corresponding to these {}.'.format(
+                            fmt,
+                            exponent,
+                            BIN_PREFIX_TO_POWER_OF_1024.keys(),
+                            POWER_OF_1024_TO_BIN_PREFIX.keys()
+                        )
+                    )
+            if (not isinstance(exponent, basestring) and not
+                    isinstance(exponent, Integral)):
                 assert float(exponent) == int(exponent)
                 exponent = int(exponent)
 
@@ -967,8 +1015,8 @@ def format_num(value,
         if np.isneginf(value) or value <= -inf_thresh:
             return left_delimiter + '-' + infstr + right_delimiter
 
-        # NOTE: ``isinf`` check must come _after_ ``neginf`` check since ``isinf``
-        # returns ``True`` for both -inf and +inf
+        # NOTE: ``isinf`` check must come _after_ ``neginf`` check since
+        # ``isinf`` returns ``True`` for both -inf and +inf
         if np.isinf(value) or value >= inf_thresh:
             if always_show_sign:
                 sign = '+'
@@ -1003,7 +1051,7 @@ def format_num(value,
                                      ' binary prefix' % exponent)
             elif exponent is None:
                 if (order_of_mag >= sci_thresh[0]
-                    or order_of_mag <= sci_thresh[1]):
+                        or order_of_mag <= sci_thresh[1]):
                     fmt = 'sci'
                 else:
                     fmt = 'full'
@@ -1452,11 +1500,12 @@ def timestamp(d=True, t=True, tz=True, utc=False, winsafe=False):
 def test_timestamp():
     """Unit tests for timestamp function"""
     print(timestamp())
+    logging.info('<< PASS : test_timestamp >>')
 
 
 if __name__ == '__main__':
     set_verbosity(1)
-    test_hrlist_formatter()
+    test_hr_range_formatter()
     test_list2hrlist()
     test_format_num()
     test_timediff()

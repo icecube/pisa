@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Utilities for simple timing.
+Class Timer which provides a context for timing blocks of code.
 
 See Also: pisa.utils.profile module, which contains decorators for timing
 functions and methods.
@@ -9,7 +9,7 @@ functions and methods.
 
 from __future__ import absolute_import, division
 
-import time
+from time import sleep, time
 
 import numpy as np
 
@@ -23,7 +23,7 @@ __all__ = ['Timer', 'test_Timer']
 # TODO: add unit tests!
 
 class Timer(object):
-    """Simple timer designed to be used via `with` sematics.
+    """Simple timer context (i.e. designed to be used via `with` sematics).
 
     Parameters
     ----------
@@ -44,11 +44,11 @@ class Timer(object):
         self.msecs = np.nan
 
     def __enter__(self):
-        self.start = time.time()
+        self.start = time()
         return self
 
     def __exit__(self, *args):
-        self.end = time.time()
+        self.end = time()
         self.secs = self.end - self.start
         self.msecs = self.secs * 1000
         if self.verbose:
@@ -59,7 +59,7 @@ class Timer(object):
 def test_Timer():
     """Unit tests for Timer class"""
     with Timer(verbose=True):
-        time.sleep(0.1)
+        sleep(0.1)
     logging.info('<< PASS : test_Timer >>')
 
 
