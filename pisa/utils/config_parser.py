@@ -517,7 +517,15 @@ def parse_pipeline_config(config):
                 kwargs = eval( # pylint: disable=eval-used
                     config.get('binning', binning + '.' + bin_name)
                 )
-                bins.append(OneDimBinning(bin_name, **kwargs))
+                try:
+                    bins.append(OneDimBinning(bin_name, **kwargs))
+                except:
+                    logging.error(
+                        "Failed to instantiate new `OneDimBinning` from '%s'"
+                        " dimension of '%s' binning entry with definition:\n"
+                        "'%s'\n"%(bin_name, binning, kwargs)
+                    )
+                    raise
             binning_dict[binning] = MultiDimBinning(bins)
 
     # Pipeline section
