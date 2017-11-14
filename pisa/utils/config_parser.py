@@ -208,7 +208,8 @@ import warnings
 
 from backports.configparser import (
     RawConfigParser, ExtendedInterpolation, DuplicateOptionError,
-    SectionProxy, MissingSectionHeaderError, DuplicateSectionError
+    SectionProxy, MissingSectionHeaderError, DuplicateSectionError,
+    NoSectionError
 )
 from backports.configparser.helpers import open as c_open
 from backports.configparser.helpers import PY2
@@ -505,6 +506,12 @@ def parse_pipeline_config(config):
             'instead.' % type(config)
         )
 
+    if not config.has_section('binning'):
+        raise NoSectionError(
+                "Could not find 'binning'. Only found sections: %s"
+                %config.sections()
+              )
+
     # Create binning objects
     binning_dict = {}
     for name, value in config['binning'].items():
@@ -514,10 +521,25 @@ def parse_pipeline_config(config):
             binning, _ = split(name, sep='.', force_case='lower')
             bins = []
             for bin_name in order:
-                kwargs = eval( # pylint: disable=eval-used
-                    config.get('binning', binning + '.' + bin_name)
-                )
-                bins.append(OneDimBinning(bin_name, **kwargs))
+                try:
+                    def_raw = config.get('binning', binning + '.' + bin_name)
+                    kwargs = eval(def_raw) # pylint: disable=eval-used
+                except:
+                    logging.error(
+                        "Failed to evaluate definition of '%s' dimension of"
+                        " '%s' binning entry:\n'%s'"
+                        %(bin_name, binning, def_raw)
+                    )
+                    raise
+                try:
+                    bins.append(OneDimBinning(bin_name, **kwargs))
+                except:
+                    logging.error(
+                        "Failed to instantiate new `OneDimBinning` from '%s'"
+                        " dimension of '%s' binning entry with definition:\n"
+                        "'%s'\n"%(bin_name, binning, kwargs)
+                    )
+                    raise
             binning_dict[binning] = MultiDimBinning(bins)
 
     # Pipeline section
