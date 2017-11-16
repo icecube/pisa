@@ -1,5 +1,14 @@
 '''
 module for data representation translation methods
+
+
+ToDo:
+
+    - right now we distinguish on histogramming/lookup for scalars (normal) or array, which means that instead
+    of just a single value per e.g. histogram bin, there can be an array of values
+    This should be made more general that one function can handle everything...since now we have several
+    functions doing similar things. not very pretty
+
 '''
 
 import numpy as np
@@ -15,6 +24,24 @@ __all__ = ['histogram',
            'lookup',
            ]
 
+# --------- histogramming methods ---------------
+
+def get_hist_np(sample, weights, bins, averaged=True):
+    '''helper function for numoy historams'''
+    hist, edges = np.histogramdd(sample=sample,
+                                 weights=weights,
+                                 bins=bin_edges,
+                                 )
+    if averaged:
+        #weights = self.array_data['event_weights'].get('host')
+        hist_counts, edges = np.histogramdd(sample=sample,
+                                 #weights=weights.get('host'),
+                                 bins=bin_edges,
+                                 )
+        with np.errstate(divide='ignore', invalid='ignore'):
+            hist /= hist_counts
+            hist[~np.isfinite(hist)] = 0.  # -inf inf NaN
+    return hist.ravel()
 
 def histogram(sample, weights, binning, averaged):
     '''
@@ -46,46 +73,59 @@ def histogram(sample, weights, binning, averaged):
         #bin_edges = binning.bin_edges
 
         sample = [s.get('host') for s in sample]
-
-        hist, edges = np.histogramdd(sample=sample,
-                                     weights=weights.get('host'),
-                                     bins=bin_edges,
-                                     )
-        if averaged:
-            #weights = self.array_data['event_weights'].get('host')
-            hist_counts, edges = np.histogramdd(sample=sample,
-                                     #weights=weights.get('host'),
-                                     bins=bin_edges,
-                                     )
-            with np.errstate(divide='ignore', invalid='ignore'):
-                hist /= hist_counts
-                hist[~np.isfinite(hist)] = 0.  # -inf inf NaN
-        return hist.ravel()
+        weights = weights.get('host')
+        if weights.ndim == 2:
+            # that means it's 1-dim data instead of scalars
+            hists = []
+            for i in range(weights.size[1]):
+                hist = get_hist_np(sample, weights[:,i], bin_edges, averaged)
+                hists.append(hist)
+            return np.stack(hists)
+        else:
+            return get_hist_np(sample, weights, bin_edges, averaged)
 
     else:
         # ToDo:
         # * make for d > 3
         # * do division for normed already on GPU
         # * just return SmartArray instead of copying
+        arrays = False
         if binning.num_dims in [2,3]:
-            flat_hist = np.zeros(binning.size, dtype=FTYPE)
+            if len(weights.shape) > 1:
+                # so we have arrays
+                flat_hist = np.zeros((binning.size, weights.shape[1]), dtype=FTYPE)
+                arrays = True
+            else:
+                flat_hist = np.zeros(binning.size, dtype=FTYPE)
             size = len(weights)
             d_flat_hist = cuda.to_device(flat_hist)
             d_bin_edges_x = cuda.to_device(bin_edges[0])
             d_bin_edges_y = cuda.to_device(bin_edges[1])
             if binning.num_dims == 2:
-                histogram_2d_kernel[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), d_flat_hist, d_bin_edges_x, d_bin_edges_y, weights.get('gpu'))
-            if binning.num_dims == 3:
+                if arrays:
+                    histogram_2d_kernel_arrays[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), d_flat_hist, d_bin_edges_x, d_bin_edges_y, weights.get('gpu'))
+                else:
+                    histogram_2d_kernel[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), d_flat_hist, d_bin_edges_x, d_bin_edges_y, weights.get('gpu'))
+            elif binning.num_dims == 3:
                 d_bin_edges_z = cuda.to_device(bin_edges[2])
-                histogram_3d_kernel[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), sample[2].get('gpu'), d_flat_hist, d_bin_edges_x, d_bin_edges_y, d_bin_edges_z, weights.get('gpu'))
+                if arrays:
+                    histogram_3d_kernel_arrays[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), sample[2].get('gpu'), d_flat_hist, d_bin_edges_x, d_bin_edges_y, d_bin_edges_z, weights.get('gpu'))
+                else:
+                    histogram_3d_kernel[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), sample[2].get('gpu'), d_flat_hist, d_bin_edges_x, d_bin_edges_y, d_bin_edges_z, weights.get('gpu'))
             d_flat_hist.to_host()
             if averaged:
-                flat_hist_counts = np.zeros(binning.size, dtype=FTYPE)
+                flat_hist_counts = np.zeros_like(flat_hist)
                 d_flat_hist_counts = cuda.to_device(flat_hist_counts)
                 if binning.num_dims == 2:
-                    histogram_2d_kernel[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), d_flat_hist_counts, d_bin_edges_x, d_bin_edges_y, None)
-                if binning.num_dims == 3:
-                    histogram_3d_kernel[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), sample[2].get('gpu'), d_flat_hist, d_bin_edges_x, d_bin_edges_y, d_bin_edges_z, None)
+                    if arrays:
+                        histogram_2d_kernel_arrays[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), d_flat_hist_counts, d_bin_edges_x, d_bin_edges_y, None)
+                    else:
+                        histogram_2d_kernel[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), d_flat_hist_counts, d_bin_edges_x, d_bin_edges_y, None)
+                elif binning.num_dims == 3:
+                    if arrays:
+                        histogram_3d_kernel_arrays[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), sample[2].get('gpu'), d_flat_hist, d_bin_edges_x, d_bin_edges_y, d_bin_edges_z, None)
+                    else:
+                        histogram_3d_kernel[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), sample[2].get('gpu'), d_flat_hist, d_bin_edges_x, d_bin_edges_y, d_bin_edges_z, None)
                 d_flat_hist_counts.to_host()
                 with np.errstate(divide='ignore', invalid='ignore'):
                     flat_hist /= flat_hist_counts
@@ -94,6 +134,102 @@ def histogram(sample, weights, binning, averaged):
 
         else:
             raise NotImplementedError('Other dimesnions that 2 and 3 on the GPU not supported right now')
+# ToDo: can we do just n-dimensional? And scalars or arbitrary array shapes? This is so ugly :/
+# Furthermore: optimize using shared memory
+@cuda.jit
+def histogram_2d_kernel(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights):
+    i = cuda.grid(1)
+    if i < sample_x.size:
+        if (sample_x[i] >= bin_edges_x[0]
+                and sample_x[i] <= bin_edges_x[-1]
+                and sample_y[i] >= bin_edges_y[0]
+                and sample_y[i] <= bin_edges_y[-1]):
+            idx_x = find_index(sample_x[i], bin_edges_x)
+            idx_y = find_index(sample_y[i], bin_edges_y)
+            idx = idx_x * (bin_edges_y.size - 1) + idx_y
+            if weights is None:
+                cuda.atomic.add(flat_hist, idx, 1.)
+            else:
+                cuda.atomic.add(flat_hist, idx, weights[i])
+@cuda.jit
+def histogram_2d_kernel_arrays(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights):
+    i = cuda.grid(1)
+    if i < sample_x.size:
+        if (sample_x[i] >= bin_edges_x[0]
+                and sample_x[i] <= bin_edges_x[-1]
+                and sample_y[i] >= bin_edges_y[0]
+                and sample_y[i] <= bin_edges_y[-1]):
+            idx_x = find_index(sample_x[i], bin_edges_x)
+            idx_y = find_index(sample_y[i], bin_edges_y)
+            idx = idx_x * (bin_edges_y.size - 1) + idx_y
+            for j in range(flat_hist.size[1]):
+                if weights is None:
+                    cuda.atomic.add(flat_hist, (idx,j), 1.)
+                else:
+                    cuda.atomic.add(flat_hist, (idx,j), weights[i,j])
+@cuda.jit
+def histogram_3d_kernel(sample_x, sample_y, sample_z, flat_hist, bin_edges_x, bin_edges_y, bin_edges_z, weights):
+    i = cuda.grid(1)
+    if i < sample_x.size:
+        if (sample_x[i] >= bin_edges_x[0]
+                and sample_x[i] <= bin_edges_x[-1]
+                and sample_y[i] >= bin_edges_y[0]
+                and sample_y[i] <= bin_edges_y[-1]
+                and sample_z[i] >= bin_edges_z[0]
+                and sample_z[i] <= bin_edges_z[-1]):
+            idx_x = find_index(sample_x[i], bin_edges_x)
+            idx_y = find_index(sample_y[i], bin_edges_y)
+            idx_z = find_index(sample_z[i], bin_edges_z)
+            idx = idx_x * (bin_edges_y.size - 1) * (bin_edges_z.size - 1) + idx_y * (bin_edges_z.size - 1) + idx_z
+            if weights is None:
+                cuda.atomic.add(flat_hist, idx, 1.)
+            else:
+                cuda.atomic.add(flat_hist, idx, weights[i])
+@cuda.jit
+def histogram_3d_kernel_arrays(sample_x, sample_y, sample_z, flat_hist, bin_edges_x, bin_edges_y, bin_edges_z, weights):
+    i = cuda.grid(1)
+    if i < sample_x.size:
+        if (sample_x[i] >= bin_edges_x[0]
+                and sample_x[i] <= bin_edges_x[-1]
+                and sample_y[i] >= bin_edges_y[0]
+                and sample_y[i] <= bin_edges_y[-1]
+                and sample_z[i] >= bin_edges_z[0]
+                and sample_z[i] <= bin_edges_z[-1]):
+            idx_x = find_index(sample_x[i], bin_edges_x)
+            idx_y = find_index(sample_y[i], bin_edges_y)
+            idx_z = find_index(sample_z[i], bin_edges_z)
+            idx = idx_x * (bin_edges_y.size - 1) * (bin_edges_z.size - 1) + idx_y * (bin_edges_z.size - 1) + idx_z
+            for j in range(flat_hist.size[1]):
+                if weights is None:
+                    cuda.atomic.add(flat_hist, (idx,j), 1.)
+                else:
+                    cuda.atomic.add(flat_hist, (idx,j), weights[i,j])
+
+## doesn't work :(
+#@cuda.jit
+#def histogram_nd_kernel(sample, flat_hist, bin_edges, weights):
+#    i = cuda.grid(1)
+#    if i < sample[0].size:
+#        #check inside:
+#        inside = True
+#        n_dim = len(sample)
+#        for j in range(n_dim):
+#            inside = inside and sample[j][i] >= bin_edges[j][0]
+#            inside = inside and sample[j][i] <= bin_edges[j][-1]
+#        if inside:
+#            idx = 0
+#            for j in range(n_dim):
+#                offset = 0
+#                for k in range(j, n_dim):
+#                    offset *= (bin_edges[k].size - 1)
+#                pos = find_index(sample[j][i], bin_edges[j])
+#                idx += offset * pos
+#            if weights is None:
+#                cuda.atomic.add(flat_hist, idx, 1.)
+#            else:
+#                cuda.atomic.add(flat_hist, idx, weights[i])
+
+# ---------- Lookup methods ---------------
 
 def lookup(sample, flat_hist, binning):
     '''
@@ -104,7 +240,7 @@ def lookup(sample, flat_hist, binning):
 
     sample : list of SmartArrays
 
-    flat_hist : SmartArrays
+    flat_hist : SmartArray
 
     binning : PISA MultiDimBinning
 
@@ -115,8 +251,14 @@ def lookup(sample, flat_hist, binning):
     assert binning.num_dims == 2, 'can only do 2d at the moment'
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
     # todo: directly return smart array
-    array = SmartArray(np.empty_like(sample[0]))
-    lookup_vectorized_2d(sample[0].get(WHERE), sample[1].get(WHERE), flat_hist.get(WHERE), bin_edges[0], bin_edges[1], out=array.get(WHERE))
+    if flat_hist.ndim == 1:
+        array = SmartArray(np.empty_like(sample[0]))
+        lookup_vectorized_2d(sample[0].get(WHERE), sample[1].get(WHERE), flat_hist.get(WHERE), bin_edges[0], bin_edges[1], out=array.get(WHERE))
+    elif flat_hist.ndim == 2:
+        array = SmartArray(np.empty((sample[0].size, flat_hist.size[1]), dtype=FTYPE))
+        lookup_vectorized_2d_arrays(sample[0].get(WHERE), sample[1].get(WHERE), flat_hist.get(WHERE), bin_edges[0], bin_edges[1], out=array.get(WHERE))
+    else:
+        raise NotImplementedError()
     array.mark_changed(WHERE)
     return array
 
@@ -157,40 +299,20 @@ def lookup_vectorized_2d(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y
     weights[0] = flat_hist[idx]
 
 
-# ToDo: can we do just n-dimensional?
-# Furthermore: optimize using shared memory
-@cuda.jit
-def histogram_2d_kernel(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights):
-    i = cuda.grid(1)
-    if i < sample_x.size:
-        #if sample_x[i] >= bin_edges_x[0] and sample_x[i] <= bin_edges_x[-1] and sample_y[i] >= bin_edges_y[0] and sample_y[i] <= bin_edges_y[-1]:
-        if (sample_x[i] >= bin_edges_x[0]
-                and sample_x[i] <= bin_edges_x[-1]
-                and sample_y[i] >= bin_edges_y[0]
-                and sample_y[i] <= bin_edges_y[-1]):
-            idx_x = find_index(sample_x[i], bin_edges_x)
-            idx_y = find_index(sample_y[i], bin_edges_y)
-            idx = idx_x * (bin_edges_y.size - 1) + idx_y
-            if weights is None:
-                cuda.atomic.add(flat_hist, idx, 1.)
-            else:
-                cuda.atomic.add(flat_hist, idx, weights[i])
-@cuda.jit
-def histogram_3d_kernel(sample_x, sample_y, sample_z, flat_hist, bin_edges_x, bin_edges_y, bin_edges_z, weights):
-    i = cuda.grid(1)
-    if i < sample_x.size:
-        if (sample_x[i] >= bin_edges_x[0]
-                and sample_x[i] <= bin_edges_x[-1]
-                and sample_y[i] >= bin_edges_y[0]
-                and sample_y[i] <= bin_edges_y[-1]
-                and sample_z[i] >= bin_edges_z[0]
-                and sample_z[i] <= bin_edges_z[-1]):
-            idx_x = find_index(sample_x[i], bin_edges_x)
-            idx_y = find_index(sample_y[i], bin_edges_y)
-            idx_z = find_index(sample_z[i], bin_edges_z)
-            idx = idx_x * (bin_edges_y.size - 1) * (bin_edges_z.size - 1) + idx_y * (bin_edges_z.size - 1) + idx_z
-            if weights is None:
-                cuda.atomic.add(flat_hist, idx, 1.)
-            else:
-                cuda.atomic.add(flat_hist, idx, weights[i])
+if FTYPE == np.float64:
+    signature = '(f8, f8, f8[:,:], f8[:], f8[:], f8[:])'
+else:
+    signature = '(f4, f4, f4[:,:], f4[:], f4[:], f4[:])'
+
+@guvectorize([signature], '(),(),(j,d),(k),(l)->(d)',target=TARGET)
+def lookup_vectorized_2d_arrays(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights):
+    '''
+    Vectorized gufunc to perform the lookup
+    while flat hist and weights have both a second dimension
+    '''
+    idx_x = find_index(sample_x, bin_edges_x)
+    idx_y = find_index(sample_y, bin_edges_y)
+    idx = idx_x*(len(bin_edges_y)-1) + idx_y
+    for i in range(weights.size):
+        weights[i] = flat_hist[idx,i]
 
