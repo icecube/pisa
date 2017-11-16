@@ -95,6 +95,7 @@ class simple_data_loader(PiStage):
             weights = np.ones_like(true_energy)
             neutrino_nue_flux = evts[name]['neutrino_nue_flux'].astype(FTYPE)
             neutrino_numu_flux = evts[name]['neutrino_numu_flux'].astype(FTYPE)
+            flux = np.stack([neutrino_nue_flux, neutrino_numu_flux], axis=1)
 
             # make container
             container = Container(name)
@@ -108,8 +109,11 @@ class simple_data_loader(PiStage):
             container.add_array_data('event_weights', event_weights)
             container.add_array_data('weights', weights)
             container.add_array_data('weighted_aeff', weighted_aeff)
-            container.add_array_data('neutrino_nue_flux', neutrino_nue_flux)
-            container.add_array_data('neutrino_numu_flux', neutrino_numu_flux)
+            #container.add_array_data('neutrino_nue_flux', neutrino_nue_flux)
+            #container.add_array_data('neutrino_numu_flux', neutrino_numu_flux)
+            container.add_array_data('nominal_flux', flux)
+            #container.data_specs = 'events'
+            #print container['nominal_flux'].shape
             self.data.add_container(container)
 
 

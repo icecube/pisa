@@ -469,4 +469,3 @@ if __name__ == '__main__':
     # augment
     container.binned_to_array('w')
     print container.get_array_data('w').get('host')
-

@@ -168,6 +168,12 @@ class PiStage(BaseStage):
                     container.array_to_binned(key, self.calc_specs)
             self.data.data_specs = self.calc_specs
 
+        if self.input_mode == 'events' and self.calc_mode is None and self.output_mode == 'binned':
+            for container in self.data:
+                for key in self.input_keys:
+                    container.array_to_binned(key, self.output_specs)
+            self.data.data_specs = self.output_specs
+
         if self.input_mode == 'events' and self.calc_mode == 'binned' and self.output_mode == 'events':
             for container in self.data:
                 for key in self.calc_keys:

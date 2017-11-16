@@ -43,16 +43,21 @@ class pi_simple(PiStage):
 
         # what are the keys used from the inputs during apply
         input_keys = ('weights',
-                      'neutrino_nue_flux',
-                      'neutrino_numu_flux',
+                      'nominal_flux',
+                      #'neutrino_nue_flux',
+                      #'neutrino_numu_flux',
                       )
         # what are keys added or altered in the calculation used during apply 
-        calc_keys = ('flux_e',
-                     'flux_mu',
-                     )
+        calc_keys = ()
+        #calc_keys = (#'flux_e',
+        #             #'flux_mu',
+        #             'nominal_flux',
+        #             'sys_flux',
+        #             )
         # what keys are added or altered for the outputs during apply
-        output_keys = ('flux_e',
-                       'flux_mu',
+        output_keys = (#'flux_e',
+                       #'flux_mu',
+                       'sys_flux',
                        )
 
         # init base class
@@ -71,27 +76,28 @@ class pi_simple(PiStage):
                                        )
 
         assert self.input_mode is not None
-        assert self.calc_mode is not None
+        #assert self.calc_mode is not None
         assert self.output_mode is not None
 
     def setup_function(self):
 
-        self.data.data_specs = self.calc_specs
+        self.data.data_specs = self.output_specs
 
-        if self.calc_mode == 'binned':
+        if self.output_mode == 'binned':
             self.data.link_containers('nu', ['nue_cc', 'numu_cc', 'nutau_cc',
                                              'nue_nc', 'numu_nc', 'nutau_nc'])
             self.data.link_containers('nubar', ['nuebar_cc', 'numubar_cc', 'nutaubar_cc',
                                                 'nuebar_nc', 'numubar_nc', 'nutaubar_nc'])
         for container in self.data:
-            container['flux_e'] = np.empty((container.size), dtype=FTYPE)
-            container['flux_mu'] = np.empty((container.size), dtype=FTYPE) 
+            container['sys_flux'] = np.empty((container.size,2), dtype=FTYPE)
+            #container['flux_e'] = np.empty((container.size), dtype=FTYPE)
+            #container['flux_mu'] = np.empty((container.size), dtype=FTYPE) 
 
         self.data.unlink_containers()
 
-    def compute_function(self):
+    def apply_function(self):
 
-        self.data.data_specs = self.calc_specs
+        #self.data.data_specs = self.calc_specs
         nue_numu_ratio = self.params.nue_numu_ratio.value.m_as('dimensionless')
 
         if self.calc_mode == 'binned':
@@ -102,15 +108,15 @@ class pi_simple(PiStage):
 
         for container in self.data:
             apply_ratio_scale_vectorized(nue_numu_ratio,
-                                         container['neutrino_nue_flux'].get(WHERE),
-                                         out=container['flux_e'].get(WHERE),
+                                         container['nominal_flux'].get(WHERE),
+                                         out=container['sys_flux'].get(WHERE),
                                          )
-            container['flux_e'].mark_changed(WHERE)
-            apply_ratio_scale_vectorized(1.,
-                                         container['neutrino_numu_flux'].get(WHERE),
-                                         out=container['flux_mu'].get(WHERE),
-                                         )
-            container['flux_mu'].mark_changed(WHERE)
+            container['sys_flux'].mark_changed(WHERE)
+            #apply_ratio_scale_vectorized(1.,
+            #                             container['neutrino_numu_flux'].get(WHERE),
+            #                             out=container['flux_mu'].get(WHERE),
+            #                             )
+            #container['flux_mu'].mark_changed(WHERE)
 
         self.data.unlink_containers()
 
@@ -118,10 +124,12 @@ class pi_simple(PiStage):
 # vectorized function to apply
 # must be outside class
 if FTYPE == np.float64:
-    signature = '(f8, f8, f8[:])'
+    signature = '(f8, f8[:], f8[:])'
 else:
-    signature = '(f4, f4, f4[:])'
+    signature = '(f4, f4[:], f4[:])'
 
-@guvectorize([signature], '(),()->()', target=TARGET)
+@guvectorize([signature], '(),(d)->(d)', target=TARGET)
 def apply_ratio_scale_vectorized(ratio_scale, flux_in, out):
-    out[0] = ratio_scale * flux_in
+    # ToDo
+    out[0] = ratio_scale * flux_in[0]
+    out[1] = ratio_scale * flux_in[1]
