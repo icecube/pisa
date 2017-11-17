@@ -156,7 +156,6 @@ def histogram_2d_kernel(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y,
                 cuda.atomic.add(flat_hist, idx, weights[i])
             else:
                 cuda.atomic.add(flat_hist, idx, 1.)
-            return
 
 @cuda.jit
 def histogram_2d_kernel_arrays(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights, apply_weights):
