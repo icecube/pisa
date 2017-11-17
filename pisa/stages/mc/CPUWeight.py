@@ -86,11 +86,6 @@ class CPUWeight(object):
             np.exp(-1.0 * np.power(x,2) / (2.0 * np.power(sigma,2)))
         return val
 
-    def shape(self, x):
-        # Philipp took this from OscFit. See code in GPUWeight for relevant
-        # comments.
-        return np.cos(x * np.pi)
-
     def ModNuMuFlux(self, energy, czenith, e1, e2, z1, z2):
         # Philipp took this from OscFit. See code in GPUWeight for relevant
         # comments.
@@ -115,8 +110,8 @@ class CPUWeight(object):
         val = A_ave - (self.norm_fcn(
             x=czenith,
             A=A_shape,
-            sigma=0.32
-        ) - 0.75 * A_shape)
+            sigma=0.36
+        ) - 0.6 * A_shape)
         return val
 
     def ModNuEFlux(self, energy, czenith, e1mu, e2mu, z1mu,
@@ -144,7 +139,7 @@ class CPUWeight(object):
         val = A_ave - (1.5 * self.norm_fcn(
             x=czenith,
             A=A_shape,
-            sigma=0.4
+            sigma=0.36
         ) - 0.7 * A_shape)
         return val
 
@@ -161,25 +156,25 @@ class CPUWeight(object):
                 use_cutoff=True,
                 cutoff_value=self.nue_cutoff
             )
-        elif kFlav == 1:
-            A_shape = 1.0 * np.absolute(uphor) * self.LogLogParam(
-                energy=true_energy,
-                y1=self.z1max_mu,
-                y2=self.z2max_mu,
-                x1=self.x1z,
-                x2=self.x2z,
-                use_cutoff=True,
-                cutoff_value=self.numu_cutoff
+            return 1.0 - 0.3 * np.sign(uphor) * self.norm_fcn(
+                x=true_coszen,
+                A=A_shape,
+                sigma=0.35
             )
+        elif kFlav == 1:
+            #A_shape = 1.0 * np.absolute(uphor) * self.LogLogParam(
+            #    energy=true_energy,
+            #    y1=self.z1max_mu,
+            #    y2=self.z2max_mu,
+            #    x1=self.x1z,
+            #    x2=self.x2z,
+            #    use_cutoff=True,
+            #    cutoff_value=self.numu_cutoff
+            #)
+            return 1.
         else:
             raise ValueError("I got the flavour %i which I don't understand." 
                              " Expect 0 or 1."%kFlav)
-        val = 1.0 - 3.5 * np.sign(uphor) * self.norm_fcn(
-            x=true_coszen,
-            A=A_shape,
-            sigma=0.35
-        )
-        return val
 
     def modRatioNuBar(self, kNuBar, kFlav, true_e, true_cz,
                       nu_nubar, nubar_sys):
@@ -226,65 +221,53 @@ class CPUWeight(object):
             raise ValueError("I got the nu/nubar number of %.2f which I don't"
                              " understand. Should be non-zero"%kNuBar)
                 
-    def calc_flux(self, true_energy, true_coszen,
-                neutrino_nue_flux, neutrino_numu_flux,
-                neutrino_oppo_nue_flux, neutrino_oppo_numu_flux,
-                scaled_nue_flux, scaled_numu_flux,
-                scaled_nue_flux_shape, scaled_numu_flux_shape,
-                nue_numu_ratio, nu_nubar_ratio, kNuBar, delta_index,
-                Barr_uphor_ratio, Barr_nu_nubar_ratio,
-                true_e_scale,
-                **kwargs):
-
-        #TODO This function's arguments need some thought. Currently, it is designed such that it has the same
-        #args as the GPU version, even where those args are unused here. It is not really clear though what
-        #variables are outputs and what are local, and care must be take to use e.g. np.copyto to ensure changes
-        #propagate byond the scope fo this function
-
+    def calc_flux(self, nue_numu_ratio, nu_nubar_ratio, delta_index,
+                  Barr_uphor_ratio, Barr_nu_nubar_ratio,
+                  true_e_scale, kNuBar, events_dict):
         # Delta index systematic
         # 24.0900951261 was hard coded here as the pivot. I don't know why!
         idx_scale = self.spectral_index_scale(
-            true_energy=true_energy * true_e_scale,
+            true_energy=events_dict['true_energy'] * true_e_scale,
             energy_pivot=24.0900951261,
             delta_index=delta_index
         )
         # nue/numu ratio systematic
         new_nue_flux, new_numu_flux = self.apply_ratio_scale(
-            flux1=neutrino_nue_flux,
-            flux2=neutrino_numu_flux,
+            flux1=events_dict['neutrino_nue_flux'],
+            flux2=events_dict['neutrino_numu_flux'],
             ratio_scale=nue_numu_ratio,
             sum_const=True
         )
         new_nue_oppo_flux, new_numu_oppo_flux = self.apply_ratio_scale(
-            flux1=neutrino_oppo_nue_flux,
-            flux2=neutrino_oppo_numu_flux,
+            flux1=events_dict['neutrino_oppo_nue_flux'],
+            flux2=events_dict['neutrino_oppo_numu_flux'],
             ratio_scale=nue_numu_ratio,
             sum_const=True
         )
         # nu/nubar ratio systematic
         if kNuBar < 0:
             new_nue_oppo_flux2, new_nue_flux2 = self.apply_ratio_scale(
-                flux1=neutrino_oppo_nue_flux,
-                flux2=neutrino_nue_flux,
+                flux1=events_dict['neutrino_oppo_nue_flux'],
+                flux2=events_dict['neutrino_nue_flux'],
                 ratio_scale=nu_nubar_ratio,
                 sum_const=True
             )
             new_numu_oppo_flux2, new_numu_flux2 = self.apply_ratio_scale(
-                flux1=neutrino_oppo_numu_flux,
-                flux2=neutrino_numu_flux,
+                flux1=events_dict['neutrino_oppo_numu_flux'],
+                flux2=events_dict['neutrino_numu_flux'],
                 ratio_scale=nu_nubar_ratio,
                 sum_const=True
             )
         else:
             new_nue_flux2, new_nue_oppo_flux2 = self.apply_ratio_scale(
-                flux1=neutrino_nue_flux,
-                flux2=neutrino_oppo_nue_flux,
+                flux1=events_dict['neutrino_nue_flux'],
+                flux2=events_dict['neutrino_oppo_nue_flux'],
                 ratio_scale=nu_nubar_ratio,
                 sum_const=True
             )
             new_numu_flux2, new_numu_oppo_flux2 = self.apply_ratio_scale(
-                flux1=neutrino_numu_flux,
-                flux2=neutrino_oppo_numu_flux,
+                flux1=events_dict['neutrino_numu_flux'],
+                flux2=events_dict['neutrino_oppo_numu_flux'],
                 ratio_scale=nu_nubar_ratio,
                 sum_const=True
             )
@@ -292,70 +275,52 @@ class CPUWeight(object):
         new_nue_flux2 *= self.modRatioNuBar(
             kNuBar=kNuBar,
             kFlav=0,
-            true_e=true_energy * true_e_scale,
-            true_cz=true_coszen,
+            true_e=events_dict['true_energy'] * true_e_scale,
+            true_cz=events_dict['true_coszen'],
             nu_nubar=1.0,
             nubar_sys=Barr_nu_nubar_ratio
         )
         new_numu_flux2 *= self.modRatioNuBar(
             kNuBar=kNuBar,
             kFlav=1,
-            true_e=true_energy * true_e_scale,
-            true_cz=true_coszen,
+            true_e=events_dict['true_energy'] * true_e_scale,
+            true_cz=events_dict['true_coszen'],
             nu_nubar=1.0,
             nubar_sys=Barr_nu_nubar_ratio
         )
-        np.copyto(scaled_nue_flux,new_nue_flux2) #Use copyto to fill np array from another (using '=' sets the pointer reference without changing the underlying object)
-        np.copyto(scaled_numu_flux,new_numu_flux2)
-        np.copyto(scaled_nue_flux_shape,
+        events_dict['scaled_nue_flux'] = new_nue_flux2
+        events_dict['scaled_numu_flux'] = new_numu_flux2
+        events_dict['scaled_nue_flux_shape'] = \
             new_nue_flux2 * idx_scale * self.modRatioUpHor(
                 kFlav=0,
-                true_energy=true_energy * true_e_scale,
-                true_coszen=true_coszen,
+                true_energy=events_dict['true_energy'] * true_e_scale,
+                true_coszen=events_dict['true_coszen'],
                 uphor=Barr_uphor_ratio
             )
-        )
-        np.copyto(scaled_numu_flux_shape,
+        events_dict['scaled_numu_flux_shape'] = \
             new_numu_flux2 * idx_scale * self.modRatioUpHor(
                 kFlav=1,
-                true_energy=true_energy * true_e_scale,
-                true_coszen=true_coszen,
+                true_energy=events_dict['true_energy'] * true_e_scale,
+                true_coszen=events_dict['true_coszen'],
                 uphor=Barr_uphor_ratio
             )
-        )
 
- 
-    def calc_weight(self, weighted_aeff,
-                    scaled_nue_flux_shape, scaled_numu_flux_shape,
-                    nue_flux_norm, numu_flux_norm,
-                    linear_fit_MaCCQE, quad_fit_MaCCQE,
-                    linear_fit_MaCCRES, quad_fit_MaCCRES,
-                    prob_e, prob_mu, weight,
-                    livetime, aeff_scale,
-                    Genie_Ma_QE, Genie_Ma_RES,
-                    **kwargs):
-        nue_flux = scaled_nue_flux_shape * nue_flux_norm
-        numu_flux = scaled_numu_flux_shape * numu_flux_norm
+    def calc_weight(self, livetime, nue_flux_norm, numu_flux_norm, aeff_scale,
+                    Genie_Ma_QE, Genie_Ma_RES, true_e_scale, events_dict):
+        nue_flux = events_dict['scaled_nue_flux_shape'] * nue_flux_norm
+        numu_flux = events_dict['scaled_numu_flux_shape'] * numu_flux_norm
         # GENIE axial mass systemtic
-        aeff_QE = 1.0 + quad_fit_MaCCQE * np.power(
+        aeff_QE = 1.0 + events_dict['quad_fit_MaCCQE'] * np.power(
             Genie_Ma_QE,2
-        ) + linear_fit_MaCCQE * Genie_Ma_QE
-        aeff_RES = 1.0 + quad_fit_MaCCRES * np.power(
+        ) + events_dict['linear_fit_MaCCQE'] * Genie_Ma_QE
+        aeff_RES = 1.0 + events_dict['quad_fit_MaCCRES'] * np.power(
             Genie_Ma_RES,2
-        ) + linear_fit_MaCCRES * Genie_Ma_RES
+        ) + events_dict['linear_fit_MaCCRES'] * Genie_Ma_RES
         # Calculate weight
-        np.copyto(weight, 
-            aeff_scale * livetime * 
-            weighted_aeff * aeff_QE * 
-            aeff_RES * 
-            ( (nue_flux * prob_e) + (numu_flux * prob_mu) )
-        )
-
+        events_dict['weight'] = aeff_scale * livetime * \
+                                events_dict['weighted_aeff'] * aeff_QE * \
+                                aeff_RES * ((nue_flux * events_dict['prob_e']) \
+                                + (numu_flux * events_dict['prob_mu']))
 
     def calc_sum(self, n_evts, x, out):
         x[0] = np.sum(x)
-
-
-    def calc_sumw2(self, weight, sumw2, **kwargs):
-        sumw2 = weight * weight #TODO Check this
-
