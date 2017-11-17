@@ -75,6 +75,7 @@ class toy_event_generator(PiStage):
             weights = np.ones(n_events, dtype=FTYPE)
             flux_nue = np.zeros(n_events, dtype=FTYPE)
             flux_numu = np.ones(n_events, dtype=FTYPE)
+            flux = np.stack([flux_nue, flux_numu], axis=1)
 
             # make container
             container = Container(name)
@@ -85,8 +86,7 @@ class toy_event_generator(PiStage):
             container.add_array_data('event_weights', event_weights)
             container.add_array_data('weights', weights)
             container.add_array_data('weighted_aeff', weights)
-            container.add_array_data('neutrino_nue_flux', flux_nue)
-            container.add_array_data('neutrino_numu_flux', flux_numu)
+            container.add_array_data('nominal_flux', flux)
             self.data.add_container(container)
 
 
