@@ -4,6 +4,7 @@ import matplotlib as mpl
 from mpl_toolkits.axes_grid import make_axes_locatable
 from matplotlib.ticker import FormatStrFormatter
 from matplotlib.ticker import FuncFormatter
+from pisa.utils.log import logging
 # Headless mode; must set prior to pyplot import
 mpl.use('Agg')
 from matplotlib import pyplot as plt
@@ -17,7 +18,6 @@ from copy import deepcopy
 from pisa.utils.format import dollars, text2tex, tex_join
 from pisa.core.map import Map, MapSet
 from pisa.core.transform import BinnedTensorTransform, TransformSet
-from pisa.utils.format import dollars, text2tex, tex_join
 from pisa.utils import fileio
 
 psublue='#1E407C'
@@ -46,7 +46,7 @@ class PlotterNutau(Plotter):
             fname = 'test2d'
         vmin = kwargs.pop('vmin', None)
         vmax = kwargs.pop('vmax', None)
-        suptitle = kwargs.pop('suptitle', None)
+        suptitle = kwargs.pop('suptitle', '')
         colbar_percent = kwargs.pop('colbar_percent', False)
         self.plot_array(map_set, 'plot_2d_map', n_rows=n_rows, n_cols=n_cols,vmin=vmin, vmax=vmax,
                 colbar_percent=colbar_percent, suptitle=suptitle, **kwargs)
@@ -59,7 +59,7 @@ class PlotterNutau(Plotter):
         vmax = kwargs.pop('vmax', None)
         n_rows = kwargs.pop('n_rows', None)
         n_cols = kwargs.pop('n_cols', None)
-        suptitle = kwargs.pop('suptitle', None)
+        suptitle = kwargs.pop('suptitle', '')
         split_axis = kwargs.pop('split_axis', None)
         colbar_percent = kwargs.pop('colbar_percent', False)
         if isinstance(map_set, Map):
@@ -251,8 +251,9 @@ class PlotterNutau(Plotter):
             else:
                 col_bar = plt.colorbar(cax=cax)
         if colorbarlabel is not None:
-            col_bar.set_label(dollars(text2tex(colorbarlabel)), fontsize=21)
+            col_bar.set_label(colorbarlabel, fontsize=21)
         elif self.label:
+            print "text2tex(self.label)", text2tex(self.label)
             col_bar.set_label(dollars(text2tex(self.label)), fontsize=21)
         col_bar.ax.tick_params(labelsize=16) 
 
@@ -326,13 +327,16 @@ class PlotterNutau(Plotter):
 
     def get_x_label(self, param_to_plot):
         xlabels={'dunkman_L5': r'BDT Score',
-                'l_over_e': r'$\rm{L/E \ [reco] \ (km/GeV)}$',
-                'reco_energy': r'$\rm{E_{reco} (GeV)}$',
-                'reco_coszen': r'$\mathrm{\cos{\theta}_{reco}}$',
+                'l_over_e': r'$L/E \rm{\ [reco] \ (km/GeV)}$',
+                #'l_over_e': r'$\rm{L/E \ [reco] \ (km/GeV)}$',
+                'reco_energy': r'${E_\rm{reco} \rm{(GeV)}}$',
+                #'reco_energy': r'$\rm{E_{reco} (GeV)}$',
+                #'reco_coszen': r'$\mathrm{\cos{\theta}_{reco}}$',
+                'reco_coszen': r'$\cos{\theta}_{\rm{reco}}$',
                 'num_hit_doms': r'$\rm{No. \ of \ Hit \ DOMs}$',
                 'rt_fid_charge': r'$\rm{RT \ Fiducial \ Charge}$',
                 'CausalVetoPE': r'$\rm{Causal \ Veto \ PE}$',
-                'pid': 'PID'
+                'pid': r'$\Delta \log{\mathcal{L_\mathrm{reco}}}$' 
                 }
         #if param_to_plot=='dunkman_L5':
         #    return r'BDT score'
@@ -374,11 +378,11 @@ class PlotterNutau(Plotter):
     def get_x_range(self, param_to_plot):
         x_ranges = {'santa_direct_doms': (0,45),
                 #'num_hit_doms': (0, 90),
-                'num_hit_doms': (8, 50),
+                #'num_hit_doms': (8, 50),
                 'separation': (0, 600),
                 'CausalVetoHits': (0, 9),
                 #'pid': (-3.60329646, 400),
-                'pid': (-3.60329646, 50),
+                #'pid': (-3.60329646, 50),
                 'linefit_speed': (0,0.5),
                 #'dunkman_L5': (0.1,0.7),
                 'dunkman_L5': (0.2,0.7),
@@ -401,11 +405,15 @@ class PlotterNutau(Plotter):
     def get_x_nbins(self, param_to_plot):
         x_bins={'first_hlc_rho': 200,
                 #'pid': np.array([-3.60329646, -2.0, -1.11009462, -0.61615503, -0.34199519, -0.18982351, -0.10536103, -0.05848035, -0.03245936, -0.01801648, -0.01, 0.01, 0.01801648, 0.03245936, 0.05848035, 0.10536103, 0.18982351, 0.34199519, 0.61615503, 1.11009462, 2.0, 3.60329646, 6.49187269, 11.69607095, 21.07220554, 37.96470182, 68.39903787, 123.23100555, 222.01892311, 400.]),
+                #'pid': np.array([-3, -1, -0.3, 0, 0.3, 1.0, 3.0, 10, 30, 100]),
+                #'pid': np.array([-3.0, -1.11009462, -0.34199519, -0.05848035, -0.01, 0.01, 0.05848035, 0.34199519, 0.61615503, 1.11009462, 2.0, 3.60329646, 6.49187269, 11.69607095, 21.07220554, 37.96470182, 68.39903787, 123.23100555, 222.01892311, 400.]),
+                'pid': np.array([-3.0, -1.11009462, -0.34199519, 0.0, 0.34199519, 0.61615503, 1.11009462, 2.0, 3.60329646, 6.49187269, 11.69607095, 21.07220554, 37.96470182, 68.39903787, 123.23100555, 222.01892311, 400.]),
                 'l_over_e': np.logspace(np.log10(0.05),np.log10(2500),30),
                 #'dunkman_L5': np.array([-0.5, -0.4, -0.3, -0.2, -0.1, 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]) 
                 #'dunkman_L5': np.array([0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7]) 
                 #'dunkman_L5': np.linspace(0.1, 0.7, 15),
                 'dunkman_L5': np.linspace(0.2, 0.7, 15),
+                'num_hit_doms': np.linspace(8, 50, 22),
                 'CausalVetoHits': np.linspace(0, 9, 10),
                 'CausalVetoPE': np.linspace(0, 9, 10)
                 }
@@ -509,8 +517,14 @@ class PlotterNutau(Plotter):
         if np.all(best_y==0):
             print "no mc or muon"
         else:
-            x = (x_edges[:-1]+x_edges[1:])/2.0
-            ax1.hist(x, weights=best_y, bins=x_edges, histtype='step', lw=2.5, color=psublue, label=r'$\rm{Total}$', **kwargs)
+            if param_to_plot=='pid':
+                special_x_edges = np.linspace(0,16,17)
+                x = (special_x_edges[:-1]+special_x_edges[1:])/2.0
+                print "use special_x_edges, x bin centers:", x
+                ax1.hist(x, weights=best_y, bins=special_x_edges, histtype='step', lw=2.5, color=psublue, label=r'$\rm{Total}$', **kwargs)
+            else:
+                x = (x_edges[:-1]+x_edges[1:])/2.0
+                ax1.hist(x, weights=best_y, bins=x_edges, histtype='step', lw=2.5, color=psublue, label=r'$\rm{Total}$', **kwargs)
 
         if extra!=[]:
             [mc_param_all_h0, mc_weight_all_h0, mc_sumw2_all_h0, muon_param_h0, icc_weight_h0, x_edges_h0] = extra
@@ -558,7 +572,11 @@ class PlotterNutau(Plotter):
                 else:
                     #mc_group_y[group], x_edges = np.histogram(group_mc_params[group], bins=x_edges, weights=group_mc_weight[group],**kwargs)
                     mc_group_y[i], x_edges = np.histogram(group_mc_params[group], bins=x_edges, weights=group_mc_weight[group],**kwargs)
-                x = (x_edges[:-1]+x_edges[1:])/2.0
+                if param_to_plot=='pid':
+                    special_x_edges = np.linspace(0,16,17)
+                    x = (special_x_edges[:-1]+special_x_edges[1:])/2.0
+                else:
+                    x = (x_edges[:-1]+x_edges[1:])/2.0
 
                 #ax1.hist(x, weights=mc_group_y[group], bins=x_edges, histtype='step', lw=1.5, color=colors[i], label=group, **kwargs)
                 #plt.errorbar(x, mc_group_y[group], yerr=np.array(group_mc_sumw2[group]), fmt='.',color=colors[i])
@@ -576,7 +594,10 @@ class PlotterNutau(Plotter):
                         mc_group_y.insert(4,muon_y)
                         all_flavs.insert(4, 'muon')
             flavor_label=self.get_flavor_label(all_flavs)
-            ax1.hist([x]*len(mc_group_y), weights=mc_group_y, bins=x_edges, lw=1.5, color=colors[0:len(mc_group_y)], label=flavor_label, histtype='bar', stacked=True, **kwargs)
+            if param_to_plot=='pid':
+                ax1.hist([x]*len(mc_group_y), weights=mc_group_y, bins=special_x_edges, lw=1.5, color=colors[0:len(mc_group_y)], label=flavor_label, histtype='bar', stacked=True, **kwargs)
+            else:
+                ax1.hist([x]*len(mc_group_y), weights=mc_group_y, bins=x_edges, lw=1.5, color=colors[0:len(mc_group_y)], label=flavor_label, histtype='bar', stacked=True, **kwargs)
             if extra!=[]:
                 ax1.hist(x, weights=best_y_h0, bins=x_edges, histtype='step', lw=1.5, color='cyan', **kwargs)
 
@@ -598,8 +619,13 @@ class PlotterNutau(Plotter):
                 print "best_y", best_y
                 print "len data_y", len(data_y)
                 print "len best_y", len(best_y)
-            x = (x_edges[:-1]+x_edges[1:])/2.0
-            plt.errorbar(x, data_y, yerr=np.sqrt(data_y), fmt='.', marker='.', markersize=4, color='k', label=r'$\rm{Data}$',capthick=1, capsize=3)
+                special_x_edges = np.linspace(0,16,17)
+                x = (special_x_edges[:-1]+special_x_edges[1:])/2.0
+            else:
+                x = (x_edges[:-1]+x_edges[1:])/2.0
+            # plot data as errorbar
+            #plt.errorbar(x, data_y, yerr=np.sqrt(data_y), fmt='.', marker='.', markersize=1, color='k', label=r'$\rm{Data}$',capthick=1, capsize=3,elinewidth=1)
+            plt.errorbar(x, data_y, yerr=np.sqrt(data_y), fmt='none', color='k', label=r'$\rm{Data}$',capthick=1, capsize=3,elinewidth=1)
             #print "     in plotter, data total ", np.sum(data_y)
             #print "     in plotter, best_y total ", np.sum(best_y)
             if thin:
@@ -610,15 +636,6 @@ class PlotterNutau(Plotter):
                 assert(mc_arrays!=None or muon_arrays!=None)
                 ax2=plt.subplot2grid((4,1), (3,0),sharex=ax1)
                 fig.subplots_adjust(hspace=0.1)
-                ax2.get_xaxis().set_tick_params(direction='in')
-                ax2.xaxis.set_ticks_position('both')
-                if param_to_plot=='pid':
-                    tick_x = [-3.60329646, -1.11009462, -0.34199519, -0.10536103, -0.03245936, -0.01, 0.01801648, 0.05848035, 0.18982351, 0.61615503, 2.0, 6.49187269, 21.07220554, 68.39903787, 222.01892311]
-                    tick_x_label = ['-3.6', '-1.1', '-0.3', '-0.1', '-0.0', '-0.0', '0.0', '0.1', '0.2', '0.6', '2.0', '6.5', '21.1', '68.4', '222.0']
-                    ax2.set_xticks(tick_x, tick_x_label)
-                ax2.tick_params(axis='x', which='both', labelsize=14)
-                ax1.tick_params(axis='y', which='both', labelsize=14)
-                ax2.tick_params(axis='y', which='both', labelsize=14)
                 def tenToThree(x, pos):
                     return r'{:2g}\dot 10^3'.format(x/1000.)
                 #formatter = FuncFormatter(tenToThree)
@@ -645,7 +662,11 @@ class PlotterNutau(Plotter):
                         ratio_best_to_best_err[i]=1
                     else:
                         ratio_best_to_best_err[i]=math.sqrt(2*best_sumw2[i])/best_y[i]
-                bin_width=np.abs(x_edges[1:]-x_edges[:-1])
+                if param_to_plot=='pid':
+                    bin_width=np.abs(special_x_edges[1:]-special_x_edges[:-1])
+                else:
+                    bin_width=np.abs(x_edges[1:]-x_edges[:-1])
+                    x = (x_edges[:-1]+x_edges[1:])/2.0
                 ax2.bar(x, 2*ratio_best_to_best_err,
                     bottom=np.ones(len(ratio_best_to_best_err))-ratio_best_to_best_err, width=bin_width,
                     linewidth=0, color=psulightblue, label=r'$\rm{Best\  Fit\  Uncert.}$', alpha=0.4
@@ -675,10 +696,25 @@ class PlotterNutau(Plotter):
                         ratio_best_to_data[i] = data_y[i]/best_y[i]
                         ratio_best_to_data_err[i] = np.sqrt(data_y[i]+((data_y[i]**2)*best_sumw2[i]/(best_y[i]**2)))/best_y[i]
 
-                ax2.errorbar(x, ratio_best_to_data, yerr=ratio_best_to_data_err, fmt='.',marker='.',markersize=4, color='black',capthick=1,capsize=3, label=r'$\rm{Data}$')
+                #ax2.errorbar(x, ratio_best_to_data, yerr=ratio_best_to_data_err, fmt='.',marker='.',markersize=1, color='black',capthick=1,capsize=3, label=r'$\rm{Data}$', elinewidth=1)
+                ax2.errorbar(x, ratio_best_to_data, yerr=ratio_best_to_data_err, fmt='none', color='black',capthick=1,capsize=3, label=r'$\rm{Data}$', elinewidth=1)
                 #ax2.errorbar(x, ratio_best_to_data, yerr=ratio_best_to_data_err, fmt='.',marker='.',markersize=4, color='black',capthick=1,capsize=3, label=r'$\rm{\sigma_{data}}$')
 
                 #ax2.legend(loc=2,ncol=2,frameon=False,prop={'size':10})
+
+                # specify tick labels
+                #ax2.get_xaxis().set_tick_params(direction='in')
+                #ax2.xaxis.set_ticks_position('both')
+                if param_to_plot=='pid':
+                    #tick_x=[-3.0, -1.11009462, -0.34199519, -0.05848035, -0.01, 0.01, 0.05848035, 0.34199519, 0.61615503, 1.11009462, 2.0, 3.60329646, 6.49187269, 11.69607095, 21.07220554, 37.96470182, 68.39903787, 123.23100555, 222.01892311, 400.]
+                    tick_x=special_x_edges
+                    #tick_x_label = ('-3', '-1.1', '-0.3', '0.01', '0.3', '0.6', '1.1', '2.0', '3.6', '6.5', '11.7', '21', '38', '68', '123', '222', '400')
+                    tick_x_label = ('', '-1.1', '', '0.0', '', '0.6', '', '2.0', '', '6.5', '', '21', '', '68', '', '222', '')
+                    plt.xticks(tick_x)
+                    plt.gca().set_xticklabels(tick_x_label)
+                ax2.tick_params(axis='x', which='both', labelsize=14)
+                ax1.tick_params(axis='y', which='both', labelsize=14)
+                ax2.tick_params(axis='y', which='both', labelsize=14)
                 if param_to_plot=='pid':
                     #ax1.plot((2,2),(0,4550),'k--', alpha=0.4)
                     #ax1.arrow(2,4500,1, 0, alpha=0.4)
@@ -754,9 +790,9 @@ class PlotterNutau(Plotter):
         if param_to_plot=='pid':
             #plt.gca().set_xscale('symlog')
             #plt.gca().set_xscale('log')
-            ax1.set_yscale('log')
-            #ax1.set_ylim([0,max(np.max(best_y),np.max(data_y))*1.7])
-            ax1.set_ylim([0,max(np.max(best_y),np.max(data_y))*100])
+            #ax1.set_yscale('log')
+            ax1.set_ylim([0,max(np.max(best_y),np.max(data_y))*1.4])
+            #ax1.set_ylim([0,max(np.max(best_y),np.max(data_y))*100])
         elif param_to_plot=='l_over_e':
             plt.gca().set_xscale('log')
             #ax1.set_ylim([0,4000])
@@ -771,15 +807,6 @@ class PlotterNutau(Plotter):
             fileio.mkdir(outdir)
         plot_name = outdir+'/'+file_name
         plt.savefig(plot_name+'.pdf')
-        plt.savefig(plot_name+'.png')
-        plt.clf()
-        if muon_arrays is not None and mc_arrays is not None:
-            return [mc_param_all, mc_weight_all, mc_sumw2_all, muon_param, muon_arrays['weight'], x_edges]
-        if muon_arrays is None and mc_arrays is not None:
-            return [mc_param_all, mc_weight_all, mc_sumw2_all, [], [], x_edges]
-        if muon_arrays is not None and mc_arrays is None:
-            return [[], [], [], muon_param, muon_arrays['weight'], x_edges]
-
        # if (data_arrays is not None) and self.ratio:
        #     plt.figure()
        #     plt.hist(x_array, weights=chi2_array, bins=x_edges, histtype='step', lw=1.5, color='r', **kwargs)
