@@ -135,7 +135,7 @@ class GPUWeight(object):
         }
         if (kFlav == 1) {
             //A_shape = 1.*abs(uphor)*LogLogParam(true_energy, z1max_mu, z2max_mu, x1z, x2z, true, numu_cutoff);
-            return 1.
+            return 1.;
         }
     }
 
