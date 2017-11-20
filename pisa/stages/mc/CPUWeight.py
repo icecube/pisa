@@ -86,11 +86,6 @@ class CPUWeight(object):
             np.exp(-1.0 * np.power(x,2) / (2.0 * np.power(sigma,2)))
         return val
 
-    def shape(self, x):
-        # Philipp took this from OscFit. See code in GPUWeight for relevant
-        # comments.
-        return np.cos(x * np.pi)
-
     def ModNuMuFlux(self, energy, czenith, e1, e2, z1, z2):
         # Philipp took this from OscFit. See code in GPUWeight for relevant
         # comments.
@@ -115,8 +110,8 @@ class CPUWeight(object):
         val = A_ave - (self.norm_fcn(
             x=czenith,
             A=A_shape,
-            sigma=0.32
-        ) - 0.75 * A_shape)
+            sigma=0.36
+        ) - 0.6 * A_shape)
         return val
 
     def ModNuEFlux(self, energy, czenith, e1mu, e2mu, z1mu,
@@ -144,7 +139,7 @@ class CPUWeight(object):
         val = A_ave - (1.5 * self.norm_fcn(
             x=czenith,
             A=A_shape,
-            sigma=0.4
+            sigma=0.36
         ) - 0.7 * A_shape)
         return val
 
@@ -161,25 +156,25 @@ class CPUWeight(object):
                 use_cutoff=True,
                 cutoff_value=self.nue_cutoff
             )
-        elif kFlav == 1:
-            A_shape = 1.0 * np.absolute(uphor) * self.LogLogParam(
-                energy=true_energy,
-                y1=self.z1max_mu,
-                y2=self.z2max_mu,
-                x1=self.x1z,
-                x2=self.x2z,
-                use_cutoff=True,
-                cutoff_value=self.numu_cutoff
+            return 1.0 - 0.3 * np.sign(uphor) * self.norm_fcn(
+                x=true_coszen,
+                A=A_shape,
+                sigma=0.35
             )
+        elif kFlav == 1:
+            #A_shape = 1.0 * np.absolute(uphor) * self.LogLogParam(
+            #    energy=true_energy,
+            #    y1=self.z1max_mu,
+            #    y2=self.z2max_mu,
+            #    x1=self.x1z,
+            #    x2=self.x2z,
+            #    use_cutoff=True,
+            #    cutoff_value=self.numu_cutoff
+            #)
+            return 1.
         else:
             raise ValueError("I got the flavour %i which I don't understand." 
                              " Expect 0 or 1."%kFlav)
-        val = 1.0 - 3.5 * np.sign(uphor) * self.norm_fcn(
-            x=true_coszen,
-            A=A_shape,
-            sigma=0.35
-        )
-        return val
 
     def modRatioNuBar(self, kNuBar, kFlav, true_e, true_cz,
                       nu_nubar, nubar_sys):
