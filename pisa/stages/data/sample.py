@@ -184,11 +184,7 @@ class sample(Stage):
         self.load_sample_events()
 
         if self.params['keep_criteria'].value is not None:
-            # TODO(shivesh)
-            raise NotImplementedError(
-                'needs check to make sure this works in a DistributionMaker'
-            )
-            self._data.applyCut(self.params['keep_criteria'].value)
+            self._data = self._data.applyCut(self.params['keep_criteria'].value)
             self._data.update_hash()
 
         if self.output_events:

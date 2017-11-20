@@ -600,7 +600,7 @@ class Data(FlavIntDataGroup):
 
         Returns
         -------
-        remaining_events : Events
+        remaining_events : Data
             An Events object with the remaining events (deepcopied) and with
             updated cut metadata including `keep_criteria`.
 
@@ -620,11 +620,9 @@ class Data(FlavIntDataGroup):
         >>> remaining = applyCut("np.log10(true_energy) >= 0")
 
         """
-        # TODO(shivesh): function does not pass tests
-        raise NotImplementedError
-
+        
         if keep_criteria in self.metadata['cuts']:
-            return
+            return self
 
         assert isinstance(keep_criteria, basestring)
 
@@ -658,17 +656,14 @@ class Data(FlavIntDataGroup):
                     field_name, 'self["%s"]["%s"]' % (fig, field_name)
                 )
             mask = eval(crit_str)
-            remaining_data[fig] = {k: v[mask]
+            remaining_data[fig] = {k: deepcopy(v[mask])
                                    for k, v in self[fig].iteritems()}
             fig_processed.append(fig)
 
-        remaining_events = Events()
-        remaining_events.metadata.update(deepcopy(self.metadata))
-        remaining_events.metadata['cuts'].append(keep_criteria)
-        for fig in fig_to_process:
-            remaining_events[fig] = deepcopy(remaining_data.pop(fig))
-
-        return remaining_events
+        #Create a new data structure using the post-cut data
+        new_data = Data(remaining_data,metadata=deepcopy(self.metadata))
+        new_data.metadata['cuts'].append(keep_criteria)
+        return new_data
 
     def keepInbounds(self, binning):
         """Cut out any events that fall outside `binning`. Note that events

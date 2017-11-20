@@ -1,6 +1,13 @@
 # authors: T.Stuttard
 # date:   Nov 3, 2017
 
+# Implementing an environmentally-induced decoherence model for neutrino oscillations
+# Based on reference [1], which is seeking to explain theta23 tension between NOvA and T2K
+#
+# References:
+# [1] arxiv:1702.04738
+
+
 
 from __future__ import division
 
@@ -59,9 +66,9 @@ class decoherence(prob3base) :
         self.gamma32 = gamma32
 
         #Enforce >= 0. for decoherence parameters #TODO Think abou this...
-        #if self.gamma21.m_as("GeV") < 0. : raise Exception("Decoherence parameter gamma21 must be >= 0.") 
-        #if self.gamma31.m_as("GeV") < 0. : raise Exception("Decoherence parameter gamma31 must be >= 0.") 
-        #if self.gamma32.m_as("GeV") < 0. : raise Exception("Decoherence parameter gamma32 must be >= 0.") 
+        if self.gamma21.m_as("GeV") < 0. : raise Exception("Decoherence parameter gamma21 must be >= 0.") 
+        if self.gamma31.m_as("GeV") < 0. : raise Exception("Decoherence parameter gamma31 must be >= 0.") 
+        if self.gamma32.m_as("GeV") < 0. : raise Exception("Decoherence parameter gamma32 must be >= 0.") 
 
         #Otherwise use base class function for all standard oscillation params
         super(self.__class__, self).set_params(theta12=theta12, 
@@ -71,9 +78,8 @@ class decoherence(prob3base) :
                                                 deltam31=deltam31, 
                                                 deltacp=deltacp )
 
-        #Get deltam32
-        #TODO Do this properly
-        self.deltam32 = self.deltam31
+        #Get deltam32 (this is what is used in [1])
+        self.deltam32 = self.deltam31 - self.deltam21
 
 
 
@@ -133,7 +139,7 @@ class decoherence(prob3base) :
     def _calc_numu_disappearance_prob_2flav(self,E,L) :
 
         #Define two-flavor decoherence approximation equation
-        #Eq. 2 from arxiv:1702.04738
+        #Eq. 2 from [1]
 
         #This line is a standard oscillations (no decoherence) 2 flavour approximation, can use for debugging
         #return np.sin(2.*theta23.m_as("rad"))**2 * np.square(np.sin(1.27*deltam32.m_as("eV**2")*L/E))
