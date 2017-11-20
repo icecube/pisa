@@ -1,8 +1,9 @@
 """
-Decorators for profiling code
-
+Tools for profiling code
 """
 
+
+from __future__ import absolute_import
 
 from functools import wraps
 from time import time
@@ -13,8 +14,7 @@ from line_profiler import LineProfiler
 import log
 
 
-__all__ = ['line_profile', 'profile',
-           'test_profile', 'test_line_profile']
+__all__ = ['line_profile', 'test_line_profile', 'profile', 'test_profile']
 
 
 class Log(object):
@@ -68,6 +68,25 @@ def line_profile(func):
     return profiled_func
 
 
+def test_line_profile():
+    """Unit tests for `line_profile` functional (decorator)"""
+    @line_profile
+    def get_number():
+        log.logging.trace('hello, i am get_number')
+        for x in xrange(500000):
+            yield x
+
+    @line_profile
+    def expensive_function():
+        log.logging.trace('hello, i am expensive fun')
+        for x in get_number():
+            _ = x ^ x ^ x
+        return 'some result!'
+
+    _ = expensive_function()
+    log.logging.info('<< ??? : test_line_profile >> Inspect above outputs')
+
+
 def profile(func):
     """Use as `@profile` decorator for a function or class method to log the
     time that it takes to complete.
@@ -118,26 +137,7 @@ def test_profile():
     log.logging.info('<< ??? : test_profile >> inspect above outputs')
 
 
-def test_line_profile():
-    """Unit tests for `line_profile` functional (decorator)"""
-    @line_profile
-    def get_number():
-        log.logging.trace('hello, i am get_number')
-        for x in xrange(500000):
-            yield x
-
-    @line_profile
-    def expensive_function():
-        log.logging.trace('hello, i am expensive fun')
-        for x in get_number():
-            _ = x ^ x ^ x
-        return 'some result!'
-
-    _ = expensive_function()
-    log.logging.info('<< ??? : test_line_profile >> Inspect above outputs')
-
-
 if __name__ == '__main__':
     log.set_verbosity(2)
-    test_profile()
     test_line_profile()
+    test_profile()

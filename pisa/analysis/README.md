@@ -1,6 +1,11 @@
-# $PISA/pisa/analysis
+# pisa.analysis
 
-* `__init__.py`
+Primary tools for performing analyses in PISA.
+
+
+## Directory Listing
+
+* `__init__.py` - Makes `analysis` directory behave as a Python module
 * `analysis.py` - Code containing an implementation of a generic `Analysis` class from which any other analysis can inherit.
 * `hypo_testing.py` - Code containing an implementation of a `HypoTesting` class for doing hypothesis testing. Inherits from `Analysis`.
 * `nutau_analysis.py`

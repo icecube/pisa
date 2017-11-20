@@ -23,7 +23,7 @@ parameters will **NOT be statistically independent** from one another.
 
 from __future__ import absolute_import, division
 
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from argparse import ArgumentParser
 from itertools import product
 import os
 import re
@@ -39,11 +39,10 @@ from pisa.stages.reco.param import load_reco_param
 from pisa.stages.pid.param import load_pid_energy_param
 from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.fileio import mkdir, to_file
+from pisa.utils.format import format_num
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
 from pisa.utils.random_numbers import get_random_state
-
-from smartFormat import simpleFormat
 
 
 __all__ = ['FNAME_TEMPLATE', 'FNAME_INFO_RE',
@@ -508,9 +507,9 @@ def populate_pid(mc_events, param_source, cut_val=0, random_state=None,
             # cascades fall below `cut_val`, tracks above
             locs_shifted = cut_val - norm.ppf(cascade_pid_probs, **dist_kwargs)
             assert recursiveEquality(
-                       norm(loc=locs_shifted, **dist_kwargs).cdf(cut_val),
-                       cascade_pid_probs
-                   )
+                norm(loc=locs_shifted, **dist_kwargs).cdf(cut_val),
+                cascade_pid_probs
+            )
             rv = norm(loc=locs_shifted, **dist_kwargs)
             # size is important in the following, as otherwise all samples are
             # 100% correlated
@@ -588,9 +587,7 @@ def mcgen_random_state(num_events, set_index):
 def parse_args(desc=__doc__):
     """Parse command line arguments"""
 
-    parser = ArgumentParser(
-        description=desc, #formatter_class=ArgumentDefaultsHelpFormatter
-    )
+    parser = ArgumentParser(description=desc)
 
     required_named = parser.add_argument_group('required named arguments')
     required_named.add_argument(
@@ -618,7 +615,7 @@ def parse_args(desc=__doc__):
     required_named.add_argument(
         '--coszen-range', metavar='LIM', type=float, nargs=2, required=True,
         help='''Range to draw true-cosine-zenity values from. Samples in this
-        range are drawn from a uniform distribution.'''
+        range are drawn from a uniform distribution. Specify as MIN MAX.'''
     )
 
     # The rest have defaults and therefore are not required
@@ -636,32 +633,37 @@ def parse_args(desc=__doc__):
         '--aeff-energy-param', metavar='PATH',
         default='aeff/vlvnt/vlvnt_aeff_energy_param.json',
         help='''Resource location or file path to effective areas energy
-        parameterization.'''
+        parameterization. (default: aeff/vlvnt/vlvnt_aeff_energy_param.json)'''
     )
     parser.add_argument(
         '--aeff-coszen-param', metavar='PATH',
         default='aeff/vlvnt/vlvnt_aeff_coszen_param.json',
         help='''Resource location or file path to effective areas coszen
-        parameterization.'''
+        parameterization. (default: aeff/vlvnt/vlvnt_aeff_energy_param.json)'''
     )
     parser.add_argument(
         '--reco-param', metavar='PATH',
         default='reco/vlvnt/vlvnt_reco_param.json',
-        help='''Resource location or file path to reco parameterization.'''
+        help='''Resource location or file path to reco parameterization.
+        (default: aeff/vlvnt/vlvnt_aeff_energy_param.json)'''
     )
     parser.add_argument(
         '--pid-param', metavar='PATH',
         default='pid/vlvnt/vlvnt_pid_energy_param.json',
-        help='''Resource location or file path to pid parameterization.'''
+        help='''Resource location or file path to pid parameterization.
+        (default: aeff/vlvnt/vlvnt_aeff_energy_param.json)'''
     )
     parser.add_argument(
         '--pid-dist', choices=['discrete', 'normal'], type=str,
         default='discrete',
-        help='''Whether PID values should be discrete or distributed.'''
+        help='''Whether PID values should be discrete or distributed. Specify
+        either "discrete" or "normal". (default: "discrete")'''
     )
     parser.add_argument(
         '-v', action='count', default=1,
-        help='Set verbosity level'
+        help='''Set verbosity level. Repeat for increased verbosity. Note that
+        default is level 1 (info), so specifying -v sets level 2 (debug+info)
+        and -vv sets level 3 (trace+debug+info).'''
     )
     args = parser.parse_args()
 
@@ -711,15 +713,14 @@ def main():
         mcevts_fname = FNAME_TEMPLATE.format(
             file_type='events',
             detector='vlvnt',
-            e_min=simpleFormat(args.energy_range[0], sciThresh=[10, 10]),
-            e_max=simpleFormat(args.energy_range[1], sciThresh=[10, 10]),
-            spectral_index=simpleFormat(args.spectral_index, sigFigs=2,
-                                        keepAllSigFigs=True,
-                                        sciThresh=[10, 10]),
-            cz_min=simpleFormat(args.coszen_range[0], sciThresh=[10, 10]),
-            cz_max=simpleFormat(args.coszen_range[1], sciThresh=[10, 10]),
-            num_events=simpleFormat(num_events, sigFigs=3, sciThresh=[1, 1]),
-            set_index=simpleFormat(set_index, sciThresh=[10, 10]),
+            e_min=format_num(args.energy_range[0]),
+            e_max=format_num(args.energy_range[1]),
+            spectral_index=format_num(args.spectral_index, sigfigs=2,
+                                      trailing_zeros=True),
+            cz_min=format_num(args.coszen_range[0]),
+            cz_max=format_num(args.coszen_range[1]),
+            num_events=format_num(num_events, sigfigs=3, sci_thresh=(1, -1)),
+            set_index=format_num(set_index, sci_thresh=(10, -10)),
             extension='hdf5'
         )
         mcevts_fpath = os.path.join(args.outdir, mcevts_fname)
