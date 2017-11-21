@@ -238,11 +238,11 @@ def lookup(sample, flat_hist, binning):
     # todo: directly return smart array
     if flat_hist.ndim == 1:
         #print 'looking up 1D'
-        array = SmartArray(np.empty_like(sample[0]))
+        array = SmartArray(np.zeros_like(sample[0]))
         lookup_vectorized_2d(sample[0].get(WHERE), sample[1].get(WHERE), flat_hist.get(WHERE), bin_edges[0], bin_edges[1], out=array.get(WHERE))
     elif flat_hist.ndim == 2:
         #print 'looking up ND'
-        array = SmartArray(np.empty((sample[0].size, flat_hist.shape[1]), dtype=FTYPE))
+        array = SmartArray(np.zeros((sample[0].size, flat_hist.shape[1]), dtype=FTYPE))
         lookup_vectorized_2d_arrays(sample[0].get(WHERE), sample[1].get(WHERE), flat_hist.get(WHERE), bin_edges[0], bin_edges[1], out=array.get(WHERE))
     else:
         raise NotImplementedError()
@@ -280,10 +280,16 @@ def lookup_vectorized_2d(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y
     '''
     Vectorized gufunc to perform the lookup
     '''
-    idx_x = find_index(sample_x, bin_edges_x)
-    idx_y = find_index(sample_y, bin_edges_y)
-    idx = idx_x*(len(bin_edges_y)-1) + idx_y
-    weights[0] = flat_hist[idx]
+    if (sample_x >= bin_edges_x[0]
+            and sample_x <= bin_edges_x[-1]
+            and sample_y >= bin_edges_y[0]
+            and sample_y <= bin_edges_y[-1]):
+        idx_x = find_index(sample_x, bin_edges_x)
+        idx_y = find_index(sample_y, bin_edges_y)
+        idx = idx_x*(len(bin_edges_y)-1) + idx_y
+        weights[0] = flat_hist[idx]
+    else:
+        weights[0] = 0.
 
 
 if FTYPE == np.float64:
@@ -297,11 +303,18 @@ def lookup_vectorized_2d_arrays(sample_x, sample_y, flat_hist, bin_edges_x, bin_
     Vectorized gufunc to perform the lookup
     while flat hist and weights have both a second dimension
     '''
-    idx_x = find_index(sample_x, bin_edges_x)
-    idx_y = find_index(sample_y, bin_edges_y)
-    idx = idx_x*(len(bin_edges_y)-1) + idx_y
-    for i in range(weights.size):
-        weights[i] = flat_hist[idx,i]
+    if (sample_x >= bin_edges_x[0]
+            and sample_x <= bin_edges_x[-1]
+            and sample_y >= bin_edges_y[0]
+            and sample_y <= bin_edges_y[-1]):
+        idx_x = find_index(sample_x, bin_edges_x)
+        idx_y = find_index(sample_y, bin_edges_y)
+        idx = idx_x*(len(bin_edges_y)-1) + idx_y
+        for i in range(weights.size):
+            weights[i] = flat_hist[idx,i]
+    else:
+        for i in range(weights.size):
+            weights[i] = 0.
 
 
 
