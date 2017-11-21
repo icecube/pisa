@@ -97,6 +97,7 @@ class corsika(Stage):
                 no_reco=no_reco,
                 #cuts='analysis',
                 cuts='l34_and_icc_def2',
+                #cuts='l34',
                 run_setting_file='events/mc_sim_run_settings.json',
                 data_proc_file='events/data_proc_params.json')
 
@@ -194,6 +195,8 @@ class corsika(Stage):
         for key in output_fields:
             if key=='weight':
                 corsika_weight = cut_data['corsika_weight'][all_cuts]/num_files
+                #print "livetime ", self.params.livetime.value.m_as('common_year')
+                #print "corsika_scale", self.params.corsika_scale.value.m_as('dimensionless')
                 scale = self.params.corsika_scale.value.m_as('dimensionless') * self.params.livetime.value.m_as('common_year') * corsika_weight
                 #scale = corsika_weight
                 output_data['weight'] = scale
