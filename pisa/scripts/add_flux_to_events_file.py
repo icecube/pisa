@@ -14,7 +14,7 @@ import pisa.core.events as events
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.fileio import from_file, to_file, mkdir
 import pisa.utils.resources as resources
-from pisa.utils.flux_weights import load_2D_table, calculate_flux_weights
+from pisa.utils.flux_weights import load_2D_table, calculate_2D_flux_weights
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
@@ -33,12 +33,12 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name, outdir)
                 true_e = data_file[prim][int_type]['true_energy']
                 true_cz = data_file[prim][int_type]['true_coszen']
                 isbar = 'bar' if 'bar' in prim else ''
-                nue_flux = calculate_flux_weights(true_e, true_cz, flux_table['nue'+isbar])
-                numu_flux = calculate_flux_weights(true_e, true_cz, flux_table['numu'+isbar])
+                nue_flux = calculate_2D_flux_weights(true_e, true_cz, flux_table['nue'+isbar])
+                numu_flux = calculate_2D_flux_weights(true_e, true_cz, flux_table['numu'+isbar])
                 # the opposite flavor fluxes( used only in the nu_nubar_ratio systematic)
                 oppo_isbar = '' if 'bar' in prim else 'bar'
-                oppo_nue_flux = calculate_flux_weights(true_e, true_cz, flux_table['nue'+isbar])
-                oppo_numu_flux = calculate_flux_weights(true_e, true_cz, flux_table['numu'+isbar])
+                oppo_nue_flux = calculate_2D_flux_weights(true_e, true_cz, flux_table['nue'+isbar])
+                oppo_numu_flux = calculate_2D_flux_weights(true_e, true_cz, flux_table['numu'+isbar])
                 data_file[prim][int_type][neutrino_weight_name+'_nue_flux'] = nue_flux
                 data_file[prim][int_type][neutrino_weight_name+'_numu_flux'] = numu_flux
                 data_file[prim][int_type][neutrino_weight_name+'_oppo_nue_flux'] = oppo_nue_flux
