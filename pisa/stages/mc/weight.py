@@ -183,7 +183,13 @@ class weight(Stage):
             'deltam31',
             'deltacp',
             'no_nc_osc',
-            'true_e_scale'
+            'true_e_scale',
+            'eps_ee',
+            'eps_emu',
+            'eps_etau',
+            'eps_mumu',
+            'eps_mutau',
+            'eps_tautau'
         )
 
         self.atm_muon_params = (
@@ -785,6 +791,12 @@ class weight(Stage):
         deltam31 = params['deltam31'].m_as('eV**2')
         deltacp = params['deltacp'].m_as('rad')
         true_e_scale = params['true_e_scale'].m_as('dimensionless')
+        eps_ee = params['eps_ee'].m_as('dimensionless')
+        eps_emu = params['eps_emu'].m_as('dimensionless')
+        eps_etau = params['eps_etau'].m_as('dimensionless')
+        eps_mumu = params['eps_mumu'].m_as('dimensionless')
+        eps_mutau = params['eps_mutau'].m_as('dimensionless')
+        eps_tautau = params['eps_tautau'].m_as('dimensionless')
 
         osc = prob3gpu(
             params=params,
@@ -821,7 +833,8 @@ class weight(Stage):
                 )
                 cuda.memcpy_htod(osc_data[fig]['device'][key], device[key])
 
-        osc.update_MNS(theta12, theta13, theta23, deltam21, deltam31, deltacp)
+        osc.update_MNS(theta12, theta13, theta23, deltam21, deltam31, deltacp,
+                       eps_ee, eps_emu, eps_etau, eps_mumu, eps_mutau, eps_tautau)
 
         osc_weights = OrderedDict()
         for fig in nu_data.iterkeys():

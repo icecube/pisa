@@ -30,17 +30,14 @@ typedef enum matrix_type {
   standard_type,
   barger_type} MatrixType;
 
-
-__device__ void getM(fType Enu, fType rho,
-                     fType Mix[][3][2], fType dmVacVac[][3], int antitype,
-                     fType dmMatMat[][3], fType dmMatVac[][3]);
 __device__ void getA(fType L, fType E, fType rho,
                      fType Mix[][3][2], fType dmMatVac[][3],
-                     fType dmMatMat[][3], int antitype, fType A[3][3][2],
+                     fType dmMatMat[][3], fType HMatMassEigenstateBasis[][3][2],
+                     fType A[3][3][2],
                      fType phase_offset);
-__device__ void get_product(fType L, fType E, fType rho,fType Mix[][3][2],
+__device__ void get_product(fType L, fType E, fType rho,
                             fType dmMatVac[][3], fType dmMatMat[][3],
-                            int antitype,
+                            fType HMatMassEigenstateBasis[][3][2],
                             fType product[][3][3][2]);
 
 

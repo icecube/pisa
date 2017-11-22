@@ -22,6 +22,7 @@ from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.osc_params import OscParams
+from pisa.stages.osc.nsi_params import NSIParams
 
 
 class prob3gpu(Stage):
@@ -46,6 +47,13 @@ class prob3gpu(Stage):
             * theta12
             * theta13
             * theta23
+        NSI parameters:
+            * eps_ee
+            * eps_emu
+            * eps_etau
+            * eps_mumu
+            * eps_mutau
+            * eps_tautau
 
     input_binning : MultiDimBinning
     output_binning : MultiDimBinning
@@ -92,6 +100,7 @@ class prob3gpu(Stage):
      */
     __global__ void propagateGrid(fType* d_smooth_maps,
                                   fType d_dm[3][3], fType d_mix[3][3][2],
+                                  fType d_nsi_eps[3][3],
                                   const fType* const d_ecen_fine,
                                   const fType* const d_czcen_fine,
                                   const int nebins_fine, const int nczbins_fine,
@@ -111,14 +120,25 @@ class prob3gpu(Stage):
       int czidx = thread_2D_pos.x;
 
       int kNuBar;
-      //if (threadIdx.z == 0)
-      //  kNuBar = 1;
-      if (blockIdx.z == 0)
+      fType mixNuType[3][3][2];
+      if (blockIdx.z == 0){
         kNuBar = 1;
-      else
+        // "U* convention" for neutrino states (cf e.g. arXiv:0905.1903, Eq. 1)
+        // (note that this only changes calculations with non-zero deltacp)
+        conjugate_complex_matrix(d_mix, mixNuType);
+      }
+      else {
         kNuBar=-1;
+        // "U convention" for antineutrino states (see ref. above)
+        // leave mixing matrix unchanged
+        copy_complex_matrix(d_mix, mixNuType);
+      }
 
       bool kUseMassEstates = false;
+
+      fType HVac2Enu[3][3][2];
+      clear_complex_matrix(HVac2Enu);
+      getHVac2Enu(mixNuType, d_dm, HVac2Enu);
 
       fType TransitionMatrix[3][3][2];
       fType TransitionProduct[3][3][2];
@@ -130,7 +150,7 @@ class prob3gpu(Stage):
       clear_complex_matrix(TransitionMatrix);
       clear_complex_matrix(TransitionProduct);
       clear_complex_matrix(TransitionTemp);
-      clear_probabilities(Probability);
+      clear_real_matrix(Probability);
 
       //int layers = 1;//*(d_numberOfLayers + czidx);
       int layers = d_numberOfLayers[czidx];
@@ -149,7 +169,7 @@ class prob3gpu(Stage):
                               distance,
                               TransitionMatrix,
                               0.0,
-                              d_mix,
+                              mixNuType, d_nsi_eps, HVac2Enu,
                               d_dm);
 
         if (i==0) {
@@ -170,7 +190,7 @@ class prob3gpu(Stage):
         }
 
         if (kUseMassEstates)
-          convert_from_mass_eigenstate(i+1, kNuBar, RawInputPsi, d_mix);
+          convert_from_mass_eigenstate(i+1, RawInputPsi, mixNuType);
         else
           RawInputPsi[i][0] = 1.0;
 
@@ -205,6 +225,7 @@ class prob3gpu(Stage):
                                    fType* d_prob_mu,
                                    fType d_dm[3][3],
                                    fType d_mix[3][3][2],
+                                   fType d_nsi_eps[3][3],
                                    const int n_evts,
                                    const int kNuBar,
                                    const int kFlav,
@@ -219,6 +240,28 @@ class prob3gpu(Stage):
       // ensure we don't access memory outside of bounds!
       if(idx >= n_evts) return;
       bool kUseMassEstates = false;
+
+      fType mixNuType[3][3][2];
+      /*
+      TODO: * ensure convention below is respected in MC reweighting
+                (kNuBar > 0 for nu, < 0 for anti-nu)
+              * kNuBar is passed in, so could already pass in the correct form
+                of mixing matrix, i.e., possibly conjugated
+      */
+      if (kNuBar > 0){
+        // in this case the mixing matrix is left untouched
+        copy_complex_matrix(d_mix, mixNuType);
+      }
+      else {
+        // here we need to complex conjugate all entries
+        // (note that this only changes calculations with non-zero deltacp)
+        conjugate_complex_matrix(d_mix, mixNuType);
+      }
+
+      fType HVac2Enu[3][3][2];
+      clear_complex_matrix(HVac2Enu);
+      getHVac2Enu(mixNuType, d_dm, HVac2Enu);
+
       fType TransitionMatrix[3][3][2];
       fType TransitionProduct[3][3][2];
       fType TransitionTemp[3][3][2];
@@ -228,7 +271,7 @@ class prob3gpu(Stage):
       clear_complex_matrix( TransitionMatrix );
       clear_complex_matrix( TransitionProduct );
       clear_complex_matrix( TransitionTemp );
-      clear_probabilities( Probability );
+      clear_real_matrix( Probability );
       int layers = *(d_numberOfLayers + idx);
       fType energy = d_energy[idx] * true_e_scale;
       for( int i=0; i<layers; i++) {
@@ -240,7 +283,7 @@ class prob3gpu(Stage):
                               distance,
                               TransitionMatrix,
                               0.0,
-                              d_mix,
+                              mixNuType, d_nsi_eps, HVac2Enu,
                               d_dm);
         if(i==0) {
           copy_complex_matrix(TransitionMatrix, TransitionProduct);
@@ -260,7 +303,7 @@ class prob3gpu(Stage):
         }
 
         if( kUseMassEstates )
-          convert_from_mass_eigenstate(i+1, kNuBar, RawInputPsi, d_mix);
+          convert_from_mass_eigenstate(i+1, RawInputPsi, mixNuType);
         else
           RawInputPsi[i][0] = 1.0;
 
@@ -299,6 +342,8 @@ class prob3gpu(Stage):
                 'detector_depth', 'prop_height',
                 'deltacp', 'deltam21', 'deltam31',
                 'theta12', 'theta13', 'theta23', 'nutau_norm',
+                'eps_ee', 'eps_emu', 'eps_etau', 'eps_mumu', 'eps_mutau',
+                'eps_tautau',
             )
         else:
             logging.debug('Using prob3gpu to calculate probabilities for'
@@ -311,6 +356,8 @@ class prob3gpu(Stage):
                 'deltacp', 'deltam21', 'deltam31',
                 'theta12', 'theta13', 'theta23',
                 'no_nc_osc', 'true_e_scale',
+                'eps_ee', 'eps_emu', 'eps_etau', 'eps_mumu', 'eps_mutau',
+                'eps_tautau',
             )
 
         # Define the names of objects that are required by this stage (objects
@@ -400,10 +447,17 @@ class prob3gpu(Stage):
         YeO = self.params.YeO.m_as('dimensionless')
         YeM = self.params.YeM.m_as('dimensionless')
         prop_height = self.params.prop_height.m_as('km')
+        eps_ee = self.params.eps_ee.m_as('dimensionless')
+        eps_emu = self.params.eps_emu.m_as('dimensionless')
+        eps_etau = self.params.eps_etau.m_as('dimensionless')
+        eps_mumu = self.params.eps_mumu.m_as('dimensionless')
+        eps_mutau = self.params.eps_mutau.m_as('dimensionless')
+        eps_tautau = self.params.eps_tautau.m_as('dimensionless')
 
-        sin2th12Sq = np.sin(theta12)**2
-        sin2th13Sq = np.sin(theta13)**2
-        sin2th23Sq = np.sin(theta23)**2
+
+        sin12 = np.sin(theta12)
+        sin13 = np.sin(theta13)
+        sin23 = np.sin(theta23)
 
         mAtm = deltam31 if deltam31 < 0.0 else (deltam31 - deltam21)
 
@@ -411,24 +465,31 @@ class prob3gpu(Stage):
                              self.params.detector_depth.m_as('km'),
                              prop_height)
         self.layers.setElecFrac(YeI, YeO, YeM)
-        self.osc = OscParams(deltam21, mAtm, sin2th12Sq, sin2th13Sq,
-                             sin2th23Sq, deltacp)
+        self.osc = OscParams(deltam21, mAtm, sin12, sin13, sin23, deltacp)
+        self.nsi = NSIParams(eps_ee=eps_ee, eps_emu=eps_emu, eps_etau=eps_etau,
+                             eps_mumu=eps_mumu, eps_mutau=eps_mutau,
+                             eps_tautau=eps_tautau)
 
         self.prepare_device_arrays()
 
-        dm_mat = self.osc.M_mass
-        mix_mat = self.osc.M_pmns
+        dm_mat = self.osc.dm_matrix
+        mix_mat = self.osc.mix_matrix
+        nsi_eps_mat = self.nsi.eps_matrix
 
-        logging.trace('dm_mat: \n %s' %str(dm_mat))
-        logging.trace('mix[re]: \n %s' %str(mix_mat[:,:,0]))
+        logging.info('dm_mat: \n %s' %str(dm_mat))
+        logging.info('mix[re]: \n %s' %str(mix_mat[:,:,0]))
+        logging.info('nsi_mat: \n %s' %str(nsi_eps_mat))
 
         dm_mat = dm_mat.astype(FTYPE)
         mix_mat = mix_mat.astype(FTYPE)
+        nsi_eps_mat = nsi_eps_mat.astype(FTYPE)
 
         d_dm_mat = cuda.mem_alloc(dm_mat.nbytes)
         d_mix_mat = cuda.mem_alloc(mix_mat.nbytes)
+        d_nsi_eps_mat = cuda.mem_alloc(nsi_eps_mat.nbytes)
         cuda.memcpy_htod(d_dm_mat, dm_mat)
         cuda.memcpy_htod(d_mix_mat, mix_mat)
+        cuda.memcpy_htod(d_nsi_eps_mat, nsi_eps_mat)
 
         nebins_fine = np.int32(len(self.ecen_fine))
         nczbins_fine = np.int32(len(self.czcen_fine))
@@ -448,7 +509,7 @@ class prob3gpu(Stage):
             2
         )
         self.propGrid(d_smooth_maps,
-                      d_dm_mat, d_mix_mat,
+                      d_dm_mat, d_mix_mat, d_nsi_eps_mat,
                       self.d_ecen_fine, self.d_czcen_fine,
                       nebins_fine, nczbins_fine,
                       nebins_fine, nczbins_fine,
@@ -588,20 +649,23 @@ class prob3gpu(Stage):
         return numLayers, densityInLayer, distanceInLayer
 
     def update_MNS(self, theta12, theta13, theta23,
-                   deltam21, deltam31, deltacp):
+                   deltam21, deltam31, deltacp, eps_ee, eps_emu, eps_etau,
+                   eps_mumu, eps_mutau, eps_tautau):
         """
         Returns an oscillation probability map dictionary calculated
         at the values of the input parameters:
           deltam21, deltam31, theta12, theta13, theta23, deltacp
           * theta12, theta13, theta23 - in [rad]
           * deltam21, deltam31 - in [eV^2]
+          * eps_ee, eps_emu, eps_etau, eps_mumu, eps_mutau,
+            eps_tautau - dimensionless
         """
 
         assert(not self.calc_transforms)
 
-        sin2th12Sq = np.sin(theta12)**2
-        sin2th13Sq = np.sin(theta13)**2
-        sin2th23Sq = np.sin(theta23)**2
+        sin12 = np.sin(theta12)
+        sin13 = np.sin(theta13)
+        sin23 = np.sin(theta23)
 
         mAtm = deltam31 if deltam31 < 0.0 else (deltam31 - deltam21)
 
@@ -611,17 +675,25 @@ class prob3gpu(Stage):
         # to feed the core libraries the correct value of m32."
         #if mAtm < 0.0: mAtm -= deltam21;
 
-        self.osc = OscParams(deltam21, mAtm, sin2th12Sq, sin2th13Sq, sin2th23Sq, deltacp)
-        dm_mat = self.osc.M_mass
-        mix_mat = self.osc.M_pmns
+        self.osc = OscParams(deltam21, mAtm, sin12, sin13, sin23, deltacp)
+        self.nsi = NSIParams(eps_ee=eps_ee, eps_emu=eps_emu, eps_etau=eps_etau,
+                             eps_mumu=eps_mumu, eps_mutau=eps_mutau,
+                             eps_tautau=eps_tautau)
 
-        logging.debug("dm_mat: \n %s"%str(dm_mat))
-        logging.debug("mix[re]: \n %s"%str(mix_mat[:,:,0]))
+        dm_mat = self.osc.dm_matrix
+        mix_mat = self.osc.mix_matrix
+        nsi_eps_mat = self.nsi.eps_matrix
+
+        logging.info("dm_mat: \n %s"%str(dm_mat))
+        logging.info("mix[re]: \n %s"%str(mix_mat[:,:,0]))
+        logging.info('nsi_mat: \n %s' %str(nsi_eps_mat))
 
         self.d_dm_mat = cuda.mem_alloc(FTYPE(dm_mat).nbytes)
         self.d_mix_mat = cuda.mem_alloc(FTYPE(mix_mat).nbytes)
+        self.d_nsi_eps_mat = cuda.mem_alloc(FTYPE(nsi_eps_mat).nbytes)
         cuda.memcpy_htod(self.d_dm_mat, FTYPE(dm_mat))
         cuda.memcpy_htod(self.d_mix_mat, FTYPE(mix_mat))
+        cuda.memcpy_htod(self.d_nsi_eps_mat, FTYPE(nsi_eps_mat))
 
     def calc_probs(self, kNuBar, kFlav, n_evts, true_e_scale, true_energy, numLayers,
                    densityInLayer, distanceInLayer, prob_e, prob_mu, **kwargs):
@@ -637,6 +709,7 @@ class prob3gpu(Stage):
             prob_mu,
             self.d_dm_mat,
             self.d_mix_mat,
+            self.d_nsi_eps_mat,
             n_evts,
             np.int32(kNuBar),
             np.int32(kFlav),
