@@ -22,8 +22,8 @@ from pisa.utils.resources import open_resource
 __all__ = ['load_2D_table', 'calculate_flux_weights']
 
 
-PRIMARIES = ['numu', 'numubar', 'nue', 'nuebar']
-texPRIMARIES = [r'$\nu_{\mu}$', r'$\bar{\nu}_{\mu}$', r'$\nu_{e}$', r'$\bar{\nu}_{e}$']
+primaries = ['numu', 'numubar', 'nue', 'nuebar']
+texprimaries = [r'$\nu_{\mu}$', r'$\bar{\nu}_{\mu}$', r'$\nu_{e}$', r'$\bar{\nu}_{e}$']
 
 
 def load_2D_Honda_table(flux_file, enpow=1, returnTable=False):
@@ -31,7 +31,7 @@ def load_2D_Honda_table(flux_file, enpow=1, returnTable=False):
     logging.debug("Loading atmospheric flux table %s" % flux_file)
 
     # columns in Honda files are in the same order
-    cols = ['energy'] + PRIMARIES
+    cols = ['energy'] + primaries
 
     # Load the data table
     table = np.genfromtxt(open_resource(flux_file),
@@ -64,7 +64,7 @@ def load_2D_Honda_table(flux_file, enpow=1, returnTable=False):
     # method must be the edges of those of the normal tables
     int_flux_dict['logenergy'] = np.linspace(-1.025, 4.025, 102)
     int_flux_dict['coszen'] = np.linspace(-1, 1, 21)
-    for nutype in PRIMARIES:
+    for nutype in primaries:
         # spline_dict now wants to be a set of splines for
         # every table cosZenith value.
         splines = {}
@@ -87,7 +87,7 @@ def load_2D_Honda_table(flux_file, enpow=1, returnTable=False):
 
         spline_dict[nutype] = splines
 
-    for prim in PRIMARIES:
+    for prim in primaries:
         flux_dict[prim] = flux_dict[prim][::-1]
 
     if returnTable:
@@ -101,7 +101,7 @@ def load_2D_Bartol_table(flux_file, enpow=1, returnTable=False):
     logging.debug("Loading atmospheric flux table %s" % flux_file)
 
     # Bartol tables have been modified to look like Honda tables
-    cols = ['energy'] + PRIMARIES
+    cols = ['energy'] + primaries
     
     # Load the data table
     table = np.genfromtxt(open_resource(flux_file),
@@ -138,7 +138,7 @@ def load_2D_Bartol_table(flux_file, enpow=1, returnTable=False):
         [low_log_energy,high_log_energy]
     )
     int_flux_dict['coszen'] = np.linspace(-1, 1, 21)
-    for nutype in PRIMARIES:
+    for nutype in primaries:
         # spline_dict now wants to be a set of splines for
         # every table cosZenith value.
         splines = {}
@@ -164,7 +164,7 @@ def load_2D_Bartol_table(flux_file, enpow=1, returnTable=False):
 
         spline_dict[nutype] = splines
 
-    for prim in PRIMARIES:
+    for prim in primaries:
         flux_dict[prim] = flux_dict[prim][::-1]
 
     if returnTable:
@@ -319,7 +319,7 @@ def load_3D_Honda_table(flux_file, enpow=1, returnTable=False):
     logging.debug("Loading atmospheric flux table %s" % flux_file)
 
     # columns in Honda files are in the same order
-    cols = ['energy'] + PRIMARIES
+    cols = ['energy'] + primaries
     
     # Load the data table
     table = np.genfromtxt(open_resource(flux_file),
@@ -359,7 +359,7 @@ def load_3D_Honda_table(flux_file, enpow=1, returnTable=False):
     # method must be the edges of those of the normal tables
     int_flux_dict['logenergy'] = np.linspace(-1.025, 4.025, 102)
     int_flux_dict['coszen'] = np.linspace(1, -1, 21)
-    for nutype in PRIMARIES:
+    for nutype in primaries:
         # spline_dict now wants to be a set of splines for
         # every table cosZenith value.
         # In 3D mode we have a set of these sets for every
