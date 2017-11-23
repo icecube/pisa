@@ -15,7 +15,7 @@ import matplotlib.colors as colors
 from argparse import ArgumentParser,ArgumentDefaultsHelpFormatter
 
 from pisa.utils.log import logging, set_verbosity
-from pisa.utils.flux_weights import load_2D_table, calculate_2D_flux_weights, primaries, texprimaries, load_3D_table, calculate_3D_flux_weights
+from pisa.utils.flux_weights import load_2D_table, calculate_2D_flux_weights, PRIMARIES, TEXPRIMARIES, load_3D_table, calculate_3D_flux_weights
 
 def Plot1DSlices(xintvals, yintvals, xtabvals, ytabvals, xtabbins,
                  xlabel, ylabel, xtext, ytext, text, tablename,
