@@ -162,7 +162,6 @@ class gpu(Stage):
         expected_params = (self.osc_params + self.flux_params +
                            self.other_params + self.true_params)
 
-        output_names = split(output_names, sep=',')
 
         super(self.__class__, self).__init__(
             use_transforms=False,
