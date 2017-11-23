@@ -51,8 +51,6 @@ class gpu(Stage):
             deltacp : quantity (angle)
             no_nc_osc : bool
                 don't oscillate NC events, but rather assign probabilities 1 for nue->nue and numu->numu, and 0 for nutau->nutau
-            eps_ee, eps_emu, eps_etau, eps_mumu, eps_mutau, eps_tautau : quantity (dimensionless)
-                neutrino non-standard interaction parameters (coupling strengths)
             nu_nubar_ratio : quantity (dimensionless)
             nue_numu_ratio : quantity (dimensionless)
             livetime : quantity (time)
@@ -129,12 +127,6 @@ class gpu(Stage):
             'deltam31',
             'deltacp',
             'no_nc_osc',
-            'eps_ee',
-            'eps_emu',
-            'eps_etau',
-            'eps_mumu',
-            'eps_mutau',
-            'eps_tautau'
         )
 
         self.true_params = (
@@ -557,16 +549,8 @@ class gpu(Stage):
                 deltam21 = self.params.deltam21.value.m_as('eV**2')
                 deltam31 = self.params.deltam31.value.m_as('eV**2')
                 deltacp = self.params.deltacp.value.m_as('rad')
-                eps_ee = self.params.eps_ee.m_as('dimensionless')
-                eps_emu = self.params.eps_emu.m_as('dimensionless')
-                eps_etau = self.params.eps_etau.m_as('dimensionless')
-                eps_mumu = self.params.eps_mumu.m_as('dimensionless')
-                eps_mutau = self.params.eps_mutau.m_as('dimensionless')
-                eps_tautau = self.params.eps_tautau.m_as('dimensionless')
                 self.osc.update_MNS(theta12, theta13, theta23,
-                                    deltam21, deltam31, deltacp,
-                                    eps_ee, eps_emu, eps_etau,
-                                    eps_mumu, eps_mutau, eps_tautau)
+                                    deltam21, deltam31, deltacp)
 
         tot = 0
         start_t = time.time()

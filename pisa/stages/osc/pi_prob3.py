@@ -8,7 +8,7 @@ from pisa.utils.profiler import profile
 from pisa.core.binning import MultiDimBinning
 from pisa.core.container import Container
 from pisa.core.map import Map, MapSet
-from pisa.stages.osc.osc_params import OscParams
+from pisa.stages.osc.pi_osc_params import OscParams
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.prob3numba.numba_osc import *
 from pisa.utils.numba_tools import *
