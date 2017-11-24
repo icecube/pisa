@@ -4,16 +4,12 @@ Docstring
 """
 from __future__ import absolute_import, print_function, division
 import numpy as np
-from numba import guvectorize, SmartArray
 
-from pisa import *
+from pisa import FTYPE
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils.numba_tools import multiply_and_scale, square, sqrt, WHERE
-from pisa.core.binning import MultiDimBinning
-from pisa.core.map import Map, MapSet
-
 
 class pi_hist(PiStage):
     """
@@ -38,7 +34,7 @@ class pi_hist(PiStage):
                  input_specs=None,
                  calc_specs=None,
                  output_specs=None,
-                 ):
+                ):
 
         expected_params = ()
         input_names = ()
@@ -46,40 +42,40 @@ class pi_hist(PiStage):
 
         # what are the keys used from the inputs during apply
         input_keys = ('weights',
-                      )
-        # what are keys added or altered in the calculation used during apply 
+                     )
+        # what are keys added or altered in the calculation used during apply
         assert calc_specs is None
         if error_method in ['sumw2']:
             calc_keys = ('weights_squared',
-                         )
+                        )
             output_keys = ('weights',
                            'error',
-                           )
+                          )
             calc_specs = input_specs
         else:
             calc_keys = ()
             output_keys = ('weights',
-                           )
+                          )
 
 
         # init base class
         super(pi_hist, self).__init__(data=data,
-                                       params=params,
-                                       expected_params=expected_params,
-                                       input_names=input_names,
-                                       output_names=output_names,
-                                       debug_mode=debug_mode,
-                                       error_method=error_method,
-                                       input_specs=input_specs,
-                                       calc_specs=calc_specs,
-                                       output_specs=output_specs,
-                                       input_keys=input_keys,
-                                       calc_keys=calc_keys,
-                                       output_keys=output_keys,
-                                       )
+                                      params=params,
+                                      expected_params=expected_params,
+                                      input_names=input_names,
+                                      output_names=output_names,
+                                      debug_mode=debug_mode,
+                                      error_method=error_method,
+                                      input_specs=input_specs,
+                                      calc_specs=calc_specs,
+                                      output_specs=output_specs,
+                                      input_keys=input_keys,
+                                      calc_keys=calc_keys,
+                                      output_keys=output_keys,
+                                     )
 
         assert self.input_mode is not None
-        assert self.output_mode is 'binned'
+        assert self.output_mode == 'binned'
 
     def setup_function(self):
         if self.error_method in ['sumw2']:
@@ -93,14 +89,14 @@ class pi_hist(PiStage):
     @profile
     def apply(self):
         self.compute()
-        
+
         # this is special, we want the actual event weights in the histo
         if self.input_mode == 'binned':
             self.data.data_specs = self.output_specs
             for container in self.data:
                 container.array_to_binned('event_weights', self.output_specs, averaged=False)
                 multiply_and_scale(1.,
-                                   container['event_weights'],get(WHERE),
+                                   container['event_weights'].get(WHERE),
                                    out=container['weights'].get(WHERE))
                 container['weights'].mark_changed(WHERE)
                 # calcualte errors
@@ -109,7 +105,7 @@ class pi_hist(PiStage):
                            out=container['weights_squared'].get(WHERE))
                     container['weights_squared'].mark_changed(WHERE)
                     multiply_and_scale(1.,
-                                       container['event_weights'],get(WHERE),
+                                       container['event_weights'].get(WHERE),
                                        out=container['weights_squared'].get(WHERE))
                     container['weights_squared'].mark_changed(WHERE)
                     sqrt(container['weights_squared'].get(WHERE),

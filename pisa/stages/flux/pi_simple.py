@@ -1,14 +1,18 @@
+# pylint: disable=not-callable
+"""
+Docstring
+"""
+from __future__ import absolute_import, print_function, division
+
 import math
 import numpy as np
-from numba import guvectorize, SmartArray, cuda
+from numba import guvectorize, cuda
 
-from pisa import *
+from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils.numba_tools import WHERE, myjit, ftype
-from pisa.core.binning import MultiDimBinning
-from pisa.core.map import Map, MapSet
 
 
 class pi_simple(PiStage):
@@ -17,7 +21,7 @@ class pi_simple(PiStage):
 
     Paramaters
     ----------
-    
+
     nue_numu_ratio : quantity (dimensionless)
 
     None
@@ -35,14 +39,14 @@ class pi_simple(PiStage):
                  input_specs=None,
                  calc_specs=None,
                  output_specs=None,
-                 ):
+                ):
 
         expected_params = ('nue_numu_ratio',
                            'nu_nubar_ratio',
                            'delta_index',
                            'Barr_uphor_ratio',
                            'Barr_nu_nubar_ratio',
-                            )
+                          )
         input_names = ()
         output_names = ()
 
@@ -50,27 +54,26 @@ class pi_simple(PiStage):
         input_keys = ('weights',
                       'nominal_flux',
                       'nominal_opposite_flux',
-                      )
-        # what are keys added or altered in the calculation used during apply 
+                     )
+        # what are keys added or altered in the calculation used during apply
         calc_keys = ()
         # what keys are added or altered for the outputs during apply
-        output_keys = (
-                       'sys_flux',
-                       )
+        output_keys = ('sys_flux',
+                      )
 
         # init base class
         super(pi_simple, self).__init__(data=data,
-                                       params=params,
-                                       expected_params=expected_params,
-                                       input_names=input_names,
-                                       output_names=output_names,
-                                       debug_mode=debug_mode,
-                                       input_specs=input_specs,
-                                       calc_specs=calc_specs,
-                                       output_specs=output_specs,
-                                       input_keys=input_keys,
-                                       calc_keys=calc_keys,
-                                       output_keys=output_keys,
+                                        params=params,
+                                        expected_params=expected_params,
+                                        input_names=input_names,
+                                        output_names=output_names,
+                                        debug_mode=debug_mode,
+                                        input_specs=input_specs,
+                                        calc_specs=calc_specs,
+                                        output_specs=output_specs,
+                                        input_keys=input_keys,
+                                        calc_keys=calc_keys,
+                                        output_keys=output_keys,
                                        )
 
         assert self.input_mode is not None
@@ -82,7 +85,7 @@ class pi_simple(PiStage):
         self.data.data_specs = self.output_specs
 
         for container in self.data:
-            container['sys_flux'] = np.empty((container.size,2), dtype=FTYPE)
+            container['sys_flux'] = np.empty((container.size, 2), dtype=FTYPE)
 
     @profile
     def apply_function(self):
@@ -94,19 +97,18 @@ class pi_simple(PiStage):
         Barr_nu_nubar_ratio = self.params.Barr_nu_nubar_ratio.value.m_as('dimensionless')
 
         for container in self.data:
-            apply_sys_vectorized(
-                    container['true_energy'].get(WHERE),
-                    container['true_coszen'].get(WHERE),
-                    container['nominal_flux'].get(WHERE),
-                    container['nominal_opposite_flux'].get(WHERE),
-                    container['nubar'],
-                    nue_numu_ratio,
-                    nu_nubar_ratio,
-                    delta_index,
-                    Barr_uphor_ratio,
-                    Barr_nu_nubar_ratio,
-                    out=container['sys_flux'].get(WHERE),
-                    )
+            apply_sys_vectorized(container['true_energy'].get(WHERE),
+                                 container['true_coszen'].get(WHERE),
+                                 container['nominal_flux'].get(WHERE),
+                                 container['nominal_opposite_flux'].get(WHERE),
+                                 container['nubar'],
+                                 nue_numu_ratio,
+                                 nu_nubar_ratio,
+                                 delta_index,
+                                 Barr_uphor_ratio,
+                                 Barr_nu_nubar_ratio,
+                                 out=container['sys_flux'].get(WHERE),
+                                )
             container['sys_flux'].mark_changed(WHERE)
 
 
@@ -114,12 +116,12 @@ class pi_simple(PiStage):
 @myjit
 def apply_ratio_scale(ratio_scale, sum_constant, in1, in2, out):
     ''' apply ratio scale to flux values
-    
+
     Paramters
     ---------
 
     ratio_scale : float
-    
+
     sum_constant : bool
         if Ture, then the sum of the new flux will be identical to the old flux
 
@@ -128,11 +130,11 @@ def apply_ratio_scale(ratio_scale, sum_constant, in1, in2, out):
     in2 : float
 
     out : array
-    
+
     '''
     if in1 == 0. and in2 == 0.:
-        out[0] == 0.
-        out[1] == 0.
+        out[0] = 0.
+        out[1] = 0.
         return
 
     if sum_constant:
@@ -146,21 +148,21 @@ def apply_ratio_scale(ratio_scale, sum_constant, in1, in2, out):
         out[1] = in2
 
 @myjit
-def spectral_index_scale(true_energy,  egy_pivot,  delta_index):
+def spectral_index_scale(true_energy, egy_pivot, delta_index):
     ''' calculate spectral index scale '''
-    return math.pow((true_energy/egy_pivot),delta_index);
+    return math.pow((true_energy/egy_pivot), delta_index)
 
 @myjit
 def sign(val):
     ''' signum '''
     if val >= 0:
         return 1.
-    else:
-        return -1.
+    return -1.
+
 @myjit
-def LogLogParam(true_energy,  y1,  y2,  x1,  x2, use_cutoff, cutoff_value):
+def LogLogParam(true_energy, y1, y2, x1, x2, use_cutoff, cutoff_value):
         # oscfit function
-    nu_nubar = sign(y2);
+    nu_nubar = sign(y2)
     y1 = sign(y1) * math.log10(abs(y1) + 0.0001)
     y2 = math.log10(abs(y2 + 0.0001))
     modification = nu_nubar * math.pow(10., (((y2 - y1) / (x2 - x1)) * (math.log10(true_energy) - x1) + y1 - 2.))
@@ -171,16 +173,16 @@ def LogLogParam(true_energy,  y1,  y2,  x1,  x2, use_cutoff, cutoff_value):
 @myjit
 def norm_fcn(x, A, sigma):
     # oscfit function
-    return A / math.sqrt(2 * math.pi * math.pow(sigma,2)) * math.exp(-math.pow(x, 2) / (2 * math.pow(sigma, 2)))
+    return A / math.sqrt(2 * math.pi * math.pow(sigma, 2)) * math.exp(-math.pow(x, 2) / (2 * math.pow(sigma, 2)))
 
 @myjit
-def ModFlux(flav, true_energy,  true_coszen,  e1mu,  e2mu,  z1mu,  z2mu,  e1e,  e2e,  z1e,  z2e):
+def ModFlux(flav, true_energy, true_coszen, e1mu, e2mu, z1mu, z2mu, e1e, e2e, z1e, z2e):
     # These parameters are obtained from fits to the paper of Barr
     # E dependent ratios, max differences per flavor (Fig.7)
     e1max_mu = 3.
     e2max_mu = 43
-    e1max_e  = 2.5
-    e2max_e  = 10
+    e1max_e = 2.5
+    e2max_e = 10
     # Evaluated at
     x1e = 0.5
     x2e = 3.
@@ -188,9 +190,9 @@ def ModFlux(flav, true_energy,  true_coszen,  e1mu,  e2mu,  z1mu,  z2mu,  e1e,  
     # Zenith dependent amplitude, max differences per flavor (Fig. 9)
     z1max_mu = 0.6
     z2max_mu = 5.
-    z1max_e  = 0.3
-    z2max_e  = 5.
-    nue_cutoff  = 650.
+    z1max_e = 0.3
+    z2max_e = 5.
+    nue_cutoff = 650.
     numu_cutoff = 1000.
     # Evaluated at
     x1z = 0.5
@@ -210,10 +212,9 @@ def modRatioUpHor(flav, true_energy, true_coszen, uphor):
     # Zenith dependent amplitude, max differences per flavor (Fig. 9)
     z1max_mu = 0.6
     z2max_mu = 5.
-    z1max_e  = 0.3
-    z2max_e  = 5.
-    nue_cutoff  = 650.
-    numu_cutoff = 1000.
+    z1max_e = 0.3
+    z2max_e = 5.
+    nue_cutoff = 650.
     # Evaluated at
     x1z = 0.5
     x2z = 2.
@@ -225,10 +226,8 @@ def modRatioUpHor(flav, true_energy, true_coszen, uphor):
         return 1.
 
 @myjit
-def modRatioNuBar(nubar, flav, true_energy, true_coszen, nu_nubar, nubar_sys):
+def modRatioNuBar(nubar, flav, true_energy, true_coszen, nubar_sys):
     # oscfit function
-    #not sure what nu_nubar is, only found this line in the documentation:
-    # +1 applies the change to neutrinos, 0 to antineutrinos. Anything in between is shared
     modfactor = nubar_sys * ModFlux(flav, true_energy, true_coszen, 1., 1., 1., 1., 1., 1., 1., 1.)
     if nubar < 0:
         return max(0., 1. / (1 + 0.5 * modfactor))
@@ -240,16 +239,16 @@ def modRatioNuBar(nubar, flav, true_energy, true_coszen, nu_nubar, nubar_sys):
 
 @myjit
 def apply_sys_kernel(true_energy,
-                         true_coszen,
-                         nominal_flux,
-                         nominal_opposite_flux,
-                         nubar,
-                         nue_numu_ratio,
-                         nu_nubar_ratio,
-                         delta_index,
-                         Barr_uphor_ratio,
-                         Barr_nu_nubar_ratio,
-                         out):
+                     true_coszen,
+                     nominal_flux,
+                     nominal_opposite_flux,
+                     nubar,
+                     nue_numu_ratio,
+                     nu_nubar_ratio,
+                     delta_index,
+                     Barr_uphor_ratio,
+                     Barr_nu_nubar_ratio,
+                     out):
     # nue/numu ratio
     new_flux = cuda.local.array(shape=(2), dtype=ftype)
     new_opposite_flux = cuda.local.array(2, dtype=ftype)
@@ -263,7 +262,7 @@ def apply_sys_kernel(true_energy,
     new_flux[1] *= idx_scale
     new_opposite_flux[0] *= idx_scale
     new_opposite_flux[1] *= idx_scale
-    
+
     # nu/nubar ratio
     new_nue_flux = cuda.local.array(2, dtype=ftype)
     new_numu_flux = cuda.local.array(2, dtype=ftype)
@@ -277,11 +276,11 @@ def apply_sys_kernel(true_energy,
         apply_ratio_scale(nu_nubar_ratio, True, new_flux[1], new_opposite_flux[1], new_numu_flux)
         out[0] = new_nue_flux[0]
         out[1] = new_numu_flux[0]
-    
+
     # Barr flux
-    out[0] *= modRatioNuBar(nubar, 0, true_energy, true_coszen, 1.0, Barr_nu_nubar_ratio)
-    out[1] *= modRatioNuBar(nubar, 1, true_energy, true_coszen, 1.0, Barr_nu_nubar_ratio)
-    
+    out[0] *= modRatioNuBar(nubar, 0, true_energy, true_coszen, Barr_nu_nubar_ratio)
+    out[1] *= modRatioNuBar(nubar, 1, true_energy, true_coszen, Barr_nu_nubar_ratio)
+
     out[0] *= modRatioUpHor(0, true_energy, true_coszen, Barr_uphor_ratio)
     out[1] *= modRatioUpHor(1, true_energy, true_coszen, Barr_uphor_ratio)
 
@@ -305,14 +304,13 @@ def apply_sys_vectorized(true_energy,
                          Barr_nu_nubar_ratio,
                          out):
     apply_sys_kernel(true_energy,
-                         true_coszen,
-                         nominal_flux,
-                         nominal_opposite_flux,
-                         nubar,
-                         nue_numu_ratio,
-                         nu_nubar_ratio,
-                         delta_index,
-                         Barr_uphor_ratio,
-                         Barr_nu_nubar_ratio,
-                         out)
-
+                     true_coszen,
+                     nominal_flux,
+                     nominal_opposite_flux,
+                     nubar,
+                     nue_numu_ratio,
+                     nu_nubar_ratio,
+                     delta_index,
+                     Barr_uphor_ratio,
+                     Barr_nu_nubar_ratio,
+                     out)

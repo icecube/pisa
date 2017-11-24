@@ -2,16 +2,15 @@
 Docstring
 """
 from __future__ import absolute_import, print_function, division
-import numpy as np
-from numba import guvectorize, SmartArray
 
-from pisa import *
+import numpy as np
+from numba import guvectorize
+
+from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-from pisa.utils.numba_tools import WHERE, multiply_and_scale
-from pisa.core.binning import MultiDimBinning
-from pisa.core.map import Map, MapSet
+from pisa.utils.numba_tools import WHERE
 
 
 class genie_sys(PiStage):
@@ -44,11 +43,11 @@ class genie_sys(PiStage):
                  input_specs=None,
                  calc_specs=None,
                  output_specs=None,
-                 ):
+                ):
 
         expected_params = ('Genie_Ma_QE',
                            'Genie_Ma_RES',
-                           )
+                          )
         input_names = ()
         output_names = ()
 
@@ -57,26 +56,26 @@ class genie_sys(PiStage):
                       'quad_fit_maccqe',
                       'linear_fit_maccres',
                       'quad_fit_maccres',
-                      )
-        # what are keys added or altered in the calculation used during apply 
+                     )
+        # what are keys added or altered in the calculation used during apply
         calc_keys = ()
         # what keys are added or altered for the outputs during apply
         output_keys = ('weights',
-                       )
+                      )
 
         # init base class
         super(genie_sys, self).__init__(data=data,
-                                       params=params,
-                                       expected_params=expected_params,
-                                       input_names=input_names,
-                                       output_names=output_names,
-                                       debug_mode=debug_mode,
-                                       input_specs=input_specs,
-                                       calc_specs=calc_specs,
-                                       output_specs=output_specs,
-                                       input_keys=input_keys,
-                                       calc_keys=calc_keys,
-                                       output_keys=output_keys,
+                                        params=params,
+                                        expected_params=expected_params,
+                                        input_names=input_names,
+                                        output_names=output_names,
+                                        debug_mode=debug_mode,
+                                        input_specs=input_specs,
+                                        calc_specs=calc_specs,
+                                        output_specs=output_specs,
+                                        input_keys=input_keys,
+                                        calc_keys=calc_keys,
+                                        output_keys=output_keys,
                                        )
 
         assert self.input_mode is not None
@@ -86,18 +85,18 @@ class genie_sys(PiStage):
     @profile
     def apply_function(self):
 
-        Genie_Ma_QE = self.params.Genie_Ma_QE.m_as('dimensionless')
-        Genie_Ma_RES = self.params.Genie_Ma_RES.m_as('dimensionless')
+        genie_ma_qe = self.params.Genie_Ma_QE.m_as('dimensionless')
+        genie_ma_res = self.params.Genie_Ma_RES.m_as('dimensionless')
 
         for container in self.data:
-            apply_genie_sys(Genie_Ma_QE,
+            apply_genie_sys(genie_ma_qe,
                             container['linear_fit_maccqe'].get(WHERE),
                             container['quad_fit_maccqe'].get(WHERE),
-                            Genie_Ma_RES,
+                            genie_ma_res,
                             container['linear_fit_maccres'].get(WHERE),
                             container['quad_fit_maccres'].get(WHERE),
                             out=container['weights'].get(WHERE),
-                            )
+                           )
             container['weights'].mark_changed(WHERE)
 
 
@@ -105,7 +104,10 @@ if FTYPE == np.float64:
     signature = '(f8, f8, f8, f8, f8, f8, f8[:])'
 else:
     signature = '(f4, f4, f4, f4, f4, f4, f4[:])'
+
 @guvectorize([signature], '(),(),(),(),(),()->()', target=TARGET)
-def apply_genie_sys(Genie_Ma_QE, linear_fit_maccqe, quad_fit_maccqe, Genie_Ma_RES, linear_fit_maccres, quad_fit_maccres, out):
-    out[0] *= 1. + (linear_fit_maccqe + quad_fit_maccqe * Genie_Ma_QE) * Genie_Ma_QE
-    out[0] *= 1. + (linear_fit_maccres + quad_fit_maccres * Genie_Ma_RES) * Genie_Ma_RES
+def apply_genie_sys(genie_ma_qe, linear_fit_maccqe, quad_fit_maccqe,
+                    genie_ma_res, linear_fit_maccres, quad_fit_maccres,
+                    out):
+    out[0] *= 1. + (linear_fit_maccqe + quad_fit_maccqe * genie_ma_qe) * genie_ma_qe
+    out[0] *= 1. + (linear_fit_maccres + quad_fit_maccres * genie_ma_res) * genie_ma_res
