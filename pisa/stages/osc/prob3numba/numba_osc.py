@@ -1,9 +1,9 @@
+# pylint: disable = not-callable, bad-whitespace
 '''Neutrino flavour oscillation in matter calculation
 Based on the original prob3++ implementation of Roger Wendell
 http://www.phy.duke.edu/~raw22/public/Prob3++/ (2012)
 '''
-
-from __future__ import print_function, division
+from __future__ import absolute_import, print_function, division
 
 __all__ = ['get_transition_matrix',
            'osc_probs_layers_kernel',
@@ -11,12 +11,11 @@ __all__ = ['get_transition_matrix',
            'propagate_array',
            'propagate_array_vacuum',
            'fill_probs',
-           ]
+          ]
 __version__ = '0.1'
 __author__ = 'Philipp Eller (pder@psu.edu)'
 
 import math, cmath
-
 import numpy as np
 from numba import jit, float64, complex64, int32, float32, complex128, guvectorize
 
@@ -69,7 +68,7 @@ def test_get_H_vac():
 
 @myjit
 def get_H_mat(rho, nsi_eps, nubar, H_mat):
-    ''' Calculate matter Hamiltonian in flavor basis 
+    ''' Calculate matter Hamiltonian in flavor basis
 
     Parameters:
     -----------
@@ -139,9 +138,9 @@ def get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac):
 
     Notes
     -----
-    Calculate mass eigenstates in matter 
+    Calculate mass eigenstates in matter
     neutrino or anti-neutrino (type already taken into account in Hamiltonian)
-    of energy energy. 
+    of energy energy.
 
     - only god knows what happens in this function, somehow it seems to work
 
@@ -216,7 +215,7 @@ def get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac):
         m_mat_u[i] = 2. * energy * (b * math.cos(theta[i]) - c2*one_third + dm_vac_vac[0,0])
         m_mat_v[i] = 2. * energy * (b_v * math.cos(theta_v[i]) - c2_v*one_third + dm_vac_vac[0,0])
 
-    # Sort according to which reproduce the vaccum eigenstates 
+    # Sort according to which reproduce the vaccum eigenstates
     for i in range(3):
         tmp_v = abs(dm_vac_vac[i,0] - m_mat_v[0])
         k = 0
@@ -229,8 +228,8 @@ def get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac):
 
     for i in range(3):
         for j in range(3):
-              dm_mat_mat[i,j] = m_mat[i] - m_mat[j]
-              dm_mat_vac[i,j] = m_mat[i] - dm_vac_vac[j,0]
+            dm_mat_mat[i,j] = m_mat[i] - m_mat[j]
+            dm_mat_vac[i,j] = m_mat[i] - dm_vac_vac[j,0]
 
 def test_get_dms():
     energy = 1.
@@ -276,7 +275,7 @@ def get_product(energy,
                 #also, cler product
                 product[i,j,k] = 0.
 
-    # Calculate the product in eq.(10) of H_minus_M for j!=k 
+    # Calculate the product in eq.(10) of H_minus_M for j!=k
     for i in range(3):
         for j in range(3):
             for k in range(3):
@@ -324,12 +323,12 @@ def get_transition_matrix_massbasis(baseline,
     dm_mat_vac : 2d-array
 
     dm_mat_mat : 2d-array
-    
+
     H_mat_mass_eigenstate_basis : 2-d array
 
     transition_matrix : 2d-array (empty)
         in mass eigenstate basis
-    
+
     Notes
     -----
     - corrsponds to matrix A (equation 10) in original Barger paper
@@ -423,12 +422,12 @@ def get_transition_matrix(nubar,
                           dm,
                           transition_matrix):
     ''' Calculate neutrino flavour transition amplitude matrix
-    
+
     Parameters
     ----------
-    
+
     nubar : int
-    
+
     energy : float
 
     baseline : float
@@ -447,7 +446,7 @@ def get_transition_matrix(nubar,
 
     transition_matrix : 2d-array (empty)
         in mass eigenstate basis
-    
+
     Notes
     -----
     for neutrino (nubar > 0) or antineutrino (nubar < 0)
@@ -464,27 +463,27 @@ def get_transition_matrix(nubar,
     H_mat_mass_eigenstate_basis = cuda.local.array(shape=(3,3), dtype=ctype)
 
     # Compute the matter potential including possible non-standard interactions
-    # in the flavor basis 
+    # in the flavor basis
     get_H_mat(rho, nsi_eps, nubar, H_mat)
 
-    # Get the full Hamiltonian by adding together matter and vacuum parts 
+    # Get the full Hamiltonian by adding together matter and vacuum parts
     one_over_two_e = 0.5 / energy
     for i in range(3):
         for j in range(3):
             H_full[i,j] = H_vac[i,j] * one_over_two_e + H_mat[i,j]
 
     # Calculate modified mass eigenvalues in matter from the full Hamiltonian and
-    # the vacuum mass splittings 
+    # the vacuum mass splittings
     get_dms(energy, H_full, dm, dm_mat_mat, dm_mat_vac)
 
     # Now we transform the matter (TODO: matter? full?) Hamiltonian back into the
     # mass eigenstate basis so we don't need to compute products of the effective
-    # mixing matrix elements explicitly 
+    # mixing matrix elements explicitly
     matrix_dot_matrix(H_mat, mix_nubar, tmp)
     matrix_dot_matrix(mix_nubar_conj_transp, tmp, H_mat_mass_eigenstate_basis)
 
     # We can now proceed to calculating the transition amplitude from the Hamiltonian
-    # in the mass basis and the effective mass splittings 
+    # in the mass basis and the effective mass splittings
     get_transition_matrix_massbasis(baseline,
                                     energy,
                                     dm_mat_vac,
@@ -518,11 +517,11 @@ def test_get_transition_matrix():
 
 @myjit
 def osc_probs_vacuum_kernel(dm,
-                           mix,
-                           nubar,
-                           energy,
-                           distance_in_layer,
-                           osc_probs):
+                            mix,
+                            nubar,
+                            energy,
+                            distance_in_layer,
+                            osc_probs):
     ''' Calculate vacumm mixing probabilities
 
     Parameters
@@ -558,7 +557,7 @@ def osc_probs_vacuum_kernel(dm,
 
     # no need to conjugate mix matrix, as we anyway only need real part
     # can this be right?
-   
+
     clear_matrix(osc_probs)
     osc_probs_local = cuda.local.array(shape=(3,3), dtype=ftype)
 
@@ -570,21 +569,21 @@ def osc_probs_vacuum_kernel(dm,
     # make more precise 20081003 rvw
     l_over_e = 1.26693281 * baseline / energy
     s21 = math.sin(dm[1,0] * l_over_e)
-    s32 = math.sin(dm[2,0] * l_over_e)       
-    s31 = math.sin((dm[2,1] + dm[3,2]) * l_over_e) 
+    s32 = math.sin(dm[2,0] * l_over_e)
+    s31 = math.sin((dm[2,1] + dm[3,2]) * l_over_e)
 
     # does anybody understand this loop?
     # ista = abs(*nutype) - 1
     for ista in range(3):
         for iend in range(2):
             osc_probs_local[ista,iend] = ((mix[ista,0].real * mix[ista,1].real * s21)**2
-                                     + (mix[ista,1].real * mix[ista,2].real * s32)**2
-                                     + (mix[ista,2].real * mix[ista,0].real * s31)**2
-                                    )
+                                          + (mix[ista,1].real * mix[ista,2].real * s32)**2
+                                          + (mix[ista,2].real * mix[ista,0].real * s31)**2
+                                         )
             if iend == ista:
-                osc_probs_local[ista,iend] = 1. -4. * osc_probs_local[ista,iend]
+                osc_probs_local[ista,iend] = 1. - 4. * osc_probs_local[ista,iend]
             else:
-                osc_probs_local[ista,iend] = -4. * osc_probs_local[ista,iend]
+                osc_probs_local[ista,iend] = - 4. * osc_probs_local[ista,iend]
 
         osc_probs_local[ista,2] = 1. - osc_probs_local[ista,0] - osc_probs_local[ista,1]
 
@@ -598,13 +597,13 @@ def osc_probs_vacuum_kernel(dm,
 
 @myjit
 def osc_probs_layers_kernel(dm,
-                           mix,
-                           nsi_eps,
-                           nubar,
-                           energy,
-                           density_in_layer,
-                           distance_in_layer,
-                           osc_probs):
+                            mix,
+                            nsi_eps,
+                            nubar,
+                            energy,
+                            density_in_layer,
+                            distance_in_layer,
+                            osc_probs):
     ''' Calculate oscillation probabilities
 
     given layers of length and density
@@ -681,7 +680,7 @@ def osc_probs_layers_kernel(dm,
     if nubar > 0:
         # in this case the mixing matrix is left untouched
         copy_matrix(mix, mix_nubar)
-    
+
     else:
         # here we need to complex conjugate all entries
         # (note that this only changes calculations with non-clear_matrix deltacp)
@@ -694,7 +693,6 @@ def osc_probs_layers_kernel(dm,
 
     if cache:
         # allocate array to store all the transition matrices
-        #transition_matrices = cuda.local.array(shape=(distance_in_layer.shape[0],3,3), dtype=ctype)
         # doesn't work in cuda...needs fixed shape
         transition_matrices = cuda.local.array(shape=(120,3,3), dtype=ctype)
 
@@ -728,7 +726,7 @@ def osc_probs_layers_kernel(dm,
                                           H_vac,
                                           dm,
                                           transition_matrix,
-                                          )
+                                         )
                     # copy
                     for j in range(3):
                         for k in range(3):
@@ -775,14 +773,14 @@ def osc_probs_layers_kernel(dm,
                                       H_vac,
                                       dm,
                                       transition_matrix,
-                                      )
+                                     )
                 if first_layer:
                     copy_matrix(transition_matrix, transition_product)
                     first_layer = False
                 else:
                     matrix_dot_matrix(transition_matrix,transition_product, tmp)
                     copy_matrix(tmp, transition_product)
-        
+
     # convrt to flavour eigenstate basis
     matrix_dot_matrix(transition_product, mix_nubar_conj_transp, tmp)
     matrix_dot_matrix(mix_nubar, tmp, transition_product)
@@ -795,7 +793,7 @@ def osc_probs_layers_kernel(dm,
         if use_mass_eigenstates:
             convert_from_mass_eigenstate(i+1, mix_nubar, raw_input_psi)
         else:
-            raw_input_psi[i] = 1. 
+            raw_input_psi[i] = 1.
 
         matrix_dot_vector(transition_product, raw_input_psi, output_psi)
         osc_probs[i][0] += output_psi[0].real**2 + output_psi[0].imag**2
@@ -815,13 +813,13 @@ def test_osc_probs_layers_kernel():
     osc_probs = np.ones(shape=(3,3), dtype=ftype)
 
     osc_probs_layers_kernel(dm,
-                           mix,
-                           nsi_eps,
-                           nubar,
-                           energy,
-                           density_in_layer,
-                           distance_in_layer,
-                           osc_probs)
+                            mix,
+                            nsi_eps,
+                            nubar,
+                            energy,
+                            density_in_layer,
+                            distance_in_layer,
+                            osc_probs)
 
 # define numba functions
 
@@ -845,10 +843,10 @@ def propagate_array_vacuum(dm, mix, nubar, energy, distances, probability):
 @guvectorize([signature_fill], '(a,b),(),()->()', target=TARGET)
 def fill_probs(probability, initial_flav, flav, out):
     out[0] = probability[initial_flav,flav]
-    
+
 
 if __name__=='__main__':
-    
+
     assert TARGET == 'cpu', "Cannot test functions on GPU, set PISA_TARGET to 'cpu'"
     test_get_H_vac()
     test_get_H_mat()

@@ -1,17 +1,19 @@
-import numpy as np
-from numba import guvectorize, SmartArray
+"""
+Docstring
+"""
+from __future__ import absolute_import, print_function, division
 
-from pisa import *
+import numpy as np
+from numba import guvectorize
+
+from pisa import FTYPE
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-from pisa.core.binning import MultiDimBinning
-from pisa.core.container import Container
-from pisa.core.map import Map, MapSet
 from pisa.stages.osc.pi_osc_params import OscParams
 from pisa.stages.osc.layers import Layers
-from pisa.stages.osc.prob3numba.numba_osc import *
-from pisa.utils.numba_tools import *
+from pisa.stages.osc.prob3numba.numba_osc import propagate_array, fill_probs
+from pisa.utils.numba_tools import WHERE, TARGET
 from pisa.utils.resources import find_resource
 
 
@@ -49,22 +51,21 @@ class pi_prob3(PiStage):
                  input_specs=None,
                  calc_specs=None,
                  output_specs=None,
-                 ):
+                ):
 
-        expected_params = (
-            'detector_depth',
-            'earth_model',
-            'prop_height',
-            'YeI',
-            'YeO',
-            'YeM',
-            'theta12',
-            'theta13',
-            'theta23',
-            'deltam21',
-            'deltam31',
-            'deltacp',
-        )
+        expected_params = ('detector_depth',
+                           'earth_model',
+                           'prop_height',
+                           'YeI',
+                           'YeO',
+                           'YeM',
+                           'theta12',
+                           'theta13',
+                           'theta23',
+                           'deltam21',
+                           'deltam31',
+                           'deltacp',
+                          )
 
         input_names = ()
         output_names = ()
@@ -72,14 +73,14 @@ class pi_prob3(PiStage):
         # what are the keys used from the inputs during apply
         input_keys = ('weights',
                       'sys_flux',
-                      )
-        # what are keys added or altered in the calculation used during apply 
+                     )
+        # what are keys added or altered in the calculation used during apply
         calc_keys = ('prob_e',
                      'prob_mu',
-                     )
+                    )
         # what keys are added or altered for the outputs during apply
         output_keys = ('weights',
-                       )
+                      )
 
         # init base class
         super(pi_prob3, self).__init__(data=data,
@@ -94,12 +95,14 @@ class pi_prob3(PiStage):
                                        input_keys=input_keys,
                                        calc_keys=calc_keys,
                                        output_keys=output_keys,
-                                       )
+                                      )
 
         assert self.input_mode is not None
         assert self.calc_mode is not None
         assert self.output_mode is not None
 
+        self.layers = None
+        self.osc_params = None
 
     def setup_function(self):
 
@@ -108,7 +111,7 @@ class pi_prob3(PiStage):
 
         # setup the layers
         #if self.params.earth_model.value is not None:
-        earth_model = find_resource(self.params.earth_model.value) #TODO Remove, don't think it is actually needed (probably done with prob3gpu/cpu)
+        earth_model = find_resource(self.params.earth_model.value)
         YeI = self.params.YeI.value.m_as('dimensionless')
         YeO = self.params.YeO.value.m_as('dimensionless')
         YeM = self.params.YeM.value.m_as('dimensionless')
@@ -117,7 +120,7 @@ class pi_prob3(PiStage):
         self.layers = Layers(earth_model, detector_depth, prop_height)
         self.layers.setElecFrac(YeI, YeO, YeM)
 
-        # set the correct data mode 
+        # set the correct data mode
         self.data.data_specs = self.calc_specs
 
         # --- calculate the layers ---
@@ -150,11 +153,11 @@ class pi_prob3(PiStage):
         # setup more empty arrays
         for container in self.data:
             container['prob_e'] = np.empty((container.size), dtype=FTYPE)
-            container['prob_mu'] = np.empty((container.size), dtype=FTYPE) 
+            container['prob_mu'] = np.empty((container.size), dtype=FTYPE)
 
     def calc_probs(self, nubar, e_array, rho_array, len_array, out):
         ''' wrapper to execute osc. calc '''
-        propagate_array(self.osc_params.dm_matrix,
+        propagate_array(self.osc_params.dm_matrix, # pylint: disable = unexpected-keyword-arg, no-value-for-parameter
                         self.osc_params.mix_matrix_complex,
                         self.osc_params.nsi_eps,
                         nubar,
@@ -162,13 +165,13 @@ class pi_prob3(PiStage):
                         rho_array.get(WHERE),
                         len_array.get(WHERE),
                         out=out.get(WHERE)
-                        )
+                       )
         out.mark_changed(WHERE)
 
     @profile
     def compute_function(self):
 
-        # set the correct data mode 
+        # set the correct data mode
         self.data.data_specs = self.calc_specs
 
         if self.calc_mode == 'binned':
@@ -193,7 +196,7 @@ class pi_prob3(PiStage):
                             container['densities'],
                             container['distances'],
                             out=container['probability'],
-                            )
+                           )
 
         # the following is flavour specific, hence unlink
         self.data.unlink_containers()
@@ -204,13 +207,13 @@ class pi_prob3(PiStage):
                        0,
                        container['flav'],
                        out=container['prob_e'].get(WHERE),
-                       )
+                      )
             # initial muons (1)
             fill_probs(container['probability'].get(WHERE),
                        1,
                        container['flav'],
                        out=container['prob_mu'].get(WHERE),
-                       )
+                      )
 
             container['prob_e'].mark_changed(WHERE)
             container['prob_mu'].mark_changed(WHERE)
