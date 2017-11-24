@@ -291,7 +291,9 @@ class Events(FlavIntData):
 
         """
         if keep_criteria in self.metadata['cuts']:
-            return
+            logging.debug("Criteria '%s' have already been applied. Returning"
+                          " events unmodified."%keep_criteria)
+            return self
 
         assert isinstance(keep_criteria, basestring)
 
@@ -354,6 +356,10 @@ class Events(FlavIntData):
         current_cuts = self.metadata['cuts']
         new_cuts = [dim.inbounds_criteria for dim in binning]
         unapplied_cuts = [c for c in new_cuts if c not in current_cuts]
+        if not unapplied_cuts:
+            logging.debug("All inbounds criteria '%s' have already been"
+                          " applied. Returning events unmodified."%new_cuts)
+            return self
         all_cuts = deepcopy(current_cuts) + unapplied_cuts
 
         # Create a single cut from all unapplied cuts
