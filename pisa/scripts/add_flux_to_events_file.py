@@ -9,85 +9,156 @@ from __future__ import absolute_import, division, print_function
 
 from argparse import ArgumentParser
 import glob
-import os
-import sys
+from os import listdir
+from os.path import basename, isdir, isfile, join, splitext
 
-from pisa.utils.log import logging, set_verbosity
-from pisa.utils.fileio import from_file, to_file, mkdir
-import pisa.utils.resources as resources
+from pisa.utils.fileio import from_file, to_file, mkdir, nsort
 from pisa.utils.flux_weights import load_2d_table, calculate_2d_flux_weights
+from pisa.utils.hdf import HDF5_EXTS
+from pisa.utils.log import logging, set_verbosity
+from pisa.utils.resources import find_resource
 
 
 __all__ = ['add_fluxes_to_file', 'main']
 
 
-def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name, outdir):
-    data_file, attrs = from_file(resources.find_resource(data_file_path), return_attrs=True)
-    data_file_name = os.path.basename(data_file_path)
-    mkdir(outdir)
-    output_file_name = outdir + '/' + data_file_name.split('.hdf5')[0]+'_with_fluxes.hdf5'
-    if not os.path.isfile(output_file_name):
-        for prim in data_file.keys():
-            for int_type in data_file[prim].keys():
-                true_e = data_file[prim][int_type]['true_energy']
-                true_cz = data_file[prim][int_type]['true_coszen']
-                isbar = 'bar' if 'bar' in prim else ''
-                nue_flux = calculate_2d_flux_weights(true_e, true_cz, flux_table['nue'+isbar])
-                numu_flux = calculate_2d_flux_weights(true_e, true_cz, flux_table['numu'+isbar])
-                # the opposite flavor fluxes( used only in the nu_nubar_ratio systematic)
-                oppo_isbar = '' if 'bar' in prim else 'bar'
-                oppo_nue_flux = calculate_2d_flux_weights(true_e, true_cz, flux_table['nue'+isbar])
-                oppo_numu_flux = calculate_2d_flux_weights(true_e, true_cz, flux_table['numu'+isbar])
-                data_file[prim][int_type][neutrino_weight_name+'_nue_flux'] = nue_flux
-                data_file[prim][int_type][neutrino_weight_name+'_numu_flux'] = numu_flux
-                data_file[prim][int_type][neutrino_weight_name+'_oppo_nue_flux'] = oppo_nue_flux
-                data_file[prim][int_type][neutrino_weight_name+'_oppo_numu_flux'] = oppo_numu_flux
-                # if need to calculate neutrino weights here
-        to_file(data_file, output_file_name, attrs=attrs, overwrite=True)
-    else:
-        logging.info('File %s already exists, skipped. Please delete it or'
-                     ' rename it.', output_file_name)
+# TODO: Should output filename include which flux file was used, so that info
+#       doesn't get lost? Or is this recorded in some other way?
+
+
+def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
+                       outdir, overwrite=False):
+    """Add fluxes to PISA events file (e.g. for use by an mc stage)
+
+    Parameters
+    -----------
+    data_file_path
+    flux_table
+    neutrino_weight_name
+    outdir
+    overwrite : bool, optional
+
+    """
+    data, attrs = from_file(find_resource(data_file_path), return_attrs=True)
+    basename, ext = splitext(basename(data_file_path))
+    assert ext.lstrip('.') in HDF5_EXTS
+    outpath = join(outdir, '{}_with_fluxes{}'.format(basename, ext))
+
+    mkdir(outdir, warn=False)
+
+    if not overwrite and isfile(outpath):
+        logging.warning('Output path "%s" already exists, not regenerating',
+                        outpath)
+        return
+
+    for primary, primary_node in data.items():
+        for int_type, int_node in primary_node.items():
+            true_e = int_node['true_energy']
+            true_cz = int_node['true_coszen']
+
+            # NOTE: The opposite-flavor fluxes are used only in the
+            #       nu_nubar_ratio systematic
+
+            for opposite in (False, True):
+                if not opposite:
+                    bar_label = 'bar' if 'bar' in primary else ''
+                    oppo_label = ''
+                else:
+                    bar_label = '' if 'bar' in primary else 'bar'
+                    oppo_label = '_oppo'
+
+                nue_flux = calculate_2d_flux_weights(
+                    true_energies=true_e,
+                    true_coszens=true_cz,
+                    en_splines=flux_table['nue' + bar_label]
+                )
+                numu_flux = calculate_2d_flux_weights(
+                    true_energies=true_e,
+                    true_coszens=true_cz,
+                    en_splines=flux_table['numu' + bar_label]
+                )
+
+                basekey = neutrino_weight_name + oppo_label
+                int_node[basekey + '_nue_flux'] = nue_flux
+                int_node[basekey + '_numu_flux'] = numu_flux
+
+                # TODO: if need to calculate neutrino weights here
+
+    to_file(data, outpath, attrs=attrs, overwrite=overwrite)
 
 
 def main():
+    """Parse command-line arguments and execute `add_fluxes_to_file` function"""
     parser = ArgumentParser(description=__doc__)
-    parser_file = parser.add_mutually_exclusive_group(required=True)
-    parser_file.add_argument(
-        '-f', '--file', metavar='H5_FILE', type=str,
-        help='input HDF5 file or directory'
-    )
-    parser_file.add_argument(
-        '--flux-file', metavar='FLUX_FILE', type=str,
-        default='flux/honda-2015-spl-solmin-aa.d',
-        help='input flux file'
+    parser.add_argument(
+        '--input', metavar='(H5_FILE|DIR)', nargs='+', type=str, required=True,
+        help='''Path to a PISA events HDF5 file or a directory containing HDF5
+        files; output files are copies of this/these, but with flux fields
+        added.''' 
     )
     parser.add_argument(
-        '-o', '--outdir', metavar='DIR', default='',
+        '--flux-file', metavar='FLUX_FILE', type=str, required=True,
+        help='''Flux file from which to obtain fluxes, e.g.
+        "flux/honda-2015-spl-solmin-aa.d"'''
+    )
+    parser.add_argument(
+        '--outdir', metavar='DIR', required=True,
         help='Directory to save the output figures.'
     )
     parser.add_argument(
-        '-v', action='count', default=None,
+        '-v', action='count', default=0,
         help='set verbosity level'
     )
     args = parser.parse_args()
 
     set_verbosity(args.v)
 
-    # flux and osc service
     flux_table = load_2d_table(args.flux_file)
-    if os.path.isdir(args.file):
-        files = [os.path.join(args.file, B) for B in os.listdir(args.file)]
-    else:
-        files = glob.glob(args.file)
 
-    for file_path in files:
-        if os.path.isfile(file_path) and file_path.endswith('.hdf5'):
-            logging.info('working on %s', file_path)
-            add_fluxes_to_file(data_file_path=file_path, flux_table=flux_table,
-                               neutrino_weight_name='neutrino',
-                               outdir=args.outdir)
+    input_paths = []
+    for input_path in args.input:
+        if isdir(input_path):
+            for filename in listdir(input_path):
+                filepath = join(input_path, filename)
+                input_paths.append(filepath)
+
         else:
-            logging.ifno('skipping %s', file_path)
+            input_paths += glob.glob(input_path)
+
+    input_paths = nsort(input_paths)
+
+    paths_to_process = []
+    basenames = []
+    for input_path in input_paths:
+        if isdir(input_path):
+            logging.debug('Path "%s" is a directory, skipping', file_path)
+            continue
+
+        firstpart, ext = splitext(input_path)
+        if ext.lstrip('.') not in HDF5_EXTS:
+            logging.debug('Path "%s" is a directory, skipping', file_path)
+            continue
+
+        basename = basename(firstpart)
+        if basename in basenames:
+            raise ValueError(
+                'Found files with duplicate basename "%s" (despite files'
+                ' having different paths); resolve the ambiguous names and'
+                ' re-run. Offending files are:\n  "%s"\n  "%s"'
+                % (basename,
+                   paths_to_process[basenames.index(basename)],
+                   input_path)
+            )
+
+        basenames.append(basename)
+        paths_to_process.append(input_path)
+
+    logging.info('Will process %d input file(s)...', len(paths_to_process))
+
+    for filepath in paths_to_process:
+        logging.info('Working on input file "%s"', filepath)
+        add_fluxes_to_file(data_file_path=filepath, flux_table=flux_table,
+                           neutrino_weight_name='neutrino', outdir=args.outdir)
 
 
 if __name__ == '__main__':
