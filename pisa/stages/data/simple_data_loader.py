@@ -1,14 +1,16 @@
-import numpy as np
-from numba import SmartArray
+"""
+Docstring
+"""
+from __future__ import absolute_import, print_function, division
 
-from pisa import *
+import numpy as np
+
+from pisa import FTYPE
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.utils.numba_tools import equal_and_scale, WHERE
 from pisa.utils.profiler import profile
-from pisa.core.binning import MultiDimBinning
-from pisa.core.map import Map, MapSet
-from pisa.core.container import Container, ContainerSet
+from pisa.core.container import Container
 from pisa.core.events import Events
 
 
@@ -19,7 +21,8 @@ class simple_data_loader(PiStage):
     Paramaters
     ----------
 
-    events_file : hdf5 file path (output from make_events), including flux weights and Genie systematics coefficients
+    events_file : hdf5 file path
+        output from make_events, including flux weights and Genie systematics coefficients
 
     mc_cuts : cut expr
         e.g. '(true_coszen <= 0.5) & (true_energy <= 70)'
@@ -38,23 +41,22 @@ class simple_data_loader(PiStage):
                  input_specs=None,
                  calc_specs=None,
                  output_specs=None,
-                 ):
+                ):
 
         expected_params = ('events_file',
                            'mc_cuts',
-                           )
+                          )
 
         # init base class
-        super(simple_data_loader, self).__init__(
-                                                data=data,
-                                                params=params,
-                                                expected_params=expected_params,
-                                                input_names=input_names,
-                                                output_names=output_names,
-                                                debug_mode=debug_mode,
-                                                input_specs=input_specs,
-                                                calc_specs=calc_specs,
-                                                output_specs=output_specs,
+        super(simple_data_loader, self).__init__(data=data,
+                                                 params=params,
+                                                 expected_params=expected_params,
+                                                 input_names=input_names,
+                                                 output_names=output_names,
+                                                 debug_mode=debug_mode,
+                                                 input_specs=input_specs,
+                                                 calc_specs=calc_specs,
+                                                 output_specs=output_specs,
                                                 )
 
         # doesn't calculate anything
@@ -73,9 +75,9 @@ class simple_data_loader(PiStage):
             evts = evts.applyCut(self.params.mc_cuts.value)
 
         for name in self.output_names:
-            
+
             # ToDo:
-            # this procedure here is solely for testing, this willa ll need to 
+            # this procedure here is solely for testing, this willa ll need to
             # be much more dynamic
             # variables to load should be specified in cfg file etc...
 
@@ -87,9 +89,12 @@ class simple_data_loader(PiStage):
             pid = evts[name]['pid'].astype(FTYPE)
             # this determination of flavour is the worst possible coding, ToDo
             nubar = -1 if 'bar' in name else 1
-            if 'e' in name: flav = 0
-            if 'mu' in name: flav = 1
-            if 'tau' in name: flav = 2
+            if 'e' in name:
+                flav = 0
+            if 'mu' in name:
+                flav = 1
+            if 'tau' in name:
+                flav = 2
             weighted_aeff = evts[name]['weighted_aeff'].astype(FTYPE)
             event_weights = np.ones_like(true_energy)
             weights = np.ones_like(true_energy)
@@ -100,10 +105,10 @@ class simple_data_loader(PiStage):
             neutrino_oppo_numu_flux = evts[name]['neutrino_oppo_numu_flux'].astype(FTYPE)
             oppo_flux = np.stack([neutrino_oppo_nue_flux, neutrino_oppo_numu_flux], axis=1)
 
-            linear_fit_maccqe =  evts[name]['linear_fit_MaCCQE'].astype(FTYPE)
-            quad_fit_maccqe =    evts[name]['quad_fit_MaCCQE'].astype(FTYPE)
+            linear_fit_maccqe = evts[name]['linear_fit_MaCCQE'].astype(FTYPE)
+            quad_fit_maccqe = evts[name]['quad_fit_MaCCQE'].astype(FTYPE)
             linear_fit_maccres = evts[name]['linear_fit_MaCCRES'].astype(FTYPE)
-            quad_fit_maccres =   evts[name]['quad_fit_MaCCRES'].astype(FTYPE)
+            quad_fit_maccres = evts[name]['quad_fit_MaCCRES'].astype(FTYPE)
 
             # make container
             container = Container(name)
@@ -135,4 +140,3 @@ class simple_data_loader(PiStage):
                             container['event_weights'].get(WHERE),
                             out=container['weights'].get(WHERE))
             container['weights'].mark_changed(WHERE)
-

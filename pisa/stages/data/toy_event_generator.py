@@ -1,13 +1,15 @@
-import numpy as np
-from numba import SmartArray
+"""
+Docstring
+"""
+from __future__ import absolute_import, print_function, division
 
-from pisa import *
+import numpy as np
+
+from pisa import FTYPE
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.utils.numba_tools import equal_and_scale, WHERE
-from pisa.core.binning import MultiDimBinning
-from pisa.core.map import Map, MapSet
-from pisa.core.container import Container, ContainerSet
+from pisa.core.container import Container
 
 
 class toy_event_generator(PiStage):
@@ -36,23 +38,22 @@ class toy_event_generator(PiStage):
                  input_specs=None,
                  calc_specs=None,
                  output_specs=None,
-                 ):
+                ):
 
         expected_params = ('n_events',
                            'seed',
                            )
         # init base class
-        super(toy_event_generator, self).__init__(
-                                                data=data,
-                                                params=params,
-                                                expected_params=expected_params,
-                                                input_names=input_names,
-                                                output_names=output_names,
-                                                debug_mode=debug_mode,
-                                                input_specs=input_specs,
-                                                calc_specs=calc_specs,
-                                                output_specs=output_specs,
-                                                )
+        super(toy_event_generator, self).__init__(data=data,
+                                                  params=params,
+                                                  expected_params=expected_params,
+                                                  input_names=input_names,
+                                                  output_names=output_names,
+                                                  debug_mode=debug_mode,
+                                                  input_specs=input_specs,
+                                                  calc_specs=calc_specs,
+                                                  output_specs=output_specs,
+                                                 )
 
         # doesn't calculate anything
         assert self.calc_mode is None
@@ -68,9 +69,12 @@ class toy_event_generator(PiStage):
             true_energy = np.power(10, np.random.rand(n_events).astype(FTYPE) * 3)
             true_coszen = np.random.rand(n_events).astype(FTYPE) * 2 - 1
             nubar = -1 if 'bar' in name else 1
-            if 'e' in name: flav = 0
-            if 'mu' in name: flav = 1
-            if 'tau' in name: flav = 2
+            if 'e' in name:
+                flav = 0
+            if 'mu' in name:
+                flav = 1
+            if 'tau' in name:
+                flav = 2
             event_weights = np.random.rand(n_events).astype(FTYPE)
             weights = np.ones(n_events, dtype=FTYPE)
             flux_nue = np.zeros(n_events, dtype=FTYPE)
