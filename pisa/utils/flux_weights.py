@@ -598,13 +598,13 @@ if __name__ == '__main__':
     low_ens = 5.0*np.ones_like(czs)
     high_ens = 20.0*np.ones_like(czs)
 
-    low_en_flux_weights = calculate_flux_weights(low_ens,
-                                                 czs,
-                                                 spline_dict['numu'])
+    low_en_flux_weights = calculate_2D_flux_weights(low_ens,
+                                                    czs,
+                                                    spline_dict['numu'])
 
-    high_en_flux_weights = calculate_flux_weights(high_ens,
-                                                  czs,
-                                                  spline_dict['numu'])
+    high_en_flux_weights = calculate_2D_flux_weights(high_ens,
+                                                     czs,
+                                                     spline_dict['numu'])
 
     plt.plot(czs, low_en_flux_weights)
     plt.xlabel('cos(zenith)')
