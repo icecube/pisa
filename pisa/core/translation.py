@@ -1,3 +1,4 @@
+# pylint: disable = unsubscriptable-object, too-many-function-args, not-callable, unexpected-keyword-arg, no-value-for-parameter
 '''
 module for data representation translation methods
 
@@ -10,19 +11,19 @@ ToDo:
     functions doing similar things. not very pretty
 
 '''
+from __future__ import absolute_import, print_function, division
 
 import numpy as np
-from numba import guvectorize, SmartArray, cuda, float32
+from numba import guvectorize, SmartArray, cuda
 
 from pisa import FTYPE, TARGET
 from pisa.core.binning import OneDimBinning, MultiDimBinning
-from pisa.core.map import Map, MapSet
 from pisa.utils.numba_tools import myjit, WHERE
 from pisa.utils.log import logging
 
 __all__ = ['histogram',
            'lookup',
-           ]
+          ]
 
 # --------- histogramming methods ---------------
 
@@ -44,7 +45,7 @@ def histogram(sample, weights, binning, averaged):
             end up in a given bin. This for example must be used when oscillation
             probabilities are translated.....otherwise we end up with probability*count
             per bin
-        
+
     Notes
     -----
 
@@ -53,66 +54,115 @@ def histogram(sample, weights, binning, averaged):
     '''
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
     if not TARGET == 'cuda':
-        #bin_edges = binning.bin_edges
-
         sample = [s.get('host') for s in sample]
         weights = weights.get('host')
         if weights.ndim == 2:
             # that means it's 1-dim data instead of scalars
             hists = []
             for i in range(weights.shape[1]):
-                hist = get_hist_np(sample, weights[:,i], bin_edges, averaged)
+                hist = get_hist_np(sample, weights[:, i], bin_edges, averaged)
                 hists.append(hist)
             return np.stack(hists, axis=1)
-        else:
-            return get_hist_np(sample, weights, bin_edges, averaged)
+        return get_hist_np(sample, weights, bin_edges, averaged)
 
     else:
         # ToDo:
         # * make for d > 3
         # * do division for normed already on GPU
         # * just return SmartArray instead of copying
-        if binning.num_dims in [2,3]:
+        if binning.num_dims in [2, 3]:
             if len(weights.shape) > 1:
                 # so we have arrays
                 flat_hist = np.zeros((binning.size, weights.shape[1]), dtype=FTYPE)
                 arrays = True
-                #print 'doing ND'
             else:
                 flat_hist = np.zeros(binning.size, dtype=FTYPE)
                 arrays = False
-                #print 'doing 1D'
             size = weights.shape[0]
             d_flat_hist = cuda.to_device(flat_hist)
             d_bin_edges_x = cuda.to_device(bin_edges[0])
             d_bin_edges_y = cuda.to_device(bin_edges[1])
             if binning.num_dims == 2:
                 if arrays:
-                    histogram_2d_kernel_arrays[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), d_flat_hist, d_bin_edges_x, d_bin_edges_y, weights.get('gpu'), True)
+                    histogram_2d_kernel_arrays[(size+511)//512, 512](sample[0].get('gpu'),
+                                                                     sample[1].get('gpu'),
+                                                                     d_flat_hist,
+                                                                     d_bin_edges_x,
+                                                                     d_bin_edges_y,
+                                                                     weights.get('gpu'),
+                                                                     True)
                 else:
-                    #print '2d kernel'
-                    histogram_2d_kernel[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), d_flat_hist, d_bin_edges_x, d_bin_edges_y, weights.get('gpu'), True)
+                    histogram_2d_kernel[(size+511)//512, 512](sample[0].get('gpu'),
+                                                              sample[1].get('gpu'),
+                                                              d_flat_hist,
+                                                              d_bin_edges_x,
+                                                              d_bin_edges_y,
+                                                              weights.get('gpu'),
+                                                              True)
             elif binning.num_dims == 3:
                 d_bin_edges_z = cuda.to_device(bin_edges[2])
                 if arrays:
-                    histogram_3d_kernel_arrays[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), sample[2].get('gpu'), d_flat_hist, d_bin_edges_x, d_bin_edges_y, d_bin_edges_z, weights.get('gpu'), True)
+                    histogram_3d_kernel_arrays[(size+511)//512, 512](sample[0].get('gpu'),
+                                                                     sample[1].get('gpu'),
+                                                                     sample[2].get('gpu'),
+                                                                     d_flat_hist,
+                                                                     d_bin_edges_x,
+                                                                     d_bin_edges_y,
+                                                                     d_bin_edges_z,
+                                                                     weights.get('gpu'),
+                                                                     True)
                 else:
-                    histogram_3d_kernel[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), sample[2].get('gpu'), d_flat_hist, d_bin_edges_x, d_bin_edges_y, d_bin_edges_z, weights.get('gpu'), True)
+                    histogram_3d_kernel[(size+511)//512, 512](sample[0].get('gpu'),
+                                                              sample[1].get('gpu'),
+                                                              sample[2].get('gpu'),
+                                                              d_flat_hist,
+                                                              d_bin_edges_x,
+                                                              d_bin_edges_y,
+                                                              d_bin_edges_z,
+                                                              weights.get('gpu'),
+                                                              True)
             d_flat_hist.to_host()
             if averaged:
                 flat_hist_counts = np.zeros_like(flat_hist)
                 d_flat_hist_counts = cuda.to_device(flat_hist_counts)
                 if binning.num_dims == 2:
                     if arrays:
-                        histogram_2d_kernel_arrays[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), d_flat_hist_counts, d_bin_edges_x, d_bin_edges_y, weights.get('gpu'), False)
+                        histogram_2d_kernel_arrays[(size+511)//512, 512](sample[0].get('gpu'),
+                                                                         sample[1].get('gpu'),
+                                                                         d_flat_hist_counts,
+                                                                         d_bin_edges_x,
+                                                                         d_bin_edges_y,
+                                                                         weights.get('gpu'),
+                                                                         False)
                     else:
-                        #print '2d kernel'
-                        histogram_2d_kernel[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), d_flat_hist_counts, d_bin_edges_x, d_bin_edges_y, weights.get('gpu'), False)
+                        histogram_2d_kernel[(size+511)//512, 512](sample[0].get('gpu'),
+                                                                  sample[1].get('gpu'),
+                                                                  d_flat_hist_counts,
+                                                                  d_bin_edges_x,
+                                                                  d_bin_edges_y,
+                                                                  weights.get('gpu'),
+                                                                  False)
                 elif binning.num_dims == 3:
                     if arrays:
-                        histogram_3d_kernel_arrays[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), sample[2].get('gpu'), d_flat_hist, d_bin_edges_x, d_bin_edges_y, d_bin_edges_z, weights.get('gpu'), False)
+                        histogram_3d_kernel_arrays[(size+511)//512, 512](sample[0].get('gpu'),
+                                                                         sample[1].get('gpu'),
+                                                                         sample[2].get('gpu'),
+                                                                         d_flat_hist,
+                                                                         d_bin_edges_x,
+                                                                         d_bin_edges_y,
+                                                                         d_bin_edges_z,
+                                                                         weights.get('gpu'),
+                                                                         False)
                     else:
-                        histogram_3d_kernel[(size+511)/512, 512](sample[0].get('gpu'), sample[1].get('gpu'), sample[2].get('gpu'), d_flat_hist, d_bin_edges_x, d_bin_edges_y, d_bin_edges_z, weights.get('gpu'), False)
+                        histogram_3d_kernel[(size+511)//512, 512](sample[0].get('gpu'),
+                                                                  sample[1].get('gpu'),
+                                                                  sample[2].get('gpu'),
+                                                                  d_flat_hist,
+                                                                  d_bin_edges_x,
+                                                                  d_bin_edges_y,
+                                                                  d_bin_edges_z,
+                                                                  weights.get('gpu'),
+                                                                  False)
                 d_flat_hist_counts.to_host()
                 with np.errstate(divide='ignore', invalid='ignore'):
                     flat_hist /= flat_hist_counts
@@ -124,16 +174,14 @@ def histogram(sample, weights, binning, averaged):
 
 def get_hist_np(sample, weights, bins, averaged=True):
     '''helper function for numoy historams'''
-    hist, edges = np.histogramdd(sample=sample,
-                                 weights=weights,
-                                 bins=bins,
-                                 )
+    hist, _ = np.histogramdd(sample=sample,
+                             weights=weights,
+                             bins=bins,
+                            )
     if averaged:
-        #weights = self.array_data['event_weights'].get('host')
-        hist_counts, edges = np.histogramdd(sample=sample,
-                                 #weights=weights.get('host'),
-                                 bins=bins,
-                                 )
+        hist_counts, _ = np.histogramdd(sample=sample,
+                                        bins=bins,
+                                       )
         with np.errstate(divide='ignore', invalid='ignore'):
             hist /= hist_counts
             hist[~np.isfinite(hist)] = 0.  # -inf inf NaN
@@ -170,9 +218,9 @@ def histogram_2d_kernel_arrays(sample_x, sample_y, flat_hist, bin_edges_x, bin_e
             idx = idx_x * (bin_edges_y.size - 1) + idx_y
             for j in range(flat_hist.shape[1]):
                 if apply_weights:
-                    cuda.atomic.add(flat_hist, (idx,j), weights[i,j])
+                    cuda.atomic.add(flat_hist, (idx, j), weights[i, j])
                 else:
-                    cuda.atomic.add(flat_hist, (idx,j), 1.)
+                    cuda.atomic.add(flat_hist, (idx, j), 1.)
 
 @cuda.jit
 def histogram_3d_kernel(sample_x, sample_y, sample_z, flat_hist, bin_edges_x, bin_edges_y, bin_edges_z, weights, apply_weights):
@@ -209,9 +257,9 @@ def histogram_3d_kernel_arrays(sample_x, sample_y, sample_z, flat_hist, bin_edge
             idx = idx_x * (bin_edges_y.size - 1) * (bin_edges_z.size - 1) + idx_y * (bin_edges_z.size - 1) + idx_z
             for j in range(flat_hist.shape[1]):
                 if apply_weights:
-                    cuda.atomic.add(flat_hist, (idx,j), weights[i,j])
+                    cuda.atomic.add(flat_hist, (idx, j), weights[i, j])
                 else:
-                    cuda.atomic.add(flat_hist, (idx,j), 1.)
+                    cuda.atomic.add(flat_hist, (idx, j), 1.)
 
 
 # ---------- Lookup methods ---------------
@@ -252,14 +300,14 @@ def lookup(sample, flat_hist, binning):
 @myjit
 def find_index(x, bin_edges):
     ''' simple binary search
-    
+
     ToDo: support lin and log binnings with
     direct trnasformations instead of search
-    
+
     '''
     first = 0
     last = len(bin_edges) - 1
-    while (first <= last):
+    while first <= last:
         i = int((first + last)/2)
         if x >= bin_edges[i]:
             if (x < bin_edges[i+1]) or (x <= bin_edges[-1] and i == len(bin_edges) - 1):
@@ -275,7 +323,7 @@ if FTYPE == np.float64:
 else:
     signature = '(f4, f4, f4[:], f4[:], f4[:], f4[:])'
 
-@guvectorize([signature], '(),(),(j),(k),(l)->()',target=TARGET)
+@guvectorize([signature], '(),(),(j),(k),(l)->()', target=TARGET)
 def lookup_vectorized_2d(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights):
     '''
     Vectorized gufunc to perform the lookup
@@ -297,7 +345,7 @@ if FTYPE == np.float64:
 else:
     signature = '(f4, f4, f4[:,:], f4[:], f4[:], f4[:])'
 
-@guvectorize([signature], '(),(),(j,d),(k),(l)->(d)',target=TARGET)
+@guvectorize([signature], '(),(),(j,d),(k),(l)->(d)', target=TARGET)
 def lookup_vectorized_2d_arrays(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights):
     '''
     Vectorized gufunc to perform the lookup
@@ -311,15 +359,13 @@ def lookup_vectorized_2d_arrays(sample_x, sample_y, flat_hist, bin_edges_x, bin_
         idx_y = find_index(sample_y, bin_edges_y)
         idx = idx_x*(len(bin_edges_y)-1) + idx_y
         for i in range(weights.size):
-            weights[i] = flat_hist[idx,i]
+            weights[i] = flat_hist[idx, i]
     else:
         for i in range(weights.size):
             weights[i] = 0.
 
 
-
-if __name__ == '__main__':
-
+def test_histogram():
     n_evts = 100
     x = np.arange(n_evts, dtype=FTYPE)
     y = np.arange(n_evts, dtype=FTYPE)
@@ -330,15 +376,18 @@ if __name__ == '__main__':
     y = SmartArray(y)
     w = SmartArray(w)
 
-    
-    binning_x = OneDimBinning(name='x', num_bins=10, is_lin=True, domain=[0,100])
-    binning_y = OneDimBinning(name='y', num_bins=10, is_lin=True, domain=[0,100])
+
+    binning_x = OneDimBinning(name='x', num_bins=10, is_lin=True, domain=[0, 100])
+    binning_y = OneDimBinning(name='y', num_bins=10, is_lin=True, domain=[0, 100])
     binning = MultiDimBinning([binning_x, binning_y])
 
-    sample = [x,y]
+    sample = [x, y]
     weights = w
     averaged = True
 
     histo = histogram(sample, weights, binning, averaged)
 
-    print histo.reshape(10,10)
+    print(histo.reshape(10, 10))
+
+if __name__ == '__main__':
+    test_histogram()
