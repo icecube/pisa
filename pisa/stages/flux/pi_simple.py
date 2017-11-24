@@ -84,7 +84,7 @@ class pi_simple(PiStage):
         for container in self.data:
             container['sys_flux'] = np.empty((container.size,2), dtype=FTYPE)
 
-
+    @profile
     def apply_function(self):
 
         nue_numu_ratio = self.params.nue_numu_ratio.value.m_as('dimensionless')
@@ -270,8 +270,12 @@ def apply_sys_kernel(true_energy,
         apply_ratio_scale(nu_nubar_ratio, True, new_flux[0], new_opposite_flux[0], new_nue_flux)
         apply_ratio_scale(nu_nubar_ratio, True, new_flux[1], new_opposite_flux[1], new_numu_flux)
     
-    out[0] = new_nue_flux[0]
-    out[1] = new_numu_flux[0]
+    if nubar < 0:
+        out[0] = new_nue_flux[1]
+        out[1] = new_numu_flux[1]
+    else:
+        out[0] = new_nue_flux[0]
+        out[1] = new_numu_flux[0]
     
     # Barr flux
     out[0] *= modRatioNuBar(nubar, 0, true_energy, true_coszen, 1.0, Barr_nu_nubar_ratio)

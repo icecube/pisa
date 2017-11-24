@@ -126,6 +126,7 @@ class PiStage(BaseStage):
         # to be implemented by stage
         pass
 
+    @profile
     def compute(self):
         # simplest caching algorithm....just don't compute if params didn't change
         if len(self.params) > 0:
@@ -140,6 +141,7 @@ class PiStage(BaseStage):
         # to be implemented by stage
         pass
 
+    @profile
     def apply(self):
         self.compute()
 

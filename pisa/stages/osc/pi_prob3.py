@@ -154,7 +154,6 @@ class pi_prob3(PiStage):
             container['prob_e'] = np.empty((container.size), dtype=FTYPE)
             container['prob_mu'] = np.empty((container.size), dtype=FTYPE) 
 
-    @profile
     def calc_probs(self, nubar, e_array, rho_array, len_array, out):
         ''' wrapper to execute osc. calc '''
         propagate_array(self.osc_params.dm_matrix,
@@ -168,6 +167,7 @@ class pi_prob3(PiStage):
                         )
         out.mark_changed(WHERE)
 
+    @profile
     def compute_function(self):
 
         # set the correct data mode 
@@ -217,6 +217,7 @@ class pi_prob3(PiStage):
             container['prob_e'].mark_changed(WHERE)
             container['prob_mu'].mark_changed(WHERE)
 
+    @profile
     def apply_function(self):
 
         # update the outputted weights
