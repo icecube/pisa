@@ -29,6 +29,7 @@ class pi_hist(PiStage):
                  input_names=None,
                  output_names=None,
                  debug_mode=None,
+                 error_method=None,
                  input_specs=None,
                  calc_specs=None,
                  output_specs=None,
@@ -42,10 +43,19 @@ class pi_hist(PiStage):
         input_keys = ('weights',
                       )
         # what are keys added or altered in the calculation used during apply 
-        calc_keys = ()
-        # what keys are added or altered for the outputs during apply
-        output_keys = ('weights',
-                       )
+        assert calc_specs is None
+        if 'sumw2' in error_method:
+            calc_keys = ('weights_squared',
+                         )
+            output_keys = ('weights',
+                           'error',
+                           )
+            calc_specs = input_specs
+        else:
+            calc_keys = ()
+            output_keys = ('weights',
+                           )
+
 
         # init base class
         super(pi_hist, self).__init__(data=data,
@@ -54,6 +64,7 @@ class pi_hist(PiStage):
                                        input_names=input_names,
                                        output_names=output_names,
                                        debug_mode=debug_mode,
+                                       error_method=error_method,
                                        input_specs=input_specs,
                                        calc_specs=calc_specs,
                                        output_specs=output_specs,
@@ -63,16 +74,26 @@ class pi_hist(PiStage):
                                        )
 
         assert self.input_mode is not None
-        #assert self.input_mode is 'events'
-        assert self.calc_mode is None
         assert self.output_mode is 'binned'
 
+    def setup_function(self):
+        if 'sumw2' in self.error_method:
+            for container in self.data:
+                container['weights_squared'] = np.empty((container.size), dtype=FTYPE)
+                container['error'] = np.empty((container.size), dtype=FTYPE)
+
+    def compute_function(self):
+        if 'sumw2' in self.error_method:
+            for container in self.data:
+                square(container['weights'].get(WHERE),
+                       out=container['weights_squared'])
 
     @profile
     def apply(self):
         
         self.data.data_specs = self.input_specs
         # this is special, we want the actual event weights in the histo
+
 
         if self.input_mode == 'binned':
             for container in self.data:

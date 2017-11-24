@@ -72,8 +72,6 @@ class pi_prob3(PiStage):
         # what are the keys used from the inputs during apply
         input_keys = ('weights',
                       'sys_flux',
-                      #'flux_e',
-                      #'flux_mu',
                       )
         # what are keys added or altered in the calculation used during apply 
         calc_keys = ('prob_e',
@@ -223,8 +221,6 @@ class pi_prob3(PiStage):
         # update the outputted weights
         for container in self.data:
             apply_probs(container['sys_flux'].get(WHERE),
-                        #container['flux_e'].get(WHERE),
-                        #container['flux_mu'].get(WHERE),
                         container['prob_e'].get(WHERE),
                         container['prob_mu'].get(WHERE),
                         out=container['weights'].get(WHERE))
