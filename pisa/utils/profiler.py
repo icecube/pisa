@@ -11,7 +11,7 @@ from time import time
 from line_profiler import LineProfiler
 
 # Note this relative import (might be) necessary to avoid circular imports
-import log
+from pisa.utils import log
 
 
 __all__ = ['line_profile', 'test_line_profile', 'profile', 'test_profile']
