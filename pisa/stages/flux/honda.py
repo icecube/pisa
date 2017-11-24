@@ -17,6 +17,7 @@ contact with us so we can work through any issues together!
 This is either achieved through b-spline interpolation (done in both energy and
 cosZenith dimensions simultaneously in log10(flux)) or an integral-preserving
 method that manipulates 1 dimensional splines of integrated flux.
+Support now also includes the 2D tables from Bartol
 
 Most of the functionality will be ported from PISA with any necessary
 changes/improvements applied.
@@ -241,6 +242,11 @@ class honda(Stage):
     the very first PINGU results.
     It is not buggy per se, but since we have a better alternative please don't
     use it.
+    One Bartol file is also provided for demonstration.
+
+    * bartol-2004-sno-solmax-aa.d
+
+    This calculation is older but is still useful for cross checks.
 
     To choose the tables file you wish for your PISA analysis, set 'flux_file'
     in your pipeline settings file to the desired file with the prefix 'flux/'
@@ -468,7 +474,18 @@ class honda(Stage):
             int_flux_dict = {}
             # Energy and CosZenith bins needed for integral-preserving
             # method must be the edges of those of the normal tables
-            int_flux_dict['logenergy'] = np.linspace(-1.025, 4.025, 102)
+            # This will depend on the tables being loaded
+            if 'honda' in self.params.flux_file.value:
+                int_flux_dict['logenergy'] = np.linspace(-1.025, 4.025, 102)
+            else:
+                # Honda did a 3D calculation at the lower energies with
+                # smaller bins. Above this the calculation is 1D and the
+                # bin width doubles.
+                low_log_energy = np.linspace(-1,1,41)
+                high_log_energy = np.linspace(1.1,4,30)
+                int_flux_dict['logenergy'] = np.concatenate(
+                    [low_log_energy,high_log_energy]
+                )
             int_flux_dict['coszen'] = np.linspace(-1, 1, 21)
             for nutype in self.primaries:
                 # spline_dict now wants to be a set of splines for
@@ -479,10 +496,22 @@ class honda(Stage):
                     int_flux = []
                     tot_flux = 0.0
                     int_flux.append(tot_flux)
-                    for energyfluxval, energyval in zip(energyfluxlist,
-                                                        flux_dict['energy']):
+                    for energyfluxval, energyval in zip(
+                            energyfluxlist,
+                            flux_dict['energy']):
                         # Spline works best if you integrate flux * energy
-                        tot_flux += energyfluxval*energyval
+                        # Since this is the integrated flux it must also be
+                        # multiplied by bin width.
+                        if 'honda' in self.params.flux_file.value:
+                            # For honda this is easy, it's constant
+                            tot_flux += energyfluxval*energyval*0.05
+                        else:
+                            # For Bartol there is a switch at 10 GeV where
+                            # the bin widths double.
+                            if energyval < 10.0:
+                                tot_flux += energyfluxval*energyval*0.05
+                            else:
+                                tot_flux += energyfluxval*energyval*0.1
                         int_flux.append(tot_flux)
 
                     spline = interpolate.splrep(int_flux_dict['logenergy'],
@@ -490,7 +519,7 @@ class honda(Stage):
                     CZvalue = '%.2f'%(1.05-CZiter*0.1)
                     splines[CZvalue] = spline
                     CZiter += 1
-
+                    
                 self.spline_dict[nutype] = splines
 
     def load_3D_table(self, smooth=0.05):
@@ -592,7 +621,7 @@ class honda(Stage):
                         for energyfluxval, energyval \
                                 in zip(energyfluxlist, flux_dict['energy']):
                             # Spline works best if you integrate flux * energy
-                            tot_flux += energyfluxval*energyval
+                            tot_flux += energyfluxval*energyval*0.05
                             int_flux.append(tot_flux)
 
                         spline = interpolate.splrep(int_flux_dict['logenergy'],
@@ -727,7 +756,7 @@ class honda(Stage):
                 # Here the bin width is 0.05 (in log energy)
                 spvals = interpolate.splev(logevals,
                                            self.spline_dict[prim][czkey],
-                                           der=1)*0.05
+                                           der=1)
                 all_spline_vals.append(spvals)
             all_spline_vals = np.array(all_spline_vals)
 
@@ -880,7 +909,7 @@ class honda(Stage):
                             cz_spline_vals.append(interpolate.splev(
                                 logenergyval,
                                 self.spline_dict[prim][azkey]['%.2f'%czkey],
-                                der=1)*0.05)
+                                der=1))
                         int_spline_vals = []
                         tot_val = 0.0
                         int_spline_vals.append(tot_val)
@@ -1177,7 +1206,15 @@ class honda(Stage):
                                            'bisplrep'])
 
         # This is the Honda service after all...
-        assert 'honda' in params.flux_file.value
+        if 'honda' not in params.flux_file.value:
+            # But it does support the Bartol tables too now
+            if 'bartol' not in params.flux_file.value:
+                raise ValueError(
+                    "Input flux file must be from Honda or possibly "
+                    "from Bartol. This is identified by having honda "
+                    "or bartol in the name. The file you provided "
+                    "was %s."%params.flux_file.value
+                )
 
         # Flux file should have aa (for azimuth-averaged) if binning
         # is energy and cosZenith
