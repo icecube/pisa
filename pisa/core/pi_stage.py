@@ -4,11 +4,10 @@ Stage class designed to be inherited by PISA Pi services, such that all basic
 functionality is built-in.
 
 """
-import numpy as np
+from __future__ import absolute_import
 
 from pisa.core.base_stage import BaseStage
 from pisa.core.binning import MultiDimBinning
-from pisa.core.map import Map, MapSet
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 
@@ -68,7 +67,7 @@ class PiStage(BaseStage):
                  input_keys=(),
                  calc_keys=(),
                  output_keys=(),
-                 ):
+                ):
 
         # init base class
         super(PiStage, self).__init__(params=params,
@@ -77,7 +76,7 @@ class PiStage(BaseStage):
                                       output_names=output_names,
                                       debug_mode=debug_mode,
                                       error_method=error_method,
-                                      )
+                                     )
 
         self.input_specs = input_specs
         self.calc_specs = calc_specs
@@ -115,6 +114,7 @@ class PiStage(BaseStage):
         self.calc_keys = calc_keys
         self.output_keys = output_keys
 
+        self.param_hash = None
 
         # cake compatibility
         self.outputs = None
@@ -159,13 +159,13 @@ class PiStage(BaseStage):
             for container in self.data:
                 for key in self.input_keys:
                     container.binned_to_array(key)
-        
+
         if self.input_mode == 'binned' and self.calc_mode == 'events' and self.output_mode == 'binned':
             for container in self.data:
                 for key in self.calc_keys:
                     container.array_to_binned(key, self.input_specs)
             self.data.data_specs = self.calc_specs
-        
+
         if self.input_mode == 'events' and self.calc_mode == 'binned' and self.output_mode == 'binned':
             for container in self.data:
                 for key in self.input_keys:
