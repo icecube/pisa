@@ -37,8 +37,8 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name, outdir)
                 numu_flux = calculate_2D_flux_weights(true_e, true_cz, flux_table['numu'+isbar])
                 # the opposite flavor fluxes( used only in the nu_nubar_ratio systematic)
                 oppo_isbar = '' if 'bar' in prim else 'bar'
-                oppo_nue_flux = calculate_2D_flux_weights(true_e, true_cz, flux_table['nue'+isbar])
-                oppo_numu_flux = calculate_2D_flux_weights(true_e, true_cz, flux_table['numu'+isbar])
+                oppo_nue_flux = calculate_2D_flux_weights(true_e, true_cz, flux_table['nue'+oppo_isbar])
+                oppo_numu_flux = calculate_2D_flux_weights(true_e, true_cz, flux_table['numu'+oppo_isbar])
                 data_file[prim][int_type][neutrino_weight_name+'_nue_flux'] = nue_flux
                 data_file[prim][int_type][neutrino_weight_name+'_numu_flux'] = numu_flux
                 data_file[prim][int_type][neutrino_weight_name+'_oppo_nue_flux'] = oppo_nue_flux
