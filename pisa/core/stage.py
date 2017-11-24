@@ -81,14 +81,6 @@ class Stage(BaseStage):
 
     output_binning : None or interpretable as MultiDimBinning
 
-    error_method : None, bool, or string
-        If None, False, or empty string, the stage does not compute errors for
-        the transforms and does not apply any (additional) error to produce its
-        outputs. (If the inputs already have errors, these are propagated.)
-
-        Otherwise, this specifies the method by which the stage should compute
-        errors for the transforms to be applied in producing outputs from the
-        stage.
 
     Notes
     -----
@@ -148,6 +140,7 @@ class Stage(BaseStage):
                                              input_names=input_names,
                                              output_names=output_names,
                                              debug_mode=debug_mode,
+                                             error_method=error_method,
                                              )
 
 
@@ -199,11 +192,6 @@ class Stage(BaseStage):
 
         self.disk_cache_path = None
         """Path to disk cache file for this stage/service (or None)."""
-
-        if bool(error_method):
-            self._error_method = error_method
-        else:
-            self._error_method = None
 
         # Include each attribute here for hashing if it is defined and its
         # value is not None
@@ -653,13 +641,6 @@ class Stage(BaseStage):
 
         self.disk_cache = DiskCache(self.disk_cache_path, max_depth=10,
                                     is_lru=False)
-
-    @property
-    def error_method(self):
-        """Read-only attribute indicating whether or not the stage will compute
-        errors for its transforms and outputs (whichever is applicable). Errors
-        on inputs are propagated regardless of this setting."""
-        return self._error_method
 
     def _derive_outputs_hash(self):
         """Derive a hash value that unique identifies the outputs that will be

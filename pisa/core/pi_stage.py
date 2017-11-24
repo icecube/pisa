@@ -61,6 +61,7 @@ class PiStage(BaseStage):
                  input_names=None,
                  output_names=None,
                  debug_mode=None,
+                 error_method=None,
                  input_specs=None,
                  calc_specs=None,
                  output_specs=None,
@@ -75,6 +76,7 @@ class PiStage(BaseStage):
                                       input_names=input_names,
                                       output_names=output_names,
                                       debug_mode=debug_mode,
+                                      error_method=error_method,
                                       )
 
         self.input_specs = input_specs
@@ -204,6 +206,11 @@ class PiStage(BaseStage):
         function for cake style outputs
         '''
         # output keys need to be exactly 1 to generate pisa cake style mapset
-        assert len(self.output_keys) == 1
-        self.outputs = self.data.get_mapset(self.output_keys[0])
+        if len(self.output_keys) == 1:
+            self.outputs = self.data.get_mapset(self.output_keys[0])
+        else:
+            assert len(self.output_keys) == 2 and 'error' in self.output_keys, 'Cannot transfor this output into PISA style maps with output keys %s'%self.output_keys
+            other_key = [key for key in self.output_keys if not key == 'error'][0]
+            self.outputs = self.data.get_mapset(other_key, error='error')
+
         return self.outputs

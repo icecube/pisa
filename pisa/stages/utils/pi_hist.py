@@ -5,7 +5,7 @@ from pisa import *
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-from pisa.utils.numba_tools import multiply_and_scale, WHERE
+from pisa.utils.numba_tools import multiply_and_scale, square, sqrt, WHERE
 from pisa.core.binning import MultiDimBinning
 from pisa.core.map import Map, MapSet
 
@@ -44,7 +44,7 @@ class pi_hist(PiStage):
                       )
         # what are keys added or altered in the calculation used during apply 
         assert calc_specs is None
-        if 'sumw2' in error_method:
+        if error_method in ['sumw2']:
             calc_keys = ('weights_squared',
                          )
             output_keys = ('weights',
@@ -77,35 +77,57 @@ class pi_hist(PiStage):
         assert self.output_mode is 'binned'
 
     def setup_function(self):
-        if 'sumw2' in self.error_method:
+        if self.error_method in ['sumw2']:
+            self.data.data_specs = self.input_specs
             for container in self.data:
                 container['weights_squared'] = np.empty((container.size), dtype=FTYPE)
-                container['error'] = np.empty((container.size), dtype=FTYPE)
-
-    def compute_function(self):
-        if 'sumw2' in self.error_method:
+            self.data.data_specs = self.output_specs
             for container in self.data:
-                square(container['weights'].get(WHERE),
-                       out=container['weights_squared'])
+                container['error'] = np.empty((container.size), dtype=FTYPE)
 
     @profile
     def apply(self):
+        self.compute()
         
-        self.data.data_specs = self.input_specs
         # this is special, we want the actual event weights in the histo
-
-
         if self.input_mode == 'binned':
+            self.data.data_specs = self.output_specs
             for container in self.data:
                 container.array_to_binned('event_weights', self.output_specs, averaged=False)
                 multiply_and_scale(1.,
                                    container['event_weights'],get(WHERE),
                                    out=container['weights'].get(WHERE))
                 container['weights'].mark_changed(WHERE)
+                # calcualte errors
+                if self.error_method in ['sumw2']:
+                    square(container['weights'].get(WHERE),
+                           out=container['weights_squared'].get(WHERE))
+                    container['weights_squared'].mark_changed(WHERE)
+                    multiply_and_scale(1.,
+                                       container['event_weights'],get(WHERE),
+                                       out=container['weights_squared'].get(WHERE))
+                    container['weights_squared'].mark_changed(WHERE)
+                    sqrt(container['weights_squared'].get(WHERE),
+                         out=container['error'].get(WHERE))
+                    container['error'].mark_changed(WHERE)
 
         elif self.input_mode == 'events':
             for container in self.data:
+                self.data.data_specs = self.input_specs
                 multiply_and_scale(1.,
                                    container['event_weights'].get(WHERE),
                                    out=container['weights'].get(WHERE))
+                container['weights'].mark_changed(WHERE)
+                # calcualte errors
+                if self.error_method in ['sumw2']:
+                    square(container['weights'].get(WHERE),
+                           out=container['weights_squared'].get(WHERE))
+                    container['weights_squared'].mark_changed(WHERE)
+                self.data.data_specs = self.output_specs
                 container.array_to_binned('weights', self.output_specs, averaged=False)
+                if self.error_method in ['sumw2']:
+                    container.array_to_binned('weights_squared', self.output_specs, averaged=False)
+                    container['weights_squared'].mark_changed(WHERE)
+                    sqrt(container['weights_squared'].get(WHERE),
+                         out=container['error'].get(WHERE))
+                    container['error'].mark_changed(WHERE)

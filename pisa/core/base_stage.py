@@ -50,6 +50,15 @@ class BaseStage(object):
         further custom behavior when this mode is set by reading the value of
         the `self.debug_mode` attribute.
 
+    error_method : None, bool, or string
+        If None, False, or empty string, the stage does not compute errors for
+        the transforms and does not apply any (additional) error to produce its
+        outputs. (If the inputs already have errors, these are propagated.)
+
+        Otherwise, this specifies the method by which the stage should compute
+        errors for the transforms to be applied in producing outputs from the
+        stage.
+
     Notes
     -----
     The following methods can be overridden in derived classes where
@@ -64,6 +73,7 @@ class BaseStage(object):
                  input_names=None,
                  output_names=None, 
                  debug_mode=None,
+                 error_method=None,
                  ):
 
         # Allow for string inputs, but have to populate into lists for
@@ -118,21 +128,10 @@ class BaseStage(object):
         else:
             self._debug_mode = None
 
-        ## Include each attribute here for hashing if it is defined and its
-        ## value is not None
-        #default_attrs_to_hash = ['input_names', 'output_names',
-        #                         ]
-        #self._attrs_to_hash = set([])
-        #for attr in default_attrs_to_hash:
-        #    if not hasattr(self, attr):
-        #        continue
-        #    val = getattr(self, attr)
-        #    if val is None:
-        #        continue
-        #    try:
-        #        self.include_attrs_for_hashes(attr)
-        #    except ValueError():
-        #        pass
+        if bool(error_method):
+            self._error_method = error_method
+        else:
+            self._error_method = None
 
         self.inputs = None
 
@@ -284,3 +283,11 @@ class BaseStage(object):
         """Override this method to test if params are valid; e.g., check range
         and dimensionality."""
         return
+
+    @property
+    def error_method(self):
+        """Read-only attribute indicating whether or not the stage will compute
+        errors for its transforms and outputs (whichever is applicable). Errors
+        on inputs are propagated regardless of this setting."""
+        return self._error_method
+

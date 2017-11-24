@@ -289,17 +289,22 @@ class Pipeline(object):
                 raise ValueError('Integer `idx` must be >= 0')
             idx += 1
         assert len(self) > 0
-        for stage in self.stages[:idx]:
+        last = len(self.stages[:idx]) - 1
+        for i, stage in enumerate(self.stages[:idx]):
             logging.debug('>> Working on stage "%s" service "%s"',
                           stage.stage_name, stage.service_name)
             try:
                 logging.trace('>>> BEGIN: get_outputs')
                 if self.pisa_version == 'pi':
                     stage.apply()
-                    try:
+                    outputs = None
+                    # return pisa cake style ouput if we're the last stage
+                    if i==last:
+                        print 'last stage'
+                        #try:
                         outputs = stage.get_outputs()
-                    except:
-                        outputs = None
+                        #except:
+                        #    pass
                 else:
                     outputs = stage.apply(inputs=inputs)
                 logging.trace('>>> END  : get_outputs')

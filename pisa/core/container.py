@@ -121,18 +121,21 @@ class ContainerSet(object):
         containers_to_be_iterated = [c for c in self.containers if not c.linked] + self.linked_containers
         return iter(containers_to_be_iterated)
 
-    def get_mapset(self, key):
+    def get_mapset(self, key, error=None):
         '''
         Parameters
         ----------
 
         key : str
 
+        error : None or str
+            specify a key that errors are read from
+
         For a given key, get a PISA MapSet
         '''
         maps = []
         for container in self:
-            maps.append(container.get_map(key))
+            maps.append(container.get_map(key, error=error))
         return MapSet(name=self.name, maps=maps)
 
 class VirtualContainer(object):
@@ -425,14 +428,18 @@ class Container(object):
         '''
         return self.binned_data[key][0]
 
-    def get_map(self, key):
+    def get_map(self, key, error=None):
         '''
         return binned data in the form of a PISA map
         '''
         hist = self.get_hist(key)
+        if error is not None:
+            error_hist = self.get_hist(error)
+        else:
+            error_hist = None
         binning = self.get_binning(key)
         assert hist.ndim == binning.num_dims
-        return Map(name=self.name, hist=hist, binning=binning)
+        return Map(name=self.name, hist=hist, error_hist=error_hist, binning=binning)
 
 
 if __name__ == '__main__':

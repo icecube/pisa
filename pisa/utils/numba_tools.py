@@ -17,6 +17,8 @@ __all__ = ['myjit',
            'ftype',
            'WHERE',
            'multiply_and_scale',
+           'square',
+           'sqrt',
            ]
 __version__ = '0.1'
 __author__ = 'Philipp Eller (pde3@psu.edu)'
@@ -171,6 +173,7 @@ if FTYPE == np.float64:
     signature = '(f8, f8, f8[:])'
 else:
     signature = '(f4, f4, f4[:])'
+
 @guvectorize([signature], '(),()->()', target=TARGET)
 def multiply_and_scale(scale, value, out):
     out[0] *= scale * value
@@ -178,6 +181,20 @@ def multiply_and_scale(scale, value, out):
 @guvectorize([signature], '(),()->()', target=TARGET)
 def equal_and_scale(scale, value, out):
     out[0] = scale * value
+
+if FTYPE == np.float64:
+    signature = '(f8, f8[:])'
+else:
+    signature = '(f4, f4[:])'
+
+@guvectorize([signature], '()->()', target=TARGET)
+def square(val, out):
+    out[0] = val**2
+
+@guvectorize([signature], '()->()', target=TARGET)
+def sqrt(val, out):
+    out[0] = math.sqrt(val)
+
 
 if __name__=='__main__':
     
