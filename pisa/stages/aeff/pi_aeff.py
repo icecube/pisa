@@ -39,6 +39,8 @@ class pi_aeff(PiStage):
         expected_params = ('livetime',
                            'aeff_scale',
                            'nutau_cc_norm',
+                           'nutau_norm',
+                           'nu_nc_norm',
                            )
         input_names = ()
         output_names = ()
@@ -82,11 +84,17 @@ class pi_aeff(PiStage):
         aeff_scale = self.params.aeff_scale.m_as('dimensionless')
         livetime_s = self.params.livetime.m_as('sec')
         nutau_cc_norm = self.params.nutau_cc_norm.m_as('dimensionless')
+        nutau_norm = self.params.nutau_norm.m_as('dimensionless')
+        nu_nc_norm = self.params.nu_nc_norm.m_as('dimensionless')
 
         for container in self.data:
             scale = aeff_scale * livetime_s
             if container.name in ['nutau_cc', 'nutaubar_cc']:
                 scale *= nutau_cc_norm
+            if 'nutau' in container.name:
+                scale *= nutau_norm
+            if 'nc' in container.name:
+                scale *= nu_nc_norm
             multiply_and_scale(scale,
                                container['weighted_aeff'].get(WHERE),
                                out=container['weights'].get(WHERE),

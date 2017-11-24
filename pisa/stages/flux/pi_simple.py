@@ -220,7 +220,7 @@ def modRatioUpHor(flav, true_energy, true_coszen, uphor):
     # oscfit function
     if flav == 0:
         A_shape = 1. * abs(uphor) * LogLogParam(true_energy, (z1max_e + z1max_mu), (z2max_e + z2max_mu), x1z, x2z, True, nue_cutoff)
-        return 1-0.3*sign(uphor)*norm_fcn(true_coszen, A_shape, 0.35)
+        return 1 - 0.3 * sign(uphor) * norm_fcn(true_coszen, A_shape, 0.35)
     if flav == 1:
         return 1.
 
@@ -250,15 +250,19 @@ def apply_sys_kernel(true_energy,
                          Barr_uphor_ratio,
                          Barr_nu_nubar_ratio,
                          out):
-    #apply flux systematics
-    # spectral idx
-    idx_scale = spectral_index_scale(true_energy, 24.0900951261, delta_index)
-    
     # nue/numu ratio
     new_flux = cuda.local.array(shape=(2), dtype=ftype)
     new_opposite_flux = cuda.local.array(2, dtype=ftype)
     apply_ratio_scale(nue_numu_ratio, True, nominal_flux[0], nominal_flux[1], new_flux)
     apply_ratio_scale(nue_numu_ratio, True, nominal_opposite_flux[0], nominal_opposite_flux[1], new_opposite_flux)
+
+    #apply flux systematics
+    # spectral idx
+    idx_scale = spectral_index_scale(true_energy, 24.0900951261, delta_index)
+    new_flux[0] *= idx_scale
+    new_flux[1] *= idx_scale
+    new_opposite_flux[0] *= idx_scale
+    new_opposite_flux[1] *= idx_scale
     
     # nu/nubar ratio
     new_nue_flux = cuda.local.array(2, dtype=ftype)
@@ -266,14 +270,11 @@ def apply_sys_kernel(true_energy,
     if nubar < 0:
         apply_ratio_scale(nu_nubar_ratio, True, new_opposite_flux[0], new_flux[0], new_nue_flux)
         apply_ratio_scale(nu_nubar_ratio, True, new_opposite_flux[1], new_flux[1], new_numu_flux)
-    else:
-        apply_ratio_scale(nu_nubar_ratio, True, new_flux[0], new_opposite_flux[0], new_nue_flux)
-        apply_ratio_scale(nu_nubar_ratio, True, new_flux[1], new_opposite_flux[1], new_numu_flux)
-    
-    if nubar < 0:
         out[0] = new_nue_flux[1]
         out[1] = new_numu_flux[1]
     else:
+        apply_ratio_scale(nu_nubar_ratio, True, new_flux[0], new_opposite_flux[0], new_nue_flux)
+        apply_ratio_scale(nu_nubar_ratio, True, new_flux[1], new_opposite_flux[1], new_numu_flux)
         out[0] = new_nue_flux[0]
         out[1] = new_numu_flux[0]
     

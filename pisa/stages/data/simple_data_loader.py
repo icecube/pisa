@@ -100,6 +100,11 @@ class simple_data_loader(PiStage):
             neutrino_oppo_numu_flux = evts[name]['neutrino_oppo_numu_flux'].astype(FTYPE)
             oppo_flux = np.stack([neutrino_oppo_nue_flux, neutrino_oppo_numu_flux], axis=1)
 
+            linear_fit_maccqe =  evts[name]['linear_fit_MaCCQE'].astype(FTYPE)
+            quad_fit_maccqe =    evts[name]['quad_fit_MaCCQE'].astype(FTYPE)
+            linear_fit_maccres = evts[name]['linear_fit_MaCCRES'].astype(FTYPE)
+            quad_fit_maccres =   evts[name]['quad_fit_MaCCRES'].astype(FTYPE)
+
             # make container
             container = Container(name)
             container.add_array_data('true_energy', true_energy)
@@ -114,8 +119,13 @@ class simple_data_loader(PiStage):
             container.add_array_data('weighted_aeff', weighted_aeff)
             container.add_array_data('nominal_flux', flux)
             container.add_array_data('nominal_opposite_flux', oppo_flux)
-            self.data.add_container(container)
 
+            container.add_array_data('linear_fit_maccqe', linear_fit_maccqe)
+            container.add_array_data('quad_fit_maccqe', quad_fit_maccqe)
+            container.add_array_data('linear_fit_maccres', linear_fit_maccres)
+            container.add_array_data('quad_fit_maccres', quad_fit_maccres)
+
+            self.data.add_container(container)
 
     @profile
     def apply_function(self):
