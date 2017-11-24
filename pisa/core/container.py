@@ -1,21 +1,22 @@
-'''
+"""
 Class to hold generic data in container.
-The data can be unbinned or binned or scalar, while 
+he data can be unbinned or binned or scalar, while
 translation methods between such different representations
 are provided.
 
 The data lives in SmartArrays on both CPU and GPU
-'''
+"""
+from __future__ import absolute_import, print_function
+
 from collections import OrderedDict
 
 import numpy as np
-from numba import guvectorize, SmartArray, cuda, float32
+from numba import SmartArray
 
-from pisa import FTYPE, TARGET
+from pisa import FTYPE
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.core.map import Map, MapSet
-from pisa.core.translation import *
-from pisa.utils.numba_tools import myjit, WHERE
+from pisa.core.translation import histogram, lookup
 from pisa.utils.log import logging
 
 
@@ -31,11 +32,12 @@ class ContainerSet(object):
             self.containers = []
         else:
             self.containers = containers
+        self._data_specs = None
         self.data_specs = data_specs
 
     def add_container(self, container):
         self.containers.append(container)
-    
+
     @property
     def data_mode(self):
         '''
@@ -175,9 +177,9 @@ class VirtualContainer(object):
         self.containers[0][key] = value
         for container in self.containers[1:]:
             if not hasattr(value, '__len__'):
-                container.scalar_data[key] = self.containers[0].scalar_data[key] 
+                container.scalar_data[key] = self.containers[0].scalar_data[key]
             else:
-                container.binned_data[key] = self.containers[0].binned_data[key] 
+                container.binned_data[key] = self.containers[0].binned_data[key]
 
     @property
     def size(self):
@@ -234,8 +236,7 @@ class Container(object):
         assert self.data_mode is not None
         if self.data_mode == 'events':
             return self.array_length
-        else:
-            return self.data_specs.size
+        return self.data_specs.size
 
     def add_scalar_data(self, key, data):
         '''
@@ -288,7 +289,7 @@ class Container(object):
 
         elif isinstance(data, tuple):
             binning, array = data
-            assert isinstance(binning , MultiDimBinning)
+            assert isinstance(binning, MultiDimBinning)
             if isinstance(array, SmartArray):
                 array = array.get('host')
             if flat:
@@ -324,7 +325,7 @@ class Container(object):
         set data in the set data_specs
         '''
         if not hasattr(value, '__len__'):
-            self.add_scalar_data((key, value))
+            self.add_scalar_data(key, value)
         else:
             assert self.data_mode is not None, 'Need to set data_specs to use simple getitem method'
             if self.data_mode == 'events':
@@ -334,7 +335,7 @@ class Container(object):
 
     def array_to_binned(self, key, binning, averaged=True):
         '''
-        histogramm data array into binned data
+        histogram data array into binned data
 
         Parameters
         ----------
@@ -359,7 +360,7 @@ class Container(object):
         weights = self.array_data[key]
         sample = [self.array_data[n] for n in binning.names]
 
-        hist =  histogram(sample, weights, binning, averaged)
+        hist = histogram(sample, weights, binning, averaged)
 
         self.add_binned_data(key, (binning, hist))
 
@@ -442,37 +443,40 @@ class Container(object):
         return Map(name=self.name, hist=hist, error_hist=error_hist, binning=binning)
 
 
-if __name__ == '__main__':
 
+def test_container():
     n_evts = 10000
     x = np.arange(n_evts, dtype=FTYPE)
     y = np.arange(n_evts, dtype=FTYPE)
     w = np.ones(n_evts, dtype=FTYPE)
     w *= np.random.rand(n_evts)
-    
+
     container = Container('test')
     container.add_array_data('x', x)
     container.add_array_data('y', y)
     container.add_array_data('w', w)
 
 
-    binning_x = OneDimBinning(name='x', num_bins=10, is_lin=True, domain=[0,100])
-    binning_y = OneDimBinning(name='y', num_bins=10, is_lin=True, domain=[0,100])
+    binning_x = OneDimBinning(name='x', num_bins=10, is_lin=True, domain=[0, 100])
+    binning_y = OneDimBinning(name='y', num_bins=10, is_lin=True, domain=[0, 100])
     binning = MultiDimBinning([binning_x, binning_y])
     #print binning.names
-    print container.get_binned_data('x', binning).get('host')
-    print Container.unroll_binning('x', binning).get('host')
+    print(container.get_binned_data('x', binning).get('host'))
+    print(Container.unroll_binning('x', binning).get('host'))
 
     # array
-    print 'original array'
-    print container.get_array_data('w').get('host')
+    print('original array')
+    print(container.get_array_data('w').get('host'))
     container.array_to_binned('w', binning)
     # binned
-    print 'binned'
-    print container.get_binned_data('w').get('host')
-    print container.get_hist('w')
+    print('binned')
+    print(container.get_binned_data('w').get('host'))
+    print(container.get_hist('w'))
 
-    print 'augmented again'
+    print('augmented again')
     # augment
     container.binned_to_array('w')
-    print container.get_array_data('w').get('host')
+    print(container.get_array_data('w').get('host'))
+
+if __name__ == '__main__':
+    test_container()
