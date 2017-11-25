@@ -22,10 +22,6 @@ from pisa.utils.resources import find_resource
 __all__ = ['add_fluxes_to_file', 'main']
 
 
-# TODO: Should output filename include which flux file was used, so that info
-#       doesn't get lost? Or is this recorded in some other way?
-
-
 def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
                        outdir, label=None, overwrite=False):
     """Add fluxes to PISA events file (e.g. for use by an mc stage)
@@ -95,9 +91,9 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
     logging.info('--> Wrote file including fluxes to "%s"', outpath)
 
 
-def main():
-    """Parse command-line arguments and execute `add_fluxes_to_file` function"""
-    parser = ArgumentParser(description=__doc__)
+def parse_args(description=__doc__):
+    """Parse command-line arguments"""
+    parser = ArgumentParser(description=description)
     parser.add_argument(
         '--input', metavar='(H5_FILE|DIR)', nargs='+', type=str, required=True,
         help='''Path to a PISA events HDF5 file or a directory containing HDF5
@@ -114,15 +110,25 @@ def main():
         help='Directory to save the output figures.'
     )
     parser.add_argument(
-        '-v', action='count', default=1,
-        help='increase verbosity level _beyond_ INFO level'
+        '--label', type=str, default=None,
+        help='''Label to give output files. If a label is not specified,
+        default label is the flux file's basename with extension removed.'''
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        '-v', action='count', default=1,
+        help='''Increase verbosity level _beyond_ INFO level by specifying -v
+        (DEBUG) or -vv (TRACE)'''
+    )
+    return parser.parse_args()
 
+
+def main():
+    """Run `add_fluxes_to_file` function with arguments from command line"""
+    args = parse_args()
     set_verbosity(args.v)
 
     flux_table = load_2d_table(args.flux_file)
-    flux_file_bname = basename(args.flux_file)
+    flux_file_bname, ext = splitext(basename(args.flux_file))
 
     input_paths = []
     for input_path in args.input:
