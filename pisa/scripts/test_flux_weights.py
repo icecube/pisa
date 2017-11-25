@@ -1458,7 +1458,7 @@ def main():
                         is not specified then no 3D tests will be done.''')
     parser.add_argument('--onedim-checks', action='store_true',
                         help='''Run verifications on 1D slices.''')
-    parser.add_argument('--twodim_checks', action='store_true',
+    parser.add_argument('--twodim-checks', action='store_true',
                         help='''Make finely interpolated 2D plots.
                         WARNING - THESE ARE SLOW.''')
     parser.add_argument('--ip-checks', action='store_true',
@@ -1477,8 +1477,8 @@ def main():
                         help='''Perform the interpolation in the azimuthal
                         dimension with the integral-preserving algorithm.
                         NOTE - THIS IS NOT RECOMMENDED.''')
-    parser.add_argument('--flavour', type=str, default=None,
-                        help='''Choose a flavour to perform the tests on. This
+    parser.add_argument('--flavor', type=str, default=None,
+                        help='''Choose a flavor to perform the tests on. This
                         is necessary for the 3D 2D and ip checks since they
                         take so much memory otherwise...''')
     parser.add_argument('--outdir', metavar='DIR', type=str, required=True,
@@ -1620,12 +1620,12 @@ def main():
             )
 
         if args.twodim_checks:
-            if args.flavour is None:
-                raise ValueError('You must specify a flavour for these tests!')
-            if args.flavour not in PRIMARIES:
-                raise ValueError('Invalid flavour chosen. Please specify one '
+            if args.flavor is None:
+                raise ValueError('You must specify a flavor for these tests!')
+            if args.flavor not in PRIMARIES:
+                raise ValueError('Invalid flavor chosen. Please specify one '
                                  'from the following: %s'%PRIMARIES)
-            flavourtex = TEXPRIMARIES[PRIMARIES.index(args.flavour)]
+            flavortex = TEXPRIMARIES[PRIMARIES.index(args.flavor)]
             do_2d_3d_honda_test(
                 spline_dict=spline_dict_3d,
                 flux_dict=flux_dict_3d,
@@ -1633,18 +1633,18 @@ def main():
                 oversample=args.oversample,
                 save_name=save_name,
                 title_filename=title_filename,
-                flav=args.flavour,
-                flavtex=flavourtex,
+                flav=args.flavor,
+                flavtex=flavortex,
                 enpow=args.enpow
             )
 
         if args.ip_checks:
-            if args.flavour is None:
-                raise ValueError('You must specify a flavour for these tests!')
-            if args.flavour not in PRIMARIES:
-                raise ValueError('Invalid flavour chosen. Please specify one '
+            if args.flavor is None:
+                raise ValueError('You must specify a flavor for these tests!')
+            if args.flavor not in PRIMARIES:
+                raise ValueError('Invalid flavor chosen. Please specify one '
                                  'from the following: %s'%PRIMARIES)
-            flavourtex = TEXPRIMARIES[PRIMARIES.index(args.flavour)]
+            flavortex = TEXPRIMARIES[PRIMARIES.index(args.flavor)]
             do_ip_3d_honda_test(
                 spline_dict=spline_dict_3d,
                 flux_dict=flux_dict_3d,
@@ -1652,8 +1652,8 @@ def main():
                 oversample=args.oversample,
                 save_name=save_name,
                 title_filename=title_filename,
-                flav=args.flavour,
-                flavtex=flavourtex,
+                flav=args.flavor,
+                flavtex=flavortex,
                 enpow=args.enpow,
                 az_linear=not args.ip_az
 
