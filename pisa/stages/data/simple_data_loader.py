@@ -8,7 +8,7 @@ import numpy as np
 from pisa import FTYPE
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
-from pisa.utils.numba_tools import equal_and_scale, WHERE
+from pisa.utils import vectorizer
 from pisa.utils.profiler import profile
 from pisa.core.container import Container
 from pisa.core.events import Events
@@ -136,7 +136,6 @@ class simple_data_loader(PiStage):
     def apply_function(self):
         # reset weights
         for container in self.data:
-            equal_and_scale(1.,
-                            container['event_weights'].get(WHERE),
-                            out=container['weights'].get(WHERE))
-            container['weights'].mark_changed(WHERE)
+            vectorizer.scale(1.,
+                             container['event_weights'],
+                             out=container['weights'])

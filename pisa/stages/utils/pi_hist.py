@@ -9,7 +9,7 @@ from pisa import FTYPE
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-from pisa.utils.numba_tools import multiply_and_scale, square, sqrt, WHERE
+from pisa.utils import vectorizer
 
 class pi_hist(PiStage):
     """
@@ -95,40 +95,22 @@ class pi_hist(PiStage):
             self.data.data_specs = self.output_specs
             for container in self.data:
                 container.array_to_binned('event_weights', self.output_specs, averaged=False)
-                multiply_and_scale(1.,
-                                   container['event_weights'].get(WHERE),
-                                   out=container['weights'].get(WHERE))
-                container['weights'].mark_changed(WHERE)
+                vectorizer.multiply_and_scale(container['event_weights'], out=container['weights'])
                 # calcualte errors
                 if self.error_method in ['sumw2']:
-                    square(container['weights'].get(WHERE),
-                           out=container['weights_squared'].get(WHERE))
-                    container['weights_squared'].mark_changed(WHERE)
-                    multiply_and_scale(1.,
-                                       container['event_weights'].get(WHERE),
-                                       out=container['weights_squared'].get(WHERE))
-                    container['weights_squared'].mark_changed(WHERE)
-                    sqrt(container['weights_squared'].get(WHERE),
-                         out=container['error'].get(WHERE))
-                    container['error'].mark_changed(WHERE)
+                    vectorizer.square(container['weights'], out=container['weights_squared'])
+                    vectorizer.multiply(container['event_weights'], out=container['weights_squared'])
+                    vectorizer.sqrt(container['weights_squared'], out=container['error'])
 
         elif self.input_mode == 'events':
             for container in self.data:
                 self.data.data_specs = self.input_specs
-                multiply_and_scale(1.,
-                                   container['event_weights'].get(WHERE),
-                                   out=container['weights'].get(WHERE))
-                container['weights'].mark_changed(WHERE)
+                vectorizer.multiply(container['event_weights'],out=container['weights'])
                 # calcualte errors
                 if self.error_method in ['sumw2']:
-                    square(container['weights'].get(WHERE),
-                           out=container['weights_squared'].get(WHERE))
-                    container['weights_squared'].mark_changed(WHERE)
+                    vectorizer.square(container['weights'], out=container['weights_squared'])
                 self.data.data_specs = self.output_specs
                 container.array_to_binned('weights', self.output_specs, averaged=False)
                 if self.error_method in ['sumw2']:
                     container.array_to_binned('weights_squared', self.output_specs, averaged=False)
-                    container['weights_squared'].mark_changed(WHERE)
-                    sqrt(container['weights_squared'].get(WHERE),
-                         out=container['error'].get(WHERE))
-                    container['error'].mark_changed(WHERE)
+                    vectorizer.sqrt(container['weights_squared'], out=container['error'])

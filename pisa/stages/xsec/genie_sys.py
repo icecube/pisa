@@ -109,5 +109,5 @@ else:
 def apply_genie_sys(genie_ma_qe, linear_fit_maccqe, quad_fit_maccqe,
                     genie_ma_res, linear_fit_maccres, quad_fit_maccres,
                     out):
-    out[0] *= 1. + (linear_fit_maccqe + quad_fit_maccqe * genie_ma_qe) * genie_ma_qe
-    out[0] *= 1. + (linear_fit_maccres + quad_fit_maccres * genie_ma_res) * genie_ma_res
+    out[0] *= ((1. + (linear_fit_maccqe + quad_fit_maccqe * genie_ma_qe) * genie_ma_qe) *
+               (1. + (linear_fit_maccres + quad_fit_maccres * genie_ma_res) * genie_ma_res))

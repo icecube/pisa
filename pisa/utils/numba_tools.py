@@ -16,9 +16,6 @@ __all__ = ['myjit',
            'ctype',
            'ftype',
            'WHERE',
-           'multiply_and_scale',
-           'square',
-           'sqrt',
            ]
 __version__ = '0.1'
 __author__ = 'Philipp Eller (pde3@psu.edu)'
@@ -165,36 +162,6 @@ def test_copy_matrix():
     B = np.zeros((3,3))
     copy_matrix(A, B)
     assert np.array_equal(A, B)
-
-
-# vectorized function to apply
-# must be outside class
-if FTYPE == np.float64:
-    signature = '(f8, f8, f8[:])'
-else:
-    signature = '(f4, f4, f4[:])'
-
-@guvectorize([signature], '(),()->()', target=TARGET)
-def multiply_and_scale(scale, value, out):
-    out[0] *= scale * value
-
-@guvectorize([signature], '(),()->()', target=TARGET)
-def equal_and_scale(scale, value, out):
-    out[0] = scale * value
-
-if FTYPE == np.float64:
-    signature = '(f8, f8[:])'
-else:
-    signature = '(f4, f4[:])'
-
-@guvectorize([signature], '()->()', target=TARGET)
-def square(val, out):
-    out[0] = val**2
-
-@guvectorize([signature], '()->()', target=TARGET)
-def sqrt(val, out):
-    out[0] = math.sqrt(val)
-
 
 if __name__=='__main__':
     

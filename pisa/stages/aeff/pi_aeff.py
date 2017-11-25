@@ -6,7 +6,7 @@ from __future__ import absolute_import, print_function, division
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-from pisa.utils.numba_tools import WHERE, multiply_and_scale
+from pisa.utils import vectorizer
 
 
 class pi_aeff(PiStage):
@@ -94,8 +94,7 @@ class pi_aeff(PiStage):
                 scale *= nutau_norm
             if 'nc' in container.name:
                 scale *= nu_nc_norm
-            multiply_and_scale(scale,
-                               container['weighted_aeff'].get(WHERE),
-                               out=container['weights'].get(WHERE),
-                              )
-            container['weights'].mark_changed(WHERE)
+            vectorizer.multiply_and_scale(scale,
+                                          container['weighted_aeff'],
+                                          out=container['weights'],
+                                         )

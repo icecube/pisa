@@ -6,14 +6,14 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 from numba import guvectorize
 
-from pisa import FTYPE
+from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.stages.osc.pi_osc_params import OscParams
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.prob3numba.numba_osc import propagate_array, fill_probs
-from pisa.utils.numba_tools import WHERE, TARGET
+from pisa.utils.numba_tools import WHERE
 from pisa.utils.resources import find_resource
 
 
