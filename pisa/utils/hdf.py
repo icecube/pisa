@@ -156,11 +156,14 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
                         dset.attrs[key] = attrs[key]
             except ValueError:
                 pass
+
             for key in sorted(node.keys()):
-                key_str = str(key)
-                if not isinstance(key, str):
-                    logging.warn("Stringifying key '" + key_str +
-                                 "'for use as name in HDF5 file")
+                if isinstance(key, basestring):
+                    key_str = key
+                else:
+                    logging.warn('Making string from key "%s", %s for use as'
+                                 ' name in HDF5 file', key_str, type(key))
+                    key_str = str(key)
                 val = node[key]
                 new_path = path + [key_str]
                 store_recursively(fhandle=fhandle, node=val, path=new_path,

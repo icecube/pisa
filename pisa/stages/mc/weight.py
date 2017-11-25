@@ -24,7 +24,7 @@ from pisa.core.param import ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.flavInt import ALL_NUFLAVINTS
 from pisa.utils.flavInt import NuFlavInt, NuFlavIntGroup
-from pisa.utils.flux_weights import load_2D_table, calculate_flux_weights
+from pisa.utils.flux_weights import load_2d_table, calculate_2d_flux_weights
 from pisa.utils.format import text2tex
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
@@ -742,25 +742,25 @@ class weight(Stage):
     def _compute_flux_weights(nu_data, params):
         """Neutrino fluxes via integral preserving spline."""
         logging.debug('Computing flux values')
-        spline_dict = load_2D_table(params['flux_file'].value)
+        spline_dict = load_2d_table(params['flux_file'].value)
 
         flux_weights = OrderedDict()
         for fig in nu_data.iterkeys():
             flux_weights[fig] = OrderedDict()
             logging.debug('Computing flux values for flavour {0}'.format(fig))
-            flux_weights[fig]['nue_flux'] = calculate_flux_weights(
+            flux_weights[fig]['nue_flux'] = calculate_2d_flux_weights(
                 nu_data[fig]['energy'], nu_data[fig]['coszen'],
                 spline_dict['nue']
             )
-            flux_weights[fig]['numu_flux'] = calculate_flux_weights(
+            flux_weights[fig]['numu_flux'] = calculate_2d_flux_weights(
                 nu_data[fig]['energy'], nu_data[fig]['coszen'],
                 spline_dict['numu']
             )
-            flux_weights[fig]['nuebar_flux'] = calculate_flux_weights(
+            flux_weights[fig]['nuebar_flux'] = calculate_2d_flux_weights(
                 nu_data[fig]['energy'], nu_data[fig]['coszen'],
                 spline_dict['nuebar']
             )
-            flux_weights[fig]['numubar_flux'] = calculate_flux_weights(
+            flux_weights[fig]['numubar_flux'] = calculate_2d_flux_weights(
                 nu_data[fig]['energy'], nu_data[fig]['coszen'],
                 spline_dict['numubar']
             )

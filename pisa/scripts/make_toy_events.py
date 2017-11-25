@@ -701,7 +701,7 @@ def main():
                 'pid_param']:
         find_resource(args_d[arg])
 
-    mkdir(args.outdir)
+    mkdir(args.outdir, warn=False)
 
     set_indices = xrange(args.first_set, args.first_set + args.num_sets)
 

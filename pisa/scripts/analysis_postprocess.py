@@ -1,10 +1,11 @@
-# author : S.Wren
-#
-# date   : July 2017
-"""
-A script for doing analysis postprocessing.
+#!/usr/bin/env python
 
 """
+A script for doing analysis postprocessing.
+"""
+
+
+from __future__ import absolute_import
 
 from argparse import ArgumentParser
 import sys
@@ -13,6 +14,10 @@ import numpy as np
 from pisa.utils.postprocess import Postprocessor
 from pisa.utils.fileio import mkdir
 from pisa.utils.log import logging, set_verbosity
+
+
+__author__ = 'S.Wren'
+
 
 def parse_args(description=__doc__, profile_scan=False,
                injparamscan=False, systtests=False,
@@ -39,7 +44,7 @@ def parse_args(description=__doc__, profile_scan=False,
                 the minimiser info will be plotted'''
             )
             parser.add_argument(
-                '-dl', '--dir_label', type=str, action='append',
+                '--dir-label', type=str, action='append',
                 help="""A unique name from which to identify each the above
                 directories can be identified. Repeat this argument for as
                 many times as you have directories. If no labels are
@@ -109,32 +114,32 @@ def parse_args(description=__doc__, profile_scan=False,
     )
     if hypo_testing_analysis:
         parser.add_argument(
-            '-LLR', '--llr_plots', action='store_true', default=False,
+            '--llr-plots', action='store_true', default=False,
             help='''Flag to make the LLR plots. This will give the
             actual analysis results.'''
         )
         parser.add_argument(
-            '-FM', '--fit_information', action='store_true', default=False,
+            '--fit-information', action='store_true', default=False,
             help='''Flag to make tex files containing the
             fiducial fit params and metric.'''
         )
         parser.add_argument(
-            '-MM', '--minim_information', action='store_true', default=False,
+            '--minim-information', action='store_true', default=False,
             help='''Flag to make plots of the minimiser information i.e. status,
             number of iterations, time taken etc.'''
         )
         parser.add_argument(
-            '-IP', '--individual_posteriors', action='store_true',
+            '--individual-posteriors', action='store_true',
             default=False,
             help='''Flag to plot individual posteriors.'''
         )
         parser.add_argument(
-            '-CP', '--combined_posteriors', action='store_true', default=False,
+            '--combined-posteriors', action='store_true', default=False,
             help='''Flag to plot combined posteriors for each h0 and h1
             combination.'''
         )
         parser.add_argument(
-            '-IOP', '--individual_overlaid_posteriors', action='store_true',
+            '--individual-overlaid-posteriors', action='store_true',
             default=False,
             help='''Flag to plot individual overlaid posteriors. Overlaid
             here means that for a plot will be made with each of the h0
@@ -142,28 +147,28 @@ def parse_args(description=__doc__, profile_scan=False,
             fiducial h0 and h1 pseudos.'''
         )
         parser.add_argument(
-            '-COP', '--combined_overlaid_posteriors', action='store_true',
+            '--combined-overlaid-posteriors', action='store_true',
             default=False,
             help='''Flag to plot combined overlaid posteriors.'''
         )
         parser.add_argument(
-            '-IS', '--individual_scatter', action='store_true', default=False,
+            '--individual-scatter', action='store_true', default=False,
             help='''Flag to plot individual 2D scatter plots of posteriors.'''
         )
         parser.add_argument(
-            '-CIS', '--combined_individual_scatter',
+            '--combined-individual-scatter',
             action='store_true', default=False,
             help='''Flag to plot all 2D scatter plots of one systematic
             with every other systematic on one plot for each h0 and h1
             combination.'''
         )
         parser.add_argument(
-            '-CS', '--combined_scatter', action='store_true', default=False,
+            '--combined-scatter', action='store_true', default=False,
             help='''Flag to plot all 2D scatter plots on one plot for each
             h0 and h1 combination.'''
         )
         parser.add_argument(
-            '-CM', '--correlation_matrix', action='store_true', default=False,
+            '--correlation-matrix', action='store_true', default=False,
             help='''Flag to plot the correlation matrices for each h0 and h1
             combination.'''
         )
@@ -201,22 +206,22 @@ def parse_args(description=__doc__, profile_scan=False,
             explicitly set it for use in the plot labels."""
         )
         parser.add_argument(
-            '-SIG', '--significances', action='store_true', default=False,
+            '--significances', action='store_true', default=False,
             help='''Flag to make the Asimov significance plots. This will
             give the actual results of the study.'''
         )
         parser.add_argument(
-            '-MM', '--minim_information', action='store_true', default=False,
+            '--minim-information', action='store_true', default=False,
             help='''Flag to make plots of the minimiser information i.e.
             status, number of iterations, time taken etc.'''
         )
         parser.add_argument(
-            '-IF', '--individual_fits', action='store_true', default=False,
+            '--individual-fits', action='store_true', default=False,
             help='''Flag to make plots of all of the best fit parameters
             separated by the fitted parameter.'''
         )
         parser.add_argument(
-            '-CF', '--combined_fits', action='store_true', default=False,
+            '--combined-fits', action='store_true', default=False,
             help='''Flag to make plots of all of the best fit parameters joined
             together.'''
         )
