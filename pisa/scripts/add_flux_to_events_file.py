@@ -27,7 +27,7 @@ __all__ = ['add_fluxes_to_file', 'main']
 
 
 def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
-                       outdir, overwrite=False):
+                       outdir, label=None, overwrite=False):
     """Add fluxes to PISA events file (e.g. for use by an mc stage)
 
     Parameters
@@ -40,9 +40,16 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
 
     """
     data, attrs = from_file(find_resource(data_file_path), return_attrs=True)
-    basename, ext = splitext(basename(data_file_path))
+    bname, ext = splitext(basename(data_file_path))
     assert ext.lstrip('.') in HDF5_EXTS
-    outpath = join(outdir, '{}_with_fluxes{}'.format(basename, ext))
+
+    if label is None:
+        label = ''
+    else:
+        assert isinstance(label, basestring)
+        label = '_' + label
+
+    outpath = join(outdir, '{}__with_fluxes{}{}'.format(bname, label, ext))
 
     mkdir(outdir, warn=False)
 
@@ -85,6 +92,7 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
                 # TODO: if need to calculate neutrino weights here
 
     to_file(data, outpath, attrs=attrs, overwrite=overwrite)
+    logging.info('--> Wrote file including fluxes to "%s"', outpath)
 
 
 def main():
@@ -106,14 +114,15 @@ def main():
         help='Directory to save the output figures.'
     )
     parser.add_argument(
-        '-v', action='count', default=0,
-        help='set verbosity level'
+        '-v', action='count', default=1,
+        help='increase verbosity level _beyond_ INFO level'
     )
     args = parser.parse_args()
 
     set_verbosity(args.v)
 
     flux_table = load_2d_table(args.flux_file)
+    flux_file_bname = basename(args.flux_file)
 
     input_paths = []
     for input_path in args.input:
@@ -139,26 +148,31 @@ def main():
             logging.debug('Path "%s" is a directory, skipping', file_path)
             continue
 
-        basename = basename(firstpart)
-        if basename in basenames:
+        bname = basename(firstpart)
+        if bname in basenames:
             raise ValueError(
                 'Found files with duplicate basename "%s" (despite files'
                 ' having different paths); resolve the ambiguous names and'
                 ' re-run. Offending files are:\n  "%s"\n  "%s"'
-                % (basename,
-                   paths_to_process[basenames.index(basename)],
+                % (bname,
+                   paths_to_process[basenames.index(bname)],
                    input_path)
             )
 
-        basenames.append(basename)
+        basenames.append(bname)
         paths_to_process.append(input_path)
 
     logging.info('Will process %d input file(s)...', len(paths_to_process))
 
     for filepath in paths_to_process:
         logging.info('Working on input file "%s"', filepath)
-        add_fluxes_to_file(data_file_path=filepath, flux_table=flux_table,
-                           neutrino_weight_name='neutrino', outdir=args.outdir)
+        add_fluxes_to_file(
+            data_file_path=filepath,
+            flux_table=flux_table,
+            neutrino_weight_name='neutrino',
+            outdir=args.outdir,
+            label=flux_file_bname
+        )
 
 
 if __name__ == '__main__':
