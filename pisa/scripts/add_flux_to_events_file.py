@@ -59,8 +59,8 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
             true_e = int_node['true_energy']
             true_cz = int_node['true_coszen']
 
-            # NOTE: The opposite-flavor fluxes are used only in the
-            #       nu_nubar_ratio systematic
+            # NOTE: The opposite-flavor fluxes are currently only used for the
+            #       nu_nubar_ratio systematic (Nov 2017)
 
             for opposite in (False, True):
                 if not opposite:
@@ -84,8 +84,6 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
                 basekey = neutrino_weight_name + oppo_label
                 int_node[basekey + '_nue_flux'] = nue_flux
                 int_node[basekey + '_numu_flux'] = numu_flux
-
-                # TODO: if need to calculate neutrino weights here
 
     to_file(data, outpath, attrs=attrs, overwrite=overwrite)
     logging.info('--> Wrote file including fluxes to "%s"', outpath)
