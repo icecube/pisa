@@ -1,7 +1,7 @@
 # PISA
 [Introduction](pisa/README.md) |
 [Installation](INSTALL.md) |
-[Documentation](http://localhost:8888/lab?token=81ab8dd3c5a76ad13d4bed2563605a5471409aea8787638b) |
+[Documentation](http://icecube.wisc.edu/%7Epeller/pisa_docs/index.html) |
 [Terminology](pisa/glossary.md) |
 [License](LICENSE) |
 [Contributors](CONTRIBUTORS.md) |
