@@ -14,7 +14,7 @@ from scipy.special import gammaln
 from uncertainties import unumpy as unp
 
 from pisa import FTYPE
-from pisa.utils.barlow import likelihoods
+from pisa.utils.barlow import Likelihoods
 from pisa.utils.comparisons import FTYPE_PREC, isbarenumeric
 from pisa.utils.log import logging
 
@@ -354,16 +354,20 @@ def barlow_llh(actual_values, expected_values):
     barlow_llh
 
     """
-    l = likelihoods()
+    likelihoods = Likelihoods()
     actual_values = unp.nominal_values(actual_values).ravel()
     sigmas = [unp.std_devs(ev.ravel()) for ev in expected_values]
     expected_values = [unp.nominal_values(ev).ravel() for ev in expected_values]
-    uws = [(ev/s)**2 for ev, s in zip(expected_values, sigmas)]
-    ws = [s**2/ev for ev, s in zip(expected_values, sigmas)]
-    l.SetData(actual_values)
-    l.SetMC(np.array(ws))
-    l.SetUnweighted(np.array(uws))
-    return -l.GetLLH('barlow')
+    unweighted = np.array(
+        [(ev/s)**2 for ev, s in zip(expected_values, sigmas)]
+    )
+    weights = np.array(
+        [s**2/ev for ev, s in zip(expected_values, sigmas)]
+    )
+    likelihoods.set_data(actual_values)
+    likelihoods.set_mc(weights)
+    likelihoods.set_unweighted(unweighted)
+    return -likelihoods.get_llh(llh_type='barlow')
 
 
 def mod_chi2(actual_values, expected_values):
