@@ -807,6 +807,14 @@ class PlotterNutau(Plotter):
             fileio.mkdir(outdir)
         plot_name = outdir+'/'+file_name
         plt.savefig(plot_name+'.pdf')
+        plt.savefig(plot_name+'.png')
+        plt.clf()
+        if muon_arrays is not None and mc_arrays is not None:
+            return [mc_param_all, mc_weight_all, mc_sumw2_all, muon_param, muon_arrays['weight'], x_edges]
+        if muon_arrays is None and mc_arrays is not None:
+            return [mc_param_all, mc_weight_all, mc_sumw2_all, [], [], x_edges]
+        if muon_arrays is not None and mc_arrays is None:
+            return [[], [], [], muon_param, muon_arrays['weight'], x_edges]
        # if (data_arrays is not None) and self.ratio:
        #     plt.figure()
        #     plt.hist(x_array, weights=chi2_array, bins=x_edges, histtype='step', lw=1.5, color='r', **kwargs)
