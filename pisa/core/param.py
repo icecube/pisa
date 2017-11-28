@@ -1,9 +1,3 @@
-#
-# author: J.L. Lanfranchi
-#         jll1062+pisa@phys.psu.edu
-#
-# date:   March 22, 2016
-#
 """
 Define Param, ParamSet, and ParamSelector classes for handling parameters, sets
 of parameters, and being able to discretely switch between sets of parameter
@@ -34,6 +28,8 @@ from pisa.utils.stats import ALL_METRICS, CHI2_METRICS, LLH_METRICS
 
 __all__ = ['Param', 'ParamSet', 'ParamSelector',
            'test_Param', 'test_ParamSet', 'test_ParamSelector']
+
+__author__ = 'J.L. Lanfranchi'
 
 
 # TODO: Make property "frozen" or "read_only" so params in param set e.g.
@@ -230,13 +226,14 @@ class Param(object):
                 val = val * ureg.dimensionless
             # NOTE: intentionally using type() instead of isinstance() here.
             # Not sure if this could be converted to isinstance(), though.
-            assert type(val) == type(self.value), \
-                    'Value "%s" has type %s but must be of type %s.' \
-                    %(val, type(val), type(self.value))
+            if not type(val) == type(self.value): # pylint: disable=unidiomatic-typecheck
+                raise TypeError('Value "%s" has type %s but must be of type'
+                                ' %s.' % (val, type(val), type(self.value)))
             if isinstance(self.value, ureg.Quantity):
-                assert self.dimensionality == val.dimensionality, \
-                    'Value "%s" units "%s" incompatible with units "%s".' \
-                    %(val, val.units, self.units)
+                if self.dimensionality != val.dimensionality:
+                    raise ValueError('Value "%s" units "%s" incompatible with'
+                                     ' units "%s".'
+                                     % (val, val.units, self.units))
 
             new_vals.append(val)
         self._range = new_vals
@@ -351,7 +348,7 @@ class Param(object):
         else:
             raise ValueError('Unrecognized `metric` "%s"' %str(metric))
 
-    def to(self, units):
+    def to(self, units): # pylint: disable=invalid-name
         """Return an equivalent copy of param but in units of `units`.
 
         Parameters

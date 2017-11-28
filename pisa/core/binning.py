@@ -1,8 +1,3 @@
-# author : J.L. Lanfranchi
-#          jll1062+pisa@phys.psu.edu
-#
-# date   : March 25, 2016
-
 """
 Class to carry information about 2D binning in energy and cosine-zenity, and to
 provide basic operations with the binning.
@@ -43,6 +38,8 @@ __all__ = ['NAME_FIXES', 'NAME_SEPCHARS', 'NAME_FIXES_REGEXES',
            'basename', '_new_obj',
            'OneDimBinning', 'MultiDimBinning',
            'test_OneDimBinning', 'test_MultiDimBinning']
+
+__author__ = 'J.L. Lanfranchi'
 
 
 NAME_FIXES = ('true', 'truth', 'reco', 'reconstructed')

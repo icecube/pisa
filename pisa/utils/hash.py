@@ -1,6 +1,5 @@
 """
 Utilities for hashing objects.
-
 """
 
 
@@ -13,7 +12,6 @@ import hashlib
 import struct
 from collections import Iterable
 
-from backports.configparser import RawConfigParser
 import numpy as np
 
 from pisa.utils.log import logging, set_verbosity
@@ -24,6 +22,8 @@ __all__ = ['FAST_HASH_FILESIZE_BYTES', 'FAST_HASH_NDARRAY_ELEMENTS',
            'FAST_HASH_STR_BYTES',
            'hash_obj', 'hash_file',
            'test_hash_obj', 'test_hash_file']
+
+__author__ = 'J.L. Lanfranchi'
 
 
 FAST_HASH_FILESIZE_BYTES = int(1e4)
@@ -86,7 +86,7 @@ def hash_obj(obj, hash_to='int', full_hash=True):
         return obj.hash
 
     # Handle numpy arrays and matrices specially
-    if isinstance(obj, np.ndarray) or isinstance(obj, np.matrix):
+    if isinstance(obj, (np.ndarray, np.matrix)):
         if full_hash:
             return hash_obj(obj.tostring(), **pass_on_kw)
         if isinstance(obj, np.matrix):
@@ -149,6 +149,7 @@ def hash_file(fname, hash_to=None, full_hash=True):
 
 
 def test_hash_obj():
+    """Unit tests for `hash_obj` function"""
     assert hash_obj('x') == 3783177783470249117
     assert hash_obj('x', full_hash=False) == 3783177783470249117
     assert hash_obj('x', hash_to='hex') == '9dd4e461268c8034'
@@ -183,6 +184,7 @@ def test_hash_obj():
 
 # TODO: test_hash_file function requires a "standard" file to test on
 def test_hash_file():
+    """Unit tests for `hash_file` function"""
     file_hash = hash_file('../utils/hash.py')
     logging.debug(file_hash)
     file_hash = hash_file('../utils/hash.py', full_hash=False)

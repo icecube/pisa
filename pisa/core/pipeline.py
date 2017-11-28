@@ -1,10 +1,7 @@
 #! /usr/bin/env python
-# authors: J.Lanfranchi/P.Eller
-# date:   March 20, 2016
 """
 Implementation of the Pipeline object, and a simple script to instantiate and
 run a pipeline (the outputs of which can be plotted and stored to disk).
-
 """
 
 
@@ -36,6 +33,8 @@ from pisa.utils.profiler import profile
 
 
 __all__ = ['Pipeline', 'test_Pipeline', 'parse_args', 'main']
+
+__author__ = 'J.L. Lanfranchi, P. Eller'
 
 
 # TODO: should we check that the output binning of a previous stage produces
@@ -258,7 +257,7 @@ class Pipeline(object):
                           stage.stage_name, stage.service_name)
             try:
                 logging.trace('>>> BEGIN: get_outputs')
-                outputs = stage.get_outputs(inputs=inputs)
+                outputs = stage.get_outputs(inputs=inputs) # pylint: disable=redefined-outer-name
                 logging.trace('>>> END  : get_outputs')
             except:
                 logging.error('Error occurred computing outputs in stage %s /'
@@ -399,7 +398,7 @@ def test_Pipeline():
 
     # Instantiate with two pipelines: first has both nh/ih and iron/pyrolite
     # param selectors, while the second only has nh/ih param selectors.
-    pipeline = Pipeline('tests/settings/test_Pipeline.cfg')
+    pipeline = Pipeline('tests/settings/test_Pipeline.cfg') # pylint: disable=redefined-outer-name
 
     current_mat = 'iron'
     current_hier = 'nh'
@@ -582,7 +581,7 @@ def main(return_outputs=False):
                 raise
 
     # Instantiate the pipeline
-    pipeline = Pipeline(bcp)
+    pipeline = Pipeline(bcp) # pylint: disable=redefined-outer-name
 
     if args.select is not None:
         pipeline.select_params(args.select, error_on_missing=True)
@@ -595,7 +594,7 @@ def main(return_outputs=False):
             pass
         if isinstance(stop_idx, basestring):
             stop_idx = pipeline.index(stop_idx)
-        outputs = pipeline.get_outputs(idx=stop_idx)
+        outputs = pipeline.get_outputs(idx=stop_idx) # pylint: disable=redefined-outer-name
         if stop_idx is not None:
             stop_idx += 1
         indices = slice(0, stop_idx)
@@ -651,8 +650,7 @@ def main(return_outputs=False):
             # (one workaround is to turn on "memcache_deepcopy")
             # TODO(shivesh): intermediate stages have no output binning
             if stage.output_binning is None:
-                logging.debug('Skipping plot of intermediate stage '
-                              '{0}'.format(stage))
+                logging.debug('Skipping plot of intermediate stage %s', stage)
                 continue
             outputs = stage.outputs.histogram_set(
                 binning=stage.output_binning,

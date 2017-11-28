@@ -1,9 +1,3 @@
-#
-# author: J.L. Lanfranchi
-#         jll1062+pisa@phys.psu.edu
-#
-# date:   March 22, 2016
-#
 """
 Prior class for use in pisa.core.Param objects
 """
@@ -26,8 +20,10 @@ from pisa.utils.fileio import from_file
 from pisa.utils.log import logging, set_verbosity
 
 
-__all__ = ['Prior', 'plot_prior', 'get_prior_bounds',
-           'test_Prior', 'test_Prior_plot']
+__all__ = ['Prior', 'plot_prior', 'get_prior_bounds', 'test_Prior',
+           'test_Prior_plot']
+
+__author__ = 'J.L. Lanfranchi'
 
 
 # TODO: uniform prior should take a constant, such that e.g. discrete parameter

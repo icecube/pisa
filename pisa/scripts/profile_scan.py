@@ -1,30 +1,101 @@
 #!/usr/bin/env python
 
-# authors: T. Ehrhardt
-# date:    October 14, 2016
-
 """
-Profile LLH/Chisquare Analysis
-
+Profile scan
 """
 
+
+from __future__ import absolute_import
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from copy import deepcopy
+from os.path import expanduser, expandvars, isfile
 
-import numpy as np
-
-from pisa import ureg, Q_
 from pisa.analysis.analysis import Analysis
 from pisa.core.distribution_maker import DistributionMaker
-from pisa.utils.config_parser import parse_pipeline_config
 from pisa.utils.fileio import from_file, to_file
 from pisa.utils.log import logging, set_verbosity
 
 
-if __name__ == '__main__':
+__all__ = ['profile_scan', 'parse_args', 'main']
+__author__ = 'T. Ehrhardt'
+
+
+def profile_scan(data_settings, template_settings, param_names, steps,
+                 only_points, no_outer, data_param_selections,
+                 hypo_param_selections, profile, outfile, minimizer_settings,
+                 metric, debug_mode):
+    """Perform a profile scan.
+
+    Parameters
+    ----------
+    data_settings
+    template_settings
+    param_names
+    steps
+    only_points
+    no_outer
+    data_param_selections
+    hypo_param_selections
+    profile
+    outfile
+    minimizer_settings
+    metric
+    debug_mode
+
+    Returns
+    -------
+    results
+    analysis
+
+    """
+    outfile = expanduser(expandvars(outfile))
+    if isfile(outfile):
+        raise IOError('`outfile` "{}" already exists!'.format(outfile))
+
+    minimizer_settings = from_file(minimizer_settings)
+
+    hypo_maker = DistributionMaker(template_settings)
+
+    if data_settings is None:
+        if (data_param_selections is None
+                or data_param_selections == hypo_param_selections):
+            data_maker = hypo_maker
+        else:
+            data_maker = deepcopy(hypo_maker)
+            data_maker.select_params(data_param_selections)
+    else:
+        data_maker = DistributionMaker(data_settings)
+        data_maker.select_params(data_param_selections)
+
+    data_dist = data_maker.get_outputs(return_sum=True)
+
+    analysis = Analysis()
+    results = analysis.scan(
+        data_dist=data_dist,
+        hypo_maker=hypo_maker,
+        hypo_param_selections=hypo_param_selections,
+        metric=metric,
+        param_names=param_names,
+        steps=steps,
+        only_points=only_points,
+        outer=not no_outer,
+        profile=profile,
+        minimizer_settings=minimizer_settings,
+        outfile=outfile,
+        debug_mode=debug_mode
+    )
+    to_file(results, outfile)
+    logging.info("Done.")
+
+    return results, analysis
+
+
+def parse_args():
+    """Parse command line arguments"""
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        '-d', '--data-settings', type=str,
+        '--data-settings', type=str,
         metavar='CONFIGFILE', default=None,
         help='''Settings for the generation of "data" distributions; repeat
         this argument to specify multiple pipelines. If omitted, the same
@@ -32,7 +103,7 @@ if __name__ == '__main__':
         distributions.'''
     )
     parser.add_argument(
-        '-t', '--template-settings',
+        '--template-settings',
         metavar='CONFIGFILE', required=True, action='append',
         help='''Settings for generating template distributions; repeat
         this option to define multiple pipelines.'''
@@ -59,7 +130,7 @@ if __name__ == '__main__':
         help='''Do not scan points as outer product of inner sequences.'''
     )
     parser.add_argument(
-        '--data-param-selection', type=str, required=False,
+        '--data-param-selections', type=str, required=False,
         help='''Selection of params to use in order to generate the data
         distributions.'''
     )
@@ -74,12 +145,12 @@ if __name__ == '__main__':
         parameters.'''
     )
     parser.add_argument(
-        '-o', '--outfile', metavar='FILE',
-        type=str, action='store', default='out.json',
+        '--outfile', metavar='FILE',
+        type=str, action='store', default='profile_scan.json',
         help='file to store the output'
     )
     parser.add_argument(
-        '-m', '--minimizer-settings', type=str,
+        '--minimizer-settings', type=str,
         metavar='JSONFILE', required=True,
         help='''Settings related to the minimizer used in the LLR analysis.'''
     )
@@ -99,26 +170,16 @@ if __name__ == '__main__':
         help='set verbosity level'
     )
     args = parser.parse_args()
+    kwargs = vars(args)
+    set_verbosity(kwargs.pop('v'))
 
-    set_verbosity(args.v)
+    return kwargs
 
-    hypo_maker = DistributionMaker(args.template_settings)
-    data_maker = hypo_maker if args.data_settings is None else \
-                                        DistributionMaker(args.data_settings)
 
-    data_maker.select_params(args.data_param_selection)
-    data = data_maker.get_outputs(return_sum=True)
+def main():
+    """Run profile_scan with args from command line"""
+    return profile_scan(**parse_args())
 
-    analysis = Analysis()
 
-    minimizer_settings = from_file(args.minimizer_settings)
-
-    res = analysis.scan(data_dist=data, hypo_maker=hypo_maker,
-                        hypo_param_selections=args.hypo_param_selections,
-                        metric=args.metric, param_names=args.param_names,
-                        steps=args.steps, only_points=args.only_points,
-                        outer=not args.no_outer, profile=args.profile,
-                        minimizer_settings=minimizer_settings,
-                        outfile=args.outfile, debug_mode=args.debug_mode)
-    to_file(res, args.outfile)
-    logging.info("Done.")
+if __name__ == '__main__':
+    results, analysis = main()

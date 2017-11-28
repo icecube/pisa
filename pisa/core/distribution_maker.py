@@ -1,6 +1,4 @@
 #! /usr/bin/env python
-# authors: J.Lanfranchi/P.Eller
-# date:   March 20, 2016
 """
 DistributionMaker class definition and a simple script to generate, save, and
 plot a distribution from pipeline config file(s).
@@ -29,6 +27,8 @@ from pisa.utils.random_numbers import get_random_state
 
 
 __all__ = ['DistributionMaker', 'test_DistributionMaker', 'parse_args', 'main']
+
+__author__ = 'J.L. Lanfranchi, P. Eller'
 
 
 class DistributionMaker(object):
@@ -59,7 +59,7 @@ class DistributionMaker(object):
 
     """
     def __init__(self, pipelines, label=None):
-        self.label = None
+        self.label = label
         self._source_code_hash = None
 
         self._pipelines = []
@@ -98,7 +98,7 @@ class DistributionMaker(object):
         MapSet if `return_sum=True` or list of MapSets if `return_sum=False`
 
         """
-        outputs = [pipeline.get_outputs(**kwargs) for pipeline in self]
+        outputs = [pipeline.get_outputs(**kwargs) for pipeline in self] # pylint: disable=redefined-outer-name
         if return_sum:
             if len(outputs) > 1:
                 outputs = reduce(lambda x, y: sum(x) + sum(y), outputs)
@@ -223,7 +223,7 @@ class DistributionMaker(object):
         for pipeline in self:
             for name, rvalue in izip(names, rvalues):
                 if name in pipeline.params.free.names:
-                    pipeline.params[name]._rescaled_value = rvalue
+                    pipeline.params[name]._rescaled_value = rvalue # pylint: disable=protected-access
                 elif name in pipeline.params.names:
                     raise AttributeError(
                         'Trying to set value for "%s", a parameter that is'
@@ -258,8 +258,6 @@ def test_DistributionMaker():
     current_hier = 'nh'
 
     for new_hier, new_mat in product(hierarchies, materials):
-        new_YeO = YeO[new_mat]
-
         assert dm.param_selections == sorted([current_hier, current_mat]), \
                 str(dm.params.param_selections)
         assert dm.params.theta23.value == t23[current_hier], \
@@ -361,11 +359,11 @@ def main(return_outputs=False):
     if args.png:
         plot_formats.append('png')
 
-    distribution_maker = DistributionMaker(pipelines=args.pipeline)
+    distribution_maker = DistributionMaker(pipelines=args.pipeline) # pylint: disable=redefined-outer-name
     if args.select is not None:
         distribution_maker.select_params(args.select)
 
-    outputs = distribution_maker.get_outputs(return_sum=args.return_sum)
+    outputs = distribution_maker.get_outputs(return_sum=args.return_sum) # pylint: disable=redefined-outer-name
     if args.outdir:
         # TODO: unique filename: append hash (or hash per pipeline config)
         fname = 'distribution_maker_outputs.json.bz2'
@@ -390,4 +388,4 @@ def main(return_outputs=False):
 
 
 if __name__ == '__main__':
-    distribution_maker, outputs = main(return_outputs=True)
+    distribution_maker, outputs = main(return_outputs=True) # pylint: disable=invalid-name

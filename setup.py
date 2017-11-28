@@ -180,13 +180,6 @@ def do_setup():
 
         'events/*.hdf5',
         'events/*.json*',
-        'events/deepcore_ic86/MSU/1XXX/Joined/*.hdf5',
-        'events/deepcore_ic86/MSU/1XXX/UnJoined/*.hdf5',
-        'events/deepcore_ic86/MSU/1XXXX/Joined/*.hdf5',
-        'events/deepcore_ic86/MSU/1XXXX/UnJoined/*.hdf5',
-        'events/deepcore_ic86/MSU/icc/*.hdf5',
-        'events/pingu_v36/*.hdf5',
-        'events/pingu_v39/*.hdf5',
 
         'flux/*.d',
         'osc/*.hdf5',
@@ -244,12 +237,12 @@ def do_setup():
     setup(
         name='pisa',
         version=versioneer.get_version(),
-        description='PINGU Simulation and Analysis',
-        author='The IceCube/PINGU Collaboration',
+        description='Tools for analyzing and drawing statistical conclusions from experimental data',
+        author='The IceCube Collaboration',
         author_email='jll1062+pisa@phys.psu.edu',
-        url='http://github.com/WIPACrepo/pisa',
+        url='http://github.com/icecubeopensource/pisa',
         cmdclass=cmdclasses,
-        python_requires='>=2.7',
+        python_requires='==2.7',
         setup_requires=[
             'pip>=1.8',
             'setuptools>18.5', # versioneer requires >18.5
@@ -294,25 +287,24 @@ def do_setup():
         zip_safe=False,
         entry_points={
             'console_scripts': [
-                # Scripts in analysis dir
-                'hypo_testing.py = pisa.analysis.hypo_testing:main',
-                'hypo_testing_postprocess.py = pisa.analysis.hypo_testing_postprocess:main',
-                'profile_llh_analysis.py = pisa.analysis.profile_llh_analysis:main',
-                'profile_llh_postprocess.py = pisa.analysis.profile_llh_postprocess:main',
-
                 # Scripts in core dir
-                'distribution_maker.py = pisa.core.distribution_maker:main',
-                'pipeline.py = pisa.core.pipeline:main',
+                'pisa-distribution_maker = pisa.core.distribution_maker:main',
+                'pisa-pipeline = pisa.core.pipeline:main',
 
                 # Scripts in scripts dir
-                'add_flux_to_events_file.py = pisa.scripts.add_flux_to_events_file:main',
-                'compare.py = pisa.scripts.compare:main',
-                'convert_config_format.py = pisa.scripts.convert_config_format:main',
-                'fit_discrete_sys.py = pisa.scripts.fit_discrete_sys:main',
-                'make_asymmetry_plots.py = pisa.scripts.make_asymmetry_plots:main',
-                'make_events_file.py = pisa.scripts.make_events_file:main',
-                'make_nufit_theta23_spline_priors.py = pisa.scripts.make_nufit_theta23_spline_priors:main',
-                'make_toy_events.py = pisa.scripts.make_toy_events:main'
+                'pisa-add_flux_to_events_file = pisa.scripts.add_flux_to_events_file:main',
+                'pisa-analysis = pisa.scripts.analysis:main',
+                'pisa-postproc = pisa.scripts.analysis_postprocess:main',
+                'pisa-compare = pisa.scripts.compare:main',
+                'pisa-convert_config_format = pisa.scripts.convert_config_format:main',
+                'pisa-fit_discrete_sys = pisa.scripts.fit_discrete_sys:main',
+                'pisa-make_asymmetry_plots = pisa.scripts.make_asymmetry_plots:main',
+                'pisa-make_events_file = pisa.scripts.make_events_file:main',
+                'pisa-make_nufit_theta23_spline_priors = pisa.scripts.make_nufit_theta23_spline_priors:main',
+                'pisa-make_systematic_variation_plots = pisa.scripts.make_systematic_variation_plots:main',
+                'pisa-make_toy_events = pisa.scripts.make_toy_events:main',
+                'pisa-profile_scan = pisa.scripts.profile_scan:main',
+                'pisa-scan_allsyst = pisa.scripts.scan_allsyst:main',
             ]
         }
     )
