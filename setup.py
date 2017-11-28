@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-# authors: Sebastian Boeser, J.L. Lanfranchi, P. Eller, M. Hieronymus
+# pylint: disable=line-too-long
+
 """
 Allows for PISA installation. Tested with `pip`. Use the environment variable
 `CC` to pass a custom compiler to the instller. (GCC and Clang should both
@@ -8,8 +9,7 @@ versions of the latter).
 
 Checkout the source code tree in the current directory via
 
-    $ git clone https://github.com/jllanfranchi/pisa.git --branch cake \
-        --single-branch
+    $ git clone https://github.com/icecubeopensource/pisa.git
 
 and install basic PISA package (in editable mode via -e flag) via
 
@@ -21,9 +21,7 @@ or include optional dependencies by specifying them in brackets
 
 If you wish to upgrade PISA and/or its dependencies:
 
-    $ pip install ./pisa[cuda,numba,develop] -r ./pisa/requirements.txt \
-        --upgrade
-
+    $ pip install ./pisa[cuda,numba,develop] -r ./pisa/requirements.txt --upgrade
 """
 
 
@@ -39,6 +37,12 @@ import tempfile
 from setuptools.command.build_ext import build_ext
 from setuptools import setup, Extension, find_packages
 import versioneer
+
+
+__all__ = ['setup_cc', 'check_cuda', 'OMP_TEST_PROGRAM', 'check_openmp',
+           'CustomBuild', 'CustomBuildExt', 'do_setup']
+
+__author__ = 'S. Boeser, J.L. Lanfranchi, P. Eller, M. Hieronymus'
 
 
 # TODO: Compile CUDA kernel(s) here (since no need for dynamic install yet...
@@ -60,7 +64,7 @@ def setup_cc():
 def check_cuda():
     """pycuda is considered to be present if it can be imported"""
     try:
-        import pycuda.driver
+        import pycuda.driver # pylint: disable=unused-variable
     except Exception:
         cuda = False
     else:
@@ -210,6 +214,16 @@ def do_setup():
         'tests/settings/*.cfg'
     ]
 
+    package_data['pisa.utils'] = [
+        '*.h',
+        '*.pyx'
+    ]
+
+    package_data['pisa.stages.osc.prob3cuda'] = [
+        '*.h',
+        '*.cu'
+    ]
+
     extra_compile_args = ['-O3', '-ffast-math', '-msse3']
     extra_link_args = ['-ffast-math', '-msse2']
     if has_openmp:
@@ -238,6 +252,7 @@ def do_setup():
         name='pisa',
         version=versioneer.get_version(),
         description='Tools for analyzing and drawing statistical conclusions from experimental data',
+        license='Apache 2.0',
         author='The IceCube Collaboration',
         author_email='jll1062+pisa@phys.psu.edu',
         url='http://github.com/icecubeopensource/pisa',
