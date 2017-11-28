@@ -1,14 +1,12 @@
-# authors: P.Eller (pde3@psu.edu)
-# date:   September 2016
 """
 Histogramming on the GPU
-
 """
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 import os
+from pkg_resources import resource_filename
 
 import numpy as np
 from pycuda.compiler import SourceModule
@@ -16,10 +14,11 @@ import pycuda.driver as cuda
 
 from pisa import FTYPE, C_FTYPE, C_PRECISION_DEF
 from pisa.utils.log import logging, set_verbosity
-from pisa.utils.resources import find_resource
 
 
 __all__ = ['GPUHist', 'test_GPUHist']
+
+__author__ = 'P. Eller'
 
 
 ITYPE = np.int64
@@ -213,7 +212,7 @@ class GPUHist(object):
         )
 
         include_dirs = [
-            os.path.abspath(find_resource('../utils'))
+            os.path.abspath(resource_filename('pisa', 'utils'))
         ]
 
         module = SourceModule(kernel_code, include_dirs=include_dirs,
@@ -298,7 +297,7 @@ def test_GPUHist():
     """Unit tests (and timings) for GPUHist class"""
     from time import time
     from itertools import product
-    import pycuda.autoinit
+    import pycuda.autoinit # pylint: disable=unused-variable
 
     ftypes = [FTYPE]
     nexps = [0, 1, 2, 3, 4, 5, 6, 7]
@@ -306,8 +305,8 @@ def test_GPUHist():
     ft = [False, True]
     for ftype, weight, nexp, n_bins in product(ftypes, ft, nexps, nbinses):
         n_events = ITYPE(10**nexp)
-        logging.debug('ftype=%s, weight=%-5s, bins=%2sx2, n_events=10^%s'
-                      %(ftype.__name__, weight, n_bins, nexp))
+        logging.debug('ftype=%s, weight=%-5s, bins=%2sx2, n_events=10^%s',
+                      ftype.__name__, weight, n_bins, nexp)
 
         if ftype == np.float32:
             rtol = 1e-5
@@ -354,7 +353,7 @@ def test_GPUHist():
         cuda.memcpy_htod(d_cz, cz)
         cuda.memcpy_htod(d_pid, pid)
         cuda.memcpy_htod(d_w, w)
-        logging.debug('time to copy data: %s' % (time()-t0))
+        logging.debug('time to copy data: %s', time()-t0)
 
         bin_edges_e = np.logspace(0, 2, n_bins+1, dtype=ftype)
         bin_edges_cz = np.linspace(-1, 1, n_bins+1, dtype=ftype)
@@ -369,7 +368,7 @@ def test_GPUHist():
             hist2d = histogrammer.get_hist(
                 n_events=n_events, d_x=d_e, d_y=d_cz, d_w=d_w
             )
-            logging.debug('gpu 2d hist took %s' % (time()-t0))
+            logging.debug('gpu 2d hist took %s', time()-t0)
 
         t0 = time()
         np_hist2d, _, _ = np.histogram2d(
@@ -377,21 +376,19 @@ def test_GPUHist():
             bins=(bin_edges_e, bin_edges_cz),
             weights=w
         )
-        logging.debug('np  2d hist took %s' % (time()-t0))
+        logging.debug('np  2d hist took %s', time()-t0)
 
         with np.errstate(divide='ignore', invalid='ignore'):
             fract_err = (hist2d / np_hist2d) - 1
             logging.debug(
                 '2D hist ftype=%s, weighted=%s, n_events=%s: max abs fract'
-                ' err=%s, mean fract err=%s, mean abs fract err=%s'
-                %(ftype, weight, n_events,
-                  np.nanmax(np.abs(fract_err)),
-                  np.nanmean(fract_err),
-                  np.nanmean(np.abs(fract_err)))
+                ' err=%s, mean fract err=%s, mean abs fract err=%s',
+                ftype, weight, n_events, np.nanmax(np.abs(fract_err)),
+                np.nanmean(fract_err), np.nanmean(np.abs(fract_err))
             )
             if not np.allclose(hist2d, np_hist2d, atol=0, rtol=rtol):
-                logging.error('Numpy hist:\n%s' % repr(np_hist2d))
-                logging.error('GPUHist hist:\n%s' % repr(hist2d))
+                logging.error('Numpy hist:\n%s', repr(np_hist2d))
+                logging.error('GPUHist hist:\n%s', repr(hist2d))
                 raise ValueError(
                     '2D histogram ftype=%s, weighted=%s, n_events=%s worst'
                     ' fractional error is %s'
@@ -401,8 +398,8 @@ def test_GPUHist():
 
         del histogrammer
 
-        logging.debug('ftype=%s, weight=%-5s, bins=%2sx%2sx2, n_events=10^%s'
-                      %(ftype.__name__, weight, n_bins, n_bins, nexp))
+        logging.debug('ftype=%s, weight=%-5s, bins=%2sx%2sx2, n_events=10^%s',
+                      ftype.__name__, weight, n_bins, n_bins, nexp)
 
         histogrammer = GPUHist(
             bin_edges_x=bin_edges_e,
@@ -414,7 +411,7 @@ def test_GPUHist():
             hist3d = histogrammer.get_hist(
                 n_events=n_events, d_x=d_e, d_y=d_cz, d_w=d_w, d_z=d_pid
             )
-            logging.debug('gpu 3d hist took %s' % (time()-t0))
+            logging.debug('gpu 3d hist took %s', time()-t0)
 
         t0 = time()
         np_hist3d, _ = np.histogramdd(
@@ -422,21 +419,19 @@ def test_GPUHist():
             bins=(bin_edges_e, bin_edges_cz, bin_edges_pid),
             weights=w
         )
-        logging.debug('np  3d hist took %s' % (time()-t0))
+        logging.debug('np  3d hist took %s', time()-t0)
 
         with np.errstate(divide='ignore', invalid='ignore'):
             fract_err = (hist3d / np_hist3d) - 1
             logging.debug(
                 '3D hist ftype=%s, weighted=%s, n_events=%s: max abs fract'
-                ' err=%s, mean fract err=%s, mean abs fract err=%s'
-                %(ftype, weight, n_events,
-                  np.nanmax(np.abs(fract_err)),
-                  np.nanmean(fract_err),
-                  np.nanmean(np.abs(fract_err)))
+                ' err=%s, mean fract err=%s, mean abs fract err=%s',
+                ftype, weight, n_events, np.nanmax(np.abs(fract_err)),
+                np.nanmean(fract_err), np.nanmean(np.abs(fract_err))
             )
             if not np.allclose(hist3d, np_hist3d, atol=0, rtol=rtol):
-                logging.error('Numpy hist:\n%s' % repr(np_hist3d))
-                logging.error('GPUHist hist:\n%s' % repr(hist3d))
+                logging.error('Numpy hist:\n%s', repr(np_hist3d))
+                logging.error('GPUHist hist:\n%s', repr(hist3d))
                 raise ValueError(
                     '3D histogram ftype=%s, weighted=%s, n_events=%s worst'
                     ' fractional error is %s'

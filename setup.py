@@ -51,8 +51,10 @@ __author__ = 'S. Boeser, J.L. Lanfranchi, P. Eller, M. Hieronymus'
 
 # TODO: address some/all of the following in the `setup()` method?
 # * package_data
-# * include_package_data
-# * eager_resources
+# * exclude_package_data : dict
+# * include_package_data : bool; include everything in source control
+# * eager_resources : list of str paths (using '/' notation relative to source root) unzip these together if any one is requested (for C
+#   extensions, etc.)
 
 
 def setup_cc():
@@ -154,10 +156,6 @@ def do_setup():
 
     # Collect (build-able) external modules and package_data
     ext_modules = []
-    package_data = {}
-
-    # Include documentation files wherever they may be
-    package_data[''] = ['*.md', '*.rst']
 
     # Prob3 oscillation code (pure C++, no CUDA)
     prob3cpu_module = Extension(
@@ -177,7 +175,13 @@ def do_setup():
     )
     ext_modules.append(prob3cpu_module)
 
-    package_data['pisa.resources'] = [
+    # Include these things in source (and binary?) distributions
+    package_data = {}
+
+    # Include documentation and license files wherever they may be
+    package_data[''] = ['*.md', '*.rst', 'LICENSE*']
+
+    package_data['pisa_example_resources'] = [
         'aeff/*.json*',
         'cross_sections/*json*',
         'discr_sys/*.json*',
@@ -202,16 +206,11 @@ def do_setup():
         'settings/osc/*.md',
         'settings/pipeline/*.cfg',
         'settings/pipeline/*.md',
+    ]
 
-        'tests/data/aeff/*.json*',
-        'tests/data/flux/*.json*',
-        'tests/data/full/*.json*',
-        'tests/data/osc/*.json*',
-        'tests/data/pid/*.json*',
-        'tests/data/reco/*.json*',
-        'tests/data/xsec/*.root',
-        'tests/data/oscfit/*.json*',
-        'tests/settings/*.cfg'
+    package_data['pisa_tests'] = [
+        '*.py',
+        '*.sh'
     ]
 
     package_data['pisa.utils'] = [
@@ -297,8 +296,9 @@ def do_setup():
         packages=find_packages(),
         ext_modules=ext_modules,
         package_data=package_data,
-        # Cannot be compressed due to c, pyx, and cu source files that need to
-        # be compiled and are inaccessible in zip
+        # Cannot be compressed due to c, pyx, and cuda source files/headers
+        # that need to be compiled at run-time but are inaccessible in a zip
+        # (I think...)
         zip_safe=False,
         entry_points={
             'console_scripts': [

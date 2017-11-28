@@ -1,10 +1,6 @@
 #! /usr/bin/env python
-#
-# author: Justin L. Lanfranchi
-#         jll1062+pisa@phys.psu.edu
-#
-# date:   October 24, 2015
 # pylint: disable=global-statement
+
 """
 Classes for working with neutrino flavors (NuFlav), interactions types
 (IntType), "flavints" (a flavor and an interaction type) (NuFlavInt), and
@@ -64,6 +60,8 @@ __all__ = ['NuFlav', 'NuFlavInt', 'NuFlavIntGroup', 'FlavIntData',
            'ALL_NUFLAVINTS', 'ALL_NUCC', 'ALL_NUNC',
            'NUECC', 'NUEBARCC', 'NUMUCC', 'NUMUBARCC', 'NUTAUCC', 'NUTAUBARCC',
            'NUENC', 'NUEBARNC', 'NUMUNC', 'NUMUBARNC', 'NUTAUNC', 'NUTAUBARNC']
+
+__author__ = 'J.L. Lanfranchi'
 
 
 __BAR_SSEP__ = ''
@@ -1888,7 +1886,7 @@ class CombinedFlavIntData(FlavIntData):
                 match = True
                 #print 'found exact match:', tgt_grp, '==', flavints
             # Requested flavints are strict subset
-            elif not (tgt_grp - flavints):
+            elif not tgt_grp - flavints:
                 all_keys[0] = key
                 match = True
                 #print 'found subset match:', tgt_grp, 'in', flavints

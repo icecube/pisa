@@ -4,9 +4,10 @@ calculations. Equivalent agorithm to Prob3++.
 """
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
-import os
+from os.path import abspath
+import pkg_resources
 
 import numpy as np
 import pycuda.compiler
@@ -19,12 +20,11 @@ from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-from pisa.utils.resources import find_resource
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.osc_params import OscParams
 
 
-class prob3gpu(Stage):
+class prob3gpu(Stage): # pylint: disable=invalid-name
     """Neutrino oscillations calculation via Prob3 with a GPU.
 
     Parameters
@@ -328,7 +328,7 @@ class prob3gpu(Stage):
 
         # Invoke the init method from the parent class (Stage), which does a
         # lot of work (caching, providing public interfaces, etc.)
-        super(self.__class__, self).__init__(
+        super(prob3gpu, self).__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,
@@ -373,9 +373,9 @@ class prob3gpu(Stage):
         self.e_dim_num = self.input_binning.names.index('true_energy')
         self.cz_dim_num = self.input_binning.names.index('true_coszen')
 
-        self.extra_dim_nums = range(self.input_binning.num_dims)
-        [self.extra_dim_nums.remove(d) for d in (self.e_dim_num,
-                                                 self.cz_dim_num)]
+        self.extra_dim_nums = list(range(self.input_binning.num_dims))
+        for d in (self.e_dim_num, self.cz_dim_num):
+            self.extra_dim_nums.remove(d)
 
     def create_transforms_datastructs(self):
         xform_shape = [3, 2] + list(self.input_binning.shape)
@@ -420,7 +420,7 @@ class prob3gpu(Stage):
         mix_mat = self.osc.M_pmns
 
         logging.trace('dm_mat: \n %s' %str(dm_mat))
-        logging.trace('mix[re]: \n %s' %str(mix_mat[:,:,0]))
+        logging.trace('mix[re]: \n %s' %str(mix_mat[:, :, 0]))
 
         dm_mat = dm_mat.astype(FTYPE)
         mix_mat = mix_mat.astype(FTYPE)
@@ -506,11 +506,11 @@ class prob3gpu(Stage):
         """
         # Path relative to `resources` directory
         include_dirs = [
-            os.path.abspath(find_resource('../stages/osc/prob3cuda')),
-            os.path.abspath(find_resource('../utils'))
+            abspath(pkg_resources.resource_filename('pisa.stages.osc', 'prob3cuda')),
+            abspath(pkg_resources.resource_filename('pisa', 'utils'))
         ]
-        logging.debug('  pycuda INC PATH: %s' %include_dirs)
-        logging.debug('  pycuda FLAGS: %s' %pycuda.compiler.DEFAULT_NVCC_FLAGS)
+        logging.debug('  pycuda INC PATH: %s', include_dirs)
+        logging.debug('  pycuda FLAGS: %s', pycuda.compiler.DEFAULT_NVCC_FLAGS)
 
         kernel_code = (self.KERNEL_TEMPLATE
                        %dict(C_PRECISION_DEF=C_PRECISION_DEF, C_FTYPE=C_FTYPE))
@@ -556,16 +556,7 @@ class prob3gpu(Stage):
         self.d_czcen_fine.free()
 
     def calc_layers(self, coszen):
-        """
-        \params:
-          * energy: array of energies in GeV
-          * coszen: array of coszen values
-          * kNuBar: +1 for neutrinos, -1 for anti neutrinos
-          * earth_model: Earth density model used for matter oscillations.
-          * detector_depth: Detector depth in km.
-          * prop_height: Height in the atmosphere to begin in km.
-        """
-        assert(not self.calc_transforms)
+        assert not self.calc_transforms
 
         YeI = self.params.YeI.m_as('dimensionless')
         YeO = self.params.YeO.m_as('dimensionless')
@@ -597,7 +588,7 @@ class prob3gpu(Stage):
           * deltam21, deltam31 - in [eV^2]
         """
 
-        assert(not self.calc_transforms)
+        assert not self.calc_transforms
 
         sin2th12Sq = np.sin(theta12)**2
         sin2th13Sq = np.sin(theta13)**2
@@ -615,8 +606,8 @@ class prob3gpu(Stage):
         dm_mat = self.osc.M_mass
         mix_mat = self.osc.M_pmns
 
-        logging.debug("dm_mat: \n %s"%str(dm_mat))
-        logging.debug("mix[re]: \n %s"%str(mix_mat[:,:,0]))
+        logging.debug("dm_mat: \n %s", str(dm_mat))
+        logging.debug("mix[re]: \n %s", str(mix_mat[:, :, 0]))
 
         self.d_dm_mat = cuda.mem_alloc(FTYPE(dm_mat).nbytes)
         self.d_mix_mat = cuda.mem_alloc(FTYPE(mix_mat).nbytes)
@@ -626,7 +617,7 @@ class prob3gpu(Stage):
     def calc_probs(self, kNuBar, kFlav, n_evts, true_e_scale, true_energy, numLayers,
                    densityInLayer, distanceInLayer, prob_e, prob_mu, **kwargs):
 
-        assert(not self.calc_transforms)
+        assert not self.calc_transforms
 
         bdim = (32, 1, 1)
         dx, mx = divmod(n_evts, bdim[0])

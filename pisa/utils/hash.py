@@ -11,6 +11,7 @@ from cPickle import PickleError, PicklingError
 import hashlib
 import struct
 from collections import Iterable
+from pkg_resources import resource_filename
 
 import numpy as np
 
@@ -185,9 +186,10 @@ def test_hash_obj():
 # TODO: test_hash_file function requires a "standard" file to test on
 def test_hash_file():
     """Unit tests for `hash_file` function"""
-    file_hash = hash_file('../utils/hash.py')
+    file_hash = hash_file(resource_filename('pisa.utils', 'hash.py'))
     logging.debug(file_hash)
-    file_hash = hash_file('../utils/hash.py', full_hash=False)
+    file_hash = hash_file(resource_filename('pisa.utils', 'hash.py'),
+                          full_hash=False)
     logging.debug(file_hash)
     logging.info('<< PASS : test_hash_file >>')
 

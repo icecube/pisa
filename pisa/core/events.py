@@ -32,7 +32,7 @@ from pisa.utils.log import logging, set_verbosity
 
 __all__ = ['Events', 'Data', 'test_Events', 'test_Data']
 
-__author__ = 'J.L. Lanfranchi'
+__author__ = 'J.L. Lanfranchi, S. Mandalia'
 
 
 # TODO: test hash function (attr)
@@ -1031,6 +1031,7 @@ class Data(FlavIntDataGroup):
         return self.meta_eq(other) and self.data_eq(other)
 
 
+# pylint: disable=line-too-long
 def test_Events():
     """Unit tests for Events class"""
     from pisa.utils.flavInt import NuFlavInt

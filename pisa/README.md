@@ -43,7 +43,6 @@ She wrote her own fitter to perform these tasks. You can evaluate her ezFit anal
 | `analysis/`                  | Primary code for running an analysis
 | `core/`                      | Objects at the heart of PISA's functionality
 | `images/`                    | Images included in documentation
-| `resources/`                 | Example resources for use in performing analyses
 | `scripts/`                   | Executable scripts with various purposes
 | `stages/`                    | Stages and the services that implement them
 | `utils/`                     | Miscellaneous functions and classes useful to PISA and for use by analyzers

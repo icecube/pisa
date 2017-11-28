@@ -1,7 +1,3 @@
-# author: Sebastian Boeser
-#         sboeser@physik.uni-bonn.de
-#
-# date:   2014-10-17
 """
 This module sets up the logging system by looking for a "logging.json"
 configuration file. It will search (in this order) the local directory, $PISA
@@ -15,9 +11,10 @@ Currently, we have three loggers
   (`have x many events`, `the flux is ...`)
 * tprofile: for how much time it takes to run some step (in the format of
   `time : start bla`, `time : stop bla`)
-
 """
 
+
+from __future__ import absolute_import
 
 import json
 import logging as logging_module
@@ -26,6 +23,8 @@ from pkg_resources import resource_stream
 
 
 __all__ = ['logging', 'physics', 'tprofile', 'set_verbosity']
+
+__author__ = 'S. Boeser'
 
 
 def initialize_logging():
@@ -42,7 +41,9 @@ def initialize_logging():
 
     # Get the logging configuration
     logconfig = json.load(
-        resource_stream('pisa', 'resources/settings/logging/logging.json'),
+        resource_stream(
+            'pisa_example_resources', 'settings/logging/logging.json'
+        )
     )
 
     # Setup the logging system with this config
@@ -93,4 +94,4 @@ def set_verbosity(verbosity):
 
 
 # Make the loggers public
-logging, physics, tprofile = initialize_logging()
+logging, physics, tprofile = initialize_logging() # pylint: disable=invalid-name

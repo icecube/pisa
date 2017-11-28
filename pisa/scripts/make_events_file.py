@@ -11,11 +11,12 @@ file for use with PISA.
 """
 
 
+from __future__ import absolute_import, division
+
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
 from copy import deepcopy
 import os
-import sys
 
 import numpy as np
 
@@ -33,6 +34,8 @@ from pisa.utils.resources import find_resource
 __all__ = ['EXAMPLE', 'CMSQ_TO_MSQ', 'EXTRACT_FIELDS', 'OUTPUT_FIELDS',
            'powerLawIntegral', 'makeEventsFile',
            'parse_args', 'main']
+
+__author__ = 'J.L. Lanfranchi'
 
 
 EXAMPLE = """
@@ -88,7 +91,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
                    run_settings=None, data_proc_params=None, join=None,
                    cust_cuts=None, extract_fields=EXTRACT_FIELDS,
                    output_fields=OUTPUT_FIELDS):
-    """Take the simulated and reconstructed HDF5 file(s) (as converted from I3
+    r"""Take the simulated and reconstructed HDF5 file(s) (as converted from I3
     by icecube.hdfwriter.I3HDFTableService) as input and write out a simplified
     PISA-standard-format HDF5 file for use in aeff, reco, and/or PID stages.
 
@@ -119,12 +122,12 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
     run_settings : string or MCSimRunSettings
         Resource location of mc_sim_run_settings.json, e.g. the PISA-standard
         location
-            $PISA/pisa/resources/events/mc_sim_run_settings.json
+            $PISA/pisa_example_resources/events/mc_sim_run_settings.json
         or an MCSimRunSettings object instantiated therefrom.
     data_proc_params : string or DataProcParams
         Resource location of data_proc_params.json, e.g. the PISA-standard
         location
-            $PISA/pisa/resources/events/data_proc_params.json
+            $PISA/pisa_example_resources/events/data_proc_params.json
         or a DataProcParams object instantiated therefrom.
     join
         String specifying any flavor/interaction types (flavInts) to join
@@ -174,7 +177,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
     """
     if isinstance(run_settings, basestring):
         run_settings = DetMCSimRunsSettings(
-            find_resource(args.run_settings),
+            find_resource(run_settings),
             detector=detector
         )
     assert isinstance(run_settings, DetMCSimRunsSettings)
@@ -341,7 +344,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
         for fname in fnames:
             # Retrieve data from all nodes specified in the processing
             # settings file
-            logging.trace('Trying to get data from file %s' %fname)
+            logging.trace('Trying to get data from file %s', fname)
             try:
                 data = data_proc_params.getData(fname,
                                                 run_settings=run_settings)
@@ -445,9 +448,9 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
                     for barnobar, barnobar_counts in run_counts.iteritems():
                         ngen_it_tot += barnobar_counts
                         logging.info(
-                            fmt %
-                            (flavint_group.simple_str(), int_type, str(run),
-                             barnobar, int(barnobar_counts), int(ngen_it_tot))
+                            fmt, flavint_group.simple_str(), int_type,
+                            str(run), barnobar, int(barnobar_counts),
+                            int(ngen_it_tot)
                         )
                 # Convert data to numpy array
                 if extract_fields is None:
@@ -477,13 +480,13 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
         int_type = flavint.intType
         for grp_n, flavint_group in enumerate(flavint_groupings):
             if not flavint in flavint_group:
-                logging.trace('flavint %s not in flavint_group %s, passing.' %
-                              (flavint, flavint_group))
+                logging.trace('flavint %s not in flavint_group %s, passing.',
+                              flavint, flavint_group)
                 continue
             else:
                 logging.trace(
-                    'flavint %s **IS** in flavint_group %s, storing.' %
-                    (flavint, flavint_group)
+                    'flavint %s **IS** in flavint_group %s, storing.',
+                    flavint, flavint_group
                 )
             if output_fields is None:
                 evts[flavint] = extracted_data[grp_n][int_type]
@@ -516,7 +519,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
     ]) + '.hdf5'
 
     outfpath = os.path.join(outdir, fname)
-    logging.info('Writing events to ' + outfpath)
+    logging.info('Writing events to %s', outfpath)
 
     # Save data to output file
     evts.save(outfpath)
@@ -561,7 +564,7 @@ def parse_args():
         '--outdir',
         metavar='DIR',
         type=str,
-        default='$PISA/pisa/resources/events',
+        default='$PISA/pisa_example_resources/events',
         help='directory into which to store resulting HDF5 file'
     )
 
@@ -617,9 +620,10 @@ def parse_args():
         metavar='CUT_NAME',
         type=str,
         help='''Name of pre-defined cut to apply. See
-        resources/events/data_proc_params.json for definitions for the detector
-        and processing version you're working with (note that the names of cuts
-        and what these entail varies by detector and processing version)'''
+        pisa_example_resources/events/data_proc_params.json for definitions for
+        the detector and processing version you're working with (note that the
+        names of cuts and what these entail varies by detector and processing
+        version)'''
     )
 
     parser.add_argument(

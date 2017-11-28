@@ -10,7 +10,7 @@ from __future__ import absolute_import, division, print_function
 from argparse import ArgumentParser
 import glob
 from os import listdir
-from os.path import basename, isdir, isfile, join, splitext
+from os.path import basename, dirname, isdir, isfile, join, splitext
 
 from pisa.utils.fileio import from_file, to_file, mkdir, nsort
 from pisa.utils.flux_weights import load_2d_table, calculate_2d_flux_weights
@@ -23,21 +23,25 @@ __all__ = ['add_fluxes_to_file', 'main']
 
 
 def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
-                       outdir, label=None, overwrite=False):
+                       outdir=None, label=None, overwrite=False):
     """Add fluxes to PISA events file (e.g. for use by an mc stage)
 
     Parameters
     -----------
-    data_file_path
+    data_file_path : string
     flux_table
     neutrino_weight_name
-    outdir
+    outdir : string or None
+        If None, output is to the same directory as `data_file_path`
     overwrite : bool, optional
 
     """
     data, attrs = from_file(find_resource(data_file_path), return_attrs=True)
     bname, ext = splitext(basename(data_file_path))
     assert ext.lstrip('.') in HDF5_EXTS
+
+    if outdir is None:
+        outdir = dirname(data_file_path)
 
     if label is None:
         label = ''
@@ -47,12 +51,12 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
 
     outpath = join(outdir, '{}__with_fluxes{}{}'.format(bname, label, ext))
 
-    mkdir(outdir, warn=False)
-
     if not overwrite and isfile(outpath):
         logging.warning('Output path "%s" already exists, not regenerating',
                         outpath)
         return
+
+    mkdir(outdir, warn=False)
 
     for primary, primary_node in data.items():
         for int_type, int_node in primary_node.items():
@@ -96,7 +100,7 @@ def parse_args(description=__doc__):
         '--input', metavar='(H5_FILE|DIR)', nargs='+', type=str, required=True,
         help='''Path to a PISA events HDF5 file or a directory containing HDF5
         files; output files are copies of this/these, but with flux fields
-        added.''' 
+        added.'''
     )
     parser.add_argument(
         '--flux-file', metavar='FLUX_FILE', type=str, required=True,
@@ -104,8 +108,9 @@ def parse_args(description=__doc__):
         "flux/honda-2015-spl-solmin-aa.d"'''
     )
     parser.add_argument(
-        '--outdir', metavar='DIR', required=True,
-        help='Directory to save the output figures.'
+        '--outdir', metavar='DIR', default=None,
+        help='''Directory to save the output to; if none is provided, output is
+        placed in same dir as --input.'''
     )
     parser.add_argument(
         '--label', type=str, default=None,
@@ -144,12 +149,12 @@ def main():
     basenames = []
     for input_path in input_paths:
         if isdir(input_path):
-            logging.debug('Path "%s" is a directory, skipping', file_path)
+            logging.debug('Path "%s" is a directory, skipping', input_path)
             continue
 
         firstpart, ext = splitext(input_path)
         if ext.lstrip('.') not in HDF5_EXTS:
-            logging.debug('Path "%s" is a directory, skipping', file_path)
+            logging.debug('Path "%s" is not an HDF5 file, skipping', input_path)
             continue
 
         bname = basename(firstpart)

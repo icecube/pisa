@@ -25,7 +25,7 @@ which is cited by the paper
 
 ## Honda et al. flux models
 
-Files in the directory `pisa/resources/flux` containing the name *honda* are from
+Files in the directory `example_resources/flux` containing the name *honda* are from
 > http://www.icrr.u-tokyo.ac.jp/~mhonda
 
 with associated paper
@@ -33,14 +33,14 @@ with associated paper
 
 ## Barr et al. flux models
 
-Files in the directory `pisa/resources/flux` containing the name *bartol* are modified slightly (to have similar format to the work by Honda et al. cited above) from
+Files in the directory `example_resources/flux` containing the name *bartol* are modified slightly (to have similar format to the work by Honda et al. cited above) from
 >  http://www-pnp.physics.ox.ac.uk/~barr/fluxfiles
 with associated paper
    G. D. Barr, T. K. Gaisser, P. Lipari, S. Robbins, and T. Stanev, Phys. Rev. D 70, 023006 (2004).
 
 ## PREM
 
-The preliminary reference Earth model data in the `pisa/resources/osc` directory (named `PREM*`) come from the paper
+The preliminary reference Earth model data in the `example_resources/osc` directory (named `PREM*`) come from the paper
 > A. M. Dziewonski and D. L. Anderson, Physics of the Earth and Planetary Interiors 25, 297 (1981)
 
 ## KDE

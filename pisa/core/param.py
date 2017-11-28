@@ -1140,7 +1140,7 @@ def test_Param():
         p2 = Param(name='c', value=1.5*ureg.meter, prior=spline, range=[1, 2],
                    is_fixed=False, is_discrete=False, tex=r'\int{\rm c}')
         _ = p2.prior_llh
-    except (TypeError, AssertionError):
+    except (ValueError, TypeError, AssertionError):
         pass
     else:
         assert False
@@ -1149,7 +1149,7 @@ def test_Param():
                    range=[1, 2], is_fixed=False, is_discrete=False,
                    tex=r'\int{\rm c}')
         _ = p2.prior_llh
-    except (TypeError, AssertionError):
+    except (ValueError, TypeError, AssertionError):
         pass
     else:
         assert False
@@ -1170,7 +1170,7 @@ def test_Param():
         logging.debug(str(linterp_nounits))
         logging.debug('p2.units: %s', p2.units)
         logging.debug('p2.prior.units: %s', p2.prior.units)
-    except (TypeError, AssertionError):
+    except (ValueError, TypeError, AssertionError):
         pass
     else:
         assert False

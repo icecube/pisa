@@ -1,6 +1,5 @@
 #! /usr/bin/env python
-# author: S.Wren
-# date:   November 15, 2016
+
 """
 Look in the PISA installation's pipeline settings directory for any example
 pipeline configs (*example*.cfg) and run all of them to ensure that their
@@ -10,9 +9,10 @@ user).
 """
 
 
+from __future__ import absolute_import
+
 from argparse import ArgumentParser
 import glob
-import os
 import sys
 import re
 from traceback import format_exception
@@ -24,8 +24,11 @@ from pisa.utils.resources import find_resource
 
 __all__ = ['parse_args', 'main']
 
+__author__ = 'S. Wren, J.L. Lanfranchi'
+
 
 def parse_args():
+    """Parse command line arguments"""
     parser = ArgumentParser(description=__doc__)
     parser.add_argument(
         '--ignore-gpu', action='store_true', default=False,
@@ -41,9 +44,9 @@ def parse_args():
     )
     parser.add_argument(
         '--ignore-missing-data', action='store_true', default=False,
-        help='''Skip the pipeline which fail because you do not have the 
-        necessary data files in the right locations for your local PISA 
-        installation. This is NOT recommended and you should probably acquire 
+        help='''Skip the pipeline which fail because you do not have the
+        necessary data files in the right locations for your local PISA
+        installation. This is NOT recommended and you should probably acquire
         the missing datafiles somehow.'''
     )
     parser.add_argument(
@@ -55,6 +58,7 @@ def parse_args():
 
 
 def main():
+    """main"""
     args = parse_args()
     set_verbosity(args.v)
 
@@ -62,13 +66,10 @@ def main():
     # things to ignore e.g. cuda stuff and ROOT stuff
     ROOT_err_strings = ['ROOT', 'Roo', 'root', 'roo']
     cuda_err_strings = ['cuda']
-    missing_data_string = ('Could not find resource "(.*)" in '
-                          'filesystem OR in PISA package.')
+    missing_data_string = ('Could not find resource "(.*)" in'
+                           ' filesystem OR in PISA package.')
 
-    example_directory = os.path.join(
-        'settings', 'pipeline'
-    )
-    example_directory = find_resource(example_directory)
+    example_directory = find_resource('settings/pipeline')
     settings_files = glob.glob(example_directory + '/*example*.cfg')
 
     num_configs = len(settings_files)
@@ -79,8 +80,8 @@ def main():
         allow_error = False
         msg = ''
         try:
-            logging.info('Instantiating pipeline from file "%s" ...'
-                         %settings_file)
+            logging.info('Instantiating pipeline from file "%s" ...',
+                         settings_file)
             pipeline = Pipeline(settings_file)
             logging.info('    retrieving outputs...')
             _ = pipeline.get_outputs()
@@ -113,7 +114,7 @@ def main():
             else:
                 failure_count += 1
 
-        except:
+        except: # pylint: disable=bare-except
             exc = sys.exc_info()
             failure_count += 1
 
@@ -128,7 +129,7 @@ def main():
                     logging.error(
                         '    FAILURE! %s failed to run. Please review the'
                         ' error message below and fix the problem. Continuing'
-                        ' with any other configs now...' % settings_file
+                        ' with any other configs now...', settings_file
                     )
                     for line in format_exception(*exc):
                         for sub_line in line.splitlines():
@@ -137,8 +138,8 @@ def main():
                 logging.info('    Seems fine!')
 
     if skip_count > 0:
-        logging.warn('%d of %d example pipeline config files were skipped'
-                     % (skip_count, num_configs))
+        logging.warn('%d of %d example pipeline config files were skipped',
+                     skip_count, num_configs)
 
     if failure_count > 0:
         msg = ('<< FAIL : test_example_pipelines : (%d of %d EXAMPLE PIPELINE'

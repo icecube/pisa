@@ -1,4 +1,4 @@
-# pisa.resources
+# pisa\_example\_resources
 
 Example PISA resources
 
@@ -18,4 +18,4 @@ To use resources outside of these examples, create a directory outside of the PI
 | `priors/`         | Pre-defined priors that can be used in analyses, e.g. from nu-fit.org
 | `reco/`           | Reconstruction resolutions, e.g. parameterised reconstruction kernels
 | `settings/`       | Contains directories, each for settings for different purposes
-| `__init__.py`     | File that makes `resources` directory behave as a Python module
+| `__init__.py`     | File that makes `pisa_example_resources` directory behave as a Python module

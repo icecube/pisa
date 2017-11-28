@@ -1,15 +1,6 @@
-# author: Sebastian Boeser
-#         sboeser@physik.uni-bonn.de
-# date:   2014-06-10
-#
-# author: J.L. Lanfranchi
-#         jll1062+pisa@phys.psu.edu
-# date:   2016-10-xx
-#
 """
 Tools to obtain resource files needed for PISA, whether the resource is located
 in the filesystem or with the installed PISA package.
-
 """
 
 
@@ -22,6 +13,8 @@ import pkg_resources
 
 
 __all__ = ['RESOURCES_SUBDIRS', 'find_resource', 'open_resource', 'find_path']
+
+__author__ = 'S. Boeser, J.L. Lanfranchi'
 
 
 RESOURCES_SUBDIRS = ['data', 'scripts', 'settings']
@@ -50,11 +43,11 @@ def find_resource(resource, fail=True):
     resource : str
         Resource path; can be path relative to CWD, path relative to
         PISA_RESOURCES environment variable (if defined), or a package resource
-        location relative to PISA's `resources` sub-directory. Within each path
-        specified in PISA_RESOURCES and within the PISA resources dir, the
-        sub-directories 'data', 'scripts', and 'settings' are checked for
-        `resource` _before_ the base directories are checked.
-        Note that the **first** result found is returned.
+        location relative to the `pisa_example_resources` sub-directory. Within
+        each path specified in PISA_RESOURCES and within the
+        `pisa_example_resources` dir, the sub-directories 'data', 'scripts',
+        and 'settings' are checked for `resource` _before_ the base directories
+        are checked. Note that the **first** result found is returned.
 
     fail : bool
         If True, raise IOError if resource not found
@@ -89,9 +82,9 @@ def find_resource(resource, fail=True):
 
     # 2) Look inside the installed pisa package
     log.logging.trace('Searching package resources...')
-    if pkg_resources.resource_exists('pisa', 'resources/' + resource):
+    if pkg_resources.resource_exists('pisa_example_resources', resource):
         resource_path = pkg_resources.resource_filename(
-            'pisa', 'resources/' + resource
+            'pisa_example_resources', resource
         )
         log.logging.debug('Found resource "%s" in PISA package at "%s"',
                           resource, resource_path)
@@ -99,13 +92,14 @@ def find_resource(resource, fail=True):
 
     for subdir in RESOURCES_SUBDIRS + [None]:
         if subdir is None:
-            augmented_path = '/'.join(['resources', resource])
+            augmented_path = resource
         else:
-            augmented_path = '/'.join(['resources', subdir, resource])
+            augmented_path = '/'.join([subdir, resource])
 
-        if pkg_resources.resource_exists('pisa', augmented_path):
+        if pkg_resources.resource_exists('pisa_example_resources',
+                                         augmented_path):
             resource_path = pkg_resources.resource_filename(
-                'pisa', augmented_path
+                'pisa_example_resources', augmented_path
             )
             log.logging.debug('Found resource "%s" in PISA package at "%s"',
                               resource, resource_path)
@@ -129,11 +123,11 @@ def open_resource(resource, mode='r'):
     resource : str
         Resource path; can be path relative to CWD, path relative to
         PISA_RESOURCES environment variable (if defined), or a package resource
-        location relative to PISA's `resources` sub-directory. Within each path
-        specified in PISA_RESOURCES and within the PISA resources dir, the
-        sub-directories 'data', 'scripts', and 'settings' are checked for
-        `resource` _before_ the base directories are checked.
-        Note that the **first** result found is returned.
+        location relative to PISA's `pisa_example_resources` sub-directory.
+        Within each path specified in PISA_RESOURCES and within the
+        `pisa_example_resources` dir, the sub-directories 'data', 'scripts',
+        and 'settings' are checked for `resource` _before_ the base directories
+        are checked. Note that the **first** result found is returned.
 
     mode : str
         'r', 'w', or 'rw'; only 'r' is valid for package resources (as these
@@ -186,11 +180,12 @@ def open_resource(resource, mode='r'):
     pkg_exc_info = None
     for subdir in RESOURCES_SUBDIRS + [None]:
         if subdir is None:
-            augmented_path = '/'.join(['resources', resource])
+            augmented_path = resource
         else:
-            augmented_path = '/'.join(['resources', subdir, resource])
+            augmented_path = '/'.join([subdir, resource])
         try:
-            stream = pkg_resources.resource_stream('pisa', augmented_path)
+            stream = pkg_resources.resource_stream('pisa_example_resources',
+                                                   augmented_path)
             # TODO: better way to check if read mode (i.e. will 'r' miss
             # anything that can be specified to also mean "read mode")?
             if mode.strip().lower() != 'r':

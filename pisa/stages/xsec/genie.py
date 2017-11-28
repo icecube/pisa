@@ -5,9 +5,11 @@ detector into an event count.
 This service in particular reads in from a GENIE cross-section spline ROOT file
 in order to obtain the relavant cross-sections. Example pipeline settings file
 can be found in
-$PISA/pisa/resources/settings/pipeline/xsec.cfg
+$PISA/pisa_example_resources/settings/pipeline/example_xsec.cfg
 """
 
+
+from __future__ import absolute_import
 
 from itertools import product
 from operator import add
@@ -30,6 +32,8 @@ from pisa.utils.resources import find_resource
 
 
 __all__ = ['genie', 'test_standard_plots', 'test_per_e_plot']
+
+__author__ = 'S. Mandalia'
 
 
 class genie(Stage):

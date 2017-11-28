@@ -17,7 +17,7 @@
 
 * **Quantity**: A number or array *with units attached*. See (units_and_uncertainties).
 
-* **Resource**: A file with settings, simulated events, parameterizations, metadata, etc. that is used by one of the services, the template maker, the minimizer, .... Resources are found in the `$PISA/pisa/resources` directory, where a subdirectory exists for each stage (and several directories exist for resources used for other purposes).
+* **Resource**: A file with settings, simulated events, parameterizations, metadata, etc. that is used by one of the services, the template maker, the minimizer, .... Example resources are found in `$PISA/pisa_example_resources` directory, where a subdirectory exists for each stage (and several directories exist for resources used for other purposes). Set (in your command shell) the environment variable PISA\_RESOURCES to your personal PISA resources directory location to access your own resources.
 
 * **Reweighted Monte Carlo (MC) analysis**: Each stage of the analysis simulates the effects of physics and detector systematics by directly modifying the MC events' characteristics (e.g., their importance weights and reconstructed properties). After applying all such effects, only in the last step are the MC events histogrammed. Contrast with *parameterized-MC analysis* (defined above), where it is histograms that are modified throughout the analysis to reflect the effects of physics and detector systematics.
 

@@ -17,19 +17,20 @@ However, PISA's methods apply equally well to high-MC situations, and PISA also 
 
 ## Directory listing
 
-| File/directory     | Description
-| ------------------ | -----------
-| `docs/`            | Sphinx auto-generated documentation
-| `images/`          | Images to include in documentation
-| `pisa/`            | Source code
-| `tests/`           | Scripts for running physics and unit tests
-| `.gitattributes`   |
-| `.gitignore`       | GIT ignores files matching these specifications
-| `INSTALL.md`       | How to install PISA
-| `MANIFEST.in`      |
-| `README.md`        | Brief overview of PISA
-| `pylintrc`         | PISA coding conventions for use with pylint
-| `requirements.txt` | Hard dependencies, use with `pip install -r requirements.txt`
-| `setup.cfg`        | Setup file for `versioneer`
-| `setup.py`         | Python setup file, allowing e.g. `pip` installation
-| `versioneer.py`    | Automatic versioning
+| File/directory            | Description
+| ------------------------- | -----------
+| `docs/`                   | Sphinx auto-generated documentation
+| `images/`                 | Images to include in documentation
+| `pisa/`                   | Source code
+| `pisa_example_resources/` | Example resources for PISA from data to settings
+| `pisa_tests/`             | Scripts for running physics and unit tests
+| `.gitattributes`          | Used with `versioneer`
+| `.gitignore`              | GIT ignores files matching these specifications
+| `INSTALL.md`              | How to install PISA
+| `MANIFEST.in`             | Extra files to distribute with PISA package
+| `pylintrc`                | PISA coding conventions for use with pylint
+| `README.md`               | Brief overview of PISA
+| `requirements.txt`        | Hard dependencies, use with `pip install -r requirements.txt`
+| `setup.cfg`               | Setup file for `versioneer`
+| `setup.py`                | Python setup file, allowing e.g. `pip` installation
+| `versioneer.py`           | Automatic versioning

@@ -12,7 +12,7 @@ echo "PISA=$PISA"
 echo "=============================================================================="
 echo "Generating toy MC for use with test scripts"
 echo "=============================================================================="
-PISA_FTYPE=float32 make_toy_events.py --outdir ${PISA_RESOURCES}/events \
+PISA_FTYPE=float32 python $PISA/pisa/scripts/make_toy_events.py --outdir ${PISA_RESOURCES}/events \
 	--num-events 1e5 \
 	--energy-range 1 80 \
 	--spectral-index 1 \
@@ -27,7 +27,7 @@ echo ""
 echo "=============================================================================="
 echo "Running test_consistency_with_pisa2.py"
 echo "=============================================================================="
-$BASEDIR/test_consistency_with_pisa2.py -v
+python $BASEDIR/test_consistency_with_pisa2.py -v
 echo "------------------------------------------------------------------------------"
 echo "Finished Running test_consistency_with_pisa2.py"
 echo "------------------------------------------------------------------------------"
@@ -38,7 +38,7 @@ echo ""
 echo "=============================================================================="
 echo "Running test_example_pipelines.py"
 echo "=============================================================================="
-$BASEDIR/test_example_pipelines.py -v
+python $BASEDIR/test_example_pipelines.py -v
 echo "------------------------------------------------------------------------------"
 echo "Finished Running test_example_pipelines.py"
 echo "------------------------------------------------------------------------------"
@@ -52,23 +52,13 @@ echo ""
 for f in `find $PISA/pisa -name "*.py"`
 do
 	BN=$(basename "$f")
-	if [[ "$BN" == test_* ]];then continue;fi
+	#if [[ "$BN" == test_* ]];then continue;fi
 	if [[ "$f" == *pisa/scripts/* ]];then continue;fi
 	if [ "$BN" == "__init__.py" ];then continue;fi
 	if [ "$BN" == "setup.py" ];then continue;fi
-	if [ "$BN" == hypo_testing.py ];then continue;fi
-	if [ "$BN" == hypo_testing_postprocess.py ];then continue;fi
-	if [ "$BN" == profile_scan.py ];then continue;fi
-	if [ "$BN" == theta23_octant_postprocess.py ];then continue;fi
-	if [ "$BN" == profile_llh_analysis.py ];then continue;fi
-	if [ "$BN" == nutau_analysis.py ];then continue;fi
-	if [ "$BN" == theta23_octant.py ];then continue;fi
-	if [ "$BN" == theta23_NMO_2.py ];then continue;fi
 	if [ "$BN" == pipeline.py ];then continue;fi
 	if [ "$BN" == distribution_maker.py ];then continue;fi
 	if [ "$BN" == genie.py ];then continue;fi
-	if [ "$BN" == roounfold.py ];then continue;fi
-	if [ "$BN" == crossSections.py ];then continue;fi
 
 	echo "=============================================================================="
 	echo "Running python $BN at abs path"
@@ -84,176 +74,171 @@ do
 done
 
 
-OUTDIR=$TMP/compare_cpu_gpu
+#
+# Test CPU vs GPU, both FP64 and FP32 and CPU FP32 vs CPU FP64
+#
+
+OUTDIR_CPU64_NH_PIPELINE=$TMP/cpu64nh_pipeline
 echo "=============================================================================="
-echo "Running compare.py, CPU vs. GPU pipeline settings, FP64, no plotting."
+echo "Running pipeline.py with example.cfg, with CPU & fp64 selected."
 echo "Storing results to"
-echo "  $OUTDIR"
+echo "  $OUTDIR_CPU64_NH_PIPELINE"
 echo "=============================================================================="
-PISA_FTYPE=float64 $PISA/pisa/scripts/compare.py \
-	--ref settings/pipeline/example.cfg \
-	--ref-label 'cpu' \
-	--test settings/pipeline/example_gpu.cfg \
-	--test-label 'gpu' \
-	--outdir $OUTDIR \
-	-v
+PISA_FTYPE=float64 python $PISA/pisa/core/pipeline.py \
+	-p settings/pipeline/example.cfg \
+	-a stage.aeff param.aeff_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
+	-a stage.reco param.reco_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
+	--select "nh" \
+	--outdir $OUTDIR_CPU64_NH_PIPELINE \
+	--png -v
 
+OUTDIR_CPU32_NH_PIPELINE=$TMP/cpu32nh_pipeline
+echo "=============================================================================="
+echo "Running pipeline.py with example.cfg, with CPU & fp32 selected."
+echo "Storing results to"
+echo "  $OUTDIR_CPU32_NH_PIPELINE"
+echo "=============================================================================="
+PISA_FTYPE=float32 python $PISA/pisa/core/pipeline.py \
+	-p settings/pipeline/example.cfg \
+	-a stage.aeff param.aeff_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
+	-a stage.reco param.reco_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
+	--select "nh" \
+	--outdir $OUTDIR_CPU32_NH_PIPELINE \
+	--png -v
 
-OUTDIR=$TMP/compare_cpu_gpu
+OUTDIR_GPU64_NH_PIPELINE=$TMP/gpu64nh_pipeline
+echo "=============================================================================="
+echo "Running pipeline.py with example_gpu.cfg, with GPU & fp64 selected."
+echo "Storing results to"
+echo "  $OUTDIR_GPU64_NH_PIPELINE"
+echo "=============================================================================="
+PISA_FTYPE=float64 python $PISA/pisa/core/pipeline.py \
+	-p settings/pipeline/example_gpu.cfg \
+	-a stage.aeff param.aeff_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
+	-a stage.reco param.reco_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
+	--select "nh" \
+	--outdir $OUTDIR_GPU64_NH_PIPELINE \
+	--png -v
+
+OUTDIR_GPU32_NH_PIPELINE=$TMP/gpu32nh_pipeline
+echo "=============================================================================="
+echo "Running pipeline.py with example_gpu.cfg, with GPU & fp32 selected."
+echo "Storing results to"
+echo "  $OUTDIR_GPU32_NH_PIPELINE"
+echo "=============================================================================="
+PISA_FTYPE=float32 python $PISA/pisa/core/pipeline.py \
+	-p settings/pipeline/example_gpu.cfg \
+	-a stage.aeff param.aeff_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
+	-a stage.reco param.reco_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
+	--select "nh" \
+	--outdir $OUTDIR_GPU32_NH_PIPELINE \
+	--png -v
+
+OUTDIR=$TMP/compare_cpu64nh_pipeline_gpu64nh_pipeline
 echo "=============================================================================="
 echo "Running compare.py, CPU vs. GPU pipeline settings, FP64."
 echo "Storing results to"
 echo "  $OUTDIR"
 echo "=============================================================================="
-PISA_FTYPE=float64 $PISA/pisa/scripts/compare.py \
-	--ref settings/pipeline/example.cfg \
-	--ref-label 'cpu' \
-	--test settings/pipeline/example_gpu.cfg \
-	--test-label 'gpu' \
+PISA_FTYPE=float64 python $PISA/pisa/scripts/compare.py \
+	--ref $OUTDIR_CPU64_NH_PIPELINE/*.json* \
+	--ref-label 'cpu64nh' \
+	--test $OUTDIR_GPU64_NH_PIPELINE/*.json* \
+	--test-label 'gpu64nh' \
+	--outdir $OUTDIR \
+	--png -v
+
+OUTDIR=$TMP/compare_cpu32nh_pipeline_gpu32nh_pipeline
+echo "=============================================================================="
+echo "Running compare.py, CPU vs. GPU pipeline settings, FP32."
+echo "Storing results to"
+echo "  $OUTDIR"
+echo "=============================================================================="
+PISA_FTYPE=float32 python $PISA/pisa/scripts/compare.py \
+	--ref $OUTDIR_CPU32_NH_PIPELINE/*.json* \
+	--ref-label 'cpu32nh' \
+	--test $OUTDIR_GPU32_NH_PIPELINE/*.json* \
+	--test-label 'gpu32nh' \
+	--outdir $OUTDIR \
+	--png -v
+
+OUTDIR=$TMP/compare_cpu32nh_pipeline_cpu64nh_pipeline
+echo "=============================================================================="
+echo "Running compare.py, CPU32NH vs. CPU64NH"
+echo "Storing results to"
+echo "  $OUTDIR"
+echo "=============================================================================="
+PISA_FTYPE=float64 python $PISA/pisa/scripts/compare.py \
+	--ref $OUTDIR_CPU64_NH_PIPELINE/*.json* \
+	--ref-label 'cpu64nh' \
+	--test $OUTDIR_CPU32_NH_PIPELINE/*.json* \
+	--test-label 'cpu32nh' \
 	--outdir $OUTDIR \
 	--png -v
 
 
-OUTDIR_IH=$TMP/ih_pipeline
+#
+# Test hierarchy NH vs IH
+#
+
+OUTDIR_CPU64_IH=$TMP/cpu64ih_pipeline
 echo "=============================================================================="
 echo "Running pipeline.py with example.cfg, with ih selected."
 echo "Storing results to"
-echo "  $OUTDIR_IH"
+echo "  $OUTDIR_CPU64_IH"
 echo "=============================================================================="
-PISA_FTYPE=float64 $PISA/pisa/core/pipeline.py \
+PISA_FTYPE=float64 python $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example.cfg \
+	-a stage.aeff param.aeff_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
+	-a stage.reco param.reco_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
 	--select "ih" \
-	--outdir $OUTDIR_IH \
+	--outdir $OUTDIR_CPU64_IH \
 	--png -v
 
-OUTDIR_NH=$TMP/nh_pipeline
+OUTDIR=$TMP/compare_cpu64nh_pipeline_to_cpu64ih_pipeline
 echo "=============================================================================="
-echo "Running pipeline.py with example.cfg, with nh selected."
+echo "Running compare.py, nh vs. ih MapSets produced above with plots."
 echo "Storing results to"
-echo "  $OUTDIR_NH"
+echo "  $OUTDIR"
 echo "=============================================================================="
-PISA_FTYPE=float64 $PISA/pisa/core/pipeline.py \
-	-p settings/pipeline/example.cfg \
-	--select "nh" \
-	--outdir $OUTDIR_NH \
+python $PISA/pisa/scripts/compare.py \
+	--ref $OUTDIR_CPU64_IH/*.json* \
+	--ref-label 'cpu64ih' \
+	--test $OUTDIR_CPU64_NH/*.json* \
+	--test-label 'cpu64nh' \
+	--outdir $OUTDIR \
 	--png -v
 
-OUTDIR_NH_DIST_MAKER=$TMP/nh_dist_maker
+
+#
+# Test that DistributionMaker has same result as pipeline
+#
+
+OUTDIR_CPU64_NH_DISTMAKER=$TMP/cpu64nh_distmaker
 echo "=============================================================================="
 echo "Running distribution_maker.py with example.cfg, with nh selected."
 echo "Storing results to"
-echo "  $OUTDIR_NH_DIST_MAKER"
+echo "  $OUTDIR_CPU64_NH_DISTMAKER"
 echo "=============================================================================="
-PISA_FTYPE=float64 $PISA/pisa/core/distribution_maker.py \
+PISA_FTYPE=float64 python $PISA/pisa/core/distribution_maker.py \
 	-p settings/pipeline/example.cfg \
+	-a stage.aeff param.aeff_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
+	-a stage.reco param.reco_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
 	--select "nh" \
-	--outdir $OUTDIR_NH_DIST_MAKER \
+	--outdir $OUTDIR_CPU64_NH_DISTMAKER \
 	--png -v
 
-OUTDIR=$TMP/compare_nh_to_ih
+OUTDIR=$TMP/compare_cpu64nh_distmaker_to_cpu64nh_pipeline
 echo "=============================================================================="
-echo "Running compare.py, nh vs. ih MapSets produced above WITH plots."
+echo "Running compare.py, fp64/cpu distmaker vs. fp64/cpu pipeline-produced MapSets."
 echo "Storing results to"
 echo "  $OUTDIR"
 echo "=============================================================================="
-$PISA/pisa/scripts/compare.py \
-	--ref $OUTDIR_IH/*.json.bz2 \
-	--ref-label 'ih' \
-	--test $OUTDIR_NH/*.json.bz2 \
-	--test-label 'nh' \
-	--outdir $OUTDIR \
-	--png -v
-
-
-OUTDIR_NH_FP32_CPU=$TMP/nh_pipeline_fp32_cpu
-echo "=============================================================================="
-echo "Running pipeline.py with example.cfg, with nh selected, FP32/CPU."
-echo "Storing results to"
-echo "  $OUTDIR_NH_FP32_CPU"
-echo "=============================================================================="
-PISA_FTYPE=float32 $PISA/pisa/core/pipeline.py \
-	-p settings/pipeline/example.cfg \
-	--select "nh" \
-	--outdir $OUTDIR_NH_FP32_CPU \
-	-v
-
-OUTDIR_NH_FP32_GPU=$TMP/nh_pipeline_fp32_gpu
-echo "=============================================================================="
-echo "Running pipeline.py with example.cfg, with nh selected, FP32/GPU."
-echo "Storing results to"
-echo "  $OUTDIR_NH_FP32_GPU"
-echo "=============================================================================="
-PISA_FTYPE=float32 $PISA/pisa/core/pipeline.py \
-	-p settings/pipeline/example_gpu.cfg \
-	--select "nh" \
-	--outdir $OUTDIR_NH_FP32_GPU \
-	-v
-
-OUTDIR_NH_FP64_GPU=$TMP/nh_pipeline_fp64_gpu
-echo "=============================================================================="
-echo "Running pipeline.py with example.cfg, with nh selected, FP64/GPU."
-echo "Storing results to"
-echo "  $OUTDIR_NH_FP64_GPU"
-echo "=============================================================================="
-PISA_FTYPE=float64 $PISA/pisa/core/pipeline.py \
-	-p settings/pipeline/example_gpu.cfg \
-	--select "nh" \
-	--outdir $OUTDIR_NH_FP64_GPU \
-	-v
-
-OUTDIR=$TMP/compare_fp32_cpu_to_fp64_cpu
-echo "=============================================================================="
-echo "Running compare.py, fp32/cpu vs. fp64/cpu MapSets produced above."
-echo "Storing results to"
-echo "  $OUTDIR"
-echo "=============================================================================="
-$PISA/pisa/scripts/compare.py \
-	--ref $OUTDIR_NH/*.json.bz2 \
-	--ref-label 'fp64_cpu' \
-	--test $OUTDIR_NH_FP32_CPU/*.json.bz2 \
-	--test-label 'fp32_cpu' \
-	--outdir $OUTDIR \
-	--png -v
-
-OUTDIR=$TMP/compare_fp32_gpu_to_fp64_cpu
-echo "=============================================================================="
-echo "Running compare.py, fp32/gpu vs. fp64/cpu MapSets produced above."
-echo "Storing results to"
-echo "  $OUTDIR"
-echo "=============================================================================="
-$PISA/pisa/scripts/compare.py \
-	--ref $OUTDIR_NH/*.json.bz2 \
-	--ref-label 'fp64_cpu' \
-	--test $OUTDIR_NH_FP32_GPU/*.json.bz2 \
-	--test-label 'fp32_gpu' \
-	--outdir $OUTDIR \
-	--png -v
-
-OUTDIR=$TMP/compare_fp64_gpu_to_fp64_cpu
-echo "=============================================================================="
-echo "Running compare.py, fp64/gpu vs. fp64/cpu MapSets produced above."
-echo "Storing results to"
-echo "  $OUTDIR"
-echo "=============================================================================="
-$PISA/pisa/scripts/compare.py \
-	--ref $OUTDIR_NH/*.json.bz2 \
-	--ref-label 'fp64_cpu' \
-	--test $OUTDIR_NH_FP64_GPU/*.json.bz2 \
-	--test-label 'fp64_gpu' \
-	--outdir $OUTDIR \
-	--png -v
-
-OUTDIR=$TMP/compare_fp32_gpu_to_fp64_gpu
-echo "=============================================================================="
-echo "Running compare.py, fp32/gpu vs. fp64/gpu MapSets produced above."
-echo "Storing results to"
-echo "  $OUTDIR"
-echo "=============================================================================="
-$PISA/pisa/scripts/compare.py \
-	--ref $OUTDIR_NH/*.json.bz2 \
-	--ref-label 'fp64_gpu' \
-	--test $OUTDIR_NH_FP32_GPU/*.json.bz2 \
-	--test-label 'fp32_gpu' \
+python $PISA/pisa/scripts/compare.py \
+	--ref $OUTDIR_CPU64_NH/*.json* \
+	--ref-label 'cpu64nh_pipeline' \
+	--test $OUTDIR_CPU32_NH/*.json* \
+	--test-label 'cpu64nh_distmaker' \
 	--outdir $OUTDIR \
 	--png -v
 
@@ -264,8 +249,8 @@ echo "Running hypo_testing.py, basic NMO Asimov analysis (not necessarily accura
 echo "Storing results to"
 echo "  $OUTDIR"
 echo "=============================================================================="
-PISA_FTYPE=float64 $PISA/pisa/analysis/hypo_testing.py analysis \
-	--h0-pipeline settings/pipeline/example.cfg \
+PISA_FTYPE=float32 python $PISA/pisa/scripts/analysis.py discrete_hypo \
+	--h0-pipeline settings/pipeline/example_gpu.cfg \
 	--h0-param-selections="ih" \
 	--h1-param-selections="nh" \
 	--data-param-selections="nh" \
