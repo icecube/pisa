@@ -35,8 +35,9 @@ with associated paper
 
 Files in the directory `example_resources/flux` containing the name *bartol* are modified slightly (to have similar format to the work by Honda et al. cited above) from
 >  http://www-pnp.physics.ox.ac.uk/~barr/fluxfiles
+
 with associated paper
-   G. D. Barr, T. K. Gaisser, P. Lipari, S. Robbins, and T. Stanev, Phys. Rev. D 70, 023006 (2004).
+> G. D. Barr, T. K. Gaisser, P. Lipari, S. Robbins, and T. Stanev, Phys. Rev. D 70, 023006 (2004).
 
 ## PREM
 
