@@ -59,7 +59,7 @@ class pi_hyperplanes(PiStage):
         # what keys are added or altered for the outputs during apply
         if error_method in ['sumw2']:
             output_keys = ('weights',
-                           'error',
+                           'errors',
                           )
         else:
             output_keys = ('weights',
@@ -105,8 +105,8 @@ class pi_hyperplanes(PiStage):
             #container.add_bined_data('hyperplane_results', (self.calc_specs, fit_results[container.name]), flat=False)
             container['hyperplane_scalefactors'] = np.empty(container.size, dtype=FTYPE)
 
-            print(container['hyperplane_results'].shape)
-            print(container['hyperplane_scalefactors'].shape)
+            #print(container['hyperplane_results'].shape)
+            #print(container['hyperplane_scalefactors'].shape)
 
         self.sys_list = fit_results['sys_list'] 
         # check compatibility
@@ -141,6 +141,8 @@ class pi_hyperplanes(PiStage):
     def apply_function(self):
         for container in self.data:
             vectorizer.multiply(container['hyperplane_scalefactors'], container['weights'])
+            if self.error_method == 'sumw2':
+                vectorizer.multiply(container['hyperplane_scalefactors'], container['errors'])
 
 
 # vectorized function to apply

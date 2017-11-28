@@ -209,8 +209,8 @@ class PiStage(BaseStage):
         if len(self.output_keys) == 1:
             self.outputs = self.data.get_mapset(self.output_keys[0])
         else:
-            assert len(self.output_keys) == 2 and 'error' in self.output_keys, 'Cannot transfor this output into PISA style maps with output keys %s'%self.output_keys
-            other_key = [key for key in self.output_keys if not key == 'error'][0]
-            self.outputs = self.data.get_mapset(other_key, error='error')
+            assert len(self.output_keys) == 2 and 'errors' in self.output_keys, 'Cannot transfor this output into PISA style maps with output keys %s'%self.output_keys
+            other_key = [key for key in self.output_keys if not key == 'errors'][0]
+            self.outputs = self.data.get_mapset(other_key, error='errors')
 
         return self.outputs

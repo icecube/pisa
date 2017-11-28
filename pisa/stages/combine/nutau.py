@@ -47,7 +47,7 @@ class nutau(Stage):
             #'nutau_cc_norm'
         )
 
-        input_names = split(input_names, sep=',')
+        #input_names = split(input_names, sep=',')
         self.combine_groups = eval(combine_groups)
         for key, val in self.combine_groups.items():
             self.combine_groups[key] = split(val, sep=',')

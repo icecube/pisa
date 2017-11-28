@@ -300,10 +300,10 @@ class Pipeline(object):
                     outputs = None
                     # return pisa cake style ouput if we're the last stage
                     if i==last:
-                        try:
-                            outputs = stage.get_outputs()
-                        except:
-                            pass
+                        #try:
+                        outputs = stage.get_outputs()
+                        #except:
+                        #    pass
                 else:
                     outputs = stage.apply(inputs=inputs)
                 logging.trace('>>> END  : get_outputs')

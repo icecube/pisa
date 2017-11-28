@@ -435,7 +435,7 @@ class Container(object):
         '''
         hist = self.get_hist(key)
         if error is not None:
-            error_hist = self.get_hist(error)
+            error_hist = np.abs(self.get_hist(error))
         else:
             error_hist = None
         binning = self.get_binning(key)

@@ -49,7 +49,7 @@ class pi_hist(PiStage):
             calc_keys = ('weights_squared',
                         )
             output_keys = ('weights',
-                           'error',
+                           'errors',
                           )
             calc_specs = input_specs
         else:
@@ -84,7 +84,7 @@ class pi_hist(PiStage):
                 container['weights_squared'] = np.empty((container.size), dtype=FTYPE)
             self.data.data_specs = self.output_specs
             for container in self.data:
-                container['error'] = np.empty((container.size), dtype=FTYPE)
+                container['errors'] = np.empty((container.size), dtype=FTYPE)
 
     @profile
     def apply(self):
@@ -100,7 +100,7 @@ class pi_hist(PiStage):
                 if self.error_method in ['sumw2']:
                     vectorizer.square(container['weights'], out=container['weights_squared'])
                     vectorizer.multiply(container['event_weights'], out=container['weights_squared'])
-                    vectorizer.sqrt(container['weights_squared'], out=container['error'])
+                    vectorizer.sqrt(container['weights_squared'], out=container['errors'])
 
         elif self.input_mode == 'events':
             for container in self.data:
@@ -113,4 +113,4 @@ class pi_hist(PiStage):
                 container.array_to_binned('weights', self.output_specs, averaged=False)
                 if self.error_method in ['sumw2']:
                     container.array_to_binned('weights_squared', self.output_specs, averaged=False)
-                    vectorizer.sqrt(container['weights_squared'], out=container['error'])
+                    vectorizer.sqrt(container['weights_squared'], out=container['errors'])
