@@ -1,6 +1,5 @@
 #! /usr/bin/env python
-# author: J.L. Lanfranchi
-# date:   October 8, 2016
+
 """
 Compare two entities: Maps, map sets, pipelines, or distribution makers. One
 kind can be compared against another, so long as the resulting map(s) have
@@ -31,6 +30,22 @@ from pisa.utils.plotter import Plotter
 __all__ = ['DISTRIBUTIONMAKER_SOURCE_STR', 'PIPELINE_SOURCE_STR',
            'MAP_SOURCE_STR', 'MAPSET_SOURCE_STR',
            'parse_args', 'compare', 'main']
+
+__author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 DISTRIBUTIONMAKER_SOURCE_STR = (

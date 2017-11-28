@@ -1,6 +1,5 @@
 #! /usr/bin/env python
-# author: S.Wren
-# date:   March 20, 2016
+
 """
 Run the pipeline in event-by-event mode to see how much it agrees with OscFit.
 This is also checked against the PISA 2 legacy mode.
@@ -9,6 +8,8 @@ Test data for comparing against should be in the tests/data directory. A set of
 plots will be output in your output directory for you to check.
 """
 
+
+from __future__ import absolute_import, division
 
 from argparse import ArgumentParser
 from copy import deepcopy
@@ -26,6 +27,22 @@ from pisa.utils.tests import print_agreement, check_agreement, plot_comparisons
 
 
 __all__ = ['consistency_test', 'compare_baseline', 'compare_systematics', 'main']
+
+__author__ = 'S. Wren'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 def consistency_test(config, testname, outdir, pisa3file,

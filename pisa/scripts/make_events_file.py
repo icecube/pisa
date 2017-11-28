@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-# author: Justin L. Lanfranchi
-#         jll1062+pisa@phys.psu.edu
-#
-# date:   October 24, 2015
 """
 Take simulated (and reconstructed) HDF5 file(s) (as converted from I3 by
 icecube.hdfwriter.I3HDFTableService) as input and writes out a simplified HDF5
@@ -36,6 +32,20 @@ __all__ = ['EXAMPLE', 'CMSQ_TO_MSQ', 'EXTRACT_FIELDS', 'OUTPUT_FIELDS',
            'parse_args', 'main']
 
 __author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 EXAMPLE = """

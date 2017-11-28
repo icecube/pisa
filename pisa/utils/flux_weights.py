@@ -1,6 +1,5 @@
 #! /usr/bin/env python
-# author: S.Wren
-# date:   October 25, 2016
+
 """
 A set of functions for calculating flux weights given an array of energy and
 cos(zenith) values based on the Honda atmospheric flux tables. A lot of this
@@ -22,6 +21,22 @@ from pisa.utils.resources import open_resource
 __all__ = ['load_2d_honda_table', 'load_2d_bartol_table', 'load_2d_table',
            'calculate_2d_flux_weights', 'load_3d_honda_table', 'load_3d_table',
            'calculate_3d_flux_weights', ]
+
+__author__ = 'S. Wren'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 PRIMARIES = ['numu', 'numubar', 'nue', 'nuebar']

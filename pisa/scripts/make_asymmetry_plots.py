@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-# authors: J.L. Lanfranchi, P.Eller, and S. Wren
-# email:   jll1062+pisa@phys.psu.edu
-# date:    October 16, 2016
+
 """
 Create asymmetry plots (aka Akhmedov**-style plots) showing the significance to
 distinguish the two hypotheses specified by h0 and h1. Current output will be a
@@ -12,6 +10,8 @@ plot in the style of (h1-h0) / sqrt(h0)
 
 """
 
+
+from __future__ import absolute_import, division
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from fnmatch import fnmatch
@@ -32,6 +32,22 @@ from pisa.utils.resources import find_resource
 
 
 __all__ = ['plot_asymmetry', 'parse_args', 'normcheckpath', 'main']
+
+__author__ = 'J.L. Lanfranchi, P. Eller, S. Wren'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 def plot_asymmetry(h0_map, h0_name, h1_map, h1_name, fulltitle, savename,

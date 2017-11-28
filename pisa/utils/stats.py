@@ -1,9 +1,5 @@
-# author : P.Eller, T.Ehrhardt, J.L.Lanfranchi
-#
-# date   : March 25, 2016
 """
 Statistical functions
-
 """
 
 
@@ -23,6 +19,22 @@ __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
            'maperror_logmsg',
            'chi2', 'llh', 'log_poisson', 'log_smear', 'conv_poisson',
            'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2']
+
+__author__ = 'P. Eller, T. Ehrhardt, J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 SMALL_POS = 1e-10 #if FTYPE == np.float64 else FTYPE_PREC

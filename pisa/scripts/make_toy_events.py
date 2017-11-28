@@ -1,9 +1,4 @@
 #! /usr/bin/env python
-#
-# author: Thomas Ehrhardt - tehrhardt@icecube.wisc.edu
-#         Justin Lanfranchi jll1062+pisa@phys.psu.edu
-#
-# date:   02 Mar 2017
 
 """
 Using parameterisations defined for effective areas, resolution functions, and
@@ -49,6 +44,22 @@ __all__ = ['FNAME_TEMPLATE', 'FNAME_INFO_RE',
            'get_physical_bounds', 'sample_powerlaw', 'sample_truncated_dist',
            'generate_mc_events', 'populate_reco_observables',
            'populate_pid', 'mcgen_random_state', 'parse_args', 'main']
+
+__author__ = 'T. Ehrhardt, J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 FNAME_TEMPLATE = (

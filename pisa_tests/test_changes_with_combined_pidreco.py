@@ -1,11 +1,13 @@
 #! /usr/bin/env python
-# author: S.Wren
-# date:   October 19, 2016
+
 """
 Run a set of tests on the PISA 3 pipeline to check the effect of combining Reco
 and PID in to a single stage. Output is tested against both the standard PISA
 and a full event-by-event treatment from OscFit in various configurations.
 """
+
+
+from __future__ import absolute_import, division
 
 from argparse import ArgumentParser
 from copy import deepcopy
@@ -25,6 +27,22 @@ __all__ = ['FMT',
            'compare_pisa_self', 'compare_5stage', 'compare_4stage',
            'do_comparisons', 'oversample_config',
            'main']
+
+__author__ = 'S. Wren'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 FMT = 'png'

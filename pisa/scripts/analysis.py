@@ -12,7 +12,6 @@ from collections import OrderedDict
 from os.path import basename
 import sys
 
-
 from pisa.scripts.discrete_hypo_test import discrete_hypo_test
 from pisa.scripts.inj_param_scan import inj_param_scan
 from pisa.scripts.systematics_tests import systematics_tests
@@ -25,6 +24,20 @@ from pisa.utils.stats import ALL_METRICS
 __all__ = ['SCRIPT', 'parse_args', 'main']
 
 __author__ = 'S. Wren, J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 SCRIPT = basename(get_script())

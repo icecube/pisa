@@ -4,7 +4,6 @@ oscillation and various systematics.
 
 This service in particular is intended to follow a `data` service which takes
 advantage of the Data object being passed as a sideband in the Stage.
-
 """
 
 
@@ -33,6 +32,22 @@ from pisa.utils.resources import open_resource
 
 
 __all__ = ['weight']
+
+__author__ = 'S. Mandalia, S. Wren'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 class weight(Stage):

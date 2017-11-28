@@ -1,9 +1,7 @@
-# author: Sebastian Boeser
-#         sboeser@uni-mainz.de
-#
-# date:   2015-03-05
 """Set of utilities for handling HDF5 file I/O"""
 
+
+from __future__ import absolute_import
 
 import os
 
@@ -19,6 +17,22 @@ from pisa.utils.comparisons import recursiveEquality
 __all__ = ['HDF5_EXTS',
            'from_hdf', 'to_hdf',
            'test_hdf']
+
+__author__ = 'S. Boeser, J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 HDF5_EXTS = ['hdf', 'h5', 'hdf5']

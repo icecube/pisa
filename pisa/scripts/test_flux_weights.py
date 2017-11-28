@@ -1,6 +1,5 @@
 #! /usr/bin/env python
-# author: S.Wren
-# date:   November 15, 2016
+
 """
 A set of tests on the flux weights calculated by PISA.
 """
@@ -22,6 +21,22 @@ from pisa.utils.log import logging, set_verbosity
 from pisa.utils.flux_weights import (load_2d_table, calculate_2d_flux_weights,
                                      PRIMARIES, TEXPRIMARIES, load_3d_table,
                                      calculate_3d_flux_weights)
+
+__author__ = 'S. Wren'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 def plot_1d_slices(xintvals, yintvals, xtabvals, ytabvals, xtabbins, xlabel,
