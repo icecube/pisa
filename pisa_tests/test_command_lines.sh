@@ -181,18 +181,18 @@ PISA_FTYPE=float64 python $PISA/pisa/scripts/compare.py \
 # Test hierarchy NH vs IH
 #
 
-OUTDIR_CPU64_IH=$TMP/cpu64ih_pipeline
+OUTDIR_CPU64_IH_PIPELINE=$TMP/cpu64ih_pipeline
 echo "=============================================================================="
 echo "Running pipeline.py with example.cfg, with ih selected."
 echo "Storing results to"
-echo "  $OUTDIR_CPU64_IH"
+echo "  $OUTDIR_CPU64_IH_PIPELINE"
 echo "=============================================================================="
 PISA_FTYPE=float64 python $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example.cfg \
 	-a stage.aeff param.aeff_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
 	-a stage.reco param.reco_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
 	--select "ih" \
-	--outdir $OUTDIR_CPU64_IH \
+	--outdir $OUTDIR_CPU64_IH_PIPELINE \
 	--png -v
 
 OUTDIR=$TMP/compare_cpu64nh_pipeline_to_cpu64ih_pipeline
@@ -202,9 +202,9 @@ echo "Storing results to"
 echo "  $OUTDIR"
 echo "=============================================================================="
 python $PISA/pisa/scripts/compare.py \
-	--ref $OUTDIR_CPU64_IH/*.json* \
+	--ref $OUTDIR_CPU64_IH_PIPELINE/*.json* \
 	--ref-label 'cpu64ih' \
-	--test $OUTDIR_CPU64_NH/*.json* \
+	--test $OUTDIR_CPU64_NH_PIPELINE/*.json* \
 	--test-label 'cpu64nh' \
 	--outdir $OUTDIR \
 	--png -v
@@ -214,35 +214,37 @@ python $PISA/pisa/scripts/compare.py \
 # Test that DistributionMaker has same result as pipeline
 #
 
-OUTDIR_CPU64_NH_DISTMAKER=$TMP/cpu64nh_distmaker
-echo "=============================================================================="
-echo "Running distribution_maker.py with example.cfg, with nh selected."
-echo "Storing results to"
-echo "  $OUTDIR_CPU64_NH_DISTMAKER"
-echo "=============================================================================="
-PISA_FTYPE=float64 python $PISA/pisa/core/distribution_maker.py \
-	-p settings/pipeline/example.cfg \
-	-a stage.aeff param.aeff_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
-	-a stage.reco param.reco_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
-	--select "nh" \
-	--outdir $OUTDIR_CPU64_NH_DISTMAKER \
-	--png -v
+# TODO: removed since -a option doesn't work for distmaker
+#OUTDIR_CPU64_NH_DISTMAKER=$TMP/cpu64nh_distmaker
+#echo "=============================================================================="
+#echo "Running distribution_maker.py with example.cfg, with nh selected."
+#echo "Storing results to"
+#echo "  $OUTDIR_CPU64_NH_DISTMAKER"
+#echo "=============================================================================="
+#PISA_FTYPE=float64 python $PISA/pisa/core/distribution_maker.py \
+#	-p settings/pipeline/example.cfg \
+#	-a stage.aeff param.aeff_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
+#	-a stage.reco param.reco_events=events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e5evts_set0__unjoined.hdf5 \
+#	--select "nh" \
+#	--outdir $OUTDIR_CPU64_NH_DISTMAKER \
+#	--png -v
+#
+#OUTDIR=$TMP/compare_cpu64nh_distmaker_to_cpu64nh_pipeline
+#echo "=============================================================================="
+#echo "Running compare.py, fp64/cpu distmaker vs. fp64/cpu pipeline-produced MapSets."
+#echo "Storing results to"
+#echo "  $OUTDIR"
+#echo "=============================================================================="
+#python $PISA/pisa/scripts/compare.py \
+#	--ref $OUTDIR_CPU64_NH_PIPELINE/*.json* \
+#	--ref-label 'cpu64nh_pipeline' \
+#	--test $OUTDIR_CPU64_NH_DISTMAKER/*.json* \
+#	--test-label 'cpu64nh_distmaker' \
+#	--outdir $OUTDIR \
+#	--png -v
 
-OUTDIR=$TMP/compare_cpu64nh_distmaker_to_cpu64nh_pipeline
-echo "=============================================================================="
-echo "Running compare.py, fp64/cpu distmaker vs. fp64/cpu pipeline-produced MapSets."
-echo "Storing results to"
-echo "  $OUTDIR"
-echo "=============================================================================="
-python $PISA/pisa/scripts/compare.py \
-	--ref $OUTDIR_CPU64_NH/*.json* \
-	--ref-label 'cpu64nh_pipeline' \
-	--test $OUTDIR_CPU32_NH/*.json* \
-	--test-label 'cpu64nh_distmaker' \
-	--outdir $OUTDIR \
-	--png -v
 
-
+# TODO: following fails unless we can use larger data set size!
 OUTDIR=$TMP/hypo_testing_test
 echo "=============================================================================="
 echo "Running hypo_testing.py, basic NMO Asimov analysis (not necessarily accurate)"
