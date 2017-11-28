@@ -631,27 +631,27 @@ def parse_args(desc=__doc__):
     )
     parser.add_argument(
         '--aeff-energy-param', metavar='PATH',
-        default='aeff/vlvnt/vlvnt_aeff_energy_param.json',
+        default='aeff/vlvnt_aeff_energy_param.json',
         help='''Resource location or file path to effective areas energy
-        parameterization. (default: aeff/vlvnt/vlvnt_aeff_energy_param.json)'''
+        parameterization. (default: aeff/vlvnt_aeff_energy_param.json)'''
     )
     parser.add_argument(
         '--aeff-coszen-param', metavar='PATH',
-        default='aeff/vlvnt/vlvnt_aeff_coszen_param.json',
+        default='aeff/vlvnt_aeff_coszen_param.json',
         help='''Resource location or file path to effective areas coszen
-        parameterization. (default: aeff/vlvnt/vlvnt_aeff_energy_param.json)'''
+        parameterization. (default: aeff/vlvnt_aeff_energy_param.json)'''
     )
     parser.add_argument(
         '--reco-param', metavar='PATH',
-        default='reco/vlvnt/vlvnt_reco_param.json',
+        default='reco/vlvnt_reco_param.json',
         help='''Resource location or file path to reco parameterization.
-        (default: aeff/vlvnt/vlvnt_aeff_energy_param.json)'''
+        (default: aeff/vlvnt_aeff_energy_param.json)'''
     )
     parser.add_argument(
         '--pid-param', metavar='PATH',
-        default='pid/vlvnt/vlvnt_pid_energy_param.json',
+        default='pid/vlvnt_pid_energy_param.json',
         help='''Resource location or file path to pid parameterization.
-        (default: aeff/vlvnt/vlvnt_aeff_energy_param.json)'''
+        (default: aeff/vlvnt_aeff_energy_param.json)'''
     )
     parser.add_argument(
         '--pid-dist', choices=['discrete', 'normal'], type=str,

@@ -1,23 +1,21 @@
 # pisa.resources
 
-Location to store default resources for PISA.
+Example PISA resources
 
-Note that for resources outside of the standard resources, you can use a separate directory and set the `PISA_RESOURCES` environment variable in your shell pointing to that directory.
+To use resources outside of these examples, create a directory outside of the PISA sourcecode and set the `PISA_RESOURCES` environment variable in your shell to point to that directory.
 
 
 ## Directory Listing
 
-* `aeff/` - Contains files used by the `aeff` stages e.g. parameterised effective areas.
-* `backgrounds/` - Contains files relating to the backgrounds in analyses.
-* `cache/` - Where the stages will store their cache by default.
-* `cross_sections/` - Contains files relating to the implementation of cross-sections in the `xsec` stage.
-* `debug/` - Where the output of running stages in debug mode will go.
-* `events/` - Contains HDF5 files with neutrino simulations.
-* `flux/` - Contains files used by the `flux` stages e.g. the Honda tables.
-* `osc/` - Contains files used by the `osc` stages e.g. the Earth density files.
-* `pid/` - Contains files used by the `pid` stages e.g. parametersied PID probabilities. 
-* `priors/` - Contains any non-standard priors that can be used in analyses.
-* `reco/` - Contains files used by the `reco` stages e.g. parameterised reconstruction kernels.
-* `settings/` - Containing settings files used by the pipelines.
-* `tests/` - Contains all files relating to the tests in `$PISA/tests`.
-* `__init__.py` - File that makes `resources` directory behave as a Python module
+| File/directory    | Description
+| ----------------- | -----------
+| `aeff/`           | Data files that define effective areas
+| `cross_sections/` | Detector medium neutrino
+| `events/`         | PISA events HDF5 files
+| `flux/`           | Neutrino fluxes, e.g. the tables from Honda et al. (2015)
+| `osc/`            | The Earth density files (PREM) used for computing neutrino oscillations
+| `pid/`            | Particle identification (PID) data files, e.g. parametersied PID probabilities.
+| `priors/`         | Pre-defined priors that can be used in analyses, e.g. from nu-fit.org
+| `reco/`           | Reconstruction resolutions, e.g. parameterised reconstruction kernels
+| `settings/`       | Contains directories, each for settings for different purposes
+| `__init__.py`     | File that makes `resources` directory behave as a Python module
