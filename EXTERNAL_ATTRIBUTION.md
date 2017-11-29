@@ -7,6 +7,15 @@ If you identify any mistakes in the below or find any other such components bein
 Unless noted below or in the contents of an individual file, all files distributed with PISA are Copyright (c) 2014-2017, The IceCube Collaboration, and are licensed under the Apache 2.0 license.
 See the LICENSE file for details.
 
+## MCEq
+
+The service `flux.mceq` does not reproduce but does call upon the MCEq software.
+> https://github.com/afedynitch/MCEq
+
+The authors of that software / the paper that it is based upon (A. Fedynitch, R. Engel, T. K. Gaisser, F. Riehn, T. Stanev) request that anyone who uses their work to produce results cite their work, so please do so if you make use the `flux.mceq` service.
+The form of the citation that they request is found in their documentation at
+> http://mceq.readthedocs.io/en/latest/citations.html
+
 ## Prob3++
 
 Files in the directory `pisa/stages/osc/prob3` were written by members of the Super-Kamiokande collaboration and are offered for public use. The original source code can be found at
@@ -86,3 +95,4 @@ and are therefore subject to the following copyright:
 Automatic versioning is provided by public-domain sofware The Versioneer, written by Brian Warner (files `versioneer.py` and `pisa/_version.py`).
 This project can be found at
 > https://github.com/warner/python-versioneer
+
