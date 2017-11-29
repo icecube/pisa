@@ -28,12 +28,17 @@ def scale(scale, value, out):
 
 def multiply(val, out):
     multiply_gufunc(val.get(WHERE),
-                 out=out.get(WHERE))
+                    out=out.get(WHERE))
+    out.mark_changed(WHERE)
+
+def set(val, out):
+    set_gufunc(val.get(WHERE),
+               out=out.get(WHERE))
     out.mark_changed(WHERE)
 
 def square(val, out):
     square_gufunc(val.get(WHERE),
-                 out=out.get(WHERE))
+                  out=out.get(WHERE))
     out.mark_changed(WHERE)
 
 def sqrt(val, out):
@@ -64,6 +69,10 @@ else:
 @guvectorize([signature], '()->()', target=TARGET)
 def multiply_gufunc(val, out):
     out[0] *= val
+
+@guvectorize([signature], '()->()', target=TARGET)
+def set_gufunc(val, out):
+    out[0] = val
 
 @guvectorize([signature], '()->()', target=TARGET)
 def square_gufunc(val, out):
