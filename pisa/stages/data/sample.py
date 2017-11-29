@@ -164,7 +164,7 @@ class sample(Stage):
 
         #User can specify that truth variables have their names prefixed with "truth_"
         self.fix_truth_variable_names = fix_truth_variable_names
-        self.truth_variables = ["energy","coszen"]
+        self.truth_variables = ["energy","coszen","x","y","z"]
         self.truth_variable_prefix = "true_"
 
         self._compute_outputs()
