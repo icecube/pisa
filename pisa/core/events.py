@@ -639,6 +639,7 @@ class Data(FlavIntDataGroup):
         fig_processed = []
         remaining_data = {}
         for fig in fig_to_process:
+
             data_dict = self[fig]
             field_names = data_dict.keys()
 
@@ -655,6 +656,10 @@ class Data(FlavIntDataGroup):
                 crit_str = crit_str.replace(
                     field_name, 'self["%s"]["%s"]' % (fig, field_name)
                 )
+            
+            #TODO (Tom) This can't handle the case where one or more variables in the cut are not present in a fig (e.g. true_energy in noise), needs fixing
+
+            #Now use the fleshed out expression to make the cut
             mask = eval(crit_str)
             remaining_data[fig] = {k: deepcopy(v[mask])
                                    for k, v in self[fig].iteritems()}
