@@ -56,10 +56,9 @@ class pi_simple(PiStage):
                       'nominal_opposite_flux',
                      )
         # what are keys added or altered in the calculation used during apply
-        calc_keys = ()
+        calc_keys = ('sys_flux')
         # what keys are added or altered for the outputs during apply
-        output_keys = ('sys_flux',
-                      )
+        output_keys = ()
 
         # init base class
         super(pi_simple, self).__init__(data=data,
@@ -77,18 +76,18 @@ class pi_simple(PiStage):
                                        )
 
         assert self.input_mode is not None
-        assert self.calc_mode is None
-        assert self.output_mode is not None
+        assert self.calc_mode is not None
+        assert self.output_mode is None
 
     def setup_function(self):
 
-        self.data.data_specs = self.output_specs
+        self.data.data_specs = self.calc_specs
 
         for container in self.data:
             container['sys_flux'] = np.empty((container.size, 2), dtype=FTYPE)
 
     @profile
-    def apply_function(self):
+    def compute_function(self):
 
         nue_numu_ratio = self.params.nue_numu_ratio.value.m_as('dimensionless')
         nu_nubar_ratio = self.params.nu_nubar_ratio.value.m_as('dimensionless')
