@@ -58,7 +58,7 @@ class pi_simple(PiStage):
         # what are keys added or altered in the calculation used during apply
         calc_keys = ('sys_flux')
         # what keys are added or altered for the outputs during apply
-        output_keys = ()
+        output_keys = ('sys_flux')
 
         # init base class
         super(pi_simple, self).__init__(data=data,
@@ -77,7 +77,7 @@ class pi_simple(PiStage):
 
         assert self.input_mode is not None
         assert self.calc_mode is not None
-        assert self.output_mode is None
+        assert self.output_mode is not None
 
     def setup_function(self):
 
@@ -89,6 +89,11 @@ class pi_simple(PiStage):
     @profile
     def compute_function(self):
 
+        self.data.data_specs = self.calc_specs
+
+
+
+
         nue_numu_ratio = self.params.nue_numu_ratio.value.m_as('dimensionless')
         nu_nubar_ratio = self.params.nu_nubar_ratio.value.m_as('dimensionless')
         delta_index = self.params.delta_index.value.m_as('dimensionless')
@@ -96,6 +101,15 @@ class pi_simple(PiStage):
         Barr_nu_nubar_ratio = self.params.Barr_nu_nubar_ratio.value.m_as('dimensionless')
 
         for container in self.data:
+
+            # we need some additional quantities (this logic should go to pi_stage):
+            if self.input_mode == 'binned' and self.calc_mode == 'events':
+                container.binned_to_array('nominal_flux')
+                container.binned_to_array('nominal_opposite_flux')
+            if self.input_mode == 'events' and self.calc_mode == 'binned':
+                container.array_to_binned('nominal_flux', self.calc_specs)
+                container.array_to_binned('nominal_opposite_flux', self.calc_specs)
+
             apply_sys_vectorized(container['true_energy'].get(WHERE),
                                  container['true_coszen'].get(WHERE),
                                  container['nominal_flux'].get(WHERE),

@@ -145,40 +145,58 @@ class PiStage(BaseStage):
 
     @profile
     def apply(self):
+
         self.compute()
 
         self.data.data_specs = 'events'
 
-        if self.input_mode is None and self.calc_mode is None and self.output_mode == 'events':
+        # make a string of the modes for convenience
+        mode = ['N','N','N']
+        if self.input_mode == 'binned':
+            mode[0] = 'B'
+        elif self.input_mode == 'events':
+            mode[0] = 'E'
+        if self.calc_mode == 'binned':
+            mode[1] = 'B'
+        elif self.calc_mode == 'events':
+            mode[1] = 'E'
+        if self.output_mode == 'binned':
+            mode[2] = 'B'
+        elif self.output_mode == 'events':
+            mode[2] = 'E'
+        mode = ''.join(mode)
+
+
+        if mode == 'NNE':
             pass
 
-        if self.input_mode == 'binned' and self.calc_mode == 'binned':
+        if mode[:2] == 'BB':
             self.data.data_specs = self.calc_specs
 
-        if self.input_mode == 'binned' and self.calc_mode == 'events' and self.output_mode == 'events':
+        if mode == 'BEE':
             for container in self.data:
                 for key in self.input_keys:
                     container.binned_to_array(key)
 
-        if self.input_mode == 'binned' and self.calc_mode == 'events' and self.output_mode == 'binned':
+        if mode == 'BEB':
             for container in self.data:
                 for key in self.calc_keys:
                     container.array_to_binned(key, self.input_specs)
             self.data.data_specs = self.calc_specs
 
-        if self.input_mode == 'events' and self.calc_mode == 'binned' and self.output_mode == 'binned':
+        if mode == 'EBB':
             for container in self.data:
                 for key in self.input_keys:
                     container.array_to_binned(key, self.calc_specs)
             self.data.data_specs = self.calc_specs
 
-        if self.input_mode == 'events' and self.calc_mode is None and self.output_mode == 'binned':
+        if mode == 'ENB':
             for container in self.data:
                 for key in self.input_keys:
                     container.array_to_binned(key, self.output_specs)
             self.data.data_specs = self.output_specs
 
-        if self.input_mode == 'events' and self.calc_mode == 'binned' and self.output_mode == 'events':
+        if mode == 'EBE':
             for container in self.data:
                 for key in self.calc_keys:
                     container.binned_to_array(key)
