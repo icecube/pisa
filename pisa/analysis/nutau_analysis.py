@@ -73,13 +73,12 @@ class Analysis(object):
         # DOF as n_bins - n_free_params + n_gauss_priors
         template = self.template_maker.get_outputs(return_sum=True)
         template = template.combine_wildcard('*')
-        #n_bins = sum(map.binning.tot_num_bins for map in template)
-        #self.n_free_params = len(self.template_maker.params.free)
-        #n_gauss_priors = 0
-        #for param in self.template_maker.params.free:
-        #    if param.prior.kind == 'gaussian': n_gauss_priors +=1
-        #self.dof = n_bins - self.n_free_params + n_gauss_priors
-        self.dof = 1
+        n_bins = template.binning.tot_num_bins
+        self.n_free_params = len(self.template_maker.params.free)
+        n_gauss_priors = 0
+        for param in self.template_maker.params.free:
+            if param.prior.kind == 'gaussian': n_gauss_priors +=1
+        self.dof = n_bins - self.n_free_params + n_gauss_priors
 
         # Generate distribution
         data = self.data_maker.get_outputs(return_sum=True)#, sum_map_name='evts', sum_map_tex_name='evts')
@@ -101,7 +100,7 @@ class Analysis(object):
             self.pseudodata = self.data.fluctuate('gauss', random_state=data_random_state)
         else:
             raise Exception('unknown method %s'%method)
-        #self.N_data = sum([unp.nominal_values(map.hist).sum() for map in self.pseudodata])
+        self.N_data = self.pseudodata.nominal_values.sum()
 
     # TODO: move the complexity of defining a scan into a class with various
     # factory methods, and just pass that class to the scan method; we will
@@ -186,7 +185,7 @@ class Analysis(object):
             self.template_maker.update_params(fp)
             template = self.template_maker.get_outputs()
             template = [t.combine_wildcard('*') for t in template]
-            template[0][0].name = 'total'
+            template[0].name = 'total'
             metric_vals.append(self.pseudodata.metric_total(expected_values=template,
                                                       metric=self.metric))
         return metric_vals
@@ -225,9 +224,7 @@ class Analysis(object):
             sign = -1
         self.template_maker.params.free._rescaled_values = scaled_param_vals
         template = self.template_maker.get_outputs()
-        #print template
         template = [t.combine_wildcard('*') for t in template]
-        #print template
         template[0].name = 'total'
         #N_mc = sum([unp.nominal_values(map.hist).sum() for map in template])
         #scale = self.N_data/N_mc
@@ -285,7 +282,7 @@ class Analysis(object):
         if skip:
             best_fit_vals = x0
             metric_val = self._minimizer_callable(x0, False)
-            dict_flags = {'warnflag':0, 'task':'skip', 'funcalls':0, 'nit':0}
+            dict_flags = {'warnflag':0, 'task':'skip', 'funcalls':0, 'nit':0, 'avg_tmp_time':0, 'n_minimizer_calls':0}
         else:
             start_t = time.time()
             minim_result = opt.minimize(fun=self._minimizer_callable,
@@ -306,7 +303,7 @@ class Analysis(object):
             metric_val = minim_result.fun
             template = self.template_maker.get_outputs()
             template = [t.combine_wildcard('*') for t in template]
-            template[0][0].name = 'total'
+            template[0].name = 'total'
             dict_flags = {}
             mod_chi2_val = (self.pseudodata.metric_total(expected_values=template, metric='mod_chi2')
                 + template_maker.params.priors_penalty(metric='mod_chi2'))
@@ -325,7 +322,7 @@ class Analysis(object):
         all_metrics = {}
         template = self.template_maker.get_outputs()
         template = [t.combine_wildcard('*') for t in template]
-        template[0][0].name = 'total'
+        template[0].name = 'total'
         #for metric in ['llh', 'conv_llh', 'barlow_llh','chi2', 'mod_chi2']:
         for metric in ['llh','chi2']:
             all_metrics[metric] = self.pseudodata.metric_total(expected_values=template, metric=metric) + template_maker.params.priors_penalty(metric=metric) 
@@ -462,8 +459,8 @@ if __name__ == '__main__':
                         metavar='JSONFILE', required=True,
                         help='''Settings related to the optimizer used in the
                         LLR analysis.''')
-    parser.add_argument('-sp', '--set-param', type=str, default='',
-                        help='Set a param to a certain value for both hypo and data.')
+    parser.add_argument('-sp', '--set-param', type=str, default=None,
+                        help='Set a param to a certain value for both hypo and data.', action='append')
     parser.add_argument('-spd', '--set-param-data', type=str, default='',
                         help='''Set a param to a certain value only for data ''')
     parser.add_argument('-fp', '--fix-param', type=str, default='',
@@ -508,18 +505,23 @@ if __name__ == '__main__':
 
         if not args.fix_param == '':
             template_maker.params.fix(args.fix_param)
-        if not args.set_param == '':
-            p_name,value = args.set_param.split("=")
-            print "p_name,value= ", p_name, " ", value
-            value = parse_quantity(value)
-            value = value.n * value.units
-            prm = template_maker.params[p_name]
-            prm.value = value
-            template_maker.update_params(prm)
-            if p_name in data_maker.params.names:
-                prm = data_maker.params[p_name]
+        if args.set_param is not None:
+            for one_set_param in args.set_param:
+                p_name,value = one_set_param.split("=")
+                print "set_parm ", p_name, " to  ", value
+                value = parse_quantity(value)
+                value = value.n * value.units
+                prm = template_maker.params[p_name]
+                print "old", p_name,".value for template= ", prm.value
                 prm.value = value
-                data_maker.update_params(prm)
+                template_maker.update_params(prm)
+                print "new ", p_name,".value for template= ", prm.value
+                if p_name in data_maker.params.names:
+                    prm = data_maker.params[p_name]
+                    print "old", p_name,".value for data= ", prm.value
+                    prm.value = value
+                    print "new", p_name,".value for data= ", prm.value
+                    data_maker.update_params(prm)
         if not args.fix_param_scan == '':
             p_name,value = args.fix_param_scan.split("=")
             print "p_name,value= ", p_name, " ", value
