@@ -8,6 +8,9 @@ import numpy as np
 
 from pisa.utils.resources import find_resource
 
+#TODO (Tom) Eventually remove this, want to be able to also run with the old (wrong) version for comparison
+#TODO (Tom) Need GPU fix too
+use_uphor_fix = True
 
 class CPUWeight(object):
     """
@@ -112,11 +115,18 @@ class CPUWeight(object):
             use_cutoff=True,
             cutoff_value=self.numu_cutoff
         )
-        val = A_ave - (self.norm_fcn(
-            x=czenith,
-            A=A_shape,
-            sigma=0.32
-        ) - 0.75 * A_shape)
+        if use_uphor_fix :
+            val = A_ave - (self.norm_fcn(
+                x=czenith,
+                A=A_shape,
+                sigma=0.36
+            ) - 0.6 * A_shape)
+        else :
+            val = A_ave - (self.norm_fcn(
+                x=czenith,
+                A=A_shape,
+                sigma=0.32
+            ) - 0.75 * A_shape)
         return val
 
     def ModNuEFlux(self, energy, czenith, e1mu, e2mu, z1mu,
@@ -141,45 +151,90 @@ class CPUWeight(object):
             use_cutoff=True,
             cutoff_value=self.nue_cutoff
         )
-        val = A_ave - (1.5 * self.norm_fcn(
-            x=czenith,
-            A=A_shape,
-            sigma=0.4
-        ) - 0.7 * A_shape)
+        if use_uphor_fix :
+            val = A_ave - (1.5 * self.norm_fcn(
+                x=czenith,
+                A=A_shape,
+                sigma=0.36
+            ) - 0.7 * A_shape)
+        else :
+            val = A_ave - (1.5 * self.norm_fcn(
+                x=czenith,
+                A=A_shape,
+                sigma=0.4
+            ) - 0.7 * A_shape)
         return val
 
     def modRatioUpHor(self, kFlav, true_energy, true_coszen, uphor):
+
         # Philipp took this from OscFit. See code in GPUWeight for relevant
         # comments.
-        if kFlav == 0:
-            A_shape = 1.0 * np.absolute(uphor) * self.LogLogParam(
-                energy=true_energy,
-                y1=self.z1max_e + self.z1max_mu,
-                y2=self.z2max_e + self.z2max_mu,
-                x1=self.x1z,
-                x2=self.x2z,
-                use_cutoff=True,
-                cutoff_value=self.nue_cutoff
+
+        if use_uphor_fix :
+
+            if kFlav == 0:
+                A_shape = 1.0 * np.absolute(uphor) * self.LogLogParam(
+                    energy=true_energy,
+                    y1=self.z1max_e + self.z1max_mu,
+                    y2=self.z2max_e + self.z2max_mu,
+                    x1=self.x1z,
+                    x2=self.x2z,
+                    use_cutoff=True,
+                    cutoff_value=self.nue_cutoff
+                )
+                return 1.0 - 0.3 * np.sign(uphor) * self.norm_fcn(
+                    x=true_coszen,
+                    A=A_shape,
+                    sigma=0.35
+                )
+            elif kFlav == 1:
+                #A_shape = 1.0 * np.absolute(uphor) * self.LogLogParam(
+                #    energy=true_energy,
+                #    y1=self.z1max_mu,
+                #    y2=self.z2max_mu,
+                #    x1=self.x1z,
+                #    x2=self.x2z,
+                #    use_cutoff=True,
+                #    cutoff_value=self.numu_cutoff
+                #)
+                return 1.
+            else:
+                raise ValueError("I got the flavour %i which I don't understand." 
+                                 " Expect 0 or 1."%kFlav)
+
+        else :
+
+            if kFlav == 0:
+                A_shape = 1.0 * np.absolute(uphor) * self.LogLogParam(
+                    energy=true_energy,
+                    y1=self.z1max_e + self.z1max_mu,
+                    y2=self.z2max_e + self.z2max_mu,
+                    x1=self.x1z,
+                    x2=self.x2z,
+                    use_cutoff=True,
+                    cutoff_value=self.nue_cutoff
+                )
+            elif kFlav == 1:
+                A_shape = 1.0 * np.absolute(uphor) * self.LogLogParam(
+                    energy=true_energy,
+                    y1=self.z1max_mu,
+                    y2=self.z2max_mu,
+                    x1=self.x1z,
+                    x2=self.x2z,
+                    use_cutoff=True,
+                    cutoff_value=self.numu_cutoff
+                )
+            else:
+                raise ValueError("I got the flavour %i which I don't understand." 
+                                 " Expect 0 or 1."%kFlav)
+            val = 1.0 - 3.5 * np.sign(uphor) * self.norm_fcn(
+                x=true_coszen,
+                A=A_shape,
+                sigma=0.35
             )
-        elif kFlav == 1:
-            A_shape = 1.0 * np.absolute(uphor) * self.LogLogParam(
-                energy=true_energy,
-                y1=self.z1max_mu,
-                y2=self.z2max_mu,
-                x1=self.x1z,
-                x2=self.x2z,
-                use_cutoff=True,
-                cutoff_value=self.numu_cutoff
-            )
-        else:
-            raise ValueError("I got the flavour %i which I don't understand." 
-                             " Expect 0 or 1."%kFlav)
-        val = 1.0 - 3.5 * np.sign(uphor) * self.norm_fcn(
-            x=true_coszen,
-            A=A_shape,
-            sigma=0.35
-        )
-        return val
+            return val
+
+
 
     def modRatioNuBar(self, kNuBar, kFlav, true_e, true_cz,
                       nu_nubar, nubar_sys):

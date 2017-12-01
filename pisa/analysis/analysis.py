@@ -231,7 +231,8 @@ class Analysis(object):
         self._nit = 0
 
     def fit_hypo(self, data_dist, hypo_maker, hypo_param_selections, metric,
-                 minimizer_settings, reset_free=True, check_octant=True,
+                 minimizer_settings, reset_free=True, 
+                 check_octant=True, limit_octant_check=False,
                  check_ordering=False, other_metrics=None,
                  blind=False, pprint=True):
         """Fitter "outer" loop: If `check_octant` is True, run
@@ -302,6 +303,9 @@ class Analysis(object):
 
         """
 
+        if ( not check_octant ) and limit_octant_check :
+            raise ValueError("If 'check_octant' is False, 'limit_octant_check' must be False")
+
         if check_ordering:
             if 'nh' in hypo_param_selections or 'ih' in hypo_param_selections:
                 raise ValueError('One of the orderings has already been '
@@ -332,6 +336,17 @@ class Analysis(object):
                 # Saves the current minimizer start values for the octant check
                 minimizer_start_params = hypo_maker.params
 
+            # If `limit_octant_check` is set, don't allow theta23 to switch octant (instead we try fitting for both octants individually and take the best)
+            inflection_point = (45.*ureg.deg).to(hypo_maker.params.theta23.units)
+            if limit_octant_check :
+                theta23 = hypo_maker.params.theta23
+                theta23_original_range = deepcopy(theta23.range)
+                if theta23.value < inflection_point :
+                    theta23.range = tuple([theta23_original_range[0],inflection_point])
+                elif theta23.value > inflection_point :
+                    theta23.range = tuple([inflection_point,theta23_original_range[1]])
+                hypo_maker.update_params(theta23)
+
             best_fit_info = self.fit_hypo_inner(
                 hypo_maker=hypo_maker,
                 data_dist=data_dist,
@@ -353,8 +368,14 @@ class Analysis(object):
 
                 # Hop to other octant by reflecting about 45 deg
                 theta23 = hypo_maker.params.theta23
-                inflection_point = (45*ureg.deg).to(theta23.units)
-                theta23.value = 2*inflection_point - theta23.value
+                mirrored_theta32_value = 2.*inflection_point - theta23.value
+                if limit_octant_check :
+                    theta23 = hypo_maker.params.theta23
+                    if mirrored_theta32_value < inflection_point :
+                        theta23.range = tuple([theta23_original_range[0],inflection_point])
+                    elif mirrored_theta32_value > inflection_point :
+                        theta23.range = tuple([inflection_point,theta23_original_range[1]])
+                theta23.value = mirrored_theta32_value
                 hypo_maker.update_params(theta23)
 
                 # Re-run minimizer starting at new point
@@ -387,6 +408,13 @@ class Analysis(object):
                     alternate_fits.append(new_fit_info)
                     if not blind:
                         logging.debug('Accepting initial-octant fit')
+
+            #If messed with the theta23 limits, undo the changes now
+            if limit_octant_check :
+                theta23 = hypo_maker.params.theta23
+                theta23.range = deepcopy(theta23_original_range)
+                hypo_maker.update_params(theta23)
+
 
         return best_fit_info, alternate_fits
 
@@ -450,28 +478,29 @@ class Analysis(object):
             bounds = [(0, 1)]*len(x0)
 
         for param, x0_val, bds in zip(hypo_maker.params.free, x0, bounds):
+            #print "+++ %s : val = %s : rescaled = %s : bounds = %s" % (param.name,param.value,x0_val,bds)
             if x0_val < bds[0]:
                 raise ValueError(
-                    'Param %s, initial value %e exceeds the lower bound.'
-                    % (param.name, param.value)
+                    'Param %s, initial value %e exceeds the lower bound %e.'
+                    % (param.name, param.value.magnitude, bds[0])
                 )
             if x0_val > bds[1]:
                 raise ValueError(
-                    'Param %s, initial value %e exceeds the upper bound.'
-                    % (param.name, param.value)
+                    'Param %s, initial value %e exceeds the upper bound. %e'
+                    % (param.name, param.value.magnitude,bds[0])
                 )
 
             if np.isclose(x0_val, bds[0], atol=np.finfo(FTYPE).eps, rtol=0):
                 logging.warn(
                     'Param %s, initial value value %e is at the lower bound;'
                     ' minimization may fail as a result.',
-                    param.name, param.value
+                    param.name, param.value.magnitude
                 )
             if np.isclose(x0_val, bds[1], atol=np.finfo(FTYPE).eps, rtol=0):
                 logging.warn(
                     'Param %s, initial value value %e is at the upper bound;'
-                    ' minimization may fail as a rsult.',
-                    param.name, param.value
+                    ' minimization may fail as a reesult.',
+                    param.name, param.value.magnitude
                 )
 
         logging.debug('Running the %s minimizer...', minimizer_method)

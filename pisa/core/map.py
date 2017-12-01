@@ -611,12 +611,11 @@ class Map(object):
 
         hist = valid_nominal_values(to_plot.hist)
         islog = False
+        vmax_ = np.nanmax(np.abs(hist)) if vmax is None else vmax
         if symm:
             if cmap is None:
                 cmap = cmap_div
-            extr = np.nanmax(np.abs(hist))
-            vmax_ = extr
-            vmin_ = -extr
+            vmin_ = -vmax_
         else:
             if cmap is None:
                 cmap = cmap_seq
@@ -624,7 +623,6 @@ class Map(object):
                 vmin_ = 0
             else:
                 vmin_ = np.nanmin(hist)
-            vmax_ = np.nanmax(hist)
 
         x = to_plot.binning.dims[0].bin_edges.magnitude
         y = to_plot.binning.dims[1].bin_edges.magnitude
@@ -637,9 +635,6 @@ class Map(object):
             yticks = 2**(np.arange(np.ceil(np.log2(min(y))),
                                    np.floor(np.log2(max(y)))+1))
             y = np.log10(y)
-
-        if vmax is not None:
-            vmax_ = vmax
 
         X, Y = np.meshgrid(x, y)
         pcmesh = ax.pcolormesh(
