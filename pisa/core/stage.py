@@ -419,7 +419,7 @@ class Stage(BaseStage):
             self.nominal_outputs_hash = nominal_outputs_hash
 
     # for PI compatibility
-    def apply(self, inputs=None):
+    def run(self, inputs=None):
         return self.get_outputs(inputs=inputs)
 
     @profile

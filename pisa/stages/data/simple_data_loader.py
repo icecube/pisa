@@ -1,5 +1,5 @@
 """
-Docstring
+Atage do load data from a PISA style hdf5 file into a PISA pi ContainerSet
 """
 from __future__ import absolute_import, print_function, division
 

@@ -296,7 +296,7 @@ class Pipeline(object):
             try:
                 logging.trace('>>> BEGIN: get_outputs')
                 if self.pisa_version == 'pi':
-                    stage.apply()
+                    stage.run()
                     outputs = None
                     # return pisa cake style ouput if we're the last stage
                     if i==last:
@@ -305,7 +305,7 @@ class Pipeline(object):
                         #except:
                         #    pass
                 else:
-                    outputs = stage.apply(inputs=inputs)
+                    outputs = stage.run(inputs=inputs)
                 logging.trace('>>> END  : get_outputs')
             except:
                 logging.error('Error occurred computing outputs in stage %s /'
@@ -679,7 +679,7 @@ def main(return_outputs=False):
                 input_maps.append(input_map)
             inputs = MapSet(maps=input_maps, name='ones', hash=1)
 
-        outputs = stage.apply(inputs=inputs)
+        outputs = stage.run(inputs=inputs)
 
     for stage in pipeline[indices]:
         if not args.outdir:

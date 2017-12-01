@@ -139,10 +139,7 @@ class BaseStage(object):
     def setup(self):
         pass
 
-    def coumpute(self):
-        pass
-
-    def apply(self):
+    def run(self):
         return None
 
 

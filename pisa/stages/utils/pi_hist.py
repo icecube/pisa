@@ -1,6 +1,7 @@
 
 """
-Docstring
+Stage to transform arrays with weights into actual `histograms`
+that represent event counts
 """
 from __future__ import absolute_import, print_function, division
 import numpy as np
@@ -41,21 +42,17 @@ class pi_hist(PiStage):
         output_names = ()
 
         # what are the keys used from the inputs during apply
-        input_keys = ('weights',
-                     )
+        input_apply_keys = ('weights',
+                           )
         # what are keys added or altered in the calculation used during apply
         assert calc_specs is None
         if error_method in ['sumw2']:
-            calc_keys = ('weights_squared',
-                        )
-            output_keys = ('weights',
-                           'errors',
-                          )
-            calc_specs = input_specs
+            output_apply_keys = ('weights',
+                                 'errors',
+                                )
         else:
-            calc_keys = ()
-            output_keys = ('weights',
-                          )
+            output_apply_keys = ('weights',
+                                )
 
 
         # init base class
@@ -69,9 +66,8 @@ class pi_hist(PiStage):
                                       input_specs=input_specs,
                                       calc_specs=calc_specs,
                                       output_specs=output_specs,
-                                      input_keys=input_keys,
-                                      calc_keys=calc_keys,
-                                      output_keys=output_keys,
+                                      input_apply_keys=input_apply_keys,
+                                      output_apply_keys=output_apply_keys,
                                      )
 
         assert self.input_mode is not None
@@ -88,9 +84,11 @@ class pi_hist(PiStage):
 
     @profile
     def apply(self):
-        self.compute()
-
         # this is special, we want the actual event weights in the histo
+        # therefor we're overwritting the apply function
+        # normally in a stage you would implement the `apply_function` method
+        # and not the `apply` method!
+
         if self.input_mode == 'binned':
             self.data.data_specs = self.output_specs
             for container in self.data:

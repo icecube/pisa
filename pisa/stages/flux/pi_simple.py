@@ -1,6 +1,11 @@
 # pylint: disable=not-callable
 """
-Docstring
+Stage to implement the old PISA/odcfit flux systematics
+
+The `nominal_flux` and `nominal_opposite_flux` is something that realy should
+not be done. That needs to be changed. We simply want to calcualte nu and nubar
+fluxes insetad!
+
 """
 from __future__ import absolute_import, print_function, division
 
@@ -23,11 +28,16 @@ class pi_simple(PiStage):
     ----------
 
     nue_numu_ratio : quantity (dimensionless)
-
-    None
+    nu_nubar_ratio : quantity (dimensionless)
+    delta_index : quantity (dimensionless)
+    Barr_uphor_ratio : quantity (dimensionless)
+    Barr_nu_nubar_ratio : quantity (dimensionless)
 
     Notes
     -----
+
+    TODO: get rid of this _oppo_flux stuff!!!
+    Just replace with nu and nubar flux!!!
 
     """
     def __init__(self,
@@ -51,14 +61,14 @@ class pi_simple(PiStage):
         output_names = ()
 
         # what are the keys used from the inputs during apply
-        input_keys = ('weights',
+        input_calc_keys = ('weights',
                       'nominal_flux',
                       'nominal_opposite_flux',
                      )
         # what are keys added or altered in the calculation used during apply
-        calc_keys = ('sys_flux')
+        output_calc_keys = ('sys_flux')
         # what keys are added or altered for the outputs during apply
-        output_keys = ('sys_flux')
+        output_apply_keys = ('sys_flux')
 
         # init base class
         super(pi_simple, self).__init__(data=data,
@@ -70,9 +80,9 @@ class pi_simple(PiStage):
                                         input_specs=input_specs,
                                         calc_specs=calc_specs,
                                         output_specs=output_specs,
-                                        input_keys=input_keys,
-                                        calc_keys=calc_keys,
-                                        output_keys=output_keys,
+                                        input_calc_keys=input_calc_keys,
+                                        output_calc_keys=output_calc_keys,
+                                        output_apply_keys=output_apply_keys,
                                        )
 
         assert self.input_mode is not None
@@ -102,13 +112,13 @@ class pi_simple(PiStage):
 
         for container in self.data:
 
-            # we need some additional quantities (this logic should go to pi_stage):
-            if self.input_mode == 'binned' and self.calc_mode == 'events':
-                container.binned_to_array('nominal_flux')
-                container.binned_to_array('nominal_opposite_flux')
-            if self.input_mode == 'events' and self.calc_mode == 'binned':
-                container.array_to_binned('nominal_flux', self.calc_specs)
-                container.array_to_binned('nominal_opposite_flux', self.calc_specs)
+            ## we need some additional quantities (this logic should go to pi_stage):
+            #if self.input_mode == 'binned' and self.calc_mode == 'events':
+            #    container.binned_to_array('nominal_flux')
+            #    container.binned_to_array('nominal_opposite_flux')
+            #if self.input_mode == 'events' and self.calc_mode == 'binned':
+            #    container.array_to_binned('nominal_flux', self.calc_specs)
+            #    container.array_to_binned('nominal_opposite_flux', self.calc_specs)
 
             apply_sys_vectorized(container['true_energy'].get(WHERE),
                                  container['true_coszen'].get(WHERE),

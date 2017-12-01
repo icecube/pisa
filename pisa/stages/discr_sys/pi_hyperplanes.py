@@ -1,5 +1,5 @@
 """
-Docstring
+PISA pi stage to apply hyperplane fits from duscrete systematics parameterizations
 """
 from __future__ import absolute_import, print_function, division
 
@@ -22,12 +22,23 @@ class pi_hyperplanes(PiStage):
     Paramaters
     ----------
 
-    livetime
-    aeff_scale
-    nutau_cc_norm
+    fit_results_file : str
+    dom_eff : dimensionless quantity
+    hole_ice : dimensionless quantity
+    hole_ice_fwd : dimensionless quantity
+    spiciness : dimensionless quantity
 
     Notes
     -----
+
+    the fit_results_file must contain the following keys:
+        sys_list : containing the order of the parameters
+        fit_results : the resulting hyperplane coeffs from the fits, first
+                      entry is constant, followed by the linear ones in the order
+                      defined in sys_list
+
+        
+
 
     """
     def __init__(self,
@@ -52,18 +63,18 @@ class pi_hyperplanes(PiStage):
         input_names = ()
         output_names = ()
 
-        # what are the keys used from the inputs during apply
-        input_keys = ()
         # what are keys added or altered in the calculation used during apply
-        calc_keys = ('hyperplane_scalefactors')
+        output_calc_keys = ('hyperplane_scalefactors')
         # what keys are added or altered for the outputs during apply
         if error_method in ['sumw2']:
-            output_keys = ('weights',
-                           'errors',
-                          )
+            output_apply_keys = ('weights',
+                                 'errors',
+                                )
+            input_apply_keys = output_apply_keys
         else:
-            output_keys = ('weights',
-                          )
+            output_apply_keys = ('weights',
+                                )
+            input_apply_keys = output_apply_keys
 
         # init base class
         super(pi_hyperplanes, self).__init__(data=data,
@@ -76,9 +87,8 @@ class pi_hyperplanes(PiStage):
                                              input_specs=input_specs,
                                              calc_specs=calc_specs,
                                              output_specs=output_specs,
-                                             input_keys=input_keys,
-                                             calc_keys=calc_keys,
-                                             output_keys=output_keys,
+                                             input_apply_keys=input_apply_keys,
+                                             output_apply_keys=output_apply_keys,
                                             )
 
         assert self.input_mode is not None
@@ -110,6 +120,7 @@ class pi_hyperplanes(PiStage):
 
         self.sys_list = fit_results['sys_list'] 
         # check compatibility
+        # ToDo: check binning hash
         assert set(self.sys_list) == set([sys for sys in self.params.names if not sys.endswith('_file')])
 
         self.data.unlink_containers()

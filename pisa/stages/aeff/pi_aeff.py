@@ -1,5 +1,5 @@
 """
-Docstring
+PISA pi stage to apply effective area weights
 """
 from __future__ import absolute_import, print_function, division
 
@@ -19,6 +19,8 @@ class pi_aeff(PiStage):
     livetime
     aeff_scale
     nutau_cc_norm
+    nutau_norm
+    nu_nc_norm
 
     Notes
     -----
@@ -45,12 +47,10 @@ class pi_aeff(PiStage):
         output_names = ()
 
         # what are the keys used from the inputs during apply
-        input_keys = ('weighted_aeff',
+        input_apply_keys = ('weighted_aeff',
                      )
-        # what are keys added or altered in the calculation used during apply
-        calc_keys = ()
         # what keys are added or altered for the outputs during apply
-        output_keys = ('weights',
+        output_apply_keys = ('weights',
                       )
 
         # init base class
@@ -63,9 +63,8 @@ class pi_aeff(PiStage):
                                       input_specs=input_specs,
                                       calc_specs=calc_specs,
                                       output_specs=output_specs,
-                                      input_keys=input_keys,
-                                      calc_keys=calc_keys,
-                                      output_keys=output_keys,
+                                      input_apply_keys=input_apply_keys,
+                                      output_apply_keys=output_apply_keys,
                                      )
 
         assert self.input_mode is not None

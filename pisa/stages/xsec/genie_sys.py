@@ -1,5 +1,5 @@
 """
-Docstring
+Stage to apply pre-calculated Genie uncertainties
 """
 from __future__ import absolute_import, print_function, division
 
@@ -52,15 +52,13 @@ class genie_sys(PiStage):
         output_names = ()
 
         # what are the keys used from the inputs during apply
-        input_keys = ('linear_fit_maccqe',
+        input_apply_keys = ('linear_fit_maccqe',
                       'quad_fit_maccqe',
                       'linear_fit_maccres',
                       'quad_fit_maccres',
                      )
-        # what are keys added or altered in the calculation used during apply
-        calc_keys = ()
         # what keys are added or altered for the outputs during apply
-        output_keys = ('weights',
+        output_apply_keys = ('weights',
                       )
 
         # init base class
@@ -73,9 +71,8 @@ class genie_sys(PiStage):
                                         input_specs=input_specs,
                                         calc_specs=calc_specs,
                                         output_specs=output_specs,
-                                        input_keys=input_keys,
-                                        calc_keys=calc_keys,
-                                        output_keys=output_keys,
+                                        input_apply_keys=input_apply_keys,
+                                        output_apply_keys=output_apply_keys,
                                        )
 
         assert self.input_mode is not None
