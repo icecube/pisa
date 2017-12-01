@@ -31,6 +31,15 @@ def multiply(val, out):
                     out=out.get(WHERE))
     out.mark_changed(WHERE)
 
+def divide(val, out):
+    ''' divide one aray by another
+    including handlic of zero division 
+    where it just sets the value to zero
+    '''
+    divide_gufunc(val.get(WHERE),
+                  out=out.get(WHERE))
+    out.mark_changed(WHERE)
+
 def set(val, out):
     set_gufunc(val.get(WHERE),
                out=out.get(WHERE))
@@ -45,6 +54,15 @@ def sqrt(val, out):
     sqrt_gufunc(val.get(WHERE),
                 out=out.get(WHERE))
     out.mark_changed(WHERE)
+    
+def replace(counts, min_count, vals, out):
+    ''' replace out with vals
+    when count > min_count
+    '''
+    replace_gufunc(counts.get(WHERE),
+                   min_count,
+                   vals.get(WHERE),
+                   out=out.get(WHERE))
 
 # vectorized function to apply
 # must be outside class
@@ -71,6 +89,13 @@ def multiply_gufunc(val, out):
     out[0] *= val
 
 @guvectorize([signature], '()->()', target=TARGET)
+def divide_gufunc(val, out):
+    if val == 0:
+        out[0] = 0
+    else:
+        out[0] /= val
+
+@guvectorize([signature], '()->()', target=TARGET)
 def set_gufunc(val, out):
     out[0] = val
 
@@ -82,3 +107,12 @@ def square_gufunc(val, out):
 def sqrt_gufunc(val, out):
     out[0] = math.sqrt(val)
 
+if FTYPE == np.float64:
+    signature = '(f8, i4, f8, f8[:])'
+else:
+    signature = '(f4, i4, f4, f4[:])'
+
+@guvectorize([signature], '(),(),(),->()', target=TARGET)
+def replace_gufunc(counts, min_count, vals, out):
+    if counts > min_count:
+        out[0] = vals

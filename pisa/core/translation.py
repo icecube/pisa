@@ -20,6 +20,7 @@ from pisa import FTYPE, TARGET
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.numba_tools import myjit, WHERE
 from pisa.utils.log import logging
+from pisa.utils import vectorizer
 
 __all__ = ['histogram',
            'lookup',
@@ -58,18 +59,15 @@ def resample(weights, old_sample, old_binning, new_sample, new_binning):
     else:
         flat_hist = get_hist_np(old_sample, weights, new_binning, True)
         flat_hist_counts = get_hist_np(old_sample, weights, new_binning, False)
-    with np.errstate(divide='ignore', invalid='ignore'):
-        flat_hist /= flat_hist_counts
-        flat_hist[~np.isfinite(flat_hist)] = 0.  # -inf inf NaN
+    vectorizer.divide(flat_hist_counts, flat_hist)
 
     # now do the inverse, a lookup
     lookup_flat_hist = lookup(new_sample, weights, old_binning)
-    lookup_flat_hist = lookup_flat_hist.get('host')
 
     # Now, for bin we have 1 or less counts, take the lookedup value instead:
-    out_hist = np.where(flat_hist_counts>1, flat_hist, lookup_flat_hist)
+    out_hist = vectorizer.replace(flat_hist_counts, 1, flat_hist, out=lookup_flat_hist)
 
-    return out_hist
+    return lookup_flat_hist
 
 
 
@@ -101,8 +99,6 @@ def get_hist(sample, weights, binning, averaged):
     Notes
     -----
 
-    The deivision of hists is right now done on CPU only.....should do that on GPU when hostograming on GPU!
-
     '''
     if TARGET == 'cuda':
         flat_hist = get_hist_gpu(sample, weights, binning, True)
@@ -113,34 +109,29 @@ def get_hist(sample, weights, binning, averaged):
         if averaged:
             flat_hist_counts = get_hist_np(sample, weights, binning, False)
     if averaged:
-        with np.errstate(divide='ignore', invalid='ignore'):
-            flat_hist /= flat_hist_counts
-            flat_hist[~np.isfinite(flat_hist)] = 0.  # -inf inf NaN
+        vectorizer.divide(flat_hist_counts, flat_hist)
     return flat_hist
 
 def get_hist_gpu(sample, weights, binning, apply_weights=True):
     # ToDo:
     # * make for d > 3
-    # * do division for normed already on GPU
-    # * just return SmartArray instead of copying
     if binning.num_dims in [2, 3]:
         bin_edges = [edges.magnitude for edges in binning.bin_edges]
         if len(weights.shape) > 1:
             # so we have arrays
-            flat_hist = np.zeros((binning.size, weights.shape[1]), dtype=FTYPE)
+            flat_hist = SmartArray(np.zeros((binning.size, weights.shape[1]), dtype=FTYPE))
             arrays = True
         else:
-            flat_hist = np.zeros(binning.size, dtype=FTYPE)
+            flat_hist = SmartArray(np.zeros(binning.size, dtype=FTYPE))
             arrays = False
         size = weights.shape[0]
-        d_flat_hist = cuda.to_device(flat_hist)
         d_bin_edges_x = cuda.to_device(bin_edges[0])
         d_bin_edges_y = cuda.to_device(bin_edges[1])
         if binning.num_dims == 2:
             if arrays:
                 histogram_2d_kernel_arrays[(size+511)//512, 512](sample[0].get('gpu'),
                                                                  sample[1].get('gpu'),
-                                                                 d_flat_hist,
+                                                                 flat_hist,
                                                                  d_bin_edges_x,
                                                                  d_bin_edges_y,
                                                                  weights.get('gpu'),
@@ -148,7 +139,7 @@ def get_hist_gpu(sample, weights, binning, apply_weights=True):
             else:
                 histogram_2d_kernel[(size+511)//512, 512](sample[0].get('gpu'),
                                                           sample[1].get('gpu'),
-                                                          d_flat_hist,
+                                                          flat_hist,
                                                           d_bin_edges_x,
                                                           d_bin_edges_y,
                                                           weights.get('gpu'),
@@ -159,7 +150,7 @@ def get_hist_gpu(sample, weights, binning, apply_weights=True):
                 histogram_3d_kernel_arrays[(size+511)//512, 512](sample[0].get('gpu'),
                                                                  sample[1].get('gpu'),
                                                                  sample[2].get('gpu'),
-                                                                 d_flat_hist,
+                                                                 flat_hist,
                                                                  d_bin_edges_x,
                                                                  d_bin_edges_y,
                                                                  d_bin_edges_z,
@@ -169,13 +160,12 @@ def get_hist_gpu(sample, weights, binning, apply_weights=True):
                 histogram_3d_kernel[(size+511)//512, 512](sample[0].get('gpu'),
                                                           sample[1].get('gpu'),
                                                           sample[2].get('gpu'),
-                                                          d_flat_hist,
+                                                          flat_hist,
                                                           d_bin_edges_x,
                                                           d_bin_edges_y,
                                                           d_bin_edges_z,
                                                           weights.get('gpu'),
                                                           apply_weights)
-        d_flat_hist.to_host()
         return flat_hist
     else:
         raise NotImplementedError('Other dimesnions that 2 and 3 on the GPU not supported right now')
@@ -198,7 +188,7 @@ def get_hist_np(sample, weights, binning, apply_weights=True):
         w = weights if apply_weights else None
         hist, _ = np.histogramdd(sample=sample, weights=w, bins=bin_edges)
         flat_hist = hist.ravel()
-    return flat_hist
+    return SmartArray(flat_hist)
     
 # ToDo: can we do just n-dimensional? And scalars or arbitrary array shapes? This is so ugly :/
 # Furthermore: optimize using shared memory
