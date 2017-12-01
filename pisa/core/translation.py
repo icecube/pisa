@@ -109,6 +109,8 @@ def get_hist(sample, weights, binning, averaged):
         if averaged:
             flat_hist_counts = get_hist_np(sample, weights, binning, False)
     if averaged:
+        #print(flat_hist_counts.get('host').shape)
+        #print(flat_hist.get('host').shape)
         vectorizer.divide(flat_hist_counts, flat_hist)
     return flat_hist
 
@@ -188,7 +190,7 @@ def get_hist_np(sample, weights, binning, apply_weights=True):
         w = weights if apply_weights else None
         hist, _ = np.histogramdd(sample=sample, weights=w, bins=bin_edges)
         flat_hist = hist.ravel()
-    return SmartArray(flat_hist)
+    return SmartArray(flat_hist.astype(FTYPE))
     
 # ToDo: can we do just n-dimensional? And scalars or arbitrary array shapes? This is so ugly :/
 # Furthermore: optimize using shared memory
