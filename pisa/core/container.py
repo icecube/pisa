@@ -16,7 +16,7 @@ from numba import SmartArray
 from pisa import FTYPE
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.core.map import Map, MapSet
-from pisa.core.translation import histogram, lookup
+from pisa.core.translation import histogram, lookup, resample
 from pisa.utils.log import logging
 
 
@@ -374,6 +374,27 @@ class Container(object):
         binning, hist = self.binned_data[key]
         sample = [self.array_data[n] for n in binning.names]
         self.add_array_data(key, lookup(sample, hist, binning))
+
+    def binned_to_binned(self, key, new_binning):
+        '''
+        resample a binned key into a different binning
+
+        Parameters
+        ----------
+
+        key : str
+
+        new_binning : MultiDimBinning
+            the new binning
+
+        '''
+        logging.debug('Resampling %s'%(key))
+        old_binning, hist = self.binned_data[key]
+        sample = [self.get_binned_data(name, old_binning) for name in old_binning.names]
+        new_sample = [SmartArray(self.unroll_binning(name, new_binning)) for name in new_binning.names]
+        hist = resample(hist, sample, old_binning, new_sample, new_binning)
+
+        self.add_binned_data(key, (new_binning, hist))
 
     def scalar_to_array(self, key):
         raise NotImplementedError()

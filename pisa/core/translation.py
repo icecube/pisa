@@ -27,7 +27,7 @@ __all__ = ['histogram',
           ]
 
 # --------- resampling ------------
-def resample(flat_hist, binning, new_binning):
+def resample(weights, old_sample, old_binning, new_sample, new_binning):
     '''
     resample binned data with a given binning into any
     arbitrary `new_binning`
@@ -35,17 +35,41 @@ def resample(flat_hist, binning, new_binning):
     Paramters
     ---------
 
-    flat_hist : SmartArrays
+    weights : SmartArray
 
-    binning : PISA MultiDimBinning
+    old_sample : list of SmartArrays
+
+    old_binning : PISA MultiDimBinning
+
+    inew_sample : list of SmartArrays
 
     new_binning : PISA MultiDimBinning
 
     '''
     
+    # make sure thw two binning have the same dimensions!
+    assert old_binning.names == new_binning.names, 'cannot translate betwen %s and %s'%(old_binning, new_binning)
+
     # this is a two step process, first histogram the weights into the new binning:
+    # and keep the flat_hist_counts
+    if TARGET == 'cuda':
+        flat_hist = get_hist_gpu(old_sample, weights, new_binning, True)
+        flat_hist_counts = get_hist_gpu(old_sample, weights, new_binning, False)
+    else:
+        flat_hist = get_hist_np(old_sample, weights, new_binning, True)
+        flat_hist_counts = get_hist_np(old_sample, weights, new_binning, False)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        flat_hist /= flat_hist_counts
+        flat_hist[~np.isfinite(flat_hist)] = 0.  # -inf inf NaN
 
+    # now do the inverse, a lookup
+    lookup_flat_hist = lookup(new_sample, weights, old_binning)
+    lookup_flat_hist = lookup_flat_hist.get('host')
 
+    # Now, for bin we have 1 or less counts, take the lookedup value instead:
+    out_hist = np.where(flat_hist_counts>1, flat_hist, lookup_flat_hist)
+
+    return out_hist
 
 
 
