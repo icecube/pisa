@@ -112,7 +112,7 @@ if FTYPE == np.float64:
 else:
     signature = '(f4, i4, f4, f4[:])'
 
-@guvectorize([signature], '(),(),(),->()', target=TARGET)
+@guvectorize([signature], '(),(),()->()', target=TARGET)
 def replace_gufunc(counts, min_count, vals, out):
     if counts > min_count:
         out[0] = vals
