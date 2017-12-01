@@ -368,10 +368,16 @@ class Container(object):
         '''
         augmented binned data to array data
 
-        ToDo: make work for n-dim
         '''
+        try:
+            binning, hist = self.binned_data[key]
+        except KeyError:
+            if self.array_data.has_key(key):
+                logging.debug('No transformation for %s array data'%(key))
+                return
+            else:
+                raise ValueError('Key %s does not exist'%key)
         logging.debug('Transforming %s binned to array data'%(key))
-        binning, hist = self.binned_data[key]
         sample = [self.array_data[n] for n in binning.names]
         self.add_array_data(key, lookup(sample, hist, binning))
 
@@ -426,7 +432,11 @@ class Container(object):
                 return self.unroll_binning(key, out_binning)
         binning, data = self.binned_data[key]
         if out_binning is not None:
-            assert binning == out_binning, 'no rebinning methods availabkle yet'
+            if not binning == out_binning:
+                logging.warning('Automatically re-beinning data %s'%key)
+                sample = [SmartArray(self.unroll_binning(name, binning)) for name in binning.names]
+                new_sample = [SmartArray(self.unroll_binning(name, out_binning)) for name in out_binning.names]
+                return resample(data, sample, binning, new_sample, out_binning)
         return data
 
     @staticmethod
@@ -439,10 +449,14 @@ class Container(object):
         '''
         return reshaped data as normal n-dimensional histogram
         '''
-        binning, data = self.binned_data[key]
+        if self.data_mode == 'binned':
+            binning = self.data_specs
+            data = self.get_binned_data(key, binning)
+        else:
+            binning, data = self.binned_data[key]
         data = data.get('host')
         full_shape = list(binning.shape) + list(data.shape)[1:-1]
-        return data.reshape(full_shape)
+        return data.reshape(full_shape), binning
 
     def get_binning(self, key):
         '''
@@ -454,12 +468,12 @@ class Container(object):
         '''
         return binned data in the form of a PISA map
         '''
-        hist = self.get_hist(key)
+        hist, binning = self.get_hist(key)
         if error is not None:
-            error_hist = np.abs(self.get_hist(error))
+            error_hist = np.abs(self.get_hist(error)[0])
         else:
             error_hist = None
-        binning = self.get_binning(key)
+        #binning = self.get_binning(key)
         assert hist.ndim == binning.num_dims
         return Map(name=self.name, hist=hist, error_hist=error_hist, binning=binning)
 

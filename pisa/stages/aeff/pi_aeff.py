@@ -48,10 +48,10 @@ class pi_aeff(PiStage):
 
         # what are the keys used from the inputs during apply
         input_apply_keys = ('weighted_aeff',
-                     )
+                           )
         # what keys are added or altered for the outputs during apply
         output_apply_keys = ('weights',
-                      )
+                            )
 
         # init base class
         super(pi_aeff, self).__init__(data=data,

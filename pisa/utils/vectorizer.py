@@ -11,7 +11,7 @@ import numpy as np
 from numba import guvectorize
 import math, cmath
 
-from pisa.utils.numba_tools import WHERE, myjit
+from pisa.utils.numba_tools import WHERE, myjit, ftype
 from pisa import FTYPE, TARGET
 
 def multiply_and_scale(scale, value, out):
@@ -90,8 +90,8 @@ def multiply_gufunc(val, out):
 
 @guvectorize([signature], '()->()', target=TARGET)
 def divide_gufunc(val, out):
-    if val == 0:
-        out[0] = 0
+    if val == 0.:
+        out[0] = 0.
     else:
         out[0] /= val
 

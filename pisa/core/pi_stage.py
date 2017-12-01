@@ -162,10 +162,15 @@ class PiStage(BaseStage):
                         for key in self.input_calc_keys:
                             container.array_to_binned(key, self.calc_specs)
 
-                elif self.mode[:2] == 'BE':
+                elif self.mode == 'EBE':
                     for container in self.data:
                         for key in self.input_calc_keys:
                             container.binned_to_array(key)
+
+                #elif self.mode == 'BBE':
+                #    for container in self.data:
+                #        for key in self.input_calc_keys:
+                #            container.binned_to_array(key)
 
                 self.data.data_specs = self.calc_specs
                 self.compute_function()
@@ -199,13 +204,24 @@ class PiStage(BaseStage):
                 for key in self.input_apply_keys:
                     container.array_to_binned(key, self.output_specs)
 
+        elif self.mode == 'BBE':
+            pass
+
         elif self.mode[0] + self.mode[2] == 'BE':
             for container in self.data:
                 for key in self.input_apply_keys:
                     container.binned_to_array(key)
 
-        self.data.data_specs = self.output_specs
+        if self.input_specs is not None:
+            self.data.data_specs = self.input_specs
+        else:
+            self.data.data_specs = self.output_specs
         self.apply_function()
+
+        if self.mode == 'BBE':
+            for container in self.data:
+                for key in self.output_apply_keys:
+                    container.binned_to_array(key)
 
 
     def apply_function(self):
