@@ -43,13 +43,16 @@ class PiStage(BaseStage):
     output_specs : binning or 'events' or None
         Specify how to generate the outputs
 
-    input_keys : tuple of str
-        keys of input data the stage needs
+    input_cal_keys : tuple of str
+        external keys of data the compute function needs
 
-    calc_keys : tuple of str
+    output_calc_keys : tuple of str
         output keys of the calculation (not intermediate results)
 
-    output_keys : tuple of str
+    input_apply_keys : tuple of str
+        keys needed by the apply function data (usually 'weights')
+
+    output_apply_keys : tuple of str
         keys of the output data (usually 'weights')
 
     """
@@ -64,9 +67,10 @@ class PiStage(BaseStage):
                  input_specs=None,
                  calc_specs=None,
                  output_specs=None,
-                 input_keys=(),
-                 calc_keys=(),
-                 output_keys=(),
+                 input_apply_keys=(),
+                 output_apply_keys=(),
+                 input_calc_keys=(),
+                 output_calc_keys=(),
                 ):
 
         # init base class
@@ -110,12 +114,28 @@ class PiStage(BaseStage):
         else:
             raise ValueError('Not understood output_specs %s'%output_specs)
 
-        self.input_keys = input_keys
-        self.calc_keys = calc_keys
-        self.output_keys = output_keys
+        self.input_calc_keys = input_calc_keys
+        self.output_calc_keys = output_calc_keys
+        self.input_apply_keys = input_apply_keys
+        self.output_apply_keys = output_apply_keys
+
+        # make a string of the modes for convenience
+        mode = ['N','N','N']
+        if self.input_mode == 'binned':
+            mode[0] = 'B'
+        elif self.input_mode == 'events':
+            mode[0] = 'E'
+        if self.calc_mode == 'binned':
+            mode[1] = 'B'
+        elif self.calc_mode == 'events':
+            mode[1] = 'E'
+        if self.output_mode == 'binned':
+            mode[2] = 'B'
+        elif self.output_mode == 'events':
+            mode[2] = 'E'
+        self.mode = ''.join(mode)
 
         self.param_hash = None
-
         # cake compatibility
         self.outputs = None
 
@@ -134,8 +154,34 @@ class PiStage(BaseStage):
         if len(self.params) > 0:
             new_param_hash = self.params.values_hash
             if not new_param_hash == self.param_hash:
+                
+                self.data.data_specs = self.input_specs
+                # convert any inputs if necessary:
+                if self.mode[:2] == 'EB':
+                    for container in self.data:
+                        for key in self.input_calc_keys:
+                            container.array_to_binned(key, self.calc_specs)
+
+                elif self.mode[:2] == 'BE':
+                    for container in self.data:
+                        for key in self.input_calc_keys:
+                            container.binned_to_array(key)
+
+                self.data.data_specs = self.calc_specs
                 self.compute_function()
                 self.param_hash = new_param_hash
+
+                # convert any outputs if necessary:
+                if self.mode[1:] == 'EB':
+                    for container in self.data:
+                        for key in self.output_calc_keys:
+                            container.array_to_binned(key, self.output_specs)
+
+                elif self.mode[1:] == 'BE':
+                    for container in self.data:
+                        for key in self.output_calc_keys:
+                            container.binned_to_array(key)
+
             else:
                 logging.trace('cached output')
 
@@ -146,77 +192,30 @@ class PiStage(BaseStage):
     @profile
     def apply(self):
 
-        self.compute()
-
-        self.data.data_specs = 'events'
-
-        # make a string of the modes for convenience
-        mode = ['N','N','N']
-        if self.input_mode == 'binned':
-            mode[0] = 'B'
-        elif self.input_mode == 'events':
-            mode[0] = 'E'
-        if self.calc_mode == 'binned':
-            mode[1] = 'B'
-        elif self.calc_mode == 'events':
-            mode[1] = 'E'
-        if self.output_mode == 'binned':
-            mode[2] = 'B'
-        elif self.output_mode == 'events':
-            mode[2] = 'E'
-        mode = ''.join(mode)
-
-
-        if mode == 'NNE':
-            pass
-
-        if mode[:2] == 'BB':
-            self.data.data_specs = self.calc_specs
-
-        if mode == 'BEE':
+        self.data.data_specs = self.input_specs
+        # convert any inputs if necessary:
+        if self.mode[0] + self.mode[2] == 'EB':
             for container in self.data:
-                for key in self.input_keys:
-                    container.binned_to_array(key)
-
-        if mode == 'BEB':
-            for container in self.data:
-                for key in self.calc_keys:
-                    container.array_to_binned(key, self.input_specs)
-            self.data.data_specs = self.calc_specs
-
-        if mode == 'EBB':
-            for container in self.data:
-                for key in self.input_keys:
-                    container.array_to_binned(key, self.calc_specs)
-            self.data.data_specs = self.calc_specs
-
-        if mode == 'ENB':
-            for container in self.data:
-                for key in self.input_keys:
+                for key in self.input_apply_keys:
                     container.array_to_binned(key, self.output_specs)
-            self.data.data_specs = self.output_specs
 
-        if mode == 'EBE':
+        elif self.mode[0] + self.mode[2] == 'BE':
             for container in self.data:
-                for key in self.calc_keys:
+                for key in self.input_apply_keys:
                     container.binned_to_array(key)
 
-        # run apply function 
+        self.data.data_specs = self.output_specs
         self.apply_function()
 
-        if self.data.data_mode == 'binned' and self.output_mode == 'events':
-            for container in self.data:
-                for key in self.output_keys:
-                    container.binned_to_array(key)
-
-        if self.data.data_mode == 'events' and self.output_mode == 'binned':
-            for container in self.data:
-                for key in self.output_keys:
-                    container.array_to_binned(key, self.output_specs)
 
     def apply_function(self):
         # to be implemented by stage
         pass
+
+
+    def run(self):
+        self.compute()
+        self.apply()
 
 
     def get_outputs(self):
@@ -224,11 +223,11 @@ class PiStage(BaseStage):
         function for cake style outputs
         '''
         # output keys need to be exactly 1 to generate pisa cake style mapset
-        if len(self.output_keys) == 1:
-            self.outputs = self.data.get_mapset(self.output_keys[0])
+        if len(self.output_apply_keys) == 1:
+            self.outputs = self.data.get_mapset(self.output_apply_keys[0])
         else:
-            assert len(self.output_keys) == 2 and 'errors' in self.output_keys, 'Cannot transfor this output into PISA style maps with output keys %s'%self.output_keys
-            other_key = [key for key in self.output_keys if not key == 'errors'][0]
+            assert len(self.output_apply_keys) == 2 and 'errors' in self.output_apply_keys, 'Cannot transfor this output into PISA style maps with output keys %s'%self.output_apply_keys
+            other_key = [key for key in self.output_apply_keys if not key == 'errors'][0]
             self.outputs = self.data.get_mapset(other_key, error='errors')
 
         return self.outputs
