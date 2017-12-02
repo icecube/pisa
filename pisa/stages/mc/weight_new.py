@@ -36,6 +36,9 @@ from pisa.stages.data.sample import parse_event_type_names
 from pisa.stages.osc.prob3_new import prob3wrapper #TODO (Tom) prob3new -> prob3
 from pisa.stages.osc.decoherence import decoherence
 from pisa.stages.osc.osc_spline import OscSpline
+from pisa.stages.reco.hist_new import calc_true_to_reco_transforms #TODO (Tom) hist_new -> hist
+from pisa.utils.flavInt import flavintGroupsFromString
+from pisa.utils.fileio import mkdir, from_file, to_file
 
 __all__ = ['weight_new']
 
@@ -128,7 +131,8 @@ class weight_new(Stage):
                  disk_cache=None, memcache_deepcopy=True,
                  outputs_cache_depth=20, use_gpu=False, cache_flux=True,
                  kde_hist=False, decoherence=False,
-                 spline_osc_probs=False, osc_spline_binning=None):
+                 spline_osc_probs=False, osc_spline_binning=None,
+                 output_events_file=None):
 
         self.sample_hash = None #Input event sample hash
         self.weight_hash = None
@@ -213,6 +217,7 @@ class weight_new(Stage):
         self.decoherence = decoherence
         self.spline_osc_probs = spline_osc_probs
         self.osc_spline_binning = osc_spline_binning
+        self.output_events_file = output_events_file
 
         #Handle nuances when decoherence is included in oscillations model
         if self.decoherence :
@@ -399,7 +404,7 @@ class weight_new(Stage):
             #
 
             #If no other PID provided, use reconstructed tracklength
-            self.add_tracklength_pid_to_events()
+            self._add_tracklength_pid_to_events()
 
             if self.neutrinos :
 
@@ -409,12 +414,34 @@ class weight_new(Stage):
                 #Calculate weighted effective area if required (used by neutrino weight calculation)
                 self._add_weighted_aeff_to_events()
 
-                #Write the nu variable relevent to re-weighting calculations to data arrays on the host (CPU) 
-                #and if required the device (GPU) 
-                #TODO Enforce once only, maybe my moving to better way of copying to GPU
-                self._populate_nu_data_arrays()
-
             #TODO store new sample hash now thing shave been changed... Or does "Data.update_hash" already handle this????
+
+
+
+            #
+            # Handle event-by-event to bin-by-bin toggle (fast mode)
+            #
+
+            #TODO (Tom) this needs finishing
+
+            '''
+            self.bin_by_bin_mode = False #TODO kwarg
+
+            if self.bin_by_bin_mode :
+                self._convert_to_bin_by_bin_mode()
+            '''
+
+
+            #
+            # Prepare data arrays
+            #
+
+            #Write the nu variable relevent to re-weighting calculations to data arrays on the host (CPU) 
+            #and if required the device (GPU) 
+            #TODO Enforce once only, maybe by moving to better way of copying to GPU
+            #TODO Also for muons and noise?
+            self._populate_nu_data_arrays()
+
 
         #Store the latest hash
         self.sample_hash = new_sample_hash
@@ -423,14 +450,45 @@ class weight_new(Stage):
         logging.trace('{0} weight sample_hash = {1}'.format(self._data.metadata['name'], self.sample_hash))
         logging.trace('{0} weight weight_hash = {1}'.format(self._data.metadata['name'], self.weight_hash)) #TODO Do I need to update the weight hash somewhere??
 
+
+        #
+        # Compute the outputs
+        #
+
         #Perform the event-by-event re-weighting
         self.reweight()
+
+        #Dump events to a file #TODO (Tom) remove this, is a hack for now just to get access to the events until we put something better in
+        if self.output_events_file is not None :
+            print "Dumping events to file : %s" % self.output_events_file
+            output_events = {}
+            event_type_keys = self._data.keys()
+            if self.muons : event_type_keys.append("muons")
+            if self.noise : event_type_keys.append("noise")
+            variables = ["true_energy","true_coszen","reco_energy","reco_coszen","pisa_weight"]
+            for event_type in event_type_keys :
+                output_events[event_type] = {}
+                for var in variables :
+                    if var in self._data[event_type] :
+                        output_events[event_type][var] = self._data[event_type][var]
+            to_file(output_events,self.output_events_file)
 
         #Return the events themselves if requested by the user, otherwise fill Maps from the events and return these
         if self.output_events:
             return self._data
+
         else :
-            return self.get_output_maps()
+
+            #Compute maps
+            output_maps =  self.get_output_maps()
+
+            ''' #TODO (Tom) this needs finishing
+            #If using bin-by-bin fast mode, apply true->reco transforms to the maps
+            if self.bin_by_bin_mode :
+                output_maps = self.reco_transforms.apply(output_maps)
+            '''
+
+            return output_maps
 
 
 
@@ -461,7 +519,7 @@ class weight_new(Stage):
                     self._data[flavint][var] = deepcopy(self._data[flavint]["sample_weight"]) * CMSQ_TO_MSQ #onvert from cm^2 to m^2
 
 
-    def add_tracklength_pid_to_events(self) :
+    def _add_tracklength_pid_to_events(self) :
 
         #GRECO uses the reconstructed tracklength of an event for PID
         if str(self._data.metadata["name"]).lower() == "greco" : #TODO make a variable in the greco.cfg file for this instead
@@ -545,6 +603,51 @@ class weight_new(Stage):
                 self._data[fig]['neutrino_oppo_nue_flux'] = flux_weights[fig]['neutrino_oppo_nue_flux']
                 self._data[fig]['neutrino_oppo_numu_flux'] = flux_weights[fig]['neutrino_oppo_numu_flux']
 
+
+    '''
+    #TODO (Tom) this needs finishing
+    def _convert_to_bin_by_bin_mode(self) :
+
+        #TODO document...
+
+        #
+        # Calculate true -> reco space transforms
+        #
+
+        #Not merging any groups (note: formatting according to pisa.utils.flavInt.flavintGroupsFromString)
+        #transform_groups = self.input_names#", ".join(self.input_names)
+        #transform_groups = flavintGroupsFromString(", ".join(self.input_names))
+        #transform_groups = flavintGroupsFromString("nue_cc+nuebar_cc, numu_cc+numubar_cc, nutau_cc+nutaubar_cc, nuall_nc+nuallbar_nc")
+        transform_groups = flavintGroupsFromString("") #Don't join anything (note: formatting according to pisa.utils.flavInt.flavintGroupsFromString)
+
+        self.reco_transforms = calc_true_to_reco_transforms(input_data=self._data,
+                                                            transform_groups=transform_groups,
+                                                            input_names=self.input_names, #TODO what if input_names and output-names are not the same?
+                                                            output_names=self.output_names, #TODO Do these need any thought?
+                                                            input_binning=self.output_binning, #Use output binning for both
+                                                            output_binning=self.output_binning,
+                                                            e_res_scale=1.,# e_res_scale, #TODO
+                                                            cz_res_scale=1., #cz_res_scale, #TODO
+                                                            e_reco_bias=0., #*ureg["GeV"], #e_reco_bias, #TODO
+                                                            cz_reco_bias=0., #*ureg["dimensionless"], #cz_reco_bias, #TODO
+                                                            reco_weights_name=None, #TODO
+                                                            res_scale_ref="zero",
+                                                            sum_grouped_flavints=False, #TODO?
+                                                            error_method=self.error_method )
+
+        '''
+        print "NUM TRANSFORMS = %i" % len(self.reco_transforms)
+        for xform in self.reco_transforms :
+            print xform
+        import sys
+        sys.exit()
+        '''
+
+
+        #
+        # Create a single "event" for each histogram bin
+        #
+    '''
 
 
     @staticmethod
@@ -970,6 +1073,7 @@ class weight_new(Stage):
 
         #Combine all information to calculate new weights #TODO (Tom) Move to Shivesh's style here
         for fig in self._data.iterkeys():
+
             data_array = self._data_arrays[fig]['device'] if self.use_gpu else self._data_arrays[fig]['host'] #Choose data based on CPU vs GPU selection
             n_evts = np.uint32(self.get_num_events(fig))
             self.weight_calc.calc_weight(

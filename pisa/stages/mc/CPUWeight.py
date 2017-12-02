@@ -9,8 +9,8 @@ import numpy as np
 from pisa.utils.resources import find_resource
 
 #TODO (Tom) Eventually remove this, want to be able to also run with the old (wrong) version for comparison
-#TODO (Tom) Need GPU fix too
-use_uphor_fix = True
+use_uphor_fix = True #TODO (Tom) Need GPU fix too
+use_nuenumu_fix = True #THis one already was fine for the GPU case
 
 class CPUWeight(object):
     """
@@ -317,32 +317,60 @@ class CPUWeight(object):
             sum_const=True
         )
         # nu/nubar ratio systematic
-        if kNuBar < 0:
-            new_nue_oppo_flux2, new_nue_flux2 = self.apply_ratio_scale(
-                flux1=neutrino_oppo_nue_flux,
-                flux2=neutrino_nue_flux,
-                ratio_scale=nu_nubar_ratio,
-                sum_const=True
-            )
-            new_numu_oppo_flux2, new_numu_flux2 = self.apply_ratio_scale(
-                flux1=neutrino_oppo_numu_flux,
-                flux2=neutrino_numu_flux,
-                ratio_scale=nu_nubar_ratio,
-                sum_const=True
-            )
-        else:
-            new_nue_flux2, new_nue_oppo_flux2 = self.apply_ratio_scale(
-                flux1=neutrino_nue_flux,
-                flux2=neutrino_oppo_nue_flux,
-                ratio_scale=nu_nubar_ratio,
-                sum_const=True
-            )
-            new_numu_flux2, new_numu_oppo_flux2 = self.apply_ratio_scale(
-                flux1=neutrino_numu_flux,
-                flux2=neutrino_oppo_numu_flux,
-                ratio_scale=nu_nubar_ratio,
-                sum_const=True
-            )
+        if use_nuenumu_fix :
+            if kNuBar < 0:
+                new_nue_oppo_flux2, new_nue_flux2 = self.apply_ratio_scale(
+                    flux1=new_nue_oppo_flux,
+                    flux2=new_nue_flux,
+                    ratio_scale=nu_nubar_ratio,
+                    sum_const=True
+                )
+                new_numu_oppo_flux2, new_numu_flux2 = self.apply_ratio_scale(
+                    flux1=new_numu_oppo_flux,
+                    flux2=new_numu_flux,
+                    ratio_scale=nu_nubar_ratio,
+                    sum_const=True
+                )
+            else:
+                new_nue_flux2, new_nue_oppo_flux2 = self.apply_ratio_scale(
+                    flux1=new_nue_flux,
+                    flux2=new_nue_oppo_flux,
+                    ratio_scale=nu_nubar_ratio,
+                    sum_const=True
+                )
+                new_numu_flux2, new_numu_oppo_flux2 = self.apply_ratio_scale(
+                    flux1=new_numu_flux,
+                    flux2=new_numu_oppo_flux,
+                    ratio_scale=nu_nubar_ratio,
+                    sum_const=True
+                )
+        else :
+            if kNuBar < 0:
+                new_nue_oppo_flux2, new_nue_flux2 = self.apply_ratio_scale(
+                    flux1=neutrino_oppo_nue_flux,
+                    flux2=neutrino_nue_flux,
+                    ratio_scale=nu_nubar_ratio,
+                    sum_const=True
+                )
+                new_numu_oppo_flux2, new_numu_flux2 = self.apply_ratio_scale(
+                    flux1=neutrino_oppo_numu_flux,
+                    flux2=neutrino_numu_flux,
+                    ratio_scale=nu_nubar_ratio,
+                    sum_const=True
+                )
+            else:
+                new_nue_flux2, new_nue_oppo_flux2 = self.apply_ratio_scale(
+                    flux1=neutrino_nue_flux,
+                    flux2=neutrino_oppo_nue_flux,
+                    ratio_scale=nu_nubar_ratio,
+                    sum_const=True
+                )
+                new_numu_flux2, new_numu_oppo_flux2 = self.apply_ratio_scale(
+                    flux1=neutrino_numu_flux,
+                    flux2=neutrino_oppo_numu_flux,
+                    ratio_scale=nu_nubar_ratio,
+                    sum_const=True
+                )
         # Barr flux
         new_nue_flux2 *= self.modRatioNuBar(
             kNuBar=kNuBar,
@@ -362,6 +390,7 @@ class CPUWeight(object):
         )
         np.copyto(scaled_nue_flux,new_nue_flux2) #Use copyto to fill np array from another (using '=' sets the pointer reference without changing the underlying object)
         np.copyto(scaled_numu_flux,new_numu_flux2)
+
         np.copyto(scaled_nue_flux_shape,
             new_nue_flux2 * idx_scale * self.modRatioUpHor(
                 kFlav=0,
