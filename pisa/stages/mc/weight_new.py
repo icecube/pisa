@@ -635,18 +635,12 @@ class weight_new(Stage):
                                                             sum_grouped_flavints=False, #TODO?
                                                             error_method=self.error_method )
 
-        '''
-        print "NUM TRANSFORMS = %i" % len(self.reco_transforms)
-        for xform in self.reco_transforms :
-            print xform
-        import sys
-        sys.exit()
-        '''
-
-
         #
         # Create a single "event" for each histogram bin
         #
+
+        #TODO
+        
     '''
 
 
