@@ -22,7 +22,7 @@ However, PISA's methods apply equally well to high-MC situations, and PISA also 
 | `docs/`                   | Sphinx auto-generated documentation
 | `images/`                 | Images to include in documentation
 | `pisa/`                   | Source code
-| `pisa_example_resources/` | Example resources for PISA from data to settings
+| `pisa_examples/`          | Example resources for PISA from data to settings, notebooks with examples of how to use PISA, etc.
 | `pisa_tests/`             | Scripts for running physics and unit tests
 | `.gitattributes`          | Used with `versioneer`
 | `.gitignore`              | GIT ignores files matching these specifications

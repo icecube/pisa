@@ -130,15 +130,11 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
         it does not already exist (including any parent directories that do not
         exist)
     run_settings : string or MCSimRunSettings
-        Resource location of mc_sim_run_settings.json, e.g. the PISA-standard
-        location
-            $PISA/pisa_example_resources/events/mc_sim_run_settings.json
-        or an MCSimRunSettings object instantiated therefrom.
+        Resource location of mc_sim_run_settings.json or an MCSimRunSettings
+        object instantiated therefrom.
     data_proc_params : string or DataProcParams
-        Resource location of data_proc_params.json, e.g. the PISA-standard
-        location
-            $PISA/pisa_example_resources/events/data_proc_params.json
-        or a DataProcParams object instantiated therefrom.
+        Resource location of data_proc_params.json or a DataProcParams object
+        instantiated therefrom.
     join
         String specifying any flavor/interaction types (flavInts) to join
         together. Separate flavInts with commas (',') and separate groups
@@ -574,7 +570,7 @@ def parse_args():
         '--outdir',
         metavar='DIR',
         type=str,
-        default='$PISA/pisa_example_resources/events',
+        required=True,
         help='directory into which to store resulting HDF5 file'
     )
 
@@ -629,11 +625,10 @@ def parse_args():
         '--cut',
         metavar='CUT_NAME',
         type=str,
-        help='''Name of pre-defined cut to apply. See
-        pisa_example_resources/events/data_proc_params.json for definitions for
-        the detector and processing version you're working with (note that the
-        names of cuts and what these entail varies by detector and processing
-        version)'''
+        help='''Name of pre-defined cut to apply. See the specified
+        --data-proc-params file for definitions for the detector and processing
+        version you're working with (note that the names of cuts and what these
+        entail varies by detector and processing version)'''
     )
 
     parser.add_argument(
@@ -646,7 +641,7 @@ def parse_args():
         field names specified by the --ccut-fields argument. Standard Python-
         and numpy-namespace expressions are allowed as well, since this string
         is passed to 'eval'. E.g.:
-        --ccut-fields="z:MCNeutrino/zenith,l6:IC86_Dunkman_L6/value" \
+        --ccut-fields="z:MCNeutrino/zenith,l6:my_l6/value" \
         --ccut-pass-if="(l6 == 1) & (z > pi/2)" '''
     )
     parser.add_argument(
@@ -657,7 +652,7 @@ def parse_args():
         help='''Custom cut: String of comma-separated fields, each containing
         colon-separated (variable name : HDF5 address) tuples. For example,
         specifying:
-        --ccut-fields="l5:IC86_Dunkman_L5/value,l6:IC86_Dunkman_L6/value"
+        --ccut-fields="l5:my_l5/value,l6:my_l6/value"
         allows for a custom cut to be defined via --ccut-pass-if="(l5 == 1) &
         (l6 == 1)"'''
     )

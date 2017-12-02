@@ -195,31 +195,33 @@ def do_setup():
     # Include documentation and license files wherever they may be
     package_data[''] = ['*.md', '*.rst', 'LICENSE*']
 
-    package_data['pisa_example_resources'] = [
-        'aeff/*.json*',
-        'cross_sections/*json*',
-        'discr_sys/*.json*',
+    package_data['pisa_examples'] = [
+        'resources/aeff/*.json*',
+        'resources/cross_sections/*json*',
+        'resources/discr_sys/*.json*',
 
-        'events/*.hdf5',
-        'events/*.json*',
+        'resources/events/*.hdf5',
+        'resources/events/*.json*',
 
-        'flux/*.d',
-        'osc/*.hdf5',
-        'osc/*.dat',
-        'pid/*.json*',
-        'priors/*.json*',
-        'priors/*.md',
-        'reco/*.json*',
+        'resources/flux/*.d',
+        'resources/osc/*.hdf5',
+        'resources/osc/*.dat',
+        'resources/pid/*.json*',
+        'resources/priors/*.json*',
+        'resources/priors/*.md',
+        'resources/reco/*.json*',
 
-        'settings/binning/*.cfg',
-        'settings/discrete_sys/*.cfg',
-        'settings/logging/logging.json',
-        'settings/mc/*.cfg',
-        'settings/minimizer/*.json*',
-        'settings/osc/*.cfg',
-        'settings/osc/*.md',
-        'settings/pipeline/*.cfg',
-        'settings/pipeline/*.md',
+        'resources/settings/binning/*.cfg',
+        'resources/settings/discrete_sys/*.cfg',
+        'resources/settings/logging/logging.json',
+        'resources/settings/mc/*.cfg',
+        'resources/settings/minimizer/*.json*',
+        'resources/settings/osc/*.cfg',
+        'resources/settings/osc/*.md',
+        'resources/settings/pipeline/*.cfg',
+        'resources/settings/pipeline/*.md',
+
+        'notebooks/*ipynb',
     ]
 
     package_data['pisa_tests'] = [
@@ -289,7 +291,7 @@ def do_setup():
             'simplejson>=3.2',
             'tables',
             'uncertainties',
-            'decorator'
+            'decorator',
         ],
         extras_require={
             'cuda': [
@@ -305,8 +307,21 @@ def do_setup():
                 'sphinx>=1.3',
                 'sphinx_rtd_theme',
                 'versioneer',
-            ]
+            ],
+            # TODO: get mceq install to work... this is non-trivial since that
+            # project isn't exactly cleanly instllable via pip already, plus it
+            # has "sub-projects" that won't get picked up by a simple single
+            # URL (e.g. the data). Plus it's huge (~1GB).
+            #'mceq': [
+            #    'llvmlite>=0.16',
+            #    'numba>=0.31',
+            #    'progressbar',
+            #    'MCEq'
+            #]
         },
+        #dependency_links=[
+        #    'git+https://github.com/afedynitch/MCEq.git#egg=MCEq'
+        #],
         packages=find_packages(),
         ext_modules=ext_modules,
         package_data=package_data,
@@ -334,6 +349,10 @@ def do_setup():
                 'pisa-make_toy_events = pisa.scripts.make_toy_events:main',
                 'pisa-profile_scan = pisa.scripts.profile_scan:main',
                 'pisa-scan_allsyst = pisa.scripts.scan_allsyst:main',
+
+                # Scripts in pisa_tests dir
+                'pisa-test_changes_with_combined_pidreco = pisa_tests.test_changes_with_combined_pidreco:main',
+                'pisa-test_example_pipelines = pisa_tests.test_example_pipelines:main'
             ]
         }
     )

@@ -6,9 +6,9 @@ configparser
 scipy>=0.17.0
 simplejson>=3.2.0
 pint>=0.8
-svn+http://code.icecube.wisc.edu/svn/sandbox/schoenen/kde/releases/V00-01-01#egg=kde
 h5py
 line_profiler
 matplotlib>=2.0
 uncertainties
 decorator
+svn+http://code.icecube.wisc.edu/svn/sandbox/schoenen/kde/releases/V00-01-01#egg=kde

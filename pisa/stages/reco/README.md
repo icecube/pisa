@@ -19,7 +19,7 @@ Thus it tells us the contribution to the reconstructed distribution from every i
 These maps in reconstructed space are normalised to the total number of events from that truth bin.
 
 For this service, one must specify where to pull these Monte Carlo events from.
-An example is provided in the `pisa_example_resources/events/` directory.
+An example is provided in the `pisa_examples/resources/events/` directory.
 One can also specify the choice of weights to be used in constructing these histograms.
 Note that this must be one of the columns in the events file, or you can set it to `None` to produce the histograms unweighted.
 

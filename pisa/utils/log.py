@@ -19,6 +19,8 @@ from __future__ import absolute_import
 import json
 import logging as logging_module
 import logging.config as logging_config
+from os import environ
+from os.path import expanduser, expandvars, isfile, join
 from pkg_resources import resource_stream
 
 
@@ -54,11 +56,29 @@ def initialize_logging():
     logging_module.trace = logging_module.root.trace
 
     # Get the logging configuration
-    logconfig = json.load(
-        resource_stream(
-            'pisa_example_resources', 'settings/logging/logging.json'
-        )
-    )
+    logf = None
+    try:
+        if 'PISA_RESOURCES' in environ:
+            for path in environ['PISA_RESOURCES'].split(':'):
+                fpath = join(expanduser(expandvars(path)),
+                             'settings/logging/logging.json')
+                if isfile(fpath):
+                    logf = open(fpath, 'r')
+                    break
+
+        if logf is None:
+            resource_spec = ('pisa_examples',
+                             'resources/settings/logging/logging.json')
+            logf = resource_stream(*resource_spec)
+
+        if logf is None:
+            raise ValueError('Could not find "logging.json" in PISA_RESOURCES'
+                             ' or in pisa_examples/resources.')
+        logconfig = json.load(logf)
+
+    finally:
+        if logf is not None:
+            logf.close()
 
     # Setup the logging system with this config
     logging_config.dictConfig(logconfig)
@@ -75,7 +95,7 @@ def initialize_logging():
     _logging = logging_module.getLogger('pisa')
     _physics = logging_module.getLogger('pisa.physics')
     _tprofile = logging_module.getLogger('pisa.tprofile')
-    # TODO: removed following line due to dupllicate logging messages. Probably
+    # TODO: removed following line due to duplicate logging messages. Probably
     # should fix this in a better manner...
     #_tprofile.handlers = [thandler]
 
