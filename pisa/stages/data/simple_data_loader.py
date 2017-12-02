@@ -51,6 +51,10 @@ class simple_data_loader(PiStage):
                            'mc_cuts',
                            'data_dict',
                           )
+        input_apply_keys = ('event_weights',
+                           )
+        output_apply_keys = ('weights',
+                            )
 
         # init base class
         super(simple_data_loader, self).__init__(data=data,
@@ -62,6 +66,8 @@ class simple_data_loader(PiStage):
                                                  input_specs=input_specs,
                                                  calc_specs=calc_specs,
                                                  output_specs=output_specs,
+                                                 input_apply_keys=input_apply_keys,
+                                                 output_apply_keys=output_apply_keys,
                                                 )
 
         # doesn't calculate anything
@@ -114,6 +120,13 @@ class simple_data_loader(PiStage):
             container.add_scalar_data('flav', flav)
 
             self.data.add_container(container)
+
+        # test
+        if self.output_mode == 'binned':
+            #self.data.data_specs = self.output_specs
+            for container in self.data:
+                container.array_to_binned('weights', self.output_specs)
+
 
     @profile
     def apply_function(self):

@@ -57,6 +57,8 @@ def resample(weights, old_sample, old_binning, new_sample, new_binning):
         flat_hist = get_hist_gpu(old_sample, weights, new_binning, True)
         flat_hist_counts = get_hist_gpu(old_sample, weights, new_binning, False)
     else:
+        #print(old_sample[0].get('host'))
+        #print(weights.get('host'))
         flat_hist = get_hist_np(old_sample, weights, new_binning, True)
         flat_hist_counts = get_hist_np(old_sample, weights, new_binning, False)
     vectorizer.divide(flat_hist_counts, flat_hist)

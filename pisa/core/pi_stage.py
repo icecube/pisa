@@ -212,10 +212,10 @@ class PiStage(BaseStage):
                 for key in self.input_apply_keys:
                     container.binned_to_array(key)
 
-        if self.input_specs is not None:
-            self.data.data_specs = self.input_specs
-        else:
-            self.data.data_specs = self.output_specs
+        #if self.input_specs is not None:
+        #    self.data.data_specs = self.input_specs
+        #else:
+        self.data.data_specs = self.output_specs
         self.apply_function()
 
         if self.mode == 'BBE':

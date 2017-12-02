@@ -297,7 +297,9 @@ class Container(object):
             else:
                 # first dimesnions must match
                 assert array.shape[:binning.num_dims] == binning.shape
-                flat_shape = [-1] + [d for d in array.shape[binning.num_dims:-1]]
+                #flat_shape = [-1] + [d for d in array.shape[binning.num_dims-1:-1]]
+                flat_shape = [binning.size, -1]
+                #print(flat_shape)
                 flat_array = array.reshape(flat_shape)
             if not isinstance(flat_array, SmartArray):
                 flat_array = SmartArray(flat_array.astype(FTYPE))
@@ -455,7 +457,10 @@ class Container(object):
         else:
             binning, data = self.binned_data[key]
         data = data.get('host')
-        full_shape = list(binning.shape) + list(data.shape)[1:-1]
+        if data.ndim > 1:#binning.num_dims:
+            full_shape = list(binning.shape) + [-1] #list(data.shape)[1:-1]
+        else:
+            full_shape = list(binning.shape)
         return data.reshape(full_shape), binning
 
     def get_binning(self, key):
