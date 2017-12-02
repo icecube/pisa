@@ -36,7 +36,7 @@ from pisa.stages.data.sample import parse_event_type_names
 from pisa.stages.osc.prob3_new import prob3wrapper #TODO (Tom) prob3new -> prob3
 from pisa.stages.osc.decoherence import decoherence
 from pisa.stages.osc.osc_spline import OscSpline
-from pisa.stages.reco.hist_new import calc_true_to_reco_transforms #TODO (Tom) hist_new -> hist
+#from pisa.stages.reco.hist_new import calc_true_to_reco_transforms #TODO (Tom) hist_new -> hist
 from pisa.utils.flavInt import flavintGroupsFromString
 from pisa.utils.fileio import mkdir, from_file, to_file
 
