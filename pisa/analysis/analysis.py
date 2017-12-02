@@ -336,16 +336,24 @@ class Analysis(object):
                 # Saves the current minimizer start values for the octant check
                 minimizer_start_params = hypo_maker.params
 
-            # If `limit_octant_check` is set, don't allow theta23 to switch octant (instead we try fitting for both octants individually and take the best)
-            inflection_point = (45.*ureg.deg).to(hypo_maker.params.theta23.units)
-            if limit_octant_check :
-                theta23 = hypo_maker.params.theta23
-                theta23_original_range = deepcopy(theta23.range)
-                if theta23.value < inflection_point :
-                    theta23.range = tuple([theta23_original_range[0],inflection_point])
-                elif theta23.value > inflection_point :
-                    theta23.range = tuple([inflection_point,theta23_original_range[1]])
-                hypo_maker.update_params(theta23)
+            # If `limit_octant_check` is set, don't allow theta23 to move between octants during minimization 
+            # (instead we try fitting for both octants individually and take the best)
+            # Do this by setting the allowed range of the parameter to stop at 45 degrees
+            # If theta23 nominal value is exactly 45, offset it slightly or this is ambiguous 
+            if check_octant and 'theta23' in hypo_maker.params.free.names:
+                inflection_point = (45.*ureg.deg).to(hypo_maker.params.theta23.units)
+                if limit_octant_check : #TODO (Tom) this isn't allowing fit to reach exact 45, fix...
+                    theta23 = hypo_maker.params.theta23
+                    theta23.reset()
+                    theta23_original_range = deepcopy(theta23.range)
+                    left_octant = tuple([theta23_original_range[0],inflection_point])
+                    right_octant = tuple([inflection_point,theta23_original_range[1]])
+                    if np.isclose(theta23.value.m_as("degree"),45.,atol=1.e-2) : theta23.value -= 1.e-2*ureg.degree #TODO Use a minimizer tolerance
+                    theta23_fit_start = deepcopy(theta23.value)
+                    first_octant = left_octant if theta23.value < inflection_point else right_octant
+                    second_octant = right_octant if theta23.value < inflection_point else left_octant
+                    theta23.range = deepcopy(first_octant)
+                    hypo_maker.update_params(theta23)
 
             best_fit_info = self.fit_hypo_inner(
                 hypo_maker=hypo_maker,
@@ -368,14 +376,11 @@ class Analysis(object):
 
                 # Hop to other octant by reflecting about 45 deg
                 theta23 = hypo_maker.params.theta23
-                mirrored_theta32_value = 2.*inflection_point - theta23.value
                 if limit_octant_check :
-                    theta23 = hypo_maker.params.theta23
-                    if mirrored_theta32_value < inflection_point :
-                        theta23.range = tuple([theta23_original_range[0],inflection_point])
-                    elif mirrored_theta32_value > inflection_point :
-                        theta23.range = tuple([inflection_point,theta23_original_range[1]])
-                theta23.value = mirrored_theta32_value
+                    theta23.range = deepcopy(second_octant)
+                    theta23.value = 2.*inflection_point - theta23_fit_start
+                else :
+                    theta23.value = 2.*inflection_point - theta23.value
                 hypo_maker.update_params(theta23)
 
                 # Re-run minimizer starting at new point
