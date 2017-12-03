@@ -414,11 +414,11 @@ class Analysis(object):
                     if not blind:
                         logging.debug('Accepting initial-octant fit')
 
-            #If messed with the theta23 limits, undo the changes now
-            if limit_octant_check :
-                theta23 = hypo_maker.params.theta23
-                theta23.range = deepcopy(theta23_original_range)
-                hypo_maker.update_params(theta23)
+                #If messed with the theta23 limits, undo the changes now
+                if limit_octant_check :
+                    theta23 = hypo_maker.params.theta23
+                    theta23.range = deepcopy(theta23_original_range)
+                    hypo_maker.update_params(theta23)
 
 
         return best_fit_info, alternate_fits
