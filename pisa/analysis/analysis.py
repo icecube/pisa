@@ -348,7 +348,7 @@ class Analysis(object):
                     theta23_original_range = deepcopy(theta23.range)
                     left_octant = tuple([theta23_original_range[0],inflection_point])
                     right_octant = tuple([inflection_point,theta23_original_range[1]])
-                    if np.isclose(theta23.value.m_as("degree"),45.,atol=1.e-2) : theta23.value -= 1.e-2*ureg.degree #TODO Use a minimizer tolerance
+                    if np.isclose(theta23.value.m_as("degree"),45.,atol=1.) : theta23.value -= 1.*ureg.degree #TODO Use a minimizer tolerance?
                     theta23_fit_start = deepcopy(theta23.value)
                     first_octant = left_octant if theta23.value < inflection_point else right_octant
                     second_octant = right_octant if theta23.value < inflection_point else left_octant
