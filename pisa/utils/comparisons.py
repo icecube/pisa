@@ -444,7 +444,7 @@ def normQuant(obj, sigfigs=None, full_norm=True):
     different systems of units (even if the underlying physical quantity is
     identical).
 
-    >>> import pint; ureg = pint.UnitRegistry()
+    >>> from pisa import ureg
     >>> from pisa.utils.hash import hash_obj
     >>> q0 = 1 * ureg.m
     >>> q1 = 100 * ureg.cm
