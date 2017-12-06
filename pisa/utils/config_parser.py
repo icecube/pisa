@@ -2,7 +2,7 @@
 Parse a ConfigFile object into a dict containing an item for every analysis
 stage, that itself contains all necessary instantiation arguments/objects for
 that stage. for en example config file, please consider
-:file:`$PISA/pisa_example_resources/settings/pipeline/example.cfg`
+:file:`$PISA/pisa_examples/resources/settings/pipeline/example.cfg`
 
 Config File Structure
 =====================

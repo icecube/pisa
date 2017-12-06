@@ -6,7 +6,8 @@ in the filesystem or with the installed PISA package.
 
 from __future__ import absolute_import
 
-import os
+from os import environ
+from os.path import exists, expanduser, expandvars, join
 import sys
 
 import pkg_resources
@@ -57,9 +58,9 @@ def find_resource(resource, fail=True):
     resource : str
         Resource path; can be path relative to CWD, path relative to
         PISA_RESOURCES environment variable (if defined), or a package resource
-        location relative to the `pisa_example_resources` sub-directory. Within
+        location relative to the `pisa_examples/resources` sub-directory. Within
         each path specified in PISA_RESOURCES and within the
-        `pisa_example_resources` dir, the sub-directories 'data', 'scripts',
+        `pisa_examples/resources` dir, the sub-directories 'data', 'scripts',
         and 'settings' are checked for `resource` _before_ the base directories
         are checked. Note that the **first** result found is returned.
 
@@ -83,7 +84,7 @@ def find_resource(resource, fail=True):
     # imports
     import pisa.utils.log as log
 
-    log.logging.trace('Attempting to find resource "%s"' % resource)
+    log.logging.trace('Attempting to find resource "%s"', resource)
 
     # 1) Check for file in filesystem at absolute path or relative to
     #    PISA_RESOURCES environment var
@@ -96,10 +97,9 @@ def find_resource(resource, fail=True):
 
     # 2) Look inside the installed pisa package
     log.logging.trace('Searching package resources...')
-    if pkg_resources.resource_exists('pisa_example_resources', resource):
-        resource_path = pkg_resources.resource_filename(
-            'pisa_example_resources', resource
-        )
+    resource_spec = ('pisa_examples', 'resources/' + resource)
+    if pkg_resources.resource_exists(*resource_spec):
+        resource_path = pkg_resources.resource_filename(*resource_spec)
         log.logging.debug('Found resource "%s" in PISA package at "%s"',
                           resource, resource_path)
         return resource_path
@@ -110,11 +110,9 @@ def find_resource(resource, fail=True):
         else:
             augmented_path = '/'.join([subdir, resource])
 
-        if pkg_resources.resource_exists('pisa_example_resources',
-                                         augmented_path):
-            resource_path = pkg_resources.resource_filename(
-                'pisa_example_resources', augmented_path
-            )
+        resource_spec = ('pisa_examples', 'resources/' + augmented_path)
+        if pkg_resources.resource_exists(*resource_spec):
+            resource_path = pkg_resources.resource_filename(*resource_spec)
             log.logging.debug('Found resource "%s" in PISA package at "%s"',
                               resource, resource_path)
             return resource_path
@@ -137,9 +135,9 @@ def open_resource(resource, mode='r'):
     resource : str
         Resource path; can be path relative to CWD, path relative to
         PISA_RESOURCES environment variable (if defined), or a package resource
-        location relative to PISA's `pisa_example_resources` sub-directory.
+        location relative to PISA's `pisa_examples/resources` sub-directory.
         Within each path specified in PISA_RESOURCES and within the
-        `pisa_example_resources` dir, the sub-directories 'data', 'scripts',
+        `pisa_examples/resources` dir, the sub-directories 'data', 'scripts',
         and 'settings' are checked for `resource` _before_ the base directories
         are checked. Note that the **first** result found is returned.
 
@@ -174,7 +172,7 @@ def open_resource(resource, mode='r'):
     # imports
     import pisa.utils.log as log
 
-    log.logging.trace('Attempting to open resource "%s"' % resource)
+    log.logging.trace('Attempting to open resource "%s"', resource)
 
     # 1) Check for file in filesystem at absolute path or relative to
     #    PISA_RESOURCES environment var
@@ -198,8 +196,8 @@ def open_resource(resource, mode='r'):
         else:
             augmented_path = '/'.join([subdir, resource])
         try:
-            stream = pkg_resources.resource_stream('pisa_example_resources',
-                                                   augmented_path)
+            resource_spec = ('pisa_examples', 'resources/' + augmented_path)
+            stream = pkg_resources.resource_stream(*resource_spec)
             # TODO: better way to check if read mode (i.e. will 'r' miss
             # anything that can be specified to also mean "read mode")?
             if mode.strip().lower() != 'r':
@@ -246,33 +244,31 @@ def find_path(pathspec, fail=True):
     # 1) Check for absolute path or path relative to current working
     #    directory
     log.logging.trace('Checking absolute or path relative to cwd...')
-    resource_path = os.path.expandvars(os.path.expanduser(pathspec))
-    if os.path.exists(resource_path):
+    resource_path = expandvars(expanduser(pathspec))
+    if exists(resource_path):
         log.logging.debug('Found "%s" at "%s"', pathspec, resource_path)
         return resource_path
 
     # 2) Check if $PISA_RESOURCES is set in environment; if so, look relative
     #    to that
     log.logging.trace('Checking environment for $PISA_RESOURCES...')
-    if 'PISA_RESOURCES' in os.environ:
-        pisa_resources = os.environ['PISA_RESOURCES']
-        log.logging.trace('Searching resource path PISA_RESOURCES=%s'
-                          % pisa_resources)
+    if 'PISA_RESOURCES' in environ:
+        pisa_resources = environ['PISA_RESOURCES']
+        log.logging.trace('Searching resource path PISA_RESOURCES=%s',
+                          pisa_resources)
         resource_paths = pisa_resources.split(':')
         for resource_path in resource_paths:
             if not resource_path:
                 continue
-            resource_path = os.path.expandvars(os.path.expanduser(
-                resource_path
-            ))
+            resource_path = expandvars(expanduser(resource_path))
             # Look in all default sub-dirs for the pathspec
-            augmented_paths = [os.path.join(resource_path, subdir, pathspec)
+            augmented_paths = [join(resource_path, subdir, pathspec)
                                for subdir in RESOURCES_SUBDIRS]
             # Also look in the base dir specified for the pathspec
-            augmented_paths.append(os.path.join(resource_path, pathspec))
+            augmented_paths.append(join(resource_path, pathspec))
 
             for augmented_path in augmented_paths:
-                if os.path.exists(augmented_path):
+                if exists(augmented_path):
                     log.logging.debug('Found path "%s" at %s',
                                       pathspec, augmented_path)
                     return augmented_path
