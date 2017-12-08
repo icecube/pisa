@@ -1,6 +1,5 @@
 """
 Plotter class for doing plots easily
-
 """
 
 
@@ -19,11 +18,27 @@ from matplotlib.offsetbox import AnchoredText
 from pisa import FTYPE
 from pisa.core.map import Map, MapSet
 from pisa.core.transform import BinnedTensorTransform, TransformSet
-from pisa.utils.format import dollars, text2tex, tex_join
+from pisa.utils.format import tex_dollars, text2tex, tex_join
 from pisa.utils.log import logging
 
 
 __all__ = ['CMAP_SEQ', 'CMAP_DIV', 'Plotter']
+
+__author__ = 'P. Eller'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 CMAP_SEQ = plt.cm.inferno
@@ -142,11 +157,11 @@ class Plotter(object):
         else:
             stamp = text
         if self.loc == 'inside':
-            a_text = AnchoredText(dollars(stamp), loc=2, frameon=False,
+            a_text = AnchoredText(tex_dollars(stamp), loc=2, frameon=False,
                                   **kwargs)
             plt.gca().add_artist(a_text)
         elif self.loc == 'outside':
-            plt.gca().set_title(dollars(stamp))
+            plt.gca().set_title(tex_dollars(stamp))
 
     def add_leg(self):
         """initialize legend """
@@ -427,8 +442,8 @@ class Plotter(object):
                         size=7
                     )
 
-        axis.set_xlabel(dollars(dims[0].label))
-        axis.set_ylabel(dollars(dims[1].label))
+        axis.set_xlabel(tex_dollars(dims[0].label))
+        axis.set_ylabel(tex_dollars(dims[1].label))
         axis.set_xlim(extent[0:2])
         axis.set_ylim(extent[2:4])
 
@@ -445,7 +460,7 @@ class Plotter(object):
             col_bar = plt.colorbar()
 
         if self.label:
-            col_bar.set_label(dollars(text2tex(self.label)))
+            col_bar.set_label(tex_dollars(text2tex(self.label)))
 
     def plot_1d_projection(self, map, plot_axis, **kwargs):
         """plot map projected on plot_axis"""
@@ -458,7 +473,7 @@ class Plotter(object):
             axis.errorbar(
                 plt_binning.weighted_centers.m, unp.nominal_values(hist),
                 yerr=unp.std_devs(hist),
-                fmt='o', markersize='4', label=dollars(text2tex('data')),
+                fmt='o', markersize='4', label=tex_dollars(text2tex('data')),
                 color='k', ecolor='k', mec='k', **kwargs
             )
         else:
@@ -467,7 +482,7 @@ class Plotter(object):
                 weights=unp.nominal_values(hist),
                 bins=inf2finite(plt_binning.bin_edges.m), histtype='step',
                 lw=1.5,
-                label=dollars(text2tex(map.tex)), color=self.color, **kwargs
+                label=tex_dollars(text2tex(map.tex)), color=self.color, **kwargs
             )
             axis.bar(
                 plt_binning.bin_edges.m[:-1], 2*unp.std_devs(hist),
@@ -475,9 +490,9 @@ class Plotter(object):
                 width=plt_binning.bin_widths, alpha=0.25, linewidth=0,
                 color=self.color, **kwargs
             )
-        axis.set_xlabel(dollars(plt_binning.label))
+        axis.set_xlabel(tex_dollars(plt_binning.label))
         if self.label:
-            axis.set_ylabel(dollars(text2tex(self.label)))
+            axis.set_ylabel(tex_dollars(text2tex(self.label)))
         if plt_binning.is_log:
             axis.set_xscale('log')
         if self.log:
@@ -539,7 +554,7 @@ class Plotter(object):
             if map.tex == 'data':
                 axis.errorbar(
                     plt_binning.weighted_centers.m, ratio, yerr=ratio_error,
-                    fmt='o', markersize='4', label=dollars(text2tex('data')),
+                    fmt='o', markersize='4', label=tex_dollars(text2tex('data')),
                     color='k', ecolor='k', mec='k'
                 )
             else:
@@ -548,7 +563,7 @@ class Plotter(object):
                     weights=ratio,
                     bins=inf2finite(plt_binning.bin_edges.m),
                     histtype='step', lw=1.5,
-                    label=dollars(text2tex(map.tex)), color=self.color
+                    label=tex_dollars(text2tex(map.tex)), color=self.color
                 )
 
                 axis.bar(
@@ -560,8 +575,8 @@ class Plotter(object):
         if self.grid:
             plt.grid(True, which="both", ls='-', alpha=0.2)
         self.fig.subplots_adjust(hspace=0)
-        axis.set_ylabel(dollars(text2tex('ratio')))
-        axis.set_xlabel(dollars(plt_binning.label))
+        axis.set_ylabel(tex_dollars(text2tex('ratio')))
+        axis.set_xlabel(tex_dollars(plt_binning.label))
         # Calculate nice scale:
         if r_vmin is not None and r_vmax is not None:
             axis.set_ylim(1 - r_vmin, 1 + r_vmax)
@@ -588,8 +603,8 @@ class Plotter(object):
             ax = fig.add_subplot(111)
             ax.grid(b=True, which='major')
             ax.grid(b=True, which='minor', linestyle=':')
-            plt.xlabel(dollars(energy_binning.label), size=18)
-            plt.ylabel(dollars(text2tex(self.label)), size=18)
+            plt.xlabel(tex_dollars(energy_binning.label), size=18)
+            plt.ylabel(tex_dollars(text2tex(self.label)), size=18)
             if self.log:
                 ax.set_yscale('log')
             if logx:

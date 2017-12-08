@@ -1,6 +1,7 @@
-#
-# class to access hdf5 files chained together.
-#
+"""
+class to access hdf5 files chained together.
+"""
+
 
 import numpy as n
 import tables

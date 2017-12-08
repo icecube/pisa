@@ -1,13 +1,3 @@
-#
-# PISA authors: Lukas Schulte
-#               schulte@physik.uni-bonn.de
-#               Justin L. Lanfranchi
-#               jll1062+pisa@phys.psu.edu
-#
-# CAKE authors: Shivesh Mandalia
-#               s.p.mandalia@qmul.ac.uk
-#
-# date:    2016-05-13
 """
 The purpose of this stage is to simulate event classification sorting the
 reconstructed particles into PID-signature channels.
@@ -41,6 +31,22 @@ from pisa.utils.profiler import profile
 
 
 __all__ = ['param']
+
+__author__ = 'L. Schulte, J.L. Lanfranchi, S. Mandalia'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 def load_pid_energy_param(source):

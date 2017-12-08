@@ -1,12 +1,11 @@
-# Authors: J.L.Lanfranchi/P.Eller
-# Date   : 2016-05-13
 """
 Transform as base class for transformations, TransformSet for sets of Transform
 objects, and BinnedTensorTransform as an implementation of Transform for
 defining and applying linear transforms.
-
 """
 
+
+from __future__ import absolute_import, division
 
 from collections import OrderedDict, Sequence
 from copy import deepcopy
@@ -31,6 +30,22 @@ from pisa.utils.log import logging, set_verbosity
 
 
 __all__ = ['TransformSet', 'Transform', 'BinnedTensorTransform']
+
+__author__ = 'J.L. Lanfranchi, P. Eller'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 # TODO: Include option for propagating/not propagating errors, so that while
@@ -81,13 +96,14 @@ class TransformSet(object):
     name
 
     """
-    def __init__(self, transforms, name=None, hash=None):
+    def __init__(self, transforms, name=None, hash=None): # pylint: disable=redefined-builtin
         self._transforms = transforms
         self.name = name
         self.hash = hash
 
     @property
     def serializable_state(self):
+        """OrderedDict : State of the object in a format that is serializable"""
         state = OrderedDict()
         state['transforms'] = [
             (t.__module__, t.__class__.__name__, t.serializable_state)
@@ -98,6 +114,7 @@ class TransformSet(object):
 
     @property
     def hashable_state(self):
+        """OrderedDict : State of the objec that can be used for hashing"""
         state = OrderedDict()
         state['transforms'] = [
             (t.__module__, t.__class__.__name__, t.hashable_state)
@@ -173,7 +190,7 @@ class TransformSet(object):
 
     @property
     def hash(self):
-        """Hash for entire set of transforms"""
+        """int : Hash for entire set of transforms"""
         hashes = self.hashes
         if len(hashes) > 0:
             if all([(h is not None and h == hashes[0]) for h in hashes]):
@@ -190,7 +207,7 @@ class TransformSet(object):
 
     @property
     def hashes(self):
-        """List of hashes, one per transform in the set"""
+        """list of int : List of hashes, one per transform in the set"""
         return [t.hash for t in self]
 
     # TODO: implement a non-volatile hash that includes source code hash in
@@ -209,14 +226,17 @@ class TransformSet(object):
 
     @property
     def num_inputs(self):
+        """int : number of inputs"""
         return len(self.input_names)
 
     @property
     def num_outputs(self):
+        """int : number of outputs"""
         return len(self)
 
     @property
     def output_names(self):
+        """list of str : names of outputs"""
         output_names = []
         for x in self:
             output_names.append(x.output_name)
@@ -310,11 +330,13 @@ class Transform(object):
     _state_attrs = ('input_names', 'output_name', 'tex', 'hash', 'error_method')
 
     def __init__(self, input_names, output_name, input_binning=None,
-                 output_binning=None, tex=None, hash=None, error_method=None):
+                 output_binning=None, tex=None, hash=None, error_method=None): # pylint: disable=redefined-builtin
         # Convert to sequence of single string if a single string was passed
         # for uniform interfacing
         if isinstance(input_names, basestring):
             input_names = [input_names]
+        else:
+            input_names = [name for name in input_names]
         self._input_names = input_names
 
         assert isinstance(output_name, basestring)
@@ -349,6 +371,7 @@ class Transform(object):
 
     @property
     def serializable_state(self):
+        """OrderedDict : State of the object in a format that is serializable"""
         state = OrderedDict()
         state['input_names'] = self.input_names
         state['output_name'] = self.output_name
@@ -361,6 +384,7 @@ class Transform(object):
 
     @property
     def hashable_state(self):
+        """OrderedDict : State of the object that can be used for hashing"""
         state = OrderedDict()
         state['input_names'] = self.input_names
         state['output_name'] = self.output_name
@@ -415,6 +439,7 @@ class Transform(object):
 
     @property
     def hash(self):
+        """int : hash of obejct's state"""
         return self._hash
 
     @hash.setter
@@ -423,26 +448,32 @@ class Transform(object):
 
     @property
     def input_names(self):
+        """list of str : input names"""
         return self._input_names
 
     @property
     def num_inputs(self):
+        """int : number of inputs"""
         return len(self.input_names)
 
     @property
     def output_name(self):
+        """str : name of output"""
         return self._output_name
 
     @property
     def input_binning(self):
+        """MultiDimBinning : binning specification for inputs"""
         return self._input_binning
 
     @property
     def output_binning(self):
+        """MultiDimBinning : binning specification for output"""
         return self._output_binning
 
     @property
     def tex(self):
+        """str : TeX label"""
         return self._tex
 
     @tex.setter
@@ -452,9 +483,21 @@ class Transform(object):
 
     @property
     def error_method(self):
+        """str or None : method specified for computing errors"""
         return self._error_method
 
     def apply(self, inputs):
+        """Apply the transform to inputs to obtain the output.
+
+        Parameters
+        ----------
+        inputs
+
+        Returns
+        -------
+        output
+
+        """
         output = self._apply(inputs)
         # TODO: tex, etc.?
         output.name = self.output_name
@@ -504,7 +547,7 @@ def _new_obj(original_function):
         """
         new_state = OrderedDict()
         state_updates = original_function(self, *args, **kwargs)
-        for slot in self._state_attrs:
+        for slot in self._state_attrs: # pylint: disable=protected-access
             if state_updates.has_key(slot):
                 new_state[slot] = state_updates[slot]
             else:
@@ -603,7 +646,7 @@ class BinnedTensorTransform(Transform):
 
     def __init__(self, input_names, output_name, input_binning, output_binning,
                  xform_array, sum_inputs=False, error_array=None, tex=None,
-                 error_method=None, hash=None):
+                 error_method=None, hash=None): # pylint: disable=redefined-builtin
         super(BinnedTensorTransform, self).__init__(
             input_names=input_names, output_name=output_name,
             input_binning=input_binning, output_binning=output_binning,
@@ -617,6 +660,7 @@ class BinnedTensorTransform(Transform):
 
     @property
     def serializable_state(self):
+        """OrderedDict : State of the object in a format that is serializable"""
         state = super(BinnedTensorTransform, self).serializable_state
         state['xform_array'] = self.nominal_values
         state['error_array'] = self.std_devs
@@ -624,6 +668,7 @@ class BinnedTensorTransform(Transform):
 
     @property
     def hashable_state(self):
+        """OrderedDict : State of the objec that can be used for hashing"""
         state = super(BinnedTensorTransform, self).hashable_state
         state['xform_array'] = normQuant(self.nominal_values,
                                          sigfigs=HASH_SIGFIGS)
@@ -643,7 +688,7 @@ class BinnedTensorTransform(Transform):
 
         """
         if error_array is None:
-            super(self.__class__, self).__setattr__(
+            super(BinnedTensorTransform, self).__setattr__(
                 '_xform_array', self.nominal_values
             )
             return
@@ -665,10 +710,14 @@ class BinnedTensorTransform(Transform):
 
     @property
     def nominal_values(self):
+        """numpy.ndarray, same shape as `xform_array` : Nominal transform
+        values (i.e. with uncertainties stripped off)"""
         return unp.nominal_values(self.xform_array)
 
     @property
     def std_devs(self):
+        """numpy.ndarray, same shape as `xform_array` : Stndard deviation of
+        each transform values value (i.e. uncertainties)"""
         return unp.std_devs(self.xform_array)
 
     @_new_obj
@@ -747,7 +796,7 @@ class BinnedTensorTransform(Transform):
 
     # TODO: validate transform...; also, this def changes number of arguments,
     # which should be avoided if possible
-    def validate_transform(self, input_binning, output_binning, xform_array):
+    def validate_transform(self, input_binning, output_binning, xform_array): # pylint: disable=arguments-differ
         """Superficial validation that the transform being set is reasonable.
 
         As of now, only checks shape.
@@ -897,7 +946,7 @@ class BinnedTensorTransform(Transform):
 
         elif (input_array.shape ==
               self.xform_array.shape[0:len(input_array.shape)]):
-            axes = range(len(input_array.shape))
+            axes = np.arange(len(input_array.shape))
             output = np.tensordot(input_array, self.xform_array,
                                   axes=(axes, axes))
 
@@ -980,7 +1029,7 @@ def test_BinnedTensorTransform():
     finally:
         shutil.rmtree(testdir, ignore_errors=True)
 
-    logging.info('<< PASSED : test_BinnedTensorTransform >>')
+    logging.info('<< PASS : test_BinnedTensorTransform >>')
 
     xforms = TransformSet(
         name='scaling',
@@ -1007,7 +1056,7 @@ def test_BinnedTensorTransform():
     finally:
         shutil.rmtree(testdir, ignore_errors=True)
 
-    logging.info('<< PASSED : test_TransformSet >>')
+    logging.info('<< PASS : test_TransformSet >>')
 
 
 if __name__ == "__main__":

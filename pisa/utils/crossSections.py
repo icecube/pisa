@@ -1,30 +1,42 @@
 #!/usr/bin/env python
-#
-# author: J.L. Lanfranchi
-#         jll1062+pisa@phys.psu.edu
-#
-# date:   October 24, 2015
+
 """
 Define CrossSections class for importing, working with, and storing neutrino
 cross sections
 """
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 from copy import deepcopy
-import os, sys
+import os
 
 import numpy as np
 from scipy.interpolate import interp1d
 
-from pisa.utils.resources import find_resource
 from pisa.utils.fileio import expand, from_file, to_file
-from pisa.utils import flavInt
+from pisa.utils.flavInt import ALL_NUFLAVINTS, FlavIntData, NuFlavIntGroup
 from pisa.utils.log import logging, set_verbosity
+from pisa.utils.resources import find_resource
 
 
 __all__ = ['CrossSections']
+
+__author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 # TODO: make class for groups of CX or just a function for finding eisting
@@ -32,7 +44,7 @@ __all__ = ['CrossSections']
 # CrossSections class methods
 
 
-class CrossSections(flavInt.FlavIntData):
+class CrossSections(FlavIntData):
     """Cross sections for each neutrino flavor & interaction type ("flavint").
     What is stored are *PER-H20-MOLECULE* cross sections, in units of [m^2].
 
@@ -111,7 +123,7 @@ class CrossSections(flavInt.FlavIntData):
 
         Returns
         -------
-        xsec : flavInt.FlavIntData
+        xsec : :class:`pisa.utils.flavInt.FlavIntData`
             Object containing the loaded cross sections
         """
         import ROOT
@@ -129,8 +141,8 @@ class CrossSections(flavInt.FlavIntData):
         rfile = ROOT.TFile(fpath)
         try:
             energy = None
-            xsec = flavInt.FlavIntData()
-            for flavint in flavInt.ALL_NUFLAVINTS:
+            xsec = FlavIntData()
+            for flavint in ALL_NUFLAVINTS:
                 fi_str = str(flavint)
                 if ver == 'genie_2.6.4':
                     # Expected to contain xsect per atom; summing 2*Hydrogen
@@ -189,7 +201,7 @@ class CrossSections(flavInt.FlavIntData):
         # TODO: different validation based on cross sections version string
 
         # Make sure the basics are present
-        xsec = flavInt.FlavIntData(xsec)
+        xsec = FlavIntData(xsec)
 
         ## No NaN's
         assert not np.any(np.isnan(energy))
@@ -198,7 +210,7 @@ class CrossSections(flavInt.FlavIntData):
         assert np.max(energy) >= 100
 
         # All event flavints need to be present
-        for k in flavInt.ALL_NUFLAVINTS:
+        for k in ALL_NUFLAVINTS:
             # Uses "standard" PISA indexing scheme
             x = xsec[k]
             # Arrays are same lengths
@@ -264,7 +276,7 @@ class CrossSections(flavInt.FlavIntData):
         m^2, evaluated at each energy. Shape of returned value matches that of
         passed `energy` parameter.
         """
-        flavintgroup = flavInt.NuFlavIntGroup(flavintgroup)
+        flavintgroup = NuFlavIntGroup(flavintgroup)
         if flavintgroup not in self.__interpolants:
             self.__define_interpolant(flavintgroup=flavintgroup)
         return self.__interpolants[flavintgroup](energy)
@@ -287,8 +299,8 @@ class CrossSections(flavInt.FlavIntData):
         evaluated at each energy. Shape of returned value matches that of
         passed `energy` parameter.
         """
-        flavintgroup0 = flavInt.NuFlavIntGroup(flavintgroup0)
-        flavintgroup1 = flavInt.NuFlavIntGroup(flavintgroup1)
+        flavintgroup0 = NuFlavIntGroup(flavintgroup0)
+        flavintgroup1 = NuFlavIntGroup(flavintgroup1)
 
         self.__define_interpolant(flavintgroup=flavintgroup0)
         self.__define_interpolant(flavintgroup=flavintgroup1)
@@ -306,10 +318,9 @@ class CrossSections(flavInt.FlavIntData):
         `flavintgroup`. Do not re-compute if already present.
         """
         if flavintgroup is None:
-            flavintgroups = [flavInt.NuFlavIntGroup(fi)
-                             for fi in self.flavints]
+            flavintgroups = [NuFlavIntGroup(fi) for fi in self.flavints]
         else:
-            flavintgroups = [flavInt.NuFlavIntGroup(flavintgroup)]
+            flavintgroups = [NuFlavIntGroup(flavintgroup)]
 
         for flavintgroup in flavintgroups:
             if flavintgroup in self.__interpolants:
@@ -337,7 +348,7 @@ class CrossSections(flavInt.FlavIntData):
         necessary when combining cross sections of disparate flavor/interaction
         types from different Monte Carlo simulation runs.
         """
-        flavintgroup = flavInt.NuFlavIntGroup(flavintgroup)
+        flavintgroup = NuFlavIntGroup(flavintgroup)
         # Trivial case: nothing to combine
         if len(flavintgroup.flavints) == 1:
             return self[flavintgroup.flavints[0]]
@@ -362,7 +373,7 @@ class CrossSections(flavInt.FlavIntData):
         return tot_xs
 
     def get_xs_ratio_integral(self, flavintgroup0, flavintgroup1, e_range,
-                    gamma=0, average=False):
+                              gamma=0, average=False):
         """Energy-spectrum-weighted integral of (possibly a ratio of)
         (possibly-combined) flavor/interaction type cross sections.
 
@@ -397,13 +408,14 @@ class CrossSections(flavInt.FlavIntData):
         assert gamma >= 0, '`gamma` must be >= 0'
 
         if flavintgroup1 is None:
-            flavintgroups = [flavInt.NuFlavIntGroup(flavintgroup0)]
+            flavintgroups = [NuFlavIntGroup(flavintgroup0)]
         else:
-            flavintgroups = [flavInt.NuFlavIntGroup(flavintgroup0),
-                             flavInt.NuFlavIntGroup(flavintgroup1)]
+            flavintgroups = [NuFlavIntGroup(flavintgroup0),
+                             NuFlavIntGroup(flavintgroup1)]
 
         # Create interpolant(s) (to get xs at  energy range's endpoints)
-        [self.__define_interpolant(flavintgroup=fg) for fg in flavintgroups]
+        for fg in flavintgroups:
+            self.__define_interpolant(flavintgroup=fg)
 
         all_energy = self.__interpolants[flavintgroups[0]].x
         xs_data = [self.__interpolants[fg].y for fg in flavintgroups]
@@ -479,7 +491,7 @@ class CrossSections(flavInt.FlavIntData):
     #    of flavints specfied in `flavintgroup`; if `gamma` specified, weight
     #    integral by simulated spectrum with that power-spectral index
     #    (i.e.: E^{-gamma}).
-    #    
+    #
     #    Specifying `average`=True yields the weighted-average of cross section.
 
     #    See also
@@ -504,10 +516,6 @@ class CrossSections(flavInt.FlavIntData):
         import matplotlib
         matplotlib.use('pdf')
         import matplotlib.pyplot as plt
-        try:
-            import seaborn as sns
-        except ImportError:
-            pass
 
         if self.__ver is None:
             leg_ver = ''
@@ -529,20 +537,20 @@ class CrossSections(flavInt.FlavIntData):
 
         energy = self.energy
         nc_n = cc_n = 0
-        for flavint in list(flavInt.ALL_NUFLAVINTS.particles) + \
-                list(flavInt.ALL_NUFLAVINTS.antiparticles):
+        for flavint in list(ALL_NUFLAVINTS.particles) + \
+                list(ALL_NUFLAVINTS.antiparticles):
             # Convert from [m^2] to [1e-38 cm^2]
             xs = self[flavint] * 1e38 * 1e4
             if flavint.cc:
                 ax1.plot(energy, xs/energy,
                          alpha=alpha,
-                         label=flavInt.tex(flavint.flav, d=1),
+                         label=flavint.tex(flavint.flav, d=1),
                          **ls[cc_n%len(ls)])
                 cc_n += 1
             else:
                 ax2.plot(energy, xs/energy,
                          alpha=alpha,
-                         label=flavInt.tex(flavint.flav, d=1),
+                         label=flavint.tex(flavint.flav, d=1),
                          **ls[nc_n%len(ls)])
                 nc_n += 1
 
@@ -569,7 +577,7 @@ class CrossSections(flavInt.FlavIntData):
             f.savefig(save)
         elif isinstance(save, dict):
             logging.info('Saving cross sections plots using figure.save'
-                         ' params %s' % (save,))
+                         ' params %s', (save,))
             f.savefig(**save)
 
 
@@ -589,33 +597,36 @@ def test_CrossSections(outdir=None):
         xs = CrossSections(ver='genie_2.6.4', xsec=pisa_xs_file)
 
         # Location of the root file to use (not included in PISA at the moment)
-        test_dir = expand(os.path.join('$PISA', 'tests', 'cross_sections'))
+        test_dir = expand(os.path.join('/tmp', 'pisa_tests', 'cross_sections'))
         #ROOT_xs_file = os.path.join(test_dir, 'genie_2.6.4_simplified.root')
         ROOT_xs_file = find_resource(os.path.join(
-            'tests', 'data', 'xsec', 'genie_2.6.4_simplified.root'
+            #'tests', 'data', 'xsec', 'genie_2.6.4_simplified.root'
+            'cross_sections', 'genie_xsec_H20.root'
         ))
 
-        # Make sure that the XS newly-imported from ROOT match those stored in PISA
+        # Make sure that the XS newly-imported from ROOT match those stored in
+        # PISA
         if os.path.isfile(ROOT_xs_file):
             xs_from_root = CrossSections.newFromROOT(ROOT_xs_file,
                                                      ver='genie_2.6.4')
-            logging.info('Found and loaded ROOT source cross sections file %s'
-                         % ROOT_xs_file)
+            logging.info('Found and loaded ROOT source cross sections file %s',
+                         ROOT_xs_file)
             #assert xs_from_root.allclose(xs, rtol=1e-7)
 
         # Check XS ratio for numu_cc to numu_cc + numu_nc (user must inspect)
-        kg0 = flavInt.NuFlavIntGroup('numu_cc')
-        kg1 = flavInt.NuFlavIntGroup('numu_nc')
-        logging.info('\\int_1^80 xs(numu_cc) E^{-1} dE = %e' %
-                     xs.get_xs_ratio_integral(kg0, None, e_range=[1, 80], gamma=1))
-        logging.info('(int E^{-gamma} * (sigma_numu_cc)/'
-                     'int(sigma_(numu_cc+numu_nc)) dE) /'
-                     ' (int E^{-gamma} dE) = %e' %
-                     xs.get_xs_ratio_integral(kg0, kg0+kg1, e_range=[1, 80],
-                                              gamma=1, average=True))
+        kg0 = NuFlavIntGroup('numu_cc')
+        kg1 = NuFlavIntGroup('numu_nc')
+        logging.info(
+            r'\int_1^80 xs(numu_cc) E^{-1} dE = %e',
+            xs.get_xs_ratio_integral(kg0, None, e_range=[1, 80], gamma=1)
+        )
+        logging.info(
+            '(int E^{-gamma} * (sigma_numu_cc)/int(sigma_(numu_cc+numu_nc)) dE) / (int E^{-gamma} dE) = %e',
+            xs.get_xs_ratio_integral(kg0, kg0+kg1, e_range=[1, 80], gamma=1,
+                                     average=True)
+        )
         # Check that XS ratio for numu_cc+numu_nc to the same is 1.0
-        assert xs.get_xs_ratio_integral(kg0+kg1, kg0+kg1, e_range=[1, 80], gamma=1,
-                                        average=True) == 1.0
+        assert xs.get_xs_ratio_integral(kg0+kg1, kg0+kg1, e_range=[1, 80], gamma=1, average=True) == 1.0
 
         # Check via plot that the
 
@@ -630,7 +641,7 @@ def test_CrossSections(outdir=None):
                 ))
         except ImportError as exc:
             logging.debug('Could not plot; possible that matplotlib not'
-                          'installed. ImportError: %s' % exc)
+                          'installed. ImportError: %s', exc)
 
     finally:
         if remove_dir:

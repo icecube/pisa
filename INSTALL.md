@@ -35,7 +35,7 @@ pip install -e my_virtual_env/src/pisa/[cuda,numba,develop] \
 export PISA_FTYPE=double
 
 # Run the physics tests (append --ignore-cuda-errors if no CUDA support)
-my_virtual_env/src/pisa/tests/test_consistency_with_pisa2.py -v
+my_virtual_env/src/pisa/pisa_tests/test_consistency_with_pisa2.py -v
 
 # EXAMPLE: Run a Monte Carlo pipeline to produce, store, and plot its expected
 # distributions at the output of each stage
@@ -44,7 +44,7 @@ pipeline.py --pipeline settings/pipeline/example.cfg \
 
 # EXAMPLE: Run the Asimov NMO analysis; leave off "_gpu" to run CPU-only
 # version
-hypo_testing.py --logdir /tmp/test analysis \
+pisa-analysis discrete_hypo --logdir /tmp/test analysis \
     --h0-pipeline settings/pipeline/example_gpu.cfg \
     --h0-param-selections="ih" \
     --h1-param-selections="nh" \
@@ -55,7 +55,7 @@ hypo_testing.py --logdir /tmp/test analysis \
     --pprint -v
 
 # Display the significance for distinguishing hypothesis h1 from h0
-hypo_testing_postprocess.py --asimov --dir /tmp/test/*
+pisa-postproc --asimov --dir /tmp/test/*
 
 # Leave the virtual environment (run the `source...` command above to re-enter
 # the virtual environment at a later time)
@@ -325,7 +325,7 @@ Unit tests are designed to ensure that the basic mechanisms of objects' function
 
 These are all run, plus additional tests (takes about 15-20 minutes on a laptop) with the command
 ```bash
-$PISA/tests/test_command_lines.sh
+$PISA/pisa_tests/test_command_lines.sh
 ```
 
 #### Physics Tests

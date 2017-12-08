@@ -4,7 +4,6 @@ oscillation and various systematics.
 
 This service in particular is intended to follow a `data` service which takes
 advantage of the Data object being passed as a sideband in the Stage.
-
 """
 
 
@@ -24,7 +23,7 @@ from pisa.core.param import ParamSet
 from pisa.core.stage import Stage
 from pisa.utils.flavInt import ALL_NUFLAVINTS
 from pisa.utils.flavInt import NuFlavInt, NuFlavIntGroup
-from pisa.utils.flux_weights import load_2D_table, calculate_flux_weights
+from pisa.utils.flux_weights import load_2d_table, calculate_2d_flux_weights
 from pisa.utils.format import text2tex
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
@@ -33,6 +32,22 @@ from pisa.utils.resources import open_resource
 
 
 __all__ = ['weight']
+
+__author__ = 'S. Mandalia, S. Wren'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 class weight(Stage):
@@ -748,25 +763,25 @@ class weight(Stage):
     def _compute_flux_weights(nu_data, params):
         """Neutrino fluxes via integral preserving spline."""
         logging.debug('Computing flux values')
-        spline_dict = load_2D_table(params['flux_file'].value)
+        spline_dict = load_2d_table(params['flux_file'].value)
 
         flux_weights = OrderedDict()
         for fig in nu_data.iterkeys():
             flux_weights[fig] = OrderedDict()
             logging.debug('Computing flux values for flavour {0}'.format(fig))
-            flux_weights[fig]['nue_flux'] = calculate_flux_weights(
+            flux_weights[fig]['nue_flux'] = calculate_2d_flux_weights(
                 nu_data[fig]['energy'], nu_data[fig]['coszen'],
                 spline_dict['nue']
             )
-            flux_weights[fig]['numu_flux'] = calculate_flux_weights(
+            flux_weights[fig]['numu_flux'] = calculate_2d_flux_weights(
                 nu_data[fig]['energy'], nu_data[fig]['coszen'],
                 spline_dict['numu']
             )
-            flux_weights[fig]['nuebar_flux'] = calculate_flux_weights(
+            flux_weights[fig]['nuebar_flux'] = calculate_2d_flux_weights(
                 nu_data[fig]['energy'], nu_data[fig]['coszen'],
                 spline_dict['nuebar']
             )
-            flux_weights[fig]['numubar_flux'] = calculate_flux_weights(
+            flux_weights[fig]['numubar_flux'] = calculate_2d_flux_weights(
                 nu_data[fig]['energy'], nu_data[fig]['coszen'],
                 spline_dict['numubar']
             )

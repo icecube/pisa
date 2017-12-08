@@ -5,9 +5,11 @@ detector into an event count.
 This service in particular reads in from a GENIE cross-section spline ROOT file
 in order to obtain the relavant cross-sections. Example pipeline settings file
 can be found in
-$PISA/pisa/resources/settings/pipeline/xsec.cfg
+$PISA/pisa_examples/resources/settings/pipeline/example_xsec.cfg
 """
 
+
+from __future__ import absolute_import
 
 from itertools import product
 from operator import add
@@ -30,6 +32,22 @@ from pisa.utils.resources import find_resource
 
 
 __all__ = ['genie', 'test_standard_plots', 'test_per_e_plot']
+
+__author__ = 'S. Mandalia'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 class genie(Stage):

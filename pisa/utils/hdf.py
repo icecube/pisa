@@ -1,9 +1,7 @@
-# author: Sebastian Boeser
-#         sboeser@uni-mainz.de
-#
-# date:   2015-03-05
 """Set of utilities for handling HDF5 file I/O"""
 
+
+from __future__ import absolute_import
 
 import os
 
@@ -19,6 +17,22 @@ from pisa.utils.comparisons import recursiveEquality
 __all__ = ['HDF5_EXTS',
            'from_hdf', 'to_hdf',
            'test_hdf']
+
+__author__ = 'S. Boeser, J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 HDF5_EXTS = ['hdf', 'h5', 'hdf5']
@@ -156,11 +170,14 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
                         dset.attrs[key] = attrs[key]
             except ValueError:
                 pass
+
             for key in sorted(node.keys()):
-                key_str = str(key)
-                if not isinstance(key, str):
-                    logging.warn("Stringifying key '" + key_str +
-                                 "'for use as name in HDF5 file")
+                if isinstance(key, basestring):
+                    key_str = key
+                else:
+                    logging.warn('Making string from key "%s", %s for use as'
+                                 ' name in HDF5 file', key_str, type(key))
+                    key_str = str(key)
                 val = node[key]
                 new_path = path + [key_str]
                 store_recursively(fhandle=fhandle, node=val, path=new_path,
@@ -315,7 +332,7 @@ def test_hdf():
     finally:
         rmtree(temp_dir)
 
-    logging.info('<< PASSED : test_hdf >>')
+    logging.info('<< PASS : test_hdf >>')
 
 
 if __name__ == "__main__":

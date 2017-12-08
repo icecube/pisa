@@ -1,9 +1,3 @@
-# author: Sebastian Boeser
-#         sboeser@physik.uni-bonn.de
-# author: J.L. Lanfranchi
-#         jll1062+pisa@phys.psu.edu
-#
-# date:   2014-01-27
 """
 A set of utilities for reading (and instantiating) objects from and writing
 objects to JSON files.
@@ -31,6 +25,22 @@ import tempfile
 
 __all__ = ['JSON_EXTS', 'ZIP_EXTS', 'XOR_EXTS',
            'json_string', 'from_json', 'to_json']
+
+__author__ = 'S. Boeser, J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 JSON_EXTS = ['json']
@@ -287,7 +297,7 @@ def test_NumpyEncoderDecoder():
     finally:
         rmtree(temp_dir)
 
-    sys.stdout.write('<< PASSED : test_NumpyEncoderDecoder >>\n')
+    sys.stdout.write('<< PASS : test_NumpyEncoderDecoder >>\n')
 
 
 if __name__ == '__main__':

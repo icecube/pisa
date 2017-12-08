@@ -1,5 +1,3 @@
-# authors: J.Lanfranchi, P.Eller, J. Weldert
-# date:   March 20, 2016
 """
 This is a dummy oscillations service, provided as a template others can use to
 build their own services.
@@ -11,7 +9,6 @@ docstring," which you should write for your own services. Also, include all of
 the docstrings (delineated by triple-quotes just beneath a class or method
 definition) seen below, too! These all automatically get compiled into the PISA
 documentation.
-
 """
 
 from __future__ import absolute_import
@@ -22,6 +19,24 @@ from pisa.core.binning import MultiDimBinning
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.hash import hash_obj
+
+__all__ = ['dummy']
+
+__author__ = 'J.L. Lanfranchi, P. Eller, J. Weldert'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 class dummy(Stage): # pylint: disable=invalid-name

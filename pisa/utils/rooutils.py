@@ -1,11 +1,9 @@
-# author: Shivesh Mandalia
-#         s.p.mandalia@qmul.ac.uk
-#
-# date:   2016-12-30
 """
 Convenience functions when interacting with ROOT.
 """
 
+
+from __future__ import absolute_import
 
 from itertools import product
 
@@ -17,6 +15,22 @@ from root_numpy import array2hist, hist2array
 from pisa.core.map import Map
 
 __all__ = ['convert_to_th1d', 'convert_to_th2d', 'unflatten_thist']
+
+__author__ = 'S. Mandalia'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 def convert_to_th1d(in_map, errors=False):

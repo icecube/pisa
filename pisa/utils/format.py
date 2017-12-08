@@ -1,36 +1,63 @@
-# author : J.L. Lanfranchi
-#          jll1062+pisa@phys.psu.edu
-#
-# date   : April 8, 2016
+# -*- coding: utf-8 -*-
+
 """
 Utilities for interpreting and returning formatted strings.
 """
 
 
-from __future__ import absolute_import, division
+from __future__ import absolute_import, division, print_function
 
+<<<<<<< HEAD
 from collections import Iterable, Mapping, Sequence
+=======
+from collections import OrderedDict
+import decimal
+>>>>>>> 99e6a7334bc4d324577063f524e0e8614e053524
 from itertools import imap
-import numbers
+from numbers import Integral, Number
 import re
+import time
 
 import numpy as np
+import uncertainties
 
 from pisa import FTYPE, ureg
 from pisa.utils.flavInt import NuFlavIntGroup
 from pisa.utils.log import logging, set_verbosity
 
 
-__all__ = ['WHITESPACE_RE', 'NUMBER_RESTR', 'NUMBER_RE',
-           'HRGROUP_RESTR', 'HRGROUP_RE', 'IGNORE_CHARS_RE',
-           'TEX_BACKSLASH_CHARS', 'TEX_SPECIAL_CHARS_MAPPING',
-           'list2hrlist', 'hrlist2list', 'hrlol2lol', 'hrbool2bool', 'engfmt',
-           'text2tex', 'tex_join', 'tex_rm', 'default_map_tex', 'is_tex',
+__all__ = ['WHITESPACE_RE', 'NUMBER_RESTR', 'NUMBER_RE', 'HRGROUP_RESTR',
+           'HRGROUP_RE', 'IGNORE_CHARS_RE', 'TEX_BACKSLASH_CHARS',
+           'TEX_SPECIAL_CHARS_MAPPING', 'SI_PREFIX_TO_ORDER_OF_MAG',
+           'ORDER_OF_MAG_TO_SI_PREFIX', 'BIN_PREFIX_TO_POWER_OF_1024',
+           'POWER_OF_1024_TO_BIN_PREFIX',
+           'split', 'hr_range_formatter', 'test_hr_range_formatter',
+           'list2hrlist', 'test_list2hrlist', 'hrlist2list',
+           'hrlol2lol', 'hrbool2bool', 'engfmt',
+           'text2tex', 'tex_join', 'tex_dollars', 'default_map_tex', 'is_tex',
            'int2hex', 'hash2hex',
            'strip_outer_dollars', 'strip_outer_parens',
-           'make_valid_python_name',
-           'arg_str_seq_none',
-           ]
+           'make_valid_python_name', 'sep_three_tens',
+           'format_num',
+           'test_format_num',
+           'timediff', 'test_timediff', 'timestamp', 'test_timestamp']
+
+
+__author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 WHITESPACE_RE = re.compile(r'\s')
@@ -68,34 +95,51 @@ TEX_SPECIAL_CHARS_MAPPING = {
     #'sqrt': r'\surd'
 }
 
-def arg_str_seq_none(inputs, name):
-    """Simple input handler.
+ORDER_OF_MAG_TO_SI_PREFIX = OrderedDict([
+    (-24, 'y'),
+    (-21, 'z'),
+    (-18, 'a'),
+    (-15, 'f'),
+    (-6, 'μ'),
+    (-3, 'm'),
+    (-9, 'n'),
+    (-12, 'p'),
+    (0, ''),
+    (3, 'k'),
+    (6, 'M'),
+    (9, 'G'),
+    (12, 'T'),
+    (15, 'P'),
+    (18, 'E'),
+    (21, 'Z'),
+    (24, 'Y')
+])
+"""Mapping of powers-of-10 to SI prefixes (orders-of-magnitude)"""
 
-    Parameters
-    ----------
-    inputs : None, string, or iterable of strings
-        Input value(s) provided by caller
-    name : string
-        Name of input, used for producing a meaningful error message
+SI_PREFIX_TO_ORDER_OF_MAG = OrderedDict()
+"""Mapping of SI prefixes to powers-of-10"""
+for K, V in ORDER_OF_MAG_TO_SI_PREFIX.items():
+    SI_PREFIX_TO_ORDER_OF_MAG[V] = K
+# Allow "u" to map to -6 (micro) as well
+SI_PREFIX_TO_ORDER_OF_MAG['u'] = -6
 
-    Returns
-    -------
-    inputs : None, or list of strings
+POWER_OF_1024_TO_BIN_PREFIX = OrderedDict([
+    (0, ''),
+    (1, 'Ki'),
+    (2, 'Mi'),
+    (3, 'Gi'),
+    (4, 'Ti'),
+    (5, 'Pi'),
+    (6, 'Ei'),
+    (7, 'Zi'),
+    (8, 'Yi')
+])
+"""Mapping from powers-of-1024 to binary prefixes"""
 
-    Raises
-    ------
-    TypeError if unrecognized type
-
-    """
-    if isinstance(inputs, basestring):
-        inputs = [inputs]
-    elif isinstance(inputs, (Iterable, Sequence)):
-        inputs = list(inputs)
-    elif inputs is None:
-        pass
-    else:
-        raise TypeError('Input %s: Unhandled type %s' % (name, type(inputs)))
-    return inputs
+BIN_PREFIX_TO_POWER_OF_1024 = OrderedDict()
+"""Mapping from binary prefixes to powerorders-of-1024"""
+for K, V in POWER_OF_1024_TO_BIN_PREFIX.items():
+    BIN_PREFIX_TO_POWER_OF_1024[V] = K
 
 
 def split(string, sep, force_case=None, parse_func=None):
@@ -138,21 +182,21 @@ def split(string, sep, force_case=None, parse_func=None):
 
     Examples
     --------
-    >>> print split(' One, TWO, three ', sep=',', force_case='lower')
+    >>> print(split(' One, TWO, three ', sep=',', force_case='lower'))
     ['one', 'two', 'three']
 
-    >>> print split('One:TWO:three', sep=':')
+    >>> print(split('One:TWO:three', sep=':'))
     ['One', 'TWO', 'three']
 
-    >>> print split('one  two  three', sep=' ')
+    >>> print(split('one  two  three', sep=' '))
     ['one', '', 'two', '' , 'three']
 
-    >>> print split('1 2 3', sep=' ', parse_func=int)
+    >>> print(split('1 2 3', sep=' ', parse_func=int))
     [1, 2, 3]
 
     >>> from ast import literal_eval
-    >>> print split('True; False; None; (1, 2, 3)', sep=',',
-    >>>             parse_func=literal_eval)
+    >>> print(split('True; False; None; (1, 2, 3)', sep=',',
+    >>>             parse_func=literal_eval))
     [True, False, None, (1, 2, 3)]
 
     """
@@ -180,7 +224,7 @@ def split(string, sep, force_case=None, parse_func=None):
 
 # TODO: allow for scientific notation input to hr*2list, etc.
 
-def hrlist_formatter(start, end, step):
+def hr_range_formatter(start, end, step):
     """Format a range (sequence) in a simple and human-readable format by
     specifying the range's starting number, ending number (inclusive), and step
     size.
@@ -204,13 +248,13 @@ def hrlist_formatter(start, end, step):
 
     Examples
     --------
-    >>> hrlist_formatter(start=0, end=10, step=1)
+    >>> hr_range_formatter(start=0, end=10, step=1)
     '0-10'
-    >>> hrlist_formatter(start=0, end=10, step=2)
+    >>> hr_range_formatter(start=0, end=10, step=2)
     '0-10:2'
-    >>> hrlist_formatter(start=0, end=3, step=8)
+    >>> hr_range_formatter(start=0, end=3, step=8)
     '0-3:8'
-    >>> hrlist_formatter(start=0.1, end=3.1, step=1.0)
+    >>> hr_range_formatter(start=0.1, end=3.1, step=1.0)
     '0.1-3.1:1'
 
     """
@@ -223,6 +267,15 @@ def hrlist_formatter(start, end, step):
     if int(start) == start and int(end) == end and step == 1:
         return '{}-{}'.format(start, end)
     return '{}-{}:{}'.format(start, end, step)
+
+
+def test_hr_range_formatter():
+    """Unit tests for hr_range_formatter"""
+    logging.debug(str((hr_range_formatter(start=0, end=10, step=1))))
+    logging.debug(str((hr_range_formatter(start=0, end=10, step=2))))
+    logging.debug(str((hr_range_formatter(start=0, end=3, step=8))))
+    logging.debug(str((hr_range_formatter(start=0.1, end=3.1, step=1.0))))
+    logging.info('<< PASS : test_hr_range_formatter >>')
 
 
 def list2hrlist(lst):
@@ -255,7 +308,7 @@ def list2hrlist(lst):
     '0-2,4-6,20'
 
     """
-    if isinstance(lst, numbers.Number):
+    if isinstance(lst, Number):
         lst = [lst]
     lst = sorted(lst)
     rtol = np.finfo(FTYPE).resolution
@@ -270,11 +323,11 @@ def list2hrlist(lst):
             continue
         for j in xrange(scan+2, n-1):
             if not np.isclose(lst[j+1] - lst[j], step, rtol=rtol):
-                result.append(hrlist_formatter(lst[scan], lst[j], step))
+                result.append(hr_range_formatter(lst[scan], lst[j], step))
                 scan = j+1
                 break
         else:
-            result.append(hrlist_formatter(lst[scan], lst[-1], step))
+            result.append(hr_range_formatter(lst[scan], lst[-1], step))
             return ','.join(result)
     if n - scan == 1:
         result.append(str(lst[scan]))
@@ -282,6 +335,14 @@ def list2hrlist(lst):
         result.append(','.join(imap(str, lst[scan:])))
 
     return ','.join(result)
+
+
+def test_list2hrlist():
+    """Unit tests for list2hrlist"""
+    logging.debug(str((list2hrlist([0, 1]))))
+    logging.debug(str((list2hrlist([0, 1, 2]))))
+    logging.debug(str((list2hrlist([0.1, 1.1, 2.1, 3.1]))))
+    logging.info('<< PASS : test_list2hrlist >>')
 
 
 def _hrgroup2list(hrgroup):
@@ -292,7 +353,8 @@ def _hrgroup2list(hrgroup):
         except ValueError:
             return False
 
-    def num2floatOrInt(num):
+    def num_to_float_or_int(num):
+        """Return int if number is effectively int, otherwise return float"""
         try:
             if isint(num):
                 return int(num)
@@ -305,18 +367,18 @@ def _hrgroup2list(hrgroup):
     hrgroup = IGNORE_CHARS_RE.sub('', hrgroup)
     if (hrgroup is None) or (hrgroup == ''):
         return []
-    numstrs = HRGROUP_RE.match(hrgroup).groups()
-    range_start = num2floatOrInt(numstrs[0])
+    num_str = HRGROUP_RE.match(hrgroup).groups()
+    range_start = num_to_float_or_int(num_str[0])
 
     # If no range is specified, just return the number
-    if numstrs[1] is None:
+    if num_str[1] is None:
         return [range_start]
 
-    range_stop = num2floatOrInt(numstrs[1])
-    if numstrs[2] is None:
+    range_stop = num_to_float_or_int(num_str[1])
+    if num_str[2] is None:
         step_size = 1 if range_stop >= range_start else -1
     else:
-        step_size = num2floatOrInt(numstrs[2])
+        step_size = num_to_float_or_int(num_str[2])
     all_ints = isint(range_start) and isint(step_size)
 
     # Make an *INCLUSIVE* list (as best we can considering floating point mumbo
@@ -457,8 +519,6 @@ def engfmt(n, sigfigs=3, decimals=None, sign_always=False):
         only negative numbers are prefixed with a sign ("-")
 
     """
-    prefixes = {-18: 'a', -15: 'f', -12: 'p', -9: 'n', -6: 'u', -3: 'm', 0: '',
-                3: 'k', 6: 'M', 9: 'G', 12: 'T', 15: 'P', 18: 'E'}
     if isinstance(n, ureg.Quantity):
         units = n.units
         n = n.magnitude
@@ -491,7 +551,7 @@ def engfmt(n, sigfigs=3, decimals=None, sign_always=False):
     # by printing the exponent rather than showing a prefix; due to my
     # inability to strip off prefix in Pint quantities (and attach my own
     # prefix), just use the "e" notation.
-    if pfx_mag not in prefixes or not units.dimensionless:
+    if pfx_mag not in ORDER_OF_MAG_TO_SI_PREFIX or not units.dimensionless:
         if pfx_mag == 0:
             return str.strip('{0:s} {1:~} '.format(num_str, units))
         return str.strip('{0:s}e{1:d} {2:~} '.format(num_str, pfx_mag, units))
@@ -500,7 +560,7 @@ def engfmt(n, sigfigs=3, decimals=None, sign_always=False):
     # can't handle prefixed-dimensionless (e.g., simply "1 k", "2.2 M", etc.,
     # with no units attached).
     #if units.dimensionless:
-    return  '{0:s} {1:s}'.format(num_str, prefixes[pfx_mag])
+    return  '{0:s} {1:s}'.format(num_str, ORDER_OF_MAG_TO_SI_PREFIX[pfx_mag])
 
 
 def append_results(results_dict, result_dict):
@@ -545,6 +605,8 @@ def text2tex(txt):
 
 
 def tex_join(sep, *args):
+    """Join TeX-formatted strings together into one, each separated by `sep`.
+    Also, this strips surrounding '$' from each string before joining."""
     strs = [strip_outer_dollars(text2tex(a))
             for a in args if a is not None and a != '']
     if not strs:
@@ -552,11 +614,7 @@ def tex_join(sep, *args):
     return str.join(sep, strs)
 
 
-def tex_rm(s):
-    return r'{\rm %s}' % strip_outer_dollars(s)
-
-
-def dollars(s):
+def tex_dollars(s):
     stripped = strip_outer_dollars(s)
     out_lines = []
     for line in stripped.split('\n'):
@@ -625,6 +683,18 @@ def int2hex(i, bits, signed):
 
 
 def hash2hex(hash, bits=64):
+    """Convert a hash value to its string hexadecimal representation.
+
+    Parameters
+    ----------
+    hash : integer or string
+    bits : integer > 0
+
+    Returns
+    -------
+    hash : string
+
+    """
     if isinstance(hash, str):
         assert len(hash) == int(np.ceil(bits/4.0))
         hex_hash = hash
@@ -636,6 +706,8 @@ def hash2hex(hash, bits=64):
 
 
 def strip_outer_dollars(value):
+    """Strip surrounding dollars signs from TeX string, ignoring leading and
+    trailing whitespace"""
     if value is None:
         return '{}'
     value = value.strip()
@@ -646,6 +718,8 @@ def strip_outer_dollars(value):
 
 
 def strip_outer_parens(value):
+    """Strip parentheses surrounding a string, ignoring leading and trailing
+    whitespace"""
     if value is None:
         return ''
     value = value.strip()
@@ -675,24 +749,781 @@ def make_valid_python_name(name):
     return name
 
 
-def test_hrlist_formatter():
-    """Unit tests for hrlist_formatter"""
-    logging.debug(str((hrlist_formatter(start=0, end=10, step=1))))
-    logging.debug(str((hrlist_formatter(start=0, end=10, step=2))))
-    logging.debug(str((hrlist_formatter(start=0, end=3, step=8))))
-    logging.debug(str((hrlist_formatter(start=0.1, end=3.1, step=1.0))))
-    logging.info('<< PASSED : test_hrlist_formatter >>')
+def sep_three_tens(strval, direction, sep=None):
+    """Insert `sep` char into sequence of chars `strval`.
+
+    Parameters
+    ----------
+    strval : sequence of chars or string
+        Sequence of chars into which to insert the separator
+
+    direction : string, one of {'left', 'right'}
+        Use 'left' for left of the decimal, and 'right' for right of the
+        decimal
+
+    sep : None or char
+        Separator to insert
+
+    Returns
+    -------
+    formatted : list of chars
+
+    """
+    if not sep:
+        return strval
+
+    direction = direction.strip().lower()
+    assert direction in ('left', 'right'), direction
+
+    formatted = []
+    if direction == 'left':
+        indices = range(len(strval)-1, -1, -1)
+        edge_indices = (indices[0], indices[-1])
+        delta = len(strval)-1
+        for c_num in indices:
+            formatted = [strval[c_num]] + formatted
+            if (((delta-c_num)+1) % 3 == 0) and c_num not in edge_indices:
+                formatted = [sep] + formatted
+        return formatted
+
+    indices = range(len(strval))
+    edge_indices = (indices[0], indices[-1])
+    for c_num in indices:
+        formatted = formatted + [strval[c_num]]
+        if ((c_num+1) % 3 == 0) and (c_num not in edge_indices):
+            formatted = formatted + [sep]
+
+    return formatted
 
 
-def test_list2hrlist():
-    """Unit tests for list2hrlist"""
-    logging.debug(str((list2hrlist([0, 1]))))
-    logging.debug(str((list2hrlist([0, 1, 2]))))
-    logging.debug(str((list2hrlist([0.1, 1.1, 2.1, 3.1]))))
-    logging.info('<< PASSED : test_list2hrlist >>')
+def format_num(value,
+               sigfigs=None,
+               precision=None,
+               fmt=None,
+               sci_thresh=(6, -4),
+               exponent=None,
+               inf_thresh=np.infty,
+               trailing_zeros=False,
+               always_show_sign=False,
+               decstr='.',
+               thousands_sep=None,
+               thousandths_sep=None,
+               left_delimiter=None,
+               right_delimiter=None,
+               expprefix=None,
+               exppostfix=None,
+               nanstr='nan',
+               infstr='inf'):
+    r"""Fine-grained control over formatting a number as a string.
+
+
+    Parameters
+    ----------
+    value : numeric
+        The number to be formatted.
+
+    sigfigs : int > 0, optional
+        Use up to this many significant figures for displaying a number. You
+        can use either `sigfigs` or `precision`, but not both. If neither are
+        specified, default is to set `sigfigs` to 8. See also `trailing_zeros`.
+
+    precision : float, optional
+        Round `value` to a precision the same as the order of magnitude of
+        `precision`. You can use either `precision` or `sigfigs`, but not both.
+        If neither is specified, default is to set `sigfigs` to 8. See also
+        `trailing_zeros`.
+
+    fmt : None or one of {'sci', 'eng', 'sipre', 'binpre', 'full'}, optional
+        Force a particular format to be used::
+            * None allows the `value` and what is passed for `sci_thresh` and
+              `exponent` to decide whether or not to use scientific notation
+            * 'sci' forces scientific notation
+            * 'eng' uses the engineering convention of powers divisible by 3
+              (10e6, 100e-9, etc.)
+            * 'sipre' uses powers divisible by 3 but uses SI prefixes (e.g. k,
+              M, G, etc.) instead of displaying the exponent
+            * 'binpre' uses powers of 1024 and uses IEC prefixes (e.g. Ki, Mi,
+              Gi, etc.) instead displaying the exponent
+            * 'full' forces printing all digits left and/or right of the
+              decimal to display the number (no exponent notation or SI/binary
+              prefix will be used)
+        Note that the display of NaN and +/-inf are unaffected by
+        `fmt`.
+
+    exponent : None, integer, or string, optional
+        Force the number to be scaled with respect to this exponent. If a
+        string prefix is passed and `fmt` is None, then the SI prefix
+        or binary prefix will be used for the number. E.g., ``exponent=3``
+        would cause the number 1 to be expressed as ``'0.001e3'`, while
+        ``exponent='k'`` would cause it to be displayed as ``'1 m'``. Both 'μ'
+        and 'u' are accepted to mean "micro". A non-``None`` value for
+        `exponent` forces some form of scientific/engineering notation, so
+        `fmt` cannot be ``'full'`` in this case. Finally, if
+        `fmt` is ``'binpre'`` then `exponent` is applied to 1024.
+        I.e., 1 maps to kibi (Ki), 2 maps to mebi (Mi), etc.
+
+    sci_thresh : tuple of 2 integers >= 0
+        When to switch to scientific notation. The first integer is the order
+        of magnitude of `value` at or above which scientific notation will be
+        used. The second integer indicates the order of magnitude at or below
+        which the most significant digit falls for scientific notation to be
+        used. E.g., ``sci_thresh=(3, -3)`` means that numbers in the
+        ones-of-thousands or greater OR numbers in the ones-of-thousandths or
+        less will be displayed using scientific notation. Note that
+        `fmt`, if not None, overrides this behavior. Default is
+        (10,-5).
+
+    inf_thresh : numeric, optional
+        Numbers whose magnitude is equal to or greater than this threhshold are
+        considered infinite and therefore displayed using `infstr` (possibly
+        including a sign, as appropriate). Default is np.inf.
+
+    trailing_zeros : bool, optional
+        Whether to display all significant figures specified by `sigfigs`, even
+        if this results in trailing zeros. Default is False.
+
+    always_show_sign : bool, optional
+        Always show a sign, whether number is positive or negative, and whether
+        exponent (if present) is positive or negative. Default is False.
+
+    decstr : string, optional
+        Separator to use for the decimal point. E.g. ``decstr='.'`` or
+        ``decstr=','`` for mthe most common cases, but this can also be used in
+        TeX tables for alignment on decimal points via ``decstr='&.&'``.
+        Default is '.'.
+
+    thousands_sep : None or string, optional
+        Separator to use between thousands, e.g. ``thousands_sep=','`` to give
+        results like ``'1,000,000'``, or ```thousands_sep=r'\,'`` for TeX
+        formatting with small spaces between thousands. Default is None.
+
+    thousandths_sep : None or string, optional
+        Separator to use between thousandthss. Default is None.
+
+    left_delimiter, right_delimiter : None or string, optional
+        Strings to delimit the left and right sides of the resulting string.
+        E.g. ``left_delimiter='${'`` and ``right_delimiter='}$'`` could be used
+        to delimit TeX-formatted strings, such that a number is displayed,
+        e.g., as ``r'${1\times10^3}$'``. Defaults are None for both.
+
+    expprefix, exppostfix : None or string, optional
+        E.g. use `expprefix='e'` for simple "e" scientific notation ("1e3"),
+        or use `expprefix=r'\times10^{'` and `exppostfix=r'}' for
+        TeX-formatted scientific notation. Use a space (or tex equivalent) for
+        binary and SI prefixes. If scientific notation is to be used,
+        `expprefix` defaults to 'e'. If either SI or binary prefixes are to be
+        used, `expprefix` defaults to ' ' (space). In any case, `exppostfix`
+        defaults to None.
+
+    nanstr : string, optional
+        Not-a-number (NaN) values will be displayed using this string. Default
+        is 'nan' (following the Numpy convention)
+
+    infstr : string, optional
+        Infinite values will be displayed using this string (note that the sign
+        is prepended, as appropriate). Default is 'inf' (following the Numpy
+        convention).
+
+
+    Returns
+    -------
+    formatted : string
+
+    """
+    with decimal.localcontext() as context:
+        # Ensure rounding behavior is same as that of Numpy
+        context.rounding = decimal.ROUND_HALF_EVEN
+        # Lots of comp precision to avoid floating point <--> decimal issues
+        context.prec = 72
+        d_10 = decimal.Decimal('10')
+        d_1024 = decimal.Decimal('1024')
+
+        if sigfigs is None:
+            if precision is None:
+                sigfigs = 8
+            else:
+                precision = decimal.Decimal(precision)
+                order_of_precision = precision.adjusted()
+        else:
+            if precision is not None:
+                raise ValueError('You cannot specify both `sigfigs` and'
+                                 ' `precision`')
+            if not isinstance(sigfigs, Integral):
+                assert float(sigfigs) == int(sigfigs), \
+                        '`sigfigs`=%s not an int' % sigfigs
+                sigfigs = int(sigfigs)
+            assert sigfigs > 0, '`sigfigs`=%s is not > 0' % sigfigs
+
+        if sci_thresh[0] < sci_thresh[1]:
+            raise ValueError(
+                '(`sci_thresh[0]`=%s) must be >= (`sci_thresh[1]`=%s)'
+                % sci_thresh
+            )
+        assert all(isinstance(s, Integral) for s in sci_thresh), str(sci_thresh)
+
+        if isinstance(fmt, basestring):
+            fmt = fmt.strip().lower()
+        assert fmt is None or fmt in ('sci', 'eng', 'sipre', 'binpre', 'full')
+        if fmt == 'full':
+            assert exponent is None
+
+        if exponent is not None:
+            if fmt in ('eng', 'sipre'):
+                if (exponent not in SI_PREFIX_TO_ORDER_OF_MAG
+                        and exponent not in ORDER_OF_MAG_TO_SI_PREFIX):
+                    raise ValueError(
+                        'For `fmt`="{}", `exponent` is {}, but must either be'
+                        ' an SI prefix {} or a power of 10 corresponding to'
+                        ' these {}.'.format(fmt,
+                                            exponent,
+                                            SI_PREFIX_TO_ORDER_OF_MAG.keys(),
+                                            ORDER_OF_MAG_TO_SI_PREFIX.keys())
+                    )
+            elif fmt == 'binpre':
+                if (exponent not in BIN_PREFIX_TO_POWER_OF_1024
+                        and exponent not in POWER_OF_1024_TO_BIN_PREFIX):
+                    raise ValueError(
+                        'For `fmt`="{}", `exponent` is {}, but must either be'
+                        ' an IEC binary prefix {} or a power of 1024'
+                        ' corresponding to these {}.'.format(
+                            fmt,
+                            exponent,
+                            BIN_PREFIX_TO_POWER_OF_1024.keys(),
+                            POWER_OF_1024_TO_BIN_PREFIX.keys()
+                        )
+                    )
+            if (not isinstance(exponent, basestring) and not
+                    isinstance(exponent, Integral)):
+                assert float(exponent) == int(exponent)
+                exponent = int(exponent)
+
+        # TODO: include uncertainties and/or units in final formatted string
+        # TODO: scale out SI prefix if `value` is a Pint Quantity
+
+        # Strip off units, if present
+        units = None
+        quantity_info = None
+        if isinstance(value, ureg.Quantity):
+            units = value.units if value.units != ureg.dimensionless else None
+            quantity_info = value.as_tuple()
+            value = value.magnitude
+
+        # Strip off uncertainty, if present
+        stddev = None
+        if isinstance(value, uncertainties.UFloat):
+            stddev = value.std_dev
+            value = value.nominal_value
+
+        # In case `value` is a singleton array
+        if isinstance(value, np.ndarray):
+            value = np.asscalar(value)
+
+        # Fill in empty strings where None might be passed in to mean the same
+        thousands_sep = '' if thousands_sep is None else thousands_sep
+        thousandths_sep = '' if thousandths_sep is None else thousandths_sep
+        left_delimiter = '' if left_delimiter is None else left_delimiter
+        right_delimiter = '' if right_delimiter is None else right_delimiter
+        exppostfix = '' if exppostfix is None else exppostfix
+        # NOTE: expprefix defaults depend on the display mode, so are set later
+
+        if np.isnan(value):
+            return left_delimiter + nanstr + right_delimiter
+
+        if np.isneginf(value) or value <= -inf_thresh:
+            return left_delimiter + '-' + infstr + right_delimiter
+
+        # NOTE: ``isinf`` check must come _after_ ``neginf`` check since
+        # ``isinf`` returns ``True`` for both -inf and +inf
+        if np.isinf(value) or value >= inf_thresh:
+            if always_show_sign:
+                sign = '+'
+            else:
+                sign = ''
+            return left_delimiter + sign + infstr + right_delimiter
+
+        if isinstance(value, Integral):
+            value = decimal.Decimal(value)
+        else:
+            value = decimal.Decimal.from_float(value)
+
+        order_of_mag = value.adjusted()
+        # Get the sign from the full precision `value`, before rounding
+        sign = ''
+        if value < 0:
+            sign = '-'
+        elif value > 0:
+            sign = '+'
+
+        # If no value passed for `fmt`, infer the format from the
+        # exponent (if it's a binary or SI prefix) OR the order of magnitude of
+        # the number w.r.t. `sci_thresh`.
+        if fmt is None:
+            if isinstance(exponent, basestring):
+                if exponent in BIN_PREFIX_TO_POWER_OF_1024:
+                    fmt = 'binpre'
+                elif exponent in SI_PREFIX_TO_ORDER_OF_MAG:
+                    fmt = 'sipre'
+                else:
+                    raise ValueError('`exponent`="%s" is not a valid SI or'
+                                     ' binary prefix' % exponent)
+            elif exponent is None:
+                if (order_of_mag >= sci_thresh[0]
+                        or order_of_mag <= sci_thresh[1]):
+                    fmt = 'sci'
+                else:
+                    fmt = 'full'
+            else:
+                fmt = 'sci'
+
+        # Define `exponent` where appropriate, and calculate `scaled_value` to
+        # account for the exponent, if there is one.
+        scale = 1
+        if exponent is None:
+            if fmt == 'sci':
+                exponent = order_of_mag
+                scale = 1 / d_10**exponent
+            elif fmt in ('eng', 'sipre'):
+                exponent = (order_of_mag // 3) * 3
+                scale = 1 / d_10**exponent
+                if fmt == 'sipre':
+                    exponent = ORDER_OF_MAG_TO_SI_PREFIX[exponent]
+            elif fmt == 'binpre':
+                exponent = value.ln() // d_1024.ln()
+                scale = 1 / d_1024**exponent
+                exponent = POWER_OF_1024_TO_BIN_PREFIX[exponent]
+        elif exponent in BIN_PREFIX_TO_POWER_OF_1024:
+            scale = 1 / d_1024**BIN_PREFIX_TO_POWER_OF_1024[exponent]
+        elif exponent in SI_PREFIX_TO_ORDER_OF_MAG:
+            scale = 1 / d_10**SI_PREFIX_TO_ORDER_OF_MAG[exponent]
+        else:
+            scale = 1 / d_10**exponent
+
+        scaled_value = scale * value
+
+        if sigfigs is not None:
+            leastsig_dig = scaled_value.adjusted() - (sigfigs - 1)
+            quantize_at = decimal.Decimal('1e%d' % leastsig_dig).normalize()
+        else: # only other case is that precision is specified
+            quantize_at = (d_10**order_of_precision * scale).normalize()
+            leastsig_dig = quantize_at.adjusted()
+
+        rounded = scaled_value.quantize(quantize_at)
+
+        # Eliminate trailing zeros in the Decimal representation
+        if not trailing_zeros:
+            rounded = rounded.normalize()
+
+        dec_tup = rounded.as_tuple()
+        mantissa_digits = dec_tup.digits
+        decimal_position = dec_tup.exponent
+
+        # Does the number underflow, making it effectively 0?
+        underflow = False
+        if sigfigs is not None:
+            if len(mantissa_digits) + decimal_position < -sigfigs:
+                underflow = True
+                decimal_position = -(sigfigs - 1)
+                mantissa_digits = (0,)
+        else: # `precision` is specified
+            if order_of_mag < order_of_precision:
+                underflow = True
+                mantissa_digits = (0,)
+                decimal_position = leastsig_dig
+
+        n_digits = len(mantissa_digits)
+        chars = [str(d) for d in mantissa_digits]
+        if decimal_position > 0:
+            chars += ['0']*decimal_position
+            chars = sep_three_tens(chars, direction='left', sep=thousands_sep)
+        elif decimal_position < 0:
+            if abs(decimal_position) >= n_digits:
+                chars = (
+                    ['0', decstr]
+                    + sep_three_tens(
+                        ['0']*(-decimal_position - n_digits) + chars,
+                        direction='right', sep=thousandths_sep
+                    )
+                )
+            else:
+                chars = (
+                    sep_three_tens(chars[:decimal_position], direction='left',
+                                   sep=thousands_sep)
+                    + [decstr]
+                    + sep_three_tens(chars[decimal_position:],
+                                     direction='right', sep=thousandths_sep)
+                )
+
+        num_str = ''.join(chars)
+
+        if always_show_sign or sign == '-' or underflow:
+            num_str = sign + num_str
+
+        if exponent is not None:
+            if expprefix is None:
+                if fmt in ('sci', 'eng'):
+                    expprefix = 'e'
+                elif fmt in ('sipre', 'binpre'):
+                    expprefix = ' '
+                else:
+                    expprefix = ''
+
+            if not isinstance(exponent, basestring):
+                if fmt == 'sipre':
+                    exponent = ORDER_OF_MAG_TO_SI_PREFIX[exponent]
+                elif fmt == 'binpre':
+                    exponent = POWER_OF_1024_TO_BIN_PREFIX[exponent]
+
+            if isinstance(exponent, basestring):
+                num_str += expprefix + exponent + exppostfix
+            else:
+                if exponent < 0:
+                    exp_sign = ''
+                elif always_show_sign:
+                    exp_sign = '+'
+                else:
+                    exp_sign = ''
+                num_str += expprefix + exp_sign + str(exponent) + exppostfix
+
+    return left_delimiter + num_str + right_delimiter
+
+
+def test_format_num():
+    """Unit tests for the `format_num` function"""
+    # sci_thresh
+    v = format_num(100, sci_thresh=(3, -3))
+    assert v == '100'
+    v = format_num(1000, sci_thresh=(3, -3))
+    assert v == '1e3'
+    v = format_num(0.01, sci_thresh=(3, -3))
+    assert v == '0.01'
+    v = format_num(0.001, sci_thresh=(3, -3))
+    assert v == '1e-3'
+
+    # trailing_zeros
+    v = format_num(0.00010001, sigfigs=6, exponent=None, trailing_zeros=True)
+    assert v == '1.00010e-4', v
+    v = format_num(0.00010001, sigfigs=6, exponent=None, trailing_zeros=False)
+    assert v == '1.0001e-4', v
+    v = format_num(0.00010001, sigfigs=6, exponent=None, trailing_zeros=False,
+                   sci_thresh=(7, -8))
+    assert v == '0.00010001', v
+    v = format_num(0.00010001, sigfigs=6, exponent=None, trailing_zeros=True,
+                   sci_thresh=(7, -20))
+    assert v == '0.000100010', v
+
+    # sigfigs and trailing_zeros
+    v = format_num(1, sigfigs=5, exponent=None, trailing_zeros=True)
+    assert v == '1.0000', v
+    v = format_num(1, sigfigs=5, exponent=None, trailing_zeros=False)
+    assert v == '1', v
+    v = format_num(16, sigfigs=5, exponent=None, trailing_zeros=False)
+    assert v == '16', v
+    v = format_num(160000, sigfigs=5, exponent=None, trailing_zeros=False)
+    assert v == '160000', v
+    v = format_num(123456789, sigfigs=15, exponent=None, trailing_zeros=False,
+                   sci_thresh=(20, -20))
+    assert v == '123456789', v
+    v = format_num(1.6e6, sigfigs=5, exponent=None, trailing_zeros=False)
+    assert v == '1.6e6', v
+
+    # precision
+    v = format_num(1.2345, precision=1e0, trailing_zeros=True)
+    assert v == '1', v
+    v = format_num(1.2345, precision=1e-1, trailing_zeros=True)
+    assert v == '1.2', v
+
+    # exponent
+    v = format_num(1e6, sigfigs=5, exponent='k', trailing_zeros=False)
+    assert v == '1000 k', v
+    v = format_num(0.00134, sigfigs=5, exponent='m', trailing_zeros=False)
+    assert v == '1.34 m', v
+    v = format_num(1024, exponent='Ki')
+    assert v == '1 Ki', v
+    v = format_num(1024*1000, exponent='Ki')
+    assert v == '1000 Ki', v
+    v = format_num(1024**2, exponent='Mi')
+    assert v == '1 Mi', v
+
+    # displaying zero
+    v = format_num(0, sigfigs=5, exponent=4, trailing_zeros=True)
+    assert v == '0.0000e4', v
+    v = format_num(0, sigfigs=5, exponent=4, trailing_zeros=False)
+    assert v == '0e4', v
+    v = format_num(0, sigfigs=5, exponent=None, trailing_zeros=True)
+    assert v == '0.0000', v
+    v = format_num(0, sigfigs=5, exponent=None, trailing_zeros=False)
+    assert v == '0'
+
+    # exponent + sigfigs or precision causes underflow
+    v = format_num(-0.00010001, sigfigs=6, exponent=4, trailing_zeros=True)
+    assert v == '-0.00000e4', v
+    v = format_num(0.00010001, sigfigs=6, exponent=4, trailing_zeros=True)
+    assert v == '+0.00000e4', v
+    v = format_num(-0.00010001, precision=1e-3, exponent=4, trailing_zeros=True)
+    assert v == '-0.0000000e4', v
+    v = format_num(0.00010001, precision=1e-3, exponent=4, trailing_zeros=True)
+    assert v == '+0.0000000e4', v
+
+    # exponent + precision, check sigfigs and trailing zeros...
+    # zeros...
+    v = format_num(-0.00010001, precision=1e-3, exponent=4,
+                   trailing_zeros=True)
+    assert v == '-0.0000000e4', v
+    v = format_num(0.00010001, precision=1e-3, exponent=4, trailing_zeros=True)
+    assert v == '+0.0000000e4', v
+    # rounding at least sig digit
+    v = format_num(-0.00015001, precision=1e-4, exponent=4, trailing_zeros=True)
+    assert v == '-0.00000002e4', v
+    v = format_num(0.00015001, precision=1e-4, exponent=4, trailing_zeros=True)
+    assert v == '0.00000002e4', v
+    # trailing zeros
+    v = format_num(-0.015001, precision=1e-4, exponent=4, trailing_zeros=True)
+    assert v == '-0.00000150e4', v
+    v = format_num(0.015001, precision=1e-4, exponent=4, trailing_zeros=True)
+    assert v == '0.00000150e4', v
+
+    # Test thousands_sep and thousandths_sep
+    v = format_num(1000.0001, sigfigs=10, trailing_zeros=True,
+                   thousands_sep=',', thousandths_sep=' ')
+    assert v == '1,000.000 100', v
+
+    # Test specials: +/-inf, nan
+    v = format_num(np.nan, sigfigs=10, trailing_zeros=True,
+                   thousands_sep=',', thousandths_sep=' ')
+    assert v == 'nan', v
+    v = format_num(np.inf, infstr='INFINITY', always_show_sign=True)
+    assert v == '+INFINITY', v
+    v = format_num(-np.inf, infstr='INFINITY')
+    assert v == '-INFINITY', v
+    v = format_num(1000, inf_thresh=100)
+    assert v == 'inf', v
+    v = format_num(-1000, inf_thresh=100)
+    assert v == '-inf', v
+
+    # eng and sipre with exponent
+    v = format_num(1000, exponent=6, precision=1e3)
+    assert v == '0.001e6', v
+    v = format_num(1000, exponent=6, precision=1e3, fmt='sipre')
+    assert v == '0.001 M', v
+    v = format_num(115e3, exponent=6, precision=1e5, fmt='sipre',
+                   trailing_zeros=True)
+    assert v == '0.1 M', v
+    v = format_num(115e3, exponent=6, precision=1e4, fmt='sipre',
+                   trailing_zeros=True)
+    assert v == '0.12 M', v
+    v = format_num(115e3, exponent=6, precision=1e3, fmt='sipre',
+                   trailing_zeros=True)
+    assert v == '0.115 M', v
+    v = format_num(115e3, exponent=6, precision=1e2, fmt='sipre',
+                   trailing_zeros=True)
+    assert v == '0.1150 M', v
+    v = format_num(115e3, exponent=6, precision=1e1, fmt='sipre',
+                   trailing_zeros=True)
+    assert v == '0.11500 M', v
+
+    # TeX formatting (use exp{pre,post}fix, {left,right}_delimiter;
+    # also fmt='eng', 'sipre', and 'binpre'
+    v = format_num(
+        value=12.5e3, sigfigs=4, trailing_zeros=True, fmt='eng',
+        expprefix=r' \, \times 10^{',
+        exppostfix='}',
+        left_delimiter='${',
+        right_delimiter='}$'
+    )
+    assert v == r'${12.50 \, \times 10^{3}}$', v
+    v = format_num(
+        value=12.5e3, sigfigs=4, trailing_zeros=False, fmt='sipre',
+        expprefix=r' \, {\rm ',
+        exppostfix='}',
+        left_delimiter='${',
+        right_delimiter='}$'
+    )
+    assert v == r'${12.5 \, {\rm k}}$', v
+    v = format_num(
+        value=12.5e3, sigfigs=4, trailing_zeros=False, fmt='binpre',
+        expprefix=r' \, {\rm ',
+        exppostfix='}',
+        left_delimiter='${',
+        right_delimiter='}$'
+    )
+    assert v == r'${12.21 \, {\rm Ki}}$', v
+
+    # fmt='full'
+    v = format_num(12.5e10, sigfigs=4, trailing_zeros=False,
+                   fmt='full',)
+    assert v == '125000000000', v
+
+    # specify both fmt='full' AND exponent (should raise exception)
+    try:
+        v = format_num(
+            12.5e3, sigfigs=4, trailing_zeros=False, fmt='full',
+            exponent=0
+        )
+    except AssertionError:
+        pass
+    else:
+        assert False, '`fmt`="full" and `exponent` is defined'
+
+    logging.info('<< PASS : test_format_num >>')
+
+
+def timediff(dt_sec, hms_always=False, sec_decimals=3):
+    """Smart string formatting for a time difference (in seconds)
+
+    Parameters
+    ----------
+    dt_sec : numeric
+        Time difference, in seconds
+    hms_always : bool
+        * True
+            Always display hours, minuts, and seconds regardless of the order-
+            of-magnitude of dt_sec
+        * False
+            Display a minimal-length string that is meaningful, by omitting
+            units that are more significant than those necessary to display
+            dt_sec; if...
+            * dt_sec < 1 s
+                Use engineering formatting for the number.
+            * dt_sec is an integer in the range 0-59 (inclusive)
+                `sec_decimals` is ignored and the number is formatted as an
+                integer
+            See Notes below for handling of units.
+        (Default: False)
+    sec_decimals : int
+        Round seconds to this number of digits
+
+    Notes
+    -----
+    If colon notation (e.g. HH:MM:SS.xxx, MM:SS.xxx, etc.) is not used, the
+    number is only seconds, and is appended by a space ' ' followed by units
+    of 's' (possibly with a metric prefix).
+
+    """
+    sign_str = ''
+    sgn = 1
+    if dt_sec < 0:
+        sgn = -1
+        sign_str = '-'
+    dt_sec = sgn*dt_sec
+
+    h, r = divmod(dt_sec, 3600)
+    m, s = divmod(r, 60)
+    h = int(h)
+    m = int(m)
+
+    strdt = ''
+    if hms_always or h != 0:
+        strdt += format(h, '02d') + ':'
+    if hms_always or h != 0 or m != 0:
+        strdt += format(m, '02d') + ':'
+
+    if float(s) == int(s):
+        s = int(s)
+        s_fmt = 'd' if len(strdt) == 0 else '02d'
+    else:
+        # If no hours or minutes, use SI-prefixed fmt for seconds with 3
+        # decimal places
+        if (h == 0) and (m == 0) and not hms_always:
+            nearest_si_order_of_mag = (
+                (decimal.Decimal.from_float(dt_sec).adjusted() // 3) * 3
+            )
+            sec_str = format_num(dt_sec,
+                                 precision=10**(nearest_si_order_of_mag-3),
+                                 exponent=nearest_si_order_of_mag,
+                                 fmt='sipre')
+            return sec_str + 's'
+        # Otherwise, round seconds to sec_decimals decimal digits
+        s = np.round(s, sec_decimals)
+        if len(strdt) == 0:
+            s_fmt = '.%df' %sec_decimals
+        else:
+            if sec_decimals == 0:
+                s_fmt = '02.0f'
+            else:
+                s_fmt = '0%d.%df' %(3+sec_decimals, sec_decimals)
+    if len(strdt) > 0:
+        strdt += format(s, s_fmt)
+    else:
+        strdt += format(s, s_fmt) + ' s'
+
+    return sign_str + strdt
+
+
+def test_timediff():
+    """Unit tests for timediff function"""
+    v = timediff(1234)
+    assert v == '20:34', v
+    v = timediff(1234.5678)
+    assert v == '20:34.568', v
+    v = timediff(1, hms_always=True)
+    assert v == '00:00:01', v
+    v = timediff(1.1, hms_always=True, sec_decimals=3)
+    assert v == '00:00:01.100', v
+    v = timediff(1e6)
+    assert v == '277:46:40', v
+    v = timediff(1e6 + 1.5)
+    assert v == '277:46:41.500', v
+    logging.info('<< PASS : test_timediff >>')
+
+
+def timestamp(d=True, t=True, tz=True, utc=False, winsafe=False):
+    """Simple utility to print out a time, date, or time+date stamp for the
+    time at which the function is called.
+
+    Parameters
+    ----------:
+    d : bool
+        Include date (default: True)
+    t : bool
+        Include time (default: True)
+    tz : bool
+        Include timezone offset from UTC (default: True)
+    utc : bool
+        Include UTC time/date (as opposed to local time/date) (default: False)
+    winsafe : bool
+        Omit colons between hours/minutes (default: False)
+
+    """
+    if utc:
+        time_tuple = time.gmtime()
+    else:
+        time_tuple = time.localtime()
+
+    dts = ''
+    if d:
+        dts += time.strftime('%Y-%m-%d', time_tuple)
+        if t:
+            dts += 'T'
+    if t:
+        if winsafe:
+            dts += time.strftime('%H%M%S', time_tuple)
+        else:
+            dts += time.strftime('%H:%M:%S', time_tuple)
+
+        if tz:
+            if utc:
+                if winsafe:
+                    dts += time.strftime('+0000')
+                else:
+                    dts += time.strftime('+0000')
+            else:
+                offset = time.strftime('%z')
+                if not winsafe:
+                    offset = offset[:-2:] + '' + offset[-2::]
+                dts += offset
+    return dts
+
+
+def test_timestamp():
+    """Unit tests for timestamp function"""
+    print(timestamp())
+    logging.info('<< PASS : test_timestamp >>')
 
 
 if __name__ == '__main__':
     set_verbosity(1)
-    test_hrlist_formatter()
+    test_hr_range_formatter()
     test_list2hrlist()
+    test_format_num()
+    test_timediff()
+    test_timestamp()

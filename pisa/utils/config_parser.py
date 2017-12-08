@@ -1,14 +1,8 @@
-# author: P.Eller
-#         pde3+pisa@psu.edu
-#         J.L. Lanfranchi
-#         jll1062+pisa@phys.psu.edu
-#
-# date:   2016-04-28
 """
 Parse a ConfigFile object into a dict containing an item for every analysis
 stage, that itself contains all necessary instantiation arguments/objects for
 that stage. for en example config file, please consider
-:file:`$PISA/pisa/resources/settings/pipeline/example.cfg`
+:file:`$PISA/pisa_examples/resources/settings/pipeline/example.cfg`
 
 Config File Structure
 =====================
@@ -207,7 +201,8 @@ import sys
 
 from backports.configparser import (
     RawConfigParser, ExtendedInterpolation, DuplicateOptionError,
-    SectionProxy, MissingSectionHeaderError, DuplicateSectionError
+    SectionProxy, MissingSectionHeaderError, DuplicateSectionError,
+    NoSectionError
 )
 from backports.configparser.helpers import open as c_open
 import numpy as np
@@ -224,6 +219,22 @@ __all__ = ['PARAM_RE', 'PARAM_ATTRS', 'STAGE_SEP',
            'parse_quantity', 'parse_string_literal', 'split',
            'interpret_param_subfields', 'parse_param', 'parse_pipeline_config',
            'MutableMultiFileIterator', 'PISAConfigParser']
+
+__author__ = 'P. Eller, J. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 PARAM_RE = re.compile(
@@ -545,6 +556,12 @@ def parse_pipeline_config(config):
             'instead.' % type(config)
         )
 
+    if not config.has_section('binning'):
+        raise NoSectionError(
+                "Could not find 'binning'. Only found sections: %s"
+                %config.sections()
+              )
+
     # Create binning objects
     binning_dict = {}
     for name, value in config['binning'].items():
@@ -553,10 +570,25 @@ def parse_pipeline_config(config):
             binning, _ = split(name, sep='.')
             bins = []
             for bin_name in order:
-                kwargs = eval( # pylint: disable=eval-used
-                    config.get('binning', binning + '.' + bin_name)
-                )
-                bins.append(OneDimBinning(bin_name, **kwargs))
+                try:
+                    def_raw = config.get('binning', binning + '.' + bin_name)
+                    kwargs = eval(def_raw) # pylint: disable=eval-used
+                except:
+                    logging.error(
+                        "Failed to evaluate definition of '%s' dimension of"
+                        " '%s' binning entry:\n'%s'",
+                        bin_name, binning, def_raw
+                    )
+                    raise
+                try:
+                    bins.append(OneDimBinning(bin_name, **kwargs))
+                except:
+                    logging.error(
+                        "Failed to instantiate new `OneDimBinning` from '%s'"
+                        " dimension of '%s' binning entry with definition:\n"
+                        "'%s'\n", bin_name, binning, kwargs
+                    )
+                    raise
             binning_dict[binning] = MultiDimBinning(bins)
 
     # Pipeline section

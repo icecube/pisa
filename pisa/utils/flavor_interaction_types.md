@@ -136,7 +136,7 @@ print utils.recursiveEquality(nested_obj1, nested_obj2) # -> True
 ```python
 from pisa.core.events import Events
 
-ev = Events('events/events__pingu__v36__runs_388-390__proc_v5__joined_G_nuall_nc_G_nuallbar_nc.hdf5')
+ev = Events('events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e2evts_set0__unjoined__with_fluxes_honda-2015-spl-solmin-aa.hdf5')
 
 print ev.metadata
 ```

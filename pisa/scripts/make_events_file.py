@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-# author: Justin L. Lanfranchi
-#         jll1062+pisa@phys.psu.edu
-#
-# date:   October 24, 2015
 """
 Take simulated (and reconstructed) HDF5 file(s) (as converted from I3 by
 icecube.hdfwriter.I3HDFTableService) as input and writes out a simplified HDF5
@@ -11,11 +7,12 @@ file for use with PISA.
 """
 
 
+from __future__ import absolute_import, division
+
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
 from copy import deepcopy
 import os
-import sys
 
 import numpy as np
 
@@ -33,6 +30,22 @@ from pisa.utils.resources import find_resource
 __all__ = ['EXAMPLE', 'CMSQ_TO_MSQ', 'EXTRACT_FIELDS', 'OUTPUT_FIELDS',
            'powerLawIntegral', 'makeEventsFile',
            'parse_args', 'main']
+
+__author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 EXAMPLE = """
@@ -88,7 +101,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
                    run_settings=None, data_proc_params=None, join=None,
                    cust_cuts=None, extract_fields=EXTRACT_FIELDS,
                    output_fields=OUTPUT_FIELDS):
-    """Take the simulated and reconstructed HDF5 file(s) (as converted from I3
+    r"""Take the simulated and reconstructed HDF5 file(s) (as converted from I3
     by icecube.hdfwriter.I3HDFTableService) as input and write out a simplified
     PISA-standard-format HDF5 file for use in aeff, reco, and/or PID stages.
 
@@ -117,15 +130,11 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
         it does not already exist (including any parent directories that do not
         exist)
     run_settings : string or MCSimRunSettings
-        Resource location of mc_sim_run_settings.json, e.g. the PISA-standard
-        location
-            $PISA/pisa/resources/events/mc_sim_run_settings.json
-        or an MCSimRunSettings object instantiated therefrom.
+        Resource location of mc_sim_run_settings.json or an MCSimRunSettings
+        object instantiated therefrom.
     data_proc_params : string or DataProcParams
-        Resource location of data_proc_params.json, e.g. the PISA-standard
-        location
-            $PISA/pisa/resources/events/data_proc_params.json
-        or a DataProcParams object instantiated therefrom.
+        Resource location of data_proc_params.json or a DataProcParams object
+        instantiated therefrom.
     join
         String specifying any flavor/interaction types (flavInts) to join
         together. Separate flavInts with commas (',') and separate groups
@@ -174,7 +183,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
     """
     if isinstance(run_settings, basestring):
         run_settings = DetMCSimRunsSettings(
-            find_resource(args.run_settings),
+            find_resource(run_settings),
             detector=detector
         )
     assert isinstance(run_settings, DetMCSimRunsSettings)
@@ -341,7 +350,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
         for fname in fnames:
             # Retrieve data from all nodes specified in the processing
             # settings file
-            logging.trace('Trying to get data from file %s' %fname)
+            logging.trace('Trying to get data from file %s', fname)
             try:
                 data = data_proc_params.getData(fname,
                                                 run_settings=run_settings)
@@ -445,9 +454,9 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
                     for barnobar, barnobar_counts in run_counts.iteritems():
                         ngen_it_tot += barnobar_counts
                         logging.info(
-                            fmt %
-                            (flavint_group.simple_str(), int_type, str(run),
-                             barnobar, int(barnobar_counts), int(ngen_it_tot))
+                            fmt, flavint_group.simple_str(), int_type,
+                            str(run), barnobar, int(barnobar_counts),
+                            int(ngen_it_tot)
                         )
                 # Convert data to numpy array
                 if extract_fields is None:
@@ -477,13 +486,13 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
         int_type = flavint.intType
         for grp_n, flavint_group in enumerate(flavint_groupings):
             if not flavint in flavint_group:
-                logging.trace('flavint %s not in flavint_group %s, passing.' %
-                              (flavint, flavint_group))
+                logging.trace('flavint %s not in flavint_group %s, passing.',
+                              flavint, flavint_group)
                 continue
             else:
                 logging.trace(
-                    'flavint %s **IS** in flavint_group %s, storing.' %
-                    (flavint, flavint_group)
+                    'flavint %s **IS** in flavint_group %s, storing.',
+                    flavint, flavint_group
                 )
             if output_fields is None:
                 evts[flavint] = extracted_data[grp_n][int_type]
@@ -516,7 +525,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
     ]) + '.hdf5'
 
     outfpath = os.path.join(outdir, fname)
-    logging.info('Writing events to ' + outfpath)
+    logging.info('Writing events to %s', outfpath)
 
     # Save data to output file
     evts.save(outfpath)
@@ -561,7 +570,7 @@ def parse_args():
         '--outdir',
         metavar='DIR',
         type=str,
-        default='$PISA/pisa/resources/events',
+        required=True,
         help='directory into which to store resulting HDF5 file'
     )
 
@@ -616,10 +625,10 @@ def parse_args():
         '--cut',
         metavar='CUT_NAME',
         type=str,
-        help='''Name of pre-defined cut to apply. See
-        resources/events/data_proc_params.json for definitions for the detector
-        and processing version you're working with (note that the names of cuts
-        and what these entail varies by detector and processing version)'''
+        help='''Name of pre-defined cut to apply. See the specified
+        --data-proc-params file for definitions for the detector and processing
+        version you're working with (note that the names of cuts and what these
+        entail varies by detector and processing version)'''
     )
 
     parser.add_argument(
@@ -632,7 +641,7 @@ def parse_args():
         field names specified by the --ccut-fields argument. Standard Python-
         and numpy-namespace expressions are allowed as well, since this string
         is passed to 'eval'. E.g.:
-        --ccut-fields="z:MCNeutrino/zenith,l6:IC86_Dunkman_L6/value" \
+        --ccut-fields="z:MCNeutrino/zenith,l6:my_l6/value" \
         --ccut-pass-if="(l6 == 1) & (z > pi/2)" '''
     )
     parser.add_argument(
@@ -643,7 +652,7 @@ def parse_args():
         help='''Custom cut: String of comma-separated fields, each containing
         colon-separated (variable name : HDF5 address) tuples. For example,
         specifying:
-        --ccut-fields="l5:IC86_Dunkman_L5/value,l6:IC86_Dunkman_L6/value"
+        --ccut-fields="l5:my_l5/value,l6:my_l6/value"
         allows for a custom cut to be defined via --ccut-pass-if="(l5 == 1) &
         (l6 == 1)"'''
     )

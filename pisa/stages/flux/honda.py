@@ -1,13 +1,3 @@
-# PISA authors: Sebastian Boeser
-#               sboeser@physik.uni-bonn.de
-#               Steven Wren
-#               steven.wren@icecube.wisc.edu
-#
-# CAKE author: Steven Wren
-#              steven.wren@icecube.wisc.edu
-#
-# date:   2016-05-11
-
 """
 This flux service provides flux values from tables provided by Honda.
 The returned values are in a map with binning defined by the user. Currently
@@ -17,20 +7,21 @@ contact with us so we can work through any issues together!
 This is either achieved through b-spline interpolation (done in both energy and
 cosZenith dimensions simultaneously in log10(flux)) or an integral-preserving
 method that manipulates 1 dimensional splines of integrated flux.
+Support now also includes the 2D tables from Bartol
 
 Most of the functionality will be ported from PISA with any necessary
 changes/improvements applied.
 """
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 from collections import Mapping
 
 import numpy as np
 import scipy.interpolate as interpolate
 
-from pisa import ureg
+from pisa import NUMBA_AVAIL, numba_jit, ureg
 from pisa.core.map import Map, MapSet
 from pisa.core.stage import Stage
 from pisa.utils.resources import open_resource
@@ -40,23 +31,37 @@ from pisa.utils.profiler import profile
 
 __all__ = ['apply_ratio_scale_2d', 'mmc2d', 'honda']
 
+__author__ = 'S. Boeser, S. Wren'
 
-try:
-    import numba
-    @numba.jit("(float64[:,:],float64[:,:],float64,float64[:,:],float64[:,:])",
-               nopython=True, nogil=True, cache=True)
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
+
+
+if NUMBA_AVAIL:
+    @numba_jit(nopython=True, nogil=True, cache=True)
     def apply_ratio_scale_2d(h1, h2, ratio_scale, out1, out2):
-        I = h1.shape[0]
-        J = h1.shape[1]
-        for i in range(I):
-            for j in range(J):
-                orig_map_sum = h1[i,j] + h2[i,j]
-                orig_map_ratio = h1[i,j] / h2[i,j]
-                out2[i,j] = orig_map_sum / (1 + ratio_scale * orig_map_ratio)
-                out1[i,j] = ratio_scale * orig_map_ratio * out2[i,j]
+        n_i = h1.shape[0]
+        n_j = h1.shape[1]
+        for i in range(n_i):
+            for j in range(n_j):
+                orig_map_sum = h1[i, j] + h2[i, j]
+                orig_map_ratio = h1[i, j] / h2[i, j]
+                out2[i, j] = orig_map_sum / (1 + ratio_scale * orig_map_ratio)
+                out1[i, j] = ratio_scale * orig_map_ratio * out2[i, j]
         return out1, out2
-except Exception:
-    apply_ratio_scale_2d = None
+else:
+    apply_ratio_scale_2d = None #pylint: disable=invalid-name
 
 
 # NOTE: the following doesn't speed up the operation, but line_profile
@@ -65,7 +70,7 @@ def mmc2d(m1, m2, c):
     return m1*m2*c
 
 
-class honda(Stage):
+class honda(Stage): #pylint: disable=invalid-name
     """
     Flux Service for performing interpolation on the Honda tables.
 
@@ -241,6 +246,11 @@ class honda(Stage):
     the very first PINGU results.
     It is not buggy per se, but since we have a better alternative please don't
     use it.
+    One Bartol file is also provided for demonstration.
+
+    * bartol-2004-sno-solmax-aa.d
+
+    This calculation is older but is still useful for cross checks.
 
     To choose the tables file you wish for your PISA analysis, set 'flux_file'
     in your pipeline settings file to the desired file with the prefix 'flux/'
@@ -341,7 +351,7 @@ class honda(Stage):
         # there are no "inputs" used by this stage. (Of course there are
         # parameters, and files with info, but no maps or MC events are used
         # and transformed directly by this stage to produce its output.)
-        super(self.__class__, self).__init__(
+        super(honda, self).__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
@@ -364,7 +374,7 @@ class honda(Stage):
         # Also, the splining should only be done once, so do that too
         if set(output_binning.names) == set(['true_energy', 'true_coszen',
                                              'true_azimuth']):
-            self.load_3D_table(smooth=0.05)
+            self.load_3d_table(smooth=0.05)
             logging.warn('!! ############################################ !!')
             logging.warn('')
             logging.warn('You have requested a full 3D calculation from the '
@@ -378,8 +388,8 @@ class honda(Stage):
             logging.warn('!! ############################################ !!')
         elif set(self.output_binning.names) == set(['true_energy',
                                                     'true_coszen']):
-            self.load_2D_table(smooth=0.05)
-            self.compute_2D_binning_constants()
+            self.load_2d_table(smooth=0.05)
+            self.compute_2d_binning_constants()
         else:
             raise ValueError(
                 'Incompatible `output_binning` for either 2D (requires'
@@ -391,7 +401,7 @@ class honda(Stage):
         self.previous_energy_scale = None
         self.output_maps = None
 
-    def load_2D_table(self, smooth=0.05):
+    def load_2d_table(self, smooth=0.05):
         """Manipulate 2 dimensional flux tables.
 
         2D is expected to mean energy and cosZenith, where azimuth is averaged
@@ -408,14 +418,14 @@ class honda(Stage):
         """
 
         flux_file = self.params.flux_file.value
-        logging.debug("Loading atmospheric flux table %s" % flux_file)
+        logging.debug("Loading atmospheric flux table %s", flux_file)
 
         # columns in Honda files are in the same order
         cols = ['energy'] + self.primaries
 
         # Load the data table
         table = np.genfromtxt(open_resource(flux_file),
-                              usecols=range(len(cols)))
+                              usecols=list(range(len(cols))))
         mask = np.all(np.isnan(table) | np.equal(table, 0), axis=1)
         table = table[~mask].T
 
@@ -445,15 +455,16 @@ class honda(Stage):
                     flux_dict[key] = flux_dict[key].T
 
             # do this in log of energy and log of flux (more stable)
-            logE, C = np.meshgrid(np.log10(flux_dict['energy']),
-                                  flux_dict['coszen'])
+            log_e_mesh, cz_mesh = np.meshgrid(np.log10(flux_dict['energy']),
+                                              flux_dict['coszen'])
 
             self.spline_dict = {}
             for nutype in self.primaries:
                 # Get the logarithmic flux
                 log_flux = np.log10(flux_dict[nutype]).T
                 # Get a spline representation
-                spline = interpolate.bisplrep(logE, C, log_flux, s=smooth)
+                spline = interpolate.bisplrep(log_e_mesh, cz_mesh, log_flux,
+                                              s=smooth)
                 # and store
                 self.spline_dict[nutype] = spline
 
@@ -468,32 +479,55 @@ class honda(Stage):
             int_flux_dict = {}
             # Energy and CosZenith bins needed for integral-preserving
             # method must be the edges of those of the normal tables
-            int_flux_dict['logenergy'] = np.linspace(-1.025, 4.025, 102)
+            # This will depend on the tables being loaded
+            if 'honda' in self.params.flux_file.value:
+                int_flux_dict['logenergy'] = np.linspace(-1.025, 4.025, 102)
+            else:
+                # Honda did a 3D calculation at the lower energies with
+                # smaller bins. Above this the calculation is 1D and the
+                # bin width doubles.
+                low_log_energy = np.linspace(-1, 1, 41)
+                high_log_energy = np.linspace(1.1, 4, 30)
+                int_flux_dict['logenergy'] = np.concatenate(
+                    [low_log_energy, high_log_energy]
+                )
             int_flux_dict['coszen'] = np.linspace(-1, 1, 21)
             for nutype in self.primaries:
                 # spline_dict now wants to be a set of splines for
                 # every table cosZenith value.
                 splines = {}
-                CZiter = 1
+                cz_iter = 1
                 for energyfluxlist in flux_dict[nutype]:
                     int_flux = []
                     tot_flux = 0.0
                     int_flux.append(tot_flux)
-                    for energyfluxval, energyval in zip(energyfluxlist,
-                                                        flux_dict['energy']):
+                    for energyfluxval, energyval in zip(
+                            energyfluxlist,
+                            flux_dict['energy']):
                         # Spline works best if you integrate flux * energy
-                        tot_flux += energyfluxval*energyval
+                        # Since this is the integrated flux it must also be
+                        # multiplied by bin width.
+                        if 'honda' in self.params.flux_file.value:
+                            # For honda this is easy, it's constant
+                            tot_flux += energyfluxval*energyval*0.05
+                        else:
+                            # For Bartol there is a switch at 10 GeV where
+                            # the bin widths double.
+                            if energyval < 10.0:
+                                tot_flux += energyfluxval*energyval*0.05
+                            else:
+                                tot_flux += energyfluxval*energyval*0.1
                         int_flux.append(tot_flux)
 
                     spline = interpolate.splrep(int_flux_dict['logenergy'],
                                                 int_flux, s=0)
-                    CZvalue = '%.2f'%(1.05-CZiter*0.1)
-                    splines[CZvalue] = spline
-                    CZiter += 1
+                    cz_value = '%.2f'%(1.05-cz_iter*0.1)
+                    splines[cz_value] = spline
+                    cz_iter += 1
 
                 self.spline_dict[nutype] = splines
 
-    def load_3D_table(self, smooth=0.05):
+    def load_3d_table(self, smooth=0.05):
         """Manipulate 3 dimensional flux tables.
 
         3D is expected to mean energy, cosZenith, and azimuth.
@@ -507,14 +541,14 @@ class honda(Stage):
             The integral-preserving has a fixed smoothing of 0.
         """
         flux_file = self.params.flux_file.value
-        logging.debug("Loading atmospheric flux table %s" %flux_file)
+        logging.debug("Loading atmospheric flux table %s", flux_file)
 
         # columns in Honda files are in the same order
         cols = ['energy'] + self.primaries
 
         # Load the data table
         table = np.genfromtxt(open_resource(flux_file),
-                              usecols=range(len(cols)))
+                              usecols=list(range(len(cols))))
         mask = np.all(np.isnan(table) | np.equal(table, 0), axis=1)
         table = table[~mask].T
 
@@ -544,8 +578,8 @@ class honda(Stage):
 
             logging.debug('Doing quick bsplrep spline interpolation in 3D')
             # do this in log of energy and log of flux (more stable)
-            logE, C = np.meshgrid(np.log10(flux_dict['energy']),
-                                  flux_dict['coszen'])
+            log_e_mesh, cz_mesh = np.meshgrid(np.log10(flux_dict['energy']),
+                                              flux_dict['coszen'])
 
             self.spline_dict = {}
 
@@ -556,8 +590,8 @@ class honda(Stage):
                     # Get the logarithmic flux
                     log_flux = np.log10(f.T)
                     # Get a spline representation
-                    spline = interpolate.bisplrep(logE, C, log_flux,
-                                                  s=smooth*4.)
+                    spline = interpolate.bisplrep(log_e_mesh, cz_mesh,
+                                                  log_flux, s=smooth*4.)
                     # Found smoothing has to be weaker here. Not sure why.
                     # and store
                     self.spline_dict[nutype][az] = spline
@@ -584,7 +618,7 @@ class honda(Stage):
                 az_splines = {}
                 for az, f in zip(flux_dict['azimuth'], flux_dict[nutype]):
                     splines = {}
-                    CZiter = 1
+                    cz_iter = 1
                     for energyfluxlist in f.T:
                         int_flux = []
                         tot_flux = 0.0
@@ -592,14 +626,14 @@ class honda(Stage):
                         for energyfluxval, energyval \
                                 in zip(energyfluxlist, flux_dict['energy']):
                             # Spline works best if you integrate flux * energy
-                            tot_flux += energyfluxval*energyval
+                            tot_flux += energyfluxval*energyval*0.05
                             int_flux.append(tot_flux)
 
                         spline = interpolate.splrep(int_flux_dict['logenergy'],
                                                     int_flux, s=0)
-                        CZvalue = '%.2f'%(1.05-CZiter*0.1)
-                        splines[CZvalue] = spline
-                        CZiter += 1
+                        cz_value = '%.2f'%(1.05-cz_iter*0.1)
+                        splines[cz_value] = spline
+                        cz_iter += 1
 
                     az_splines[az] = splines
 
@@ -622,9 +656,9 @@ class honda(Stage):
                 outbnames = set(self.output_binning.names)
                 if outbnames == set(['true_energy', 'true_coszen',
                                      'true_azimuth']):
-                    output_maps.append(self.compute_3D_outputs(prim))
+                    output_maps.append(self.compute_3d_outputs(prim))
                 elif outbnames == set(['true_energy', 'true_coszen']):
-                    output_maps.append(self.compute_2D_outputs(prim))
+                    output_maps.append(self.compute_2d_outputs(prim))
                 else:
                     raise ValueError(
                         'Incompatible `output_binning` for either 2D (requires'
@@ -656,7 +690,7 @@ class honda(Stage):
 
         return scaled_output_maps
 
-    def compute_2D_binning_constants(self):
+    def compute_2d_binning_constants(self):
         self.bin_volumes = self.output_binning.bin_volumes(attach_units=False)
         # Adds/ensures the expected units for the binning
         if self.output_binning['true_energy'].units != ureg.GeV:
@@ -672,7 +706,7 @@ class honda(Stage):
         )
 
     @profile
-    def compute_2D_outputs(self, prim):
+    def compute_2d_outputs(self, prim):
         """
         Method for computing 2 dimensional fluxes.
         Binning always expected in energy and cosZenith.
@@ -727,7 +761,7 @@ class honda(Stage):
                 # Here the bin width is 0.05 (in log energy)
                 spvals = interpolate.splev(logevals,
                                            self.spline_dict[prim][czkey],
-                                           der=1)*0.05
+                                           der=1)
                 all_spline_vals.append(spvals)
             all_spline_vals = np.array(all_spline_vals)
 
@@ -737,11 +771,11 @@ class honda(Stage):
             # TODO: the following loop is what takes almost all of the time in
             # this function. This is candidate for obtaining speedups! (Or can
             # algorithm be re-worked to avoid re-splining each time
-            # compute_2D_outputs is called?)
+            # compute_2d_outputs is called?)
             return_table = []
             for n, energyval in enumerate(evals):
                 spline = interpolate.splrep(cz_spline_points,
-                                            int_spline_vals[:,n], s=0)
+                                            int_spline_vals[:, n], s=0)
 
                 # Have to multiply by bin widths to get correct derivatives
                 # Here the bin width is in cosZenith, is 0.1
@@ -769,12 +803,12 @@ class honda(Stage):
         #return_map *= self.bin_volumes*(2*np.pi*self.params.energy_scale.m)
         return return_map
 
-    def compute_3D_outputs(self, prim):
+    def compute_3d_outputs(self, prim):
         """Compute 3 dimensional fluxes when binning is specified in energy,
         cosZenith, and azimuth.
 
         Binning always expected in energy and cosZenith, and the previous
-        compute_2D_outputs is called in that case instead.
+        compute_2d_outputs is called in that case instead.
 
         For now this just mimics the dummy functionality. Will add it in
         properly later.
@@ -880,7 +914,7 @@ class honda(Stage):
                             cz_spline_vals.append(interpolate.splev(
                                 logenergyval,
                                 self.spline_dict[prim][azkey]['%.2f'%czkey],
-                                der=1)*0.05)
+                                der=1))
                         int_spline_vals = []
                         tot_val = 0.0
                         int_spline_vals.append(tot_val)
@@ -1104,7 +1138,7 @@ class honda(Stage):
         return MapSet(maps=scaled_flux_maps, name='flux maps')
 
     def apply_delta_index(self, flux_maps):
-        """Apply the atmospheric index systematic.
+        r"""Apply the atmospheric index systematic.
 
         This is applied as a shift in the E^{-\gamma} spectrum predicted by
         Honda. I.e. A value of the atmospheric index systematic of 0 leaves the
@@ -1177,7 +1211,15 @@ class honda(Stage):
                                            'bisplrep'])
 
         # This is the Honda service after all...
-        assert 'honda' in params.flux_file.value
+        if 'honda' not in params.flux_file.value:
+            # But it does support the Bartol tables too now
+            if 'bartol' not in params.flux_file.value:
+                raise ValueError(
+                    "Input flux file must be from Honda or possibly "
+                    "from Bartol. This is identified by having honda "
+                    "or bartol in the name. The file you provided "
+                    "was %s."%params.flux_file.value
+                )
 
         # Flux file should have aa (for azimuth-averaged) if binning
         # is energy and cosZenith

@@ -1,41 +1,3 @@
-#!/usr/bin/env python
-#
-# J.L. Lanfranchi for the IceCube/PINGU collaboration.
-#
-# Based on the implementation in Matlab by Zdravko Botev, and the paper
-# Z. I. Botev, J. F. Grotowski, and D. P. Kroese. Kernel density
-# estimation via diffusion. The Annals of Statistics, 38(5):2916-2957, 2010.
-#
-# Original BSD license, applicable *ONLY* to functions "isj_bandwidth" and
-# "fixed_point" since these were derived from Botev's original work (this
-# license applies to any future code derived from those functions as well):
-# ============================================================================
-#   Copyright (c) 2007, Zdravko Botev
-#   All rights reserved.
-#
-#   Redistribution and use in source and binary forms, with or without
-#   modification, are permitted provided that the following conditions are
-#   met:
-#
-#       * Redistributions of source code must retain the above copyright
-#         notice, this list of conditions and the following disclaimer.
-#       * Redistributions in binary form must reproduce the above copyright
-#         notice, this list of conditions and the following disclaimer in
-#         the documentation and/or other materials provided with the
-#         distribution
-#
-#   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-#   IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
-#   TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-#   PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
-#   OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-#   EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-#   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-#   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-#   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-#   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-#   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-# ============================================================================
 """
 Implementation of the Improved Sheather Jones (ISJ) KDE bandwidth selection
 method outlined in:
@@ -53,6 +15,9 @@ See also
   P. Hall, T. C. Hu, J. S. Marron, Improved Variable Window Kernel
     Estimates of Probability Densities, Annals of Statistics
     Vol. 23, No. 1, 1-10, 1995
+
+Some code in this module is Copyright (c) 2007 Zdravko Botev. See __license__
+for details.
 """
 
 
@@ -79,6 +44,57 @@ from pisa.utils.log import logging, set_verbosity, tprofile
 
 __all__ = ['OPT_TYPE', 'FIXED_POINT_IMPL',
            'fbwkde', 'vbwkde', 'isj_bandwidth', 'test_fbwkde', 'test_vbwkde']
+
+__author__ = 'Z. Botev, J.L. Lanfranchi'
+
+__license__ = '''Original BSD license, applicable *ONLY* to functions
+"isj_bandwidth" and "fixed_point" since these were derived from Botev's
+original work (this license applies to any future code derived from those
+functions as well):
+
+  Copyright (c) 2007, Zdravko Botev
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are
+  met:
+
+      * Redistributions of source code must retain the above copyright
+        notice, this list of conditions and the following disclaimer.
+      * Redistributions in binary form must reproduce the above copyright
+        notice, this list of conditions and the following disclaimer in
+        the documentation and/or other materials provided with the
+        distribution
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+  IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+  TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+  PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+  OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+============================================================================
+
+All other code in this module is under the following copyright/license:
+
+Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 # NOTE: 'minimum' is giving very rough overfit results. Switching to 'root' for

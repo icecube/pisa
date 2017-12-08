@@ -1,6 +1,5 @@
 """
 Utilities for working wtih coordinates (e.g. coord-system transformations).
-
 """
 
 
@@ -13,6 +12,22 @@ from pisa.utils.log import logging, set_verbosity
 
 __all__ = ['abs2rel', 'rel2abs',
            'test_abs2rel', 'test_rel2abs']
+
+__author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 # NOTE: If we want to scale the resolutions about some reference point
@@ -93,7 +108,7 @@ def test_abs2rel():
                    scale=1, abs_obj_shift=1)
     assert xrel[0] == -3 and xrel[-1] == 1
 
-    logging.info('<< PASSED : test_abs2rel >>')
+    logging.info('<< PASS : test_abs2rel >>')
 
 
 def test_rel2abs():
@@ -103,7 +118,7 @@ def test_rel2abs():
                   abs_obj_shift=19)
     xrel = abs2rel(xabs, **kwargs)
     assert np.allclose(rel2abs(abs2rel(xabs, **kwargs), **kwargs), xabs)
-    logging.info('<< PASSED : test_rel2abs >>')
+    logging.info('<< PASS : test_rel2abs >>')
 
 
 

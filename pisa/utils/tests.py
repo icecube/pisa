@@ -1,10 +1,9 @@
-# author : S.Wren, J.L.Lanfranchi
-#
-# date   : September 06, 2016
 """
 Functions to help compare and plot differences between PISA 2 and PISA 3 maps
-
 """
+
+
+from __future__ import absolute_import, division
 
 import os
 import numpy as np
@@ -27,6 +26,22 @@ __all__ = ['order', 'order_str', 'check_agreement', 'print_agreement',
            'baseplot', 'baseplot2',
            'plot_comparisons', 'plot_map_comparisons', 'plot_cmp',
            'pisa2_map_to_pisa3_map']
+
+__author__ = 'S. Wren'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 # TODO: make functions work transparently (i.e. autodetect) whether it's a

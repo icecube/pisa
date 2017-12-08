@@ -1,7 +1,3 @@
-# author: Sebastian Boeser
-#         sboeser@physik.uni-bonn.de
-#
-# date:   2014-10-17
 """
 This module sets up the logging system by looking for a "logging.json"
 configuration file. It will search (in this order) the local directory, $PISA
@@ -15,17 +11,36 @@ Currently, we have three loggers
   (`have x many events`, `the flux is ...`)
 * tprofile: for how much time it takes to run some step (in the format of
   `time : start bla`, `time : stop bla`)
-
 """
 
+
+from __future__ import absolute_import
 
 import json
 import logging as logging_module
 import logging.config as logging_config
+from os import environ
+from os.path import expanduser, expandvars, isfile, join
 from pkg_resources import resource_stream
 
 
 __all__ = ['logging', 'physics', 'tprofile', 'set_verbosity']
+
+__author__ = 'S. Boeser'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 def initialize_logging():
@@ -41,9 +56,29 @@ def initialize_logging():
     logging_module.trace = logging_module.root.trace
 
     # Get the logging configuration
-    logconfig = json.load(
-        resource_stream('pisa', 'resources/settings/logging/logging.json'),
-    )
+    logf = None
+    try:
+        if 'PISA_RESOURCES' in environ:
+            for path in environ['PISA_RESOURCES'].split(':'):
+                fpath = join(expanduser(expandvars(path)),
+                             'settings/logging/logging.json')
+                if isfile(fpath):
+                    logf = open(fpath, 'r')
+                    break
+
+        if logf is None:
+            resource_spec = ('pisa_examples',
+                             'resources/settings/logging/logging.json')
+            logf = resource_stream(*resource_spec)
+
+        if logf is None:
+            raise ValueError('Could not find "logging.json" in PISA_RESOURCES'
+                             ' or in pisa_examples/resources.')
+        logconfig = json.load(logf)
+
+    finally:
+        if logf is not None:
+            logf.close()
 
     # Setup the logging system with this config
     logging_config.dictConfig(logconfig)
@@ -60,7 +95,7 @@ def initialize_logging():
     _logging = logging_module.getLogger('pisa')
     _physics = logging_module.getLogger('pisa.physics')
     _tprofile = logging_module.getLogger('pisa.tprofile')
-    # TODO: removed following line due to dupllicate logging messages. Probably
+    # TODO: removed following line due to duplicate logging messages. Probably
     # should fix this in a better manner...
     #_tprofile.handlers = [thandler]
 
@@ -93,4 +128,4 @@ def set_verbosity(verbosity):
 
 
 # Make the loggers public
-logging, physics, tprofile = initialize_logging()
+logging, physics, tprofile = initialize_logging() # pylint: disable=invalid-name

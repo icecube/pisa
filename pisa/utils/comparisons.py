@@ -1,7 +1,3 @@
-# author : J.L. Lanfranchi
-#          jll1062+pisa@phys.psu.edu
-#
-# date   : April 8, 2016
 """
 Utilities for comparing things.
 
@@ -45,6 +41,22 @@ __all__ = ['FTYPE_PREC', 'EQUALITY_SIGFIGS', 'EQUALITY_PREC', 'ALLCLOSE_KW',
            'NP_TYPES', 'SEQ_TYPES', 'MAP_TYPES', 'COMPLEX_TYPES',
            'isvalidname', 'isscalar', 'isbarenumeric',
            'recursiveEquality', 'recursiveAllclose', 'normQuant']
+
+__author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 FTYPE_PREC = np.finfo(FTYPE).eps
@@ -432,7 +444,7 @@ def normQuant(obj, sigfigs=None, full_norm=True):
     different systems of units (even if the underlying physical quantity is
     identical).
 
-    >>> import pint; ureg = pint.UnitRegistry()
+    >>> from pisa import ureg
     >>> from pisa.utils.hash import hash_obj
     >>> q0 = 1 * ureg.m
     >>> q1 = 100 * ureg.cm
@@ -635,7 +647,7 @@ def test_isscalar():
     p_u_fl = ufloat(1, 1) * ureg.GeV
     for x in [u_fl, p_fl, p_u_fl]:
         assert isscalar(x), str(x) + ' should evaluate to scalar'
-    logging.info('<< PASSED : test_isscalar >>')
+    logging.info('<< PASS : test_isscalar >>')
 
 
 def test_recursiveEquality():
@@ -697,7 +709,7 @@ def test_recursiveEquality():
     assert recursiveEquality(-np.inf, -np.inf)
     assert not recursiveEquality(np.inf, -np.inf)
     assert not recursiveEquality(np.inf, np.nan)
-    logging.info('<< PASSED : test_recursiveEquality >>')
+    logging.info('<< PASS : test_recursiveEquality >>')
 
 
 def test_normQuant():
@@ -753,7 +765,7 @@ def test_normQuant():
 
     # Dict of dicts
     _ = normQuant({'x': {'1': 1, '2': 2}, 'y': {'3': 3, '4': 4}})
-    logging.info('<< PASSED : test_normQuant >>')
+    logging.info('<< PASS : test_normQuant >>')
 
 
 if __name__ == '__main__':

@@ -1,8 +1,3 @@
-# author : J.L. Lanfranchi
-#          jll1062+pisa@phys.psu.edu
-#
-# date   : March 25, 2016
-
 """
 Class to carry information about 2D binning in energy and cosine-zenity, and to
 provide basic operations with the binning.
@@ -43,6 +38,22 @@ __all__ = ['NAME_FIXES', 'NAME_SEPCHARS', 'NAME_FIXES_REGEXES',
            'basename', '_new_obj',
            'OneDimBinning', 'MultiDimBinning',
            'test_OneDimBinning', 'test_MultiDimBinning']
+
+__author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 NAME_FIXES = ('true', 'truth', 'reco', 'reconstructed')
@@ -2844,7 +2855,7 @@ def test_OneDimBinning():
     finally:
         shutil.rmtree(testdir, ignore_errors=True)
 
-    logging.info('<< PASSED >> test_OneDimBinning')
+    logging.info('<< PASS : test_OneDimBinning >>')
 
 
 def test_MultiDimBinning():
@@ -3054,7 +3065,7 @@ def test_MultiDimBinning():
     tprofile.info('Time to iterate over %d bins: %.6f sec',
                   mdb_3d_reco.size, time.time() - t0)
 
-    logging.info('<< PASSED >> test_MultiDimBinning')
+    logging.info('<< PASS : test_MultiDimBinning >>')
 
 
 if __name__ == "__main__":

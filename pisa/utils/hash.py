@@ -1,6 +1,5 @@
 """
 Utilities for hashing objects.
-
 """
 
 
@@ -12,8 +11,8 @@ from cPickle import PickleError, PicklingError
 import hashlib
 import struct
 from collections import Iterable
+from pkg_resources import resource_filename
 
-from backports.configparser import RawConfigParser
 import numpy as np
 
 from pisa.utils.log import logging, set_verbosity
@@ -24,6 +23,22 @@ __all__ = ['FAST_HASH_FILESIZE_BYTES', 'FAST_HASH_NDARRAY_ELEMENTS',
            'FAST_HASH_STR_BYTES',
            'hash_obj', 'hash_file',
            'test_hash_obj', 'test_hash_file']
+
+__author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 FAST_HASH_FILESIZE_BYTES = int(1e4)
@@ -86,7 +101,7 @@ def hash_obj(obj, hash_to='int', full_hash=True):
         return obj.hash
 
     # Handle numpy arrays and matrices specially
-    if isinstance(obj, np.ndarray) or isinstance(obj, np.matrix):
+    if isinstance(obj, (np.ndarray, np.matrix)):
         if full_hash:
             return hash_obj(obj.tostring(), **pass_on_kw)
         if isinstance(obj, np.matrix):
@@ -149,6 +164,7 @@ def hash_file(fname, hash_to=None, full_hash=True):
 
 
 def test_hash_obj():
+    """Unit tests for `hash_obj` function"""
     assert hash_obj('x') == 3783177783470249117
     assert hash_obj('x', full_hash=False) == 3783177783470249117
     assert hash_obj('x', hash_to='hex') == '9dd4e461268c8034'
@@ -179,15 +195,17 @@ def test_hash_obj():
         assert a2_h_part != a0_h_part
         assert a2_h_part != a1_h_part
 
-    logging.info('<< PASSED : test_hash_obj >>')
+    logging.info('<< PASS : test_hash_obj >>')
 
 # TODO: test_hash_file function requires a "standard" file to test on
 def test_hash_file():
-    file_hash = hash_file('../utils/hash.py')
+    """Unit tests for `hash_file` function"""
+    file_hash = hash_file(resource_filename('pisa.utils', 'hash.py'))
     logging.debug(file_hash)
-    file_hash = hash_file('../utils/hash.py', full_hash=False)
+    file_hash = hash_file(resource_filename('pisa.utils', 'hash.py'),
+                          full_hash=False)
     logging.debug(file_hash)
-    logging.info('<< PASSED : test_hash_file >>')
+    logging.info('<< PASS : test_hash_file >>')
 
 
 if __name__ == "__main__":

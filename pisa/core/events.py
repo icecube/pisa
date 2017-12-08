@@ -1,25 +1,19 @@
 #! /usr/bin/env python
-#
-# Events class for working with PISA events files
-#
-# author: Justin L. Lanfranchi
-#         jll1062+pisa@phys.psu.edu
-#
-# date:   October 24, 2015
-#
+
 """
 Events class for working with PISA events files and Data class for working
 with arbitrary Monte Carlo and datasets
-
 """
 
 
+from __future__ import absolute_import, division, print_function
+
 from copy import deepcopy
-from collections import Iterable, OrderedDict, Sequence
+from collections import Iterable, Mapping, OrderedDict, Sequence
 
 import h5py
-from numpy import inf, nan
 import numpy as np
+from numpy import inf, nan # pylint: disable=unused-import
 from uncertainties import unumpy as unp
 
 from pisa import ureg
@@ -36,8 +30,23 @@ from pisa.utils import hdf
 from pisa.utils.log import logging, set_verbosity
 
 
-__all__ = ['Events', 'Data',
-           'test_Events', 'test_Data']
+__all__ = ['Events', 'Data', 'test_Events', 'test_Data']
+
+__author__ = 'J.L. Lanfranchi, S. Mandalia'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 # TODO: test hash function (attr)
@@ -49,7 +58,7 @@ class Events(FlavIntData):
     >>> from pisa.core.binning import OneDimBinning, MultiDimBinning
 
     >>> # Load events from a PISA HDF5 file
-    >>> events = Events('events/pingu_v39/events__pingu__v39__runs_620-622__proc_v5.1__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5')
+    >>> events = Events('events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e2evts_set0__unjoined__with_fluxes_honda-2015-spl-solmin-aa.hdf5')
 
     >>> # Apply a simple cut
     >>> events = events.applyCut('(true_coszen <= 0.5) & (true_energy <= 70)')
@@ -65,7 +74,7 @@ class Events(FlavIntData):
     >>> np.min(events[fi]['true_energy']) >= 10
     True
 
-    >>> print [(k, events.metadata[k]) for k in sorted(events.metadata.keys())]
+    >>> print([(k, events.metadata[k]) for k in sorted(events.metadata.keys())])
     [('cuts', ['analysis']),
       ('detector', 'pingu'),
       ('flavints_joined',
@@ -89,7 +98,7 @@ class Events(FlavIntData):
         ])
         meta = {}
         data = FlavIntData()
-        if isinstance(val, basestring) or isinstance(val, h5py.Group):
+        if isinstance(val, (basestring, h5py.Group)):
             data, meta = self.__load(val)
         elif isinstance(val, Events):
             meta = deepcopy(val.metadata)
@@ -292,7 +301,9 @@ class Events(FlavIntData):
         """
 
         if keep_criteria in self.metadata['cuts']:
-            return
+            logging.debug("Criteria '%s' have already been applied. Returning"
+                          " events unmodified.", keep_criteria)
+            return self
 
         #Nothing to do if no cuts specified
         if keep_criteria is None :
@@ -363,6 +374,10 @@ class Events(FlavIntData):
         current_cuts = self.metadata['cuts']
         new_cuts = [dim.inbounds_criteria for dim in binning]
         unapplied_cuts = [c for c in new_cuts if c not in current_cuts]
+        if not unapplied_cuts:
+            logging.debug("All inbounds criteria '%s' have already been"
+                          " applied. Returning events unmodified.", new_cuts)
+            return self
         all_cuts = deepcopy(current_cuts) + unapplied_cuts
 
         # Create a single cut from all unapplied cuts
@@ -436,12 +451,12 @@ class Data(FlavIntDataGroup):
 
         # Get data and metadata from val
         meta = {}
-        if isinstance(val, basestring) or isinstance(val, h5py.Group):
+        if isinstance(val, (basestring, h5py.Group)):
             data, meta = self.__load(val)
         elif isinstance(val, Data):
             data = val
             meta = val.metadata
-        elif isinstance(val, dict) or isinstance(val, FlavIntDataGroup):
+        elif isinstance(val, (Mapping, FlavIntDataGroup)):
             data = val
             meta = None
         else:
@@ -488,9 +503,7 @@ class Data(FlavIntDataGroup):
         if data == dict():
             self._flavint_groups = []
         else:
-            super(self.__class__, self).__init__(
-                val=data, flavint_groups=flavint_groups
-            )
+            super(Data, self).__init__(val=data, flavint_groups=flavint_groups)
             self.contains_neutrinos = True
 
         # Check consistency of flavints_joined
@@ -1069,6 +1082,7 @@ class Data(FlavIntDataGroup):
         return self.meta_eq(other) and self.data_eq(other)
 
 
+# pylint: disable=line-too-long
 def test_Events():
     """Unit tests for Events class"""
     from pisa.utils.flavInt import NuFlavInt
@@ -1076,7 +1090,7 @@ def test_Events():
     events = Events()
 
     # Instantiate from PISA events HDF5 file
-    events = Events('events/pingu_v39/events__pingu__v39__runs_620-622__proc_v5.1__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5')
+    events = Events('events/events__vlvnt__toy_1_to_80GeV_spidx1.0_cz-1_to_1_1e2evts_set0__unjoined__with_fluxes_honda-2015-spl-solmin-aa.hdf5')
 
     # Apply a simple cut
     events = events.applyCut('(true_coszen <= 0.5) & (true_energy <= 70)')
@@ -1126,7 +1140,7 @@ def test_Events():
         assert np.min(events[fi]['true_energy']) < 30
 
     logging.info(
-        '<< PASSED : test_Events >> (note:'
+        '<< PASS : test_Events >> (note:'
         ' "[   ERROR] Events object is in an inconsistent state. Reverting cut'
         ' for all flavInts." message above **is expected**.)')
 
@@ -1227,7 +1241,7 @@ def test_Data():
     d3_com = d3.transform_groups(['nue+nuebar+numu+numubar'])
     logging.debug(str((d3_com)))
 
-    logging.info('<< PASSED : test_Data >>')
+    logging.info('<< PASS : test_Data >>')
 
 
 if __name__ == "__main__":

@@ -1,11 +1,12 @@
-# Authors
 """
 Stage base class designed to be inherited by PISA services, such that all basic
 functionality is built-in.
-
 """
 
 
+from __future__ import absolute_import, division, print_function
+
+from collections import Iterable, Mapping, Sequence
 from copy import deepcopy
 import inspect
 import os
@@ -29,6 +30,22 @@ from pisa.utils.format import arg_str_seq_none
 __all__ = ['Stage']
 __author__ = 'Justin Lanfranchi'
 __version__ = 'Cake'
+
+__author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 # TODO: mode for not propagating errors. Probably needs hooks here, but meat of
@@ -528,7 +545,32 @@ class Stage(BaseStage):
                             ' the case that the input includes sideband'
                             ' objects.' % type(outputs))
 
+<<<<<<< HEAD
     @profile
+=======
+    def _check_params(self, params):
+        """Make sure that `expected_params` is defined and that exactly the
+        params specified in self.expected_params are present.
+
+        """
+        assert self.expected_params is not None
+        exp_p, got_p = set(self.expected_params), set(params.names)
+        if exp_p == got_p:
+            return
+        excess = got_p.difference(exp_p)
+        missing = exp_p.difference(got_p)
+        err_strs = []
+        if len(excess) > 0:
+            err_strs.append('Excess params provided: %s'
+                            %', '.join(sorted(excess)))
+        if len(missing) > 0:
+            err_strs.append('Missing params: %s'
+                            %', '.join(sorted(missing)))
+        raise ValueError('Expected parameters: %s;\n'
+                         %', '.join(sorted(exp_p))
+                         + ';\n'.join(err_strs))
+
+>>>>>>> 99e6a7334bc4d324577063f524e0e8614e053524
     def check_transforms(self, transforms):
         """Check that transforms' inputs and outputs match those specified
         for this service.
@@ -550,8 +592,8 @@ class Stage(BaseStage):
                 "Transforms' outputs: " + str(transforms.output_names) + \
                 "\nStage outputs: " + str(self.output_names)
 
-    @profile
     def check_outputs(self, outputs):
+        """Check that the output names are those expected"""
         if set(outputs.names) != set(self.output_names):
             raise ValueError(
                 "'%s' : Outputs found do not match expected outputs for this stage:\n"%self.stage_name +
@@ -811,19 +853,19 @@ class Stage(BaseStage):
     def _derive_nominal_outputs_hash(self):
         return self._derive_nominal_transforms_hash()
 
-    def _compute_nominal_transforms(self):
+    def _compute_nominal_transforms(self): # pylint: disable=no-self-use
         """Stages that start with a nominal transform and use systematic
         parameters to modify the nominal transform in order to obtain the final
         transforms should override this method for deriving the nominal
         transform."""
         return None
 
-    def _compute_transforms(self):
+    def _compute_transforms(self): # pylint: disable=no-self-use
         """Stages that apply transforms to inputs should override this method
         for deriving the transform. No-input stages should leave this as-is."""
         return TransformSet([])
 
-    def _compute_nominal_outputs(self):
+    def _compute_nominal_outputs(self): # pylint: disable=no-self-use
         return None
 
     @profile
@@ -833,7 +875,16 @@ class Stage(BaseStage):
         work for computing outputs is done by the TransfromSet below."""
         return self.transforms.apply(inputs)
 
+<<<<<<< HEAD
     def validate_binning(self):
+=======
+    def validate_params(self, params): # pylint: disable=unused-argument, no-self-use
+        """Override this method to test if params are valid; e.g., check range
+        and dimensionality."""
+        return
+
+    def validate_binning(self): # pylint: disable=no-self-use
+>>>>>>> 99e6a7334bc4d324577063f524e0e8614e053524
         """Override this method to test if the input and output binning
         (e.g., dimensionality, domains, separately or in combination)
         conform to the transform applied by the stage."""
