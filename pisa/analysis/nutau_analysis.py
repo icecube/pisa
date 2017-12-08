@@ -73,6 +73,7 @@ class Analysis(object):
         # DOF as n_bins - n_free_params + n_gauss_priors
         template = self.template_maker.get_outputs(return_sum=True)
         template = template.combine_wildcard('*')
+
         n_bins = template.binning.tot_num_bins
         self.n_free_params = len(self.template_maker.params.free)
         n_gauss_priors = 0

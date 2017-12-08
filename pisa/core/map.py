@@ -852,7 +852,7 @@ class Map(object):
         Parameters
         ----------
         method : None or string
-            Valid strings are '', 'none', 'poisson', or 'gauss+poisson'.
+            Valid strings are '', 'none', 'poisson', 'gauss', or 'gauss+poisson'.
             Strings are case-insensitive and whitespace is removed.
 
         random_state : None or type accepted by utils.random_numbers.get_random_state
@@ -907,6 +907,22 @@ class Map(object):
                 )
                 hist_vals[nan_at] = np.nan
 
+                error_vals = np.empty_like(orig_hist, dtype=np.float64)
+                error_vals[valid_mask] = np.sqrt(orig_hist[valid_mask])
+                error_vals[nan_at] = np.nan
+            return {'hist': unp.uarray(hist_vals, error_vals)}
+
+        elif method == 'gauss':
+            random_state = get_random_state(random_state, jumpahead=jumpahead)
+            with np.errstate(invalid='ignore'):
+                orig_hist = self.nominal_values
+                sigma = self.std_devs
+                nan_at = np.isnan(orig_hist)
+                valid_mask = ~nan_at
+                hist_vals = np.empty_like(orig_hist, dtype=np.float64)
+                hist_vals[valid_mask] = norm.rvs(
+                        loc=orig_hist[valid_mask], scale=sigma[valid_mask])
+                hist_vals[nan_at] = np.nan
                 error_vals = np.empty_like(orig_hist, dtype=np.float64)
                 error_vals[valid_mask] = np.sqrt(orig_hist[valid_mask])
                 error_vals[nan_at] = np.nan
@@ -2139,8 +2155,9 @@ class MapSet(object):
             else:
                 m = copy(maps_to_combine[0])
             resulting_maps.append(m)
-        if len(resulting_maps) == 1:
-            return resulting_maps[0]
+        # same return type that is case independent is better
+        #if len(resulting_maps) == 1:
+        #    return resulting_maps[0]
         return MapSet(maps=resulting_maps, name=self.name, tex=self.tex,
                       collate_by_name=self.collate_by_name)
 
