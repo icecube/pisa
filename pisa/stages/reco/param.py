@@ -507,6 +507,10 @@ class param(Stage):
         self.include_attrs_for_hashes('particles')
         self.include_attrs_for_hashes('transform_groups')
         self.include_attrs_for_hashes('sum_grouped_flavints')
+        self.include_attrs_for_hashes('only_physics_domain')
+        self.include_attrs_for_hashes('only_physics_domain_sum')
+        self.include_attrs_for_hashes('only_physics_domain_distwise')
+        self.include_attrs_for_hashes('coszen_flipback')
 
     def validate_binning(self):
         # Right now this can only deal with 2D energy / coszenith binning

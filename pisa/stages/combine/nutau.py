@@ -8,7 +8,7 @@ from pisa import ureg, Q_
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.log import logging
-from pisa.utils.config_parser import split
+from pisa.utils.format import split
 from pisa.utils.profiler import profile
 
 
@@ -47,10 +47,10 @@ class nutau(Stage):
             #'nutau_cc_norm'
         )
 
-        input_names =  split(input_names)
+        #input_names = split(input_names, sep=',')
         self.combine_groups = eval(combine_groups)
         for key, val in self.combine_groups.items():
-            self.combine_groups[key] = split(val)
+            self.combine_groups[key] = split(val, sep=',')
         output_names = self.combine_groups.keys()
 
         super(self.__class__, self).__init__(

@@ -25,10 +25,10 @@ import numpy as np
 
 
 __all__ = ['PKL_EXTS', 'DILL_EXTS', 'CFG_EXTS', 'ZIP_EXTS', 'TXT_EXTS', 'XOR_EXTS',
-           'NSORT_RE',
-           'expand', 'mkdir', 'get_valid_filename', 'nsort', 'find_files',
-           'from_cfg', 'from_pickle', 'to_pickle', 'from_dill', 'to_dill',
-           'from_file', 'to_file']
+           'NSORT_RE', 'UNSIGNED_FSORT_RE', 'SIGNED_FSORT_RE',
+           'expand', 'mkdir', 'get_valid_filename', 'nsort', 'fsort',
+           'find_files', 'from_cfg', 'from_pickle', 'to_pickle', 'from_dill',
+           'to_dill', 'from_file', 'to_file']
 
 
 PKL_EXTS = ['pickle', 'pckl', 'pkl', 'p']
@@ -39,6 +39,27 @@ TXT_EXTS = ['txt', 'dat']
 XOR_EXTS = ['xor']
 
 NSORT_RE = re.compile(r'(\d+)')
+UNSIGNED_FSORT_RE = re.compile(
+    r'''
+    (
+        (?:\d+(?:\.\d*){0,1}) # Digit(s) followed by opt. "." and opt. digits
+        |(?:\.\d+)            # Or starts with "." and must have digits after
+        (?:e[+-]?\d+){0,1}    # Opt.: followed by exponent: e12, e-12, e+0, etc.
+    )
+    ''',
+    re.IGNORECASE | re.VERBOSE
+)
+SIGNED_FSORT_RE = re.compile(
+    r'''
+    (
+        [+-]{0,1}             # Optional sign
+        (?:\d+(?:\.\d*){0,1}) # Digit(s) followed by opt. "." and opt. digits
+        |(?:\.\d+)            # Or starts with "." but must have digits after
+        (?:e[+-]?\d+){0,1}    # Opt.: exponent: e12, e-12, e+0, etc.
+    )
+    ''',
+    re.IGNORECASE | re.VERBOSE
+)
 
 
 def expand(path, exp_user=True, exp_vars=True, absolute=False):
@@ -159,16 +180,87 @@ def get_valid_filename(s):
 
 
 def nsort(l):
-    """Numbers in string sorted by value, not by alpha order.
+    """Sort a sequence of strings containing integer number fields by the
+    value of those numbers, rather than by simple alpha order. Useful
+    for sorting e.g. version strings, etc..
 
-    Code from nedbatchelder.com/blog/200712/human_sorting.html#comments
+    Code adapted from nedbatchelder.com/blog/200712/human_sorting.html#comments
+
+    Parameters
+    ----------
+    l : sequence of strings
+
+    Returns
+    -------
+    sorted_l : sequence of strings
+
+    Examples
+    --------
+    >>> l = ['f1.10.0.txt', 'f1.01.2.txt', 'f1.1.1.txt', 'f9.txt', 'f10.txt']
+    >>> nsort(l)
+    ['f1.1.1.txt', 'f1.01.2.txt', 'f1.10.0.txt', 'f9.txt', 'f10.txt']
+
+    See Also
+    --------
+    fsort
+        Sort sequence of strings with floating-point numbers in the strings.
 
     """
-    return sorted(
-        l,
-        key=lambda a: zip(NSORT_RE.split(a)[0::2],
-                          [int(i) for i in NSORT_RE.split(a)[1::2]])
-    )
+    def _field_splitter(s):
+        spl = NSORT_RE.split(s)
+        non_numbers = spl[0::2]
+        numbers = (int(i) for i in spl[1::2])
+        return zip(non_numbers, numbers)
+
+    return sorted(l, key=_field_splitter)
+
+
+def fsort(l, signed=True):
+    """Sort a sequence of strings with one or more floating point number fields
+    in using the floating point value(s) (and intervening strings are treated
+    as normally done). Note that + and - preceding a number are included in the
+    floating point value unless `signed=False`.
+
+    Code adapted from nedbatchelder.com/blog/200712/human_sorting.html#comments
+
+    Parameters
+    ----------
+    l : sequence of strings
+    signed : bool
+        Whether to include a "+" or "-" preceeding a number in its value to be
+        sorted. One might specify False if "-" is used exclusively as a
+        separator in the string.
+
+    Returns
+    -------
+    sorted_l : sequence of strings
+
+    Examples
+    --------
+    >>> l = ['a-0.1.txt', 'a-0.01.txt', 'a-0.05.txt']
+    >>> fsort(l, signed=True)
+    ['a-0.1.txt', 'a-0.05.txt', 'a-0.01.txt']
+
+    >>> fsort(l, signed=False)
+    ['a-0.01.txt', 'a-0.05.txt', 'a-0.1.txt']
+
+    See Also
+    --------
+    nsort
+        Sort using integer-only values of numbers; good for e.g. version
+        numbers, where periods are separators rather than decimal points.
+
+    """
+    def _field_splitter(s):
+        if signed:
+            spl = SIGNED_FSORT_RE.split(s)
+        else:
+            spl = UNSIGNED_FSORT_RE.split(s)
+        non_numbers = spl[0::2]
+        numbers = (float(i) for i in spl[1::2])
+        return zip(non_numbers, numbers)
+
+    return sorted(l, key=_field_splitter)
 
 
 def find_files(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
@@ -214,15 +306,15 @@ def find_files(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
     # Define a function for accepting a filename as a match
     if regex is None:
         if fname is None:
-            def validfilefunc(fn):
+            def _validfilefunc(fn):
                 return True, None
         else:
-            def validfilefunc(fn):
+            def _validfilefunc(fn):
                 if fn == fname:
                     return True, None
                 return False, None
     else:
-        def validfilefunc(fn):
+        def _validfilefunc(fn):
             match = regex.match(fn)
             if match and (len(match.groups()) == regex.groups):
                 return True, match
@@ -232,7 +324,7 @@ def find_files(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
         for rootdir, dirs, files in os.walk(root, followlinks=True):
             for basename in file_sorter(files):
                 fullfilepath = os.path.join(rootdir, basename)
-                is_valid, match = validfilefunc(basename)
+                is_valid, match = _validfilefunc(basename)
                 if is_valid:
                     yield fullfilepath, basename, match
             for dirname in dir_sorter(dirs):
@@ -240,22 +332,22 @@ def find_files(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
                 for basename in file_sorter(os.listdir(fulldirpath)):
                     fullfilepath = os.path.join(fulldirpath, basename)
                     if os.path.isfile(fullfilepath):
-                        is_valid, match = validfilefunc(basename)
+                        is_valid, match = _validfilefunc(basename)
                         if is_valid:
                             yield fullfilepath, basename, match
     else:
         for basename in file_sorter(os.listdir(root)):
             fullfilepath = os.path.join(root, basename)
             #if os.path.isfile(fullfilepath):
-            is_valid, match = validfilefunc(basename)
+            is_valid, match = _validfilefunc(basename)
             if is_valid:
                 yield fullfilepath, basename, match
 
 
 def from_cfg(fname):
     """Load a PISA config file"""
-    from pisa.utils.config_parser import BetterConfigParser
-    config = BetterConfigParser()
+    from pisa.utils.config_parser import PISAConfigParser
+    config = PISAConfigParser()
     config.read(fname)
     return config
 

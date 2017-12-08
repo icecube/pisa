@@ -288,7 +288,7 @@ class OneDimBinning(object):
                 dimensionless_bin_edges = bin_edges.magnitude
 
             elif bin_edges is not None:
-                dimensionless_bin_edges = np.asarray(bin_edges)
+                dimensionless_bin_edges = np.asarray(bin_edges).astype(FTYPE)
                 bin_edges = None
 
         dimensionless_domain = None
@@ -349,14 +349,16 @@ class OneDimBinning(object):
                 dimensionless_bin_edges = np.logspace(
                     np.log10(dimensionless_domain[0]),
                     np.log10(dimensionless_domain[1]),
-                    num_bins + 1
+                    num_bins + 1,
+                    dtype=FTYPE,
                 )
             elif is_lin:
                 is_log = False
                 dimensionless_bin_edges = np.linspace(
                     dimensionless_domain[0],
                     dimensionless_domain[1],
-                    num_bins + 1
+                    num_bins + 1,
+                    dtype=FTYPE,
                 )
         elif dimensionless_domain is not None:
             assert dimensionless_domain[0] == dimensionless_bin_edges[0]
@@ -364,13 +366,13 @@ class OneDimBinning(object):
 
         if is_lin:
             if not self.is_bin_spacing_lin(dimensionless_bin_edges):
-                raise ValueError('`is_lin` is True but `bin_edges` are not'
-                                 ' linearly spaced.')
+                raise ValueError('%s : `is_lin` is True but `bin_edges` are not'
+                                 ' linearly spaced.'%self._name)
             is_log = False
         elif is_log:
             if not self.is_binning_ok(dimensionless_bin_edges, is_log=True):
-                raise ValueError('`is_log` is True but `bin_edges` are not'
-                                 ' logarithmically spaced.')
+                raise ValueError('%s : `is_log` is True but `bin_edges` are not'
+                                 ' logarithmically spaced.'%self._name)
             is_lin = False
         else:
             is_lin = self.is_bin_spacing_lin(dimensionless_bin_edges)
@@ -1102,7 +1104,18 @@ class OneDimBinning(object):
 
         Returns
         -------
-        OneDimBinning object
+        new_binning : OneDimBinning
+            New binning, oversampled from the current binning.
+
+        Raises
+        ------
+        ValueError if illegal value is specified for `factor`
+
+        Notes
+        -----
+        Bin names are _not_ preserved for any `factor` except 1 since it is
+        ambiguous how names should be propagated. If you wish to have bin
+        names after oversampling, assign them afterwards.
 
         """
         if factor < 1 or factor != int(factor):
@@ -1156,6 +1169,12 @@ class OneDimBinning(object):
         Raises
         ------
         ValueError if illegal value is specified for `factor`
+
+        Notes
+        -----
+        Bin names are _not_ preserved for any `factor` except 1 since it is
+        ambiguous how names should be propagated. If you wish to have bin
+        names after downsampling, assign them afterwards.
 
         """
         if int(factor) != float(factor):
@@ -2045,7 +2064,7 @@ class MultiDimBinning(object):
         return self.coord(*coord[::-1])
 
     # TODO: examples!
-    def reorder_dimensions(self, order, use_deepcopy=False):
+    def reorder_dimensions(self, order, use_deepcopy=False, use_basenames=False):
         """Return a new MultiDimBinning object with dimensions ordered
         according to `order`.
 
@@ -2092,14 +2111,15 @@ class MultiDimBinning(object):
         indices = []
         for dim in order:
             try:
-                idx = self.index(dim, use_basenames=True)
+                idx = self.index(dim, use_basenames=use_basenames)
             except ValueError:
                 continue
             indices.append(idx)
         if set(indices) != set(range(len(self))):
             raise ValueError(
                 'Invalid `order`: Only a subset of the dimensions present'
-                ' were specified. `order`=%s; dimensions=%s' %(order, self)
+                ' were specified. `order`=%s, but dimensions=%s'
+                %(order, self.names)
             )
         if use_deepcopy:
             new_dimensions = [deepcopy(self._dimensions[n]) for n in indices]
@@ -2134,7 +2154,7 @@ class MultiDimBinning(object):
         return True
 
     def oversample(self, *args, **kwargs):
-        """Return a Binning object oversampled relative to this binning.
+        """Return a MultiDimBinning object oversampled relative to this one.
 
         Parameters
         ----------
@@ -2143,17 +2163,86 @@ class MultiDimBinning(object):
             one factor (one arg)--which will be broadcast to all dimensions--or
             there must be as many factors (args) as there are dimensions.
             If positional args are specified (i.e., non-kwargs), then kwargs
-            are forbidden.
+            are forbidden. For more detailed control, use keyword arguments to
+            specify the dimension(s) to be oversampled and their factors.
 
         **kwargs : name=factor pairs
+            Dimensions not specified default to oversample factor of 1 (i.e.,
+            no oversampling)
+
+        Returns
+        -------
+        new_binning : MultiDimBinning
+            New binning, oversampled from the current binning.
 
         Notes
         -----
-        Can either specify oversmapling by passing in args (ordered values, no
-        keywords) or kwargs (order doesn't matter, but uses keywords), but not
-        both.
+        You can either specify oversmapling by passing in args (ordered values,
+        no keywords) or kwargs (order doesn't matter, but uses keywords), but
+        not both.
+
+        Specifying simple args (no keywords) requires either a single scalar
+        (in which case all dimensions will be oversampled by the same factor)
+        or one scalar per dimension (which oversamples the dimensions in the
+        order specified).
+
+        Specifying keyword args is far more explicit (and general), where each
+        dimension's oversampling can be specified by name=factor pairs, but not
+        every dimension must be specified (where no oversampling is applied to
+        unspecified dimensions).
+
+        See Also
+        --------
+        downsample
+            Similar to this, but downsample the MultiDimBinning
+
+        OneDimBinning.oversample
+            Oversample a OneDimBinning object; this method is called to
+            actually perform the oversampling for each dimension within this
+            MultiDimBinning object
+
+        OneDimBinning.downsample
+            Same but downsample for OneDimBinning
+
+        Examples
+        --------
+        >>> x = OneDimBinning('x', bin_edges=[0, 1, 2])
+        >>> y = OneDimBinning('y', bin_edges=[0, 20])
+        >>> mdb = x * y
+
+        The following are all equivalent:
+
+        >>> print mdb.oversample(2)
+        MultiDimBinning(
+                OneDimBinning('x', 4 equally-sized bins spanning [0.0, 2.0]),
+                OneDimBinning('y', 2 equally-sized bins spanning [0.0, 20.0])
+        )
+        >>> print mdb.oversample(2, 2)
+        MultiDimBinning(
+                OneDimBinning('x', 4 equally-sized bins spanning [0.0, 2.0]),
+                OneDimBinning('y', 2 equally-sized bins spanning [0.0, 20.0])
+        )
+        >>> print mdb.oversample(x=2, y=2)
+        MultiDimBinning(
+                OneDimBinning('x', 4 equally-sized bins spanning [0.0, 2.0]),
+                OneDimBinning('y', 2 equally-sized bins spanning [0.0, 20.0])
+        )
+
+        But with kwargs, you can specify only the dimensions you want to
+        oversample, and the other dimension(s) remain unchanged:
+
+        >>> print mdb.oversample(y=5)
+        MultiDimBinning([
+                OneDimBinning('x', 2 equally-sized bins spanning [0, 2])),
+                OneDimBinning('y', 5 equally-sized bins spanning [0.0, 20.0]))])
 
         """
+        if args:
+            assert len(args) in [1, len(self)]
+        elif kwargs:
+            for name in self.names:
+                if name not in kwargs:
+                    kwargs[name] = 1
         factors = self._args_kwargs_to_list(*args, **kwargs)
         new_binning = [dim.oversample(f)
                        for dim, f in izip(self._dimensions, factors)]
@@ -2173,13 +2262,36 @@ class MultiDimBinning(object):
 
         **kwargs : name=factor pairs
 
+        Returns
+        -------
+        new_binning : MultiDimBinning
+            New binning, downsampled from the current binning.
+
         Notes
         -----
         Can either specify downsampling by passing in args (ordered values, no
         keywords) or kwargs (order doesn't matter, but uses keywords), but not
         both.
 
+        See Also
+        --------
+        oversample
+            Oversample (upsample) a the MultiDimBinning
+
+        OneDimBinning.downsample
+            The method actually called to perform the downsampling for each
+            OneDimBinning within this MultiDimBinning object.
+
+        OneDimBinning.oversample
+            Same, but oversample (upsample) a OneDimBinning object
+
         """
+        if args:
+            assert len(args) in [1, len(self)]
+        elif kwargs:
+            for name in self.names:
+                if name not in kwargs:
+                    kwargs[name] = 1
         factors = self._args_kwargs_to_list(*args, **kwargs)
         new_binning = [dim.downsample(f)
                        for dim, f in izip(self._dimensions, factors)]

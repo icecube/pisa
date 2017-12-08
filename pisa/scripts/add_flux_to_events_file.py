@@ -22,9 +22,10 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 __all__ = ['add_fluxes_to_file', 'main']
 
 
-def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name, outdir):
+def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name, outdir=None): #TODO Make a "add_fluxes_to_events" function, and call from this one
     data_file, attrs = from_file(resources.find_resource(data_file_path), return_attrs = True)
     data_file_name = os.path.basename(data_file_path)
+    if outdir is None : outdir = os.path.dirname(data_file_path)
     mkdir(outdir)
     output_file_name = outdir + '/' + data_file_name.split('.hdf5')[0]+'_with_fluxes.hdf5'
     if not os.path.isfile(output_file_name):
@@ -45,6 +46,7 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name, outdir)
                 data_file[prim][int_type][neutrino_weight_name+'_oppo_numu_flux'] = oppo_numu_flux
                 # if need to calculate neutrino weights here
         to_file(data_file, output_file_name, attrs=attrs, overwrite=True)
+        return output_file_name
     else:
         print 'File %s already exists, skipped. Please delete it or rename it.' % output_file_name
 

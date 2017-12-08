@@ -33,7 +33,7 @@ __all__ = ['MINIMIZERS_USING_SYMM_GRAD',
            'Counter', 'Analysis']
 
 
-MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b',)
+MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b', 'slsqp')
 """Minimizers that use symmetrical steps on either side of a point to compute
 gradients. See https://github.com/scipy/scipy/issues/4916"""
 
@@ -189,6 +189,18 @@ def validate_minimizer_settings(minimizer_settings):
             raise ValueError(eps_gt_msg % (method, 'eps', val, err_lim))
         if val > warn_lim:
             logging.warn(eps_gt_msg, method, 'eps', val, warn_lim)
+
+
+def check_theta23(fit_info, return_octant=False):
+    """Checks the octant value in fit_info and returns it if wanted"""
+    octants = [0.0, 1.0]
+    theta23 = fit_info['params'].theta23.value
+    octant = ((theta23 % (360 * ureg.deg)) // (45 * ureg.deg)).magnitude
+    if octant not in octants:
+        raise ValueError("Fitted theta23 value was not in the "
+                         "first or second octant as expected.")
+    if return_octant:
+        return octant
 
 
 # TODO: move this to a central location prob. in utils
@@ -368,6 +380,38 @@ class Analysis(object):
                     blind=blind
                 )
 
+                # Check to make sure these two fits were either side of 45
+                # degrees.
+                old_octant = check_theta23(best_fit_info, return_octant=True)
+                new_octant = check_theta23(new_fit_info, return_octant=True)
+
+                if old_octant == new_octant:
+                    logging.warning(
+                        'Checking other octant was NOT successful since both '
+                        'fits have resulted in the same octant. Fit will be'
+                        ' tried again starting at a point further into '
+                        'the opposite octant.'
+                    )
+                    alternate_fits.append(new_fit_info)
+                    if old_octant > 0.0:
+                        theta23.value = (55.0*ureg.deg).to(theta23.units)
+                    else:
+                        theta23.value = (35.0*ureg.deg).to(theta23.units)
+                    hypo_maker.update_params(theta23)
+
+                    # Re-run minimizer starting at new point
+                    new_fit_info = self.fit_hypo_inner(
+                        hypo_maker=hypo_maker,
+                        data_dist=data_dist,
+                        metric=metric,
+                        minimizer_settings=minimizer_settings,
+                        other_metrics=other_metrics,
+                        pprint=pprint,
+                        blind=blind
+                    )
+                    # Make sure the new octant is sensible
+                    check_theta23(new_fit_info)
+
                 # Take the one with the best fit
                 if metric in METRICS_TO_MAXIMIZE:
                     it_got_better = (
@@ -479,7 +523,10 @@ class Analysis(object):
         # Using scipy.optimize.minimize allows a whole host of minimizers to be
         # used.
         counter = Counter()
+        
         fit_history = []
+        fit_history.append( [metric] + [v.name for v in hypo_maker.params.free])
+
         start_t = time.time()
 
         if pprint and not blind:
@@ -568,6 +615,7 @@ class Analysis(object):
             params=hypo_maker.params, metric=metric, other_metrics=other_metrics
         )
         fit_info['minimizer_time'] = minimizer_time * ureg.sec
+        fit_info['num_distributions_generated'] = counter.count
         fit_info['minimizer_metadata'] = metadata
         fit_info['fit_history'] = fit_history
         # If blind replace hypo_asimov_dist with none object
@@ -604,14 +652,27 @@ class Analysis(object):
         """
         fit_info = OrderedDict()
         fit_info['metric'] = metric
-        fit_info['metric_val'] = data_dist.metric_total(
-            expected_values=hypo_asimov_dist,
-            metric=metric
-        )
 
         # NOTE: Select params but *do not* reset to nominal values to record
         # the current (presumably already optimal) param values
         hypo_maker.select_params(hypo_param_selections)
+
+        # Assess the fit: whether the data came from the hypo_asimov_dist
+        try:
+            metric_val = (
+                data_dist.metric_total(expected_values=hypo_asimov_dist,
+                                       metric=metric)
+                + hypo_maker.params.priors_penalty(metric=metric)
+            )
+        except:
+            if not blind:
+                logging.error(
+                    'Failed when computing metric with free params %s',
+                    hypo_maker.params.free
+                )
+            raise
+
+        fit_info['metric_val'] = metric_val
 
         if blind:
             # Okay, if blind analysis is being performed, reset the values so
@@ -625,6 +686,7 @@ class Analysis(object):
             params=hypo_maker.params, metric=metric, other_metrics=other_metrics
         )
         fit_info['minimizer_time'] = 0 * ureg.sec
+        fit_info['num_distributions_generated'] = 0
         fit_info['minimizer_metadata'] = OrderedDict()
         fit_info['hypo_asimov_dist'] = hypo_asimov_dist
         return fit_info
@@ -776,7 +838,7 @@ class Analysis(object):
             fit_history.append(
                 [metric_val] + [v.value.m for v in hypo_maker.params.free]
             )
-
+            
         return sign*metric_val
 
     def _minimizer_callback(self, xk):
@@ -915,6 +977,7 @@ class Analysis(object):
             `debug_mode` will be set to 2.
 
         """
+
         if debug_mode not in (0, 1, 2):
             debug_mode = 2
 
@@ -959,6 +1022,9 @@ class Analysis(object):
                         for (i, pname) in enumerate(param_names)]
         else:
             steplist = [[(param_names[0], val) for val in values[0]]]
+
+        #Number of steps must be > 0
+        assert len(steplist) > 0
 
         points_acc = []
         if only_points is not None:
@@ -1016,11 +1082,11 @@ class Analysis(object):
                     hypo_param_selections=hypo_param_selections,
                     hypo_asimov_dist=hypo_maker.get_outputs(return_sum=True),
                     metric=metric,
-                    **kwargs
+                    **dict([(k,v) for k,v in kwargs.items() if k not in ["pprint","reset_free","check_octant"]])
                 )
             else:
                 logging.info('Starting optimization since `profile` requested.')
-                best_fit, alternate_fits = self.fit_hypo(
+                best_fit, _ = self.fit_hypo(
                     data_dist=data_dist,
                     hypo_maker=hypo_maker,
                     hypo_param_selections=hypo_param_selections,

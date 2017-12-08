@@ -11,7 +11,7 @@ from pisa.core.param import ParamSet, ParamSelector
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.resources import find_resource
-from pisa.stages.osc.prob3.BargerPropagator import BargerPropagator
+from pisa.stages.osc.prob3cc.BargerPropagator import BargerPropagator
 from pisa.utils.comparisons import normQuant
 from pisa.utils.profiler import profile
 from pisa.utils.log import logging
@@ -188,8 +188,9 @@ class prob3cpu(Stage):
 
         # TODO: can we pass kwargs to swig-ed C++ code?
         if self._barger_earth_model is not None:
+            earth_model = find_resource(self._barger_earth_model)
             self.barger_propagator = BargerPropagator(
-                find_resource(self._barger_earth_model),
+                earth_model.encode('ascii'),
                 self._barger_detector_depth
             )
         else:

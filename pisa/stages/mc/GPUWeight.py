@@ -137,6 +137,7 @@ class GPUWeight(object):
             //A_shape = 1.*abs(uphor)*LogLogParam(true_energy, z1max_mu, z2max_mu, x1z, x2z, true, numu_cutoff);
             return 1.;
         }
+        return 1.;
     }
 
     __device__ fType modRatioNuBar(const int kNuBar, const int kFlav, fType true_e, fType true_cz, fType nu_nubar, fType nubar_sys) {

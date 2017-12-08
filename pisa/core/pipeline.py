@@ -27,8 +27,10 @@ from pisa.core.events import Data
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
 from pisa.core.stage import Stage
+from pisa.core.pi_stage import PiStage
 from pisa.core.transform import TransformSet
-from pisa.utils.config_parser import BetterConfigParser, parse_pipeline_config
+from pisa.core.container import ContainerSet
+from pisa.utils.config_parser import PISAConfigParser, parse_pipeline_config
 from pisa.utils.fileio import mkdir
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging, set_verbosity
@@ -61,22 +63,24 @@ class Pipeline(object):
 
     Parameters
     ----------
-    config : string, OrderedDict, or BetterConfigParser
+    config : string, OrderedDict, or PISAConfigParser
         If string, interpret as resource location; send to the
         `config_parser.parse_pipeline_config()` method to get a config
         OrderedDict. If `OrderedDict`, use directly as pipeline configuration.
 
     """
     def __init__(self, config):
-        if isinstance(config, (basestring, BetterConfigParser)):
+        if isinstance(config, (basestring, PISAConfigParser)):
             config = parse_pipeline_config(config=config)
         elif isinstance(config, OrderedDict):
             pass
         else:
             raise TypeError(
                 '`config` passed is of type %s but must be string,'
-                ' BetterConfigParser, or OrderedDict' % type(config).__name__
+                ' PISAConfigParser, or OrderedDict' % type(config).__name__
             )
+
+        self.pisa_version = None
 
         self._stages = []
         self._config = config
@@ -126,9 +130,11 @@ class Pipeline(object):
         for stage in self:
             if stage.stage_name == attr:
                 return stage
-        raise AttributeError('"%s" is not a stage in this pipeline or "%s" is'
-                             ' a property of Pipeline that failed to execute.'
-                             %(attr, attr))
+        #else:
+        #    return .__getattr__(self, attr)
+        #raise AttributeError('"%s" is not a stage in this pipeline or "%s" is'
+        #                     ' a property of Pipeline that failed to execute.'
+        #                     %(attr, attr))
 
     def _init_stages(self):
         """Stage factory: Instantiate stages specified by self.config.
@@ -141,6 +147,7 @@ class Pipeline(object):
 
         """
         stages = []
+        data = ContainerSet('events')
         for stage_num, ((stage_name, service_name), settings) \
                 in enumerate(self.config.items()):
             try:
@@ -159,16 +166,45 @@ class Pipeline(object):
 
                 # Instantiate service
                 service = cls(**settings)
-                if not isinstance(service, Stage):
+
+                cake_stage = isinstance(service, Stage)
+                pi_stage = isinstance(service, PiStage)
+
+                if not (cake_stage or pi_stage):
                     raise TypeError(
                         'Trying to create service "%s" for stage #%d (%s),'
                         ' but object %s instantiated from class %s is not a'
-                        ' %s type but instead is of type %s.'
-                        % (service_name, stage_num, stage_name, service, cls,
-                           Stage, type(service))
+                        ' PISA Stage type but instead is of type %s.'
+                        %(service_name, stage_num, stage_name, service, cls,
+                           type(service))
+                        )
+
+                # first stage can determine type of pipeline
+                if self.pisa_version is None:
+                    self.pisa_version = 'cake' if cake_stage else 'pi'
+                
+                elif self.pisa_version == 'cake' and pi_stage:
+                    raise TypeError(
+                        'Trying to use the PISA Pi Stage in '
+                        'a PISA cake pipeline.'
                     )
 
+                elif self.pisa_version == 'pi' and cake_stage:
+                    raise TypeError(
+                        'Trying to use the PISA cake Stage in '
+                        'a PISA Pi pipeline.'
+                    )
+
+
                 # Append service to pipeline
+
+                if self.pisa_version == 'pi':
+                    service.data = data
+                # add events object
+                
+                # run setup on service
+                service.setup()
+
                 stages.append(service)
 
             except:
@@ -253,12 +289,23 @@ class Pipeline(object):
                 raise ValueError('Integer `idx` must be >= 0')
             idx += 1
         assert len(self) > 0
-        for stage in self.stages[:idx]:
+        last = len(self.stages[:idx]) - 1
+        for i, stage in enumerate(self.stages[:idx]):
             logging.debug('>> Working on stage "%s" service "%s"',
                           stage.stage_name, stage.service_name)
             try:
                 logging.trace('>>> BEGIN: get_outputs')
-                outputs = stage.get_outputs(inputs=inputs)
+                if self.pisa_version == 'pi':
+                    stage.run()
+                    outputs = None
+                    # return pisa cake style ouput if we're the last stage
+                    if i==last:
+                        #try:
+                        outputs = stage.get_outputs()
+                        #except:
+                        #    pass
+                else:
+                    outputs = stage.run(inputs=inputs)
                 logging.trace('>>> END  : get_outputs')
             except:
                 logging.error('Error occurred computing outputs in stage %s /'
@@ -550,11 +597,11 @@ def main(return_outputs=False):
         mkdir(args.outdir)
     else:
         if args.pdf or args.png:
-            raise ValueError('No --dir provided, so cannot save images.')
+            raise ValueError('No --outdir provided, so cannot save images.')
 
     # Most basic parsing of the pipeline config (parsing only to this level
     # allows for simple strings to be specified as args for updating)
-    bcp = BetterConfigParser()
+    bcp = PISAConfigParser()
     bcp.read(args.pipeline)
 
     # Update the config with any args specified on command line
@@ -632,7 +679,7 @@ def main(return_outputs=False):
                 input_maps.append(input_map)
             inputs = MapSet(maps=input_maps, name='ones', hash=1)
 
-        outputs = stage.get_outputs(inputs=inputs)
+        outputs = stage.run(inputs=inputs)
 
     for stage in pipeline[indices]:
         if not args.outdir:
@@ -644,39 +691,51 @@ def main(return_outputs=False):
         if args.transforms and stage.use_transforms:
             stage.transforms.to_json(fbase + '__transforms.json.bz2')
 
-        formats = OrderedDict(png=args.png, pdf=args.pdf)
-        if isinstance(stage.outputs, Data):
-            outputs = stage.outputs.histogram_set(
-                binning=stage.output_binning,
-                nu_weights_col='pisa_weight',
-                mu_weights_col='pisa_weight',
-                mapset_name=stg_svc,
-                errors=True
-            )
-        elif isinstance(stage.outputs, (MapSet, TransformSet)):
-            outputs = stage.outputs
-
-        try:
-            for fmt, enabled in formats.items():
-                if not enabled:
+        # also only plot if args intermediate or last stage
+        if args.intermediate or stage == pipeline[indices][-1]:
+            formats = OrderedDict(png=args.png, pdf=args.pdf)
+            if isinstance(stage.outputs, Data):
+                # TODO(shivesh): plots made here will use the most recent
+                # "pisa_weight" column and so all stages will have identical plots
+                # (one workaround is to turn on "memcache_deepcopy")
+                # TODO(shivesh): intermediate stages have no output binning
+                if stage.output_binning is None:
+                    logging.debug('Skipping plot of intermediate stage '
+                                  '{0}'.format(stage))
                     continue
-                my_plotter = Plotter(
-                    stamp='Event rate',
-                    outdir=args.outdir,
-                    fmt=fmt, log=False,
-                    annotate=args.annotate
+                outputs = stage.outputs.histogram_set(
+                    binning=stage.output_binning,
+                    nu_weights_col='pisa_weight',
+                    mu_weights_col='pisa_weight',
+                    noise_weights_col='pisa_weight',
+                    mapset_name=stg_svc,
+                    errors=True
                 )
-                my_plotter.ratio = True
-                my_plotter.plot_2d_array(
-                    outputs,
-                    fname=stg_svc + '__output'
-                )
-        except ValueError as exc:
-            logging.error('Failed to save plot to format %s. See exception'
-                          ' message below', fmt)
-            traceback.format_exc()
-            logging.exception(exc)
-            logging.warning("I can't go on, I'll go on.")
+            elif isinstance(stage.outputs, (MapSet, TransformSet)):
+                outputs = stage.outputs
+
+            try:
+                for fmt, enabled in formats.items():
+                    if not enabled:
+                        continue
+                    my_plotter = Plotter(
+                        stamp='Event rate',
+                        outdir=args.outdir,
+                        fmt=fmt, log=False,
+                        annotate=args.annotate
+                    )
+                    my_plotter.ratio = True
+                    my_plotter.plot_2d_array(
+                        outputs,
+                        fname=stg_svc + '__output',
+                        cmap='RdBu',
+                    )
+            except ValueError as exc:
+                logging.error('Failed to save plot to format %s. See exception'
+                              ' message below', fmt)
+                traceback.format_exc()
+                logging.exception(exc)
+                logging.warning("I can't go on, I'll go on.")
 
     if return_outputs:
         return pipeline, outputs

@@ -9,6 +9,7 @@ Utilities for interpreting and returning formatted strings.
 
 from __future__ import absolute_import, division
 
+from collections import Iterable, Mapping, Sequence
 from itertools import imap
 import numbers
 import re
@@ -16,7 +17,7 @@ import re
 import numpy as np
 
 from pisa import FTYPE, ureg
-from pisa.utils.flavInt import flavintGroupsFromString, NuFlavIntGroup
+from pisa.utils.flavInt import NuFlavIntGroup
 from pisa.utils.log import logging, set_verbosity
 
 
@@ -27,7 +28,9 @@ __all__ = ['WHITESPACE_RE', 'NUMBER_RESTR', 'NUMBER_RE',
            'text2tex', 'tex_join', 'tex_rm', 'default_map_tex', 'is_tex',
            'int2hex', 'hash2hex',
            'strip_outer_dollars', 'strip_outer_parens',
-           'make_valid_python_name']
+           'make_valid_python_name',
+           'arg_str_seq_none',
+           ]
 
 
 WHITESPACE_RE = re.compile(r'\s')
@@ -64,6 +67,116 @@ TEX_SPECIAL_CHARS_MAPPING = {
     #'sqrt': r'\sqrt{\,}'
     #'sqrt': r'\surd'
 }
+
+def arg_str_seq_none(inputs, name):
+    """Simple input handler.
+
+    Parameters
+    ----------
+    inputs : None, string, or iterable of strings
+        Input value(s) provided by caller
+    name : string
+        Name of input, used for producing a meaningful error message
+
+    Returns
+    -------
+    inputs : None, or list of strings
+
+    Raises
+    ------
+    TypeError if unrecognized type
+
+    """
+    if isinstance(inputs, basestring):
+        inputs = [inputs]
+    elif isinstance(inputs, (Iterable, Sequence)):
+        inputs = list(inputs)
+    elif inputs is None:
+        pass
+    else:
+        raise TypeError('Input %s: Unhandled type %s' % (name, type(inputs)))
+    return inputs
+
+
+def split(string, sep, force_case=None, parse_func=None):
+    """Parse a string containing a separated list.
+
+    * Before splitting the list, the string has extraneous whitespace removed
+      from either end.
+    * The strings that result after the split can have their case forced or be
+      left alone.
+    * Whitespace surrounding (but not falling between non-whitespace) in each
+      resulting string is removed.
+    * After all of the above, the value can be parsed further by a
+      user-supplied `parse_func`.
+
+    Note that repeating a separator without intervening values yields
+    empty-string values.
+
+
+    Parameters
+    ----------
+    string : string
+        The string to be split
+
+    sep : string
+        Separator to look for
+
+    force_case : None, 'lower', or 'upper'
+        Whether to force the case of the resulting items: None does not change
+        the case, while 'lower' or 'upper' change the case.
+
+    parse_func : None or callable
+        If a callable is supplied, each item in the list, after the basic
+        parsing, is processed by `parse_func`.
+
+    Returns
+    -------
+    lst : list of objects
+        The types of the items in the list depend upon `parse_func` if it is
+        supplied; otherwise, all items are strings.
+
+    Examples
+    --------
+    >>> print split(' One, TWO, three ', sep=',', force_case='lower')
+    ['one', 'two', 'three']
+
+    >>> print split('One:TWO:three', sep=':')
+    ['One', 'TWO', 'three']
+
+    >>> print split('one  two  three', sep=' ')
+    ['one', '', 'two', '' , 'three']
+
+    >>> print split('1 2 3', sep=' ', parse_func=int)
+    [1, 2, 3]
+
+    >>> from ast import literal_eval
+    >>> print split('True; False; None; (1, 2, 3)', sep=',',
+    >>>             parse_func=literal_eval)
+    [True, False, None, (1, 2, 3)]
+
+    """
+    funcs = []
+    if force_case == 'lower':
+        funcs.append(str.lower)
+    elif force_case == 'upper':
+        funcs.append(str.upper)
+
+    if parse_func is not None:
+        if not callable(parse_func):
+            raise TypeError('`parse_func` must be callable; got %s instead.'
+                            % type(parse_func))
+        funcs.append(parse_func)
+
+    if not funcs:
+        aggfunc = lambda x: x
+    elif len(funcs) == 1:
+        aggfunc = funcs[0]
+    elif len(funcs) == 2:
+        aggfunc = lambda x: funcs[1](funcs[0](x))
+
+    return [aggfunc(x.strip()) for x in str.split(str(string).strip(), sep)]
+
 
 # TODO: allow for scientific notation input to hr*2list, etc.
 
@@ -171,7 +284,7 @@ def list2hrlist(lst):
     return ','.join(result)
 
 
-def hrgroup2list(hrgroup):
+def _hrgroup2list(hrgroup):
     def isint(num):
         """Test whether a number is *functionally* an integer"""
         try:
@@ -240,7 +353,7 @@ def hrlist2list(hrlst):
     if not groups:
         return lst
     for group in groups:
-        lst.extend(hrgroup2list(group))
+        lst.extend(_hrgroup2list(group))
     return lst
 
 
@@ -301,6 +414,22 @@ def hrlol2lol(hrlol):
 
 
 def hrbool2bool(s):
+    """Convert a string that a user might input to indicate a boolean value of
+    either True or False and convert to the appropriate Python bool.
+
+    * Note first that the case used in the string is ignored
+    * 't', 'true', '1', 'yes', and 'one' all map to True
+    * 'f', 'false', '0', 'no', and 'zero' all map to False
+
+    Parameters
+    ----------
+    s : string
+
+    Returns
+    -------
+    b : bool
+
+    """
     s = str(s).strip()
     if s.lower() in ['t', 'true', '1', 'yes', 'one']:
         return True

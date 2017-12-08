@@ -3,8 +3,25 @@
 BASEDIR=$(dirname "$0")
 PISA=$BASEDIR/..
 TMP=/tmp/pisa_tests
+export PISA_RESOURCES=${TMP}/pisa_resources
 mkdir -p $TMP
+mkdir -p $PISA_RESOURCES
 echo "PISA=$PISA"
+
+
+echo "=============================================================================="
+echo "Generating toy MC for use with test scripts"
+echo "=============================================================================="
+PISA_FTYPE=float32 make_toy_events.py --outdir ${PISA_RESOURCES}/events \
+	--num-events 1e5 \
+	--energy-range 1 80 \
+	--spectral-index 1 \
+	--coszen-range -1 1
+echo "------------------------------------------------------------------------------"
+echo "Finished creating toy MC events to be used with unit tests"
+echo "------------------------------------------------------------------------------"
+echo ""
+echo ""
 
 
 echo "=============================================================================="
@@ -107,7 +124,7 @@ echo "==========================================================================
 PISA_FTYPE=float64 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example.cfg \
 	--select "ih" \
-	-d $OUTDIR_IH \
+	--outdir $OUTDIR_IH \
 	--png -v
 
 OUTDIR_NH=$TMP/nh_pipeline
@@ -119,7 +136,7 @@ echo "==========================================================================
 PISA_FTYPE=float64 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example.cfg \
 	--select "nh" \
-	-d $OUTDIR_NH \
+	--outdir $OUTDIR_NH \
 	--png -v
 
 OUTDIR_NH_DIST_MAKER=$TMP/nh_dist_maker
@@ -131,7 +148,7 @@ echo "==========================================================================
 PISA_FTYPE=float64 $PISA/pisa/core/distribution_maker.py \
 	-p settings/pipeline/example.cfg \
 	--select "nh" \
-	-d $OUTDIR_NH_DIST_MAKER \
+	--outdir $OUTDIR_NH_DIST_MAKER \
 	--png -v
 
 OUTDIR=$TMP/compare_nh_to_ih
@@ -158,7 +175,7 @@ echo "==========================================================================
 PISA_FTYPE=float32 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example.cfg \
 	--select "nh" \
-	-d $OUTDIR_NH_FP32_CPU \
+	--outdir $OUTDIR_NH_FP32_CPU \
 	-v
 
 OUTDIR_NH_FP32_GPU=$TMP/nh_pipeline_fp32_gpu
@@ -170,7 +187,7 @@ echo "==========================================================================
 PISA_FTYPE=float32 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example_gpu.cfg \
 	--select "nh" \
-	-d $OUTDIR_NH_FP32_GPU \
+	--outdir $OUTDIR_NH_FP32_GPU \
 	-v
 
 OUTDIR_NH_FP64_GPU=$TMP/nh_pipeline_fp64_gpu
@@ -182,7 +199,7 @@ echo "==========================================================================
 PISA_FTYPE=float64 $PISA/pisa/core/pipeline.py \
 	-p settings/pipeline/example_gpu.cfg \
 	--select "nh" \
-	-d $OUTDIR_NH_FP64_GPU \
+	--outdir $OUTDIR_NH_FP64_GPU \
 	-v
 
 OUTDIR=$TMP/compare_fp32_cpu_to_fp64_cpu
@@ -248,13 +265,13 @@ echo "Running hypo_testing.py, basic NMO Asimov analysis (not necessarily accura
 echo "Storing results to"
 echo "  $OUTDIR"
 echo "=============================================================================="
-PISA_FTYPE=float64 $PISA/pisa/analysis/hypo_testing.py \
+PISA_FTYPE=float64 $PISA/pisa/analysis/hypo_testing.py analysis \
 	--h0-pipeline settings/pipeline/example.cfg \
 	--h0-param-selections="ih" \
 	--h1-param-selections="nh" \
 	--data-param-selections="nh" \
 	--data-is-mc \
-	--minimizer-settings settings/minimizer/bfgs_settings_fac1e11_eps1e-4_mi20.json \
+	--min-settings settings/minimizer/l-bfgs-b_ftol2e-5_gtol1e-5_eps1e-4_maxiter200.json \
 	--metric=chi2 \
 	--logdir $OUTDIR \
 	--pprint -v --allow-dirty

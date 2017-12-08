@@ -157,16 +157,16 @@ def do_setup():
 
     # Prob3 oscillation code (pure C++, no CUDA)
     prob3cpu_module = Extension(
-        name='pisa.stages.osc.prob3._BargerPropagator',
+        name='pisa.stages.osc.prob3cc._BargerPropagator',
         sources=[
-            'pisa/stages/osc/prob3/BargerPropagator.i',
-            'pisa/stages/osc/prob3/BargerPropagator.cc',
-            'pisa/stages/osc/prob3/EarthDensity.cc',
-            'pisa/stages/osc/prob3/mosc.c',
-            'pisa/stages/osc/prob3/mosc3.c'
+            'pisa/stages/osc/prob3cc/BargerPropagator.i',
+            'pisa/stages/osc/prob3cc/BargerPropagator.cc',
+            'pisa/stages/osc/prob3cc/EarthDensity.cc',
+            'pisa/stages/osc/prob3cc/mosc.c',
+            'pisa/stages/osc/prob3cc/mosc3.c'
         ],
         include_dirs=[
-            'pisa/stages/osc/prob3/'
+            'pisa/stages/osc/prob3cc/'
         ],
         extra_compile_args=['-Wall', '-O3', '-fPIC'],
         swig_opts=['-c++'],
@@ -257,6 +257,7 @@ def do_setup():
             'numpy>=1.11',
         ],
         install_requires=[
+            'configparser',
             'scipy>=0.17',
             'dill',
             'h5py',
@@ -306,6 +307,7 @@ def do_setup():
                 # Scripts in scripts dir
                 'add_flux_to_events_file.py = pisa.scripts.add_flux_to_events_file:main',
                 'compare.py = pisa.scripts.compare:main',
+                'convert_config_format.py = pisa.scripts.convert_config_format:main',
                 'fit_discrete_sys.py = pisa.scripts.fit_discrete_sys:main',
                 'make_asymmetry_plots.py = pisa.scripts.make_asymmetry_plots:main',
                 'make_events_file.py = pisa.scripts.make_events_file:main',

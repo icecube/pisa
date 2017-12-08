@@ -2,7 +2,13 @@
 
 ### Quickstart
 
-In Ubuntu you can peform the following steps to perform a clean, full (all optional dependencies included), editable install of PISA on your local PC; test the installation; and run a quick analysis.
+See [github.com/jllanfranchi/pisa/wiki/installation_specific_examples](https://github.com/jllanfranchi/pisa/wiki/installation_specific_examples) for users' recipes for installing PISA under various circumstances.
+Please add notes there and/or add your own recipe if your encounter a unique installation issue.
+Also, for instructions on running PISA on Open Science Grid (OSG) nodes, see [github.com/jllanfranchi/pisa/wiki/Running-PISA-on-GRID-nodes-with-access-to-CVMFS](https://github.com/jllanfranchi/pisa/wiki/Running-PISA-on-GRID-nodes-with-access-to-CVMFS)
+
+One example is listed here for a personal computer running Ubuntu (and using the bash shell).
+This includes a clean, full (all optional dependencies included), editable install of PISA on your local PC; tests of the installation; and running a quick analysis.
+Note that if you are not using the bash shell, you may have to adapt the syntax below (e.g., zsh requires that you escape the square brackets).
 
 ```bash
 # Install required and optional system packages
@@ -26,30 +32,30 @@ pip install -e my_virtual_env/src/pisa/[cuda,numba,develop] \
     -r my_virtual_env/src/pisa/requirements.txt
 
 # Define the precision you want GPU code to run in (single or double)
-export PISA_FTYPE=single
+export PISA_FTYPE=double
 
 # Run the physics tests (append --ignore-cuda-errors if no CUDA support)
-test_consistency_with_pisa2.py -v
+my_virtual_env/src/pisa/tests/test_consistency_with_pisa2.py -v
 
 # EXAMPLE: Run a Monte Carlo pipeline to produce, store, and plot its expected
 # distributions at the output of each stage
-pipeline.py --settings settings/pipeline/example.cfg \
+pipeline.py --pipeline settings/pipeline/example.cfg \
     --outdir /tmp/pipeline_output --intermediate --pdf -v
 
 # EXAMPLE: Run the Asimov NMO analysis; leave off "_gpu" to run CPU-only
 # version
-hypo_testing.py --logdir /tmp/test \
+hypo_testing.py --logdir /tmp/test analysis \
     --h0-pipeline settings/pipeline/example_gpu.cfg \
     --h0-param-selections="ih" \
     --h1-param-selections="nh" \
     --data-param-selections="nh" \
     --data-is-mc \
-    --minimizer-settings settings/minimizer/bfgs_settings_fac1e11_eps1e-4_mi20.json \
+    --min-method l-bfgs-b \
     --metric=chi2 \
     --pprint -v
 
 # Display the significance for distinguishing hypothesis h1 from h0
-hypo_testing_postprocess.py --asimov --logdir /tmp/test/*
+hypo_testing_postprocess.py --asimov --dir /tmp/test/*
 
 # Leave the virtual environment (run the `source...` command above to re-enter
 # the virtual environment at a later time)
@@ -64,8 +70,8 @@ Although the selection of maintained packages is smaller than if you use the `pi
 
 The other advantage to these distributions is that they easily install without system administrative privileges (and install in a user directory) and come with the non-Python binary libraries upon which many Python modules rely, making them ideal for setup on e.g. clusters.
 
-* **Note**: Make sure that your `PATH` variable points to e.g. `<anaconda_install_dr>/bin` and *not* your system Python directory. To check this, type: `echo $PATH`; to udpate it, add `export PATH=<anaconda_install_dir>/bin:$PIATH` to your .bashrc file.
-* Python 2.7.x can also be found from the Python website [https://www.python.org/downloads](https://www.python.org/downloads/) or pre-packaged for almost any OS.
+* **Note**: Make sure that your `PATH` variable points to e.g. `<anaconda_install_dr>/bin` and *not* your system Python directory. To check this, type: `echo $PATH`; to udpate it, add `export PATH=<anaconda_install_dir>/bin:$PATH` to your .bashrc file.
+* Python 2.7.x can also be found from the Python website [python.org/downloads](https://www.python.org/downloads/) or pre-packaged for almost any OS.
 
 
 ### Required Dependencies
@@ -93,6 +99,7 @@ Also note that Python, SWIG, HDF5, and pip support come pre-packaged or as `cond
     `sudo apt-get install libhdf5-10`
 
 Required Python modules that are installed automatically when you use the pip command detailed later:
+* [configparser](https://pypi.python.org/pypi/configparser)
 * [cython](http://cython.org)
 * [decorator](https://pypi.python.org/pypi/decorator)
 * [dill](http://trac.mystic.cacr.caltech.edu/project/pathos/wiki/dill.html)
@@ -334,7 +341,7 @@ test_consistency_with_pisa2.py -v
 To make sure that an analysis can be run, try running an Asimov analysis of neutrino mass ordering (NMO) with the following (this takes about one minute on a laptop; note, though, that the result is not terribly accurate due to the use of coarse binning and low Monte Carlo statistics):
 ```bash
 export PISA_FTYPE=fp64
-hypo_testing.py --logdir /tmp/nmo_test \
+hypo_testing.py --logdir /tmp/nmo_test analysis \
     --h0-pipeline settings/pipeline/example.cfg \
     --h0-param-selections="ih" \
     --h1-param-selections="nh" \

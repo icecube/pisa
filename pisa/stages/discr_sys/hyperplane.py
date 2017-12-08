@@ -47,7 +47,6 @@ class hyperplane(Stage):
             'spiciness', 
         )
 
-        input_names = split(input_names)
         output_names = input_names
 
         # Invoke the init method from the parent class, which does a lot of

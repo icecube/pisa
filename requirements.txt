@@ -2,6 +2,7 @@ pip>=1.8
 cython
 dill
 numpy>=1.11.0
+configparser
 scipy>=0.17.0
 simplejson>=3.2.0
 pint>=0.8
@@ -11,3 +12,4 @@ line_profiler
 matplotlib>=2.0
 uncertainties
 decorator
+numba>=0.35

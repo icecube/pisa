@@ -7,7 +7,7 @@ Statistical functions
 """
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 import numpy as np
 from scipy.special import gammaln
@@ -344,7 +344,7 @@ def conv_llh(actual_values, expected_values):
 
 
 def barlow_llh(actual_values, expected_values):
-    """Compute the barlow LLH taking into account finite stats
+    """Compute the Barlow LLH taking into account finite statistics.
 
     Parameters
     ----------

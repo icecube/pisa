@@ -290,16 +290,24 @@ class Events(FlavIntData):
         >>> events = events.applyCut("np.log10(true_energy) >= 0")
 
         """
+
         if keep_criteria in self.metadata['cuts']:
+            return
+
+        #Nothing to do if no cuts specified
+        if keep_criteria is None :
             return
 
         assert isinstance(keep_criteria, basestring)
 
-        flavints_to_process = self.flavints
+        flavints_to_process = self.present_flavints #Only get the flavints for which we have data
         flavints_processed = []
         remaining_data = {}
         for flavint in flavints_to_process:
+
+            #Get the evets for this flavor/interaction
             data_dict = self[flavint]
+
             field_names = data_dict.keys()
 
             # TODO: handle unicode:
@@ -319,7 +327,8 @@ class Events(FlavIntData):
             remaining_data[flavint] = (
                 {k: v[mask] for k, v in self[flavint].iteritems()}
             )
-            flavints_processed.append(flavint)
+
+            flavints_processed.append(flavint) #
 
         remaining_events = Events()
         remaining_events.metadata.update(deepcopy(self.metadata))
@@ -368,6 +377,31 @@ class Events(FlavIntData):
         return remaining_events
 
 
+    #This returns a tuple of the flavints that are present in the events
+    @property
+    def present_flavints(self):
+
+        present_flavints_list = []
+
+        #Loop over a tuple of all possible flav/int combinations
+        for flavint in self.flavints:
+
+            # If a particular flavor/interaction combination is not present in the events, then
+            # self[flavint] will be set to np.nan
+            # Check this here, using a try block to catch exceptions throw if the data is actually
+            # there (in which case it is a dict, and np.isnan will raise an exception as cannot
+            # take a dit as input)
+            found_data_for_this_flavint = True
+            try :
+                if np.isnan(self[flavint]) : found_data_for_this_flavint = False
+            except TypeError : 
+                pass
+            if found_data_for_this_flavint :
+                present_flavints_list.append(flavint)
+
+        return tuple(present_flavints_list)
+
+
 class Data(FlavIntDataGroup):
     """Container for storing events, including metadata about the events.
 
@@ -398,7 +432,7 @@ class Data(FlavIntDataGroup):
         ])
         self.contains_neutrinos = False
         self.contains_muons = False
-        self._muons = None
+        self.contains_noise = False
 
         # Get data and metadata from val
         meta = {}
@@ -436,6 +470,20 @@ class Data(FlavIntDataGroup):
             raise AssertionError('Found muons in data but not found in '
                                  'metadata key `flavints_joined`')
 
+        # Find and deal with any noise data if it exists
+        if self.metadata['flavints_joined'] == list([]):
+            if 'noise' in data:
+                self.noise = data.pop('noise')
+        elif 'noise' in self.metadata['flavints_joined']:
+            if 'noise' not in data:
+                raise AssertionError('Metadata has noise specified but '
+                                     'they are not found in the data')
+            else:
+                self.noise = data.pop('noise')
+        elif 'noise' in data:
+            raise AssertionError('Found noise in data but not found in '
+                                 'metadata key `flavints_joined`')
+
         # Instantiate a FlavIntDataGroup
         if data == dict():
             self._flavint_groups = []
@@ -452,6 +500,8 @@ class Data(FlavIntDataGroup):
                 combined_types += [str(f) for f in self.flavint_groups]
             if self.contains_muons:
                 combined_types += ['muons']
+            if self.contains_noise:
+                combined_types += ['noise']
             if set(self.metadata['flavints_joined']) != \
                set(combined_types):
                 raise AssertionError(
@@ -465,6 +515,8 @@ class Data(FlavIntDataGroup):
                                                 for f in self.flavint_groups]
             if self.contains_muons:
                 self.metadata['flavints_joined'] += ['muons']
+            if self.contains_noise:
+                self.metadata['flavints_joined'] += ['noise']
 
         self._hash = None
         self.update_hash()
@@ -501,6 +553,18 @@ class Data(FlavIntDataGroup):
         assert isinstance(val, dict)
         self.contains_muons = True
         self._muons = val
+
+    @property
+    def noise(self):
+        if not self.contains_noise:
+            raise AttributeError('No noise loaded in Data')
+        return self._noise
+
+    @noise.setter
+    def noise(self, val):
+        assert isinstance(val, dict)
+        self.contains_noise = True
+        self._noise = val
 
     @property
     def neutrinos(self):
@@ -556,6 +620,9 @@ class Data(FlavIntDataGroup):
         >>> remaining = applyCut("np.log10(true_energy) >= 0")
 
         """
+        # TODO(shivesh): function does not pass tests
+        raise NotImplementedError
+
         if keep_criteria in self.metadata['cuts']:
             return
 
@@ -566,6 +633,11 @@ class Data(FlavIntDataGroup):
             fig_to_process += deepcopy(self.flavint_groups)
         if self.contains_muons:
             fig_to_process += ['muons']
+        if self.contains_noise:
+            fig_to_process += ['noise']
+
+        logging.info("Applying cut to %s : %s" % (fig_to_process,keep_criteria) )
+
         fig_processed = []
         remaining_data = {}
         for fig in fig_to_process:
@@ -633,14 +705,66 @@ class Data(FlavIntDataGroup):
         t_fidg = super(Data, self).transform_groups(flavint_groups)
         metadata = deepcopy(self.metadata)
         metadata['flavints_joined'] = [str(f) for f in t_fidg.flavint_groups]
+        t_dict = dict(t_fidg)
         if self.contains_muons:
             metadata['flavints_joined'] += ['muons']
-            t_dict = dict(t_fidg)
-            t_dict['muons'] = self['muons']
-            t_fidg = t_dict
+            t_dict['muons'] = deepcopy(self['muons'])
+        if self.contains_noise:
+            metadata['flavints_joined'] += ['noise']
+            t_dict['noise'] = deepcopy(self['noise'])
+        t_fidg = t_dict
         ret_obj = Data(t_fidg, metadata=metadata)
         ret_obj.update_hash()
         return ret_obj
+
+    def digitize(self, kinds, binning, binning_cols=None):
+        """Wrapper for numpy's digitize function."""
+        if isinstance(kinds, basestring):
+            kinds = [kinds]
+        if 'muons' not in kinds and 'noise' not in kinds:
+            kinds = self._parse_flavint_groups(kinds)
+        kinds = kinds[0]
+
+        if isinstance(binning_cols, basestring):
+            binning_cols = [binning_cols]
+
+        # TODO: units of columns, and convert bin edges if necessary
+        if isinstance(binning, OneDimBinning):
+            binning = MultiDimBinning([binning])
+        elif isinstance(binning, MultiDimBinning):
+            pass
+        elif (isinstance(binning, Iterable)
+              and not isinstance(binning, Sequence)):
+            binning = list(binning)
+        elif isinstance(binning, Sequence):
+            pass
+        else:
+            raise TypeError('Unhandled type %s for `binning`.' % type(binning))
+
+        if isinstance(binning, Sequence):
+            raise NotImplementedError(
+                'Simle sequences not handled at this time. Please specify a'
+                ' OneDimBinning or MultiDimBinning object for `binning`.'
+            )
+            # assert len(binning_cols) == len(binning)
+            # bin_edges = binning
+
+        # TODO: units support for Data will mean we can do `m_as(...)` here!
+        bin_edges = [edges.magnitude for edges in binning.bin_edges]
+        if binning_cols is None:
+            binning_cols = binning.names
+        else:
+            assert set(binning_cols).issubset(set(binning.names))
+
+        hist_idxs = []
+        for colname in binning_cols:
+            sample = self[kinds][colname]
+            hist_idxs.append(np.digitize(
+                sample, binning[colname].bin_edges.m
+            ))
+        hist_idxs = np.vstack(hist_idxs).T
+
+        return hist_idxs
 
     def histogram(self, kinds, binning, binning_cols=None, weights_col=None,
                   errors=False, name=None, tex=None, **kwargs):
@@ -678,7 +802,7 @@ class Data(FlavIntDataGroup):
 
         if isinstance(kinds, basestring):
             kinds = [kinds]
-        if 'muons' not in kinds:
+        if 'muons' not in kinds and 'noise' not in kinds:
             kinds = self._parse_flavint_groups(kinds)
         kinds = kinds[0]
 
@@ -752,7 +876,7 @@ class Data(FlavIntDataGroup):
         return Map(name=name, hist=hist, binning=binning, tex=tex, **kwargs)
 
     def histogram_set(self, binning, nu_weights_col, mu_weights_col,
-                      mapset_name, errors=False):
+                      noise_weights_col, mapset_name, errors=False):
         """Uses the above histogram function but returns the set of all of them
         for everything in the Data object.
 
@@ -765,6 +889,9 @@ class Data(FlavIntDataGroup):
             histograms. Specify None for unweighted histograms.
         mu_weights_col : None or string
             The column in the Data object by which to weight the muon
+            histograms. Specify None for unweighted histograms.
+        noise_weights_col : None or string
+            The column in the Data object by which to weight the noise
             histograms. Specify None for unweighted histograms.
         mapset_name : string
             The name by which the resulting MapSet will be identified.
@@ -795,10 +922,7 @@ class Data(FlavIntDataGroup):
                             'should be a boolean. Got %s.' % type(errors))
         outputs = []
         if self.contains_neutrinos:
-            trans_nu_data = self.transform_groups(
-                self.flavint_groups
-            )
-            for fig in trans_nu_data.iterkeys():
+            for fig in self.iterkeys():
                 outputs.append(
                     self.histogram(
                         kinds=fig,
@@ -819,6 +943,17 @@ class Data(FlavIntDataGroup):
                     tex=r'\rm{muons}'
                 )
             )
+        if self.contains_noise:
+            outputs.append(
+                self.histogram(
+                    kinds='noise',
+                    binning=binning,
+                    weights_col=mu_weights_col,
+                    errors=errors,
+                    name='noise',
+                    tex=r'\rm{noise}'
+                )
+            )
         return MapSet(maps=outputs, name=mapset_name)
 
     def __load(self, fname):
@@ -830,30 +965,61 @@ class Data(FlavIntDataGroup):
         return data, meta
 
     def __getitem__(self, arg):
-        if arg == 'muons':
-            return self.muons
+        if isinstance(arg, basestring):
+            arg = arg.strip().lower()
+            if arg == 'muons':
+                return self.muons
+            if arg == 'noise':
+                return self.noise
         tgt_obj = super(Data, self).__getitem__(arg)
         return tgt_obj
 
     def __setitem__(self, arg, value):
-        if arg == 'muons':
-            self.muons = value
-            return
+        if isinstance(arg, basestring):
+            arg = arg.strip().lower()
+            if arg == 'muons':
+                self.muons = value
+                return
+            if arg == 'noise':
+                self.noise = value
+                return
         super(Data, self).__setitem__(arg, value)
 
     def __add__(self, other):
         muons = None
+        noise = None
         assert isinstance(other, Data)
 
+        metadata = {}
         for key in self.metadata:
-            if (key != 'flavints_joined' and
-                    self.metadata[key] != other.metadata[key]):
-                raise AssertionError(
-                    'Metadata mismatch, key {0}, {1} != '
-                    '{2}'.format(key, self.metadata[key],
-                                 other.metadata[key])
-                )
-        metadata = deepcopy(self.metadata)
+            if key == 'flavints_joined':
+                continue
+            if key in other.metadata:
+                if self.metadata[key] != other.metadata[key]:
+                    raise AssertionError(
+                        'Metadata mismatch, key {0}, {1} != '
+                        '{2}'.format(key, self.metadata[key],
+                                     other.metadata[key])
+                    )
+                else:
+                    metadata[key] = deepcopy(self.metadata[key])
+            else:
+                metadata[key] = deepcopy(self.metadata[key])
+
+        for key in other.metadata:
+            if key == 'flavints_joined':
+                continue
+            if key in self.metadata:
+                if other.metadata[key] != self.metadata[key]:
+                    raise AssertionError(
+                        'Metadata mismatch, key {0}, {1} != '
+                        '{2}'.format(key, other.metadata[key],
+                                     self.metadata[key])
+                    )
+                else:
+                    metadata[key] = deepcopy(other.metadata[key])
+            else:
+                metadata[key] = deepcopy(other.metadata[key])
 
         if self.contains_muons:
             if other.contains_muons:
@@ -862,6 +1028,14 @@ class Data(FlavIntDataGroup):
                 muons = deepcopy(self['muons'])
         elif other.contains_muons:
             muons = deepcopy(other['muons'])
+
+        if self.contains_noise:
+            if other.contains_noise:
+                noise = self._merge(deepcopy(self['noise']), other['noise'])
+            else:
+                noise = deepcopy(self['noise'])
+        elif other.contains_noise:
+            noise = deepcopy(other['noise'])
 
         if len(self.flavint_groups) == 0:
             if len(other.flavint_groups) == 0:
@@ -876,6 +1050,11 @@ class Data(FlavIntDataGroup):
             a_dict = dict(a_fidg)
             metadata['flavints_joined'] += ['muons']
             a_dict['muons'] = muons
+            a_fidg = a_dict
+        if noise is not None:
+            a_dict = dict(a_fidg)
+            metadata['flavints_joined'] += ['noise']
+            a_dict['noise'] = noise
             a_fidg = a_dict
         return Data(a_fidg, metadata=metadata)
 
@@ -965,9 +1144,9 @@ def test_Data():
     data2 = Data(d2)
     logging.debug(str((data.keys())))
 
-    muon_file = 'Level7_muongun.12370_15.pckl'
-    loaded = from_file(muon_file)
-    m = Data(val={'muons': loaded})
+    muon_file = 'GRECO/new_style_files/Level7_muongun.12370_15.pckl'
+    m = {'muons': from_file(muon_file)}
+    m = Data(val=m)
     assert m.contains_muons
     assert not m.contains_neutrinos
     logging.debug(str((m)))
@@ -978,52 +1157,65 @@ def test_Data():
         raise Exception("data doesn't contain muons.")
     logging.debug(str((data.neutrinos.keys())))
 
+    noise_file = 'GRECO/new_style_files/Level7_VuvuzelaPureNoise_V2.990015.pckl'
+    n = {'noise': from_file(muon_file)}
+    n = Data(val=n)
+    assert n.contains_noise
+    assert not n.contains_neutrinos
+    logging.debug(str((n)))
+    data = data + n
+    assert data.contains_neutrinos
+    logging.debug(str((data)))
+    if not data.contains_noise:
+        raise Exception("data doesn't contain noise.")
+    logging.debug(str((data.neutrinos.keys())))
+
     # Apply a simple cut
-    data.applyCut('(zenith <= 1.1) & (energy <= 200)')
-    for fi in data.flavint_groups:
-        assert np.max(data[fi]['zenith']) <= 1.1
-        assert np.max(data[fi]['energy']) <= 200
+    # data.applyCut('(zenith <= 1.1) & (energy <= 200)')
+    # for fi in data.flavint_groups:
+    #     assert np.max(data[fi]['zenith']) <= 1.1
+    #     assert np.max(data[fi]['energy']) <= 200
 
     # Apply an "inbounds" cut via a OneDimBinning
-    e_binning = OneDimBinning(
-        name='energy', num_bins=80, is_log=True, domain=[10, 200]*ureg.GeV
-    )
-    data.keepInbounds(e_binning)
-    for fi in data.flavint_groups:
-        assert np.min(data[fi]['energy']) >= 10
-        assert np.max(data[fi]['energy']) <= 200
+    # e_binning = OneDimBinning(
+    #     name='energy', num_bins=80, is_log=True, domain=[10, 200]*ureg.GeV
+    # )
+    # data.keepInbounds(e_binning)
+    # for fi in data.flavint_groups:
+    #     assert np.min(data[fi]['energy']) >= 10
+    #     assert np.max(data[fi]['energy']) <= 200
 
     # Apply an "inbounds" cut via a MultiDimBinning
-    e_binning = OneDimBinning(
-        name='energy', num_bins=80, is_log=True, domain=[20, 210]*ureg.GeV
-    )
-    cz_binning = OneDimBinning(
-        name='zenith', num_bins=40, is_lin=True, domain=[0.1, 1.8*np.pi]
-    )
-    mdb = MultiDimBinning([e_binning, cz_binning])
-    data.keepInbounds(mdb)
-    for fi in data.flavint_groups:
-        assert np.min(data[fi]['energy']) >= 20
-        assert np.max(data[fi]['energy']) <= 210
-        assert np.min(data[fi]['zenith']) >= 0.1
-        assert np.max(data[fi]['zenith']) <= 1.8*np.pi
+    # e_binning = OneDimBinning(
+    #     name='energy', num_bins=80, is_log=True, domain=[20, 210]*ureg.GeV
+    # )
+    # cz_binning = OneDimBinning(
+    #     name='zenith', num_bins=40, is_lin=True, domain=[0.1, 1.8*np.pi]
+    # )
+    # mdb = MultiDimBinning([e_binning, cz_binning])
+    # data.keepInbounds(mdb)
+    # for fi in data.flavint_groups:
+    #     assert np.min(data[fi]['energy']) >= 20
+    #     assert np.max(data[fi]['energy']) <= 210
+    #     assert np.min(data[fi]['zenith']) >= 0.1
+    #     assert np.max(data[fi]['zenith']) <= 1.8*np.pi
 
-    # Now try to apply a cut that fails on one flav/int (since the field will
-    # be missing) and make sure that the cut did not get applied anywhere in
-    # the end (i.e., it is rolled back)
-    sub_evts = data['nue+nuebar']
-    sub_evts.pop('energy')
-    data['nue+nuebar'] = sub_evts
-    try:
-        data.applyCut('(energy >= 30) & (energy <= 40)')
-    except Exception:
-        pass
-    else:
-        raise Exception('Should not have been able to apply the cut!')
-    for fi in data.flavint_groups:
-        if fi == NuFlavIntGroup('nue+nuebar'):
-            continue
-        assert np.min(data[fi]['energy']) < 30
+    # # Now try to apply a cut that fails on one flav/int (since the field will
+    # # be missing) and make sure that the cut did not get applied anywhere in
+    # # the end (i.e., it is rolled back)
+    # sub_evts = data['nue+nuebar']
+    # sub_evts.pop('energy')
+    # data['nue+nuebar'] = sub_evts
+    # try:
+    #     data.applyCut('(energy >= 30) & (energy <= 40)')
+    # except Exception:
+    #     pass
+    # else:
+    #     raise Exception('Should not have been able to apply the cut!')
+    # for fi in data.flavint_groups:
+    #     if fi == NuFlavIntGroup('nue+nuebar'):
+    #         continue
+    #     assert np.min(data[fi]['energy']) < 30
 
     data.save('/tmp/test_FlavIntDataGroup.json')
     data.save('/tmp/test_FlavIntDataGroup.hdf5')

@@ -43,8 +43,6 @@ from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
 from pisa.utils.random_numbers import get_random_state
 
-from smartFormat import simpleFormat
-
 
 __all__ = ['FNAME_TEMPLATE', 'FNAME_INFO_RE',
            'get_physical_bounds', 'sample_powerlaw', 'sample_truncated_dist',
@@ -677,6 +675,9 @@ def parse_args(desc=__doc__):
 
 
 def main():
+
+    from smartFormat import simpleFormat
+
     """Main"""
     args = parse_args()
     set_verbosity(args.v)
