@@ -2155,9 +2155,7 @@ class MapSet(object):
             else:
                 m = copy(maps_to_combine[0])
             resulting_maps.append(m)
-        # same return type that is case independent is better
-        #if len(resulting_maps) == 1:
-        #    return resulting_maps[0]
+
         return MapSet(maps=resulting_maps, name=self.name, tex=self.tex,
                       collate_by_name=self.collate_by_name)
 
