@@ -727,44 +727,42 @@ def main(return_outputs=False):
             elif isinstance(stage.outputs, (MapSet, TransformSet)):
                 outputs = stage.outputs
 
-        # TDO: why the nested try/except blocks? And missing except block
+        # what does that do?
+        #try:
+        #    for fmt, enabled in formats.items():
+        #        if not enabled:
+        #            continue
+        #        outputs = stage.outputs.histogram_set(
+        #            binning=stage.output_binning,
+        #            nu_weights_col='pisa_weight',
+        #            mu_weights_col='pisa_weight',
+        #            noise_weights_col='pisa_weight',
+        #            mapset_name=stg_svc,
+        #            errors=True
+        #        )
+
         try:
             for fmt, enabled in formats.items():
                 if not enabled:
                     continue
-                outputs = stage.outputs.histogram_set(
-                    binning=stage.output_binning,
-                    nu_weights_col='pisa_weight',
-                    mu_weights_col='pisa_weight',
-                    noise_weights_col='pisa_weight',
-                    mapset_name=stg_svc,
-                    errors=True
+                my_plotter = Plotter(
+                    stamp='Event rate',
+                    outdir=args.outdir,
+                    fmt=fmt, log=False,
+                    annotate=args.annotate
                 )
-            elif isinstance(stage.outputs, (MapSet, TransformSet)):
-                outputs = stage.outputs
-
-            try:
-                for fmt, enabled in formats.items():
-                    if not enabled:
-                        continue
-                    my_plotter = Plotter(
-                        stamp='Event rate',
-                        outdir=args.outdir,
-                        fmt=fmt, log=False,
-                        annotate=args.annotate
-                    )
-                    my_plotter.ratio = True
-                    my_plotter.plot_2d_array(
-                        outputs,
-                        fname=stg_svc + '__output',
-                        cmap='RdBu',
-                    )
-            except ValueError as exc:
-                logging.error('Failed to save plot to format %s. See exception'
-                              ' message below', fmt)
-                traceback.format_exc()
-                logging.exception(exc)
-                logging.warning("I can't go on, I'll go on.")
+                my_plotter.ratio = True
+                my_plotter.plot_2d_array(
+                    outputs,
+                    fname=stg_svc + '__output',
+                    cmap='RdBu',
+                )
+        except ValueError as exc:
+            logging.error('Failed to save plot to format %s. See exception'
+                          ' message below', fmt)
+            traceback.format_exc()
+            logging.exception(exc)
+            logging.warning("I can't go on, I'll go on.")
 
     if return_outputs:
         return pipeline, outputs
