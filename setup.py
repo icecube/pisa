@@ -272,7 +272,7 @@ def do_setup():
         author_email='jll1062+pisa@phys.psu.edu',
         url='http://github.com/icecubeopensource/pisa',
         cmdclass=cmdclasses,
-        python_requires='==2.7',
+        python_requires='>=2.7, <3.0',
         setup_requires=[
             'pip>=1.8',
             'setuptools>18.5', # versioneer requires >18.5
