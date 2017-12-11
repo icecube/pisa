@@ -84,7 +84,7 @@ class nutau(Stage):
                     scale *= self.params.nu_nc_norm.value.m_as('dimensionless')
                 #if 'nutau' in name:
                 #    scale *= self.params.nutau_norm.value.m_as('dimensionless')
-                #if 'nutau_cc' in name:
+                #if name in ['nutau_cc','nutaubar_cc']:
                 #    scale *= self.params.nutau_cc_norm.value.m_as('dimensionless')
                 if scale != 1:
                     xform[i] *= scale
