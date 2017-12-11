@@ -45,7 +45,7 @@ class data(Stage):
             'bdt_cut'
         )
 
-        output_names = ('evts')
+        output_names = ('total')
 
         super(self.__class__, self).__init__(
             use_transforms=False,
