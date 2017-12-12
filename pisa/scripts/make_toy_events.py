@@ -690,9 +690,6 @@ def parse_args(desc=__doc__):
 
 
 def main():
-
-    from smartFormat import simpleFormat
-
     """Main"""
     args = parse_args()
     set_verbosity(args.v)
