@@ -432,7 +432,8 @@ class OneDimBinning(object):
 
     def __repr__(self):
         previous_precision = np.get_printoptions()['precision']
-        np.set_printoptions(precision=18)
+        #np.set_printoptions(precision=18)
+        np.set_printoptions(precision=9)
         try:
             argstrs = [('%s=%r' %item) for item in
                        self.serializable_state.items()]
@@ -2719,7 +2720,7 @@ def test_OneDimBinning():
     import shutil
     import tempfile
     # needed so that eval(repr(b)) works
-    from numpy import array # pylint: disable=unused-variable
+    from numpy import array , float32, float64 # pylint: disable=unused-variable
     import dill
 
     b1 = OneDimBinning(name='true_energy', num_bins=40, is_log=True,
@@ -2866,7 +2867,7 @@ def test_MultiDimBinning():
     import tempfile
     import time
     # needed so that eval(repr(mdb)) works
-    from numpy import array # pylint: disable=unused-variable
+    from numpy import array, float32, float64 # pylint: disable=unused-variable
     import dill
 
     b1 = OneDimBinning(name='energy', num_bins=40, is_log=True,
