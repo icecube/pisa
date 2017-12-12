@@ -432,8 +432,7 @@ class OneDimBinning(object):
 
     def __repr__(self):
         previous_precision = np.get_printoptions()['precision']
-        #np.set_printoptions(precision=18)
-        np.set_printoptions(precision=9)
+        np.set_printoptions(precision=18)
         try:
             argstrs = [('%s=%r' %item) for item in
                        self.serializable_state.items()]
