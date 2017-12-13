@@ -6,7 +6,7 @@ variables (including constants) are available, what their purpose is, and by whi
 ## Global constants overview
 
 | Constant | Description | Default | Overwritten by environment variable(s) (this order)
-| --- | --- |
+| --- | --- | --- | --- |
 | `PYCUDA_AVAIL`     | Availability of pycuda                                                           | `False` (unless installed) |                                   |
 | `NUMBA_AVAIL`      | Availability of numba                                                            | `False` (unless installed) |                                   |
 | `NUMBA_CUDA_AVAIL` | Availability of cuda through numba (`False` if no GPUs are detected in any case) | `False` (unless installed) |                                   |
