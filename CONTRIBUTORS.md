@@ -11,4 +11,10 @@ Individual contributors, whether or not from The IceCube Collaboration, are list
 
 | Contributor                     | Email                                   | Contribution (optional; see git history for more detail)
 | ------------------------------- | --------------------------------------- | --------------------------------------------------------
+| Thimothy Arlen                  | timothyarlen@gmail.com                  | PISA foundations, project management 
+| Sebastian Böser                 | sboeser@uni-mainz.de                    | PISA foundations, project management 
+| Melanie Day                     |                                         |
 | Justin L. Lanfranchi            | jll1062+pisa@phys.psu.edu               | PISA Cake (3.0) lead dev; architecture, core objects, vbwkde reco stage
+| Lukas Schulte                   | schulte_lukas@web.de                    |
+| Steven Wren                     |                                         |
+
