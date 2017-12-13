@@ -5,7 +5,7 @@ import numpy as np
 from pisa.utils.resources import find_resource
 
 
-__author__ = 'P. Eller, S. Wren'
+__author__ = 'P. Eller, S. Wren, J.P. Yanez'
 
 __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 
