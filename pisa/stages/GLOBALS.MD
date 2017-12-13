@@ -14,6 +14,6 @@ variables (including constants) are available, what their purpose is, and by whi
 | `FTYPE` | Global floating-point data type |
 | `HASH_SIGFIGS` | Number of significant digits used for hashing numbers, depends on `FTYPE` |
 | `EPSILON` | Best numerical precision, derived from `HASH_SIGFIGS` |
-| `C_FTYPE` | Corresponding numerical C type to `FTYPE`  |
+| `C_FTYPE` | Numerical C type corresponding to `FTYPE`  |
 | `C_PRECISION_DEF` | C precision of floating point calculations, derived from `FTYPE` |
 | `CACHE_DIR` | Root directory for storing PISA cache files |
