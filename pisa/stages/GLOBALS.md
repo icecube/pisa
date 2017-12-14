@@ -1,9 +1,8 @@
-# Global variables
+# Global constants
 
-Global variables are defined upon initialization of the `pisa` package (`pisa/__init__.py`) and are available to all of its modules. Here we keep track of which global
-variables (including constants) are available, what their purpose is, and by which stage(s) they are used.
+Global variables and constants are defined upon initialization of the `pisa` package (`pisa/__init__.py`) and are available to all of its modules. Here we keep track of which global constants are available, what their purpose is, and by which stage(s) they are used.
 
-## Global constants overview
+## Description
 
 | Constant           | Description                                                                      | Default                    | Overwritten by environment variable(s) ( in this order) |
 | ---                | ---                                                                              | ---                        | ---                               |
@@ -18,7 +17,7 @@ variables (including constants) are available, what their purpose is, and by whi
 | `C_PRECISION_DEF`  | C precision of floating point calculations, derived from `FTYPE`                 | `'DOUBLE_PRECISION'`       |                                   |
 | `CACHE_DIR`        | Root directory for storing PISA cache files                                      | `'~/.cache/pisa'`          | `PISA_CACHE_DIR`, `XDG_CACHE_HOME`|
 
-## Global constants usage
+## Usage
 The table below depicts which services make use of a select set of global constants. Note that the table entries are derived from both the module files themselves (where the services are defined) but also from any `pisa.utils` objects they make use of. Constants which are implicitly used by all services via `pisa.core` objects (e.g. `HASH_SIGFIGS`, `CACHE_DIR`) are not shown. Also note that were a service implements `FTYPE` and relies on C extension code, the simultaneous implementation of `C_FTYPE` and `C_PRECISION_DEF` is implied.
 
 **Legend**
