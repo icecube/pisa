@@ -5,8 +5,8 @@ variables (including constants) are available, what their purpose is, and by whi
 
 ## Global constants overview
 
-| Constant | Description | Default | Overwritten by environment variable(s) (this order)
-| --- | --- | --- | --- |
+| Constant           | Description                                                                      | Default                    | Overwritten by environment variable(s) ( in this order) |
+| ---                | ---                                                                              | ---                        | ---                               |
 | `PYCUDA_AVAIL`     | Availability of pycuda                                                           | `False` (unless installed) |                                   |
 | `NUMBA_AVAIL`      | Availability of numba                                                            | `False` (unless installed) |                                   |
 | `NUMBA_CUDA_AVAIL` | Availability of cuda through numba (`False` if no GPUs are detected in any case) | `False` (unless installed) |                                   |
@@ -20,15 +20,14 @@ variables (including constants) are available, what their purpose is, and by whi
 
 ## Global constants usage
 
-| Constant |  |
-| --- | --- |
-| `PYCUDA_AVAIL` |  |
-| `NUMBA_AVAIL` |  |
-| `NUMBA_CUDA_AVAIL` | |
-| `OMP_NUM_THREADS` |  |
-| `FTYPE` | Global  |
-| `HASH_SIGFIGS` |  |
-| `EPSILON` |  |
-| `C_FTYPE` | |
-| `C_PRECISION_DEF` |  |
-| `CACHE_DIR` | |
+:heavy_check_mark:: implements
+:black_square_button:: does not implement but does not fail
+:heavy_exclamation_mark:: fails
+
+| Constant | `PYCUDA_AVAIL`  | `NUMBA_AVAIL` | `NUMBA_CUDA_AVAIL` | `OMP_NUM_THREADS` | `FTYPE` |
+| ---      | ---             | ---           | ---                | ---               | ---     |
+| `aeff.hist`    | | | | | | | | | | |
+| `aeff.param`   | | | | | | | | | | |
+| `aeff.smooth`  | | | | | | | | | | |
+| `osc.prob3cpu` | :black_square_button:    | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `osc.prob3gpu` | :heavy_exclamation_mark: | :black_square_button: | :black_square_button: | :black_square_button: | :heavy_check_mark:    |
