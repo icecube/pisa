@@ -38,5 +38,16 @@ variables (including constants) are available, what their purpose is, and by whi
 | `flux.dummy` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
 | `flux.honda` | :black_square_button: | :heavy_check_mark: | :black_square_button: | :black_square_button: | :black_square_button: |
 | `flux.mceq` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `mc.cpu` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :heavy_check_mark: |
+| `mc.gpu` | :heavy_exclamation_mark: | :black_square_button: | :black_square_button: | :black_square_button: | :heavy_check_mark: |
+| `mc.weight` | :heavy_exclamation_mark: | :black_square_button: | :black_square_button: | :black_square_button: | :heavy_check_mark: |
 | `osc.prob3cpu` | :black_square_button:    | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
 | `osc.prob3gpu` | :heavy_exclamation_mark: | :black_square_button: | :black_square_button: | :black_square_button: | :heavy_check_mark:    |
+| `pid.hist`    | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `pid.param`    | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `pid.smooth`    | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `reco.hist`    | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `reco.hist`    | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `reco.param`    | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `reco.vbwkde`    | :black_square_button: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+
