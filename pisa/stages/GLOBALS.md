@@ -24,10 +24,19 @@ variables (including constants) are available, what their purpose is, and by whi
 :black_square_button:: does not implement but does not fail
 :heavy_exclamation_mark:: fails
 
-| Constant | `PYCUDA_AVAIL`  | `NUMBA_AVAIL` | `NUMBA_CUDA_AVAIL` | `OMP_NUM_THREADS` | `FTYPE` |
-| ---      | ---             | ---           | ---                | ---               | ---     |
-| `aeff.hist`    | | | | | | | | | | |
-| `aeff.param`   | | | | | | | | | | |
-| `aeff.smooth`  | | | | | | | | | | |
+| | `PYCUDA_AVAIL`  | `NUMBA_AVAIL` | `NUMBA_CUDA_AVAIL` | `OMP_NUM_THREADS` | `FTYPE` |
+| :---:      | :---:             | :---:           | :---:                | :---:               | :---:     |
+| `aeff.hist`    | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `aeff.param`   | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `aeff.smooth`  | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `combine.nutau` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `data.data` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `data.icc` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `data.sample` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `discr_sys.fit` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `discr_sys.polyfits` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `flux.dummy` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `flux.honda` | :black_square_button: | :heavy_check_mark: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `flux.mceq` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
 | `osc.prob3cpu` | :black_square_button:    | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
 | `osc.prob3gpu` | :heavy_exclamation_mark: | :black_square_button: | :black_square_button: | :black_square_button: | :heavy_check_mark:    |
