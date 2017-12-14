@@ -1,29 +1,31 @@
 # Global constants
 
-Global variables and constants are defined upon initialization of the `pisa` package (`pisa/__init__.py`) and are available to all of its modules. Here we keep track of which global constants are available, what their purpose is, and by which stage(s) they are used.
+Global variables and constants are defined upon initialization of the `pisa` package (`pisa/__init__.py`) and are available to all of its modules. They can be imported via `from pisa import <constant>`.
+
+Here we keep track of which global constants are available, what their purpose is, and by which stage(s) they are used.
 
 ## Description
 
-| Constant           | Description                                                                      | Default                    | Overwritten by environment variable(s) ( in this order) |
-| ---                | ---                                                                              | ---                        | ---                               |
-| `PYCUDA_AVAIL`     | Availability of pycuda                                                           | `False` (unless installed) |                                   |
-| `NUMBA_AVAIL`      | Availability of numba                                                            | `False` (unless installed) |                                   |
-| `NUMBA_CUDA_AVAIL` | Availability of cuda through numba (`False` if no GPUs are detected in any case) | `False` (unless installed) |                                   |
-| `OMP_NUM_THREADS`  | Number of threads allocated to OpenMP                                            | `1`                        | `OMP_NUM_THREADS`                 |
-| `FTYPE`            | Global floating-point data type                                                  | `np.float64`               | `PISA_FTYPE`                      |
-| `HASH_SIGFIGS`     | Number of significant digits used for hashing numbers, depends on `FTYPE`        | `12`                       |                                   |
-| `EPSILON`          | Best numerical precision, derived from `HASH_SIGFIGS`                            | `10**(-HASH_SIGFIGS)`      |                                   |
-| `C_FTYPE`          | Numerical C type corresponding to `FTYPE`                                        | `'double'`                 |                                   |
-| `C_PRECISION_DEF`  | C precision of floating point calculations, derived from `FTYPE`                 | `'DOUBLE_PRECISION'`       |                                   |
-| `CACHE_DIR`        | Root directory for storing PISA cache files                                      | `'~/.cache/pisa'`          | `PISA_CACHE_DIR`, `XDG_CACHE_HOME`|
+| Constant           | Description                                                                      | Default                                         | Overwritten by environment variables (priority indicated where necessary) |
+| ---                | ---                                                                              | ---                                             | ---                |
+| `PYCUDA_AVAIL`     | Availability of pycuda                                                           | `False` (unless installed)                      | |
+| `NUMBA_AVAIL`      | Availability of numba                                                            | `False` (unless installed)                      | |
+| `NUMBA_CUDA_AVAIL` | Availability of cuda through numba (`False` if no GPUs are detected in any case) | `False` (unless installed)                      | |
+| `OMP_NUM_THREADS`  | Number of threads allocated to OpenMP                                            | `1`                                             | `OMP_NUM_THREADS`                 |
+| `FTYPE`            | Global floating point data type                                                  | `np.float64`                                    | `PISA_FTYPE`                      |
+| `HASH_SIGFIGS`     | Number of significant digits used for hashing numbers, depends on `FTYPE`        | `12(5)` for `FTYPE=np.float64(32)`              | |
+| `EPSILON`          | Best numerical precision, derived from `HASH_SIGFIGS`                            | `10**(-HASH_SIGFIGS)`                           | |
+| `C_FTYPE`          | C floating point type corresponding to `FTYPE`                                   | `'double'('single')` for `FTYPE=np.float64(32)` | |
+| `C_PRECISION_DEF`  | C precision of floating point calculations, derived from `FTYPE`                 | `'DOUBLE_PRECISION'('SINGLE_PRECISION')` for `FTYPE=np.float64(32)`       |                                   |
+| `CACHE_DIR`        | Root directory for storing PISA cache files                                      | `'~/.cache/pisa'`                               | 1.`PISA_CACHE_DIR`, 2.`XDG_CACHE_HOME` -> `pisa`|
 
 ## Usage
-The table below depicts which services make use of a select set of global constants. Note that the table entries are derived from both the module files themselves (where the services are defined) but also from any `pisa.utils` objects they make use of. Constants which are implicitly used by all services via `pisa.core` objects (e.g. `HASH_SIGFIGS`, `CACHE_DIR`) are not shown. Also note that were a service implements `FTYPE` and relies on C extension code, the simultaneous implementation of `C_FTYPE` and `C_PRECISION_DEF` is implied.
+The table below depicts which services make use of a select set of global constants. Note that the table entries are derived from both the module files themselves (where the services are defined) but also from any `pisa.utils` objects they make use of. Constants which are implicitly used by all services via `pisa.core` objects (e.g. `HASH_SIGFIGS`, `CACHE_DIR`) are not shown. Also note that where a service implements `FTYPE` and relies on C extension code, the simultaneous implementation of `C_FTYPE` and `C_PRECISION_DEF` is implied.
 
 **Legend**
 - :heavy_check_mark:: implements
 - :black_square_button:: does not implement but does not fail (i.e., ignores)
-- :heavy_exclamation_mark:: fails (i.e., depends)
+- :heavy_exclamation_mark:: implements and fails if `False` (i.e., depends)
 
 | | `PYCUDA_AVAIL`  | `NUMBA_AVAIL` | `NUMBA_CUDA_AVAIL` | `OMP_NUM_THREADS` | `FTYPE` |
 | :---:      | :---:             | :---:           | :---:                | :---:               | :---:     |
