@@ -163,12 +163,12 @@ def gaussians(x, mu, sigma, weights=None, implementation=None, **kwargs):
 
         if FTYPE == np.float64:
             gaussians_cython.gaussians_d(
-                outbuf, x, mu, inv_sigma, inv_sigma_sq, n_gaussians,
+                outbuf, x, mu, inv_sigma, inv_sigma_sq, weights, n_gaussians,
                 threads=threads, **kwargs
             )
         elif FTYPE == np.float32:
             gaussians_cython.gaussians_s(
-                outbuf, x, mu, inv_sigma, inv_sigma_sq, n_gaussians,
+                outbuf, x, mu, inv_sigma, inv_sigma_sq, weights, n_gaussians,
                 threads=threads, **kwargs
             )
 
@@ -323,32 +323,50 @@ def test_gaussians():
     n_eval = 1e4
 
     x = np.linspace(-20, 20, n_eval)
-    mu_sigma_sets = [(np.linspace(-50, 50, n), np.linspace(0.5, 100, n))
-                     for n in n_gaus]
+    np.random.seed(0)
+    mu_sigma_weight_sets = [(np.linspace(-50, 50, n), np.linspace(0.5, 100, n),
+                             np.random.rand(n)) for n in n_gaus]
 
     timings = OrderedDict()
     for impl in GAUS_IMPLEMENTATIONS:
         timings[impl] = []
 
-    for mus, sigmas in mu_sigma_sets:
+    for mus, sigmas, weights in mu_sigma_weight_sets:
         if not isinstance(mus, Iterable):
             mus = [mus]
             sigmas = [sigmas]
-        ref = np.sum(
+            weights = [weights]
+        ref_unw = np.sum(
             [stats.norm.pdf(x, loc=m, scale=s) for m, s in zip(mus, sigmas)],
             axis=0
         )/len(mus)
+        ref_w = np.sum(
+            [stats.norm.pdf(x, loc=m, scale=s)*w for m, s, w in zip(mus, sigmas, weights)],
+            axis=0
+        )/np.sum(weights)
         for impl in GAUS_IMPLEMENTATIONS:
             t0 = time()
-            test = gaussians(x, mu=mus, sigma=sigmas, implementation=impl)
-            dt = time() - t0
-            timings[impl].append(np.round(dt*1000, decimals=3))
-            if not np.allclose(test, ref, atol=0, rtol=5*EPSILON):
-                logging.error('BAD RESULT, implementation: %s', impl)
+            test_unw = gaussians(x, mu=mus, sigma=sigmas, weights=None,
+                                 implementation=impl)
+            dt_unw = time() - t0
+            t0 = time()
+            test_w = gaussians(x, mu=mus, sigma=sigmas, weights=weights,
+                               implementation=impl)
+            dt_w = time() - t0
+            timings[impl].append((np.round(dt_unw*1000, decimals=3),
+                                  np.round(dt_w*1000, decimals=3)))
+            # rtol factors needed as otherwise running in FP32 cython impl.
+            # returns bad results
+            if not np.allclose(test_unw, ref_unw, atol=0, rtol=4*EPSILON):
+                logging.error('BAD RESULT (unweighted), implementation: %s', impl)
                 logging.error('max abs fract diff: %s',
-                              np.max(np.abs((test/ref - 1))))
+                              np.max(np.abs((test_unw/ref_unw - 1))))
+            if not np.allclose(test_w, ref_w, atol=0, rtol=7*EPSILON):
+                logging.error('BAD RESULT (weighted), implementation: %s', impl)
+                logging.error('max abs fract diff: %s',
+                              np.max(np.abs((test_w/ref_w - 1))))
 
-    tprofile.debug('gaussians() timings  (Note: OMP_NUM_THREADS=%d; evaluated'
+    tprofile.debug('gaussians() timings (unweighted) (Note: OMP_NUM_THREADS=%d; evaluated'
                    ' at %e points)', OMP_NUM_THREADS, n_eval)
     timings_str = '  '.join([format(t, '10d') for t in n_gaus])
     tprofile.debug(' '*30 + 'Number of gaussians'.center(59))
@@ -356,7 +374,8 @@ def test_gaussians():
     timings_str = '  '.join(['-'*10 for t in n_gaus])
     tprofile.debug('         %15s       %s', '-'*15, timings_str)
     for impl in GAUS_IMPLEMENTATIONS:
-        timings_str = '  '.join([format(t, '10.3f') for t in timings[impl]])
+        # only report timings for unweighted case
+        timings_str = '  '.join([format(t[0], '10.3f') for t in timings[impl]])
         tprofile.debug('Timings, %15s (ms): %s', impl, timings_str)
     logging.info('<< PASS : test_gaussians >>')
 
