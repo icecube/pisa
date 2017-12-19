@@ -15,7 +15,7 @@ from time import time
 import numpy as np
 from scipy import stats
 
-from pisa import (EPSILON, FTYPE, OMP_NUM_THREADS, NUMBA_AVAIL,
+from pisa import (FTYPE, OMP_NUM_THREADS, NUMBA_AVAIL,
                   NUMBA_CUDA_AVAIL, numba_jit)
 from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging, set_verbosity, tprofile
