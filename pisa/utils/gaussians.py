@@ -17,6 +17,7 @@ from scipy import stats
 
 from pisa import (EPSILON, FTYPE, OMP_NUM_THREADS, NUMBA_AVAIL,
                   NUMBA_CUDA_AVAIL, numba_jit)
+from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging, set_verbosity, tprofile
 from pisa.utils import gaussians_cython
 if FTYPE == np.float32:
@@ -355,16 +356,21 @@ def test_gaussians():
             dt_w = time() - t0
             timings[impl].append((np.round(dt_unw*1000, decimals=3),
                                   np.round(dt_w*1000, decimals=3)))
-            # rtol factors needed as otherwise running in FP32 cython impl.
-            # returns bad results
-            if not np.allclose(test_unw, ref_unw, atol=0, rtol=4*EPSILON):
-                logging.error('BAD RESULT (unweighted), implementation: %s', impl)
-                logging.error('max abs fract diff: %s',
-                              np.max(np.abs((test_unw/ref_unw - 1))))
-            if not np.allclose(test_w, ref_w, atol=0, rtol=7*EPSILON):
-                logging.error('BAD RESULT (weighted), implementation: %s', impl)
-                logging.error('max abs fract diff: %s',
-                              np.max(np.abs((test_w/ref_w - 1))))
+            err_msg = ''
+            if not recursiveEquality(test_unw, ref_unw):
+                err_msg += (
+                    '\n'+'BAD RESULT (unweighted), n_gaus=%d, implementation:'
+                    ' %s, max. abs. fract. diff.: %s'
+                    %(len(mus), impl, np.max(np.abs((test_unw/ref_unw - 1))))
+                )
+            if not recursiveEquality(test_w, ref_w):
+                err_msg += (
+                    '\n'+'BAD RESULT (weighted), n_gaus=%d, implementation: %s'
+                    ', max. abs. fract. diff.: %s'
+                    %(len(mus), impl, np.max(np.abs((test_w/ref_w - 1))))
+                )
+            if err_msg:
+                raise ValueError(err_msg)
 
     tprofile.debug('gaussians() timings (unweighted) (Note: OMP_NUM_THREADS=%d; evaluated'
                    ' at %e points)', OMP_NUM_THREADS, n_eval)
