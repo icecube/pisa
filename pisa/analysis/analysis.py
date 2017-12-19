@@ -16,9 +16,10 @@ import time
 import numpy as np
 import scipy.optimize as optimize
 
-from pisa import FTYPE, ureg
+from pisa import EPSILON, FTYPE, ureg
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
+from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging
 from pisa.utils.fileio import to_file
 from pisa.utils.stats import METRICS_TO_MAXIMIZE
@@ -523,30 +524,34 @@ class Analysis(object):
         else:
             bounds = [(0, 1)]*len(x0)
 
+        clipped_x0 = []
         for param, x0_val, bds in zip(hypo_maker.params.free, x0, bounds):
-            if x0_val < bds[0]:
+            if x0_val < bds[0] - EPSILON:
                 raise ValueError(
-                    'Param %s, initial value %e exceeds the lower bound.'
-                    % (param.name, param.value)
+                    'Param %s, initial scaled value %.17e exceeds lower bound'
+                    ' %.17e.' % (param.name, x0_val, bds[0])
                 )
-            if x0_val > bds[1]:
+            if x0_val > bds[1] + EPSILON:
                 raise ValueError(
-                    'Param %s, initial value %e exceeds the upper bound.'
-                    % (param.name, param.value)
+                    'Param %s, initial scaled value %.17e exceeds upper bound'
+                    ' %.17e.' % (param.name, x0_val, bds[1])
                 )
 
-            if np.isclose(x0_val, bds[0], atol=np.finfo(FTYPE).eps, rtol=0):
+            if recursiveEquality(x0_val, bds[0]):
                 logging.warn(
                     'Param %s, initial value value %e is at the lower bound;'
                     ' minimization may fail as a result.',
                     param.name, param.value
                 )
-            if np.isclose(x0_val, bds[1], atol=np.finfo(FTYPE).eps, rtol=0):
+            if recursiveEquality(x0_val, bds[1]):
                 logging.warn(
                     'Param %s, initial value value %e is at the upper bound;'
                     ' minimization may fail as a rsult.',
                     param.name, param.value
                 )
+            clipped_x0.append(np.clip(x0_val, a_min=bds[0], a_max=bds[1]))
+
+        x0 = tuple(clipped_x0)
 
         logging.debug('Running the %s minimizer...', minimizer_method)
 
