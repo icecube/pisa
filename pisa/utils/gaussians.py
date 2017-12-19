@@ -126,7 +126,7 @@ def gaussians(x, mu, sigma, weights=None, implementation=None, **kwargs):
         sigma = [sigma]
     if weights is None:
         use_weights = False
-        weights = [0]
+        weights = [-1]
     else:
         use_weights = True
         if not isinstance(weights, Iterable):
@@ -204,7 +204,7 @@ def gaussians(x, mu, sigma, weights=None, implementation=None, **kwargs):
 
 def _gaussians_multithreaded(outbuf, x, mu, inv_sigma, inv_sigma_sq, weights,
                              n_gaussians, threads=OMP_NUM_THREADS):
-    """Sum of multiple guassians, optimized to be run in multiple threads. This
+    """Sum of multiple Gaussians, optimized to be run in multiple threads. This
     dispatches the single-kernel threaded """
     n_points = len(x)
     chunklen = n_points // OMP_NUM_THREADS
@@ -228,8 +228,9 @@ def _gaussians_multithreaded(outbuf, x, mu, inv_sigma, inv_sigma_sq, weights,
 @numba_jit(nopython=True, nogil=True, fastmath=True)
 def _gaussians_singlethreaded(outbuf, x, mu, inv_sigma, inv_sigma_sq, weights,
                               n_gaussians, start, stop):
-    """Sum of multiple guassians, optimized to be run in a single thread"""
-    if weights[0] != 0:
+    """Sum of multiple Gaussians, optimized to be run in a single thread"""
+    if weights[0] != -1:
+        assert len(weights) == n_gaussians
         for i in range(start, stop):
             tot = 0.0
             for j in range(n_gaussians):
@@ -240,6 +241,7 @@ def _gaussians_singlethreaded(outbuf, x, mu, inv_sigma, inv_sigma_sq, weights,
                 )
             outbuf[i] = tot
     else:
+        assert len(weights) == 1
         for i in range(start, stop):
             tot = 0.0
             for j in range(n_gaussians):
@@ -258,7 +260,8 @@ if NUMBA_CUDA_AVAIL:
         n_points = len(x)
 
         use_weights = True
-        if weights[0] == 0:
+        if weights[0] == -1:
+            assert len(weights) == 1
             use_weights = False
 
         threads_per_block = 32
@@ -275,6 +278,7 @@ if NUMBA_CUDA_AVAIL:
         d_inv_sigma = cuda.to_device(inv_sigma)
         d_inv_sigma_sq = cuda.to_device(inv_sigma_sq)
         if use_weights:
+            assert len(weights) == n_gaussians
             d_weights = cuda.to_device(weights)
             func = _gaussians_weighted_cuda_kernel[blocks_per_grid,
                                                    threads_per_block]
@@ -309,7 +313,7 @@ if NUMBA_CUDA_AVAIL:
         for g_idx in range(n_gaussians):
             xlessmu = x[pt_idx] - mu[g_idx]
             tot += (exp((xlessmu*xlessmu) * inv_sigma_sq[g_idx])
-                    * inv_sigma[g_idx])
+                    * weights[g_idx] * inv_sigma[g_idx])
         outbuf[pt_idx] = tot
 
 

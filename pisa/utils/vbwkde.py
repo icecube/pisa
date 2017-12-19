@@ -238,7 +238,7 @@ def vbwkde(data, weights=None, n_dct=None, min=None, max=None, n_addl_iter=0,
         If None, defaults to min(data) - range(data)/2
 
     max : None or float
-        Maximum of range over which to compute density>
+        Maximum of range over which to compute density.
         If None: max(data) + range(data)/2
 
     n_addl_iter : int >= 0
@@ -333,7 +333,7 @@ def vbwkde(data, weights=None, n_dct=None, min=None, max=None, n_addl_iter=0,
 
     n_iter = 1 + n_addl_iter
     for n in xrange(n_iter):
-        # Note below diverges from the published Ambramson method, by forcing
+        # Note below diverges from the published Abramson method, by forcing
         # the bandwidth at the max of the density distribution to be exactly
         # the bandwidth found above with the improved Sheather-Jones BW
         # selection technique. Refs:
