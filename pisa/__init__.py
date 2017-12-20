@@ -9,7 +9,11 @@ from collections import namedtuple, OrderedDict
 import os
 import sys
 
-from numpy import array, inf
+from numpy import (array, inf, nan,
+                   float32, float64,
+                   int0, int8, int16, int32, int64,
+                   uint0, uint8, uint16, uint32, uint64,
+                   complex64, complex128, complex256)
 import numpy as np
 from pint import UnitRegistry
 
@@ -31,6 +35,76 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.'''
+
+
+# TODO: pisa.core names are _not_ included here, but possibly should be...?
+__all__ = [
+    # Versioneer needs this
+    '__version__',
+
+    # Utilities that must be accessed centrally for consistency
+    'ureg', 'Q_',
+
+    # Utilities that should be accessed centrally to avoid hassle
+    'numba_jit',
+
+    # Python standard library and Numpy names so that `eval(repr(x)) == x` for
+    # all types defined in PISA (i.e. passes round trip test)
+    'array', 'inf', 'nan', 'namedtuple', 'OrderedDict',
+    'float32', 'float64',
+    'int0', 'int8', 'int16', 'int32', 'int64',
+    'uint0', 'uint8', 'uint16', 'uint32', 'uint64',
+    'complex64', 'complex128', 'complex256',
+
+    # Constants
+    'PYCUDA_AVAIL', 'NUMBA_AVAIL', 'NUMBA_CUDA_AVAIL', 'OMP_NUM_THREADS',
+    'FTYPE', 'HASH_SIGFIGS', 'EPSILON', 'C_FTYPE', 'C_PRECISION_DEF',
+    'CACHE_DIR'
+]
+
+
+__version__ = get_versions()['version']
+"""PISA version is automatically constructed from versioneer/git info"""
+
+
+ureg = UnitRegistry() # pylint: disable=invalid-name
+"""Single Pint unit registry that should be used by all PISA code"""
+
+Q_ = ureg.Quantity # pylint: disable=invalid-name
+"""Shortcut for Quantity that uses central PISA Pint unit regeistry"""
+
+
+# Default value for CACHE_DIR
+CACHE_DIR = '~/.cache/pisa'
+"""Root directory for storing PISA cache files"""
+
+# PISA users can define cache directory directly via PISA_CACHE_DIR env var;
+# PISA_CACHE_DIR has priority over XDG_CACHE_HOME, so it is checked first
+if 'PISA_CACHE_DIR' in os.environ:
+    CACHE_DIR = os.environ['PISA_CACHE_DIR']
+
+# Free Standards Group (freedesktop.org) defines the standard override for
+# '~/.cache' to be set by XDG_CACHE_HOME env var; more info at
+# https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+elif 'XDG_CACHE_HOME' in os.environ:
+    CACHE_DIR = os.path.join(os.environ['XDG_CACHE_HOME'], 'pisa')
+
+CACHE_DIR = os.path.expanduser(os.path.expandvars(CACHE_DIR))
+
+
+# If `NUMBA_CACHE_DIR` env var is not set and `PISA_CACHE_DIR` is, then use
+# `PISA_CACHE_DIR/numba` for caching Numba's compiled objects
+if 'NUMBA_CACHE_DIR' not in os.environ:
+    os.environ['NUMBA_CACHE_DIR'] = os.path.join(CACHE_DIR, 'numba')
+
+
+# Default to single thread, then try to read from env
+OMP_NUM_THREADS = 1
+"""Number of threads OpenMP is allocated"""
+
+if os.environ.has_key('OMP_NUM_THREADS'):
+    OMP_NUM_THREADS = int(os.environ['OMP_NUM_THREADS'])
+    assert OMP_NUM_THREADS >= 1
 
 
 PYCUDA_AVAIL = False
@@ -74,35 +148,6 @@ finally:
         if NUMBA_CUDA_AVAIL:
             cuda.close()
         del cuda
-
-
-# TODO: pisa.core names are _not_ included here, but possibly should be...?
-__all__ = [
-    # Versioneer needs this
-    '__version__',
-
-    # Utilities that must be accessed centrally for consistency
-    'ureg', 'Q_',
-
-    # Utilities that should be accessed centrally to avoid hassle
-    'numba_jit',
-
-    # Python standard library and Numpy names so that `eval(repr(x)) == x` for
-    # all types defined in PISA
-    'array', 'inf', 'namedtuple', 'OrderedDict',
-
-    # Constants
-    'PYCUDA_AVAIL', 'NUMBA_AVAIL', 'NUMBA_CUDA_AVAIL', 'OMP_NUM_THREADS',
-    'FTYPE', 'HASH_SIGFIGS', 'EPSILON', 'C_FTYPE', 'C_PRECISION_DEF',
-    'CACHE_DIR'
-]
-
-
-__version__ = get_versions()['version']
-
-
-ureg = UnitRegistry() # pylint: disable=invalid-name
-Q_ = ureg.Quantity # pylint: disable=invalid-name
 
 
 # Default value for FTYPE
@@ -175,33 +220,6 @@ elif FTYPE == np.float64:
 else:
     raise ValueError('FTYPE must be one of `np.float32` or `np.float64`. Got'
                      ' %s instead.' %FTYPE)
-
-# Default to single thread, then try to read from env
-OMP_NUM_THREADS = 1
-"""Number of threads OpenMP is allocated"""
-
-if os.environ.has_key('OMP_NUM_THREADS'):
-    OMP_NUM_THREADS = int(os.environ['OMP_NUM_THREADS'])
-    assert OMP_NUM_THREADS >= 1
-
-
-# Default value for CACHE_DIR
-CACHE_DIR = '~/.cache/pisa'
-"""Root directory for storing PISA cache files"""
-
-# PISA users can define cache directory directly via PISA_CACHE_DIR env var;
-# PISA_CACHE_DIR has priority over XDG_CACHE_HOME, so it is checked first
-if 'PISA_CACHE_DIR' in os.environ:
-    CACHE_DIR = os.environ['PISA_CACHE_DIR']
-
-# Free Standards Group (freedesktop.org) defines the standard override for
-# '~/.cache' to be set by XDG_CACHE_HOME env var; more info at
-# https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
-elif 'XDG_CACHE_HOME' in os.environ:
-    CACHE_DIR = os.path.join(os.environ['XDG_CACHE_HOME'], 'pisa')
-
-CACHE_DIR = os.path.expandvars(os.path.expanduser(CACHE_DIR))
-
 
 # Clean up imported names
 del os, sys, np, UnitRegistry, get_versions
