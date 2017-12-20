@@ -22,7 +22,7 @@ from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
 
 
-__all__ = ['parse_args', 'main']
+__all__ = ['test_example_pipelines', 'parse_args', 'main']
 
 __author__ = 'S. Wren, J.L. Lanfranchi'
 
@@ -41,44 +41,25 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  limitations under the License.'''
 
 
-def parse_args():
-    """Parse command line arguments"""
-    parser = ArgumentParser(description=__doc__)
-    parser.add_argument(
-        '--ignore-gpu', action='store_true', default=False,
-        help='''Skip the pipelines which require a gpu to run. You will
-        need to flag this if your system does not have a gpu else it
-        will fail.'''
-    )
-    parser.add_argument(
-        '--ignore-root', action='store_true', default=False,
-        help='''Skip the pipelines which require ROOT to run. You will
-        need to flag this if your system does not have an installation
-        of ROOT that your python can find else it will fail.'''
-    )
-    parser.add_argument(
-        '--ignore-missing-data', action='store_true', default=False,
-        help='''Skip the pipeline which fail because you do not have the
-        necessary data files in the right locations for your local PISA
-        installation. This is NOT recommended and you should probably acquire
-        the missing datafiles somehow.'''
-    )
-    parser.add_argument(
-        '-v', action='count', default=None,
-        help='set verbosity level'
-    )
-    args = parser.parse_args()
-    return args
+def test_example_pipelines(ignore_gpu=False, ignore_root=False,
+                           ignore_missing_data=False):
+    """Run example pipelines.
 
+    Parameters
+    ----------
+    ignore_gpu : bool
+        Do not count errors initializing a GPU as failures
 
-def main():
-    """main"""
-    args = parse_args()
-    set_verbosity(args.v)
+    ignore_root : bool
+        Do not count errors importing ROOT as failures
 
+    ignore_missing_data : bool
+        Do not count errors due to missing data files as failures
+
+    """
     # Set up the lists of strings needed to search the error messages for
     # things to ignore e.g. cuda stuff and ROOT stuff
-    ROOT_err_strings = ['ROOT', 'Roo', 'root', 'roo']
+    root_err_strings = ['ROOT', 'Roo', 'root', 'roo']
     cuda_err_strings = ['cuda']
     missing_data_string = ('Could not find resource "(.*)" in'
                            ' filesystem OR in PISA package.')
@@ -102,14 +83,14 @@ def main():
 
         except ImportError as err:
             exc = sys.exc_info()
-            if any(errstr in err.message for errstr in ROOT_err_strings) and \
-              args.ignore_root:
+            if any(errstr in err.message for errstr in root_err_strings) and \
+              ignore_root:
                 skip_count += 1
                 allow_error = True
                 msg = ('    Skipping pipeline, %s, as it has ROOT dependencies'
                        ' (ROOT cannot be imported)'%settings_file)
             elif any(errstr in err.message for errstr in cuda_err_strings) and \
-              args.ignore_gpu:
+              ignore_gpu:
                 skip_count += 1
                 allow_error = True
                 msg = ('    Skipping pipeline, %s, as it has cuda dependencies'
@@ -120,7 +101,7 @@ def main():
         except IOError as err:
             exc = sys.exc_info()
             match = re.match(missing_data_string, err.message, re.M|re.I)
-            if match is not None and args.ignore_missing_data:
+            if match is not None and ignore_missing_data:
                 skip_count += 1
                 allow_error = True
                 msg = ('    Skipping pipeline, %s, as it has data that cannot'
@@ -162,6 +143,44 @@ def main():
         raise Exception(msg)
 
     logging.info('<< PASS : test_example_pipelines >>')
+
+
+def parse_args(description=__doc__):
+    """Parse command line arguments"""
+    parser = ArgumentParser(description=description)
+    parser.add_argument(
+        '--ignore-gpu', action='store_true', default=False,
+        help='''Skip the pipelines which require a gpu to run. You will
+        need to flag this if your system does not have a gpu else it
+        will fail.'''
+    )
+    parser.add_argument(
+        '--ignore-root', action='store_true', default=False,
+        help='''Skip the pipelines which require ROOT to run. You will
+        need to flag this if your system does not have an installation
+        of ROOT that your python can find else it will fail.'''
+    )
+    parser.add_argument(
+        '--ignore-missing-data', action='store_true', default=False,
+        help='''Skip the pipeline which fail because you do not have the
+        necessary data files in the right locations for your local PISA
+        installation. This is NOT recommended and you should probably acquire
+        the missing datafiles somehow.'''
+    )
+    parser.add_argument(
+        '-v', action='count', default=None,
+        help='set verbosity level'
+    )
+    args = parser.parse_args()
+    return args
+
+
+def main():
+    """main"""
+    args = parse_args()
+    kwargs = vars(args)
+    set_verbosity(kwargs.pop('v'))
+    test_example_pipelines(**kwargs)
 
 
 if __name__ == '__main__':
