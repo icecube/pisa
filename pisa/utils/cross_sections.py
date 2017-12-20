@@ -14,9 +14,9 @@ import os
 import numpy as np
 from scipy.interpolate import interp1d
 
+from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.fileio import expand, from_file, to_file
-from pisa.utils.flavInt import (ALL_NUFLAVINTS, BarSep, FlavIntData,
-                                NuFlavIntGroup)
+from pisa.utils.flavInt import ALL_NUFLAVINTS, FlavIntData, NuFlavIntGroup
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
 
@@ -67,8 +67,8 @@ class CrossSections(FlavIntData):
                  xsec='cross_sections/cross_sections.json'):
         super(CrossSections, self).__init__()
         self.energy = energy
-        self.__ver = ver
-        self.__interpolants = {}
+        self._ver = ver
+        self._interpolants = {}
         if xsec is None:
             pass
         elif isinstance(xsec, dict):
@@ -83,7 +83,7 @@ class CrossSections(FlavIntData):
             super(CrossSections, self).validate(xsec)
             self.validate_xsec(self.energy, xsec)
             self.update(xsec)
-            self.__define_interpolant()
+            self._define_interpolant()
 
     @staticmethod
     def load(fpath, ver=None, **kwargs):
@@ -97,8 +97,8 @@ class CrossSections(FlavIntData):
         return all_xsec[ver]['energy'], all_xsec[ver]['xsec']
 
     @staticmethod
-    def loadROOTFile(fpath, ver, tot_sfx='_tot', o_sfx='_o16', h_sfx='_h1',
-                     plt_sfx='_plot'):
+    def load_root_file(fpath, ver, tot_sfx='_tot', o_sfx='_o16', h_sfx='_h1',
+                       plt_sfx='_plot'):
         """Load cross sections from root file, where graphs are first-level in
         hierarchy. This is yet crude and not very flexible, but at least it's
         recorded here for posterity.
@@ -130,6 +130,7 @@ class CrossSections(FlavIntData):
         import ROOT
 
         def extractData(f, key):
+            """Extract x and y info from (already-opened) ROOT TFile."""
             try:
                 g = ROOT.gDirectory.Get(key)
                 x = np.array(g.GetX())
@@ -144,29 +145,38 @@ class CrossSections(FlavIntData):
             energy = None
             xsec = FlavIntData()
             for flavint in ALL_NUFLAVINTS:
-                with BarSep('_'):
-                    fi_str = 'nu_%s' % str(flavint.flav).lstrip('nu')
                 if ver == 'genie_2.6.4':
                     # Expected to contain xsect per atom; summing 2*Hydrogen
                     # and 1*Oxygen yields total cross section for water
                     # molecule.
-                    O16_e, O16_xs = extractData(rfile, fi_str + o_sfx.upper())
-                    H1_e, H1_xs = extractData(rfile, fi_str + h_sfx.upper())
-                    tot_xs = (H1_xs*2 + O16_xs*1)
-                    assert np.alltrue(H1_e == O16_e)
-                    ext_e = O16_e
+                    # Format as found in, e.g., "genie_2.6.4_simplified.root"
+                    key = str(flavint) + o_sfx
+                    o16_e, o16_xs = extractData(rfile, key)
+
+                    key = str(flavint) + h_sfx
+                    h1_e, h1_xs = extractData(rfile, key)
+
+                    tot_xs = h1_xs*2 + o16_xs*1
+                    assert np.alltrue(h1_e == o16_e)
+                    ext_e = o16_e
+
                 elif ver == 'genie_2.8.6':
                     # Expected to contain xsect-per-nucleon-per-energy, so
                     # multiplying by energy and by # of nucleons (18) yields
                     # cross sections per molecule.
-                    ext_e, fract_xs = extractData(rfile, fi_str + plt_sfx)
+                    # Format as found in, e.g., "genie_2.8.6_simplified.root"
+                    key = str(flavint) + plt_sfx
+                    ext_e, fract_xs = extractData(rfile, key)
                     tot_xs = fract_xs * ext_e * 18
+
                 else:
                     raise ValueError('Invalid or not implemented `ver`: "%s"'
                                      % ver)
                 if energy is None:
                     energy = ext_e
+
                 assert np.alltrue(ext_e == energy)
+
                 # Note that units in the ROOT files are [1e-38 cm^2] but PISA
                 # requires units of [m^2], so this conversion is made here.
                 xsec[flavint] = tot_xs * 1e-38 * 1e-4
@@ -178,7 +188,7 @@ class CrossSections(FlavIntData):
         return energy, xsec
 
     @classmethod
-    def newFromROOT(cls, fpath, ver, **kwargs):
+    def new_from_root(cls, fpath, ver, **kwargs):
         """Instantiate a new CrossSections object from ROOT file.
 
         Parameters
@@ -188,13 +198,13 @@ class CrossSections(FlavIntData):
         ver : string
             Specify the version name of the cross sections loaded
         **kwargs
-            Passed to method loadROOTFile()
+            Passed to method load_root_file()
 
         Returns
         -------
         Instantiated CrossSections object
         """
-        energy, xsec = CrossSections.loadROOTFile(fpath, ver=ver, **kwargs)
+        energy, xsec = CrossSections.load_root_file(fpath, ver=ver, **kwargs)
         return cls(energy=energy, xsec=xsec, ver=ver)
 
     @staticmethod
@@ -224,24 +234,24 @@ class CrossSections(FlavIntData):
 
     def set_version(self, ver):
         """Set the cross sections version to the string `ver`."""
-        self.__ver = ver
+        self._ver = ver
 
     def get_version(self):
         """Return the cross sections version string"""
-        return self.__ver
+        return self._ver
 
     def save(self, fpath, ver=None, **kwargs):
         """Save cross sections (and the energy specification) to a file at
         `fpath`."""
         if ver is None:
-            if self.__ver is None:
+            if self._ver is None:
                 raise ValueError(
                     'Either a ver must be specified in call to `save` or it '
                     'must have been set prior to the invocation of `save`.'
                 )
-            ver = self.__ver
+            ver = self._ver
         else:
-            assert ver == self.__ver
+            assert ver == self._ver
 
         try:
             fpath = find_resource(fpath)
@@ -253,7 +263,7 @@ class CrossSections(FlavIntData):
         if os.path.exists(fpath):
             all_xs = from_file(fpath)
         # Validate existing data by instantiating objects from each
-        for v, d in all_xs.iteritems():
+        for v, d in all_xs.items():
             CrossSections(ver=v, energy=d['energy'], xsec=d['xsec'])
         if ver in all_xs:
             logging.warning('Overwriting existing version "' + ver +
@@ -279,9 +289,9 @@ class CrossSections(FlavIntData):
         passed `energy` parameter.
         """
         flavintgroup = NuFlavIntGroup(flavintgroup)
-        if flavintgroup not in self.__interpolants:
-            self.__define_interpolant(flavintgroup=flavintgroup)
-        return self.__interpolants[flavintgroup](energy)
+        if flavintgroup not in self._interpolants:
+            self._define_interpolant(flavintgroup=flavintgroup)
+        return self._interpolants[flavintgroup](energy)
 
     def get_xs_ratio_value(self, flavintgroup0, flavintgroup1, energy,
                            gamma=0):
@@ -304,17 +314,17 @@ class CrossSections(FlavIntData):
         flavintgroup0 = NuFlavIntGroup(flavintgroup0)
         flavintgroup1 = NuFlavIntGroup(flavintgroup1)
 
-        self.__define_interpolant(flavintgroup=flavintgroup0)
-        self.__define_interpolant(flavintgroup=flavintgroup1)
+        self._define_interpolant(flavintgroup=flavintgroup0)
+        self._define_interpolant(flavintgroup=flavintgroup1)
 
-        xs_ratio_vals = self.__interpolants[flavintgroup0](energy) / \
-                self.__interpolants[flavintgroup1](energy)
+        xs_ratio_vals = self._interpolants[flavintgroup0](energy) / \
+                self._interpolants[flavintgroup1](energy)
         # Special case to avoid multiplying by array of ones
         if gamma == 0:
             return xs_ratio_vals
         return xs_ratio_vals * energy**(-gamma)
 
-    def __define_interpolant(self, flavintgroup=None):
+    def _define_interpolant(self, flavintgroup=None):
         """If `flavintgroup` is None, compute all (separate) flavint
         interpolants; otherwise, compute interpolant for specified
         `flavintgroup`. Do not re-compute if already present.
@@ -324,15 +334,16 @@ class CrossSections(FlavIntData):
         else:
             flavintgroups = [NuFlavIntGroup(flavintgroup)]
 
-        for flavintgroup in flavintgroups:
-            if flavintgroup in self.__interpolants:
+        for fig in flavintgroups:
+            if fig in self._interpolants:
                 continue
-            combined_xs = self.__combineXS(flavintgroup)
-            self.__interpolants[flavintgroup] = \
-                    interp1d(x=self.energy, y=combined_xs, kind='linear',
-                             copy=False, bounds_error=True, fill_value=0)
+            combined_xs = self._combine_xs(fig)
+            self._interpolants[fig] = interp1d(
+                x=self.energy, y=combined_xs, kind='linear', copy=False,
+                bounds_error=True, fill_value=0
+            )
 
-    def __combineXS(self, flavintgroup):
+    def _combine_xs(self, flavintgroup):
         """Combine all cross sections specified by the flavints in
         `flavintgroup`. All CC and NC interactions are separately grouped
         together and averaged, then the average of each interaction type
@@ -399,7 +410,7 @@ class CrossSections(FlavIntData):
 
         See also
         --------
-        See __combineXS for detals on how flavints are combined.
+        See _combine_xs for detals on how flavints are combined.
         """
         e_min = min(e_range)
         e_max = max(e_range)
@@ -417,10 +428,10 @@ class CrossSections(FlavIntData):
 
         # Create interpolant(s) (to get xs at  energy range's endpoints)
         for fg in flavintgroups:
-            self.__define_interpolant(flavintgroup=fg)
+            self._define_interpolant(flavintgroup=fg)
 
-        all_energy = self.__interpolants[flavintgroups[0]].x
-        xs_data = [self.__interpolants[fg].y for fg in flavintgroups]
+        all_energy = self._interpolants[flavintgroups[0]].x
+        xs_data = [self._interpolants[fg].y for fg in flavintgroups]
 
         for xd in xs_data:
             logging.trace('mean(xs_data) = %e' % np.mean(xd))
@@ -429,7 +440,7 @@ class CrossSections(FlavIntData):
         idx = (all_energy > e_min) & (all_energy < e_max)
 
         # Get xsec at endpoints
-        xs_endpoints = [self.__interpolants[fg]((e_min, e_max))
+        xs_endpoints = [self._interpolants[fg]((e_min, e_max))
                         for fg in flavintgroups]
 
         for ep in xs_endpoints:
@@ -498,7 +509,7 @@ class CrossSections(FlavIntData):
 
     #    See also
     #    --------
-    #    See __combineXS for detals on how flavints are combined.
+    #    See _combine_xs for detals on how flavints are combined.
     #    """
     #    return self.get_xs_ratio_integral(
     #        flavintgroup0=flavintgroup, flavintgroup1=None,
@@ -519,10 +530,10 @@ class CrossSections(FlavIntData):
         matplotlib.use('pdf')
         import matplotlib.pyplot as plt
 
-        if self.__ver is None:
+        if self._ver is None:
             leg_ver = ''
         else:
-            leg_ver = self.__ver + '\n'
+            leg_ver = self._ver + '\n'
         leg_fs = 11
         figsize = (9, 6)
         alpha = 1.0
@@ -584,6 +595,7 @@ class CrossSections(FlavIntData):
 
 
 def test_CrossSections(outdir=None):
+    """Unit tests for CrossSections class"""
     from shutil import rmtree
     from tempfile import mkdtemp
 
@@ -609,8 +621,8 @@ def test_CrossSections(outdir=None):
         # Make sure that the XS newly-imported from ROOT match those stored in
         # PISA
         if os.path.isfile(root_xs_file):
-            xs_from_root = CrossSections.newFromROOT(root_xs_file,
-                                                     ver='genie_2.6.4')
+            xs_from_root = CrossSections.new_from_root(root_xs_file,
+                                                       ver='genie_2.6.4')
             logging.info('Found and loaded ROOT source cross sections file %s',
                          root_xs_file)
             #assert xs_from_root.allclose(xs, rtol=1e-7)
@@ -623,12 +635,17 @@ def test_CrossSections(outdir=None):
             xs.get_xs_ratio_integral(kg0, None, e_range=[1, 80], gamma=1)
         )
         logging.info(
-            '(int E^{-gamma} * (sigma_numu_cc)/int(sigma_(numu_cc+numu_nc)) dE) / (int E^{-gamma} dE) = %e',
+            '(int E^{-gamma} * (sigma_numu_cc)/int(sigma_(numu_cc+numu_nc)) dE)'
+            ' / (int E^{-gamma} dE) = %e',
             xs.get_xs_ratio_integral(kg0, kg0+kg1, e_range=[1, 80], gamma=1,
                                      average=True)
         )
         # Check that XS ratio for numu_cc+numu_nc to the same is 1.0
-        assert xs.get_xs_ratio_integral(kg0+kg1, kg0+kg1, e_range=[1, 80], gamma=1, average=True) == 1.0
+        int_val = xs.get_xs_ratio_integral(kg0+kg1, kg0+kg1, e_range=[1, 80],
+                                           gamma=1, average=True)
+        if not recursiveEquality(int_val, 1):
+            raise ValueError('Integral of nc + cc should be 1.0; get %e'
+                             ' instead.' % int_val)
 
         # Check via plot that the
 

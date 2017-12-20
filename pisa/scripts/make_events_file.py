@@ -17,7 +17,7 @@ import os
 import numpy as np
 
 from pisa.core.events import Events
-from pisa.utils.dataProcParams import DataProcParams
+from pisa.utils.data_proc_params import DataProcParams
 from pisa.utils.format import list2hrlist
 from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.flavInt import (FlavIntData, NuFlav, NuFlavIntGroup,
@@ -352,8 +352,9 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
             # settings file
             logging.trace('Trying to get data from file %s', fname)
             try:
-                data = data_proc_params.getData(fname,
-                                                run_settings=run_settings)
+                data = data_proc_params.get_data(
+                    fname, run_settings=run_settings
+                )
             except (ValueError, KeyError, IOError):
                 logging.warn('Bad file encountered: %s', fname)
                 bad_files.append(fname)
@@ -384,7 +385,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
 
                 # Retrieve this-interaction-type- & this-barnobar-only events
                 # that also pass cuts. (note that cut names are strings)
-                intonly_cut_data = data_proc_params.applyCuts(
+                intonly_cut_data = data_proc_params.apply_cuts(
                     data,
                     cuts=cuts+[str(int_type), str(barnobar)],
                     return_fields=extract_fields
@@ -444,7 +445,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
         fmt_n = [len(f) for f in fmtfields]
         fmt = '  '.join([r'%'+str(n)+r's' for n in fmt_n])
         lines = '  '.join(['-'*n for n in fmt_n])
-        logging.info(fmt % fmtfields)
+        logging.info(fmt, fmtfields)
         logging.info(lines)
         for grp_n, flavint_group in enumerate(flavint_groupings):
             for int_type in set([fi.intType for fi in

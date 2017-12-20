@@ -3,16 +3,16 @@
 """Handle Monte Carlo simulation run settings"""
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 import pisa.utils.fileio as fileio
 import pisa.utils.flavInt as flavInt
 from pisa.utils import resources as resources
-import pisa.utils.crossSections as crossSections
+from pisa.utils.cross_sections import CrossSections
 
 # Following "import *" is intentionally done so that `eval` called in
-# translateSourceDict will execute with direct access to numpy namespace
-from numpy import *
+# translate_source_dict will execute with direct access to numpy namespace
+from numpy import * # pylint: disable=wildcard-import, unused-wildcard-import, redefined-builtin
 
 
 __all__ = ['MCSimRunSettings', 'DetMCSimRunsSettings']
@@ -124,6 +124,7 @@ class MCSimRunSettings(dict):
 
     """
     def __init__(self, run_settings, run=None, detector=None):
+        super(MCSimRunSettings, self).__init__()
         # TODO: clean up this constructor!
         #if isinstance(run_settings, basestring):
         #    rsd = jsons.from_json(resources.find_resource(run_settings))
@@ -137,7 +138,7 @@ class MCSimRunSettings(dict):
         #        rsd = rsd[detector]
         #    except:
         #        pass
-        rsd = self.translateSourceDict(rsd)
+        rsd = self.translate_source_dict(rsd)
         if not detector is None:
             detector = str(detector).strip()
         self.detector = detector
@@ -145,7 +146,7 @@ class MCSimRunSettings(dict):
         self.update(rsd)
 
     @staticmethod
-    def translateSourceDict(d):
+    def translate_source_dict(d):
         d['tot_gen'] = d['num_events_per_file'] * d['num_i3_files']
 
         # TODO: does the following logic actually work with both old and new
@@ -178,7 +179,7 @@ class MCSimRunSettings(dict):
 
         return d
 
-    def consistencyChecks(self, data, flav=None):
+    def consistency_checks(self, data, flav=None):
         # TODO: implement!
         pass
 
@@ -280,10 +281,10 @@ class MCSimRunSettings(dict):
         return self['xsec_version']
 
     def get_xsec(self, xsec=None):
-        """Instantiated crossSections.CrossSections object"""
+        """Instantiated CrossSections object"""
         if xsec is None:
-            return crossSections.CrossSections(ver=self['xsec_version'])
-        return crossSections.CrossSections(ver=self['xsec_version'], xsec=xsec)
+            return CrossSections(ver=self['xsec_version'])
+        return CrossSections(ver=self['xsec_version'], xsec=xsec)
 
 
 class DetMCSimRunsSettings(dict):
@@ -306,6 +307,7 @@ class DetMCSimRunsSettings(dict):
 
     """
     def __init__(self, run_settings, detector=None):
+        super(DetMCSimRunsSettings, self).__init__()
         if isinstance(run_settings, basestring):
             rsd = fileio.from_file(resources.find_resource(run_settings))
         elif isinstance(run_settings, dict):
@@ -340,12 +342,12 @@ class DetMCSimRunsSettings(dict):
         # a key, so it is a string upon import, and it's safest to keep it as
         # a string considering how non-standardized naming is in IceCube) and
         # convert actual run settings dict to MCSimRunSettings instances
-        runs_d = {str(k): MCSimRunSettings(v) for k, v in runs_d.iteritems()}
+        runs_d = {str(k): MCSimRunSettings(v) for k, v in runs_d.items()}
 
         # Save the runs_d to this object instance, which behaves like a dict
         self.update(runs_d)
 
-    def consistencyChecks(self, data, run, flav=None):
+    def consistency_checks(self, data, run, flav=None):
         pass
 
     def barnobarfract(self, run, barnobar=None, is_particle=None,
@@ -382,5 +384,5 @@ class DetMCSimRunsSettings(dict):
         return self[str(run)].get_xsec_version()
 
     def get_xsec(self, run, xsec=None):
-        """Instantiated crossSections.CrossSections object"""
+        """Instantiated CrossSections object"""
         return self[str(run)].get_xsec(xsec)

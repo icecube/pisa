@@ -17,10 +17,10 @@ See the directory listing below for a brief description of the utilities contain
 | `confInterval.py`             | Compute confidence intervals
 | `config_parser.py`            | Parsing of PISA-format config files
 | `coords.py`                   | Coordinate systems and transformations
-| `crossSections.py`            | CrossSections class for importing, working with, and storing neutrino cross sections
+| `cross_sections.py`           | CrossSections class for importing, working with, and storing neutrino cross sections from GENIE
 | `cross_sections.md`           | More help for CrossSections
 | `cuda_utils.h`                | Header file with utils for CUDA coding
-| `dataProcParams.py`           | DataProcParams class for importing, working with, and storing data processing parameters (e.g., PINGU's V5 processing).
+| `data_proc_params.py`         | DataProcParams class for importing, working with, and storing data processing parameters (e.g., PINGU's V5 processing).
 | `fileio.py`                   | Load from and store to files in PISA-standard ways
 | `flavInt.py`                  | Neutrino flavors and interaction types classes
 | `flavor_interaction_types.md` | More help on flavInt module

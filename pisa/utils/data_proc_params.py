@@ -6,7 +6,7 @@ parameters (e.g., PINGU's V5 processing).
 """
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 from collections import Mapping, OrderedDict, Sequence
 from itertools import izip
@@ -17,13 +17,13 @@ import h5py
 # Note that the form of the numpy import is intentional, so that cuts -- which
 # are exectuted with `eval` -- will have access to numpy's namespace without
 # explicit reference to numpy. It's a hack, but it works well.
-from numpy import *
-import numpy
-import numpy as np
+from numpy import * # pylint: disable=wildcard-import, unused-wildcard-import, redefined-builtin
+import numpy # pylint: disable=unused-import
+import numpy as np # pylint: disable=reimported
 
 from pisa.utils import jsons
 from pisa.utils.flavInt import NuFlav, IntType, FlavIntData
-from pisa.utils.log import logging, set_verbosity
+from pisa.utils.log import logging
 from pisa.utils import resources
 
 
@@ -233,6 +233,7 @@ class DataProcParams(dict):
 
     """
     def __init__(self, detector, proc_ver, data_proc_params=None):
+        super(DataProcParams, self).__init__()
         if data_proc_params is None:
             data_proc_params = 'events/data_proc_params.json'
         if isinstance(data_proc_params, basestring):
@@ -299,10 +300,10 @@ class DataProcParams(dict):
         })
 
         # Enforce rules on cuts:
-        self.validateCutSpec(self['cuts'])
+        self.validate_cut_spec(self['cuts'])
 
     @staticmethod
-    def validateCutSpec(cuts):
+    def validate_cut_spec(cuts):
         """Validate a cut specification dictionary"""
         for cutname, cutspec in cuts.iteritems():
             # Cut names are lower-case strings with no surrounding whitespace
@@ -321,7 +322,7 @@ class DataProcParams(dict):
             assert isinstance(cutspec['pass_if'], basestring)
 
     @staticmethod
-    def validatePIDSpec(pids):
+    def validate_pid_spec(pids):
         """Validate a PID specification dictionary"""
         for particle_name, pidspec in pids.iteritems():
             # Particle names are lower-case strings with no surrounding
@@ -344,7 +345,7 @@ class DataProcParams(dict):
     # _not_ prefixed by this is not replaced. This allows for righer
     # expresssions (but also dangerous things...).
     @staticmethod
-    def retrieveExpression(h5group, expression):
+    def retrieve_expression(h5group, expression):
         """Retrieve data from an HDF5 group `h5group` according to
         `expresssion`. This can apply expressions with simple mathematical
         operators and numpy functions to multiple fields within the HDF5 file
@@ -374,7 +375,7 @@ class DataProcParams(dict):
 
         Examples
         --------
-        >>> retrieveExpression('np.sqrt(MCneutrino/x**2 + MCneutrino/y**2)')
+        >>> retrieve_expression('np.sqrt(MCneutrino/x**2 + MCneutrino/y**2)')
 
         Indexing into the data arrays can also be performed, and numpy masks
         used as usual:
@@ -399,24 +400,24 @@ class DataProcParams(dict):
         for h5path in h5path_re.findall(expression):
             if numpy_re.match(h5path):
                 continue
-            intermediate_data[h5path] = DataProcParams.retrieveNodeData(
+            intermediate_data[h5path] = DataProcParams.retrieve_node_data(
                 h5group, h5path
             )
             eval_str = eval_str.replace(h5path,
                                         "intermediate_data['%s']"%h5path)
 
         try:
-            result = eval(eval_str)
+            result = eval(eval_str) # pylint: disable=eval-used
         except:
             logging.error('`expression` "%s" was translated into `eval_str`'
-                          ' "%s" and failed to evaluate.'
-                          %(expression, eval_str))
+                          ' "%s" and failed to evaluate.',
+                          expression, eval_str)
             raise
 
         return result
 
     @staticmethod
-    def retrieveNodeData(h5group, address):
+    def retrieve_node_data(h5group, address):
         """Retrieve data from an HDF5 group `group` at address `address`.
         Levels of hierarchy are separated by forward-slashes ('/').
 
@@ -428,19 +429,19 @@ class DataProcParams(dict):
         return subgroup
 
     @staticmethod
-    def populateGNS(h5group, field_map):
+    def populate_global_namespace(h5group, field_map):
         """Populate the Python global namespace with variables named as the
         keys in `field_map` and values loaded from the `h5group` at addresses
         specified by the corresponding values in `field_map`.
         """
         for var, h5path in field_map.items():
-            globals()[var] = DataProcParams.retrieveNodeData(h5group, h5path)
+            globals()[var] = DataProcParams.retrieve_node_data(h5group, h5path)
 
-    # TODO: make the following behave like `retrieveExpression` method which
+    # TODO: make the following behave like `retrieve_expression` method which
     # does not rely on populating globals (just a dict, the name of which gets
     # substituted in where approprite to the expression) to work.
     @staticmethod
-    def cutBoolIdx(h5group, cut_fields, keep_criteria):
+    def cut_bool_idx(h5group, cut_fields, keep_criteria):
         """Return numpy boolean indexing for data in `h5group` given a cut
         specified using `cut_fields` in the `h5group` and evaluation criteria
         `keep_criteria`
@@ -456,11 +457,11 @@ class DataProcParams(dict):
         bool_idx : numpy array (1=keep, 0=reject)
 
         """
-        DataProcParams.populateGNS(h5group, cut_fields)
-        bool_idx = eval(keep_criteria)
+        DataProcParams.populate_global_namespace(h5group, cut_fields)
+        bool_idx = eval(keep_criteria) # pylint: disable=eval-used
         return bool_idx
 
-    def getData(self, h5, run_settings=None, flav=None):
+    def get_data(self, h5, run_settings=None, flav=None):
         """Get data attached to an HDF5 node, returned as a dictionary.
 
         The returned dictionary's keys match those in the field_map and the
@@ -474,17 +475,17 @@ class DataProcParams(dict):
                 h5 = h5py.File(os.path.expandvars(os.path.expanduser(h5)),
                                mode='r')
             data = OrderedDict()
-            for name, path in self['field_map'].iteritems():
-                datum = self.retrieveExpression(h5, path)
+            for name, path in self['field_map'].items():
+                datum = self.retrieve_expression(h5, path)
                 path_parts = path.split('/')
                 if path_parts[0] == 'I3MCTree' and path_parts[-1] != 'Event':
-                    evts = self.retrieveNodeData(
+                    evts = self.retrieve_node_data(
                         h5, '/'.join(path_parts[:-1] + ['Event'])
                     )
-                    pdgs = self.retrieveNodeData(
+                    pdgs = self.retrieve_node_data(
                         h5, '/'.join(path_parts[:-1] + ['pdg_encoding'])
                     )
-                    energies = self.retrieveNodeData(
+                    energies = self.retrieve_node_data(
                         h5, '/'.join(path_parts[:-1] + ['energy'])
                     )
 
@@ -522,15 +523,15 @@ class DataProcParams(dict):
                 except: # TODO: specify exception type(s)!
                     pass
 
-        self.interpretData(data)
+        self.interpret_data(data)
         # TODO: enable consistency checks here & implement in run_settings
         #if run_settings is not None:
-        #    run_settings.consistencyChecks(data, flav=flav)
+        #    run_settings.consistency_checks(data, flav=flav)
 
         # TODO: implement flav filtering (or not? or more advanced filtering?)
         return data
 
-    def interpretData(self, data):
+    def interpret_data(self, data):
         """Perform mappings from non-standard to standard values (such as
         translating non-PDG neutrino flavor codes to PDG codes) and add
         fields expected to be useful (such as coszen, derived from zen fields).
@@ -539,7 +540,7 @@ class DataProcParams(dict):
         into this methd.
 
         """
-        for k, v in data.iteritems():
+        for k, v in data.items():
             if isinstance(v, Sequence):
                 data[k] = v[0]
 
@@ -561,12 +562,10 @@ class DataProcParams(dict):
                                                             indices=indices)
         elif isinstance(data, Mapping):
             if indices is None:
-                return {k:v for k, v in data.iteritems() if k in fields}
-            else:
-                return {k:v[indices]
-                        for k, v in data.iteritems() if k in fields}
+                return {k:v for k, v in data.items() if k in fields}
+            return {k:v[indices] for k, v in data.items() if k in fields}
 
-    def applyCuts(self, data, cuts, boolean_op='&', return_fields=None):
+    def apply_cuts(self, data, cuts, boolean_op='&', return_fields=None):
         """Perform `cuts` on `data` and return a dict containing
         `return_fields` from events that pass the cuts.
 
@@ -580,13 +579,13 @@ class DataProcParams(dict):
         if isinstance(data, FlavIntData):
             outdata = FlavIntData()
             for flavint in data.flavints:
-                outdata[flavint] = self.applyCuts(
+                outdata[flavint] = self.apply_cuts(
                     data[flavint], cuts=cuts, boolean_op=boolean_op,
                     return_fields=return_fields
                 )
             return outdata
 
-        if isinstance(cuts, basestring) or isinstance(cuts, dict):
+        if isinstance(cuts, (basestring, dict)):
             cuts = [cuts]
 
         # Default is to return all fields
@@ -601,7 +600,7 @@ class DataProcParams(dict):
         cut_fields = set()
         for cut in cuts:
             if isinstance(cut, dict):
-                self.validateCutSpec(cut)
+                self.validate_cut_spec(cut)
             elif self['cuts'].has_key(cut.lower()):
                 cut = self['cuts'][cut.lower()]
             else:
@@ -618,9 +617,9 @@ class DataProcParams(dict):
 
         # Evaluate cuts, returning a boolean array
         try:
-            bool_idx = eval(cut_string)
+            bool_idx = eval(cut_string) # pylint: disable=eval-used
         except:
-            logging.error('Failed to evaluate `cut_string` "%s"' %cut_string)
+            logging.error('Failed to evaluate `cut_string` "%s"', cut_string)
             raise
 
         # Return specified (or all) fields, indexed by boolean array
