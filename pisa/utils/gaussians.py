@@ -5,7 +5,7 @@ Multiple implementations of sum-of-gaussians for compatibility and speed
 """
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 from collections import Iterable, OrderedDict
 from math import exp, sqrt
@@ -281,13 +281,13 @@ if NUMBA_CUDA_AVAIL:
         if use_weights:
             assert len(weights) == n_gaussians
             d_weights = cuda.to_device(weights)
-            func = _gaussians_weighted_cuda_kernel[blocks_per_grid,
+            func = _gaussians_weighted_cuda_kernel[blocks_per_grid, # pylint: disable=unsubscriptable-object
                                                    threads_per_block]
             func(d_outbuf, d_x, d_mu, d_inv_sigma, d_inv_sigma_sq, d_weights,
                  n_gaussians)
         else:
             d_weights = None
-            func = _gaussians_cuda_kernel[blocks_per_grid, threads_per_block]
+            func = _gaussians_cuda_kernel[blocks_per_grid, threads_per_block] # pylint: disable=unsubscriptable-object
             func(d_outbuf, d_x, d_mu, d_inv_sigma, d_inv_sigma_sq, n_gaussians)
 
         # Copy contents of GPU result to host's outbuf
@@ -298,7 +298,7 @@ if NUMBA_CUDA_AVAIL:
     @cuda.jit(inline=True, fastmath=True)
     def _gaussians_cuda_kernel(outbuf, x, mu, inv_sigma, inv_sigma_sq,
                                n_gaussians):
-        pt_idx = cuda.grid(1)
+        pt_idx = cuda.grid(1) # pylint: disable=not-callable
         tot = 0.0
         for g_idx in range(n_gaussians):
             xlessmu = x[pt_idx] - mu[g_idx]
@@ -309,7 +309,7 @@ if NUMBA_CUDA_AVAIL:
     @cuda.jit(inline=True, fastmath=True)
     def _gaussians_weighted_cuda_kernel(outbuf, x, mu, inv_sigma, inv_sigma_sq,
                                         weights, n_gaussians):
-        pt_idx = cuda.grid(1)
+        pt_idx = cuda.grid(1) # pylint: disable=not-callable
         tot = 0.0
         for g_idx in range(n_gaussians):
             xlessmu = x[pt_idx] - mu[g_idx]
@@ -321,7 +321,7 @@ if NUMBA_CUDA_AVAIL:
 def test_gaussians():
     """Test `gaussians` function"""
     n_gaus = [1, 10, 100, 1000, 10000]
-    n_eval = 1e4
+    n_eval = int(1e4)
 
     x = np.linspace(-20, 20, n_eval)
     np.random.seed(0)
@@ -342,7 +342,8 @@ def test_gaussians():
             axis=0
         )/len(mus)
         ref_w = np.sum(
-            [stats.norm.pdf(x, loc=m, scale=s)*w for m, s, w in zip(mus, sigmas, weights)],
+            [stats.norm.pdf(x, loc=m, scale=s)*w
+             for m, s, w in zip(mus, sigmas, weights)],
             axis=0
         )/np.sum(weights)
         for impl in GAUS_IMPLEMENTATIONS:
@@ -356,24 +357,28 @@ def test_gaussians():
             dt_w = time() - t0
             timings[impl].append((np.round(dt_unw*1000, decimals=3),
                                   np.round(dt_w*1000, decimals=3)))
-            err_msg = ''
+            err_msgs = []
             if not recursiveEquality(test_unw, ref_unw):
-                err_msg += (
-                    '\n'+'BAD RESULT (unweighted), n_gaus=%d, implementation:'
-                    ' %s, max. abs. fract. diff.: %s'
+                err_msgs.append(
+                    'BAD RESULT (unweighted), n_gaus=%d, implementation='
+                    '"%s", max. abs. fract. diff.: %s'
                     %(len(mus), impl, np.max(np.abs((test_unw/ref_unw - 1))))
                 )
             if not recursiveEquality(test_w, ref_w):
-                err_msg += (
-                    '\n'+'BAD RESULT (weighted), n_gaus=%d, implementation: %s'
+                err_msgs.append(
+                    'BAD RESULT (weighted), n_gaus=%d, implementation="%s"'
                     ', max. abs. fract. diff.: %s'
                     %(len(mus), impl, np.max(np.abs((test_w/ref_w - 1))))
                 )
-            if err_msg:
-                raise ValueError(err_msg)
+            if err_msgs:
+                for err_msg in err_msgs:
+                    logging.error(err_msg)
+                raise ValueError('\n'.join(err_msgs))
 
-    tprofile.debug('gaussians() timings (unweighted) (Note: OMP_NUM_THREADS=%d; evaluated'
-                   ' at %e points)', OMP_NUM_THREADS, n_eval)
+    tprofile.debug(
+        'gaussians() timings (unweighted) (Note:OMP_NUM_THREADS=%d; evaluated'
+        ' at %.0e points)', OMP_NUM_THREADS, n_eval
+    )
     timings_str = '  '.join([format(t, '10d') for t in n_gaus])
     tprofile.debug(' '*30 + 'Number of gaussians'.center(59))
     tprofile.debug('         %15s       %s', 'impl.', timings_str)
