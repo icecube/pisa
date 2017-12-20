@@ -528,7 +528,7 @@ class Analysis(object):
         for param, x0_val, bds in zip(hypo_maker.params.free, x0, bounds):
             if x0_val < bds[0] - EPSILON:
                 raise ValueError(
-                    'Param %s, initial scaled value %.17e exceeds lower bound'
+                    'Param %s, initial scaled value %.17e is below lower bound'
                     ' %.17e.' % (param.name, x0_val, bds[0])
                 )
             if x0_val > bds[1] + EPSILON:
@@ -537,19 +537,21 @@ class Analysis(object):
                     ' %.17e.' % (param.name, x0_val, bds[1])
                 )
 
-            if recursiveEquality(x0_val, bds[0]):
+            clipped_x0_val = np.clip(x0_val, a_min=bds[0], a_max=bds[1])
+            clipped_x0.append(clipped_x0_val)
+
+            if recursiveEquality(clipped_x0_val, bds[0]):
                 logging.warn(
-                    'Param %s, initial value value %e is at the lower bound;'
+                    'Param %s, initial scaled value %e is at the lower bound;'
                     ' minimization may fail as a result.',
-                    param.name, param.value
+                    param.name, clipped_x0_val
                 )
-            if recursiveEquality(x0_val, bds[1]):
+            if recursiveEquality(clipped_x0_val, bds[1]):
                 logging.warn(
-                    'Param %s, initial value value %e is at the upper bound;'
-                    ' minimization may fail as a rsult.',
-                    param.name, param.value
+                    'Param %s, initial scaled value %e is at the upper bound;'
+                    ' minimization may fail as a result.',
+                    param.name, clipped_x0_val
                 )
-            clipped_x0.append(np.clip(x0_val, a_min=bds[0], a_max=bds[1]))
 
         x0 = tuple(clipped_x0)
 
