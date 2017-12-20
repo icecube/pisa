@@ -139,7 +139,7 @@ machine precision doesn't cause effectively equivalent numbers to hash
 differently."""
 
 if FTYPE == np.float32:
-    HASH_SIGFIGS = 6
+    HASH_SIGFIGS = 5
 
 EPSILON = 10**(-HASH_SIGFIGS)
 """Best precision considering HASH_SIGFIGS (which is chosen kinda ad-hoc but
