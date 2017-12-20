@@ -15,7 +15,8 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from pisa.utils.fileio import expand, from_file, to_file
-from pisa.utils.flavInt import ALL_NUFLAVINTS, FlavIntData, NuFlavIntGroup
+from pisa.utils.flavInt import (ALL_NUFLAVINTS, BarSep, FlavIntData,
+                                NuFlavIntGroup)
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
 
@@ -46,7 +47,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 
 class CrossSections(FlavIntData):
     """Cross sections for each neutrino flavor & interaction type ("flavint").
-    What is stored are *PER-H20-MOLECULE* cross sections, in units of [m^2].
+    What is stored are *PER-H2O-MOLECULE* cross sections, in units of [m^2].
 
     Be careful when using these; cross sections are often plotted in the
     literature as per-nucleon and per-energy with units [10^-38 cm^2 / GeV].
@@ -131,25 +132,26 @@ class CrossSections(FlavIntData):
         def extractData(f, key):
             try:
                 g = ROOT.gDirectory.Get(key)
-                x = np.array([g.GetX()[i] for i in xrange(g.GetN())])
-                y = np.array([g.GetY()[i] for i in xrange(g.GetN())])
+                x = np.array(g.GetX())
+                y = np.array(g.GetY())
             except AttributeError:
                 raise ValueError('Possibly missing file "%s" or missing key'
-                                 '"%s" within that file?' % (f, key))
+                                 ' "%s" within that file?' % (f, key))
             return x, y
 
-        rfile = ROOT.TFile(fpath)
+        rfile = ROOT.TFile(fpath) # pylint: disable=no-member
         try:
             energy = None
             xsec = FlavIntData()
             for flavint in ALL_NUFLAVINTS:
-                fi_str = str(flavint)
+                with BarSep('_'):
+                    fi_str = 'nu_%s' % str(flavint.flav).lstrip('nu')
                 if ver == 'genie_2.6.4':
                     # Expected to contain xsect per atom; summing 2*Hydrogen
                     # and 1*Oxygen yields total cross section for water
                     # molecule.
-                    O16_e, O16_xs = extractData(rfile, fi_str + o_sfx)
-                    H1_e, H1_xs = extractData(rfile, fi_str + h_sfx)
+                    O16_e, O16_xs = extractData(rfile, fi_str + o_sfx.upper())
+                    H1_e, H1_xs = extractData(rfile, fi_str + h_sfx.upper())
                     tot_xs = (H1_xs*2 + O16_xs*1)
                     assert np.alltrue(H1_e == O16_e)
                     ext_e = O16_e
@@ -544,13 +546,13 @@ class CrossSections(FlavIntData):
             if flavint.cc:
                 ax1.plot(energy, xs/energy,
                          alpha=alpha,
-                         label=flavint.tex(flavint.flav, d=1),
+                         label='$%s$' % flavint.flav.tex,
                          **ls[cc_n%len(ls)])
                 cc_n += 1
             else:
                 ax2.plot(energy, xs/energy,
                          alpha=alpha,
-                         label=flavint.tex(flavint.flav, d=1),
+                         label='$%s$' % flavint.flav.tex,
                          **ls[nc_n%len(ls)])
                 nc_n += 1
 
@@ -598,19 +600,19 @@ def test_CrossSections(outdir=None):
 
         # Location of the root file to use (not included in PISA at the moment)
         test_dir = expand(os.path.join('/tmp', 'pisa_tests', 'cross_sections'))
-        #ROOT_xs_file = os.path.join(test_dir, 'genie_2.6.4_simplified.root')
-        ROOT_xs_file = find_resource(os.path.join(
+        #root_xs_file = os.path.join(test_dir, 'genie_2.6.4_simplified.root')
+        root_xs_file = find_resource(os.path.join(
             #'tests', 'data', 'xsec', 'genie_2.6.4_simplified.root'
-            'cross_sections', 'genie_xsec_H20.root'
+            'cross_sections', 'genie_xsec_h2o.root'
         ))
 
         # Make sure that the XS newly-imported from ROOT match those stored in
         # PISA
-        if os.path.isfile(ROOT_xs_file):
-            xs_from_root = CrossSections.newFromROOT(ROOT_xs_file,
+        if os.path.isfile(root_xs_file):
+            xs_from_root = CrossSections.newFromROOT(root_xs_file,
                                                      ver='genie_2.6.4')
             logging.info('Found and loaded ROOT source cross sections file %s',
-                         ROOT_xs_file)
+                         root_xs_file)
             #assert xs_from_root.allclose(xs, rtol=1e-7)
 
         # Check XS ratio for numu_cc to numu_cc + numu_nc (user must inspect)
