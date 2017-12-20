@@ -137,6 +137,7 @@ def gaussians_d(double[::1] outbuf,
                 double[::1] mu,
                 double[::1] inv_sigma,
                 double[::1] inv_sigma_sq,
+                double[::1] weights,
                 int n_gaussians,
                 int threads=1):
     """Sum of multiple, normalized Gaussian function at points `x`, given
@@ -161,6 +162,9 @@ def gaussians_d(double[::1] outbuf,
     inv_sigma_sq : array of non-zero double
         -0.5 * inverse of standard deviations, squared
 
+    weights : array of double
+        Weights of the Gaussians
+
     n_gaussians : int
         Number of gaussians
 
@@ -173,21 +177,40 @@ def gaussians_d(double[::1] outbuf,
     cdef double xlessmu
     cdef double tmp
     cdef Py_ssize_t i, gaus_n
-    # NOTE that the order of the loops is important, as
-    # updating the outbuf is NOT thread safe!
-    for i in prange(x.shape[0],
-                    nogil=True,
-                    num_threads=threads,
-                    schedule='dynamic'):
-        tmp = 0
-        for gaus_n in range(mu.shape[0]):
-            xlessmu = x[i] - mu[gaus_n]
-            # NOTE: must use the syntax "tmp = tmp + ...", or else Cython
-            # compiler assumes tmp is a reduction variable and compilation
-            # fails
-            tmp = (tmp + exp((xlessmu * xlessmu) * inv_sigma_sq[gaus_n])
-                   * inv_sigma[gaus_n])
-        outbuf[i] = tmp
+    if weights[0] != -1:
+        assert len(weights) == len(mu)
+        # NOTE that the order of the loops is important, as
+        # updating the outbuf is NOT thread safe!
+        for i in prange(x.shape[0],
+                        nogil=True,
+                        num_threads=threads,
+                        schedule='dynamic'):
+            tmp = 0
+            for gaus_n in range(mu.shape[0]):
+                xlessmu = x[i] - mu[gaus_n]
+                # NOTE: must use the syntax "tmp = tmp + ...", or else Cython
+                # compiler assumes tmp is a reduction variable and compilation
+                # fails
+                tmp = (tmp + exp((xlessmu * xlessmu) * inv_sigma_sq[gaus_n])
+                       * weights[gaus_n] * inv_sigma[gaus_n])
+            outbuf[i] = tmp
+    else:
+        assert len(weights) == 1
+        # NOTE that the order of the loops is important, as
+        # updating the outbuf is NOT thread safe!
+        for i in prange(x.shape[0],
+                        nogil=True,
+                        num_threads=threads,
+                        schedule='dynamic'):
+            tmp = 0
+            for gaus_n in range(mu.shape[0]):
+                xlessmu = x[i] - mu[gaus_n]
+                # NOTE: must use the syntax "tmp = tmp + ...", or else Cython
+                # compiler assumes tmp is a reduction variable and compilation
+                # fails
+                tmp = (tmp + exp((xlessmu * xlessmu) * inv_sigma_sq[gaus_n])
+                       * inv_sigma[gaus_n])
+            outbuf[i] = tmp
 
 
 @cython.cdivision(True)
@@ -198,6 +221,7 @@ def gaussians_s(float[::1] outbuf,
                 float[::1] mu,
                 float[::1] inv_sigma,
                 float[::1] inv_sigma_sq,
+                float[::1] weights,
                 int n_gaussians,
                 int threads=1):
     """Sum of multiple, normalized Gaussian function at points `x`, given
@@ -222,6 +246,9 @@ def gaussians_s(float[::1] outbuf,
     inv_sigma_sq : array of non-zero float
         -0.5 * inverse of standard deviations, squared
 
+    weights : array of float
+        Weights of the Gaussians
+
     n_gaussians : int
         Number of gaussians
 
@@ -234,18 +261,37 @@ def gaussians_s(float[::1] outbuf,
     cdef float xlessmu
     cdef float tmp
     cdef Py_ssize_t i, gaus_n
-    # NOTE that the order of the loops is important, as
-    # updating the outbuf is NOT thread safe!
-    for i in prange(x.shape[0],
-                    nogil=True,
-                    num_threads=threads,
-                    schedule='dynamic'):
-        tmp = 0
-        for gaus_n in range(mu.shape[0]):
-            xlessmu = x[i] - mu[gaus_n]
-            # NOTE: must use the syntax "tmp = tmp + ...", or else Cython
-            # compiler assumes tmp is a reduction variable and compilation
-            # fails
-            tmp = (tmp + exp((xlessmu * xlessmu) * inv_sigma_sq[gaus_n])
-                   * inv_sigma[gaus_n])
-        outbuf[i] = tmp
+    if weights[0] != -1:
+        assert len(weights) == len(mu)
+        # NOTE that the order of the loops is important, as
+        # updating the outbuf is NOT thread safe!
+        for i in prange(x.shape[0],
+                        nogil=True,
+                        num_threads=threads,
+                        schedule='dynamic'):
+            tmp = 0
+            for gaus_n in range(mu.shape[0]):
+                xlessmu = x[i] - mu[gaus_n]
+                # NOTE: must use the syntax "tmp = tmp + ...", or else Cython
+                # compiler assumes tmp is a reduction variable and compilation
+                # fails
+                tmp = (tmp + exp((xlessmu * xlessmu) * inv_sigma_sq[gaus_n])
+                       * weights[gaus_n] * inv_sigma[gaus_n])
+            outbuf[i] = tmp
+    else:
+        assert len(weights) == 1
+        # NOTE that the order of the loops is important, as
+        # updating the outbuf is NOT thread safe!
+        for i in prange(x.shape[0],
+                        nogil=True,
+                        num_threads=threads,
+                        schedule='dynamic'):
+            tmp = 0
+            for gaus_n in range(mu.shape[0]):
+                xlessmu = x[i] - mu[gaus_n]
+                # NOTE: must use the syntax "tmp = tmp + ...", or else Cython
+                # compiler assumes tmp is a reduction variable and compilation
+                # fails
+                tmp = (tmp + exp((xlessmu * xlessmu) * inv_sigma_sq[gaus_n])
+                       * inv_sigma[gaus_n])
+            outbuf[i] = tmp
