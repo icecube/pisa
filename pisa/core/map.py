@@ -41,7 +41,7 @@ from pisa.utils import stats
 
 
 __all__ = ['type_error', 'reduceToHist', 'rebin', 'valid_nominal_values', 
-    'Map', 'MapSet', 'test_Map', 'test_MapSet']
+           'Map', 'MapSet', 'test_Map', 'test_MapSet']
 
 __author__ = 'J.L. Lanfranchi'
 
