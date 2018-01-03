@@ -1,3 +1,7 @@
+'''
+Test functions used during developpement of the osc. code
+Please ignore unless you are the author
+'''
 from __future__ import print_function
 
 import time
