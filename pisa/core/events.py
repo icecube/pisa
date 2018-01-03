@@ -304,7 +304,7 @@ class Events(FlavIntData):
                           " events unmodified.", keep_criteria)
             return self
 
-        #Nothing to do if no cuts specified
+        # Nothing to do if no cuts specified
         if keep_criteria is None :
             return
 
