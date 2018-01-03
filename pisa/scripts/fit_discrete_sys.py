@@ -107,7 +107,7 @@ def main():
         degree = cfg.getint(sys, 'degree')
         force_through_nominal = cfg.getboolean(sys, 'force_through_nominal')
         runs = eval(cfg.get(sys, 'runs'))
-        print "runs ", runs
+        #print "runs ", runs
         smooth = cfg.get(sys, 'smooth')
 
         x_values = np.array(sorted(runs))
@@ -127,13 +127,13 @@ def main():
         if not args.set_param == '':
             for one_set_param in args.set_param:
                 p_name, value = one_set_param.split("=")
-                print "p_name,value= ", p_name, " ", value
+                #print "p_name,value= ", p_name, " ", value
                 value = parse_quantity(value)
                 value = value.n * value.units
                 param = template_maker.params[p_name]
-                print "old ", p_name, "value = ", param.value
+                #print "old ", p_name, "value = ", param.value
                 param.value = value
-                print "new ", p_name, "value = ", param.value
+                #print "new ", p_name, "value = ", param.value
                 template_maker.update_params(param)
 
         inputs = {}
