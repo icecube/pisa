@@ -23,8 +23,19 @@ from pisa.utils.log import logging
 class ContainerSet(object):
     '''
     Class to hold a set of container objects
-    '''
 
+
+    Parameters
+    ----------
+    
+    name : str
+
+    containers : list or None
+
+    data_specs : MultiDimBinning, 'events' or None
+
+
+    '''
     def __init__(self, name, containers=None, data_specs=None):
         self.name = name
         self.linked_containers = []
@@ -101,9 +112,6 @@ class ContainerSet(object):
 
     def unlink_containers(self):
         '''
-        Parameters
-        ----------
-
         unlink all container
         '''
         logging.debug('Unlinking all containers')
@@ -151,18 +159,28 @@ class VirtualContainer(object):
 
     For writting, it creates one object that is added to all containers
 
+    Parameters
+    ----------
+
+    name : str
+
+    containers : list
+
     '''
 
     def __init__(self, name, containers):
         self.name = name
         # check and set link flag
         for container in containers:
-            assert container.linked is False, 'Cannot link container %s since it is already linked'%container.name
+            if container.linked:
+                raise ValueError('Cannot link container %s since it is already linked'%container.name)
             container.linked = True
         self.containers = containers
 
     def unlink(self):
-        # reset link flag
+        '''
+        reset link flag
+        '''
         for container in self:
             container.linked = False
 
@@ -176,13 +194,16 @@ class VirtualContainer(object):
     def __setitem__(self, key, value):
         self.containers[0][key] = value
         for container in self.containers[1:]:
-            if not hasattr(value, '__len__'):
+            if np.isscalar(value):
                 container.scalar_data[key] = self.containers[0].scalar_data[key]
             else:
                 container.binned_data[key] = self.containers[0].binned_data[key]
 
     @property
     def size(self):
+        '''
+        size of container
+        '''
         return self.containers[0].size
 
 
@@ -206,7 +227,6 @@ class Container(object):
 
     data_specs : str, MultiDimBinning or None
         the representation one is working in at the moment
-
     '''
 
     def __init__(self, name, code=None, data_specs=None):
@@ -233,7 +253,8 @@ class Container(object):
         '''
         length of event arrays or number of bins for binned data
         '''
-        assert self.data_mode is not None
+        if self.data_mode is None:
+            raise ValueError('data_mode needs to be set first')
         if self.data_mode == 'events':
             return self.array_length
         return self.data_specs.size
@@ -279,10 +300,9 @@ class Container(object):
 
         flat : bool
             is the data already flattened (i.e. the binning dimesnions unrolled)
-
-        ToDo: logic to not copy back and forth
-
         '''
+        # TODO: logic to not copy back and forth
+
         if isinstance(data, Map):
             flat_array = data.hist.ravel()
             self.binned_data[key] = (SmartArray(flat_array), data.binning)
