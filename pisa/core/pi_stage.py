@@ -192,7 +192,9 @@ class PiStage(BaseStage):
                         container.binned_to_array(key)
 
     def compute_function(self):
-        # to be implemented by stage
+        '''
+        to be implemented by stage
+        '''
         pass
 
     @profile
@@ -226,7 +228,9 @@ class PiStage(BaseStage):
 
 
     def apply_function(self):
-        # to be implemented by stage
+        '''
+        to be implemented by stage
+        '''
         pass
 
 
