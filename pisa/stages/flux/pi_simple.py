@@ -55,7 +55,9 @@ class pi_simple(PiStage):
                            'nu_nubar_ratio',
                            'delta_index',
                            'Barr_uphor_ratio',
+                           #'Barr_uphor_ratio2',
                            'Barr_nu_nubar_ratio',
+                           #'Barr_nu_nubar_ratio2',
                           )
         input_names = ()
         output_names = ()
@@ -110,7 +112,9 @@ class pi_simple(PiStage):
         nu_nubar_ratio = self.params.nu_nubar_ratio.value.m_as('dimensionless')
         delta_index = self.params.delta_index.value.m_as('dimensionless')
         Barr_uphor_ratio = self.params.Barr_uphor_ratio.value.m_as('dimensionless')
+        #Barr_uphor_ratio2 = self.params.Barr_uphor_ratio2.value.m_as('dimensionless')
         Barr_nu_nubar_ratio = self.params.Barr_nu_nubar_ratio.value.m_as('dimensionless')
+        #Barr_nu_nubar_ratio2 = self.params.Barr_nu_nubar_ratio2.value.m_as('dimensionless')
 
         for container in self.data:
 
@@ -123,7 +127,9 @@ class pi_simple(PiStage):
                                  nu_nubar_ratio,
                                  delta_index,
                                  Barr_uphor_ratio,
+                                 #Barr_uphor_ratio2,
                                  Barr_nu_nubar_ratio,
+                                 #Barr_nu_nubar_ratio2,
                                  out=container['sys_flux'].get(WHERE),
                                 )
             container['sys_flux'].mark_changed(WHERE)
@@ -218,10 +224,16 @@ def ModFlux(flav, true_energy, true_coszen, e1mu, e2mu, z1mu, z2mu, e1e, e2e, z1
     if flav == 1:
         A_ave = LogLogParam(true_energy, e1max_mu*e1mu, e2max_mu*e2mu, x1e, x2e, False, 0)
         A_shape = 2.5*LogLogParam(true_energy, z1max_mu*z1mu, z2max_mu*z2mu, x1z, x2z, True, numu_cutoff)
+        # pre-fix (wrong)
+        #return A_ave - (norm_fcn(true_coszen, A_shape, 0.32) - 0.75 * A_shape)
+        # fixed (correct)
         return A_ave - (norm_fcn(true_coszen, A_shape, 0.36) - 0.6 * A_shape)
     if flav == 0:
         A_ave = LogLogParam(true_energy, e1max_mu * e1mu + e1max_e * e1e, e2max_mu * e2mu + e2max_e * e2e, x1e, x2e, False, 0)
         A_shape = 1. * LogLogParam(true_energy, z1max_mu * z1mu + z1max_e * z1e, z2max_mu * z2mu + z2max_e * z2e, x1z, x2z, True, nue_cutoff)
+        # pre-fix (wrong)
+        #return A_ave - (1.5*norm_fcn(true_coszen, A_shape, 0.4) - 0.7 * A_shape)
+        # fixed (correct)
         return A_ave - (1.5*norm_fcn(true_coszen, A_shape, 0.36) - 0.7 * A_shape)
 
 @myjit
@@ -232,15 +244,23 @@ def modRatioUpHor(flav, true_energy, true_coszen, uphor):
     z1max_e = 0.3
     z2max_e = 5.
     nue_cutoff = 650.
+    numu_cutoff = 1000.
     # Evaluated at
     x1z = 0.5
     x2z = 2.
     # oscfit function
     if flav == 0:
         A_shape = 1. * abs(uphor) * LogLogParam(true_energy, (z1max_e + z1max_mu), (z2max_e + z2max_mu), x1z, x2z, True, nue_cutoff)
+        # correct:
         return 1 - 0.3 * sign(uphor) * norm_fcn(true_coszen, A_shape, 0.35)
     if flav == 1:
+        # pre-fix (wrong)
+        #A_shape = 1. * abs(uphor) * LogLogParam(true_energy, z1max_mu, z2max_mu, x1z, x2z, True, numu_cutoff)
+        #return 1 - 0.3 * sign(uphor) * norm_fcn(true_coszen, A_shape, 0.35)
+        # fixed (correct)
         return 1.
+    # wrong:
+    #return 1 - 3.5 * sign(uphor) * norm_fcn(true_coszen, A_shape, 0.35)
 
 @myjit
 def modRatioNuBar(nubar, flav, true_energy, true_coszen, nubar_sys):
@@ -264,7 +284,9 @@ def apply_sys_kernel(true_energy,
                      nu_nubar_ratio,
                      delta_index,
                      Barr_uphor_ratio,
+                     #Barr_uphor_ratio2,
                      Barr_nu_nubar_ratio,
+                     #Barr_nu_nubar_ratio2,
                      out):
     # nue/numu ratio
     new_flux = cuda.local.array(shape=(2), dtype=ftype)
@@ -318,7 +340,9 @@ def apply_sys_vectorized(true_energy,
                          nu_nubar_ratio,
                          delta_index,
                          Barr_uphor_ratio,
+                         #Barr_uphor_ratio2,
                          Barr_nu_nubar_ratio,
+                         #Barr_nu_nubar_ratio2,
                          out):
     apply_sys_kernel(true_energy,
                      true_coszen,
@@ -329,5 +353,7 @@ def apply_sys_vectorized(true_energy,
                      nu_nubar_ratio,
                      delta_index,
                      Barr_uphor_ratio,
+                     #Barr_uphor_ratio2,
                      Barr_nu_nubar_ratio,
+                     #Barr_nu_nubar_ratio2,
                      out)

@@ -179,6 +179,7 @@ class Pipeline(object):
                 cls = getattr(module, service_name)
 
                 # Instantiate service
+                logging.trace("initializing stage %s.%s with settings %s"%(stage_name, service_name, settings))
                 service = cls(**settings)
 
                 cake_stage = isinstance(service, Stage)
@@ -715,22 +716,6 @@ def main(return_outputs=False):
                 # TODO(shivesh): intermediate stages have no output binning
                 if stage.output_binning is None:
                     logging.debug('Skipping plot of intermediate stage %s', stage)
-                    continue
-                outputs = stage.outputs.histogram_set(
-                    binning=stage.output_binning,
-                    nu_weights_col='pisa_weight',
-                    mu_weights_col='pisa_weight',
-                    noise_weights_col='pisa_weight',
-                    mapset_name=stg_svc,
-                    errors=True
-                )
-            elif isinstance(stage.outputs, (MapSet, TransformSet)):
-                outputs = stage.outputs
-
-        # TDO: why the nested try/except blocks? And missing except block
-        try:
-            for fmt, enabled in formats.items():
-                if not enabled:
                     continue
                 outputs = stage.outputs.histogram_set(
                     binning=stage.output_binning,

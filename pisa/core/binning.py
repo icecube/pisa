@@ -2719,7 +2719,7 @@ def test_OneDimBinning():
     import shutil
     import tempfile
     # needed so that eval(repr(b)) works
-    from numpy import array # pylint: disable=unused-variable
+    from numpy import array , float32, float64 # pylint: disable=unused-variable
     import dill
 
     b1 = OneDimBinning(name='true_energy', num_bins=40, is_log=True,
@@ -2866,7 +2866,7 @@ def test_MultiDimBinning():
     import tempfile
     import time
     # needed so that eval(repr(mdb)) works
-    from numpy import array # pylint: disable=unused-variable
+    from numpy import array, float32, float64 # pylint: disable=unused-variable
     import dill
 
     b1 = OneDimBinning(name='energy', num_bins=40, is_log=True,
