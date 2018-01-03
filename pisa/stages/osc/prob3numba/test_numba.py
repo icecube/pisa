@@ -1,3 +1,7 @@
+'''
+Test functions used during developpement of the osc. code
+Please ignore unless you are the author
+'''
 import numpy as np
 import time
 
