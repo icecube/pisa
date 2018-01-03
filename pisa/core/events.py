@@ -310,7 +310,8 @@ class Events(FlavIntData):
 
         assert isinstance(keep_criteria, basestring)
 
-        flavints_to_process = self.present_flavints #Only get the flavints for which we have data
+        #Only get the flavints for which we have data
+        flavints_to_process = self.present_flavints 
         flavints_processed = []
         remaining_data = {}
         for flavint in flavints_to_process:
