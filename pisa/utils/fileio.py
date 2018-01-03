@@ -6,6 +6,7 @@ Generic file I/O, dispatching specific file readers/writers as necessary
 from __future__ import absolute_import
 
 import cPickle
+import errno
 import os
 import re
 
@@ -161,7 +162,7 @@ def mkdir(d, mode=0o0750, warn=True):
     try:
         os.makedirs(d, mode=mode)
     except OSError as err:
-        if err.errno == 17:
+        if err.errno == errno.EEXIST:
             if warn:
                 log.logging.warn('Directory "%s" already exists', d)
         else:
