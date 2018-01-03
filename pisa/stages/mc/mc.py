@@ -63,7 +63,7 @@ class mc(Stage):
         if self.params.mc_cuts.value is not None:
             logging.info('Applying cut %s'%self.params.mc_cuts.value)
             evts = evts.applyCut(self.params.mc_cuts.value)
-        
+
         maps = []
 	bin_edges = [edges.magnitude for edges in self.output_binning.bin_edges]
 

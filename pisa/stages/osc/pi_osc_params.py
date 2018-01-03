@@ -140,7 +140,7 @@ class OscParams(object):
 
     @eps_ee.setter
     def eps_ee(self, value):
-        self.nsi_eps[0,0] = value + 1.j * self.nsi_eps[0,0].imag
+        self.nsi_eps[0, 0] = value + 1.j * self.nsi_eps[0, 0].imag
 
     @property
     def eps_emu(self):
@@ -149,8 +149,8 @@ class OscParams(object):
 
     @eps_emu.setter
     def eps_emu(self, value):
-        self.nsi_eps[1,0] = value + 1.j * self.nsi_eps[1,0].imag
-        self.nsi_eps[0,1] = value + 1.j * self.nsi_eps[0,1].imag
+        self.nsi_eps[1, 0] = value + 1.j * self.nsi_eps[1, 0].imag
+        self.nsi_eps[0, 1] = value + 1.j * self.nsi_eps[0, 1].imag
 
     @property
     def eps_etau(self):
@@ -159,51 +159,51 @@ class OscParams(object):
 
     @eps_etau.setter
     def eps_etau(self, value):
-        self.nsi_eps[2,0] = value + 1.j * self.nsi_eps[2,0].imag
-        self.nsi_eps[0,2] = value + 1.j * self.nsi_eps[0,2].imag
+        self.nsi_eps[2, 0] = value + 1.j * self.nsi_eps[2, 0].imag
+        self.nsi_eps[0, 2] = value + 1.j * self.nsi_eps[0, 2].imag
 
     @property
     def mix_matrix(self):
         """Neutrino mixing matrix"""
-        mix = np.zeros((3,3,2), dtype=FTYPE)
+        mix = np.zeros((3, 3, 2), dtype=FTYPE)
 
         sd = np.sin(self.deltacp)
         cd = np.cos(self.deltacp)
 
-        c12 = np.sqrt(1.-self.sin12**2)
-        c23 = np.sqrt(1.-self.sin23**2)
-        c13 = np.sqrt(1.-self.sin13**2)
+        c12 = np.sqrt(1. - self.sin12**2)
+        c23 = np.sqrt(1. - self.sin23**2)
+        c13 = np.sqrt(1. - self.sin13**2)
 
-        mix[0][0][0] = c12 * c13
-        mix[0][0][1] = 0.
-        mix[0][1][0] = self.sin12 * c13
-        mix[0][1][1] = 0.
-        mix[0][2][0] = self.sin13 * cd
-        mix[0][2][1] = - self.sin13 * sd
-        mix[1][0][0] = - self.sin12 * c23 - c12 * self.sin23 * self.sin13 * cd
-        mix[1][0][1] = - c12 * self.sin23 * self.sin13 * sd
-        mix[1][1][0] = c12 * c23 - self.sin12 * self.sin23 * self.sin13 * cd
-        mix[1][1][1] = - self.sin12 * self.sin23 * self.sin13 * sd
-        mix[1][2][0] = self.sin23 * c13
-        mix[1][2][1] = 0.
-        mix[2][0][0] = self.sin12 * self.sin23 - c12 * c23 * self.sin13 * cd
-        mix[2][0][1] = - c12 * c23 * self.sin13 * sd
-        mix[2][1][0] = - c12 * self.sin23 - self.sin12 * c23 * self.sin13 * cd
-        mix[2][1][1] = - self.sin12 * c23 * self.sin13 * sd
-        mix[2][2][0] = c23 * c13
-        mix[2][2][1] = 0.
+        mix[0, 0, 0] = c12 * c13
+        mix[0, 0, 1] = 0.
+        mix[0, 1, 0] = self.sin12 * c13
+        mix[0, 1, 1] = 0.
+        mix[0, 2, 0] = self.sin13 * cd
+        mix[0, 2, 1] = - self.sin13 * sd
+        mix[1, 0, 0] = - self.sin12 * c23 - c12 * self.sin23 * self.sin13 * cd
+        mix[1, 0, 1] = - c12 * self.sin23 * self.sin13 * sd
+        mix[1, 1, 0] = c12 * c23 - self.sin12 * self.sin23 * self.sin13 * cd
+        mix[1, 1, 1] = - self.sin12 * self.sin23 * self.sin13 * sd
+        mix[1, 2, 0] = self.sin23 * c13
+        mix[1, 2, 1] = 0.
+        mix[2, 0, 0] = self.sin12 * self.sin23 - c12 * c23 * self.sin13 * cd
+        mix[2, 0, 1] = - c12 * c23 * self.sin13 * sd
+        mix[2, 1, 0] = - c12 * self.sin23 - self.sin12 * c23 * self.sin13 * cd
+        mix[2, 1, 1] = - self.sin12 * c23 * self.sin13 * sd
+        mix[2, 2, 0] = c23 * c13
+        mix[2, 2, 1] = 0.
 
         return mix
 
     @property
     def mix_matrix_complex(self):
         ''' mixing matrix as complex 2-d array'''
-        return self.mix_matrix[:,:,0] + self.mix_matrix[:,:,1] * 1.j
+        return self.mix_matrix[:, :, 0] + self.mix_matrix[:, :, 1] * 1.j
 
     @property
     def dm_matrix(self):
         """Neutrino mass splitting matrix in vacuum"""
-        dmVacVac = np.zeros((3,3), dtype=FTYPE)
+        dmVacVac = np.zeros((3, 3), dtype=FTYPE)
         mVac = np.zeros(3, dtype=FTYPE)
         delta = 5.e-9
 
@@ -217,14 +217,14 @@ class OscParams(object):
         if mVac[2] == 0.:
             mVac[2] += delta
 
-        dmVacVac[0][0] = 0.
-        dmVacVac[1][1] = 0.
-        dmVacVac[2][2] = 0.
-        dmVacVac[0][1] = mVac[0] - mVac[1]
-        dmVacVac[1][0] = - dmVacVac[0][1]
-        dmVacVac[0][2] = mVac[0] - mVac[2]
-        dmVacVac[2][0] = - dmVacVac[0][2]
-        dmVacVac[1][2] = mVac[1] - mVac[2]
-        dmVacVac[2][1] = - dmVacVac[1][2]
+        dmVacVac[0, 0] = 0.
+        dmVacVac[1, 1] = 0.
+        dmVacVac[2, 2] = 0.
+        dmVacVac[0, 1] = mVac[0] - mVac[1]
+        dmVacVac[1, 0] = - dmVacVac[0, 1]
+        dmVacVac[0, 2] = mVac[0] - mVac[2]
+        dmVacVac[2, 0] = - dmVacVac[0, 2]
+        dmVacVac[1, 2] = mVac[1] - mVac[2]
+        dmVacVac[2, 1] = - dmVacVac[1, 2]
 
         return dmVacVac
