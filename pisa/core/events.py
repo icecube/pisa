@@ -299,7 +299,6 @@ class Events(FlavIntData):
         >>> events = events.applyCut("np.log10(true_energy) >= 0")
 
         """
-
         if keep_criteria in self.metadata['cuts']:
             logging.debug("Criteria '%s' have already been applied. Returning"
                           " events unmodified.", keep_criteria)
