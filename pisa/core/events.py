@@ -390,9 +390,11 @@ class Events(FlavIntData):
         return remaining_events
 
 
-    #This returns a tuple of the flavints that are present in the events
     @property
     def flavints_present(self):
+        '''
+        returns a tuple of the flavints that are present in the events
+        '''
 
         flavints_present_list = []
 
