@@ -1,8 +1,7 @@
 """
-#This is an inout module for filling a 'Data' instance from a file
-#containg data from an 'Events' instance
-#The outputs should be consistent with the 'sample' stage
-#Tom Stuttard
+This is an inout module for filling a 'Data' instance from a file
+containg data from an 'Events' instance
+The outputs should be consistent with the 'sample' stage
 """
 
 
