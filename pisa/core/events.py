@@ -408,7 +408,8 @@ class Events(FlavIntData):
             # take a dit as input)
             found_data_for_this_flavint = True
             try:
-                if np.isnan(self[flavint]): found_data_for_this_flavint = False
+                if np.isnan(self[flavint]):
+                    found_data_for_this_flavint = False
             except TypeError: 
                 pass
             if found_data_for_this_flavint:
@@ -649,7 +650,7 @@ class Data(FlavIntDataGroup):
         if self.contains_noise:
             fig_to_process += ['noise']
 
-        logging.info("Applying cut to %s : %s" % (fig_to_process,keep_criteria) )
+        logging.info("Applying cut to %s : %s" %(fig_to_process,keep_criteria))
 
         fig_processed = []
         remaining_data = {}
