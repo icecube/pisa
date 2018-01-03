@@ -1,4 +1,3 @@
-# Authors
 """
 Stage base class designed to be inherited by PISA core stages, such that all basic
 functionality is built-in.
@@ -19,8 +18,6 @@ from pisa.utils.format import arg_str_seq_none
 
 
 __all__ = ['BaseStage']
-__author__ = 'Justin Lanfranchi'
-
 
 class BaseStage(object):
     """
