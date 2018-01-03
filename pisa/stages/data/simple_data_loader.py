@@ -16,7 +16,7 @@ from pisa.core.events import Events
 
 class simple_data_loader(PiStage):
     """
-    random toy event generator PISA Pi class
+    HDF5 file loader PISA Pi class
 
     Paramaters
     ----------
