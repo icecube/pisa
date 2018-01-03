@@ -337,8 +337,7 @@ class Events(FlavIntData):
             remaining_data[flavint] = (
                 {k: v[mask] for k, v in self[flavint].iteritems()}
             )
-
-            flavints_processed.append(flavint) #
+            flavints_processed.append(flavint)
 
         remaining_events = Events()
         remaining_events.metadata.update(deepcopy(self.metadata))
