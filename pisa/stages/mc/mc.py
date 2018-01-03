@@ -1,5 +1,3 @@
-# authors: P.Eller
-# date:    May 27, 2017
 """
 Histogram Monte Carlo events directly 
 """
