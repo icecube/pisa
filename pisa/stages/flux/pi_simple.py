@@ -36,10 +36,10 @@ class pi_simple(PiStage):
     Notes
     -----
 
-    TODO: get rid of this _oppo_flux stuff!!!
-    Just replace with nu and nubar flux!!!
-
     """
+    # TODO: get rid of this _oppo_flux stuff!!!
+    # Just replace with nu and nubar flux!!!
+
     def __init__(self,
                  data=None,
                  params=None,
