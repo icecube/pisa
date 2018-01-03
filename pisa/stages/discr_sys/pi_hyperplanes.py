@@ -1,5 +1,5 @@
 """
-PISA pi stage to apply hyperplane fits from duscrete systematics parameterizations
+PISA pi stage to apply hyperplane fits from discrete systematics parameterizations
 """
 from __future__ import absolute_import, print_function, division
 
@@ -35,11 +35,7 @@ class pi_hyperplanes(PiStage):
         sys_list : containing the order of the parameters
         fit_results : the resulting hyperplane coeffs from the fits, first
                       entry is constant, followed by the linear ones in the order
-                      defined in sys_list
-
-        
-
-
+                      defined in `sys_list`
     """
     def __init__(self,
                  data=None,
