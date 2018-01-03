@@ -1112,7 +1112,7 @@ class Analysis(object):
                     hypo_param_selections=hypo_param_selections,
                     hypo_asimov_dist=hypo_maker.get_outputs(return_sum=True),
                     metric=metric,
-                    **dict([(k,v) for k,v in kwargs.items() if k not in ["pprint","reset_free","check_octant"]])
+                    **{k: v for k,v in kwargs.items() if k not in ["pprint","reset_free","check_octant"]}
                 )
             else:
                 logging.info('Starting optimization since `profile` requested.')
