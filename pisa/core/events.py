@@ -315,7 +315,6 @@ class Events(FlavIntData):
         flavints_processed = []
         remaining_data = {}
         for flavint in flavints_to_process:
-
             #Get the evets for this flavor/interaction
             data_dict = self[flavint]
 
