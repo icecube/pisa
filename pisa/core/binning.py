@@ -299,7 +299,7 @@ class OneDimBinning(object):
                 dimensionless_bin_edges = bin_edges.magnitude
 
             elif bin_edges is not None:
-                dimensionless_bin_edges = np.asarray(bin_edges).astype(FTYPE)
+                dimensionless_bin_edges = np.asarray(bin_edges, dtype=FTYPE)
                 bin_edges = None
 
         dimensionless_domain = None
