@@ -311,7 +311,7 @@ class Events(FlavIntData):
         assert isinstance(keep_criteria, basestring)
 
         #Only get the flavints for which we have data
-        flavints_to_process = self.present_flavints 
+        flavints_to_process = self.flavints_present 
         flavints_processed = []
         remaining_data = {}
         for flavint in flavints_to_process:
@@ -394,9 +394,9 @@ class Events(FlavIntData):
 
     #This returns a tuple of the flavints that are present in the events
     @property
-    def present_flavints(self):
+    def flavints_present(self):
 
-        present_flavints_list = []
+        flavints_present_list = []
 
         #Loop over a tuple of all possible flav/int combinations
         for flavint in self.flavints:
@@ -412,9 +412,9 @@ class Events(FlavIntData):
             except TypeError : 
                 pass
             if found_data_for_this_flavint :
-                present_flavints_list.append(flavint)
+                flavints_present_list.append(flavint)
 
-        return tuple(present_flavints_list)
+        return tuple(flavints_present_list)
 
 
 class Data(FlavIntDataGroup):
