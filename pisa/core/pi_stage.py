@@ -19,8 +19,7 @@ __author__ = 'Philipp Eller (pde3@psu.edu)'
 
 class PiStage(BaseStage):
     """
-    PISA stage base class. Should encompass all behaviors common to (almost)
-    all stages.
+    PISA Pi stage base class. Should be used to implement PISA Pi stages
 
     Specialization should be done via subclasses.
 
@@ -151,44 +150,46 @@ class PiStage(BaseStage):
     @profile
     def compute(self):
         # simplest caching algorithm....just don't compute if params didn't change
-        if len(self.params) > 0:
-            new_param_hash = self.params.values_hash
-            if not new_param_hash == self.param_hash:
-                
-                self.data.data_specs = self.input_specs
-                # convert any inputs if necessary:
-                if self.mode[:2] == 'EB':
-                    for container in self.data:
-                        for key in self.input_calc_keys:
-                            container.array_to_binned(key, self.calc_specs)
+        if len(self.params) == 0:
+            return
 
-                elif self.mode == 'EBE':
-                    for container in self.data:
-                        for key in self.input_calc_keys:
-                            container.binned_to_array(key)
+        new_param_hash = self.params.values_hash
+        if new_param_hash == self.param_hash:
+            logging.trace('cached output')
+            return
 
-                #elif self.mode == 'BBE':
-                #    for container in self.data:
-                #        for key in self.input_calc_keys:
-                #            container.binned_to_array(key)
+        else:
+            self.data.data_specs = self.input_specs
+            # convert any inputs if necessary:
+            if self.mode[:2] == 'EB':
+                for container in self.data:
+                    for key in self.input_calc_keys:
+                        container.array_to_binned(key, self.calc_specs)
 
-                self.data.data_specs = self.calc_specs
-                self.compute_function()
-                self.param_hash = new_param_hash
+            elif self.mode == 'EBE':
+                for container in self.data:
+                    for key in self.input_calc_keys:
+                        container.binned_to_array(key)
 
-                # convert any outputs if necessary:
-                if self.mode[1:] == 'EB':
-                    for container in self.data:
-                        for key in self.output_calc_keys:
-                            container.array_to_binned(key, self.output_specs)
+            #elif self.mode == 'BBE':
+            #    for container in self.data:
+            #        for key in self.input_calc_keys:
+            #            container.binned_to_array(key)
 
-                elif self.mode[1:] == 'BE':
-                    for container in self.data:
-                        for key in self.output_calc_keys:
-                            container.binned_to_array(key)
+            self.data.data_specs = self.calc_specs
+            self.compute_function()
+            self.param_hash = new_param_hash
 
-            else:
-                logging.trace('cached output')
+            # convert any outputs if necessary:
+            if self.mode[1:] == 'EB':
+                for container in self.data:
+                    for key in self.output_calc_keys:
+                        container.array_to_binned(key, self.output_specs)
+
+            elif self.mode[1:] == 'BE':
+                for container in self.data:
+                    for key in self.output_calc_keys:
+                        container.binned_to_array(key)
 
     def compute_function(self):
         # to be implemented by stage
