@@ -19,7 +19,6 @@ from numba import guvectorize, SmartArray, cuda
 from pisa import FTYPE, TARGET
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.numba_tools import myjit, WHERE
-from pisa.utils.log import logging
 from pisa.utils import vectorizer
 
 __all__ = ['histogram',
@@ -47,7 +46,6 @@ def resample(weights, old_sample, old_binning, new_sample, new_binning):
     new_binning : PISA MultiDimBinning
 
     '''
-    
     # make sure thw two binning have the same dimensions!
     assert old_binning.names == new_binning.names, 'cannot translate betwen %s and %s'%(old_binning, new_binning)
 
@@ -67,7 +65,7 @@ def resample(weights, old_sample, old_binning, new_sample, new_binning):
     lookup_flat_hist = lookup(new_sample, weights, old_binning)
 
     # Now, for bin we have 1 or less counts, take the lookedup value instead:
-    out_hist = vectorizer.replace(flat_hist_counts, 1, flat_hist, out=lookup_flat_hist)
+    vectorizer.replace(flat_hist_counts, 1, flat_hist, out=lookup_flat_hist)
 
     return lookup_flat_hist
 
@@ -184,7 +182,7 @@ def get_hist_np(sample, weights, binning, apply_weights=True):
         # that means it's 1-dim data instead of scalars
         hists = []
         for i in range(weights.shape[1]):
-            w = weights[:,i] if apply_weights else None
+            w = weights[:, i] if apply_weights else None
             hist, _ = np.histogramdd(sample=sample, weights=w, bins=bin_edges)
             hists.append(hist.ravel())
         flat_hist = np.stack(hists, axis=1)
@@ -193,8 +191,8 @@ def get_hist_np(sample, weights, binning, apply_weights=True):
         hist, _ = np.histogramdd(sample=sample, weights=w, bins=bin_edges)
         flat_hist = hist.ravel()
     return SmartArray(flat_hist.astype(FTYPE))
-    
-# ToDo: can we do just n-dimensional? And scalars or arbitrary array shapes? This is so ugly :/
+
+# TODO: can we do just n-dimensional? And scalars or arbitrary array shapes? This is so ugly :/
 # Furthermore: optimize using shared memory
 @cuda.jit
 def histogram_2d_kernel(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights, apply_weights):
@@ -308,10 +306,10 @@ def lookup(sample, flat_hist, binning):
 def find_index(x, bin_edges):
     ''' simple binary search
 
-    ToDo: support lin and log binnings with
     direct trnasformations instead of search
-
     '''
+    # TODO: support lin and log binnings with
+
     first = 0
     last = len(bin_edges) - 1
     while first <= last:
