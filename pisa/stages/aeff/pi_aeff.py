@@ -11,16 +11,20 @@ from pisa.utils import vectorizer
 
 class pi_aeff(PiStage):
     """
-    stage to histogram events
+    PISA Pi stage to histogram events
 
     Paramaters
     ----------
 
-    livetime
-    aeff_scale
-    nutau_cc_norm
-    nutau_norm
-    nu_nc_norm
+    livetime : Quantity with time units
+
+    aeff_scale : dimensionless Quantity
+
+    nutau_cc_norm : dimensionless Quantity
+
+    nutau_norm : dimensionless Quantity
+
+    nu_nc_norm : dimensionless Quantity
 
     Notes
     -----
