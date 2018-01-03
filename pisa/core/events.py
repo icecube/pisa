@@ -305,7 +305,7 @@ class Events(FlavIntData):
             return self
 
         # Nothing to do if no cuts specified
-        if keep_criteria is None :
+        if keep_criteria is None:
             return
 
         assert isinstance(keep_criteria, basestring)
@@ -335,7 +335,7 @@ class Events(FlavIntData):
                 )
             mask = eval(crit_str)
             remaining_data[flavint] = (
-                {k: v[mask] for k, v in self[flavint].iteritems()}
+                {k : v[mask] for k, v in self[flavint].iteritems()}
             )
             flavints_processed.append(flavint)
 
@@ -407,11 +407,11 @@ class Events(FlavIntData):
             # there (in which case it is a dict, and np.isnan will raise an exception as cannot
             # take a dit as input)
             found_data_for_this_flavint = True
-            try :
-                if np.isnan(self[flavint]) : found_data_for_this_flavint = False
-            except TypeError : 
+            try:
+                if np.isnan(self[flavint]): found_data_for_this_flavint = False
+            except TypeError: 
                 pass
-            if found_data_for_this_flavint :
+            if found_data_for_this_flavint:
                 flavints_present_list.append(flavint)
 
         return tuple(flavints_present_list)
