@@ -1,6 +1,6 @@
 # pylint: disable=not-callable
 """
-Stage to implement the old PISA/odcfit flux systematics
+Stage to implement the old PISA/oscfit flux systematics
 
 The `nominal_flux` and `nominal_opposite_flux` is something that realy should
 not be done. That needs to be changed. We simply want to calcualte nu and nubar
