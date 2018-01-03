@@ -18,8 +18,16 @@ from pisa.utils.log import logging
 # input_names and output_names.
 
 def fit_fun(X,*P):
-    # X: array of points
-    # P: array of params, with first being the offset followe by the slopes
+    '''
+    Hyperplane function
+
+    Parameters
+    ----------
+    
+    X : array of points
+    P : array of params
+        with first being the offset followe by the slopes
+    '''
     ret_val = P[0]
     for x,p in zip(X,P[1:]):
 	ret_val += x*p
