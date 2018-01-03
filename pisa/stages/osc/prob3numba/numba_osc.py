@@ -13,7 +13,6 @@ __all__ = ['get_transition_matrix',
            'fill_probs',
           ]
 __version__ = '0.1'
-__author__ = 'Philipp Eller (pder@psu.edu)'
 
 import math, cmath
 import numpy as np
