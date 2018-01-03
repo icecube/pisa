@@ -13,7 +13,6 @@ import os
 from pisa.core.param import Param, ParamSelector
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
-from pisa.utils.profiler import profile
 from pisa.utils.format import arg_str_seq_none
 
 
@@ -163,7 +162,6 @@ class BaseStage(object):
                           %(selections, self.params))
 
 
-    @profile
     def _check_params(self, params):
         """Make sure that `expected_params` is defined and that exactly the
         params specified in self.expected_params are present.
