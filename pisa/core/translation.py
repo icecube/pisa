@@ -1,16 +1,14 @@
 # pylint: disable = unsubscriptable-object, too-many-function-args, not-callable, unexpected-keyword-arg, no-value-for-parameter
 '''
 module for data representation translation methods
-
-
-ToDo:
-
-    - right now we distinguish on histogramming/lookup for scalars (normal) or array, which means that instead
-    of just a single value per e.g. histogram bin, there can be an array of values
-    This should be made more general that one function can handle everything...since now we have several
-    functions doing similar things. not very pretty
-
 '''
+
+# TODO:
+#    - right now we distinguish on histogramming/lookup for scalars (normal) or array, which means that instead
+#    of just a single value per e.g. histogram bin, there can be an array of values
+#    This should be made more general that one function can handle everything...since now we have several
+#    functions doing similar things. not very pretty
+
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
