@@ -8,7 +8,7 @@ The data lives in SmartArrays on both CPU and GPU
 """
 from __future__ import absolute_import, print_function
 
-from collections import OrderedDict
+from collections import OrderedDict, Sequence
 
 import numpy as np
 from numba import SmartArray
@@ -307,7 +307,7 @@ class Container(object):
             flat_array = data.hist.ravel()
             self.binned_data[key] = (SmartArray(flat_array), data.binning)
 
-        elif isinstance(data, tuple):
+        elif isinstance(data, Sequence) and len(data) == 2:
             binning, array = data
             assert isinstance(binning, MultiDimBinning)
             if isinstance(array, SmartArray):
