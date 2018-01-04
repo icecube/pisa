@@ -177,7 +177,9 @@ def spectral_index_scale(true_energy, egy_pivot, delta_index):
 
 @myjit
 def sign(val):
-    ''' signum '''
+    ''' signum function'''
+    if val == 0:
+        return 0
     if val >= 0:
         return 1.
     return -1.
