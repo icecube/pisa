@@ -19,7 +19,7 @@ import numpy as np
 from numba import jit, float64, complex64, int32, float32, complex128, guvectorize
 
 from pisa import FTYPE, TARGET
-from pisa.utils.numba_tools import *
+from pisa.utils.numba_tools import myjit, conjugate_transpose, conjugate, matrix_dot_matrix, matrix_dot_vector, clear_matrix, copy_matrix, cuda, ctype, ftype
 
 @myjit
 def get_H_vac(mix_nubar, mix_nubar_conj_transp, dm_vac_vac, H_vac):
