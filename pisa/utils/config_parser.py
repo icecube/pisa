@@ -736,7 +736,7 @@ class MutableMultiFileIterator(object):
         if fpath is None:
             try:
                 resource = find_resource(fpname)
-            except:
+            except IOError:
                 pass
             else:
                 if isfile(resource):
