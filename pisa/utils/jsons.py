@@ -88,7 +88,7 @@ def from_json(filename):
 
     _, ext = os.path.splitext(filename)
     ext = ext.replace('.', '').lower()
-    assert ext in JSON_EXTS or ext in ZIP_EXTS or ext in XOR_EXTS
+    assert ext in JSON_EXTS or ext in ZIP_EXTS + XOR_EXTS
     if ext == 'bz2':
         content = json.loads(
             bz2.decompress(open_resource(filename).read()),
@@ -156,7 +156,7 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
 
     _, ext = os.path.splitext(filename)
     ext = ext.replace('.', '').lower()
-    assert ext == 'json' or ext in ZIP_EXTS or ext in XOR_EXTS
+    assert ext == 'json' or ext in ZIP_EXTS + XOR_EXTS
 
     with open(filename, 'w') as outfile:
         if ext == 'bz2':
