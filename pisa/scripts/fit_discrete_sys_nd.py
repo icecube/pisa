@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 """
+Hyperplane fitting scriot
+
 Produce fit results for sets of disctrete systematics (i.e. for example
 several simulations for different DOM efficiencies)
 
 The parameters and settings going into the fit are given by an external cfg
 file (fit settings).
 
-n-dimensional MapSets are supported to be fitted with m-dimesnional
-polynomials, that can either be forced to go through the nominal data point or
-not
+n-dimensional MapSets are supported to be fitted with m-dimesnional, linear
+hyperplanes functions
 """
-
 
 from argparse import ArgumentParser
 from uncertainties import unumpy as unp
