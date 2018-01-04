@@ -476,8 +476,9 @@ def parse_param(config, section, selector, fullname, pname, value):
             nominal = value.nominal_value * value.units # pylint: disable=unused-variable
         if 'sigma' in range_:
             sigma = value.std_dev * value.units # pylint: disable=unused-variable
-        range_ = np.asarray(eval(range_))
-        kwargs['range'] = range_.to(value.units) # pylint: disable=eval-used
+        range_ = range_.replace('[', 'np.array([')
+        range_ = range_.replace(']', '])')
+        kwargs['range'] = eval(range_).to(value.units) # pylint: disable=eval-used
         # Strip out uncertainties from value itself (as we will rely on the
         # prior from here on out)
         value = value.nominal_value * value.units

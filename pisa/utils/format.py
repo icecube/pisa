@@ -139,7 +139,7 @@ for K, V in POWER_OF_1024_TO_BIN_PREFIX.items():
     BIN_PREFIX_TO_POWER_OF_1024[V] = K
 
 
-def split(string, sep, force_case=None, parse_func=None):
+def split(string, sep=',', force_case=None, parse_func=None):
     """Parse a string containing a separated list.
 
     * Before splitting the list, the string has extraneous whitespace removed
