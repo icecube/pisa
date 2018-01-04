@@ -26,30 +26,34 @@ def sum_row_kernel(mix, bla, inp, out):
 def sum_row(mix, bla, inp, out):
     sum_row_kernel(mix, bla, inp, out)
 
-print 'ftype=',ftype
+def main():
+    print 'ftype=',ftype
 
-# hist arrays
-mix = np.ones((3,3), dtype=np.float64)
-n = 1000000
-inp = np.arange(3*n, dtype=np.int32).reshape(n, 3)
-out = np.ones((n), dtype=np.int32)
+    # hist arrays
+    mix = np.ones((3,3), dtype=np.float64)
+    n = 1000000
+    inp = np.arange(3*n, dtype=np.int32).reshape(n, 3)
+    out = np.ones((n), dtype=np.int32)
 
-inp = SmartArray(inp)
-out = SmartArray(out)
+    inp = SmartArray(inp)
+    out = SmartArray(out)
 
-if target == 'cuda':
-    where='gpu'
-else:
-    where='host'
+    if target == 'cuda':
+        where='gpu'
+    else:
+        where='host'
 
-start_t = time.time()
-sum_row(mix, 42.+2j, inp.get(where), out=out.get(where))
-end_t = time.time()
-print 'took %.5f'%(end_t - start_t)
-start_t = time.time()
-sum_row(mix, 42.+2j, inp.get(where), out=out.get(where))
-end_t = time.time()
-print 'took %.5f'%(end_t - start_t)
-out.mark_changed(where)
+    start_t = time.time()
+    sum_row(mix, 42.+2j, inp.get(where), out=out.get(where))
+    end_t = time.time()
+    print 'took %.5f'%(end_t - start_t)
+    start_t = time.time()
+    sum_row(mix, 42.+2j, inp.get(where), out=out.get(where))
+    end_t = time.time()
+    print 'took %.5f'%(end_t - start_t)
+    out.mark_changed(where)
 
-print out.get('host')
+    print out.get('host')
+
+if __name__ == '__main__':
+    main()
