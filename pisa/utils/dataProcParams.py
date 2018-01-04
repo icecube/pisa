@@ -565,7 +565,7 @@ class DataProcParams(dict):
     def subselect(data, fields, indices=None):
         if isinstance(data, FlavIntData):
             outdata = FlavIntData()
-            for flavint in data.flavints():
+            for flavint in data.flavints:
                 outdata[flavint] = DataProcParams.subselect(data[flavint],
                                                             fields=fields,
                                                             indices=indices)
@@ -589,7 +589,7 @@ class DataProcParams(dict):
         """
         if isinstance(data, FlavIntData):
             outdata = FlavIntData()
-            for flavint in data.flavints():
+            for flavint in data.flavints:
                 outdata[flavint] = self.applyCuts(
                     data[flavint], cuts=cuts, boolean_op=boolean_op,
                     return_fields=return_fields
