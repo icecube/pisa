@@ -11,7 +11,7 @@ from pisa.utils import vectorizer
 
 class pi_aeff(PiStage):
     """
-    PISA Pi stage to histogram events
+    PISA Pi stage to apply aeff weights
 
     Paramaters
     ----------
