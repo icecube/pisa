@@ -4,7 +4,7 @@
 DataProcParams class for importing, working with, and storing data processing
 parameters (e.g., PINGU's V5 processing).
 """
-
+from __future__ import division
 
 from collections import Mapping, OrderedDict, Sequence
 from itertools import izip
