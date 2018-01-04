@@ -210,13 +210,14 @@ from uncertainties import ufloat, ufloat_fromstr
 
 from pisa import ureg
 from pisa.utils.fileio import from_file
+from pisa.utils.format import split
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
 
 
 __all__ = ['PARAM_RE', 'PARAM_ATTRS', 'STAGE_SEP',
-           'parse_quantity', 'parse_string_literal', 'split',
+           'parse_quantity', 'parse_string_literal',
            'interpret_param_subfields', 'parse_param', 'parse_pipeline_config',
            'MutableMultiFileIterator', 'PISAConfigParser']
 
@@ -336,36 +337,6 @@ def parse_string_literal(string):
     if string.strip().lower() == 'none':
         return None
     return string
-
-
-def split(string, sep=','):
-    """Parse a string containing a comma-separated list as a Python list of
-    strings. Each resulting string is forced to be lower-case and surrounding
-    whitespace is stripped.
-
-    Parameters
-    ----------
-    string : string
-        The string to be split
-
-    sep : string
-        Separator to look for
-
-    Returns
-    -------
-    lst : list of strings
-
-    Examples
-    --------
-    >>> print split(' One, TWO, three ')
-    ['one', 'two', 'three']
-
-    >>> print split('one:two:three', sep=':')
-    ['one', 'two', 'three']
-
-    """
-    #return [ x.strip().lower() for x in str.split(str(string), sep)]
-    return [ parse_string_literal(x.strip().lower()) for x in str.split(str(string), sep)]
 
 
 def interpret_param_subfields(subfields, selector=None, pname=None, attr=None):
