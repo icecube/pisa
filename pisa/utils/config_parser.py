@@ -435,6 +435,8 @@ def parse_param(config, section, selector, fullname, pname, value):
             sigma = value.s * value.units # pylint: disable=unused-variable
         range_ = range_.replace('[', 'np.array([')
         range_ = range_.replace(']', '])')
+        # Strip out uncertainties from value itself (as we will rely on the
+        # prior from here on out)
         kwargs['range'] = eval(range_).to(value.units) # pylint: disable=eval-used
 
     if config.has_option(section, fullname + '.prior'):
@@ -468,20 +470,6 @@ def parse_param(config, section, selector, fullname, pname, value):
         kwargs['prior'] = Prior(kind='gaussian',
                                 mean=value.nominal_value * value.units,
                                 stddev=value.std_dev * value.units)
-
-    if config.has_option(section, fullname + '.range'):
-        range_ = config.get(section, fullname + '.range')
-        # NOTE: `nominal` and `sigma` are called out in the `range_` string
-        if 'nominal' in range_:
-            nominal = value.nominal_value * value.units # pylint: disable=unused-variable
-        if 'sigma' in range_:
-            sigma = value.std_dev * value.units # pylint: disable=unused-variable
-        range_ = range_.replace('[', 'np.array([')
-        range_ = range_.replace(']', '])')
-        kwargs['range'] = eval(range_).to(value.units) # pylint: disable=eval-used
-        # Strip out uncertainties from value itself (as we will rely on the
-        # prior from here on out)
-        value = value.nominal_value * value.units
 
     # Strip out any uncertainties from value itself (an explicit ``.prior``
     # specification takes precedence over this)
