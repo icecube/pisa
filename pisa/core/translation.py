@@ -50,13 +50,13 @@ def resample(weights, old_sample, old_binning, new_sample, new_binning):
     # this is a two step process, first histogram the weights into the new binning:
     # and keep the flat_hist_counts
     if TARGET == 'cuda':
-        flat_hist = get_hist_gpu(old_sample, weights, new_binning, True)
-        flat_hist_counts = get_hist_gpu(old_sample, weights, new_binning, False)
+        flat_hist = get_hist_gpu(old_sample, weights, new_binning, apply_weights=True)
+        flat_hist_counts = get_hist_gpu(old_sample, weights, new_binning, apply_weights=False)
     else:
         #print(old_sample[0].get('host'))
         #print(weights.get('host'))
-        flat_hist = get_hist_np(old_sample, weights, new_binning, True)
-        flat_hist_counts = get_hist_np(old_sample, weights, new_binning, False)
+        flat_hist = get_hist_np(old_sample, weights, new_binning, apply_weights=True)
+        flat_hist_counts = get_hist_np(old_sample, weights, new_binning, apply_weights=False)
     vectorizer.divide(flat_hist_counts, flat_hist)
 
     # now do the inverse, a lookup
@@ -99,13 +99,13 @@ def get_hist(sample, weights, binning, averaged):
 
     '''
     if TARGET == 'cuda':
-        flat_hist = get_hist_gpu(sample, weights, binning, True)
+        flat_hist = get_hist_gpu(sample, weights, binning, apply_weights=True)
         if averaged:
-            flat_hist_counts = get_hist_gpu(sample, weights, binning, False)
+            flat_hist_counts = get_hist_gpu(sample, weights, binning, apply_weights=False)
     else:
-        flat_hist = get_hist_np(sample, weights, binning, True)
+        flat_hist = get_hist_np(sample, weights, binning, apply_weights=True)
         if averaged:
-            flat_hist_counts = get_hist_np(sample, weights, binning, False)
+            flat_hist_counts = get_hist_np(sample, weights, binning, apply_weights=False)
     if averaged:
         #print(flat_hist_counts.get('host').shape)
         #print(flat_hist.get('host').shape)
