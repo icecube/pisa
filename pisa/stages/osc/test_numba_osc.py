@@ -9,15 +9,22 @@ import numpy as np
 from numba import guvectorize, SmartArray
 
 from pisa import FTYPE
-from pisa.stages.osc.osc_params import OscParams
+from pisa.stages.osc.pi_osc_params import OscParams
 from pisa.stages.osc.layers import Layers
 from prob3numba.numba_osc import *
-from prob3numba.numba_tools import *
+from pisa.utils.numba_tools import *
+from pisa.utils.resources import find_resource
 
 def main():
 
     # Set up some mixing parameters
-    OP = OscParams(7.5e-5, 2.524e-3, np.sqrt(0.306), np.sqrt(0.02166), np.sqrt(0.441), 261/180.*np.pi)
+    OP = OscParams()
+    OP.dm21 = 7.5e-5
+    OP.dm31 = 2.524e-3
+    OP.sin12 = np.sqrt(0.306)
+    OP.sin13 = np.sqrt(0.02166)
+    OP.sin23 = np.sqrt(0.441)
+    OP.deltacp = 261/180.*np.pi
     mix = OP.mix_matrix_complex
     dm = OP.dm_matrix
     nsi_eps = np.zeros_like(mix)
@@ -25,7 +32,7 @@ def main():
 
 
     # calc layers
-    earth_model = '/home/peller/cake/pisa/resources/osc/PREM_59layer.dat'
+    earth_model = find_resource('osc/PREM_59layer.dat')
     det_depth = 2
     atm_height = 20
     myLayers = Layers(earth_model, det_depth, atm_height)
@@ -179,4 +186,5 @@ def main():
     plt.savefig('osc_test_map_diff.png')
 
 if __name__ == '__main__':
-    main()
+    pass
+    #main()

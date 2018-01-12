@@ -7,6 +7,7 @@ import time
 
 from numba import guvectorize, SmartArray
 
+from pisa import TARGET
 from pisa.utils.numba_tools import *
 
 @myjit
@@ -22,7 +23,7 @@ def sum_row_kernel(mix, bla, inp, out):
     bla *= 0.1
     out[0] += E[1].real * bla.real + inp[0]
 
-@guvectorize(['void(float64[:,:], complex128, int32[:], int32[:])'], '(a,b),(),(f)->()', target=target)
+@guvectorize(['void(float64[:,:], complex128, int32[:], int32[:])'], '(a,b),(),(f)->()', target=TARGET)
 def sum_row(mix, bla, inp, out):
     sum_row_kernel(mix, bla, inp, out)
 
@@ -38,20 +39,15 @@ def main():
     inp = SmartArray(inp)
     out = SmartArray(out)
 
-    if target == 'cuda':
-        where='gpu'
-    else:
-        where='host'
-
     start_t = time.time()
-    sum_row(mix, 42.+2j, inp.get(where), out=out.get(where))
+    sum_row(mix, 42.+2j, inp.get(WHERE), out=out.get(WHERE))
     end_t = time.time()
     print 'took %.5f'%(end_t - start_t)
     start_t = time.time()
-    sum_row(mix, 42.+2j, inp.get(where), out=out.get(where))
+    sum_row(mix, 42.+2j, inp.get(WHERE), out=out.get(WHERE))
     end_t = time.time()
     print 'took %.5f'%(end_t - start_t)
-    out.mark_changed(where)
+    out.mark_changed(WHERE)
 
     print out.get('host')
 
