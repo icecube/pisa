@@ -257,7 +257,6 @@ else:
     raise ValueError('FTYPE must be one of `np.float32` or `np.float64`. Got'
                      ' %s instead.' %FTYPE)
 
-<<<<<<< HEAD
 if TARGET == 'cpu':
     sys.stderr.write('PISA running on CPU only.\n')
 if TARGET == 'parallel':
@@ -265,35 +264,5 @@ if TARGET == 'parallel':
 elif TARGET == 'cuda':
     sys.stderr.write('PISA running on CPU+GPU.\n')
 
-
-# Default to single thread, then try to read from env
-OMP_NUM_THREADS = 1
-"""Number of threads OpenMP is allocated"""
-
-if os.environ.has_key('OMP_NUM_THREADS'):
-    OMP_NUM_THREADS = int(os.environ['OMP_NUM_THREADS'])
-    assert OMP_NUM_THREADS >= 1
-
-
-# Default value for CACHE_DIR
-CACHE_DIR = '~/.cache/pisa'
-"""Root directory for storing PISA cache files"""
-
-# PISA users can define cache directory directly via PISA_CACHE_DIR env var;
-# PISA_CACHE_DIR has priority over XDG_CACHE_HOME, so it is checked first
-if 'PISA_CACHE_DIR' in os.environ:
-    CACHE_DIR = os.environ['PISA_CACHE_DIR']
-
-# Free Standards Group (freedesktop.org) defines the standard override for
-# '~/.cache' to be set by XDG_CACHE_HOME env var; more info at
-# https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
-elif 'XDG_CACHE_HOME' in os.environ:
-    CACHE_DIR = os.path.join(os.environ['XDG_CACHE_HOME'], 'pisa')
-
-CACHE_DIR = os.path.expandvars(os.path.expanduser(CACHE_DIR))
-
-
-=======
->>>>>>> cake
 # Clean up imported names
 del os, sys, np, UnitRegistry, get_versions
