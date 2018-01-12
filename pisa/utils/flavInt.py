@@ -1,10 +1,6 @@
 #! /usr/bin/env python
-#
-# author: Justin L. Lanfranchi
-#         jll1062+pisa@phys.psu.edu
-#
-# date:   October 24, 2015
 # pylint: disable=global-statement
+
 """
 Classes for working with neutrino flavors (NuFlav), interactions types
 (IntType), "flavints" (a flavor and an interaction type) (NuFlavInt), and
@@ -65,6 +61,21 @@ __all__ = ['NuFlav', 'NuFlavInt', 'NuFlavIntGroup', 'FlavIntData',
            'NUECC', 'NUEBARCC', 'NUMUCC', 'NUMUBARCC', 'NUTAUCC', 'NUTAUBARCC',
            'NUENC', 'NUEBARNC', 'NUMUNC', 'NUMUBARNC', 'NUTAUNC', 'NUTAUBARNC']
 
+__author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 __BAR_SSEP__ = ''
 
@@ -1888,7 +1899,7 @@ class CombinedFlavIntData(FlavIntData):
                 match = True
                 #print 'found exact match:', tgt_grp, '==', flavints
             # Requested flavints are strict subset
-            elif not (tgt_grp - flavints):
+            elif not tgt_grp - flavints:
                 all_keys[0] = key
                 match = True
                 #print 'found subset match:', tgt_grp, 'in', flavints

@@ -52,14 +52,16 @@ Some examples are given to facilitate understanding.
 
 ## Directory Listing
 
-* `images/` - Contains images designed to illustrate the architecture of a stage, how it fits in to the pipeline and the overall distribution maker.
-* `__init__.py`
-* `binning.py` - A class for dealing with binning so that features like the name, units, whether it is logarithmic etc. can be stored.
-* `distribution_maker.py` - A class for dealing with how to go from a pipeline to actual output that can be fed to an analysis or whatever is needed. This can deal with combining multiple pipelines.
-* `events.py` - A storage container for the raw events that can be then used to create _something_ e.g. a `Map` or a `Transform`.
-* `map.py` - A storage container for the output histograms so that much more information can be easily kept with it e.g. name, binning, errors, units etc.
-* `param.py` - Defines the behaviour of parameters i.e. the name, expected values, any priors, whether they are to be varied in an analysis etc.
-* `pipeline.py` - Gives structure to the stages and organises them based on pipeline `cfg` files. 
-* `prior.py` - Defines the generic form of a prior i.e. the type and how the penalty is calculated.
-* `stage.py` - Defines the generic form of a stage i.e. loading from pipelines, how to cache results etc.
-* `transform.py` - Defines the generic form of the transforms used to get between stages i.e. take the input (if any), do _something_ to it and then get an output. 
+| File/directory          | Description
+| ----------------------- | -----------
+| `images/`               | Images to include in docs
+| `__init__.py`           | Make the `pisa/core` directory behave as Python module `pisa.core`
+| `binning.py`            | Define `OneDimBinning` and `MultiDimBinning` classes to define and work with various types of binning specifications
+| `distribution_maker.py` | Define `DistributionMaker` class for producing distributions from one or more `Pipeline`s; also can run this file as a script to produce a distribution
+| `events.py`             | Define `Events` and `Data` classes as containers for events
+| `map.py`                | Define `Map` class for defining/creating a single histogram and `MapSet` for working with a set of `Map`s (histograms)
+| `param.py`              | Define `Param` class for working with experimental parameters (name, expected values, priors, whether they are to be varied in an analysis etc.) and define `ParamSet` for working with a set of `Param`s, and finally `ParamSelector` to allow switching between discrete versions of individual `Param`s
+| `pipeline.py`           | Define `Pipeline` class that holds one or more `Stage`s that are meant to be chained together to poduce a distribution; also can run this file as a script to produce a distribtuion
+| `prior.py`              | Define `Prior` class to give to `Param`s for defining prior knowledge on them
+| `stage.py`              | Define `Stage` class which is the base class for implementing a service in PISA
+| `transform.py`          | Define  `Transform` as a generic object for use in a service for transforming the outputs of a previous stage; `BinnedTensorTransform` is a subclass of this implementing arbitrary-dimensional tensor transforms; `TransformSet` is a container for multiple `Transform`s

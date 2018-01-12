@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-
 """
 Utilities for interpreting and returning formatted strings.
 """
@@ -40,7 +39,21 @@ __all__ = ['WHITESPACE_RE', 'NUMBER_RESTR', 'NUMBER_RE', 'HRGROUP_RESTR',
            'timediff', 'test_timediff', 'timestamp', 'test_timestamp']
 
 
-__author__ = 'J.L. Lanfranchi, jll1062+pisa@phys.psu.edu'
+__author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 WHITESPACE_RE = re.compile(r'\s')
@@ -845,7 +858,7 @@ def format_num(value,
         `fmt` is ``'binpre'`` then `exponent` is applied to 1024.
         I.e., 1 maps to kibi (Ki), 2 maps to mebi (Mi), etc.
 
-    sci_thresh : tuple of 2 integers >= 0
+    sci_thresh : sequence of 2 integers
         When to switch to scientific notation. The first integer is the order
         of magnitude of `value` at or above which scientific notation will be
         used. The second integer indicates the order of magnitude at or below

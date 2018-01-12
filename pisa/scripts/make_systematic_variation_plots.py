@@ -5,9 +5,10 @@
 """
 Create plots showing the effect of shifting a systematic by 10% or +/- 1 sigma
 if such a definition is possible. This will be shown as 2D maps per PID bin.
-
 """
 
+
+from __future__ import absolute_import, division
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from fnmatch import fnmatch
@@ -29,6 +30,22 @@ from pisa.utils.postprocess import tex_axis_label
 
 
 __all__ = ['plot_asymmetry', 'parse_args', 'normcheckpath', 'main']
+
+__author__ = 'S. Wren'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 def plot_variation(baseline_maps, up_maps, down_maps,

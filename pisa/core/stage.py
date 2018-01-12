@@ -1,10 +1,10 @@
-# Authors
 """
 Stage base class designed to be inherited by PISA services, such that all basic
 functionality is built-in.
-
 """
 
+
+from __future__ import absolute_import, division, print_function
 
 from collections import Iterable, Mapping, Sequence
 from copy import deepcopy
@@ -26,6 +26,22 @@ from pisa.utils.resources import find_resource
 
 
 __all__ = ['arg_str_seq_none', 'Stage']
+
+__author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 # TODO: mode for not propagating errors. Probably needs hooks here, but meat of
@@ -613,7 +629,6 @@ class Stage(object):
                             ' the case that the input includes sideband'
                             ' objects.' % type(outputs))
 
-    @profile
     def _check_params(self, params):
         """Make sure that `expected_params` is defined and that exactly the
         params specified in self.expected_params are present.
@@ -636,7 +651,6 @@ class Stage(object):
                          %', '.join(sorted(exp_p))
                          + ';\n'.join(err_strs))
 
-    @profile
     def check_transforms(self, transforms):
         """Check that transforms' inputs and outputs match those specified
         for this service.
@@ -658,8 +672,8 @@ class Stage(object):
                 "Transforms' outputs: " + str(transforms.output_names) + \
                 "\nStage outputs: " + str(self.output_names)
 
-    @profile
     def check_outputs(self, outputs):
+        """Check that the output names are those expected"""
         if set(outputs.names) != set(self.output_names):
             raise ValueError(
                 "Outputs: " + str(outputs.names) +
@@ -1036,19 +1050,19 @@ class Stage(object):
     def _derive_nominal_outputs_hash(self):
         return self._derive_nominal_transforms_hash()
 
-    def _compute_nominal_transforms(self):
+    def _compute_nominal_transforms(self): # pylint: disable=no-self-use
         """Stages that start with a nominal transform and use systematic
         parameters to modify the nominal transform in order to obtain the final
         transforms should override this method for deriving the nominal
         transform."""
         return None
 
-    def _compute_transforms(self):
+    def _compute_transforms(self): # pylint: disable=no-self-use
         """Stages that apply transforms to inputs should override this method
         for deriving the transform. No-input stages should leave this as-is."""
         return TransformSet([])
 
-    def _compute_nominal_outputs(self):
+    def _compute_nominal_outputs(self): # pylint: disable=no-self-use
         return None
 
     @profile
@@ -1058,12 +1072,12 @@ class Stage(object):
         work for computing outputs is done by the TransfromSet below."""
         return self.transforms.apply(inputs)
 
-    def validate_params(self, params):
+    def validate_params(self, params): # pylint: disable=unused-argument, no-self-use
         """Override this method to test if params are valid; e.g., check range
         and dimensionality."""
         return
 
-    def validate_binning(self):
+    def validate_binning(self): # pylint: disable=no-self-use
         """Override this method to test if the input and output binning
         (e.g., dimensionality, domains, separately or in combination)
         conform to the transform applied by the stage."""

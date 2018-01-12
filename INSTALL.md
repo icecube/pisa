@@ -35,7 +35,7 @@ pip install -e my_virtual_env/src/pisa/[cuda,numba,develop] \
 export PISA_FTYPE=double
 
 # Run the physics tests (append --ignore-cuda-errors if no CUDA support)
-my_virtual_env/src/pisa/tests/test_consistency_with_pisa2.py -v
+my_virtual_env/src/pisa/pisa_tests/test_consistency_with_pisa2.py -v
 
 # EXAMPLE: Run a Monte Carlo pipeline to produce, store, and plot its expected
 # distributions at the output of each stage
@@ -44,7 +44,7 @@ pipeline.py --pipeline settings/pipeline/example.cfg \
 
 # EXAMPLE: Run the Asimov NMO analysis; leave off "_gpu" to run CPU-only
 # version
-hypo_testing.py --logdir /tmp/test analysis \
+pisa-analysis discrete_hypo --logdir /tmp/test analysis \
     --h0-pipeline settings/pipeline/example_gpu.cfg \
     --h0-param-selections="ih" \
     --h1-param-selections="nh" \
@@ -55,7 +55,7 @@ hypo_testing.py --logdir /tmp/test analysis \
     --pprint -v
 
 # Display the significance for distinguishing hypothesis h1 from h0
-hypo_testing_postprocess.py --asimov --dir /tmp/test/*
+pisa-postproc --asimov --dir /tmp/test/*
 
 # Leave the virtual environment (run the `source...` command above to re-enter
 # the virtual environment at a later time)
@@ -131,9 +131,7 @@ Optional dependencies. Some of these must be installed manually prior to install
     `pip install virtualenv`
 * [OpenMP](http://www.openmp.org) Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.
   * Available from your compiler: gcc supports OpenMP 4.0 and Clang >= 3.8.0 supports OpenMP 3.1. Either version of OpenMP should work, but Clang has yet to be tested for its OpenMP support.
-* [PyROOT](https://root.cern.ch/pyroot) Necessary to read ROOT cross sections files; must install ROOT on your system in addition to PyROOT. There is no `pip` package for either.
-  * Ubuntu 15.x and 16.04:<br>
-    `sudo apt-get install root-system libroot-bindings-python*`
+* [ROOT 6.x with PyROOT](https://root.cern.ch) Necessary for `xsec.genie` and `unfold.roounfold` services, and to read ROOT cross section files in the `crossSections` utils module.
 * [numba](http://numba.pydata.org) Just-in-time compilation of decorated Python functions to native machine code via LLVM. This can accelerate certain routines significantly. If not using Anaconda to install, you must have LLVM installed already on your system (see above).
   * Installed alongside PISA if you specify option `['numba']` to `pip`
 * [Pylint](http://www.pylint.org): Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.<br>
@@ -146,6 +144,8 @@ Optional dependencies. Some of these must be installed manually prior to install
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [versioneer](https://github.com/warner/python-versioneer) Automatically get versions from git and make these embeddable and usable in code. Note that the install process is unique since it first places `versioneer.py` in the PISA root directory, and then updates source files within the repository to provide static and dynamic version info.
   * Installed alongside PISA if you specify option `['develop']` to `pip`
+* [MCEq](http://github.com/afedynitch/MCEq) Required for `flux.mceq` service.
+* [nuSQuiDS](https://github.com/arguelles/nuSQuIDS) Required for `osc.nusquids` service.
 
 
 ### Set up your environment
@@ -325,7 +325,7 @@ Unit tests are designed to ensure that the basic mechanisms of objects' function
 
 These are all run, plus additional tests (takes about 15-20 minutes on a laptop) with the command
 ```bash
-$PISA/tests/test_command_lines.sh
+$PISA/pisa_tests/test_command_lines.sh
 ```
 
 #### Physics Tests

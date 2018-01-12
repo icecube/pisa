@@ -1,13 +1,3 @@
-#
-# PISA authors: Lukas Schulte
-#               schulte@physik.uni-bonn.de
-#               Justin L. Lanfranchi
-#               jll1062+pisa@phys.psu.edu
-#
-# CAKE author: Shivesh Mandalia
-#              s.p.mandalia@qmul.ac.uk
-#
-# date:    2016-05-13
 """
 The purpose of this stage is to simulate event classification like that used
 for PINGU, sorting the reconstructed nue CC, numu CC, nutau CC, and NC events
@@ -21,11 +11,10 @@ created, which gives the PID probabilities in each bin. The input maps are
 transformed according to these probabilities to provide an output containing a
 map for track-like events ('trck') and shower-like events ('cscd'), which is
 then returned.
-
 """
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 from collections import OrderedDict
 from itertools import product
@@ -41,6 +30,22 @@ from pisa.utils.profiler import profile
 
 
 __all__ = ['hist']
+
+__author__ = 'L. Schulte, J.L. Lanfranchi, S. Mandalia'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 class hist(Stage):
@@ -164,7 +169,7 @@ class hist(Stage):
     `nue_cc, numu_cc, nutau_cc, nuall_nc`. Thus, only the HDF5 files with the
     naming convention
     ```
-    events__*__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc.hdf5
+    events__*__joined_G_nue_cc+nuebar_cc_G_numu_cc+numubar_cc_G_nutau_cc+nutaubar_cc_G_nuall_nc+nuallbar_nc*.hdf5
     ```
     should be used as input. The structure of the datafile is
     ```
@@ -232,7 +237,7 @@ class hist(Stage):
         output_names = [self.suffix_channel(in_name, out_chan) for in_name,
                         out_chan in product(input_names, self.output_channels)]
 
-        super(self.__class__, self).__init__(
+        super(hist, self).__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,

@@ -1,71 +1,112 @@
-# author : S.Wren
-#
-# date   : July 2017
-"""
-A script for doing analysis postprocessing.
+#!/usr/bin/env python
 
 """
+Postprocess the outputs of a PISA analysis.
+"""
+
+
+from __future__ import absolute_import
 
 from argparse import ArgumentParser
+from collections import OrderedDict
+from os.path import basename
 import sys
 import numpy as np
 
-from pisa.utils.postprocess import Postprocessor
 from pisa.utils.fileio import mkdir
 from pisa.utils.log import logging, set_verbosity
+from pisa.utils.postprocess import Postprocessor
+from pisa.utils.scripting import get_script, parse_command
 
-def parse_args(description=__doc__, profile_scan=False,
-               injparamscan=False, systtests=False,
-               hypo_testing_analysis=False):
-    """Parse command line args. The booleans are used to specify what
-    type of postprocessing is being done and so the correct args will
-    be displayed.
+
+__all__ = ['SCRIPT', 'parse_args', 'postproc_profile_scan',
+           'postproc_discrete_hypo', 'postproc_inj_param_scan',
+           'postproc_syst_tests', 'parse_hypo_testing_subcommand', 'main']
+
+__author__ = 'S. Wren, J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
+
+
+SCRIPT = basename(get_script())
+
+
+def parse_args(command, description):
+    """Parse command line args, where `command` defines what args are to be
+    displayed / accepted...
+
+    Parameters
+    ----------
+    command : string
+        Command passed to the script
+
+    description : string
+        Description line(s) to print to terminal in help message (i.e. if -h
+        or --help is passed)
 
     Returns
     -------
     init_args_d : dict
+        Command line arguments passed via the command line, in a dictionary
 
     """
+    assert command in ['profile_scan', 'hypo_testing', 'inj_param_scan',
+                       'syst_tests']
+
     parser = ArgumentParser(description=description)
 
-    if not profile_scan:
-        if injparamscan:
-            parser.add_argument(
-                '-d', '--dir', required=True,
-                metavar='DIR', type=str, action='append',
-                help='''Directory containing output of hypo_testing.py.
-                Repeat this argument to plot multiple significance lines on
-                the same plot. Note that if you do then none of the fits or
-                the minimiser info will be plotted'''
-            )
-            parser.add_argument(
-                '-dl', '--dir_label', type=str, action='append',
-                help="""A unique name from which to identify each the above
-                directories can be identified. Repeat this argument for as
-                many times as you have directories. If no labels are
-                specified here they will be constructed using the truth
-                information in the files. So either specify one for
-                every directory or none at all."""
-            )
-        else:
-            parser.add_argument(
-                '-d', '--dir', required=True,
-                metavar='DIR', type=str,
-                help='''Directory containing output of hypo_testing.py.'''
-            )
-            if not systtests:
-                group = parser.add_mutually_exclusive_group(required=True)
-                group.add_argument(
-                    '--asimov', action='store_true',
-                    help='''Analyze the Asimov trials in the specified
-                    directories.'''
-                )
-                group.add_argument(
-                    '--llr', action='store_true',
-                    help='''Analyze the LLR trials in the specified
-                    directories.'''
-                )
-    else:
+    if command == 'inj_param_scan':
+        parser.add_argument(
+            '-d', '--dir', required=True,
+            metavar='DIR', type=str, action='append',
+            help='''Directory containing output of hypo_testing.py.
+            Repeat this argument to plot multiple significance lines on
+            the same plot. Note that if you do then none of the fits or
+            the minimiser info will be plotted'''
+        )
+        parser.add_argument(
+            '--dir-label', type=str, action='append',
+            help="""A unique name from which to identify each the above
+            directories can be identified. Repeat this argument for as
+            many times as you have directories. If no labels are
+            specified here they will be constructed using the truth
+            information in the files. So either specify one for
+            every directory or none at all."""
+        )
+
+    if command in ['hypo_testing', 'syst_tests']:
+        parser.add_argument(
+            '-d', '--dir', required=True,
+            metavar='DIR', type=str,
+            help='''Directory containing output of hypo_testing.py.'''
+        )
+
+    if command == 'hypo_testing':
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument(
+            '--asimov', action='store_true',
+            help='''Analyze the Asimov trials in the specified
+            directories.'''
+        )
+        group.add_argument(
+            '--llr', action='store_true',
+            help='''Analyze the LLR trials in the specified
+            directories.'''
+        )
+
+    if command == 'profile_scan':
         parser.add_argument(
             '--infile', metavar='FILE', type=str, required=True,
             help='''Output file of profile_scan.py to processs.'''
@@ -99,6 +140,7 @@ def parse_args(description=__doc__, profile_scan=False,
             all of the hX_hypo_to_hY_fid fit results on to the contour
             so you can select the appropriate one after the script is run.'''
         )
+
     parser.add_argument(
         '--detector', type=str, default='',
         help='''Name of detector to put in histogram titles.'''
@@ -107,34 +149,35 @@ def parse_args(description=__doc__, profile_scan=False,
         '--selection', type=str, default='',
         help='''Name of selection to put in histogram titles.'''
     )
-    if hypo_testing_analysis:
+
+    if command == 'hypo_testing':
         parser.add_argument(
-            '-LLR', '--llr_plots', action='store_true', default=False,
+            '--llr-plots', action='store_true', default=False,
             help='''Flag to make the LLR plots. This will give the
             actual analysis results.'''
         )
         parser.add_argument(
-            '-FM', '--fit_information', action='store_true', default=False,
+            '--fit-information', action='store_true', default=False,
             help='''Flag to make tex files containing the
             fiducial fit params and metric.'''
         )
         parser.add_argument(
-            '-MM', '--minim_information', action='store_true', default=False,
+            '--minim-information', action='store_true', default=False,
             help='''Flag to make plots of the minimiser information i.e. status,
             number of iterations, time taken etc.'''
         )
         parser.add_argument(
-            '-IP', '--individual_posteriors', action='store_true',
+            '--individual-posteriors', action='store_true',
             default=False,
             help='''Flag to plot individual posteriors.'''
         )
         parser.add_argument(
-            '-CP', '--combined_posteriors', action='store_true', default=False,
+            '--combined-posteriors', action='store_true', default=False,
             help='''Flag to plot combined posteriors for each h0 and h1
             combination.'''
         )
         parser.add_argument(
-            '-IOP', '--individual_overlaid_posteriors', action='store_true',
+            '--individual-overlaid-posteriors', action='store_true',
             default=False,
             help='''Flag to plot individual overlaid posteriors. Overlaid
             here means that for a plot will be made with each of the h0
@@ -142,28 +185,28 @@ def parse_args(description=__doc__, profile_scan=False,
             fiducial h0 and h1 pseudos.'''
         )
         parser.add_argument(
-            '-COP', '--combined_overlaid_posteriors', action='store_true',
+            '--combined-overlaid-posteriors', action='store_true',
             default=False,
             help='''Flag to plot combined overlaid posteriors.'''
         )
         parser.add_argument(
-            '-IS', '--individual_scatter', action='store_true', default=False,
+            '--individual-scatter', action='store_true', default=False,
             help='''Flag to plot individual 2D scatter plots of posteriors.'''
         )
         parser.add_argument(
-            '-CIS', '--combined_individual_scatter',
+            '--combined-individual-scatter',
             action='store_true', default=False,
             help='''Flag to plot all 2D scatter plots of one systematic
             with every other systematic on one plot for each h0 and h1
             combination.'''
         )
         parser.add_argument(
-            '-CS', '--combined_scatter', action='store_true', default=False,
+            '--combined-scatter', action='store_true', default=False,
             help='''Flag to plot all 2D scatter plots on one plot for each
             h0 and h1 combination.'''
         )
         parser.add_argument(
-            '-CM', '--correlation_matrix', action='store_true', default=False,
+            '--correlation-matrix', action='store_true', default=False,
             help='''Flag to plot the correlation matrices for each h0 and h1
             combination.'''
         )
@@ -190,7 +233,8 @@ def parse_args(description=__doc__, profile_scan=False,
             '--extra-points-labels', type=str, action='append',
             help='''The label(s) for the extra points above.'''
         )
-    elif injparamscan:
+
+    if command == 'inj_param_scan':
         parser.add_argument(
             '--inj-param-units', type=str, default=None,
             help="""If you know the units that you injected the parameter
@@ -201,22 +245,22 @@ def parse_args(description=__doc__, profile_scan=False,
             explicitly set it for use in the plot labels."""
         )
         parser.add_argument(
-            '-SIG', '--significances', action='store_true', default=False,
+            '--significances', action='store_true', default=False,
             help='''Flag to make the Asimov significance plots. This will
             give the actual results of the study.'''
         )
         parser.add_argument(
-            '-MM', '--minim_information', action='store_true', default=False,
+            '--minim-information', action='store_true', default=False,
             help='''Flag to make plots of the minimiser information i.e.
             status, number of iterations, time taken etc.'''
         )
         parser.add_argument(
-            '-IF', '--individual_fits', action='store_true', default=False,
+            '--individual-fits', action='store_true', default=False,
             help='''Flag to make plots of all of the best fit parameters
             separated by the fitted parameter.'''
         )
         parser.add_argument(
-            '-CF', '--combined_fits', action='store_true', default=False,
+            '--combined-fits', action='store_true', default=False,
             help='''Flag to make plots of all of the best fit parameters joined
             together.'''
         )
@@ -236,6 +280,7 @@ def parse_args(description=__doc__, profile_scan=False,
             '--extra-points-labels', type=str, action='append',
             help='''The label(s) for the extra points above.'''
         )
+
     parser.add_argument(
         '--outdir', metavar='DIR', type=str, default=None,
         help='''Store all output plots to this directory. This will make
@@ -253,9 +298,10 @@ def parse_args(description=__doc__, profile_scan=False,
         '-v', action='count', default=None,
         help='''set verbosity level'''
     )
-    if profile_scan:
+
+    if command == 'profile_scan':
         args = parser.parse_args(sys.argv[2:])
-    else:
+    else: # inj_param_scan, syst_tests, and hypo_testing
         args = parser.parse_args(sys.argv[3:])
     init_args_d = vars(args)
 
@@ -267,114 +313,20 @@ def parse_args(description=__doc__, profile_scan=False,
     if args.pdf:
         init_args_d['formats'].append('pdf')
 
-    if len(init_args_d['formats']) > 0:
-        logging.info(
-            "Files will be saved in format(s) %s"%init_args_d['formats']
-        )
-    else:
-        raise ValueError('Must specify a plot file format, either --png or'
-                         ' --pdf (or both), when processing llr results.')
+    if init_args_d['formats']:
+        logging.info('Files will be saved in format(s) %s',
+                     init_args_d['formats'])
 
     return init_args_d
 
 
-class PostprocessArgParser(object):
-    """
-    Allows for clever usage of this script such that all of the
-    postprocessing can be contained in this single script.
-    """
-    def __init__(self):
-        parser = ArgumentParser(
-            description="""This script contains all of the functionality for
-            processing the output of analyses""",
-            usage="""postprocess.py <command> [<subcommand>] [<args>]
+def postproc_profile_scan(return_outputs=False):
+    """Process the output files of profile_scan"""
 
-            There are two commands that can be issued:
-
-              hypo_testing    Processes output from some form of hypo_testing.
-              profile_scan    Processes output from some form of profile_scan.
-
-            Run postprocess.py <command> -h to see the different possible 
-            subcommands/arguments to each of these commands."""
-        )
-        parser.add_argument('command', help='Subcommand to run')
-        args = parser.parse_args(sys.argv[1:2])
-        expected_commands = ['hypo_testing', 'profile_scan']
-        if not hasattr(self, args.command):
-            raise ValueError(
-                "The command issued, %s, was not one of the expected commands"
-                " - %s."%(args.command, expected_commands)
-            )
-        else:
-            getattr(self, args.command)()
-
-    def hypo_testing(self):
-        """Does the main when the user selects hypo_testing"""
-        main_hypo_testing()
-
-    def profile_scan(self):
-        """Does the main when the user selects profile_scan"""
-        main_profile_scan()
-
-
-class PostprocessHypoTestingArgParser(object):
-    """
-    Allows for further clever usage of this script such that all of the
-    hypo_testing postprocessing can be contained in this single script.
-    """
-    def __init__(self):
-        parser = ArgumentParser(
-            description="""This script contains all of the functionality for
-            processing the output of hypo_testing analyses""",
-            usage="""postprocess.py hypo_testing [<subcommand>] [<args>]
-
-            There are three subcommands that can be issued:
-
-              analysis        Processes output from the standard hypothesis 
-                              testing analyses.
-              injparamscan    Processes output from a scan over some injected
-                              parameter in the data.
-              systtests       Processes output from tests on the impact of
-                              systematics on the analysis.
-
-            Run postprocess.py hypo_testing <subcommand> -h to see the
-            different possible arguments to each of these commands."""
-        )
-        parser.add_argument('subcommand', help='Subcommand to run')
-        args = parser.parse_args(sys.argv[2:3])
-        expected_commands = ['analysis', 'injparamscan', 'systtests']
-        if not hasattr(self, args.subcommand):
-            raise ValueError(
-                "The command issued, %s, was not one of the expected commands"
-                " - %s."%(args.subcommand, expected_commands)
-            )
-        else:
-            getattr(self, args.subcommand)()
-
-    def analysis(self):
-        """Does the main when the user selects hypo_testing analysis"""
-        main_analysis_postprocessing()
-
-    def injparamscan(self):
-        """Does the main when the user selects hypo_testing injparamscan"""
-        main_injparamscan_postprocessing()
-
-    def systtests(self):
-        """Does the main when the user selects hypo_testing systtests"""
-        main_systtests_postprocessing()
-
-
-def main_hypo_testing():
-    """Parses the args when the user selects hypo_testing"""
-    PostprocessHypoTestingArgParser()
-
-
-def main_profile_scan():
-    description = """A script for processing the output files of
-    profile_scan.py"""
-
-    init_args_d = parse_args(description=description,
-                             profile_scan=True)
+    init_args_d = parse_args(
+        description=postproc_profile_scan.__doc__,
+        command='profile_scan'
+    )
 
     if init_args_d['pseudo_experiments'] is not None:
         fluctuate_fid = True
@@ -408,8 +360,8 @@ def main_profile_scan():
     elif len(postprocessor.all_bin_cens) == 2:
         postprocessor.plot_2d_scans()
 
-        if (postprocessor.all_bin_names[0] == 'theta23') and \
-           (postprocessor.all_bin_names[1] == 'deltam31'):
+        if (postprocessor.all_bin_names[0] == 'theta23'
+                and postprocessor.all_bin_names[1] == 'deltam31'):
 
             postprocessor.add_deltam32_sin2theta23()
             postprocessor.plot_2d_scans(
@@ -420,13 +372,16 @@ def main_profile_scan():
 
     else:
         raise NotImplementedError(
-            "Postprocessing of profile scans in anything other than 1D or "
-            " 2D not implemented in this script."
+            'Postprocessing of profile scans in anything other than 1D or '
+            ' 2D not implemented in this script.'
         )
 
+    if return_outputs:
+        return postprocessor
 
-def main_analysis_postprocessing():
-    description = """Hypothesis testing: How do two hypotheses compare for
+
+def postproc_discrete_hypo(return_outputs=False):
+    """Hypothesis testing: How do two hypotheses compare for
     describing MC or data?
 
     This computes significances, etc. from the logfiles recorded by the
@@ -439,15 +394,17 @@ def main_analysis_postprocessing():
     #    axis labels. Come up with a better way of doing this. Could involve
     #    making legends and just labelling the axes alphabetically.
 
-    init_args_d = parse_args(description=description,
-                             hypo_testing_analysis=True)
+    init_args_d = parse_args(
+        description=postproc_discrete_hypo.__doc__,
+        command='hypo_testing'
+    )
 
     if init_args_d['asimov']:
         # TODO - Something like the necessary function is there with
         # calculate_deltachi2_significances but exactly how to output
         # this should probably be thought about
         raise NotImplementedError(
-            "Postprocessing of Asimov analysis not implemented yet."
+            'Postprocessing of Asimov analysis not implemented yet.'
         )
 
     # Otherwise: llr analysis
@@ -512,8 +469,8 @@ def main_analysis_postprocessing():
         postprocessor.make_scatter_plots(matrix=True)
 
 
-def main_injparamscan_postprocessing():
-    description = """Hypothesis testing: How do two hypotheses compare for
+def postproc_inj_param_scan(return_outputs=False):
+    """Hypothesis testing: How do two hypotheses compare for
     describing MC or data?
 
     This computes significances, etc. from the logfiles recorded by the
@@ -521,8 +478,10 @@ def main_injparamscan_postprocessing():
     The main result will be an Asimov sensitivity curve as a function of
     this inejcted parameter."""
 
-    init_args_d = parse_args(description=description,
-                             injparamscan=True)
+    init_args_d = parse_args(
+        description=postproc_inj_param_scan.__doc__,
+        command='inj_param_scan'
+    )
 
     postprocessor = Postprocessor(
         analysis_type='hypo_testing',
@@ -557,8 +516,8 @@ def main_injparamscan_postprocessing():
         if init_args_d['combined_fits']:
             postprocessor.make_asimov_fit_parameter_plots(combined=True)
     else:
-        if init_args_d['individual_fits'] or init_args_d['combned_fits'] or \
-           init_args_d['minim_information']:
+        if (init_args_d['individual_fits'] or init_args_d['combned_fits']
+                or init_args_d['minim_information']):
             raise ValueError(
                 "You have specified multiple input directories but have "
                 "also requested to make plots of the fit parameters or the "
@@ -567,12 +526,12 @@ def main_injparamscan_postprocessing():
             )
 
 
-def main_systtests_postprocessing():
-    description = """Hypothesis testing: How do two hypotheses compare for
+def postproc_syst_tests(return_outputs=False):
+    """Hypothesis testing: How do two hypotheses compare for
     describing MC or data?
 
     This script/module computes significances, etc. from the logfiles recorded
-    by the `hypo_testing_systtests.py` script. That is, looks at how the fits
+    by the `systematics_tests.py` script. That is, looks at how the fits
     change for three different N-1 tests:
 
       1) Where one of the systematics is fixed to the baseline value.
@@ -581,8 +540,10 @@ def main_systtests_postprocessing():
       3) Same as 2, but the systematic is not fixed and so the minimiser is
          allowed to try correct for the incorrect hypothesis."""
 
-    init_args_d = parse_args(description=description,
-                             systtests=True)
+    init_args_d = parse_args(
+        description=postproc_syst_tests.__doc__,
+        command='syst_tests'
+    )
 
     postprocessor = Postprocessor(
         analysis_type='hypo_testing',
@@ -599,5 +560,67 @@ def main_systtests_postprocessing():
     postprocessor.make_systtest_plots()
 
 
+HYPO_TESTING_COMMANDS = OrderedDict([
+    ('discrete_hypo', postproc_discrete_hypo),
+    ('inj_param_scan', postproc_inj_param_scan),
+    ('syst_tests', postproc_syst_tests)
+])
+
+HYPO_TESTING_DESCR = (
+    'Process the outputs produced by pisa-analysis script'
+)
+
+HYPO_TESTING_SUBCOMMAND_STR = '\n'.join([
+    '  {0:16s} Processes outputs of pisa-analysis {0} ...'.format(cmd)
+    for cmd in HYPO_TESTING_COMMANDS.keys()
+])
+
+
+HYPO_TESTING_USAGE = '''{0} hypo_testing [<subcommand>] [<args>]
+
+The subcommands that can be issued are:
+
+{1}
+
+Run
+  {0} hypo_testing <subcommand> -h
+to see the valid arguments for each of the above subcommands
+'''.format(SCRIPT, HYPO_TESTING_SUBCOMMAND_STR)
+
+
+def parse_hypo_testing_subcommand(return_outputs=False):
+    """Parse command line args for hypo_testing subcommand"""
+    return parse_command(command_depth=1,
+                         commands=HYPO_TESTING_COMMANDS,
+                         description=HYPO_TESTING_DESCR,
+                         usage=HYPO_TESTING_USAGE,
+                         return_outputs=return_outputs)
+
+
+MAIN_CMD_SPEC = dict(
+    commands=OrderedDict([
+        ('hypo_testing', parse_hypo_testing_subcommand),
+        ('profile_scan', postproc_profile_scan)
+    ]),
+    description='Postprocess outputs generated by a PISA analysis.',
+    usage='''{0} <command> [<subcommand>] [<args>]
+
+The commands that can be issued are:
+
+  hypo_testing    Processes output from one of the hypo_testing commands.
+  profile_scan    Processes output from profile_scan.
+
+Run
+  {0} <command> -h
+to see the possible subcommands/arguments to each command.'''.format(SCRIPT)
+)
+
+
+def main(return_outputs=False):
+    """main"""
+    return parse_command(command_depth=0, return_outputs=return_outputs,
+                         **MAIN_CMD_SPEC)
+
+
 if __name__ == '__main__':
-    PostprocessArgParser()
+    outputs = main(return_outputs=True) # pylint: disable=invalid-name

@@ -1,15 +1,9 @@
-# author : J.L. Lanfranchi
-#          jll1062+pisa@phys.psu.edu
-#
-# date   : March 25, 2016
-
 """
 Map class to contain 2D histogram, error, and metadata about the contents.
 MapSet class to contain a set of maps.
 
 Also provide basic mathematical operations that user applies directly to the
 containers but that get passed down to operate on the contained data.
-
 """
 
 
@@ -48,6 +42,22 @@ from pisa.utils import stats
 
 __all__ = ['type_error', 'reduceToHist', 'rebin', 'Map', 'MapSet', 'test_Map',
            'test_MapSet']
+
+__author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 # TODO: inconsistent treatment of metrics in *chi2*, *llh*, and metric* methods
@@ -234,10 +244,9 @@ class Map(object):
 
     Examples
     --------
-    >>> import pint; ureg = pint.UnitRegistry()
     >>> from pisa.core.binning import MultiDimBinning
     >>> binning = MultiDimBinning([dict(name='energy', is_log=True, num_bins=4,
-    ...                                 domain=[1, 80]*ureg.GeV),
+    ...                                 domain=[1, 80], units='GeV'),
     ...                            dict(name='coszen', is_lin=True, num_bins=5,
     ...                                 domain=[-1, 0])])
     >>> m0 = Map(name='x', binning=binning, hist=np.zeros(binning.shape))
@@ -287,8 +296,7 @@ class Map(object):
         super(Map, self).__setattr__('_name', name)
         super(Map, self).__setattr__('_tex', tex)
         super(Map, self).__setattr__('_hash', hash)
-        super(Map, self).__setattr__('_full_comparison',
-                                                full_comparison)
+        super(Map, self).__setattr__('_full_comparison', full_comparison)
 
         if not isinstance(binning, MultiDimBinning):
             if isinstance(binning, Sequence):

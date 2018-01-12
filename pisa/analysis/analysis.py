@@ -1,10 +1,6 @@
-# authors: J.L. Lanfranchi, P.Eller, and S. Wren
-# email:   jll1062+pisa@phys.psu.edu
-# date:    March 20, 2016
 """
 Common tools for performing an analysis collected into a single class
 `Analysis` that can be subclassed by specific analyses.
-
 """
 
 
@@ -20,9 +16,10 @@ import time
 import numpy as np
 import scipy.optimize as optimize
 
-from pisa import FTYPE, ureg
+from pisa import EPSILON, FTYPE, ureg
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
+from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging
 from pisa.utils.fileio import to_file
 from pisa.utils.stats import METRICS_TO_MAXIMIZE
@@ -31,6 +28,22 @@ from pisa.utils.stats import METRICS_TO_MAXIMIZE
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD',
            'set_minimizer_defaults', 'validate_minimizer_settings',
            'Counter', 'Analysis']
+
+__author__ = 'J.L. Lanfranchi, P. Eller, S. Wren'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b', 'slsqp')
@@ -191,16 +204,34 @@ def validate_minimizer_settings(minimizer_settings):
             logging.warn(eps_gt_msg, method, 'eps', val, warn_lim)
 
 
-def check_theta23(fit_info, return_octant=False):
-    """Checks the octant value in fit_info and returns it if wanted"""
-    octants = [0.0, 1.0]
+def check_t23_octant(fit_info):
+    """Check that theta23 is in the first or second octant.
+
+    Parameters
+    ----------
+    fit_info
+
+    Returns
+    -------
+    octant_index : int
+
+    Raises
+    ------
+    ValueError
+        Raised if the theta23 value is not in first (`octant_index`=0) or
+        second octant (`octant_index`=1)
+
+    """
+    valid_octant_indices = (0, 1)
+
     theta23 = fit_info['params'].theta23.value
-    octant = ((theta23 % (360 * ureg.deg)) // (45 * ureg.deg)).magnitude
-    if octant not in octants:
-        raise ValueError("Fitted theta23 value was not in the "
-                         "first or second octant as expected.")
-    if return_octant:
-        return octant
+    octant_index = int(
+        ((theta23 % (360 * ureg.deg)) // (45 * ureg.deg)).magnitude
+    )
+    if octant_index not in valid_octant_indices:
+        raise ValueError('Fitted theta23 value is not in the'
+                         ' first or second octant.')
+    return octant_index
 
 
 # TODO: move this to a central location prob. in utils
@@ -382,8 +413,8 @@ class Analysis(object):
 
                 # Check to make sure these two fits were either side of 45
                 # degrees.
-                old_octant = check_theta23(best_fit_info, return_octant=True)
-                new_octant = check_theta23(new_fit_info, return_octant=True)
+                old_octant = check_t23_octant(best_fit_info)
+                new_octant = check_t23_octant(new_fit_info)
 
                 if old_octant == new_octant:
                     logging.warning(
@@ -410,7 +441,7 @@ class Analysis(object):
                         blind=blind
                     )
                     # Make sure the new octant is sensible
-                    check_theta23(new_fit_info)
+                    check_t23_octant(new_fit_info)
 
                 # Take the one with the best fit
                 if metric in METRICS_TO_MAXIMIZE:
@@ -493,30 +524,36 @@ class Analysis(object):
         else:
             bounds = [(0, 1)]*len(x0)
 
+        clipped_x0 = []
         for param, x0_val, bds in zip(hypo_maker.params.free, x0, bounds):
-            if x0_val < bds[0]:
+            if x0_val < bds[0] - EPSILON:
                 raise ValueError(
-                    'Param %s, initial value %e exceeds the lower bound.'
-                    % (param.name, param.value)
+                    'Param %s, initial scaled value %.17e is below lower bound'
+                    ' %.17e.' % (param.name, x0_val, bds[0])
                 )
-            if x0_val > bds[1]:
+            if x0_val > bds[1] + EPSILON:
                 raise ValueError(
-                    'Param %s, initial value %e exceeds the upper bound.'
-                    % (param.name, param.value)
+                    'Param %s, initial scaled value %.17e exceeds upper bound'
+                    ' %.17e.' % (param.name, x0_val, bds[1])
                 )
 
-            if np.isclose(x0_val, bds[0], atol=np.finfo(FTYPE).eps, rtol=0):
+            clipped_x0_val = np.clip(x0_val, a_min=bds[0], a_max=bds[1])
+            clipped_x0.append(clipped_x0_val)
+
+            if recursiveEquality(clipped_x0_val, bds[0]):
                 logging.warn(
-                    'Param %s, initial value value %e is at the lower bound;'
+                    'Param %s, initial scaled value %e is at the lower bound;'
                     ' minimization may fail as a result.',
-                    param.name, param.value
+                    param.name, clipped_x0_val
                 )
-            if np.isclose(x0_val, bds[1], atol=np.finfo(FTYPE).eps, rtol=0):
+            if recursiveEquality(clipped_x0_val, bds[1]):
                 logging.warn(
-                    'Param %s, initial value value %e is at the upper bound;'
-                    ' minimization may fail as a rsult.',
-                    param.name, param.value
+                    'Param %s, initial scaled value %e is at the upper bound;'
+                    ' minimization may fail as a result.',
+                    param.name, clipped_x0_val
                 )
+
+        x0 = tuple(clipped_x0)
 
         logging.debug('Running the %s minimizer...', minimizer_method)
 
@@ -838,7 +875,7 @@ class Analysis(object):
 
         return sign*metric_val
 
-    def _minimizer_callback(self, xk):
+    def _minimizer_callback(self, xk): # pylint: disable=unused-argument
         """Passed as `callback` parameter to `optimize.minimize`, and is called
         after each iteration. Keeps track of number of iterations.
 

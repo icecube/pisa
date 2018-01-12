@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-#
-# Copyright 2017 J.L. Lanfranchi for the IceCube/PINGU collaboration.
+
 """
 Multiple implementations of sum-of-gaussians for compatibility and speed
 """
 
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 from collections import Iterable, OrderedDict
 from math import exp, sqrt
@@ -16,8 +15,9 @@ from time import time
 import numpy as np
 from scipy import stats
 
-from pisa import (EPSILON, FTYPE, OMP_NUM_THREADS, NUMBA_AVAIL,
+from pisa import (FTYPE, OMP_NUM_THREADS, NUMBA_AVAIL,
                   NUMBA_CUDA_AVAIL, numba_jit)
+from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging, set_verbosity, tprofile
 from pisa.utils import gaussians_cython
 if FTYPE == np.float32:
@@ -36,6 +36,22 @@ else:
 
 
 __all__ = ['GAUS_IMPLEMENTATIONS', 'gaussian', 'gaussians', 'test_gaussians']
+
+__author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 GAUS_IMPLEMENTATIONS = ('singlethreaded', 'multithreaded', 'cython')
@@ -111,7 +127,7 @@ def gaussians(x, mu, sigma, weights=None, implementation=None, **kwargs):
         sigma = [sigma]
     if weights is None:
         use_weights = False
-        weights = [0]
+        weights = [-1]
     else:
         use_weights = True
         if not isinstance(weights, Iterable):
@@ -148,12 +164,12 @@ def gaussians(x, mu, sigma, weights=None, implementation=None, **kwargs):
 
         if FTYPE == np.float64:
             gaussians_cython.gaussians_d(
-                outbuf, x, mu, inv_sigma, inv_sigma_sq, n_gaussians,
+                outbuf, x, mu, inv_sigma, inv_sigma_sq, weights, n_gaussians,
                 threads=threads, **kwargs
             )
         elif FTYPE == np.float32:
             gaussians_cython.gaussians_s(
-                outbuf, x, mu, inv_sigma, inv_sigma_sq, n_gaussians,
+                outbuf, x, mu, inv_sigma, inv_sigma_sq, weights, n_gaussians,
                 threads=threads, **kwargs
             )
 
@@ -189,7 +205,7 @@ def gaussians(x, mu, sigma, weights=None, implementation=None, **kwargs):
 
 def _gaussians_multithreaded(outbuf, x, mu, inv_sigma, inv_sigma_sq, weights,
                              n_gaussians, threads=OMP_NUM_THREADS):
-    """Sum of multiple guassians, optimized to be run in multiple threads. This
+    """Sum of multiple Gaussians, optimized to be run in multiple threads. This
     dispatches the single-kernel threaded """
     n_points = len(x)
     chunklen = n_points // OMP_NUM_THREADS
@@ -213,8 +229,9 @@ def _gaussians_multithreaded(outbuf, x, mu, inv_sigma, inv_sigma_sq, weights,
 @numba_jit(nopython=True, nogil=True, fastmath=True)
 def _gaussians_singlethreaded(outbuf, x, mu, inv_sigma, inv_sigma_sq, weights,
                               n_gaussians, start, stop):
-    """Sum of multiple guassians, optimized to be run in a single thread"""
-    if weights[0] != 0:
+    """Sum of multiple Gaussians, optimized to be run in a single thread"""
+    if weights[0] != -1:
+        assert len(weights) == n_gaussians
         for i in range(start, stop):
             tot = 0.0
             for j in range(n_gaussians):
@@ -225,6 +242,7 @@ def _gaussians_singlethreaded(outbuf, x, mu, inv_sigma, inv_sigma_sq, weights,
                 )
             outbuf[i] = tot
     else:
+        assert len(weights) == 1
         for i in range(start, stop):
             tot = 0.0
             for j in range(n_gaussians):
@@ -243,7 +261,8 @@ if NUMBA_CUDA_AVAIL:
         n_points = len(x)
 
         use_weights = True
-        if weights[0] == 0:
+        if weights[0] == -1:
+            assert len(weights) == 1
             use_weights = False
 
         threads_per_block = 32
@@ -260,14 +279,15 @@ if NUMBA_CUDA_AVAIL:
         d_inv_sigma = cuda.to_device(inv_sigma)
         d_inv_sigma_sq = cuda.to_device(inv_sigma_sq)
         if use_weights:
+            assert len(weights) == n_gaussians
             d_weights = cuda.to_device(weights)
-            func = _gaussians_weighted_cuda_kernel[blocks_per_grid,
+            func = _gaussians_weighted_cuda_kernel[blocks_per_grid, # pylint: disable=unsubscriptable-object
                                                    threads_per_block]
             func(d_outbuf, d_x, d_mu, d_inv_sigma, d_inv_sigma_sq, d_weights,
                  n_gaussians)
         else:
             d_weights = None
-            func = _gaussians_cuda_kernel[blocks_per_grid, threads_per_block]
+            func = _gaussians_cuda_kernel[blocks_per_grid, threads_per_block] # pylint: disable=unsubscriptable-object
             func(d_outbuf, d_x, d_mu, d_inv_sigma, d_inv_sigma_sq, n_gaussians)
 
         # Copy contents of GPU result to host's outbuf
@@ -278,7 +298,7 @@ if NUMBA_CUDA_AVAIL:
     @cuda.jit(inline=True, fastmath=True)
     def _gaussians_cuda_kernel(outbuf, x, mu, inv_sigma, inv_sigma_sq,
                                n_gaussians):
-        pt_idx = cuda.grid(1)
+        pt_idx = cuda.grid(1) # pylint: disable=not-callable
         tot = 0.0
         for g_idx in range(n_gaussians):
             xlessmu = x[pt_idx] - mu[g_idx]
@@ -289,55 +309,84 @@ if NUMBA_CUDA_AVAIL:
     @cuda.jit(inline=True, fastmath=True)
     def _gaussians_weighted_cuda_kernel(outbuf, x, mu, inv_sigma, inv_sigma_sq,
                                         weights, n_gaussians):
-        pt_idx = cuda.grid(1)
+        pt_idx = cuda.grid(1) # pylint: disable=not-callable
         tot = 0.0
         for g_idx in range(n_gaussians):
             xlessmu = x[pt_idx] - mu[g_idx]
             tot += (exp((xlessmu*xlessmu) * inv_sigma_sq[g_idx])
-                    * inv_sigma[g_idx])
+                    * weights[g_idx] * inv_sigma[g_idx])
         outbuf[pt_idx] = tot
 
 
 def test_gaussians():
     """Test `gaussians` function"""
     n_gaus = [1, 10, 100, 1000, 10000]
-    n_eval = 1e4
+    n_eval = int(1e4)
 
     x = np.linspace(-20, 20, n_eval)
-    mu_sigma_sets = [(np.linspace(-50, 50, n), np.linspace(0.5, 100, n))
-                     for n in n_gaus]
+    np.random.seed(0)
+    mu_sigma_weight_sets = [(np.linspace(-50, 50, n), np.linspace(0.5, 100, n),
+                             np.random.rand(n)) for n in n_gaus]
 
     timings = OrderedDict()
     for impl in GAUS_IMPLEMENTATIONS:
         timings[impl] = []
 
-    for mus, sigmas in mu_sigma_sets:
+    for mus, sigmas, weights in mu_sigma_weight_sets:
         if not isinstance(mus, Iterable):
             mus = [mus]
             sigmas = [sigmas]
-        ref = np.sum(
+            weights = [weights]
+        ref_unw = np.sum(
             [stats.norm.pdf(x, loc=m, scale=s) for m, s in zip(mus, sigmas)],
             axis=0
         )/len(mus)
+        ref_w = np.sum(
+            [stats.norm.pdf(x, loc=m, scale=s)*w
+             for m, s, w in zip(mus, sigmas, weights)],
+            axis=0
+        )/np.sum(weights)
         for impl in GAUS_IMPLEMENTATIONS:
             t0 = time()
-            test = gaussians(x, mu=mus, sigma=sigmas, implementation=impl)
-            dt = time() - t0
-            timings[impl].append(np.round(dt*1000, decimals=3))
-            if not np.allclose(test, ref, atol=0, rtol=5*EPSILON):
-                logging.error('BAD RESULT, implementation: %s', impl)
-                logging.error('max abs fract diff: %s',
-                              np.max(np.abs((test/ref - 1))))
+            test_unw = gaussians(x, mu=mus, sigma=sigmas, weights=None,
+                                 implementation=impl)
+            dt_unw = time() - t0
+            t0 = time()
+            test_w = gaussians(x, mu=mus, sigma=sigmas, weights=weights,
+                               implementation=impl)
+            dt_w = time() - t0
+            timings[impl].append((np.round(dt_unw*1000, decimals=3),
+                                  np.round(dt_w*1000, decimals=3)))
+            err_msgs = []
+            if not recursiveEquality(test_unw, ref_unw):
+                err_msgs.append(
+                    'BAD RESULT (unweighted), n_gaus=%d, implementation='
+                    '"%s", max. abs. fract. diff.: %s'
+                    %(len(mus), impl, np.max(np.abs((test_unw/ref_unw - 1))))
+                )
+            if not recursiveEquality(test_w, ref_w):
+                err_msgs.append(
+                    'BAD RESULT (weighted), n_gaus=%d, implementation="%s"'
+                    ', max. abs. fract. diff.: %s'
+                    %(len(mus), impl, np.max(np.abs((test_w/ref_w - 1))))
+                )
+            if err_msgs:
+                for err_msg in err_msgs:
+                    logging.error(err_msg)
+                raise ValueError('\n'.join(err_msgs))
 
-    tprofile.debug('gaussians() timings  (Note: OMP_NUM_THREADS=%d; evaluated'
-                   ' at %e points)', OMP_NUM_THREADS, n_eval)
+    tprofile.debug(
+        'gaussians() timings (unweighted) (Note:OMP_NUM_THREADS=%d; evaluated'
+        ' at %.0e points)', OMP_NUM_THREADS, n_eval
+    )
     timings_str = '  '.join([format(t, '10d') for t in n_gaus])
     tprofile.debug(' '*30 + 'Number of gaussians'.center(59))
     tprofile.debug('         %15s       %s', 'impl.', timings_str)
     timings_str = '  '.join(['-'*10 for t in n_gaus])
     tprofile.debug('         %15s       %s', '-'*15, timings_str)
     for impl in GAUS_IMPLEMENTATIONS:
-        timings_str = '  '.join([format(t, '10.3f') for t in timings[impl]])
+        # only report timings for unweighted case
+        timings_str = '  '.join([format(t[0], '10.3f') for t in timings[impl]])
         tprofile.debug('Timings, %15s (ms): %s', impl, timings_str)
     logging.info('<< PASS : test_gaussians >>')
 

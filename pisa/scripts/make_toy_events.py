@@ -1,9 +1,4 @@
 #! /usr/bin/env python
-#
-# author: Thomas Ehrhardt - tehrhardt@icecube.wisc.edu
-#         Justin Lanfranchi jll1062+pisa@phys.psu.edu
-#
-# date:   02 Mar 2017
 
 """
 Using parameterisations defined for effective areas, resolution functions, and
@@ -48,22 +43,37 @@ from pisa.utils.random_numbers import get_random_state
 __all__ = ['FNAME_TEMPLATE', 'FNAME_INFO_RE',
            'get_physical_bounds', 'sample_powerlaw', 'sample_truncated_dist',
            'generate_mc_events', 'populate_reco_observables',
-           'populate_pid', 'mcgen_random_state', 'parse_args', 'main']
+           'populate_pid', 'mcgen_random_state', 'make_toy_events',
+           'parse_args', 'main']
+
+__author__ = 'T. Ehrhardt, J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 FNAME_TEMPLATE = (
-    ''.join([
-        '{file_type}',
-        '__{detector}',
-        '__toy',
-        '_{e_min}_to_{e_max}GeV',
-        '_spidx{spectral_index}',
-        '_cz{cz_min}_to_{cz_max}',
-        '_{num_events}evts',
-        '_set{set_index}',
-        '__unjoined',
-        '.{extension}'
-    ])
+    '{file_type}'
+    '__{detector}'
+    '__toy'
+    '_{e_min}_to_{e_max}GeV'
+    '_spidx{spectral_index}'
+    '_cz{cz_min}_to_{cz_max}'
+    '_{num_events}evts'
+    '_set{set_index}'
+    '__unjoined'
+    '.{extension}'
 )
 
 FNAME_INFO_RE = re.compile(
@@ -584,6 +594,108 @@ def mcgen_random_state(num_events, set_index):
     return get_random_state((num_events_id, set_index))
 
 
+def make_toy_events(outdir, num_events, energy_range, spectral_index,
+                    coszen_range, num_sets, first_set, aeff_energy_param,
+                    aeff_coszen_param, reco_param, pid_param, pid_dist):
+    """Make toy events and store to a file.
+
+    Parameters
+    ----------
+    outdir : string
+    num_events : int
+    energy_range : 2-tuple of floats
+    spectral_index : float
+    coszen_range : 2-tuple of floats
+    num_sets : int
+    first_set : int
+    aeff_energy_param : string
+    aeff_coszen_param : string
+    reco_param : string
+    pid_param : string
+    pid_dist : string
+
+    Returns
+    -------
+    events : :class:`pisa.core.events.Events`
+
+    """
+    energy_range = sorted(energy_range)
+    coszen_range = sorted(coszen_range)
+
+    # Validation of args
+    assert energy_range[0] > 0 and energy_range[1] < 1e9
+    assert coszen_range[0] >= -1 and coszen_range[1] <= 1
+    assert np.diff(energy_range)[0] > 0, str(energy_range)
+    assert np.diff(coszen_range)[0] > 0, str(coszen_range)
+    assert spectral_index >= 0, str(spectral_index)
+    assert first_set >= 0, str(first_set)
+    assert num_sets >= 1, str(first_set)
+
+    # Make sure resources specified actually exist
+    for arg in [aeff_energy_param, aeff_coszen_param, reco_param, pid_param]:
+        find_resource(arg)
+
+    mkdir(outdir, warn=False)
+
+    set_indices = list(range(first_set, first_set + num_sets))
+
+    # The following loop is for validation only
+    for num, index in product(num_events, set_indices):
+        mcgen_random_state(num_events=num, set_index=index)
+
+    for num, set_index in product(num_events, set_indices):
+        mcevts_fname = FNAME_TEMPLATE.format(
+            file_type='events',
+            detector='vlvnt',
+            e_min=format_num(energy_range[0]),
+            e_max=format_num(energy_range[1]),
+            spectral_index=format_num(spectral_index, sigfigs=2,
+                                      trailing_zeros=True),
+            cz_min=format_num(coszen_range[0]),
+            cz_max=format_num(coszen_range[1]),
+            num_events=format_num(num, sigfigs=3, sci_thresh=(1, -1)),
+            set_index=format_num(set_index, sci_thresh=(10, -10)),
+            extension='hdf5'
+        )
+        mcevts_fpath = os.path.join(outdir, mcevts_fname)
+        if os.path.isfile(mcevts_fpath):
+            logging.warn('File already exists, skipping: "%s"', mcevts_fpath)
+            continue
+
+        logging.info('Working on set "%s"', mcevts_fname)
+
+        # TODO: pass filepaths / resource locations via command line args
+
+        # Create a single random state object to pass from function to function
+        random_state = mcgen_random_state(num_events=num,
+                                          set_index=set_index)
+
+        mc_events = generate_mc_events(
+            num_events=num,
+            energy_range=energy_range,
+            coszen_range=coszen_range,
+            spec_ind=spectral_index,
+            aeff_energy_param_source=aeff_energy_param,
+            aeff_coszen_param_source=aeff_coszen_param,
+            random_state=random_state
+        )
+        populate_reco_observables(
+            mc_events=mc_events,
+            param_source=reco_param,
+            random_state=random_state
+        )
+        populate_pid(
+            mc_events=mc_events,
+            param_source=pid_param,
+            random_state=random_state,
+            dist=pid_dist
+        )
+
+        to_file(mc_events, mcevts_fpath)
+
+        return mc_events
+
+
 def parse_args(desc=__doc__):
     """Parse command line arguments"""
 
@@ -631,27 +743,27 @@ def parse_args(desc=__doc__):
     )
     parser.add_argument(
         '--aeff-energy-param', metavar='PATH',
-        default='aeff/vlvnt/vlvnt_aeff_energy_param.json',
+        default='aeff/vlvnt_aeff_energy_param.json',
         help='''Resource location or file path to effective areas energy
-        parameterization. (default: aeff/vlvnt/vlvnt_aeff_energy_param.json)'''
+        parameterization. (default: aeff/vlvnt_aeff_energy_param.json)'''
     )
     parser.add_argument(
         '--aeff-coszen-param', metavar='PATH',
-        default='aeff/vlvnt/vlvnt_aeff_coszen_param.json',
+        default='aeff/vlvnt_aeff_coszen_param.json',
         help='''Resource location or file path to effective areas coszen
-        parameterization. (default: aeff/vlvnt/vlvnt_aeff_energy_param.json)'''
+        parameterization. (default: aeff/vlvnt_aeff_energy_param.json)'''
     )
     parser.add_argument(
         '--reco-param', metavar='PATH',
-        default='reco/vlvnt/vlvnt_reco_param.json',
+        default='reco/vlvnt_reco_param.json',
         help='''Resource location or file path to reco parameterization.
-        (default: aeff/vlvnt/vlvnt_aeff_energy_param.json)'''
+        (default: aeff/vlvnt_aeff_energy_param.json)'''
     )
     parser.add_argument(
         '--pid-param', metavar='PATH',
-        default='pid/vlvnt/vlvnt_pid_energy_param.json',
+        default='pid/vlvnt_pid_energy_param.json',
         help='''Resource location or file path to pid parameterization.
-        (default: aeff/vlvnt/vlvnt_aeff_energy_param.json)'''
+        (default: aeff/vlvnt_aeff_energy_param.json)'''
     )
     parser.add_argument(
         '--pid-dist', choices=['discrete', 'normal'], type=str,
@@ -681,83 +793,9 @@ def parse_args(desc=__doc__):
 def main():
     """Main"""
     args = parse_args()
-    set_verbosity(args.v)
-
-    args.energy_range = sorted(args.energy_range)
-    args.coszen_range = sorted(args.coszen_range)
-
-    # Validation of args
-    assert args.energy_range[0] > 0 and args.energy_range[1] < 1e9
-    assert args.coszen_range[0] >= -1 and args.coszen_range[1] <= 1
-    assert np.diff(args.energy_range)[0] > 0, str(args.energy_range)
-    assert np.diff(args.coszen_range)[0] > 0, str(args.coszen_range)
-    assert args.spectral_index >= 0, str(args.spectral_index)
-    assert args.first_set >= 0, str(args.first_set)
-    assert args.num_sets >= 1, str(args.first_set)
-
-    # Make sure resources specified actually exist
     args_d = vars(args)
-    for arg in ['aeff_energy_param', 'aeff_coszen_param', 'reco_param',
-                'pid_param']:
-        find_resource(args_d[arg])
-
-    mkdir(args.outdir)
-
-    set_indices = xrange(args.first_set, args.first_set + args.num_sets)
-
-    # The following loop is for validation only
-    for num_events, set_index in product(args.num_events, set_indices):
-        mcgen_random_state(num_events=num_events, set_index=set_index)
-
-    for num_events, set_index in product(args.num_events, set_indices):
-        mcevts_fname = FNAME_TEMPLATE.format(
-            file_type='events',
-            detector='vlvnt',
-            e_min=format_num(args.energy_range[0]),
-            e_max=format_num(args.energy_range[1]),
-            spectral_index=format_num(args.spectral_index, sigfigs=2,
-                                      trailing_zeros=True),
-            cz_min=format_num(args.coszen_range[0]),
-            cz_max=format_num(args.coszen_range[1]),
-            num_events=format_num(num_events, sigfigs=3, sci_thresh=(1, -1)),
-            set_index=format_num(set_index, sci_thresh=(10, -10)),
-            extension='hdf5'
-        )
-        mcevts_fpath = os.path.join(args.outdir, mcevts_fname)
-        if os.path.isfile(mcevts_fpath):
-            logging.warn('File already exists, skipping: "%s"', mcevts_fpath)
-            continue
-
-        logging.info('Working on set "%s"', mcevts_fname)
-
-        # TODO: pass filepaths / resource locations via command line args
-
-        # Create a single random state object to pass from function to function
-        random_state = mcgen_random_state(num_events=num_events,
-                                          set_index=set_index)
-
-        mc_events = generate_mc_events(
-            num_events=num_events,
-            energy_range=args.energy_range,
-            coszen_range=args.coszen_range,
-            spec_ind=args.spectral_index,
-            aeff_energy_param_source=args.aeff_energy_param,
-            aeff_coszen_param_source=args.aeff_coszen_param,
-            random_state=random_state
-        )
-        populate_reco_observables(
-            mc_events=mc_events,
-            param_source=args.reco_param,
-            random_state=random_state
-        )
-        populate_pid(
-            mc_events=mc_events,
-            param_source=args.pid_param,
-            random_state=random_state,
-            dist=args.pid_dist
-        )
-
-        to_file(mc_events, mcevts_fpath)
+    set_verbosity(args_d.pop('v'))
+    make_toy_events(**args_d)
 
 
 if __name__ == '__main__':

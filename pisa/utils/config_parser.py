@@ -1,14 +1,8 @@
-# author: P.Eller
-#         pde3+pisa@psu.edu
-#         J.L. Lanfranchi
-#         jll1062+pisa@phys.psu.edu
-#
-# date:   2016-04-28
 """
 Parse a ConfigFile object into a dict containing an item for every analysis
 stage, that itself contains all necessary instantiation arguments/objects for
 that stage. for en example config file, please consider
-:file:`$PISA/pisa/resources/settings/pipeline/example.cfg`
+:file:`$PISA/pisa_examples/resources/settings/pipeline/example.cfg`
 
 Config File Structure
 =====================
@@ -228,6 +222,22 @@ __all__ = ['PARAM_RE', 'PARAM_ATTRS', 'STAGE_SEP',
            'parse_quantity', 'parse_string_literal', 'split',
            'interpret_param_subfields', 'parse_param', 'parse_pipeline_config',
            'MutableMultiFileIterator', 'PISAConfigParser']
+
+__author__ = 'P. Eller, J. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 PARAM_RE = re.compile(
@@ -527,8 +537,8 @@ def parse_pipeline_config(config):
                 except:
                     logging.error(
                         "Failed to evaluate definition of '%s' dimension of"
-                        " '%s' binning entry:\n'%s'"
-                        %(bin_name, binning, def_raw)
+                        " '%s' binning entry:\n'%s'",
+                        bin_name, binning, def_raw
                     )
                     raise
                 try:
@@ -537,7 +547,7 @@ def parse_pipeline_config(config):
                     logging.error(
                         "Failed to instantiate new `OneDimBinning` from '%s'"
                         " dimension of '%s' binning entry with definition:\n"
-                        "'%s'\n"%(bin_name, binning, kwargs)
+                        "'%s'\n", bin_name, binning, kwargs
                     )
                     raise
             binning_dict[binning] = MultiDimBinning(bins)

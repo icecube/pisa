@@ -1,9 +1,3 @@
-#
-# author: J.L. Lanfranchi
-#         jll1062+pisa@phys.psu.edu
-#
-# date:   March 22, 2016
-#
 """
 Define Param, ParamSet, and ParamSelector classes for handling parameters, sets
 of parameters, and being able to discretely switch between sets of parameter
@@ -34,6 +28,22 @@ from pisa.utils.stats import ALL_METRICS, CHI2_METRICS, LLH_METRICS
 
 __all__ = ['Param', 'ParamSet', 'ParamSelector',
            'test_Param', 'test_ParamSet', 'test_ParamSelector']
+
+__author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 # TODO: Make property "frozen" or "read_only" so params in param set e.g.
@@ -230,13 +240,14 @@ class Param(object):
                 val = val * ureg.dimensionless
             # NOTE: intentionally using type() instead of isinstance() here.
             # Not sure if this could be converted to isinstance(), though.
-            assert type(val) == type(self.value), \
-                    'Value "%s" has type %s but must be of type %s.' \
-                    %(val, type(val), type(self.value))
+            if not type(val) == type(self.value): # pylint: disable=unidiomatic-typecheck
+                raise TypeError('Value "%s" has type %s but must be of type'
+                                ' %s.' % (val, type(val), type(self.value)))
             if isinstance(self.value, ureg.Quantity):
-                assert self.dimensionality == val.dimensionality, \
-                    'Value "%s" units "%s" incompatible with units "%s".' \
-                    %(val, val.units, self.units)
+                if self.dimensionality != val.dimensionality:
+                    raise ValueError('Value "%s" units "%s" incompatible with'
+                                     ' units "%s".'
+                                     % (val, val.units, self.units))
 
             new_vals.append(val)
         self._range = new_vals
@@ -351,7 +362,7 @@ class Param(object):
         else:
             raise ValueError('Unrecognized `metric` "%s"' %str(metric))
 
-    def to(self, units):
+    def to(self, units): # pylint: disable=invalid-name
         """Return an equivalent copy of param but in units of `units`.
 
         Parameters
@@ -1143,7 +1154,7 @@ def test_Param():
         p2 = Param(name='c', value=1.5*ureg.meter, prior=spline, range=[1, 2],
                    is_fixed=False, is_discrete=False, tex=r'\int{\rm c}')
         _ = p2.prior_llh
-    except (TypeError, AssertionError):
+    except (ValueError, TypeError, AssertionError):
         pass
     else:
         assert False
@@ -1152,7 +1163,7 @@ def test_Param():
                    range=[1, 2], is_fixed=False, is_discrete=False,
                    tex=r'\int{\rm c}')
         _ = p2.prior_llh
-    except (TypeError, AssertionError):
+    except (ValueError, TypeError, AssertionError):
         pass
     else:
         assert False
@@ -1173,7 +1184,7 @@ def test_Param():
         logging.debug(str(linterp_nounits))
         logging.debug('p2.units: %s', p2.units)
         logging.debug('p2.prior.units: %s', p2.prior.units)
-    except (TypeError, AssertionError):
+    except (ValueError, TypeError, AssertionError):
         pass
     else:
         assert False

@@ -7,6 +7,13 @@ This package along with its documentation can be found at:
 https://github.com/afedynitch/MCEq
 http://arxiv.org/abs/1503.00544
 
+The authors of that software / the paper that it is based upon (A. Fedynitch,
+R. Engel, T. K. Gaisser, F. Riehn, T. Stanev) request that anyone who uses
+their work to produce results cite their work, so please do so if you make use
+the `flux.mceq` service. The form of the citation that they request is found in
+their documentation at
+  http://mceq.readthedocs.io/en/latest/citations.html
+
 For convenience the prerequisites of MCEq are listed below:
     - python-2.7
     - numpy
@@ -35,7 +42,7 @@ from MCEq.core import MCEqRun
 import mceq_config
 import CRFluxModels as pm
 
-from pisa import FTYPE, ureg
+from pisa import ureg
 from pisa.core.map import Map, MapSet
 from pisa.core.stage import Stage
 from pisa.utils.format import split
@@ -45,8 +52,24 @@ from pisa.utils.profiler import profile
 
 __all__ = ['mceq']
 
+__author__ = 'S. Mandalia'
 
-class mceq(Stage):
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
+
+
+class mceq(Stage): # pylint: disable=invalid-name
     """flux service to calculate the flux tables by solving the matrix cascade
     equation using the MCEq package.
 

@@ -1,16 +1,12 @@
-# author: Justin Lanfranchi
-#         jll1062+pisa@phys.psu.edu
-#
-# date:   2015-06-13
 """
 Generic file I/O, dispatching specific file readers/writers as necessary
-
 """
 
 
 from __future__ import absolute_import
 
 import cPickle
+import errno
 import os
 import re
 
@@ -29,6 +25,22 @@ __all__ = ['PKL_EXTS', 'DILL_EXTS', 'CFG_EXTS', 'ZIP_EXTS', 'TXT_EXTS',
            'expand', 'mkdir', 'get_valid_filename', 'nsort', 'fsort',
            'find_files', 'from_cfg', 'from_pickle', 'to_pickle', 'from_dill',
            'to_dill', 'from_file', 'to_file']
+
+__author__ = 'J.L. Lanfranchi'
+
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 PKL_EXTS = ['pickle', 'pckl', 'pkl', 'p']
@@ -150,7 +162,7 @@ def mkdir(d, mode=0o0750, warn=True):
     try:
         os.makedirs(d, mode=mode)
     except OSError as err:
-        if err.errno == 17:
+        if err.errno == errno.EEXIST:
             if warn:
                 log.logging.warn('Directory "%s" already exists', d)
         else:
