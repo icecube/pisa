@@ -49,7 +49,6 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
     outdir : string or None
         If None, output is to the same directory as `data_file_path`
     overwrite : bool, optional
-
     """
     data, attrs = from_file(find_resource(data_file_path), return_attrs=True)
     bname, ext = splitext(basename(data_file_path))

@@ -883,7 +883,7 @@ def format_num(value,
         `fmt` is ``'binpre'`` then `exponent` is applied to 1024.
         I.e., 1 maps to kibi (Ki), 2 maps to mebi (Mi), etc.
 
-    sci_thresh : tuple of 2 integers >= 0
+    sci_thresh : sequence of 2 integers
         When to switch to scientific notation. The first integer is the order
         of magnitude of `value` at or above which scientific notation will be
         used. The second integer indicates the order of magnitude at or below

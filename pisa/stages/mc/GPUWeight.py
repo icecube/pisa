@@ -8,7 +8,7 @@ import numpy as np
 from pisa import FTYPE, C_FTYPE, C_PRECISION_DEF
 
 
-__author__ = 'P. Eller'
+__author__ = 'P. Eller, J.P. Yanez'
 
 __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 

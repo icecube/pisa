@@ -238,7 +238,7 @@ def vbwkde(data, weights=None, n_dct=None, min=None, max=None, n_addl_iter=0,
         If None, defaults to min(data) - range(data)/2
 
     max : None or float
-        Maximum of range over which to compute density>
+        Maximum of range over which to compute density.
         If None: max(data) + range(data)/2
 
     n_addl_iter : int >= 0
@@ -333,7 +333,7 @@ def vbwkde(data, weights=None, n_dct=None, min=None, max=None, n_addl_iter=0,
 
     n_iter = 1 + n_addl_iter
     for n in xrange(n_iter):
-        # Note below diverges from the published Ambramson method, by forcing
+        # Note below diverges from the published Abramson method, by forcing
         # the bandwidth at the max of the density distribution to be exactly
         # the bandwidth found above with the improved Sheather-Jones BW
         # selection technique. Refs:
@@ -640,7 +640,7 @@ def test_fbwkde():
 
 
 def test_vbwkde():
-    """Test speed and accuracy of vbwkde implementations"""
+    """Test speed of unweighted vbwkde implementation"""
     n_samp = int(1e4)
     n_dct = int(2**12)
     n_eval = int(5e3)
@@ -660,7 +660,32 @@ def test_vbwkde():
     logging.info('<< PASS : test_vbwkde >>')
 
 
+def test_weighted_vbwkde():
+    """Test speed of vbwkde implementation using weights"""
+    n_samp = int(1e4)
+    n_dct = int(2**12)
+    n_eval = int(5e3)
+    n_addl = 0
+    x = np.linspace(0, 20, n_samp)
+    np.random.seed(0)
+    times = []
+    for _ in xrange(3):
+        enuerr = np.random.noncentral_chisquare(df=3, nonc=1, size=n_eval)
+        weights = np.random.rand(n_eval)
+        t0 = time()
+        vbwkde(data=enuerr, weights=weights,
+               n_dct=n_dct, evaluate_at=x, n_addl_iter=n_addl)
+        times.append(time() - t0)
+    tprofile.debug(
+        'median time to run weighted vbwkde, %d samples %d dct %d addl iter,'
+        ' eval. at %d points: %f ms',
+        n_samp, n_dct, n_addl, n_eval, np.median(times)*1e3
+    )
+    logging.info('<< PASS : test_weighted_vbwkde >>')
+
+
 if __name__ == "__main__":
-    set_verbosity(1)
+    set_verbosity(2)
     test_fbwkde()
     test_vbwkde()
+    test_weighted_vbwkde()
