@@ -40,7 +40,7 @@ from pisa.utils.random_numbers import get_random_state
 from pisa.utils import stats
 
 
-__all__ = ['type_error', 'reduceToHist', 'rebin', 'valid_nominal_values', 
+__all__ = ['type_error', 'reduceToHist', 'rebin', 'valid_nominal_values',
            'Map', 'MapSet', 'test_Map', 'test_MapSet']
 
 __author__ = 'J.L. Lanfranchi'
@@ -205,7 +205,7 @@ def _new_obj(original_function):
 
 def valid_nominal_values(data_array):
     """Get the the nominal values that are valid for an array"""
-    return np.ma.masked_invalid( unp.nominal_values(data_array) )
+    return np.ma.masked_invalid(unp.nominal_values(data_array))
 
 
 # TODO: implement strategies for decreasing dimensionality (i.e.
@@ -928,8 +928,8 @@ class Map(object):
                 nan_at = np.isnan(orig_hist)
                 valid_mask = ~nan_at
                 hist_vals = np.empty_like(orig_hist, dtype=np.float64)
-                hist_vals[valid_mask] = norm.rvs(
-                        loc=orig_hist[valid_mask], scale=sigma[valid_mask])
+                hist_vals[valid_mask] = norm.rvs(loc=orig_hist[valid_mask],
+                                                 scale=sigma[valid_mask])
                 hist_vals[nan_at] = np.nan
                 error_vals = np.empty_like(orig_hist, dtype=np.float64)
                 error_vals[valid_mask] = np.sqrt(orig_hist[valid_mask])
@@ -955,7 +955,7 @@ class Map(object):
     @property
     def num_entries(self):
         """int : total number of weighted entries in all bins"""
-        return np.sum( valid_nominal_values(self.hist) )
+        return np.sum(valid_nominal_values(self.hist))
 
     @property
     def serializable_state(self):
@@ -2163,7 +2163,8 @@ class MapSet(object):
             else:
                 m = copy(maps_to_combine[0])
             resulting_maps.append(m)
-
+        if len(resulting_maps) == 1:
+            return resulting_maps[0]
         return MapSet(maps=resulting_maps, name=self.name, tex=self.tex,
                       collate_by_name=self.collate_by_name)
 
