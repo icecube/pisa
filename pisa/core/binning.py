@@ -1,6 +1,7 @@
 """
-Class to carry information about 2D binning in energy and cosine-zenity, and to
-provide basic operations with the binning.
+Class to define binning in one dimension (OneDimBinning) and then a container
+class (MultiDimBinning) for arbitrarily many of dimensions (one or more). These
+classes have many useful methods for working with binning.
 """
 
 # TODO: include Iterables where only Sequence is allowed now?
@@ -205,7 +206,7 @@ class OneDimBinning(object):
     True
 
     """
-    # `is_log` and `is_lin` are required for state alongsize bin_edges so that
+    # `is_log` and `is_lin` are required for state alongside bin_edges so that
     # a sub-sampling down to a single bin that is then resampled to > 1 bin
     # will retain the log/linear property of the original OneDimBinning.
     _hash_attrs = ('name', 'tex', 'bin_edges', 'is_log', 'is_lin', 'bin_names')
@@ -2719,7 +2720,7 @@ def test_OneDimBinning():
     import shutil
     import tempfile
     # needed so that eval(repr(b)) works
-    from numpy import array , float32, float64 # pylint: disable=unused-variable
+    from numpy import array, float32, float64 # pylint: disable=unused-variable
     import dill
 
     b1 = OneDimBinning(name='true_energy', num_bins=40, is_log=True,
