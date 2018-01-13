@@ -1,6 +1,7 @@
 """
-Class to carry information about 2D binning in energy and cosine-zenity, and to
-provide basic operations with the binning.
+Class to define binning in one dimension (OneDimBinning) and then a container
+class (MultiDimBinning) for arbitrarily many of dimensions (one or more). These
+classes have many useful methods for working with binning.
 """
 
 # TODO: include Iterables where only Sequence is allowed now?
@@ -205,7 +206,7 @@ class OneDimBinning(object):
     True
 
     """
-    # `is_log` and `is_lin` are required for state alongsize bin_edges so that
+    # `is_log` and `is_lin` are required for state alongside bin_edges so that
     # a sub-sampling down to a single bin that is then resampled to > 1 bin
     # will retain the log/linear property of the original OneDimBinning.
     _hash_attrs = ('name', 'tex', 'bin_edges', 'is_log', 'is_lin', 'bin_names')
@@ -299,7 +300,7 @@ class OneDimBinning(object):
                 dimensionless_bin_edges = bin_edges.magnitude
 
             elif bin_edges is not None:
-                dimensionless_bin_edges = np.asarray(bin_edges)
+                dimensionless_bin_edges = np.asarray(bin_edges, dtype=FTYPE)
                 bin_edges = None
 
         dimensionless_domain = None
@@ -360,14 +361,16 @@ class OneDimBinning(object):
                 dimensionless_bin_edges = np.logspace(
                     np.log10(dimensionless_domain[0]),
                     np.log10(dimensionless_domain[1]),
-                    num_bins + 1
+                    num_bins + 1,
+                    dtype=FTYPE,
                 )
             elif is_lin:
                 is_log = False
                 dimensionless_bin_edges = np.linspace(
                     dimensionless_domain[0],
                     dimensionless_domain[1],
-                    num_bins + 1
+                    num_bins + 1,
+                    dtype=FTYPE,
                 )
         elif dimensionless_domain is not None:
             assert dimensionless_domain[0] == dimensionless_bin_edges[0]
@@ -375,13 +378,13 @@ class OneDimBinning(object):
 
         if is_lin:
             if not self.is_bin_spacing_lin(dimensionless_bin_edges):
-                raise ValueError('`is_lin` is True but `bin_edges` are not'
-                                 ' linearly spaced.')
+                raise ValueError('%s : `is_lin` is True but `bin_edges` are not'
+                                 ' linearly spaced.'%self._name)
             is_log = False
         elif is_log:
             if not self.is_binning_ok(dimensionless_bin_edges, is_log=True):
-                raise ValueError('`is_log` is True but `bin_edges` are not'
-                                 ' logarithmically spaced.')
+                raise ValueError('%s : `is_log` is True but `bin_edges` are not'
+                                 ' logarithmically spaced.'%self._name)
             is_lin = False
         else:
             is_lin = self.is_bin_spacing_lin(dimensionless_bin_edges)
@@ -2717,7 +2720,7 @@ def test_OneDimBinning():
     import shutil
     import tempfile
     # needed so that eval(repr(b)) works
-    from numpy import array # pylint: disable=unused-variable
+    from numpy import array, float32, float64 # pylint: disable=unused-variable
     import dill
 
     b1 = OneDimBinning(name='true_energy', num_bins=40, is_log=True,
@@ -2864,7 +2867,7 @@ def test_MultiDimBinning():
     import tempfile
     import time
     # needed so that eval(repr(mdb)) works
-    from numpy import array # pylint: disable=unused-variable
+    from numpy import array, float32, float64 # pylint: disable=unused-variable
     import dill
 
     b1 = OneDimBinning(name='energy', num_bins=40, is_log=True,

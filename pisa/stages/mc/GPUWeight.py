@@ -1,11 +1,11 @@
-import os
+from os.path import abspath
+import pkg_resources
 
 import pycuda.driver as cuda
 from pycuda.compiler import SourceModule
 import numpy as np
 
 from pisa import FTYPE, C_FTYPE, C_PRECISION_DEF
-from pisa.utils.resources import find_resource
 
 
 __author__ = 'P. Eller, J.P. Yanez'
@@ -276,8 +276,8 @@ class GPUWeight(object):
 
         # compile
         include_dirs = [
-            os.path.abspath(find_resource('../stages/osc/prob3cuda')),
-            os.path.abspath(find_resource('../utils'))
+            abspath(pkg_resources.resource_filename('pisa.stages.osc', 'prob3cuda')),
+            abspath(pkg_resources.resource_filename('pisa', 'utils'))
         ]
 
         kernel_code = (self.KERNEL_TEMPLATE

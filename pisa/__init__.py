@@ -149,7 +149,6 @@ finally:
             cuda.close()
         del cuda
 
-
 # Default value for FTYPE
 FTYPE = np.float64
 """Global floating-point data type. C, CUDA, and Numba datatype definitions are
@@ -160,13 +159,12 @@ FLOAT32_STRINGS = ['single', 'float32', 'fp32', '32', 'f4']
 FLOAT64_STRINGS = ['double', 'float64', 'fp64', '64', 'f8']
 if 'PISA_FTYPE' in os.environ:
     PISA_FTYPE = os.environ['PISA_FTYPE']
-    sys.stderr.write('PISA_FTYPE env var is defined as: "%s"; ' % PISA_FTYPE)
+    sys.stderr.write('PISA_FTYPE env var is defined as: "%s"; \n' % PISA_FTYPE)
     if PISA_FTYPE.strip().lower() in FLOAT32_STRINGS:
         FTYPE = np.float32
     elif PISA_FTYPE.strip().lower() in FLOAT64_STRINGS:
         FTYPE = np.float64
     else:
-        sys.stderr.write('\n')
         raise ValueError(
             'Environment var PISA_FTYPE="%s" is unrecognized.\n'
             '--> For single precision set PISA_FTYPE to one of %s\n'
@@ -174,6 +172,44 @@ if 'PISA_FTYPE' in os.environ:
             %(PISA_FTYPE, FLOAT32_STRINGS, FLOAT64_STRINGS)
         )
 del FLOAT32_STRINGS, FLOAT64_STRINGS
+
+# set default target
+if NUMBA_CUDA_AVAIL:
+    TARGET = 'cuda'
+else:
+    TARGET = 'cpu'
+
+cpu_targets = ['cpu', 'numba']
+parallel_targets = ['parallel', 'multicore']
+gpu_targets = ['cuda', 'gpu', 'numba-cuda']
+
+if 'PISA_TARGET' in os.environ:
+    PISA_TARGET = os.environ['PISA_TARGET']
+    if PISA_TARGET.strip().lower() in gpu_targets:
+        if not NUMBA_CUDA_AVAIL:
+            raise ValueError(
+                'Environment var PISA_TARGET="%s" set, even though numba-cuda is not available\n'
+                %(PISA_TARGET)
+            )
+        else:
+            TARGET = 'cuda'
+    elif PISA_TARGET.strip().lower() in cpu_targets:
+        TARGET = 'cpu'
+    elif PISA_TARGET.strip().lower() in parallel_targets:
+        TARGET = 'parallel'
+    else:
+        raise ValueError(
+            'Environment var PISA_TARGTE="%s" is unrecognized.\n'
+            '--> For cpu set PISA_FTYPE to one of %s\n'
+            '--> For parallel set PISA_FTYPE to one of %s\n'
+            '--> For gpu set PISA_FTYPE to one of %s\n'
+            %(PISA_TARGET, cpu_targets, parallel_targets, gpu_targets)
+        )
+
+del cpu_targets, gpu_targets, parallel_targets
+
+
+# or overwrite with env var
 
 
 # Define HASH_SIGFIGS to set hashing precision based on FTYPE above; value here
@@ -220,6 +256,13 @@ elif FTYPE == np.float64:
 else:
     raise ValueError('FTYPE must be one of `np.float32` or `np.float64`. Got'
                      ' %s instead.' %FTYPE)
+
+if TARGET == 'cpu':
+    sys.stderr.write('PISA running on CPU only.\n')
+if TARGET == 'parallel':
+    sys.stderr.write('PISA running on CPU only, multicore.\n')
+elif TARGET == 'cuda':
+    sys.stderr.write('PISA running on CPU+GPU.\n')
 
 # Clean up imported names
 del os, sys, np, UnitRegistry, get_versions

@@ -40,8 +40,8 @@ from pisa.utils.random_numbers import get_random_state
 from pisa.utils import stats
 
 
-__all__ = ['type_error', 'reduceToHist', 'rebin', 'Map', 'MapSet', 'test_Map',
-           'test_MapSet']
+__all__ = ['type_error', 'reduceToHist', 'rebin', 'valid_nominal_values',
+           'Map', 'MapSet', 'test_Map', 'test_MapSet']
 
 __author__ = 'J.L. Lanfranchi'
 
@@ -200,6 +200,12 @@ def _new_obj(original_function):
             return np.asscalar(new_state['hist'])
         return Map(**new_state)
     return decorate(original_function, new_function)
+
+
+
+def valid_nominal_values(data_array):
+    """Get the the nominal values that are valid for an array"""
+    return np.ma.masked_invalid(unp.nominal_values(data_array))
 
 
 # TODO: implement strategies for decreasing dimensionality (i.e.
@@ -611,7 +617,7 @@ class Map(object):
             to_plot = self.squeeze()
         assert len(to_plot.binning) == 2
 
-        hist = np.ma.masked_invalid(to_plot.hist)
+        hist = valid_nominal_values(to_plot.hist)
         islog = False
         if symm:
             if cmap is None:
@@ -854,7 +860,7 @@ class Map(object):
         Parameters
         ----------
         method : None or string
-            Valid strings are '', 'none', 'poisson', or 'gauss+poisson'.
+            Valid strings are '', 'none', 'poisson', 'gauss', or 'gauss+poisson'.
             Strings are case-insensitive and whitespace is removed.
 
         random_state : None or type accepted by utils.random_numbers.get_random_state
@@ -914,6 +920,22 @@ class Map(object):
                 error_vals[nan_at] = np.nan
             return {'hist': unp.uarray(hist_vals, error_vals)}
 
+        elif method == 'gauss':
+            random_state = get_random_state(random_state, jumpahead=jumpahead)
+            with np.errstate(invalid='ignore'):
+                orig_hist = self.nominal_values
+                sigma = self.std_devs
+                nan_at = np.isnan(orig_hist)
+                valid_mask = ~nan_at
+                hist_vals = np.empty_like(orig_hist, dtype=np.float64)
+                hist_vals[valid_mask] = norm.rvs(loc=orig_hist[valid_mask],
+                                                 scale=sigma[valid_mask])
+                hist_vals[nan_at] = np.nan
+                error_vals = np.empty_like(orig_hist, dtype=np.float64)
+                error_vals[valid_mask] = np.sqrt(orig_hist[valid_mask])
+                error_vals[nan_at] = np.nan
+            return {'hist': unp.uarray(hist_vals, error_vals)}
+
         elif method in ['', 'none']:
             return {}
 
@@ -929,6 +951,11 @@ class Map(object):
     def size(self):
         """int : total number of elements"""
         return self.hist.size
+
+    @property
+    def num_entries(self):
+        """int : total number of weighted entries in all bins"""
+        return np.sum(valid_nominal_values(self.hist))
 
     @property
     def serializable_state(self):

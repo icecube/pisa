@@ -20,8 +20,10 @@ import simplejson as json
 from pisa import ureg
 from pisa.utils.comparisons import isbarenumeric
 
+import tempfile
 
-__all__ = ['JSON_EXTS', 'ZIP_EXTS',
+
+__all__ = ['JSON_EXTS', 'ZIP_EXTS', 'XOR_EXTS',
            'json_string', 'from_json', 'to_json']
 
 __author__ = 'S. Boeser, J.L. Lanfranchi'
@@ -43,6 +45,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 
 JSON_EXTS = ['json']
 ZIP_EXTS = ['bz2']
+XOR_EXTS = ['xor']
 
 
 def json_string(string):
@@ -68,6 +71,9 @@ def from_json(filename):
     Note that this currently only recognizes bz2-compressed file by its
     extension (i.e., the file must be <root>.json.bz2 if it is compressed).
 
+    If the file extension is .xor, the content will be scrambled to make it human unreadble
+    This is useful for staying blind when fitting data
+
     Parameters
     ----------
     filename : str
@@ -82,13 +88,28 @@ def from_json(filename):
 
     _, ext = os.path.splitext(filename)
     ext = ext.replace('.', '').lower()
-    assert ext in JSON_EXTS or ext in ZIP_EXTS
+    assert ext in JSON_EXTS or ext in ZIP_EXTS + XOR_EXTS
     if ext == 'bz2':
         content = json.loads(
             bz2.decompress(open_resource(filename).read()),
             cls=NumpyDecoder,
             object_pairs_hook=OrderedDict
         )
+    elif ext == 'xor':
+        #create tempfile
+        temp = tempfile.TemporaryFile(mode='w+b')
+        with open(filename, 'rb') as infile:
+            for line in infile:
+                # decrypt with key 42
+                line = ''.join([chr(ord(c)^42) for c in line])
+                temp.write(line)
+        # rewind
+        temp.seek(0)
+        content = json.load(temp,
+                            cls=NumpyDecoder,
+                            object_pairs_hook=OrderedDict)
+
+
     else:
         content = json.load(open_resource(filename),
                             cls=NumpyDecoder,
@@ -135,7 +156,7 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
 
     _, ext = os.path.splitext(filename)
     ext = ext.replace('.', '').lower()
-    assert ext == 'json' or ext in ZIP_EXTS
+    assert ext == 'json' or ext in ZIP_EXTS + XOR_EXTS
 
     with open(filename, 'w') as outfile:
         if ext == 'bz2':
@@ -147,6 +168,21 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
                     )
                 )
             )
+        elif ext == 'xor':
+            #create tempfile
+            temp = tempfile.TemporaryFile(mode='w+b')
+            temp.write(
+                json.dumps(
+                    content, temp, indent=indent, cls=NumpyEncoder,
+                    sort_keys=sort_keys, allow_nan=True, ignore_nan=False
+                )
+            )
+            # rewind
+            temp.seek(0)
+            for line in temp:
+                # decrypt with key 42
+                line = ''.join([chr(ord(c)^42) for c in line])
+                outfile.write(line)
         else:
             json.dump(
                 content, outfile, indent=indent, cls=NumpyEncoder,
@@ -250,9 +286,11 @@ def test_NumpyEncoderDecoder():
         d1 = {'nda1': nda1}
         fname = os.path.join(temp_dir, 'd1.json')
         fname2 = os.path.join(temp_dir, 'd1.json.bz2')
+        fname3 = os.path.join(temp_dir, 'd1.json.xor')
         to_json(d1, fname)
         to_json(d1, fname2)
-        for fn in [fname, fname2]:
+        to_json(d1, fname3)
+        for fn in [fname, fname2, fname3]:
             d2 = from_json(fn)
             assert recursiveEquality(d2, d1), \
                     'd1=\n%s\nd2=\n%s\nsee file: %s' %(d1, d2, fn)

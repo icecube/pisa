@@ -198,7 +198,6 @@ from io import StringIO
 from os.path import abspath, expanduser, expandvars, isfile, join
 import re
 import sys
-import warnings
 
 from backports.configparser import (
     RawConfigParser, ExtendedInterpolation, DuplicateOptionError,
@@ -206,7 +205,6 @@ from backports.configparser import (
     NoSectionError
 )
 from backports.configparser.helpers import open as c_open
-from backports.configparser.helpers import PY2
 import numpy as np
 from uncertainties import ufloat, ufloat_fromstr
 
@@ -219,7 +217,7 @@ from pisa.utils.resources import find_resource
 
 
 __all__ = ['PARAM_RE', 'PARAM_ATTRS', 'STAGE_SEP',
-           'parse_quantity', 'parse_string_literal', 'split',
+           'parse_quantity', 'parse_string_literal',
            'interpret_param_subfields', 'parse_param', 'parse_pipeline_config',
            'MutableMultiFileIterator', 'PISAConfigParser']
 
@@ -428,10 +426,25 @@ def parse_param(config, section, selector, fullname, pname, value):
     if config.has_option(section, fullname + '.unique_id'):
         kwargs['unique_id'] = config.get(section, fullname + '.unique_id')
 
+    if config.has_option(section, fullname + '.range'):
+        range_ = config.get(section, fullname + '.range')
+        # Note: `nominal` and `sigma` are called out in the `range_` string
+        if 'nominal' in range_:
+            nominal = value.n * value.units # pylint: disable=unused-variable
+        if 'sigma' in range_:
+            sigma = value.s * value.units # pylint: disable=unused-variable
+        range_ = range_.replace('[', 'np.array([')
+        range_ = range_.replace(']', '])')
+        # Strip out uncertainties from value itself (as we will rely on the
+        # prior from here on out)
+        kwargs['range'] = eval(range_).to(value.units) # pylint: disable=eval-used
+
     if config.has_option(section, fullname + '.prior'):
         prior = str(config.get(section, fullname + '.prior')).strip().lower()
         if prior == 'uniform':
             kwargs['prior'] = Prior(kind='uniform')
+        elif prior == 'jeffreys':
+            kwargs['prior'] = Prior(kind='jeffreys', A=kwargs['range'][0], B=kwargs['range'][1])
         elif prior == 'spline':
             priorname = pname
             if selector is not None:
@@ -457,20 +470,6 @@ def parse_param(config, section, selector, fullname, pname, value):
         kwargs['prior'] = Prior(kind='gaussian',
                                 mean=value.nominal_value * value.units,
                                 stddev=value.std_dev * value.units)
-
-    if config.has_option(section, fullname + '.range'):
-        range_ = config.get(section, fullname + '.range')
-        # NOTE: `nominal` and `sigma` are called out in the `range_` string
-        if 'nominal' in range_:
-            nominal = value.nominal_value * value.units # pylint: disable=unused-variable
-        if 'sigma' in range_:
-            sigma = value.std_dev * value.units # pylint: disable=unused-variable
-        range_ = range_.replace('[', 'np.array([')
-        range_ = range_.replace(']', '])')
-        kwargs['range'] = eval(range_).to(value.units) # pylint: disable=eval-used
-        # Strip out uncertainties from value itself (as we will rely on the
-        # prior from here on out)
-        value = value.nominal_value * value.units
 
     # Strip out any uncertainties from value itself (an explicit ``.prior``
     # specification takes precedence over this)
@@ -526,9 +525,8 @@ def parse_pipeline_config(config):
     binning_dict = {}
     for name, value in config['binning'].items():
         if name.endswith('.order'):
-            order = split(config.get('binning', name), sep=',',
-                          force_case='lower')
-            binning, _ = split(name, sep='.', force_case='lower')
+            order = split(config.get('binning', name))
+            binning, _ = split(name, sep='.')
             bins = []
             for bin_name in order:
                 try:
@@ -556,13 +554,11 @@ def parse_pipeline_config(config):
     section = 'pipeline'
 
     # Get and parse the order of the stages (and which services implement them)
-    order = [split(x, sep=STAGE_SEP, force_case='lower')
-             for x in split(config.get(section, 'order'), sep=',')]
+    order = [split(x, STAGE_SEP) for x in split(config.get(section, 'order'))]
 
     param_selections = []
     if config.has_option(section, 'param_selections'):
-        param_selections = split(config.get(section, 'param_selections'),
-                                 sep=',', force_case='lower')
+        param_selections = split(config.get(section, 'param_selections'))
 
     # Parse [stage.<stage_name>] sections and store to stage_dicts
     stage_dicts = OrderedDict()
@@ -637,10 +633,27 @@ def parse_pipeline_config(config):
                 param_selector.update(param, selector=infodict['selector'])
 
             # If it's not a param spec but contains 'binning', assume it's a
-            # binning spec
+            # binning spec for CAKE stages
             elif 'binning' in fullname:
                 service_kwargs[fullname] = binning_dict[value]
 
+            # it's gonna be a PI stage
+            elif '_specs' in fullname:
+                value = parse_string_literal(value)
+                # is it None?
+                if value is None:
+                    service_kwargs[fullname] = value
+                # is it evts?
+                elif value in ['evnts', 'events']:
+                    service_kwargs[fullname] = 'events'
+                # so it gotta be a binning
+                else:
+                    service_kwargs[fullname] = binning_dict[value]
+
+            # it's a list on in/output names list
+            elif fullname.endswith('_names'):
+                value = split(value)
+                service_kwargs[fullname] = value
             # Otherwise it's some other stage instantiation argument; identify
             # this by its full name and try to interpret and instantiate a
             # Python object using the string
@@ -972,8 +985,7 @@ class PISAConfigParser(RawConfigParser):
 
     def read(self, filenames, encoding=None):
         """Override `read` method to interpret `filenames` as PISA resource
-        locations, then call overridden `read` method. Also, IOError fails
-        here, whereas it is ignored in RawConfigParser.
+        locations, then call overridden `read` method.
 
         For further help on this method and its arguments, see
         :method:`~backports.configparser.configparser.read`
@@ -983,38 +995,10 @@ class PISAConfigParser(RawConfigParser):
             filenames = [filenames]
         resource_locations = []
         for filename in filenames:
-            resource_location = find_resource(filename)
-            if not isfile(resource_location):
-                raise ValueError(
-                    '"%s" is not a file or could not be located' % filename
-                )
-            resource_locations.append(resource_location)
+            resource_locations.append(find_resource(filename))
 
-        filenames = resource_locations
-
-        # NOTE: From here on, most of the `read` method is copied, but
-        # ignoring IOError exceptions is removed here. Python copyrights apply.
-
-        if PY2 and isinstance(filenames, bytes):
-            # we allow for a little unholy magic for Python 2 so that
-            # people not using unicode_literals can still use the library
-            # conveniently
-            warnings.warn(
-                "You passed a bytestring as `filenames`. This will not work"
-                " on Python 3. Use `cp.read_file()` or switch to using Unicode"
-                " strings across the board.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            filenames = [filenames]
-        elif isinstance(filenames, str):
-            filenames = [filenames]
-        read_ok = []
-        for filename in filenames:
-            with c_open(filename, encoding=encoding) as fp:
-                self._read(fp, filename)
-            read_ok.append(filename)
-        return read_ok
+        return super(PISAConfigParser, self).read(filenames=resource_locations,
+                                                  encoding=encoding)
 
     # NOTE: the `_read` method is copy-pasted (then modified slightly) from
     # Python's backports.configparser (version 3.5.0), and so any copyright
@@ -1183,7 +1167,7 @@ class PISAConfigParser(RawConfigParser):
                         # list of all bogus lines
                         e = self._handle_error(e, fpname, lineno, line)
         # if any parsing errors occurred, raise an exception
-        if e is not None:
+        if e:
             raise e
         self._join_multiline_values()
 

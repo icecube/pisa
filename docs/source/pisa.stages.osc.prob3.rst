@@ -7,7 +7,7 @@ Submodules
 pisa.stages.osc.prob3.BargerPropagator module
 ---------------------------------------------
 
-.. automodule:: pisa.stages.osc.prob3.BargerPropagator
+.. automodule:: pisa.stages.osc.prob3cc.BargerPropagator
     :members:
     :undoc-members:
     :show-inheritance:
@@ -16,7 +16,7 @@ pisa.stages.osc.prob3.BargerPropagator module
 Module contents
 ---------------
 
-.. automodule:: pisa.stages.osc.prob3
+.. automodule:: pisa.stages.osc.prob3cc
     :members:
     :undoc-members:
     :show-inheritance:
