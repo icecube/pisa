@@ -189,30 +189,37 @@ cpu_targets = ['cpu', 'numba']
 parallel_targets = ['parallel', 'multicore']
 gpu_targets = ['cuda', 'gpu', 'numba-cuda']
 
-if 'PISA_TARGET' in os.environ:
+# ignore PISA_TARGET env var if no numba support at all available
+if TARGET is not None and 'PISA_TARGET' in os.environ:
     PISA_TARGET = os.environ['PISA_TARGET']
-    # ignore PISA_TARGET env var if no numba support at all available
-    if PISA_TARGET is not None:
-        if PISA_TARGET.strip().lower() in gpu_targets:
-            if not NUMBA_CUDA_AVAIL:
-                raise ValueError(
-                    'Environment var PISA_TARGET="%s" set, even though numba-cuda'
-                    ' is not available\n'%(PISA_TARGET)
-                )
-            else:
-                TARGET = 'cuda'
-        elif PISA_TARGET.strip().lower() in cpu_targets:
-            TARGET = 'cpu'
-        elif PISA_TARGET.strip().lower() in parallel_targets:
-            TARGET = 'parallel'
-        else:
+    try_target = PISA_TARGET.strip().lower()
+    if try_target in gpu_targets:
+        if not NUMBA_CUDA_AVAIL:
             raise ValueError(
-                'Environment var PISA_TARGET="%s" is unrecognized.\n'
-                '--> For cpu set PISA_TARGET to one of %s\n'
-                '--> For parallel set PISA_TARGET to one of %s\n'
-                '--> For gpu set PISA_TARGET to one of %s\n'
-                %(PISA_TARGET, cpu_targets, parallel_targets, gpu_targets)
+                'Environment var PISA_TARGET="%s" set, even though numba-cuda'
+                ' is not available\n'%(PISA_TARGET)
             )
+        else:
+            TARGET = 'cuda'
+    elif (try_target in cpu_targets or try_target in parallel_targets):
+        if not NUMBA_AVAIL:
+            # is NUMBA_CUDA_AVAIL but not NUMBA_AVAIL even possible?
+            raise ValueError(
+                'Environment var PISA_TARGET="%s" set, even though numba'
+                ' is not available\n'%(PISA_TARGET)
+            )
+        if try_target in cpu_targets:
+            TARGET = 'cpu'
+        elif try_target in parallel_targets:
+            TARGET = 'parallel'
+    else:
+        raise ValueError(
+            'Environment var PISA_TARGET="%s" is unrecognized.\n'
+            '--> For cpu set PISA_TARGET to one of %s\n'
+            '--> For parallel set PISA_TARGET to one of %s\n'
+            '--> For gpu set PISA_TARGET to one of %s\n'
+            %(PISA_TARGET, cpu_targets, parallel_targets, gpu_targets)
+        )
 
 del cpu_targets, gpu_targets, parallel_targets
 
