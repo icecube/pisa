@@ -11,6 +11,7 @@ Here we keep track of which global constants are available, what their purpose i
 | `PYCUDA_AVAIL`     | Availability of PyCUDA                                                           | `False` (unless installed)                      | |
 | `NUMBA_AVAIL`      | Availability of Numba                                                            | `False` (unless installed)                      | |
 | `NUMBA_CUDA_AVAIL` | Availability of Numba's CUDA interface                                           | `False` (unless installed and CUDA-capable GPU available)                      | |
+| `TARGET`           | Numba compilation target                                                         | `cpu` if `NUMBA_AVAIL`, `gpu` if `NUMBA_CUDA_AVAIL`, `None` otherwise | `PISA_TARGET` |
 | `OMP_NUM_THREADS`  | Number of threads allocated to OpenMP                                            | `1`                                             | `OMP_NUM_THREADS`                 |
 | `FTYPE`            | Global floating point data type                                                  | `np.float64`                                    | `PISA_FTYPE`                      |
 | `HASH_SIGFIGS`     | Number of significant digits used for hashing numbers, depends on `FTYPE`        | `12(5)` for `FTYPE=np.float64(32)`              | |

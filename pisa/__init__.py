@@ -57,9 +57,9 @@ __all__ = [
     'complex64', 'complex128', 'complex256',
 
     # Constants
-    'PYCUDA_AVAIL', 'NUMBA_AVAIL', 'NUMBA_CUDA_AVAIL', 'OMP_NUM_THREADS',
-    'FTYPE', 'HASH_SIGFIGS', 'EPSILON', 'C_FTYPE', 'C_PRECISION_DEF',
-    'CACHE_DIR'
+    'PYCUDA_AVAIL', 'NUMBA_AVAIL', 'NUMBA_CUDA_AVAIL', 'TARGET',
+    'OMP_NUM_THREADS', 'FTYPE', 'HASH_SIGFIGS', 'EPSILON',
+    'C_FTYPE', 'C_PRECISION_DEF', 'CACHE_DIR'
 ]
 
 
@@ -173,11 +173,19 @@ if 'PISA_FTYPE' in os.environ:
         )
 del FLOAT32_STRINGS, FLOAT64_STRINGS
 
+#NUMBA_AVAIL = False
+#NUMBA_CUDA_AVAIL = False
 # set default target
 if NUMBA_CUDA_AVAIL:
     TARGET = 'cuda'
-else:
+elif NUMBA_AVAIL:
     TARGET = 'cpu'
+else:
+    TARGET = None
+    sys.stderr.write(
+        'No numba support detected - only limited functionality available.\n'
+    )
+
 
 cpu_targets = ['cpu', 'numba']
 parallel_targets = ['parallel', 'multicore']
@@ -185,31 +193,30 @@ gpu_targets = ['cuda', 'gpu', 'numba-cuda']
 
 if 'PISA_TARGET' in os.environ:
     PISA_TARGET = os.environ['PISA_TARGET']
-    if PISA_TARGET.strip().lower() in gpu_targets:
-        if not NUMBA_CUDA_AVAIL:
-            raise ValueError(
-                'Environment var PISA_TARGET="%s" set, even though numba-cuda is not available\n'
-                %(PISA_TARGET)
-            )
+    # ignore PISA_TARGET env var if no numba support at all available
+    if PISA_TARGET is not None:
+        if PISA_TARGET.strip().lower() in gpu_targets:
+            if not NUMBA_CUDA_AVAIL:
+                raise ValueError(
+                    'Environment var PISA_TARGET="%s" set, even though numba-cuda'
+                    ' is not available\n'%(PISA_TARGET)
+                )
+            else:
+                TARGET = 'cuda'
+        elif PISA_TARGET.strip().lower() in cpu_targets:
+            TARGET = 'cpu'
+        elif PISA_TARGET.strip().lower() in parallel_targets:
+            TARGET = 'parallel'
         else:
-            TARGET = 'cuda'
-    elif PISA_TARGET.strip().lower() in cpu_targets:
-        TARGET = 'cpu'
-    elif PISA_TARGET.strip().lower() in parallel_targets:
-        TARGET = 'parallel'
-    else:
-        raise ValueError(
-            'Environment var PISA_TARGTE="%s" is unrecognized.\n'
-            '--> For cpu set PISA_FTYPE to one of %s\n'
-            '--> For parallel set PISA_FTYPE to one of %s\n'
-            '--> For gpu set PISA_FTYPE to one of %s\n'
-            %(PISA_TARGET, cpu_targets, parallel_targets, gpu_targets)
-        )
+            raise ValueError(
+                'Environment var PISA_TARGET="%s" is unrecognized.\n'
+                '--> For cpu set PISA_TARGET to one of %s\n'
+                '--> For parallel set PISA_TARGET to one of %s\n'
+                '--> For gpu set PISA_TARGET to one of %s\n'
+                %(PISA_TARGET, cpu_targets, parallel_targets, gpu_targets)
+            )
 
 del cpu_targets, gpu_targets, parallel_targets
-
-
-# or overwrite with env var
 
 
 # Define HASH_SIGFIGS to set hashing precision based on FTYPE above; value here
