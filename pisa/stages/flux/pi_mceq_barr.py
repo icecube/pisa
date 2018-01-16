@@ -33,11 +33,9 @@ class pi_mceq_barr(PiStage):
     Paramaters
     ----------
 
-    nue_numu_ratio : quantity (dimensionless)
-    nu_nubar_ratio : quantity (dimensionless)
-    delta_index : quantity (dimensionless)
-    Barr_uphor_ratio : quantity (dimensionless)
-    Barr_nu_nubar_ratio : quantity (dimensionless)
+    table_file : str
+        pointing to spline table obtained from MCEq
+    barr_a : quantity (dimensionless)
 
     Notes
     -----
@@ -67,8 +65,8 @@ class pi_mceq_barr(PiStage):
 
         # what are the keys used from the inputs during apply
         input_calc_keys = ('weights',
-                           'nominal_flux',
-                           'nominal_opposite_flux',
+                           'nominal_nu_flux',
+                           'nominal_nubar_flux',
                           )
         # what are keys added or altered in the calculation used during apply
         output_calc_keys = ('sys_flux',
@@ -100,12 +98,18 @@ class pi_mceq_barr(PiStage):
 
 
         # load MCeq tables
-        table = pickle.load(BZ2File(find_resource(self.params.table_file.value)))
+        spline_tables_dict = pickle.load(BZ2File(find_resource(self.params.table_file.value)))
 
         self.data.data_specs = self.calc_specs
 
         for container in self.data:
             container['sys_flux'] = np.empty((container.size, 2), dtype=FTYPE)
+            # evaluate the splines for each E/CZ point
+            for key in spline_tables_dict.keys():
+                container['barr_'+key] = np.empty((container.size, 8), dtype=FTYPE)
+                eval_splines_vectorized(
+
+
 
     @profile
     def compute_function(self):
