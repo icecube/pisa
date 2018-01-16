@@ -173,8 +173,6 @@ if 'PISA_FTYPE' in os.environ:
         )
 del FLOAT32_STRINGS, FLOAT64_STRINGS
 
-#NUMBA_AVAIL = False
-#NUMBA_CUDA_AVAIL = False
 # set default target
 if NUMBA_CUDA_AVAIL:
     TARGET = 'cuda'

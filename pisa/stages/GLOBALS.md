@@ -32,19 +32,28 @@ The table below depicts which services make use of a select set of global consta
 | :---:      | :---:             | :---:           | :---:                | :---:               | :---:     |
 | `aeff.hist`    | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
 | `aeff.param`   | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `aeff.pi_aeff` | :black_square_button: | :heavy_exclamation_mark: | :heavy_check_mark: | :black_square_button: | :heavy_check_mark: |
 | `aeff.smooth`  | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
 | `combine.nutau` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
 | `data.data` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `data.events_to_data` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
 | `data.icc` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
 | `data.sample` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `data.simple_data_loader` | :black_square_button: | :heavy_exclamation_mark: | :heavy_check_mark: | :black_square_button: | :heavy_check_mark: |
+| `data.toy_event_generator` | :black_square_button: | :heavy_exclamation_mark: | :heavy_check_mark: | :black_square_button: | :heavy_check_mark: |
 | `discr_sys.fit` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `discr_sys.hyperplane` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `discr_sys.pi_hyperplanes` | :black_square_button: | :heavy_exclamation_mark: | :heavy_check_mark: | :black_square_button: | :heavy_check_mark: |
 | `discr_sys.polyfits` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
 | `flux.dummy` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
 | `flux.honda` | :black_square_button: | :heavy_check_mark: | :black_square_button: | :black_square_button: | :black_square_button: |
 | `flux.mceq` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `flux.pi_simple` | :black_square_button: | :heavy_exclamation_mark: | :heavy_check_mark: | :black_square_button: | :heavy_check_mark: |
 | `mc.cpu` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :heavy_check_mark: |
 | `mc.gpu` | :heavy_exclamation_mark: | :black_square_button: | :black_square_button: | :black_square_button: | :heavy_check_mark: |
 | `mc.weight` | :heavy_exclamation_mark: | :black_square_button: | :black_square_button: | :black_square_button: | :heavy_check_mark: |
+| `mc.mc` | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `osc.pi_prob3` | :black_square_button:    | :heavy_exclamation_mark: | :heavy_check_mark: | :black_square_button: | :heavy_check_mark: |
 | `osc.prob3cpu` | :black_square_button:    | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
 | `osc.prob3gpu` | :heavy_exclamation_mark: | :black_square_button: | :black_square_button: | :black_square_button: | :heavy_check_mark:    |
 | `pid.hist`    | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
@@ -55,5 +64,6 @@ The table below depicts which services make use of a select set of global consta
 | `reco.param`    | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
 | `reco.vbwkde`    | :black_square_button: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | `unfold.roounfold`    | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
+| `utils.pi_hist` | :black_square_button:    | :heavy_exclamation_mark: | :heavy_check_mark: | :black_square_button: | :heavy_check_mark: |
 | `xsec.genie`    | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: | :black_square_button: |
-
+| `xsec.genie_sys` | :black_square_button: | :heavy_exclamation_mark: | :heavy_check_mark: | :black_square_button: | :heavy_check_mark: |
