@@ -37,7 +37,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  limitations under the License.'''
 
 
-def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
+def add_fluxes_to_file(data_file_path, flux_table, flux_name,
                        outdir=None, label=None, overwrite=False):
     """Add fluxes to PISA events file (e.g. for use by an mc stage)
 
@@ -45,11 +45,10 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
     -----------
     data_file_path : string
     flux_table
-    neutrino_weight_name
+    flux_name
     outdir : string or None
         If None, output is to the same directory as `data_file_path`
     overwrite : bool, optional
-
     """
     data, attrs = from_file(find_resource(data_file_path), return_attrs=True)
     bname, ext = splitext(basename(data_file_path))
@@ -78,31 +77,15 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
             true_e = int_node['true_energy']
             true_cz = int_node['true_coszen']
 
-            # NOTE: The opposite-flavor fluxes are currently only used for the
-            #       nu_nubar_ratio systematic (Nov 2017)
-
-            for opposite in (False, True):
-                if not opposite:
-                    bar_label = 'bar' if 'bar' in primary else ''
-                    oppo_label = ''
-                else:
-                    bar_label = '' if 'bar' in primary else 'bar'
-                    oppo_label = '_oppo'
-
-                nue_flux = calculate_2d_flux_weights(
+            # calculate all 4 fluxes (nue, nuebar, numu and numubar)
+            for table in ['nue', 'nuebar', 'numu', 'numubar']:
+                flux = calculate_2d_flux_weights(
                     true_energies=true_e,
                     true_coszens=true_cz,
-                    en_splines=flux_table['nue' + bar_label]
+                    en_splines=flux_table[table]
                 )
-                numu_flux = calculate_2d_flux_weights(
-                    true_energies=true_e,
-                    true_coszens=true_cz,
-                    en_splines=flux_table['numu' + bar_label]
-                )
-
-                basekey = neutrino_weight_name + oppo_label
-                int_node[basekey + '_nue_flux'] = nue_flux
-                int_node[basekey + '_numu_flux'] = numu_flux
+                keyname = flux_name + '_' + table + '_flux'
+                int_node[keyname] = flux
 
     to_file(data, outpath, attrs=attrs, overwrite=overwrite)
     logging.info('--> Wrote file including fluxes to "%s"', outpath)
@@ -193,7 +176,7 @@ def main():
         add_fluxes_to_file(
             data_file_path=filepath,
             flux_table=flux_table,
-            neutrino_weight_name='neutrino',
+            flux_name='nominal',
             outdir=args.outdir,
             label=flux_file_bname
         )

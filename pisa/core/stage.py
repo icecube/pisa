@@ -12,6 +12,7 @@ import inspect
 import os
 
 from pisa import CACHE_DIR
+from pisa.core.base_stage import BaseStage
 from pisa.core.events import Events
 from pisa.core.map import Map, MapSet
 from pisa.core.param import Param, ParamSelector
@@ -23,9 +24,12 @@ from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
+from pisa.utils.format import arg_str_seq_none
 
 
-__all__ = ['arg_str_seq_none', 'Stage']
+__all__ = ['Stage']
+__author__ = 'Justin Lanfranchi'
+__version__ = 'Cake'
 
 __author__ = 'J.L. Lanfranchi'
 
@@ -47,37 +51,8 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 # TODO: mode for not propagating errors. Probably needs hooks here, but meat of
 # implementation would live inside map.py and/or transform.py.
 
-def arg_str_seq_none(inputs, name):
-    """Simple input handler.
 
-    Parameters
-    ----------
-    inputs : None, string, or iterable of strings
-        Input value(s) provided by caller
-    name : string
-        Name of input, used for producing a meaningful error message
-
-    Returns
-    -------
-    inputs : None, or list of strings
-
-    Raises
-    ------
-    TypeError if unrecognized type
-
-    """
-    if isinstance(inputs, basestring):
-        inputs = [inputs]
-    elif isinstance(inputs, (Iterable, Sequence)):
-        inputs = list(inputs)
-    elif inputs is None:
-        pass
-    else:
-        raise TypeError('Input %s: Unhandled type %s' % (name, type(inputs)))
-    return inputs
-
-
-class Stage(object):
+class Stage(BaseStage):
     """
     PISA stage base class. Should encompass all behaviors common to (almost)
     all stages.
@@ -89,12 +64,6 @@ class Stage(object):
     use_transforms : bool (required)
         Whether or not this stage takes inputs to be transformed (and hence
         implements transforms).
-
-    params : ParamSelector, dict of ParamSelector kwargs, ParamSet, or object
-             instantiable to ParamSet
-
-    expected_params : list of strings
-        List containing required `params` names.
 
     input_names : None or list of strings
 
@@ -129,23 +98,6 @@ class Stage(object):
 
     output_binning : None or interpretable as MultiDimBinning
 
-    error_method : None, bool, or string
-        If None, False, or empty string, the stage does not compute errors for
-        the transforms and does not apply any (additional) error to produce its
-        outputs. (If the inputs already have errors, these are propagated.)
-
-        Otherwise, this specifies the method by which the stage should compute
-        errors for the transforms to be applied in producing outputs from the
-        stage.
-
-    debug_mode : None, bool, or string
-        If None, False, or empty string, the stage runs normally.
-
-        Otherwise, the stage runs in debug mode. This disables caching (forcing
-        recomputation of any nominal transforms, transforms, and outputs).
-        Services that subclass from the `Stage` class can then implement
-        further custom behavior when this mode is set by reading the value of
-        the `self.debug_mode` attribute.
 
     Notes
     -----
@@ -188,34 +140,26 @@ class Stage(object):
                  output_binning=None, debug_mode=None):
         # Allow for string inputs, but have to populate into lists for
         # consistent interfacing to one or multiple of these things
-        expected_params = arg_str_seq_none(expected_params, 'expected_params')
-        input_names = arg_str_seq_none(input_names, 'input_names')
-        output_names = arg_str_seq_none(output_names, 'output_names')
+
 
         self.use_transforms = use_transforms
         """Whether or not stage uses transforms"""
 
-        module_path = self.__module__.split('.')
-
-        self.stage_name = module_path[-2]
-        """Name of the stage (e.g. flux, osc, aeff, reco, pid, etc."""
-
-        self.service_name = module_path[-1]
-        """Name of the specific service implementing the stage."""
-
-        self.expected_params = expected_params
-        """The full set of parameters (by name) that must be present in
-        `params`"""
-
         self._events_hash = None
-
-        self._input_names = [] if input_names is None else input_names
-        self._output_names = [] if output_names is None else output_names
 
         self.input_binning = input_binning
         self.output_binning = output_binning
         self.validate_binning()
-        self._source_code_hash = None
+
+        # init base class!
+        super(Stage, self).__init__(params=params,
+                                             expected_params=expected_params,
+                                             input_names=input_names,
+                                             output_names=output_names,
+                                             debug_mode=debug_mode,
+                                             error_method=error_method,
+                                             )
+
 
         # Storage of latest transforms and outputs; default to empty
         # TransformSet and None, respectively.
@@ -224,9 +168,6 @@ class Stage(object):
         transforms computed stores them here. Before computation, `transforms`
         is an empty TransformSet; a stage that does not make use of these (such
         as a no-input stage) has an empty TransformSet."""
-
-        self.outputs = None
-        """Last-computed outputs; None if no outputs have been computed yet."""
 
         self.memcache_deepcopy = memcache_deepcopy
 
@@ -269,34 +210,6 @@ class Stage(object):
         self.disk_cache_path = None
         """Path to disk cache file for this stage/service (or None)."""
 
-        param_selector_keys = set([
-            'regular_params', 'selector_param_sets', 'selections'
-        ])
-        if isinstance(params, Mapping) \
-                and set(params.keys()) == param_selector_keys:
-            self._param_selector = ParamSelector(**params)
-        elif isinstance(params, ParamSelector):
-            self._param_selector = params
-        else:
-            self._param_selector = ParamSelector(regular_params=params)
-
-        # Get the params from the ParamSelector, validate, and set as the
-        # params object for this stage
-        p = self._param_selector.params
-        self._check_params(p)
-        self.validate_params(p)
-        self._params = p
-
-        if bool(debug_mode):
-            self._debug_mode = debug_mode
-        else:
-            self._debug_mode = None
-
-        if bool(error_method):
-            self._error_method = error_method
-        else:
-            self._error_method = None
-
         # Include each attribute here for hashing if it is defined and its
         # value is not None
         default_attrs_to_hash = ['input_names', 'output_names',
@@ -313,7 +226,6 @@ class Stage(object):
             except ValueError():
                 pass
 
-        self.inputs = None
         self.events = None
         self.nominal_transforms = None
 
@@ -523,6 +435,10 @@ class Stage(object):
             self._compute_nominal_outputs()
             self.nominal_outputs_hash = nominal_outputs_hash
 
+    # for PI compatibility
+    def run(self, inputs=None):
+        return self.get_outputs(inputs=inputs)
+
     @profile
     def get_outputs(self, inputs=None):
         """Top-level function for computing outputs. Use this method to get
@@ -629,28 +545,6 @@ class Stage(object):
                             ' the case that the input includes sideband'
                             ' objects.' % type(outputs))
 
-    def _check_params(self, params):
-        """Make sure that `expected_params` is defined and that exactly the
-        params specified in self.expected_params are present.
-
-        """
-        assert self.expected_params is not None
-        exp_p, got_p = set(self.expected_params), set(params.names)
-        if exp_p == got_p:
-            return
-        excess = got_p.difference(exp_p)
-        missing = exp_p.difference(got_p)
-        err_strs = []
-        if len(excess) > 0:
-            err_strs.append('Excess params provided: %s'
-                            %', '.join(sorted(excess)))
-        if len(missing) > 0:
-            err_strs.append('Missing params: %s'
-                            %', '.join(sorted(missing)))
-        raise ValueError('Expected parameters: %s;\n'
-                         %', '.join(sorted(exp_p))
-                         + ';\n'.join(err_strs))
-
     def check_transforms(self, transforms):
         """Check that transforms' inputs and outputs match those specified
         for this service.
@@ -676,33 +570,10 @@ class Stage(object):
         """Check that the output names are those expected"""
         if set(outputs.names) != set(self.output_names):
             raise ValueError(
-                "Outputs: " + str(outputs.names) +
-                "\nStage outputs: " + str(self.output_names)
+                "'%s' : Outputs found do not match expected outputs for this stage:\n"%self.stage_name +
+                "  Outputs found: " + str(outputs.names) + "\n"
+                "  Expected stage outputs: " + str(self.output_names)
             )
-
-    def select_params(self, selections, error_on_missing=False):
-        """Apply the `selections` to contained ParamSet.
-
-        Parameters
-        ----------
-        selections : string or iterable
-        error_on_missing : bool
-
-        """
-        try:
-            self._param_selector.select_params(
-                selections, error_on_missing=True
-            )
-        except KeyError:
-            msg = 'Not all of the selections %s found in this stage.' \
-                    %(selections,)
-            if error_on_missing:
-                #logging.error(msg)
-                raise
-            logging.trace(msg)
-        else:
-            logging.trace('`selections` = %s yielded `params` = %s'
-                          %(selections, self.params))
 
     def load_events(self, events):
         """Load events from path given by `events`. Stored as `self.events`.
@@ -786,100 +657,6 @@ class Stage(object):
 
         self.disk_cache = DiskCache(self.disk_cache_path, max_depth=10,
                                     is_lru=False)
-
-    @property
-    def params(self):
-        """Params"""
-        return self._params
-
-    @property
-    def param_selections(self):
-        """Param selections"""
-        return sorted(deepcopy(self._param_selector.param_selections))
-
-    @property
-    def input_names(self):
-        """Names of input objects (e.g. names of input maps)"""
-        return deepcopy(self._input_names)
-
-    @property
-    def output_names(self):
-        """Names of output objects (e.g. names of output maps)"""
-        return deepcopy(self._output_names)
-
-    @property
-    def source_code_hash(self):
-        """Hash for the source code of this object's class.
-
-        Not meant to be perfect, but should suffice for tracking provenance of
-        an object stored to disk that were produced by a Stage.
-        """
-        if self._source_code_hash is None:
-            self._source_code_hash = hash_obj(
-                inspect.getsource(self.__class__),
-                full_hash=self.full_hash
-            )
-        return self._source_code_hash
-
-    @property
-    def hash(self):
-        """Combines source_code_hash and params.hash for checking/tagging
-        provenance of persisted (on-disk) objects."""
-        objects_to_hash = [self.source_code_hash, self.params.hash]
-        for attr in self._attrs_to_hash:
-            objects_to_hash.append(hash_obj(getattr(self, attr),
-                                            full_hash=self.full_hash))
-        return hash_obj(objects_to_hash, full_hash=self.full_hash)
-
-    def __hash__(self):
-        return self.hash
-
-    def include_attrs_for_hashes(self, attrs):
-        """Include a class attribute or attributes to be included when
-        computing hashes (for all that apply: nominal transforms, transforms,
-        and/or outputs).
-
-        This is a convenience that allows some customization of hashing (and
-        hence caching) behavior without having to override the hash-computation
-        methods (`_derive_nominal_transforms_hash`, `_derive_transforms_hash`,
-        and `_derive_outputs_hash`).
-
-        Parameters
-        ----------
-        attrs : string or sequence thereof
-            Name of the attribute(s) to include for hashes. Each must be an
-            existing attribute of the object at the time this method is
-            invoked.
-
-        """
-        if isinstance(attrs, basestring):
-            attrs = [attrs]
-
-        # Validate that all are actually attrs before setting any
-        for attr in attrs:
-            assert isinstance(attr, basestring)
-            if not hasattr(self, attr):
-                raise ValueError('"%s" not an attribute of the class; not'
-                                 ' adding *any* of the passed attributes %s to'
-                                 ' attrs to hash.' %(attr, attrs))
-
-        # Include the attribute names
-        for attr in attrs:
-            self._attrs_to_hash.add(attr)
-
-    @property
-    def debug_mode(self):
-        """Read-only attribute indicating whether or not the stage is being run
-        in debug mode. None indicates non-debug mode, while non-none value
-        indicates a debug mode."""
-        return self._debug_mode
-
-    @property
-    def error_method(self):
-        """Read-only attribute indicating whether or not the stage will compute
-        errors for its transforms and outputs (whichever is applicable). Errors
-        on inputs are propagated regardless of this setting."""
-        return self._error_method
 
     def _derive_outputs_hash(self):
         """Derive a hash value that unique identifies the outputs that will be
@@ -1071,11 +848,6 @@ class Stage(object):
         Input stages that compute a TransformSet needn't override this, as the
         work for computing outputs is done by the TransfromSet below."""
         return self.transforms.apply(inputs)
-
-    def validate_params(self, params): # pylint: disable=unused-argument, no-self-use
-        """Override this method to test if params are valid; e.g., check range
-        and dimensionality."""
-        return
 
     def validate_binning(self): # pylint: disable=no-self-use
         """Override this method to test if the input and output binning

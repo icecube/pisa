@@ -9,6 +9,7 @@ parameters (e.g., PINGU's V5 processing).
 from __future__ import absolute_import, division
 
 from collections import Mapping, OrderedDict, Sequence
+from copy import deepcopy
 from itertools import izip
 import os
 import re
@@ -27,8 +28,7 @@ from pisa.utils.log import logging
 from pisa.utils import resources
 
 
-__all__ = ['MULTI_PART_FIELDS', 'NU_PDG_CODES',
-           'DataProcParams']
+__all__ = ['MULTI_PART_FIELDS', 'NU_PDG_CODES', 'DataProcParams']
 
 __author__ = 'J.L. Lanfranchi'
 
@@ -417,7 +417,7 @@ class DataProcParams(dict):
         return result
 
     @staticmethod
-    def retrieve_node_data(h5group, address):
+    def retrieve_node_data(h5group, address, allow_missing=False):
         """Retrieve data from an HDF5 group `group` at address `address`.
         Levels of hierarchy are separated by forward-slashes ('/').
 
@@ -425,17 +425,30 @@ class DataProcParams(dict):
         """
         subgroup = h5group
         for sub_addy in address.split('/'):
-            subgroup = subgroup[sub_addy]
+            try:
+                subgroup = subgroup[sub_addy]
+            except KeyError:
+                if allow_missing:
+                    return None
+                raise
         return subgroup
 
     @staticmethod
-    def populate_global_namespace(h5group, field_map):
+    def populate_global_namespace(h5group, field_map, allow_missing=False):
         """Populate the Python global namespace with variables named as the
         keys in `field_map` and values loaded from the `h5group` at addresses
         specified by the corresponding values in `field_map`.
         """
         for var, h5path in field_map.items():
-            globals()[var] = DataProcParams.retrieve_node_data(h5group, h5path)
+            try:
+                value = DataProcParams.retrieve_node_data(
+                    h5group, h5path, allow_missing=False
+                )
+            except KeyError:
+                if allow_missing:
+                    return None
+                raise
+            globals()[var] = value
 
     # TODO: make the following behave like `retrieve_expression` method which
     # does not rely on populating globals (just a dict, the name of which gets
@@ -467,7 +480,13 @@ class DataProcParams(dict):
         The returned dictionary's keys match those in the field_map and the
         dict's values are the data from the HDF5's nodes found at the addresses
         specified as values in the field_map
+
+        Parameters
+        ----------
+        file_type : string, one of {'mc', 'data'}
+
         """
+        not_fields_in_data = ['I3MCWeightDict', 'PrimaryNu', 'trueNeutrino']
         myfile = False
         try:
             if isinstance(h5, basestring):
@@ -478,6 +497,10 @@ class DataProcParams(dict):
             for name, path in self['field_map'].items():
                 datum = self.retrieve_expression(h5, path)
                 path_parts = path.split('/')
+                if (file_type == 'data' and 'I3MCWeightDict' in path_parts
+                        or 'PrimaryNu' in path_parts or 'trueNeutrino' in path_parts):
+                    continue
+
                 if path_parts[0] == 'I3MCTree' and path_parts[-1] != 'Event':
                     evts = self.retrieve_node_data(
                         h5, '/'.join(path_parts[:-1] + ['Event'])
@@ -548,8 +571,10 @@ class DataProcParams(dict):
             data['nu_code'] = [
                 self.nu_code_to_pdg_map[code] for code in data['nu_code']
             ]
-        data['true_coszen'] = np.cos(data['true_zenith'])
-        data['reco_coszen'] = np.cos(data['reco_zenith'])
+        if 'true_zenith' in data:
+            data['true_coszen'] = np.cos(data['true_zenith'])
+        if 'reco_zenith' in data:
+            data['reco_coszen'] = np.cos(data['reco_zenith'])
         return data
 
     @staticmethod
@@ -590,7 +615,7 @@ class DataProcParams(dict):
 
         # Default is to return all fields
         if return_fields is None:
-            return_fields = data.keys() #self['field_map'].keys()
+            return_fields = data.keys()
 
         # If no cuts specified, return all data from specified fields
         if len(cuts) == 0:

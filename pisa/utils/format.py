@@ -7,7 +7,7 @@ Utilities for interpreting and returning formatted strings.
 
 from __future__ import absolute_import, division, print_function
 
-from collections import OrderedDict
+from collections import OrderedDict, Iterable, Sequence
 import decimal
 from itertools import imap
 from numbers import Integral, Number
@@ -36,7 +36,8 @@ __all__ = ['WHITESPACE_RE', 'NUMBER_RESTR', 'NUMBER_RE', 'HRGROUP_RESTR',
            'make_valid_python_name', 'sep_three_tens',
            'format_num',
            'test_format_num',
-           'timediff', 'test_timediff', 'timestamp', 'test_timestamp']
+           'timediff', 'test_timediff', 'timestamp', 'test_timestamp',
+	    'arg_str_seq_none']
 
 
 __author__ = 'J.L. Lanfranchi'
@@ -138,7 +139,7 @@ for K, V in POWER_OF_1024_TO_BIN_PREFIX.items():
     BIN_PREFIX_TO_POWER_OF_1024[V] = K
 
 
-def split(string, sep, force_case=None, parse_func=None):
+def split(string, sep=',', force_case=None, parse_func=None):
     """Parse a string containing a separated list.
 
     * Before splitting the list, the string has extraneous whitespace removed
@@ -217,6 +218,30 @@ def split(string, sep, force_case=None, parse_func=None):
 
     return [aggfunc(x.strip()) for x in str.split(str(string).strip(), sep)]
 
+def arg_str_seq_none(inputs, name):
+    """Simple input handler.
+    Parameters
+    ----------
+    inputs : None, string, or iterable of strings
+        Input value(s) provided by caller
+    name : string
+        Name of input, used for producing a meaningful error message
+    Returns
+    -------
+    inputs : None, or list of strings
+    Raises
+    ------
+    TypeError if unrecognized type
+    """
+    if isinstance(inputs, basestring):
+        inputs = [inputs]
+    elif isinstance(inputs, (Iterable, Sequence)):
+        inputs = list(inputs)
+    elif inputs is None:
+        pass
+    else:
+        raise TypeError('Input %s: Unhandled type %s' % (name, type(inputs)))
+    return inputs
 
 # TODO: allow for scientific notation input to hr*2list, etc.
 
@@ -858,7 +883,7 @@ def format_num(value,
         `fmt` is ``'binpre'`` then `exponent` is applied to 1024.
         I.e., 1 maps to kibi (Ki), 2 maps to mebi (Mi), etc.
 
-    sci_thresh : tuple of 2 integers >= 0
+    sci_thresh : sequence of 2 integers
         When to switch to scientific notation. The first integer is the order
         of magnitude of `value` at or above which scientific notation will be
         used. The second integer indicates the order of magnitude at or below

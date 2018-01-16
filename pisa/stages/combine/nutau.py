@@ -59,7 +59,7 @@ class nutau(Stage):
             #'nutau_cc_norm'
         )
 
-        input_names = split(input_names, sep=',')
+        #input_names = split(input_names, sep=',')
         self.combine_groups = eval(combine_groups)
         for key, val in self.combine_groups.items():
             self.combine_groups[key] = split(val, sep=',')
@@ -96,7 +96,7 @@ class nutau(Stage):
                     scale *= self.params.nu_nc_norm.value.m_as('dimensionless')
                 #if 'nutau' in name:
                 #    scale *= self.params.nutau_norm.value.m_as('dimensionless')
-                #if 'nutau_cc' in name:
+                #if name in ['nutau_cc','nutaubar_cc']:
                 #    scale *= self.params.nutau_cc_norm.value.m_as('dimensionless')
                 if scale != 1:
                     xform[i] *= scale

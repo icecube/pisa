@@ -316,6 +316,15 @@ class NuFlav(object):
             field = field[idx]
         return field
 
+    @property
+    def prob3_codes(self):
+        """(int,int) : flavor and particle/antiparticle codes, as used by prob3"""
+        if np.abs(self.code) == self.NUE_CODE : prob3flav = 0
+        elif np.abs(self.code) == self.NUMU_CODE : prob3flav = 1
+        elif np.abs(self.code) == self.NUTAU_CODE : prob3flav = 2
+        prob3bar = self.bar_code
+        return (prob3flav,prob3bar)
+
 
 NUE = NuFlav('nue')
 NUEBAR = NuFlav('nuebar')
