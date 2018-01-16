@@ -91,7 +91,7 @@ class simple_data_loader(PiStage):
         # here we revert that, incase these oppo keys are there
         for f in evts.flavints:
             if evts[f].has_key('neutrino_oppo_nue_flux'):
-                logging.info('renaming the outdated "oppo" flux keys, in the future, do not use those anymore')
+                logging.warning('renaming the outdated "oppo" flux keys, in the future, do not use those anymore')
                 if f.particle:
                     evts[f]['nominal_nue_flux'] = evts[f].pop('neutrino_nue_flux')
                     evts[f]['nominal_numu_flux'] = evts[f].pop('neutrino_numu_flux')
