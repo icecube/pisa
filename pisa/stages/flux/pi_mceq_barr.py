@@ -40,9 +40,10 @@ class pi_mceq_barr(PiStage):
     Notes
     -----
 
+    The table containe for each barr parameter 8 splines, these are:
+    flux nue, derivative nue, flux nuebar, derivative nuebar, flux numu, ...
+
     """
-    # TODO: get rid of this _oppo_flux stuff!!!
-    # Just replace with nu and nubar flux!!!
 
     def __init__(self,
                  data=None,
@@ -57,8 +58,8 @@ class pi_mceq_barr(PiStage):
 
         expected_params = ('table_file',
                            'barr_a',
-                           'barr_b',
-                           'barr_c',
+                           #'barr_b',
+                           #'barr_c',
                           )
         input_names = ()
         output_names = ()
@@ -104,11 +105,38 @@ class pi_mceq_barr(PiStage):
 
         for container in self.data:
             container['sys_flux'] = np.empty((container.size, 2), dtype=FTYPE)
-            # evaluate the splines for each E/CZ point
-            for key in spline_tables_dict.keys():
-                container['barr_'+key] = np.empty((container.size, 8), dtype=FTYPE)
-                eval_splines_vectorized(
 
+        if self.calc_mode == 'binned':
+            # speed up calculation by adding links
+            # as layers don't care about flavour
+            self.data.link_containers('nu', ['nue_cc', 'numu_cc', 'nutau_cc',
+                                             'nue_nc', 'numu_nc', 'nutau_nc',
+                                             'nuebar_cc', 'numubar_cc', 'nutaubar_cc',
+                                             'nuebar_nc', 'numubar_nc', 'nutaubar_nc'])
+
+        for container in self.data:
+            # evaluate the splines (flux and deltas) for each E/CZ point
+            # at the moment this is done on CPU, therefore we force 'host'
+            for key in spline_tables_dict.keys():
+                logging.info('Evaluating MCEq splines for %s for Barr parameter %s'%(container.name, key))
+                container['barr_'+key] = np.empty((container.size, 8), dtype=FTYPE)
+                self.eval_spline(container['true_energy'].get('host'),
+                                 container['true_coszen'].get('host'),
+                                 spline_tables_dict[key],
+                                 out=container['barr_'+key].get('host'))
+                container['barr_'+key].mark_changed('host')
+        self.data.unlink_containers()
+
+    def eval_spline(self, true_energy, true_coszen, splines, out):
+        '''
+        dumb function to iterate trhouh all E, CZ values
+        and evlauate all 8 Barr splines at these points
+        '''
+        for i in xrange(len(true_energy)):
+            abs_cos = abs(true_coszen[i])
+            log_e = np.log(true_energy[i])
+            for j in xrange(len(splines)):
+                out[i,j] = splines[j](abs_cos, log_e)[0,0]
 
 
     @profile
@@ -116,32 +144,39 @@ class pi_mceq_barr(PiStage):
 
         self.data.data_specs = self.calc_specs
 
-
-
-
-        nue_numu_ratio = self.params.nue_numu_ratio.value.m_as('dimensionless')
-        nu_nubar_ratio = self.params.nu_nubar_ratio.value.m_as('dimensionless')
-        delta_index = self.params.delta_index.value.m_as('dimensionless')
-        Barr_uphor_ratio = self.params.Barr_uphor_ratio.value.m_as('dimensionless')
-        #Barr_uphor_ratio2 = self.params.Barr_uphor_ratio2.value.m_as('dimensionless')
-        Barr_nu_nubar_ratio = self.params.Barr_nu_nubar_ratio.value.m_as('dimensionless')
-        #Barr_nu_nubar_ratio2 = self.params.Barr_nu_nubar_ratio2.value.m_as('dimensionless')
+        barr_a = self.params.barr_a.value.m_as('dimensionless')
 
         for container in self.data:
 
-            apply_sys_vectorized(container['true_energy'].get(WHERE),
-                                 container['true_coszen'].get(WHERE),
-                                 container['nominal_flux'].get(WHERE),
-                                 container['nominal_opposite_flux'].get(WHERE),
-                                 container['nubar'],
-                                 nue_numu_ratio,
-                                 nu_nubar_ratio,
-                                 delta_index,
-                                 Barr_uphor_ratio,
-                                 Barr_nu_nubar_ratio,
-                                 out=container['sys_flux'].get(WHERE),
-                                )
+            apply_barr_vectorized(container['nominal_nu_flux'].get(WHERE),
+                                  container['nominal_nubar_flux'].get(WHERE),
+                                  container['nubar'],
+                                  container['barr_a+'].get(WHERE),
+                                  container['barr_a-'].get(WHERE),
+                                  barr_a,
+                                  out=container['sys_flux'].get(WHERE),
+                                 )
             container['sys_flux'].mark_changed(WHERE)
 
 
 
+# vectorized function to apply
+# must be outside class
+if FTYPE == np.float64:
+    signature = '(f8, f8, f8[:], f8[:], i4, f8, f8, f8, f8, f8, f8[:])'
+else:
+    signature = '(f4[:], f4[:], i4, f4[:], f4[:], f4, f4[:])'
+@guvectorize([signature], '(d),(d),(),(c),(c),()->(d)', target=TARGET)
+def apply_barr_vectorized(nominal_nu_flux,
+                          nominal_nubar_flux,
+                          nubar,
+                          barr_a_pos,
+                          barr_a_neg,
+                          barr_a,
+                          out):
+    if nubar > 0:
+        out[0] = nominal_nu_flux[0] * (1. + barr_a * ( (barr_a_pos[1] / barr_a_pos[0]) + (barr_a_neg[1] / barr_a_neg[0])))
+        out[1] = nominal_nu_flux[1] * (1. + barr_a * ( (barr_a_pos[5] / barr_a_pos[4]) + (barr_a_neg[5] / barr_a_neg[4])))
+    else:
+        out[0] = nominal_nubar_flux[0] * (1. + barr_a * ( (barr_a_pos[3] / barr_a_pos[2]) + (barr_a_neg[3] / barr_a_neg[2])))
+        out[1] = nominal_nubar_flux[1] * (1. + barr_a * ( (barr_a_pos[7] / barr_a_pos[6]) + (barr_a_neg[7] / barr_a_neg[6])))
