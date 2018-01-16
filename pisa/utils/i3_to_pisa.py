@@ -1,23 +1,25 @@
-import glob, sys, os, tables
+import glob, sys, os, tables, collections
 
-from icecube import icetray
-from I3Tray import I3Tray
-from icecube.tableio import I3TableWriter, I3TableService
-from icecube.hdfwriter import I3HDFTableService #, pytables_ext
+
 
 
 #
-# Handle variable mapping
+# i3 -> PISA variable mapping
 #
 
-class VariableMap() :
+'''
+This class is used to map between I3 frame objects to PISA variables
+'''
 
-	class Variable() :
+class I3ToPISAVariableMap() :
 
+	#Sub-class for holding a single variable mapping
+	class Mapping() :
 		def __init__(self,i3_frame_object,i3_frame_object_variable,pisa_variable) :
 			self.i3_frame_object = i3_frame_object
 			self.i3_frame_object_variable = i3_frame_object_variable
 			self.pisa_variable = pisa_variable
+
 
 	def __init__(self) :
 		self.variables = []
@@ -25,14 +27,16 @@ class VariableMap() :
 
 	def add(self,i3_frame_object,i3_frame_object_variable,pisa_variable) :
 		#TODO Check no duplication in pisa_variable
-		self.variables.append( self.Variable(i3_frame_object,i3_frame_object_variable,pisa_variable) )
+		self.variables.append( self.Mapping(i3_frame_object,i3_frame_object_variable,pisa_variable) )
 
 
 	def get_all_i3_frame_objects(self) :
 		return list(set([ v.i3_frame_object for v in self.variables ]))
 
+
 	def get_all_pisa_variables(self) :
 		return [ v.pisa_variable for v in self.variables ]
+
 
 	def __getitem__(self,i3_frame_obj) :
 		return [ v for v in self.variables if v.i3_frame_object == i3_frame_obj ]
@@ -41,171 +45,194 @@ class VariableMap() :
 
 
 #
-# Helper functions
+# i3 -> IceCube HDF5 conversion
 #
 
-def i3_to_icecube_hdf5(i3_files,variable_map,print_frame_objects=False) :
+#Define a function to produce an IceCube-format HDF5 file from a list of input .i3 files
+#Uses the I3ToPISAVariableMap class to know which frame objects are required
+def i3_to_icecube_hdf5(	i3_files,
+						output_file,
+						variable_map,
+						sub_event_streams=None) :
 
-	output_file = "tmp.hdf5"
+	from icecube import icetray
+	from I3Tray import I3Tray
+	from icecube.tableio import I3TableWriter, I3TableService
+	from icecube.hdfwriter import I3HDFTableService 
 
-	i3_variables = variable_map.get_all_i3_frame_objects()
 
+	#
+	# Get inputs
+	#
+
+	#Get a list of all i3 frame objects in the mapping
+	i3_frame_objects = variable_map.get_all_i3_frame_objects()
+
+	#Set a default sub event stream
+	if sub_event_streams is None :
+		sub_event_streams = ["InIceSplit"]
+
+
+	#
+	# Perform conversion
+	#
+
+	#Create an IceTray instance
 	tray = I3Tray()
 
-	hdf = I3HDFTableService(output_file)
+	#Prepare the HDF5 output table writer
+	output_hdf5 = I3HDFTableService(output_file)
 
+	#Add module to parse input i3 files
 	tray.AddModule('I3Reader','reader',filenamelist=i3_files)
 
-	if print_frame_objects :
-		def print_frame(frame) : print frame
-		tray.AddModule(print_frame)
+	#def print_frame(frame) : print frame
+	#tray.AddModule(print_frame)
 
-	#Check all required i3 frame objects exist
+	#Skip frames that do not contain ALL the required i3 frame objects
 	def check_all_frame_objects_exist(frame) :
-		for var in i3_variables :
+		for var in i3_frame_objects :
 			if var not in frame :
 				return False
 		return True
 	tray.AddModule(check_all_frame_objects_exist,"check_frame_objects")
 
+	#Add the HDF5 writer module
 	tray.AddModule(I3TableWriter,'writer',
-	               tableservice = hdf,
-	               #tableservice=my_table,
-	               SubEventStreams = ["InIceSplit"], #TODO Is this the one?
-	               #keys         = ['Pegleg_Fit_MNHDCasc','Pegleg_Fit_MNTrack']
-	               #keys         = ['SRTTWOfflinePulsesDC']
-	               #keys         = ['TauL6_bool','SRTTWOfflinePulsesDC']
-	               keys = i3_variables
+	               tableservice = output_hdf5,
+	               SubEventStreams = sub_event_streams,
+	               keys = i3_frame_objects
 	              )
 
+	#Run it all
 	tray.Execute()
 
-	return output_file
-
 
 
 
 
 #
-# Define inputs
+# Main conversion function
 #
 
-#Input files
-input_files = {}
-#input_files["data"] = sorted(glob.glob("/data/ana/LE/NBI_nutau_appearance/level7_5July2017/data/2014/Level7_Run??????.*.i3.bz2"))
-#input_files["data"] = sorted(glob.glob("/data/ana/LE/NBI_nutau_appearance/level7_5July2017/data/2014/Level7_Run??????.0001.i3.bz2"))
-input_files["data"] = sorted(glob.glob("/data/ana/LE/NBI_nutau_appearance/level7_24Nov2015/exp/2014/Level7_data_IC2014.Run??????.i3.bz2"))
-#TODO Use latest GRECO, but need to get correct pegleg variable names...
+'''
+This function does most of the heavy lifting.
+For each category of input data, the IceCube HDF5 writer is used to generate 
+an IceCube-format HDF5 file from the input i3 files.
+These various HDF% files are then combined into a single PISA-format HDF5
+file, including mapping the variable names and conversion to numpy arrays.
+'''
 
-#Map variables
-variable_map = VariableMap()
-variable_map.add("Pegleg_Fit_MNHDCasc","energy","true_energy_cascade")
-variable_map.add("Pegleg_Fit_MNTrack","energy","true_energy_track")
-
-
-
-#
-# Create a top-level data system
-#
-
-#TODO Create a PISA events file class?
-
-#Create the file
-output_pisa_events_file = tables.open_file("pisa_events.hdf5", mode="w", title="PISA HDF5 Events File")
-
-#Create an events group
-events_group = output_pisa_events_file.create_group("/", 'Events', 'Event data')
-
-#TODO Create metadata
-
-
-
-#
-# Loop over datasets
-#
-
-i3_variables = variable_map.get_all_i3_frame_objects()
-
-for dataset_key,files in input_files.items() :
-
-	#TODO Handle CC,NC, etc
+def convert_i3_to_pisa(input_data,output_file,variable_map) :
 
 
 	#
-	# Convert i3 files to IceCube HDF5 format
+	# Check inputs
 	#
 
-	print "\n%s : %i files" % (dataset_key,len(files))
+	#TODO...
 
-	files = files[:10] #TODO REMOVE
+	#input_data must be a dict where:
+	#  key = name of a catgory of data/events
+	#  value = list of input files for that data category
+	#TODO
 
-	tmp_hdf5_file_path = i3_to_icecube_hdf5(files,variable_map,print_frame_objects=False)
+
+	#
+	# Initialise the output PISA events file
+	#
+
+	#Create the file
+	output_pisa_events_file = tables.open_file(output_file, mode="w", title="PISA HDF5 Events File")
+
+	#Create an events group
+	events_group = output_pisa_events_file.create_group("/", 'Events', 'Event data')
+
+	#TODO Create metadata
 
 
 
 	#
-	# Add the data to the top-level output HDF5 file
+	# Loop over data categories
 	#
 
-	#Load the temporary i3 file
-	tmp_hdf5_file = tables.openFile(tmp_hdf5_file_path)
+	i3_frame_objects = variable_map.get_all_i3_frame_objects()
 
-	#Create a group for this dataset_key in the output file
-	dataset_key_group = output_pisa_events_file.create_group(events_group, dataset_key, dataset_key)
+	for data_category,input_files in input_data.items() :
 
-	#Loop over variables
-	for i3_var in i3_variables :
-
-		#Get the table correspondig to this variable in tmp hdf5 file
-		i3_var_table = getattr(tmp_hdf5_file.root,i3_var)
-
-		#Get all mappings for this i3 variable
-		mappings = variable_map[i3_var]
-
-		#Loop through mappings
-		for mapping in mappings :
-
-			#Check frame object variable is present #TODO DO this earlier???
-			if mapping.i3_frame_object_variable not in i3_var_table.colnames :
-				raise Exception("Error : Frame object %s does not contain the variable %s" % (i3_var,mapping.i3_frame_object_variable) ) 
-
-			#Get the variable and add it to the output PISA HDF5 file group
-			print i3_var_table.col(mapping.i3_frame_object_variable)[:5]
-			#pisa_variable
-
-			#Get the variable and add it to the output PISA HDF5 file group
-			#Need to create the array if this is the first time we've tried to add daat to it
-			i3_var_array = i3_var_table.col(mapping.i3_frame_object_variable)
-			if mapping.pisa_variable in dataset_key_group :
-				pisa_var_array = get_attr(dataset_key_group, mapping.pisa_variable)
-				i3_var_array.append(i3_var_array)
-			else :
-				output_pisa_events_file.create_array(dataset_key_group, mapping.pisa_variable, i3_var_array, "") #TODO Add description field (optional in VariableMapping)?? 
-				#output_pisa_events_file.create_carray(dataset_key_group, mapping.pisa_variable, i3_var_array, "") #TODO array or carray?
+		#TODO Handle CC,NC, etc
 
 
-	#TODO NC/CC
+		#
+		# Convert i3 files to IceCube-format HDF5
+		#
 
-	#output_data[dataset_key] = from_file(tmp_file)
+		tmp_hdf5_file_path = "./tmp_%s.hdf5" % data_category
+
+		i3_to_icecube_hdf5(	i3_files=input_files,
+							output_file=tmp_hdf5_file_path,
+							variable_map=variable_map)
+
+
+		#
+		# Add the data to the top-level output HDF5 file
+		#
+
+		#Load the temporary i3 file
+		tmp_hdf5_file = tables.openFile(tmp_hdf5_file_path)
+
+		#Create a group for this data_category in the output file
+		data_category_group = output_pisa_events_file.create_group(events_group, data_category, data_category)
+
+		#Loop over variables
+		for i3_var in i3_frame_objects :
+
+			#Get the table correspondig to this variable in tmp hdf5 file
+			i3_var_table = getattr(tmp_hdf5_file.root,i3_var)
+
+			#Get all mappings for this i3 variable
+			mappings = variable_map[i3_var]
+
+			#Loop through mappings
+			for mapping in mappings :
+
+				#Check frame object variable is present #TODO DO this earlier???
+				if mapping.i3_frame_object_variable not in i3_var_table.colnames :
+					raise Exception("Error : Frame object %s does not contain the variable %s" % (i3_var,mapping.i3_frame_object_variable) ) 
+
+				#Get the variable and add it to the output PISA HDF5 file group
+				#Need to create the array if this is the first time we've tried to add daat to it
+				i3_var_array = i3_var_table.col(mapping.i3_frame_object_variable)
+				if mapping.pisa_variable in data_category_group :
+					pisa_var_array = get_attr(data_category_group, mapping.pisa_variable)
+					i3_var_array.append(i3_var_array)
+				else :
+					output_pisa_events_file.create_array(data_category_group, mapping.pisa_variable, i3_var_array, "") #TODO Add description field (optional in I3ToPISAVariableMapping)?? 
+					#output_pisa_events_file.create_carray(data_category_group, mapping.pisa_variable, i3_var_array, "") #TODO array or carray?
+
+		#Close the tmp file
+		tmp_hdf5_file.close()
+
+
+	#
+	# Check the resulting data structure
+	#
+
+	#TODO num events, all pis_variables have been created, etc...
+
+
+	#
+	# Done
+	#
+
+	output_pisa_events_file.close()
+
 
 	#TODO Free memory?
 
+	#TODO Is this an efficient way to handle memory in HDF5 ?
+
 	#TODO Delete tmp files?
-
-	#TODO Check all pisa_variables have had array created, and that all have same number of elements
-
-
-#
-# Write the top-level file
-#
-
-print "\nOutput file:"
-print output_pisa_events_file
-
-#output_file = "output.hdf5"
-#to_file(output_data[dataset_key],output_file)
-
-print "Done!"
 
 
 
