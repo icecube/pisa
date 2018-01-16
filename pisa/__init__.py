@@ -78,6 +78,9 @@ Q_ = ureg.Quantity # pylint: disable=invalid-name
 CACHE_DIR = '~/.cache/pisa'
 """Root directory for storing PISA cache files"""
 
+# message later on written to stderr for user convenience
+ini_msgs = []
+
 # PISA users can define cache directory directly via PISA_CACHE_DIR env var;
 # PISA_CACHE_DIR has priority over XDG_CACHE_HOME, so it is checked first
 if 'PISA_CACHE_DIR' in os.environ:
@@ -148,6 +151,7 @@ finally:
         if NUMBA_CUDA_AVAIL:
             cuda.close()
         del cuda
+del dummy_func
 
 # Default value for FTYPE
 FTYPE = np.float64
@@ -159,7 +163,7 @@ FLOAT32_STRINGS = ['single', 'float32', 'fp32', '32', 'f4']
 FLOAT64_STRINGS = ['double', 'float64', 'fp64', '64', 'f8']
 if 'PISA_FTYPE' in os.environ:
     PISA_FTYPE = os.environ['PISA_FTYPE']
-    sys.stderr.write('PISA_FTYPE env var is defined as: "%s"; \n' % PISA_FTYPE)
+    ini_msgs.append('PISA_FTYPE env var is defined as: "%s"' % PISA_FTYPE)
     if PISA_FTYPE.strip().lower() in FLOAT32_STRINGS:
         FTYPE = np.float32
     elif PISA_FTYPE.strip().lower() in FLOAT64_STRINGS:
@@ -180,10 +184,6 @@ elif NUMBA_AVAIL:
     TARGET = 'cpu'
 else:
     TARGET = None
-    sys.stderr.write(
-        'No numba support detected - only limited functionality available.\n'
-    )
-
 
 cpu_targets = ['cpu', 'numba']
 parallel_targets = ['parallel', 'multicore']
@@ -192,6 +192,7 @@ gpu_targets = ['cuda', 'gpu', 'numba-cuda']
 # ignore PISA_TARGET env var if no numba support at all available
 if TARGET is not None and 'PISA_TARGET' in os.environ:
     PISA_TARGET = os.environ['PISA_TARGET']
+    ini_msgs.append('PISA_TARGET env var is defined as: "%s"' % PISA_TARGET)
     try_target = PISA_TARGET.strip().lower()
     if try_target in gpu_targets:
         if not NUMBA_CUDA_AVAIL:
@@ -220,6 +221,7 @@ if TARGET is not None and 'PISA_TARGET' in os.environ:
             '--> For gpu set PISA_TARGET to one of %s\n'
             %(PISA_TARGET, cpu_targets, parallel_targets, gpu_targets)
         )
+    del try_target
 
 del cpu_targets, gpu_targets, parallel_targets
 
@@ -260,21 +262,30 @@ based on by FTYPE)"""
 if FTYPE == np.float32:
     C_FTYPE = 'float'
     C_PRECISION_DEF = 'SINGLE_PRECISION'
-    sys.stderr.write('PISA running in single precision (FP32) mode.\n')
+    ftype_msg = 'PISA is running in single precision (FP32) mode'
 elif FTYPE == np.float64:
     C_FTYPE = 'double'
     C_PRECISION_DEF = 'DOUBLE_PRECISION'
-    sys.stderr.write('PISA running in double precision (FP64) mode.\n')
+    ftype_msg = 'PISA is running in double precision (FP64) mode'
 else:
     raise ValueError('FTYPE must be one of `np.float32` or `np.float64`. Got'
                      ' %s instead.' %FTYPE)
+ini_msgs.append(ftype_msg)
+del ftype_msg
 
-if TARGET == 'cpu':
-    sys.stderr.write('PISA running on CPU only.\n')
-if TARGET == 'parallel':
-    sys.stderr.write('PISA running on CPU only, multicore.\n')
+if TARGET is None:
+   target_msg = 'numba is not present'
+elif TARGET == 'cpu':
+    target_msg = 'numba is running on CPU'
+elif TARGET == 'parallel':
+    target_msg = 'numba is running on CPU (multicore)'
 elif TARGET == 'cuda':
-    sys.stderr.write('PISA running on CPU+GPU.\n')
+    target_msg = 'numba is running on GPU'
+ini_msgs.append(target_msg)
+del target_msg
+
+sys.stderr.write("<< "+"; ".join(ini_msgs)+" >>")
+del ini_msgs
 
 # Clean up imported names
 del os, sys, np, UnitRegistry, get_versions
