@@ -161,17 +161,16 @@ class GPUWeight(object):
         if (kFlav == 0){
             modfactor = nubar_sys * ModNuEFlux(true_e, true_cz, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0);
         }
-        if (kFlav == 1){
-            modfactor = nubar_sys * ModNuMuFlux(true_e, true_cz, 1.0, 1.0,1.0,1.0);
+        else if (kFlav == 1){
+            modfactor = nubar_sys * ModNuMuFlux(true_e, true_cz, 1.0, 1.0, 1.0, 1.0);
         }
         if (kNuBar < 0){
             //return 1./(1+(1-nu_nubar)*modfactor);
-            return max(0.,1./(1+0.5*modfactor));
+            return max(0., 1./(1+0.5*modfactor));
         }
-        if (kNuBar > 0){
-            //return 1. + modfactor*nu_nubar;
-            return max(0.,1. + 0.5*modfactor);
-        }
+        // Otherwise, kNuBar is positive:
+        //return 1. + modfactor*nu_nubar;
+        return max(0., 1. + 0.5*modfactor);
     }
 
 
