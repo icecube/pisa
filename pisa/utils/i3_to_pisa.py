@@ -160,8 +160,6 @@ def convert_i3_to_pisa(input_data,output_file,variable_map) :
 
 	for data_category,input_files in input_data.items() :
 
-		#TODO Handle CC,NC, etc
-
 
 		#
 		# Convert i3 files to IceCube-format HDF5
