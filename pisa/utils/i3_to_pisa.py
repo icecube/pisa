@@ -1,6 +1,6 @@
 import glob, sys, os, tables, collections
 
-
+import numpy as np
 
 
 #
@@ -15,9 +15,9 @@ class I3ToPISAVariableMap() :
 
 	#Sub-class for holding a single variable mapping
 	class Mapping() :
-		def __init__(self,i3_frame_object,i3_frame_object_variable,pisa_variable) :
-			self.i3_frame_object = i3_frame_object
-			self.i3_frame_object_variable = i3_frame_object_variable
+		def __init__(self,i3_frame_obj,i3_frame_obj_variable,pisa_variable) :
+			self.i3_frame_obj = i3_frame_obj
+			self.i3_frame_obj_variable = i3_frame_obj_variable
 			self.pisa_variable = pisa_variable
 
 
@@ -25,13 +25,13 @@ class I3ToPISAVariableMap() :
 		self.variables = []
 
 
-	def add(self,i3_frame_object,i3_frame_object_variable,pisa_variable) :
+	def add(self,i3_frame_obj,i3_frame_obj_variable,pisa_variable) :
 		#TODO Check no duplication in pisa_variable
-		self.variables.append( self.Mapping(i3_frame_object,i3_frame_object_variable,pisa_variable) )
+		self.variables.append( self.Mapping(i3_frame_obj,i3_frame_obj_variable,pisa_variable) )
 
 
-	def get_all_i3_frame_objects(self) :
-		return list(set([ v.i3_frame_object for v in self.variables ]))
+	def get_all_i3_frame_objs(self) :
+		return list(set([ v.i3_frame_obj for v in self.variables ]))
 
 
 	def get_all_pisa_variables(self) :
@@ -39,7 +39,7 @@ class I3ToPISAVariableMap() :
 
 
 	def __getitem__(self,i3_frame_obj) :
-		return [ v for v in self.variables if v.i3_frame_object == i3_frame_obj ]
+		return [ v for v in self.variables if v.i3_frame_obj == i3_frame_obj ]
 
 
 
@@ -66,7 +66,7 @@ def i3_to_icecube_hdf5(	i3_files,
 	#
 
 	#Get a list of all i3 frame objects in the mapping
-	i3_frame_objects = variable_map.get_all_i3_frame_objects()
+	i3_frame_objs = variable_map.get_all_i3_frame_objs()
 
 	#Set a default sub event stream
 	if sub_event_streams is None :
@@ -91,7 +91,7 @@ def i3_to_icecube_hdf5(	i3_files,
 
 	#Skip frames that do not contain ALL the required i3 frame objects
 	def check_all_frame_objects_exist(frame) :
-		for var in i3_frame_objects :
+		for var in i3_frame_objs :
 			if var not in frame :
 				return False
 		return True
@@ -101,7 +101,7 @@ def i3_to_icecube_hdf5(	i3_files,
 	tray.AddModule(I3TableWriter,'writer',
 	               tableservice = output_hdf5,
 	               SubEventStreams = sub_event_streams,
-	               keys = i3_frame_objects
+	               keys = i3_frame_objs
 	              )
 
 	#Run it all
@@ -146,7 +146,7 @@ def convert_i3_to_pisa(input_data,output_file,variable_map) :
 	output_pisa_events_file = tables.open_file(output_file, mode="w", title="PISA HDF5 Events File")
 
 	#Create an events group
-	events_group = output_pisa_events_file.create_group("/", 'Events', 'Event data')
+	events_group = output_pisa_events_file.create_group("/", 'events', 'Event data')
 
 	#TODO Create metadata
 
@@ -156,7 +156,7 @@ def convert_i3_to_pisa(input_data,output_file,variable_map) :
 	# Loop over data categories
 	#
 
-	i3_frame_objects = variable_map.get_all_i3_frame_objects()
+	i3_frame_objs = variable_map.get_all_i3_frame_objs()
 
 	for data_category,input_files in input_data.items() :
 
@@ -183,30 +183,36 @@ def convert_i3_to_pisa(input_data,output_file,variable_map) :
 		data_category_group = output_pisa_events_file.create_group(events_group, data_category, data_category)
 
 		#Loop over variables
-		for i3_var in i3_frame_objects :
+		for i3_frame_obj in i3_frame_objs :
 
 			#Get the table correspondig to this variable in tmp hdf5 file
-			i3_var_table = getattr(tmp_hdf5_file.root,i3_var)
+			i3_frame_obj_table = getattr(tmp_hdf5_file.root,i3_frame_obj)
+
+			#print "+++ %s cols = %s" % (i3_frame_obj,i3_frame_obj_table.colnames)
 
 			#Get all mappings for this i3 variable
-			mappings = variable_map[i3_var]
+			mappings = variable_map[i3_frame_obj]
 
 			#Loop through mappings
 			for mapping in mappings :
 
 				#Check frame object variable is present #TODO DO this earlier???
-				if mapping.i3_frame_object_variable not in i3_var_table.colnames :
-					raise Exception("Error : Frame object %s does not contain the variable %s" % (i3_var,mapping.i3_frame_object_variable) ) 
+				if mapping.i3_frame_obj_variable not in i3_frame_obj_table.colnames :
+					raise Exception("Error : Frame object %s does not contain the variable %s" % (i3_frame_obj,mapping.i3_frame_obj_variable) ) 
 
 				#Get the variable and add it to the output PISA HDF5 file group
 				#Need to create the array if this is the first time we've tried to add daat to it
-				i3_var_array = i3_var_table.col(mapping.i3_frame_object_variable)
+				i3_frame_obj_array = i3_frame_obj_table.col(mapping.i3_frame_obj_variable)
 				if mapping.pisa_variable in data_category_group :
 					pisa_var_array = get_attr(data_category_group, mapping.pisa_variable)
-					i3_var_array.append(i3_var_array)
+					i3_frame_obj_array.append(i3_frame_obj_array)
 				else :
-					output_pisa_events_file.create_array(data_category_group, mapping.pisa_variable, i3_var_array, "") #TODO Add description field (optional in I3ToPISAVariableMapping)?? 
-					#output_pisa_events_file.create_carray(data_category_group, mapping.pisa_variable, i3_var_array, "") #TODO array or carray?
+					output_pisa_events_file.create_array(data_category_group, mapping.pisa_variable, i3_frame_obj_array, "") #TODO Add description field (optional in I3ToPISAVariableMapping)?? 
+					#output_pisa_events_file.create_carray(data_category_group, mapping.pisa_variable, i3_frame_obj_array, "") #TODO array or carray?
+
+		#Store number of files
+		num_events = getattr(tmp_hdf5_file.root,i3_frame_objs[0]).nrows
+		output_pisa_events_file.create_array(data_category_group, "n_files", np.full(num_events,len(input_files)), "")
 
 		#Close the tmp file
 		tmp_hdf5_file.close()

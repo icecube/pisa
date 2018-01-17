@@ -8,15 +8,20 @@ Tom Stuttard
 #TODO Enforce correct environment (e.g. IceCube, not PISA)
 
 
+"""Conversion factor: convert from centimeters^2 to meters^2"""
+CMSQ_TO_MSQ = 1.0e-4
+
+
+
 #
-# Helper functions
+# Testing functions
 #
 
 #Generate dummy HDF5 file (for testing)
 def generate_dummy_hdf5_file(output_file,variable_map,num_events=10) :
 	hdf5_file = tables.open_file(output_file,mode="w")
 	events_group = hdf5_file.create_group(hdf5_file.root,"events")
-	for nu_key,pdf_code in zip(["nue"],[12]) :
+	for nu_key,pdf_code in zip(["nue","numu","nutau"],[12,14,16]) :
 		nu_group = hdf5_file.create_group(events_group,nu_key)
 		for pisa_var in variable_map.get_all_pisa_variables() :
 			if pisa_var == "pdg_code" : fake_data = np.random.choice([-1,1],size=(num_events)) * pdf_code
@@ -24,6 +29,101 @@ def generate_dummy_hdf5_file(output_file,variable_map,num_events=10) :
 			else : fake_data = np.random.uniform(0.,10.,size=(num_events))
 			array = hdf5_file.create_array(nu_group,pisa_var,fake_data,"")
 	hdf5_file.close()
+
+
+#
+# Post-processing functions
+#
+
+'''
+Combine the pegleg track and cascade hypothesis energies
+'''
+def combine_reco_track_and_cascade_hypotheses(hdf5_events_file) :
+
+	#Loop over groups
+	for group in hdf5_events_file.root.events :
+
+		#Combine cascade and track energy
+		reco_energy = group.reco_energy_cascade.read() + group.reco_energy_track.read()
+
+		#Replace the indidivual reco energies with this in the table
+		hdf5_events_file.create_array(group, "reco_energy", reco_energy, "") 
+		hdf5_events_file.remove_node(group, "reco_energy_cascade") 
+		hdf5_events_file.remove_node(group, "reco_energy_track")
+
+
+'''
+Split neutrino events by nu vs nubar, and CC vs NC
+'''
+def subdivide_neutrino_groups(hdf5_events_file) :
+
+	#Loop over groups
+	neutrino_groups_found = []
+	for group in hdf5_events_file.root.events :
+
+		#Select only neutrino groups
+		group_name = group._v_name #TODO How to "officialy" get name?
+		if group_name.startswith("nu") :
+
+			neutrino_groups_found.append(group_name)
+
+			#Get nubar mask by checking PDG code
+			if "pdg_code" not in group :
+				raise Exception( "Could not find PDG code for %s" % group_name )
+			nubar_mask = group.pdg_code.read() < 0
+
+			#Get CC mask by checking interaction code
+			if "interaction" not in group :
+				raise Exception( "Could not find interaction code for %s" % group_name )
+			cc_mask = group.interaction.read() == 1 #TODO Check code
+
+			#Create new groups
+			nu_cc_group = hdf5_events_file.create_group(hdf5_events_file.root.events,group_name+"_cc")
+			nu_nc_group = hdf5_events_file.create_group(hdf5_events_file.root.events,group_name+"_nc")
+			nubar_cc_group = hdf5_events_file.create_group(hdf5_events_file.root.events,group_name+"bar_cc")
+			nubar_nc_group = hdf5_events_file.create_group(hdf5_events_file.root.events,group_name+"bar_nc")
+
+			#Fill new groups
+			for array in group :
+				array_data = array.read()
+				hdf5_events_file.create_array(nu_cc_group,array.name,array_data[(~nubar_mask)&cc_mask])
+				hdf5_events_file.create_array(nu_nc_group,array.name,array_data[(~nubar_mask)&(~cc_mask)])
+				hdf5_events_file.create_array(nubar_cc_group,array.name,array_data[nubar_mask&cc_mask])
+				hdf5_events_file.create_array(nubar_nc_group,array.name,array_data[nubar_mask&(~cc_mask)])
+
+			#Remove the old group
+			hdf5_events_file.remove_node(hdf5_events_file.root.events,group_name,recursive=True)
+
+	if len(neutrino_groups_found) == 0 :
+		raise ValueError("Did not find any neutrino groups, cannpt subdivide them")
+
+'''
+Calculate the effective area weights
+'''
+def calc_effective_area_weight(hdf5_events_file) :
+
+	#Loop over groups
+	for group in hdf5_events_file.root.events :
+
+		#Select only neutrino groups
+		group_name = group._v_name #TODO How to "officially" get name?
+		if group_name.startswith("nu") :
+
+			#Get neutrino vs antoneutrino generation ratio
+			#TODO This needs to be stored in a file somewhere, here using the known value for our GENIE datasets but this is very very nasty
+			#TODO This needs to be stored in a file somewhere, here using the known value for our GENIE datasets but this is very very nasty
+			#TODO This needs to be stored in a file somewhere, here using the known value for our GENIE datasets but this is very very nasty
+			#TODO This needs to be stored in a file somewhere, here using the known value for our GENIE datasets but this is very very nasty
+			nu_nubar_genratio = 0.7
+
+			#Calculate weighted effective area
+			#Note the conversion from cm^2 to m^2
+			weighted_aeff = CMSQ_TO_MSQ * group.one_weight.read() / ( group.n_files.read() * group.n_events.read() * nu_nubar_genratio )
+			hdf5_events_file.create_array(group,"weighted_aeff",weighted_aeff,"")
+
+		else :
+			raise Exception( "Effective area calculation not yet implemented for '%s'" % group_name )
+
 
 
 #
@@ -38,11 +138,11 @@ if __name__ == "__main__" :
 	start_time = datetime.datetime.now()
 
 	#from pisa.utils.i3_to_pisa import I3ToPISAVariableMap, convert_i3_to_pisa
-	from i3_to_pisa import I3ToPISAVariableMap #, convert_i3_to_pisa
+	from i3_to_pisa import I3ToPISAVariableMap, convert_i3_to_pisa
 	#from i3_to_pisa_tables import I3ToPISAVariableMap, convert_i3_to_pisa, convert_i3_to_pisa
 
 	debug = True
-	dummy_data = True
+	dummy_data = False
 
 
 	#
@@ -54,7 +154,7 @@ if __name__ == "__main__" :
 	#Define inputs files for each category of events...
 
 	#Create container
-	neutrinos = {"nue":12}#,"numu":14,"nutau":16}
+	neutrinos = {"nue":12,"numu":14,"nutau":16}
 	input_data = { cat:[] for cat in neutrinos.keys() } #+["muons","noise"] } 
 
 	#Define GENIE datasets
@@ -89,24 +189,29 @@ if __name__ == "__main__" :
 	variable_map = I3ToPISAVariableMap()
 
 	#TODO Make define some common mappings, and make a way to combine mappings instances?
-	#TODO Would it be more generic to make IceTray modules that create the required variables? 
+	#TODO Would it be more generic to make IceTray modules that create the required variables?
+	#TODO Could do something like define name of I3Particle for reco, truth particle, etc 
 
-	variable_map.add("Pegleg_Fit_MNHDCasc","energy","reco_energy_cascade") #TODO Common with exp
-	variable_map.add("Pegleg_Fit_MNTrack","energy","reco_energy_track") #TODO Common with exp
+	variable_map.add("Pegleg_Fit_MNHDCasc","energy","reco_energy_cascade")
+	variable_map.add("Pegleg_Fit_MNTrack","energy","reco_energy_track")
+	variable_map.add("Pegleg_Fit_MNTrack","zenith","reco_coszen")
+	variable_map.add("Pegleg_Fit_MNTrack","length","reco_tracklength")
+	variable_map.add("Pegleg_Fit_MNTrack","x","reco_x")
+	variable_map.add("Pegleg_Fit_MNTrack","y","reco_y")
+	variable_map.add("Pegleg_Fit_MNTrack","z","reco_z")
 
 	variable_map.add("MCNeutrino","pdg_encoding","pdg_code")
+	variable_map.add("MCNeutrino","x","true_x") #TODO Michael gets these in a different way, check this...
+	variable_map.add("MCNeutrino","y","true_y")
+	variable_map.add("MCNeutrino","z","true_z")
 
 	variable_map.add("I3MCWeightDict","PrimaryNeutrinoEnergy","true_energy")
 	variable_map.add("I3MCWeightDict","InteractionType","interaction")
+	variable_map.add("I3MCWeightDict","OneWeight","one_weight")
+	variable_map.add("I3MCWeightDict","NEvents","n_events")
 
-	'''
-	FLUX : true_energy, true_coszen, nominal_flux, nominal_opposite_flux, nubar
-            apply_sys_vectorized(container['true_energy'].get(WHERE),
-                                 container['true_coszen'].get(WHERE),
-                                 container['nominal_flux'].get(WHERE),
-                                 container['nominal_opposite_flux'].get(WHERE),
-                                 container['nubar'],
-	'''                        
+	#TODO Need to add flux info, where to do this?
+
 
 	#
 	# Run the conversion
@@ -132,50 +237,14 @@ if __name__ == "__main__" :
 	#Re-open the file for editing
 	reopened_output_file = tables.open_file(output_file, mode="r+")
 
-	#Combine the pegleg track and cascade hypothesis energies
-	for group in reopened_output_file.root.events :
-		reco_energy = group.reco_energy_cascade.read() + group.reco_energy_track.read()
-		reopened_output_file.create_array(group, "reco_energy", reco_energy, "") 
-		reopened_output_file.remove_node(group, "reco_energy_cascade") 
-		reopened_output_file.remove_node(group, "reco_energy_track")
+	#Combine pegleg track and cascade hypotheses
+	combine_reco_track_and_cascade_hypotheses(reopened_output_file)
 
-	#TODO Need a nubar array?
+	#Split neutrino events by nu vs nubar, and CC vs NC
+	subdivide_neutrino_groups(reopened_output_file)
 
-	#Split neutrino events by nu vs nubar, and CC vs NC...
-
-	#Loop over groups
-	for group in reopened_output_file.root.events :
-
-		#Select only neutrino groups
-		group_name = group._v_name #TODO How to "officialy" get name?
-		if group_name.startswith("nu") :
-
-			#Get nubar mask by checking PDG code
-			if "pdg_code" not in group :
-				raise Exception( "Could not find PDG code for %s" % group_name )
-			nubar_mask = group.pdg_code.read() < 0
-
-			#Get CC mask by checking interaction code
-			if "interaction" not in group :
-				raise Exception( "Could not find interaction code for %s" % group_name )
-			cc_mask = group.interaction.read() == 1 #TODO Check code
-
-			#Create new groups
-			nu_cc_group = reopened_output_file.create_group(reopened_output_file.root.events,group_name+"_cc")
-			nu_nc_group = reopened_output_file.create_group(reopened_output_file.root.events,group_name+"_nc")
-			nubar_cc_group = reopened_output_file.create_group(reopened_output_file.root.events,group_name+"bar_cc")
-			nubar_nc_group = reopened_output_file.create_group(reopened_output_file.root.events,group_name+"bar_nc")
-
-			#Fill new groups
-			for array in group :
-				array_data = array.read()
-				reopened_output_file.create_array(nu_cc_group,array.name,array_data[(~nubar_mask)&cc_mask])
-				reopened_output_file.create_array(nu_nc_group,array.name,array_data[(~nubar_mask)&(~cc_mask)])
-				reopened_output_file.create_array(nubar_cc_group,array.name,array_data[nubar_mask&cc_mask])
-				reopened_output_file.create_array(nubar_nc_group,array.name,array_data[nubar_mask&(~cc_mask)])
-
-			#Remove the old group
-			reopened_output_file.remove_node(reopened_output_file.root.events,group_name,recursive=True)
+	#Calculate effective area (weight)
+	calc_effective_area_weight(reopened_output_file)
 
 	#Close the re-opened file
 	reopened_output_file.close()
