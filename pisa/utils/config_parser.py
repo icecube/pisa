@@ -8,7 +8,7 @@ Config File Structure
 =====================
 
 A pipeline config file is expected to contain something like the following,
-with the sections ``[pipeline]`` and corresponding ``[stage:stagename]``
+with the sections ``[pipeline]`` and corresponding ``[stage:service]``
 required, in addition to a ``[binning]`` section:
 
 .. code-block:: cfg
@@ -28,7 +28,7 @@ required, in addition to a ``[binning]`` section:
     binning1.axis2 = {'num_bins':10, 'is_lin':True,
                       'domain':[1,5], 'tex': r'A_2'}
 
-    [stage:stagename0]
+    [stageA:serviceA]
     input_binning = bining1
     output_binning = binning1
     error_method = None
@@ -38,7 +38,7 @@ required, in addition to a ``[binning]`` section:
     param.p1.fixed = False
     param.p1.range = nominal + [-2.0, +2.0] * sigma
 
-    [stage:stagename1]
+    [stageB:serviceB]
     ...
 
 * ``#include`` statements can be used to include other config files. The
@@ -49,8 +49,8 @@ required, in addition to a ``[binning]`` section:
 * ``pipeline`` is the top-most section that defines the hierarchy of stages and
   what services to be instantiated.
 * ``binning`` can contain different binning definitions, that are then later
-  referred to from within the ``stage.stage_name`` sections.
-* ``stage.stage_name`` one such section per stage:service is necessary. It
+  referred to from within the ``stage.service`` sections.
+* ``stage.service`` one such section per stage.service is necessary. It
   contains some options that are common for all stages (`binning`,
   `error_method` and `debug_mode`) as well as all the necessary arguments and
   parameters for a given stage.
@@ -567,7 +567,15 @@ def parse_pipeline_config(config):
     # Parse [stage.<stage_name>] sections and store to stage_dicts
     stage_dicts = OrderedDict()
     for stage, service in order:
-        section = 'stage%s%s' % (STAGE_SEP, stage)
+        old_section_header = 'stage%s%s' % (STAGE_SEP, stage)
+        new_section_header = '%s%s%s' % (stage, STAGE_SEP, service)
+        if config.has_section(old_section_header):
+            logging.warning('%s is an old-style section header, in the future use %s'%(old_section_header, new_section_header))
+            section = old_section_header
+        elif config.has_section(new_section_header):
+            section = new_section_header
+        else:
+            raise IOError('missing section in cfg for stage %s service %s'%(stage, service))
 
         # Instantiate dict to store args to pass to this stage
         service_kwargs = OrderedDict()
