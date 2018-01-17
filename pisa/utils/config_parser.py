@@ -560,6 +560,10 @@ def parse_pipeline_config(config):
     if config.has_option(section, 'param_selections'):
         param_selections = split(config.get(section, 'param_selections'))
 
+    detector_name = None
+    if config.has_option(section, 'detector_name'):
+        detector_name = config.get(section, 'detector_name')    
+        
     # Parse [stage.<stage_name>] sections and store to stage_dicts
     stage_dicts = OrderedDict()
     for stage, service in order:
@@ -673,6 +677,7 @@ def parse_pipeline_config(config):
         # Store the service's kwargs to the stage_dicts
         stage_dicts[(stage, service)] = service_kwargs
 
+    stage_dicts['detector_name'] = detector_name    
     return stage_dicts
 
 
