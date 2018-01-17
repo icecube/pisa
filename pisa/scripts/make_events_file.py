@@ -115,37 +115,47 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
                 ...
                 <string run>: <list of file paths>,
             }
+
     detector : string
         Name of the detector (e.g. IceCube, DeepCore, PINGU, etc.) as found in
         e.g. mc_sim_run_settings.json and data_proc_params.json files.
+
     proc_ver
         Version of processing applied to the events, as found in e.g.
         data_proc_params.json.
+
     cut
         Name of a standard cut to use; must be specified in the relevant
         detector/processing version node of the data processing parameters
         (file from which the data_proc_params object was instantiated)
+
     outdir
         Directory path in which to store resulting files; will be generated if
         it does not already exist (including any parent directories that do not
         exist)
+
     run_settings : string or MCSimRunSettings
         Resource location of mc_sim_run_settings.json or an MCSimRunSettings
         object instantiated therefrom.
+
     data_proc_params : string or DataProcParams
         Resource location of data_proc_params.json or a DataProcParams object
         instantiated therefrom.
+
     join
         String specifying any flavor/interaction types (flavInts) to join
         together. Separate flavInts with commas (',') and separate groups
         with semicolons (';'). E.g. an acceptable string is:
             'numucc+numubarcc; nuall bar NC, nuall NC'
+
     cust_cuts
         dict with a single DataProcParams cut specification or list of same
         (see help for DataProcParams for detailed description of cut spec)
+
     extract_fields : None or iterable of strings
         Field names to extract from source HDF5 file. If None, extract all
         fields.
+
     output_fields : None or iterable of strings
         Fields to include in the generated PISA-standard-format events HDF5
         file; note that if 'weighted_aeff' is not preent, effective area will
