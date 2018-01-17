@@ -64,7 +64,6 @@ class OscParams(object):
         self.dm31 = 0.
         self.nsi_eps = np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3,3), dtype=FTYPE)
 
-    # --- theta12 ---
     @property
     def sin12(self):
         """Sine of 1-2 mixing angle"""
@@ -76,7 +75,7 @@ class OscParams(object):
         self._sin12 = value
 
     @property
-    def theta12(self, value):
+    def theta12(self):
         return np.arcsin(self.sin12)
 
     @theta12.setter
@@ -95,7 +94,7 @@ class OscParams(object):
         self._sin13 = value
 
     @property
-    def theta13(self, value):
+    def theta13(self):
         return np.arcsin(self.sin13)
 
     @theta13.setter
@@ -114,7 +113,7 @@ class OscParams(object):
         self._sin23 = value
 
     @property
-    def theta23(self, value):
+    def theta23(self):
         return np.arcsin(self.sin23)
 
     @theta23.setter
@@ -155,12 +154,39 @@ class OscParams(object):
     @property
     def eps_etau(self):
         """nue-nutau NSI coupling parameter"""
-        return self.nsi_eps[2, 0].real()
+        return self.nsi_eps[2, 0].real
 
     @eps_etau.setter
     def eps_etau(self, value):
         self.nsi_eps[2, 0] = value + 1.j * self.nsi_eps[2, 0].imag
         self.nsi_eps[0, 2] = value + 1.j * self.nsi_eps[0, 2].imag
+
+    @property
+    def eps_mumu(self):
+        return self.nsi_eps[1,1].real
+
+    @eps_mumu.setter
+    def eps_mumu(self, value):
+        self.nsi_eps[1,1] = value + 1.j * self.nsi_eps[1, 1].imag
+
+    @property
+    def eps_mutau(self):
+        return self.nsi_eps[1, 2].real
+
+    @eps_etau.setter
+    def eps_mutau(self, value):
+        self.nsi_eps[2, 1] = value + 1.j * self.nsi_eps[2, 1].imag
+        self.nsi_eps[1, 2] = value + 1.j * self.nsi_eps[1, 2].imag
+
+    @property
+    def eps_tautau(self):
+        return self.nsi_eps[2,2].real
+
+    @eps_tautau.setter
+    def eps_tautau(self, value):
+        self.nsi_eps[2,2] = value + 1.j * self.nsi_eps[2, 2].imag
+
+
 
     @property
     def mix_matrix(self):
