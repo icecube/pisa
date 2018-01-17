@@ -1985,26 +1985,29 @@ class MapSet(object):
 
     # TODO: add different aggregation options OR rename to sum_{wildcard|re}
     def combine_re(self, regexes):
-        r"""For each regex passed, add contained maps whose names match.
+        r"""For each regex passed, add together contained maps whose names
+        match.
 
-        If a single regex is passed, the corresponding maps are combined and
-        returned as a Map object. If a *sequence* of regexes is passed, each
-        grouping is combined into a map separately and the resulting maps are
-        populated into a new MapSet to be returned.
+        If a string or regex is passed, the corresponding maps are combined and
+        returned as a Map object. If an iterable of one or more regexes is
+        passed, each grouping found is combined into a Map separately and the
+        resulting Maps are populated into a new MapSet to be returned.
 
         Parameters
         ----------
-        regexes : compiled regex, str representing a regex, or sequence thereof
+        regexes : compiled regex, str representing a regex, or iterable thereof
             See Python module `re` for formatting.
 
         Returns
         -------
-        Map : if single regex is passed
-        MapSet : if multiple regexes are passed
+        combined
+            Map if `regexes` is a string or regex; MapSet if `regexes` is an
+            iterable of one or more strings or regexes
 
         Raises
         ------
-        ValueError if any of the passed regexes fail to match any map names.
+        ValueError
+            If any `regexes` fail to match any map names.
 
         Notes
         -----
@@ -2042,7 +2045,8 @@ class MapSet(object):
 
         See Also
         --------
-        combine_wildcard : similar method but using wildcards (like filename
+        combine_wildcard
+            Similar method but using wildcards (i.e., globbing, like filename
             matching in the Unix shell)
 
         References
@@ -2051,8 +2055,11 @@ class MapSet(object):
             https://docs.python.org/2/library/re.html
 
         """
+        is_scalar = False
         if isinstance(regexes, (basestring, re._pattern_type)):
+            is_scalar = True
             regexes = [regexes]
+
         resulting_maps = []
         for regex in regexes:
             if hasattr(regex, 'pattern'):
@@ -2087,13 +2094,20 @@ class MapSet(object):
             else:
                 m = copy(maps_to_combine[0])
             resulting_maps.append(m)
-        if len(resulting_maps) == 1:
-            return resulting_maps[0]
-        return MapSet(maps=resulting_maps, name=self.name, tex=self.tex,
-                      collate_by_name=self.collate_by_name)
+
+        if is_scalar:
+            combined = resulting_maps[0]
+        else:
+            combined = MapSet(maps=resulting_maps,
+                              name=self.name,
+                              tex=self.tex,
+                              collate_by_name=self.collate_by_name)
+        return combined
 
     def combine_wildcard(self, expressions):
-        """For each expression passed, add contained maps whose names match.
+        """For each expression passed, add together contained maps whose names
+        match.
+
         Expressions can contain wildcards like those used in the Unix shell.
 
         Valid wildcards (from fnmatch docs, link below):
@@ -2102,15 +2116,26 @@ class MapSet(object):
             "[`seq`]" : matches any character in `seq`
             "[!`seq`]" : matches any character not in `seq`
 
-        If a single expression is passed, the matching maps are combined and
-        returned as a Map object. If a *sequence* of expressions is passed,
-        each grouping is combined into a map separately and the resulting maps
+        Note that if a string is passed, the matching maps are combined and
+        returned as a Map object. If an iterable of strings is passed, each
+        grouping found is combined into a Map separately and the resulting Maps
         are populated into a new MapSet to be returned.
 
         Parameters
         ----------
         expressions : string or sequence thereof
             See Python module `fnmatch` for more info.
+
+        Returns
+        -------
+        combined
+            Map if `expressions` is a string; MapSet if `expressions` is an
+            iterable of one or more strings
+
+        Raises
+        ------
+        ValueError
+            If any `expressions` fail to match any map names.
 
         Examples
         --------
@@ -2130,8 +2155,11 @@ class MapSet(object):
             https://docs.python.org/2/library/fnmatch.html
 
         """
+        is_scalar = False
         if isinstance(expressions, basestring):
+            is_scalar = True
             expressions = [expressions]
+
         resulting_maps = []
         for expr in expressions:
             maps_to_combine = []
@@ -2163,10 +2191,15 @@ class MapSet(object):
             else:
                 m = copy(maps_to_combine[0])
             resulting_maps.append(m)
-        if len(resulting_maps) == 1:
-            return resulting_maps[0]
-        return MapSet(maps=resulting_maps, name=self.name, tex=self.tex,
-                      collate_by_name=self.collate_by_name)
+
+        if is_scalar:
+            combined = resulting_maps[0]
+        else:
+            combined = MapSet(maps=resulting_maps,
+                              name=self.name,
+                              tex=self.tex,
+                              collate_by_name=self.collate_by_name)
+        return combined
 
     def compare(self, ref):
         """Compare maps in this MapSet against a reference MapSet.

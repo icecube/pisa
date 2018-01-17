@@ -28,6 +28,11 @@ import math, cmath
 
 from pisa import FTYPE, TARGET
 
+if TARGET is None:
+    raise NotImplementedError(
+        'Numba not supported.'
+    )
+
 # the `WHERE` variable is for usage with smart arrays
 if TARGET == 'cuda':
     from numba import cuda
