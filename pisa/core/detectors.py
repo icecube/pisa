@@ -388,10 +388,17 @@ def main(return_outputs=False):
             annotate=False
         )
         for num, output in enumerate(outputs):
-            my_plotter.plot_2d_array(
-                output,
-                fname=Names[num]
-            )
+            if args.return_sum:
+                my_plotter.plot_2d_array(
+                    output,
+                    fname=Names[num]
+                )
+            else:
+                for out in output:
+                    my_plotter.plot_2d_array(
+                        out,
+                        fname=Names[num]
+                    )
 
     if return_outputs:
         return detectors, outputs
