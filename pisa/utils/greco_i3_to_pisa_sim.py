@@ -20,9 +20,7 @@ CMSQ_TO_MSQ = 1.0e-4
 #Generate dummy HDF5 file (for testing)
 def generate_dummy_hdf5_file(output_file,variable_map,num_events=10) :
 	hdf5_file = tables.open_file(output_file,mode="w")
-	#events_group = hdf5_file.create_group(hdf5_file.root,"events")
 	for nu_key,pdf_code in zip(["nue","numu","nutau"],[12,14,16]) :
-		#nu_group = hdf5_file.create_group(events_group,nu_key)
 		nu_group = hdf5_file.create_group(hdf5_file.root,nu_key)
 		for pisa_var in variable_map.get_all_pisa_variables() :
 			if pisa_var == "pdg_code" : fake_data = np.random.choice([-1,1],size=(num_events)) * pdf_code
@@ -42,7 +40,6 @@ Combine the pegleg track and cascade hypothesis energies
 def combine_reco_track_and_cascade_hypotheses(hdf5_events_file) :
 
 	#Loop over groups
-	#for group in hdf5_events_file.root.events :
 	for group in hdf5_events_file.root :
 
 		#Combine cascade and track energy
@@ -61,7 +58,6 @@ def subdivide_neutrino_groups(hdf5_events_file) :
 
 	#Loop over groups
 	neutrino_groups_found = []
-	#for group in hdf5_events_file.root.events :
 	for group in hdf5_events_file.root :
 
 		#Select only neutrino groups
@@ -81,10 +77,6 @@ def subdivide_neutrino_groups(hdf5_events_file) :
 			cc_mask = group.interaction.read() == 1 #TODO Check code
 
 			#Create new groups
-			#nu_cc_group = hdf5_events_file.create_group(hdf5_events_file.root.events,group_name+"_cc")
-			#nu_nc_group = hdf5_events_file.create_group(hdf5_events_file.root.events,group_name+"_nc")
-			#nubar_cc_group = hdf5_events_file.create_group(hdf5_events_file.root.events,group_name+"bar_cc")
-			#nubar_nc_group = hdf5_events_file.create_group(hdf5_events_file.root.events,group_name+"bar_nc")
 			nu_cc_group = hdf5_events_file.create_group(hdf5_events_file.root,group_name+"_cc")
 			nu_nc_group = hdf5_events_file.create_group(hdf5_events_file.root,group_name+"_nc")
 			nubar_cc_group = hdf5_events_file.create_group(hdf5_events_file.root,group_name+"bar_cc")
@@ -99,7 +91,6 @@ def subdivide_neutrino_groups(hdf5_events_file) :
 				hdf5_events_file.create_array(nubar_nc_group,array.name,array_data[nubar_mask&(~cc_mask)])
 
 			#Remove the old group
-			#hdf5_events_file.remove_node(hdf5_events_file.root.events,group_name,recursive=True)
 			hdf5_events_file.remove_node(hdf5_events_file.root,group_name,recursive=True)
 
 	if len(neutrino_groups_found) == 0 :
@@ -111,7 +102,6 @@ Calculate the effective area weights
 def calc_effective_area_weight(hdf5_events_file) :
 
 	#Loop over groups
-	#for group in hdf5_events_file.root.events :
 	for group in hdf5_events_file.root :
 
 		#Select only neutrino groups
@@ -132,6 +122,28 @@ def calc_effective_area_weight(hdf5_events_file) :
 
 		else :
 			raise Exception( "Effective area calculation not yet implemented for '%s'" % group_name )
+
+
+'''
+Convert zenith to cos(zenith)
+'''
+def convert_to_coszen(hdf5_events_file) :
+
+	#Loop over groups
+	for group in hdf5_events_file.root :
+
+		#Convert true zenith, if it exists
+		if "true_zenith" in group :
+			array = group.true_zenith.read()
+			hdf5_events_file.create_array(group,"true_coszen",np.cos(array),"")
+			hdf5_events_file.remove_node(group,"true_zenith")
+
+		#Convert reco zenith, if it exists
+		if "reco_zenith" in group :
+			array = group.reco_zenith.read()
+			hdf5_events_file.create_array(group,"reco_coszen",np.cos(array),"")
+			hdf5_events_file.remove_node(group,"reco_zenith")
+
 
 
 
@@ -207,7 +219,8 @@ if __name__ == "__main__" :
 
 	variable_map.add("Pegleg_Fit_MNHDCasc","energy","reco_energy_cascade")
 	variable_map.add("Pegleg_Fit_MNTrack","energy","reco_energy_track")
-	variable_map.add("Pegleg_Fit_MNTrack","zenith","reco_coszen")
+	variable_map.add("Pegleg_Fit_MNTrack","zenith","reco_zenith")
+	variable_map.add("Pegleg_Fit_MNTrack","azimuth","reco_azimuth")
 	variable_map.add("Pegleg_Fit_MNTrack","length","reco_tracklength")
 	variable_map.add("Pegleg_Fit_MNTrack","x","reco_x")
 	variable_map.add("Pegleg_Fit_MNTrack","y","reco_y")
@@ -217,6 +230,8 @@ if __name__ == "__main__" :
 	variable_map.add("MCNeutrino","x","true_x") #TODO Michael gets these in a different way, check this...
 	variable_map.add("MCNeutrino","y","true_y")
 	variable_map.add("MCNeutrino","z","true_z")
+	variable_map.add("MCNeutrino","zenith","true_zenith")
+	variable_map.add("MCNeutrino","azimuth","true_azimuth")
 
 	variable_map.add("I3MCWeightDict","PrimaryNeutrinoEnergy","true_energy")
 	variable_map.add("I3MCWeightDict","InteractionType","interaction")
@@ -262,6 +277,9 @@ if __name__ == "__main__" :
 
 	#Combine pegleg track and cascade hypotheses
 	combine_reco_track_and_cascade_hypotheses(reopened_output_file)
+
+	#Convert zenith angles to cos(zenith)
+	convert_to_coszen(reopened_output_file)
 
 	#Split neutrino events by nu vs nubar, and CC vs NC
 	subdivide_neutrino_groups(reopened_output_file)
