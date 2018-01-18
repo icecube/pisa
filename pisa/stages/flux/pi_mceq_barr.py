@@ -1,11 +1,11 @@
 # pylint: disable=not-callable
 """
-Stage to implement the old PISA/oscfit flux systematics
+Stage to implement the the systematic flux variations based on the
+Barr scheme and evaluate with MCEq
 
-The `nominal_flux` and `nominal_opposite_flux` is something that realy should
-not be done. That needs to be changed. We simply want to calcualte nu and nubar
-fluxes insetad!
+It requires spline tables created by the `$PISA/scripts/create_barr_sys_tables_mceq.py`
 
+this stage is highly experimental and not yet validated or finished!
 """
 from __future__ import absolute_import, print_function, division
 
