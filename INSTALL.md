@@ -131,7 +131,7 @@ Optional dependencies. Some of these must be installed manually prior to install
     `pip install virtualenv`
 * [OpenMP](http://www.openmp.org) Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.
   * Available from your compiler: gcc supports OpenMP 4.0 and Clang >= 3.8.0 supports OpenMP 3.1. Either version of OpenMP should work, but Clang has yet to be tested for its OpenMP support.
-* [ROOT 6.x with PyROOT](https://root.cern.ch) Necessary for `xsec.genie` and `unfold.roounfold` services, and to read ROOT cross section files in the `crossSections` utils module.
+* [ROOT >= 6.12.04 with PyROOT](https://root.cern.ch) Necessary for `xsec.genie` and `unfold.roounfold` services, and to read ROOT cross section files in the `crossSections` utils module. Due to a bug in ROOT's python support (documented here https://github.com/jllanfranchi/pisa/issues/430), you need at least version 6.12.04 of ROOT.
 * [numba](http://numba.pydata.org) Just-in-time compilation of decorated Python functions to native machine code via LLVM. This can accelerate certain routines significantly. If not using Anaconda to install, you must have LLVM installed already on your system (see above).
   * Installed alongside PISA if you specify option `['numba']` to `pip`
 * [Pylint](http://www.pylint.org): Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.<br>
