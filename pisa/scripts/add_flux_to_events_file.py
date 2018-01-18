@@ -72,20 +72,25 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
 
     mkdir(outdir, warn=False)
 
-    for primary, primary_node in data.items():
-        for int_type, int_node in primary_node.items():
-            true_e = int_node['true_energy']
-            true_cz = int_node['true_coszen']
+    for node_key, node in data.items():
+
+        logging.info('Adding fluxes to "%s" events', node_key)
+
+        # Only add fluxes to neutrino events
+        if node_key.startswith("nu") :
+
+            true_e = node['true_energy']
+            true_cz = node['true_coszen']
 
             # NOTE: The opposite-flavor fluxes are currently only used for the
             #       nu_nubar_ratio systematic (Nov 2017)
 
             for opposite in (False, True):
                 if not opposite:
-                    bar_label = 'bar' if 'bar' in primary else ''
+                    bar_label = 'bar' if 'bar' in node_key else ''
                     oppo_label = ''
                 else:
-                    bar_label = '' if 'bar' in primary else 'bar'
+                    bar_label = '' if 'bar' in node_key else 'bar'
                     oppo_label = '_oppo'
 
                 nue_flux = calculate_2d_flux_weights(
@@ -100,8 +105,8 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
                 )
 
                 basekey = neutrino_weight_name + oppo_label
-                int_node[basekey + '_nue_flux'] = nue_flux
-                int_node[basekey + '_numu_flux'] = numu_flux
+                node[basekey + '_nue_flux'] = nue_flux
+                node[basekey + '_numu_flux'] = numu_flux
 
     to_file(data, outpath, attrs=attrs, overwrite=overwrite)
     logging.info('--> Wrote file including fluxes to "%s"', outpath)

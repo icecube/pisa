@@ -14,11 +14,11 @@ from pisa.utils.numba_tools import WHERE
 
 class EventsPi(dict) :
 
-    def __init__(self,name,*arg,**kw) :
+    def __init__(self,name=None,*arg,**kw) :
 
         super(EventsPi, self).__init__(*arg, **kw)
 
-        self.name = name
+        self.name = "events" if name is None else name
 
         #Define some metadata
         self.metadata = collections.OrderedDict([
@@ -161,7 +161,7 @@ class EventsPi(dict) :
             #cut_data[key].data_specs = self[key].data_specs
             for variable_name in variables :
                 #cut_data[key].add_array_data(variable_name,copy.deepcopy(self[key][variable_name].get(WHERE)[mask]))
-                cut_data[key][variable_name] = deepcopy(self[key][variable_name][mask])
+                cut_data[key][variable_name] = copy.deepcopy(self[key][variable_name][mask])
 
         #TODO update to GPUs?
 
@@ -230,5 +230,25 @@ class EventsPi(dict) :
         string += "-----------------------------"
         return string
             
+
+'''
+Main functions
+'''
+
+if  __name__ == "__main__":
+
+    # This main function can be used to load an events file and print the contents
+
+    import argparse
+    parser = argparse.ArgumentParser(description="Events parsing")
+    parser.add_argument("--input-file",type=str,required=True,help="Input HDF5 events file")
+    args = parser.parse_args()
+
+    events = EventsPi()
+    events.load_events_file(args.input_file)
+
+    print("Loaded events from : %s"%args.input_file)
+
+    print(events)
 
 
