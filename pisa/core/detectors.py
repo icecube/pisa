@@ -32,29 +32,6 @@ __all__ = ['Detectors', 'test_Detectors', 'parse_args', 'main']
 
 class Detectors(object):
     """Container for one or more distribution makers, that belong to different detectors.
-
-    Parameters
-    ----------
-    pipelines : Pipeline or convertible thereto, or iterable thereof
-        A new pipline is instantiated with each object passed. Legal objects
-        are already-instantiated Pipelines and anything interpret-able by the
-        Pipeline init method.
-
-    Notes
-    -----
-    Free params with the same name in two pipelines are updated at the same
-    time so long as you use the `update_params`, `set_free_params`, or
-    `_set_rescaled_free_params` methods. Also use `select_params` to select
-    params across all pipelines (if a pipeline does not have one or more of
-    the param selectors specified, those param selectors have no effect in
-    that pipeline).
-
-    `_*_rescaled_*` properties and methods are for interfacing with a
-    minimizer, where values are linearly mapped onto the interval [0, 1]
-    according to the parameter's allowed range. Avoid interfacing with these
-    except if using a minimizer, since, e.g., units are stripped and values and
-    intervals are non-physical.
-
     """
     def __init__(self, distribution_makers, label=None):
         self.label = None
@@ -101,7 +78,7 @@ class Detectors(object):
     def update_params(self, params):
         for distribution_maker in self:
             distribution_maker.update_params(params)
-
+#
     def select_params(self, selections, error_on_missing=True):
         successes = 0
         if selections is not None:
@@ -134,17 +111,17 @@ class Detectors(object):
 
     @property
     def params(self):
-        params = ParamSet()
+        params = []
         for distribution_maker in self:
-            params.extend(distribution_maker.params)
+            params.append(distribution_maker.params)
         return params
 
     @property
     def param_selections(self):
-        selections = set()
+        selections = []
         for distribution_maker in self:
-            selections.update(distribution_maker.param_selections)
-        return sorted(selections)
+            selections.append(distribution_maker.param_selections)
+        return selections
 
     @property
     def source_code_hash(self):
@@ -159,65 +136,59 @@ class Detectors(object):
 
     @property
     def hash(self):
-        return hash_obj([self.source_code_hash] + [p.hash for p in self])
+        return hash_obj([self.source_code_hash] + [d.hash for d in self])
 
     def set_free_params(self, values):
         """Set free parameters' values.
 
         Parameters
         ----------
-        values : list of quantities
+        values : a list of lists of quantities
 
         """
-        for name, value in izip(self.params.free.names, values):
-            for distribution_maker in self:
-                if name in distribution_maker.params.free.names:
-                    distribution_maker.params[name] = value
-                elif name in distribution_maker.params.names:
-                    raise AttributeError(
-                        'Trying to set value for "%s", a parameter that is'
-                        ' fixed in at least one pipeline of' %name
-                    )
+        if len(values) != len(self):
+            raise ('Number of detectors and number of parameter sets is not the same')
+        
+        for i in range(len(values)):
+            self[i].set_free_params(values[i])
+
 
     def randomize_free_params(self, random_state=None):
         if random_state is None:
             random = np.random
         else:
             random = get_random_state(random_state)
-        n = len(self.params.free)
-        rand = random.rand(n)
+            
+        rand = []
+        for i in len(self):
+            n = (len(self[i].params.free))
+            rand.append(random.rand(n))
         self._set_rescaled_free_params(rand)
 
     def reset_all(self):
         """Reset both free and fixed parameters to their nominal values."""
         for d in self:
-            d.params.reset_all()
+            d.reset_all()
 
     def reset_free(self):
         """Reset only free parameters to their nominal values."""
         for d in self:
-            d.params.reset_free()
+            d.reset_free()
 
     def set_nominal_by_current_values(self):
         """Define the nominal values as the parameters' current values."""
         for d in self:
-            d.params.set_nominal_by_current_values()
+            d.set_nominal_by_current_values()
 
     def _set_rescaled_free_params(self, rvalues):
-        """Set free param values given a simple list of [0,1]-rescaled,
+        """Set free param values given a simple list of lists of [0,1]-rescaled,
         dimensionless values
-
         """
-        names = self.params.free.names
-        for distribution_maker in self:
-            for name, rvalue in izip(names, rvalues):
-                if name in distribution_maker.params.free.names:
-                    distribution_maker.params[name]._rescaled_value = rvalue
-                elif name in distribution_maker.params.names:
-                    raise AttributeError(
-                        'Trying to set value for "%s", a parameter that is'
-                        ' fixed in at least one pipeline of' %name
-                    )
+        if len(rvalues) != len(self):
+            raise ('Number of detectors and number of rescaled parameter sets is not the same')
+        
+        for i in range(len(rvalues)):
+            self[i]._set_rescaled_free_params(values[i])
 
 
 def test_Detectors():
