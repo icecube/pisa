@@ -20,9 +20,10 @@ CMSQ_TO_MSQ = 1.0e-4
 #Generate dummy HDF5 file (for testing)
 def generate_dummy_hdf5_file(output_file,variable_map,num_events=10) :
 	hdf5_file = tables.open_file(output_file,mode="w")
-	events_group = hdf5_file.create_group(hdf5_file.root,"events")
+	#events_group = hdf5_file.create_group(hdf5_file.root,"events")
 	for nu_key,pdf_code in zip(["nue","numu","nutau"],[12,14,16]) :
-		nu_group = hdf5_file.create_group(events_group,nu_key)
+		#nu_group = hdf5_file.create_group(events_group,nu_key)
+		nu_group = hdf5_file.create_group(hdf5_file.root,nu_key)
 		for pisa_var in variable_map.get_all_pisa_variables() :
 			if pisa_var == "pdg_code" : fake_data = np.random.choice([-1,1],size=(num_events)) * pdf_code
 			elif pisa_var == "interaction" : fake_data = np.random.choice([0,1],size=(num_events))
@@ -41,7 +42,8 @@ Combine the pegleg track and cascade hypothesis energies
 def combine_reco_track_and_cascade_hypotheses(hdf5_events_file) :
 
 	#Loop over groups
-	for group in hdf5_events_file.root.events :
+	#for group in hdf5_events_file.root.events :
+	for group in hdf5_events_file.root :
 
 		#Combine cascade and track energy
 		reco_energy = group.reco_energy_cascade.read() + group.reco_energy_track.read()
@@ -59,7 +61,8 @@ def subdivide_neutrino_groups(hdf5_events_file) :
 
 	#Loop over groups
 	neutrino_groups_found = []
-	for group in hdf5_events_file.root.events :
+	#for group in hdf5_events_file.root.events :
+	for group in hdf5_events_file.root :
 
 		#Select only neutrino groups
 		group_name = group._v_name #TODO How to "officialy" get name?
@@ -78,10 +81,14 @@ def subdivide_neutrino_groups(hdf5_events_file) :
 			cc_mask = group.interaction.read() == 1 #TODO Check code
 
 			#Create new groups
-			nu_cc_group = hdf5_events_file.create_group(hdf5_events_file.root.events,group_name+"_cc")
-			nu_nc_group = hdf5_events_file.create_group(hdf5_events_file.root.events,group_name+"_nc")
-			nubar_cc_group = hdf5_events_file.create_group(hdf5_events_file.root.events,group_name+"bar_cc")
-			nubar_nc_group = hdf5_events_file.create_group(hdf5_events_file.root.events,group_name+"bar_nc")
+			#nu_cc_group = hdf5_events_file.create_group(hdf5_events_file.root.events,group_name+"_cc")
+			#nu_nc_group = hdf5_events_file.create_group(hdf5_events_file.root.events,group_name+"_nc")
+			#nubar_cc_group = hdf5_events_file.create_group(hdf5_events_file.root.events,group_name+"bar_cc")
+			#nubar_nc_group = hdf5_events_file.create_group(hdf5_events_file.root.events,group_name+"bar_nc")
+			nu_cc_group = hdf5_events_file.create_group(hdf5_events_file.root,group_name+"_cc")
+			nu_nc_group = hdf5_events_file.create_group(hdf5_events_file.root,group_name+"_nc")
+			nubar_cc_group = hdf5_events_file.create_group(hdf5_events_file.root,group_name+"bar_cc")
+			nubar_nc_group = hdf5_events_file.create_group(hdf5_events_file.root,group_name+"bar_nc")
 
 			#Fill new groups
 			for array in group :
@@ -92,7 +99,8 @@ def subdivide_neutrino_groups(hdf5_events_file) :
 				hdf5_events_file.create_array(nubar_nc_group,array.name,array_data[nubar_mask&(~cc_mask)])
 
 			#Remove the old group
-			hdf5_events_file.remove_node(hdf5_events_file.root.events,group_name,recursive=True)
+			#hdf5_events_file.remove_node(hdf5_events_file.root.events,group_name,recursive=True)
+			hdf5_events_file.remove_node(hdf5_events_file.root,group_name,recursive=True)
 
 	if len(neutrino_groups_found) == 0 :
 		raise ValueError("Did not find any neutrino groups, cannpt subdivide them")
@@ -103,7 +111,8 @@ Calculate the effective area weights
 def calc_effective_area_weight(hdf5_events_file) :
 
 	#Loop over groups
-	for group in hdf5_events_file.root.events :
+	#for group in hdf5_events_file.root.events :
+	for group in hdf5_events_file.root :
 
 		#Select only neutrino groups
 		group_name = group._v_name #TODO How to "officially" get name?
@@ -177,8 +186,10 @@ if __name__ == "__main__" :
 
 	#Truncate input data if debugging
 	if debug :
+		max_num_files = 1
+		print "WARNING: Truncating number of files in each category to %i in debug mode" % max_num_files
 		for k in input_data.keys() :
-			input_data[k] = input_data[k][:1]
+			input_data[k] = input_data[k][:max_num_files]
 
 
 	#
@@ -191,6 +202,8 @@ if __name__ == "__main__" :
 	#TODO Make define some common mappings, and make a way to combine mappings instances?
 	#TODO Would it be more generic to make IceTray modules that create the required variables?
 	#TODO Could do something like define name of I3Particle for reco, truth particle, etc 
+
+	variable_map.add("I3EventHeader","time_start_utc_daq","time_start_utc_daq")
 
 	variable_map.add("Pegleg_Fit_MNHDCasc","energy","reco_energy_cascade")
 	variable_map.add("Pegleg_Fit_MNTrack","energy","reco_energy_track")
@@ -214,6 +227,15 @@ if __name__ == "__main__" :
 
 
 	#
+	# Define metadata
+	#
+
+	metadata = {
+		"sample":"greco",
+	}
+
+
+	#
 	# Run the conversion
 	#
 
@@ -226,7 +248,8 @@ if __name__ == "__main__" :
 		#Call the main i3 -> PISA converter function to do the heavy lifting
 		convert_i3_to_pisa(input_data=input_data,
 							output_file=output_file,
-							variable_map=variable_map) 
+							variable_map=variable_map,
+							metadata=metadata) 
 
 
 

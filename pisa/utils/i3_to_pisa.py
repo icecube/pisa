@@ -109,6 +109,26 @@ def i3_to_icecube_hdf5(	i3_files,
 
 
 
+#
+# pytables helper functions
+#
+
+def create_or_append_to_array(hdf5_file,group,array_name,array_data,description=None) :
+
+	#Check if the array already exists
+	if array_name in group :
+
+		#It already exists, so append to it
+		array = get_attr(group,array_name)
+		array.append(array_data)
+	else :
+
+		#It doesn't exist yet, create it
+		if description is None : description = ""
+		hdf5_file.create_array(group, array_name, array_data, description) #TODO Add description field (optional in I3ToPISAVariableMapping)?? 
+
+
+
 
 
 #
@@ -123,7 +143,7 @@ These various HDF% files are then combined into a single PISA-format HDF5
 file, including mapping the variable names and conversion to numpy arrays.
 '''
 
-def convert_i3_to_pisa(input_data,output_file,variable_map) :
+def convert_i3_to_pisa(input_data,output_file,variable_map,metadata=None) :
 
 
 	#
@@ -145,11 +165,13 @@ def convert_i3_to_pisa(input_data,output_file,variable_map) :
 	#Create the file
 	output_pisa_events_file = tables.open_file(output_file, mode="w", title="PISA HDF5 Events File")
 
-	#Create an events group
-	events_group = output_pisa_events_file.create_group("/", 'events', 'Event data')
-
-	#TODO Create metadata
-
+	#Add some metadata
+	#Store it as attributes of the top-level node
+	#output_pisa_events_file.root._v_attrs.foo = "bar" 
+	if metadata is not None :
+		for key,val in metadata.items() :
+			setattr(output_pisa_events_file.root._v_attrs,key,val) 
+	#TODO What else to store here?
 
 
 	#
@@ -159,6 +181,9 @@ def convert_i3_to_pisa(input_data,output_file,variable_map) :
 	i3_frame_objs = variable_map.get_all_i3_frame_objs()
 
 	for data_category,input_files in input_data.items() :
+
+
+		print "Processing %s : %i files" % (data_category,len(input_files))
 
 
 		#
@@ -179,16 +204,21 @@ def convert_i3_to_pisa(input_data,output_file,variable_map) :
 		#Load the temporary i3 file
 		tmp_hdf5_file = tables.openFile(tmp_hdf5_file_path)
 
+		#TODO Check if any tables were acutally written (if user mistypes a frame object name, then nothing is written, need to handle this error better)
+
 		#Create a group for this data_category in the output file
-		data_category_group = output_pisa_events_file.create_group(events_group, data_category, data_category)
+		#data_category_group = output_pisa_events_file.create_group(events_group, data_category, data_category)
+		data_category_group = output_pisa_events_file.create_group(output_pisa_events_file.root, data_category, data_category)
 
 		#Loop over variables
 		for i3_frame_obj in i3_frame_objs :
 
+			#Check the I3 HDF5 table writer did actually add this frame object to the file
+			if not hasattr(tmp_hdf5_file.root,i3_frame_obj) :
+				raise Exception("Expected frame object '%s' was not written to the i3 HDF5 file : %s"%(i3_frame_obj,tmp_hdf5_file_path))
+
 			#Get the table correspondig to this variable in tmp hdf5 file
 			i3_frame_obj_table = getattr(tmp_hdf5_file.root,i3_frame_obj)
-
-			#print "+++ %s cols = %s" % (i3_frame_obj,i3_frame_obj_table.colnames)
 
 			#Get all mappings for this i3 variable
 			mappings = variable_map[i3_frame_obj]
@@ -200,15 +230,17 @@ def convert_i3_to_pisa(input_data,output_file,variable_map) :
 				if mapping.i3_frame_obj_variable not in i3_frame_obj_table.colnames :
 					raise Exception("Error : Frame object %s does not contain the variable %s" % (i3_frame_obj,mapping.i3_frame_obj_variable) ) 
 
-				#Get the variable and add it to the output PISA HDF5 file group
-				#Need to create the array if this is the first time we've tried to add daat to it
+				#Get the variable and add it to the output PISA HDF5 file group as an array
 				i3_frame_obj_array = i3_frame_obj_table.col(mapping.i3_frame_obj_variable)
-				if mapping.pisa_variable in data_category_group :
-					pisa_var_array = get_attr(data_category_group, mapping.pisa_variable)
-					i3_frame_obj_array.append(i3_frame_obj_array)
-				else :
-					output_pisa_events_file.create_array(data_category_group, mapping.pisa_variable, i3_frame_obj_array, "") #TODO Add description field (optional in I3ToPISAVariableMapping)?? 
-					#output_pisa_events_file.create_carray(data_category_group, mapping.pisa_variable, i3_frame_obj_array, "") #TODO array or carray?
+				create_or_append_to_array( output_pisa_events_file, data_category_group, mapping.pisa_variable, i3_frame_obj_array)
+
+		#Store run and event IDs
+		#These are stored for each event for each table, so parse them from any fraem obekct table
+		#Get the variable and add it to the output PISA HDF5 file group
+		run_id_array = getattr(tmp_hdf5_file.root,i3_frame_objs[0]).col("Run")
+		create_or_append_to_array( output_pisa_events_file, data_category_group, "run_id", run_id_array)
+		event_id_array = getattr(tmp_hdf5_file.root,i3_frame_objs[0]).col("Event")
+		create_or_append_to_array( output_pisa_events_file, data_category_group, "event_id", event_id_array)
 
 		#Store number of files
 		num_events = getattr(tmp_hdf5_file.root,i3_frame_objs[0]).nrows
@@ -222,7 +254,7 @@ def convert_i3_to_pisa(input_data,output_file,variable_map) :
 	# Check the resulting data structure
 	#
 
-	#TODO num events, all pis_variables have been created, etc...
+	#TODO num events, all pisa_variables have been created, etc...
 
 
 	#
