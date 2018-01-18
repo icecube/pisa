@@ -3,6 +3,7 @@
 
 from __future__ import absolute_import
 
+from collections import OrderedDict
 import os
 
 import numpy as np
@@ -14,9 +15,7 @@ from pisa.utils.resources import find_resource
 from pisa.utils.comparisons import recursiveEquality
 
 
-__all__ = ['HDF5_EXTS',
-           'from_hdf', 'to_hdf',
-           'test_hdf']
+__all__ = ['HDF5_EXTS', 'from_hdf', 'to_hdf', 'test_hdf']
 
 __author__ = 'S. Boeser, J.L. Lanfranchi'
 
@@ -38,8 +37,8 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 HDF5_EXTS = ['hdf', 'h5', 'hdf5']
 
 
-# TODO: convert to use OrderedDict to preserve ordering
 # TODO: convert to allow reading of icetray-produced HDF5 files
+
 
 def from_hdf(val, return_node=None, return_attrs=False):
     """Return the contents of an HDF5 file or node as a nested dict; optionally
@@ -62,11 +61,11 @@ def from_hdf(val, return_node=None, return_attrs=False):
 
     Returns
     -------
-    data : dict
+    data : OrderedDict
         Nested dictionary; keys are HDF5 node names and values contain the
         contents of that node.
 
-    (attrs : dict)
+    (attrs : OrderedDict)
         Attributes of entry-level entity; only returned if return_attrs=True
 
     """
@@ -80,21 +79,25 @@ def from_hdf(val, return_node=None, return_attrs=False):
     # when the caller explicitly specifies for the function to do so is the
     # second return value returned, which seems the safest compromise for now.
 
-    # Function for iteratively parsing the file to create the dictionary
     def visit_group(obj, sdict):
+        """Iteratively parse `obj` to create the dictionary `sdict`"""
         name = obj.name.split('/')[-1]
-        if type(obj) in [h5py.Dataset]:
+        if isinstance(obj, h5py.Dataset):
             sdict[name] = obj.value
-        if type(obj) in [h5py.Group, h5py.File]:
-            sdict[name] = {}
+        if isinstance(obj, (h5py.Group, h5py.File)):
+            sdict[name] = OrderedDict()
             for sobj in obj.values():
                 visit_group(sobj, sdict[name])
 
-    data = {}
-    attrs = {}
+    data = OrderedDict()
+    attrs = OrderedDict()
     myfile = False
     if isinstance(val, basestring):
-        root = h5py.File(find_resource(val), 'r')
+        try:
+            root = h5py.File(find_resource(val), 'r')
+        except:
+            logging.error('Failed to load HDF5 file, `val`="%s"', val)
+            raise
         myfile = True
     else:
         root = val
@@ -132,18 +135,22 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
     ----------
     data_dict : dict
         Dictionary to be stored
+
     tgt : str or h5py.Group
         Target for storing data. If `tgt` is a str, it is interpreted as a
         filename; a file is created with that name (overwriting an existing
         file, if present). After writing, the file is closed. If `tgt` is an
         h5py.Group, the data is simply written to that Group and it is left
         open at function return.
+
     attrs : dict
         Attributes to apply to the top-level entity being written. See
         http://docs.h5py.org/en/latest/high/attr.html
+
     overwrite : bool
         Set to `True` (default) to allow overwriting existing file. Raise
         exception and quit otherwise.
+
     warn : bool
         Issue a warning message if a file is being overwritten. Suppress
         warning by setting to `False` (e.g. when overwriting is the desired
@@ -155,11 +162,11 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
         logging.error(errmsg)
         raise TypeError(errmsg)
 
-    # Define a function for interatively doing the work
     def store_recursively(fhandle, node, path=None, attrs=None,
                           node_hashes=None):
+        """Function for interatively doing the work"""
         path = [] if path is None else path
-        node_hashes = {} if node_hashes is None else node_hashes
+        node_hashes = OrderedDict() if node_hashes is None else node_hashes
         full_path = '/' + '/'.join(path)
         if isinstance(node, dict):
             logging.trace("  creating Group '%s'" % full_path)
@@ -195,8 +202,8 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
             # None
             if node is None:
                 node = np.nan
-                logging.warn("  encountered `None` at node '%s'; converting to"
-                             " np.nan" % full_path)
+                logging.warn('  encountered `None` at node "%s"; converting to'
+                             ' np.nan', full_path)
             # "Scalar datasets don't support chunk/filter options". Shuffling
             # is a good idea otherwise since subsequent compression will
             # generally benefit; shuffling requires chunking. Compression is
@@ -223,8 +230,8 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
                 # seems to be compatible with both h5py and pytables
                 node = np.array(node)
 
-            logging.trace("  creating dataset at node '%s', hash %s" %
-                          (full_path, node_hash))
+            logging.trace('  creating dataset at node "%s", hash %s',
+                          full_path, node_hash)
             try:
                 dset = fhandle.create_dataset(
                     name=full_path, data=node, chunks=chunks, compression=None,
@@ -271,6 +278,7 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
 
 
 def test_hdf():
+    """Unit tests for hdf module"""
     from shutil import rmtree
     from tempfile import mkdtemp
 
@@ -324,7 +332,7 @@ def test_hdf():
         assert recursiveEquality(data, loaded_data2)
         assert recursiveEquality(attrs, loaded_attrs)
 
-        for k, v in attrs.iteritems():
+        for k, v in attrs.items():
             tgt_type = type(attrs[k])
             assert isinstance(loaded_attrs[k], tgt_type), \
                     "key %s: val '%s' is type '%s' but should be '%s'" % \
