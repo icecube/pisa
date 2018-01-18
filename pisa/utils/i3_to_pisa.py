@@ -60,6 +60,8 @@ def i3_to_icecube_hdf5(	i3_files,
 	from icecube.tableio import I3TableWriter, I3TableService
 	from icecube.hdfwriter import I3HDFTableService 
 
+	#from icecube import genie_icetray #TODO toggle GENIE requirement based on need
+
 
 	#
 	# Get inputs
@@ -121,6 +123,7 @@ def create_or_append_to_array(hdf5_file,group,array_name,array_data,description=
 		#It already exists, so append to it
 		array = get_attr(group,array_name)
 		array.append(array_data)
+
 	else :
 
 		#It doesn't exist yet, create it
@@ -182,8 +185,8 @@ def convert_i3_to_pisa(input_data,output_file,variable_map,metadata=None) :
 
 	for data_category,input_files in input_data.items() :
 
-
-		print "Processing %s : %i files" % (data_category,len(input_files))
+		num_files = len(input_files)
+		print "Processing %s : %i files" % (data_category,num_files)
 
 
 		#
@@ -244,7 +247,7 @@ def convert_i3_to_pisa(input_data,output_file,variable_map,metadata=None) :
 
 		#Store number of files
 		num_events = getattr(tmp_hdf5_file.root,i3_frame_objs[0]).nrows
-		output_pisa_events_file.create_array(data_category_group, "n_files", np.full(num_events,len(input_files)), "")
+		output_pisa_events_file.create_array(data_category_group, "n_files", np.full(num_events,num_files), "")
 
 		#Close the tmp file
 		tmp_hdf5_file.close()

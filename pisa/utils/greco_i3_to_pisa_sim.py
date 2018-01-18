@@ -145,6 +145,62 @@ def convert_to_coszen(hdf5_events_file) :
 			hdf5_events_file.remove_node(group,"reco_zenith")
 
 
+'''
+Calculate GENIE systematics
+'''
+
+#TODO Document this, including links to GENIE docs or IceCube wiki...
+def fit_axial_mass(self, in_yvalues, genie_weight):
+    rw_xvalues  = numpy.array([-2,-1,0,1,2])
+    if sum(in_yvalues) == 4.0: return numpy.array([0,0])
+    in_yvalues = numpy.array(in_yvalues)
+    yvalues = numpy.concatenate((in_yvalues[:2]/genie_weight, [1.], in_yvalues[2:]/genie_weight))
+    fitcoeff = np.polynomial.polynomial.polyfit(rw_xvalues, yvalues, deg = 2)[::-1]
+    linear_fit_coefft,quadratic_fit_coefft = fitcoeff[:2]
+    return linear_fit_coefft,quadratic_fit_coefft
+
+
+def calc_genie_axial_mass_systematics(hdf5_events_file) :
+
+	#TODO Document this, including links to GENIE docs or IceCube wiki...
+
+	#Loop over groups
+	for group in hdf5_events_file.root :
+
+		#Select only neutrino groups
+		group_name = group._v_name #TODO How to "officially" get name?
+		if group_name.startswith("nu") :
+
+			#TODO REMOVE temporary hack, for now put empty fits in until get metaproject with genie up and running...
+			#TODO REMOVE
+			linear_fit_maccqe = np.zeros(group.event_id.shape)
+			quad_fit_maccqe = np.zeros(group.event_id.shape)
+			linear_fit_maccres = np.zeros(group.event_id.shape)
+			quad_fit_maccres = np.zeros(group.event_id.shape)
+			#TODO REMOVE
+			#TODO REMOVE
+
+			''' #TODO REPLACE THIS LOT
+			#Get the information pertainting to the GENIE axial mass systematics that 
+			#have been written to the file
+			genie_weight = group.genie_weight.read()
+			genie_rw_maccqe = group.genie_rw_maccqe.read()
+			genie_rw_maccres = group.genie_rw_maccres.read()
+
+			#Get the linear and quandric terms from an axial mass fit
+			linear_fit_maccqe,quad_fit_maccqe = fit_axial_mass(genie_rw_maccqe,genie_weight)
+			linear_fit_maccres,quad_fit_maccres = fit_axial_mass(genie_rw_maccres,genie_weight)
+			'''
+
+			#Add the fits to the events
+			hdf5_events_file.create_array(group,"linear_fit_maccqe",linear_fit_maccqe,"")
+			hdf5_events_file.create_array(group,"quad_fit_maccqe",quad_fit_maccqe,"")
+			hdf5_events_file.create_array(group,"linear_fit_maccres",linear_fit_maccres,"")
+			hdf5_events_file.create_array(group,"quad_fit_maccres",quad_fit_maccres,"")
+
+			#TODO remove the GENIE stuff used to calculate this...
+
+
 
 
 #
@@ -162,7 +218,7 @@ if __name__ == "__main__" :
 	from i3_to_pisa import I3ToPISAVariableMap, convert_i3_to_pisa
 	#from i3_to_pisa_tables import I3ToPISAVariableMap, convert_i3_to_pisa, convert_i3_to_pisa
 
-	debug = True
+	debug = False
 	dummy_data = False
 
 
@@ -179,9 +235,10 @@ if __name__ == "__main__" :
 	input_data = { cat:[] for cat in neutrinos.keys() } #+["muons","noise"] } 
 
 	#Define GENIE datasets
-	greco_top_dir = "/data/ana/LE/NBI_nutau_appearance/level7_24Nov2015"
+	#greco_top_dir = "/data/ana/LE/NBI_nutau_appearance/level7_24Nov2015"
+	greco_top_dir = "/data/ana/LE/NBI_nutau_appearance/level7_5July2017"
 	genie_dir = os.path.join( greco_top_dir, "genie" )
-	genie_dataset = 600
+	genie_dataset = 640
 	for nu_key,pdg_code in neutrinos.items() :
 		input_data[nu_key].extend( sorted(glob.glob( os.path.join(genie_dir,"%i%i"%(pdg_code,genie_dataset),"*.i3*") )) )
 	
@@ -198,7 +255,7 @@ if __name__ == "__main__" :
 
 	#Truncate input data if debugging
 	if debug :
-		max_num_files = 1
+		max_num_files = 100
 		print "WARNING: Truncating number of files in each category to %i in debug mode" % max_num_files
 		for k in input_data.keys() :
 			input_data[k] = input_data[k][:max_num_files]
@@ -217,14 +274,15 @@ if __name__ == "__main__" :
 
 	variable_map.add("I3EventHeader","time_start_utc_daq","time_start_utc_daq")
 
-	variable_map.add("Pegleg_Fit_MNHDCasc","energy","reco_energy_cascade")
-	variable_map.add("Pegleg_Fit_MNTrack","energy","reco_energy_track")
-	variable_map.add("Pegleg_Fit_MNTrack","zenith","reco_zenith")
-	variable_map.add("Pegleg_Fit_MNTrack","azimuth","reco_azimuth")
-	variable_map.add("Pegleg_Fit_MNTrack","length","reco_tracklength")
-	variable_map.add("Pegleg_Fit_MNTrack","x","reco_x")
-	variable_map.add("Pegleg_Fit_MNTrack","y","reco_y")
-	variable_map.add("Pegleg_Fit_MNTrack","z","reco_z")
+	pegleg_frame_object_stem = "Pegleg_Fit_MN_tol10" #"Pegleg_Fit_MN"
+	variable_map.add("%sHDCasc"%pegleg_frame_object_stem,"energy","reco_energy_cascade")
+	variable_map.add("%sTrack"%pegleg_frame_object_stem,"energy","reco_energy_track")
+	variable_map.add("%sTrack"%pegleg_frame_object_stem,"zenith","reco_zenith")
+	variable_map.add("%sTrack"%pegleg_frame_object_stem,"azimuth","reco_azimuth")
+	variable_map.add("%sTrack"%pegleg_frame_object_stem,"length","reco_tracklength")
+	variable_map.add("%sTrack"%pegleg_frame_object_stem,"x","reco_x")
+	variable_map.add("%sTrack"%pegleg_frame_object_stem,"y","reco_y")
+	variable_map.add("%sTrack"%pegleg_frame_object_stem,"z","reco_z")
 
 	variable_map.add("MCNeutrino","pdg_encoding","pdg_code")
 	variable_map.add("MCNeutrino","x","true_x") #TODO Michael gets these in a different way, check this...
@@ -237,6 +295,10 @@ if __name__ == "__main__" :
 	variable_map.add("I3MCWeightDict","InteractionType","interaction")
 	variable_map.add("I3MCWeightDict","OneWeight","one_weight")
 	variable_map.add("I3MCWeightDict","NEvents","n_events")
+
+	#variable_map.add("I3MCWeightDict","GENIEWeight","genie_weight")
+	#variable_map.add("I3GENIEResultDict","rw_MaCCQE","genie_rw_maccqe")
+	#variable_map.add("I3GENIEResultDict","rw_MaCCRES","genie_rw_maccres")
 
 	#TODO Need to add flux info, where to do this?
 
@@ -280,6 +342,9 @@ if __name__ == "__main__" :
 
 	#Convert zenith angles to cos(zenith)
 	convert_to_coszen(reopened_output_file)
+
+	#Calculate the GENIE axial mass systematics
+	calc_genie_axial_mass_systematics(reopened_output_file)
 
 	#Split neutrino events by nu vs nubar, and CC vs NC
 	subdivide_neutrino_groups(reopened_output_file)
