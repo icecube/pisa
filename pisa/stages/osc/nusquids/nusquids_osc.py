@@ -2,7 +2,7 @@
 '''Wrapper around the nuSQuIDS python interface
 '''
 from __future__ import absolute_import, print_function, division
-
+import os
 import numpy as np
 import nuSQUIDSpy as nsq
 
@@ -10,6 +10,7 @@ from pisa import CACHE_DIR, FTYPE, OMP_NUM_THREADS, ureg, OrderedDict
 from pisa.core.binning import MultiDimBinning
 from pisa.stages.osc.pi_osc_params import OscParams
 from pisa.utils.fileio import from_file
+from pisa.utils.log import logging
 from pisa.utils.resources import find_resource
 
 __all__ = [
@@ -23,13 +24,15 @@ NSI_CLASS = "nuSQUIDSNSIAtm"
 ATM_CLASS = "nuSQUIDSAtm"
 NSI_AVAIL = hasattr(nsq, NSI_CLASS)
 ATM_AVAIL = hasattr(nsq, ATM_CLASS)
+# TODO: NSI instance cannot handle case num_flav = 4, so need
+# some other mechanism to decide on which instance to create
 if NSI_AVAIL:
     NSQ = getattr(nsq, NSI_CLASS)
 elif ATM_AVAIL:
     NSQ = getattr(nsq, ATM_CLASS)
 else:
     raise AttributeError('Could not find classes %s or %s in the nuSQuIDS'
-                         ' python interface.'%(NSI_CLASS, ATM_CLASS))
+                         ' python interface.' % (NSI_CLASS, ATM_CLASS))
 del NSI_CLASS, ATM_CLASS
 
 NSQ_CONST = nsq.Const()
@@ -128,11 +131,8 @@ def _setup_physics_and_evolve_states(cz_shape,
         nuSQ.Set_MixingAngle(0, 2, osc_params.theta13)
         nuSQ.Set_MixingAngle(1, 2, osc_params.theta23)
         if nu_flav_no == 4:
-            raise NotImplementedError("n=3 required")
-            # taken from the "atm default" example on github
-            # TODO: make configurable
-            nuSQ.Set_SquareMassDifference(3, -1.)
-            nuSQ.Set_MixingAngle(1, 3, 0.160875)
+            nuSQ.Set_SquareMassDifference(3, osc_params.dm41)
+            nuSQ.Set_MixingAngle(1, 3, osc_params.theta14)
 
         nuSQ.Set_SquareMassDifference(1, osc_params.dm21)
         nuSQ.Set_SquareMassDifference(2, osc_params.dm31)
@@ -140,24 +140,19 @@ def _setup_physics_and_evolve_states(cz_shape,
         nuSQ.Set_CPPhase(0, 2, osc_params.deltacp)
 
         for icz in xrange(cz_shape):
-            nuSQ_NSI_icz = nuSQ.GetnuSQuIDS(icz)
-            nuSQ_NSI_icz.Set_epsilon_ee(osc_params.eps_ee)
-            nuSQ_NSI_icz.Set_epsilon_emu(osc_params.eps_emu)
-            nuSQ_NSI_icz.Set_epsilon_etau(osc_params.eps_etau)
-            nuSQ_NSI_icz.Set_epsilon_mumu(osc_params.eps_mumu)
-            nuSQ_NSI_icz.Set_epsilon_mutau(osc_params.eps_mutau)
-            nuSQ_NSI_icz.Set_epsilon_tautau(osc_params.eps_tautau)
+            nuSQ_icz = nuSQ.GetnuSQuIDS(icz)
+            nuSQ_icz.Set_epsilon_ee(osc_params.eps_ee)
+            nuSQ_icz.Set_epsilon_emu(osc_params.eps_emu)
+            nuSQ_icz.Set_epsilon_etau(osc_params.eps_etau)
+            nuSQ_icz.Set_epsilon_mumu(osc_params.eps_mumu)
+            nuSQ_icz.Set_epsilon_mutau(osc_params.eps_mutau)
+            nuSQ_icz.Set_epsilon_tautau(osc_params.eps_tautau)
 
         nuSQ.Set_initial_state(ini_states[input_name], nsq.Basis.flavor)
         nuSQ.EvolveState()
 
 
-def _eval_osc_probs(kNuBar,
-                    kFlav,
-                    propagators,
-                    true_energies,
-                    true_coszens,
-                   ):
+def _eval_osc_probs(kNuBar, kFlav, propagators, true_energies, true_coszens):
     """Calculate oscillation probs. for given array of energy and cos(zenith).
     Arrays of true energy and zenith are tested to be of the same length.
     Parameters
@@ -190,7 +185,7 @@ def _eval_osc_probs(kNuBar,
             true_coszens = np.array(true_coszens)
     if not ((true_coszens >= -1.0).all() and (true_coszens <= 1.0).all()):
         raise ValueError('Not all true coszens found to be between -1 and 1.')
-    if not ((true_energies >= 0.0).all()):
+    if not (true_energies >= 0.0).all():
         raise ValueError('Not all true energies found to be positive.')
     if not len(true_energies) == len(true_coszens):
         raise ValueError('Length of energy and coszen arrays must match.')
@@ -211,8 +206,8 @@ def _eval_osc_probs(kNuBar,
                 prob_mu[i] = chan_prob
             else:
                 raise ValueError(
-                        "Input name '%s' not recognised!"%input_name
-                      )
+                    "Input name '%s' not recognized!" % input_name
+                )
 
     return prob_e, prob_mu
 
@@ -245,8 +240,7 @@ def _make_EarthAtm_Ye(YeI,
         a nuSQuIDs propagator object
     """
     logging.debug("Regenerating nuSQuIDS Earth Model with electron"
-                  " fractions: YeI=%s, YeO=%s, YeM=%s"%(YeI, YeO, YeM))
-    Ye = np.array([YeI, YeO, YeM])
+                  " fractions: YeI=%s, YeO=%s, YeM=%s" % (YeI, YeO, YeM))
     earth_radius = 6371.0 # km
     Ye_outer_radius = np.array([1121.5, 3480.0, earth_radius]) # km
 
@@ -268,6 +262,7 @@ def _make_EarthAtm_Ye(YeI,
 
 
 def test_nusquids_osc():
+    """Test nuSQuIDS functions."""
     from pisa.core.binning import OneDimBinning
     # define binning for nuSQuIDS nodes (where master eqn. is solved)
     en_calc_binning = OneDimBinning(name='true_energy',
@@ -287,29 +282,33 @@ def test_nusquids_osc():
     en_calc_grid, cz_calc_grid = compute_binning_constants(binning_2d_calc)
     # set up initial states, get the nuSQuIDS "propagator" instances
     ini_states, props = _get_nusquids_ini_prop(
-                            cz_nodes=cz_calc_grid,
-                            en_nodes=en_calc_grid,
-                            nu_flav_no=3,
-                            rel_err=1.0e-5,
-                            abs_err=1.0e-5,
-                            progress_bar=True
-                        )
+        cz_nodes=cz_calc_grid,
+        en_nodes=en_calc_grid,
+        nu_flav_no=3,
+        rel_err=1.0e-5,
+        abs_err=1.0e-5,
+        progress_bar=False
+    )
     # make an Earth model
     PREM_fpath = find_resource(resource='osc/nuSQuIDS_PREM.dat')
-    earth_atm = nsq.EarthAtm(PREM_fpath)
+    YeI, YeM, YeO = 0.4656, 0.4957, 0.4656
+    earth_atm = _make_EarthAtm_Ye(YeI=YeI, YeM=YeM, YeO=YeO)
 
     # define some oscillation parameter values
     osc_params = OscParams()
-    osc_params.theta23 = np.deg2rad(45.)
-    osc_params.theta12 = np.deg2rad(33.)
-    osc_params.theta13 = np.deg2rad(8.)
-    osc_params.dm21 = 7.5e-5
-    osc_params.dm31 = 2.5e-3
+    osc_params.theta23 = np.deg2rad(48.7)
+    osc_params.theta12 = np.deg2rad(33.63)
+    osc_params.theta13 = np.deg2rad(8.52)
+    osc_params.theta14 = np.deg2rad(0.0)
+    osc_params.dm21 = 7.40e-5
+    osc_params.dm31 = 2.515e-3
+    osc_params.dm41 = 0.
     osc_params.eps_ee = 0.
     osc_params.eps_emu = 0.
     osc_params.eps_etau = 0.
     osc_params.eps_mumu = 0.
-    osc_params.eps_mutau = 0.
+    osc_params.eps_mutau = 0.005
+    osc_params.eps_tautau = 0.
     # evolve the states starting from initial ones
     _setup_physics_and_evolve_states(
         cz_shape=cz_calc_grid.shape[0],
@@ -329,12 +328,12 @@ def test_nusquids_osc():
     # collect the transition probabilities from
     # muon and electron neutrinos
     prob_e, prob_mu = _eval_osc_probs(
-                           kNuBar=kNuBar,
-                           kFlav=kFlav,
-                           propagators=props,
-                           true_energies=en_eval,
-                           true_coszens=cz_eval,
-                      )
+        kNuBar=kNuBar,
+        kFlav=kFlav,
+        propagators=props,
+        true_energies=en_eval,
+        true_coszens=cz_eval,
+    )
 
 
 if __name__ == "__main__":
