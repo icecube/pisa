@@ -3,7 +3,7 @@
 
 from __future__ import absolute_import
 
-from collections import OrderedDict
+from collections import Mapping, OrderedDict
 import os
 
 import numpy as np
@@ -101,11 +101,11 @@ def from_hdf(val, return_node=None, return_attrs=False):
         myfile = True
     else:
         root = val
-        logging.trace('root = %s, root.values() = %s' % (root, root.values()))
+        logging.trace('root = %s, root.values() = %s', root, root.values())
     try:
         # Retrieve attrs if told to return attrs
         if return_attrs and hasattr(root, 'attrs'):
-            attrs = dict(root.attrs)
+            attrs = OrderedDict(root.attrs)
         # Run over the whole dataset
         for obj in root.values():
             visit_group(obj, data)
@@ -133,8 +133,8 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
 
     Parameters
     ----------
-    data_dict : dict
-        Dictionary to be stored
+    data_dict : Mapping
+        Dictionary, OrderedDict, or other Mapping to be stored
 
     tgt : str or h5py.Group
         Target for storing data. If `tgt` is a str, it is interpreted as a
@@ -143,7 +143,7 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
         h5py.Group, the data is simply written to that Group and it is left
         open at function return.
 
-    attrs : dict
+    attrs : Mapping
         Attributes to apply to the top-level entity being written. See
         http://docs.h5py.org/en/latest/high/attr.html
 
@@ -157,10 +157,9 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
         behaviour).
 
     """
-    if not isinstance(data_dict, dict):
-        errmsg = 'to_hdf: `data_dict` only accepts top-level dict.'
-        logging.error(errmsg)
-        raise TypeError(errmsg)
+    if not isinstance(data_dict, Mapping):
+        raise TypeError('`data_dict` only accepts top-level'
+                        ' dict/OrderedDict/etc.')
 
     def store_recursively(fhandle, node, path=None, attrs=None,
                           node_hashes=None):
@@ -168,12 +167,17 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
         path = [] if path is None else path
         node_hashes = OrderedDict() if node_hashes is None else node_hashes
         full_path = '/' + '/'.join(path)
-        if isinstance(node, dict):
-            logging.trace("  creating Group '%s'" % full_path)
+        if attrs is not None:
+            if isinstance(attrs, OrderedDict):
+                sorted_attr_keys = attrs.keys()
+            else:
+                sorted_attr_keys = sorted(attrs.keys())
+        if isinstance(node, Mapping):
+            logging.trace('  creating Group "%s"', full_path)
             try:
                 dset = fhandle.create_group(full_path)
                 if attrs is not None:
-                    for key in sorted(attrs.keys()):
+                    for key in sorted_attr_keys:
                         dset.attrs[key] = attrs[key]
             except ValueError:
                 pass
@@ -182,9 +186,9 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
                 if isinstance(key, basestring):
                     key_str = key
                 else:
+                    key_str = str(key)
                     logging.warn('Making string from key "%s", %s for use as'
                                  ' name in HDF5 file', key_str, type(key))
-                    key_str = str(key)
                 val = node[key]
                 new_path = path + [key_str]
                 store_recursively(fhandle=fhandle, node=val, path=new_path,
@@ -193,8 +197,8 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
             # Check for existing node
             node_hash = hash_obj(node)
             if node_hash in node_hashes:
-                logging.trace("  creating hardlink for Dataset: '%s' -> '%s'" %
-                              (full_path, node_hashes[node_hash]))
+                logging.trace('  creating hardlink for Dataset: "%s" -> "%s"',
+                              full_path, node_hashes[node_hash])
                 # Hardlink the matching existing dataset
                 fhandle[full_path] = fhandle[node_hashes[node_hash]]
                 return
@@ -246,14 +250,14 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
                         compression=None, shuffle=shuffle, fletcher32=False
                     )
                 except:
-                    logging.error('  full_path: ' + full_path)
-                    logging.error('  chunks   : ' + str(chunks))
-                    logging.error('  shuffle  : ' + str(shuffle))
-                    logging.error('  node     : ' + str(node))
+                    logging.error('  full_path: %s', full_path)
+                    logging.error('  chunks   : %s', str(chunks))
+                    logging.error('  shuffle  : %s', str(shuffle))
+                    logging.error('  node     : %s', str(node))
                     raise
 
             if attrs is not None:
-                for key in sorted(attrs.keys()):
+                for key in sorted_attr_keys:
                     dset.attrs[key] = attrs[key]
 
     # Perform the actual operation using the dict passed in by user
@@ -272,9 +276,7 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
         store_recursively(fhandle=tgt, node=data_dict, attrs=attrs)
 
     else:
-        errmsg = "to_hdf: Invalid `tgt` type: " + type(tgt)
-        logging.error(errmsg)
-        raise TypeError(errmsg)
+        raise TypeError('to_hdf: Invalid `tgt` type: %s', type(tgt))
 
 
 def test_hdf():
@@ -282,53 +284,56 @@ def test_hdf():
     from shutil import rmtree
     from tempfile import mkdtemp
 
-    data = {
-        'top': {
-            'secondlvl1':{
-                'thirdlvl11': np.linspace(1, 100, 10000),
-                'thirdlvl12': "this is a string"
-            },
-            'secondlvl2':{
-                'thirdlvl21': np.linspace(1, 100, 10000),
-                'thirdlvl22': "this is a string"
-            },
-            'secondlvl3':{
-                'thirdlvl31': np.linspace(1, 100, 10000),
-                'thirdlvl32': "this is a string"
-            },
-            'secondlvl4':{
-                'thirdlvl41': np.linspace(1, 100, 10000),
-                'thirdlvl42': "this is a string"
-            },
-            'secondlvl5':{
-                'thirdlvl51': np.linspace(1, 100, 10000),
-                'thirdlvl52': "this is a string"
-            },
-            'secondlvl6':{
-                'thirdlvl61': np.linspace(100, 1000, 10000),
-                'thirdlvl62': "this is a string"
-            },
-        }
-    }
+    data = OrderedDict([
+        ('top', OrderedDict([
+            ('secondlvl1', OrderedDict([
+                ('thirdlvl11', np.linspace(1, 100, 10000)),
+                ('thirdlvl12', "this is a string")
+            ])),
+            ('secondlvl2', OrderedDict([
+                ('thirdlvl21', np.linspace(1, 100, 10000)),
+                ('thirdlvl22', "this is a string")
+            ])),
+            ('secondlvl3', OrderedDict([
+                ('thirdlvl31', np.linspace(1, 100, 10000)),
+                ('thirdlvl32', "this is a string")
+            ])),
+            ('secondlvl4', OrderedDict([
+                ('thirdlvl41', np.linspace(1, 100, 10000)),
+                ('thirdlvl42', "this is a string")
+            ])),
+            ('secondlvl5', OrderedDict([
+                ('thirdlvl51', np.linspace(1, 100, 10000)),
+                ('thirdlvl52', "this is a string")
+            ])),
+            ('secondlvl6', OrderedDict([
+                ('thirdlvl61', np.linspace(100, 1000, 10000)),
+                ('thirdlvl62', "this is a string")
+            ])),
+        ]))
+    ]) # yapf: disable
 
     temp_dir = mkdtemp()
     try:
         fpath = os.path.join(temp_dir, 'to_hdf_noattrs.hdf5')
-        to_hdf(data, fpath,
-               overwrite=True, warn=False)
+        to_hdf(data, fpath, overwrite=True, warn=False)
         loaded_data1 = from_hdf(fpath)
+        assert data.keys() == loaded_data1.keys()
         assert recursiveEquality(data, loaded_data1)
 
-        attrs = {
-            'float1': 9.98237,
-            'float2': 1.,
-            'pi': np.pi,
-            'string': "string attribute!",
-            'int': 1
-        }
+        attrs = OrderedDict([
+            ('float1', 9.98237),
+            ('float2', 1.),
+            ('pi', np.pi),
+            ('string', "string attribute!"),
+            ('int', 1)
+        ]) # yapf: disable
         fpath = os.path.join(temp_dir, 'to_hdf_withattrs.hdf5')
         to_hdf(data, fpath, attrs=attrs, overwrite=True, warn=False)
         loaded_data2, loaded_attrs = from_hdf(fpath, return_attrs=True)
+        assert data.keys() == loaded_data2.keys()
+        assert attrs.keys() == loaded_attrs.keys(), \
+                '\n' + str(attrs.keys()) + '\n' + str(loaded_attrs.keys())
         assert recursiveEquality(data, loaded_data2)
         assert recursiveEquality(attrs, loaded_attrs)
 
