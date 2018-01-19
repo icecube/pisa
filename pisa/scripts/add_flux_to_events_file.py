@@ -23,13 +23,10 @@ from pisa.utils.resources import find_resource
 __all__ = ['add_fluxes_to_file', 'main']
 
 __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
-
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
-
    http://www.apache.org/licenses/LICENSE-2.0
-
  Unless required by applicable law or agreed to in writing, software
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,15 +34,14 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  limitations under the License.'''
 
 
-def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
+def add_fluxes_to_file(data_file_path, flux_table, flux_name,
                        outdir=None, label=None, overwrite=False):
     """Add fluxes to PISA events file (e.g. for use by an mc stage)
-
     Parameters
     -----------
     data_file_path : string
     flux_table
-    neutrino_weight_name
+    flux_name
     outdir : string or None
         If None, output is to the same directory as `data_file_path`
     overwrite : bool, optional
@@ -72,41 +68,31 @@ def add_fluxes_to_file(data_file_path, flux_table, neutrino_weight_name,
 
     mkdir(outdir, warn=False)
 
-    for node_key, node in data.items():
+    # Loop over the top-level keys
+    for primary, primary_node in data.items():
 
-        logging.info('Adding fluxes to "%s" events', node_key)
+        # Input data may have one layer of hierarchy before the event variables (e.g. [numu_cc]), 
+        # or for older files there maybe be a second layer (e.g. [numu][cc]).
+        # Handling either case here...
+        if "true_energy" in primary_node :
+            secondary_nodes = [primary_node]
+        else :
+            secondary_nodes = primary_node.values()
 
-        # Only add fluxes to neutrino events
-        if node_key.startswith("nu") :
+        for secondary_node in secondary_nodes :
 
-            true_e = node['true_energy']
-            true_cz = node['true_coszen']
+            true_e = secondary_node['true_energy']
+            true_cz = secondary_node['true_coszen']
 
-            # NOTE: The opposite-flavor fluxes are currently only used for the
-            #       nu_nubar_ratio systematic (Nov 2017)
-
-            for opposite in (False, True):
-                if not opposite:
-                    bar_label = 'bar' if 'bar' in node_key else ''
-                    oppo_label = ''
-                else:
-                    bar_label = '' if 'bar' in node_key else 'bar'
-                    oppo_label = '_oppo'
-
-                nue_flux = calculate_2d_flux_weights(
+            # calculate all 4 fluxes (nue, nuebar, numu and numubar)
+            for table in ['nue', 'nuebar', 'numu', 'numubar']:
+                flux = calculate_2d_flux_weights(
                     true_energies=true_e,
                     true_coszens=true_cz,
-                    en_splines=flux_table['nue' + bar_label]
+                    en_splines=flux_table[table]
                 )
-                numu_flux = calculate_2d_flux_weights(
-                    true_energies=true_e,
-                    true_coszens=true_cz,
-                    en_splines=flux_table['numu' + bar_label]
-                )
-
-                basekey = neutrino_weight_name + oppo_label
-                node[basekey + '_nue_flux'] = nue_flux
-                node[basekey + '_numu_flux'] = numu_flux
+                keyname = flux_name + '_' + table + '_flux'
+                secondary_node[keyname] = flux
 
     to_file(data, outpath, attrs=attrs, overwrite=overwrite)
     logging.info('--> Wrote file including fluxes to "%s"', outpath)
@@ -197,7 +183,7 @@ def main():
         add_fluxes_to_file(
             data_file_path=filepath,
             flux_table=flux_table,
-            neutrino_weight_name='neutrino',
+            flux_name='nominal',
             outdir=args.outdir,
             label=flux_file_bname
         )

@@ -2,10 +2,6 @@
 """
 Stage to implement the old PISA/oscfit flux systematics
 
-The `nominal_flux` and `nominal_opposite_flux` is something that realy should
-not be done. That needs to be changed. We simply want to calcualte nu and nubar
-fluxes insetad!
-
 """
 from __future__ import absolute_import, print_function, division
 
@@ -37,8 +33,6 @@ class pi_simple(PiStage):
     -----
 
     """
-    # TODO: get rid of this _oppo_flux stuff!!!
-    # Just replace with nu and nubar flux!!!
 
     def __init__(self,
                  data=None,
@@ -55,17 +49,15 @@ class pi_simple(PiStage):
                            'nu_nubar_ratio',
                            'delta_index',
                            'Barr_uphor_ratio',
-                           #'Barr_uphor_ratio2',
                            'Barr_nu_nubar_ratio',
-                           #'Barr_nu_nubar_ratio2',
                           )
         input_names = ()
         output_names = ()
 
         # what are the keys used from the inputs during apply
         input_calc_keys = ('weights',
-                           'nominal_flux',
-                           'nominal_opposite_flux',
+                           'nominal_nu_flux',
+                           'nominal_nubar_flux',
                           )
         # what are keys added or altered in the calculation used during apply
         output_calc_keys = ('sys_flux',
@@ -112,24 +104,20 @@ class pi_simple(PiStage):
         nu_nubar_ratio = self.params.nu_nubar_ratio.value.m_as('dimensionless')
         delta_index = self.params.delta_index.value.m_as('dimensionless')
         Barr_uphor_ratio = self.params.Barr_uphor_ratio.value.m_as('dimensionless')
-        #Barr_uphor_ratio2 = self.params.Barr_uphor_ratio2.value.m_as('dimensionless')
         Barr_nu_nubar_ratio = self.params.Barr_nu_nubar_ratio.value.m_as('dimensionless')
-        #Barr_nu_nubar_ratio2 = self.params.Barr_nu_nubar_ratio2.value.m_as('dimensionless')
 
         for container in self.data:
 
             apply_sys_vectorized(container['true_energy'].get(WHERE),
                                  container['true_coszen'].get(WHERE),
-                                 container['nominal_flux'].get(WHERE),
-                                 container['nominal_opposite_flux'].get(WHERE),
+                                 container['nominal_nu_flux'].get(WHERE),
+                                 container['nominal_nubar_flux'].get(WHERE),
                                  container['nubar'],
                                  nue_numu_ratio,
                                  nu_nubar_ratio,
                                  delta_index,
                                  Barr_uphor_ratio,
-                                 #Barr_uphor_ratio2,
                                  Barr_nu_nubar_ratio,
-                                 #Barr_nu_nubar_ratio2,
                                  out=container['sys_flux'].get(WHERE),
                                 )
             container['sys_flux'].mark_changed(WHERE)
@@ -279,42 +267,38 @@ def modRatioNuBar(nubar, flav, true_energy, true_coszen, nubar_sys):
 @myjit
 def apply_sys_kernel(true_energy,
                      true_coszen,
-                     nominal_flux,
-                     nominal_opposite_flux,
+                     nominal_nu_flux,
+                     nominal_nubar_flux,
                      nubar,
                      nue_numu_ratio,
                      nu_nubar_ratio,
                      delta_index,
                      Barr_uphor_ratio,
-                     #Barr_uphor_ratio2,
                      Barr_nu_nubar_ratio,
-                     #Barr_nu_nubar_ratio2,
                      out):
     # nue/numu ratio
-    new_flux = cuda.local.array(shape=(2), dtype=ftype)
-    new_opposite_flux = cuda.local.array(2, dtype=ftype)
-    apply_ratio_scale(nue_numu_ratio, True, nominal_flux[0], nominal_flux[1], new_flux)
-    apply_ratio_scale(nue_numu_ratio, True, nominal_opposite_flux[0], nominal_opposite_flux[1], new_opposite_flux)
+    new_nu_flux = cuda.local.array(shape=(2), dtype=ftype)
+    new_nubar_flux = cuda.local.array(2, dtype=ftype)
+    apply_ratio_scale(nue_numu_ratio, True, nominal_nu_flux[0], nominal_nu_flux[1], new_nu_flux)
+    apply_ratio_scale(nue_numu_ratio, True, nominal_nubar_flux[0], nominal_nubar_flux[1], new_nubar_flux)
 
     #apply flux systematics
     # spectral idx
     idx_scale = spectral_index_scale(true_energy, 24.0900951261, delta_index)
-    new_flux[0] *= idx_scale
-    new_flux[1] *= idx_scale
-    new_opposite_flux[0] *= idx_scale
-    new_opposite_flux[1] *= idx_scale
+    new_nu_flux[0] *= idx_scale
+    new_nu_flux[1] *= idx_scale
+    new_nubar_flux[0] *= idx_scale
+    new_nubar_flux[1] *= idx_scale
 
     # nu/nubar ratio
     new_nue_flux = cuda.local.array(2, dtype=ftype)
     new_numu_flux = cuda.local.array(2, dtype=ftype)
+    apply_ratio_scale(nu_nubar_ratio, True, new_nu_flux[0], new_nubar_flux[0], new_nue_flux)
+    apply_ratio_scale(nu_nubar_ratio, True, new_nu_flux[1], new_nubar_flux[1], new_numu_flux)
     if nubar < 0:
-        apply_ratio_scale(nu_nubar_ratio, True, new_opposite_flux[0], new_flux[0], new_nue_flux)
-        apply_ratio_scale(nu_nubar_ratio, True, new_opposite_flux[1], new_flux[1], new_numu_flux)
         out[0] = new_nue_flux[1]
         out[1] = new_numu_flux[1]
     else:
-        apply_ratio_scale(nu_nubar_ratio, True, new_flux[0], new_opposite_flux[0], new_nue_flux)
-        apply_ratio_scale(nu_nubar_ratio, True, new_flux[1], new_opposite_flux[1], new_numu_flux)
         out[0] = new_nue_flux[0]
         out[1] = new_numu_flux[0]
 
@@ -335,27 +319,23 @@ else:
 @guvectorize([signature], '(),(),(d),(d),(),(),(),(),(),()->(d)', target=TARGET)
 def apply_sys_vectorized(true_energy,
                          true_coszen,
-                         nominal_flux,
-                         nominal_opposite_flux,
+                         nominal_nu_flux,
+                         nominal_nubar_flux,
                          nubar,
                          nue_numu_ratio,
                          nu_nubar_ratio,
                          delta_index,
                          Barr_uphor_ratio,
-                         #Barr_uphor_ratio2,
                          Barr_nu_nubar_ratio,
-                         #Barr_nu_nubar_ratio2,
                          out):
     apply_sys_kernel(true_energy,
                      true_coszen,
-                     nominal_flux,
-                     nominal_opposite_flux,
+                     nominal_nu_flux,
+                     nominal_nubar_flux,
                      nubar,
                      nue_numu_ratio,
                      nu_nubar_ratio,
                      delta_index,
                      Barr_uphor_ratio,
-                     #Barr_uphor_ratio2,
                      Barr_nu_nubar_ratio,
-                     #Barr_nu_nubar_ratio2,
                      out)

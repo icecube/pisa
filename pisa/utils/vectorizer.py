@@ -9,10 +9,10 @@ __author__ = 'Philipp Eller (pde3@psu.edu)'
 
 import numpy as np
 from numba import guvectorize
-import math, cmath
+import math
 
-from pisa.utils.numba_tools import WHERE, myjit, ftype
 from pisa import FTYPE, TARGET
+from pisa.utils.numba_tools import WHERE
 
 def multiply_and_scale(scale, value, out):
     multiply_and_scale_gufunc(scale,
