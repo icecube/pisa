@@ -86,24 +86,6 @@ class simple_data_loader(PiStage):
         if self.params.mc_cuts.value is not None:
             logging.info('applying the following cuts to events: %s'%self.params.mc_cuts.value)
             evts = evts.apply_cut(self.params.mc_cuts.value)
-
-        # fix this `oppo` flux insanity
-        # someone added this in the nominal flux calculation that
-        # oppo flux is nue flux if flavour is nuebar, and vice versa
-        # here we revert that, incase these oppo keys are there
-        for f in evts.keys():
-            if evts[f].has_key('neutrino_oppo_nue_flux'):
-                logging.warning('renaming the outdated "oppo" flux keys, in the future, do not use those anymore')
-                if 'bar' in f:
-                    evts[f]['nominal_nuebar_flux'] = evts[f].pop('neutrino_nue_flux')
-                    evts[f]['nominal_numubar_flux'] = evts[f].pop('neutrino_numu_flux')
-                    evts[f]['nominal_nue_flux'] = evts[f].pop('neutrino_oppo_nue_flux')
-                    evts[f]['nominal_numu_flux'] = evts[f].pop('neutrino_oppo_numu_flux')
-                else :
-                    evts[f]['nominal_nue_flux'] = evts[f].pop('neutrino_nue_flux')
-                    evts[f]['nominal_numu_flux'] = evts[f].pop('neutrino_numu_flux')
-                    evts[f]['nominal_nuebar_flux'] = evts[f].pop('neutrino_oppo_nue_flux')
-                    evts[f]['nominal_numubar_flux'] = evts[f].pop('neutrino_oppo_numu_flux')
                     
         #Create containers from the events
         for name in self.output_names:

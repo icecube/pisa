@@ -340,7 +340,10 @@ class Container(object):
             elif isinstance(self.data_specs, MultiDimBinning):
                 return self.get_binned_data(key, self.data_specs)
         except KeyError:
-            return self.get_scalar_data(key)
+            try :
+                return self.get_scalar_data(key)
+            except KeyError:
+                raise KeyError('"%s" not found in container "%s"'%(key,self.name))
 
     def __setitem__(self, key, value):
         '''

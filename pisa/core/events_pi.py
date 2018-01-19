@@ -6,6 +6,7 @@ import copy, collections
 
 import numpy as np 
 
+from pisa.utils.log import logging
 from pisa.utils.fileio import from_file, to_file
 #from pisa.core.container import Container
 from pisa import FTYPE
@@ -74,6 +75,9 @@ class EventsPi(dict) :
                 if not isinstance(var_data,np.ndarray) :
                     raise Exception("'%s/%s' input data is not a numpy array, unknown format (%s)" % (cat_key,var_key,type(var_data)))
 
+        # Ensure backwards compatibility wiht the old style "oppo" flux variables
+        fix_oppo_flux(input_data)
+
         #Load events
         #Should be organised under a single layer of keys, each representing some cateogry of input data
         for data_key in input_data.keys() :
@@ -98,7 +102,7 @@ class EventsPi(dict) :
                 array_data = None
                 if not np.isscalar(var_src) :
                     array_data_to_stack = [ input_data[data_key][var].astype(FTYPE) for var in var_src if var in input_data[data_key] ]
-                    if len(array_data_to_stack) > 0 :
+                    if len(array_data_to_stack) == len(var_src) :
                         array_data = np.stack(array_data_to_stack,axis=1)
                 else :
                     if var_src in input_data[data_key] :
@@ -108,6 +112,8 @@ class EventsPi(dict) :
                 if array_data is not None :
                     #container.add_array_data(var_dst,array_data) #TODO use the special cases that Philipp added to simple_data_loader
                     self[data_key][var_dst] = array_data
+                else :
+                    logging.warn("Source variable(s) not present for '%s', skipping mapping : %s -> %s"%(data_key,var_src,var_dst))
 
             #self[data_key] = container
 
@@ -267,6 +273,28 @@ def convert_nu_data_to_flat_format(input_data) :
                 if "_bar" in new_top_key : new_top_key = new_top_key.replace("_bar","bar") #numu_bar -> numubar conversion
                 input_data[new_top_key] = input_data[top_key].pop(int_key)
             input_data.pop(top_key)
+
+
+'''
+Fix this `oppo` flux insanity
+someone added this in the nominal flux calculation that
+oppo flux is nue flux if flavour is nuebar, and vice versa
+here we revert that, incase these oppo keys are there
+'''
+def fix_oppo_flux(input_data) :
+    for f in input_data.keys():
+        if input_data[f].has_key('neutrino_oppo_nue_flux'):
+            logging.warning('renaming the outdated "oppo" flux keys, in the future, do not use those anymore')
+            if 'bar' in f:
+                input_data[f]['nominal_nuebar_flux'] = input_data[f].pop('neutrino_nue_flux')
+                input_data[f]['nominal_numubar_flux'] = input_data[f].pop('neutrino_numu_flux')
+                input_data[f]['nominal_nue_flux'] = input_data[f].pop('neutrino_oppo_nue_flux')
+                input_data[f]['nominal_numu_flux'] = input_data[f].pop('neutrino_oppo_numu_flux')
+            else :
+                input_data[f]['nominal_nue_flux'] = input_data[f].pop('neutrino_nue_flux')
+                input_data[f]['nominal_numu_flux'] = input_data[f].pop('neutrino_numu_flux')
+                input_data[f]['nominal_nuebar_flux'] = input_data[f].pop('neutrino_oppo_nue_flux')
+                input_data[f]['nominal_numubar_flux'] = input_data[f].pop('neutrino_oppo_numu_flux')
 
 
 '''
