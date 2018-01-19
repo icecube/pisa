@@ -2,6 +2,67 @@ import glob, sys, os, tables, collections
 
 import numpy as np
 
+from icecube import icetray, dataclasses
+from I3Tray import I3Tray
+from icecube.tableio import I3TableWriter, I3TableService
+from icecube.hdfwriter import I3HDFTableService 
+
+#from icecube import genie_icetray #TODO toggle GENIE requirement based on need
+
+
+#
+# Define some IceCube module for creating useful frame variables
+#
+
+#TODO Want to share this stuff between here and also the processing harvester scripts
+#     This would be easiest if this script lives in 'fridge' rather than PISA repository
+
+
+# Calculate radial position from string TODO (which string) 
+def calc_rho(x,y) :
+	return np.sqrt( (x-46.29) ** 2 + (y+34.88) ** 2 )
+
+
+#Compute some "one per frame" metrics about the pulse series
+def calc_hit_stats(frame,pulse_series="SRTTWOfflinePulsesDC") :
+
+	#Get the pulse series
+	hitmap = frame[pulse_series].apply(frame)
+
+	#Define the variables to fill
+	n_channel = 0 #Number of hit DOMs in this frame
+	q_tot = 0. #Total charge in this frame
+	q_max = -sys.float_info.max #Max charge in a single pulse in this fra,e
+	q_dom_max = -sys.float_info.max #Total charge in DOM that has the highest total charge in the frame
+
+	#Loop over DOMs, pulses, and fill the variables...
+	for dom,hits in hitmap.items() :
+
+		n_channel += len(hits) > 0
+		q_dom = 0.
+
+		for hit in hits :
+			q_dom += hit.charge
+			if hit.charge > q_max : 
+				q_max = hit.charge
+
+		q_tot += q_dom
+		if q_dom > q_dom_max : 
+			q_dom_max = q_dom
+
+	return n_channel,q_tot,q_max,q_dom_max
+
+
+def add_hit_stats_to_frame(frame,pulse_series="SRTTWOfflinePulsesDC") :
+	n_channel,q_tot,q_max,q_dom_max = calc_hit_stats(frame,pulse_series)
+	hit_stats = dataclasses.I3MapStringDouble()
+	hit_stats["n_channel"] = n_channel #TODO Should be an int
+	hit_stats["q_tot"] = q_tot
+	hit_stats["q_max"] = q_max
+	hit_stats["q_dom_max"] = q_dom_max
+	frame["%s_HitStats"%pulse_series] = hit_stats
+
+
 
 #
 # i3 -> PISA variable mapping
@@ -55,14 +116,6 @@ def i3_to_icecube_hdf5(	i3_files,
 						variable_map,
 						sub_event_streams=None) :
 
-	from icecube import icetray
-	from I3Tray import I3Tray
-	from icecube.tableio import I3TableWriter, I3TableService
-	from icecube.hdfwriter import I3HDFTableService 
-
-	#from icecube import genie_icetray #TODO toggle GENIE requirement based on need
-
-
 	#
 	# Get inputs
 	#
@@ -87,6 +140,9 @@ def i3_to_icecube_hdf5(	i3_files,
 
 	#Add module to parse input i3 files
 	tray.AddModule('I3Reader','reader',filenamelist=i3_files)
+
+	#Add module to calculate hit series stats
+	tray.AddModule(add_hit_stats_to_frame,"hit_stats")
 
 	#def print_frame(frame) : print frame
 	#tray.AddModule(print_frame)
@@ -246,6 +302,7 @@ def convert_i3_to_pisa(input_data,output_file,variable_map,metadata=None) :
 		create_or_append_to_array( output_pisa_events_file, data_category_group, "event_id", event_id_array)
 
 		#Store number of files
+		#TODO This only works if all files at generator level survive to final level (even if they are empty), need to give option to specify num files from e.g. the dataset webpage or a an I frame (this is important for e.g. GRECO NuGen)
 		num_events = getattr(tmp_hdf5_file.root,i3_frame_objs[0]).nrows
 		output_pisa_events_file.create_array(data_category_group, "n_files", np.full(num_events,num_files), "")
 

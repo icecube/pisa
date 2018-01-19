@@ -12,7 +12,6 @@ Tom Stuttard
 CMSQ_TO_MSQ = 1.0e-4
 
 
-
 #
 # Testing functions
 #
@@ -35,9 +34,26 @@ def generate_dummy_hdf5_file(output_file,variable_map,num_events=10) :
 #
 
 '''
-Combine the pegleg track and cascade hypothesis energies
+Do any requird post-processing on particle truth variables
 '''
-def combine_reco_track_and_cascade_hypotheses(hdf5_events_file) :
+def post_process_true_variables(hdf5_events_file) :
+
+	from i3_to_pisa import calc_rho
+
+	#Loop over groups
+	for group in hdf5_events_file.root :
+
+		#Calculate true rho
+		true_rho = calc_rho(x=group.true_x.read(),y=group.true_y.read())
+		hdf5_events_file.create_array(group, "true_rho", true_rho, "") 
+
+
+'''
+Do any requird post-processing on pegleg variables
+'''
+def post_process_pegleg_variables(hdf5_events_file) :
+
+	from i3_to_pisa import calc_rho
 
 	#Loop over groups
 	for group in hdf5_events_file.root :
@@ -49,6 +65,11 @@ def combine_reco_track_and_cascade_hypotheses(hdf5_events_file) :
 		hdf5_events_file.create_array(group, "reco_energy", reco_energy, "") 
 		hdf5_events_file.remove_node(group, "reco_energy_cascade") 
 		hdf5_events_file.remove_node(group, "reco_energy_track")
+
+		#Calculate reco rho
+		reco_rho = calc_rho(x=group.reco_x.read(),y=group.reco_y.read())
+		hdf5_events_file.create_array(group, "reco_rho", reco_rho, "") 
+
 
 
 '''
@@ -202,6 +223,58 @@ def calc_genie_axial_mass_systematics(hdf5_events_file) :
 
 
 
+'''
+GRECO post-L7 cuts
+'''
+
+'''
+# These are the GRECO post-L7 cuts, need to make sure they are all included...
+cut = numpy.ones_like(f["reco_energy"], dtype=bool)
+cut = cut & (f['weight'] < 50)
+cut = cut & (f['nchannel'] >= 8)
+cut = cut & (f['reco_z'] < -230)
+cut = cut & (f['reco_rho'] < 140)
+cut = cut & (f['reco_z'] <= -4.4 * f['reco_rho']+166)
+cut = cut & (f['charge_fraction'] < 0.8)
+mcut = numpy.abs((f['GeV_per_channel']-1.)/(f['t_rms']-800.)) <\
+    numpy.abs((3.-1.)/(500.-800.))
+mcut *= f['GeV_per_channel'] < 3
+mcut *= f['t_rms'] < 800
+cut = cut & (mcut | (f['nchannel'] >= 14))
+for k2 in f.keys(): f[k2] = f[k2][cut]
+'''
+
+def greco_post_l7_cuts(hdf5_events_file) :
+
+	#Loop over groups
+	for group in hdf5_events_file.root :
+
+		#Get the variables required
+		charge_fraction = group.q_dom_max.read() / group.q_tot.read()
+		n_channel = group.n_channel.read()
+		reco_z = group.reco_z.read()
+		reco_rho = group.reco_rho.read()
+
+		#Produce cut mask
+		mask = np.ones(group.event_id.shape,dtype=bool) #Start from a "keep all" mask
+		#mask = mask & (group.weight < 50) #TODO This is because of a few rogue muons, why?
+		mask = mask & (n_channel >= 8)
+		mask = mask & (reco_z < -230.)
+		mask = mask & (reco_rho < 140.)
+		mask = mask & (reco_z <= -4.4 * reco_rho+166)
+		mask = mask & (charge_fraction < 0.8)
+
+		#TODO Add Martin's cuts ('mcut')
+
+		#Apply cut to all arrays for this group
+		#For now creating a new masked off array and deleting the old one #TODO Is there a faster way to do this?
+		for array in group :
+			array_name = array.name
+			old_array_data = array.read()
+			hdf5_events_file.remove_node(group,array_name)
+			hdf5_events_file.create_array(group,array_name,old_array_data[mask],"")
+
+
 
 #
 # Main function
@@ -218,7 +291,7 @@ if __name__ == "__main__" :
 	from i3_to_pisa import I3ToPISAVariableMap, convert_i3_to_pisa
 	#from i3_to_pisa_tables import I3ToPISAVariableMap, convert_i3_to_pisa, convert_i3_to_pisa
 
-	debug = False
+	debug = True
 	dummy_data = False
 
 
@@ -275,14 +348,20 @@ if __name__ == "__main__" :
 	variable_map.add("I3EventHeader","time_start_utc_daq","time_start_utc_daq")
 
 	pegleg_frame_object_stem = "Pegleg_Fit_MN_tol10" #"Pegleg_Fit_MN"
-	variable_map.add("%sHDCasc"%pegleg_frame_object_stem,"energy","reco_energy_cascade")
+	variable_map.add("%sHDCasc"%pegleg_frame_object_stem,"energy","reco_energy_cascade") #TODO WHat about EM cascade?
 	variable_map.add("%sTrack"%pegleg_frame_object_stem,"energy","reco_energy_track")
 	variable_map.add("%sTrack"%pegleg_frame_object_stem,"zenith","reco_zenith")
 	variable_map.add("%sTrack"%pegleg_frame_object_stem,"azimuth","reco_azimuth")
 	variable_map.add("%sTrack"%pegleg_frame_object_stem,"length","reco_tracklength")
-	variable_map.add("%sTrack"%pegleg_frame_object_stem,"x","reco_x")
-	variable_map.add("%sTrack"%pegleg_frame_object_stem,"y","reco_y")
-	variable_map.add("%sTrack"%pegleg_frame_object_stem,"z","reco_z")
+	variable_map.add("%sHDCasc"%pegleg_frame_object_stem,"x","reco_x")
+	variable_map.add("%sHDCasc"%pegleg_frame_object_stem,"y","reco_y")
+	variable_map.add("%sHDCasc"%pegleg_frame_object_stem,"z","reco_z")
+
+	pulse_series = "SRTTWOfflinePulsesDC"
+	variable_map.add("%s_HitStats"%pulse_series,"n_channel","n_channel")
+	variable_map.add("%s_HitStats"%pulse_series,"q_tot","q_tot")
+	variable_map.add("%s_HitStats"%pulse_series,"q_max","q_max")
+	variable_map.add("%s_HitStats"%pulse_series,"q_dom_max","q_dom_max")
 
 	variable_map.add("MCNeutrino","pdg_encoding","pdg_code")
 	variable_map.add("MCNeutrino","x","true_x") #TODO Michael gets these in a different way, check this...
@@ -337,8 +416,9 @@ if __name__ == "__main__" :
 	#Re-open the file for editing
 	reopened_output_file = tables.open_file(output_file, mode="r+")
 
-	#Combine pegleg track and cascade hypotheses
-	combine_reco_track_and_cascade_hypotheses(reopened_output_file)
+	#Post-process the true and reco variables
+	post_process_true_variables(reopened_output_file)
+	post_process_pegleg_variables(reopened_output_file)
 
 	#Convert zenith angles to cos(zenith)
 	convert_to_coszen(reopened_output_file)
@@ -346,11 +426,14 @@ if __name__ == "__main__" :
 	#Calculate the GENIE axial mass systematics
 	calc_genie_axial_mass_systematics(reopened_output_file)
 
-	#Split neutrino events by nu vs nubar, and CC vs NC
-	subdivide_neutrino_groups(reopened_output_file)
-
 	#Calculate effective area (weight)
 	calc_effective_area_weight(reopened_output_file)
+
+	#GRECO postL7 cuts
+	greco_post_l7_cuts(reopened_output_file)
+
+	#Split neutrino events by nu vs nubar, and CC vs NC
+	subdivide_neutrino_groups(reopened_output_file)
 
 	#Close the re-opened file
 	reopened_output_file.close()
