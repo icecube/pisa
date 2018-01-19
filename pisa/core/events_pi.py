@@ -12,6 +12,10 @@ from pisa import FTYPE
 from pisa.utils.numba_tools import WHERE
 
 
+
+__all__ = ["EventsPi","convert_nu_data_to_flat_format"]
+
+
 class EventsPi(dict) :
 
     def __init__(self,name=None,*arg,**kw) :
@@ -53,6 +57,22 @@ class EventsPi(dict) :
 
         #Open the input file
         input_data = from_file(events_file)
+
+        # Input data should be a dict where each key is a category of data
+        if not isinstance(input_data,(dict,collections.OrderedDict)) :
+            raise Exception("Input data is not a dict, unknown format (%s)" % type(input_data))
+
+        # The value for each category should itself be a dict of the event variables,
+        # where each entry is has a variable name as the key and a np.array filled once 
+        # per event as the value.
+        # For backwards compatibility, convert to thisfromat from knwon older formats first
+        convert_nu_data_to_flat_format(input_data)
+        for cat_key,cat_dict in input_data.items() :
+            if not isinstance(cat_dict,(dict,collections.OrderedDict)) :
+                raise Exception("'%s' input data is not a dict, unknown format (%s)" % (cat_key,type(cat_dict)))
+            for var_key,var_data in cat_dict.items() :
+                if not isinstance(var_data,np.ndarray) :
+                    raise Exception("'%s/%s' input data is not a numpy array, unknown format (%s)" % (cat_key,var_key,type(var_data)))
 
         #Load events
         #Should be organised under a single layer of keys, each representing some cateogry of input data
@@ -230,6 +250,24 @@ class EventsPi(dict) :
         string += "-----------------------------"
         return string
             
+
+
+'''
+Format for events files is now a single layer of categories.
+For backwards compatibility, also want to handle case where there is an 
+additional layer between the categories and variables, as older files have
+the format [nu_flavor][nc/cc], whilst new ones are [nu_flavor_nc/cc]
+'''
+def convert_nu_data_to_flat_format(input_data) :
+    int_keys = ["nc","cc"]
+    for top_key,v in input_data.items() :
+        if set(input_data[top_key].keys()) == set(int_keys) :
+            for int_key in int_keys :
+                new_top_key = top_key + "_" + int_key
+                if "_bar" in new_top_key : new_top_key = new_top_key.replace("_bar","bar") #numu_bar -> numubar conversion
+                input_data[new_top_key] = input_data[top_key].pop(int_key)
+            input_data.pop(top_key)
+
 
 '''
 Main functions
