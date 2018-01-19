@@ -13,14 +13,13 @@ from __future__ import absolute_import, division
 import bz2
 from collections import OrderedDict
 import os
+import tempfile
 
 import numpy as np
 import simplejson as json
 
 from pisa import ureg
 from pisa.utils.comparisons import isbarenumeric
-
-import tempfile
 
 
 __all__ = ['JSON_EXTS', 'ZIP_EXTS', 'XOR_EXTS',
@@ -65,14 +64,12 @@ def loads(s):
 
 
 def from_json(filename):
-    """Open a file in JSON format (optionally compressed with bz2) and parse
-    the content into Python objects.
+    """Open a file in JSON format (optionally compressed with bz2 or
+    xor-scrambled) and parse the content into Python objects.
 
-    Note that this currently only recognizes bz2-compressed file by its
-    extension (i.e., the file must be <root>.json.bz2 if it is compressed).
-
-    If the file extension is .xor, the content will be scrambled to make it human unreadble
-    This is useful for staying blind when fitting data
+    Note that this currently only recognizes a bz2-compressed or xor-scrambled
+    file by its extension (i.e., the file must be <base>.json.bz2 if it is
+    compressed or <base>.json.xor if it is scrambled).
 
     Parameters
     ----------
@@ -84,62 +81,80 @@ def from_json(filename):
 
     """
     # Import here to avoid circular imports
+    from pisa.utils.log import logging
     from pisa.utils.resources import open_resource
 
     _, ext = os.path.splitext(filename)
     ext = ext.replace('.', '').lower()
     assert ext in JSON_EXTS or ext in ZIP_EXTS + XOR_EXTS
-    if ext == 'bz2':
-        content = json.loads(
-            bz2.decompress(open_resource(filename).read()),
-            cls=NumpyDecoder,
-            object_pairs_hook=OrderedDict
-        )
-    elif ext == 'xor':
-        #create tempfile
-        temp = tempfile.TemporaryFile(mode='w+b')
-        with open(filename, 'rb') as infile:
-            for line in infile:
-                # decrypt with key 42
-                line = ''.join([chr(ord(c)^42) for c in line])
-                temp.write(line)
-        # rewind
-        temp.seek(0)
-        content = json.load(temp,
-                            cls=NumpyDecoder,
-                            object_pairs_hook=OrderedDict)
-
-
-    else:
-        content = json.load(open_resource(filename),
-                            cls=NumpyDecoder,
-                            object_pairs_hook=OrderedDict)
+    try:
+        if ext == 'bz2':
+            bz2_content = open_resource(filename).read()
+            decompressed = bz2.decompress(bz2_content)
+            del bz2_content
+            content = json.loads(
+                decompressed,
+                cls=NumpyDecoder,
+                object_pairs_hook=OrderedDict
+            )
+            del decompressed
+        elif ext == 'xor':
+            # Create tempfile
+            temp = tempfile.TemporaryFile(mode='w+b')
+            with open(filename, 'rb') as infile:
+                for line in infile:
+                    # Decrypt with key 42
+                    line = ''.join([chr(ord(c)^42) for c in line])
+                    temp.write(line)
+            # Rewind
+            temp.seek(0)
+            content = json.load(temp,
+                                cls=NumpyDecoder,
+                                object_pairs_hook=OrderedDict)
+        else:
+            content = json.load(open_resource(filename),
+                                cls=NumpyDecoder,
+                                object_pairs_hook=OrderedDict)
+    except:
+        logging.error('Failed to load JSON, `filename`="%s"', filename)
+        raise
     return content
 
 
 def to_json(content, filename, indent=2, overwrite=True, warn=True,
             sort_keys=False):
-    """Write content to a JSON file using a custom parser that automatically
-    converts numpy arrays to lists. If the filename has a ".bz2" extension
-    appended, the contents will be compressed (using bz2 and highest-level of
-    compression, i.e., -9)
+    """Write `content` to a JSON file at `filename`.
+
+    Uses a custom parser that automatically converts numpy arrays to lists.
+
+    If `filename` has a ".bz2" extension, the contents will be compressed
+    (using bz2 and highest-level of compression, i.e., -9).
+
+    If `filename` has a ".xor" extension, the contents will be xor-scrambled to
+    make them human-unreadable (this is useful for, e.g., blind fits).
+
 
     Parameters
     ----------
     content : obj
         Object to be written to file. Tries making use of the object's own
         `to_json` method if it exists.
+
     filename : str
         Name of the file to be written to. Extension has to be 'json' or 'bz2'.
+
     indent : int
         Pretty-printing. Cf. documentation of json.dump() or json.dumps()
+
     overwrite : bool
         Set to `True` (default) to allow overwriting existing file. Raise
         exception and quit otherwise.
+
     warn : bool
         Issue a warning message if a file is being overwritten (`True`,
         default). Suppress warning by setting to `False` (e.g. when overwriting
         is the desired behaviour).
+
     sort_keys : bool
         Output of dictionaries will be sorted by key if set to `True`.
         Default is `False`. Cf. json.dump() or json.dumps().
@@ -169,7 +184,7 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
                 )
             )
         elif ext == 'xor':
-            #create tempfile
+            # Create tempfile
             temp = tempfile.TemporaryFile(mode='w+b')
             temp.write(
                 json.dumps(
@@ -177,10 +192,10 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
                     sort_keys=sort_keys, allow_nan=True, ignore_nan=False
                 )
             )
-            # rewind
+            # Rewind
             temp.seek(0)
             for line in temp:
-                # decrypt with key 42
+                # Decrypt with key 42
                 line = ''.join([chr(ord(c)^42) for c in line])
                 outfile.write(line)
         else:
@@ -267,13 +282,13 @@ class NumpyDecoder(json.JSONDecoder):
 
 # TODO: finish this little bit
 def test_NumpyEncoderDecoder():
+    """Unit tests for NumpyEncoder and NumpyDecoder"""
     from shutil import rmtree
     import sys
-    from tempfile import mkdtemp
     from pisa.utils.comparisons import recursiveEquality
 
     nda1 = np.array([-np.inf, np.nan, np.inf, -1, 0, 1, ])
-    temp_dir = mkdtemp()
+    temp_dir = tempfile.mkdtemp()
     try:
         fname = os.path.join(temp_dir, 'nda1.json')
         to_json(nda1, fname)
