@@ -71,28 +71,31 @@ def add_fluxes_to_file(data_file_path, flux_table, flux_name,
     # Loop over the top-level keys
     for primary, primary_node in data.items():
 
-        # Input data may have one layer of hierarchy before the event variables (e.g. [numu_cc]), 
-        # or for older files there maybe be a second layer (e.g. [numu][cc]).
-        # Handling either case here...
-        if "true_energy" in primary_node :
-            secondary_nodes = [primary_node]
-        else :
-            secondary_nodes = primary_node.values()
+        # Only handling neutrnio fluxes here, skip past e.g. muon or noise MC events
+        if primary.startswith("nu") :
 
-        for secondary_node in secondary_nodes :
+            # Input data may have one layer of hierarchy before the event variables (e.g. [numu_cc]), 
+            # or for older files there maybe be a second layer (e.g. [numu][cc]).
+            # Handling either case here...
+            if "true_energy" in primary_node :
+                secondary_nodes = [primary_node]
+            else :
+                secondary_nodes = primary_node.values()
 
-            true_e = secondary_node['true_energy']
-            true_cz = secondary_node['true_coszen']
+            for secondary_node in secondary_nodes :
 
-            # calculate all 4 fluxes (nue, nuebar, numu and numubar)
-            for table in ['nue', 'nuebar', 'numu', 'numubar']:
-                flux = calculate_2d_flux_weights(
-                    true_energies=true_e,
-                    true_coszens=true_cz,
-                    en_splines=flux_table[table]
-                )
-                keyname = flux_name + '_' + table + '_flux'
-                secondary_node[keyname] = flux
+                true_e = secondary_node['true_energy']
+                true_cz = secondary_node['true_coszen']
+
+                # calculate all 4 fluxes (nue, nuebar, numu and numubar)
+                for table in ['nue', 'nuebar', 'numu', 'numubar']:
+                    flux = calculate_2d_flux_weights(
+                        true_energies=true_e,
+                        true_coszens=true_cz,
+                        en_splines=flux_table[table]
+                    )
+                    keyname = flux_name + '_' + table + '_flux'
+                    secondary_node[keyname] = flux
 
     to_file(data, outpath, attrs=attrs, overwrite=overwrite)
     logging.info('--> Wrote file including fluxes to "%s"', outpath)
