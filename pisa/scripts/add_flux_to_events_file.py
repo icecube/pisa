@@ -74,6 +74,8 @@ def add_fluxes_to_file(data_file_path, flux_table, flux_name,
         # Only handling neutrnio fluxes here, skip past e.g. muon or noise MC events
         if primary.startswith("nu") :
 
+            logging.info('Adding fluxes to "%s" events', primary)
+
             # Input data may have one layer of hierarchy before the event variables (e.g. [numu_cc]), 
             # or for older files there maybe be a second layer (e.g. [numu][cc]).
             # Handling either case here...
