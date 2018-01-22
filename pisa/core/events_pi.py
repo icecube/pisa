@@ -17,7 +17,7 @@ from pisa.utils.numba_tools import WHERE
 __all__ = ["EventsPi","convert_nu_data_to_flat_format"]
 
 
-class EventsPi(dict) :
+class EventsPi(collections.OrderedDict) :
 
     def __init__(self,name=None,*arg,**kw) :
 
@@ -89,7 +89,7 @@ class EventsPi(dict) :
             #container = Container(data_key)
             #container.data_specs = "events"
 
-            self[data_key] = {}
+            self[data_key] = collections.OrderedDict()
 
             # Loop through variable mapping
             # If none provided, just use all variables and keep the input names
@@ -118,9 +118,7 @@ class EventsPi(dict) :
             #self[data_key] = container
 
 
-
     def apply_cut(self, keep_criteria):
-
         """Apply a cut by specifying criteria for keeping events. The cut must
         be successfully applied to all flav/ints in the events object before
         the changes are kept, otherwise the cuts are reverted.
@@ -260,13 +258,12 @@ class EventsPi(dict) :
 
 
 def convert_nu_data_to_flat_format(input_data) :
-
-    '''
-    Format for events files is now a single layer of categories.
+    """Format for events files is now a single layer of categories.
     For backwards compatibility, also want to handle case where there is an 
     additional layer between the categories and variables, as older files have
     the format [nu_flavor][nc/cc], whilst new ones are [nu_flavor_nc/cc]
-    '''
+
+    """
 
     int_keys = ["nc","cc"]
     for top_key,top_dict in input_data.items() :
@@ -281,13 +278,12 @@ def convert_nu_data_to_flat_format(input_data) :
 
 
 def fix_oppo_flux(input_data) :
-
-    '''
-    Fix this `oppo` flux insanity
+    """Fix this `oppo` flux insanity
     someone added this in the nominal flux calculation that
     oppo flux is nue flux if flavour is nuebar, and vice versa
     here we revert that, incase these oppo keys are there
-    '''
+
+    """
 
     for key,val in input_data.items():
         if 'neutrino_oppo_nue_flux' not in val:
@@ -310,10 +306,7 @@ Main functions
 '''
 
 def main() :
-
-    '''
-    This main function can be used to load an events file and print the contents
-    '''
+    """This main function can be used to load an events file and print the contents"""
 
     import argparse
     parser = argparse.ArgumentParser(description="Events parsing")
