@@ -23,6 +23,7 @@ from pisa.utils.resources import find_resource
 __all__ = ['add_fluxes_to_file', 'main']
 
 __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -36,6 +37,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 
 def add_fluxes_to_file(data_file_path, flux_table, flux_name,
                        outdir=None, label=None, overwrite=False):
+
     """Add fluxes to PISA events file (e.g. for use by an mc stage)
     Parameters
     -----------
@@ -196,3 +198,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
