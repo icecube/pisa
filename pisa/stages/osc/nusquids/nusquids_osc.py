@@ -1,39 +1,42 @@
-# pylint: disable = not-callable, bad-whitespace
 '''Wrapper around the nuSQuIDS python interface
 '''
 from __future__ import absolute_import, print_function, division
 import os
 import numpy as np
-import nuSQUIDSpy as nsq
+try:
+    import nuSQUIDSpy as nsq
+except:
+    msg_part = os.environ.get('PYTHONPATH', 'not set')
+    raise ImportError(
+        'Could not import the nuSQuIDS python interface. Your $PYTHONPATH'
+        ' is: %s.' % msg_part
+    )
+
+NSI_CLASS = "nuSQUIDSNSIAtm"
+ATM_CLASS = "nuSQUIDSAtm"
+NSI_AVAIL = hasattr(nsq, NSI_CLASS)
+ATM_AVAIL = hasattr(nsq, ATM_CLASS)
+
+if not NSI_AVAIL and not ATM_AVAIL:
+    raise AttributeError(
+        'nuSQuIDS interface does not seem to provide any'
+        ' useful classes ("%s" or "%s").'
+        % (NSI_CLASS, ATM_CLASS)
+    )
 
 from pisa import CACHE_DIR, FTYPE, OMP_NUM_THREADS, ureg, OrderedDict
 from pisa.core.binning import MultiDimBinning
 from pisa.stages.osc.pi_osc_params import OscParams
 from pisa.utils.fileio import from_file
 from pisa.utils.log import logging
-from pisa.utils.resources import find_resource
 
 __all__ = [
     # constants
-    'NSI_AVAIL', 'ATM_AVAIL', 'NSQ', 'NSQ_CONST'
+    'NSI_AVAIL', 'ATM_AVAIL', 'NSI_CLASS', 'ATM_CLASS', 'NSQ_CONST'
 ]
 
 __version__ = '0.1'
 
-NSI_CLASS = "nuSQUIDSNSIAtm"
-ATM_CLASS = "nuSQUIDSAtm"
-NSI_AVAIL = hasattr(nsq, NSI_CLASS)
-ATM_AVAIL = hasattr(nsq, ATM_CLASS)
-# TODO: NSI instance cannot handle case num_flav = 4, so need
-# some other mechanism to decide on which instance to create
-if NSI_AVAIL:
-    NSQ = getattr(nsq, NSI_CLASS)
-elif ATM_AVAIL:
-    NSQ = getattr(nsq, ATM_CLASS)
-else:
-    raise AttributeError('Could not find classes %s or %s in the nuSQuIDS'
-                         ' python interface.' % (NSI_CLASS, ATM_CLASS))
-del NSI_CLASS, ATM_CLASS
 
 NSQ_CONST = nsq.Const()
 
@@ -80,11 +83,22 @@ def _get_nusquids_ini_prop(cz_nodes,
                            nu_flav_no,
                            rel_err=1.0e-5,
                            abs_err=1.0e-5,
-                           progress_bar=True,
+                           progress_bar=True
                           ):
     """Set up nuSQuIDs propagators (propagation medium,
     initial states, grid, etc.)."""
-    #logging.trace('Entering nusquids._init_nusquids_calc_grid')
+    if nu_flav_no > 3 and ATM_AVAIL:
+        NSQ = getattr(nsq, ATM_CLASS)
+    elif not ATM_AVAIL:
+        raise AttributeError(
+            'nuSQuIDS python interface does not seem to provide class "%s"'
+            ' needed for n>3 neutrinos.' % ATM_CLASS
+        )
+    else:
+        # without steriles, try to make use of NSI support, otherwise
+        # fall back to the regular atmospheric class (which will not be
+        # able to handle any NSI parameters)
+        NSQ = getattr(nsq, NSI_CLASS) if NSI_AVAIL else getattr(nsq, ATM_CLASS)
 
     cz_shape = cz_nodes.shape[0]
     en_shape = en_nodes.shape[0]
@@ -99,8 +113,8 @@ def _get_nusquids_ini_prop(cz_nodes,
         # single-flavor initial states to assume for
         # oscillation probabilities
         ini_state = np.zeros(shape)
-        ini_state[:,:,0,FLAV_INDS[input_name]] = np.ones((cz_shape, en_shape))
-        ini_state[:,:,1,FLAV_INDS[input_name]] = np.ones((cz_shape, en_shape))
+        ini_state[:, :, 0, FLAV_INDS[input_name]] = np.ones((cz_shape, en_shape))
+        ini_state[:, :, 1, FLAV_INDS[input_name]] = np.ones((cz_shape, en_shape))
 
         ini_states[input_name] = ini_state
 
@@ -124,6 +138,13 @@ def _setup_physics_and_evolve_states(cz_shape,
                                      nsq_earth_atm,
                                      osc_params,
                                     ):
+    '''Function that sets the oscillation parameters
+    and solves for the neutrino evolution.'''
+    if osc_params.nsi_eps.any() and not NSI_AVAIL:
+        raise ValueError(
+            'nuSQuIDS interface does not seem to support NSI parameters,'
+            ' but you have requested to set at least one.'
+        )
     for (input_name, nuSQ) in propagators.iteritems():
         nu_flav_no = nuSQ.GetNumNeu()
         nuSQ.Set_EarthModel(nsq_earth_atm)
@@ -139,6 +160,7 @@ def _setup_physics_and_evolve_states(cz_shape,
 
         nuSQ.Set_CPPhase(0, 2, osc_params.deltacp)
 
+        # invoke odd mechanism to set NSI parameters
         for icz in xrange(cz_shape):
             nuSQ_icz = nuSQ.GetnuSQuIDS(icz)
             nuSQ_icz.Set_epsilon_ee(osc_params.eps_ee)
@@ -153,7 +175,7 @@ def _setup_physics_and_evolve_states(cz_shape,
 
 
 def _eval_osc_probs(kNuBar, kFlav, propagators, true_energies, true_coszens):
-    """Calculate oscillation probs. for given array of energy and cos(zenith).
+    """Evaluate oscillation probs. for given array of energy and cos(zenith).
     Arrays of true energy and zenith are tested to be of the same length.
     Parameters
     ----------
@@ -193,10 +215,10 @@ def _eval_osc_probs(kNuBar, kFlav, propagators, true_energies, true_coszens):
         raise ValueError('Only `kNuBar` values accepted are 1 and -1. Your'
                          ' choice: %s.' % kNuBar)
 
-    # TODO: initalise with Nan to check whether calculation was performed
-    prob_e = np.zeros(len(true_energies), dtype=FTYPE)
-    prob_mu = np.zeros_like(prob_e, dtype=FTYPE)
-    nutype = 1 if kNuBar==1 else 0
+    # initialise with Nan to check whether calculation was performed later on
+    prob_e = np.zeros(len(true_energies), dtype=FTYPE)*np.nan
+    prob_mu = np.zeros_like(prob_e, dtype=FTYPE)*np.nan
+    nutype = 1 if kNuBar == 1 else 0
     for (i, (cz, en)) in enumerate(zip(true_coszens, true_energies)):
         for (input_name, nuSQ) in propagators.iteritems():
             chan_prob = nuSQ.EvalFlavor(kFlav, cz, en, nutype)
@@ -208,6 +230,11 @@ def _eval_osc_probs(kNuBar, kFlav, propagators, true_energies, true_coszens):
                 raise ValueError(
                     "Input name '%s' not recognized!" % input_name
                 )
+
+    if np.isnan(prob_e).any() or np.isnan(prob_mu).any():
+        raise ValueError(
+            'Nan detected in oscillation probabilities returned by nuSQuIDS!'
+        )
 
     return prob_e, prob_mu
 
@@ -245,8 +272,8 @@ def _make_EarthAtm_Ye(YeI,
     Ye_outer_radius = np.array([1121.5, 3480.0, earth_radius]) # km
 
     fname_tmp = os.path.join(CACHE_DIR, "nuSQuIDS_PREM_TMP.dat")
-    f = from_file(fname=PREM_file, as_array=True)
-    for i,(r, _, _) in enumerate(f):
+    PREM_file = from_file(fname=PREM_file, as_array=True)
+    for i, (r, _, _) in enumerate(PREM_file):
         this_radius = r*earth_radius
         if this_radius <= Ye_outer_radius[0]:
             Ye_new = YeI
@@ -254,9 +281,9 @@ def _make_EarthAtm_Ye(YeI,
             Ye_new = YeO
         elif this_radius <= Ye_outer_radius[2]:
             Ye_new = YeM
-        f[i][2] = Ye_new
+        PREM_file[i][2] = Ye_new
 
-    np.savetxt(fname=fname_tmp, X=f)
+    np.savetxt(fname=fname_tmp, X=PREM_file)
     earth_atm = nsq.EarthAtm(fname_tmp)
     return earth_atm
 
@@ -265,20 +292,22 @@ def test_nusquids_osc():
     """Test nuSQuIDS functions."""
     from pisa.core.binning import OneDimBinning
     # define binning for nuSQuIDS nodes (where master eqn. is solved)
-    en_calc_binning = OneDimBinning(name='true_energy',
-                                    bin_edges=np.logspace(0.99, 2.01, 40)*ureg.GeV,
-                                   )
-    cz_calc_binning = OneDimBinning(name='true_coszen',
-                                    domain=[-1, 1]*ureg.dimensionless,
-                                    is_lin=True,
-                                    num_bins=21
-                                   )
+    en_calc_binning = OneDimBinning(
+        name='true_energy',
+        bin_edges=np.logspace(0.99, 2.01, 40)*ureg.GeV,
+    )
+    cz_calc_binning = OneDimBinning(
+        name='true_coszen',
+        domain=[-1, 1]*ureg.dimensionless,
+        is_lin=True,
+        num_bins=21
+    )
     # make 2D binning
     binning_2d_calc = en_calc_binning*cz_calc_binning
     # check it has necessary entries
     validate_calc_grid(binning_2d_calc)
     # pad the grid to make sure we can later on evaluate osc. probs.
-    # *anywhere* inside the outermost bin edges
+    # *anywhere* in between of the outermost bin edges
     en_calc_grid, cz_calc_grid = compute_binning_constants(binning_2d_calc)
     # set up initial states, get the nuSQuIDS "propagator" instances
     ini_states, props = _get_nusquids_ini_prop(
@@ -290,7 +319,6 @@ def test_nusquids_osc():
         progress_bar=False
     )
     # make an Earth model
-    PREM_fpath = find_resource(resource='osc/nuSQuIDS_PREM.dat')
     YeI, YeM, YeO = 0.4656, 0.4957, 0.4656
     earth_atm = _make_EarthAtm_Ye(YeI=YeI, YeM=YeM, YeO=YeO)
 
@@ -320,8 +348,8 @@ def test_nusquids_osc():
 
     # define some points where osc. probs. are to be
     # evaluated
-    en_eval = np.logspace(1, 2, 100) * NSQ_CONST.GeV
-    cz_eval = np.linspace(-0.95, 0.95, 100)
+    en_eval = np.logspace(1, 2, 500) * NSQ_CONST.GeV
+    cz_eval = np.linspace(-0.95, 0.95, 500)
     # look them up for appearing tau neutrinos
     kFlav = FLAV_INDS['nutau']
     kNuBar = 1
