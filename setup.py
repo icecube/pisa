@@ -299,7 +299,7 @@ def do_setup():
             ],
             'numba': [
                 'llvmlite>=0.16', # fastmath jit flag
-                'numba=0.35' # fastmath jit flag
+                'numba==0.35' # fastmath jit flag, version fixed because of issue #439
             ],
             'develop': [
                 'pylint>=1.7',
@@ -314,7 +314,7 @@ def do_setup():
             # URL (e.g. the data). Plus it's huge (~1GB).
             #'mceq': [
             #    'llvmlite>=0.16',
-            #    'numba=0.35',
+            #    'numba==0.35',
             #    'progressbar',
             #    'MCEq'
             #]
