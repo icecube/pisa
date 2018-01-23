@@ -326,8 +326,7 @@ def calculate_2d_flux_weights(true_energies, true_coszens, en_splines,
         spline = interpolate.splrep(cz_spline_points,
                                     int_spline_vals, s=0)
 
-        out[i] = interpolate.splev(true_coszens[i], spline, der=1) /
-                 np.power(true_energy, enpow)
+        out[i] = interpolate.splev(true_coszens[i], spline, der=1) / np.power(true_energies[i], enpow)
 
     return out
 

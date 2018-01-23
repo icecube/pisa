@@ -57,8 +57,8 @@ class pi_honda_ip(PiStage):
                            )
         # what keys are added or altered for the outputs during apply
         output_apply_keys = (
-                             'nominal_nu_flux',
-                             'nominal_nubar_flux',
+                            'nominal_nu_flux',
+                            'nominal_nubar_flux',
                             )
 
         # init base class
@@ -85,9 +85,19 @@ class pi_honda_ip(PiStage):
         self.flux_table = load_2d_table(self.params.flux_table.value)
 
         self.data.data_specs = self.calc_specs
+        if self.calc_mode == 'binned':
+            # speed up calculation by adding links
+            # as nominal flux doesn't depend on the (outgoing) flavour
+            self.data.link_containers('nu', ['nue_cc', 'numu_cc', 'nutau_cc',
+                                             'nue_nc', 'numu_nc', 'nutau_nc',
+                                             'nuebar_cc', 'numubar_cc', 'nutaubar_cc',
+                                             'nuebar_nc', 'numubar_nc', 'nutaubar_nc'])
         for container in self.data:
             container['nominal_nu_flux'] = np.empty((container.size, 2), dtype=FTYPE)
             container['nominal_nubar_flux'] = np.empty((container.size, 2), dtype=FTYPE)
+
+        # don't forget to un-link everything again
+        self.data.unlink_containers()
 
     @profile
     def compute_function(self):
@@ -108,13 +118,14 @@ class pi_honda_ip(PiStage):
         tables = ['nue', 'numu', 'nuebar', 'numubar']
         for container in self.data:
             for out_name, index, table in zip(out_names, indices, tables):
-                 calculate_2d_flux_weights(true_energies=container['true_energy'].get('host'),
+                logging.info('Calculating nominal %s flux for %s'%(table, container.name))
+                calculate_2d_flux_weights(true_energies=container['true_energy'].get('host'),
                                            true_coszens=container['true_coszen'].get('host'),
                                            en_splines=self.flux_table[table],
                                            out=container[out_name].get('host')[:,index]
                                           )
-        container['nominal_nu_flux'].mark_changed(WHERE)
-        container['nominal_nubar_flux'].mark_changed(WHERE)
+            container['nominal_nu_flux'].mark_changed('host')
+            container['nominal_nubar_flux'].mark_changed('host')
 
         # don't forget to un-link everything again
         self.data.unlink_containers()
