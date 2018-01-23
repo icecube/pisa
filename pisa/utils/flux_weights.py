@@ -249,7 +249,7 @@ def load_2d_table(flux_file, enpow=1, return_table=False):
 
 
 def calculate_2d_flux_weights(true_energies, true_coszens, en_splines,
-                              enpow=1):
+                              enpow=1, out=None):
     """Calculate flux weights for given array of energy and cos(zenith).
     Arrays of true energy and zenith are expected to be for MC events, so
     they are tested to be of the same length.
@@ -268,6 +268,8 @@ def calculate_2d_flux_weights(true_energies, true_coszens, en_splines,
     enpow : integer
         The power to which the energy was raised in the construction of the
         splines. If you don't know what this means, leave it as 1.
+    out : np.array
+        optional array to store results
 
     Example
     -------
@@ -305,30 +307,29 @@ def calculate_2d_flux_weights(true_energies, true_coszens, en_splines,
     if not isinstance(enpow, int):
         raise TypeError('Energy power must be an integer')
 
-    czkeys = ['%.2f'%x for x in np.linspace(-0.95, 0.95, 20)]
-    cz_spline_points = np.linspace(-1, 1, 21)
+    num_cz_points = 20
+    czkeys = ['%.2f'%x for x in np.linspace(-0.95, 0.95, num_cz_points)]
+    cz_spline_points = np.linspace(-1, 1, num_cz_points+1)
 
-    flux_weights = []
-    for true_energy, true_coszen in zip(true_energies, true_coszens):
-        true_log_energy = np.log10(true_energy)
-        spline_vals = [0]
-        for czkey in czkeys:
-            spval = interpolate.splev(true_log_energy,
-                                      en_splines[czkey],
-                                      der=1)
+    if out is None:
+        out = np.empty_like(true_energies)
 
-            spline_vals.append(spval)
-        spline_vals = np.array(spline_vals)
+    spline_vals = np.zeros(num_cz_points+1)
+    for i in range(len(true_energies)):
+        true_log_energy = np.log10(true_energies[i])
+        for j in range(num_cz_points):
+            spline_vals[j+1] = interpolate.splev(true_log_energy,
+                                                 en_splines[czkeys[j]],
+                                                 der=1)
+
         int_spline_vals = np.cumsum(spline_vals)*0.1
         spline = interpolate.splrep(cz_spline_points,
                                     int_spline_vals, s=0)
-        flux_weights.append(
-            interpolate.splev(true_coszen, spline, der=1)
-            / np.power(true_energy, enpow)
-        )
 
-    flux_weights = np.array(flux_weights)
-    return flux_weights
+        out[i] = interpolate.splev(true_coszens[i], spline, der=1) /
+                 np.power(true_energy, enpow)
+
+    return out
 
 
 def load_3d_honda_table(flux_file, enpow=1, return_table=False):
