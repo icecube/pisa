@@ -76,7 +76,7 @@ class pi_honda_ip(PiStage):
                                         output_apply_keys=output_apply_keys,
                                        )
 
-        assert self.input_mode is not None
+        assert self.input_mode is None
         assert self.calc_mode is not None
         assert self.output_mode is not None
 

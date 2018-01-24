@@ -128,6 +128,7 @@ class simple_data_loader(PiStage):
     @profile
     def apply_function(self):
         # reset weights to event_weights
+        self.data.data_specs = self.output_specs
         for container in self.data:
             vectorizer.set(container['event_weights'],
                            out=container['weights'])

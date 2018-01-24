@@ -207,8 +207,8 @@ class PiStage(BaseStage):
                 for key in self.input_apply_keys:
                     container.array_to_binned(key, self.output_specs)
 
-        elif self.mode == 'BBE':
-            pass
+        #elif self.mode == 'BBE':
+        #    pass
 
         elif self.mode[0] + self.mode[2] == 'BE':
             for container in self.data:
