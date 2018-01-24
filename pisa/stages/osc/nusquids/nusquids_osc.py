@@ -1,4 +1,10 @@
 '''Wrapper around the nuSQuIDS python interface
+
+Note that the nuSQuIDS NSI branch which contains the
+full functionality this wrapper can provide is at
+https://github.com/thehrh/nuSQuIDS/tree/nusquids_nsi (experimental!),
+but the master branch https://github.com/arguelles/nuSQuIDS can
+and should be used if no NSI are needed.
 '''
 from __future__ import absolute_import, print_function, division
 import os
@@ -41,6 +47,7 @@ __version__ = '0.1'
 NSQ_CONST = nsq.Const()
 
 PRIMARIES = ['numu', 'numubar', 'nue', 'nuebar']
+# flavor codes used internally by nuSQuIDS
 FLAV_INDS = {'nue': 0, 'nuebar': 0, 'numu': 1, 'numubar': 1, 'nutau': 2,
              'nutaubar': 2}
 FLAV_INDS = OrderedDict(sorted(FLAV_INDS.items(), key=lambda t: t[0]))
@@ -182,7 +189,7 @@ def _eval_osc_probs(kNuBar, kFlav, propagators, true_energies, true_coszens):
     kNuBar : 1 or -1
         Code for denoting nu or anti-nu
     kFlav : 0, 1, or 2
-        Code for denoting neutrino flavor
+        Code for denoting neutrino flavor (used internally by nuSQuIDS)
     propagators : dict
         Dictionary of neutrino flavors and corresponding
         nuSQuIDS propagators
@@ -352,6 +359,7 @@ def test_nusquids_osc():
     cz_eval = np.linspace(-0.95, 0.95, 500)
     # look them up for appearing tau neutrinos
     kFlav = FLAV_INDS['nutau']
+    # neutrinos, not anti-neutrinos
     kNuBar = 1
     # collect the transition probabilities from
     # muon and electron neutrinos
