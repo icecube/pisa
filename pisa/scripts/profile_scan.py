@@ -70,7 +70,7 @@ def profile_scan(data_settings, template_settings, param_names, steps,
 
     minimizer_settings = from_file(minimizer_settings)
 
-    hypo_maker = DistributionMaker(template_settings)
+    hypo_maker = Detectors(template_settings,shared_params=shared_params)
 
     if data_settings is None:
         if (data_param_selections is None
@@ -80,7 +80,7 @@ def profile_scan(data_settings, template_settings, param_names, steps,
             data_maker = deepcopy(hypo_maker)
             data_maker.select_params(data_param_selections)
     else:
-        data_maker = DistributionMaker(data_settings)
+        data_maker = Detectors(data_settings,shared_params=shared_params)
         data_maker.select_params(data_param_selections)
 
     data_dist = data_maker.get_outputs(return_sum=True)
@@ -122,6 +122,11 @@ def parse_args():
         metavar='CONFIGFILE', required=True, action='append',
         help='''Settings for generating template distributions; repeat
         this option to define multiple pipelines.'''
+    )
+    parser.add_argument(
+        '-sp', '--shared_params', type=str, default=None,
+        action='append',
+        help='''Shared parameters for multi det analysis (repeat for multiple).'''
     )
     parser.add_argument(
         '--param-names', type=str, nargs='+', required=True,

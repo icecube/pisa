@@ -88,6 +88,14 @@ class DistributionMaker(object):
         #for pipeline in self:
         #    pipeline.select_params(self.param_selections,
         #                           error_on_missing=False)
+        
+        self.detector_name = 0       
+        for p in self._pipelines:
+            name = p._detector_name
+            if name != self.detector_name and self.detector_name != 0:
+                raise NameError('Different detector names in distribution_maker pipelines')
+            
+            self.detector_name = name
 
     def __iter__(self):
         return iter(self._pipelines)
@@ -243,7 +251,7 @@ class DistributionMaker(object):
                         'Trying to set value for "%s", a parameter that is'
                         ' fixed in at least one pipeline' %name
                     )
-
+                    
 
 def test_DistributionMaker():
     """Unit tests for DistributionMaker"""

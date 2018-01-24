@@ -30,6 +30,7 @@ import numpy as np
 from pisa import ureg, _version, __version__
 from pisa.analysis.analysis import Analysis
 from pisa.core.distribution_maker import DistributionMaker
+from pisa.core.detectors import Detectors
 from pisa.core.map import MapSet
 from pisa.utils.comparisons import normQuant
 from pisa.utils.fileio import from_file, get_valid_filename, mkdir, to_file
@@ -178,7 +179,7 @@ class HypoTesting(Analysis):
     minimizer_settings : string
         Minimizer settings file or resource path.
 
-    data_maker : None, DistributionMaker or instantiable thereto
+    data_maker : None, DistributionMaker(s) or instantiable thereto
         Data maker specification, or None (specify an already-generated data
         distribution with `data_dist`).
 
@@ -189,21 +190,21 @@ class HypoTesting(Analysis):
     data_name : None or string
         Name for data distribution. If None, a name is auto-generated.
 
-    data_dist : None, MapSet or instantiable thereto
+    data_dist : None, MapSet(s) or instantiable thereto
         Specify an existing distribution as the data distribution instead of a
         generating a new one. Use this instead of `data_maker`.
 
     h0_name : None or string
         Name for hypothesis 0. If None, a name is auto-generated.
 
-    h0_maker : DistributionMaker or instantiable thereto
+    h0_maker : DistributionMaker(s) or instantiable thereto
         Hypothesis-0-maker specification.
 
     h0_param_selections : None, string, or sequence of strings
         Param selections to use for hypothesis 0, or None to accept any param
         selections already made in `h0_maker`.
 
-    h0_fid_asimov_dist : None, MapSet or instantiable thereto
+    h0_fid_asimov_dist : None, MapSet(s) or instantiable thereto
         TODO: this parameter is NOT currently used, but is intended to remove
         requirement to re-generate this distribution if it's already been
         generated in a previous run
@@ -211,7 +212,7 @@ class HypoTesting(Analysis):
     h1_name : None or string
         Name for hypothesis 1. If None, a name is auto-generated.
 
-    h1_maker : None, DistributionMaker or instantiable thereto
+    h1_maker : None, DistributionMaker(s) or instantiable thereto
         Hypothesis-1-maker specification. If None, `h0_maker` is used also for
         hypothesis 1 (but in this case, be sure to specify
         `h1_param_selections` so that h0 and h1 come out to be different).
@@ -220,7 +221,7 @@ class HypoTesting(Analysis):
         Param selections to use for hypothesis 1, or None to accept any param
         selections already made in `h1_maker`.
 
-    h1_fid_asimov_dist : None, MapSet or instantiable thereto
+    h1_fid_asimov_dist : None, MapSet(s) or instantiable thereto
         TODO: this parameter is NOT currently used, but is intended to remove
         requirement to re-generate this distribution if it's already been
         generated in a previous run
@@ -339,7 +340,7 @@ class HypoTesting(Analysis):
                  check_ordering=False,
                  allow_dirty=False, allow_no_git_info=False,
                  blind=False, store_minimizer_history=True, pprint=False,
-                 reset_free=True):
+                 reset_free=True, shared_params=None):
         super(HypoTesting, self).__init__()
 
         assert num_data_trials >= 1
@@ -354,8 +355,8 @@ class HypoTesting(Analysis):
         # Instantiate h0 distribution maker to ensure it is a valid spec
         if h0_maker is None:
             raise ValueError('`h0_maker` must be specified (and not None)')
-        if not isinstance(h0_maker, DistributionMaker):
-            h0_maker = DistributionMaker(h0_maker)
+        if not isinstance(h0_maker, Detectors):
+            h0_maker = Detectors(h0_maker,shared_params=shared_params)
         if isinstance(h0_param_selections, basestring):
             h0_param_selections = h0_param_selections.strip().lower()
             if h0_param_selections == '':
@@ -391,10 +392,11 @@ class HypoTesting(Analysis):
             assert data_maker is None
             assert data_param_selections is None
             assert num_data_trials == 1
-            if isinstance(data_dist, basestring):
-                data_dist = from_file(data_dist)
-            if not isinstance(data_dist, MapSet):
-                data_dist = MapSet(data_dist)
+            for i in range(len(data_dist)):
+                if isinstance(data_dist[i], basestring):
+                    data_dist[i] = from_file(data_dist[i])
+                if not isinstance(data_dist[i], MapSet):
+                    data_dist[i] = MapSet(data_dist[i])
 
         # Ensure num_{fid_}data_trials is one if fluctuate_{fid_}data is False
         if not fluctuate_data and num_data_trials != 1:
@@ -453,11 +455,11 @@ class HypoTesting(Analysis):
                              ' is invalid.')
 
         # Instantiate distribution makers only where necessary (otherwise copy)
-        if not isinstance(h1_maker, DistributionMaker):
+        if not isinstance(h1_maker, Detectors):
             if self.h1_maker_is_h0_maker:
                 h1_maker = h0_maker
             else:
-                h1_maker = DistributionMaker(h1_maker)
+                h1_maker = Detectors(h1_maker,shared_params=shared_params)
 
         # Cannot know if data came from same dist maker if we're given the data
         # distribution directly
@@ -466,13 +468,13 @@ class HypoTesting(Analysis):
             self.data_maker_is_h1_maker = False
         # Otherwise instantiate or copy the data dist maker
         else:
-            if not isinstance(data_maker, DistributionMaker):
+            if not isinstance(data_maker, Detectors):
                 if self.data_maker_is_h0_maker:
                     data_maker = h0_maker
                 elif self.data_maker_is_h1_maker:
                     data_maker = h1_maker
                 else:
-                    data_maker = DistributionMaker(data_maker)
+                    data_maker = Detectors(data_maker,shared_params=shared_params)
 
         # Read in minimizer settings
         if isinstance(minimizer_settings, basestring):
@@ -515,6 +517,8 @@ class HypoTesting(Analysis):
         self.blind = blind
         self.store_minimizer_history = store_minimizer_history
         self.pprint = pprint
+
+        self.shared_params = shared_params
 
         # Storage for most recent Asimov (un-fluctuated) distributions
         self.toy_data_asimov_dist = None
@@ -1332,9 +1336,9 @@ class HypoTesting(Analysis):
         if not self.data_is_data:
             summary['data_param_selections'] = ','.join(
                 self.data_param_selections)
-        summary['data_params_hash'] = self.data_maker.params.hash
-        summary['data_params'] = [str(p) for p in self.data_maker.params]
-        summary['data_pipelines'] = self.summarize_dist_maker(self.data_maker)
+        summary['data_params_hash'] = [d.params.hash for d in self.data_maker]
+        summary['data_params'] = [[str(p) for p in d.params] for d in self.data_maker]
+        summary['data_pipelines'] = [self.summarize_dist_maker(d) for d in self.data_maker]
 
         self.h0_maker.select_params(self.h0_param_selections)
         if reset_params:
@@ -1342,9 +1346,9 @@ class HypoTesting(Analysis):
         summary['h0_name'] = self.labels.h0_name
         summary['h0_hash'] = self.h0_hash
         summary['h0_param_selections'] = ','.join(self.h0_param_selections)
-        summary['h0_params_hash'] = self.h0_maker.params.hash
-        summary['h0_params'] = [str(p) for p in self.h0_maker.params]
-        summary['h0_pipelines'] = self.summarize_dist_maker(self.h0_maker)
+        summary['h0_params_hash'] = [d.params.hash for d in self.h0_maker]
+        summary['h0_params'] = [[str(p) for p in d.params] for d in self.h0_maker]
+        summary['h0_pipelines'] = [self.summarize_dist_maker(d) for d in self.h0_maker]
 
         self.h1_maker.select_params(self.h1_param_selections)
         if reset_params:
@@ -1352,9 +1356,9 @@ class HypoTesting(Analysis):
         summary['h1_name'] = self.labels.h1_name
         summary['h1_hash'] = self.h1_hash
         summary['h1_param_selections'] = ','.join(self.h1_param_selections)
-        summary['h1_params_hash'] = self.h1_maker.params.hash
-        summary['h1_params'] = [str(p) for p in self.h1_maker.params]
-        summary['h1_pipelines'] = self.summarize_dist_maker(self.h1_maker)
+        summary['h1_params_hash'] = [d.params.hash for d in self.h1_maker]
+        summary['h1_params'] = [[str(p) for p in d.params] for d in self.h1_maker]
+        summary['h1_pipelines'] = [self.summarize_dist_maker(d) for d in self.h1_maker]
 
         # Reverse the order so it serializes to a file as intended
         # (want top-to-bottom file convention vs. fifo streaming data

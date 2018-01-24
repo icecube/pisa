@@ -2,7 +2,11 @@
 """
 Detector class definition and a simple script to generate, save, and
 plot distributions for different detectors from pipeline config file(s).
+A detector is represented by a distribution_maker.
 
+Pipeline: A special detector setting for a single detector
+Distribution_maker: A single detector
+Detectors: A set (list) of detectors
 """
 
 from __future__ import absolute_import
@@ -12,6 +16,7 @@ from collections import OrderedDict
 import inspect
 from itertools import izip, product
 import os
+from copy import deepcopy
 
 import numpy as np
 
@@ -19,7 +24,7 @@ from pisa import ureg
 from pisa.core.map import MapSet
 from pisa.core.pipeline import Pipeline
 from pisa.core.distribution_maker import DistributionMaker
-from pisa.core.param import ParamSet
+from pisa.core.param import ParamSet, Param
 from pisa.utils.config_parser import PISAConfigParser
 from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.hash import hash_obj
@@ -27,29 +32,48 @@ from pisa.utils.log import set_verbosity, logging
 from pisa.utils.random_numbers import get_random_state
 
 
-__all__ = ['Detectors', 'test_Detectors', 'parse_args', 'main']
+__all__ = ['Detectors', 'parse_args', 'main']
 
 
 class Detectors(object):
     """Container for one or more distribution makers, that belong to different detectors.
     """
-    def __init__(self, distribution_makers, label=None):
-        self.label = None
+    def __init__(self, pipelines, label=None, shared_params=None):
+        self.label = label
         self._source_code_hash = None
+        self.shared_params = shared_params
 
-        self._distribution_makers = []
-        if isinstance(distribution_makers, (basestring, PISAConfigParser, OrderedDict,
-                                  DistributionMaker)):
-            distribution_makers = [distribution_makers]
+        if isinstance(pipelines, (basestring, PISAConfigParser, OrderedDict,
+                                  Pipeline)):
+            pipelines = [pipelines]
+        
+        self._distribution_makers , self.det_names = [] , []
+        for pipeline in pipelines:
+            if not isinstance(pipeline, Pipeline):
+                pipeline = Pipeline(pipeline)
+                
+            name = pipeline._detector_name
+            if name in self.det_names:
+                self._distribution_makers[self.det_names.index(name)].append(pipeline)
+            else:
+                self._distribution_makers.append([pipeline])
+                self.det_names.append(name)
+    
+        if None in self.det_names and len(self.det_names) > 1:
+            raise NameError('One of the pipelines has no detector_name.')
 
-        for distribution_maker in distribution_makers:
-            if not isinstance(distribution_maker, DistributionMaker):
-                distribution_maker = DistributionMaker(distribution_maker)
-            self._distribution_makers.append(distribution_maker)
-        #for distribution_maker in self:
-        #    distribution_maker.select_params(self.param_selections,
-        #                           error_on_missing=False)
-
+        for i in range(len(self._distribution_makers)):
+            self._distribution_makers[i] = DistributionMaker(pipelines=self._distribution_makers[i])
+            
+        if shared_params != None:
+            for sp in shared_params:
+                n = 0
+                for distribution_maker in self._distribution_makers:
+                    if sp in distribution_maker.params.free.names:
+                        n += 1
+                if n < 2:
+                    raise NameError('Shared param %s only a free param in less than 2 detectors.' % sp)
+            
     def __iter__(self):
         return iter(self._distribution_makers)
 
@@ -59,17 +83,14 @@ class Detectors(object):
         Parameters
         ----------
         return_sum : bool
-            If True, add up all Maps in all MapSets returned by all pipelines.
-            The result will be a single Map contained in a MapSet.
-            If False, return a list where each element is the full MapSet
-            returned by each pipeline in the DistributionMaker.
+            Passed on to each distribution_maker's `get_outputs` method.
 
         **kwargs
-            Passed on to each pipeline's `get_outputs1` method.
+            Passed on to each distribution_maker's `get_outputs` method.
 
         Returns
         -------
-        MapSet if `return_sum=True` or list of MapSets if `return_sum=False`
+        List of MapSets if `return_sum=True` or list of lists of MapSets if `return_sum=False`
 
         """
         outputs = [distribution_maker.get_outputs(return_sum=return_sum,**kwargs) for distribution_maker in self]
@@ -78,49 +99,84 @@ class Detectors(object):
     def update_params(self, params):
         for distribution_maker in self:
             distribution_maker.update_params(params)
-#
+
     def select_params(self, selections, error_on_missing=True):
-        successes = 0
-        if selections is not None:
-            for distribution_maker in self:
-                try:
-                    distribution_maker.select_params(selections, error_on_missing=True)
-                except KeyError:
-                    pass
-                else:
-                    successes += 1
-
-            if error_on_missing and successes == 0:
-                raise KeyError(
-                    'None of the stages from any pipeline in any distribution'
-                    ' maker has all of the selections %s available.'
-                    %(selections,)
-                )
-        else:
-            for distribution_maker in self:
-                possible_selections = distribution_maker.param_selections
-                if possible_selections:
-                    logging.warn("Although you didn't make a parameter "
-                                 "selection, the following were available: %s."
-                                 " This may cause issues.",
-                                 possible_selections)
-
+        for distribution_maker in self:
+            distribution_maker.select_params(selections=selections)
+            
     @property
     def distribution_makers(self):
         return self._distribution_makers
 
     @property
     def params(self):
-        params = []
+        """Returns a ParamSet including all params of all detectors. First the shared params
+        (if there are some), then all the "single detector" params. If two detectors use a
+        parameter with the same name (but not shared), the name of the detector is added to the
+        parameter name (except for the first detector).
+        """
+        if self.shared_params == None: self.shared_params = []
+        
+        Params = ParamSet()
+        for p_name in self.shared_params:
+            for distribution_maker in self:
+                try:
+                    Params.extend(distribution_maker.params[p_name])
+                    break
+                except:
+                    continue
+                    
         for distribution_maker in self:
-            params.append(distribution_maker.params)
-        return params
+            for param in distribution_maker.params:
+                if param.name in Params.names and param.name in self.shared_params:
+                    continue
+                elif param.name in Params.names:
+                    changed_param = deepcopy(param)
+                    changed_param.name = param.name + '_' + distribution_maker.detector_name
+                    Params.extend(changed_param)
+                else:
+                    Params.extend(param)
+        return Params
+    
+    def all_param_names(self, free=False):
+        all_param_names = []
+        
+        for distribution_maker in self:
+            if free:
+                names = distribution_maker.params.free.names
+            else:
+                names = distribution_maker.params.names
+            
+            for name in names:
+                if name not in all_param_names:
+                    all_param_names.append(name)
+                    
+        return all_param_names
 
     @property
+    def shared_param_ind_list(self):
+        """ A list of lists (one for each detector) containing the position of the shared 
+        params in the free params of the distribution_maker (that belongs to the detector)
+        together with their position in the shared parameter list.
+        """
+        shared_param_ind_list = []
+        if self.shared_params != None:
+            for distribution_maker in self:
+                free_names = distribution_maker.params.free.names
+                spi = []
+                for p_name in free_names:
+                    if p_name in self.shared_params:
+                        spi.append((free_names.index(p_name),self.shared_params.index(p_name)))
+                shared_param_ind_list.append(spi)
+        return shared_param_ind_list
+            
+    @property
     def param_selections(self):
-        selections = []
+        selections = None
         for distribution_maker in self:
-            selections.append(distribution_maker.param_selections)
+            if selections != None and sorted(distribution_maker.param_selections) != selections:
+                raise ('Different param_selections for different detectors.')
+            selections = sorted(distribution_maker.param_selections)
         return selections
 
     @property
@@ -143,26 +199,27 @@ class Detectors(object):
 
         Parameters
         ----------
-        values : a list of lists of quantities
+        values : a list of quantities
 
         """
-        if len(values) != len(self):
-            raise ('Number of detectors and number of parameter sets is not the same')
-        
-        for i in range(len(values)):
-            self[i].set_free_params(values[i])
-
+        for dist_maker in self:
+            dist_values = []
+            for dist_name in dist_maker.params.free.names:
+                for name, value in izip(self.params.free.names, values):
+                    if name == dist_name:
+                        v = value
+                    if name == dist_name + '_' + dist_maker.detector_name:
+                        v = value
+                dist_values.append(v)
+            dist_maker.set_free_params(dist_values)
 
     def randomize_free_params(self, random_state=None):
         if random_state is None:
             random = np.random
         else:
             random = get_random_state(random_state)
-            
-        rand = []
-        for i in len(self):
-            n = (len(self[i].params.free))
-            rand.append(random.rand(n))
+        n = len(self.params.free)
+        rand = random.rand(n)
         self._set_rescaled_free_params(rand)
 
     def reset_all(self):
@@ -181,92 +238,32 @@ class Detectors(object):
             d.set_nominal_by_current_values()
 
     def _set_rescaled_free_params(self, rvalues):
-        """Set free param values given a simple list of lists of [0,1]-rescaled,
+        """Set free param values given a simple list of [0,1]-rescaled,
         dimensionless values
         """
-        if len(rvalues) != len(self):
-            raise ('Number of detectors and number of rescaled parameter sets is not the same')
+        if not isinstance(rvalues,list):
+            rvalues = list(rvalues)
         
-        for i in range(len(rvalues)):
-            self[i]._set_rescaled_free_params(values[i])
-
-
-def test_Detectors():
-    """Unit tests for Detectors"""
-    #
-    # Test: select_params and param_selections
-    #
-
-    hierarchies = ['nh', 'ih']
-    materials = ['iron', 'pyrolite']
-
-    t23 = dict(
-        ih=49.5 * ureg.deg,
-        nh=42.3 * ureg.deg
-    )
-    YeO = dict(
-        iron=0.4656,
-        pyrolite=0.4957
-    )
-
-    # Instantiate with two pipelines: first has both nh/ih and iron/pyrolite
-    # param selectors, while the second only has nh/ih param selectors.
-    dm1 = DistributionMaker(['tests/settings/test_Pipeline.cfg',
-                            'tests/settings/test_Pipeline2.cfg'])
-    dm2 = DistributionMaker(['tests/settings/test_Pipeline.cfg',
-                            'tests/settings/test_Pipeline2.cfg'])
-    det = Detectors(dm1,dm2)
-
-    current_mat = 'pyrolite'
-    current_hier = 'nh'
-
-    for new_hier, new_mat in product(hierarchies, materials):
-        new_YeO = YeO[new_mat]
-
-        assert det.param_selections == sorted([current_hier, current_mat]), \
-                str(det.params.param_selections)
-        assert det.params.theta23.value == t23[current_hier], \
-                str(det.params.theta23)
-        assert det.params.YeO.value == YeO[current_mat], str(det.params.YeO)
-
-        # Select just the hierarchy
-        det.select_params(new_hier)
-        assert det.param_selections == sorted([new_hier, current_mat]), \
-                str(det.param_selections)
-        assert det.params.theta23.value == t23[new_hier], \
-                str(det.params.theta23)
-        assert det.params.YeO.value == YeO[current_mat], \
-                str(det.params.YeO)
-
-        # Select just the material
-        det.select_params(new_mat)
-        assert det.param_selections == sorted([new_hier, new_mat]), \
-                str(det.param_selections)
-        assert det.params.theta23.value == t23[new_hier], \
-                str(det.params.theta23)
-        assert det.params.YeO.value == YeO[new_mat], \
-                str(det.params.YeO)
-
-        # Reset both to "current"
-        det.select_params([current_mat, current_hier])
-        assert det.param_selections == sorted([current_hier, current_mat]), \
-                str(det.param_selections)
-        assert det.params.theta23.value == t23[current_hier], \
-                str(det.params.theta23)
-        assert det.params.YeO.value == YeO[current_mat], \
-                str(det.params.YeO)
-
-        # Select both hierarchy and material
-        det.select_params([new_mat, new_hier])
-        assert det.param_selections == sorted([new_hier, new_mat]), \
-                str(det.param_selections)
-        assert det.params.theta23.value == t23[new_hier], \
-                str(det.params.theta23)
-        assert det.params.YeO.value == YeO[new_mat], \
-                str(det.params.YeO)
-
-        current_hier = new_hier
-        current_mat = new_mat
+        if self.shared_params == None:
+            for d in self:
+                rp = []
+                for j in range(len(d.params.free)):
+                    rp.append(rvalues.pop(0))
+                d._set_rescaled_free_params(rp)
+                
+        else:
+            sp = []         # first get the shared params
+            for i in range(len(self.shared_params)):
+                sp.append(rvalues.pop(0))
+            spi = self.shared_param_ind_list
+                
+            for i in range(len(self._distribution_makers)):
+                rp = []
+                for j in range(len(self._distribution_makers[i].params.free) - len(spi[i])):
+                    rp.append(rvalues.pop(0))
+                for j in range(len(spi[i])):
+                    rp.insert(spi[i][j][0],sp[spi[i][j][1]])
+                self._distribution_makers[i]._set_rescaled_free_params(rp)
 
 
 def parse_args():
@@ -280,6 +277,11 @@ def parse_args():
         '-p', '--pipeline', type=str, required=True,
         metavar='CONFIGFILE', action='append',
         help='''Settings file for each pipeline (repeat for multiple).'''
+    )
+    parser.add_argument(
+        '-sp', '--shared_params', type=str, default=None,
+        action='append',
+        help='''Shared parameters for multi det analysis (repeat for multiple).'''
     )
     parser.add_argument(
         '--select', metavar='PARAM_SELECTIONS', nargs='+', default=None,
@@ -324,27 +326,12 @@ def main(return_outputs=False):
     if args.png:
         plot_formats.append('png')
         
-    pipelines = args.pipeline
-    distribution_makers , Names = [] , []
-    for pipeline in pipelines:
-        name = Pipeline(pipeline)._detector_name
-        if name in Names:
-            distribution_makers[Names.index(name)].append(pipeline)
-        else:
-            distribution_makers.append([pipeline])
-            Names.append(name)
-    
-    if None in Names and len(Names) > 1:
-        raise NameError('One of the pipelines has no detector_name.')
-
-    for i in range(len(distribution_makers)):
-        distribution_makers[i] = DistributionMaker(pipelines=distribution_makers[i])
-    detectors = Detectors(distribution_makers=distribution_makers)
-        
+    detectors = Detectors(args.pipeline,shared_params=args.shared_params)
+    Names = detectors.det_names
     if args.select is not None:
         detectors.select_params(args.select)
-
-    outputs = detectors.get_outputs(return_sum=args.return_sum)
+        
+    outputs = detectors.get_outputs(return_sum=args.return_sum)    
     if args.outdir:
         # TODO: unique filename: append hash (or hash per pipeline config)
         fname = 'detectors_outputs.json.bz2'

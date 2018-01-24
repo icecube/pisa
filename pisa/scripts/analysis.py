@@ -93,6 +93,11 @@ def parse_args(command, description):
         help='''Fit both ordering hypotheses. This should only be flagged if
         the ordering is NOT the discrete hypothesis being tested'''
     )
+    parser.add_argument(
+        '-sp', '--shared_params', type=str, default=None,
+        action='append',
+        help='''Shared parameters for multi det analysis (repeat for multiple).'''
+    )
 
     if command == discrete_hypo_test:
         # Data cannot be data for MC studies e.g. injected parameter scans so
