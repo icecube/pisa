@@ -36,12 +36,26 @@ __all__ = ['Detectors', 'parse_args', 'main']
 
 
 class Detectors(object):
-    """Container for one or more distribution makers, that belong to different detectors.
+    """Container for one or more distribution makers, that represent different detectors.
+    
+    Parameters
+    ----------
+    pipelines : Pipeline or convertible thereto, or iterable thereof
+        A new pipline is instantiated with each object passed. Legal objects
+        are already-instantiated Pipelines and anything interpret-able by the
+        Pipeline init method.
+        
+    shared_params : Parameter to be treated the same way in all the
+        distribution_makers that contain them.
     """
     def __init__(self, pipelines, label=None, shared_params=None):
         self.label = label
         self._source_code_hash = None
-        self.shared_params = shared_params
+        
+        if shared_params == None:
+            self.shared_params = []
+        else:
+            self.shared_params = shared_params
 
         if isinstance(pipelines, (basestring, PISAConfigParser, OrderedDict,
                                   Pipeline)):
@@ -60,31 +74,27 @@ class Detectors(object):
                 self.det_names.append(name)
     
         if None in self.det_names and len(self.det_names) > 1:
-            raise NameError('One of the pipelines has no detector_name.')
+            raise NameError('There are different detectors, but one of the used pipelines has no detector_name.')
 
-        for i in range(len(self._distribution_makers)):
-            self._distribution_makers[i] = DistributionMaker(pipelines=self._distribution_makers[i])
+        for i, pipelines in enumerate(self._distribution_makers):
+            self._distribution_makers[i] = DistributionMaker(pipelines=pipelines)
             
-        if shared_params != None:
-            for sp in shared_params:
-                n = 0
-                for distribution_maker in self._distribution_makers:
-                    if sp in distribution_maker.params.free.names:
-                        n += 1
-                if n < 2:
-                    raise NameError('Shared param %s only a free param in less than 2 detectors.' % sp)
+        for sp in self.shared_params:
+            n = 0
+            for distribution_maker in self._distribution_makers:
+                if sp in distribution_maker.params.free.names:
+                    n += 1
+            if n < 2:
+                raise NameError('Shared param %s only a free param in less than 2 detectors.' % sp)
             
     def __iter__(self):
         return iter(self._distribution_makers)
 
-    def get_outputs(self, return_sum=False, **kwargs):
+    def get_outputs(self, **kwargs):
         """Compute and return the outputs.
 
         Parameters
         ----------
-        return_sum : bool
-            Passed on to each distribution_maker's `get_outputs` method.
-
         **kwargs
             Passed on to each distribution_maker's `get_outputs` method.
 
@@ -93,7 +103,7 @@ class Detectors(object):
         List of MapSets if `return_sum=True` or list of lists of MapSets if `return_sum=False`
 
         """
-        outputs = [distribution_maker.get_outputs(return_sum=return_sum,**kwargs) for distribution_maker in self]
+        outputs = [distribution_maker.get_outputs(**kwargs) for distribution_maker in self]
         return outputs
 
     def update_params(self, params):
@@ -114,44 +124,27 @@ class Detectors(object):
         (if there are some), then all the "single detector" params. If two detectors use a
         parameter with the same name (but not shared), the name of the detector is added to the
         parameter name (except for the first detector).
-        """
-        if self.shared_params == None: self.shared_params = []
-        
+        """        
         Params = ParamSet()
         for p_name in self.shared_params:
             for distribution_maker in self:
                 try:
                     Params.extend(distribution_maker.params[p_name])
-                    break
+                    break  # shared param found, can continue with the next shared param
                 except:
-                    continue
+                    continue # shared param was not in this distribution_maker, so search in the next one
                     
         for distribution_maker in self:
             for param in distribution_maker.params:
                 if param.name in Params.names and param.name in self.shared_params:
-                    continue
-                elif param.name in Params.names:
+                    continue # shared param is already in param set, can continue with the next param
+                elif param.name in Params.names: # need new name
                     changed_param = deepcopy(param)
-                    changed_param.name = param.name + '_' + distribution_maker.detector_name
+                    changed_param.name = param.name + '_' + distribution_maker._detector_name
                     Params.extend(changed_param)
                 else:
                     Params.extend(param)
         return Params
-    
-    def all_param_names(self, free=False):
-        all_param_names = []
-        
-        for distribution_maker in self:
-            if free:
-                names = distribution_maker.params.free.names
-            else:
-                names = distribution_maker.params.names
-            
-            for name in names:
-                if name not in all_param_names:
-                    all_param_names.append(name)
-                    
-        return all_param_names
 
     @property
     def shared_param_ind_list(self):
@@ -159,15 +152,16 @@ class Detectors(object):
         params in the free params of the distribution_maker (that belongs to the detector)
         together with their position in the shared parameter list.
         """
+        if not self.shared_params: return []
+
         shared_param_ind_list = []
-        if self.shared_params != None:
-            for distribution_maker in self:
-                free_names = distribution_maker.params.free.names
-                spi = []
-                for p_name in free_names:
-                    if p_name in self.shared_params:
-                        spi.append((free_names.index(p_name),self.shared_params.index(p_name)))
-                shared_param_ind_list.append(spi)
+        for distribution_maker in self:
+            free_names = distribution_maker.params.free.names
+            spi = []
+            for p_name in free_names:
+                if p_name in self.shared_params:
+                    spi.append((free_names.index(p_name),self.shared_params.index(p_name)))
+            shared_param_ind_list.append(spi)
         return shared_param_ind_list
             
     @property
@@ -244,7 +238,7 @@ class Detectors(object):
         if not isinstance(rvalues,list):
             rvalues = list(rvalues)
         
-        if self.shared_params == None:
+        if self.shared_params == []:
             for d in self:
                 rp = []
                 for j in range(len(d.params.free)):
@@ -330,7 +324,7 @@ def main(return_outputs=False):
     Names = detectors.det_names
     if args.select is not None:
         detectors.select_params(args.select)
-        
+
     outputs = detectors.get_outputs(return_sum=args.return_sum)    
     if args.outdir:
         # TODO: unique filename: append hash (or hash per pipeline config)

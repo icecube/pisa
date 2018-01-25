@@ -89,13 +89,13 @@ class DistributionMaker(object):
         #    pipeline.select_params(self.param_selections,
         #                           error_on_missing=False)
         
-        self.detector_name = 0       
+        self._detector_name = 0       
         for p in self._pipelines:
             name = p._detector_name
-            if name != self.detector_name and self.detector_name != 0:
+            if name != self._detector_name and self._detector_name != 0:
                 raise NameError('Different detector names in distribution_maker pipelines')
             
-            self.detector_name = name
+            self._detector_name = name
 
     def __iter__(self):
         return iter(self._pipelines)

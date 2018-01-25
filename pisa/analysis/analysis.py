@@ -288,11 +288,11 @@ class Analysis(object):
 
         Parameters
         ----------
-        data_dist : MapSet(s)
+        data_dist : List of MapSets
             Data distribution(s). These are what the hypothesis is tasked to
             best describe during the optimization process.
 
-        hypo_maker : DistributionMaker(s) or instantiable thereto
+        hypo_maker : Detectors or instantiable thereto
             Generates the expectation distribution under a particular
             hypothesis. This typically has (but is not required to have) some
             free parameters which can be modified by the minimizer to optimize
@@ -489,10 +489,10 @@ class Analysis(object):
 
         Parameters
         ----------
-        data_dist : MapSet(s)
+        data_dist : List of MapSets
             Data distribution(s)
 
-        hypo_maker : DistributionMaker(s) or convertible thereto
+        hypo_maker : Detectors or convertible thereto
 
         metric : string
 
@@ -660,7 +660,7 @@ class Analysis(object):
         fit_info['detailed_metric_info'] = [self.get_detailed_metric_info(
             data_dist=data_dist[i], hypo_asimov_dist=hypo_asimov_dist[i],
             params=hypo_maker._distribution_makers[i].params, metric=metric,
-            other_metrics=other_metrics,detector_name=hypo_maker.det_names[i]
+            other_metrics=other_metrics, detector_name=hypo_maker.det_names[i]
         ) for i in range(len(data_dist))]
         fit_info['minimizer_time'] = minimizer_time * ureg.sec
         fit_info['num_distributions_generated'] = counter.count
@@ -689,8 +689,8 @@ class Analysis(object):
 
         Parameters
         ----------
-        data_dist : MapSet(s)
-        hypo_maker : DistributionMaker(s)
+        data_dist : List of MapSets
+        hypo_maker : Detectors
         hypo_param_selections : None, string, or sequence of strings
         hypo_asimov_dist : MapSet(s)
         metric : string
@@ -710,8 +710,9 @@ class Analysis(object):
             metric_val = 0
             for i in range(len(hypo_maker._distribution_makers)):
                 data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],metric=metric)
-                priors = hypo_maker._distribution_makers[i].params.priors_penalty(metric=metric)
-                metric_val += (data + priors)
+                metric_val += data
+            priors = hypo_maker.params.priors_penalty(metric=metric)
+            metric_val += priors
         except:
             if not blind:
                 logging.error(
@@ -732,7 +733,7 @@ class Analysis(object):
         fit_info['detailed_metric_info'] = [self.get_detailed_metric_info(
             data_dist=data_dist[i], hypo_asimov_dist=hypo_asimov_dist[i],
             params=hypo_maker._distribution_makers[i].params, metric=metric,
-            other_metrics=other_metrics,detector_name=hypo_maker.det_names[i]
+            other_metrics=other_metrics, detector_name=hypo_maker.det_names[i]
         ) for i in range(len(data_dist))]
         fit_info['minimizer_time'] = 0 * ureg.sec
         fit_info['num_distributions_generated'] = 0
@@ -806,12 +807,12 @@ class Analysis(object):
             their original (physical) ranges (including units) is handled
             within this method.
 
-        hypo_maker : DistributionMaker(s)
+        hypo_maker : Detectors
             Creates the per-bin expectation values per map (aka Asimov
             distribution) based on its param values. Free params in the
             `hypo_maker` are modified by the minimizer to achieve a "best" fit.
 
-        data_dist : MapSet(s)
+        data_dist : List of MapSets
             Data distribution to be fit. Can be an actual-, Asimov-, or
             pseudo-data distribution (where the latter two are derived from
             simulation and so aren't technically "data").
@@ -854,8 +855,9 @@ class Analysis(object):
             for i in range(len(hypo_maker._distribution_makers)):
                 data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],
                                               metric=metric)
-                priors = hypo_maker._distribution_makers[i].params.priors_penalty(metric=metric)
-                metric_val += (data + priors)
+                metric_val += data
+            priors = hypo_maker.params.priors_penalty(metric=metric)
+            metric_val += priors
         except:
             if not blind:
                 logging.error(
@@ -928,11 +930,11 @@ class Analysis(object):
 
         Parameters
         ----------
-        data_dist : MapSet(s)
+        data_dist : List of MapSets
             Data distribution(s). These are what the hypothesis is tasked to
             best describe during the optimization/comparison process.
 
-        hypo_maker : DistributionMaker(s) or instantiable thereto
+        hypo_maker : Detectors or instantiable thereto
             Generates the expectation distribution under a particular
             hypothesis. This typically has (but is not required to have) some
             free parameters which will be modified by the minimizer to optimize
@@ -1154,9 +1156,9 @@ class Analysis(object):
             best_fit['params'] = deepcopy(
                 best_fit['params'].serializable_state
             )
-            best_fit['hypo_asimov_dist'] = deepcopy(
-                best_fit['hypo_asimov_dist'].serializable_state
-            )
+            best_fit['hypo_asimov_dist'] = [deepcopy(
+                best_fit['hypo_asimov_dist'][i].serializable_state
+            ) for i in range(len(best_fit['hypo_asimov_dist']))]
 
             # decide which information to retain based on chosen debug mode
             if debug_mode == 0 or debug_mode == 1:

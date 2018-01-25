@@ -8,11 +8,12 @@ Profile scan
 from __future__ import absolute_import
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-from copy import deepcopy
+from copy import copy
 from os.path import expanduser, expandvars, isfile
 
 from pisa.analysis.analysis import Analysis
 from pisa.core.distribution_maker import DistributionMaker
+from pisa.core.detectors import Detectors
 from pisa.utils.fileio import from_file, to_file
 from pisa.utils.log import logging, set_verbosity
 
@@ -39,7 +40,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 def profile_scan(data_settings, template_settings, param_names, steps,
                  only_points, no_outer, data_param_selections,
                  hypo_param_selections, profile, outfile, minimizer_settings,
-                 metric, debug_mode):
+                 metric, debug_mode, shared_params):
     """Perform a profile scan.
 
     Parameters
@@ -57,6 +58,7 @@ def profile_scan(data_settings, template_settings, param_names, steps,
     minimizer_settings
     metric
     debug_mode
+    shared_params
 
     Returns
     -------
@@ -70,17 +72,17 @@ def profile_scan(data_settings, template_settings, param_names, steps,
 
     minimizer_settings = from_file(minimizer_settings)
 
-    hypo_maker = Detectors(template_settings,shared_params=shared_params)
+    hypo_maker = Detectors(template_settings, shared_params=shared_params)
 
     if data_settings is None:
         if (data_param_selections is None
                 or data_param_selections == hypo_param_selections):
             data_maker = hypo_maker
         else:
-            data_maker = deepcopy(hypo_maker)
+            data_maker = copy(hypo_maker)
             data_maker.select_params(data_param_selections)
     else:
-        data_maker = Detectors(data_settings,shared_params=shared_params)
+        data_maker = Detectors(data_settings, shared_params=shared_params)
         data_maker.select_params(data_param_selections)
 
     data_dist = data_maker.get_outputs(return_sum=True)
@@ -126,7 +128,8 @@ def parse_args():
     parser.add_argument(
         '-sp', '--shared_params', type=str, default=None,
         action='append',
-        help='''Shared parameters for multi det analysis (repeat for multiple).'''
+        help='''Shared parameters for multi det analysis (repeat for multiple).
+        These parameters have to be the same in all detectors, that contain the param.'''
     )
     parser.add_argument(
         '--param-names', type=str, nargs='+', required=True,

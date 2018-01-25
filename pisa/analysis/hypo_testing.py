@@ -179,7 +179,7 @@ class HypoTesting(Analysis):
     minimizer_settings : string
         Minimizer settings file or resource path.
 
-    data_maker : None, DistributionMaker(s) or instantiable thereto
+    data_maker : None, Detectors or instantiable thereto
         Data maker specification, or None (specify an already-generated data
         distribution with `data_dist`).
 
@@ -190,21 +190,21 @@ class HypoTesting(Analysis):
     data_name : None or string
         Name for data distribution. If None, a name is auto-generated.
 
-    data_dist : None, MapSet(s) or instantiable thereto
+    data_dist : None, list of MapSets or instantiable thereto
         Specify an existing distribution as the data distribution instead of a
         generating a new one. Use this instead of `data_maker`.
 
     h0_name : None or string
         Name for hypothesis 0. If None, a name is auto-generated.
 
-    h0_maker : DistributionMaker(s) or instantiable thereto
+    h0_maker : Detectors or instantiable thereto
         Hypothesis-0-maker specification.
 
     h0_param_selections : None, string, or sequence of strings
         Param selections to use for hypothesis 0, or None to accept any param
         selections already made in `h0_maker`.
 
-    h0_fid_asimov_dist : None, MapSet(s) or instantiable thereto
+    h0_fid_asimov_dist : None, list of MapSets or instantiable thereto
         TODO: this parameter is NOT currently used, but is intended to remove
         requirement to re-generate this distribution if it's already been
         generated in a previous run
@@ -212,7 +212,7 @@ class HypoTesting(Analysis):
     h1_name : None or string
         Name for hypothesis 1. If None, a name is auto-generated.
 
-    h1_maker : None, DistributionMaker(s) or instantiable thereto
+    h1_maker : None, Detectors or instantiable thereto
         Hypothesis-1-maker specification. If None, `h0_maker` is used also for
         hypothesis 1 (but in this case, be sure to specify
         `h1_param_selections` so that h0 and h1 come out to be different).
@@ -221,7 +221,7 @@ class HypoTesting(Analysis):
         Param selections to use for hypothesis 1, or None to accept any param
         selections already made in `h1_maker`.
 
-    h1_fid_asimov_dist : None, MapSet(s) or instantiable thereto
+    h1_fid_asimov_dist : None, list of MapSets or instantiable thereto
         TODO: this parameter is NOT currently used, but is intended to remove
         requirement to re-generate this distribution if it's already been
         generated in a previous run
@@ -355,8 +355,11 @@ class HypoTesting(Analysis):
         # Instantiate h0 distribution maker to ensure it is a valid spec
         if h0_maker is None:
             raise ValueError('`h0_maker` must be specified (and not None)')
-        if not isinstance(h0_maker, Detectors):
+        if isinstance(h0_maker, DistributionMaker):
+            h0_maker = Detectors(h0_maker._pipelines,shared_params=shared_params)
+        elif not isinstance(h0_maker, Detectors):
             h0_maker = Detectors(h0_maker,shared_params=shared_params)
+
         if isinstance(h0_param_selections, basestring):
             h0_param_selections = h0_param_selections.strip().lower()
             if h0_param_selections == '':
@@ -455,6 +458,8 @@ class HypoTesting(Analysis):
                              ' is invalid.')
 
         # Instantiate distribution makers only where necessary (otherwise copy)
+        if isinstance (h1_maker, DistributionMaker):
+            h1_maker = Detectors(h1_maker._pipelines,shared_params=shared_params)
         if not isinstance(h1_maker, Detectors):
             if self.h1_maker_is_h0_maker:
                 h1_maker = h0_maker
@@ -468,6 +473,8 @@ class HypoTesting(Analysis):
             self.data_maker_is_h1_maker = False
         # Otherwise instantiate or copy the data dist maker
         else:
+            if isinstance (h1_maker, DistributionMaker):
+                h1_maker = Detectors(h1_maker._pipelines,shared_params=shared_params)
             if not isinstance(data_maker, Detectors):
                 if self.data_maker_is_h0_maker:
                     data_maker = h0_maker
