@@ -125,26 +125,26 @@ class Detectors(object):
         parameter with the same name (but not shared), the name of the detector is added to the
         parameter name (except for the first detector).
         """        
-        Params = ParamSet()
+        params = ParamSet()
         for p_name in self.shared_params:
             for distribution_maker in self:
                 try:
-                    Params.extend(distribution_maker.params[p_name])
+                    params.extend(distribution_maker.params[p_name])
                     break  # shared param found, can continue with the next shared param
                 except:
                     continue # shared param was not in this distribution_maker, so search in the next one
                     
         for distribution_maker in self:
             for param in distribution_maker.params:
-                if param.name in Params.names and param.name in self.shared_params:
+                if param.name in params.names and param.name in self.shared_params:
                     continue # shared param is already in param set, can continue with the next param
-                elif param.name in Params.names: # need new name
+                elif param.name in params.names: # need new name
                     changed_param = deepcopy(param)
                     changed_param.name = param.name + '_' + distribution_maker._detector_name
-                    Params.extend(changed_param)
+                    params.extend(changed_param)
                 else:
-                    Params.extend(param)
-        return Params
+                    params.extend(param)
+        return params
 
     @property
     def shared_param_ind_list(self):
