@@ -1065,7 +1065,7 @@ def format_num(value,
         if isinstance(value, Integral):
             value = decimal.Decimal(value)
         else:
-            value = decimal.Decimal.from_float(value)
+            value = decimal.Decimal.from_float(float(value))
 
         order_of_mag = value.adjusted()
         # Get the sign from the full precision `value`, before rounding
