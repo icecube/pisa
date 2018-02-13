@@ -119,8 +119,8 @@ def init_nusquids_prop(
         # single-flavor initial states to assume for
         # oscillation probabilities
         ini_state = np.zeros(shape)
-        ini_state[:, :, 0, FLAV_INDS[input_name]] = np.ones((cz_shape, en_shape))
-        ini_state[:, :, 1, FLAV_INDS[input_name]] = np.ones((cz_shape, en_shape))
+        ini_state[:, :, 0, FLAV_INDS[input_name]] = np.ones((cz_shape, en_shape), dtype=FTYPE)
+        ini_state[:, :, 1, FLAV_INDS[input_name]] = np.ones((cz_shape, en_shape), dtype=FTYPE)
 
         ini_states[input_name] = ini_state
 
