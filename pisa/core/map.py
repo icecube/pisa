@@ -563,19 +563,78 @@ class Map(object):
 
         return comparisons
 
-    def plot(self, evtrate=True, symm=False, logz=False, fig=None, ax=None,
-             title=None, outdir=None, fname=None, backend='pdf', fmt='pdf',
-             cmap=None, fig_kw=None, plt_kw=None, vmax=None, clabel=None,
-             clabelsize=None, xlabelsize=None, ylabelsize=None,
-             titlesize=None):
-        """Simple plot of a 2D map.
+    def plot(self, symm=False, logz=False, vmin=None, vmax=None, backend=None,
+             ax=None, title=None, cmap=None, clabel=None, clabelsize=None,
+             xlabelsize=None, ylabelsize=None, titlesize=None, fig_kw=None,
+             pcolormesh_kw=None, colorbar_kw=None, outdir=None, fname=None,
+             fmt=None):
+        """Plot a 2D map.
+
+        Parameters
+        ----------
+        symm : bool, optional
+            Plot with symmetric (about 0) value-range limits.
+
+        logz : bool, optional
+            Plot logarithmic value-range
+
+        vmin, vmax : float, optional
+            Minimum and maximum values for the value-range of the plot. If None
+            specified, these are set according to `symm` and/or the values of
+            the `hist` in this Map.
+
+        backend : string, optional
+            Matplotlib backend to use (only takes effect if matplotlib is first
+            imported by this function).
+
+        ax : matplotlib.axis.Axis, optional
+            Provide an axis onto which the plot is drawn; if None is specified,
+            a new figure and axis are created.
+
+        title : string, optional
+            Set the title to this value; if None is specified, the title is
+            taken from the name of this Map.
+
+        cmap : string or matplotlib.colors.Colormap, optional
+
+        clabel : string, optional
+            Label to place on the colorbar
+
+        clabelsize, xlabelsize, ylabelsize, titlesize : float, optional
+            Size of the colorbar, x-axis label, y-axis label, and title text
+
+        fig_kw : mapping, optional
+            Keyword arguments passed to call to `matplotlib.pyplot.figure`;
+            this is only done, however, if `ax` is None and so a new figure
+            needs to be created.
+
+        plot_kw : mapping, optional
+            Keyword arguments to pass to call to `matplotlib.pyplot.pcolormesh`
+            (if Map is two or more dimensions).
+
+        colorbar_kw : mapping, optional
+            Keyword arguments to pass to call to `matplotlib.colorbar`.
+
+        fmt : string in ('pdf', 'png') or iterable thereof, optional
+            File format(s) in which to save the file. If None, then the plot
+            will not be saved.
+
+        outdir : string, optional
+            Directory into which to save the plot. If None is provided, the the
+            default is the current directory. Note that if `fmt` is None, then
+            this argument is irrelevant.
+
+        fname : string, optional
+             Custom filename to set for saved figure. If not provided, a name
+             is derived from the `name` attribute of the Map. Note that if
+             `fmt` is None, then this argument is irrelevant.
 
         Returns
         -------
         fig : :class:`matplotlib.figure.Figure` object
         ax : :class:`matplotlib.axes.Axes` object
         pcmesh : :class:`matplotlib.collections.QuadMesh`
-        cbar : :class:`matplotlib.colorbar.Colorbar`
+        colorbar : :class:`matplotlib.colorbar.Colorbar`
 
         """
         import matplotlib as mpl
@@ -583,31 +642,42 @@ class Map(object):
                 and mpl.get_backend().lower() != backend.lower()):
             mpl.use(backend)
         import matplotlib.pyplot as plt
+
         cmap_seq = plt.cm.inferno
         cmap_seq.set_bad(color=(0.0, 0.2, 0.0), alpha=1)
 
         cmap_div = plt.cm.RdBu_r
         cmap_div.set_bad(color=(0.5, 0.9, 0.5), alpha=1)
 
-        tex = self.name if self.tex is None else self.tex
+        # TODO: use https://matplotlib.org/users/colormapnorms.html
+        # to allow for both symm and logz (and to implement logz in the first
+        # place!)
+        assert not(symm and logz)
+        assert not logz, 'log not implemented'
 
         if title is None:
-            title = '$%s$' % tex
+            title = '$%s$' % (self.name if self.tex is None else self.tex)
+
         if fname is None:
             fname = get_valid_filename(self.name)
 
-        if fig_kw is None:
-            fig_kw = {}
-        if plt_kw is None:
-            plt_kw = {}
+        fig_kw = {} if fig_kw is None else fig_kw
+        pcolormesh_kw = {} if pcolormesh_kw is None else pcolormesh_kw
+        colorbar_kw = {} if colorbar_kw is None else colorbar_kw
+        if fmt is not None:
+            if isinstance(fmt, basestring):
+                fmt = [fmt]
+            fmt = set(f.strip().lower().lstrip('.') for f in fmt)
+            if outdir is None:
+                outdir = './'
+            else:
+                mkdir(outdir, warn=False)
 
-        if fig is None and ax is None:
-            fig = plt.figure(**fig_kw)
         if ax is None:
+            fig = plt.figure(**fig_kw)
             ax = fig.add_subplot(111)
-
-        if outdir is not None:
-            mkdir(outdir, warn=False)
+        else:
+            fig = ax.figure
 
         # TODO: allow plotting of N-dimensional arrays: 1D should be simple; >
         # 2D by arraying them as 2D slices in the smallest dimension(s)
@@ -617,22 +687,26 @@ class Map(object):
             to_plot = self.squeeze()
         assert len(to_plot.binning) == 2
 
+        if fmt is not None and fname is None:
+            fname = get_valid_filename(to_plot.name)
+
         hist = valid_nominal_values(to_plot.hist)
-        islog = False
         if symm:
-            if cmap is None:
-                cmap = cmap_div
-            extr = np.nanmax(np.abs(hist))
-            vmax_ = extr
-            vmin_ = -extr
-        else:
-            if cmap is None:
-                cmap = cmap_seq
-            if evtrate:
-                vmin_ = 0
+            cmap = cmap_div if cmap is None else cmap
+            if vmin is None and vmax is None:
+                vmax_ = np.nanmax(np.abs(hist))
+            elif vmin is None and vmax is not None:
+                vmax_ = np.abs(vmax)
+            elif vmin is not None and vmax is None:
+                vmax_ = np.abs(vmin)
             else:
-                vmin_ = np.nanmin(hist)
-            vmax_ = np.nanmax(hist)
+                assert vmax > vmin and vmax == -vmin
+                vmax_ = vmax
+            vmin_ = -vmax_
+        else:
+            cmap = cmap_seq if cmap is None else cmap
+            vmin_ = vmin if vmin is not None else np.nanmin(hist)
+            vmax_ = vmax if vmax is not None else np.nanmax(hist)
 
         x = to_plot.binning.dims[0].bin_edges.magnitude
         y = to_plot.binning.dims[1].bin_edges.magnitude
@@ -646,38 +720,27 @@ class Map(object):
                                    np.floor(np.log2(max(y)))+1))
             y = np.log10(y)
 
-        if vmax is not None:
-            vmax_ = vmax
-
-        X, Y = np.meshgrid(x, y)
-        pcmesh = ax.pcolormesh(
-            X, Y, hist.T,
+        defaults = dict(
             vmin=vmin_, vmax=vmax_, cmap=cmap,
             shading='flat', edgecolors='face'
         )
-        cbar = plt.colorbar(mappable=pcmesh, ax=ax)
-        cbar.ax.tick_params(labelsize='large')
+        for key, dflt_val in defaults.items():
+            if key not in pcolormesh_kw:
+                pcolormesh_kw[key] = dflt_val
+
+        X, Y = np.meshgrid(x, y)
+        pcmesh = ax.pcolormesh(X, Y, hist.T, **pcolormesh_kw)
+        colorbar = plt.colorbar(mappable=pcmesh, ax=ax, **colorbar_kw)
+        colorbar.ax.tick_params(labelsize='large')
         if clabel is not None:
-            if clabelsize is not None:
-                cbar.set_label(label=clabel, size=clabelsize)
-            else:
-                cbar.set_label(label=clabel)
+            colorbar.set_label(label=clabel, size=clabelsize)
 
         xlabel = '$%s$' % to_plot.binning.dims[0].label
         ylabel = '$%s$' % to_plot.binning.dims[1].label
 
-        if xlabelsize is not None:
-            ax.set_xlabel(xlabel, size=xlabelsize)
-        else:
-            ax.set_xlabel(xlabel)
-        if ylabelsize is not None:
-            ax.set_ylabel(ylabel, size=ylabelsize)
-        else:
-            ax.set_ylabel(ylabel)
-        if titlesize is not None:
-            ax.set_title(title, y=1.03, size=titlesize)
-        else:
-            ax.set_title(title, y=1.03)
+        ax.set_xlabel(xlabel, size=xlabelsize)
+        ax.set_ylabel(ylabel, size=ylabelsize)
+        ax.set_title(title, y=1.03, size=titlesize)
         ax.set_xlim(np.min(x), np.max(x))
         ax.set_ylim(np.min(y), np.max(y))
 
@@ -688,14 +751,13 @@ class Map(object):
             ax.set_yticks(np.log10(yticks))
             ax.set_yticklabels([str(int(yt)) for yt in yticks])
 
-        if outdir is not None:
-            if fname is None:
-                fname = to_plot.name
-            path = os.path.join([outdir, get_valid_filename(fname+'.'+fmt)])
-            logging.debug('>>>> Plot for inspection saved at %s', path)
-            fig.savefig(os.path.join(*path))
+        if fmt is not None:
+            for fmt_ in fmt:
+                path = os.path.join(outdir, fname + '.' + fmt_)
+                fig.savefig(os.path.join(*path))
+                logging.debug('>>>> Plot for inspection saved at %s', path)
 
-        return fig, ax, pcmesh, cbar
+        return fig, ax, pcmesh, colorbar
 
     @_new_obj
     def reorder_dimensions(self, order):
@@ -860,8 +922,9 @@ class Map(object):
         Parameters
         ----------
         method : None or string
-            Valid strings are '', 'none', 'poisson', 'gauss', or 'gauss+poisson'.
-            Strings are case-insensitive and whitespace is removed.
+            Valid strings are '', 'none', 'poisson', 'gauss', or
+            'gauss+poisson'. Strings are case-insensitive and whitespace is
+            removed.
 
         random_state : None or type accepted by utils.random_numbers.get_random_state
 
