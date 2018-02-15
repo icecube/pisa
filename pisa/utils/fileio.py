@@ -7,6 +7,7 @@ from __future__ import absolute_import
 
 import cPickle
 import errno
+import operator
 import os
 import re
 
@@ -192,7 +193,7 @@ def get_valid_filename(s):
     return re.sub(r'(?u)[^-\w.]', '', s)
 
 
-def nsort(l):
+def nsort(l, reverse=False):
     """Sort a sequence of strings containing integer number fields by the
     value of those numbers, rather than by simple alpha order. Useful
     for sorting e.g. version strings, etc..
@@ -202,10 +203,14 @@ def nsort(l):
     Parameters
     ----------
     l : sequence of strings
+        Sequence of strings to be sorted.
+
+    reverse : bool, optional
+        Whether to reverse the sort order (True => descending order)
 
     Returns
     -------
-    sorted : list of strings
+    sorted_l : list of strings
         Sorted strings
 
     Examples
@@ -223,13 +228,13 @@ def nsort(l):
     def _field_splitter(s):
         spl = NSORT_RE.split(s)
         non_numbers = spl[0::2]
-        numbers = (int(i) for i in spl[1::2])
-        return iter(zip(non_numbers, numbers))
+        numbers = [int(i) for i in spl[1::2]]
+        return reduce(operator.concat, zip(non_numbers, numbers))
 
-    return sorted(l, key=_field_splitter)
+    return sorted(l, key=_field_splitter, reverse=reverse)
 
 
-def fsort(l, signed=True):
+def fsort(l, signed=True, reverse=False):
     """Sort a sequence of strings with one or more floating point number fields
     in using the floating point value(s) (and intervening strings are treated
     as normally done). Note that + and - preceding a number are included in the
@@ -240,14 +245,19 @@ def fsort(l, signed=True):
     Parameters
     ----------
     l : sequence of strings
-    signed : bool
+        Sequence of strings to be sorted.
+
+    signed : bool, optional
         Whether to include a "+" or "-" preceeding a number in its value to be
         sorted. One might specify False if "-" is used exclusively as a
         separator in the string.
 
+    reverse : bool, optional
+        Whether to reverse the sort order (True => descending order)
+
     Returns
     -------
-    sorted_l : sequence of strings
+    sorted_l : list of strings
         Sorted strings
 
     Examples
@@ -266,16 +276,18 @@ def fsort(l, signed=True):
         numbers, where periods are separators rather than decimal points.
 
     """
-    def _field_splitter(s):
-        if signed:
-            spl = SIGNED_FSORT_RE.split(s)
-        else:
-            spl = UNSIGNED_FSORT_RE.split(s)
-        non_numbers = spl[0::2]
-        numbers = (float(i) for i in spl[1::2])
-        return iter(zip(non_numbers, numbers))
+    if signed:
+        fsort_re = SIGNED_FSORT_RE
+    else:
+        fsort_re = UNSIGNED_FSORT_RE
 
-    return sorted(l, key=_field_splitter)
+    def _field_splitter(s):
+        spl = fsort_re.split(s)
+        non_numbers = spl[0::2]
+        numbers = [float(i) for i in spl[1::2]]
+        return reduce(operator.concat, zip(non_numbers, numbers))
+
+    return sorted(l, key=_field_splitter, reverse=reverse)
 
 
 def find_files(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
