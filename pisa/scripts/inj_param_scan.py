@@ -10,11 +10,11 @@ from __future__ import absolute_import, division
 import numpy
 
 from pisa import ureg
-from pisa.analysis.hypo_testing import HypoTesting
+from pisa.analysis.hypo_testing import HypoTesting, setup_makers_from_pipelines,\
+                                       collect_maker_selections, select_maker_params
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.prior import Prior
 from pisa.utils.log import logging
-from pisa.utils.scripting import normcheckpath
 
 
 __all__ = ['inj_param_scan']
@@ -54,38 +54,20 @@ def inj_param_scan(return_outputs=False):
     init_args_d = parse_args(description=inj_param_scan.__doc__,
                              command=inj_param_scan)
 
-    # Normalize and convert `*_pipeline` filenames; store to `*_maker`
-    # (which is argument naming convention that HypoTesting init accepts).
-    # For this test, pipeline is required so we don't need the try arguments
-    # or the checks on it being None
-    filenames = init_args_d.pop('pipeline')
-    filenames = sorted(
-        [normcheckpath(fname) for fname in filenames]
-    )
-    init_args_d['h0_maker'] = filenames
-    # However, we do need them for the selections, since they can be different
-    for maker in ['h0', 'h1', 'data']:
-        ps_name = maker + '_param_selections'
-        ps_str = init_args_d[ps_name]
-        if ps_str is None:
-            ps_list = None
-        else:
-            ps_list = [x.strip().lower() for x in ps_str.split(',')]
-        init_args_d[ps_name] = ps_list
+    # only have a single distribution maker, the h0_maker
+    setup_makers_from_pipelines(init_args_d=init_args_d, ref_maker_names=['h0'])
 
-    init_args_d['data_maker'] = init_args_d['h0_maker']
-    init_args_d['h1_maker'] = init_args_d['h0_maker']
-    init_args_d['h0_maker'] = DistributionMaker(init_args_d['h0_maker'])
-    init_args_d['h1_maker'] = DistributionMaker(init_args_d['h1_maker'])
-    init_args_d['h1_maker'].select_params(init_args_d['h1_param_selections'])
-    init_args_d['data_maker'] = DistributionMaker(init_args_d['data_maker'])
+    # process param selections for each of h0, h1, and data
+    collect_maker_selections(init_args_d=init_args_d, maker_names=['h0', 'h1', 'data'])
+
+    # apply h0 selections to data if data doesn't have selections defined
     if init_args_d['data_param_selections'] is None:
         init_args_d['data_param_selections'] = \
             init_args_d['h0_param_selections']
         init_args_d['data_name'] = init_args_d['h0_name']
-    init_args_d['data_maker'].select_params(
-        init_args_d['data_param_selections']
-    )
+
+    # apply param selections to h1 and data distribution makers
+    select_maker_params(init_args_d=init_args_d, maker_names=['h1', 'data'])
 
     # Remove final parameters that don't want to be passed to HypoTesting
     param_name = init_args_d.pop('param_name')
@@ -97,7 +79,7 @@ def inj_param_scan(return_outputs=False):
     hypo_testing = HypoTesting(**init_args_d)
 
     logging.info(
-        'Scanning over %s between %.4f and %.4f with %i vals',
+        'Scanning over injected %s between %.4f and %.4f with %i vals',
         param_name, min(inj_vals), max(inj_vals), len(inj_vals)
     )
     # Modify parameters if necessary

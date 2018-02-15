@@ -11,7 +11,13 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from copy import deepcopy
 from os.path import expanduser, expandvars, isfile
 
-from pisa.analysis.analysis import Analysis
+# Import numpy and define np=numpy to allow `eval` to work with either
+import numpy
+
+#from pisa.analysis.analysis import Analysis
+from pisa import ureg
+from pisa.analysis.hypo_testing import HypoTesting, setup_makers_from_pipelines,\
+                                       collect_maker_selections, select_maker_params
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.utils.fileio import from_file, to_file
 from pisa.utils.log import logging, set_verbosity
@@ -36,165 +42,47 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  limitations under the License.'''
 
 
-def profile_scan(data_settings, template_settings, param_names, steps,
-                 only_points, no_outer, data_param_selections,
-                 hypo_param_selections, profile, outfile, minimizer_settings,
-                 metric, debug_mode):
-    """Perform a profile scan.
+np = numpy # pylint: disable=invalid-name
 
-    Parameters
-    ----------
-    data_settings
-    template_settings
-    param_names
-    steps
-    only_points
-    no_outer
-    data_param_selections
-    hypo_param_selections
-    profile
-    outfile
-    minimizer_settings
-    metric
-    debug_mode
 
-    Returns
-    -------
-    results
-    analysis
+def profile_scan(return_outputs=False):
+    """Load the HypoTesting class and use it to do an Asimov test across the
+    space of some hypo parameters.
 
+    The user will define the parameter and pass a numpy-interpretable string to
+    set the range of values. For example, one could scan over the space of
+    theta23 by using a string such as `"np.linspace(0.35, 0.65, 31)*ureg.rad"`.
     """
-    outfile = expanduser(expandvars(outfile))
-    if isfile(outfile):
-        raise IOError('`outfile` "{}" already exists!'.format(outfile))
+    # NOTE: import here to avoid circular refs
+    from pisa.scripts.analysis import parse_args
+    init_args_d = parse_args(description=profile_scan.__doc__,
+                             command=profile_scan)
 
-    minimizer_settings = from_file(minimizer_settings)
+    # only care about h0_maker and data_maker
+    setup_makers_from_pipelines(init_args_d=init_args_d, ref_maker_names=['h0', 'data'])
 
-    hypo_maker = DistributionMaker(template_settings)
+    # process param selections for each of h0 and data
+    collect_maker_selections(init_args_d=init_args_d, maker_names=['h0', 'data'])
 
-    if data_settings is None:
-        if (data_param_selections is None
-                or data_param_selections == hypo_param_selections):
-            data_maker = hypo_maker
-        else:
-            data_maker = deepcopy(hypo_maker)
-            data_maker.select_params(data_param_selections)
-    else:
-        data_maker = DistributionMaker(data_settings)
-        data_maker.select_params(data_param_selections)
+    # so HypoTesting won't be unhappy, even though we don't care about h1
+    init_args_d['h1_maker'] = init_args_d['h0_maker']
 
-    data_dist = data_maker.get_outputs(return_sum=True)
+    # apply param selections to h0 and data distribution makers
+    select_maker_params(init_args_d=init_args_d, maker_names=['h0', 'data'])
 
-    analysis = Analysis()
-    results = analysis.scan(
-        data_dist=data_dist,
-        hypo_maker=hypo_maker,
-        hypo_param_selections=hypo_param_selections,
-        metric=metric,
-        param_names=param_names,
-        steps=steps,
-        only_points=only_points,
-        outer=not no_outer,
-        profile=profile,
-        minimizer_settings=minimizer_settings,
-        outfile=outfile,
-        debug_mode=debug_mode
-    )
-    to_file(results, outfile)
-    logging.info("Done.")
+    # Remove final parameters that don't want to be passed to HypoTesting
+    param_names = init_args_d.pop('param_name')
+    scan_vals_lists = init_args_d.pop('scan_vals')
+    scan_vals = [eval(scan_vals_list) for scan_vals_list in scan_vals_lists]
+    outer = not init_args_d.pop('no_outer')
+    profile = not init_args_d.pop('no_profile')
+    store_intermediate = init_args_d.pop('store_intermediate')
 
-    return results, analysis
+    hypo_testing = HypoTesting(**init_args_d)
 
-
-def parse_args():
-    """Parse command line arguments"""
-    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-    parser.add_argument(
-        '--data-settings', type=str,
-        metavar='CONFIGFILE', default=None,
-        help='''Settings for the generation of "data" distributions; repeat
-        this argument to specify multiple pipelines. If omitted, the same
-        settings as specified for --template-settings are used to generate data
-        distributions.'''
+    scan_res = hypo_testing.hypo_scan(
+        param_names = param_names,
+        values = scan_vals,
+        outer = outer,
+        profile = profile
     )
-    parser.add_argument(
-        '--template-settings',
-        metavar='CONFIGFILE', required=True, action='append',
-        help='''Settings for generating template distributions; repeat
-        this option to define multiple pipelines.'''
-    )
-    parser.add_argument(
-        '--param-names', type=str, nargs='+', required=True,
-        help='''Provide a list of parameter names to scan.'''
-    )
-    parser.add_argument(
-        '--steps', type=int, nargs='+', required=True,
-        help='''Provide a number of steps for each parameter (in the same order
-        as the parameter names).'''
-    )
-    parser.add_argument(
-        '--only-points', type=int, nargs='+', required=False,
-        help='''Provide a point or ranges of points to be scanned specified by
-        one or an even number of integer numbers (might be useful if the
-        analysis is to be split up into several smaller jobs). 0-indexing is
-        assumed. Isn't applied to any single parameter, but to the whole set of
-        points (with steps x steps - 1 corresponding to the last).'''
-    )
-    parser.add_argument(
-        '--no-outer', action='store_true',
-        help='''Do not scan points as outer product of inner sequences.'''
-    )
-    parser.add_argument(
-        '--data-param-selections', type=str, required=False,
-        help='''Selection of params to use in order to generate the data
-        distributions.'''
-    )
-    parser.add_argument(
-        '--hypo-param-selections', type=str, nargs='+', required=False,
-        help='''Selection of params to use in order to generate the
-        hypothesised Asimov distributions.'''
-    )
-    parser.add_argument(
-        '--profile', action='store_true',
-        help='''Run profile scan, i.e. optimise over remaining free
-        parameters.'''
-    )
-    parser.add_argument(
-        '--outfile', metavar='FILE',
-        type=str, action='store', default='profile_scan.json',
-        help='file to store the output'
-    )
-    parser.add_argument(
-        '--minimizer-settings', type=str,
-        metavar='JSONFILE', required=True,
-        help='''Settings related to the minimizer used in the LLR analysis.'''
-    )
-    parser.add_argument(
-        '--metric', type=str,
-        choices=['llh', 'chi2', 'conv_llh', 'mod_chi2'], required=True,
-        help='''Settings related to the minimizer used in the LLR analysis.'''
-    )
-    parser.add_argument(
-        '--debug-mode', type=int, choices=[0, 1, 2], required=False, default=1,
-        help='''How much information to keep in the output file. 0 for only
-        essentials for a physics analysis, 1 for more minimizer history, 2 for
-        whatever can be recorded.'''
-    )
-    parser.add_argument(
-        '-v', action='count', default=None,
-        help='set verbosity level'
-    )
-    args = parser.parse_args()
-    kwargs = vars(args)
-    set_verbosity(kwargs.pop('v'))
-
-    return kwargs
-
-
-def main():
-    """Run profile_scan with args from command line"""
-    return profile_scan(**parse_args())
-
-
-if __name__ == '__main__':
-    results, analysis = main()

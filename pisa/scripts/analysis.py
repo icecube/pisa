@@ -14,6 +14,7 @@ import sys
 
 from pisa.scripts.discrete_hypo_test import discrete_hypo_test
 from pisa.scripts.inj_param_scan import inj_param_scan
+from pisa.scripts.profile_scan import profile_scan
 from pisa.scripts.systematics_tests import systematics_tests
 from pisa.utils.fileio import from_file
 from pisa.utils.log import logging, set_verbosity
@@ -23,7 +24,7 @@ from pisa.utils.stats import ALL_METRICS
 
 __all__ = ['SCRIPT', 'parse_args', 'main']
 
-__author__ = 'S. Wren, J.L. Lanfranchi'
+__author__ = 'S. Wren, J.L. Lanfranchi, T. Ehrhardt'
 
 __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 
@@ -51,7 +52,8 @@ def parse_args(command, description):
     init_args_d : dict
 
     """
-    assert command in [discrete_hypo_test, inj_param_scan, systematics_tests]
+    assert command in [discrete_hypo_test, inj_param_scan, profile_scan,
+                       systematics_tests]
 
     parser = ArgumentParser(
         description=description,
@@ -94,7 +96,7 @@ def parse_args(command, description):
         the ordering is NOT the discrete hypothesis being tested'''
     )
 
-    if command == discrete_hypo_test:
+    if command in [discrete_hypo_test, profile_scan]:
         # Data cannot be data for MC studies e.g. injected parameter scans so
         # these arguments are redundant there.
         group = parser.add_mutually_exclusive_group(required=True)
@@ -122,7 +124,7 @@ def parse_args(command, description):
         )
 
     else:
-        assert command in [inj_param_scan, systematics_tests]
+        assert command in (inj_param_scan, systematics_tests)
         parser.add_argument(
             '--pipeline', required=True,
             type=str, action='append', metavar='PIPELINE_CFG',
@@ -149,7 +151,7 @@ def parse_args(command, description):
     # For the MC tests (injected parameter scan, systematic tests etc.) you
     # must have the same pipeline for h0, h1 and data. So this argument is
     # hidden.
-    if command not in (inj_param_scan, systematics_tests):
+    if command == discrete_hypo_test:
         parser.add_argument(
             '--h1-pipeline',
             type=str, action='append', default=None, metavar='PIPELINE_CFG',
@@ -160,22 +162,23 @@ def parse_args(command, description):
             --h1-param-selections argument to generate a hypotheses distinct
             from hypothesis h0 but still use h0's distribution maker).'''
         )
-    parser.add_argument(
-        '--h1-param-selections',
-        type=str, default=None, metavar='PARAM_SELECTOR_LIST',
-        help='''Comma-separated (no spaces) list of param selectors to apply to
-        hypothesis h1 distribution maker's pipelines.'''
-    )
-    parser.add_argument(
-        '--h1-name',
-        type=str, metavar='NAME', default=None,
-        help='''Name for hypothesis h1. E.g., "IO" for inverted
-        ordering in the neutrino mass ordering analysis. Note that the name
-        here has no bearing on the actual process, so it's important that you
-        be careful to use a name that appropriately identifies the
-        hypothesis.'''
-    )
-    # For the MC tests (injected parameter scan, systematic tests etc.) you
+    if command in (discrete_hypo_test, inj_param_scan, systematics_tests):
+        parser.add_argument(
+            '--h1-param-selections',
+            type=str, default=None, metavar='PARAM_SELECTOR_LIST',
+            help='''Comma-separated (no spaces) list of param selectors to apply to
+            hypothesis h1 distribution maker's pipelines.'''
+        )
+        parser.add_argument(
+            '--h1-name',
+            type=str, metavar='NAME', default=None,
+            help='''Name for hypothesis h1. E.g., "IO" for inverted
+            ordering in the neutrino mass ordering analysis. Note that the name
+            here has no bearing on the actual process, so it's important that you
+            be careful to use a name that appropriately identifies the
+            hypothesis.'''
+        )
+    # For the MC tests (injected parameter scan, systematics tests) you
     # must have the same pipeline for h0, h1 and data. So this argument is
     # hidden.
     if command not in (inj_param_scan, systematics_tests):
@@ -221,7 +224,7 @@ def parse_args(command, description):
         parser.add_argument(
             '--fluctuate-fid',
             action='store_true',
-            help='''Apply fluctuations to the fiducaial distributions. If this
+            help='''Apply fluctuations to the fiducial distributions. If this
             flag is not set, --num-fid-trials and --fid-start-ind are forced to
             1 and 0, respectively.'''
         )
@@ -253,13 +256,13 @@ def parse_args(command, description):
         parser.add_argument(
             '--data-start-ind',
             type=int, default=0,
-            help='''Fluctated data set index.'''
+            help='''Fluctuated data set index.'''
         )
         parser.add_argument(
             '--num-fid-trials',
             type=int, default=1,
             help='''Number of fiducial pseudodata trials to run. In our
-            experience, it takes ~10^3-10^5 fiducial psuedodata trials to
+            experience, it takes ~10^3-10^5 fiducial pseudodata trials to
             achieve low uncertainties on the resulting significance, though
             that exact number will vary based upon the details of an
             analysis.'''
@@ -267,7 +270,7 @@ def parse_args(command, description):
         parser.add_argument(
             '--fid-start-ind',
             type=int, default=0,
-            help='''Fluctated fiducial data index.'''
+            help='''Fluctuated fiducial data index.'''
         )
     # A blind analysis only makes sense when the possibility of actually
     # analysing data is available.
@@ -328,6 +331,39 @@ def parse_args(command, description):
             non-central prior i.e. injecting a truth that differs from the
             centre of the prior. Flag this to force the prior to be left on.'''
         )
+    # Add in the arguments specific to the profile scan.
+    if command == profile_scan:
+        # allow for several parameters to be scanned
+        parser.add_argument(
+            '--param-name',
+            type=str, action='append', required=True,
+            help='''Provide the name of a parameter to scan. Repeat
+            for multiple.'''
+        )
+        parser.add_argument(
+            '--scan-vals',
+            type=str, action='append', required=True,
+            help='''List of values to scan (interpretable by numpy)
+            for a parameter, with units. Provide one for each parameter
+            passed via '--param-name' (in the same order).
+            Example: "np.linspace(35,55,10)*ureg.deg".'''
+        )
+        parser.add_argument(
+            '--no-outer',
+            action='store_true',
+            help='''Do not scan points as outer product of inner sequences.'''
+        )
+        parser.add_argument(
+            '--no-profile',
+            action='store_true',
+            help='''Just run scan (no profile), i.e. do not optimise over
+            remaining free parameters at each point.'''
+        )
+        parser.add_argument(
+            '--store-intermediate',
+            action='store_true',
+            help='Overwrite output after each fit.'
+        )
     # Add in the arguments specific to the systematic tests.
     if command == systematics_tests:
         parser.add_argument(
@@ -373,7 +409,25 @@ def parse_args(command, description):
         help='set verbosity level'
     )
     args = parser.parse_args(sys.argv[2:])
-    assert args.min_settings is not None or args.min_method is not None
+    if command != profile_scan:
+        # need minimization settings in any case
+        if args.min_settings is None and args.min_method is None:
+            raise ArgumentError(
+                None,
+                'Invalid options: require at least one of "--min-settings" and'
+                ' "--min-method".'
+              )
+    else:
+        if (args.min_settings is None and args.min_method is None
+            and not args.no_profile):
+            # only require minimization settings if some nuisance parameters
+            # are supposed to be taken into account
+            raise ArgumentError(
+                None,
+                'Invalid options: specify "--min-settings" or "--min-method"'
+                ' or set "--no-profile".'
+            )
+
     init_args_d = vars(args)
 
     set_verbosity(init_args_d.pop('v'))
@@ -442,6 +496,7 @@ MAIN_CMD_SPEC = dict(
     commands=OrderedDict([
         ('discrete_hypo', discrete_hypo_test),
         ('inj_param_scan', inj_param_scan),
+        ('profile_scan', profile_scan),
         ('syst_tests', systematics_tests)
     ]),
     description='Perform hypothesis testing',
@@ -451,6 +506,7 @@ The commands that can be issued are:
 
   discrete_hypo   Standard hypothesis testing analyses
   inj_param_scan  Scan over some injected parameter in the data
+  profile_scan    Scan over some hypothesis parameters
   syst_tests      Perform tests on the impact of systematics on the analysis
 
 Run

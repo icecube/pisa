@@ -6,7 +6,8 @@ Ment to be called from `pisa.scripts.analysis` as a subcommand.
 
 from __future__ import absolute_import, division
 
-from pisa.analysis.hypo_testing import HypoTesting
+from pisa.analysis.hypo_testing import HypoTesting, setup_makers_from_pipelines,\
+                                       collect_maker_selections
 from pisa.utils.scripting import normcheckpath
 
 
@@ -54,26 +55,11 @@ def discrete_hypo_test(return_outputs=False):
         command=discrete_hypo_test,
         description=('Test the ability to distinguish between two hypotheses'
                      ' based on "data": real data, toy data, or fluctuated toy'
-                     ' data (aka psuedodata)')
+                     ' data (aka pseudodata)')
     )
 
-    # Normalize and convert `*_pipeline` filenames; store to `*_maker`
-    # (which is argument naming convention that HypoTesting init accepts).
-    for maker in ['h0', 'h1', 'data']:
-        filenames = init_args_d.pop(maker + '_pipeline')
-        if filenames is not None:
-            filenames = sorted(
-                [normcheckpath(fname) for fname in filenames]
-            )
-        init_args_d[maker + '_maker'] = filenames
-
-        ps_name = maker + '_param_selections'
-        ps_str = init_args_d[ps_name]
-        if ps_str is None:
-            ps_list = None
-        else:
-            ps_list = [x.strip().lower() for x in ps_str.split(',')]
-        init_args_d[ps_name] = ps_list
+    setup_makers_from_pipelines(init_args_d, ref_maker_names=['h0', 'h1', 'data'])
+    collect_maker_selections(init_args_d, maker_names=['h0', 'h1', 'data'])
 
     # Instantiate the analysis object
     hypo_testing = HypoTesting(**init_args_d)

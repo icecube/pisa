@@ -12,7 +12,7 @@ logged by this script.
 from __future__ import absolute_import, division
 
 
-from collections import Mapping, OrderedDict, Sequence
+from collections import Counter, Mapping, OrderedDict, Sequence
 from copy import copy
 import getpass
 from itertools import chain, product
@@ -37,6 +37,7 @@ from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.random_numbers import get_random_state
 from pisa.utils.resources import find_resource
+from pisa.utils.scripting import normcheckpath
 from pisa.utils.stats import ALL_METRICS
 from pisa.utils.format import timediff, timestamp
 
@@ -59,6 +60,114 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  See the License for the specific language governing permissions and
  limitations under the License.'''
 
+ALL_MAKER_NAMES = ('h0', 'h1', 'data')
+
+
+def validate_maker_names(maker_names, require_all=False):
+    """Ensure that maker_names contains only names in ALL_MAKER_NAMES and has
+    no duplicates.
+    """
+    if isinstance(maker_names, basestring):
+        maker_names = [maker_names]
+    # count entry has to disappear exactly
+    test = Counter(maker_names)
+    ref = Counter(ALL_MAKER_NAMES)
+    found_extra = test - ref
+    missing_some = ref - test
+    if found_extra:
+        raise ValueError(
+            'Only allowed distribution maker names are: %s. Found'
+            ' extra entries: %s.' % (ALL_MAKER_NAMES, found_extra.keys())
+        )
+    if require_all and missing_some:
+        raise ValueError(
+            ' Missing distribution maker names: %s.' % missing_some.keys()
+        )
+    return
+
+def setup_makers_from_pipelines(init_args_d, ref_maker_names):
+    """Either setup all distribution makers from the pipeline settings for
+    a single one (reference) or set them all up individually.
+    """
+    validate_maker_names(ref_maker_names, require_all=False)
+    if len(ref_maker_names) == 1:
+        ref_ind = ALL_MAKER_NAMES.index(ref_maker_names[0])
+        ref_maker_name = ALL_MAKER_NAMES[ref_ind]
+        other_maker_names = [maker_name for maker_name in ALL_MAKER_NAMES
+                             if maker_name != ref_maker_name]
+        filenames = init_args_d.pop('pipeline')
+        filenames = sorted(
+            [normcheckpath(fname) for fname in filenames]
+        )
+        init_args_d[ref_maker_name+'_maker'] = DistributionMaker(filenames)
+        for maker_name in other_maker_names:
+            init_args_d[maker_name+'_maker'] = DistributionMaker(filenames)
+    else:
+        # here we have several makers, so check whether there are any
+        # filenames for a given one
+        for maker_name in ref_maker_names:
+            try:
+                mp = maker_name + '_pipeline'
+                filenames = init_args_d.pop(mp)
+            except KeyError:
+                raise KeyError(
+                    'Could not find a pipeline entry "%s" in the dict.' % mp
+                )
+            except:
+                raise
+            if filenames is not None:
+                filenames = sorted(
+                    [normcheckpath(fname) for fname in filenames]
+                )
+                init_args_d[maker_name + '_maker'] = DistributionMaker(filenames)
+            else:
+                raise ValueError(
+                    'Only found "None" pipeline settings for "%s",'
+                    ' so do not know how to setup a corresponding'
+                    ' DistributionMaker.' % maker_name
+                )
+
+def collect_maker_selections(init_args_d, maker_names):
+    """Collect and process selections from all of the given maker names. An
+    entry needs to exist for each of the maker names (but it can be None).
+    If 'data' is among the names and there's no selection, the selection from
+    'h0' will be applied.
+    """
+    validate_maker_names(maker_names, require_all=False)
+    for maker_name in maker_names:
+        ps_name = maker_name + '_param_selections'
+        try:
+            ps_str = init_args_d[ps_name]
+        except KeyError, e:
+            raise KeyError('Could not find the param selection entry "%s" in'
+                           ' the dict dict.' % ps_name)
+        except:
+            raise
+        if ps_str is None:
+            ps_list = None
+        else:
+            ps_list = [x.strip().lower() for x in ps_str.split(',')]
+        init_args_d[ps_name] = ps_list
+
+def select_maker_params(init_args_d, maker_names):
+    """Call `select_params` on DistributionMaker objects in `init_args_d`
+    with prefixes listed in `maker_names`. Fails if a corresponding param
+    selection entry is not found (after trying to fall back to 'h0' selection
+    in case of 'data'). Needs to be called after `collect_maker_selections`.
+    """
+    validate_maker_names(maker_names, require_all=False)
+    for maker_name in maker_names:
+        ps_name = maker_name + '_param_selections'
+        try:
+            ps = init_args_d[ps_name]
+        except KeyError:
+            # cannot tolerate the missing ps_name entry
+            raise KeyError('Could not find the param selection entry for the'
+                           ' distribution maker "%s" in the dict, so'
+                           ' `select_params` cannot be called.' % maker_name)
+        except:
+            raise
+        init_args_d[maker_name+'_maker'].select_params(ps)
 
 class Labels(object):
     """Derive file labels and naming scheme for data and directories produced
@@ -570,7 +679,6 @@ class HypoTesting(Analysis):
             fluctuate_data=self.fluctuate_data,
             fluctuate_fid=self.fluctuate_fid
         )
-
 
     def run_analysis(self):
         """Run the defined analysis.
@@ -1675,6 +1783,131 @@ class HypoTesting(Analysis):
             # Also be sure to remove the data_dist and toy_data_asimov_dist
             # so that they are regenerated next time
             self.clear_data()
+
+
+    def hypo_scan(self, param_names, values, outer, profile, debug_mode=1):
+        if isinstance(param_names, basestring):
+            param_names = [param_names]
+
+        nparams = len(param_names)
+        params = self.h0_maker.params
+        # Fix the parameters to be scanned
+        params.fix(param_names)
+        if nparams > 1:
+            steplist = []
+            for (i, pname) in enumerate(param_names):
+                steplist.append([(pname, val) for val in values[i]])
+                rangetuple = min(values[i]), max(values[i])
+                params[pname].range = rangetuple
+        else:
+            pname = param_names[0]
+            steplist = [[(pname, val) for val in values[0]]]
+            params[pname].range = min(values[0]), max(values[0])
+
+        # Instead of introducing another multitude of tests above, check here
+        # whether the lists of steps all have the same length in case `outer`
+        # is set to False
+        if nparams > 1 and not outer:
+            assert np.all(len(steps) == len(steplist[0]) for steps in steplist)
+            loopfunc = zip
+        else:
+            # With single parameter, can use either `zip` or `product`
+            loopfunc = product
+
+        t0 = time.time()
+        results = {'scan_vals': {pname: [] for pname in param_names}, 'trials': []}
+
+        # Setup logging and things.
+        self.setup_logging(reset_params=False)
+        #self.write_config_summary(reset_params=False)
+        self.write_minimizer_settings()
+        self.write_run_info()
+
+        # Loop for multiple (if fluctuated) data distributions
+        for self.data_ind in xrange(self.data_start_ind,
+                                    self.data_start_ind
+                                    + self.num_data_trials):
+            data_trials_complete = self.data_ind-self.data_start_ind
+            pct_data_complete = (
+                100.*(data_trials_complete)/self.num_data_trials
+            )
+            logging.info(
+                'Working on %s set ID %d (will stop after ID %d).'
+                ' %0.2f%s of %s sets completed.',
+                self.labels.data_disp,
+                self.data_ind,
+                self.data_start_ind+self.num_data_trials-1,
+                pct_data_complete,
+                '%',
+                self.labels.data_disp
+            )
+
+            # Setup directory for logging results
+            self.thisdata_dirpath = self.data_dirpath
+            if self.fluctuate_data:
+                self.thisdata_dirpath += '_' + format(self.data_ind, 'd')
+            mkdir(self.thisdata_dirpath)
+
+            self.generate_data()
+            trial_results = {'data_dist': self.data_dist, 'results': []}
+            for i, pos in enumerate(loopfunc(*steplist)):
+                msg = ''
+                sep = ', '
+                for (pname, val) in pos:
+                    params[pname].value = val
+                    if self.data_ind == self.data_start_ind:
+                        results['scan_vals'][pname].append(val)
+                    if isinstance(val, float) or isinstance(val, ureg.Quantity):
+                        if msg:
+                            msg += sep
+                        msg += '%s = %s'%(pname, val)
+                    else:
+                        raise TypeError("val is of type %s which I don't know "
+                                        "how to deal with in the output "
+                                        "messages."% type(val))
+                logging.info('Working on hypo point ' + msg)
+                self.h0_maker.update_params(params)
+                # TODO: consistent treatment of hypo_param_selections and scanning
+                if not profile:
+                    # explicitly fix all parameters
+                    for param in self.h0_maker.params.free:
+                        param.is_fixed = True
+                if not self.h0_maker.params.free:
+                    logging.info('Not optimizing since `profile` set to False or'
+                                 ' no free parameters found...')
+                    self.h0_fit_to_data = self.nofit_hypo(
+                        data_dist=self.data_dist,
+                        hypo_maker=self.h0_maker,
+                        hypo_param_selections=self.h0_param_selections,
+                        hypo_asimov_dist=self.h0_maker.get_outputs(return_sum=True),
+                        metric=self.metric, other_metrics=self.other_metrics,
+                        blind=self.blind
+                    )
+                else:
+                    logging.info('Starting optimization since `profile` requested.')
+                    self.h0_fit_to_data, alternate_fits = self.fit_hypo(
+                        data_dist=self.data_dist,
+                        hypo_maker=self.h0_maker,
+                        hypo_param_selections=self.h0_param_selections,
+                        metric=self.metric, other_metrics=self.other_metrics,
+                        minimizer_settings=self.minimizer_settings,
+                        check_octant=self.check_octant,
+                        check_ordering=self.check_ordering,
+                        pprint=self.pprint,
+                        blind=self.blind,
+                        reset_free=self.reset_free
+                    )
+                self.log_fit(fit_info=self.h0_fit_to_data,
+                             dirpath=self.thisdata_dirpath,
+                             label=self.labels.h0_fit_to_data)
+                trial_results['results'].append(self.h0_fit_to_data)
+            results['trials'].append(trial_results)
+            # At the end, reset the parameters in the maker
+            self.reset_makers()
+            # Also be sure to remove the data_dist and toy_data_asimov_dist
+            # so that they are regenerated next time
+            self.clear_data()
+        return results
 
     def asimov_nminusone_test(self, data_param, h0_name, h1_name, data_name):
         """This function will perform the standard N-1 test. This
