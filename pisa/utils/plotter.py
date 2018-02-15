@@ -1,7 +1,10 @@
+# pylint: disable=wrong-import-position, redefined-builtin
 """
 Plotter class for doing plots easily
 """
 
+
+from __future__ import absolute_import, division, print_function
 
 import itertools
 import os
@@ -119,7 +122,7 @@ class Plotter(object):
         self.ratio = ratio
         self.annotate = annotate
         if symmetric:
-            assert(self.log == False), 'cannot do log and symmetric at the same time'
+            assert(not self.log), 'cannot do log and symmetric at the same time'
         self.symmetric = symmetric
         self.reset_colors()
         self.color = 'b'
@@ -305,8 +308,12 @@ class Plotter(object):
             n_rows = np.floor(np.sqrt(n))
             while n % n_rows != 0:
                 n_rows -= 1
-            n_cols = n / n_rows
-        assert (n <= n_cols * n_rows), 'trying to plot %s subplots on a grid with %s x %s cells'%(n, n_cols, n_rows)
+            n_cols = n // n_rows
+        if n > n_cols * n_rows:
+            raise ValueError(
+                'trying to plot %s subplots on a grid with %s x %s cells'
+                % (n, n_cols, n_rows)
+            )
         size = (n_cols*self.size[0], n_rows*self.size[1])
         self.init_fig(size)
         plt.tight_layout()
@@ -326,7 +333,8 @@ class Plotter(object):
         plt_axis_n = map_sets[0][0].binning.names.index(plot_axis)
         # determine how many slices we need accoring to map_set[0]
         n_rows = 0
-        assert(len(map_sets[0][0].binning) == 2), 'only supported for 2d maps right now'
+        if len(map_sets[0][0].binning) != 2:
+            raise NotImplementedError('only supported for 2d maps right now')
         slice_axis_n = int(not plt_axis_n)
         slice_axis = map_sets[0][0].binning.names[slice_axis_n]
         n_rows = map_sets[0][0].binning[slice_axis].num_bins
@@ -422,8 +430,11 @@ class Plotter(object):
             )
         else:
             x, y = np.meshgrid(bin_edges[0], bin_edges[1])
-            pcol = plt.pcolormesh(x, y, np.ma.masked_invalid(zmap.T),
-                               vmin=vmin, vmax=vmax, cmap=cmap, linewidth=0, rasterized=True, **kwargs)
+            pcol = plt.pcolormesh(
+                x, y, np.ma.masked_invalid(zmap.T),
+                vmin=vmin, vmax=vmax, cmap=cmap, linewidth=0, rasterized=True,
+                **kwargs
+            )
             pcol.set_edgecolor('face')
 
         if self.annotate:
@@ -487,7 +498,7 @@ class Plotter(object):
             axis.bar(
                 plt_binning.bin_edges.m[:-1], 2*unp.std_devs(hist),
                 bottom=unp.nominal_values(hist)-unp.std_devs(hist),
-                width=plt_binning.bin_widths, alpha=0.25, linewidth=0,
+                width=plt_binning.bin_widths.m, alpha=0.25, linewidth=0,
                 color=self.color, **kwargs
             )
         axis.set_xlabel(tex_dollars(plt_binning.label))
@@ -546,15 +557,16 @@ class Plotter(object):
                     ratio[i] = 0.
                     ratio_error[i] = 1.
                 else:
-                    ratio[i] = hist1[i]/hist0i
-                    ratio_error[i] = err1[i]/hist0i
+                    ratio[i] = hist1[i] / hist0i
+                    ratio_error[i] = err1[i] / hist0i
                     minimum = min(minimum, ratio[i])
                     maximum = max(maximum, ratio[i])
 
             if map.tex == 'data':
                 axis.errorbar(
                     plt_binning.weighted_centers.m, ratio, yerr=ratio_error,
-                    fmt='o', markersize='4', label=tex_dollars(text2tex('data')),
+                    fmt='o', markersize='4',
+                    label=tex_dollars(text2tex('data')),
                     color='k', ecolor='k', mec='k'
                 )
             else:
@@ -568,7 +580,7 @@ class Plotter(object):
 
                 axis.bar(
                     plt_binning.bin_edges.m[:-1], 2*ratio_error,
-                    bottom=ratio-ratio_error, width=plt_binning.bin_widths,
+                    bottom=ratio-ratio_error, width=plt_binning.bin_widths.m,
                     alpha=0.25, linewidth=0, color=self.color
                 )
 
@@ -621,4 +633,3 @@ class Plotter(object):
             fileio.mkdir(self.outdir)
             fig.savefig(self.outdir+'/'+map.name+'.png', bbox_inches='tight',
                         dpi=150)
-

@@ -8,7 +8,7 @@ Config File Structure
 =====================
 
 A pipeline config file is expected to contain something like the following,
-with the sections ``[pipeline]`` and corresponding ``[stage:stagename]``
+with the sections ``[pipeline]`` and corresponding ``[stage:service]``
 required, in addition to a ``[binning]`` section:
 
 .. code-block:: cfg
@@ -28,7 +28,7 @@ required, in addition to a ``[binning]`` section:
     binning1.axis2 = {'num_bins':10, 'is_lin':True,
                       'domain':[1,5], 'tex': r'A_2'}
 
-    [stage:stagename0]
+    [stageA:serviceA]
     input_binning = bining1
     output_binning = binning1
     error_method = None
@@ -38,7 +38,7 @@ required, in addition to a ``[binning]`` section:
     param.p1.fixed = False
     param.p1.range = nominal + [-2.0, +2.0] * sigma
 
-    [stage:stagename1]
+    [stageB:serviceB]
     ...
 
 * ``#include`` statements can be used to include other config files. The
@@ -49,8 +49,8 @@ required, in addition to a ``[binning]`` section:
 * ``pipeline`` is the top-most section that defines the hierarchy of stages and
   what services to be instantiated.
 * ``binning`` can contain different binning definitions, that are then later
-  referred to from within the ``stage.stage_name`` sections.
-* ``stage.stage_name`` one such section per stage:service is necessary. It
+  referred to from within the ``stage.service`` sections.
+* ``stage.service`` one such section per stage.service is necessary. It
   contains some options that are common for all stages (`binning`,
   `error_method` and `debug_mode`) as well as all the necessary arguments and
   parameters for a given stage.
@@ -198,6 +198,7 @@ from io import StringIO
 from os.path import abspath, expanduser, expandvars, isfile, join
 import re
 import sys
+import warnings
 
 from backports.configparser import (
     RawConfigParser, ExtendedInterpolation, DuplicateOptionError,
@@ -205,6 +206,7 @@ from backports.configparser import (
     NoSectionError
 )
 from backports.configparser.helpers import open as c_open
+from backports.configparser.helpers import PY2
 import numpy as np
 from uncertainties import ufloat, ufloat_fromstr
 
@@ -517,9 +519,9 @@ def parse_pipeline_config(config):
 
     if not config.has_section('binning'):
         raise NoSectionError(
-                "Could not find 'binning'. Only found sections: %s"
-                %config.sections()
-              )
+            "Could not find 'binning'. Only found sections: %s"
+            % config.sections()
+        )
 
     # Create binning objects
     binning_dict = {}
@@ -531,6 +533,21 @@ def parse_pipeline_config(config):
             for bin_name in order:
                 try:
                     def_raw = config.get('binning', binning + '.' + bin_name)
+                except:
+                    dims_defined = [
+                        split(dim, sep='.')[1] for dim in
+                        config['binning'].keys() if
+                        dim.startswith(binning + '.') and not
+                        dim.endswith('.order')
+                    ]
+                    logging.error(
+                        "Failed to find definition of '%s' dimension of '%s'"
+                        " binning entry. Only found definition(s) of: %s",
+                        bin_name, binning, dims_defined
+                    )
+                    del dims_defined
+                    raise
+                try:
                     kwargs = eval(def_raw) # pylint: disable=eval-used
                 except:
                     logging.error(
@@ -563,7 +580,15 @@ def parse_pipeline_config(config):
     # Parse [stage.<stage_name>] sections and store to stage_dicts
     stage_dicts = OrderedDict()
     for stage, service in order:
-        section = 'stage%s%s' % (STAGE_SEP, stage)
+        old_section_header = 'stage%s%s' % (STAGE_SEP, stage)
+        new_section_header = '%s%s%s' % (stage, STAGE_SEP, service)
+        if config.has_section(old_section_header):
+            logging.warning('%s is an old-style section header, in the future use %s'%(old_section_header, new_section_header))
+            section = old_section_header
+        elif config.has_section(new_section_header):
+            section = new_section_header
+        else:
+            raise IOError('missing section in cfg for stage %s service %s'%(stage, service))
 
         # Instantiate dict to store args to pass to this stage
         service_kwargs = OrderedDict()
@@ -985,7 +1010,8 @@ class PISAConfigParser(RawConfigParser):
 
     def read(self, filenames, encoding=None):
         """Override `read` method to interpret `filenames` as PISA resource
-        locations, then call overridden `read` method.
+        locations, then call overridden `read` method. Also, IOError fails
+        here, whereas it is ignored in RawConfigParser.
 
         For further help on this method and its arguments, see
         :method:`~backports.configparser.configparser.read`
@@ -995,10 +1021,38 @@ class PISAConfigParser(RawConfigParser):
             filenames = [filenames]
         resource_locations = []
         for filename in filenames:
-            resource_locations.append(find_resource(filename))
+            resource_location = find_resource(filename)
+            if not isfile(resource_location):
+                raise ValueError(
+                    '"%s" is not a file or could not be located' % filename
+                )
+            resource_locations.append(resource_location)
 
-        return super(PISAConfigParser, self).read(filenames=resource_locations,
-                                                  encoding=encoding)
+        filenames = resource_locations
+
+        # NOTE: From here on, most of the `read` method is copied, but
+        # ignoring IOError exceptions is removed here. Python copyrights apply.
+
+        if PY2 and isinstance(filenames, bytes):
+            # we allow for a little unholy magic for Python 2 so that
+            # people not using unicode_literals can still use the library
+            # conveniently
+            warnings.warn(
+                "You passed a bytestring as `filenames`. This will not work"
+                " on Python 3. Use `cp.read_file()` or switch to using Unicode"
+                " strings across the board.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            filenames = [filenames]
+        elif isinstance(filenames, str):
+            filenames = [filenames]
+        read_ok = []
+        for filename in filenames:
+            with c_open(filename, encoding=encoding) as fp:
+                self._read(fp, filename)
+            read_ok.append(filename)
+        return read_ok
 
     # NOTE: the `_read` method is copy-pasted (then modified slightly) from
     # Python's backports.configparser (version 3.5.0), and so any copyright

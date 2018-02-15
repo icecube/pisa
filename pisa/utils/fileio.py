@@ -7,6 +7,7 @@ from __future__ import absolute_import
 
 import cPickle
 import errno
+import operator
 import os
 import re
 
@@ -20,11 +21,12 @@ from pisa.utils import resources
 import numpy as np
 
 
-__all__ = ['PKL_EXTS', 'DILL_EXTS', 'CFG_EXTS', 'ZIP_EXTS', 'TXT_EXTS', 'XOR_EXTS',
-           'NSORT_RE', 'UNSIGNED_FSORT_RE', 'SIGNED_FSORT_RE',
-           'expand', 'mkdir', 'get_valid_filename', 'nsort', 'fsort',
-           'find_files', 'from_cfg', 'from_pickle', 'to_pickle', 'from_dill',
-           'to_dill', 'from_file', 'to_file']
+__all__ = [
+    'PKL_EXTS', 'DILL_EXTS', 'CFG_EXTS', 'ZIP_EXTS', 'TXT_EXTS', 'XOR_EXTS',
+    'NSORT_RE', 'UNSIGNED_FSORT_RE', 'SIGNED_FSORT_RE', 'expand', 'mkdir',
+    'get_valid_filename', 'nsort', 'fsort', 'find_files', 'from_cfg',
+    'from_pickle', 'to_pickle', 'from_dill', 'to_dill', 'from_file', 'to_file'
+]
 
 __author__ = 'J.L. Lanfranchi'
 
@@ -191,7 +193,7 @@ def get_valid_filename(s):
     return re.sub(r'(?u)[^-\w.]', '', s)
 
 
-def nsort(l):
+def nsort(l, reverse=False):
     """Sort a sequence of strings containing integer number fields by the
     value of those numbers, rather than by simple alpha order. Useful
     for sorting e.g. version strings, etc..
@@ -201,10 +203,15 @@ def nsort(l):
     Parameters
     ----------
     l : sequence of strings
+        Sequence of strings to be sorted.
+
+    reverse : bool, optional
+        Whether to reverse the sort order (True => descending order)
 
     Returns
     -------
-    sorted_l : sequence of strings
+    sorted_l : list of strings
+        Sorted strings
 
     Examples
     --------
@@ -221,13 +228,13 @@ def nsort(l):
     def _field_splitter(s):
         spl = NSORT_RE.split(s)
         non_numbers = spl[0::2]
-        numbers = (int(i) for i in spl[1::2])
-        return zip(non_numbers, numbers)
+        numbers = [int(i) for i in spl[1::2]]
+        return reduce(operator.concat, zip(non_numbers, numbers))
 
-    return sorted(l, key=_field_splitter)
+    return sorted(l, key=_field_splitter, reverse=reverse)
 
 
-def fsort(l, signed=True):
+def fsort(l, signed=True, reverse=False):
     """Sort a sequence of strings with one or more floating point number fields
     in using the floating point value(s) (and intervening strings are treated
     as normally done). Note that + and - preceding a number are included in the
@@ -238,14 +245,20 @@ def fsort(l, signed=True):
     Parameters
     ----------
     l : sequence of strings
-    signed : bool
+        Sequence of strings to be sorted.
+
+    signed : bool, optional
         Whether to include a "+" or "-" preceeding a number in its value to be
         sorted. One might specify False if "-" is used exclusively as a
         separator in the string.
 
+    reverse : bool, optional
+        Whether to reverse the sort order (True => descending order)
+
     Returns
     -------
-    sorted_l : sequence of strings
+    sorted_l : list of strings
+        Sorted strings
 
     Examples
     --------
@@ -263,16 +276,18 @@ def fsort(l, signed=True):
         numbers, where periods are separators rather than decimal points.
 
     """
-    def _field_splitter(s):
-        if signed:
-            spl = SIGNED_FSORT_RE.split(s)
-        else:
-            spl = UNSIGNED_FSORT_RE.split(s)
-        non_numbers = spl[0::2]
-        numbers = (float(i) for i in spl[1::2])
-        return zip(non_numbers, numbers)
+    if signed:
+        fsort_re = SIGNED_FSORT_RE
+    else:
+        fsort_re = UNSIGNED_FSORT_RE
 
-    return sorted(l, key=_field_splitter)
+    def _field_splitter(s):
+        spl = fsort_re.split(s)
+        non_numbers = spl[0::2]
+        numbers = [float(i) for i in spl[1::2]]
+        return reduce(operator.concat, zip(non_numbers, numbers))
+
+    return sorted(l, key=_field_splitter, reverse=reverse)
 
 
 def find_files(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
@@ -318,7 +333,7 @@ def find_files(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
     # Define a function for accepting a filename as a match
     if regex is None:
         if fname is None:
-            def _validfilefunc(fn):
+            def _validfilefunc(fn): # pylint: disable=unused-argument
                 return True, None
         else:
             def _validfilefunc(fn):
@@ -360,13 +375,23 @@ def from_cfg(fname):
     """Load a PISA config file"""
     from pisa.utils.config_parser import PISAConfigParser
     config = PISAConfigParser()
-    config.read(fname)
+    try:
+        config.read(fname)
+    except:
+        log.logging.error(
+            'Failed to read PISA config file, `fname`="%s"', fname
+        )
+        raise
     return config
 
 
 def from_pickle(fname):
     """Load from a Python pickle file"""
-    return cPickle.load(file(fname, 'rb'))
+    try:
+        return cPickle.load(file(fname, 'rb'))
+    except:
+        log.logging.error('Failed to load pickle file, `fname`="%s"', fname)
+        raise
 
 
 def to_pickle(obj, fname, overwrite=True, warn=True):
@@ -378,14 +403,18 @@ def to_pickle(obj, fname, overwrite=True, warn=True):
 
 def from_txt(fname, as_array=False):
     """Load from a text (txt) file"""
-    if as_array:
-        with open(fname, 'r') as f:
-            a = f.readlines()
-        a = [[float(m) for m in l.strip('\n\r').split()] for l in a]
-        a = np.array(a)
-    else:
-        with open(fname, 'r') as f:
-            a = f.read()
+    try:
+        if as_array:
+            with open(fname, 'r') as f:
+                a = f.readlines()
+            a = [[float(m) for m in l.strip('\n\r').split()] for l in a]
+            a = np.array(a)
+        else:
+            with open(fname, 'r') as f:
+                a = f.read()
+    except:
+        log.logging.error('Failed to load txt file, `fname`="%s"', fname)
+        raise
     return a
 
 
@@ -397,7 +426,11 @@ def to_txt(obj, fname):
 
 def from_dill(fname):
     """Load from a `dill` file"""
-    return dill.load(file(fname, 'rb'))
+    try:
+        return dill.load(file(fname, 'rb'))
+    except:
+        log.logging.error('Failed to load dill file, `fname`="%s"', fname)
+        raise
 
 
 def to_dill(obj, fname, overwrite=True, warn=True):
@@ -407,23 +440,31 @@ def to_dill(obj, fname, overwrite=True, warn=True):
 
 
 def from_file(fname, fmt=None, **kwargs):
-    """Dispatch correct file reader based on fmt (if specified) or guess
+    """Dispatch correct file reader based on `fmt` (if specified) or guess
     based on file name's extension.
 
     Parameters
     ----------
     fname : string
         File path / name from which to load data.
+
     fmt : None or string
         If string, for interpretation of the file according to this format. If
         None, file format is deduced by an extension found in `fname`.
+
     **kwargs
-        All other arguments are passed to the function called to read the file.
+        All other arguments are passed to the function dispatched to read the
+        file.
 
     Returns
     -------
     Object instantiated from the file (string, dictionariy, ...). Each format
     is interpreted differently.
+
+    Raises
+    ------
+    ValueError
+        If extension is not recognized
 
     """
     if fmt is None:
@@ -433,11 +474,9 @@ def from_file(fname, fmt=None, **kwargs):
         rootname = fname
         ext = fmt.lower()
 
-    zip_ext = None
     if ext in ZIP_EXTS or ext in XOR_EXTS:
         rootname, inner_ext = os.path.splitext(rootname)
         inner_ext = inner_ext.replace('.', '').lower()
-        zip_ext = ext
         ext = inner_ext
 
     fname = resources.find_resource(fname)
@@ -468,11 +507,9 @@ def to_file(obj, fname, fmt=None, overwrite=True, warn=True, **kwargs):
         rootname = fname
         ext = fmt.lower()
 
-    zip_ext = None
     if ext in ZIP_EXTS or ext in XOR_EXTS:
         rootname, inner_ext = os.path.splitext(rootname)
         inner_ext = inner_ext.replace('.', '').lower()
-        zip_ext = ext
         ext = inner_ext
 
     if ext in jsons.JSON_EXTS:
