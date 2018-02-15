@@ -3,7 +3,6 @@ Performe injected parameter scan based on command line args. Ment to be called
 from `pisa.scripts.analysis` as a subcommand.
 """
 
-
 from __future__ import absolute_import, division
 
 # Import numpy and define np=numpy to allow `eval` to work with either
@@ -39,7 +38,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 np = numpy # pylint: disable=invalid-name
 
 
-def inj_param_scan(return_outputs=False):
+def inj_param_scan(init_args_d, return_outputs=False):
     """Load the HypoTesting class and use it to do an Asimov test across the
     space of one of the injected parameters.
 
@@ -49,10 +48,6 @@ def inj_param_scan(return_outputs=False):
     will then be evaluated to figure out a space of theta23 to inject and run
     Asimov tests.
     """
-    # NOTE: import here to avoid circular refs
-    from pisa.scripts.analysis import parse_args
-    init_args_d = parse_args(description=inj_param_scan.__doc__,
-                             command=inj_param_scan)
 
     # only have a single distribution maker, the h0_maker
     setup_makers_from_pipelines(init_args_d=init_args_d, ref_maker_names=['h0'])
@@ -65,6 +60,15 @@ def inj_param_scan(return_outputs=False):
         init_args_d['data_param_selections'] = \
             init_args_d['h0_param_selections']
         init_args_d['data_name'] = init_args_d['h0_name']
+
+    # we cannot allow a data_name or h0/1_name of None, or the actual method
+    # in hypo_testing will fail, so set 'None' string
+    if init_args_d['data_name'] is None:
+        init_args_d['data_name'] = 'None'
+    if init_args_d['h0_name'] is None:
+        init_args_d['h0_name'] = 'None'
+    if init_args_d['h1_name'] is None:
+        init_args_d['h1_name'] = 'None'
 
     # apply param selections to h1 and data distribution makers
     select_maker_params(init_args_d=init_args_d, maker_names=['h1', 'data'])
@@ -226,6 +230,7 @@ def inj_param_scan(return_outputs=False):
         test_name=test_name,
         inj_vals=inj_vals,
         requested_vals=requested_vals,
+        #TODO: there seems to be some fairly opaque logic w.r.t. these names in HypoTesting and it asimov_inj_param_scan script
         h0_name=init_args_d['h0_name'],
         h1_name=init_args_d['h1_name'],
         data_name=init_args_d['data_name']

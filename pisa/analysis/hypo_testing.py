@@ -650,7 +650,6 @@ class HypoTesting(Analysis):
                 h0_name = ','.join(self.h0_param_selections)
             else:
                 h0_name = 'h0'
-        h0_name = get_valid_filename(h0_name).lower()
 
         if h1_name is None:
             if (self.h1_maker == self.h0_maker
@@ -1438,8 +1437,13 @@ class HypoTesting(Analysis):
         summary['data_is_data'] = self.data_is_data
         summary['data_hash'] = self.data_hash
         if not self.data_is_data:
+            #TODO: ugly but necessary fix
+            if self.data_param_selections is None:
+                data_param_selections = ['None']
+            else:
+                data_param_selections = self.data_param_selections
             summary['data_param_selections'] = ','.join(
-                self.data_param_selections)
+                data_param_selections)
         summary['data_params_hash'] = self.data_maker.params.hash
         summary['data_params'] = [str(p) for p in self.data_maker.params]
         summary['data_pipelines'] = self.summarize_dist_maker(self.data_maker)
@@ -1449,7 +1453,12 @@ class HypoTesting(Analysis):
             self.h0_maker.reset_free()
         summary['h0_name'] = self.labels.h0_name
         summary['h0_hash'] = self.h0_hash
-        summary['h0_param_selections'] = ','.join(self.h0_param_selections)
+        #TODO: ugly but necessary fix
+        if self.h0_param_selections is None:
+            h0_param_selections = ['None']
+        else:
+            h0_param_selections = self.h0_param_selections
+        summary['h0_param_selections'] = ','.join(h0_param_selections)
         summary['h0_params_hash'] = self.h0_maker.params.hash
         summary['h0_params'] = [str(p) for p in self.h0_maker.params]
         summary['h0_pipelines'] = self.summarize_dist_maker(self.h0_maker)
@@ -1459,7 +1468,12 @@ class HypoTesting(Analysis):
             self.h1_maker.reset_free()
         summary['h1_name'] = self.labels.h1_name
         summary['h1_hash'] = self.h1_hash
-        summary['h1_param_selections'] = ','.join(self.h1_param_selections)
+        #TODO: ugly but necessary fix
+        if self.h1_param_selections is None:
+            h1_param_selections = ['None']
+        else:
+            h1_param_selections = self.h1_param_selections
+        summary['h1_param_selections'] = ','.join(h1_param_selections)
         summary['h1_params_hash'] = self.h1_maker.params.hash
         summary['h1_params'] = [str(p) for p in self.h1_maker.params]
         summary['h1_pipelines'] = self.summarize_dist_maker(self.h1_maker)
@@ -1637,7 +1651,7 @@ class HypoTesting(Analysis):
             self.h0_maker.select_params([selection])
             self.h1_maker.select_params([selection])
         if self.h0_maker.params[test_name].range is not None:
-            enforce_positive = self.h0_maker.params[test_name].range[0] >= 0
+            enforce_positive = self.h0_maker.params[test_name].range[0].m >= 0
         else:
             enforce_positive = False
         # Convert the units if necessary
@@ -1650,7 +1664,7 @@ class HypoTesting(Analysis):
             )
             rangetuple = (newminrangeval, newmaxrangeval)
         # Make the lower end equal to zero if it needs to be
-        if enforce_positive and rangetuple[0] < 0:
+        if enforce_positive and rangetuple[0].m < 0:
             newminrangeval = 0.0 * ureg(inj_units)
             newminrangeval = newminrangeval.to(
                 self.h0_maker.params[test_name].units

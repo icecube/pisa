@@ -30,7 +30,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  limitations under the License.'''
 
 
-def discrete_hypo_test(return_outputs=False):
+def discrete_hypo_test(init_args_d, return_outputs=False):
     """Setup distribution makers and run the hypo_testing process.
 
     Parameters
@@ -44,19 +44,7 @@ def discrete_hypo_test(return_outputs=False):
         If `return_outputs` is True, returns the object used for running the
         analysis (e.g. for calling this script/function from an interactive
         shell).
-
     """
-    # NOTE: import here to avoid circular refs
-    from pisa.scripts.analysis import parse_args
-
-    # NOTE: Removing extraneous args that won't get passed to instantiate the
-    # HypoTesting object via dictionary's `pop()` method.
-    init_args_d = parse_args(
-        command=discrete_hypo_test,
-        description=('Test the ability to distinguish between two hypotheses'
-                     ' based on "data": real data, toy data, or fluctuated toy'
-                     ' data (aka pseudodata)')
-    )
 
     setup_makers_from_pipelines(init_args_d, ref_maker_names=['h0', 'h1', 'data'])
     collect_maker_selections(init_args_d, maker_names=['h0', 'h1', 'data'])

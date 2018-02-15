@@ -20,7 +20,6 @@ from pisa.analysis.hypo_testing import HypoTesting, setup_makers_from_pipelines,
                                        collect_maker_selections, select_maker_params
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.utils.fileio import from_file, to_file
-from pisa.utils.log import logging, set_verbosity
 
 
 __all__ = ['profile_scan', 'parse_args', 'main']
@@ -45,7 +44,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 np = numpy # pylint: disable=invalid-name
 
 
-def profile_scan(return_outputs=False):
+def profile_scan(init_args_d, return_outputs=False):
     """Load the HypoTesting class and use it to do an Asimov test across the
     space of some hypo parameters.
 
@@ -53,10 +52,6 @@ def profile_scan(return_outputs=False):
     set the range of values. For example, one could scan over the space of
     theta23 by using a string such as `"np.linspace(0.35, 0.65, 31)*ureg.rad"`.
     """
-    # NOTE: import here to avoid circular refs
-    from pisa.scripts.analysis import parse_args
-    init_args_d = parse_args(description=profile_scan.__doc__,
-                             command=profile_scan)
 
     # only care about h0_maker and data_maker
     setup_makers_from_pipelines(init_args_d=init_args_d, ref_maker_names=['h0', 'data'])
