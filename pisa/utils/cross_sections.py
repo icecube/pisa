@@ -615,7 +615,7 @@ def test_CrossSections(outdir=None):
         #root_xs_file = os.path.join(test_dir, 'genie_2.6.4_simplified.root')
         root_xs_file = find_resource(os.path.join(
             #'tests', 'data', 'xsec', 'genie_2.6.4_simplified.root'
-            'cross_sections', 'genie_xsec_h2o.root'
+            'cross_sections', 'genie_xsec_H2O.root'
         ))
 
         # Make sure that the XS newly-imported from ROOT match those stored in
