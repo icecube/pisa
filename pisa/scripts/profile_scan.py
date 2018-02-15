@@ -76,8 +76,8 @@ def profile_scan(init_args_d, return_outputs=False):
     hypo_testing = HypoTesting(**init_args_d)
 
     scan_res = hypo_testing.hypo_scan(
-        param_names = param_names,
-        values = scan_vals,
-        outer = outer,
-        profile = profile
+        param_names=param_names,
+        values=scan_vals,
+        outer=outer,
+        profile=profile
     )
