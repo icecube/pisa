@@ -18,6 +18,9 @@ from pisa.scripts.inj_param_scan import inj_param_scan
 from pisa.scripts.profile_scan import profile_scan
 from pisa.scripts.systematics_tests import systematics_tests as syst_tests
 from pisa.utils.log import logging, set_verbosity
+from pisa.utils.minimization import GLOBAL_MINIMIZERS_WITH_DEFAULTS,\
+                                    LOCAL_MINIMIZERS_WITH_DEFAULTS,\
+                                    override_min_opt
 from pisa.utils.scripting import get_script
 from pisa.utils.stats import ALL_METRICS
 
@@ -109,6 +112,9 @@ class AnalysisScript(object):
         """Creates a generically usable dictionary of init args for the
         various analysis scripts"""
         init_args_d = self.analysis_init_args_d
+        global_min_settings_from_file = init_args_d.pop('global_min_settings')
+        global_minimizer = init_args_d.pop('global_min_method')
+        global_min_opt = init_args_d.pop('global_min_opt')
         min_settings_from_file = init_args_d.pop('min_settings')
         minimizer = init_args_d.pop('min_method')
         min_opt = init_args_d.pop('min_opt')
@@ -119,6 +125,22 @@ class AnalysisScript(object):
             options=dict(value=dict(), desc=dict())
         )
 
+        global_minimizer_settings = dict(
+            method=dict(value='', desc='no desc'),
+            options=dict(value=dict(), desc=dict())
+        )
+
+        if global_min_settings_from_file is not None:
+            global_minimizer_settings.update(
+                from_file(global_min_settings_from_file)
+            )
+        if global_minimizer is not None:
+            global_minimizer_settings['method'] = dict(value=global_minimizer,
+                                                       desc='no desc')
+
+        if global_min_opt is not None:
+            override_min_opt(global_minimizer_settings, global_min_opt)
+
         if min_settings_from_file is not None:
             minimizer_settings.update(from_file(min_settings_from_file))
 
@@ -126,18 +148,10 @@ class AnalysisScript(object):
             minimizer_settings['method'] = dict(value=minimizer, desc='no desc')
 
         if min_opt is not None:
-            for opt_val_str in min_opt:
-                opt, val_str = [s.strip() for s in opt_val_str.split(':')]
-                try:
-                    val = int(val_str)
-                except ValueError:
-                    try:
-                        val = float(val_str)
-                    except ValueError:
-                        val = val_str
-                minimizer_settings['options']['value'][opt] = val
-                minimizer_settings['options']['desc'][opt] = 'no desc'
+            override_min_opt(minimizer_settings, min_opt)
+
         init_args_d['minimizer_settings'] = minimizer_settings
+        init_args_d['global_minimizer_settings'] = global_minimizer_settings
 
         init_args_d['check_octant'] = not init_args_d.pop('no_octant_check')
         init_args_d['check_ordering'] = init_args_d.pop('ordering_check')
@@ -393,34 +407,9 @@ class AnalysisScript(object):
 
 
     def parse_fit(self):
-        """Parser for fit (methods)"""
+        """Parser for general fitting stuff"""
         parser = ArgumentParser(
             add_help=False
-        )
-        parser.add_argument(
-            '--min-settings',
-            type=str, metavar='MINIMIZER_CFG', default=None,
-            help='''Minimizer settings config file.'''
-        )
-        parser.add_argument(
-            '--min-method',
-            type=str, default=None, choices=('l-bfgs-b', 'slsqp'),
-            help='''Name of minimizer to use. Note that this takes precedence over
-            the minimizer method specified via the --min-settings config
-            file.'''
-        )
-        parser.add_argument(
-            '--min-opt',
-            type=str, metavar='OPTION:VALUE', nargs='+', default=None,
-            help='''Minimizer option:value pair(s) (can specify multiple).
-            Values specified here override any of the same name in the config file
-            specified by --min-settings'''
-        )
-        parser.add_argument(
-            '--no-octant-check',
-            action='store_true',
-            help='''Disable fitting hypotheses in theta23 octant opposite initial
-            octant.'''
         )
         parser.add_argument(
             '--ordering-check',
@@ -615,6 +604,67 @@ class AnalysisScript(object):
         self.metric_parser = parser
 
 
+    def parse_min_global(self):
+        """Parser for global minimization method"""
+        parser = ArgumentParser(
+            add_help=False
+        )
+        parser.add_argument(
+            '--global-min-settings',
+            type=str, metavar='MINIMIZER_CFG', default=None,
+            help='''Minimizer settings config file in case global minimization
+            is desired.'''
+        )
+        parser.add_argument(
+            '--global-min-method',
+            type=str, default=None, choices=GLOBAL_MINIMIZERS_WITH_DEFAULTS,
+            help='''Name of global minimizer to use. Note that this takes
+            precedence over the minimizer method specified via the
+            --global-min-settings config file.'''
+        )
+        parser.add_argument(
+            '--global-min-opt',
+            type=str, metavar='OPTION:VALUE', nargs='+', default=None,
+            help='''Global minimizer option:value pair(s) (can specify multiple).
+            Values specified here override any of the same name in the config
+            file specified by --global-min-settings'''
+        )
+        self.min_global_parser = parser
+
+
+    def parse_min_local(self):
+        """Parser for local minimization method"""
+        parser = ArgumentParser(
+            add_help=False
+        )
+        parser.add_argument(
+            '--min-settings',
+            type=str, metavar='MINIMIZER_CFG', default=None,
+            help='''Minimizer settings config file.'''
+        )
+        parser.add_argument(
+            '--min-method',
+            type=str, default=None, choices=LOCAL_MINIMIZERS_WITH_DEFAULTS,
+            help='''Name of minimizer to use. Note that this takes precedence
+            over the minimizer method specified via the --min-settings config
+            file.'''
+        )
+        parser.add_argument(
+            '--min-opt',
+            type=str, metavar='OPTION:VALUE', nargs='+', default=None,
+            help='''Minimizer option:value pair(s) (can specify multiple).
+            Values specified here override any of the same name in the config
+            file specified by --min-settings'''
+        )
+        parser.add_argument(
+            '--no-octant-check',
+            action='store_true',
+            help='''Disable fitting hypotheses in theta23 octant opposite
+            initial octant.'''
+        )
+        self.min_local_parser = parser
+
+
     def parse_profile_scan(self):
         """Parser for a profile scan"""
         parser = ArgumentParser(
@@ -730,6 +780,7 @@ class AnalysisScript(object):
         parser = ArgumentParser(
             description='Discrete hypothesis test',
             parents=[self.log_parser, self.git_info_parser,
+                     self.min_local_parser, self.min_global_parser,
                      self.fit_parser, self.metric_parser, self.blindness_parser,
                      self.data_type_parser, self.data_pipeline_parser,
                      self.data_prop_parser, self.data_fluct_parser,
@@ -744,11 +795,12 @@ class AnalysisScript(object):
     def command_inj_param_scan(self):
         parser = ArgumentParser(
             description='Injected-parameter scan',
-            parents=[self.log_parser, self.git_info_parser, self.fit_parser,
-                     self.metric_parser, self.single_pipeline_parser,
-                     self.data_prop_parser, self.h0_prop_parser,
-                     self.h1_prop_parser, self.inj_param_scan_parser,
-                     self.verbosity_parser]
+            parents=[self.log_parser, self.git_info_parser,
+                     self.min_local_parser, self.min_global_parser,
+                     self.fit_parser, self.metric_parser,
+                     self.single_pipeline_parser, self.data_prop_parser,
+                     self.h0_prop_parser, self.h1_prop_parser,
+                     self.inj_param_scan_parser, self.verbosity_parser]
         )
         return parser
 
@@ -756,8 +808,9 @@ class AnalysisScript(object):
     def command_profile_scan(self):
         parser = ArgumentParser(
             description='Profile scan',
-            parents=[self.log_parser, self.git_info_parser, self.fit_parser,
-                     self.metric_parser, self.blindness_parser,
+            parents=[self.log_parser, self.git_info_parser,
+                     self.min_local_parser, self.min_global_parser,
+                     self.fit_parser, self.metric_parser, self.blindness_parser,
                      self.data_type_parser, self.data_pipeline_parser,
                      self.data_prop_parser, self.data_fluct_parser,
                      self.data_trial_parser, self.fid_fluct_parser,
@@ -771,11 +824,12 @@ class AnalysisScript(object):
     def command_syst_tests(self):
         parser = ArgumentParser(
             description='Systematics tests',
-            parents=[self.log_parser, self.git_info_parser, self.fit_parser,
-                     self.metric_parser, self.single_pipeline_parser,
-                     self.data_prop_parser, self.h0_prop_parser,
-                     self.h1_prop_parser, self.syst_tests_parser,
-                     self.verbosity_parser]
+            parents=[self.log_parser, self.git_info_parser,
+                     self.min_local_parser, self.min_global_parser,
+                     self.fit_parser, self.metric_parser,
+                     self.single_pipeline_parser, self.data_prop_parser,
+                     self.h0_prop_parser, self.h1_prop_parser,
+                     self.syst_tests_parser, self.verbosity_parser]
         )
         return parser
 
