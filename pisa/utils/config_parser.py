@@ -221,6 +221,7 @@ from pisa.utils.resources import find_resource
 __all__ = ['PARAM_RE', 'PARAM_ATTRS', 'STAGE_SEP',
            'parse_quantity', 'parse_string_literal',
            'interpret_param_subfields', 'parse_param', 'parse_pipeline_config',
+           'parse_fitter_config',
            'MutableMultiFileIterator', 'PISAConfigParser']
 
 __author__ = 'P. Eller, J. Lanfranchi'
@@ -380,6 +381,19 @@ def interpret_param_subfields(subfields, selector=None, pname=None, attr=None):
 
     raise ValueError('Unable to parse param subfields %s'
                      %infodict['subfields'])
+
+
+def parse_fitter_config(config):
+    raise NotImplementedError("not implemented yet")
+    if isinstance(config, basestring):
+        config = from_file(config)
+    elif isinstance(config, PISAConfigParser):
+        pass
+    else:
+        raise TypeError(
+            '`config` must either be a string or PISAConfigParser. Got %s '
+            'instead.' % type(config)
+        )
 
 
 def parse_param(config, section, selector, fullname, pname, value):
