@@ -221,7 +221,7 @@ from pisa.utils.resources import find_resource
 __all__ = ['PARAM_RE', 'PARAM_ATTRS', 'STAGE_SEP',
            'parse_quantity', 'parse_string_literal',
            'interpret_param_subfields', 'parse_param', 'parse_pipeline_config',
-           'parse_fitter_config',
+           'parse_optimizer_config', 'parse_minimizer_config',
            'MutableMultiFileIterator', 'PISAConfigParser']
 
 __author__ = 'P. Eller, J. Lanfranchi'
@@ -383,7 +383,48 @@ def interpret_param_subfields(subfields, selector=None, pname=None, attr=None):
                      %infodict['subfields'])
 
 
-def parse_fitter_config(config):
+def parse_minimizer_config(config):
+    """Parse minimizer config.
+
+    Parameters
+    ----------
+    config : string or ConfigParser
+
+    Returns
+    -------
+    minimizer_settings_dict : OrderedDict
+
+    """
+    if isinstance(config, basestring):
+        config = from_file(config)
+    elif isinstance(config, PISAConfigParser):
+        pass
+    else:
+        raise TypeError(
+            '`config` must either be a string or PISAConfigParser. Got %s '
+            'instead.' % type(config)
+        )
+
+    if not config.has_section('method'):
+        raise NoSectionError(
+            "Could not find 'method'. Only found sections: %s"
+            % config.sections()
+        )
+
+    if not config.has_section('options'):
+        raise NoSectionError(
+            "Could not find 'options'. Only found sections: %s"
+            % config.sections()
+        )
+    settings_dict = {}
+    solver  = config['method']['name']
+    settings_dict['method'] = solver
+    for opt, val in config['options'].items():
+        settings_dict[opt] = val
+    return settings_dict
+
+
+def parse_optimizer_config(config):
     raise NotImplementedError("not implemented yet")
     if isinstance(config, basestring):
         config = from_file(config)

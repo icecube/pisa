@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 """
-Implementation of a fitter base class, which has all basic
+Implementation of an optimizer base class, which has all basic
 functionality built in.
 """
 
@@ -13,13 +13,13 @@ from collections import OrderedDict
 import numpy as np
 
 from pisa.core.param import ParamSet
-from pisa.utils.config_parser import PISAConfigParser, parse_fitter_config
+from pisa.utils.config_parser import PISAConfigParser, parse_optimizer_config
 from pisa.utils.fit import Fit
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 
 
-__all__ = ['Fitter', 'test_Fitter']
+__all__ = ['Optimizer', 'test_Optimizer']
 
 __author__ = 'T. Ehrhardt'
 
@@ -37,16 +37,17 @@ __license__ = '''Copyright (c) 2014-2018, The IceCube Collaboration
  See the License for the specific language governing permissions and
  limitations under the License.'''
 
-class Fitter(object):
-    """Instantiate a fitter according to an instantiated config object;
-    perform a fit.
+
+class Optimizer(object):
+    """Instantiate an optimizer according to an instantiated config object;
+    perform an optimization.
 
     Parameters
     ----------
     config : string, OrderedDict, or PISAConfigParser
         If string, interpret as resource location; send to the
-        `config_parser.parse_fitter_config()` method to get a config
-        OrderedDict. If `OrderedDict`, use directly as fitter configuration.
+        `config_parser.parse_optimizer_config()` method to get a config
+        OrderedDict. If `OrderedDict`, use directly as optimizer configuration.
 
     data_dist : MapSet
         Data distribution(s). These are what the hypothesis is tasked to
@@ -77,8 +78,8 @@ class Fitter(object):
     -----
     The following methods can be overridden in derived classes where
     applicable:
-        _run_fit
-        _validate_fit
+        _run_optimization
+        _validate_result
         _print_progress
     """
 
@@ -87,7 +88,7 @@ class Fitter(object):
                  blind, pprint):
 
         if isinstance(config, (basestring, PISAConfigParser)):
-            config = parse_fitter_config(config=config)
+            config = parse_optimizer_config(config=config)
         elif isinstance(config, OrderedDict):
             pass
         else:
@@ -116,65 +117,67 @@ class Fitter(object):
         self.params_to_fit = ParamSet()
         """Records the parameters to be fit"""
 
-        self.fit_result = Fit()
+        self.result = Fit()
         """Records the fit result"""
 
-        self.fit_tmp = Fit()
+        self.tmp = Fit()
         """Intermediate fit status that can be reported during the process"""
 
-        self.fit_result_cleansed = False
+        self.is_result_cleansed = False
         """Whether the fit result has been 'cleansed' for blindness"""
 
         # Define useful flags and values for debugging behavior after running
 
-        self.fit_computed = False
+        self.done = False
         """Whether the fit has been computed"""
 
-        self.fit_success = None
+        self.success = None
         """Whether the fit was successful"""
 
-        self.fit_cache = None
+        self.cache = None
         """Memory cache object for storing fits"""
 
-        self.fit_result_hash = None
-        self.fit_result_cleansed_hash = None
+        self.result_hash = None
+        #self.result_cleansed_hash = None
 
     @profile
-    def run_fit(self):
-        """This method calls the `_run_fit` method, which by
+    def run_optimizatin(self):
+        """This method calls the `_run_optimization` method, which by
         default does nothing.
 
-        However, if you want to implement your own fit,
-        override the `_run_fit` method and fill in the
+        However, if you want to implement your own optimizer,
+        override the `_run_optimization` method and fill in the
         logic there.
         """
-        self.fit_result = self._run_fit()
-        self.fit_computed = True
-        self.cleanse_fit()
+        self.result = self._run_optimization()
+        self.done = True
+        self.cleanse_result()
 
-    def _run_fit(self): # pylint: disable=no-self-use
-        """Derived fitters should override this method.
+    def _run_optimization(self): # pylint: disable=no-self-use
+        """Derived optimizers should override this method.
         """
         return None
 
-    def cleanse_fit(self):
+    def cleanse_result(self):
         if self.blind:
-            logging.info("Getting cleansed fit results because"
+            logging.info("Getting cleansed optimization results because"
                          "blindness was requested...")
-            self.fit_result = self.fit_result.cleansed
-            self.fit_result_cleansed = True
+            # requires a `Fit` object to have a `cleansed` attribute
+            # leave no trace of the non-blind result 
+            self.result = self.result.cleansed
+            self.is_result_cleansed = True
 
-    def validate_fit(self):
-        self.fit_success = self._validate_fit()
+    def validate_result(self):
+        self.success = self._validate_result()
 
-    def _validate_fit(self): # pylint: disable=no-self-use
-        """Derived fitters should override this method."""
+    def _validate_result(self): # pylint: disable=no-self-use
+        """Derived optimizers should override this method."""
         return None
 
 
-def test_Fitter():
+def test_Optimizer():
     pass
 
 
 if __name__ == '__main__':
-    test_Fitter()
+    test_Optimizer()
