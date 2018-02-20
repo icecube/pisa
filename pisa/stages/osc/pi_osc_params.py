@@ -76,7 +76,7 @@ class OscParams(object):
         self._sin12 = value
 
     @property
-    def theta12(self, value):
+    def theta12(self):
         return np.arcsin(self.sin12)
 
     @theta12.setter
@@ -95,7 +95,7 @@ class OscParams(object):
         self._sin13 = value
 
     @property
-    def theta13(self, value):
+    def theta13(self):
         return np.arcsin(self.sin13)
 
     @theta13.setter
@@ -114,7 +114,7 @@ class OscParams(object):
         self._sin23 = value
 
     @property
-    def theta23(self, value):
+    def theta23(self):
         return np.arcsin(self.sin23)
 
     @theta23.setter

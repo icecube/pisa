@@ -1,11 +1,10 @@
-# authors: T. Stuttard, M. Jensen
-# date:   Nov 3, 2017
+'''
+Implementing an environmentally-induced decoherence model for neutrino oscillations
+Based on reference [1], which uses an energy-indepedence deocherence matrix in vacuum
 
-# Implementing an environmentally-induced decoherence model for neutrino oscillations
-# Based on reference [1], which is seeking to explain theta23 tension between NOvA and T2K
-#
-# References:
-# [1] arxiv:1702.04738
+References:
+  [1] arxiv:1702.04738
+'''
 
 
 
@@ -29,19 +28,25 @@ from pisa import ureg
 
 __all__ = ['DecoherenceParams', 'calc_decoherence_probs', "decoherence"]
 
+__author__ = 'T. Stuttard, M. Jensen'
 
-#
-# Decoherence calculation helpers
-#
 
-#Container for decoherence oscillation params
-class DecoherenceParams :
+class DecoherenceParams(OscParams) :
+    '''
+    Container for decoherence oscillation params
+    This includes standard oscillation params plus additional 'Gamma' terms parameterising decoherence
+    gamma21,31,32 params have units of energy
+    '''
 
     def __init__(self, deltam21, deltam31, theta12, theta13, theta23, deltacp, gamma21, gamma31, gamma32):
 
-        #Store args
-        self.deltam21 = deltam21
-        self.deltam31 = deltam31
+        # Call base class constructor
+        super(DecoherenceParams, self).__init__()
+
+        # Store args
+        # Note that keeping them as quantities here
+        self.dm21 = deltam21
+        self.dm31 = deltam31
         self.theta12 = theta12
         self.theta13 = theta13
         self.theta23 = theta23
@@ -50,23 +55,53 @@ class DecoherenceParams :
         self.gamma31 = gamma31
         self.gamma32 = gamma32
 
-        #Get deltam32 (this is what is used in [1])
-        self.deltam32 = self.deltam31 - self.deltam21
+        # Get deltam32 (this is what is used in [1])
+        self.dm32 = self.dm31 - self.dm21
 
 
-#Probability calculator function
 def calc_decoherence_probs(decoh_params, flav, energy, baseline, prob_e, prob_mu, prob_tau, two_flavor=False):
+    '''
+    Oscillation probability calculator function, with decoherence included
 
-    #Electron neutrino case
-    #For nu_e case, in this approiximation we are essential neglecting nu_e oscillations
-    #If a particle starts as a nu_e, it stays as a nu_e
+    Paramaters
+    ----------
+    decoh_params : 
+        DecoherenceParams instance
+
+    flav :
+        str : Neutrino flavor
+
+    energy : 
+        Neutrino true energy values as float(s), either a single value or an array
+        If no units attached, must be [GeV]
+
+    baseline : 
+        Neutrino true propagation distance values as float(s), either a single value or an array
+        If no units attached, must be [km]
+
+    prob_e :
+        Array of floats of same dimensions as `energy` and `baseline`. Will be filled with probabilities to oscillate to a nue
+
+    prob_mu :
+        Array of floats of same dimensions as `energy` and `baseline`. Will be filled with probabilities to oscillate to a numu
+
+    prob_tau :
+        Array of floats of same dimensions as `energy` and `baseline`. Will be filled with probabilities to oscillate to a nutau
+
+    two_flavor :
+        bool : Flag indicating whether a two- or 3-flavor model should be used
+    '''
+
+    # Electron neutrino case
+    # For nu_e case, in this approiximation we are essential neglecting nu_e oscillations
+    # If a particle starts as a nu_e, it stays as a nu_e
     if flav.startswith("nue") :
         prob_e.fill(1.)
         prob_mu.fill(0.)
 
-    #Muon neutrino case
-    #For nu_mu case, in this approximation there is zero probability of becoming a nu_e
-    #Use numu disappearance calculation to get numu/tau probs
+    # Muon neutrino case
+    # For nu_mu case, in this approximation there is 0. probability of becoming a nu_e
+    # Use numu disappearance calculation to get numu/tau probs
     elif flav.startswith("numu") :
         prob_e.fill(0.)
         numu_disappearance_func = _calc_numu_disappearance_prob_2flav if two_flavor else _calc_numu_disappearance_prob_3flav
@@ -76,56 +111,59 @@ def calc_decoherence_probs(decoh_params, flav, energy, baseline, prob_e, prob_mu
     else :
         raise ValueError( "Input flavor '%s' not supported" % flav)
 
-    #Assume unitarity
+    # Assume unitarity
     np.copyto(src=1.-prob_e-prob_mu,dst=prob_tau)
 
-    '''
-    print("---------------")
-    print("%s" % flav)
-    print("prob_e   = %s" % prob_e[:5])
-    print("prob_mu  = %s" % prob_mu[:5])
-    print("prob_tau = %s" % prob_tau[:5])
-    print("---------------")
-    '''
 
-
-#Calculate numju disppearance in 2-flavor model
-#Don't call tihs directly, use calc_decoherence_probs
 def _calc_numu_disappearance_prob_2flav(decoh_params,E,L) :
+    """
+    Calculate numu disppearance in 2-flavor model
+    User should no call this directly, instead use `calc_decoherence_probs`
+    Define two-flavor decoherence approximation according to Eqn 2 from [1]
 
-    #Define two-flavor decoherence approximation equation
-    #Eq. 2 from [1]
+    Paramaters
+    ----------
+    decoh_params : 
+        DecoherenceParams instance
 
-    #This line is a standard oscillations (no decoherence) 2 flavour approximation, can use for debugging
-    #return np.sin(2.*theta23.m_as("rad"))**2 * np.square(np.sin(1.27*deltam32.m_as("eV**2")*L/E))
+    E : 
+        Neutrino true energy values as float(s), either a single value or an array
+        If no units attached, must be [GeV]
 
-    #Assume units if none provided for main input arrays
-    #Would prefer to get units but is not always the case
-    E = E if hasattr(E,"units") else E * ureg["GeV"]
-    L = L if hasattr(L,"units") else L * ureg["km"]
+    L : 
+        Neutrino true propagation distance values as float(s), either a single value or an array
+        If no units attached, must be [km]
+    """
 
-    #Calculate normalisation term
+    # This line is a standard oscillations (no decoherence) 2 flavour approximation, can use for debugging
+    #return np.sin(2.*decoh_params.theta23.m_as("rad"))**2 * np.square(np.sin(1.27*decoh_params.dm32.m_as("eV**2")*L/E))
+
+    # Assume units if none provided for main input arrays
+    # Would prefer to get units but is not always the case
+    E = E if isinstance(E,ureg.Quantity) else E * ureg["GeV"]
+    L = L if isinstance(L,ureg.Quantity) else L * ureg["km"]
+
+    # Calculate normalisation term
     norm_term = 0.5 * ( np.sin( 2. * decoh_params.theta23.m_as("rad") )**2 )
 
-    #Calculate decoherence term
+    # Calculate decoherence term
     decoh_term = np.exp( -decoh_params.gamma32.m_as("eV") * ( L.m_as("m")/1.97e-7 ) ) #Convert L from [m] to natural units
 
-    #Calculate oscillation term
-    osc_term = np.cos( ( 2. * 1.27 * decoh_params.deltam32.m_as("eV**2") * L.m_as("km") ) / ( E.m_as("GeV") ) )
+    # Calculate oscillation term
+    osc_term = np.cos( ( 2. * 1.27 * decoh_params.dm32.m_as("eV**2") * L.m_as("km") ) / ( E.m_as("GeV") ) )
 
     return norm_term * ( 1. - (decoh_term*osc_term) )
 
 
-#Helper function used by _calc_numu_disappearance_prob_3flav
-def _update_matrix(theta12, theta13, theta23):
-
+def _update_pmns_matrix(theta12, theta13, theta23):
     """
+    Helper function used by _calc_numu_disappearance_prob_3flav
     Updates the PMNS matrix and its complex conjugate.
-    
     Must be called by the class each time one of the PMNS matrix parameters are changed.
     """
 
-    zero = 0.0
+    # TODO Mikkel needs to reference code he used as inspiration here
+
     c12  =  math.cos( theta12.m_as("rad") )
     c13  =  math.cos( theta13.m_as("rad") )
     c23  =  math.cos( theta23.m_as("rad") )
@@ -135,49 +173,54 @@ def _update_matrix(theta12, theta13, theta23):
     eid  = 0.0 # e^( i * delta_cp)
     emid = 0.0 # e^(-i * delta_cp)
     
-    matrix      = [[zero,zero,zero],[zero,zero,zero],[zero,zero,zero]]
-    anti_matrix = [[zero,zero,zero],[zero,zero,zero],[zero,zero,zero]]
+    matrix      = np.zeros((3,3))
+    anti_matrix = np.zeros((3,3))
     
-    matrix[0][0] = c12 * c13
-    matrix[0][1] = s12 * c13
-    matrix[0][2] = s13 * emid
+    matrix[0,0] = c12 * c13
+    matrix[0,1] = s12 * c13
+    matrix[0,2] = s13 * emid
     
-    matrix[1][0] = (zero - s12*c23 ) - ( c12*s23*s13*eid )
-    matrix[1][1] = ( c12*c23 ) - ( s12*s23*s13*eid )
-    matrix[1][2] = s23*c13
+    matrix[1,0] = (0. - s12*c23 ) - ( c12*s23*s13*eid )
+    matrix[1,1] = ( c12*c23 ) - ( s12*s23*s13*eid )
+    matrix[1,2] = s23*c13
     
-    matrix[2][0] = ( s12*s23 ) - ( c12*c23*s13*eid)
-    matrix[2][1] = ( zero - c12*s23 ) - ( s12*c23*s13*eid )
-    matrix[2][2] = c23*c13
-    
-    for i in range(3):
-        for j in range(3):
-            anti_matrix[i][j] = matrix[i][j].conjugate()
+    matrix[2,0] = ( s12*s23 ) - ( c12*c23*s13*eid)
+    matrix[2,1] = ( 0. - c12*s23 ) - ( s12*c23*s13*eid )
+    matrix[2,2] = c23*c13
 
+    anti_matrix = matrix.conjugate()
+    
     return matrix, anti_matrix
 
 
-#Calculate numju disppearance in 2-flavor model
-#Don't call tihs directly, use calc_decoherence_probs
-def _calc_numu_disappearance_prob_3flav(decoh_params, E, L):
-        
-    #Returns the oscillation probability.
-        
-    # Oscillations with E = 0 or don't really make sense,
-    # but if you're plotting graphs these are the values you'll want.
+def _calc_numu_disappearance_prob_3flav(decoh_params, E, L): 
+    """
+    Calculate numu disppearance in 3-flavor model
 
-    E = E if hasattr(E,"units") else E * ureg["GeV"]
-    L = L if hasattr(L,"units") else L * ureg["km"]
+    User should no call this directly, instead use `calc_decoherence_probs`
 
-    U = _update_matrix(decoh_params.theta12, decoh_params.theta13, decoh_params.theta23)[0] # Use PMNS matrix
-    
-    # No decoherence 
-    #s = complex(0.0,0.0)
+    Define three-flavor decoherence approximation according to the equation that is not numbered but can be 
+    found between equations 2 and 3 in [1],with the notable difference that we are using the vacuum case 
+    (e.g. not substituting in the effeective matter values for parameters)
 
-    #for x in range(3):
-    #   s += U[a][x].conjugate() * U[b][x] * cmath.exp( (-i*m2[x]*L)/(2.0*E) )
-    
-    #return pow(abs(s), 2)
+    Paramaters
+    ----------
+    decoh_params : 
+        DecoherenceParams instance
+
+    E : 
+        Neutrino true energy values as float(s), either a single value or an array
+        If no units attached, must be [GeV]
+
+    L : 
+        Neutrino true propagation distance values as float(s), either a single value or an array
+        If no units attached, must be [km]
+    """
+    E = E if isinstance(E,ureg.Quantity) else E * ureg["GeV"]
+    L = L if isinstance(L,ureg.Quantity) else L * ureg["km"]
+
+    U = _update_pmns_matrix(decoh_params.theta12, decoh_params.theta13, decoh_params.theta23)[0] # Use PMNS matrix
+
     
     # Decoherence matrix
     Gamma = np.zeros([3,3])
@@ -185,13 +228,11 @@ def _calc_numu_disappearance_prob_3flav(decoh_params, E, L):
     Gamma[2][0] = decoh_params.gamma31.m_as("GeV")
     Gamma[2][1] = decoh_params.gamma32.m_as("GeV")
                 
-            
-    #if( E[i_e][i_l] == 0.0 or L[i_e][i_l] == 0.0 ):
-    #   return 1.0          
+    # Mass splitting matrix
     delta_jk = np.zeros([3,3])
-    delta_jk[1][0] = decoh_params.deltam21.m_as("eV**2") 
-    delta_jk[2][0] = decoh_params.deltam31.m_as("eV**2")
-    delta_jk[2][1] = decoh_params.deltam32.m_as("eV**2")
+    delta_jk[1][0] = decoh_params.dm21.m_as("eV**2") 
+    delta_jk[2][0] = decoh_params.dm31.m_as("eV**2")
+    delta_jk[2][1] = decoh_params.dm32.m_as("eV**2")
 
     prob_dec = np.zeros(np.shape(E))
     
@@ -205,34 +246,32 @@ def _calc_numu_disappearance_prob_3flav(decoh_params, E, L):
 
 
 
-#
-# Decoherence stage
-#
 
 class decoherence(PiStage):
     """
-    prob3 osc PISA Pi class
+    PISA Pi stage representing oscillations in the presence of decoherence
 
     Paramaters
     ----------
-    detector_depth : float
-    earth_model : PREM file path
-    prop_height : quantity (dimensionless)
-    YeI : quantity (dimensionless)
-    YeO : quantity (dimensionless)
-    YeM : quantity (dimensionless)
-    theta12 : quantity (angle)
-    theta13 : quantity (angle)
-    theta23 : quantity (angle)
-    deltam21 : quantity (mass^2)
-    deltam31 : quantity (mass^2)
-    deltacp : quantity (angle)
 
-    None
+    Uses the standard parameters as required by a PISA pi stage (see `pisa/core/pi_stage.py`)
 
-    Notes
-    -----
-
+    Expected contents of `params` ParamSet:
+        detector_depth : float
+        earth_model : PREM file path
+        prop_height : quantity (dimensionless)
+        YeI : quantity (dimensionless)
+        YeO : quantity (dimensionless)
+        YeM : quantity (dimensionless)
+        theta12 : quantity (angle)
+        theta13 : quantity (angle)
+        theta23 : quantity (angle)
+        deltam21 : quantity (mass^2)
+        deltam31 : quantity (mass^2)
+        deltacp : quantity (angle)
+        gamma12 : quantity (energy)
+        gamma13 : quantity (energy)
+        gamma23 : quantity (energy)
     """
     def __init__(self,
                  data=None,
@@ -417,13 +456,6 @@ class decoherence(PiStage):
             container['prob_e'].mark_changed(WHERE)
             container['prob_mu'].mark_changed(WHERE)
 
-            '''
-            print("---------------")
-            print("%s" % container.name)
-            print("prob_e   = %s" % container['prob_e'].get(WHERE)[:5])
-            print("prob_mu  = %s" % container['prob_mu'].get(WHERE)[:5])
-            print("---------------")
-            '''
 
 
     @profile
@@ -457,29 +489,6 @@ class decoherence(PiStage):
         np.copyto(dst=prob_array[:,2,0],src=prob_array[:,1,0])
         np.copyto(dst=prob_array[:,2,1],src=prob_array[:,1,2])
         np.copyto(dst=prob_array[:,2,2],src=prob_array[:,1,1])
-
-        '''
-        print("---------------")
-        print("nue")
-        print("prob_e   = %s" % prob_array[:5,0,0])
-        print("prob_mu  = %s" % prob_array[:5,0,1])
-        print("prob_tau = %s" % prob_array[:5,0,2])
-        print("---------------")
-
-        print("---------------")
-        print("numu")
-        print("prob_e   = %s" % prob_array[:5,1,0])
-        print("prob_mu  = %s" % prob_array[:5,1,1])
-        print("prob_tau = %s" % prob_array[:5,1,2])
-        print("---------------")
-
-        print("---------------")
-        print("nutau")
-        print("prob_e   = %s" % prob_array[:5,2,0])
-        print("prob_mu  = %s" % prob_array[:5,2,1])
-        print("prob_tau = %s" % prob_array[:5,2,2])
-        print("---------------")
-        '''
 
         #Register that arrays have changed
         out.mark_changed(WHERE)

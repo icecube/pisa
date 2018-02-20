@@ -266,7 +266,6 @@ class Layers(object):
 
     """
     def __init__(self, prem_file, detector_depth=1., prop_height=2.):
-
         # Load earth model
         if prem_file is not None :
             self.using_earth_model = True
@@ -288,12 +287,12 @@ class Layers(object):
         self.min_detector_depth = 1.0e-3 # <-- Why? // [km] so min is ~ 1 m
 
         # Change outermost radius to a bit underground, where the detector
-        if self.using_earth_model :
+        if self.using_earth_model:
             if self.detector_depth >= self.min_detector_depth:
                 self.radii[0] -= detector_depth
                 self.max_layers += 1
 
-        if self.using_earth_model :
+        if self.using_earth_model:
             self.computeMinLengthToLayers()
 
     def setElecFrac(self, YeI, YeO, YeM):
@@ -305,7 +304,6 @@ class Layers(object):
             and M=mantle
 
         """
-
         if not self.using_earth_model :
             raise ValueError("Cannot set electron fraction when not using an Earth model")
 
@@ -338,8 +336,8 @@ class Layers(object):
 
         """
 
-        if not self.using_earth_model :
-            raise ValueError("Cannot calcukate layers when not using an Earth model")
+        if not self.using_earth_model:
+            raise ValueError("Cannot calculate layers when not using an Earth model")
 
         # run external function
         self._n_layers, self._density, self._distance = extCalcLayers(
@@ -359,13 +357,13 @@ class Layers(object):
 
     @property
     def n_layers(self):
-        if not self.using_earth_model :
+        if not self.using_earth_model:
             raise ValueError("Cannot get layers when not using an Earth model")
         return self._n_layers
 
     @property
     def density(self):
-        if not self.using_earth_model :
+        if not self.using_earth_model:
             raise ValueError("Cannot get density when not using an Earth model")
         return self._density
 
@@ -374,10 +372,18 @@ class Layers(object):
         return self._distance
 
 
-    #Calculate path length of the neutrino, given the production height, detector depth and zenith angle
-    #Useful if not modelling matter effects
     def calcPathLength(self, cz) :
+        """
 
+        Calculate path length of the neutrino through an Earth-sized sphere, given the 
+        production height, detector depth and zenith angle.
+        Useful if not considering matter effects.
+
+        Parameters
+        ----------
+        cz : cos(zenith angle), either single float value or an array of float values
+
+        """
         pathlength = []
 
         for this_cz in (cz if hasattr(cz,"__len__") else [cz] ) :
