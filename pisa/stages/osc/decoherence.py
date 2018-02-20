@@ -219,9 +219,9 @@ def _calc_numu_disappearance_prob_3flav(decoh_params, E, L):
     E = E if isinstance(E,ureg.Quantity) else E * ureg["GeV"]
     L = L if isinstance(L,ureg.Quantity) else L * ureg["km"]
 
-    U = _update_pmns_matrix(decoh_params.theta12, decoh_params.theta13, decoh_params.theta23)[0] # Use PMNS matrix
+    # Get PMNS matrix
+    U,_ = _update_pmns_matrix(decoh_params.theta12, decoh_params.theta13, decoh_params.theta23)
 
-    
     # Decoherence matrix
     Gamma = np.zeros([3,3])
     Gamma[1][0] = decoh_params.gamma21.m_as("GeV")

@@ -280,20 +280,23 @@ class Layers(object):
             self.using_earth_model = False
             r_earth = 6371.0 #If no Earth model provided, use a standard Earth radius value
 
-        #Set some other
+        # Set some other
         self.r_detector = r_earth - detector_depth
         self.prop_height = prop_height
         self.detector_depth = detector_depth
         self.min_detector_depth = 1.0e-3 # <-- Why? // [km] so min is ~ 1 m
 
-        # Change outermost radius to a bit underground, where the detector
+        # Some additional handling of the Earth model
         if self.using_earth_model:
+
+            # Change outermost radius to a bit underground, where the detector
             if self.detector_depth >= self.min_detector_depth:
                 self.radii[0] -= detector_depth
                 self.max_layers += 1
 
-        if self.using_earth_model:
+            # Compute coszen limit
             self.computeMinLengthToLayers()
+
 
     def setElecFrac(self, YeI, YeO, YeM):
         """
