@@ -442,13 +442,13 @@ class decoherence(PiStage):
         for container in self.data:
             # initial electrons (0)
             fill_probs(container['probability'].get(WHERE),
-                       0,
+                       0, # electron
                        container['flav'],
                        out=container['prob_e'].get(WHERE),
                       )
             # initial muons (1)
             fill_probs(container['probability'].get(WHERE),
-                       1,
+                       1, # muon
                        container['flav'],
                        out=container['prob_mu'].get(WHERE),
                       )
