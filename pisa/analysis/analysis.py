@@ -24,7 +24,7 @@ from pisa.utils.minimization import set_minimizer_defaults, _minimizer_x0_bounds
                                     validate_minimizer_settings,\
                                     display_minimizer_header, run_minimizer,\
                                     Counter, MINIMIZERS_USING_SYMM_GRAD
-from pisa.utils.stats import METRICS_TO_MAXIMIZE
+from pisa.utils.stats import METRICS_TO_MAXIMIZE, it_got_better
 
 
 __all__ = ['Analysis']
@@ -95,7 +95,7 @@ class Analysis(object):
     def fit_hypo_new(self, data_dist, hypo_maker, hypo_param_selections, metric,
                      fit_settings=None, reset_free=False, minimizer_settings=None,
                      extra_hypo_param_selections=None, other_metrics=None,
-                     blind=False, pprint=True):
+                     return_full_scan=False, blind=False, pprint=True):
         """require fit_settings to be dict like
         fit_settings = {'minimize': {'params': ['param3', ...],
                                      'seeds': ['seeds3', ....]}, ?
@@ -106,7 +106,7 @@ class Analysis(object):
                        }
         """
 
-        #validate_fit_settings(fit_settings)
+        # TODO: validate_fit_settings(fit_settings)
 
         if not isinstance(extra_hypo_param_selections, Sequence):
             extra_hypo_param_selections = [extra_hypo_param_selections]
@@ -128,12 +128,12 @@ class Analysis(object):
             scan_params = fit_settings['scan']['params']
             scan_vals = []
             for i,pname in enumerate(scan_params):
-                scan_vals.append([(pname, val) for val in settings['scan']['values'][i]])
+                scan_vals.append([(pname, val) for val in
+                                  fit_settings['scan']['values'][i]])
 
             pull_params = fit_settings['pull']['params']
             fit_settings.pop('scan')
 
-            print minimize_params, scan_params, pull_params
             for pname in tuple(minimize_params) + tuple(scan_params) + tuple(pull_params):
                 # require all params to be set to free initially
                 assert pname in hypo_maker.params.free.names
@@ -149,8 +149,9 @@ class Analysis(object):
                 scan_vals = [[(pname, hypo_maker.params[pname].value)]
                               for pname in hypo_maker.params.free.names]
 
+            # each scan point comes with its own best fit
+            scan_fit_infos = []
             for i, pos in enumerate(zip(*scan_vals)):
-                print i, pos
                 msg = ''
                 sep = ', '
                 for (pname, val) in pos:
@@ -180,8 +181,25 @@ class Analysis(object):
                     pprint=pprint,
                     blind=blind
                 )
+                scan_fit_infos.append(best_fit_info)
+                if i >= 1 and not return_full_scan:
+                    if it_got_better(
+                           new_metric_val=best_fit_info['metric_val'],
+                           old_metric_val=scan_fit_infos[i-1]['metric_val'],
+                           metric=metric
+                        ):
+                        best_ind = i
 
-        return best_fit_info
+        # always return a list (of one ore more fit results)
+        if return_full_scan:
+            logging.debug("Returning full hypo scan.")
+            return scan_fit_infos
+        else:
+            logging.debug("Only returning overall best fit.")
+            if len(scan_fit_infos) == 1:
+                return scan_fit_infos
+            else:
+                return [scan_fit_infos[best_ind]]
 
 
     def fit_hypo_inner_new(self, data_dist, hypo_maker, metric, fit_settings_inner,
@@ -489,7 +507,7 @@ class Analysis(object):
             minimizer_settings_local = None
 
         # TODO: only require this for now
-        assert minimizer_settings_local is not None
+        #assert minimizer_settings_local is not None
 
         if minimizer_settings_local is not None:
             minimizer_settings_local =\
@@ -500,15 +518,13 @@ class Analysis(object):
 
         sign = -1 if metric in METRICS_TO_MAXIMIZE else +1
 
-        # TODO: bounds handling in case global minimization requested
-        # should they only depend on local minimimizer?
+        # set starting values and bounds (bounds possibly modified depending
+        # on whether the local minimizer uses gradients)
         x0, bounds = _minimizer_x0_bounds(
             free_params=hypo_maker.params.free,
             minimizer_settings=minimizer_settings_local
         )
 
-        # Using scipy.optimize.minimize allows a whole host of minimizers to be
-        # used.
         counter = Counter()
         
         fit_history = []
@@ -596,12 +612,17 @@ class Analysis(object):
             hypo_asimov_dist = None
         fit_info['hypo_asimov_dist'] = hypo_asimov_dist
 
-        if not optimize_result.success:
-            if blind:
-                msg = ''
-            else:
-                msg = ' ' + optimize_result.message
-            raise ValueError('Optimization failed.' + msg)
+        msg = optimize_result.message
+        if blind:
+            msg = ''
+
+        if hasattr(optimize_result, 'success'):
+            if not optimize_result.success:
+                raise ValueError('Optimization failed. Message: "%s"' % msg)
+        else:
+            logging.warn('Could not tell whether optimization was successful -'
+                         ' most likely because global optimization was'
+                         ' requested. Message: "%s"' % msg)
 
         return fit_info
 
@@ -1102,3 +1123,83 @@ class Analysis(object):
                 to_file(results, outfile)
 
         return results
+
+def test_fit_hypo_new():
+    """Testing. Could easily break because heavily relies on external stuff."""
+    from pisa.core import distribution_maker
+    from pisa.utils.log import set_verbosity
+    from pisa.utils.config_parser import parse_minimizer_config
+    set_verbosity(1)
+    example_pipeline = "../../pisa_examples/resources/settings/pipeline/example_gpu.cfg"
+    d = distribution_maker.DistributionMaker(pipelines=example_pipeline)
+    data_dist = d.get_outputs(return_sum=True)
+
+    fix = ('nu_nubar_ratio', 'energy_scale', 'nu_nubar_ratio', 'nue_numu_ratio',
+           'theta13', 'aeff_scale', 'atm_delta_index')
+    for pname in fix:
+        try:
+            d.params[pname].is_fixed = True
+        except:
+            pass
+
+    if not 'theta23' in d.params.free.names or not 'deltam31' in d.params.free.names:
+        return
+
+    d.params.theta23.prior = None
+    d.params.deltam31.prior = None
+    free_params = d.params.free
+
+    ana = Analysis()
+
+    # setup the minimizer settings
+    minimizer_settings_global = parse_minimizer_config(
+        '../../pisa_examples/resources/settings/minimizer/'
+        'basinhopping_niter100_niter_success20_T1e0_stepsize5e-1_interval50.cfg'
+    )
+    minimizer_settings_local = parse_minimizer_config(
+        '../../pisa_examples/resources/settings/minimizer/'
+        'l-bfgs-b_ftol2e-9_gtol1e-5_eps1e-7_maxiter200.cfg'
+    )
+
+    minimizer_settings = {'global': {}, 'local': {}}
+    minimizer_settings['global'] = minimizer_settings_global
+    minimizer_settings['local'] = minimizer_settings_local
+
+    # define some fit settings for a scan first (without any minimization)
+    fit_settings = {'scan': {'params': free_params.names,
+                             'values': [np.linspace(40, 50, 21)*ureg.deg,
+                                        np.linspace(0.0024, 0.0027, 21)*ureg.eV**2]},
+                    'minimize':     {'params': []},
+                    'pull':     {'params': []},
+                   }
+    fit_info = ana.fit_hypo_new(data_dist, d, None, 'chi2', fit_settings, True, minimizer_settings, None, None, True, False, True)
+
+    # redefine d because it lost its free scan params and repeat the stuff from above
+    d = distribution_maker.DistributionMaker(pipelines=example_pipeline)
+
+    fix = ('nu_nubar_ratio', 'energy_scale', 'nu_nubar_ratio', 'nue_numu_ratio',
+           'theta13', 'aeff_scale', 'atm_delta_index')
+    for pname in fix:
+        try:
+            d.params[pname].is_fixed = True
+        except:
+            pass
+
+    if not 'theta23' in d.params.free.names or not 'deltam31' in d.params.free.names:
+        return
+
+    d.params.theta23.prior = None
+    d.params.deltam31.prior = None
+    free_params = d.params.free
+
+    # define some fit settings for a single minimization (global + local)
+    fit_settings = {'minimize': {'params': free_params.names},
+                    'scan':     {'params': []},
+                    'pull':     {'params': []},
+                   }
+
+    fit_info = ana.fit_hypo_new(data_dist, d, None, 'chi2', fit_settings, True, minimizer_settings, None, None, True, False, True)
+
+if __name__ == '__main__':
+    test_fit_hypo_new()
+    

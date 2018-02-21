@@ -16,7 +16,7 @@ from pisa.utils.log import logging
 
 
 __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
-           'maperror_logmsg',
+           'maperror_logmsg', 'it_got_better',
            'chi2', 'llh', 'log_poisson', 'log_smear', 'conv_poisson',
            'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2']
 
@@ -56,6 +56,15 @@ METRICS_TO_MAXIMIZE = LLH_METRICS
 # TODO(philippeller):
 # * unit tests to ensure these don't break
 
+
+def it_got_better(new_metric_val, old_metric_val, metric):
+    """Compare metric values and report whether improvement found."""
+    assert metric in ALL_METRICS
+    if metric in METRICS_TO_MAXIMIZE:
+        it_got_better = new_metric_val > old_metric_val
+    else:
+        it_got_better = new_metric_val < old_metric_val
+    return it_got_better
 
 def maperror_logmsg(m):
     """Create message with thorough info about a map for logging purposes"""

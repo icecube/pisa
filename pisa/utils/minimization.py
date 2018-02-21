@@ -140,7 +140,7 @@ def validate_minimizer_settings(minimizer_settings):
 
     elif method == 'basinhopping':
         must_have = ('niter', 'T', 'stepsize')
-        may_have = must_have + ('take_step', 'accept_test', 'callback', 'interval',
+        may_have = must_have + ('take_step', 'callback', 'interval',
                                 'disp', 'niter_success', 'seed')
     else:
         raise ValueError('Cannot validate unhandled minimizer "%s".' % method)
@@ -252,6 +252,9 @@ def override_min_opt(minimizer_settings, min_opt):
 def _minimizer_x0_bounds(free_params, minimizer_settings):
     # Get starting free parameter values
     x0 = free_params._rescaled_values # pylint: disable=protected-access
+    bounds = [(0, 1)]*len(x0)
+    if minimizer_settings is None:
+        return x0, bounds
     minimizer_method = minimizer_settings['method'].lower()
     if minimizer_method in MINIMIZERS_USING_SYMM_GRAD:
         logging.warning(
@@ -262,8 +265,6 @@ def _minimizer_x0_bounds(free_params, minimizer_settings):
         )
         step_size = minimizer_settings['options']['eps']
         bounds = [(0 + step_size, 1 - step_size)]*len(x0)
-    else:
-        bounds = [(0, 1)]*len(x0)
 
     clipped_x0 = []
     for param, x0_val, bds in zip(free_params, x0, bounds):
@@ -298,6 +299,19 @@ def _minimizer_x0_bounds(free_params, minimizer_settings):
     return x0, bounds
 
 
+class Bounds(object):
+    """from scipy.optimize.basinhopping docs:
+    acceptance test for respecting bounds"""
+    def __init__(self, xmax, xmin):
+        self.xmax = np.array(xmax)
+        self.xmin = np.array(xmin)
+    def __call__(self, **kwargs):
+        x = kwargs["x_new"]
+        tmax = bool(np.all(x <= self.xmax))
+        tmin = bool(np.all(x >= self.xmin))
+        return tmax and tmin
+
+
 def run_global_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
                          hypo_maker, data_dist, metric, counter, fit_history,
                          pprint, blind):
@@ -311,17 +325,21 @@ def run_global_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback
     }
     if minimizer_settings['local'] is not None:
         minimizer_kwargs.update(minimizer_settings['local'])
-        # also tell the local minimizer the bounds, TODO: test
+        # bounds for local minimizer,
         minimizer_kwargs['bounds'] = bounds
 
+    bounds = Bounds(xmax=np.array(bounds)[:,1], xmin=np.array(bounds)[:,0])
     global_min = getattr(optimize, method)
-    # TODO: bounds?
+    # TODO: seed for reproducibility
+    # TODO: why are you running out of bounds with slsqp?
     optimize_result = global_min(
         func=fun,
         x0=x0,
         minimizer_kwargs=minimizer_kwargs,
+        accept_test=bounds,
         **options
     )
+
     return optimize_result
 
 
@@ -341,24 +359,26 @@ def run_local_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
         options=options,
         callback=minimizer_callback
     )
+    return optimize_result
 
 
 def run_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
                   hypo_maker, data_dist, metric, counter, fit_history, pprint,
                   blind):
     if minimizer_settings['global'] is not None:
-        run_global_minimizer(
+        optimize_result = run_global_minimizer(
             fun, x0, bounds, minimizer_settings, minimizer_callback,
             hypo_maker, data_dist, metric, counter, fit_history,
             pprint, blind
         )
 
     elif minimizer_settings['local'] is not None:
-        run_local_minimizer(
+        optimize_result = run_local_minimizer(
             fun, x0, bounds, minimizer_settings, minimizer_callback,
             hypo_maker, data_dist, metric, counter, fit_history,
             pprint, blind
         )
+
     return optimize_result
 
 
