@@ -416,16 +416,23 @@ def parse_minimizer_config(config):
             "Could not find 'options'. Only found sections: %s"
             % config.sections()
         )
-    settings_dict = {}
+
+    settings_dict = OrderedDict()
     solver  = config['method']['name']
     settings_dict['method'] = solver
+    settings_dict['options'] = OrderedDict()
     for opt, val in config['options'].items():
-        settings_dict[opt] = val
+        try:
+            val = parse_quantity(val)
+            settings_dict['options'][opt] = val.nominal_value
+        except ValueError:
+            val = parse_string_literal(val)
+            settings_dict['options'][opt] = val
     return settings_dict
 
 
-def parse_optimizer_config(config):
-    raise NotImplementedError("not implemented yet")
+def parse_fit_config(config):
+    raise NotImplementedError()
     if isinstance(config, basestring):
         config = from_file(config)
     elif isinstance(config, PISAConfigParser):
@@ -435,6 +442,14 @@ def parse_optimizer_config(config):
             '`config` must either be a string or PISAConfigParser. Got %s '
             'instead.' % type(config)
         )
+
+    if not config.has_section('methods'):
+        raise NoSectionError(
+            "Could not find 'method'. Only found sections: %s"
+            % config.sections()
+        )
+
+    return settings_dict
 
 
 def parse_param(config, section, selector, fullname, pname, value):

@@ -6,10 +6,9 @@ Common tools for performing an analysis collected into a single class
 
 from __future__ import absolute_import, division
 
-from collections import OrderedDict
+from collections import OrderedDict, Sequence
 from copy import deepcopy
 from itertools import product
-import re
 import sys
 import time
 
@@ -19,12 +18,12 @@ import scipy.optimize as optimize
 from pisa import EPSILON, FTYPE, ureg
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
-from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.fileio import to_file
 from pisa.utils.log import logging
-from pisa.utils.minimization import set_minimizer_defaults,\
-                                    validate_minimizer_settings, Counter,\
-                                    MINIMIZERS_USING_SYMM_GRAD
+from pisa.utils.minimization import set_minimizer_defaults, _minimizer_x0_bounds,\
+                                    validate_minimizer_settings,\
+                                    display_minimizer_header, run_minimizer,\
+                                    Counter, MINIMIZERS_USING_SYMM_GRAD
 from pisa.utils.stats import METRICS_TO_MAXIMIZE
 
 
@@ -46,6 +45,8 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  See the License for the specific language governing permissions and
  limitations under the License.'''
 
+ANALYSIS_METHODS = ('minimize', 'scan', 'pull')
+"""Allowed parameter fitting methods."""
 
 def check_t23_octant(fit_info):
     """Check that theta23 is in the first or second octant.
@@ -90,6 +91,151 @@ class Analysis(object):
     """
     def __init__(self):
         self._nit = 0
+
+    def fit_hypo_new(self, data_dist, hypo_maker, hypo_param_selections, metric,
+                     fit_settings=None, reset_free=False, minimizer_settings=None,
+                     extra_hypo_param_selections=None, other_metrics=None,
+                     blind=False, pprint=True):
+        """require fit_settings to be dict like
+        fit_settings = {'minimize': {'params': ['param3', ...],
+                                     'seeds': ['seeds3', ....]}, ?
+                        'scan':     {'params': ['param1', ...],
+                                     'values': [steplist1, ...]},
+                        'pull':     {'params': ['param2', ...],
+                                     'values': [steplist2, ...]}
+                       }
+        """
+
+        #validate_fit_settings(fit_settings)
+
+        if not isinstance(extra_hypo_param_selections, Sequence):
+            extra_hypo_param_selections = [extra_hypo_param_selections]
+
+        for extra_param_selection in extra_hypo_param_selections:
+            if extra_param_selection is not None:
+                full_param_selections = hypo_param_selections
+                full_param_selections.append(extra_param_selection)
+            else:
+                full_param_selections = hypo_param_selections
+            # Select the version of the parameters used for this hypothesis
+            hypo_maker.select_params(full_param_selections)
+
+            assert set(fit_settings.keys()) == set(ANALYSIS_METHODS)
+            minimize_params = fit_settings['minimize']['params']
+            if minimize_params:
+                assert minimizer_settings is not None
+
+            scan_params = fit_settings['scan']['params']
+            scan_vals = []
+            for i,pname in enumerate(scan_params):
+                scan_vals.append([(pname, val) for val in settings['scan']['values'][i]])
+
+            pull_params = fit_settings['pull']['params']
+            fit_settings.pop('scan')
+
+            print minimize_params, scan_params, pull_params
+            for pname in tuple(minimize_params) + tuple(scan_params) + tuple(pull_params):
+                # require all params to be set to free initially
+                assert pname in hypo_maker.params.free.names
+            # TODO: excess, missing
+
+            # the parameters to scan over need to be fixed
+            hypo_maker.params.fix(scan_params)
+            params = hypo_maker.params
+
+            # TODO: if there are no scan_vals, we can just inject e.g. the nominal
+            # value for each free parameter
+            if not scan_vals:
+                scan_vals = [[(pname, hypo_maker.params[pname].value)]
+                              for pname in hypo_maker.params.free.names]
+
+            for i, pos in enumerate(zip(*scan_vals)):
+                print i, pos
+                msg = ''
+                sep = ', '
+                for (pname, val) in pos:
+                    params[pname].value = val
+                    if isinstance(val, float) or isinstance(val, ureg.Quantity):
+                        if msg:
+                            msg += sep
+                        msg += '%s = %s'%(pname, val)
+                    else:
+                        raise TypeError("val is of type %s which I don't know "
+                                        "how to deal with in the output "
+                                        "messages."% type(val))
+                # Reset free parameters to nominal values
+                if reset_free:
+                    hypo_maker.reset_free()
+                else:
+                    # Saves the current minimizer start values (for the octant check)
+                    optimizer_start_params = hypo_maker.params
+
+                best_fit_info = self.fit_hypo_inner_new(
+                    hypo_maker=hypo_maker,
+                    data_dist=data_dist,
+                    metric=metric,
+                    fit_settings_inner=fit_settings,
+                    minimizer_settings=minimizer_settings,
+                    other_metrics=other_metrics,
+                    pprint=pprint,
+                    blind=blind
+                )
+
+        return best_fit_info
+
+
+    def fit_hypo_inner_new(self, data_dist, hypo_maker, metric, fit_settings_inner,
+                           minimizer_settings=None, other_metrics=None,
+                           pprint=True, blind=False):
+
+        pull_params = fit_settings_inner['pull']['params']
+        minimize_params = fit_settings_inner['minimize']['params']
+
+        # dispatch correct fitting method depending on combination of
+        # pull and minimize params
+
+        # no parameters to fit
+        if not len(pull_params) and not len(minimize_params):
+            logging.info("Nothing else to do. Calculating metric(s).")
+            nofit_hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
+            fit_info = self.nofit_hypo(
+                data_dist=data_dist,
+                hypo_maker=hypo_maker,
+                hypo_param_selections=None,
+                hypo_asimov_dist=nofit_hypo_asimov_dist,
+                metric=metric,
+                other_metrics=other_metrics,
+                blind=blind
+           )
+
+        # only parameters to optimize numerically
+        elif len(minimize_params) and not len(pull_params):
+            fit_info = self.fit_hypo_minimizer(
+                data_dist=data_dist,
+                hypo_maker=hypo_maker,
+                minimizer_settings=minimizer_settings,
+                metric=metric,
+                other_metrics=other_metrics,
+                blind=blind
+            )
+
+        # only parameters to fit with pull method
+        elif len(pull_params) and not len(minimize_params):
+            raise NotImplementedError("Pull method not implemented yet!")
+            fit_info = self.fit_hypo_pull(
+                data_dist=data_dist,
+                hypo_maker=hypo_maker,
+                metric=metric,
+                other_metrics=other_metrics,
+                blind=blind
+            )
+        # parameters to optimize numerically and to fit with pull method
+        else:
+            raise NotImplementedError(
+                "Combination of minimization and pull method not implemented yet!"
+            )
+        return fit_info
+
 
     def fit_hypo(self, data_dist, hypo_maker, hypo_param_selections, metric,
                  minimizer_settings, reset_free=True, check_octant=True,
@@ -283,8 +429,9 @@ class Analysis(object):
 
         return best_fit_info, alternate_fits
 
-    def fit_hypo_inner(self, data_dist, hypo_maker, metric, minimizer_settings,
-                       other_metrics=None, pprint=True, blind=False):
+
+    def fit_hypo_minimizer(self, data_dist, hypo_maker, metric, minimizer_settings,
+                           other_metrics=None, pprint=True, blind=False):
         """Fitter "inner" loop: Run an arbitrary scipy minimizer to modify
         hypo dist maker's free params until the data_dist is most likely to have
         come from this hypothesis.
@@ -321,59 +468,44 @@ class Analysis(object):
             'minimizer_metadata'
 
         """
-        minimizer_settings = set_minimizer_defaults(minimizer_settings)
-        validate_minimizer_settings(minimizer_settings)
+        use_global_minimizer = False
+        # allow for an entry of `None` but also no entry at all
+        try:
+            minimizer_settings_global = minimizer_settings['global']
+        except:
+            minimizer_settings_global = None
+
+        if minimizer_settings_global is not None:
+            minimizer_settings_global =\
+                set_minimizer_defaults(minimizer_settings_global)
+            use_global_minimizer = True
+            validate_minimizer_settings(minimizer_settings_global)
+        minimizer_settings['global'] = minimizer_settings_global
+
+        use_local_minimizer = False
+        try:
+            minimizer_settings_local = minimizer_settings['local']
+        except:
+            minimizer_settings_local = None
+
+        # TODO: only require this for now
+        assert minimizer_settings_local is not None
+
+        if minimizer_settings_local is not None:
+            minimizer_settings_local =\
+                set_minimizer_defaults(minimizer_settings_local)
+            use_local_minimizer = True
+            validate_minimizer_settings(minimizer_settings_local)
+        minimizer_settings['local'] = minimizer_settings_local
 
         sign = -1 if metric in METRICS_TO_MAXIMIZE else +1
 
-        # Get starting free parameter values
-        x0 = hypo_maker.params.free._rescaled_values # pylint: disable=protected-access
-
-        minimizer_method = minimizer_settings['method']['value'].lower()
-        if minimizer_method in MINIMIZERS_USING_SYMM_GRAD:
-            logging.warning(
-                'Minimizer %s requires artificial boundaries SMALLER than the'
-                ' user-specified boundaries (so that numerical gradients do'
-                ' not exceed the user-specified boundaries).',
-                minimizer_method
-            )
-            step_size = minimizer_settings['options']['value']['eps']
-            bounds = [(0 + step_size, 1 - step_size)]*len(x0)
-        else:
-            bounds = [(0, 1)]*len(x0)
-
-        clipped_x0 = []
-        for param, x0_val, bds in zip(hypo_maker.params.free, x0, bounds):
-            if x0_val < bds[0] - EPSILON:
-                raise ValueError(
-                    'Param %s, initial scaled value %.17e is below lower bound'
-                    ' %.17e.' % (param.name, x0_val, bds[0])
-                )
-            if x0_val > bds[1] + EPSILON:
-                raise ValueError(
-                    'Param %s, initial scaled value %.17e exceeds upper bound'
-                    ' %.17e.' % (param.name, x0_val, bds[1])
-                )
-
-            clipped_x0_val = np.clip(x0_val, a_min=bds[0], a_max=bds[1])
-            clipped_x0.append(clipped_x0_val)
-
-            if recursiveEquality(clipped_x0_val, bds[0]):
-                logging.warn(
-                    'Param %s, initial scaled value %e is at the lower bound;'
-                    ' minimization may fail as a result.',
-                    param.name, clipped_x0_val
-                )
-            if recursiveEquality(clipped_x0_val, bds[1]):
-                logging.warn(
-                    'Param %s, initial scaled value %e is at the upper bound;'
-                    ' minimization may fail as a result.',
-                    param.name, clipped_x0_val
-                )
-
-        x0 = tuple(clipped_x0)
-
-        logging.debug('Running the %s minimizer...', minimizer_method)
+        # TODO: bounds handling in case global minimization requested
+        # should they only depend on local minimimizer?
+        x0, bounds = _minimizer_x0_bounds(
+            free_params=hypo_maker.params.free,
+            minimizer_settings=minimizer_settings_local
+        )
 
         # Using scipy.optimize.minimize allows a whole host of minimizers to be
         # used.
@@ -382,47 +514,33 @@ class Analysis(object):
         fit_history = []
         fit_history.append( [metric] + [v.name for v in hypo_maker.params.free])
 
-        start_t = time.time()
-
         if pprint and not blind:
-            free_p = hypo_maker.params.free
-
-            # Display any units on top
-            r = re.compile(r'(^[+0-9.eE-]* )|(^[+0-9.eE-]*$)')
-            hdr = ' '*(6+1+10+1+12+3)
-            unt = []
-            for p in free_p:
-                u = r.sub('', format(p.value, '~')).replace(' ', '')[0:10]
-                if u:
-                    u = '(' + u + ')'
-                unt.append(u.center(12))
-            hdr += ' '.join(unt)
-            hdr += '\n'
-
-            # Header names
-            hdr += ('iter'.center(6) + ' ' + 'funcalls'.center(10) + ' ' +
-                    metric[0:12].center(12) + ' | ')
-            hdr += ' '.join([p.name[0:12].center(12) for p in free_p])
-            hdr += '\n'
-
-            # Underscores
-            hdr += ' '.join(['-'*6, '-'*10, '-'*12, '+'] + ['-'*12]*len(free_p))
-            hdr += '\n'
-
-            sys.stdout.write(hdr)
+            # display header if desired/allowed
+            display_minimizer_header(free_params=hypo_maker.params.free,
+                                     metric=metric)
 
         # reset number of iterations before each minimization
         self._nit = 0
-        optimize_result = optimize.minimize(
+
+        # record start time
+        start_t = time.time()
+
+        # this is the function that does the heavy lifting
+        optimize_result = run_minimizer(
             fun=self._minimizer_callable,
             x0=x0,
-            args=(hypo_maker, data_dist, metric, counter, fit_history, pprint,
-                  blind),
             bounds=bounds,
-            method=minimizer_settings['method']['value'],
-            options=minimizer_settings['options']['value'],
-            callback=self._minimizer_callback
+            minimizer_settings=minimizer_settings,
+            minimizer_callback=self._minimizer_callback,
+            hypo_maker=hypo_maker,
+            data_dist=data_dist,
+            metric=metric,
+            counter=counter,
+            fit_history=fit_history,
+            pprint=pprint,
+            blind=blind
         )
+
         end_t = time.time()
         if pprint:
             # clear the line

@@ -5,15 +5,21 @@ Common minimization tools and constants.
 
 from __future__ import absolute_import, division
 
+import re
+import sys
+
 import numpy as np
 import scipy.optimize as optimize
 
 from pisa import EPSILON, FTYPE, ureg
+from pisa.utils.comparisons import recursiveEquality
+from pisa.utils.log import logging
 
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD', 'LOCAL_MINIMIZERS_WITH_DEFAULTS',
            'GLOBAL_MINIMIZERS_WITH_DEFAULTS', 'Counter',
            'set_minimizer_defaults', 'validate_minimizer_settings',
-           'override_min_opt']
+           'override_min_opt', 'run_local_minimizer', 'run_global_minimizer',
+           'run_minimizer']
 
 __author__ = 'J.L. Lanfranchi, P. Eller, S. Wren, T. Ehrhardt'
 
@@ -58,14 +64,14 @@ def set_minimizer_defaults(minimizer_settings):
 
     """
     new_minimizer_settings = dict(
-        method=dict(value='', desc=''),
-        options=dict(value=dict(), desc=dict())
+        method='',
+        options=dict()
     )
     new_minimizer_settings.update(minimizer_settings)
 
     sqrt_ftype_eps = np.sqrt(np.finfo(FTYPE).eps)
     opt_defaults = {}
-    method = minimizer_settings['method']['value'].lower()
+    method = minimizer_settings['method'].lower()
 
     if method == 'l-bfgs-b' and FTYPE == np.float64:
         # From `scipy.optimize.lbfgsb._minimize_lbfgsb`
@@ -96,14 +102,9 @@ def set_minimizer_defaults(minimizer_settings):
         raise ValueError('Unhandled minimizer "%s" / FTYPE=%s'
                          % (method, FTYPE))
 
-    opt_defaults.update(new_minimizer_settings['options']['value'])
+    opt_defaults.update(new_minimizer_settings['options'])
 
-    new_minimizer_settings['options']['value'] = opt_defaults
-
-    # Populate the descriptions with something
-    for opt_name in new_minimizer_settings['options']['value']:
-        if opt_name not in new_minimizer_settings['options']['desc']:
-            new_minimizer_settings['options']['desc'] = 'no desc'
+    new_minimizer_settings['options'] = opt_defaults
 
     return new_minimizer_settings
 
@@ -125,8 +126,8 @@ def validate_minimizer_settings(minimizer_settings):
 
     """
     ftype_eps = np.finfo(FTYPE).eps
-    method = minimizer_settings['method']['value'].lower()
-    options = minimizer_settings['options']['value']
+    method = minimizer_settings['method'].lower()
+    options = minimizer_settings['options']
     if method == 'l-bfgs-b':
         must_have = ('maxcor', 'ftol', 'gtol', 'eps', 'maxfun', 'maxiter',
                      'maxls')
@@ -136,6 +137,13 @@ def validate_minimizer_settings(minimizer_settings):
         must_have = ('maxiter', 'ftol', 'eps')
         may_have = must_have + ('args', 'jac', 'bounds', 'constraints',
                                 'iprint', 'disp', 'callback')
+
+    elif method == 'basinhopping':
+        must_have = ('niter', 'T', 'stepsize')
+        may_have = must_have + ('take_step', 'accept_test', 'callback', 'interval',
+                                'disp', 'niter_success', 'seed')
+    else:
+        raise ValueError('Cannot validate unhandled minimizer "%s".' % method)
 
     missing = set(must_have).difference(set(options))
     excess = set(options).difference(set(may_have))
@@ -176,6 +184,14 @@ def validate_minimizer_settings(minimizer_settings):
         if val > warn_lim:
             logging.warn(eps_gt_msg, method, 'eps', val, warn_lim)
 
+        # make sure we only have integers where we can only have integers
+        for s in ('maxcor', 'maxfun', 'maxiter', 'maxls', 'iprint'):
+            try:
+                options[s] = int(options[s])
+            except:
+                # if the setting doesn't exist in the first place we don't care
+                pass
+
     if method == 'slsqp':
         err_lim, warn_lim = 2, 10
         val = options['ftol']
@@ -201,6 +217,22 @@ def validate_minimizer_settings(minimizer_settings):
         if val > warn_lim:
             logging.warn(eps_gt_msg, method, 'eps', val, warn_lim)
 
+        # make sure we only have integers where we can only have integers
+        for s in ('maxiter', 'iprint'):
+            try:
+                options[s] = int(options[s])
+            except:
+                # if the setting doesn't exist in the first place we don't care
+                pass
+
+    if method == 'basinhopping':
+        for s in ('niter', 'interval', 'niter_success'):
+            try:
+                options[s] = int(options[s])
+            except:
+                # if the setting doesn't exist in the first place we don't care
+                pass
+
 
 def override_min_opt(minimizer_settings, min_opt):
     """Override minimizer option:value pair(s) in a minimizer settings dict
@@ -214,8 +246,146 @@ def override_min_opt(minimizer_settings, min_opt):
                 val = float(val_str)
             except ValueError:
                 val = val_str
-        minimizer_settings['options']['value'][opt] = val
-        minimizer_settings['options']['desc'][opt] = 'no desc'
+        minimizer_settings['options'][opt] = val
+
+
+def _minimizer_x0_bounds(free_params, minimizer_settings):
+    # Get starting free parameter values
+    x0 = free_params._rescaled_values # pylint: disable=protected-access
+    minimizer_method = minimizer_settings['method'].lower()
+    if minimizer_method in MINIMIZERS_USING_SYMM_GRAD:
+        logging.warning(
+            'Local minimizer %s requires artificial boundaries SMALLER than'
+            ' the user-specified boundaries (so that numerical gradients do'
+            ' not exceed the user-specified boundaries).',
+            minimizer_method
+        )
+        step_size = minimizer_settings['options']['eps']
+        bounds = [(0 + step_size, 1 - step_size)]*len(x0)
+    else:
+        bounds = [(0, 1)]*len(x0)
+
+    clipped_x0 = []
+    for param, x0_val, bds in zip(free_params, x0, bounds):
+        if x0_val < bds[0] - EPSILON:
+            raise ValueError(
+                'Param %s, initial scaled value %.17e is below lower bound'
+                ' %.17e.' % (param.name, x0_val, bds[0])
+            )
+        if x0_val > bds[1] + EPSILON:
+            raise ValueError(
+                'Param %s, initial scaled value %.17e exceeds upper bound'
+                ' %.17e.' % (param.name, x0_val, bds[1])
+            )
+
+        clipped_x0_val = np.clip(x0_val, a_min=bds[0], a_max=bds[1])
+        clipped_x0.append(clipped_x0_val)
+
+        if recursiveEquality(clipped_x0_val, bds[0]):
+            logging.warn(
+                'Param %s, initial scaled value %e is at the lower bound;'
+                ' minimization may fail as a result.',
+                param.name, clipped_x0_val
+            )
+        if recursiveEquality(clipped_x0_val, bds[1]):
+            logging.warn(
+                'Param %s, initial scaled value %e is at the upper bound;'
+                ' minimization may fail as a result.',
+                param.name, clipped_x0_val
+            )
+
+    x0 = tuple(clipped_x0)
+    return x0, bounds
+
+
+def run_global_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
+                         hypo_maker, data_dist, metric, counter, fit_history,
+                         pprint, blind):
+    method = minimizer_settings['global']['method']
+    options = minimizer_settings['global']['options']
+    logging.debug('Running the global "%s" minimizer...' % method )
+
+    minimizer_kwargs = {
+        'args': (hypo_maker, data_dist, metric, counter, fit_history,
+                 pprint, blind)
+    }
+    if minimizer_settings['local'] is not None:
+        minimizer_kwargs.update(minimizer_settings['local'])
+        # also tell the local minimizer the bounds, TODO: test
+        minimizer_kwargs['bounds'] = bounds
+
+    global_min = getattr(optimize, method)
+    # TODO: bounds?
+    optimize_result = global_min(
+        func=fun,
+        x0=x0,
+        minimizer_kwargs=minimizer_kwargs,
+        **options
+    )
+    return optimize_result
+
+
+def run_local_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
+                        hypo_maker, data_dist, metric, counter, fit_history,
+                        pprint, blind):
+    method = minimizer_settings['local']['method']
+    logging.debug('Running the local "%s" minimizer...' % method )
+    options = minimizer_settings['local']['options']
+    optimize_result = optimize.minimize(
+        fun=fun,
+        x0=x0,
+        args=(hypo_maker, data_dist, metric, counter, fit_history, pprint,
+              blind),
+        bounds=bounds,
+        method=method,
+        options=options,
+        callback=minimizer_callback
+    )
+
+
+def run_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
+                  hypo_maker, data_dist, metric, counter, fit_history, pprint,
+                  blind):
+    if minimizer_settings['global'] is not None:
+        run_global_minimizer(
+            fun, x0, bounds, minimizer_settings, minimizer_callback,
+            hypo_maker, data_dist, metric, counter, fit_history,
+            pprint, blind
+        )
+
+    elif minimizer_settings['local'] is not None:
+        run_local_minimizer(
+            fun, x0, bounds, minimizer_settings, minimizer_callback,
+            hypo_maker, data_dist, metric, counter, fit_history,
+            pprint, blind
+        )
+    return optimize_result
+
+
+def display_minimizer_header(free_params, metric):
+    # Display any units on top
+    r = re.compile(r'(^[+0-9.eE-]* )|(^[+0-9.eE-]*$)')
+    hdr = ' '*(6+1+10+1+12+3)
+    unt = []
+    for p in free_params:
+        u = r.sub('', format(p.value, '~')).replace(' ', '')[0:10]
+        if u:
+            u = '(' + u + ')'
+        unt.append(u.center(12))
+    hdr += ' '.join(unt)
+    hdr += '\n'
+
+    # Header names
+    hdr += ('iter'.center(6) + ' ' + 'funcalls'.center(10) + ' ' +
+            metric[0:12].center(12) + ' | ')
+    hdr += ' '.join([p.name[0:12].center(12) for p in free_params])
+    hdr += '\n'
+
+    # Underscores
+    hdr += ' '.join(['-'*6, '-'*10, '-'*12, '+'] + ['-'*12]*len(free_params))
+    hdr += '\n'
+
+    sys.stdout.write(hdr)
 
 
 class Counter(object):
