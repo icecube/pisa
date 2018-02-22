@@ -18,8 +18,7 @@ from pisa.utils.log import logging
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD', 'LOCAL_MINIMIZERS_WITH_DEFAULTS',
            'GLOBAL_MINIMIZERS_WITH_DEFAULTS', 'Counter',
            'set_minimizer_defaults', 'validate_minimizer_settings',
-           'override_min_opt', 'run_local_minimizer', 'run_global_minimizer',
-           'run_minimizer']
+           'override_min_opt', 'run_minimizer', 'minimizer_x0_bounds']
 
 __author__ = 'J.L. Lanfranchi, P. Eller, S. Wren, T. Ehrhardt'
 
@@ -249,7 +248,27 @@ def override_min_opt(minimizer_settings, min_opt):
         minimizer_settings['options'][opt] = val
 
 
-def _minimizer_x0_bounds(free_params, minimizer_settings):
+def minimizer_x0_bounds(free_params, minimizer_settings):
+    """Ensure values of free parameters are within their bounds
+    (given floating point precision) and adapt minimizer bounds
+    if necessary to prevent it from stepping outside of
+    user-specified bounds.
+
+    Parameters
+    ----------
+    free_params : ParamSet
+        Obtain starting values and user-specified bounds
+    minimizer_settings : dict
+        Parsed minimizer cfg (method and stepsize relevant)
+
+    Returns
+    -------
+    x0 : Sequence
+        Normalised and clipped parameter values
+    bounds: Sequence (of 2-tuples)
+        Normalised and possibly shrunk parameter bounds
+
+    """
     # Get starting free parameter values
     x0 = free_params._rescaled_values # pylint: disable=protected-access
     bounds = [(0, 1)]*len(x0)
@@ -300,11 +319,21 @@ def _minimizer_x0_bounds(free_params, minimizer_settings):
 
 
 class Bounds(object):
-    """from scipy.optimize.basinhopping docs:
-    acceptance test for respecting bounds"""
     def __init__(self, xmax, xmin):
+        """Acceptance test to make global minimizer
+        respect bounds.
+        (source: `scipy.optimize.basinhopping` docs)
+
+        Parameters
+        ----------
+        xmax : Sequence
+            Upper bounds
+        xmin : Sequence
+            Lower bounds
+        """
         self.xmax = np.array(xmax)
         self.xmin = np.array(xmin)
+
     def __call__(self, **kwargs):
         x = kwargs["x_new"]
         tmax = bool(np.all(x <= self.xmax))
@@ -312,9 +341,23 @@ class Bounds(object):
         return tmax and tmin
 
 
-def run_global_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
-                         hypo_maker, data_dist, metric, counter, fit_history,
-                         pprint, blind):
+def _run_global_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
+                          hypo_maker, data_dist, metric, counter, fit_history,
+                          pprint, blind):
+    """Run global (+local) minimization routine via
+    `scipy.optimize` interface:
+    `basinhopping`, `brute`, `differential_evolution`
+
+    Parameters
+    ----------
+    cf. `run_minimizer`
+
+    Returns
+    -------
+    optimize_result : OptimizeResult
+
+    """
+
     method = minimizer_settings['global']['method']
     options = minimizer_settings['global']['options']
     logging.debug('Running the global "%s" minimizer...' % method )
@@ -343,12 +386,26 @@ def run_global_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback
     return optimize_result
 
 
-def run_local_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
-                        hypo_maker, data_dist, metric, counter, fit_history,
-                        pprint, blind):
-    method = minimizer_settings['local']['method']
+def _run_local_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
+                         hypo_maker, data_dist, metric, counter, fit_history,
+                         pprint, blind):
+    """Run arbitrary local minimization routine
+    via `scipy.optimize.minimize` interface.
+
+    Parameters
+    ----------
+    cf. `run_minimizer`
+
+    Returns
+    -------
+    optimize_result : OptimizeResult
+
+    """
+
+    method = minimizer_settings['method']
+    options = minimizer_settings['options']
     logging.debug('Running the local "%s" minimizer...' % method )
-    options = minimizer_settings['local']['options']
+
     optimize_result = optimize.minimize(
         fun=fun,
         x0=x0,
@@ -359,13 +416,52 @@ def run_local_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
         options=options,
         callback=minimizer_callback
     )
+
     return optimize_result
 
 
 def run_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
                   hypo_maker, data_dist, metric, counter, fit_history, pprint,
                   blind):
+    """A wrapper that dispatches a global or a local minimization
+    routine according to minimizer_settings.
+
+    Parameters
+    ----------
+    fun : callable
+        function that is minimized
+    x0 : Sequence
+        minimizer initial guess (normalized to [0,1])
+    bounds : Sequence of 2-tuples
+        minimizer bounds (one pair per value in x0)
+    minimizer_settings : dict
+        dictionary containing parsed 'global' and/or 'local'
+        minimizer configs
+    minimizer_callback : callable
+        callback function called after each iteration/
+        for each minimum found
+    hypo_maker : DistributionMaker
+    data_dist : MapSet
+        (pseudo-)data distribution
+    metric : str
+        metric to minimize
+    counter : Counter
+        counter passed to minimizer callable that keeps track
+        of the number of function calls
+    fit_history : Sequence
+        passed to minimizer callable to record progress of minimizer
+        (metric and parameter values)
+    pprint : bool
+    blind : bool
+
+    Returns
+    -------
+    optimize_result: OptimizeResult
+
+    """
     if minimizer_settings['global'] is not None:
+        # can make use of both global and local minimizers, so pass in
+        # whole minimizer_settings
         optimize_result = run_global_minimizer(
             fun, x0, bounds, minimizer_settings, minimizer_callback,
             hypo_maker, data_dist, metric, counter, fit_history,
@@ -374,7 +470,7 @@ def run_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
 
     elif minimizer_settings['local'] is not None:
         optimize_result = run_local_minimizer(
-            fun, x0, bounds, minimizer_settings, minimizer_callback,
+            fun, x0, bounds, minimizer_settings['local'], minimizer_callback,
             hypo_maker, data_dist, metric, counter, fit_history,
             pprint, blind
         )
@@ -383,6 +479,14 @@ def run_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
 
 
 def display_minimizer_header(free_params, metric):
+    """Display nicely formatted header for use with minimizer.
+
+    Parameters
+    ----------
+    free_params : ParamSet
+    metric : str
+
+    """
     # Display any units on top
     r = re.compile(r'(^[+0-9.eE-]* )|(^[+0-9.eE-]*$)')
     hdr = ' '*(6+1+10+1+12+3)

@@ -21,7 +21,7 @@ from pisa.core.param import ParamSet
 from pisa.utils.config_parser import parse_minimizer_config, PISAConfigParser
 from pisa.utils.fileio import to_file
 from pisa.utils.log import logging
-from pisa.utils.minimization import set_minimizer_defaults, _minimizer_x0_bounds,\
+from pisa.utils.minimization import set_minimizer_defaults, minimizer_x0_bounds,\
                                     validate_minimizer_settings,\
                                     display_minimizer_header, run_minimizer,\
                                     Counter, MINIMIZERS_USING_SYMM_GRAD
@@ -305,16 +305,11 @@ class Analysis(object):
             pull_params = fit_settings['pull']['params']
             fit_settings.pop('scan')
 
-            for pname in tuple(minimize_params) + tuple(scan_params) + tuple(pull_params):
-                # require all params to be set to free initially
-                assert pname in hypo_maker.params.free.names
-            # TODO: excess, missing
-
             # the parameters to scan over need to be fixed
             hypo_maker.params.fix(scan_params)
             params = hypo_maker.params
 
-            # TODO: if there are no scan_vals, we can just inject e.g. the nominal
+            # if there are no scan_vals, we can just inject e.g. the nominal
             # value for each free parameter
             if not scan_vals:
                 scan_vals = [[(pname, hypo_maker.params[pname].value)]
@@ -335,11 +330,12 @@ class Analysis(object):
                         raise TypeError("val is of type %s which I don't know "
                                         "how to deal with in the output "
                                         "messages."% type(val))
+                logging.debug('Fixing hypothesis parameters: %s.' % msg)
                 # Reset free parameters to nominal values
                 if reset_free:
                     hypo_maker.reset_free()
                 else:
-                    # Saves the current minimizer start values (for the octant check)
+                    # Saves the current minimizer start values
                     optimizer_start_params = hypo_maker.params
 
                 best_fit_info = self.fit_hypo_inner_new(
@@ -363,14 +359,13 @@ class Analysis(object):
 
         # always return a list (of one ore more fit results)
         if return_full_scan:
-            logging.debug("Returning full hypo scan.")
+            logging.debug('Returning full hypo scan.')
+            return scan_fit_infos
+        logging.debug('Only returning overall best fit.')
+        if len(scan_fit_infos) == 1:
             return scan_fit_infos
         else:
-            logging.debug("Only returning overall best fit.")
-            if len(scan_fit_infos) == 1:
-                return scan_fit_infos
-            else:
-                return [scan_fit_infos[best_ind]]
+            return [scan_fit_infos[best_ind]]
 
 
     def fit_hypo_inner_new(self, data_dist, hypo_maker, metric, fit_settings_inner,
@@ -385,7 +380,7 @@ class Analysis(object):
 
         # no parameters to fit
         if not len(pull_params) and not len(minimize_params):
-            logging.info("Nothing else to do. Calculating metric(s).")
+            logging.debug("Nothing else to do. Calculating metric(s).")
             nofit_hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
             fit_info = self.nofit_hypo(
                 data_dist=data_dist,
@@ -691,7 +686,7 @@ class Analysis(object):
 
         # set starting values and bounds (bounds possibly modified depending
         # on whether the local minimizer uses gradients)
-        x0, bounds = _minimizer_x0_bounds(
+        x0, bounds = minimizer_x0_bounds(
             free_params=hypo_maker.params.free,
             minimizer_settings=minimizer_settings_local
         )
@@ -699,7 +694,7 @@ class Analysis(object):
         counter = Counter()
         
         fit_history = []
-        fit_history.append( [metric] + [v.name for v in hypo_maker.params.free])
+        fit_history.append([metric] + hypo_maker.params.free.names)
 
         if pprint and not blind:
             # display header if desired/allowed
@@ -772,7 +767,8 @@ class Analysis(object):
             fit_info['params'] = deepcopy(hypo_maker.params)
         fit_info['detailed_metric_info'] = self.get_detailed_metric_info(
             data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist,
-            params=hypo_maker.params, metric=metric, other_metrics=other_metrics
+            params=hypo_maker.params, metric=metric, other_metrics=other_metrics,
+            blind=blind
         )
         fit_info['minimizer_time'] = minimizer_time * ureg.sec
         fit_info['num_distributions_generated'] = counter.count
@@ -840,7 +836,7 @@ class Analysis(object):
         fit_info['metric_val'] = metric_val
 
         if blind:
-            # Okay, if blind analysis is being performed, reset the values so
+            # in case of blind analysis, reset the values so
             # the user can't find them in the object
             hypo_maker.reset_free()
             fit_info['params'] = ParamSet()
@@ -848,17 +844,21 @@ class Analysis(object):
             fit_info['params'] = deepcopy(hypo_maker.params)
         fit_info['detailed_metric_info'] = self.get_detailed_metric_info(
             data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist,
-            params=hypo_maker.params, metric=metric, other_metrics=other_metrics
+            params=hypo_maker.params, metric=metric, other_metrics=other_metrics,
+            blind=blind
         )
         fit_info['minimizer_time'] = 0 * ureg.sec
         fit_info['num_distributions_generated'] = 0
         fit_info['minimizer_metadata'] = OrderedDict()
+        # If blind replace hypo_asimov_dist with none object
+        if blind:
+            hypo_asimov_dist = None
         fit_info['hypo_asimov_dist'] = hypo_asimov_dist
         return fit_info
 
     @staticmethod
     def get_detailed_metric_info(data_dist, hypo_asimov_dist, params, metric,
-                                 other_metrics=None):
+                                 other_metrics=None, blind=False):
         """Get detailed fit information, including e.g. maps that yielded the
         metric.
 
@@ -869,6 +869,7 @@ class Analysis(object):
         params
         metric
         other_metrics
+        blind
 
         Returns
         -------
@@ -899,7 +900,11 @@ class Analysis(object):
                 )
                 maps_binned.append(map_binned)
             name_vals_d['maps_binned'] = MapSet(maps_binned)
-            name_vals_d['priors'] = params.priors_penalties(metric=metric)
+            # do not record param priors in case of blind analysis
+            priors_penalties = (
+                params.priors_penalties(metric=metric) if not blind else None
+            )
+            name_vals_d['priors'] = priors_penalties
             detailed_metric_info[m] = name_vals_d
         return detailed_metric_info
 
