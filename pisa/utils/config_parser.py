@@ -497,9 +497,10 @@ def parse_fit_config(config):
     # default must be there
     method_defaults = {'scan': {'range': None, 'nvalues': None},
                        'pull': {'range': None, 'nvalues': None},
-                        # TODO: no need to attach the following to single params
-                        # (won't want to allow different minimizers for different
-                        # parameters)
+                        # probably won't want to allow different minimizers for
+                        # different parameters, but at least we already have
+                        # the structure here for more complex fit settings for
+                        # minimization
                        'minimize': {'global': None, 'local': None},
                       }
     # if the wildcard is employed, require global defaults to be set
@@ -513,7 +514,7 @@ def parse_fit_config(config):
     for fit_method in sorted(fit_methods):
         wildcard_here = False
         if not fit_method in fit_params:
-            # no implicit assignment of fit parameters will be tolerated
+            # no implicit assignment of fit parameters will be tolerated -
             # at least wildcard required
             raise ValueError('Please specify which parameters should be fit'
                              ' via "%s".' % fit_method)
@@ -568,6 +569,13 @@ def parse_fit_config(config):
                     # setting of <opt>
                     param_opt = '%s.%s' % (param, opt)
                     if param_opt in config[fit_method]:
+                        if 'fit_method' == 'minimize':
+                            raise ValueError(
+                                'Currently only global default options allowed'
+                                ' for minimization! Found: "%s". Please just'
+                                ' specify "%s" exactly once.'
+                                % (param_opt, opt)
+                            )
                         val = config[fit_method][param_opt]
                         try:
                             val = parse_quantity(val)
