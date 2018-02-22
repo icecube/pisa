@@ -502,57 +502,101 @@ def parse_fit_config(config):
                         # parameters)
                        'minimize': {'global': None, 'local': None},
                       }
+    # if the wildcard is employed, require global defaults to be set
+    wildcard = '*'
 
     # now check whether for each method there's a specification of its
     # parameters
     fit_params = config['fit.params']
+    wildcard_used = False
+    # TODO: cannot allow overlap in parameters between different methods
     for fit_method in sorted(fit_methods):
+        wildcard_here = False
         if not fit_method in fit_params:
+            # no implicit assignment of fit parameters will be tolerated
+            # at least wildcard required
             raise ValueError('Please specify which parameters should be fit'
                              ' via "%s".' % fit_method)
         method_params = ''.join(fit_params[fit_method].split()).split(',')
-        settings_dict[fit_method] = {'params': {p: {} for p in sorted(method_params)}}
-        if config.has_section(fit_method):
-            if fit_method in method_defaults:
-                found_some_default = False
-                # Look for specification of the allowed defaults from
-                # `method_defaults`. Only record if specified.
-                allowed_opts = sorted(method_defaults[fit_method].keys())
-                for opt in allowed_opts:
-                    found_default = False
-                    if opt in config[fit_method]:
-                        val = config[fit_method][opt]
-                        found_default = True
+        if wildcard in method_params:
+            if wildcard_used:
+                raise ValueError(
+                    'Cannot use wildcard "%s" more than once in a fit config.'
+                    % wildcard
+                )
+            wildcard_used = True
+            wildcard_here = True
+        settings_dict[fit_method] = {
+            'params': {p: {} for p in sorted(method_params)}
+        }
+        # require a section for the fit method
+        if not config.has_section(fit_method):
+            raise NoSectionError(
+                'Could not find "%s". Only found sections: %s'
+                % (fit_method, config.sections())
+            )
+
+        # Look for specification of the allowed global defaults from
+        # `method_defaults` and for param-specific ones (take precedence)
+        if fit_method in method_defaults:
+            allowed_opts = sorted(method_defaults[fit_method].keys())
+            for opt in allowed_opts:
+                found_default = False
+                if opt in config[fit_method]:
+                    val = config[fit_method][opt]
+                    found_default = True
+                    try:
+                        val = parse_quantity(val)
+                        method_defaults[fit_method][opt] = val.nominal_value
+                    except:
+                        # remove *any* whitespace
+                        val = ''.join(parse_string_literal(val).split())
+                        method_defaults[fit_method][opt] = val
+                    # processed, so remove
+                    config[fit_method].pop(opt)
+                else:
+                    # this allowed default hasn't been set
+                    # -> only problematic if wildcard is used
+                    if wildcard_used:
+                        raise ValueError(
+                            'You have to globally set option "%s" for fit'
+                            ' method "%s" since you used the wildcard!'
+                            % (opt, fit_method)
+                        )
+                for param in method_params:
+                    # options set as <param>.<opt> take precedence over global
+                    # setting of <opt>
+                    param_opt = '%s.%s' % (param, opt)
+                    if param_opt in config[fit_method]:
+                        val = config[fit_method][param_opt]
                         try:
                             val = parse_quantity(val)
-                            method_defaults[fit_method][opt] = val.nominal_value
+                            val = val.nominal_value
                         except:
-                            val = parse_string_literal(val)
-                            method_defaults[fit_method][opt] = val
+                            # remove *any* whitespace
+                            val = ''.join(parse_string_literal(val).split())
+                        config[fit_method].pop(param_opt)
                     else:
-                        # this allowed default hasn't been set
-                        # -> nothing to be done
-                        pass
-
-                    for param in method_params:
-                        param_opt = '%s.%s' % (param, opt)
-                        if param_opt in config[fit_method]:
-                            val = config[fit_method][param_opt]
-                            try:
-                                val = parse_quantity(val)
-                                val = val.nominal_value
-                            except:
-                                val = parse_string_literal(val)
-                        else:
-                            # fill with default for this option
-                            val = method_defaults[fit_method][opt]
-                            if not found_default:
-                                raise ValueError(
-                                    'No option "%s" found for "%s". Either'
-                                    ' set "%s" explicitly or set a "%s" default.'
-                                    % (opt, param, param_opt, opt)
-                                )
-                        settings_dict[fit_method]['params'][param][opt] = val
+                        # but if no <param>.<opt> entry is found, there
+                        # *has* to be a global default for this fit method
+                        val = method_defaults[fit_method][opt]
+                        if not found_default:
+                            raise ValueError(
+                                'No option "%s" found for "%s". Either'
+                                ' set "%s" explicitly or set a "%s" default.'
+                                % (opt, param, param_opt, opt)
+                            )
+                    settings_dict[fit_method]['params'][param][opt] = val
+        # have to record the global defaults so we can later on apply them
+        # to the remaining parameters if the wildcard is used
+        if wildcard_here:
+            settings_dict[fit_method]['defaults'] = method_defaults[fit_method]
+        # make sure no excess specs remain
+        unhandled = config[fit_method].keys()
+        if unhandled:
+            raise ValueError(
+                'Unhandled "%s" specs: %s.' % (fit_method, unhandled)
+            )
 
     return settings_dict
 

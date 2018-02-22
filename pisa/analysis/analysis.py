@@ -27,7 +27,7 @@ from pisa.utils.minimization import set_minimizer_defaults, _minimizer_x0_bounds
 from pisa.utils.stats import METRICS_TO_MAXIMIZE, it_got_better
 
 
-__all__ = ['Analysis']
+__all__ = ['Analysis', 'validate_fit_settings', 'ANALYSIS_METHODS']
 
 __author__ = 'J.L. Lanfranchi, P. Eller, S. Wren'
 
@@ -78,6 +78,50 @@ def check_t23_octant(fit_info):
     return octant_index
 
 
+def validate_fit_settings(fit_settings, free_params):
+    """Validate fit settings (cf. `config_parser.parse_fit_config`) together
+    with a `DistributionMaker`'s set of free parameters. Ensure that params,
+    ranges, test points, seeds etc. are compatible with free parameter specs.
+    """
+    fit_methods = fit_settings.keys()
+    # TODO: don't require all possible methods to be present
+    #assert set(fit_methods) == set(ANALYSIS_METHODS)
+
+    # wildcard can only occur once in fit_settings; all parameters not
+    # specified will be treated by the method which has the wildcard
+    wildcard = '*'
+
+    method_with_wildcard = [
+        fit_method for fit_method in fit_methods
+        if wildcard in fit_settings[fit_method]['params']
+    ]
+    assert len(method_with_wildcard) == 1
+    method_with_wildcard = method_with_wildcard[0]
+
+    fit_settings[method_with_wildcard]['params'].pop(wildcard)
+
+    params_with_fit_method = [
+        pname for fit_method in fit_methods
+        for pname in fit_settings[fit_method]['params'].keys()
+    ]
+
+    for pname in params_with_fit_method:
+        # require to be a free parameter
+        assert pname in free_params.names
+
+    # remaining
+    params_remaining = [pname for pname in free_params.names
+                        if pname not in params_with_fit_method]
+
+    # these need the fit method settings defaults
+    defaults = fit_settings[method_with_wildcard]['defaults']
+    fit_settings[method_with_wildcard]['params'].update(
+        {premain: defaults for premain in params_remaining}
+    )
+
+    return fit_settings
+
+
 class Analysis(object):
     """Major tools for performing "canonical" IceCube/DeepCore/PINGU analyses.
 
@@ -106,8 +150,6 @@ class Analysis(object):
                        }
         """
 
-        # TODO: validate_fit_settings(fit_settings)
-
         if not isinstance(extra_hypo_param_selections, Sequence):
             extra_hypo_param_selections = [extra_hypo_param_selections]
 
@@ -120,7 +162,9 @@ class Analysis(object):
             # Select the version of the parameters used for this hypothesis
             hypo_maker.select_params(full_param_selections)
 
-            assert set(fit_settings.keys()) == set(ANALYSIS_METHODS)
+            # only validate after the param selection has been applied
+            validate_fit_settings(fit_settings, hypo_maker.params.free)
+
             minimize_params = fit_settings['minimize']['params']
             if minimize_params:
                 assert minimizer_settings is not None
