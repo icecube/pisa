@@ -193,7 +193,7 @@ default selection they must be separated by commas.
 
 from __future__ import absolute_import, division
 
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from io import StringIO
 from os.path import abspath, expanduser, expandvars, isfile, join
 import re
@@ -384,7 +384,10 @@ def interpret_param_subfields(subfields, selector=None, pname=None, attr=None):
 
 
 def parse_minimizer_config(config):
-    """Parse minimizer config.
+    """Parse a minimizer configuration. Note that some of
+    the fields which are passed on to the corresponding
+    `scipy.optimize` interface might have to be integers.
+    This needs to be ensured outside of here.
 
     Parameters
     ----------
@@ -392,7 +395,7 @@ def parse_minimizer_config(config):
 
     Returns
     -------
-    minimizer_settings_dict : OrderedDict
+    settings_dict : OrderedDict
 
     """
     if isinstance(config, basestring):
@@ -418,7 +421,7 @@ def parse_minimizer_config(config):
         )
 
     settings_dict = OrderedDict()
-    solver  = config['method']['name']
+    solver = config['method']['name']
     settings_dict['method'] = solver
     settings_dict['options'] = OrderedDict()
     for opt, val in config['options'].items():
@@ -428,11 +431,26 @@ def parse_minimizer_config(config):
         except ValueError:
             val = parse_string_literal(val)
             settings_dict['options'][opt] = val
+
     return settings_dict
 
 
 def parse_fit_config(config):
-    raise NotImplementedError()
+    """Parse a fit configuration from a path to a parsable
+    configuration file or from a `PISAConfigParser`.
+    Requires at least sections 'fit' and 'fit.params'
+    and additional ones depending on the chosen fitting methods.
+
+    Parameters
+    ----------
+    config : string or ConfigParser
+
+    Returns
+    -------
+    settings_dict : OrderedDict
+
+    """
+    from pisa.analysis.analysis import ANALYSIS_METHODS
     if isinstance(config, basestring):
         config = from_file(config)
     elif isinstance(config, PISAConfigParser):
@@ -443,11 +461,98 @@ def parse_fit_config(config):
             'instead.' % type(config)
         )
 
-    if not config.has_section('methods'):
+    if not config.has_section('fit'):
         raise NoSectionError(
-            "Could not find 'method'. Only found sections: %s"
+            'Could not find "fit". Please specify which fit methods to use'
+            ' here. Only found sections: %s.' % config.sections()
+        )
+
+    if not config.has_section('fit.params'):
+        raise NoSectionError(
+            'Could not find "fit.params". Please specify by which method to'
+            ' treat which parameter here. Only found sections: %s.'
             % config.sections()
         )
+
+    # parse fit methods first
+    settings_dict = OrderedDict()
+    fit_methods = config['fit']['method']
+    fit_methods = ''.join(fit_methods.split()).split('+')
+
+    # check whether all fit methods are recognised
+    excess = set(fit_methods).difference(set(ANALYSIS_METHODS))
+    if excess:
+        raise ValueError('Unrecognised fit method(s): %s' % excess)
+
+    # check for duplicates (could also ignore those, but let's be more
+    # cautious and raise)
+    method_count = Counter(fit_methods)
+    duplicates = [m for (m,c) in method_count.items() if c > 1]
+    if duplicates:
+        raise ValueError('Found duplicated fit method(s): %s' % duplicates)
+
+    # these are the allowed + must have options for the different fit methods
+    # these can be specified globally ("<opt> = ...") or per param
+    # ("<param>.<opt> = ..."), but if the latter doesn't exist a global
+    # default must be there
+    method_defaults = {'scan': {'range': None, 'nvalues': None},
+                       'pull': {'range': None, 'nvalues': None},
+                        # TODO: no need to attach the following to single params
+                        # (won't want to allow different minimizers for different
+                        # parameters)
+                       'minimize': {'global': None, 'local': None},
+                      }
+
+    # now check whether for each method there's a specification of its
+    # parameters
+    fit_params = config['fit.params']
+    for fit_method in sorted(fit_methods):
+        if not fit_method in fit_params:
+            raise ValueError('Please specify which parameters should be fit'
+                             ' via "%s".' % fit_method)
+        method_params = ''.join(fit_params[fit_method].split()).split(',')
+        settings_dict[fit_method] = {'params': {p: {} for p in sorted(method_params)}}
+        if config.has_section(fit_method):
+            if fit_method in method_defaults:
+                found_some_default = False
+                # Look for specification of the allowed defaults from
+                # `method_defaults`. Only record if specified.
+                allowed_opts = sorted(method_defaults[fit_method].keys())
+                for opt in allowed_opts:
+                    found_default = False
+                    if opt in config[fit_method]:
+                        val = config[fit_method][opt]
+                        found_default = True
+                        try:
+                            val = parse_quantity(val)
+                            method_defaults[fit_method][opt] = val.nominal_value
+                        except:
+                            val = parse_string_literal(val)
+                            method_defaults[fit_method][opt] = val
+                    else:
+                        # this allowed default hasn't been set
+                        # -> nothing to be done
+                        pass
+
+                    for param in method_params:
+                        param_opt = '%s.%s' % (param, opt)
+                        if param_opt in config[fit_method]:
+                            val = config[fit_method][param_opt]
+                            try:
+                                val = parse_quantity(val)
+                                val = val.nominal_value
+                            except:
+                                val = parse_string_literal(val)
+                        else:
+                            # fill with default for this option
+                            val = method_defaults[fit_method][opt]
+                            if not found_default:
+                                raise ValueError(
+                                    'No option "%s" found for "%s". Either'
+                                    ' set "%s" explicitly or set a "%s" default.'
+                                    % (opt, param, param_opt, opt)
+                                )
+                        settings_dict[fit_method]['params'][param][opt] = val
 
     return settings_dict
 
