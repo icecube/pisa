@@ -109,7 +109,7 @@ def get_gradients(param, hypo_maker, take_finite_diffs=False, grid_settings=None
     return pmaps, gradient_map
 
 
-def calculate_pulls(fisher, fid_maps_truth, fid_maps_hypo, gradient_maps):
+def calculate_pulls(fisher, fid_maps_truth, fid_hypo_asimov_dist, gradient_maps):
     """Compute parameter pulls given data distribution, fiducial hypothesis
     distribution, Fisher matrix, and binwise gradients.
     """
@@ -122,7 +122,7 @@ def calculate_pulls(fisher, fid_maps_truth, fid_maps_hypo, gradient_maps):
         gm = gradient_maps[chan]
         # binwise differences between truth and model in this chan
         # [d_bin1, d_bin2, ..., d_bin780]
-        dm = np.subtract(fid_maps_truth[chan].hist, fid_maps_hypo[chan].hist).flatten()
+        dm = np.subtract(fid_maps_truth[chan].hist, fid_hypo_asimov_dist[chan].hist).flatten()
         # binwise statist. uncertainties for truth
         # [sigma_bin1, sigma_bin2, ..., sigma_bin3]
         sigma = fid_maps_truth[chan].hist.flatten()
@@ -144,57 +144,3 @@ def calculate_pulls(fisher, fid_maps_truth, fid_maps_hypo, gradient_maps):
     f_tot.calculateCovariance()
     pulls = np.dot(f_tot.covariance, d)
     return [(pname, pull) for pname, pull in zip(f_tot.parameters, pulls.flat)]
-
-
-def get_fisher_matrices(data_dist, hypo_maker,
-                        take_finite_diffs=False, return_pulls=False):
-    """Compute Fisher matrices at fiducial hypothesis given data.
-    """
-    hypo_params = hypo_maker.params.free
-
-    #fisher = {'total': {}}
-    fid_hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
-
-    pmaps = {'total': {}}
-    gradient_maps = {'total': {}}
-
-    for pname in hypo_params.names:
-        logging.debug("Computing binwise gradients for parameter '%s'." % pname)
-        tpm, gm = get_gradients(
-            param=pname,
-            hypo_maker=hypo_maker,
-            take_finite_diffs=take_finite_diffs,
-        )
-
-        pmaps['total'][pname] = tpm
-        gradient_maps['total'][pname] = gm
-
-    fisher = build_fisher_matrix(
-        gradient_maps['total'],
-        fid_hypo_asimov_dist.hist['total'].flatten(),
-        hypo_params
-    )
-
-    """
-    parameters = fisher.parameters
-    best_fits = fisher.best_fits
-
-    if len(fisher.keys()) > 1:
-        fisher['comb'] = FisherMatrix(
-            matrix=np.array([f.matrix for f in fisher.itervalues()]).sum(axis=0),
-            parameters=parameters,  #order is important here!
-            best_fits=best_fits,
-            labels=[par for par in parameters],
-            priors=None, #FIXME
-        )
-    """
-    if return_pulls:
-        pulls = calculate_pulls(
-            fisher,
-            data_dist,
-            fid_hypo_asimov_dist,
-            gradient_maps
-        )
-        return fisher, pulls
-
-    return fisher

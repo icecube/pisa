@@ -44,7 +44,6 @@ def build_fisher_matrix(gradient_hist_flat_d, fiducial_hist_flat, fiducial_param
     logging.info("Using %u non-empty bins of %u" %
                  (len(nonempty[0]), len(fiducial_hist_flat)))
 
-    print nonempty
     # get gradients as calculated above for non-zero bins
     gradients = np.array(
         [gradient_hist_flat_d[par][nonempty] for par in params]
@@ -71,6 +70,37 @@ def build_fisher_matrix(gradient_hist_flat_d, fiducial_hist_flat, fiducial_param
 
     return fisher
 
+
+def get_fisher_matrix(data_dist, hypo_maker,
+                      take_finite_diffs=False):
+    """Compute Fisher matrices at fiducial hypothesis given data.
+    """
+    from pisa.utils.pull_method import get_gradients
+    hypo_params = hypo_maker.params.free
+
+    #fisher = {'total': {}}
+    fid_hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
+
+    pmaps = {'total': {}}
+    gradient_maps = {'total': {}}
+
+    for pname in hypo_params.names:
+        logging.debug("Computing binwise gradients for parameter '%s'." % pname)
+        tpm, gm = get_gradients(
+            param=pname,
+            hypo_maker=hypo_maker,
+            take_finite_diffs=take_finite_diffs,
+        )
+
+        pmaps['total'][pname] = tpm
+        gradient_maps['total'][pname] = gm
+
+    fisher = build_fisher_matrix(
+        gradient_maps['total'],
+        fid_hypo_asimov_dist.hist['total'].flatten(),
+        hypo_params
+    )
+    return fisher, gradient_maps, fid_hypo_asimov_dist
 
 
 ### FISHER MATRIX CLASS DEFINITION ###

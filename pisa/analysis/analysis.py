@@ -20,12 +20,13 @@ from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
 from pisa.utils.config_parser import parse_minimizer_config, PISAConfigParser
 from pisa.utils.fileio import to_file
+from pisa.utils.fisher_matrix import get_fisher_matrix
 from pisa.utils.log import logging
 from pisa.utils.minimization import set_minimizer_defaults, minimizer_x0_bounds,\
                                     validate_minimizer_settings,\
                                     display_minimizer_header, run_minimizer,\
                                     Counter, MINIMIZERS_USING_SYMM_GRAD
-from pisa.utils.pull_method import get_fisher_matrices # TODO: rename/change
+from pisa.utils.pull_method import calculate_pulls
 from pisa.utils.stats import METRICS_TO_MAXIMIZE, it_got_better
 
 
@@ -815,11 +816,14 @@ class Analysis(object):
 
         # main algorithm: calculate fisher matrix and parameter pulls
         # TODO: make configurable
-        fisher, pulls = get_fisher_matrices(
-            data_dist, hypo_maker,
-            take_finite_diffs=False, return_pulls=True
+        # TODO: check this is indeed generated at the fiducial model
+        fisher, gradient_maps, fid_hypo_asimov_dist = get_fisher_matrix(
+            data_dist, hypo_maker, take_finite_diffs=True
         )
 
+        pulls = calculate_pulls(
+            fisher, data_dist, fid_hypo_asimov_dist, gradient_maps
+        )
         #fit_params = deepcopy(hypo_maker.params)
 
         # update hypo maker params to best fit values
