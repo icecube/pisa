@@ -51,14 +51,14 @@ def build_fisher_matrix(gradient_hist_flat_d, fiducial_hist_flat, fiducial_param
 
     # get error estimate from best-fit bin count for non-zero bins
     # TODO: use propagated uncertainties instead
-    sigmas = np.sqrt(fiducial_hist_flat[nonempty])
+    variances = fiducial_hist_flat[nonempty]
 
     # Loop over all parameters per bin (simple transpose) and calculate Fisher
     # matrix by getting the outer product of all gradients in a bin.
     # Result is sum of matrix for all bins.
     fmatrix = np.zeros((len(params), len(params)))
-    for bin_gradients, bin_sigma in zip(gradients.T, sigmas):
-        fmatrix += np.outer(bin_gradients, bin_gradients)/bin_sigma**2
+    for bin_gradients, bin_var in zip(gradients.T, variances):
+        fmatrix += np.outer(bin_gradients, bin_gradients)/bin_var
 
     # construct the fisher matrix object
     fisher = FisherMatrix(
@@ -91,9 +91,15 @@ def get_fisher_matrix(data_dist, hypo_maker,
             hypo_maker=hypo_maker,
             take_finite_diffs=take_finite_diffs,
         )
-
+        # the maps corresponding to variations of
+        # a single param are not flattened
         pmaps['total'][pname] = tpm
+        # these are flattened, which is also what the
+        # method below assumes
         gradient_maps['total'][pname] = gm
+
+    # hypo param values are not at nominal anymore,
+    # but we don't use their values here
 
     fisher = build_fisher_matrix(
         gradient_maps['total'],
