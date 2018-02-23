@@ -13,6 +13,8 @@ import itertools
 import json
 from scipy.stats import chi2
 
+from pisa.utils.log import logging
+
 
 __all__ = ['FisherMatrix']
 
@@ -31,6 +33,43 @@ __license__ = '''Copyright (c) 2014-2018, The IceCube Collaboration
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.'''
+
+
+def build_fisher_matrix(gradient_hist_flat_d, fiducial_hist_flat, fiducial_params):
+    # fix the ordering of parameters
+    params = sorted(gradient_hist_flat_d.keys())
+
+    # find non-empty bins in flattened map
+    nonempty = np.nonzero(fiducial_hist_flat)
+    logging.info("Using %u non-empty bins of %u" %
+                 (len(nonempty[0]), len(fiducial_hist_flat)))
+
+    print nonempty
+    # get gradients as calculated above for non-zero bins
+    gradients = np.array(
+        [gradient_hist_flat_d[par][nonempty] for par in params]
+    )
+
+    # get error estimate from best-fit bin count for non-zero bins
+    # TODO: use propagated uncertainties instead
+    sigmas = np.sqrt(fiducial_hist_flat[nonempty])
+
+    # Loop over all parameters per bin (simple transpose) and calculate Fisher
+    # matrix by getting the outer product of all gradients in a bin.
+    # Result is sum of matrix for all bins.
+    fmatrix = np.zeros((len(params), len(params)))
+    for bin_gradients, bin_sigma in zip(gradients.T, sigmas):
+        fmatrix += np.outer(bin_gradients, bin_gradients)/bin_sigma**2
+
+    # construct the fisher matrix object
+    fisher = FisherMatrix(
+        matrix=fmatrix,
+        parameters=params,  #order is important here!
+        best_fits=fiducial_params.nominal_values, # TODO: fix order
+        priors=None, #FIXME
+    )
+
+    return fisher
 
 
 

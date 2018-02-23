@@ -25,6 +25,7 @@ from pisa.utils.minimization import set_minimizer_defaults, minimizer_x0_bounds,
                                     validate_minimizer_settings,\
                                     display_minimizer_header, run_minimizer,\
                                     Counter, MINIMIZERS_USING_SYMM_GRAD
+from pisa.utils.pull_method import get_fisher_matrices # TODO: rename/change
 from pisa.utils.stats import METRICS_TO_MAXIMIZE, it_got_better
 
 
@@ -172,7 +173,7 @@ def apply_fit_settings(fit_settings, free_params):
                     raise
                 nom = free_params[pname].nominal_value
                 prange = [nom - scale_nom * nom, nom + scale_nom * nom]
-            elif isinstace(prange, Q_):
+            elif isinstance(prange, Q_):
                 if not isinstance(prange, Sequence):
                     raise TypeError(
                         'Range specified for parameter "%s" is not'
@@ -331,6 +332,7 @@ class Analysis(object):
                                         "how to deal with in the output "
                                         "messages."% type(val))
                 logging.debug('Fixing hypothesis parameters: %s.' % msg)
+                # TODO: keep track of scan steps taken
                 # Reset free parameters to nominal values
                 if reset_free:
                     hypo_maker.reset_free()
@@ -348,6 +350,7 @@ class Analysis(object):
                     pprint=pprint,
                     blind=blind
                 )
+
                 scan_fit_infos.append(best_fit_info)
                 if i >= 1 and not return_full_scan:
                     if it_got_better(
@@ -792,6 +795,72 @@ class Analysis(object):
                          ' requested. Message: "%s"' % msg)
 
         return fit_info
+
+
+    def fit_hypo_pull(self, data_dist, hypo_maker, metric, pull_settings,
+                      other_metrics=None, pprint=True, blind=False):
+        """Fit a hypo to a data distribution via the pull method.
+
+        Returns
+        -------
+        fit_info : OrderedDict with details of the fit with keys 'metric',
+            'metric_val', 'params', 'hypo_asimov_dist'
+        """
+        # TODO: still a lot of work to do: configurability, other metrics, etc.
+        fit_info = OrderedDict()
+        fit_info['metric'] = metric
+
+        # record start time
+        start_t = time.time()
+
+        # main algorithm: calculate fisher matrix and parameter pulls
+        # TODO: make configurable
+        fisher, pulls = get_fisher_matrices(
+            data_dist, hypo_maker,
+            take_finite_diffs=False, return_pulls=True
+        )
+
+        #fit_params = deepcopy(hypo_maker.params)
+
+        # update hypo maker params to best fit values
+        for pname, pull in pulls:
+            hypo_maker.params[pname].value = (
+                hypo_maker.params[pname].nominal_value + pull
+            )
+
+        # generate the hypo distribution at the best fit
+        best_fit_hypo_dist = hypo_maker.get_outputs(return_sum=True)
+
+        # calculate the value of the metric at the best fit
+        metric_val = (
+                data_dist.metric_total(expected_values=best_fit_hypo_dist,
+                                       metric=metric)
+                + hypo_maker.params.priors_penalty(metric=metric)
+        )
+
+        end_t = time.time()
+        fit_time = end_t - start_t
+        fit_info['pull_time'] = fit_time * ureg.sec
+
+        # store the metric value
+        fit_info['metric_val'] = metric_val
+        if blind:
+            hypo_maker.reset_free()
+            fit_info['params'] = ParamSet()
+        else:
+            fit_info['params'] = hypo_maker.params
+        fit_info['detailed_metric_info'] = self.get_detailed_metric_info(
+            data_dist=data_dist, hypo_asimov_dist=best_fit_hypo_dist,
+            params=hypo_maker.params, metric=metric, other_metrics=other_metrics,
+            blind=blind
+        )
+        fit_info['num_distributions_generated'] = None # FIXME
+        if blind:
+            best_fit_hypo_dist = None
+        fit_info['hypo_asimov_dist'] = best_fit_hypo_dist
+
+        return fit_info
+
 
     def nofit_hypo(self, data_dist, hypo_maker, hypo_param_selections,
                    hypo_asimov_dist, metric, other_metrics=None, blind=False):
