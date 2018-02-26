@@ -44,7 +44,7 @@ def derivative_from_polycoefficients(coeff, loc):
     return derivative
 
 
-def get_derivative_map(hypo_maps, chan, fiducial=None, take_finite_diffs=False, degree=2):
+def get_derivative_map(hypo_maps):
     """
     Get the approximate derivative of data w.r.t parameter par
     at location loc with polynomic degree of approximation, default: 2.
@@ -61,22 +61,14 @@ def get_derivative_map(hypo_maps, chan, fiducial=None, take_finite_diffs=False, 
     """
     test_points = sorted(hypo_maps.keys())
 
-    # Flatten data map (for use with polyfit)
+    # flatten data map (for use with polyfit - not employed currently)
     hypo_maps_flat = [hypo_maps[pvalue].flatten() for pvalue in test_points]
 
-    if take_finite_diffs:
-        assert(len(test_points)==2)
-        # we only have 2 test points
-        del_x = test_points[1] - test_points[0]
-        del_counts = np.subtract(hypo_maps_flat[1], hypo_maps_flat[0])
-        derivative_map = np.divide(del_counts, del_x.magnitude)
-
-    else:
-        # perform a fit, with number of test points specified by grid settings file
-        # Polynomial fit of bin counts
-        channel_fit_params = np.polyfit(test_points, channel_data, deg=degree)
-        # Get partial derivatives at fiducial values
-        derivative_map = derivative_from_polycoefficients(channel_fit_params[::-1], fiducial['value'])
+    assert(len(test_points)==2)
+    # we only have 2 test points
+    del_x = test_points[1] - test_points[0]
+    del_counts = np.subtract(hypo_maps_flat[1], hypo_maps_flat[0])
+    derivative_map = np.divide(del_counts, del_x.magnitude)
 
     # TODO: keep flat or reshape?
     #derivative_map = np.reshape(derivative_map, hypo_maps.values()[0].shape)
@@ -84,25 +76,25 @@ def get_derivative_map(hypo_maps, chan, fiducial=None, take_finite_diffs=False, 
     return derivative_map
 
 
-def get_gradients(param, hypo_maker, take_finite_diffs=False, grid_settings=None):
+def get_gradients(param, hypo_maker, test_vals):
     """
     Use the template maker to create all the templates needed to obtain the gradients.
     """
     logging.info("Working on parameter %s."%param)
 
-    fiducial_params = hypo_maker.params
-
-    steps = fiducial_params[param].range #np.array([fiducial_params[param].range[0], fiducial_params[param].range[1]])
     pmaps = {}
 
-    # Generate one template for each value of the parameter in question and store in pmaps
-    for param_value in steps:
+    # generate one template for each value of the parameter in question
+    # and store in pmaps
+    for param_value in test_vals:
         hypo_maker.params[param].value = param_value
-        # Make the template corresponding to the current value of the parameter
+        # make the template corresponding to the current value of the parameter
         hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
         pmaps[param_value] = hypo_asimov_dist.hist['total']
 
-    gradient_map = get_derivative_map(pmaps, fiducial_params[param], take_finite_diffs, 2)
+    gradient_map = get_derivative_map(
+        hypo_maps=pmaps,
+    )
 
     return pmaps, gradient_map
 
@@ -144,10 +136,11 @@ def calculate_pulls(fisher, fid_maps_truth, fid_hypo_asimov_dist, gradient_maps)
     return [(pname, pull) for pname, pull in zip(f_tot.parameters, pulls.flat)]
 
 
-def test_pull_method():
+def test_pull_method(param_variations=None):
     import time
     from pisa import ureg
     from pisa.core.distribution_maker import DistributionMaker
+    from pisa.analysis.analysis import Analysis
 
     data_maker = DistributionMaker(
         pipelines="../../pisa_examples/resources/settings/pipeline/example_param.cfg"
@@ -158,9 +151,14 @@ def test_pull_method():
     )
 
 
-    param_variations = {'aeff_scale': +0.07*ureg.dimensionless,
-                        'nue_numu_ratio': -0.04*ureg.dimensionless
-    }
+    if param_variations is None:
+        param_variations = {'aeff_scale': +0.07*ureg.dimensionless,
+                            'nue_numu_ratio': -0.04*ureg.dimensionless
+        }
+    else:
+        for pname in param_variations:
+            assert pname in hypo_maker.params.names
+            hypo_maker.params[pname].is_fixed = False
 
     for pname, variation in param_variations.items():
         nominal = data_maker.params[pname].nominal_value
@@ -174,36 +172,41 @@ def test_pull_method():
         if not param.name in param_variations:
             param.is_fixed = True
 
+    pull_settings = {'params': [], 'values': []}
     for pname in param_variations:
+        pull_settings['params'].append(pname)
         param = hypo_maker.params[pname]
         param.is_fixed = False
         # set sensible ranges over which difference quotients are computed
         # (don't have to include the true value of the parameter
         # to fit it back)
-        param.range = [0.95*param.nominal_value, 1.05*param.nominal_value]
+        if param.nominal_value.m > 0:
+            test_vals = [0.95*param.nominal_value, 1.05*param.nominal_value]
+        elif param.nominal_value.m == 0:
+            test_vals = [-0.05*param.nominal_value.units,
+                          0.05*param.nominal_value.units]
+        else:
+            test_vals = [1.05*param.nominal_value, 0.95*param.nominal_value]
+        pull_settings['values'].append(test_vals)
 
-    # now we run the fit
-    start_t = time.time()
-    fisher, gradient_maps, hypo_asimov_dist = get_fisher_matrix(
+    a = Analysis()
+
+    fit_info = a.fit_hypo_pull(
         data_dist=data_dist,
         hypo_maker=hypo_maker,
-        take_finite_diffs=True
+        pull_settings=pull_settings,
+        metric='chi2'
     )
 
-    pulls = calculate_pulls(
-        fisher=fisher,
-        fid_maps_truth=data_dist,
-        fid_hypo_asimov_dist=hypo_asimov_dist,
-        gradient_maps=gradient_maps
-    )
-    end_t = time.time()
-    logging.info('Pull fit took %.2fs.' % (((end_t - start_t) * ureg.sec).m))
+    logging.info('Pull fit took %.2fs.' % (fit_info['pull_time'].m))
+    logging.info('Chi^2 at minimum: %.5f' % fit_info['metric_val'])
+
     msg = 'fit vs. true parameter pulls:\n'
     for pname, variation in param_variations.items():
-        true_pull = variation
-        fit_pull = [pull for (name, pull) in pulls if name==pname][0]
+        true_pull = variation.to(hypo_maker.params[pname].nominal_value.units).m
+        fit_pull = [fit_info['params'][pname].value - data_maker.params[pname].nominal_value][0]
         msg += ' '*12
-        msg += '%s: %.4f (fit) vs. %.4f (truth)\n' % (pname, fit_pull, true_pull)
+        msg += '%s: %.5f (fit) vs. %.5f (truth)\n' % (pname, fit_pull, true_pull)
     logging.info(msg)
 
 if __name__ == '__main__':

@@ -159,8 +159,24 @@ def apply_fit_settings(fit_settings, free_params):
             continue
         new_values_d = {'params': [], 'values': []}
         for pname, sett_d in fit_settings[fit_method]['params'].items():
-            nvals = int(sett_d['nvalues'])
-            prange = sett_d['range']
+            # keys correspond to individual parameter fit settings
+            found_keys = sorted(sett_d.keys())
+            if fit_method == 'scan':
+                valid_keys = sorted(['nvalues', 'range'])
+            else:
+                valid_keys = sorted(['lin_range'])
+            if not found_keys == valid_keys:
+                raise KeyError(
+                    'Only recognised keys for %s method: %s. You tried'
+                    ' to set %s for parameter "%s".'
+                    % (fit_method, valid_keys, found_keys, pname)
+                )
+            if fit_method == 'scan':
+                nvals = int(sett_d['nvalues'])
+                prange = sett_d['range']
+            else:
+                nvals = 2
+                prange = sett_d['lin_range']
             target_units = free_params[pname].units
             if isinstance(prange, basestring):
                 try:
@@ -303,8 +319,6 @@ class Analysis(object):
             for i,pname in enumerate(scan_params):
                 scan_vals.append([(pname, val) for val in
                                   fit_settings['scan']['values'][i]])
-
-            pull_params = fit_settings['pull']['params']
             fit_settings.pop('scan')
 
             # the parameters to scan over need to be fixed
@@ -333,7 +347,6 @@ class Analysis(object):
                                         "how to deal with in the output "
                                         "messages."% type(val))
                 logging.debug('Fixing hypothesis parameters: %s.' % msg)
-                # TODO: keep track of scan steps taken
                 # Reset free parameters to nominal values
                 if reset_free:
                     hypo_maker.reset_free()
@@ -409,10 +422,10 @@ class Analysis(object):
 
         # only parameters to fit with pull method
         elif len(pull_params) and not len(minimize_params):
-            raise NotImplementedError("Pull method not implemented yet!")
             fit_info = self.fit_hypo_pull(
                 data_dist=data_dist,
                 hypo_maker=hypo_maker,
+                pull_settings=fit_settings_inner['pull'],
                 metric=metric,
                 other_metrics=other_metrics,
                 blind=blind
@@ -798,7 +811,7 @@ class Analysis(object):
         return fit_info
 
 
-    def fit_hypo_pull(self, data_dist, hypo_maker, metric, pull_settings,
+    def fit_hypo_pull(self, data_dist, hypo_maker, pull_settings, metric,
                       other_metrics=None, pprint=True, blind=False):
         """Fit a hypo to a data distribution via the pull method.
 
@@ -807,22 +820,31 @@ class Analysis(object):
         fit_info : OrderedDict with details of the fit with keys 'metric',
             'metric_val', 'params', 'hypo_asimov_dist'
         """
-        # TODO: still a lot of work to do: configurability, other metrics, etc.
         fit_info = OrderedDict()
         fit_info['metric'] = metric
+
+        # currently only chi2 fit implemented
+        assert metric == 'chi2'
 
         # record start time
         start_t = time.time()
 
         # main algorithm: calculate fisher matrix and parameter pulls
-        # TODO: make configurable
         # TODO: check this is indeed generated at the fiducial model
+        test_vals = {pname: pull_settings['values'][i] for i,pname in
+                     enumerate(pull_settings['params'])}
+
         fisher, gradient_maps, fid_hypo_asimov_dist = get_fisher_matrix(
-            data_dist, hypo_maker, take_finite_diffs=True
+            data_dist=data_dist,
+            hypo_maker=hypo_maker,
+            test_vals=test_vals,
         )
 
         pulls = calculate_pulls(
-            fisher, data_dist, fid_hypo_asimov_dist, gradient_maps
+            fisher=fisher,
+            fid_maps_truth=data_dist,
+            fid_hypo_asimov_dist=fid_hypo_asimov_dist,
+            gradient_maps=gradient_maps,
         )
         #fit_params = deepcopy(hypo_maker.params)
 
@@ -842,12 +864,16 @@ class Analysis(object):
                 + hypo_maker.params.priors_penalty(metric=metric)
         )
 
+        # record stop time
         end_t = time.time()
-        fit_time = end_t - start_t
-        fit_info['pull_time'] = fit_time * ureg.sec
 
         # store the metric value
         fit_info['metric_val'] = metric_val
+
+        # store the fit duration
+        fit_time = end_t - start_t
+        fit_info['pull_time'] = fit_time * ureg.sec
+
         if blind:
             hypo_maker.reset_free()
             fit_info['params'] = ParamSet()

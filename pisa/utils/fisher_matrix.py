@@ -71,8 +71,7 @@ def build_fisher_matrix(gradient_hist_flat_d, fiducial_hist_flat, fiducial_param
     return fisher
 
 
-def get_fisher_matrix(data_dist, hypo_maker,
-                      take_finite_diffs=False):
+def get_fisher_matrix(data_dist, hypo_maker, test_vals):
     """Compute Fisher matrices at fiducial hypothesis given data.
     """
     from pisa.utils.pull_method import get_gradients
@@ -89,7 +88,7 @@ def get_fisher_matrix(data_dist, hypo_maker,
         tpm, gm = get_gradients(
             param=pname,
             hypo_maker=hypo_maker,
-            take_finite_diffs=take_finite_diffs,
+            test_vals=test_vals[pname],
         )
         # the maps corresponding to variations of
         # a single param are not flattened
@@ -102,9 +101,9 @@ def get_fisher_matrix(data_dist, hypo_maker,
     # but we don't use their values here
 
     fisher = build_fisher_matrix(
-        gradient_maps['total'],
-        fid_hypo_asimov_dist.hist['total'].flatten(),
-        hypo_params
+        gradient_hist_flat_d=gradient_maps['total'],
+        fiducial_hist_flat=fid_hypo_asimov_dist.hist['total'].flatten(),
+        fiducial_params=hypo_params
     )
     return fisher, gradient_maps, fid_hypo_asimov_dist
 
