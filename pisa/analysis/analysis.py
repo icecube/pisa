@@ -338,23 +338,78 @@ class Analysis(object):
 
         return best_fit_info
 
-
+    # TODO: fix docstring (not just here)
     def fit_hypo_new(self, data_dist, hypo_maker, hypo_param_selections, metric,
                      fit_settings=None, reset_free=True, check_octant=True,
                      check_ordering=False, minimizer_settings=None,
                      other_metrics=None, return_full_scan=False,
-                     blind=False, pprint=True):
-        """Require fit_settings to be dict like:
-        fit_settings = {'minimize': {'params': ['param3', ...],
-                                     'global': <global_min>.cfg,
-                                     'local': <local_min>.cfg}
-                        'scan':     {'params': ['param1', ...],
-                                     'values': [steplist1, ...]},
-                        'pull':     {'params': ['param2', ...],
-                                     'values': [steplist2, ...]}
-                       }
-        Minimizer settings specified as `minimizer_settings` argument take
-        precedence over those in `fit_settings`.
+                     blind=False, pprint=True)
+        """Fitter "outer" loop: If `check_octant` is True, run
+        `fit_hypo_inner` starting in each octant of theta23 (assuming that
+        is a param in the `hypo_maker`). Otherwise, just run the inner
+        method once.
+
+        Note that prior to running the fit, the `hypo_maker` has
+        `hypo_param_selections` applied and its free parameters are reset to
+        their nominal values.
+
+        Parameters
+        ----------
+        data_dist : MapSet
+            Data distribution(s). These are what the hypothesis is tasked to
+            best describe during the optimization process.
+
+        hypo_maker : DistributionMaker or instantiable thereto
+            Generates the expectation distribution under a particular
+            hypothesis. This typically has (but is not required to have) some
+            free parameters which can be modified by the minimizer to optimize
+            the `metric`.
+
+        hypo_param_selections : None, string, or sequence of strings
+            A pipeline configuration can have param selectors that allow
+            switching a parameter among two or more values by specifying the
+            corresponding param selector(s) here. This also allows for a single
+            instance of a DistributionMaker to generate distributions from
+            different hypotheses.
+
+        metric : string
+            The metric to use for optimization. Valid metrics are found in
+            `VALID_METRICS`. Note that the optimized hypothesis also has this
+            metric evaluated and reported for each of its output maps.
+
+        minimizer_settings : string or dict
+
+        check_octant : bool
+            If theta23 is a parameter to be used in the optimization (i.e.,
+            free), the fit will be re-run in the second (first) octant if
+            theta23 is initialized in the first (second) octant.
+
+        check_ordering : bool
+            If the ordering is not in the hypotheses already being tested, the
+            fit will be run in both orderings.
+
+        other_metrics : None, string, or list of strings
+            After finding the best fit, these other metrics will be evaluated
+            for each output that contributes to the overall fit. All strings
+            must be valid metrics, as per `VALID_METRICS`, or the
+            special string 'all' can be specified to evaluate all
+            VALID_METRICS..
+
+        pprint : bool
+            Whether to show live-update of minimizer progress.
+
+        blind : bool
+            Whether to carry out a blind analysis. This hides actual parameter
+            values from display and disallows these (as well as Jacobian,
+            Hessian, etc.) from ending up in logfiles.
+
+
+        Returns
+        -------
+        best_fit_info : OrderedDict (see fit_hypo_inner method for details of
+            `fit_info` dict)
+        alternate_fits : list of `fit_info` from other fits run
+
         """
         if check_ordering:
             if 'nh' in hypo_param_selections or 'ih' in hypo_param_selections:
@@ -556,199 +611,6 @@ class Analysis(object):
                 "Combination of minimization and pull method not implemented yet!"
             )
         return fit_info
-
-
-    def fit_hypo(self, data_dist, hypo_maker, hypo_param_selections, metric,
-                 minimizer_settings, reset_free=True, check_octant=True,
-                 check_ordering=False, other_metrics=None,
-                 blind=False, pprint=True):
-        """Fitter "outer" loop: If `check_octant` is True, run
-        `fit_hypo_inner` starting in each octant of theta23 (assuming that
-        is a param in the `hypo_maker`). Otherwise, just run the inner
-        method once.
-
-        Note that prior to running the fit, the `hypo_maker` has
-        `hypo_param_selections` applied and its free parameters are reset to
-        their nominal values.
-
-        Parameters
-        ----------
-        data_dist : MapSet
-            Data distribution(s). These are what the hypothesis is tasked to
-            best describe during the optimization process.
-
-        hypo_maker : DistributionMaker or instantiable thereto
-            Generates the expectation distribution under a particular
-            hypothesis. This typically has (but is not required to have) some
-            free parameters which can be modified by the minimizer to optimize
-            the `metric`.
-
-        hypo_param_selections : None, string, or sequence of strings
-            A pipeline configuration can have param selectors that allow
-            switching a parameter among two or more values by specifying the
-            corresponding param selector(s) here. This also allows for a single
-            instance of a DistributionMaker to generate distributions from
-            different hypotheses.
-
-        metric : string
-            The metric to use for optimization. Valid metrics are found in
-            `VALID_METRICS`. Note that the optimized hypothesis also has this
-            metric evaluated and reported for each of its output maps.
-
-        minimizer_settings : string or dict
-
-        check_octant : bool
-            If theta23 is a parameter to be used in the optimization (i.e.,
-            free), the fit will be re-run in the second (first) octant if
-            theta23 is initialized in the first (second) octant.
-
-        check_ordering : bool
-            If the ordering is not in the hypotheses already being tested, the
-            fit will be run in both orderings.
-
-        other_metrics : None, string, or list of strings
-            After finding the best fit, these other metrics will be evaluated
-            for each output that contributes to the overall fit. All strings
-            must be valid metrics, as per `VALID_METRICS`, or the
-            special string 'all' can be specified to evaluate all
-            VALID_METRICS..
-
-        pprint : bool
-            Whether to show live-update of minimizer progress.
-
-        blind : bool
-            Whether to carry out a blind analysis. This hides actual parameter
-            values from display and disallows these (as well as Jacobian,
-            Hessian, etc.) from ending up in logfiles.
-
-
-        Returns
-        -------
-        best_fit_info : OrderedDict (see fit_hypo_inner method for details of
-            `fit_info` dict)
-        alternate_fits : list of `fit_info` from other fits run
-
-        """
-
-        if check_ordering:
-            if 'nh' in hypo_param_selections or 'ih' in hypo_param_selections:
-                raise ValueError('One of the orderings has already been '
-                                 'specified as one of the hypotheses but the '
-                                 'fit has been requested to check both. These '
-                                 'are incompatible.')
-
-            logging.info('Performing fits in both orderings.')
-            extra_param_selections = ['nh', 'ih']
-        else:
-            extra_param_selections = [None]
-
-        alternate_fits = []
-
-        for extra_param_selection in extra_param_selections:
-            if extra_param_selection is not None:
-                full_param_selections = hypo_param_selections
-                full_param_selections.append(extra_param_selection)
-            else:
-                full_param_selections = hypo_param_selections
-            # Select the version of the parameters used for this hypothesis
-            hypo_maker.select_params(full_param_selections)
-
-            # Reset free parameters to nominal values
-            if reset_free:
-                hypo_maker.reset_free()
-            else:
-                # Saves the current minimizer start values for the octant check
-                minimizer_start_params = hypo_maker.params
-
-            best_fit_info = self.fit_hypo_inner(
-                hypo_maker=hypo_maker,
-                data_dist=data_dist,
-                metric=metric,
-                minimizer_settings=minimizer_settings,
-                other_metrics=other_metrics,
-                pprint=pprint,
-                blind=blind
-            )
-
-            # Decide whether fit for other octant is necessary
-            if check_octant and 'theta23' in hypo_maker.params.free.names:
-                logging.debug('checking other octant of theta23')
-                if reset_free:
-                    hypo_maker.reset_free()
-                else:
-                    for param in minimizer_start_params:
-                        hypo_maker.params[param.name].value = param.value
-
-                # Hop to other octant by reflecting about 45 deg
-                theta23 = hypo_maker.params.theta23
-                inflection_point = (45*ureg.deg).to(theta23.units)
-                theta23.value = 2*inflection_point - theta23.value
-                hypo_maker.update_params(theta23)
-
-                # Re-run minimizer starting at new point
-                new_fit_info = self.fit_hypo_inner(
-                    hypo_maker=hypo_maker,
-                    data_dist=data_dist,
-                    metric=metric,
-                    minimizer_settings=minimizer_settings,
-                    other_metrics=other_metrics,
-                    pprint=pprint,
-                    blind=blind
-                )
-
-                # Check to make sure these two fits were either side of 45
-                # degrees.
-                old_octant = t23_octant(best_fit_info)
-                new_octant = t23_octant(new_fit_info)
-
-                if old_octant == new_octant:
-                    logging.warning(
-                        'Checking other octant was NOT successful since both '
-                        'fits have resulted in the same octant. Fit will be'
-                        ' tried again starting at a point further into '
-                        'the opposite octant.'
-                    )
-                    alternate_fits.append(new_fit_info)
-                    if old_octant > 0.0:
-                        theta23.value = (55.0*ureg.deg).to(theta23.units)
-                    else:
-                        theta23.value = (35.0*ureg.deg).to(theta23.units)
-                    hypo_maker.update_params(theta23)
-
-                    # Re-run minimizer starting at new point
-                    new_fit_info = self.fit_hypo_inner(
-                        hypo_maker=hypo_maker,
-                        data_dist=data_dist,
-                        metric=metric,
-                        minimizer_settings=minimizer_settings,
-                        other_metrics=other_metrics,
-                        pprint=pprint,
-                        blind=blind
-                    )
-                    # Make sure the new octant is sensible
-                    t23_octant(new_fit_info)
-
-                # Take the one with the best fit
-                if metric in METRICS_TO_MAXIMIZE:
-                    it_got_better = (
-                        new_fit_info['metric_val'] > best_fit_info['metric_val']
-                    )
-                else:
-                    it_got_better = (
-                        new_fit_info['metric_val'] < best_fit_info['metric_val']
-                    )
-
-                if it_got_better:
-                    alternate_fits.append(best_fit_info)
-                    best_fit_info = new_fit_info
-                    if not blind:
-                        logging.debug('Accepting other-octant fit')
-                else:
-                    alternate_fits.append(new_fit_info)
-                    if not blind:
-                        logging.debug('Accepting initial-octant fit')
-
-        return best_fit_info, alternate_fits
 
 
     def fit_hypo_minimizer(self, data_dist, hypo_maker, metric, minimizer_settings,
