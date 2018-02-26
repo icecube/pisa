@@ -51,7 +51,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 ANALYSIS_METHODS = ('minimize', 'scan', 'pull')
 """Allowed parameter fitting methods."""
 
-def check_t23_octant(fit_info):
+def t23_octant(fit_info):
     """Check that theta23 is in the first or second octant.
 
     Parameters
@@ -269,10 +269,81 @@ class Analysis(object):
     def __init__(self):
         self._nit = 0
 
+    def really_check_t23_octant(self, best_fit_info, alternate_fits, data_dist,
+                                hypo_maker, metric, minimizer_settings,
+                                other_metric, pprint, blind):
+        # Hop to other octant by reflecting about 45 deg
+        theta23 = hypo_maker.params.theta23
+        inflection_point = (45*ureg.deg).to(theta23.units)
+        theta23.value = 2*inflection_point - theta23.value
+        hypo_maker.update_params(theta23)
+
+        # Re-run minimizer starting at new point
+        new_fit_info = self.fit_hypo_inner(
+            hypo_maker=hypo_maker,
+            data_dist=data_dist,
+            metric=metric,
+            minimizer_settings=minimizer_settings,
+            other_metrics=other_metrics,
+            pprint=pprint,
+            blind=blind
+        )
+
+        # Check to make sure these two fits were either side of 45
+        # degrees.
+        old_octant = t23_octant(best_fit_info)
+        new_octant = t23_octant(new_fit_info)
+
+        if old_octant == new_octant:
+            logging.warning(
+                'Checking other octant was NOT successful since both '
+                'fits have resulted in the same octant. Fit will be'
+                ' tried again starting at a point further into '
+                'the opposite octant.'
+            )
+            alternate_fits.append(new_fit_info)
+            if old_octant > 0.0:
+                theta23.value = (55.0*ureg.deg).to(theta23.units)
+            else:
+                theta23.value = (35.0*ureg.deg).to(theta23.units)
+            hypo_maker.update_params(theta23)
+
+            # Re-run minimizer starting at new point
+            new_fit_info = self.fit_hypo_inner(
+                hypo_maker=hypo_maker,
+                data_dist=data_dist,
+                metric=metric,
+                minimizer_settings=minimizer_settings,
+                other_metrics=other_metrics,
+                pprint=pprint,
+                blind=blind
+            )
+            # Make sure the new octant is sensible
+            t23_octant(new_fit_info)
+
+            if it_got_better(
+                new_metric_val=new_fit_info['metric_val'],
+                old_metric_val=best_fit_info['metric_val'],
+                metric=metric
+            ):
+            # Take the one with the best fit
+                alternate_fits.append(best_fit_info)
+                best_fit_info = new_fit_info
+                if not blind:
+                    logging.debug('Accepting other-octant fit')
+            else:
+                alternate_fits.append(new_fit_info)
+                if not blind:
+                    logging.debug('Accepting initial-octant fit')
+
+        return best_fit_info
+
+
     def fit_hypo_new(self, data_dist, hypo_maker, hypo_param_selections, metric,
-                     fit_settings=None, reset_free=False, minimizer_settings=None,
-                     extra_hypo_param_selections=None, other_metrics=None,
-                     return_full_scan=False, blind=False, pprint=True):
+                     fit_settings=None, reset_free=True, check_octant=True,
+                     check_ordering=False, minimizer_settings=None,
+                     other_metrics=None, return_full_scan=False,
+                     blind=False, pprint=True):
         """Require fit_settings to be dict like:
         fit_settings = {'minimize': {'params': ['param3', ...],
                                      'global': <global_min>.cfg,
@@ -285,11 +356,22 @@ class Analysis(object):
         Minimizer settings specified as `minimizer_settings` argument take
         precedence over those in `fit_settings`.
         """
+        if check_ordering:
+            if 'nh' in hypo_param_selections or 'ih' in hypo_param_selections:
+                raise ValueError('One of the orderings has already been '
+                                 'specified as one of the hypotheses but the '
+                                 'fit has been requested to check both. These '
+                                 'are incompatible.')
 
-        if not isinstance(extra_hypo_param_selections, Sequence):
-            extra_hypo_param_selections = [extra_hypo_param_selections]
+            logging.info('Performing and returning fits in both orderings.')
+            extra_param_selections = ['nh', 'ih']
+        else:
+            extra_param_selections = [None]
 
-        for extra_param_selection in extra_hypo_param_selections:
+        best_fits = []
+        alternate_fits = []
+
+        for extra_param_selection in extra_param_selections:
             if extra_param_selection is not None:
                 full_param_selections = hypo_param_selections
                 full_param_selections.append(extra_param_selection)
@@ -300,30 +382,43 @@ class Analysis(object):
 
             # only apply fit settings after the param selection has been
             # applied
-            apply_fit_settings(fit_settings, hypo_maker.params.free)
+            if fit_settings is not None:
+                apply_fit_settings(fit_settings, hypo_maker.params.free)
 
-            minimize_params = fit_settings['minimize']['params']
-            if minimize_params:
-                # check if minimizer settings are passed into this method,
-                # fall back to those given in fit settings
-                if minimizer_settings is None:
-                    # note: we assume these are parsed already!
-                    minimizer_settings = {
-                        'global': fit_settings['minimize']['global'],
-                        'local': fit_settings['minimize']['local']
-                    }
-                assert minimizer_settings is not None
+                minimize_params = fit_settings['minimize']['params']
+                if minimize_params:
+                    # check if minimizer settings are passed into this method,
+                    # fall back to those given in fit settings
+                    if minimizer_settings is None:
+                        # note: we assume these are parsed already!
+                        minimizer_settings = {
+                            'global': fit_settings['minimize']['global'],
+                            'local': fit_settings['minimize']['local']
+                        }
+                    assert minimizer_settings is not None
+                else:
+                    if check_octant:
+                        logging.warn(
+                            'Selecting "check_octant" only useful if theta23'
+                            ' is among minimization parameters. No need or no'
+                            ' point with any other fitting method.'
+                        )
+                        check_octant = False
 
-            scan_params = fit_settings['scan']['params']
-            scan_vals = []
-            for i,pname in enumerate(scan_params):
-                scan_vals.append([(pname, val) for val in
-                                  fit_settings['scan']['values'][i]])
-            fit_settings.pop('scan')
+                scan_params = fit_settings['scan']['params']
+                for i,pname in enumerate(scan_params):
+                    scan_vals.append([(pname, val) for val in
+                                      fit_settings['scan']['values'][i]])
+                fit_settings.pop('scan')
+                # the parameters to scan over need to be fixed
+                hypo_maker.params.fix(scan_params)
 
-            # the parameters to scan over need to be fixed
-            hypo_maker.params.fix(scan_params)
-            params = hypo_maker.params
+            else:
+                # when there are no fit settings we want the default
+                # behavior - just numerical minimization over all free
+                # parameters
+                scan_params = []
+                scan_vals = []
 
             # if there are no scan_vals, we can just inject e.g. the nominal
             # value for each free parameter
@@ -332,12 +427,13 @@ class Analysis(object):
                               for pname in hypo_maker.params.free.names]
 
             # each scan point comes with its own best fit
-            scan_fit_infos = []
+            this_hypo_best_fits = []
+            this_hypo_alternate_fits = []
             for i, pos in enumerate(product(*scan_vals)):
                 msg = ''
                 sep = ', '
                 for (pname, val) in pos:
-                    params[pname].value = val
+                    hypo_maker.params[pname].value = val
                     if isinstance(val, float) or isinstance(val, ureg.Quantity):
                         if msg:
                             msg += sep
@@ -352,7 +448,7 @@ class Analysis(object):
                     hypo_maker.reset_free()
                 else:
                     # Saves the current minimizer start values
-                    optimizer_start_params = hypo_maker.params
+                    minimizer_start_params = hypo_maker.params
 
                 best_fit_info = self.fit_hypo_inner_new(
                     hypo_maker=hypo_maker,
@@ -365,32 +461,56 @@ class Analysis(object):
                     blind=blind
                 )
 
-                scan_fit_infos.append(best_fit_info)
+                if check_octant and 'theta23' in hypo_maker.params.free.names:
+                    logging.debug('checking other octant of theta23')
+                    if reset_free:
+                        hypo_maker.reset_free()
+                    else:
+                        for param in minimizer_start_params:
+                            hypo_maker.params[param.name].value = param.value
+                    best_fit_info = self.really_check_t23_octant(
+                        best_fit_info=best_fit_info,
+                        alternate_fits=this_hypo_alternate_fits,
+                        data_dist=data_dist,
+                        hypo_maker=hypo_maker,
+                        metric=metric,
+                        minimizer_settings=minimizer_settings,
+                        other_metrics=other_metrics,
+                        pprint=pprint,
+                        blind=blind
+                    )
+                this_hypo_best_fits.append(best_fit_info)
                 if i >= 1 and not return_full_scan:
                     if it_got_better(
                            new_metric_val=best_fit_info['metric_val'],
                            old_metric_val=scan_fit_infos[i-1]['metric_val'],
                            metric=metric
                         ):
-                        best_ind = i
+                        this_hypo_best_ind = i
 
-        # always return a list (of one ore more fit results)
-        if return_full_scan:
-            logging.debug('Returning full hypo scan.')
-            return scan_fit_infos
-        logging.debug('Only returning overall best fit.')
-        if len(scan_fit_infos) == 1:
-            return scan_fit_infos
+            if not return_full_scan:
+                # only record best and alternate fit at best fitting point
+                best_fits.append([this_hypo_best_fits[this_hypo_best_ind]])
+                alternate_fits.append([this_hypo_alternate_fits[this_hypo_best_ind]])
+            else:
+                # record full list of fits
+                best_fits.append(this_hypo_best_fits)
+                alternate_fits.append(this_hypo_alternate_fits)
+
+        return best_fits #, alternate_fits
+
+
+    def fit_hypo_inner_new(self, data_dist, hypo_maker, metric,
+                           fit_settings_inner=None, minimizer_settings=None,
+                           other_metrics=None, pprint=True, blind=False):
+
+        if fit_settings_inner is not None:
+            pull_params = fit_settings_inner['pull']['params']
+            minimize_params = fit_settings_inner['minimize']['params']
         else:
-            return [scan_fit_infos[best_ind]]
-
-
-    def fit_hypo_inner_new(self, data_dist, hypo_maker, metric, fit_settings_inner,
-                           minimizer_settings=None, other_metrics=None,
-                           pprint=True, blind=False):
-
-        pull_params = fit_settings_inner['pull']['params']
-        minimize_params = fit_settings_inner['minimize']['params']
+            # the default: just minimizer over all free
+            pull_params = []
+            minimize_params = hypo_maker.params.free.names
 
         # dispatch correct fitting method depending on combination of
         # pull and minimize params
@@ -578,8 +698,8 @@ class Analysis(object):
 
                 # Check to make sure these two fits were either side of 45
                 # degrees.
-                old_octant = check_t23_octant(best_fit_info)
-                new_octant = check_t23_octant(new_fit_info)
+                old_octant = t23_octant(best_fit_info)
+                new_octant = t23_octant(new_fit_info)
 
                 if old_octant == new_octant:
                     logging.warning(
@@ -606,7 +726,7 @@ class Analysis(object):
                         blind=blind
                     )
                     # Make sure the new octant is sensible
-                    check_t23_octant(new_fit_info)
+                    t23_octant(new_fit_info)
 
                 # Take the one with the best fit
                 if metric in METRICS_TO_MAXIMIZE:
