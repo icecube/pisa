@@ -22,7 +22,7 @@ from pisa.core.param import ParamSet
 from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging
 from pisa.utils.fileio import to_file
-from pisa.utils.stats import METRICS_TO_MAXIMIZE
+from pisa.utils.stats import METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE
 
 
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD',
@@ -516,7 +516,14 @@ class Analysis(object):
         minimizer_settings = set_minimizer_defaults(minimizer_settings)
         validate_minimizer_settings(minimizer_settings)
 
-        sign = -1 if metric in METRICS_TO_MAXIMIZE else +1
+        sign = 0
+        for m in metric:
+            if m in METRICS_TO_MAXIMIZE and sign != +1:
+                sign = -1
+            elif m in METRICS_TO_MINIMIZE and sign != -1:
+                sign = +1
+            else:
+                raise ValueError('Defined metrics are not compatible')
 
         # Get starting free parameter values
         x0 = hypo_maker.params.free._rescaled_values # pylint: disable=protected-access
@@ -572,7 +579,7 @@ class Analysis(object):
         counter = Counter()
         
         fit_history = []
-        fit_history.append( [metric] + [v.name for v in hypo_maker.params.free])
+        fit_history.append(metric + [v.name for v in hypo_maker.params.free])
 
         start_t = time.time()
 
@@ -659,7 +666,7 @@ class Analysis(object):
             fit_info['params'] = deepcopy(hypo_maker.params)
         fit_info['detailed_metric_info'] = [self.get_detailed_metric_info(
             data_dist=data_dist[i], hypo_asimov_dist=hypo_asimov_dist[i],
-            params=hypo_maker._distribution_makers[i].params, metric=metric,
+            params=hypo_maker._distribution_makers[i].params, metric=metric[i],
             other_metrics=other_metrics, detector_name=hypo_maker.det_names[i]
         ) for i in range(len(data_dist))]
         fit_info['minimizer_time'] = minimizer_time * ureg.sec
@@ -705,13 +712,17 @@ class Analysis(object):
         # the current (presumably already optimal) param values
         hypo_maker.select_params(hypo_param_selections)
 
+        # One metric for all detectors
+        if len(metric) == 1:
+            metric = metric * len(hypo_maker._distribution_makers)
+
         # Assess the fit: whether the data came from the hypo_asimov_dist
         try:
             metric_val = 0
             for i in range(len(hypo_maker._distribution_makers)):
-                data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],metric=metric)
+                data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],metric=metric[i])
                 metric_val += data
-            priors = hypo_maker.params.priors_penalty(metric=metric)
+            priors = hypo_maker.params.priors_penalty(metric=metric[0])
             metric_val += priors
         except:
             if not blind:
@@ -732,7 +743,7 @@ class Analysis(object):
             fit_info['params'] = deepcopy(hypo_maker.params)
         fit_info['detailed_metric_info'] = [self.get_detailed_metric_info(
             data_dist=data_dist[i], hypo_asimov_dist=hypo_asimov_dist[i],
-            params=hypo_maker._distribution_makers[i].params, metric=metric,
+            params=hypo_maker._distribution_makers[i].params, metric=metric[i],
             other_metrics=other_metrics, detector_name=hypo_maker.det_names[i]
         ) for i in range(len(data_dist))]
         fit_info['minimizer_time'] = 0 * ureg.sec
@@ -833,7 +844,14 @@ class Analysis(object):
         """
         # Want to *maximize* e.g. log-likelihood but we're using a minimizer,
         # so flip sign of metric in those cases.
-        sign = -1 if metric in METRICS_TO_MAXIMIZE else +1
+        sign = 0
+        for m in metric:
+            if m in METRICS_TO_MAXIMIZE and sign != +1:
+                sign = -1
+            elif m in METRICS_TO_MINIMIZE and sign != -1:
+                sign = +1
+            else:
+                raise ValueError('Defined metrics are not compatible')
 
         # Set param values from the scaled versions the minimizer works with
         hypo_maker._set_rescaled_free_params(scaled_param_vals) # pylint: disable=protected-access
@@ -849,14 +867,18 @@ class Analysis(object):
                 )
             raise
 
+        # One metric for all detectors
+        if len(metric) == 1:
+            metric = metric * len(hypo_maker._distribution_makers)
+
         # Assess the fit: whether the data came from the hypo_asimov_dist
         try:
             metric_val = 0
             for i in range(len(hypo_maker._distribution_makers)):
                 data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],
-                                              metric=metric)
+                                              metric=metric[i])
                 metric_val += data
-            priors = hypo_maker.params.priors_penalty(metric=metric)
+            priors = hypo_maker.params.priors_penalty(metric=metric[0])
             metric_val += priors
         except:
             if not blind:

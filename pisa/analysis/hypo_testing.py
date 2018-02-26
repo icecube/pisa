@@ -347,7 +347,8 @@ class HypoTesting(Analysis):
         assert num_fid_trials >= 1
         assert data_start_ind >= 0
         assert fid_start_ind >= 0
-        assert metric in ALL_METRICS
+        for m in metric:
+            assert m in ALL_METRICS
 
         # Make it possible to seed minimiser off truth
         self.reset_free = reset_free
@@ -458,7 +459,7 @@ class HypoTesting(Analysis):
                              ' is invalid.')
 
         # Instantiate distribution makers only where necessary (otherwise copy)
-        if isinstance (h1_maker, DistributionMaker):
+        if isinstance(h1_maker, DistributionMaker):
             h1_maker = Detectors(h1_maker._pipelines,shared_params=shared_params)
         if not isinstance(h1_maker, Detectors):
             if self.h1_maker_is_h0_maker:
@@ -473,7 +474,7 @@ class HypoTesting(Analysis):
             self.data_maker_is_h1_maker = False
         # Otherwise instantiate or copy the data dist maker
         else:
-            if isinstance (h1_maker, DistributionMaker):
+            if isinstance(h1_maker, DistributionMaker):
                 h1_maker = Detectors(h1_maker._pipelines,shared_params=shared_params)
             if not isinstance(data_maker, Detectors):
                 if self.data_maker_is_h0_maker:
@@ -718,11 +719,13 @@ class HypoTesting(Analysis):
             #                             same data trial)
             #   * fid trial = 0         : always 0 since data stays the same
             #                             for all fid trials in this data trial
-            data_random_state = get_random_state([0, self.data_ind, 0])
+            # data_random_state = get_random_state([0, self.data_ind, 0])
 
-            self.data_dist = self.toy_data_asimov_dist.fluctuate(
-                method='poisson', random_state=data_random_state
-            )
+            self.data_dist = []
+            for i in range(len(self.toy_data_asimov_dist)):
+                self.data_dist.append(self.toy_data_asimov_dist[i].fluctuate(
+                    method='poisson', random_state=get_random_state([0, self.data_ind, 0]))
+                                     )
 
         else:
             self.data_dist = self.toy_data_asimov_dist
@@ -1255,8 +1258,12 @@ class HypoTesting(Analysis):
             normQuant(self.minimizer_settings), hash_to='x'
         )
         co = 'co1' if self.check_octant else 'co0'
+        met = '('
+        for m in self.metric:
+            met += m + '_'
+        met = met[:-1] + ')'
         self.minsettings_flabel = (
-            'min_' + '_'.join([self.minimizer_settings_hash, co, self.metric])
+            'min_' + '_'.join([self.minimizer_settings_hash, co, met])
         )
 
         # Code versioning

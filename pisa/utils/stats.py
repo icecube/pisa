@@ -52,6 +52,9 @@ ALL_METRICS = LLH_METRICS + CHI2_METRICS
 METRICS_TO_MAXIMIZE = LLH_METRICS
 """Metrics that must be maximized to obtain a better fit"""
 
+METRICS_TO_MINIMIZE = CHI2_METRICS
+"""Metrics that must be minimized to obtain a better fit"""
+
 
 # TODO(philippeller):
 # * unit tests to ensure these don't break
@@ -136,7 +139,8 @@ def chi2(actual_values, expected_values):
         return np.zeros_like(delta, dtype=FTYPE)
 
     assert np.all(actual_values > 0), str(actual_values)
-    chi2_val = np.square(delta) / actual_values
+    #chi2_val = np.square(delta) / actual_values
+    chi2_val = np.square(delta) / expected_values
     assert np.all(chi2_val >= 0), str(chi2_val[chi2_val < 0])
     return chi2_val
 
