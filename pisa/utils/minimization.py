@@ -462,14 +462,14 @@ def run_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
     if minimizer_settings['global'] is not None:
         # can make use of both global and local minimizers, so pass in
         # whole minimizer_settings
-        optimize_result = run_global_minimizer(
+        optimize_result = _run_global_minimizer(
             fun, x0, bounds, minimizer_settings, minimizer_callback,
             hypo_maker, data_dist, metric, counter, fit_history,
             pprint, blind
         )
 
     elif minimizer_settings['local'] is not None:
-        optimize_result = run_local_minimizer(
+        optimize_result = _run_local_minimizer(
             fun, x0, bounds, minimizer_settings['local'], minimizer_callback,
             hypo_maker, data_dist, metric, counter, fit_history,
             pprint, blind

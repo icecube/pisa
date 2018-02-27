@@ -343,7 +343,7 @@ class Analysis(object):
                      fit_settings=None, reset_free=True, check_octant=True,
                      check_ordering=False, minimizer_settings=None,
                      other_metrics=None, return_full_scan=False,
-                     blind=False, pprint=True)
+                     blind=False, pprint=True):
         """Fitter "outer" loop: If `check_octant` is True, run
         `fit_hypo_inner` starting in each octant of theta23 (assuming that
         is a param in the `hypo_maker`). Otherwise, just run the inner
@@ -435,6 +435,8 @@ class Analysis(object):
             # Select the version of the parameters used for this hypothesis
             hypo_maker.select_params(full_param_selections)
 
+            # set up the list used for storing the points to scan
+            scan_vals = []
             # only apply fit settings after the param selection has been
             # applied
             if fit_settings is not None:
@@ -473,7 +475,6 @@ class Analysis(object):
                 # behavior - just numerical minimization over all free
                 # parameters
                 scan_params = []
-                scan_vals = []
 
             # if there are no scan_vals, we can just inject e.g. the nominal
             # value for each free parameter
@@ -483,6 +484,7 @@ class Analysis(object):
 
             # each scan point comes with its own best fit
             this_hypo_best_fits = []
+            this_hypo_best_ind = 0
             this_hypo_alternate_fits = []
             for i, pos in enumerate(product(*scan_vals)):
                 msg = ''
@@ -538,19 +540,19 @@ class Analysis(object):
                 if i >= 1 and not return_full_scan:
                     if it_got_better(
                            new_metric_val=best_fit_info['metric_val'],
-                           old_metric_val=scan_fit_infos[i-1]['metric_val'],
+                           old_metric_val=this_hypo_best_fits[i-1]['metric_val'],
                            metric=metric
                         ):
                         this_hypo_best_ind = i
 
             if not return_full_scan:
-                # only record best and alternate fit at best fitting point
-                best_fits.append([this_hypo_best_fits[this_hypo_best_ind]])
-                alternate_fits.append([this_hypo_alternate_fits[this_hypo_best_ind]])
+                    # only record best and alternate fit at best fitting point
+                    best_fits.append([this_hypo_best_fits[this_hypo_best_ind]])
+                    #alternate_fits.append([this_hypo_alternate_fits[this_hypo_best_ind]])
             else:
                 # record full list of fits
                 best_fits.append(this_hypo_best_fits)
-                alternate_fits.append(this_hypo_alternate_fits)
+                #alternate_fits.append(this_hypo_alternate_fits)
 
         return best_fits #, alternate_fits
 
@@ -592,7 +594,8 @@ class Analysis(object):
                 minimizer_settings=minimizer_settings,
                 metric=metric,
                 other_metrics=other_metrics,
-                blind=blind
+                blind=blind,
+                pprint=pprint
             )
 
         # only parameters to fit with pull method
@@ -651,35 +654,15 @@ class Analysis(object):
             'minimizer_metadata'
 
         """
-        use_global_minimizer = False
         # allow for an entry of `None` but also no entry at all
-        try:
-            minimizer_settings_global = minimizer_settings['global']
-        except:
-            minimizer_settings_global = None
-
-        if minimizer_settings_global is not None:
-            minimizer_settings_global =\
-                set_minimizer_defaults(minimizer_settings_global)
-            use_global_minimizer = True
-            validate_minimizer_settings(minimizer_settings_global)
-        minimizer_settings['global'] = minimizer_settings_global
-
-        use_local_minimizer = False
-        try:
-            minimizer_settings_local = minimizer_settings['local']
-        except:
-            minimizer_settings_local = None
-
-        # TODO: only require this for now
-        #assert minimizer_settings_local is not None
-
-        if minimizer_settings_local is not None:
-            minimizer_settings_local =\
-                set_minimizer_defaults(minimizer_settings_local)
-            use_local_minimizer = True
-            validate_minimizer_settings(minimizer_settings_local)
-        minimizer_settings['local'] = minimizer_settings_local
+        for minimizer_type in ['local', 'global']:
+            try:
+                minimizer_type_settings =\
+                    set_minimizer_defaults(minimizer_settings[minimizer_type])
+                validate_minimizer_settings(minimizer_type_settings)
+            except:
+                minimizer_type_settings = None
+            minimizer_settings[minimizer_type] = minimizer_type_settings
 
         sign = -1 if metric in METRICS_TO_MAXIMIZE else +1
 
@@ -687,18 +670,20 @@ class Analysis(object):
         # on whether the local minimizer uses gradients)
         x0, bounds = minimizer_x0_bounds(
             free_params=hypo_maker.params.free,
-            minimizer_settings=minimizer_settings_local
+            minimizer_settings=minimizer_settings['local']
         )
 
         counter = Counter()
         
         fit_history = []
-        fit_history.append([metric] + hypo_maker.params.free.names)
+        fit_history.append([metric] + [p.name for p in hypo_maker.params.free])
 
         if pprint and not blind:
             # display header if desired/allowed
-            display_minimizer_header(free_params=hypo_maker.params.free,
-                                     metric=metric)
+            display_minimizer_header(
+                free_params=hypo_maker.params.free,
+                metric=metric
+            )
 
         # reset number of iterations before each minimization
         self._nit = 0
@@ -1110,7 +1095,9 @@ def test_fit_hypo_new():
     from pisa.core import distribution_maker
     from pisa.utils.log import set_verbosity
     set_verbosity(1)
-    example_pipeline = "../../pisa_examples/resources/settings/pipeline/example_gpu.cfg"
+    example_pipeline = (
+        "../../pisa_examples/resources/settings/pipeline/example_param.cfg"
+    )
     d = distribution_maker.DistributionMaker(pipelines=example_pipeline)
     data_dist = d.get_outputs(return_sum=True)
 
@@ -1145,8 +1132,22 @@ def test_fit_hypo_new():
                     'minimize': {'params': {}},
                     'pull': {'params': {}},
     }
-    fit_info = ana.fit_hypo_new(data_dist, d, None, 'chi2', fit_settings, True, None, None, None, False, False, True)
-    logging.info('Value of metric at best fit: %s' % fit_info[0]['metric_val'])
+    fit_info = ana.fit_hypo_new(
+        data_dist=data_dist,
+        hypo_maker=d,
+        hypo_param_selections=None,
+        metric='chi2',
+        fit_settings=fit_settings,
+        reset_free=True,
+        check_octant=False,
+        check_ordering=False,
+        minimizer_settings=None,
+        other_metrics=None,
+        return_full_scan=False,
+        blind=False,
+        pprint=True
+    )
+    logging.info('Value of metric at best fit: %s' % fit_info[0][0]['metric_val'])
 
     # redefine d because it lost its free scan params and repeat the stuff from above
     d = distribution_maker.DistributionMaker(pipelines=example_pipeline)
@@ -1188,8 +1189,22 @@ def test_fit_hypo_new():
                     'pull': {'params': {}}
                    }
 
-    fit_info = ana.fit_hypo_new(data_dist, d, None, 'chi2', fit_settings, True, None, None, None, True, False, True)
-    logging.info('Value of metric at best fit: %s' % fit_info[0]['metric_val'])
+    fit_info = ana.fit_hypo_new(
+        data_dist=data_dist,
+        hypo_maker=d,
+        hypo_param_selections=None,
+        metric='chi2',
+        fit_settings=fit_settings,
+        reset_free=True,
+        check_octant=False,
+        check_ordering=False,
+        minimizer_settings=None,
+        other_metrics=None,
+        return_full_scan=False,
+        blind=False,
+        pprint=True
+    )
+    logging.info('Value of metric at best fit: %s' % fit_info[0][0]['metric_val'])
 
 if __name__ == '__main__':
     test_fit_hypo_new()
