@@ -25,7 +25,8 @@ from pisa.utils.log import logging
 from pisa.utils.minimization import set_minimizer_defaults, minimizer_x0_bounds,\
                                     validate_minimizer_settings,\
                                     display_minimizer_header, run_minimizer,\
-                                    Counter, MINIMIZERS_USING_SYMM_GRAD
+                                    Counter, MINIMIZERS_USING_SYMM_GRAD,\
+                                    LOCAL_MINIMIZERS_WITH_DEFAULTS
 from pisa.utils.pull_method import calculate_pulls
 from pisa.utils.stats import METRICS_TO_MAXIMIZE, it_got_better
 
@@ -86,7 +87,7 @@ def apply_fit_settings(fit_settings, free_params):
     a `DistributionMaker`'s set of free parameters. Ensure that params,
     ranges, test points, seeds etc. are compatible with free parameter specs.
 
-    Modifies fit_settings in-place.
+    Returns a modified fit_settings dict.
 
     Parameters
     ----------
@@ -98,6 +99,7 @@ def apply_fit_settings(fit_settings, free_params):
         free parameters to which the fit settings are to be applied
 
     """
+    processed_fit_settings = deepcopy(fit_settings)
     fit_methods = fit_settings.keys()
     # TODO: don't require all possible methods to be present
     #assert set(fit_methods) == set(ANALYSIS_METHODS)
@@ -128,10 +130,10 @@ def apply_fit_settings(fit_settings, free_params):
 
     if method_with_wildcard:
         method_with_wildcard = method_with_wildcard[0]
-        fit_settings[method_with_wildcard]['params'].pop(wildcard)
+        processed_fit_settings[method_with_wildcard]['params'].pop(wildcard)
         # these need the fit method settings defaults
-        defaults = fit_settings[method_with_wildcard].pop('defaults')
-        fit_settings[method_with_wildcard]['params'].update(
+        defaults = processed_fit_settings[method_with_wildcard].pop('defaults')
+        processed_fit_settings[method_with_wildcard]['params'].update(
             {premain: defaults for premain in params_remaining}
         )
     elif params_remaining:
@@ -145,7 +147,7 @@ def apply_fit_settings(fit_settings, free_params):
     # for the other fit methods which don't make use
     # of wildcard
     for fit_method in fit_methods:
-        fit_settings[fit_method].pop('defaults', None)
+        processed_fit_settings[fit_method].pop('defaults', None)
 
     # make the scan/pull values for each parameter
     # (can apply identical treatment)
@@ -155,10 +157,10 @@ def apply_fit_settings(fit_settings, free_params):
     # TODO: allow for flexibility beyond symmetry around nominal
     # TODO: compare fit ranges to free_params ranges, precedence?
     for fit_method in ['pull', 'scan']:
-        if not fit_method in fit_settings:
+        if not fit_method in processed_fit_settings:
             continue
         new_values_d = {'params': [], 'values': []}
-        for pname, sett_d in fit_settings[fit_method]['params'].items():
+        for pname, sett_d in processed_fit_settings[fit_method]['params'].items():
             # keys correspond to individual parameter fit settings
             found_keys = sorted(sett_d.keys())
             if fit_method == 'scan':
@@ -221,9 +223,9 @@ def apply_fit_settings(fit_settings, free_params):
             new_values_d['values'].append(values)
 
         # overwrite entry with the new dict
-        fit_settings[fit_method] = new_values_d
+        processed_fit_settings[fit_method] = new_values_d
 
-    minimize_settings = fit_settings['minimize']
+    minimize_settings = processed_fit_settings['minimize']
     # all we do here for now is move 'global' and 'local' minimizer cfg
     # out from under one param to its own entry (assuming all minimizer cfg's
     # are identical) and make a simple list of params
@@ -250,9 +252,9 @@ def apply_fit_settings(fit_settings, free_params):
         new_minimize_settings_d['local'] = min_sett_local
         new_minimize_settings_d['params'].append(pname)
 
-    fit_settings['minimize'] = new_minimize_settings_d
+    processed_fit_settings['minimize'] = new_minimize_settings_d
 
-    return fit_settings
+    return processed_fit_settings
 
 
 class Analysis(object):
@@ -276,63 +278,68 @@ class Analysis(object):
             check_octant=True, minimizer_settings=None, other_metrics=None,
             return_full_scan=False, blind=False, pprint=True
     ):
-    # let someone pass just a single extra param selection
-    # (which could just as well be part of the regular
-    # hypo param selections), and then let hope enter our anguish
-    if not isinstance(extra_param_selections, Sequence):
-        extra_param_selections = [extra_param_selections]
+        # let someone pass just a single extra param selection
+        # (which could just as well be part of the regular
+        # hypo param selections), and then let hope enter our anguish
+        if not isinstance(extra_param_selections, Sequence):
+            extra_param_selections = [extra_param_selections]
 
-    logging.info('Optimizing over all discrete selections in %s.'
-                 % extra_param_selections)
+        logging.info('Optimizing over all discrete selections in %s.'
+                     % extra_param_selections)
 
-    # here we store the (best) fit(s) for each discrete selection
-    fit_infos = []
-    fit_metric_vals = []
-    for extra_param_selection in extra_param_selections:
-        if extra_param_selection in hypo_param_selections:
-            raise ValueError('Your extra parameter selection "%s" has already '
-                             'been specified as one of the hypotheses but the '
-                             'fit has been requested to minimize over it. These '
-                             'are incompatible.' % extra_param_selection)
-        # combine any previous param selection + the extra selection
-        full_param_selections = hypo_param_selections
-        full_param_selections.append(extra_param_selection)
+        # here we store the (best) fit(s) for each discrete selection
+        fit_infos = []
+        fit_metric_vals = []
+        for extra_param_selection in extra_param_selections:
+            if extra_param_selection in hypo_param_selections:
+                raise ValueError('Your extra parameter selection "%s" has already '
+                                 'been specified as one of the hypotheses but the '
+                                 'fit has been requested to minimize over it. These '
+                                 'are incompatible.' % extra_param_selection)
+            # combine any previous param selection + the extra selection
+            full_param_selections = hypo_param_selections
+            full_param_selections.append(extra_param_selection)
 
-        this_hypo_fits, _ = self.fit_hypo(
-            data_dist=data_dist,
-            hypo_maker=hypo_maker,
-            hypo_param_selections=full_param_selections,
-            metric=metric,
-            fit_settings=fit_settings,
-            reset_free=reset_free,
-            check_octant=check_octant,
-            minimizer_settings=minimizer_settings,
-            other_metrics=other_metrics,
-            return_full_scan=return_full_scan,
-            blind=blind,
-            pprint=pprint
-        )
+            logging.info('Fitting discrete selection "%s".'
+                         % extra_param_selection)
 
-        fit_infos.append(this_hypo_fits)
-        fit_metric_vals.append([hypo_fit['metric_val'] for
-                                hypo_fit in this_hypo_fits])
-    # what's returned by fit_hypo can either be a full scan or just
-    # a single point - in any case, for each point we now optimize
-    # the extra selections manually
-    if metric in METRICS_TO_MAXIMIZE:
-        bf_dims = np.argmax(fit_metric_vals, axis=0)
-    else:
-        bf_dims = np.argmin(fit_metric_vals, axis=0)
+            # ignore alternate fits (it's complicated enough with the various
+            # discrete hypo best fits we have already)
+            this_hypo_fits, _ = self.fit_hypo(
+                data_dist=data_dist,
+                hypo_maker=hypo_maker,
+                hypo_param_selections=full_param_selections,
+                metric=metric,
+                fit_settings=fit_settings,
+                reset_free=reset_free,
+                check_octant=check_octant,
+                minimizer_settings=minimizer_settings,
+                other_metrics=other_metrics,
+                return_full_scan=return_full_scan,
+                blind=blind,
+                pprint=pprint
+            )
 
-    # select the fitting infos corresponding to these best metric values
-    best_fit_infos = [fit_infos[dim][i] for i,dim in enumerate(bf_dims)]
+            fit_infos.append(this_hypo_fits)
+            fit_metric_vals.append([hypo_fit['metric_val'] for
+                                    hypo_fit in this_hypo_fits])
+        # what's returned by fit_hypo can either be a full scan or just
+        # a single point - in any case, for each point we now optimize
+        # the extra selections manually
+        if metric in METRICS_TO_MAXIMIZE:
+            bf_dims = np.argmax(fit_metric_vals, axis=0)
+        else:
+            bf_dims = np.argmin(fit_metric_vals, axis=0)
 
-    return best_fit_infos
+        # select the fitting infos corresponding to these best metric values
+        best_fit_infos = [fit_infos[dim][i] for i,dim in enumerate(bf_dims)]
+
+        return best_fit_infos
 
 
-    def really_check_t23_octant(self, best_fit_info, alternate_fits, data_dist,
-                                hypo_maker, metric, minimizer_settings,
-                                other_metric, pprint, blind):
+    def optimize_t23_octant(self, best_fit_info, alternate_fits, data_dist,
+                            hypo_maker, metric, minimizer_settings,
+                            other_metrics, pprint, blind):
         # Hop to other octant by reflecting about 45 deg
         theta23 = hypo_maker.params.theta23
         inflection_point = (45*ureg.deg).to(theta23.units)
@@ -481,7 +488,7 @@ class Analysis(object):
         # only apply fit settings after the param selection has been
         # applied
         if fit_settings is not None:
-            apply_fit_settings(fit_settings, hypo_maker.params.free)
+            fit_settings = apply_fit_settings(fit_settings, hypo_maker.params.free)
 
             minimize_params = fit_settings['minimize']['params']
             if minimize_params:
@@ -493,7 +500,6 @@ class Analysis(object):
                         'global': fit_settings['minimize']['global'],
                         'local': fit_settings['minimize']['local']
                     }
-                assert minimizer_settings is not None
             else:
                 if check_octant:
                     logging.warn(
@@ -511,13 +517,20 @@ class Analysis(object):
             # the parameters to scan over need to be fixed
             hypo_maker.params.fix(scan_params)
 
-        # when there are no fit settings we want the default
-        # behavior - just numerical minimization over all free
-        # parameters
+        else:
+            # when there are no fit settings we want the default
+            # behavior - just numerical minimization over all free
+            # parameters: `fit_hypo_inner` makes sure of this
+            if hypo_maker.params.free and minimizer_settings is None:
+                raise ValueError(
+                    'You did not specify any fit settings, but there are free'
+                    ' parameters which cannot be minimized over if there are'
+                    ' no minimizer settings!'
+                )
 
-        # if there are no scan_vals, we can just inject e.g. the nominal
+        # if there are no scan params/vals, we should inject the current
         # value for each free parameter
-        if not scan_vals:
+        if not scan_params:
             scan_vals = [[(pname, hypo_maker.params[pname].value)]
                           for pname in hypo_maker.params.free.names]
 
@@ -536,7 +549,10 @@ class Analysis(object):
                     raise TypeError("val is of type %s which I don't know "
                                     "how to deal with in the output "
                                     "messages."% type(val))
-            logging.debug('Fixing hypothesis parameters: %s.' % msg)
+            # reporting the message below without the user having requested
+            # a scan would be confusing/misleading
+            if scan_params and not blind:
+                logging.info('Fixing hypothesis parameters: %s.' % msg)
             # Reset free parameters to nominal values
             if reset_free:
                 hypo_maker.reset_free()
@@ -544,7 +560,7 @@ class Analysis(object):
                 # Saves the current minimizer start values
                 minimizer_start_params = hypo_maker.params
 
-            best_fit_info = self.fit_hypo_inner_new(
+            best_fit_info = self.fit_hypo_inner(
                 hypo_maker=hypo_maker,
                 data_dist=data_dist,
                 metric=metric,
@@ -556,13 +572,20 @@ class Analysis(object):
             )
 
             if check_octant and 'theta23' in hypo_maker.params.free.names:
+                if ('global' in minimizer_settings and
+                    minimizer_settings['global'] is not None):
+                    logging.info(
+                        'Checking other octant of theta23 might not be'
+                        ' necessary with a global minimizer. Doing so'
+                        ' anyway right now.'
+                    )
                 logging.debug('checking other octant of theta23')
                 if reset_free:
                     hypo_maker.reset_free()
                 else:
                     for param in minimizer_start_params:
                         hypo_maker.params[param.name].value = param.value
-                best_fit_info = self.really_check_t23_octant(
+                best_fit_info = self.optimize_t23_octant(
                     best_fit_info=best_fit_info,
                     alternate_fits=alternate_fits,
                     data_dist=data_dist,
@@ -588,17 +611,17 @@ class Analysis(object):
                     ):
                     best_fit_ind = i
 
+        # always return full list of alternate_fits for now
         if not return_full_scan:
-            # only record best and alternate fit at best fitting point
-            return best_fits[best_fit_ind], alternate_fits
+            # only return best fitting point
+            return [best_fits[best_fit_ind]], alternate_fits
 
-        # record full list of fits
         return best_fits, alternate_fits
 
 
-    def fit_hypo_inner_new(self, data_dist, hypo_maker, metric,
-                           fit_settings_inner=None, minimizer_settings=None,
-                           other_metrics=None, pprint=True, blind=False):
+    def fit_hypo_inner(self, data_dist, hypo_maker, metric,
+                       fit_settings_inner=None, minimizer_settings=None,
+                       other_metrics=None, pprint=True, blind=False):
 
         if fit_settings_inner is not None:
             pull_params = fit_settings_inner['pull']['params']
@@ -617,8 +640,7 @@ class Analysis(object):
             nofit_hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
             fit_info = self.nofit_hypo(
                 data_dist=data_dist,
-                hypo_maker=hypo_maker,
-                hypo_param_selections=None,
+                hypo_params=hypo_maker.params,
                 hypo_asimov_dist=nofit_hypo_asimov_dist,
                 metric=metric,
                 other_metrics=other_metrics,
@@ -693,15 +715,34 @@ class Analysis(object):
             'minimizer_metadata'
 
         """
-        # allow for an entry of `None` but also no entry at all
-        for minimizer_type in ['local', 'global']:
-            try:
-                minimizer_type_settings =\
-                    set_minimizer_defaults(minimizer_settings[minimizer_type])
-                validate_minimizer_settings(minimizer_type_settings)
-            except:
-                minimizer_type_settings = None
-            minimizer_settings[minimizer_type] = minimizer_type_settings
+        if set(minimizer_settings.keys()) == set(('local', 'global')):
+            # allow for an entry of `None`
+            for minimizer_type in ['local', 'global']:
+                try:
+                    minimizer_type_settings =\
+                        set_minimizer_defaults(minimizer_settings[minimizer_type])
+                    validate_minimizer_settings(minimizer_type_settings)
+                except:
+                    minimizer_type_settings = None
+                minimizer_settings[minimizer_type] = minimizer_type_settings
+        else:
+            # just try to interpret as "regular" local minimization
+            method = minimizer_settings['method'].lower()
+            if not method in LOCAL_MINIMIZERS_WITH_DEFAULTS:
+                raise ValueError(
+                    'Minimizer method "%s" could not be identified as'
+                    ' corresponding to local minimization (valid methods: %s).'
+                    ' If you desire to run a global minimizer pass in the'
+                    ' config with explicit "global" and "local" keys.'
+                    % (method, LOCAL_MINIMIZERS_WITH_DEFAULTS)
+                )
+            minimizer_settings = set_minimizer_defaults(minimizer_settings)
+            validate_minimizer_settings(minimizer_settings)
+            new_minimizer_settings = {
+                'global': None,
+                'local': minimizer_settings
+            }
+            minimizer_settings = new_minimizer_settings
 
         sign = -1 if metric in METRICS_TO_MAXIMIZE else +1
 
@@ -898,8 +939,8 @@ class Analysis(object):
         return fit_info
 
 
-    def nofit_hypo(self, data_dist, hypo_maker, hypo_param_selections,
-                   hypo_asimov_dist, metric, other_metrics=None, blind=False):
+    def nofit_hypo(self, data_dist, hypo_params, hypo_asimov_dist, metric,
+                   other_metrics=None, blind=False):
         """Fitting a hypo to Asimov distribution generated by its own
         distribution maker is unnecessary. In such a case, use this method
         (instead of `fit_hypo`) to still retrieve meaningful information for
@@ -919,37 +960,29 @@ class Analysis(object):
         fit_info = OrderedDict()
         fit_info['metric'] = metric
 
-        # NOTE: Select params but *do not* reset to nominal values to record
-        # the current (presumably already optimal) param values
-        hypo_maker.select_params(hypo_param_selections)
-
         # Assess the fit: whether the data came from the hypo_asimov_dist
         try:
             metric_val = (
                 data_dist.metric_total(expected_values=hypo_asimov_dist,
                                        metric=metric)
-                + hypo_maker.params.priors_penalty(metric=metric)
+                + hypo_params.priors_penalty(metric=metric)
             )
         except:
             if not blind:
                 logging.error(
-                    'Failed when computing metric with free params %s',
-                    hypo_maker.params.free
+                    'Failed when computing metric with params %s.', hypo_params
                 )
             raise
 
         fit_info['metric_val'] = metric_val
 
         if blind:
-            # in case of blind analysis, reset the values so
-            # the user can't find them in the object
-            hypo_maker.reset_free()
             fit_info['params'] = ParamSet()
         else:
-            fit_info['params'] = deepcopy(hypo_maker.params)
+            fit_info['params'] = deepcopy(hypo_params)
         fit_info['detailed_metric_info'] = self.get_detailed_metric_info(
             data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist,
-            params=hypo_maker.params, metric=metric, other_metrics=other_metrics,
+            params=hypo_params, metric=metric, other_metrics=other_metrics,
             blind=blind
         )
         fit_info['minimizer_time'] = 0 * ureg.sec
@@ -1129,14 +1162,16 @@ class Analysis(object):
         self._nit += 1
 
 
-def test_fit_hypo():
+def test_fitting():
     """Testing. Could easily break because heavily relies on external stuff."""
     from pisa.core import distribution_maker
     from pisa.utils.log import set_verbosity
+    from pisa.utils.resources import find_resource
     set_verbosity(1)
-    example_pipeline = (
-        "../../pisa_examples/resources/settings/pipeline/example_param.cfg"
-    )
+    ana = Analysis()
+    example_directory = find_resource('settings/pipeline')
+    example_pipeline = example_directory + '/example_param_discrete_hypos.cfg'
+
     d = distribution_maker.DistributionMaker(pipelines=example_pipeline)
     data_dist = d.get_outputs(return_sum=True)
 
@@ -1154,8 +1189,6 @@ def test_fit_hypo():
     d.params.theta23.prior = None
     d.params.deltam31.prior = None
     free_params = d.params.free
-
-    ana = Analysis()
 
     # define some fit settings for a scan first (without any minimization)
     fit_settings = {'scan': {
@@ -1185,10 +1218,17 @@ def test_fit_hypo():
         blind=False,
         pprint=True
     )
-    logging.info('Value of metric at best fit: %s' % fit_info['metric_val'])
 
-    # redefine d because it lost its free scan params and repeat the stuff from above
+    logging.info('Value of metric at best fit (scan): %s'
+                 % fit_info[0]['metric_val'])
+
+    # redefine d because it lost its free scan params
     d = distribution_maker.DistributionMaker(pipelines=example_pipeline)
+    # let's generate the distribution for theta23 off-nominal (to test whether
+    # the global optimizer can recover the value for the matching discrete hypo)
+    d.params['theta23'].value = 49.7 * ureg.degree
+    data_dist = d.get_outputs(return_sum=True)
+    d.reset_free()
 
     fix = ('nu_nubar_ratio', 'energy_scale', 'nu_nubar_ratio', 'nue_numu_ratio',
            'theta13', 'aeff_scale', 'atm_delta_index')
@@ -1205,19 +1245,19 @@ def test_fit_hypo():
     d.params.deltam31.prior = None
     free_params = d.params.free
 
-    # single minimization
-
+    # global minimization over discrete hypotheses
     # setup the minimizer settings
+    minimizer_cfg_directory = find_resource('settings/minimizer')
     minimizer_settings_global = parse_minimizer_config(
-        '../../pisa_examples/resources/settings/minimizer/'
-        'basinhopping_niter100_niter_success20_T1e0_stepsize5e-1_interval50.cfg'
+         minimizer_cfg_directory +
+        '/basinhopping_niter100_niter_success20_T1e0_stepsize5e-1_interval50.cfg'
     )
     minimizer_settings_local = parse_minimizer_config(
-        '../../pisa_examples/resources/settings/minimizer/'
-        'l-bfgs-b_ftol2e-9_gtol1e-5_eps1e-7_maxiter200.cfg'
+        minimizer_cfg_directory +
+        '/l-bfgs-b_ftol2e-9_gtol1e-5_eps1e-7_maxiter200.cfg'
     )
 
-    minimizer_settings = {'global': {}, 'local': {}}
+    minimizer_settings = {}
     minimizer_settings['global'] = minimizer_settings_global
     minimizer_settings['local'] = minimizer_settings_local
 
@@ -1227,22 +1267,24 @@ def test_fit_hypo():
                     'pull': {'params': {}}
                    }
 
-    fit_info, _ = ana.fit_hypo(
+    fit_info = ana.optimize_discrete_selections(
         data_dist=data_dist,
         hypo_maker=d,
-        hypo_param_selections=None,
+        hypo_param_selections=[None],
+        extra_param_selections=['wrong1', 'wrong2', 'correct', 'wrong3'],
         metric='chi2',
-        fit_settings=fit_settings,
+        fit_settings=fit_settings, # equivalent to not using any for min. only
         reset_free=True,
         check_octant=False,
-        minimizer_settings=None,
+        minimizer_settings=minimizer_settings,
         other_metrics=None,
         return_full_scan=False,
         blind=False,
         pprint=True
     )
-    logging.info('Value of metric at best fit: %s' % fit_info['metric_val'])
+
+    logging.info('Value of metric at best fit: %s' % fit_info[0]['metric_val'])
 
 if __name__ == '__main__':
-    test_fit_hypo()
+    test_fitting()
     
