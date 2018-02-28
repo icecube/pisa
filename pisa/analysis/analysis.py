@@ -33,7 +33,7 @@ from pisa.utils.stats import METRICS_TO_MAXIMIZE, it_got_better
 
 __all__ = ['Analysis', 'apply_fit_settings', 'ANALYSIS_METHODS']
 
-__author__ = 'J.L. Lanfranchi, P. Eller, S. Wren'
+__author__ = 'J.L. Lanfranchi, P. Eller, S. Wren, T. Ehrhardt'
 
 __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 
@@ -51,6 +51,12 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 
 ANALYSIS_METHODS = ('minimize', 'scan', 'pull')
 """Allowed parameter fitting methods."""
+
+# Define names that users can specify in configs such that the eval of those
+# strings works.
+numpy = np # pylint: disable=invalid-name
+inf = np.inf # pylint: disable=invalid-name
+units = ureg # pylint: disable=invalid-name
 
 def t23_octant(fit_info):
     """Check that theta23 is in the first or second octant.
@@ -102,7 +108,7 @@ def apply_fit_settings(fit_settings, free_params):
     processed_fit_settings = deepcopy(fit_settings)
     fit_methods = fit_settings.keys()
     # TODO: don't require all possible methods to be present
-    #assert set(fit_methods) == set(ANALYSIS_METHODS)
+    # assert set(fit_methods) == set(ANALYSIS_METHODS)
 
     # wildcard can only occur once in fit_settings; all parameters not
     # specified will be treated by the method which has the wildcard
@@ -122,7 +128,12 @@ def apply_fit_settings(fit_settings, free_params):
 
     for pname in params_with_fit_method:
         # require to be a free parameter
-        assert pname in free_params.names
+        if not pname in free_params.names:
+            raise ValueError(
+                'Parameter "%s" present in fit settings but not among free'
+                ' parameters "%s". Please ensure consistency.'
+                % (pname, free_params.names)
+            )
 
     # remaining
     params_remaining = [pname for pname in free_params.names
@@ -144,8 +155,7 @@ def apply_fit_settings(fit_settings, free_params):
         )
 
     # remove any 'default' entry (shouldn't be here in the first place)
-    # for the other fit methods which don't make use
-    # of wildcard
+    # for the other fit methods which don't make use of wildcard
     for fit_method in fit_methods:
         processed_fit_settings[fit_method].pop('defaults', None)
 
@@ -153,72 +163,111 @@ def apply_fit_settings(fit_settings, free_params):
     # (can apply identical treatment)
     # These are constructed from a range and an nvalues integer, where
     # the range can be given as "nominal+/-<scale>*nominal.
-    # TODO: allow for non-linearly spaced scan values
-    # TODO: allow for flexibility beyond symmetry around nominal
     # TODO: compare fit ranges to free_params ranges, precedence?
     for fit_method in ['pull', 'scan']:
-        if not fit_method in processed_fit_settings:
-            continue
         new_values_d = {'params': [], 'values': []}
+        if not fit_method in processed_fit_settings:
+            processed_fit_settings[fit_method] = new_values_d
+            continue
         for pname, sett_d in processed_fit_settings[fit_method]['params'].items():
             # keys correspond to individual parameter fit settings
-            found_keys = sorted(sett_d.keys())
+            found_keys = set(sett_d.keys())
+            # a certain combination of keys/options is allowed
             if fit_method == 'scan':
-                valid_keys = sorted(['nvalues', 'range'])
+                valid_keys = [set(('nvalues', 'range')), set(('values',))]
             else:
-                valid_keys = sorted(['lin_range'])
-            if not found_keys == valid_keys:
+                valid_keys = [set(('lin_range',))]
+            # one of the combinations must be an exact hit
+            if not found_keys in valid_keys:
                 raise KeyError(
-                    'Only recognised keys for %s method: %s. You tried'
-                    ' to set %s for parameter "%s".'
+                    'Only recognised key (combinations) for %s method: %s. You'
+                    ' tried to set %s for parameter "%s".'
                     % (fit_method, valid_keys, found_keys, pname)
                 )
+            # interpret and process the fields which we have depending on the
+            # fit method in question
             if fit_method == 'scan':
-                nvals = int(sett_d['nvalues'])
-                prange = sett_d['range']
+                try:
+                    nvals = int(sett_d['nvalues'])
+                    prange = sett_d['range']
+                except:
+                    nvals, prange = None, None
+                    values = sett_d['values']
             else:
+                # pull method
                 nvals = 2
                 prange = sett_d['lin_range']
+
+            # record the units of the target parameter and do consistency checks
             target_units = free_params[pname].units
-            if isinstance(prange, basestring):
-                try:
-                    scale_nom = float(prange[prange.find('+/-')+3:prange.find('*')])
-                except:
-                    logging.error(
-                        'Could not interpret range string "%s" for parameter "%s".'
-                        ' Please specify as "nominal+/-<float>*nominal".'
-                        % (prange, pname)
-                    )
-                    raise
-                nom = free_params[pname].nominal_value
-                prange = [nom - scale_nom * nom, nom + scale_nom * nom]
-            elif isinstance(prange, Q_):
-                if not isinstance(prange, Sequence):
+            if prange is None:
+                # this means we must have the case of scanning and scan values
+                # being specified directly
+                values = eval(values)
+                if not isinstance(values, Q_):
                     raise TypeError(
-                        'Range specified for parameter "%s" is not'
-                        ' a sequence but of "%s".' % (pname, type(prange))
-                    )
-                if not len(prange) == 2:
-                    raise ValueError(
-                        'Range "%s" specified for parameter "%s" is not'
-                        ' of length 2.' % (prange, pname)
+                        'Please specify scan values for param "%s" with units'
+                        ' (convertible to: "%s").' % (pname, target_units)
                     )
                 try:
-                    prange.ito(target_units)
+                    values.ito(target_units)
                 except:
                     logging.error(
                         'The units ("%s") specified for parameter "%s" are not'
                         ' compatible with those ("%s") of the corresponding'
                         ' parameter in the `ParamSet` of free parameters.'
-                        % (prange.units, target_units)
+                        % (values.units, pname, target_units)
                     )
                     raise
             else:
-                raise TypeError(
-                    'Range "%s" specified for parameter "%s" is of "%s" which'
-                    ' is unhandled.' % (prange, pname)
-                )
-            values = np.linspace(prange[0], prange[1], nvals) * target_units
+                # need to convert from range and nvalues to linearly spaced
+                # values themselves
+                if isinstance(prange, basestring):
+                    try:
+                        # first detect the fraction of the nominal value which
+                        # will correspond to one half of the range
+                        scale_nom = float(
+                            prange[prange.find('+/-') + 3:prange.find('*')]
+                        )
+                    except:
+                        logging.error(
+                            'Could not interpret range string "%s" for'
+                            ' parameter "%s". Please specify as'
+                            ' "nominal+/-<float>*nominal".'
+                            % (prange, pname)
+                        )
+                        raise
+                    nom = free_params[pname].nominal_value
+                    half_width = scale_nom * nom
+                    prange = [nom - half_width, nom + half_width]
+                elif isinstance(prange, Q_):
+                    if not isinstance(prange, Sequence):
+                        raise TypeError(
+                            'Range specified for parameter "%s" is not'
+                            ' a sequence but of "%s".' % (pname, type(prange))
+                        )
+                    if not len(prange) == 2:
+                        raise ValueError(
+                            'Range "%s" specified for parameter "%s" is not'
+                            ' of length 2.' % (prange, pname)
+                        )
+                    try:
+                        prange.ito(target_units)
+                    except:
+                        logging.error(
+                            'The units ("%s") specified for parameter "%s" are'
+                            ' not compatible with those ("%s") of the'
+                            ' corresponding parameter in the `ParamSet` of free'
+                            ' parameters.' % (prange.units, pname, target_units)
+                        )
+                        raise
+                else:
+                    raise TypeError(
+                        'Range "%s" specified for parameter "%s" is of "%s" which'
+                        ' is unhandled.' % (prange, pname, type(prange))
+                    )
+                values = np.linspace(prange[0], prange[1], nvals) * target_units
+
             new_values_d['params'].append(pname)
             new_values_d['values'].append(values)
 
@@ -233,18 +282,10 @@ def apply_fit_settings(fit_settings, free_params):
     # or for more complex things such as seeds
     new_minimize_settings_d = {'global': None, 'local': None, 'params': []}
     for pname, sett_d in minimize_settings['params'].items():
-        if new_minimize_settings_d['global'] is None:
-            new_minimize_settings_d['global'] = sett_d['global']
-        else:
-            assert sett_d['global'] == new_minimize_settings_d['global']
-        if new_minimize_settings_d['local'] is None:
-            new_minimize_settings_d['local'] = sett_d['local']
-        else:
-            assert sett_d['local'] == new_minimize_settings_d['local']
-        min_sett_global = new_minimize_settings_d['global']
+        min_sett_global = sett_d['global']
         if isinstance(min_sett_global, basestring):
             min_sett_global = parse_minimizer_config(min_sett_global)
-        min_sett_local = new_minimize_settings_d['local']
+        min_sett_local = sett_d['local']
         if isinstance(min_sett_local, basestring):
             min_sett_local = parse_minimizer_config(min_sett_local)
 
@@ -284,14 +325,15 @@ class Analysis(object):
         if not isinstance(extra_param_selections, Sequence):
             extra_param_selections = [extra_param_selections]
 
-        logging.info('Optimizing over all discrete selections in %s.'
-                     % extra_param_selections)
+        if not isinstance(hypo_param_selections, Sequence):
+            hypo_param_selections = [hypo_param_selections]
 
         # here we store the (best) fit(s) for each discrete selection
         fit_infos = []
         fit_metric_vals = []
         for extra_param_selection in extra_param_selections:
-            if extra_param_selection in hypo_param_selections:
+            if (extra_param_selection is not None and
+                extra_param_selection in hypo_param_selections):
                 raise ValueError('Your extra parameter selection "%s" has already '
                                  'been specified as one of the hypotheses but the '
                                  'fit has been requested to minimize over it. These '
@@ -299,9 +341,9 @@ class Analysis(object):
             # combine any previous param selection + the extra selection
             full_param_selections = hypo_param_selections
             full_param_selections.append(extra_param_selection)
-
-            logging.info('Fitting discrete selection "%s".'
-                         % extra_param_selection)
+            if extra_param_selection is not None:
+                logging.info('Fitting discrete selection "%s".'
+                             % extra_param_selection)
 
             # ignore alternate fits (it's complicated enough with the various
             # discrete hypo best fits we have already)
@@ -464,7 +506,9 @@ class Analysis(object):
         blind : bool
             Whether to carry out a blind analysis. This hides actual parameter
             values from display and disallows these (as well as Jacobian,
-            Hessian, etc.) from ending up in logfiles.
+            Hessian, etc.) from ending up in logfiles. It also resets the hypo
+            maker's parameters to their nominal states, to prevent these from
+            violating blindness when this method is run interactively.
 
 
         Returns
@@ -485,8 +529,7 @@ class Analysis(object):
         # Select the version of the parameters used for this hypothesis
         hypo_maker.select_params(hypo_param_selections)
 
-        # only apply fit settings after the param selection has been
-        # applied
+        # only apply fit settings after the param selection has been applied
         if fit_settings is not None:
             fit_settings = apply_fit_settings(fit_settings, hypo_maker.params.free)
 
@@ -529,10 +572,10 @@ class Analysis(object):
                 )
 
         # if there are no scan params/vals, we should inject the current
-        # value for each free parameter
+        # value for each parameter (do not require there to be free ones)
         if not scan_params:
             scan_vals = [[(pname, hypo_maker.params[pname].value)]
-                          for pname in hypo_maker.params.free.names]
+                          for pname in hypo_maker.params.names]
 
         # each scan point comes with its own best fit
         best_fit_ind = 0
@@ -541,17 +584,18 @@ class Analysis(object):
             sep = ', '
             for (pname, val) in pos:
                 hypo_maker.params[pname].value = val
-                if isinstance(val, float) or isinstance(val, ureg.Quantity):
-                    if msg:
-                        msg += sep
-                    msg += '%s = %s'%(pname, val)
-                else:
-                    raise TypeError("val is of type %s which I don't know "
-                                    "how to deal with in the output "
-                                    "messages."% type(val))
-            # reporting the message below without the user having requested
-            # a scan would be confusing/misleading
+                if scan_params and not blind:
+                    if isinstance(val, float) or isinstance(val, ureg.Quantity):
+                        if msg:
+                            msg += sep
+                        msg += '%s = %s'%(pname, val)
+                    else:
+                        raise TypeError("val is of type %s which I don't know "
+                                        "how to deal with in the output "
+                                        "messages."% type(val))
             if scan_params and not blind:
+                # reporting the message below without the user having
+                # requested a scan would be confusing/misleading
                 logging.info('Fixing hypothesis parameters: %s.' % msg)
             # Reset free parameters to nominal values
             if reset_free:
@@ -715,6 +759,7 @@ class Analysis(object):
             'minimizer_metadata'
 
         """
+        print minimizer_settings
         if set(minimizer_settings.keys()) == set(('local', 'global')):
             # allow for an entry of `None`
             for minimizer_type in ['local', 'global']:
@@ -1194,8 +1239,10 @@ def test_fitting():
     fit_settings = {'scan': {
                         'params': {
                             'deltam31': {
-                                'nvalues': 10, 'range': 'nominal+/-0.05*nominal'
-                            },
+                                'values': 'np.linspace(2.4e-3, 2.6e-3, 10) * units.eV**2'
+                            }, # we can either give values directly or a range
+                               # around nominal + a number of lin. spaced values
+                               # (useful e.g. for different discrete hypos)
                             'theta23': {
                                 'nvalues': 10, 'range': 'nominal+/-0.2*nominal'
                             },

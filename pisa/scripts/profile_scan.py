@@ -14,7 +14,6 @@ from os.path import expanduser, expandvars, isfile
 # Import numpy and define np=numpy to allow `eval` to work with either
 import numpy
 
-#from pisa.analysis.analysis import Analysis
 from pisa import ureg
 from pisa.analysis.hypo_testing import HypoTesting, setup_makers_from_pipelines,\
                                        collect_maker_selections, select_maker_params
@@ -42,10 +41,11 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 
 
 np = numpy # pylint: disable=invalid-name
+units = ureg # pylint: disable=invalid-name
 
 
 def profile_scan(init_args_d, return_outputs=False):
-    """Load the HypoTesting class and use it to do an Asimov test across the
+    """Load the HypoTesting class and use it to do a test across the
     space of some hypo parameters.
 
     The user will define the parameter and pass a numpy-interpretable string to
@@ -69,7 +69,6 @@ def profile_scan(init_args_d, return_outputs=False):
     param_names = init_args_d.pop('param_name')
     scan_vals_lists = init_args_d.pop('scan_vals')
     scan_vals = [eval(scan_vals_list) for scan_vals_list in scan_vals_lists]
-    outer = not init_args_d.pop('no_outer')
     profile = not init_args_d.pop('no_profile')
     store_intermediate = init_args_d.pop('store_intermediate')
 
@@ -77,7 +76,6 @@ def profile_scan(init_args_d, return_outputs=False):
 
     scan_res = hypo_testing.hypo_scan(
         param_names=param_names,
-        values=scan_vals,
-        outer=outer,
+        scan_vals=scan_vals,
         profile=profile
     )

@@ -32,6 +32,7 @@ from pisa.analysis.analysis import Analysis
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.map import MapSet
 from pisa.utils.comparisons import normQuant
+from pisa.utils.config_parser import parse_fit_config, parse_minimizer_config
 from pisa.utils.fileio import from_file, get_valid_filename, mkdir, to_file
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
@@ -44,9 +45,9 @@ from pisa.utils.format import timediff, timestamp
 
 __all__ = ['Labels', 'HypoTesting']
 
-__author__ = 'J.L. Lanfranchi, P.Eller, S. Wren'
+__author__ = 'J.L. Lanfranchi, P.Eller, S. Wren, T. Ehrhardt'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2018, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -285,7 +286,8 @@ class HypoTesting(Analysis):
         not exist.
 
     minimizer_settings : string
-        Minimizer settings file or resource path.
+        Minimizer settings file or resource path. These will be processed
+        internally and passed to the appropriate `scipy.optimize` backend.
 
     data_maker : None, DistributionMaker or instantiable thereto
         Data maker specification, or None (specify an already-generated data
@@ -334,6 +336,10 @@ class HypoTesting(Analysis):
         requirement to re-generate this distribution if it's already been
         generated in a previous run
 
+    extra_param_selections : None, or sequence of strings
+        Extra parameter selections to optimize over in each fit. May not be
+        part of any of the regular (h0, h1) selections
+
     num_data_trials : int >= 1
         Number of (pseudo)data trials to run. For each trial, a new pseudodata
         distribution is generated, and then all subsequent fits are preformed.
@@ -358,9 +364,10 @@ class HypoTesting(Analysis):
 
     check_octant : bool
         If True and theta23 is a free parameter, minimization is performed once
-        starting wtih theta23 = theta23.nominal_value and then a second time
-        starting with theta23 = (180 deg - theta23.nominal_value). The best fit
-        found from each of these two fits is taken to be the best overall fit.
+        starting wtih theta23 = theta23.nominal_value and then a second and
+        possibly a third time starting with theta23 in the octant opposite from
+        its current/nominal value (depending on setting of `reset_free`). The
+        best overall fit from all of these is recorded.
 
     metric : string
         Metric for minimizer to use for comparing distributions. Valid metrics
@@ -391,6 +398,11 @@ class HypoTesting(Analysis):
         If True, display fit information as a single line on the terminal that
         updates in-place as the fit proceeds. If False, this information is
         output as a separate line for each iteration.
+
+    reset_free : bool
+        If True, before each new fit the free hypothesis parameters are reset
+        to their nominal values. Otherwise, each fit will start off from
+        whatever state the parameters in the hypothesis maker are in.
 
 
     Notes
@@ -437,15 +449,15 @@ class HypoTesting(Analysis):
 
     """
     def __init__(self, logdir, minimizer_settings,
-                 data_is_data,
-                 fluctuate_data, fluctuate_fid, metric, other_metrics=None,
+                 data_is_data, fluctuate_data, fluctuate_fid,
+                 metric, other_metrics=None, fit_settings=None,
                  h0_name=None, h0_maker=None, h0_param_selections=None, h0_fid_asimov_dist=None,
                  h1_name=None, h1_maker=None, h1_param_selections=None, h1_fid_asimov_dist=None,
                  data_name=None, data_maker=None, data_param_selections=None, data_dist=None,
+                 extra_param_selections=None,
                  num_data_trials=1, num_fid_trials=1,
                  data_start_ind=0, fid_start_ind=0,
                  check_octant=True,
-                 check_ordering=False,
                  allow_dirty=False, allow_no_git_info=False,
                  blind=False, store_minimizer_history=True, pprint=False,
                  reset_free=True):
@@ -585,15 +597,36 @@ class HypoTesting(Analysis):
 
         # Read in minimizer settings
         if isinstance(minimizer_settings, basestring):
-            minimizer_settings = from_file(minimizer_settings)
-        assert isinstance(minimizer_settings, Mapping)
+            minimizer_settings = parse_minimizer_config(minimizer_settings)
+        assert isinstance(minimizer_settings, Mapping) or minimizer_settings is None
+
+        # Read in fit settings
+        if isinstance(fit_settings, basestring):
+            fit_settings = parse_fit_config(fit_settings)
+        assert isinstance(fit_settings, Mapping) or fit_settings is None
+
+        # Read in and validate extra param selections
+        if extra_param_selections is None:
+            extra_param_selections = [extra_param_selections]
+        else:
+            assert isinstance(extra_param_selections, Sequence)
+            for selection in extra_param_selections:
+                for regular_param_selections in\
+                    (self.h0_param_selections, self.h1_param_selections):
+                    if isinstance(regular_param_selections, Sequence):
+                        if selection in regular_param_selections:
+                            raise ValueError(
+                                'Extra parameter selection "%s" also found in'
+                                ' regular parameter selections "%s"!'
+                                % (selection, regular_param_selections)
+                            )
 
         # Store variables to `self` for later access
-
         self.logdir = logdir
         self.minimizer_settings = minimizer_settings
+        self.fit_settings = fit_settings
         self.check_octant = check_octant
-        self.check_ordering = check_ordering
+        self.extra_param_selections = extra_param_selections
 
         self.h0_maker = h0_maker
         self.h0_param_selections = h0_param_selections
@@ -876,15 +909,15 @@ class HypoTesting(Analysis):
                     blind=self.blind
                 )
             else:
-                self.h0_fit_to_data, alternate_fits = self.fit_hypo(
+                self.h0_fit_to_data, alternate_fits = self.optimize_discrete_selections(
                     data_dist=self.data_dist,
                     hypo_maker=self.h0_maker,
                     hypo_param_selections=self.h0_param_selections,
+                    extra_param_selections=self.extra_param_selections,
                     metric=self.metric,
                     other_metrics=self.other_metrics,
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
-                    check_ordering=self.check_ordering,
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free
@@ -932,15 +965,15 @@ class HypoTesting(Analysis):
                     blind=self.blind
                 )
             else:
-                self.h1_fit_to_data, alternate_fits = self.fit_hypo(
+                self.h1_fit_to_data, alternate_fits = self.optimize_discrete_selections(
                     data_dist=self.data_dist,
                     hypo_maker=self.h1_maker,
                     hypo_param_selections=self.h1_param_selections,
+                    extra_param_selections=self.extra_param_selections,
                     metric=self.metric,
                     other_metrics=self.other_metrics,
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
-                    check_ordering=self.check_ordering,
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free
@@ -1029,15 +1062,15 @@ class HypoTesting(Analysis):
                         blind=self.blind
                     )
                 else:
-                    self.h0_fit_to_h0_fid, alternate_fits = self.fit_hypo(
+                    self.h0_fit_to_h0_fid, alternate_fits = self.optimize_discrete_selections(
                         data_dist=self.h0_fid_dist,
                         hypo_maker=self.h0_maker,
                         hypo_param_selections=self.h0_param_selections,
+                        extra_param_selections=self.extra_param_selections,
                         metric=self.metric,
                         other_metrics=self.other_metrics,
                         minimizer_settings=self.minimizer_settings,
                         check_octant=self.check_octant,
-                        check_ordering=self.check_ordering,
                         pprint=self.pprint,
                         blind=self.blind,
                         reset_free=self.reset_free
@@ -1082,15 +1115,15 @@ class HypoTesting(Analysis):
                         blind=self.blind
                     )
                 else:
-                    self.h1_fit_to_h1_fid, alternate_fits = self.fit_hypo(
+                    self.h1_fit_to_h1_fid, alternate_fits = self.optimize_discrete_selections(
                         data_dist=self.h1_fid_dist,
                         hypo_maker=self.h1_maker,
                         hypo_param_selections=self.h1_param_selections,
+                        extra_param_selections=self.extra_param_selections,
                         metric=self.metric,
                         other_metrics=self.other_metrics,
                         minimizer_settings=self.minimizer_settings,
                         check_octant=self.check_octant,
-                        check_ordering=self.check_ordering,
                         pprint=self.pprint,
                         blind=self.blind,
                         reset_free=self.reset_free
@@ -1140,15 +1173,15 @@ class HypoTesting(Analysis):
                         blind=self.blind
                     )
                 else:
-                    self.h1_fit_to_h0_fid, alternate_fits = self.fit_hypo(
+                    self.h1_fit_to_h0_fid, alternate_fits = self.optimize_discrete_selections(
                         data_dist=self.h0_fid_dist,
                         hypo_maker=self.h1_maker,
                         hypo_param_selections=self.h1_param_selections,
+                        extra_param_selections=self.extra_param_selections,
                         metric=self.metric,
                         other_metrics=self.other_metrics,
                         minimizer_settings=self.minimizer_settings,
                         check_octant=self.check_octant,
-                        check_ordering=self.check_ordering,
                         pprint=self.pprint,
                         blind=self.blind,
                         reset_free=self.reset_free
@@ -1191,15 +1224,15 @@ class HypoTesting(Analysis):
                         blind=self.blind
                     )
                 else:
-                    self.h0_fit_to_h1_fid, alternate_fits = self.fit_hypo(
+                    self.h0_fit_to_h1_fid, alternate_fits = self.optimize_discrete_selections(
                         data_dist=self.h1_fid_dist,
                         hypo_maker=self.h0_maker,
                         hypo_param_selections=self.h0_param_selections,
+                        extra_param_selections=self.extra_param_selections,
                         metric=self.metric,
                         other_metrics=self.other_metrics,
                         minimizer_settings=self.minimizer_settings,
                         check_octant=self.check_octant,
-                        check_ordering=self.check_ordering,
                         pprint=self.pprint,
                         blind=self.blind,
                         reset_free=self.reset_free
@@ -1260,7 +1293,7 @@ class HypoTesting(Analysis):
             * h1_pipelines (list containing list per pipeline)
             * h1_param_selections
 
-        mininimzer_settings.cfg : copy of the minimzer settings used
+        minimizer_settings.cfg : copy of the minimizer settings used
 
         run_info_<datetime in microseconds, UTC>_<hostname>.info
             * fluctuate_data : bool
@@ -1421,10 +1454,9 @@ class HypoTesting(Analysis):
         summary['source_provenance'] = d
 
         d = OrderedDict()
-        d['minimizer_name'] = self.minimizer_settings['method']['value']
+        #d['minimizer_name'] = self.minimizer_settings['method']['value']
         d['minimizer_settings_hash'] = self.minimizer_settings_hash
         d['check_octant'] = self.check_octant
-        d['check_ordering'] = self.check_ordering
         d['metric_optimized'] = self.metric
         summary['minimizer_info'] = d
 
@@ -1477,6 +1509,8 @@ class HypoTesting(Analysis):
         summary['h1_params_hash'] = self.h1_maker.params.hash
         summary['h1_params'] = [str(p) for p in self.h1_maker.params]
         summary['h1_pipelines'] = self.summarize_dist_maker(self.h1_maker)
+
+        summary['extra_param_selections'] = ','.join(self.extra_param_selections)
 
         # Reverse the order so it serializes to a file as intended
         # (want top-to-bottom file convention vs. fifo streaming data
@@ -1555,9 +1589,9 @@ class HypoTesting(Analysis):
         logging.info('Run info written to: ' + self.run_info_fpath)
 
     def write_minimizer_settings(self):
-        if os.path.isfile(self.minimizer_settings_fpath):
-            return
-        to_file(self.minimizer_settings, self.minimizer_settings_fpath)
+        if not os.path.isfile(self.minimizer_settings_fpath):
+            to_file(self.minimizer_settings, self.minimizer_settings_fpath)
+        return
 
     def write_run_stop_info(self, exc=None):
         if isinstance(exc, Sequence):
@@ -1798,131 +1832,6 @@ class HypoTesting(Analysis):
             # so that they are regenerated next time
             self.clear_data()
 
-
-    def hypo_scan(self, param_names, values, outer, profile, debug_mode=1):
-        if isinstance(param_names, basestring):
-            param_names = [param_names]
-
-        nparams = len(param_names)
-        params = self.h0_maker.params
-        # Fix the parameters to be scanned
-        params.fix(param_names)
-        if nparams > 1:
-            steplist = []
-            for (i, pname) in enumerate(param_names):
-                steplist.append([(pname, val) for val in values[i]])
-                rangetuple = min(values[i]), max(values[i])
-                params[pname].range = rangetuple
-        else:
-            pname = param_names[0]
-            steplist = [[(pname, val) for val in values[0]]]
-            params[pname].range = min(values[0]), max(values[0])
-
-        # Instead of introducing another multitude of tests above, check here
-        # whether the lists of steps all have the same length in case `outer`
-        # is set to False
-        if nparams > 1 and not outer:
-            assert np.all(len(steps) == len(steplist[0]) for steps in steplist)
-            loopfunc = zip
-        else:
-            # With single parameter, can use either `zip` or `product`
-            loopfunc = product
-
-        t0 = time.time()
-        results = {'scan_vals': {pname: [] for pname in param_names}, 'trials': []}
-
-        # Setup logging and things.
-        self.setup_logging(reset_params=False)
-        #self.write_config_summary(reset_params=False)
-        self.write_minimizer_settings()
-        self.write_run_info()
-
-        # Loop for multiple (if fluctuated) data distributions
-        for self.data_ind in xrange(self.data_start_ind,
-                                    self.data_start_ind
-                                    + self.num_data_trials):
-            data_trials_complete = self.data_ind-self.data_start_ind
-            pct_data_complete = (
-                100.*(data_trials_complete)/self.num_data_trials
-            )
-            logging.info(
-                'Working on %s set ID %d (will stop after ID %d).'
-                ' %0.2f%s of %s sets completed.',
-                self.labels.data_disp,
-                self.data_ind,
-                self.data_start_ind+self.num_data_trials-1,
-                pct_data_complete,
-                '%',
-                self.labels.data_disp
-            )
-
-            # Setup directory for logging results
-            self.thisdata_dirpath = self.data_dirpath
-            if self.fluctuate_data:
-                self.thisdata_dirpath += '_' + format(self.data_ind, 'd')
-            mkdir(self.thisdata_dirpath)
-
-            self.generate_data()
-            trial_results = {'data_dist': self.data_dist, 'results': []}
-            for i, pos in enumerate(loopfunc(*steplist)):
-                msg = ''
-                sep = ', '
-                for (pname, val) in pos:
-                    params[pname].value = val
-                    if self.data_ind == self.data_start_ind:
-                        results['scan_vals'][pname].append(val)
-                    if isinstance(val, float) or isinstance(val, ureg.Quantity):
-                        if msg:
-                            msg += sep
-                        msg += '%s = %s'%(pname, val)
-                    else:
-                        raise TypeError("val is of type %s which I don't know "
-                                        "how to deal with in the output "
-                                        "messages."% type(val))
-                logging.info('Working on hypo point ' + msg)
-                self.h0_maker.update_params(params)
-                # TODO: consistent treatment of hypo_param_selections and scanning
-                if not profile:
-                    # explicitly fix all parameters
-                    for param in self.h0_maker.params.free:
-                        param.is_fixed = True
-                if not self.h0_maker.params.free:
-                    logging.info('Not optimizing since `profile` set to False or'
-                                 ' no free parameters found...')
-                    self.h0_fit_to_data = self.nofit_hypo(
-                        data_dist=self.data_dist,
-                        hypo_maker=self.h0_maker,
-                        hypo_param_selections=self.h0_param_selections,
-                        hypo_asimov_dist=self.h0_maker.get_outputs(return_sum=True),
-                        metric=self.metric, other_metrics=self.other_metrics,
-                        blind=self.blind
-                    )
-                else:
-                    logging.info('Starting optimization since `profile` requested.')
-                    self.h0_fit_to_data, alternate_fits = self.fit_hypo(
-                        data_dist=self.data_dist,
-                        hypo_maker=self.h0_maker,
-                        hypo_param_selections=self.h0_param_selections,
-                        metric=self.metric, other_metrics=self.other_metrics,
-                        minimizer_settings=self.minimizer_settings,
-                        check_octant=self.check_octant,
-                        check_ordering=self.check_ordering,
-                        pprint=self.pprint,
-                        blind=self.blind,
-                        reset_free=self.reset_free
-                    )
-                self.log_fit(fit_info=self.h0_fit_to_data,
-                             dirpath=self.thisdata_dirpath,
-                             label=self.labels.h0_fit_to_data)
-                trial_results['results'].append(self.h0_fit_to_data)
-            results['trials'].append(trial_results)
-            # At the end, reset the parameters in the maker
-            self.reset_makers()
-            # Also be sure to remove the data_dist and toy_data_asimov_dist
-            # so that they are regenerated next time
-            self.clear_data()
-        return results
-
     def asimov_nminusone_test(self, data_param, h0_name, h1_name, data_name):
         """This function will perform the standard N-1 test. This
         function expects h0_name, h1_name and data_name so that the
@@ -2150,3 +2059,121 @@ class HypoTesting(Analysis):
                 for h1_param in self.h1_maker.params:
                     if h1_param.name == data_param.name:
                         h1_param.is_fixed = False
+
+    def hypo_scan(self, param_names, scan_vals, profile):
+        if isinstance(param_names, basestring):
+            param_names = [param_names]
+
+        # cannot allow for any of the params to be scanned to be part of
+        # the fit settings
+        if self.fit_settings is not None:
+            for method in self.fit_settings:
+                for fit_pname in self.fit_settings[method]['params']:
+                    if fit_pname in param_names:
+                        raise ValueError(
+                            'Parameter "%s" found in fit settings even though it'
+                            ' is supposed to be scanned over. Please remove it'
+                            ' from fit settings.' % fit_pname
+                        )
+
+        nparams = len(param_names)
+        params = self.h0_maker.params
+        # fix the parameters to be scanned - also make the parameter range
+        # correspond to the (min, max) of scan values (these take
+        # precedence over the preset ranges)
+        params.fix(param_names)
+        if nparams > 1:
+            steplist = []
+            for (i, pname) in enumerate(param_names):
+                steplist.append([(pname, val) for val in scan_vals[i]])
+                rangetuple = min(scan_vals[i]), max(scan_vals[i])
+                params[pname].range = rangetuple
+        else:
+            pname = param_names[0]
+            steplist = [[(pname, val) for val in scan_vals[0]]]
+            params[pname].range = min(scan_vals[0]), max(scan_vals[0])
+
+        if not profile:
+            # explicitly fix all parameters
+            for param in self.h0_maker.params.free:
+                param.is_fixed = True
+
+        t0 = time.time()
+        results = {'scan_vals': {pname: [] for pname in param_names}, 'trials': []}
+
+        # Setup logging and things.
+        self.setup_logging(reset_params=False)
+        #self.write_config_summary(reset_params=False)
+        self.write_minimizer_settings()
+        self.write_run_info()
+
+        # Loop for multiple (if fluctuated) data distributions
+        for self.data_ind in xrange(self.data_start_ind,
+                                    self.data_start_ind
+                                    + self.num_data_trials):
+            data_trials_complete = self.data_ind-self.data_start_ind
+            pct_data_complete = (
+                100.*(data_trials_complete)/self.num_data_trials
+            )
+            logging.info('Working on %s set ID %d (will stop after ID %d).'
+                ' %0.2f%s of %s sets completed.',
+                self.labels.data_disp,
+                self.data_ind,
+                self.data_start_ind+self.num_data_trials-1,
+                pct_data_complete,
+                '%',
+                self.labels.data_disp
+            )
+
+            # Setup directory for logging results
+            self.thisdata_dirpath = self.data_dirpath
+            if self.fluctuate_data:
+                self.thisdata_dirpath += '_' + format(self.data_ind, 'd')
+            mkdir(self.thisdata_dirpath)
+
+            self.generate_data()
+            trial_results = {'data_dist': self.data_dist, 'results': []}
+            for i, pos in enumerate(product(*steplist)):
+                msg = ''
+                sep = ', '
+                for (pname, val) in pos:
+                    params[pname].value = val
+                    if self.data_ind == self.data_start_ind:
+                        results['scan_vals'][pname].append(val)
+                    if isinstance(val, float) or isinstance(val, ureg.Quantity):
+                        if msg:
+                            msg += sep
+                        msg += '%s = %s'%(pname, val)
+                    else:
+                        raise TypeError("val is of type %s which I don't know "
+                                        "how to deal with in the output "
+                                        "messages."% type(val))
+                logging.info('Working on hypo point ' + msg)
+                self.h0_maker.update_params(params)
+                # the no-profile case is handled internally
+                self.h0_fit_to_data = self.optimize_discrete_selections(
+                    data_dist=self.data_dist,
+                    hypo_maker=self.h0_maker,
+                    hypo_param_selections=self.h0_param_selections,
+                    extra_param_selections=self.extra_param_selections,
+                    fit_settings=self.fit_settings,
+                    metric=self.metric,
+                    other_metrics=self.other_metrics,
+                    minimizer_settings=self.minimizer_settings,
+                    check_octant=self.check_octant,
+                    pprint=self.pprint,
+                    blind=self.blind,
+                    reset_free=self.reset_free
+                )[0]
+
+                self.log_fit(fit_info=self.h0_fit_to_data,
+                             dirpath=self.thisdata_dirpath,
+                             label=self.labels.h0_fit_to_data)
+                trial_results['results'].append(self.h0_fit_to_data)
+            results['trials'].append(trial_results)
+            # At the end, reset the parameters in the maker
+            self.reset_makers()
+            # Also be sure to remove the data_dist and toy_data_asimov_dist
+            # so that they are regenerated next time
+            self.clear_data()
+        return results

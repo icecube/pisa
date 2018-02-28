@@ -17,6 +17,7 @@ from pisa.scripts.discrete_hypo_test import discrete_hypo_test as discrete_hypo
 from pisa.scripts.inj_param_scan import inj_param_scan
 from pisa.scripts.profile_scan import profile_scan
 from pisa.scripts.systematics_tests import systematics_tests as syst_tests
+from pisa.utils.config_parser import parse_fit_config, parse_minimizer_config
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.minimization import GLOBAL_MINIMIZERS_WITH_DEFAULTS,\
                                     LOCAL_MINIMIZERS_WITH_DEFAULTS,\
@@ -115,46 +116,61 @@ class AnalysisScript(object):
         global_min_settings_from_file = init_args_d.pop('global_min_settings')
         global_minimizer = init_args_d.pop('global_min_method')
         global_min_opt = init_args_d.pop('global_min_opt')
-        min_settings_from_file = init_args_d.pop('min_settings')
-        minimizer = init_args_d.pop('min_method')
-        min_opt = init_args_d.pop('min_opt')
-
-        # TODO: put this datastructure remnant from PISA 2 out of its misery...
-        minimizer_settings = dict(
-            method=dict(value='', desc='no desc'),
-            options=dict(value=dict(), desc=dict())
-        )
+        local_min_settings_from_file = init_args_d.pop('min_settings')
+        local_minimizer = init_args_d.pop('min_method')
+        local_min_opt = init_args_d.pop('min_opt')
+        fit_settings = init_args_d.pop('fit_settings')
 
         global_minimizer_settings = dict(
-            method=dict(value='', desc='no desc'),
-            options=dict(value=dict(), desc=dict())
+            method=dict(),
+            options=dict()
+        )
+
+        local_minimizer_settings = dict(
+            method=dict(),
+            options=dict()
         )
 
         if global_min_settings_from_file is not None:
-            global_minimizer_settings.update(
-                from_file(global_min_settings_from_file)
+            global_minimizer_settings = parse_minimizer_config(
+                global_min_settings_from_file
             )
         if global_minimizer is not None:
-            global_minimizer_settings['method'] = dict(value=global_minimizer,
-                                                       desc='no desc')
+            global_minimizer_settings['method'] = global_minimizer
 
         if global_min_opt is not None:
             override_min_opt(global_minimizer_settings, global_min_opt)
 
-        if min_settings_from_file is not None:
-            minimizer_settings.update(from_file(min_settings_from_file))
+        if local_min_settings_from_file is not None:
+            local_minimizer_settings = parse_minimizer_config(
+                local_min_settings_from_file
+            )
+        if local_minimizer is not None:
+            local_minimizer_settings['method'] = local_minimizer
 
-        if minimizer is not None:
-            minimizer_settings['method'] = dict(value=minimizer, desc='no desc')
+        if local_min_opt is not None:
+            override_min_opt(local_minimizer_settings, local_min_opt)
 
-        if min_opt is not None:
-            override_min_opt(minimizer_settings, min_opt)
+        if fit_settings is not None:
+            fit_settings = parse_fit_config(fit_settings)
+
+        # only if one of these has been filled we create a dictionary, otherwise
+        # we set the whole minimizer settings object to None so the fitting
+        # methods will know to use the minimizer settings from the fit config
+        if global_minimizer_settings['method'] or local_minimizer_settings['method']:
+            minimizer_settings = {
+                'global': global_minimizer_settings,
+                'local': local_minimizer_settings,
+            }
+        else:
+            minimizer_settings = None
 
         init_args_d['minimizer_settings'] = minimizer_settings
-        init_args_d['global_minimizer_settings'] = global_minimizer_settings
+
+        init_args_d['fit_settings'] = fit_settings
 
         init_args_d['check_octant'] = not init_args_d.pop('no_octant_check')
-        init_args_d['check_ordering'] = init_args_d.pop('ordering_check')
+        init_args_d['extra_param_selections'] = init_args_d.pop('extra_selection')
 
         if self.command not in ('inj_param_scan', 'syst_tests'):
             init_args_d['data_is_data'] = not init_args_d.pop('data_is_mc')
@@ -212,6 +228,7 @@ class AnalysisScript(object):
 
     def validate_args_profile_scan(self):
         """Validate parser arguments for profile scan."""
+        """
         if (self.analysis_args.min_settings is None and
             self.analysis_args.min_method is None and
             not self.analysis_args.no_profile):
@@ -222,12 +239,14 @@ class AnalysisScript(object):
                 'Invalid options: specify "--min-settings" or "--min-method"'
                 ' or set "--no-profile".'
             )
+        """
         if self.analysis_args.fluctuate_fid:
             raise ArgumentError(
                 None,
                 'Invalid options: profile scan does not know how to deal with'
                 ' --fluctuate-fid.'
             )
+        return
 
 
     ############### Subparser setup ###############
@@ -412,10 +431,18 @@ class AnalysisScript(object):
             add_help=False
         )
         parser.add_argument(
-            '--ordering-check',
-            action='store_true',
-            help='''Fit both ordering hypotheses. This should only be flagged if
-            the ordering is NOT the discrete hypothesis being tested'''
+            '--fit-settings',
+            type=str, metavar='FIT_CFG', default=None,
+            help='''Fit settings config file. If omitted, fitting is
+            carried out according to minimizer settings.'''
+        )
+        parser.add_argument(
+            '--extra-selection',
+            type=str, action='append', required=False,
+            help='''Provide the name of an extra parameter selection to optimize
+            over in each fit. Repeat if you want to optimize over multiple
+            selections/hypos. Note that no extra selection is allowed to be part
+            of the regular hypothesis selections.'''
         )
         parser.add_argument(
             '--no-min-history',
@@ -659,8 +686,8 @@ class AnalysisScript(object):
         parser.add_argument(
             '--no-octant-check',
             action='store_true',
-            help='''Disable fitting hypotheses in theta23 octant opposite
-            initial octant.'''
+            help='''Disable rerunning fit from theta23 octant opposite from
+            outcome of initial fit.'''
         )
         self.min_local_parser = parser
 
@@ -684,11 +711,6 @@ class AnalysisScript(object):
             for a parameter, with units. Provide one for each parameter
             passed via '--param-name' (in the same order).
             Example: "np.linspace(35,55,10)*ureg.deg".'''
-        )
-        parser.add_argument(
-            '--no-outer',
-            action='store_true',
-            help='''Do not scan points as outer product of inner sequences.'''
         )
         parser.add_argument(
             '--no-profile',

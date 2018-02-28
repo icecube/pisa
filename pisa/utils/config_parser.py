@@ -510,7 +510,8 @@ def parse_fit_config(config):
     # parameters
     fit_params = config['fit.params']
     wildcard_used = False
-    # TODO: cannot allow overlap in parameters between different methods
+    # to prevent single parameters from being assigned to multiple methods
+    fit_pnames_collected = set()
     for fit_method in sorted(fit_methods):
         wildcard_here = False
         if not fit_method in fit_params:
@@ -518,8 +519,16 @@ def parse_fit_config(config):
             # at least wildcard required
             raise ValueError('Please specify which parameters should be fit'
                              ' via "%s".' % fit_method)
-        method_params = ''.join(fit_params[fit_method].split()).split(',')
-        if wildcard in method_params:
+        method_pnames = ''.join(fit_params[fit_method].split()).split(',')
+        for pname in method_pnames:
+            if pname in fit_pnames_collected:
+                raise ValueError(
+                    'Parameter "%s" already assigned to a fit method other than'
+                    ' "%s"!' % (pname, fit_method)
+                )
+                fit_pnames_collected.add(pname)
+        # TODO: make sure only one occurrence of any parameter within a method
+        if wildcard in method_pnames:
             if wildcard_used:
                 raise ValueError(
                     'Cannot use wildcard "%s" more than once in a fit config.'
@@ -528,7 +537,7 @@ def parse_fit_config(config):
             wildcard_used = True
             wildcard_here = True
         settings_dict[fit_method] = {
-            'params': {p: {} for p in sorted(method_params)}
+            'params': {p: {} for p in sorted(method_pnames)}
         }
         # require a section for the fit method
         if not config.has_section(fit_method):
@@ -564,10 +573,10 @@ def parse_fit_config(config):
                             ' method "%s" since you used the wildcard!'
                             % (opt, fit_method)
                         )
-                for param in method_params:
+                for pname in method_pnames:
                     # options set as <param>.<opt> take precedence over global
                     # setting of <opt>
-                    param_opt = '%s.%s' % (param, opt)
+                    param_opt = '%s.%s' % (pname, opt)
                     if param_opt in config[fit_method]:
                         if 'fit_method' == 'minimize':
                             raise ValueError(
@@ -592,9 +601,9 @@ def parse_fit_config(config):
                             raise ValueError(
                                 'No option "%s" found for "%s". Either'
                                 ' set "%s" explicitly or set a "%s" default.'
-                                % (opt, param, param_opt, opt)
+                                % (opt, pname, param_opt, opt)
                             )
-                    settings_dict[fit_method]['params'][param][opt] = val
+                    settings_dict[fit_method]['params'][pname][opt] = val
         # have to record the global defaults so we can later on apply them
         # to the remaining parameters if the wildcard is used
         if wildcard_here:
