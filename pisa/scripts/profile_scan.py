@@ -70,6 +70,7 @@ def profile_scan(init_args_d, return_outputs=False):
     scan_vals_lists = init_args_d.pop('scan_vals')
     scan_vals = [eval(scan_vals_list) for scan_vals_list in scan_vals_lists]
     profile = not init_args_d.pop('no_profile')
+    # TODO: do we need the below
     store_intermediate = init_args_d.pop('store_intermediate')
 
     hypo_testing = HypoTesting(**init_args_d)
@@ -79,3 +80,8 @@ def profile_scan(init_args_d, return_outputs=False):
         scan_vals=scan_vals,
         profile=profile
     )
+
+    #to_file(scan_res, 'out.json.bz2')
+
+    if return_outputs:
+        return scan_res

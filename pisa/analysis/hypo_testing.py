@@ -1436,6 +1436,9 @@ class HypoTesting(Analysis):
         self.minimizer_settings_fpath = os.path.join(
             self.logroot, 'minimizer_settings.json'
         )
+        self.fit_settings_fpath = os.path.join(
+            self.logroot, 'fit_settings.json'
+        )
         self.run_info_fname = (
             'run_%s_%s_%s.info'
             %(self.invocation_datetime, self.hostname, self.random_suffix)
@@ -1454,6 +1457,7 @@ class HypoTesting(Analysis):
         summary['source_provenance'] = d
 
         d = OrderedDict()
+        # TODO
         #d['minimizer_name'] = self.minimizer_settings['method']['value']
         d['minimizer_settings_hash'] = self.minimizer_settings_hash
         d['check_octant'] = self.check_octant
@@ -1593,6 +1597,11 @@ class HypoTesting(Analysis):
             to_file(self.minimizer_settings, self.minimizer_settings_fpath)
         return
 
+    def write_fit_settings(self):
+        if not os.path.isfile(self.fit_settings_fpath):
+            to_file(self.fit_settings, self.fit_settings_fpath)
+        return
+
     def write_run_stop_info(self, exc=None):
         if isinstance(exc, Sequence):
             if exc[0] is None:
@@ -1632,7 +1641,7 @@ class HypoTesting(Analysis):
 
     def log_fit(self, fit_info, dirpath, label):
         serialize = ['metric', 'metric_val', 'params', 'minimizer_time',
-                     'detailed_metric_info', 'minimizer_metadata',
+                     'detailed_metric_info', #'minimizer_metadata',
                      'num_distributions_generated']
         if self.store_minimizer_history:
             serialize.append('fit_history')
@@ -1721,6 +1730,7 @@ class HypoTesting(Analysis):
         self.setup_logging(reset_params=False)
         self.write_config_summary(reset_params=False)
         self.write_minimizer_settings()
+        self.write_fit_settings()
         self.write_run_info()
         # Now do the fits
         self.generate_data()
@@ -2102,9 +2112,11 @@ class HypoTesting(Analysis):
         results = {'scan_vals': {pname: [] for pname in param_names}, 'trials': []}
 
         # Setup logging and things.
-        self.setup_logging(reset_params=False)
-        #self.write_config_summary(reset_params=False)
+        self.setup_logging()
+        # doesn't seem to work if stages don't define attributes to hash?
+        #self.write_config_summary()
         self.write_minimizer_settings()
+        self.write_fit_settings()
         self.write_run_info()
 
         # Loop for multiple (if fluctuated) data distributions
@@ -2163,12 +2175,14 @@ class HypoTesting(Analysis):
                     check_octant=self.check_octant,
                     pprint=self.pprint,
                     blind=self.blind,
-                    reset_free=self.reset_free
+                    reset_free=self.reset_free,
+                    # TODO: allow this
+                    return_full_scan=False,
                 )[0]
 
                 self.log_fit(fit_info=self.h0_fit_to_data,
                              dirpath=self.thisdata_dirpath,
-                             label=self.labels.h0_fit_to_data)
+                             label=msg) #FIXME
                 trial_results['results'].append(self.h0_fit_to_data)
             results['trials'].append(trial_results)
             # At the end, reset the parameters in the maker
