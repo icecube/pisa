@@ -6,7 +6,7 @@ Common tools for performing an analysis collected into a single class
 
 from __future__ import absolute_import, division
 
-from collections import OrderedDict, Sequence
+from collections import Mapping, OrderedDict, Sequence
 from copy import deepcopy
 from itertools import product
 import sys
@@ -282,15 +282,13 @@ def apply_fit_settings(fit_settings, free_params):
     # or for more complex things such as seeds
     new_minimize_settings_d = {'global': None, 'local': None, 'params': []}
     for pname, sett_d in minimize_settings['params'].items():
-        min_sett_global = sett_d['global']
-        if isinstance(min_sett_global, basestring):
-            min_sett_global = parse_minimizer_config(min_sett_global)
-        min_sett_local = sett_d['local']
-        if isinstance(min_sett_local, basestring):
-            min_sett_local = parse_minimizer_config(min_sett_local)
-
-        new_minimize_settings_d['global'] = min_sett_global
-        new_minimize_settings_d['local'] = min_sett_local
+        for opt in ['local', 'global']:
+            # ensure necessary condition for this being parsed min. cfg
+            assert isinstance(sett_d[opt], Mapping) or sett_d[opt] is None
+            # also ensure all are identical
+            if new_minimize_settings_d[opt]:
+                assert sett_d[opt] == new_minimize_settings_d[opt]
+            new_minimize_settings_d[opt] = sett_d[opt]
         new_minimize_settings_d['params'].append(pname)
 
     processed_fit_settings['minimize'] = new_minimize_settings_d
@@ -389,7 +387,7 @@ class Analysis(object):
         hypo_maker.update_params(theta23)
 
         # Re-run minimizer starting at new point
-        new_fit_info = self.fit_hypo_inner(
+        new_fit_info = self._fit_hypo_inner(
             hypo_maker=hypo_maker,
             data_dist=data_dist,
             metric=metric,
@@ -419,7 +417,7 @@ class Analysis(object):
             hypo_maker.update_params(theta23)
 
             # Re-run minimizer starting at new point
-            new_fit_info = self.fit_hypo_inner(
+            new_fit_info = self._fit_hypo_inner(
                 hypo_maker=hypo_maker,
                 data_dist=data_dist,
                 metric=metric,
@@ -454,7 +452,7 @@ class Analysis(object):
                  minimizer_settings=None, other_metrics=None,
                  return_full_scan=False, blind=False, pprint=True):
         """Fitter "outer" loop: If `check_octant` is True, run
-        `fit_hypo_inner` starting in each octant of theta23 (assuming that
+        `_fit_hypo_inner` starting in each octant of theta23 (assuming that
         is a param in the `hypo_maker`). Otherwise, just run the inner
         method once.
 
@@ -513,7 +511,7 @@ class Analysis(object):
 
         Returns
         -------
-        best_fit_info : OrderedDict (see fit_hypo_inner method for details of
+        best_fit_info : OrderedDict (see _fit_hypo_inner method for details of
             `fit_info` dict)
         alternate_fits : list of `fit_info` from other fits run
 
@@ -543,6 +541,10 @@ class Analysis(object):
                         'global': fit_settings['minimize']['global'],
                         'local': fit_settings['minimize']['local']
                     }
+                else:
+                    logging.warn('Minimizer settings provided as argument'
+                                 ' to `fit_hypo` used to override those in'
+                                 ' the fit settings!')
             else:
                 if check_octant:
                     logging.warn(
@@ -563,7 +565,7 @@ class Analysis(object):
         else:
             # when there are no fit settings we want the default
             # behavior - just numerical minimization over all free
-            # parameters: `fit_hypo_inner` makes sure of this
+            # parameters: `_fit_hypo_inner` makes sure of this
             if hypo_maker.params.free and minimizer_settings is None:
                 raise ValueError(
                     'You did not specify any fit settings, but there are free'
@@ -604,7 +606,7 @@ class Analysis(object):
                 # Saves the current minimizer start values
                 minimizer_start_params = hypo_maker.params
 
-            best_fit_info = self.fit_hypo_inner(
+            best_fit_info = self._fit_hypo_inner(
                 hypo_maker=hypo_maker,
                 data_dist=data_dist,
                 metric=metric,
@@ -663,7 +665,7 @@ class Analysis(object):
         return best_fits, alternate_fits
 
 
-    def fit_hypo_inner(self, data_dist, hypo_maker, metric,
+    def _fit_hypo_inner(self, data_dist, hypo_maker, metric,
                        fit_settings_inner=None, minimizer_settings=None,
                        other_metrics=None, pprint=True, blind=False):
 
@@ -798,7 +800,7 @@ class Analysis(object):
         )
 
         counter = Counter()
-        
+
         fit_history = []
         fit_history.append([metric] + [p.name for p in hypo_maker.params.free])
 
@@ -1341,4 +1343,3 @@ def test_fitting():
 
 if __name__ == '__main__':
     test_fitting()
-    

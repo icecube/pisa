@@ -448,9 +448,9 @@ class HypoTesting(Analysis):
     TODO
 
     """
-    def __init__(self, logdir, minimizer_settings,
+    def __init__(self, logdir,
                  data_is_data, fluctuate_data, fluctuate_fid,
-                 metric, other_metrics=None, fit_settings=None,
+                 metric, other_metrics=None, fit_settings=None, minimizer_settings=None,
                  h0_name=None, h0_maker=None, h0_param_selections=None, h0_fid_asimov_dist=None,
                  h1_name=None, h1_maker=None, h1_param_selections=None, h1_fid_asimov_dist=None,
                  data_name=None, data_maker=None, data_param_selections=None, data_dist=None,
@@ -477,6 +477,7 @@ class HypoTesting(Analysis):
             raise ValueError('`h0_maker` must be specified (and not None)')
         if not isinstance(h0_maker, DistributionMaker):
             h0_maker = DistributionMaker(h0_maker)
+        # Convert empty strings to None, otherwise put the string in a list
         if isinstance(h0_param_selections, basestring):
             h0_param_selections = h0_param_selections.strip().lower()
             if h0_param_selections == '':
@@ -489,6 +490,12 @@ class HypoTesting(Analysis):
                 h1_param_selections = None
             else:
                 h1_param_selections = [h1_param_selections]
+        if isinstance(extra_param_selections, basestring):
+            extra_param_selections = extra_param_selections.strip().lower()
+            if extra_param_selections == '':
+                extra_param_selections = None
+            else:
+                extra_param_selections = [extra_param_selections]
         if isinstance(data_param_selections, basestring):
             data_param_selections = data_param_selections.strip().lower()
             if data_param_selections == '':
@@ -496,12 +503,16 @@ class HypoTesting(Analysis):
             else:
                 data_param_selections = [h0_param_selections]
 
+        # empty lists become None also
         if (isinstance(h0_param_selections, Sequence)
                 and not h0_param_selections):
             h0_param_selections = None
         if (isinstance(h1_param_selections, Sequence)
                 and not h1_param_selections):
             h1_param_selections = None
+        if (isinstance(extra_param_selections, Sequence)
+                and not extra_param_selections):
+            extra_param_selections = None
         if (isinstance(data_param_selections, Sequence)
                 and not data_param_selections):
             data_param_selections = None
@@ -595,6 +606,12 @@ class HypoTesting(Analysis):
                 else:
                     data_maker = DistributionMaker(data_maker)
 
+        # Only allow for either minimizer settings or fit settings to be
+        # provided, but not both.
+        if minimizer_settings and fit_settings:
+            raise ValueError('Please provide either a minimizer settings'
+                             ' or a fit settings argument, but not both!')
+
         # Read in minimizer settings
         if isinstance(minimizer_settings, basestring):
             minimizer_settings = parse_minimizer_config(minimizer_settings)
@@ -606,9 +623,7 @@ class HypoTesting(Analysis):
         assert isinstance(fit_settings, Mapping) or fit_settings is None
 
         # Read in and validate extra param selections
-        if extra_param_selections is None:
-            extra_param_selections = [extra_param_selections]
-        else:
+        if extra_param_selections is not None:
             assert isinstance(extra_param_selections, Sequence)
             for selection in extra_param_selections:
                 for regular_param_selections in\
@@ -1513,8 +1528,11 @@ class HypoTesting(Analysis):
         summary['h1_params_hash'] = self.h1_maker.params.hash
         summary['h1_params'] = [str(p) for p in self.h1_maker.params]
         summary['h1_pipelines'] = self.summarize_dist_maker(self.h1_maker)
-
-        summary['extra_param_selections'] = ','.join(self.extra_param_selections)
+        if self.extra_param_selections is None:
+            extra_param_selections = ['None']
+        else:
+            extra_param_selections = self.extra_param_selections
+        summary['extra_param_selections'] = ','.join(extra_param_selections)
 
         # Reverse the order so it serializes to a file as intended
         # (want top-to-bottom file convention vs. fifo streaming data
@@ -1641,7 +1659,7 @@ class HypoTesting(Analysis):
 
     def log_fit(self, fit_info, dirpath, label):
         serialize = ['metric', 'metric_val', 'params', 'fit_time',
-                     'detailed_metric_info', #'minimizer_metadata',
+                     'detailed_metric_info', 'minimizer_metadata',
                      'num_distributions_generated', 'hypo_asimov_dist',
                      ]
         if self.store_minimizer_history:
@@ -1653,7 +1671,7 @@ class HypoTesting(Analysis):
                 continue
             if k == 'params':
                 d = OrderedDict()
-                for param in v: # record all hypo parameter values
+                for param in v: # record *all* hypo parameter values
                     d[param.name] = str(param.value)
                 v = d
             if k == 'minimizer_metadata':
@@ -2117,7 +2135,7 @@ class HypoTesting(Analysis):
         # Setup logging and things.
         self.setup_logging()
         # doesn't seem to work if stages don't define attributes to hash?
-        #self.write_config_summary()
+        self.write_config_summary()
         self.write_minimizer_settings()
         self.write_fit_settings()
         self.write_run_info()

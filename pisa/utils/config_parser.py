@@ -555,13 +555,20 @@ def parse_fit_config(config):
                 if opt in config[fit_method]:
                     val = config[fit_method][opt]
                     found_default = True
-                    try:
-                        val = parse_quantity(val)
-                        method_defaults[fit_method][opt] = val.nominal_value
-                    except:
-                        # remove *any* whitespace
-                        val = ''.join(parse_string_literal(val).split())
-                        method_defaults[fit_method][opt] = val
+                    if val == "None":
+                        method_defaults[fit_method][opt] = None
+                    # parse minimizer config
+                    elif fit_method == 'minimize' and opt in ['global', 'local']:
+                        print "parsing minimizer config"
+                        method_defaults[fit_method][opt] = parse_minimizer_config(val)
+                    else:
+                        try:
+                            val = parse_quantity(val)
+                            method_defaults[fit_method][opt] = val.nominal_value
+                        except:
+                            # remove *any* whitespace
+                            val = ''.join(parse_string_literal(val).split())
+                            method_defaults[fit_method][opt] = val
                     # processed, so remove
                     config[fit_method].pop(opt)
                 else:
