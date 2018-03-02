@@ -1785,6 +1785,8 @@ class HypoTesting(Analysis):
             such as sin2theta23.
 
         """
+        # record so we don't keep appending to it
+        data_name = self.labels.data_name
         # Scan over the injected values. We also loop over the requested vals
         # here in case they are different so that value can be put in labels
         for inj_val, requested_val in zip(inj_vals, requested_vals):
@@ -1814,9 +1816,9 @@ class HypoTesting(Analysis):
             # Make names reflect parameter value
             if param_name == 'deltam3l':
                 self.labels = Labels(
-                    h0_name=self.h0_name,
-                    h1_name=self.h1_name,
-                    data_name=self.data_name+'_%s_%.4f'
+                    h0_name=self.labels.h0_name,
+                    h1_name=self.labels.h1_name,
+                    data_name=data_name+'_%s_%.4f'
                     %(param_name, requested_val*1000.0),
                     data_is_data=False,
                     fluctuate_data=False,
@@ -1824,9 +1826,9 @@ class HypoTesting(Analysis):
                 )
             else:
                 self.labels = Labels(
-                    h0_name=self.h0_name,
-                    h1_name=self.h1_name,
-                    data_name=self.data_name+'_%s_%.4f'
+                    h0_name=self.labels.h0_name,
+                    h1_name=self.labels.h1_name,
+                    data_name=data_name+'_%s_%.4f'
                     %(param_name, requested_val),
                     data_is_data=False,
                     fluctuate_data=False,
@@ -2069,8 +2071,11 @@ class HypoTesting(Analysis):
                         h1_param.is_fixed = False
 
     def hypo_scan(self, param_names, scan_vals, profile):
+        assert not self.blind # deal with blindess
         if isinstance(param_names, basestring):
             param_names = [param_names]
+
+        data_name = self.labels.data_name
 
         # cannot allow for any of the params to be scanned to be part of
         # the fit settings
@@ -2150,27 +2155,25 @@ class HypoTesting(Analysis):
                     params[pname].value = val
                     if self.data_ind == self.data_start_ind:
                         results['scan_vals'][pname].append(val)
-                    if not blind:
-                        if isinstance(val, float) or isinstance(val, ureg.Quantity):
-                            if pos_msg:
-                                pos_msg += sep
-                            pos_msg += '%s = %s'%(pname, val)
-                        else:
-                            if not self.blind:
-                                # no need to raise an error in the case of blindness
-                                raise TypeError(
-                                    "Value is of type %s which I don't know "
-                                    "how to deal with in the output "
-                                    "messages."% type(val)
-                                )
-                        logging.info('Working on hypo point ' + pos_msg)
+                    if isinstance(val, float) or isinstance(val, ureg.Quantity):
+                        if pos_msg:
+                            pos_msg += sep
+                        pos_msg += '%s = %s'%(pname, val)
+                    else:
+                        # no need to raise an error in the case of blindness
+                        raise TypeError(
+                            "Value is of type %s which I don't know "
+                            "how to deal with in the output "
+                            "messages."% type(val)
+                        )
+                logging.info('Working on hypo point ' + pos_msg)
                 self.h0_maker.update_params(params)
 
                 self.labels = Labels(
-                    h0_name=self.h0_name,
+                    h0_name=self.labels.h0_name,
                     h1_name='',
-                    data_name=self.data_name+'_%s_%s'
-                    %(param_name, msg),
+                    data_name=data_name+'_%s'
+                    %(pos_msg),
                     data_is_data=self.data_is_data,
                     fluctuate_data=self.fluctuate_data,
                     fluctuate_fid=self.fluctuate_fid
