@@ -759,7 +759,6 @@ class Analysis(object):
             'minimizer_metadata'
 
         """
-        print minimizer_settings
         if set(minimizer_settings.keys()) == set(('local', 'global')):
             # allow for an entry of `None`
             for minimizer_type in ['local', 'global']:
@@ -964,7 +963,7 @@ class Analysis(object):
 
         # store the fit duration
         fit_time = end_t - start_t
-        fit_info['pull_time'] = fit_time * ureg.sec
+        fit_info['fit_time'] = fit_time * ureg.sec
 
         if blind:
             hypo_maker.reset_free()
@@ -1005,6 +1004,9 @@ class Analysis(object):
         fit_info = OrderedDict()
         fit_info['metric'] = metric
 
+        # record start time
+        start_t = time.time()
+
         # Assess the fit: whether the data came from the hypo_asimov_dist
         try:
             metric_val = (
@@ -1019,6 +1021,9 @@ class Analysis(object):
                 )
             raise
 
+        # record stop time
+        end_t = time.time()
+
         fit_info['metric_val'] = metric_val
 
         if blind:
@@ -1030,8 +1035,10 @@ class Analysis(object):
             params=hypo_params, metric=metric, other_metrics=other_metrics,
             blind=blind
         )
-        fit_info['minimizer_time'] = 0 * ureg.sec
-        fit_info['num_distributions_generated'] = 0
+        # store the fit duration
+        fit_time = end_t - start_t
+        fit_info['fit_time'] = fit_time * ureg.sec
+        fit_info['num_distributions_generated'] = 1
         fit_info['minimizer_metadata'] = OrderedDict()
         # If blind replace hypo_asimov_dist with none object
         if blind:

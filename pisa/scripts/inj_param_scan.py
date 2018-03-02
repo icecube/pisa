@@ -229,11 +229,7 @@ def inj_param_scan(init_args_d, return_outputs=False):
         param_name=param_name,
         test_name=test_name,
         inj_vals=inj_vals,
-        requested_vals=requested_vals,
-        #TODO: there seems to be some fairly opaque logic w.r.t. these names in HypoTesting and it asimov_inj_param_scan script
-        h0_name=init_args_d['h0_name'],
-        h1_name=init_args_d['h1_name'],
-        data_name=init_args_d['data_name']
+        requested_vals=requested_vals
     )
 
     if return_outputs:

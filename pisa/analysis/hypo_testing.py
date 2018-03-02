@@ -811,7 +811,7 @@ class HypoTesting(Analysis):
                 raise exc[0], exc[1], exc[2]
 
     def generate_data(self):
-        """Geneerate "data" distribution"""
+        """Generate "data" distribution"""
         logging.info('Generating %s distributions.', self.labels.data_disp)
         # Ambiguous whether we're dealing with Asimov or regular data if the
         # data set is provided for us, so just return it.
@@ -1640,9 +1640,10 @@ class HypoTesting(Analysis):
         logging.info('Total analysis run time: ' + dt_stamp)
 
     def log_fit(self, fit_info, dirpath, label):
-        serialize = ['metric', 'metric_val', 'params', 'minimizer_time',
+        serialize = ['metric', 'metric_val', 'params', 'fit_time',
                      'detailed_metric_info', #'minimizer_metadata',
-                     'num_distributions_generated']
+                     'num_distributions_generated', 'hypo_asimov_dist',
+                     ]
         if self.store_minimizer_history:
             serialize.append('fit_history')
 
@@ -1652,7 +1653,7 @@ class HypoTesting(Analysis):
                 continue
             if k == 'params':
                 d = OrderedDict()
-                for param in v.free:
+                for param in v: # record all hypo parameter values
                     d[param.name] = str(param.value)
                 v = d
             if k == 'minimizer_metadata':
@@ -1757,7 +1758,7 @@ class HypoTesting(Analysis):
         self.toy_data_asimov_dist = None
 
     def asimov_inj_param_scan(self, param_name, test_name, inj_vals,
-                              requested_vals, h0_name, h1_name, data_name):
+                              requested_vals):
         """Perform the Asimov hypo testing analysis over some injected data
         parameter. This will be the parameter specified by test_name and the
         injected values are in inj_vals. The requested vals from the command
@@ -1782,9 +1783,6 @@ class HypoTesting(Analysis):
             the same as inj_vals in cases where, for example, the units
             had to be changed or the scan is over some special variable
             such as sin2theta23.
-
-        *_name : string
-            Same as for the HypoTesting class.
 
         """
         # Scan over the injected values. We also loop over the requested vals
@@ -1816,9 +1814,9 @@ class HypoTesting(Analysis):
             # Make names reflect parameter value
             if param_name == 'deltam3l':
                 self.labels = Labels(
-                    h0_name=h0_name,
-                    h1_name=h1_name,
-                    data_name=data_name+'_%s_%.4f'
+                    h0_name=self.h0_name,
+                    h1_name=self.h1_name,
+                    data_name=self.data_name+'_%s_%.4f'
                     %(param_name, requested_val*1000.0),
                     data_is_data=False,
                     fluctuate_data=False,
@@ -1826,9 +1824,9 @@ class HypoTesting(Analysis):
                 )
             else:
                 self.labels = Labels(
-                    h0_name=h0_name,
-                    h1_name=h1_name,
-                    data_name=data_name+'_%s_%.4f'
+                    h0_name=self.h0_name,
+                    h1_name=self.h1_name,
+                    data_name=self.data_name+'_%s_%.4f'
                     %(param_name, requested_val),
                     data_is_data=False,
                     fluctuate_data=False,
@@ -2146,22 +2144,38 @@ class HypoTesting(Analysis):
             self.generate_data()
             trial_results = {'data_dist': self.data_dist, 'results': []}
             for i, pos in enumerate(product(*steplist)):
-                msg = ''
+                pos_msg = ''
                 sep = ', '
                 for (pname, val) in pos:
                     params[pname].value = val
                     if self.data_ind == self.data_start_ind:
                         results['scan_vals'][pname].append(val)
-                    if isinstance(val, float) or isinstance(val, ureg.Quantity):
-                        if msg:
-                            msg += sep
-                        msg += '%s = %s'%(pname, val)
-                    else:
-                        raise TypeError("val is of type %s which I don't know "
-                                        "how to deal with in the output "
-                                        "messages."% type(val))
-                logging.info('Working on hypo point ' + msg)
+                    if not blind:
+                        if isinstance(val, float) or isinstance(val, ureg.Quantity):
+                            if pos_msg:
+                                pos_msg += sep
+                            pos_msg += '%s = %s'%(pname, val)
+                        else:
+                            if not self.blind:
+                                # no need to raise an error in the case of blindness
+                                raise TypeError(
+                                    "Value is of type %s which I don't know "
+                                    "how to deal with in the output "
+                                    "messages."% type(val)
+                                )
+                        logging.info('Working on hypo point ' + pos_msg)
                 self.h0_maker.update_params(params)
+
+                self.labels = Labels(
+                    h0_name=self.h0_name,
+                    h1_name='',
+                    data_name=self.data_name+'_%s_%s'
+                    %(param_name, msg),
+                    data_is_data=self.data_is_data,
+                    fluctuate_data=self.fluctuate_data,
+                    fluctuate_fid=self.fluctuate_fid
+                )
+
                 # the no-profile case is handled internally
                 self.h0_fit_to_data = self.optimize_discrete_selections(
                     data_dist=self.data_dist,
@@ -2182,7 +2196,7 @@ class HypoTesting(Analysis):
 
                 self.log_fit(fit_info=self.h0_fit_to_data,
                              dirpath=self.thisdata_dirpath,
-                             label=msg) #FIXME
+                             label=self.labels.h0_fit_to_data)
                 trial_results['results'].append(self.h0_fit_to_data)
             results['trials'].append(trial_results)
             # At the end, reset the parameters in the maker
