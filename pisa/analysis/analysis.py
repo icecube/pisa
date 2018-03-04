@@ -25,7 +25,7 @@ from pisa.utils.log import logging
 from pisa.utils.minimization import set_minimizer_defaults, minimizer_x0_bounds,\
                                     validate_minimizer_settings,\
                                     display_minimizer_header, run_minimizer,\
-                                    Counter, MINIMIZERS_USING_SYMM_GRAD,\
+                                    MINIMIZERS_USING_SYMM_GRAD,\
                                     LOCAL_MINIMIZERS_WITH_DEFAULTS
 from pisa.utils.pull_method import calculate_pulls
 from pisa.utils.stats import METRICS_TO_MAXIMIZE, it_got_better
@@ -35,7 +35,7 @@ __all__ = ['Analysis', 'apply_fit_settings', 'ANALYSIS_METHODS']
 
 __author__ = 'J.L. Lanfranchi, P. Eller, S. Wren, T. Ehrhardt'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2018, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -296,6 +296,31 @@ def apply_fit_settings(fit_settings, free_params):
     return processed_fit_settings
 
 
+class Counter(object):
+    """Simple counter object for use e.g. as a minimizer callback."""
+    def __init__(self, i=0):
+        self._count = i
+
+    def __str__(self):
+        return str(self._count)
+
+    def __repr__(self):
+        return str(self)
+
+    def __iadd__(self, inc):
+        self._count += inc
+        return self
+
+    def reset(self):
+        """Reset counter"""
+        self._count = 0
+
+    @property
+    def count(self):
+        """int : Current count"""
+        return self._count
+
+
 class Analysis(object):
     """Major tools for performing "canonical" IceCube/DeepCore/PINGU analyses.
 
@@ -309,7 +334,7 @@ class Analysis(object):
     """
     def __init__(self):
         self._nit = 0
-
+        self.counter = Counter()
 
     def optimize_discrete_selections(
             self, data_dist, hypo_maker, hypo_param_selections,
@@ -326,9 +351,13 @@ class Analysis(object):
         if not isinstance(hypo_param_selections, Sequence):
             hypo_param_selections = [hypo_param_selections]
 
+        start_t = time.time()
+
         # here we store the (best) fit(s) for each discrete selection
         fit_infos = []
         fit_metric_vals = []
+        fit_num_dists = []
+        fit_times = []
         for extra_param_selection in extra_param_selections:
             if (extra_param_selection is not None and
                 extra_param_selection in hypo_param_selections):
@@ -357,12 +386,20 @@ class Analysis(object):
                 other_metrics=other_metrics,
                 return_full_scan=return_full_scan,
                 blind=blind,
-                pprint=pprint
+                pprint=pprint,
             )
 
             fit_infos.append(this_hypo_fits)
-            fit_metric_vals.append([hypo_fit['metric_val'] for
-                                    hypo_fit in this_hypo_fits])
+            fit_metric_vals.append(
+                [hypo_fit['metric_val'] for hypo_fit in this_hypo_fits]
+            )
+            fit_num_dists.append(
+                [hypo_fit['num_distributions_generated'] for
+                 hypo_fit in this_hypo_fits]
+            )
+            fit_times.append(
+                [hypo_fit['fit_time'].m_as('second') for hypo_fit in this_hypo_fits]
+            )
         # what's returned by fit_hypo can either be a full scan or just
         # a single point - in any case, for each point we now optimize
         # the extra selections manually
@@ -370,9 +407,25 @@ class Analysis(object):
             bf_dims = np.argmax(fit_metric_vals, axis=0)
         else:
             bf_dims = np.argmin(fit_metric_vals, axis=0)
+        bf_num_dists = np.sum(fit_num_dists, axis=0)
+        bf_fit_times = np.sum(fit_times, axis=0) * ureg.sec
 
         # select the fitting infos corresponding to these best metric values
         best_fit_infos = [fit_infos[dim][i] for i,dim in enumerate(bf_dims)]
+        for num_dist, fit_time, bf_info in \
+            zip(bf_num_dists, bf_fit_times, best_fit_infos):
+            bf_info['num_distributions_generated'] = num_dist
+            bf_info['fit_time'] = fit_time
+
+        end_t = time.time()
+        multi_hypo_fit_t = end_t - start_t
+
+        if len(extra_param_selections) > 1:
+            logging.info(
+                'Total time to fit all discrete hypos: %8.4f s;'
+                ' # of dists. generated: %6d',
+                multi_hypo_fit_t, np.sum(bf_num_dists)
+            )
 
         return best_fit_infos
 
@@ -516,6 +569,7 @@ class Analysis(object):
         alternate_fits : list of `fit_info` from other fits run
 
         """
+        start_t = time.time()
         # set up lists for storing the fits
         best_fits = []
         alternate_fits = []
@@ -523,6 +577,9 @@ class Analysis(object):
         # store the parameters to scan and the values to fix them to
         scan_params = []
         scan_vals = []
+
+        # reset the counter whenever we start a new hypo fit
+        self.counter = Counter()
 
         # Select the version of the parameters used for this hypothesis
         hypo_maker.select_params(hypo_param_selections)
@@ -542,9 +599,11 @@ class Analysis(object):
                         'local': fit_settings['minimize']['local']
                     }
                 else:
-                    logging.warn('Minimizer settings provided as argument'
-                                 ' to `fit_hypo` used to override those in'
-                                 ' the fit settings!')
+                    logging.warn(
+                        'Minimizer settings provided as argument'
+                        ' to `fit_hypo` used to override those in'
+                        ' the fit settings!'
+                    )
             else:
                 if check_octant:
                     logging.warn(
@@ -642,6 +701,10 @@ class Analysis(object):
                     pprint=pprint,
                     blind=blind
                 )
+            # make sure the overall best fit contains the
+            # overall number of distributions generated
+            # across the whole fitting process for this point
+            best_fit_info['num_distributions_generated'] = self.counter.count
             # append the best fit for this scan point
             best_fits.append(best_fit_info)
 
@@ -657,8 +720,21 @@ class Analysis(object):
                     ):
                     best_fit_ind = i
 
+        end_t = time.time()
+        fit_t = end_t - start_t
+
+        logging.info(
+            'Total time to fit hypo: %8.4f s;'
+            ' # of dists generated: %6d',
+            fit_t, self.counter.count,
+        )
+
         # always return full list of alternate_fits for now
         if not return_full_scan:
+            # interpret all points scanned as part of the fitting process
+            best_fits[best_fit_ind]['num_distributions_generated'] =\
+                self.counter.count
+            best_fits[best_fit_ind]['fit_time'] = fit_t * ureg.sec
             # only return best fitting point
             return [best_fits[best_fit_ind]], alternate_fits
 
@@ -684,6 +760,7 @@ class Analysis(object):
         if not len(pull_params) and not len(minimize_params):
             logging.debug("Nothing else to do. Calculating metric(s).")
             nofit_hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
+            self.counter += 1
             fit_info = self.nofit_hypo(
                 data_dist=data_dist,
                 hypo_params=hypo_maker.params,
@@ -799,8 +876,6 @@ class Analysis(object):
             minimizer_settings=minimizer_settings['local']
         )
 
-        counter = Counter()
-
         fit_history = []
         fit_history.append([metric] + [p.name for p in hypo_maker.params.free])
 
@@ -813,6 +888,9 @@ class Analysis(object):
 
         # reset number of iterations before each minimization
         self._nit = 0
+        # also create a dedicated counter for this one
+        # minimization process
+        min_counter = Counter()
 
         # record start time
         start_t = time.time()
@@ -827,25 +905,16 @@ class Analysis(object):
             hypo_maker=hypo_maker,
             data_dist=data_dist,
             metric=metric,
-            counter=counter,
+            counter=min_counter,
             fit_history=fit_history,
             pprint=pprint,
             blind=blind
         )
 
-        end_t = time.time()
         if pprint:
             # clear the line
             sys.stdout.write('\n\n')
             sys.stdout.flush()
-
-        minimizer_time = end_t - start_t
-
-        logging.info(
-            'Total time to optimize: %8.4f s; # of dists generated: %6d;'
-            ' avg dist gen time: %10.4f ms',
-            minimizer_time, counter.count, minimizer_time*1000./counter.count
-        )
 
         # Will not assume that the minimizer left the hypo maker in the
         # minimized state, so set the values now (also does conversion of
@@ -855,9 +924,24 @@ class Analysis(object):
 
         # Record the Asimov distribution with the optimal param values
         hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
+        min_counter += 1
+
+        # update the global counter
+        self.counter += min_counter.count
 
         # Get the best-fit metric value
         metric_val = sign * optimize_result.pop('fun')
+
+        end_t = time.time()
+        minimizer_time = end_t - start_t
+
+        logging.info(
+            'Total time to minimize: %8.4f s;'
+            ' # of dists. generated: %6d;'
+            ' avg. dist. gen. time: %10.4f ms',
+            minimizer_time, min_counter.count,
+            minimizer_time*1000./min_counter.count
+        )
 
         # Record minimizer metadata (all info besides 'x' and 'fun'; also do
         # not record some attributes if performing blinded analysis)
@@ -880,9 +964,10 @@ class Analysis(object):
             params=hypo_maker.params, metric=metric, other_metrics=other_metrics,
             blind=blind
         )
-        fit_info['minimizer_time'] = minimizer_time * ureg.sec
-        fit_info['num_distributions_generated'] = counter.count
-        fit_info['minimizer_metadata'] = metadata
+        fit_info['fit_time'] = minimizer_time * ureg.sec
+        # store the no. of distributions for this minimization process
+        fit_info['num_distributions_generated'] = min_counter.count
+        fit_info['fit_metadata'] = metadata
         fit_info['fit_history'] = fit_history
         # If blind replace hypo_asimov_dist with none object
         if blind:
@@ -922,6 +1007,8 @@ class Analysis(object):
         # record start time
         start_t = time.time()
 
+        pull_counter = Counter()
+
         # main algorithm: calculate fisher matrix and parameter pulls
         # TODO: check this is indeed generated at the fiducial model
         test_vals = {pname: pull_settings['values'][i] for i,pname in
@@ -931,6 +1018,7 @@ class Analysis(object):
             data_dist=data_dist,
             hypo_maker=hypo_maker,
             test_vals=test_vals,
+            counter=pull_counter
         )
 
         pulls = calculate_pulls(
@@ -949,6 +1037,8 @@ class Analysis(object):
 
         # generate the hypo distribution at the best fit
         best_fit_hypo_dist = hypo_maker.get_outputs(return_sum=True)
+        pull_counter += 1
+        self.counter += pull_counter
 
         # calculate the value of the metric at the best fit
         metric_val = (
@@ -964,8 +1054,15 @@ class Analysis(object):
         fit_info['metric_val'] = metric_val
 
         # store the fit duration
-        fit_time = end_t - start_t
-        fit_info['fit_time'] = fit_time * ureg.sec
+        fit_t = end_t - start_t
+
+        logging.info(
+            'Total time to compute pulls: %8.4f s;'
+            ' # of dists. generated: %6d',
+            fit_t, pull_counter.count,
+        )
+
+        fit_info['fit_time'] = fit_t * ureg.sec
 
         if blind:
             hypo_maker.reset_free()
@@ -977,7 +1074,7 @@ class Analysis(object):
             params=hypo_maker.params, metric=metric, other_metrics=other_metrics,
             blind=blind
         )
-        fit_info['num_distributions_generated'] = None # FIXME
+        fit_info['num_distributions_generated'] = pull_counter.count
         if blind:
             best_fit_hypo_dist = None
         fit_info['hypo_asimov_dist'] = best_fit_hypo_dist
@@ -1025,6 +1122,8 @@ class Analysis(object):
 
         # record stop time
         end_t = time.time()
+        # store the "fit" duration
+        fit_t = end_t - start_t
 
         fit_info['metric_val'] = metric_val
 
@@ -1037,11 +1136,9 @@ class Analysis(object):
             params=hypo_params, metric=metric, other_metrics=other_metrics,
             blind=blind
         )
-        # store the fit duration
-        fit_time = end_t - start_t
-        fit_info['fit_time'] = fit_time * ureg.sec
+        fit_info['fit_time'] = fit_t * ureg.sec
         fit_info['num_distributions_generated'] = 1
-        fit_info['minimizer_metadata'] = OrderedDict()
+        fit_info['fit_metadata'] = OrderedDict()
         # If blind replace hypo_asimov_dist with none object
         if blind:
             hypo_asimov_dist = None
@@ -1200,7 +1297,7 @@ class Analysis(object):
             fit_history.append(
                 [metric_val] + [v.value.m for v in hypo_maker.params.free]
             )
-            
+
         return sign*metric_val
 
     def _minimizer_callback(self, xk): # pylint: disable=unused-argument
@@ -1306,7 +1403,7 @@ def test_fitting():
     minimizer_cfg_directory = find_resource('settings/minimizer')
     minimizer_settings_global = parse_minimizer_config(
          minimizer_cfg_directory +
-        '/basinhopping_niter100_niter_success20_T1e0_stepsize5e-1_interval50.cfg'
+        '/basinhopping_niter100_niter_success2_T1e0_stepsize5e-1_interval50.cfg'
     )
     minimizer_settings_local = parse_minimizer_config(
         minimizer_cfg_directory +

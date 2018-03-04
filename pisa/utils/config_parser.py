@@ -559,7 +559,6 @@ def parse_fit_config(config):
                         method_defaults[fit_method][opt] = None
                     # parse minimizer config
                     elif fit_method == 'minimize' and opt in ['global', 'local']:
-                        print "parsing minimizer config"
                         method_defaults[fit_method][opt] = parse_minimizer_config(val)
                     else:
                         try:

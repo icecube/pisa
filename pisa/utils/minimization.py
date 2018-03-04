@@ -22,7 +22,7 @@ __all__ = ['MINIMIZERS_USING_SYMM_GRAD', 'LOCAL_MINIMIZERS_WITH_DEFAULTS',
 
 __author__ = 'J.L. Lanfranchi, P. Eller, S. Wren, T. Ehrhardt'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2018, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -510,28 +510,3 @@ def display_minimizer_header(free_params, metric):
     hdr += '\n'
 
     sys.stdout.write(hdr)
-
-
-class Counter(object):
-    """Simple counter object for use as a minimizer callback."""
-    def __init__(self, i=0):
-        self._count = i
-
-    def __str__(self):
-        return str(self._count)
-
-    def __repr__(self):
-        return str(self)
-
-    def __iadd__(self, inc):
-        self._count += inc
-
-    def reset(self):
-        """Reset counter"""
-        self._count = 0
-
-    @property
-    def count(self):
-        """int : Current count"""
-        return self._count
-
