@@ -220,6 +220,9 @@ def apply_fit_settings(fit_settings, free_params):
                     )
                     raise
             else:
+                if fit_method == 'pull':
+                    prange = eval(prange)
+                    print len(prange)
                 # need to convert from range and nvalues to linearly spaced
                 # values themselves
                 if isinstance(prange, basestring):
@@ -241,11 +244,11 @@ def apply_fit_settings(fit_settings, free_params):
                     half_width = scale_nom * nom
                     prange = [nom - half_width, nom + half_width]
                 elif isinstance(prange, Q_):
-                    if not isinstance(prange, Sequence):
-                        raise TypeError(
-                            'Range specified for parameter "%s" is not'
-                            ' a sequence but of "%s".' % (pname, type(prange))
-                        )
+                    #if not isinstance(prange, Sequence):
+                    #    raise TypeError(
+                    #        'Range specified for parameter "%s" is not'
+                    #        ' a sequence but of "%s".' % (pname, type(prange))
+                    #    )
                     if not len(prange) == 2:
                         raise ValueError(
                             'Range "%s" specified for parameter "%s" is not'
@@ -274,22 +277,23 @@ def apply_fit_settings(fit_settings, free_params):
         # overwrite entry with the new dict
         processed_fit_settings[fit_method] = new_values_d
 
-    minimize_settings = processed_fit_settings['minimize']
-    # all we do here for now is move 'global' and 'local' minimizer cfg
-    # out from under one param to its own entry (assuming all minimizer cfg's
-    # are identical) and make a simple list of params
-    # TODO: could also allow for min. ranges to be specified in fit settings,
-    # or for more complex things such as seeds
     new_minimize_settings_d = {'global': None, 'local': None, 'params': []}
-    for pname, sett_d in minimize_settings['params'].items():
-        for opt in ['local', 'global']:
-            # ensure necessary condition for this being parsed min. cfg
-            assert isinstance(sett_d[opt], Mapping) or sett_d[opt] is None
-            # also ensure all are identical
-            if new_minimize_settings_d[opt]:
-                assert sett_d[opt] == new_minimize_settings_d[opt]
-            new_minimize_settings_d[opt] = sett_d[opt]
-        new_minimize_settings_d['params'].append(pname)
+    if 'minimize' in processed_fit_settings:
+        minimize_settings = processed_fit_settings['minimize']
+        # all we do here for now is move 'global' and 'local' minimizer cfg
+        # out from under one param to its own entry (assuming all minimizer cfg's
+        # are identical) and make a simple list of params
+        # TODO: could also allow for min. ranges to be specified in fit settings,
+        # or for more complex things such as seeds
+        for pname, sett_d in minimize_settings['params'].items():
+            for opt in ['local', 'global']:
+                # ensure necessary condition for this being parsed min. cfg
+                assert isinstance(sett_d[opt], Mapping) or sett_d[opt] is None
+                # also ensure all are identical
+                if new_minimize_settings_d[opt]:
+                    assert sett_d[opt] == new_minimize_settings_d[opt]
+                new_minimize_settings_d[opt] = sett_d[opt]
+            new_minimize_settings_d['params'].append(pname)
 
     processed_fit_settings['minimize'] = new_minimize_settings_d
 
@@ -1038,7 +1042,7 @@ class Analysis(object):
         # generate the hypo distribution at the best fit
         best_fit_hypo_dist = hypo_maker.get_outputs(return_sum=True)
         pull_counter += 1
-        self.counter += pull_counter
+        self.counter += pull_counter.count
 
         # calculate the value of the metric at the best fit
         metric_val = (

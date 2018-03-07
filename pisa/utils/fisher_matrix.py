@@ -13,6 +13,7 @@ import itertools
 import json
 from scipy.stats import chi2
 
+from pisa import FTYPE
 from pisa.utils.log import logging
 
 
@@ -35,28 +36,29 @@ __license__ = '''Copyright (c) 2014-2018, The IceCube Collaboration
  limitations under the License.'''
 
 
-def build_fisher_matrix(gradient_hist_flat_d, fiducial_hist_flat, fiducial_params):
+def build_fisher_matrix(gradient_hist_flat_d, fiducial_hist, fiducial_params):
     # fix the ordering of parameters
     params = sorted(gradient_hist_flat_d.keys())
 
     # find non-empty bins in flattened map
+    fiducial_hist_flat = fiducial_hist.nominal_values['total'].flatten()
     nonempty = np.nonzero(fiducial_hist_flat)
     logging.info("Using %u non-empty bins of %u" %
                  (len(nonempty[0]), len(fiducial_hist_flat)))
 
     # get gradients as calculated above for non-zero bins
     gradients = np.array(
-        [gradient_hist_flat_d[par][nonempty] for par in params]
+        [gradient_hist_flat_d[par][nonempty] for par in params], dtype=FTYPE
     )
 
     # get error estimate from best-fit bin count for non-zero bins
     # TODO: use propagated uncertainties instead
-    variances = fiducial_hist_flat[nonempty]
+    variances = fiducial_hist['total'].std_devs.flatten()[nonempty]
 
     # Loop over all parameters per bin (simple transpose) and calculate Fisher
     # matrix by getting the outer product of all gradients in a bin.
     # Result is sum of matrix for all bins.
-    fmatrix = np.zeros((len(params), len(params)))
+    fmatrix = np.zeros((len(params), len(params)), dtype=FTYPE)
     for bin_gradients, bin_var in zip(gradients.T, variances):
         fmatrix += np.outer(bin_gradients, bin_gradients)/bin_var
 
@@ -104,7 +106,7 @@ def get_fisher_matrix(data_dist, hypo_maker, test_vals, counter):
 
     fisher = build_fisher_matrix(
         gradient_hist_flat_d=gradient_maps['total'],
-        fiducial_hist_flat=fid_hypo_asimov_dist.hist['total'].flatten(),
+        fiducial_hist=fid_hypo_asimov_dist,
         fiducial_params=hypo_params
     )
     return fisher, gradient_maps, fid_hypo_asimov_dist

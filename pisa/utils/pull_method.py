@@ -90,7 +90,7 @@ def get_gradients(param, hypo_maker, test_vals):
         hypo_maker.params[param].value = param_value
         # make the template corresponding to the current value of the parameter
         hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
-        pmaps[param_value] = hypo_asimov_dist.hist['total']
+        pmaps[param_value] = hypo_asimov_dist.nominal_values['total']
 
     gradient_map = get_derivative_map(
         hypo_maps=pmaps,
@@ -112,10 +112,10 @@ def calculate_pulls(fisher, fid_maps_truth, fid_hypo_asimov_dist, gradient_maps)
         gm = gradient_maps[chan]
         # binwise differences between truth and model in this chan
         # [d_bin1, d_bin2, ..., d_bin780]
-        dm = np.subtract(fid_maps_truth[chan].hist, fid_hypo_asimov_dist[chan].hist).flatten()
+        dm = np.subtract(fid_maps_truth[chan].nominal_values, fid_hypo_asimov_dist[chan].nominal_values).flatten()
         # binwise statist. uncertainties for truth
         # [sigma_bin1, sigma_bin2, ..., sigma_bin3]
-        sigma = fid_maps_truth[chan].hist.flatten()
+        sigma = fid_maps_truth[chan].std_devs.flatten()
         for i, param in enumerate(f.parameters):
             chan_d.append([])
             assert(param in gm.keys())

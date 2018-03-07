@@ -496,7 +496,7 @@ def parse_fit_config(config):
     # ("<param>.<opt> = ..."), but if the latter doesn't exist a global
     # default must be there
     method_defaults = {'scan': {'range': None, 'nvalues': None},
-                       'pull': {'range': None, 'nvalues': None},
+                       'pull': {'lin_range': None},
                         # probably won't want to allow different minimizers for
                         # different parameters, but at least we already have
                         # the structure here for more complex fit settings for

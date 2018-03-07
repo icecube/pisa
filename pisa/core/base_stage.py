@@ -67,10 +67,10 @@ class BaseStage(object):
                  params=None,
                  expected_params=None,
                  input_names=None,
-                 output_names=None, 
+                 output_names=None,
                  debug_mode=None,
                  error_method=None,
-                 ):
+                ):
 
         # Allow for string inputs, but have to populate into lists for
         # consistent interfacing to one or multiple of these things
@@ -130,6 +130,8 @@ class BaseStage(object):
             self._error_method = None
 
         self.inputs = None
+
+        self._attrs_to_hash = set([])
 
 
     def setup(self):
@@ -282,4 +284,3 @@ class BaseStage(object):
         errors for its transforms and outputs (whichever is applicable). Errors
         on inputs are propagated regardless of this setting."""
         return self._error_method
-

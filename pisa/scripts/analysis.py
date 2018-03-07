@@ -445,6 +445,12 @@ class AnalysisScript(object):
             of the regular hypothesis selections.'''
         )
         parser.add_argument(
+            '--force-fits',
+            action='store_true',
+            help='''Force all Asimov fits to be done, even for cases where
+            'the truth should be recovered by definition.'''
+        )
+        parser.add_argument(
             '--no-min-history',
             action='store_true',
             help='''Do not store minimizer history (steps). This behavior is also
