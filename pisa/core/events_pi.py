@@ -6,6 +6,7 @@ import copy, collections
 
 import numpy as np 
 
+from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.log import logging
 from pisa.utils.fileio import from_file, to_file
 #from pisa.core.container import Container
@@ -147,8 +148,14 @@ class EventsPi(collections.OrderedDict) :
 
         assert isinstance(keep_criteria, basestring)
 
+        if not keep_criteria:
+            logging.debug(
+                'Empy criteria. Returning events unmodified.'
+            )
+            return self
+
         # Check if have already applied these cuts
-        if keep_criteria in self.metadata['cuts'] :
+        if keep_criteria in self.metadata['cuts']:
             logging.debug("Criteria '%s' have already been applied. Returning"
                           " events unmodified.", keep_criteria)
             return self
@@ -158,6 +165,10 @@ class EventsPi(collections.OrderedDict) :
         # Prepare the post-cut data container
         cut_data = EventsPi(name=self.name)
         cut_data.metadata = copy.deepcopy(self.metadata)
+
+        logging.debug(
+            'Applying cuts "%s".' % keep_criteria
+        )
 
         # Loop over the data containers
         for key in self.keys() :
@@ -226,7 +237,7 @@ class EventsPi(collections.OrderedDict) :
             logging.debug("All inbounds criteria '%s' have already been"
                           " applied. Returning events unmodified.", new_cuts)
             return self
-        all_cuts = deepcopy(current_cuts) + unapplied_cuts
+        all_cuts = copy.deepcopy(current_cuts) + unapplied_cuts
 
         # Create a single cut from all unapplied cuts
         keep_criteria = ' & '.join(['(%s)' % c for c in unapplied_cuts])
