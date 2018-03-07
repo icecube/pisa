@@ -39,6 +39,12 @@ class pi_prob3(PiStage):
     deltam21 : quantity (mass^2)
     deltam31 : quantity (mass^2)
     deltacp : quantity (angle)
+    eps_ee : quantity (dimensionless)
+    eps_emu : quantity (dimensionless)
+    eps_etau : quantity (dimensionless)
+    eps_mumu : quantity (dimensionless)
+    eps_mutau : quantity (dimensionless)
+    eps_tautau : quantity (dimensionless)
 
     None
 
@@ -69,6 +75,12 @@ class pi_prob3(PiStage):
                            'deltam21',
                            'deltam31',
                            'deltacp',
+                           'eps_ee',
+                           'eps_emu',
+                           'eps_etau',
+                           'eps_mumu',
+                           'eps_mutau',
+                           'eps_tautau',
                           )
 
         input_names = ()
@@ -192,6 +204,12 @@ class pi_prob3(PiStage):
         self.osc_params.dm21 = self.params.deltam21.value.m_as('eV**2')
         self.osc_params.dm31 = self.params.deltam31.value.m_as('eV**2')
         self.osc_params.deltacp = self.params.deltacp.value.m_as('rad')
+        self.osc_params.eps_ee = self.params.eps_ee.value.m_as('dimensionless')
+        self.osc_params.eps_emu = self.params.eps_emu.value.m_as('dimensionless')
+        self.osc_params.eps_etau = self.params.eps_etau.value.m_as('dimensionless')
+        self.osc_params.eps_mumu = self.params.eps_mumu.value.m_as('dimensionless')
+        self.osc_params.eps_mutau = self.params.eps_mutau.value.m_as('dimensionless')
+        self.osc_params.eps_tautau = self.params.eps_tautau.value.m_as('dimensionless')
 
 
         for container in self.data:
