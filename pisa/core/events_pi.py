@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 import copy, collections
 
-import numpy as np 
+import numpy as np
 import os
 
 from pisa.core.binning import OneDimBinning, MultiDimBinning
@@ -158,7 +158,7 @@ class EventsPi(collections.OrderedDict) :
 
         if not keep_criteria:
             logging.debug(
-                'Empy criteria. Returning events unmodified.'
+                'Empty criteria. Returning events unmodified.'
             )
             return self
 
