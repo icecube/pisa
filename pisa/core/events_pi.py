@@ -255,16 +255,12 @@ class EventsPi(collections.OrderedDict) :
             logging.debug("All inbounds criteria '%s' have already been"
                           " applied. Returning events unmodified.", new_cuts)
             return self
-        all_cuts = copy.deepcopy(current_cuts) + unapplied_cuts
 
         # Create a single cut from all unapplied cuts
         keep_criteria = ' & '.join(['(%s)' % c for c in unapplied_cuts])
 
         # Do the cutting
         cut_data = self.apply_cut(keep_criteria=keep_criteria)
-
-        # Replace the combined 'cuts' string with individual cut strings
-        #cut_data.metadata['cuts'] = np.append(cut_data.metadata['cuts'], all_cuts)
 
         return cut_data
 
