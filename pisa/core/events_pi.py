@@ -5,12 +5,14 @@ from __future__ import absolute_import, division, print_function
 import copy, collections
 
 import numpy as np 
+import os
 
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.log import logging
 from pisa.utils.fileio import from_file, to_file
 #from pisa.core.container import Container
 from pisa import FTYPE
+from pisa.utils.hdf import HDF5_EXTS
 from pisa.utils.numba_tools import WHERE
 
 
@@ -58,7 +60,13 @@ class EventsPi(collections.OrderedDict) :
                     raise ValueError("'variable_mapping' 'src' (value) must be a string, or a list of strings")
 
         # Open the input file
-        input_data = from_file(events_file)
+        rootname, ext = os.path.splitext(events_file)
+        ext = ext.replace('.', '').lower()
+        if ext in HDF5_EXTS:
+            input_data, attrs = from_file(events_file, return_attrs=True)
+            self.metadata.update(attrs)
+        else:
+            input_data = from_file(events_file)
 
         # Input data should be a dict where each key is a category of data
         if not isinstance(input_data,collections.Mapping) :
