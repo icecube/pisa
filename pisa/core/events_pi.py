@@ -62,11 +62,19 @@ class EventsPi(collections.OrderedDict) :
         # Open the input file
         rootname, ext = os.path.splitext(events_file)
         ext = ext.replace('.', '').lower()
+        # read in entry-level attributes as metadata in the case of an hdf5 file
         if ext in HDF5_EXTS:
             input_data, attrs = from_file(events_file, return_attrs=True)
             self.metadata.update(attrs)
         else:
             input_data = from_file(events_file)
+        cuts = self.metadata['cuts']
+        # ensure uniform type of 'cuts' entry independent of how it
+        # is stored in the events file (if at all) - this will be
+        # updated with user-defined cuts if applicable
+        if not isinstance(cuts, np.ndarray):
+            self.metadata['cuts'] = np.array(cuts)
+
 
         # Input data should be a dict where each key is a category of data
         if not isinstance(input_data,collections.Mapping) :
@@ -209,7 +217,9 @@ class EventsPi(collections.OrderedDict) :
         #TODO update to GPUs?
 
         # Record the cuts
-        cut_data.metadata["cuts"].append(keep_criteria)
+        # TODO: this can lead to many 'duplicate' 'cuts' in here
+        # -> implement parsing mechanism to prevent this
+        cut_data.metadata['cuts'] = np.append(cut_data.metadata['cuts'], keep_criteria)
 
         return cut_data
 
@@ -254,7 +264,7 @@ class EventsPi(collections.OrderedDict) :
         cut_data = self.apply_cut(keep_criteria=keep_criteria)
 
         # Replace the combined 'cuts' string with individual cut strings
-        #cut_data.metadata['cuts'].append = all_cuts
+        #cut_data.metadata['cuts'] = np.append(cut_data.metadata['cuts'], all_cuts)
 
         return cut_data
 
