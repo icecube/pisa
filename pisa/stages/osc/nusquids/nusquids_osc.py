@@ -165,12 +165,13 @@ def evolve_states(cz_shape, propagators, ini_states, nsq_earth_atm, osc_params):
         # invoke odd mechanism to set NSI parameters
         for icz in xrange(cz_shape): # pylint: disable=xrange-builtin
             nuSQ_icz = nuSQ.GetnuSQuIDS(icz)
-            nuSQ_icz.Set_epsilon_ee(osc_params.eps_ee)
-            nuSQ_icz.Set_epsilon_emu(osc_params.eps_emu)
-            nuSQ_icz.Set_epsilon_etau(osc_params.eps_etau)
-            nuSQ_icz.Set_epsilon_mumu(osc_params.eps_mumu)
-            nuSQ_icz.Set_epsilon_mutau(osc_params.eps_mutau)
-            nuSQ_icz.Set_epsilon_tautau(osc_params.eps_tautau)
+            if NSI_AVAIL :
+                nuSQ_icz.Set_epsilon_ee(osc_params.eps_ee)
+                nuSQ_icz.Set_epsilon_emu(osc_params.eps_emu)
+                nuSQ_icz.Set_epsilon_etau(osc_params.eps_etau)
+                nuSQ_icz.Set_epsilon_mumu(osc_params.eps_mumu)
+                nuSQ_icz.Set_epsilon_mutau(osc_params.eps_mutau)
+                nuSQ_icz.Set_epsilon_tautau(osc_params.eps_tautau)
 
         nuSQ.Set_initial_state(ini_states[input_name], nsq.Basis.flavor)
         nuSQ.EvolveState()
