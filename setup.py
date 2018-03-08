@@ -307,6 +307,7 @@ def do_setup():
                 'sphinx>=1.3',
                 'sphinx_rtd_theme',
                 'versioneer',
+                'yapf',
             ],
             # TODO: get mceq install to work... this is non-trivial since that
             # project isn't exactly cleanly instllable via pip already, plus it
