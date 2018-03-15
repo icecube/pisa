@@ -18,16 +18,19 @@ except:
         ' is: %s.' % pypath
     )
 
+# Check which nuSQuIDS classes are available
 NSI_CLASS = "nuSQUIDSNSIAtm"
+DECOH_CLASS = "nuSQUIDSAtmDecoh"
 ATM_CLASS = "nuSQUIDSAtm"
 NSI_AVAIL = hasattr(nsq, NSI_CLASS)
+DECOH_AVAIL = hasattr(nsq, DECOH_CLASS)
 ATM_AVAIL = hasattr(nsq, ATM_CLASS)
 
-if not NSI_AVAIL and not ATM_AVAIL:
+if not NSI_AVAIL and not ATM_AVAIL and not DECOH_AVAIL:
     raise AttributeError(
         'nuSQuIDS interface does not seem to provide any'
-        ' useful classes ("%s" or "%s").'
-        % (NSI_CLASS, ATM_CLASS)
+        ' useful classes ("%s", "%s" or "%s").'
+        % (NSI_CLASS, DECOH_CLASS, ATM_CLASS)
     )
 
 from pisa import CACHE_DIR, FTYPE, OMP_NUM_THREADS, ureg, OrderedDict
@@ -38,7 +41,7 @@ from pisa.utils.log import logging
 
 __all__ = [
     # constants
-    'NSI_AVAIL', 'ATM_AVAIL', 'NSI_CLASS', 'ATM_CLASS', 'NSQ_CONST',
+    'NSI_AVAIL', 'DECOH_AVAIL', 'ATM_AVAIL', 'NSI_CLASS', 'DECOH_CLASS', 'ATM_CLASS', 'NSQ_CONST',
     # functions
     'validate_calc_grid', 'compute_binning_constants', 'init_nusquids_prop',
     'evolve_states', 'osc_probs', 'earth_model'
@@ -89,22 +92,26 @@ def compute_binning_constants(calc_grid):
 
 def init_nusquids_prop(
         cz_nodes, en_nodes, nu_flav_no,
-        rel_err=1.0e-5, abs_err=1.0e-5, progress_bar=True
+        rel_err=1.0e-5, abs_err=1.0e-5, progress_bar=True,
+        use_nsi=False,use_decoherence=False,
     ):
     """Set up nuSQuIDs propagators (propagation medium,
     initial states, grid, etc.)."""
-    if nu_flav_no > 3 and ATM_AVAIL:
+
+    assert not (use_nsi and use_decoherence), "Cannot use `NSI` and `decoherence` together"
+
+    # choose nuSQuIDS class
+    if use_nsi :
+        assert NSI_AVAIL == True, 'nuSQuIDS atmopsheric NSI class not available'
+        assert nu_flav_no == 3, 'nuSQuIDS atmopsheric NSI class only supports 3 neutrino flavors'
+        NSQ = getattr(nsq, NSI_CLASS) # pylint: disable=invalid-name
+    elif use_decoherence :
+        assert DECOH_AVAIL == True, 'nuSQuIDS atmospheric decoherence class not available'
+        assert nu_flav_no == 3, 'nuSQuIDS atmopsheric decoherence class only supports 3 neutrino flavors'
+        NSQ = getattr(nsq, DECOH_CLASS) # pylint: disable=invalid-name
+    else :
+        assert ATM_AVAIL == True, 'nuSQuIDS atmospheric class not available'
         NSQ = getattr(nsq, ATM_CLASS) # pylint: disable=invalid-name
-    elif not ATM_AVAIL:
-        raise AttributeError(
-            'nuSQuIDS python interface does not seem to provide class "%s"'
-            ' needed for n>3 neutrinos.' % ATM_CLASS
-        )
-    else:
-        # without steriles, try to make use of NSI support, otherwise
-        # fall back to the regular atmospheric class (which will not be
-        # able to handle any NSI parameters)
-        NSQ = getattr(nsq, NSI_CLASS) if NSI_AVAIL else getattr(nsq, ATM_CLASS) # pylint: disable=invalid-name
 
     cz_shape = cz_nodes.shape[0]
     en_shape = en_nodes.shape[0]
@@ -129,7 +136,7 @@ def init_nusquids_prop(
                    numneu=nu_flav_no, NT=nsq.NeutrinoType.both,
                    iinteraction=False)
 
-        nuSQ.Set_EvalThreads(OMP_NUM_THREADS)
+        nuSQ.Set_EvalThreads(0) #OMP_NUM_THREADS) # TODO What to use here? Using 'OMP_NUM_THREADS' seems to make Set_initial_state slow and hnce the minimizer becomes unusable
         nuSQ.Set_ProgressBar(progress_bar)
         nuSQ.Set_rel_error(rel_err)
         nuSQ.Set_abs_error(abs_err)
@@ -147,7 +154,14 @@ def evolve_states(cz_shape, propagators, ini_states, nsq_earth_atm, osc_params):
             'nuSQuIDS interface does not seem to support NSI parameters,'
             ' but you have requested to set at least one.'
         )
+    import datetime
+    dt1 = datetime.timedelta(seconds=0.)
+    dt2 = datetime.timedelta(seconds=0.)
+    dt3 = datetime.timedelta(seconds=0.)
     for (input_name, nuSQ) in propagators.iteritems():
+
+        t1 = datetime.datetime.now()
+
         nu_flav_no = nuSQ.GetNumNeu()
         nuSQ.Set_EarthModel(nsq_earth_atm)
         nuSQ.Set_MixingAngle(0, 1, osc_params.theta12)
@@ -165,7 +179,7 @@ def evolve_states(cz_shape, propagators, ini_states, nsq_earth_atm, osc_params):
         # invoke odd mechanism to set NSI parameters
         for icz in xrange(cz_shape): # pylint: disable=xrange-builtin
             nuSQ_icz = nuSQ.GetnuSQuIDS(icz)
-            if NSI_AVAIL :
+            if hasattr(nuSQ_icz,"Set_epsilon_ee") : #TODO Find a nicer way to do this (maybe make all this into a class?)
                 nuSQ_icz.Set_epsilon_ee(osc_params.eps_ee)
                 nuSQ_icz.Set_epsilon_emu(osc_params.eps_emu)
                 nuSQ_icz.Set_epsilon_etau(osc_params.eps_etau)
@@ -173,11 +187,30 @@ def evolve_states(cz_shape, propagators, ini_states, nsq_earth_atm, osc_params):
                 nuSQ_icz.Set_epsilon_mutau(osc_params.eps_mutau)
                 nuSQ_icz.Set_epsilon_tautau(osc_params.eps_tautau)
 
+        # set decoherence parameters
+        if hasattr(nuSQ,"Set_DecoherenceMatrix") : #TODO Find a nicer way to do this (maybe make all this into a class?)
+            nuSQ.Set_DecoherenceMatrix(osc_params.gamma21,osc_params.gamma31,osc_params.gamma32)
+
+        t2 = datetime.datetime.now()
+
+        #print("+++ %s INI STATE : SHAPE = %s : SIZE = %s : NUM KB = %s" % (input_name,ini_states[input_name].shape,ini_states[input_name].size,ini_states[input_name].nbytes*1.e-3) )
+
         nuSQ.Set_initial_state(ini_states[input_name], nsq.Basis.flavor)
+
+        t3 = datetime.datetime.now()
+
         nuSQ.EvolveState()
 
+        t4 = datetime.datetime.now()
 
-def osc_probs(nuflav, propagators, true_energies, true_coszens):
+        dt1 = t2 - t1
+        dt2 = t3 - t2
+        dt2 = t4 - t3
+
+        #print("+++ Took : Setters = %s : Set_initial_state = %s : EvolveState = %s" % (dt1,dt2,dt3) )
+
+
+def osc_probs(nuflav, propagators, true_energies, true_coszens, prob_e=None, prob_mu=None ):
     """Evaluate oscillation probs. from nue(bar) and numu(bar) to
     nuflav (of nutype) for given array of energy and cos(zenith).
     Arrays of true energy and zenith are tested to be of the same length.
@@ -193,6 +226,12 @@ def osc_probs(nuflav, propagators, true_energies, true_coszens):
         A list of the true energies in GeV
     true_coszens : list or numpy array
         A list of the true cosine zenith values
+    prob_e : numpy array
+        An array to fill with the probability to oscillate to nue(bar)
+        If none is provided one will be created and returned (more efficient to pass an existing one)
+        Must be the same shape as `true_energies` and `true_coszens`
+    prob_mu : numpy array
+        Same as `prob_e` but contains probabilities for oscillation to numu(bar)
     """
     if not isinstance(true_energies, np.ndarray):
         if not isinstance(true_energies, list):
@@ -219,11 +258,18 @@ def osc_probs(nuflav, propagators, true_energies, true_coszens):
     nutype = 1 if not nuflav.endswith('bar') else 0
     kflav = FLAV_INDS[nuflav]
 
+    # create arrays to hold results, unless they already exist
     # initialise with Nan to check whether calculation was performed later on
-    prob_e = np.zeros(len(true_energies), dtype=FTYPE)*np.nan
-    prob_mu = np.zeros_like(prob_e, dtype=FTYPE)*np.nan
+    if prob_e is None :
+        prob_e = np.zeros(len(true_energies), dtype=FTYPE)*np.nan
+    if prob_mu is None :
+        prob_mu = np.zeros_like(prob_e, dtype=FTYPE)*np.nan
+
+    # evaluate oscillation probabilties
     for (i, (cz, en)) in enumerate(zip(true_coszens, true_energies)):
         for (input_name, nuSQ) in propagators.iteritems():
+            if not isinstance(en.dtype,np.float64) : en = np.float64(en)  #TODO Current nuSQuIDS pybindings can only accept double, not float. Fix this (overload) and remove this hack
+            if not isinstance(cz.dtype,np.float64) : cz = np.float64(cz)  #TODO Current nuSQuIDS pybindings can only accept double, not float. Fix this (overload) and remove this hack
             chan_prob = nuSQ.EvalFlavor(kflav, cz, en, nutype)
             if input_name == "nue":
                 prob_e[i] = chan_prob

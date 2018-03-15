@@ -83,7 +83,7 @@ class pi_aeff(PiStage):
     def apply_function(self):
 
         # read out
-        aeff_scale = self.params.aeff_scale.m_as('dimensionless')
+        aeff_scale = self.params.aeff_scale.m_as('dimensionless') #TODO Should this be applie dto muon and noise triggers or reserved only for neutrinos?
         livetime_s = self.params.livetime.m_as('sec')
         nutau_cc_norm = self.params.nutau_cc_norm.m_as('dimensionless')
         nutau_norm = self.params.nutau_norm.m_as('dimensionless')
