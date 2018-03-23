@@ -5,7 +5,7 @@
 from collections import Sequence
 import sys
 import scipy.optimize as opt
-from scipy.stats import chisqprob
+from scipy.stats import chi2
 import time
 from uncertainties import unumpy as unp
 import random
@@ -248,12 +248,12 @@ class Analysis(object):
         # Report status of metric & params
         if self.blind:
             msg = '%s=%.6e | %s blinded parameters' %(self.metric, metric_val, self.n_free_params)
-            msg += '    mod_chi2 = %.6e / %i DOF, p = %.4f' %(mod_chi2_val, self.dof, chisqprob(mod_chi2_val, self.dof))
-            msg += '    chi2 = %.6e / %i DOF, p = %.4f' %(chi2_val, self.dof, chisqprob(chi2_val,self.dof))
+            msg += '    mod_chi2 = %.6e / %i DOF, p = %.4f' %(mod_chi2_val, self.dof, chi2.sf(mod_chi2_val, self.dof))
+            msg += '    chi2 = %.6e / %i DOF, p = %.4f' %(chi2_val, self.dof, chi2.sf(chi2_val,self.dof))
         else:
             msg = '%s=%.6e , mod_chi2 = %.6e / %i DOF, p = %.4f, chi2 = %.6e / %i DOF, p = %.4f | %s' %(self.metric, metric_val,
-                                    mod_chi2_val, self.dof, chisqprob(mod_chi2_val, self.dof),
-                                    chi2_val, self.dof, chisqprob(chi2_val,self.dof),
+                                    mod_chi2_val, self.dof, chi2.sf(mod_chi2_val, self.dof),
+                                    chi2_val, self.dof, chi2.sf(chi2_val,self.dof),
                                     self.template_maker.params.free)
         if pprint:
             sys.stdout.write(msg)
