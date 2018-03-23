@@ -7,10 +7,9 @@ import numpy as np
 
 from pisa import FTYPE
 from pisa.core.pi_stage import PiStage
-from pisa.utils.log import logging
 from pisa.utils import vectorizer
 from pisa.utils.profiler import profile
-from pisa.core.container import Container, ContainerSet
+from pisa.core.container import Container
 from pisa.core.events_pi import EventsPi
 
 
@@ -73,11 +72,10 @@ class simple_data_loader(PiStage):
         # doesn't calculate anything
         assert self.calc_mode is None
 
-        self._load_events()
-        self._apply_cuts_to_events()
+        self.load_events()
+        self.apply_cuts_to_events()
 
-
-    def _load_events(self):
+    def load_events(self):
         # open events file
         self.evts = EventsPi(name="Events")
         self.evts_file = self.params.events_file.value
@@ -87,16 +85,13 @@ class simple_data_loader(PiStage):
             variable_mapping=self.data_dict
         )
 
-    def _apply_cuts_to_events(self):
+    def apply_cuts_to_events(self):
         # apply any cuts that the user defined
         self.cuts = self.params.mc_cuts.value
         if self.cuts:
-            logging.info(
-                'Applying the following cuts to events: %s' % self.cuts
-            )
             self.evts = self.evts.apply_cut(self.cuts)
 
-    def setup_function(self):
+    def record_event_properties(self):
         # create containers from the events
         for name in self.output_names:
             # make container
@@ -108,7 +103,6 @@ class simple_data_loader(PiStage):
                     'Output name "%s" not found in events. Only found %s.'
                     % (name, event_groups)
                 )
-
             # add the events data to the container
             for key, val in self.evts[name].items():
                 container.add_array_data(key, val)
@@ -137,70 +131,47 @@ class simple_data_loader(PiStage):
             for container in self.data:
                 container.array_to_binned('weights', self.output_specs)
 
+    def setup_function(self):
+        # store event properties from events file present at
+        # service initialisation - whenever this service is run later on
+        # we have to check whether cuts or events file have changed
+        self.record_event_properties()
 
-    @profile
-    def apply_function(self):
+    def prevent_evts_mods(self):
+        # TODO: are there more checks?
         original_variable_mapping = self.data_dict
         requested_variable_mapping = eval(self.params.data_dict.value)
-        # TODO: allow the variable mapping to change after setup? will change
-        # which keys are present in containers
-        if not requested_variable_mapping == original_variable_mapping:
+        if requested_variable_mapping != original_variable_mapping:
             raise ValueError(
                 'Found changed variable mapping while obtaining event weights:'
-                ' "%s" -> "%s". Cannot deal with that currently!'
+                ' %s -> %s. Mapping must not change!'
                 % (original_variable_mapping, requested_variable_mapping)
             )
         original_evts_file = self.evts_file
         requested_evts_file = self.params.events_file.value
+        if requested_evts_file != original_evts_file:
+            raise ValueError(
+                'Found changed events file while obtaining event weights:'
+                ' %s -> %s. File must not change!'
+                % (original_evts_file, requested_evts_file)
+            )
         original_cuts = self.cuts
         requested_cuts = self.params.mc_cuts.value
-        if (requested_evts_file != original_evts_file or
-            requested_cuts != original_cuts):
-            original_evt_groups = sorted(self.data.names)
-            requested_evt_groups = sorted(self.evts.keys())
-            if requested_evt_groups != original_evt_groups:
-                raise ValueError('Found changed events groups!')
-            # need to reload events file and reapply cuts
-            self._load_events()
-            self._apply_cuts_to_events()
-            # TODO: move to function instead of duplicating code and bugs
-            # TODO: this doesn't seem to break things, but does it do what's
-            # intended?
-            # containers will change size, so set them up completely anew
-            self.data = ContainerSet('events')
-            for name in original_evt_groups:
-                # make container
-                container = Container(name)
-                container.data_specs = 'events'
-                # add the events data to the container
-                for key, val in self.evts[name].items():
-                    container.add_array_data(key, val)
-                # add some additional keys
-                container.add_array_data('weights', np.ones(container.size, dtype=FTYPE))
-                container.add_array_data('event_weights', np.ones(container.size, dtype=FTYPE))
-                # this determination of flavour is the worst possible coding, ToDo
-                nubar = -1 if 'bar' in name else 1
-                if 'tau' in name:
-                    flav = 2
-                elif 'mu' in name:
-                    flav = 1
-                elif 'e' in name:
-                    flav = 0
-                else:
-                    raise ValueError('Cannot determine flavour of %s' % name)
-                container.add_scalar_data('nubar', nubar)
-                container.add_scalar_data('flav', flav)
+        if requested_cuts != original_cuts:
+            raise ValueError(
+                'Found changed cuts while obtaining event weights:'
+                ' %s -> %s. Cuts must not change!'
+                % (original_cuts, requested_cuts)
+            )
 
-                self.data.add_container(container)
-
-        # test
-        if self.output_mode == 'binned':
-            #self.data.data_specs = self.output_specs
-            for container in self.data:
-                container.array_to_binned('weights', self.output_specs)
-
+    @profile
+    def apply_function(self):
+        # seatbelts against changes to the underlying events
+        self.prevent_evts_mods()
+        # TODO: do we need this line? Isn't this handled universally
+        # by the base class (in PiStage's apply)?
+        self.data.data_specs = self.output_specs
         # reset weights to event_weights
-        #self.data.data_specs = self.output_specs
         for container in self.data:
             vectorizer.set(container['event_weights'],
                            out=container['weights'])
