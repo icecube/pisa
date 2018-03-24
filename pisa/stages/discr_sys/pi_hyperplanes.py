@@ -4,14 +4,14 @@ PISA pi stage to apply hyperplane fits from discrete systematics parameterizatio
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
-from numba import guvectorize, cuda
+from numba import guvectorize
 
 from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils.fileio import from_file
-from pisa.utils.numba_tools import WHERE, myjit
+from pisa.utils.numba_tools import WHERE
 from pisa.utils import vectorizer
 
 
@@ -27,6 +27,8 @@ class pi_hyperplanes(PiStage):
     hole_ice : dimensionless quantity
     hole_ice_fwd : dimensionless quantity
     spiciness : dimensionless quantity
+    bulk_scatter : dimensionless quantity
+    bulk_abs : dimensionless quantity
 
     Notes
     -----
@@ -51,15 +53,22 @@ class pi_hyperplanes(PiStage):
                 ):
 
         expected_params = ('fit_results_file',
-                           'dom_eff', 
-                           'hole_ice', 
-                           'hole_ice_fwd', 
-                           'spiciness', 
+                           'dom_eff',
+                           'hole_ice',
+                           'hole_ice_fwd',
+                           'spiciness',
+                           'bulk_scatter',
+                           'bulk_abs'
                           )
+        # will be needed at computation time, where
+        # we want to make sure that the params from
+        # the hyperplane fits constitute a subset
+        self.sys_params = set(expected_params[1:])
         input_names = ()
         output_names = ()
 
         # what are keys added or altered in the calculation used during apply
+        # TODO: this is not being used
         output_calc_keys = ('hyperplane_scalefactors')
         # what keys are added or altered for the outputs during apply
         if error_method in ['sumw2']:
@@ -91,14 +100,30 @@ class pi_hyperplanes(PiStage):
         assert self.calc_mode == 'binned'
         assert self.output_mode is not None
 
-        self.sys_list = None
+        self.fit_results = None
+        """Results of the hyperplane fit"""
+        self.fit_sys_list = None
+        """List of systematic parameters participating in the external fit"""
+        self.fit_binning_hash = None
+        """Hash of the binning used in the external fit"""
+        self.active_sys_params = None
+        """Systematic parameters belonging to this service which are active"""
+        self.inactive_sys_params = None
+        """Inactive systematic parameters"""
 
-        self.links = eval(links)
-    
+        self.links = eval(links) # pylint: disable=eval-used
+
     def setup_function(self):
         """Load the fit results from the file and make some check
         compatibility"""
-        fit_results = from_file(self.params['fit_results_file'].value)
+        self.fit_results = from_file(self.params['fit_results_file'].value)
+        self.fit_binning_hash = self.fit_results.get('binning_hash', None)
+        if not self.fit_binning_hash:
+            raise KeyError(
+                'Cannot determine the hash of the binning employed'
+                ' for the hyperplane fits. Correct application of'
+                ' fits would not be guaranteed!'
+            )
 
         self.data.data_specs = self.calc_specs
 
@@ -107,22 +132,40 @@ class pi_hyperplanes(PiStage):
                 self.data.link_containers(key, val)
 
         for container in self.data:
-            container['hyperplane_results'] = fit_results[container.name].reshape(container.size, -1)
-            #container.add_bined_data('hyperplane_results', (self.calc_specs, fit_results[container.name]), flat=False)
+            container['hyperplane_results'] = self.fit_results[container.name].reshape(container.size, -1)
             container['hyperplane_scalefactors'] = np.empty(container.size, dtype=FTYPE)
 
-            #print(container['hyperplane_results'].shape)
-            #print(container['hyperplane_scalefactors'].shape)
+        self.fit_sys_list = set(self.fit_results['sys_list'])
+        # do not require all of the expected parameters to be in the fit file
+        # as it should be possible to run this stage with a subset of all
+        # supported systematics
+        excess = (self.fit_sys_list).difference(self.sys_params)
+        if excess:
+            raise KeyError(
+                'Fit results contain systematic parameters unaccounted for'
+                ' by this service, i.e. %s.' % excess
+            )
+        # record the "active" systematics, i.e. those which may take off-nominal values
+        # and which will be used in the computation
+        self.active_sys_params = (self.sys_params).intersection(self.fit_sys_list)
+        self.inactive_sys_params = (self.sys_params).difference(self.active_sys_params)
 
-        self.sys_list = fit_results['sys_list'] 
         # check compatibility
-        # ToDo: check binning hash
-        assert set(self.sys_list) == set([sys for sys in self.params.names if not sys.endswith('_file')])
-
+        if self.data.data_mode == 'binned':
+            # let's be extremely strict here for now: require
+            # the absolutely identical binning (full hash)
+            binning_hash = self.data.data_specs.hash
+            if not binning_hash == self.fit_binning_hash:
+                raise ValueError(
+                    'Disagreeing hash values between fit binning and the'
+                    ' one to be used in the application of the hyperplane'
+                    ' fits!'
+                )
         self.data.unlink_containers()
 
     @profile
     def compute_function(self):
+        # TODO: add some safety precautions against changing params
         self.data.data_specs = self.calc_specs
         if self.links is not None:
             for key, val in self.links.items():
@@ -130,9 +173,24 @@ class pi_hyperplanes(PiStage):
 
         # get parameters:
         param_values = []
-        for sys in self.sys_list:
+        for sys in self.active_sys_params:
+            # TODO: what about units?
             param_values.append(self.params[sys].magnitude)
+
         param_values = np.array(param_values, dtype=FTYPE)
+
+        # require inactive params to be fixed
+        for sys in self.inactive_sys_params:
+            if not self.params[sys].is_fixed:
+                raise ValueError(
+                    'Please explicitly fix the inactive systematic "%s"'
+                    ' since it is not part of the hyperplane fit to be applied.'
+                    % sys
+                )
+            logging.warn(
+                'Ignoring discrete systematic parameter "%s" set to'
+                ' a value of %.2f' % (sys, self.params[sys].value)
+            )
 
         for container in self.data:
             eval_hyperplane(param_values,
