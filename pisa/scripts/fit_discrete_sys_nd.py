@@ -181,7 +181,17 @@ def make_discrete_sys_distributions(fit_cfg):
                     % (sys_set_specifier, diff)
                 )
             pipeline_cfg = fit_cfg.get(section, sys_set_specifier)
-            # retreive maps
+            if not len(sys_param_point) == len(sys_list):
+                raise ValueError(
+                    '%s "%s" specifies %d systematic parameter values'
+                    ' (%s), but list of systematics is %s. Make sure'
+                    ' number of values in section headers agree with'
+                    ' number of systematic parameters.'
+                    % (section[:section.find(':')], pipeline_cfg,
+                       len(sys_param_point), sys_param_point,
+                       sys_list)
+                )
+            # retrieve maps
             logging.info( # pylint: disable=logging-not-lazy
                 'Generating maps for discrete systematics point: %s. Using'
                 ' pipeline config at %s.' % (point_str, pipeline_cfg)
@@ -285,6 +295,7 @@ def fit_discrete_sys_distributions(
     binning_hash = binning.hash
     for map_name in out_names:
         logging.info('Fitting "%s" maps.' % map_name) # pylint: disable=logging-not-lazy
+        # TODO: correct error propagation for the ratios?
         nominal_hist = unp.nominal_values(nominal_mapset[map_name].hist)
         sys_hists = []
         for sys_mapset in sys_mapsets:
@@ -410,7 +421,7 @@ def save_hyperplane_fits(hyperplane_fits, chi2s, outdir, tag=None):
     np.save('%s/nd_sysfits_%s_raw_chi2s' % (outdir, tag), chi2s)
 
 
-def plot_hyperplane_fits(hyperplane_fits, names, binning, outdir=None, tag=None):
+def plot_hyperplane_fit_params(hyperplane_fits, names, binning, outdir=None, tag=None):
     """Plot 2D distributions of fit parameters.
 
     Parameters
@@ -461,6 +472,28 @@ def plot_hyperplane_fits(hyperplane_fits, names, binning, outdir=None, tag=None)
         )
 
 
+def plot_binwise_variations_with_fits(
+        hyperplane_fits, sys_param_points,
+        nominal_mapset, sys_mapsets, outdir=None, tag=None):
+    """Bin-by-bin plots of count variations as function of
+    systematic parameters together with projections of fit
+    function along each dimension in each bin.
+
+    Parameters
+    ----------
+    hyperplane_fits : dict
+    sys_param_points : list
+    nominal_mapset : MapSet
+    sys_mapsets : list of MapSets
+    outdir : str
+    tag : str
+
+    """
+    #TODO: fill this, ideally with part of the code that does the
+    # normalisation and fitting
+    return
+
+
 def main():
     """Main function to run discrete systematics fits from command line and
     possibly plot the results.
@@ -468,7 +501,7 @@ def main():
     args = parse_args()
     set_verbosity(args.v)
 
-    nom_ms, sys_points, sys_ms, binning, fits, chi2s = hyperplane( # pylint: disable=unused-variable
+    nom_ms, sys_points, sys_ms, binning, fits, chi2s = hyperplane(
         fit_cfg=args.fit_cfg,
     )
     save_hyperplane_fits(
@@ -478,10 +511,18 @@ def main():
         tag=args.tag
     )
     if args.plot:
-        plot_hyperplane_fits(
+        plot_hyperplane_fit_params(
             hyperplane_fits=fits,
             names=nom_ms.names,
             binning=binning,
+            outdir=args.outdir,
+            tag=args.tag
+        )
+        plot_binwise_variations_with_fits(
+            hyperplane_fits=fits,
+            nominal_mapset=nom_ms,
+            sys_param_points=sys_points,
+            sys_mapsets=sys_ms,
             outdir=args.outdir,
             tag=args.tag
         )
