@@ -383,7 +383,7 @@ def fit_discrete_sys_distributions(
                     sigma=y_sigma, p0=p0[map_name]
                 )
 
-                # calculate chi2 values:
+                # calculate chisquare values
                 for point_idx in range(sys_param_points.shape[1]):
                     point = sys_param_points[:, point_idx]
                     predicted = hyperplane_fun(point, *popt)
@@ -393,9 +393,17 @@ def fit_discrete_sys_distributions(
                     chi2s.append(chi2)
 
             else:
+                # without error estimates each point has the same weight
+                # and we cannot get chisquare values
+                logging.warn( # pylint: disable=logging-not-lazy
+                    'No uncertainties for any of the normalised counts in bin'
+                    ' %s ("%s") found. Fit is performed unweighted and no'
+                    ' chisquare values will be available.' % (idx, map_name)
+                )
                 popt, pcov = curve_fit(
                     hyperplane_fun, sys_param_points, y_values, p0=p0[map_name]
                 )
+                chi2s.append(np.nan)
             perr = np.sqrt(np.diag(pcov))
             for k, p in enumerate(popt):
                 fit_results[map_name][idx][k] = p
@@ -527,9 +535,46 @@ def plot_hyperplane_fit_params(hyperplane_fits, names, binning, outdir=None, tag
         )
 
 
+def plot_chisquare_values(chi2s, outdir, tag=None):
+    """Fit and plot distribution of chisquare values.
+
+    Parameters
+    ----------
+    chi2 : list
+        flat list of chisquare values to fit and histogram
+    outdir : str
+        path to output directory for plots
+    tag : str
+        identifier for plot filenames
+
+    """
+    import matplotlib.pyplot as plt
+    from scipy import stats
+
+    logging.info('Fitting and histogramming %d chisquare values.' % len(chi2s)) # pylint: disable=logging-not-lazy
+    # fit for d.o.f., location and scale of distribution of values
+    popt = stats.chi2.fit(chi2s)
+
+    bins = np.linspace(0, 1.01*max(chi2s), 100)
+    centers = (bins[1:] + bins[:-1])/2.
+    fit_pdf = stats.chi2.pdf(centers, *popt[:-2], loc=popt[-2], scale=popt[-1])
+
+    fig = plt.figure()
+    n, bins, _ = plt.hist(
+        chi2s, bins=bins, color='firebrick', histtype='step', linewidth=2, normed=True
+    )
+    plt.plot(centers, fit_pdf, lw=2, color='black')
+    plt.xlabel(r'\chi^2', fontsize='x-large')
+    plt.ylabel('AU', fontsize='x-large')
+    plt.ylim(0, 1.01*max(n))
+    plt.tight_layout()
+    fname = 'hyperplane_all_chi2_vals_%s.png' % tag
+    fig.savefig(os.path.join(outdir, fname))
+
+
 def plot_binwise_variations_with_fits(
         hyperplane_fits, sys_param_points,
-        nominal_mapset, sys_mapsets, outdir=None, tag=None,
+        nominal_mapset, sys_mapsets, outdir, tag=None,
         subplot_kw=None, gridspec_kw=None, **fig_kw):
     """Bin-by-bin plots of count variations as function of
     systematic parameters together with projections of fit
@@ -543,20 +588,30 @@ def plot_binwise_variations_with_fits(
     sys_mapsets : list of MapSets
     outdir : str
     tag : str
+    subplot_kw, gridspec_kw, fig_kw : dict
+        keyword arguments passed on to plt.subplots
 
     """
     import matplotlib.pyplot as plt
     # normalise the systematics variations to the nominal distribution
     # with error propagation
     norm_sys_maps = norm_sys_distributions(nominal_mapset, sys_mapsets)
-    shape_map = list(nominal_mapset[0].shape)
-    if not len(shape_map) == 3:
+    binning = nominal_mapset[0].binning
+    shape_map = binning.shape
+    if not (len(shape_map) == 2 or len(shape_map) == 3):
         raise NotImplementedError(
-            'Need 3d maps currently.'
+            'Need 2d or 3d maps currently.'
         )
-    nx, ny, nz = shape_map[0], shape_map[1], shape_map[2]
+    nx, ny = shape_map[0], shape_map[1]
+    try:
+        nz = shape_map[2]
+        is_3d = True
+    except IndexError:
+        nz = 0
+        is_3d = False
     sys_list = hyperplane_fits['sys_list']
     if not len(sys_list) == 1:
+        # TODO: allow for multi-sys. fits, but then project correctly
         raise NotImplementedError(
             'Plotting logic for more than 1 systematic not yet done.'
         )
@@ -570,31 +625,52 @@ def plot_binwise_variations_with_fits(
             # of the values of possible other parameters -> TODO: filter out
             # those for which others are at not at nominal
             sys_vals = sys_param_points[:, i]
+            some_xs = np.linspace(min(sys_vals), max(sys_vals), 100)
             # make a new figure for each bin in the third dimension
-            for zind in range(nz):
+            ziter = range(nz) if nz else [0] # pylint: disable=range-builtin-not-iterating
+            for zind in ziter:
+                zstr = '_%s_bin_%d_' % (binning.names[2], zind) if is_3d else '_'
                 fig, ax2d = plt.subplots(
                     nrows=ny, ncols=nx, sharex='col', sharey='row',
                     subplot_kw=subplot_kw, gridspec_kw=gridspec_kw, **fig_kw
                 )
+                if is_3d:
+                    title = map_name + ': %s' % zstr.replace('_', ' ').strip()
+                    fig.suptitle(title, fontsize='xx-large')
                 chan_norm_sys_maps_zind = chan_norm_sys_maps[:, :, zind]
                 # each unique idx corresponds to one bin
                 for idx in np.ndindex(*(shape_map[:2])):
                     y_values = unp.nominal_values(chan_norm_sys_maps_zind[idx])
                     y_sigma = unp.std_devs(chan_norm_sys_maps_zind[idx])
-                    x_dummy = sys_vals
-
                     ax2d[idx[1], idx[0]].errorbar(
-                        x=x_dummy, y=y_values, yerr=y_sigma, fmt='o',
+                        x=sys_vals, y=y_values, yerr=y_sigma, fmt='o',
                         mfc='firebrick', mec='firebrick', ecolor='firebrick'
                     )
-                fig.text(0.5, 0.04, sys_name, ha='center', fontsize='x-large')
+                    # obtain the best fit parameters and plot the fit function
+                    # for these
+                    popt = np.array(hyperplane_fits[map_name][:, :, zind][idx])
+                    y_opt = hyperplane_fun([some_xs], *popt)
+                    ax2d[idx[1], idx[0]].plot(
+                        some_xs, y_opt, color='firebrick', lw=2
+                    )
+                    # label the bin numbers
+                    if idx[1] == len(ax2d) - 1:
+                        ax2d[idx[1], idx[0]].set_xlabel(
+                            '%s bin %d' % (binning.basenames[0], idx[0]),
+                            fontsize='small', labelpad=10
+                        )
+                    if idx[0] == 0:
+                        ax2d[idx[1], idx[0]].set_ylabel(
+                            '%s bin %d' % (binning.basenames[1], idx[1]),
+                            fontsize='small', labelpad=10
+                        )
+
+                fig.text(0.5, 0.04, sys_name, ha='center', fontsize='xx-large')
                 fig.text(0.04, 0.5, 'normalised count', va='center',
-                         rotation='vertical', fontsize='x-large')
-                # TODO: this is currently not of much use if no outdir is specified
-                if outdir:
-                    fname = ('%s_%s_%d_%s_binwise_hyperplane.png'
-                             % (sys_name, map_name, zind, tag))
-                    fig.savefig(os.path.join(outdir, fname))
+                         rotation='vertical', fontsize='xx-large')
+                fname = ('%s_%s%s%s_binwise_hyperplane.png'
+                         % (sys_name, map_name, zstr, tag))
+                fig.savefig(os.path.join(outdir, fname))
 
 
 def main():
@@ -629,6 +705,11 @@ def main():
             outdir=args.outdir,
             tag=args.tag,
             figsize=(16, 16)
+        )
+        plot_chisquare_values(
+            chi2s=chi2s,
+            outdir=args.outdir,
+            tag=args.tag
         )
 
 
