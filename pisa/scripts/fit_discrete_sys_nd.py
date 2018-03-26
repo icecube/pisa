@@ -13,6 +13,8 @@ hyperplanes functions
 """
 from __future__ import absolute_import, division
 
+import os
+
 from argparse import ArgumentParser
 from collections import Mapping, Sequence
 from uncertainties import unumpy as unp
@@ -527,7 +529,8 @@ def plot_hyperplane_fit_params(hyperplane_fits, names, binning, outdir=None, tag
 
 def plot_binwise_variations_with_fits(
         hyperplane_fits, sys_param_points,
-        nominal_mapset, sys_mapsets, outdir=None, tag=None):
+        nominal_mapset, sys_mapsets, outdir=None, tag=None,
+        subplot_kw=None, gridspec_kw=None, **fig_kw):
     """Bin-by-bin plots of count variations as function of
     systematic parameters together with projections of fit
     function along each dimension in each bin.
@@ -542,9 +545,56 @@ def plot_binwise_variations_with_fits(
     tag : str
 
     """
-    #TODO: fill this, ideally with part of the code that does the
-    # normalisation and fitting
-    return
+    import matplotlib.pyplot as plt
+    # normalise the systematics variations to the nominal distribution
+    # with error propagation
+    norm_sys_maps = norm_sys_distributions(nominal_mapset, sys_mapsets)
+    shape_map = list(nominal_mapset[0].shape)
+    if not len(shape_map) == 3:
+        raise NotImplementedError(
+            'Need 3d maps currently.'
+        )
+    nx, ny, nz = shape_map[0], shape_map[1], shape_map[2]
+    sys_list = hyperplane_fits['sys_list']
+    if not len(sys_list) == 1:
+        raise NotImplementedError(
+            'Plotting logic for more than 1 systematic not yet done.'
+        )
+    sys_param_points = np.array(sys_param_points)
+    for map_name, chan_norm_sys_maps in norm_sys_maps.items():
+        logging.info( # pylint: disable=logging-not-lazy
+            'Displaying binwise variations of "%s" maps.' % (map_name)
+        )
+        for i, sys_name in enumerate(sys_list):
+            # these are all values of the param in question, irrespective
+            # of the values of possible other parameters -> TODO: filter out
+            # those for which others are at not at nominal
+            sys_vals = sys_param_points[:, i]
+            # make a new figure for each bin in the third dimension
+            for zind in range(nz):
+                fig, ax2d = plt.subplots(
+                    nrows=ny, ncols=nx, sharex='col', sharey='row',
+                    subplot_kw=subplot_kw, gridspec_kw=gridspec_kw, **fig_kw
+                )
+                chan_norm_sys_maps_zind = chan_norm_sys_maps[:, :, zind]
+                # each unique idx corresponds to one bin
+                for idx in np.ndindex(*(shape_map[:2])):
+                    y_values = unp.nominal_values(chan_norm_sys_maps_zind[idx])
+                    y_sigma = unp.std_devs(chan_norm_sys_maps_zind[idx])
+                    x_dummy = sys_vals
+
+                    ax2d[idx[1], idx[0]].errorbar(
+                        x=x_dummy, y=y_values, yerr=y_sigma, fmt='o',
+                        mfc='firebrick', mec='firebrick', ecolor='firebrick'
+                    )
+                fig.text(0.5, 0.04, sys_name, ha='center', fontsize='x-large')
+                fig.text(0.04, 0.5, 'normalised count', va='center',
+                         rotation='vertical', fontsize='x-large')
+                # TODO: this is currently not of much use if no outdir is specified
+                if outdir:
+                    fname = ('%s_%s_%d_%s_binwise_hyperplane.png'
+                             % (sys_name, map_name, zind, tag))
+                    fig.savefig(os.path.join(outdir, fname))
 
 
 def main():
@@ -577,7 +627,8 @@ def main():
             sys_param_points=sys_points,
             sys_mapsets=sys_ms,
             outdir=args.outdir,
-            tag=args.tag
+            tag=args.tag,
+            figsize=(16, 16)
         )
 
 
