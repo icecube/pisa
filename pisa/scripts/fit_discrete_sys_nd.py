@@ -548,6 +548,8 @@ def plot_chisquare_values(chi2s, outdir, tag=None):
         identifier for plot filenames
 
     """
+    import matplotlib as mpl
+    mpl.use('agg')
     import matplotlib.pyplot as plt
     from scipy import stats
 
@@ -564,7 +566,7 @@ def plot_chisquare_values(chi2s, outdir, tag=None):
         chi2s, bins=bins, color='firebrick', histtype='step', linewidth=2, normed=True
     )
     plt.plot(centers, fit_pdf, lw=2, color='black')
-    plt.xlabel(r'\chi^2', fontsize='x-large')
+    plt.xlabel(r'$\chi^2$', fontsize='x-large')
     plt.ylabel('AU', fontsize='x-large')
     plt.ylim(0, 1.01*max(n))
     plt.tight_layout()

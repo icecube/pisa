@@ -106,8 +106,6 @@ class pi_hyperplanes(PiStage):
         """List of systematic parameters participating in the external fit"""
         self.fit_binning_hash = None
         """Hash of the binning used in the external fit"""
-        self.active_sys_params = None
-        """Systematic parameters belonging to this service which are active"""
         self.inactive_sys_params = None
         """Inactive systematic parameters"""
 
@@ -135,20 +133,20 @@ class pi_hyperplanes(PiStage):
             container['hyperplane_results'] = self.fit_results[container.name].reshape(container.size, -1)
             container['hyperplane_scalefactors'] = np.empty(container.size, dtype=FTYPE)
 
-        self.fit_sys_list = set(self.fit_results['sys_list'])
+        # need to conserve order here!
+        self.fit_sys_list = self.fit_results['sys_list']
         # do not require all of the expected parameters to be in the fit file
         # as it should be possible to run this stage with a subset of all
         # supported systematics
-        excess = (self.fit_sys_list).difference(self.sys_params)
+        excess = set(self.fit_sys_list).difference(self.sys_params)
         if excess:
             raise KeyError(
                 'Fit results contain systematic parameters unaccounted for'
                 ' by this service, i.e. %s.' % excess
             )
-        # record the "active" systematics, i.e. those which may take off-nominal values
-        # and which will be used in the computation
-        self.active_sys_params = (self.sys_params).intersection(self.fit_sys_list)
-        self.inactive_sys_params = (self.sys_params).difference(self.active_sys_params)
+        # record the "inactive" systematics, i.e. those which we have no handle
+        # on and which can thus not be used in the computation
+        self.inactive_sys_params = (self.sys_params).difference(set(self.fit_sys_list))
 
         # check compatibility
         if self.data.data_mode == 'binned':
@@ -171,9 +169,9 @@ class pi_hyperplanes(PiStage):
             for key, val in self.links.items():
                 self.data.link_containers(key, val)
 
-        # get parameters:
+        # get parameters, in the right order
         param_values = []
-        for sys in self.active_sys_params:
+        for sys in self.fit_sys_list:
             # TODO: what about units?
             param_values.append(self.params[sys].magnitude)
 
@@ -187,7 +185,7 @@ class pi_hyperplanes(PiStage):
                     ' since it is not part of the hyperplane fit to be applied.'
                     % sys
                 )
-            logging.warn(
+            logging.debug(
                 'Ignoring discrete systematic parameter "%s" set to'
                 ' a value of %.2f' % (sys, self.params[sys].value)
             )
