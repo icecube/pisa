@@ -468,9 +468,15 @@ class Analysis(object):
             )
             alternate_fits.append(new_fit_info)
             if old_octant > 0.0:
-                theta23.value = (55.0*ureg.deg).to(theta23.units)
+                theta23.value = min(
+                    (55.0*ureg.deg).to(theta23.units),
+                    max(theta23.range) - 0.01 * (max(theta23.range)-min(theta23.range))
+                )
             else:
-                theta23.value = (35.0*ureg.deg).to(theta23.units)
+                theta23.value = max(
+                    (35.0*ureg.deg).to(theta23.units),
+                    min(theta23.range) + 0.01 * (max(theta23.range)-min(theta23.range))
+                )
             hypo_maker.update_params(theta23)
 
             # Re-run minimizer starting at new point

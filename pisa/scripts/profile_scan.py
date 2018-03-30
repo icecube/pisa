@@ -69,6 +69,8 @@ def profile_scan(init_args_d, return_outputs=False):
     param_names = init_args_d.pop('param_name')
     scan_vals_lists = init_args_d.pop('scan_vals')
     scan_vals = [eval(scan_vals_list) for scan_vals_list in scan_vals_lists]
+    nuisance_params = init_args_d.pop('nuisance_params')
+    fix_params = init_args_d.pop('fix_params')
     profile = not init_args_d.pop('no_profile')
     # TODO: do we need the below
     store_intermediate = init_args_d.pop('store_intermediate')
@@ -78,7 +80,9 @@ def profile_scan(init_args_d, return_outputs=False):
     scan_res = hypo_testing.hypo_scan(
         param_names=param_names,
         scan_vals=scan_vals,
-        profile=profile
+        profile=profile,
+        nuisance_params=nuisance_params,
+        fix_params=fix_params
     )
 
     #to_file(scan_res, 'out.json.bz2')

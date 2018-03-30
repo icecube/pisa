@@ -7,7 +7,7 @@ Test hypotheses
 
 from __future__ import absolute_import, division
 
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, ArgumentError
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, ArgumentError, SUPPRESS
 from collections import OrderedDict
 from os.path import basename
 import sys
@@ -16,6 +16,7 @@ import sys
 from pisa.scripts.discrete_hypo_test import discrete_hypo_test as discrete_hypo
 from pisa.scripts.inj_param_scan import inj_param_scan
 from pisa.scripts.profile_scan import profile_scan
+from pisa.scripts.simple_fit import simple_fit
 from pisa.scripts.systematics_tests import systematics_tests as syst_tests
 from pisa.utils.config_parser import parse_fit_config, parse_minimizer_config
 from pisa.utils.log import logging, set_verbosity
@@ -30,7 +31,7 @@ __all__ = ['SCRIPT', 'AnalysisScript', 'main']
 
 __author__ = 'S. Wren, J.L. Lanfranchi, T. Ehrhardt'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2018, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -61,6 +62,7 @@ class AnalysisScript(object):
             discrete_hypo   Standard hypothesis testing analyses
             inj_param_scan  Scan over some injected parameter in the data
             profile_scan    Scan over some hypothesis parameters
+            simple_fit      Extremely basic no-nonsense fit of hypo to pseudo-data
             syst_tests      Perform tests on the impact of systematics on the analysis
 
             Run
@@ -113,13 +115,14 @@ class AnalysisScript(object):
         """Creates a generically usable dictionary of init args for the
         various analysis scripts"""
         init_args_d = self.analysis_init_args_d
-        global_min_settings_from_file = init_args_d.pop('global_min_settings')
-        global_minimizer = init_args_d.pop('global_min_method')
-        global_min_opt = init_args_d.pop('global_min_opt')
-        local_min_settings_from_file = init_args_d.pop('min_settings')
-        local_minimizer = init_args_d.pop('min_method')
-        local_min_opt = init_args_d.pop('min_opt')
-        fit_settings = init_args_d.pop('fit_settings')
+
+        global_min_settings_from_file = init_args_d.pop('global_min_settings', None)
+        global_minimizer = init_args_d.pop('global_min_method', None)
+        global_min_opt = init_args_d.pop('global_min_opt', None)
+        local_min_settings_from_file = init_args_d.pop('min_settings', None)
+        local_minimizer = init_args_d.pop('min_method', None)
+        local_min_opt = init_args_d.pop('min_opt', None)
+        fit_settings = init_args_d.pop('fit_settings', None)
 
         global_minimizer_settings = dict(
             method=dict(),
@@ -169,11 +172,20 @@ class AnalysisScript(object):
 
         init_args_d['fit_settings'] = fit_settings
 
-        init_args_d['check_octant'] = not init_args_d.pop('no_octant_check')
-        init_args_d['extra_param_selections'] = init_args_d.pop('extra_selection')
+        init_args_d['check_octant'] = (
+            not init_args_d.pop('no_octant_check')
+            if 'no_octant_check' in init_args_d else None
+        )
 
-        if self.command not in ('inj_param_scan', 'syst_tests'):
-            init_args_d['data_is_data'] = not init_args_d.pop('data_is_mc')
+        init_args_d['extra_param_selections'] = init_args_d.pop(
+            'extra_selection', None
+        )
+
+        if self.command not in ('inj_param_scan', 'syst_tests', 'simple_fit'):
+            init_args_d['data_is_data'] = (
+                not init_args_d.pop('data_is_mc')
+                if 'data_is_mc' in init_args_d else None
+            )
         else:
             init_args_d['data_is_data'] = False
             init_args_d['fluctuate_data'] = False
@@ -181,9 +193,10 @@ class AnalysisScript(object):
 
         init_args_d['store_minimizer_history'] = (
             not init_args_d.pop('no_min_history')
+            if 'no_min_history' in init_args_d else None
         )
 
-        other_metrics = init_args_d.pop('other_metric')
+        other_metrics = init_args_d.pop('other_metric', None)
         if other_metrics is not None:
             other_metrics = [s.strip().lower() for s in other_metrics]
             if 'all' in other_metrics:
@@ -219,6 +232,10 @@ class AnalysisScript(object):
 
 
     def validate_args_inj_param_scan(self):
+        return
+
+
+    def validate_args_simple_fit(self):
         return
 
 
@@ -718,6 +735,17 @@ class AnalysisScript(object):
             passed via '--param-name' (in the same order).
             Example: "np.linspace(35,55,10)*ureg.deg".'''
         )
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument(
+            '--nuisance-params', type=str, nargs='+', required=False,
+            help='''Specify set of nuisance parameter to take into account,
+            for fine-grained control over free and fixed parameters.'''
+        )
+        group.add_argument(
+            '--fix-params', type=str, nargs='+', required=False,
+            help='''Specify set of parameters to fix, for fine-grained control
+            over free and fixed parameters.'''
+        )
         parser.add_argument(
             '--no-profile',
             action='store_true',
@@ -787,6 +815,25 @@ class AnalysisScript(object):
         self.syst_tests_parser = parser
 
 
+    def parse_simple_fit(self):
+        """Parser for simple fit. Remaining arguments gotten via
+        other subparsers."""
+        parser = ArgumentParser(
+            add_help=False
+        )
+        parser.add_argument(
+            '--fit-settings',
+            type=str, metavar='FIT_CFG', required=True,
+            help='''Fit settings config file.'''
+        )
+        parser.add_argument(
+            '--outfile',
+            type=str, metavar='OUTFILE', default='simple_fit.json.bz2',
+            help='''Outfile path.'''
+        )
+        self.simple_fit_parser = parser
+
+
     def parse_verbosity(self):
         """Parser for verbosity"""
         parser = ArgumentParser(
@@ -844,6 +891,16 @@ class AnalysisScript(object):
                      self.data_trial_parser, self.fid_fluct_parser,
                      self.fid_trial_parser, self.h0_pipeline_parser,
                      self.h0_prop_parser, self.profile_scan_parser,
+                     self.verbosity_parser]
+        )
+        return parser
+
+
+    def command_simple_fit(self):
+        parser = ArgumentParser(
+            description='Simple fit',
+            parents=[self.data_pipeline_parser, self.h0_pipeline_parser,
+                     self.metric_parser, self.simple_fit_parser,
                      self.verbosity_parser]
         )
         return parser

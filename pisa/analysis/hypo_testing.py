@@ -2138,10 +2138,24 @@ class HypoTesting(Analysis):
                     if h1_param.name == data_param.name:
                         h1_param.is_fixed = False
 
-    def hypo_scan(self, param_names, scan_vals, profile):
+    def hypo_scan(self, param_names, scan_vals, profile, nuisance_params=None,
+                  fix_params=None):
         assert not self.blind # deal with blindess
+        if nuisance_params and not profile:
+            raise ValueError(
+                'Nuisance parameters specified, but "profile" is not set!'
+            )
+        if nuisance_params and fix_params:
+            raise ValueError(
+                'Both nuisance parameters and parameters-to-fix specified, but'
+                ' these are mutually exclusive!'
+            )
         if isinstance(param_names, basestring):
             param_names = [param_names]
+        if isinstance(nuisance_params, basestring):
+            nuisance_params = [nuisance_params]
+        if isinstance(fix_params, basestring):
+            fix_params = [fix_params]
 
         data_name = self.labels.data_name
 
@@ -2175,9 +2189,43 @@ class HypoTesting(Analysis):
             params[pname].range = min(scan_vals[0]), max(scan_vals[0])
 
         if not profile:
+            if fix_params:
+                raise ValueError(
+                    'Not specifying "profile" automatically fixes all'
+                    ' parameters, but parameters to fix have been specified in'
+                    ' addition. This seems like an undesired configuration.'
+                )
             # explicitly fix all parameters
             for param in self.h0_maker.params.free:
                 param.is_fixed = True
+
+        # check which other parameters have to be fixed depending on arguments
+        # passed in
+        if nuisance_params:
+            for nuis_param in nuisance_params:
+                if nuis_param in param_names:
+                    raise ValueError(
+                        'Parameter "%s" cannot be both nuisance parameter and'
+                        ' scan parameter simultaneously!' % nuis_param
+                    )
+                if not nuis_param in params.names:
+                    raise ValueError(
+                        'Parameter "%s" specified as nuisance parameter is not'
+                        ' part of the set of parameters of the hypothesis'
+                        ' maker!' % nuis_param
+                    )
+            for param in self.h0_maker.params.free:
+                if param.name not in nuisance_params:
+                    params.fix(param.name)
+        if fix_params and profile:
+            for param_to_fix in fix_params:
+                if not param_to_fix in params.names:
+                    raise ValueError(
+                        'Parameter "%s" specified as to be fixed is not'
+                        ' part of the set of parameters of the hypothesis'
+                        ' maker!' % param_to_fix
+                    )
+                params.fix(param_to_fix)
 
         t0 = time.time()
         results = {'scan_vals': {pname: [] for pname in param_names}, 'trials': []}

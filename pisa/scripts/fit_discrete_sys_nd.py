@@ -614,9 +614,10 @@ def plot_binwise_variations_with_fits(
     sys_list = hyperplane_fits['sys_list']
     if not len(sys_list) == 1:
         # TODO: allow for multi-sys. fits, but then project correctly
-        raise NotImplementedError(
-            'Plotting logic for more than 1 systematic not yet done.'
+        logging.warn(
+            'Plotting logic for more than 1 systematic not yet done. Returning.'
         )
+        return
     sys_param_points = np.array(sys_param_points)
     for map_name, chan_norm_sys_maps in norm_sys_maps.items():
         logging.info( # pylint: disable=logging-not-lazy
