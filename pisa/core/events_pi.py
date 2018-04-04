@@ -66,7 +66,7 @@ class EventsPi(collections.OrderedDict) :
         # The value for each category should itself be a dict of the event variables,
         # where each entry is has a variable name as the key and a np.array filled once 
         # per event as the value.
-        # For backwards compatibility, convert to thisfromat from knwon older formats first
+        # For backwards compatibility, convert to thisfromat from known older formats first
         convert_nu_data_to_flat_format(input_data)
         for cat_key,cat_dict in input_data.items() :
             if not isinstance(cat_dict,collections.Mapping) :

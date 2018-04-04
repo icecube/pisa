@@ -61,9 +61,10 @@ class pi_nusquids(PiStage):
         TODO
 
     Additional params expected when using the `use_decoherence` argument:
-        gamma12 : quantity (energy)
-        gamma13 : quantity (energy)
-        gamma23 : quantity (energy)
+        gamma : quantity (energy)
+#        gamma12 : quantity (energy)
+#        gamma13 : quantity (energy)
+#        gamma23 : quantity (energy)
 
     """
     def __init__(self,
@@ -103,9 +104,10 @@ class pi_nusquids(PiStage):
 
         # Add decoherence parameters
         if self.use_decoherence :
-            expected_params.extend(['gamma21',
-                                    'gamma31',
-                                    'gamma32'])
+            expected_params.extend(['gamma'])
+            #expected_params.extend(['gamma21',
+            #                        'gamma31',
+            #                        'gamma32'])
 
         # Add NSI parameters
         #TODO
@@ -214,9 +216,14 @@ class pi_nusquids(PiStage):
 
         # update osc params specific to decoherence
         if self.use_decoherence :
+            self.osc_params.gamma21 = self.params.gamma.value.m_as('eV')
+            self.osc_params.gamma31 = self.params.gamma.value.m_as('eV')
+            self.osc_params.gamma32 = self.params.gamma.value.m_as('eV')
+            '''
             self.osc_params.gamma21 = self.params.gamma21.value.m_as('eV')
             self.osc_params.gamma31 = self.params.gamma31.value.m_as('eV')
             self.osc_params.gamma32 = self.params.gamma32.value.m_as('eV')
+            '''
 
         # TODO sterile params
         '''

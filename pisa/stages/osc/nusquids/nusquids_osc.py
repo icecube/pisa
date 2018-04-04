@@ -172,7 +172,7 @@ def evolve_states(cz_shape, propagators, ini_states, nsq_earth_atm, osc_params):
             nuSQ.Set_MixingAngle(1, 3, osc_params.theta14)
 
         nuSQ.Set_SquareMassDifference(1, osc_params.dm21)
-        nuSQ.Set_SquareMassDifference(2, osc_params.dm31)
+        nuSQ.Set_SquareMassDifference(2, osc_params.dm31) #TODO Should this be dm32?
 
         nuSQ.Set_CPPhase(0, 2, osc_params.deltacp)
 
@@ -188,8 +188,8 @@ def evolve_states(cz_shape, propagators, ini_states, nsq_earth_atm, osc_params):
                 nuSQ_icz.Set_epsilon_tautau(osc_params.eps_tautau)
 
         # set decoherence parameters
-        if hasattr(nuSQ,"Set_DecoherenceMatrix") : #TODO Find a nicer way to do this (maybe make all this into a class?)
-            nuSQ.Set_DecoherenceMatrix(osc_params.gamma21,osc_params.gamma31,osc_params.gamma32)
+        if hasattr(nuSQ,"Set_DecoherenceGammaMatrix") : #TODO Find a nicer way to do this (maybe make all this into a class?)
+            nuSQ.Set_DecoherenceGammaMatrix(osc_params.gamma21,osc_params.gamma31,osc_params.gamma32)
 
         t2 = datetime.datetime.now()
 
