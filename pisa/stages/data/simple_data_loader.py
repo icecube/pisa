@@ -146,9 +146,6 @@ class simple_data_loader(PiStage):
     def apply_function(self):
         # reset weights to event_weights
         self.data.data_specs = self.output_specs
-        #TODO Do we really want to do this?
-        '''
-        for container in self.data:
+        for container in self.data: #TODO This needs thinking about for case where we have input event weights
             vectorizer.set(container['event_weights'],
                            out=container['weights'])
-        '''
