@@ -267,24 +267,36 @@ class Layers(object):
     """
     def __init__(self, prem_file, detector_depth=1., prop_height=2.):
         # Load earth model
-        prem = from_file(prem_file, as_array=True)
-        self.rhos = prem[...,1][::-1].astype(FTYPE)
-        self.radii = prem[...,0][::-1].astype(FTYPE)
-        r_earth = prem[-1][0]
+        if prem_file is not None :
+            self.using_earth_model = True
+            prem = from_file(prem_file, as_array=True)
+            self.rhos = prem[...,1][::-1].astype(FTYPE)
+            self.radii = prem[...,0][::-1].astype(FTYPE)
+            r_earth = prem[-1][0]
+            self.default_elec_frac = 0.5
+            n_prem = len(self.radii) - 1
+            self.max_layers = 2 * n_prem + 1
+        else :
+            self.using_earth_model = False
+            r_earth = 6371.0 #If no Earth model provided, use a standard Earth radius value
+
+        # Set some other
         self.r_detector = r_earth - detector_depth
-        self.default_elec_frac = 0.5
         self.prop_height = prop_height
         self.detector_depth = detector_depth
         self.min_detector_depth = 1.0e-3 # <-- Why? // [km] so min is ~ 1 m
-        n_prem = len(self.radii) - 1
-        self.max_layers = 2 * n_prem + 1
 
-        # Change outermost radius to a bit underground, where the detector
-        if self.detector_depth >= self.min_detector_depth:
-            self.radii[0] -= detector_depth
-            self.max_layers += 1
+        # Some additional handling of the Earth model
+        if self.using_earth_model:
 
-        self.computeMinLengthToLayers()
+            # Change outermost radius to a bit underground, where the detector
+            if self.detector_depth >= self.min_detector_depth:
+                self.radii[0] -= detector_depth
+                self.max_layers += 1
+
+            # Compute coszen limit
+            self.computeMinLengthToLayers()
+
 
     def setElecFrac(self, YeI, YeO, YeM):
         """
@@ -295,6 +307,9 @@ class Layers(object):
             and M=mantle
 
         """
+        if not self.using_earth_model :
+            raise ValueError("Cannot set electron fraction when not using an Earth model")
+
         self.YeFrac = np.array([YeI, YeO, YeM], dtype=FTYPE)
 
         # TODO: these numbers are just hard coded for some reason...?
@@ -323,6 +338,10 @@ class Layers(object):
             Array of coszen values
 
         """
+
+        if not self.using_earth_model:
+            raise ValueError("Cannot calculate layers when not using an Earth model")
+
         # run external function
         self._n_layers, self._density, self._distance = extCalcLayers(
             cz=cz,
@@ -341,10 +360,14 @@ class Layers(object):
 
     @property
     def n_layers(self):
+        if not self.using_earth_model:
+            raise ValueError("Cannot get layers when not using an Earth model")
         return self._n_layers
 
     @property
     def density(self):
+        if not self.using_earth_model:
+            raise ValueError("Cannot get density when not using an Earth model")
         return self._density
 
     @property
@@ -352,7 +375,44 @@ class Layers(object):
         return self._distance
 
 
+    def calcPathLength(self, cz) :
+        """
+
+        Calculate path length of the neutrino through an Earth-sized sphere, given the 
+        production height, detector depth and zenith angle.
+        Useful if not considering matter effects.
+
+        Parameters
+        ----------
+        cz : cos(zenith angle), either single float value or an array of float values
+
+        """
+        pathlength = []
+
+        for this_cz in (cz if hasattr(cz,"__len__") else [cz] ) :
+
+            if this_cz < 0:
+                this_pathlength = np.sqrt(
+                    (self.r_detector + self.prop_height + self.detector_depth) * \
+                    (self.r_detector + self.prop_height + self.detector_depth) - \
+                    (self.r_detector*self.r_detector)*(1 - this_cz*this_cz)
+                ) - self.r_detector*this_cz
+            else:
+                kappa = (self.detector_depth + self.prop_height)/self.r_detector
+                this_pathlength = self.r_detector * np.sqrt(
+                    this_cz*this_cz - 1 + (1 + kappa)*(1 + kappa)
+                ) - self.r_detector*this_cz
+
+            pathlength.append(this_pathlength)
+
+        pathlength = np.asarray(pathlength)
+
+        self._distance = pathlength
+
+
 def test_Layers():
+
+    logging.info('Test layers calculation:')
     layer = Layers('osc/PREM_4layer.dat')
     layer.setElecFrac(0.4656, 0.4656, 0.4957)
     cz = np.linspace(-1, 1, 1e5, dtype=FTYPE)
@@ -360,6 +420,14 @@ def test_Layers():
     logging.info('n_layers = %s' %layer.n_layers)
     logging.info('density  = %s' %layer.density)
     logging.info('distance = %s' %layer.distance)
+
+    logging.info('Test path length calculation:')
+    layer = Layers(None)
+    cz = np.array([1.,0.,-1.])
+    layer.calcPathLength(cz)
+    logging.info('coszen = %s' %cz)
+    logging.info('pathlengths = %s' %layer.distance)
+
     logging.info('<< PASS : test_Layers >>')
 
 

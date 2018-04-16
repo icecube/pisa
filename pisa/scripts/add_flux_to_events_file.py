@@ -36,11 +36,10 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  See the License for the specific language governing permissions and
  limitations under the License.'''
 
-
 def add_fluxes_to_file(data_file_path, flux_table, flux_name,
                        outdir=None, label=None, overwrite=False):
     """Add fluxes to PISA events file (e.g. for use by an mc stage)
-
+    
     Parameters
     -----------
     data_file_path : string
@@ -72,20 +71,36 @@ def add_fluxes_to_file(data_file_path, flux_table, flux_name,
 
     mkdir(outdir, warn=False)
 
+    # Loop over the top-level keys
     for primary, primary_node in data.items():
-        for int_type, int_node in primary_node.items():
-            true_e = int_node['true_energy']
-            true_cz = int_node['true_coszen']
 
-            # calculate all 4 fluxes (nue, nuebar, numu and numubar)
-            for table in ['nue', 'nuebar', 'numu', 'numubar']:
-                flux = calculate_2d_flux_weights(
-                    true_energies=true_e,
-                    true_coszens=true_cz,
-                    en_splines=flux_table[table]
-                )
-                keyname = flux_name + '_' + table + '_flux'
-                int_node[keyname] = flux
+        # Only handling neutrnio fluxes here, skip past e.g. muon or noise MC events
+        if primary.startswith("nu") :
+
+            logging.info('Adding fluxes to "%s" events', primary)
+
+            # Input data may have one layer of hierarchy before the event variables (e.g. [numu_cc]), 
+            # or for older files there maybe be a second layer (e.g. [numu][cc]).
+            # Handling either case here...
+            if "true_energy" in primary_node :
+                secondary_nodes = [primary_node]
+            else :
+                secondary_nodes = primary_node.values()
+
+            for secondary_node in secondary_nodes :
+
+                true_e = secondary_node['true_energy']
+                true_cz = secondary_node['true_coszen']
+
+                # calculate all 4 fluxes (nue, nuebar, numu and numubar)
+                for table in ['nue', 'nuebar', 'numu', 'numubar']:
+                    flux = calculate_2d_flux_weights(
+                        true_energies=true_e,
+                        true_coszens=true_cz,
+                        en_splines=flux_table[table]
+                    )
+                    keyname = flux_name + '_' + table + '_flux'
+                    secondary_node[keyname] = flux
 
     to_file(data, outpath, attrs=attrs, overwrite=overwrite)
     logging.info('--> Wrote file including fluxes to "%s"', outpath)

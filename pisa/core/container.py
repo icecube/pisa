@@ -248,6 +248,18 @@ class Container(object):
         elif self.data_specs is None:
             return None
 
+    @property
+    def keys(self):
+        '''
+        return list of available keys
+        '''
+        if self.data_mode == 'events':
+            return self.array_data.keys() + self.scalar_data.keys()
+        elif self.data_mode == 'binned':
+            return self.array_data.keys() + self.scalar_data.keys() + self.data_specsn_names
+        else:
+            raise ValueError('Need to set data specs first')
+
     @ property
     def size(self):
         '''
@@ -340,7 +352,10 @@ class Container(object):
             elif isinstance(self.data_specs, MultiDimBinning):
                 return self.get_binned_data(key, self.data_specs)
         except KeyError:
-            return self.get_scalar_data(key)
+            try :
+                return self.get_scalar_data(key)
+            except KeyError:
+                raise KeyError('"%s" not found in container "%s"'%(key,self.name))
 
     def __setitem__(self, key, value):
         '''
@@ -354,6 +369,12 @@ class Container(object):
                 self.add_array_data(key, value)
             elif self.data_mode == 'binned':
                 self.add_binned_data(key, (self.data_specs, value))
+
+    def __iter__(self):
+        '''
+        iterate over all keys in container
+        '''
+        return iter(self.keys)
 
     def array_to_binned(self, key, binning, averaged=True):
         '''

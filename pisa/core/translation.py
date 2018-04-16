@@ -284,6 +284,7 @@ def lookup(sample, flat_hist, binning):
     -----
     this is only a 2d method right now
     '''
+    #print(binning)
     assert binning.num_dims == 2, 'can only do 2d at the moment'
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
     # todo: directly return smart array
