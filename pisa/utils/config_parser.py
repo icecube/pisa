@@ -198,6 +198,7 @@ from io import StringIO
 from os.path import abspath, expanduser, expandvars, isfile, join
 import re
 import sys
+import warnings
 
 from backports.configparser import (
     RawConfigParser, ExtendedInterpolation, DuplicateOptionError,
@@ -205,6 +206,7 @@ from backports.configparser import (
     NoSectionError
 )
 from backports.configparser.helpers import open as c_open
+from backports.configparser.helpers import PY2
 import numpy as np
 from uncertainties import ufloat, ufloat_fromstr
 
@@ -517,9 +519,9 @@ def parse_pipeline_config(config):
 
     if not config.has_section('binning'):
         raise NoSectionError(
-                "Could not find 'binning'. Only found sections: %s"
-                %config.sections()
-              )
+            "Could not find 'binning'. Only found sections: %s"
+            % config.sections()
+        )
 
     # Create binning objects
     binning_dict = {}
@@ -531,6 +533,21 @@ def parse_pipeline_config(config):
             for bin_name in order:
                 try:
                     def_raw = config.get('binning', binning + '.' + bin_name)
+                except:
+                    dims_defined = [
+                        split(dim, sep='.')[1] for dim in
+                        config['binning'].keys() if
+                        dim.startswith(binning + '.') and not
+                        dim.endswith('.order')
+                    ]
+                    logging.error(
+                        "Failed to find definition of '%s' dimension of '%s'"
+                        " binning entry. Only found definition(s) of: %s",
+                        bin_name, binning, dims_defined
+                    )
+                    del dims_defined
+                    raise
+                try:
                     kwargs = eval(def_raw) # pylint: disable=eval-used
                 except:
                     logging.error(
@@ -993,7 +1010,8 @@ class PISAConfigParser(RawConfigParser):
 
     def read(self, filenames, encoding=None):
         """Override `read` method to interpret `filenames` as PISA resource
-        locations, then call overridden `read` method.
+        locations, then call overridden `read` method. Also, IOError fails
+        here, whereas it is ignored in RawConfigParser.
 
         For further help on this method and its arguments, see
         :method:`~backports.configparser.configparser.read`
@@ -1003,10 +1021,38 @@ class PISAConfigParser(RawConfigParser):
             filenames = [filenames]
         resource_locations = []
         for filename in filenames:
-            resource_locations.append(find_resource(filename))
+            resource_location = find_resource(filename)
+            if not isfile(resource_location):
+                raise ValueError(
+                    '"%s" is not a file or could not be located' % filename
+                )
+            resource_locations.append(resource_location)
 
-        return super(PISAConfigParser, self).read(filenames=resource_locations,
-                                                  encoding=encoding)
+        filenames = resource_locations
+
+        # NOTE: From here on, most of the `read` method is copied, but
+        # ignoring IOError exceptions is removed here. Python copyrights apply.
+
+        if PY2 and isinstance(filenames, bytes):
+            # we allow for a little unholy magic for Python 2 so that
+            # people not using unicode_literals can still use the library
+            # conveniently
+            warnings.warn(
+                "You passed a bytestring as `filenames`. This will not work"
+                " on Python 3. Use `cp.read_file()` or switch to using Unicode"
+                " strings across the board.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            filenames = [filenames]
+        elif isinstance(filenames, str):
+            filenames = [filenames]
+        read_ok = []
+        for filename in filenames:
+            with c_open(filename, encoding=encoding) as fp:
+                self._read(fp, filename)
+            read_ok.append(filename)
+        return read_ok
 
     # NOTE: the `_read` method is copy-pasted (then modified slightly) from
     # Python's backports.configparser (version 3.5.0), and so any copyright
