@@ -398,10 +398,10 @@ class Container(object):
             binning, hist = self.binned_data[key]
         except KeyError:
             if self.array_data.has_key(key):
-                logging.debug('No transformation for %s array data'%(key))
+                logging.debug('No transformation for `%s` array data in container `%s`'%(key,self.name))
                 return
             else:
-                raise ValueError('Key %s does not exist'%key)
+                raise ValueError('Key `%s` does not exist in container `%s`'%(key,self.name))
         logging.debug('Transforming %s binned to array data'%(key))
         sample = [self.array_data[n] for n in binning.names]
         self.add_array_data(key, lookup(sample, hist, binning))

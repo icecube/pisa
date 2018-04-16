@@ -44,6 +44,7 @@ class pi_hist(PiStage):
         # what are the keys used from the inputs during apply
         input_apply_keys = ('weights',
                            )
+
         # what are keys added or altered in the calculation used during apply
         assert calc_specs is None
         if error_method in ['sumw2']:
@@ -74,6 +75,7 @@ class pi_hist(PiStage):
         assert self.output_mode == 'binned'
 
     def setup_function(self):
+        # create the variables to be filled in `apply`
         if self.error_method in ['sumw2']:
             self.data.data_specs = self.input_specs
             for container in self.data:
@@ -92,18 +94,14 @@ class pi_hist(PiStage):
         if self.input_mode == 'binned':
             self.data.data_specs = self.output_specs
             for container in self.data:
-                container.array_to_binned('event_weights', self.output_specs, averaged=False)
-                vectorizer.multiply_and_scale(container['event_weights'], out=container['weights'])
                 # calcualte errors
                 if self.error_method in ['sumw2']:
                     vectorizer.square(container['weights'], out=container['weights_squared'])
-                    vectorizer.multiply(container['event_weights'], out=container['weights_squared'])
                     vectorizer.sqrt(container['weights_squared'], out=container['errors'])
 
         elif self.input_mode == 'events':
             for container in self.data:
                 self.data.data_specs = self.input_specs
-                vectorizer.multiply(container['event_weights'],out=container['weights'])
                 # calcualte errors
                 if self.error_method in ['sumw2']:
                     vectorizer.square(container['weights'], out=container['weights_squared'])
