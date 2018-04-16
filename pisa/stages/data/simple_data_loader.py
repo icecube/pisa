@@ -115,9 +115,13 @@ class simple_data_loader(PiStage):
                 container.add_array_data(key, val)
 
             # create weight arrays
-            # to start with this is just a placeholder `weights` array full of 1s
+            # define an `initial_weights` array that will be the starting point (and never modified), 
+            # and a `weights` array that will be initialised from `initial_weights` modified by the stages
+            # user can also provide the `initial_weights` values in the input file if desired
             assert 'weights' not in container.array_data, "Found an existing `weights` array in %s, this would be overwritten (this perhaps should be `initial_weights``"%name
-            container.add_array_data('weights', np.ones(container.size, dtype=FTYPE))
+            if "initial_weights" not in container.array_data : #TODO Need to fix the bug in checking for something being `in` a container
+              container.add_array_data('initial_weights', np.ones(container.size, dtype=FTYPE))
+            container.add_array_data('weights', np.ones(container.size, dtype=FTYPE)) # The values can be anything (will be overwritten by `initial_weights`)
 
             # add neutrino flavor information for neutrino events
             if name.startswith("nu") :
@@ -149,9 +153,8 @@ class simple_data_loader(PiStage):
     @profile
     def apply_function(self):
 
-        # if user provided `initial_weights`, set `weights` to these values
+        # reset the weights to the initial weights prior to the downstream stages running
         self.data.data_specs = self.output_specs
         for container in self.data:
-            if "initial_weights" in container.array_data : #TODO Need to fix the bug in checking for something being `in` a container
-                vectorizer.set(container['initial_weights'],out=container['weights'])
+            vectorizer.set(container['initial_weights'],out=container['weights'])
 
