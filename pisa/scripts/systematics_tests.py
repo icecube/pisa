@@ -72,6 +72,7 @@ def systematics_tests(init_args_d, return_outputs=False):
                          ' one-by-one.')
 
     # only have a single distribution maker, the h0_maker
+    # first set up all distribution makers the same
     setup_makers_from_pipelines(init_args_d=init_args_d, ref_maker_names=['h0'])
 
     # process param selections for each of h0, h1, and data
@@ -83,8 +84,15 @@ def systematics_tests(init_args_d, return_outputs=False):
             init_args_d['h0_param_selections']
         init_args_d['data_name'] = init_args_d['h0_name']
 
-    # apply param selections to h1 and data distribution makers
-    select_maker_params(init_args_d=init_args_d, maker_names=['h1', 'data'])
+    if init_args_d['h1_param_selections'] is None or init_args_d['h1_param_selections'] == init_args_d['h0_param_selections']:
+        # this will mean hypothesis testing will only work
+        # with a single hypothesis
+        init_args_d['h1_maker'] = None
+        # just to be clear
+        init_args_d['h1_name'] = init_args_d['h0_name']
+
+    # apply param selections to data distribution maker if applicable
+    select_maker_params(init_args_d=init_args_d, maker_names=['data'])
 
     if only_syst is not None:
         for syst in only_syst:

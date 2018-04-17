@@ -1124,8 +1124,8 @@ class Analysis(object):
         Parameters
         ----------
         data_dist : MapSet
-        hypo_maker : DistributionMaker
-        hypo_param_selections : None, string, or sequence of strings
+        hypo_params : ParamSet
+            hypothesis parameters corresponding to the hypo_asimov_dist
         hypo_asimov_dist : MapSet
         metric : string
         other_metrics : None, string, or sequence of strings
