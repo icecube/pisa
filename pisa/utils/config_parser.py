@@ -561,24 +561,21 @@ def parse_fit_config(config):
                     elif fit_method == 'minimize' and opt in ['global', 'local']:
                         method_defaults[fit_method][opt] = parse_minimizer_config(val)
                     else:
-                        try:
-                            val = parse_quantity(val)
-                            method_defaults[fit_method][opt] = val.nominal_value
-                        except:
-                            # remove *any* whitespace
-                            val = ''.join(parse_string_literal(val).split())
-                            method_defaults[fit_method][opt] = val
+                        # remove *any* whitespace
+                        val = ''.join(parse_string_literal(val).split())
+                        method_defaults[fit_method][opt] = val
                     # processed, so remove
                     config[fit_method].pop(opt)
                 else:
                     # this allowed default hasn't been set
                     # -> only problematic if wildcard is used
-                    if wildcard_used:
+                    if wildcard_here:
                         raise ValueError(
                             'You have to globally set option "%s" for fit'
                             ' method "%s" since you used the wildcard!'
                             % (opt, fit_method)
                         )
+                # start searching for param specific specs
                 for pname in method_pnames:
                     # options set as <param>.<opt> take precedence over global
                     # setting of <opt>
@@ -592,12 +589,8 @@ def parse_fit_config(config):
                                 % (param_opt, opt)
                             )
                         val = config[fit_method][param_opt]
-                        try:
-                            val = parse_quantity(val)
-                            val = val.nominal_value
-                        except:
-                            # remove *any* whitespace
-                            val = ''.join(parse_string_literal(val).split())
+                        # remove *any* whitespace
+                        val = ''.join(parse_string_literal(val).split())
                         config[fit_method].pop(param_opt)
                     else:
                         # but if no <param>.<opt> entry is found, there

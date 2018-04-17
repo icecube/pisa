@@ -31,6 +31,7 @@ from pisa import ureg, _version, __version__
 from pisa.analysis.analysis import Analysis
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.map import MapSet
+from pisa.core.prior import get_prior_bounds
 from pisa.utils.comparisons import normQuant
 from pisa.utils.config_parser import parse_fit_config, parse_minimizer_config
 from pisa.utils.fileio import from_file, get_valid_filename, mkdir, to_file
@@ -92,6 +93,7 @@ def setup_makers_from_pipelines(init_args_d, ref_maker_names):
     """
     validate_maker_names(ref_maker_names, require_all=False)
     if len(ref_maker_names) == 1:
+        # just assign the "pipeline" to the reference maker and all other makers
         ref_ind = ALL_MAKER_NAMES.index(ref_maker_names[0])
         ref_maker_name = ALL_MAKER_NAMES[ref_ind]
         other_maker_names = [maker_name for maker_name in ALL_MAKER_NAMES
@@ -122,11 +124,18 @@ def setup_makers_from_pipelines(init_args_d, ref_maker_names):
                 )
                 init_args_d[maker_name + '_maker'] = DistributionMaker(filenames)
             else:
+                logging.warn(
+                    'No filenames for "%s". Setting it up with `None`.'
+                    % (maker_name + '_maker')
+                )
+                init_args_d[maker_name + '_maker'] = None
+                """
                 raise ValueError(
                     'Only found "None" pipeline settings for "%s",'
                     ' so do not know how to setup a corresponding'
                     ' DistributionMaker.' % maker_name
                 )
+                """
 
 def collect_maker_selections(init_args_d, maker_names):
     """Collect and process selections from all of the given maker names. An
@@ -176,13 +185,16 @@ class Labels(object):
 
     """
     def __init__(self, h0_name, h1_name, data_name, data_is_data,
-                 fluctuate_data, fluctuate_fid):
+                 fluctuate_data, fluctuate_fid,
+                 fluctuate_data_method=None, fluctuate_fid_method=None):
         self.h0_name = get_valid_filename(h0_name).lower()
         self.h1_name = get_valid_filename(h1_name).lower()
         self.data_name = get_valid_filename(data_name).lower()
         self.data_is_data = data_is_data
         self.fluctuate_data = fluctuate_data
+        self.fluctuate_data_method = fluctuate_data_method
         self.fluctuate_fid = fluctuate_fid
+        self.fluctuate_fid_method = fluctuate_fid_method
         self._construct_names()
 
     def _construct_names(self):
@@ -204,7 +216,7 @@ class Labels(object):
         else:
             self.data_prefix = 'toy'
             if self.fluctuate_data:
-                self.data_suffix = 'pseudodata'
+                self.data_suffix = 'pseudodata_' + self.fluctuate_data_method
             else:
                 self.data_suffix = 'asimov'
 
@@ -221,7 +233,7 @@ class Labels(object):
 
         if self.fluctuate_fid:
             self.fid_disp = 'fiducial pseudodata'
-            self.fid = 'fid_pseudodata'
+            self.fid = 'fid_pseudodata_' + self.fluctuate_fid_method
         else:
             self.fid_disp = 'fiducial Asimov'
             self.fid = 'fid_asimov'
@@ -284,6 +296,24 @@ class HypoTesting(Analysis):
         Base directory in which to create the directory that stores all
         results. Note that `logdir` will be (recursively) generated if it does
         not exist.
+
+    data_is_data : bool
+        Whether the distributions fit to are from real data or not
+
+    fluctuate_data : bool
+        Whether to apply random fluctuations to expected toy data from MC
+
+    fluctuate_fid : bool
+        Whether to apply random fluctuations to fiducial distributions
+        (if applicable)
+
+    fluctuate_data_method : str
+        Method according to which toy data distributions are to be fluctuated.
+        Choice needs to be recognized by `Map`'s `fluctuate` method.
+
+    fluctuate_fid_method : str
+        Method according to which fiducial distributions are to be fluctuated.
+        Choice needs to be recognized by `Map`'s `fluctuate` method.
 
     minimizer_settings : string
         Minimizer settings file or resource path. These will be processed
@@ -355,12 +385,12 @@ class HypoTesting(Analysis):
         that. Note that fiducial trials recorded to disk are not duplicated in
         subsequent runs (assuming the same `logdir` is specified for each run).
 
-    data_start_ind : int >= 0 but < 2**(?)
+    data_start_ind : int >= 0 but < 2**12
         Start data trials at this index. Valid indexes begin with 0. The final
         data trial index is (data_start_ind + num_data_trials - 1). Any data
         trials already recorded to disk will be skipped.
 
-    fid_start_ind : int >= 0 but < 2**(?)
+    fid_start_ind : int >= 0 but < 2**12
         Start fiducial trials at this index. Valid indexes begin with 0. The
         final fiducial trial index is (fid_start_ind + num_fid_trials - 1). Any
         fiducial trials already recorded to disk will be skipped.
@@ -420,13 +450,14 @@ class HypoTesting(Analysis):
 
     If the "data" used in the analysis is pseudodata (i.e., `data_maker` uses
     Monte Carlo to produce its distributions, and these are then
-    Poisson-fluctuated--`fluctuate_data` is True), then `num_data_trials`
-    should be as large as is computationally feasible.
+    fluctuated--`fluctuate_data` is True and `fluctuate_data_method` is set to
+    a valid method), then `num_data_trials` should be as large as is
+    computationally feasible.
 
     Likewise, if the fiducial-fit data is to be pseudodata (i.e.,
-    `fluctuate_fid` is True and regardless if `data_maker` uses Monte
-    Carlo), `num_fid_trials` should be as large as computationally
-    feasible.
+    `fluctuate_fid` is True and `fluctuate_fid_method` is set to a valid method
+    and regardless if `data_maker` uses Monte Carlo), `num_fid_trials` should
+    be as large as computationally feasible.
 
     Typical analyses include the following:
         * Asimov analysis of data: `data_maker` uses (actual, measured) data
@@ -452,8 +483,9 @@ class HypoTesting(Analysis):
 
     """
     def __init__(self, logdir,
-                 data_is_data, fluctuate_data, fluctuate_fid,
-                 metric, other_metrics=None, fit_settings=None, minimizer_settings=None,
+                 data_is_data, fluctuate_data, fluctuate_fid, metric,
+                 fluctuate_data_method=None, fluctuate_fid_method=None,
+                 other_metrics=None, fit_settings=None, minimizer_settings=None,
                  h0_name=None, h0_maker=None, h0_param_selections=None, h0_fid_asimov_dist=None,
                  h1_name=None, h1_maker=None, h1_param_selections=None, h1_fid_asimov_dist=None,
                  data_name=None, data_maker=None, data_param_selections=None, data_dist=None,
@@ -466,8 +498,8 @@ class HypoTesting(Analysis):
                  reset_free=True):
         super(HypoTesting, self).__init__()
 
-        assert num_data_trials >= 1
-        assert num_fid_trials >= 1
+        assert num_data_trials >= 0
+        assert num_fid_trials >= 0
         assert data_start_ind >= 0
         assert fid_start_ind >= 0
         assert metric in ALL_METRICS
@@ -532,8 +564,19 @@ class HypoTesting(Analysis):
             if not isinstance(data_dist, MapSet):
                 data_dist = MapSet(data_dist)
 
+        # If analyzing actual data, fluctuations should not be applied to the
+        # data_dist (fluctuating fiducial-fits Asimov dist is still fine,
+        # though).
+        if data_is_data and fluctuate_data:
+            raise ValueError('Adding fluctuations to actual data distribution'
+                             ' is invalid.')
+
+        if fluctuate_data and num_data_trials == 0:
+            raise ValueError(
+                '`fluctuate_data` is True but `num_data_trials` is set to 0!'
+            )
         # Ensure num_{fid_}data_trials is one if fluctuate_{fid_}data is False
-        if not fluctuate_data and num_data_trials != 1:
+        if not fluctuate_data and num_data_trials > 1:
             logging.warn(
                 'More than one data trial is unnecessary because'
                 ' `fluctuate_data` is False (i.e., all `num_data_trials` data'
@@ -542,7 +585,11 @@ class HypoTesting(Analysis):
             )
             num_data_trials = 1
 
-        if not fluctuate_fid and num_fid_trials != 1:
+        if fluctuate_fid and num_fid_trials == 0:
+            raise ValueError(
+                '`fluctuate_fid` is True but `num_fid_trials` is set to 0!'
+            )
+        if not fluctuate_fid and num_fid_trials > 1:
             logging.warn(
                 'More than one fid trial is unnecessary because'
                 ' `fluctuate_fid` is False (i.e., all'
@@ -551,9 +598,28 @@ class HypoTesting(Analysis):
             )
             num_fid_trials = 1
 
+        if fluctuate_data:
+            if fluctuate_data_method is None:
+                raise ValueError(
+                    '`fluctuate_data` is True but no `fluctuate_data_method`'
+                    ' is specified!'
+                )
+            if not isinstance(fluctuate_data_method, basestring):
+                raise TypeError('`fluctuate_data_method` must be a string!')
+
+        if fluctuate_fid:
+            if fluctuate_fid_method is None:
+                raise ValueError(
+                    '`fluctuate_fid` is True but no `fluctuate_fid_method`'
+                    ' is specified!'
+                )
+            if not isinstance(fluctuate_fid_method, basestring):
+                raise TypeError('`fluctuate_fid_method` must be a string!')
+
         # Identify duplicate `*_maker` specifications
         self.h1_maker_is_h0_maker = False
         if h1_maker is None or h1_maker == h0_maker:
+            logging.info('h1_maker is identical to h0_maker.')
             self.h1_maker_is_h0_maker = True
 
         self.data_maker_is_h0_maker = False
@@ -572,6 +638,8 @@ class HypoTesting(Analysis):
         # If no h1 maker settings AND no h1 param selections are
         # provided, then we really can't proceed since h0 and h1 will be
         # identical in every way and there's nothing of substance to be done.
+        # TE: I disagree
+        """
         if h1_maker is None and h1_param_selections is None:
             raise ValueError(
                 'Hypotheses h0 and h1 to be generated will use the same'
@@ -580,14 +648,7 @@ class HypoTesting(Analysis):
                 ' must explicitly specify `h1_maker` and/or'
                 ' `h1_param_selections`.'
             )
-
-        # If analyzing actual data, fluctuations should not be applied to the
-        # data_dist (fluctuating fiducial-fits Asimov dist is still fine,
-        # though).
-        if data_is_data and fluctuate_data:
-            raise ValueError('Adding fluctuations to actual data distribution'
-                             ' is invalid.')
-
+        """
         # Instantiate distribution makers only where necessary (otherwise copy)
         if not isinstance(h1_maker, DistributionMaker):
             if self.h1_maker_is_h0_maker:
@@ -660,7 +721,9 @@ class HypoTesting(Analysis):
         self.metric = metric
         self.other_metrics = other_metrics
         self.fluctuate_data = fluctuate_data
+        self.fluctuate_data_method = fluctuate_data_method
         self.fluctuate_fid = fluctuate_fid
+        self.fluctuate_fid_method = fluctuate_fid_method
 
         self.num_data_trials = num_data_trials
         self.num_fid_trials = num_fid_trials
@@ -728,7 +791,9 @@ class HypoTesting(Analysis):
             h0_name=h0_name, h1_name=h1_name,
             data_name=data_name, data_is_data=self.data_is_data,
             fluctuate_data=self.fluctuate_data,
-            fluctuate_fid=self.fluctuate_fid
+            fluctuate_fid=self.fluctuate_fid,
+            fluctuate_data_method=self.fluctuate_data_method,
+            fluctuate_fid_method=self.fluctuate_fid_method
         )
 
     def run_analysis(self):
@@ -744,6 +809,7 @@ class HypoTesting(Analysis):
         self.setup_logging()
         self.write_config_summary()
         self.write_minimizer_settings()
+        self.write_fit_settings()
         self.write_run_info()
 
         t0 = time.time()
@@ -869,7 +935,7 @@ class HypoTesting(Analysis):
             data_random_state = get_random_state([0, self.data_ind, 0])
 
             self.data_dist = self.toy_data_asimov_dist.fluctuate(
-                method='poisson', random_state=data_random_state
+                method=self.fluctuate_data_method, random_state=data_random_state
             )
 
         else:
@@ -1030,7 +1096,7 @@ class HypoTesting(Analysis):
 
             # Fluctuate h0 fid Asimov
             self.h0_fid_dist = self.h0_fid_asimov_dist.fluctuate(
-                method='poisson',
+                method=self.fluctuate_fid_method,
                 random_state=fid_random_state
             )
             # The state of `random_state` will be moved forward now as compared
@@ -1038,7 +1104,7 @@ class HypoTesting(Analysis):
             # behavior, so the *exact* same random state isn't used to
             # fluctuate h1 as was used to fluctuate h0.
             self.h1_fid_dist = self.h1_fid_asimov_dist.fluctuate(
-                method='poisson',
+                method=self.fluctuate_fid_method,
                 random_state=fid_random_state
             )
         else:
@@ -1342,7 +1408,9 @@ class HypoTesting(Analysis):
 
         run_info_<datetime in microseconds, UTC>_<hostname>.info
             * fluctuate_data : bool
+            * fluctuate_data_method : str
             * fluctuate_fid : bool
+            * fluctuate_fid_method : str
             * data_start_ind (if toy pseudodata)
             * num_data_trials (if toy pseudodata)
             * fid_start_ind (if fid fits to pseudodata)
@@ -1469,6 +1537,7 @@ class HypoTesting(Analysis):
                              self.fitsettings_flabel,
                              'pisa' + self.__version__])
         dirpath = os.path.join(self.logdir, dirname)
+        # keep your fingers crossed this path doesn't become too long...
         mkdir(dirpath)
         normpath = find_resource(dirpath)
         self.logroot = normpath
@@ -1622,9 +1691,11 @@ class HypoTesting(Analysis):
         if self.fluctuate_data:
             run_info.append('data_start_ind = %d' %self.data_start_ind)
             run_info.append('num_data_trials = %d' %self.num_data_trials)
+            run_info.append('fluctuate_data_method = %s' %self.fluctuate_data_method)
         if self.fluctuate_fid:
             run_info.append('fid_start_ind = %d' %self.fid_start_ind)
             run_info.append('num_fid_trials = %d' %self.num_fid_trials)
+            run_info.append('fluctuate_fid_method = %s' %self.fluctuate_fid_method)
         run_info.append('metric = %s' %self.metric)
         run_info.append('other_metrics = %s' %self.other_metrics)
         run_info.append('blind = %s' %self.blind)
@@ -1643,7 +1714,7 @@ class HypoTesting(Analysis):
                 val = ''
             run_info.append('%s = %s' %(env_var, val))
 
-        for prefix in ['PBS_']:
+        for prefix in ['PBS_', 'SLURM_']:
             for env_var, val in os.environ.iteritems():
                 if env_var.startswith(prefix):
                     run_info.append('%s = %s' %(env_var, val))
@@ -1948,7 +2019,7 @@ class HypoTesting(Analysis):
                                   h0_name, h1_name, data_name):
         """This function will perform a modified version of the N-1 test. This
         differs in that here we do not assume the systematics take their
-        baseline values but here see instead what happens with something
+        baseline values but check what happens with something
         systematically wrong. So, the data_param is shifted by 1 sigma or 10%
         off baseline. The direction of this shift should be specified pve or
         nve in the direction argument (meaning positive or negative). Then one
@@ -1978,32 +2049,84 @@ class HypoTesting(Analysis):
             Same as for HypoTesting.
 
         """
+        def vary_param(data_param, tgt, direction):
+            '''Helper function for setting the value of a parameter taking
+            into account its allowed range.
+
+            Parameters
+            ----------
+            data_param : param
+            tgt : pint quantity
+            direction : string
+
+            '''
+            if direction == 'pve':
+                if tgt > data_param.range[1]:
+                    logging.warn(
+                        'Setting %s = %s not possible since it would exceed its'
+                        ' allowed range. Will set it to its upper range limit.'
+                        % (data_param.name, tgt)
+                    )
+                data_param.value = min(tgt, data_param.range[1])
+            else:
+                if tgt < data_param.range[0]:
+                    logging.warn(
+                        'Setting %s = %s not possible since it would fall below its'
+                        ' allowed range. Will set it to its lower range limit.'
+                        % (data_param.name, tgt)
+                    )
+                data_param.value = max(tgt, data_param.range[0])
+            logging.debug(
+                'Set parameter %s = %s.' % (data_param.name, data_param.value)
+            )
+
         if direction not in ['pve', 'nve']:
             raise ValueError('Direction to shift systematic value must be'
                              ' specified either as "pve" or "nve" for'
                              ' positive and negative respectively')
-        # Calculate this wrong value based on the prior
-        if hasattr(data_param, 'prior'):
+
+        # set some default target parameter values - will be refined based on
+        # the type of prior detected
+        # when the param has a nominal value of 0, tentatively vary it by +/- 1.0
+        if data_param.value == 0.0:
+            if direction == 'pve':
+                tgt = 1.0
+            else:
+                tgt = -1.0
+        # else do 10%
+        else:
+            if direction == 'pve':
+                tgt = 1.1 * data_param.value
+            else:
+                tgt = 0.9 * data_param.value
+        # now check whether the prior allows us to calculate a +/- 1 sigma value
+        if hasattr(data_param, 'prior') and data_param.prior is not None:
             # Gaussian priors are easy - just do 1 sigma
             if data_param.prior.kind == 'gaussian':
                 if direction == 'pve':
-                    data_param.value \
-                        = data_param.value + data_param.prior.stddev
+                    tgt = data_param.value + data_param.prior.stddev
                 else:
-                    data_param.value \
-                        = data_param.value - data_param.prior.stddev
-            # Special case for 0 since 0 +/- 10% is still zero
-            elif data_param.value == 0.0:
+                    tgt = data_param.value - data_param.prior.stddev
+            elif data_param.prior.kind == 'spline':
+                # 1 sigma variation is also doable in this case
+                bounds = get_prior_bounds(data_param.prior)
                 if direction == 'pve':
-                    data_param.value = 1.0
+                    if not len(bounds) > 1:
+                        # ok, this is fishy, fall back to the 10% case
+                        tgt = 1.1 * data_param.value
+                    else:
+                        tgt = bounds[-1]
                 else:
-                    data_param.value = -1.0
-            # Else do 10%
-            else:
-                if direction == 'pve':
-                    data_param.value = 1.1 * data_param.value
-                else:
-                    data_param.value = 0.9 * data_param.value
+                    if not len(bounds) > 1:
+                        tgt = 0.9 * data_param.value
+                    else:
+                        tgt = bounds[0]
+        # now try to set the parameter's value based on the target
+        vary_param(
+            data_param=data_param,
+            tgt=tgt,
+            direction=direction
+        )
         # If we are not allowing the fit to correct for this, it must be
         # fixed in the hypo makers.
         if not fit_wrong:
@@ -2018,18 +2141,18 @@ class HypoTesting(Analysis):
             self.labels = Labels(
                 h0_name=h0_name,
                 h1_name=h1_name,
-                data_name=data_name + '_inj_%s_%s_wrong'%(
-                    data_param.name, direction),
+                data_name='%s_inj_%s_%s_wrong'%(
+                    data_name, data_param.name, direction),
                 data_is_data=False,
                 fluctuate_data=False,
                 fluctuate_fid=False
             )
         else:
             self.labels = Labels(
-                h0_name=h0_name + '_fixed_%s_baseline'%data_param.name,
-                h1_name=h1_name + '_fixed_%s_baseline'%data_param.name,
-                data_name=data_name + '_inj_%s_%s_wrong'%(
-                    data_param.name, direction),
+                h0_name='%s_fixed_%s_baseline'%(h0_name, data_param.name),
+                h1_name='%s_fixed_%s_baseline'%(h1_name, data_param.name),
+                data_name='%s_inj_%s_%s_wrong'%(
+                    data_name, data_param.name, direction),
                 data_is_data=False,
                 fluctuate_data=False,
                 fluctuate_fid=False
@@ -2096,6 +2219,9 @@ class HypoTesting(Analysis):
             if do_test:
                 if inject_wrong:
                     # First inject this wrong up by one sigma
+                    logging.info(
+                        'Injecting shifted up value for %s.' % data_param.name
+                    )
                     self.sys_wrong_asimov_analysis(
                         data_param=data_param,
                         fit_wrong=fit_wrong,
@@ -2109,6 +2235,9 @@ class HypoTesting(Analysis):
                     # Data must be cleared or else it won't be regenerated
                     self.clear_data()
                     # Then inject this wrong down by one sigma
+                    logging.info(
+                        'Injecting shifted down value for %s.' % data_param.name
+                    )
                     self.sys_wrong_asimov_analysis(
                         data_param=data_param,
                         fit_wrong=fit_wrong,
@@ -2214,6 +2343,10 @@ class HypoTesting(Analysis):
                         ' part of the set of parameters of the hypothesis'
                         ' maker!' % nuis_param
                     )
+            # now unfix the selected nuisance parameters, since they might not
+            # be among free ones
+            self.h0_maker.params.unfix(nuisance_params)
+            # now fix all free parameters not among nuisance parameters
             for param in self.h0_maker.params.free:
                 if param.name not in nuisance_params:
                     params.fix(param.name)
@@ -2292,7 +2425,9 @@ class HypoTesting(Analysis):
                     %(pos_msg),
                     data_is_data=self.data_is_data,
                     fluctuate_data=self.fluctuate_data,
-                    fluctuate_fid=self.fluctuate_fid
+                    fluctuate_fid=self.fluctuate_fid,
+                    fluctuate_data_method=self.fluctuate_data_method,
+                    fluctuate_fid_method=self.fluctuate_fid_method
                 )
 
                 # the no-profile case is handled internally

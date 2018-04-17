@@ -39,14 +39,12 @@ class icc(Stage):
     params : ParamSet
         icc_bg_file : string
             path pointing to the hdf5 file containing the events
-        pid_bound : float
-            boundary between cascade and track channel
-        pid_remo : float
-            lower cutoff value, below which events get rejected
         sim_ver: string
             indicating the sim version, wither 4digit, 5digit or dima
         bdt_cut : float
             further cut applied to events for the atm. muon rejections BDT
+        require_mn_stop_contained : bool
+            whether to require multinest stopping containment
         livetime : time quantity
             livetime scale factor
         alt_icc_bg_file : string
@@ -76,6 +74,7 @@ class icc(Stage):
             'sim_ver',
             'livetime',
             'bdt_cut',
+            'require_mn_stop_contained',
             'alt_icc_bg_file',
             'kde_hist',
             'fixed_scale_factor'
@@ -115,6 +114,7 @@ class icc(Stage):
         sim_ver = self.params.sim_ver.value
         use_def1 = self.params.use_def1.value
         bdt_cut = self.params.bdt_cut.m_as('dimensionless')
+        require_mn_stop_contained = self.params.require_mn_stop_contained.value
 
         self.bin_names = self.output_binning.names
         self.bin_edges = []
@@ -163,8 +163,9 @@ class icc(Stage):
         inverted_corridor_cut = corridor_doms_over_threshold > 1
         assert (np.all(inverted_corridor_cut) and
                 np.all(l6['santa_direct_doms'] >= 3) and
-                np.all(l6['mn_start_contained'] == 1.) and
-                np.all(l6['mn_stop_contained'] == 1.))
+                np.all(l6['mn_start_contained'] == 1.))
+        if require_mn_stop_contained:
+            assert np.all(l6['mn_stop_contained'] == 1.)
 
         #load events
         if sim_ver == '4digit':

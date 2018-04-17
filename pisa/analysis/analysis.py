@@ -18,7 +18,8 @@ import scipy.optimize as optimize
 from pisa import EPSILON, FTYPE, ureg, Q_
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
-from pisa.utils.config_parser import parse_minimizer_config, PISAConfigParser
+from pisa.utils.config_parser import parse_minimizer_config, PISAConfigParser,\
+                                     parse_quantity
 from pisa.utils.fileio import to_file
 from pisa.utils.fisher_matrix import get_fisher_matrix
 from pisa.utils.log import logging
@@ -222,27 +223,45 @@ def apply_fit_settings(fit_settings, free_params):
             else:
                 if fit_method == 'pull':
                     prange = eval(prange)
-                    print len(prange)
                 # need to convert from range and nvalues to linearly spaced
                 # values themselves
                 if isinstance(prange, basestring):
-                    try:
-                        # first detect the fraction of the nominal value which
-                        # will correspond to one half of the range
-                        scale_nom = float(
-                            prange[prange.find('+/-') + 3:prange.find('*')]
-                        )
-                    except:
-                        logging.error(
-                            'Could not interpret range string "%s" for'
-                            ' parameter "%s". Please specify as'
-                            ' "nominal+/-<float>*nominal".'
-                            % (prange, pname)
-                        )
-                        raise
+                    if '+/-' in prange:
+                        search_start = prange.find('+/-')+len('+/-')
+                        # two cases:
+                        # 1. range around nominal
+                        # 2. range around some arbitrary value
+                        if prange.startswith('nominal'):
+                            # 1
+                            # two cases:
+                            # 1. range as fraction of nominal around nominal
+                            # 2. absolute range around nominal
+                            if prange.endswith('nominal'):
+                                # 1
+                                scale_nom = float(
+                                    prange[search_start:prange.find('*')]
+                                )
+                                half_range = scale_nom * free_params[pname].nominal_value
+                            else:
+                                # 2
+                                half_range = prange[search_start:]
+                                try:
+                                    half_range = parse_quantity(half_range).nominal_value
+                                except:
+                                    logging.error(
+                                        'Parameter "%s": could not parse "%s"'
+                                        ' into a pint/uncertainty quantity.'
+                                        % (pname, half_range)
+                                    )
+                                    raise
+                        else:
+                            # 2
+                            raise NotImplementedError(
+                                'Parameter "%s": Range spec needs to be of'
+                                ' format "nominal+/-..."' % pname
+                            )
                     nom = free_params[pname].nominal_value
-                    half_width = scale_nom * nom
-                    prange = [nom - half_width, nom + half_width]
+                    prange = [nom - half_range, nom + half_range]
                 elif isinstance(prange, Q_):
                     #if not isinstance(prange, Sequence):
                     #    raise TypeError(
@@ -354,6 +373,9 @@ class Analysis(object):
 
         if not isinstance(hypo_param_selections, Sequence):
             hypo_param_selections = [hypo_param_selections]
+
+        if not extra_param_selections:
+            extra_param_selections = [None]
 
         start_t = time.time()
 

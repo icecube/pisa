@@ -314,6 +314,13 @@ class AnalysisScript(object):
             this is not set, --num-data-trials and --data-start-ind are forced
             to 1 and 0, respectively.'''
         )
+        parser.add_argument(
+            '--fluctuate-data-method',
+            # TODO: define choices centrally to always keep them in sync with with choices `Map` class accepts?
+            type=str, default=None, choices=['poisson', 'gauss', 'gauss+poisson'],
+            help='''Method according to which data distributions are fluctuated.
+            No effect if '--fluctuate-data' not selected.'''
+        )
         self.data_fluct_parser = parser
 
 
@@ -416,6 +423,13 @@ class AnalysisScript(object):
             help='''Apply fluctuations to the fiducial distributions. If this
             flag is not set, --num-fid-trials and --fid-start-ind are forced to
             1 and 0, respectively.'''
+        )
+        parser.add_argument(
+            '--fluctuate-fid-method',
+            # TODO: define choices centrally to always keep them in sync with with choices `Map` class accepts?
+            type=str, default=None, choices=['poisson', 'gauss', 'gauss+poisson'],
+            help='''Method according to which fiducial distributions are fluctuated.
+            No effect if '--fluctuate-fid' not selected.'''
         )
         self.fid_fluct_parser = parser
 
@@ -781,7 +795,7 @@ class AnalysisScript(object):
             add_help=False
         )
         parser.add_argument(
-            '--inject_wrong',
+            '--inject-wrong',
             action='store_true',
             help='''Inject a parameter to some systematically wrong value.
             This will be either +/- 1 sigma or +/- 10%% if such a definition
@@ -789,7 +803,7 @@ class AnalysisScript(object):
             the fit_wrong argument is also flagged.'''
         )
         parser.add_argument(
-            '--fit_wrong',
+            '--fit-wrong',
             action='store_true',
             help='''In the case of injecting a systematically wrong hypothesis
             setting this argument will get the minimiser to try correct for it.
@@ -797,7 +811,7 @@ class AnalysisScript(object):
             false or else the script will fail.'''
         )
         parser.add_argument(
-            '--only_syst', default=None,
+            '--only-syst', default=None,
             type=str, action='append', metavar='PARAM_NAME',
             help='''Specify the name of one of the systematics in the file to
             run the test for this systematic. Repeat this argument to specify
@@ -805,7 +819,7 @@ class AnalysisScript(object):
             over all systematics in the pipeline.'''
         )
         parser.add_argument(
-            '--skip_baseline',
+            '--skip-baseline',
             action='store_true',
             help='''Skip the baseline systematic test i.e. the one where none
             of them are fixed and/or modified. In most cases you will want this

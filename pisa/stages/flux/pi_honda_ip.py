@@ -118,7 +118,7 @@ class pi_honda_ip(PiStage):
         tables = ['nue', 'numu', 'nuebar', 'numubar']
         for container in self.data:
             for out_name, index, table in zip(out_names, indices, tables):
-                logging.info('Calculating nominal %s flux for %s'%(table, container.name))
+                logging.debug('Calculating nominal %s flux for %s'%(table, container.name))
                 calculate_2d_flux_weights(true_energies=container['true_energy'].get('host'),
                                            true_coszens=container['true_coszen'].get('host'),
                                            en_splines=self.flux_table[table],
