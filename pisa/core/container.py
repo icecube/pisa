@@ -39,14 +39,17 @@ class ContainerSet(object):
     def __init__(self, name, containers=None, data_specs=None):
         self.name = name
         self.linked_containers = []
+        self.containers = []
         if containers is None:
-            self.containers = []
-        else:
-            self.containers = containers
+            containers = []
+        for container in containers:
+            self.add_container(container)
         self._data_specs = None
         self.data_specs = data_specs
 
     def add_container(self, container):
+        if container.name in self.names:
+            raise ValueError('container with name %s already exists'%container.name)
         self.containers.append(container)
 
     @property
@@ -558,5 +561,20 @@ def test_container():
     container.binned_to_array('w')
     print(container.get_array_data('w').get('host'))
 
+
+def test_container_set():
+    container1 = Container('test1')
+    container2 = Container('test2')
+    
+    data = ContainerSet('data', [container1, container2])
+
+    try:
+        data.add_container(container1)
+    except ValueError:
+        pass
+    else:
+        raise Exception('identical containers added to a containerset, this should not be possible')
+
 if __name__ == '__main__':
     test_container()
+    test_container_set()
