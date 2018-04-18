@@ -248,7 +248,6 @@ class Container(object):
         elif self.data_specs is None:
             return None
 
-    @property
     def keys(self):
         '''
         return list of available keys
@@ -374,7 +373,7 @@ class Container(object):
         '''
         iterate over all keys in container
         '''
-        return iter(self.keys)
+        return iter(self.keys())
 
     def array_to_binned(self, key, binning, averaged=True):
         '''
