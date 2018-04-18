@@ -110,10 +110,12 @@ class Detectors(object):
         for distribution_maker in self:
             distribution_maker.update_params(params)
 
-        for p in params: # now update params with det_names inside
+        if isinstance(params,Param): params = ParamSet(params) # just for the following
+
+        for p in params.names: # now update params with det_names inside
             for i, det_name in enumerate(self.det_names):
-                if det_name in p.name:
-                    cp = deepcopy(p)
+                if det_name in p:
+                    cp = deepcopy(params[p])
                     cp.name = cp.name.replace('_'+det_name, "")
                     self._distribution_makers[i].update_params(cp)
 

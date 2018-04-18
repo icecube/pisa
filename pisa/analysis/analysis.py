@@ -395,16 +395,7 @@ class Analysis(object):
                         hypo_maker.params[param.name].value = param.value
 
                 # Hop to other octant by reflecting about 45 deg
-                theta23 = None
-                for distribution_maker in hypo_maker:
-                    try:
-                        t23 = distribution_maker.params.theta23
-                        if theta23 != None and t23 != theta23:
-                            raise ValueError('Different theta23 default values in'
-                                   'your detectors.')
-                    except:
-                        continue
-                    theta23 = t23
+                theta23 = hypo_maker.params.theta23
 
                 inflection_point = (45*ureg.deg).to(theta23.units)
                 theta23.value = 2*inflection_point - theta23.value

@@ -1650,21 +1650,31 @@ class HypoTesting(Analysis):
                     inj_val[hierarchy] = inj_val[hierarchy].to(
                         self.h0_maker.params[test_name].units
                     )
-                    self.h0_maker.params[test_name].value = inj_val[hierarchy]
-                    self.h1_maker.params[test_name].value = inj_val[hierarchy]
+                    p = self.h0_maker.params[test_name]
+                    p.value = inj_val[hierarchy]
+                    self.h0_maker.update_params(p)
+                    p = self.h1_maker.params[test_name]
+                    p.value = inj_val[hierarchy]
+                    self.h1_maker.update_params(p)
                     if np.sign(self.data_maker.params[
                             test_name].value.magnitude) == 1:
-                        self.data_maker.params[test_name].value = inj_val['nh']
+                        p = self.data_maker.params[test_name]
+                        p.value = inj_val['nh']
+                        self.data_maker.update_params(p)
                     else:
-                        self.data_maker.params[test_name].value = inj_val['ih']
+                        p = self.data_maker.params[test_name]
+                        p.value = inj_val['ih']
+                        self.data_maker.update_params(p)
             # This is easy if there's just one of them
             else:
                 # Make sure the units are right
                 inj_val = inj_val.to(self.h0_maker.params[test_name].units)
                 # Then set the value in all of the makers
-                self.h0_maker.params[test_name].value = inj_val
-                self.h1_maker.params[test_name].value = inj_val
-                self.data_maker.params[test_name].value = inj_val
+                p = self.data_maker.params[test_name]
+                p.value = inj_val
+                self.h0_maker.update_params(p)
+                self.h1_maker.update_params(p)
+                self.data_maker.update_params(p)
             # Make names reflect parameter value
             if param_name == 'deltam3l':
                 self.labels = Labels(

@@ -126,7 +126,7 @@ def parse_args():
         this option to define multiple pipelines.'''
     )
     parser.add_argument(
-        '-sp', '--shared_params', type=str, default=None,
+        '-sp', '--shared-params', type=str, default=None,
         action='append',
         help='''Shared parameters for multi det analysis (repeat for multiple).
         These parameters have to be the same in all detectors, that contain the param.'''

@@ -12,6 +12,7 @@ import numpy
 from pisa import ureg
 from pisa.analysis.hypo_testing import HypoTesting
 from pisa.core.distribution_maker import DistributionMaker
+from pisa.core.detectors import Detectors
 from pisa.core.prior import Prior
 from pisa.utils.log import logging
 from pisa.utils.scripting import normcheckpath
@@ -73,12 +74,13 @@ def inj_param_scan(return_outputs=False):
             ps_list = [x.strip().lower() for x in ps_str.split(',')]
         init_args_d[ps_name] = ps_list
 
+    shared_params=init_args_d['shared_params']
     init_args_d['data_maker'] = init_args_d['h0_maker']
     init_args_d['h1_maker'] = init_args_d['h0_maker']
-    init_args_d['h0_maker'] = DistributionMaker(init_args_d['h0_maker'])
-    init_args_d['h1_maker'] = DistributionMaker(init_args_d['h1_maker'])
+    init_args_d['h0_maker'] = Detectors(init_args_d['h0_maker'],shared_params=shared_params)
+    init_args_d['h1_maker'] = Detectors(init_args_d['h1_maker'],shared_params=shared_params)
     init_args_d['h1_maker'].select_params(init_args_d['h1_param_selections'])
-    init_args_d['data_maker'] = DistributionMaker(init_args_d['data_maker'])
+    init_args_d['data_maker'] = Detectors(init_args_d['data_maker'],shared_params=shared_params)
     if init_args_d['data_param_selections'] is None:
         init_args_d['data_param_selections'] = \
             init_args_d['h0_param_selections']
