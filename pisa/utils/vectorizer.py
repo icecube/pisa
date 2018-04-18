@@ -116,3 +116,19 @@ else:
 def replace_gufunc(counts, min_count, vals, out):
     if counts > min_count:
         out[0] = vals
+
+
+def test():
+    from numba import SmartArray
+    a = np.linspace(0,1,1000, dtype=FTYPE)
+    a = SmartArray(a)
+
+    out = np.ones_like(a)
+    out = SmartArray(out)
+
+    multiply_and_scale(10., a, out)
+
+    assert np.allclose(out.get('host'), np.linspace(0,10,1000, dtype=FTYPE))
+
+if __name__ == '__main__':
+    test()
