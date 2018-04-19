@@ -37,6 +37,9 @@ class simple_data_loader(PiStage):
 
     """
     def __init__(self,
+                 events_file,
+                 mc_cuts,
+                 data_dict,
                  data=None,
                  params=None,
                  input_names=None,
@@ -47,11 +50,13 @@ class simple_data_loader(PiStage):
                  output_specs=None,
                 ):
 
-        expected_params = ('events_file',
-                           'mc_cuts',
-                           'data_dict',
+        self.events_file = events_file
+        self.mc_cuts = mc_cuts
+        self.data_dict = data_dict
+
+        expected_params = (
                           )
-        input_apply_keys = ('event_weights',
+        input_apply_keys = ('initial_weights',
                            )
         output_apply_keys = ('weights',
                             )
@@ -73,22 +78,31 @@ class simple_data_loader(PiStage):
         # doesn't calculate anything
         assert self.calc_mode is None
 
+        # check output names
+        assert len(self.output_names) > 0, "Must specify at least one element in `output_names`"
+        assert len(self.output_names) == len(set(self.output_names)), "Found duplicates in `output_names`"
+
+
     def setup_function(self):
 
         # --- Load the events ---
 
         # open Events file
         evts = EventsPi(name="Events")
-        data_dict = eval(self.params.data_dict.value)
-        evts.load_events_file(self.params.events_file.value,data_dict)
+        self.data_dict = eval(self.data_dict)
+        evts.load_events_file(self.events_file,self.data_dict)
 
         #Apply any cuts that the user defined
-        if self.params.mc_cuts.value is not None:
-            logging.info('applying the following cuts to events: %s'%self.params.mc_cuts.value)
-            evts = evts.apply_cut(self.params.mc_cuts.value)
+        if self.mc_cuts is not None:
+            logging.info('applying the following cuts to events: %s'%self.mc_cuts)
+            evts = evts.apply_cut(self.mc_cuts)
                     
         #Create containers from the events
         for name in self.output_names:
+
+            # check container doesn't already exist
+            assert name not in self.data.names, "Cannot add `%s` data container, a container with this name already exists" % name 
+
             # make container
             container = Container(name)
             container.data_specs = 'events'
@@ -100,23 +114,34 @@ class simple_data_loader(PiStage):
             for key,val in evts[name].items() :
                 container.add_array_data(key, val)
 
-            # add some additional keys
-            container.add_array_data('weights', np.ones(container.size, dtype=FTYPE))
-            container.add_array_data('event_weights', np.ones(container.size, dtype=FTYPE))
-            # this determination of flavour is the worst possible coding, ToDo
-            nubar = -1 if 'bar' in name else 1
-            if 'tau' in name:
-                flav = 2
-            elif 'mu' in name:
-                flav = 1
-            elif 'e' in name:
-                flav = 0
-            else:
-                raise ValueError('Cannot determine flavour of %s'%name)
-            container.add_scalar_data('nubar', nubar)
-            container.add_scalar_data('flav', flav)
+            # create weight arrays
+            # define an `initial_weights` array that will be the starting point (and never modified), 
+            # and a `weights` array that will be initialised from `initial_weights` modified by the stages
+            # user can also provide the `initial_weights` values in the input file if desired
+            assert 'weights' not in container.array_data, "Found an existing `weights` array in %s, this would be overwritten (this perhaps should be `initial_weights``"%name
+            if "initial_weights" not in container.array_data : #TODO Need to fix the bug in checking for something being `in` a container
+              container.add_array_data('initial_weights', np.ones(container.size, dtype=FTYPE))
+            container.add_array_data('weights', np.ones(container.size, dtype=FTYPE)) # The values can be anything (will be overwritten by `initial_weights`)
+
+            # add neutrino flavor information for neutrino events
+            if name.startswith("nu") :
+                # this determination of flavour is the worst possible coding, ToDo
+                nubar = -1 if 'bar' in name else 1
+                if name.startswith('nutau'):
+                    flav = 2
+                elif name.startswith('numu'):
+                    flav = 1
+                elif name.startswith('nue'):
+                    flav = 0
+                else:
+                    raise ValueError('Cannot determine flavour of %s'%name)
+                container.add_scalar_data('nubar', nubar)
+                container.add_scalar_data('flav', flav)
 
             self.data.add_container(container)
+
+        # check created at least one container
+        assert len(self.data.names) > 0, "No containers created during data loading"
 
         # test
         if self.output_mode == 'binned':
@@ -127,8 +152,9 @@ class simple_data_loader(PiStage):
 
     @profile
     def apply_function(self):
-        # reset weights to event_weights
+
+        # reset the weights to the initial weights prior to the downstream stages running
         self.data.data_specs = self.output_specs
         for container in self.data:
-            vectorizer.set(container['event_weights'],
-                           out=container['weights'])
+            vectorizer.set(container['initial_weights'],out=container['weights'])
+
