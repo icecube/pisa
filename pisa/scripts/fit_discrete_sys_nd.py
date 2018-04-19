@@ -2,7 +2,7 @@
 """
 Hyperplane fitting scriot
 
-Produce fit results for sets of disctrete systematics (i.e. for example
+Produce fit results for sets of discrete systematics (i.e. for example
 several simulations for different DOM efficiencies)
 
 The parameters and settings going into the fit are given by an external cfg
@@ -270,13 +270,8 @@ def norm_sys_distributions(nominal_mapset, sys_mapsets):
         nominal_map = nominal_mapset[map_name]
         chan_norm_sys_maps = []
         for sys_mapset in sys_mapsets:
-            # the nominal mapset is part of the systematics mapsets,
-            # so to avoid vanishing uncertainty on its ratio with itself
-            # it requires special treatment
-            if sys_mapset == nominal_mapset:
-                norm_sys_map = sys_mapset[map_name].hist/nominal_map.nominal_values
-            else:
-                norm_sys_map = sys_mapset[map_name].hist/nominal_map.hist
+            # TODO: think about the best way to perform unc. propagation
+            norm_sys_map = sys_mapset[map_name].hist/nominal_map.nominal_values
             chan_norm_sys_maps.append(norm_sys_map)
         chan_norm_sys_maps = np.array(chan_norm_sys_maps)
         # move to last axis
