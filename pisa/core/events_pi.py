@@ -4,12 +4,15 @@ from __future__ import absolute_import, division, print_function
 
 import copy, collections
 
-import numpy as np 
+import numpy as np
+import os
 
+from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.log import logging
 from pisa.utils.fileio import from_file, to_file
 #from pisa.core.container import Container
 from pisa import FTYPE
+from pisa.utils.hdf import HDF5_EXTS
 from pisa.utils.numba_tools import WHERE
 
 
@@ -57,7 +60,21 @@ class EventsPi(collections.OrderedDict) :
                     raise ValueError("'variable_mapping' 'src' (value) must be a string, or a list of strings")
 
         # Open the input file
-        input_data = from_file(events_file)
+        rootname, ext = os.path.splitext(events_file)
+        ext = ext.replace('.', '').lower()
+        # read in entry-level attributes as metadata in the case of an hdf5 file
+        if ext in HDF5_EXTS:
+            input_data, attrs = from_file(events_file, return_attrs=True)
+            self.metadata.update(attrs)
+        else:
+            input_data = from_file(events_file)
+        cuts = self.metadata['cuts']
+        # ensure uniform type of 'cuts' entry independent of how it
+        # is stored in the events file (if at all) - this will be
+        # updated with user-defined cuts if applicable
+        if not isinstance(cuts, np.ndarray):
+            self.metadata['cuts'] = np.array(cuts)
+
 
         # Input data should be a dict where each key is a category of data
         if not isinstance(input_data,collections.Mapping) :
@@ -147,8 +164,14 @@ class EventsPi(collections.OrderedDict) :
 
         assert isinstance(keep_criteria, basestring)
 
+        if not keep_criteria:
+            logging.debug(
+                'Empty criteria. Returning events unmodified.'
+            )
+            return self
+
         # Check if have already applied these cuts
-        if keep_criteria in self.metadata['cuts'] :
+        if keep_criteria in self.metadata['cuts']:
             logging.debug("Criteria '%s' have already been applied. Returning"
                           " events unmodified.", keep_criteria)
             return self
@@ -158,6 +181,10 @@ class EventsPi(collections.OrderedDict) :
         # Prepare the post-cut data container
         cut_data = EventsPi(name=self.name)
         cut_data.metadata = copy.deepcopy(self.metadata)
+
+        logging.debug(
+            'Applying cuts "%s".' % keep_criteria
+        )
 
         # Loop over the data containers
         for key in self.keys() :
@@ -190,7 +217,9 @@ class EventsPi(collections.OrderedDict) :
         #TODO update to GPUs?
 
         # Record the cuts
-        cut_data.metadata["cuts"].append(keep_criteria)
+        # TODO: this can lead to many 'duplicate' 'cuts' in here
+        # -> implement parsing mechanism to prevent this
+        cut_data.metadata['cuts'] = np.append(cut_data.metadata['cuts'], keep_criteria)
 
         return cut_data
 
@@ -226,16 +255,12 @@ class EventsPi(collections.OrderedDict) :
             logging.debug("All inbounds criteria '%s' have already been"
                           " applied. Returning events unmodified.", new_cuts)
             return self
-        all_cuts = deepcopy(current_cuts) + unapplied_cuts
 
         # Create a single cut from all unapplied cuts
         keep_criteria = ' & '.join(['(%s)' % c for c in unapplied_cuts])
 
         # Do the cutting
         cut_data = self.apply_cut(keep_criteria=keep_criteria)
-
-        # Replace the combined 'cuts' string with individual cut strings
-        #cut_data.metadata['cuts'].append = all_cuts
 
         return cut_data
 
