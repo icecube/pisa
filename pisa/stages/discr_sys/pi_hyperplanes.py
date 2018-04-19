@@ -29,6 +29,7 @@ class pi_hyperplanes(PiStage):
     spiciness : dimensionless quantity
     bulk_scatter : dimensionless quantity
     bulk_abs : dimensionless quantity
+    rde : dimensionless quantity
 
     Notes
     -----
@@ -54,6 +55,7 @@ class pi_hyperplanes(PiStage):
 
         expected_params = ('fit_results_file',
                            'dom_eff',
+                           'rde',
                            'hole_ice',
                            'hole_ice_fwd',
                            'spiciness',
