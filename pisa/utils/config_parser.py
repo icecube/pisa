@@ -220,13 +220,13 @@ from pisa.utils.resources import find_resource
 
 __all__ = ['PARAM_RE', 'PARAM_ATTRS', 'STAGE_SEP',
            'parse_quantity', 'parse_string_literal',
-           'interpret_param_subfields', 'parse_param', 'parse_pipeline_config',
-           'parse_optimizer_config', 'parse_minimizer_config',
+           'interpret_param_subfields', 'parse_param',
+           'parse_pipeline_config', 'parse_minimizer_config',
            'MutableMultiFileIterator', 'PISAConfigParser']
 
-__author__ = 'P. Eller, J. Lanfranchi'
+__author__ = 'P. Eller, J. Lanfranchi, T. Ehrhardt'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2018, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -487,7 +487,7 @@ def parse_fit_config(config):
     # check for duplicates (could also ignore those, but let's be more
     # cautious and raise)
     method_count = Counter(fit_methods)
-    duplicates = [m for (m,c) in method_count.items() if c > 1]
+    duplicates = [m for (m, c) in method_count.items() if c > 1]
     if duplicates:
         raise ValueError('Found duplicated fit method(s): %s' % duplicates)
 
@@ -497,10 +497,10 @@ def parse_fit_config(config):
     # default must be there
     method_defaults = {'scan': {'range': None, 'nvalues': None},
                        'pull': {'lin_range': None},
-                        # probably won't want to allow different minimizers for
-                        # different parameters, but at least we already have
-                        # the structure here for more complex fit settings for
-                        # minimization
+                       # probably won't want to allow different minimizers for
+                       # different parameters, but at least we already have
+                       # the structure here for more complex fit settings for
+                       # minimization
                        'minimize': {'global': None, 'local': None},
                       }
     # if the wildcard is employed, require global defaults to be set
@@ -526,7 +526,6 @@ def parse_fit_config(config):
                     'Parameter "%s" already assigned to a fit method other than'
                     ' "%s"!' % (pname, fit_method)
                 )
-                fit_pnames_collected.add(pname)
         # TODO: make sure only one occurrence of any parameter within a method
         if wildcard in method_pnames:
             if wildcard_used:
@@ -1389,9 +1388,9 @@ class PISAConfigParser(RawConfigParser):
                     # add empty line to the value, but only if there was no
                     # comment on the line
                     if (comment_start is None and
-                        cursect is not None and
-                        optname and
-                        cursect[optname] is not None):
+                            cursect is not None and
+                            optname and
+                            cursect[optname] is not None):
                         cursect[optname].append('') # newlines added at join
                 else:
                     # empty line marks end of value
@@ -1401,7 +1400,7 @@ class PISAConfigParser(RawConfigParser):
             first_nonspace = self.NONSPACECRE.search(line)
             cur_indent_level = first_nonspace.start() if first_nonspace else 0
             if (cursect is not None and optname and
-                cur_indent_level > indent_level):
+                    cur_indent_level > indent_level):
                 cursect[optname].append(value)
             # a section header or option header?
             else:
@@ -1437,7 +1436,7 @@ class PISAConfigParser(RawConfigParser):
                             e = self._handle_error(e, fpname, lineno, line)
                         optname = self.optionxform(optname.rstrip())
                         if (self._strict and
-                            (sectname, optname) in elements_added):
+                                (sectname, optname) in elements_added):
                             raise DuplicateOptionError(sectname, optname,
                                                        fpname, lineno)
                         elements_added.add((sectname, optname))
