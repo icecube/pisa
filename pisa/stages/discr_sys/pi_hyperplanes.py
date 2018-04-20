@@ -14,10 +14,11 @@ from pisa.utils.fileio import from_file
 from pisa.utils.numba_tools import WHERE
 from pisa.utils import vectorizer
 
-
+# TODO: consider taking into account fit parameter covariances
 class pi_hyperplanes(PiStage):
     """
-    stage to histogram events
+    Service to apply hyperplane parameterisation produced by
+    `scripts.fit_discrete_sys_nd`
 
     Parameters
     ----------
@@ -35,10 +36,12 @@ class pi_hyperplanes(PiStage):
     -----
 
     the fit_results_file must contain the following keys:
-        sys_list : containing the order of the parameters
-        fit_results : the resulting hyperplane coeffs from the fits, first
-                      entry is constant, followed by the linear ones in the order
-                      defined in `sys_list`
+        sys_list: containing the order of the parameters
+        <map_name> : the resulting hyperplane coeffs from the fits, first
+             entry is constant, followed by the linear ones in the order
+             defined in `sys_list`
+        binning_hash : hash of binning used in fits
+
     """
     def __init__(self,
                  fit_results_file,
