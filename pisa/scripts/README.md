@@ -15,7 +15,8 @@ Analysis and helper scripts (executables).
 | `compare.py`                          | Compare maps, map sets, pipelines, ... at the command line, producing plots and summary text
 | `convert_config_format.py`            | Convert old PISA config format to new format
 | `discrete_hypo_test.py`               | 
-| `fit_discrete_sys.py`                 | 
+| `fit_discrete_sys.py`                 | One-by-one parameterisation of discrete systematics impact (deprecated)
+| `fit_discrete_sys_nd.py`              | n-dimensional hyperplane (linear) parameterisation of discrete systematics impact
 | `inj_param_scan.py`                   | 
 | `make_asymmetry_plots.py`             | 
 | `make_events_file.py`                 | Generate a PISA events (HDF5) file from an IceTray-produced HDF5 file

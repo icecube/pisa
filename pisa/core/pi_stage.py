@@ -8,8 +8,10 @@ from __future__ import absolute_import
 
 from pisa.core.base_stage import BaseStage
 from pisa.core.binning import MultiDimBinning
+from pisa.core.container import ContainerSet
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
+from numba import SmartArray
 
 
 __all__ = ['PiStage']
@@ -138,8 +140,25 @@ class PiStage(BaseStage):
         # cake compatibility
         self.outputs = None
 
+
     def setup(self):
+
+        # check that data is a ContainerSet (downstream modules assume this)
+        if self.data is not None :
+            assert isinstance(self.data,ContainerSet), "`data` must be a `ContainerSet`"
+
+        # check that the arrays in `data` is stored as numba `SmartArrays`
+        # the downstream stages generally assume this
+        # a common problem is if the user copies data before passing it to th stage then a 
+        # bug in SmartArray means the result is a numoy array, rather than a SmartArray
+        if self.data is not None :
+            for container in self.data :
+                for key,array in container.array_data.items() :
+                    assert isinstance(array,SmartArray), "Array `%s` in `data` should be a `SmartArray`, but is a `%s`" % (key,type(array))
+
+        # call the user-defined setup function
         self.setup_function()
+
         # invalidate param hash:
         self.param_hash = -1
 

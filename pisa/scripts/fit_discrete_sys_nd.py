@@ -2,7 +2,7 @@
 """
 Hyperplane fitting scriot
 
-Produce fit results for sets of disctrete systematics (i.e. for example
+Produce fit results for sets of discrete systematics (i.e. for example
 several simulations for different DOM efficiencies)
 
 The parameters and settings going into the fit are given by an external cfg
@@ -270,13 +270,8 @@ def norm_sys_distributions(nominal_mapset, sys_mapsets):
         nominal_map = nominal_mapset[map_name]
         chan_norm_sys_maps = []
         for sys_mapset in sys_mapsets:
-            # the nominal mapset is part of the systematics mapsets,
-            # so to avoid vanishing uncertainty on its ratio with itself
-            # it requires special treatment
-            if sys_mapset == nominal_mapset:
-                norm_sys_map = sys_mapset[map_name].hist/nominal_map.nominal_values
-            else:
-                norm_sys_map = sys_mapset[map_name].hist/nominal_map.hist
+            # TODO: think about the best way to perform unc. propagation
+            norm_sys_map = sys_mapset[map_name].hist/nominal_map.nominal_values
             chan_norm_sys_maps.append(norm_sys_map)
         chan_norm_sys_maps = np.array(chan_norm_sys_maps)
         # move to last axis
@@ -368,7 +363,8 @@ def fit_discrete_sys_distributions(
 
     for map_name, chan_norm_sys_maps in norm_sys_maps.items():
         logging.info( # pylint: disable=logging-not-lazy
-            'Fitting "%s" maps with initial guess %s.' % (map_name, p0[map_name])
+            'Fitting "%s" maps with initial guess %s.'
+            % (map_name, p0[map_name])
         )
 
         fit_results[map_name] = np.ones(shape_output)
@@ -449,9 +445,8 @@ def hyperplane(fit_cfg, set_param=None):
     if set_param:
         raise NotImplementedError()
 
-    nominal_mapset, sys_list, sys_param_points, sys_mapsets = make_discrete_sys_distributions(
-        fit_cfg=fit_cfg
-    )
+    nominal_mapset, sys_list, sys_param_points, sys_mapsets =\
+        make_discrete_sys_distributions(fit_cfg=fit_cfg)
 
     hyperplane_fits, errors, chi2s, binning = fit_discrete_sys_distributions(
         nominal_mapset=nominal_mapset,
@@ -459,7 +454,8 @@ def hyperplane(fit_cfg, set_param=None):
         sys_param_points=sys_param_points,
         sys_mapsets=sys_mapsets
     )
-    return nominal_mapset, sys_param_points, sys_mapsets, binning, hyperplane_fits, errors, chi2s
+    return (nominal_mapset, sys_param_points, sys_mapsets, binning,
+            hyperplane_fits, errors, chi2s)
 
 
 def save_hyperplane_fits(hyperplane_fits, chi2s, outdir, tag=None):
@@ -484,7 +480,8 @@ def save_hyperplane_fits(hyperplane_fits, chi2s, outdir, tag=None):
     np.save('%s/nd_sysfits_%s_raw_chi2s' % (outdir, tag), chi2s)
 
 
-def plot_hyperplane_fit_params(hyperplane_fits, names, binning, outdir=None, tag=None):
+def plot_hyperplane_fit_params(hyperplane_fits, names, binning, outdir=None,
+                               tag=None):
     """Plot 2D distributions of fit parameters.
 
     Parameters
@@ -535,15 +532,26 @@ def plot_hyperplane_fit_params(hyperplane_fits, names, binning, outdir=None, tag
         )
 
 
-def plot_chisquare_values(chi2s, outdir, tag=None):
+def plot_chisquare_values(chi2s, outdir, fit=True, fit_loc_scale=True,
+                          bins=None, logy=False, tag=None):
     """Fit and plot distribution of chisquare values.
 
     Parameters
     ----------
-    chi2 : list
+    chi2s : list
         flat list of chisquare values to fit and histogram
     outdir : str
         path to output directory for plots
+    fit : bool
+        whether to fit the list of chisquare values with
+        a chisquare distribution
+    fit_loc_scale : bool
+        whether to allow the shape parameters "loc" and "scale"
+        to float in the fit
+    bins : sequence
+        binning to employ for histogramming
+    logy : bool
+        employ a logarithmic y scale
     tag : str
         identifier for plot filenames
 
@@ -553,22 +561,47 @@ def plot_chisquare_values(chi2s, outdir, tag=None):
     import matplotlib.pyplot as plt
     from scipy import stats
 
-    logging.info('Fitting and histogramming %d chisquare values.' % len(chi2s)) # pylint: disable=logging-not-lazy
-    # fit for d.o.f., location and scale of distribution of values
-    popt = stats.chi2.fit(chi2s)
+    if fit_loc_scale and not fit:
+        raise ValueError(
+            'Use `fit_loc_scale` only when `fit` is True.'
+        )
 
-    bins = np.linspace(0, 1.01*max(chi2s), 100)
-    centers = (bins[1:] + bins[:-1])/2.
-    fit_pdf = stats.chi2.pdf(centers, *popt[:-2], loc=popt[-2], scale=popt[-1])
-
+    logging.info('Histogramming %d chisquare values.' % len(chi2s)) # pylint: disable=logging-not-lazy
+    if bins is None:
+        bins = np.linspace(0.99*min(chi2s), 1.01*max(chi2s), 100)
     fig = plt.figure()
     n, bins, _ = plt.hist(
-        chi2s, bins=bins, color='firebrick', histtype='step', linewidth=2, normed=True
+        chi2s, bins=bins, facecolor='firebrick', histtype='stepfilled',
+        weights=np.ones_like(chi2s)/len(chi2s),
+        label='hyperplane residuals (%d)' % len(chi2s)
     )
-    plt.plot(centers, fit_pdf, lw=2, color='black')
+    if fit:
+        logging.info( # pylint: disable=logging-not-lazy
+            'Performing chisquare fit with "loc" and "scale" %s.'
+            % ('floating' if fit_loc_scale else 'fixed')
+        )
+        if fit_loc_scale:
+            # fit for d.o.f., location and scale of distribution of values
+            popt = stats.chi2.fit(chi2s)
+            fit_rv = stats.chi2(*popt[:-2], loc=popt[-2], scale=popt[-1])
+        else:
+            popt = stats.chi2.fit(chi2s, floc=0, fscale=1)
+            fit_rv = stats.chi2(df=popt[0])
+        logging.info('Best fit parameters: %s' % list(popt)) # pylint: disable=logging-not-lazy
+        # plot the binwise integrated fit pdf
+        fit_cdf = fit_rv.cdf(bins[1:]) - fit_rv.cdf(bins[:-1])
+        centers = (bins[1:] + bins[:-1])/2.
+        plt.step(centers, fit_cdf, where='mid',
+                 color='black', label=r'$\chi^2$ fit (%.2f d.o.f.)' % popt[0],
+                 linestyle='solid')
     plt.xlabel(r'$\chi^2$', fontsize='x-large')
     plt.ylabel('AU', fontsize='x-large')
-    plt.ylim(0, 1.01*max(n))
+    if not logy:
+        plt.ylim(0, 1.01*max(n))
+    else:
+        plt.yscale('log')
+    plt.xlim(min(bins), max(bins))
+    plt.legend(loc='best')
     plt.tight_layout()
     fname = 'hyperplane_all_chi2_vals_%s.png' % tag
     fig.savefig(os.path.join(outdir, fname))

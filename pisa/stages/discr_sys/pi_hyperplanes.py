@@ -19,7 +19,7 @@ class pi_hyperplanes(PiStage):
     """
     stage to histogram events
 
-    Paramaters
+    Parameters
     ----------
 
     fit_results_file : str
@@ -41,6 +41,7 @@ class pi_hyperplanes(PiStage):
                       defined in `sys_list`
     """
     def __init__(self,
+                 fit_results_file,
                  data=None,
                  params=None,
                  input_names=None,
@@ -53,15 +54,17 @@ class pi_hyperplanes(PiStage):
                  links=None,
                 ):
 
-        expected_params = ('fit_results_file',
-                           'dom_eff',
-                           'rde',
-                           'hole_ice',
-                           'hole_ice_fwd',
-                           'spiciness',
-                           'bulk_scatter',
-                           'bulk_abs'
-                          )
+        self.fit_results_file = fit_results_file
+
+        expected_params = (
+            'dom_eff',
+            'rde',
+            'hole_ice',
+            'hole_ice_fwd',
+            'spiciness',
+            'bulk_scatter',
+            'bulk_abs'
+        )
         # will be needed at computation time, where
         # we want to make sure that the params from
         # the hyperplane fits constitute a subset
@@ -103,7 +106,7 @@ class pi_hyperplanes(PiStage):
         assert self.output_mode is not None
 
         self.fit_results = None
-        """Results of the hyperplane fit"""
+        """Parsed results of the hyperplane fit"""
         self.fit_sys_list = None
         """List of systematic parameters participating in the external fit"""
         self.fit_binning_hash = None
@@ -116,7 +119,7 @@ class pi_hyperplanes(PiStage):
     def setup_function(self):
         """Load the fit results from the file and make some check
         compatibility"""
-        self.fit_results = from_file(self.params['fit_results_file'].value)
+        self.fit_results = from_file(self.fit_results_file)
         self.fit_binning_hash = self.fit_results.get('binning_hash', None)
         if not self.fit_binning_hash:
             raise KeyError(
@@ -165,7 +168,6 @@ class pi_hyperplanes(PiStage):
 
     @profile
     def compute_function(self):
-        # TODO: add some safety precautions against changing params
         self.data.data_specs = self.calc_specs
         if self.links is not None:
             for key, val in self.links.items():
