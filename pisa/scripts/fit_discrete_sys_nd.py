@@ -41,13 +41,13 @@ def parse_args():
         help='Settings for the hyperplane fit'
     )
     parser.add_argument(
-        '-sp', '--set-param', type=str, default=None,
-        help='Set a param to a certain value.',
-        action='append'
+        '-sp', '--set-param', type=str, default=None, action='append',
+        help='''Currently *NOT* implemented. Set one or multiple parameters
+        to a certain value (e.g. to test stability of parameterisation).'''
     )
     parser.add_argument(
         '--tag', type=str, default='deepcore',
-        help='Tag for the filename'
+        help='Tag for the filename.'
     )
     parser.add_argument(
         '-o', '--outdir', type=str, required=True,
@@ -55,7 +55,9 @@ def parse_args():
     )
     parser.add_argument(
         '--plot', action='store_true',
-        help='plot'
+        help='''Plot distribution of fit parameters, bin-by-bin variations
+        from systematics sets, and the distribution of chisquare residuals
+        together with a chisquare fit.'''
     )
     parser.add_argument(
         '-v', action='count', default=None,
@@ -532,8 +534,8 @@ def plot_hyperplane_fit_params(hyperplane_fits, names, binning, outdir=None,
         )
 
 
-def plot_chisquare_values(chi2s, outdir, fit=True, fit_loc_scale=True,
-                          bins=None, logy=False, tag=None):
+def plot_chisquare_values(chi2s, outdir, fit=True, fit_loc_scale=False,
+                          bins=None, logy=True, tag=None):
     """Fit and plot distribution of chisquare values.
 
     Parameters
