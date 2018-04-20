@@ -68,7 +68,7 @@ class pi_hyperplanes(PiStage):
         # will be needed at computation time, where
         # we want to make sure that the params from
         # the hyperplane fits constitute a subset
-        self.sys_params = set(expected_params[1:])
+        self.sys_params = set(expected_params)
         input_names = ()
         output_names = ()
 
