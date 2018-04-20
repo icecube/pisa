@@ -56,8 +56,8 @@ def parse_args():
     parser.add_argument(
         '--plot', action='store_true',
         help='''Plot distribution of fit parameters, bin-by-bin variations
-        from systematics sets, and the distribution of chisquare residuals
-        together with a chisquare fit.'''
+        from systematics sets, and the distribution of chi-square residuals
+        together with a chi-square fit.'''
     )
     parser.add_argument(
         '-v', action='count', default=None,
@@ -310,11 +310,12 @@ def fit_discrete_sys_distributions(
 
     Returns
     -------
-    outputs : dict
-        stores fit results (fit parameters for each map name, the names of
-        the systematic parameters, the hash of the binning)
+    fit_results : dict
+        stores fit results, i.e., map names, fit parameters for each map,
+        parameter covariances under 'pcov', the names of
+        the systematic parameters, the hash of the binning
     chi2s : list
-        fit chi-square values
+        individual chi-square residuals between fit and data points
     binning : MultiDimBinning
         binning of all maps
 
@@ -333,8 +334,7 @@ def fit_discrete_sys_distributions(
     binning = nominal_mapset[0].binning
     binning_hash = binning.hash
 
-    fit_results = {}
-    errors = {}
+    fit_results = {'pcov': {}}
     chi2s = []
 
     # normalise the systematics variations to the nominal distribution
@@ -369,8 +369,9 @@ def fit_discrete_sys_distributions(
             % (map_name, p0[map_name])
         )
 
-        fit_results[map_name] = np.ones(shape_output)
-        errors[map_name] = np.ones(shape_output)
+        # initialise data arrays with nans
+        fit_results[map_name] = np.full(shape_output, np.nan)
+        fit_results['pcov'][map_name] = np.full(shape_output + [n_params], np.nan)
 
         for idx in np.ndindex(*shape_map):
             y_values = unp.nominal_values(chan_norm_sys_maps[idx])
@@ -381,7 +382,7 @@ def fit_discrete_sys_distributions(
                     sigma=y_sigma, p0=p0[map_name]
                 )
 
-                # calculate chisquare values
+                # calculate chi-square values
                 for point_idx in range(sys_param_points.shape[1]):
                     point = sys_param_points[:, point_idx]
                     predicted = hyperplane_fun(point, *popt)
@@ -392,7 +393,7 @@ def fit_discrete_sys_distributions(
 
             else:
                 # without error estimates each point has the same weight
-                # and we cannot get chisquare values
+                # and we cannot get chi-square values
                 logging.warn( # pylint: disable=logging-not-lazy
                     'No uncertainties for any of the normalised counts in bin'
                     ' %s ("%s") found. Fit is performed unweighted and no'
@@ -402,17 +403,15 @@ def fit_discrete_sys_distributions(
                     hyperplane_fun, sys_param_points, y_values, p0=p0[map_name]
                 )
                 chi2s.append(np.nan)
-            perr = np.sqrt(np.diag(pcov))
-            for k, p in enumerate(popt):
-                fit_results[map_name][idx][k] = p
-                errors[map_name][idx][k] = perr[k]
+            fit_results[map_name][idx] = popt
+            fit_results['pcov'][map_name][idx] = pcov
 
     fit_results['p0'] = p0
     fit_results['sys_list'] = sys_list
     fit_results['map_names'] = nominal_mapset.names
     fit_results['binning_hash'] = binning_hash
 
-    return fit_results, errors, chi2s, binning
+    return fit_results, chi2s, binning
 
 
 def hyperplane(fit_cfg, set_param=None):
@@ -450,14 +449,14 @@ def hyperplane(fit_cfg, set_param=None):
     nominal_mapset, sys_list, sys_param_points, sys_mapsets =\
         make_discrete_sys_distributions(fit_cfg=fit_cfg)
 
-    hyperplane_fits, errors, chi2s, binning = fit_discrete_sys_distributions(
+    hyperplane_fits, chi2s, binning = fit_discrete_sys_distributions(
         nominal_mapset=nominal_mapset,
         sys_list=sys_list,
         sys_param_points=sys_param_points,
         sys_mapsets=sys_mapsets
     )
     return (nominal_mapset, sys_param_points, sys_mapsets, binning,
-            hyperplane_fits, errors, chi2s)
+            hyperplane_fits, chi2s)
 
 
 def save_hyperplane_fits(hyperplane_fits, chi2s, outdir, tag=None):
@@ -476,10 +475,19 @@ def save_hyperplane_fits(hyperplane_fits, chi2s, outdir, tag=None):
         identifier for filenames holding fit results
 
     """
-    tag = '_' if not tag else '_%s_' % tag
-    to_file(hyperplane_fits, '%s/nd_sysfits%sraw.json' % (outdir, tag))
+    dim = len(hyperplane_fits['sys_list'])
+    param_str = '_'.join(hyperplane_fits['sys_list'])
+    res_path = os.path.join(
+        outdir,
+        '%s_%dd_%s_hyperplane_fits.json' % (tag, dim, param_str)
+    )
+    to_file(hyperplane_fits, res_path)
     chi2s = np.array(chi2s)
-    np.save('%s/nd_sysfits_%s_raw_chi2s' % (outdir, tag), chi2s)
+    chi2s_path = os.path.join(
+        outdir,
+        '%s_%dd_%s_hyperplane_chi2s' % (tag, dim, param_str)
+    )
+    np.save(chi2s_path, chi2s)
 
 
 def plot_hyperplane_fit_params(hyperplane_fits, names, binning, outdir=None,
@@ -530,23 +538,23 @@ def plot_hyperplane_fit_params(hyperplane_fits, names, binning, outdir=None,
         )
         my_plotter.plot_2d_array(
             maps,
-            fname='%s_%s_raw_ndfits'%(tag, fit_param_id),
+            fname='%s_%s_%ddfits'%(tag, fit_param_id, len(sys_list)),
         )
 
 
-def plot_chisquare_values(chi2s, outdir, fit=True, fit_loc_scale=False,
-                          bins=None, logy=True, tag=None):
-    """Fit and plot distribution of chisquare values.
+def plot_chisquare_values(chi2s, outfile, fit=True, fit_loc_scale=False,
+                          bins=None, logy=True):
+    """Fit and plot distribution of chi-square values.
 
     Parameters
     ----------
     chi2s : list
-        flat list of chisquare values to fit and histogram
-    outdir : str
-        path to output directory for plots
+        flat list of chi-square values to fit and histogram
+    outfile : str
+        plot output file
     fit : bool
-        whether to fit the list of chisquare values with
-        a chisquare distribution
+        whether to fit the list of chi-square values with
+        a chi-square distribution
     fit_loc_scale : bool
         whether to allow the shape parameters "loc" and "scale"
         to float in the fit
@@ -554,9 +562,6 @@ def plot_chisquare_values(chi2s, outdir, fit=True, fit_loc_scale=False,
         binning to employ for histogramming
     logy : bool
         employ a logarithmic y scale
-    tag : str
-        identifier for plot filenames
-
     """
     import matplotlib as mpl
     mpl.use('agg')
@@ -605,8 +610,7 @@ def plot_chisquare_values(chi2s, outdir, fit=True, fit_loc_scale=False,
     plt.xlim(min(bins), max(bins))
     plt.legend(loc='best')
     plt.tight_layout()
-    fname = 'hyperplane_all_chi2_vals_%s.png' % tag
-    fig.savefig(os.path.join(outdir, fname))
+    fig.savefig(outfile)
 
 
 def plot_binwise_variations_with_fits(
@@ -706,8 +710,8 @@ def plot_binwise_variations_with_fits(
                 fig.text(0.5, 0.04, sys_name, ha='center', fontsize='xx-large')
                 fig.text(0.04, 0.5, 'normalised count', va='center',
                          rotation='vertical', fontsize='xx-large')
-                fname = ('%s_%s%s%s_binwise_hyperplane.png'
-                         % (sys_name, map_name, zstr, tag))
+                fname = ('%s_%s_%s%sbinwise_hyperplane.png'
+                         % (tag, sys_name, map_name, zstr))
                 fig.savefig(os.path.join(outdir, fname))
 
 
@@ -718,7 +722,7 @@ def main():
     args = parse_args()
     set_verbosity(args.v)
 
-    nom_ms, sys_points, sys_ms, binning, fits, errors, chi2s = hyperplane( # pylint: disable=unused-variable
+    nom_ms, sys_points, sys_ms, binning, fits, chi2s = hyperplane(
         fit_cfg=args.fit_cfg,
     )
     save_hyperplane_fits(
@@ -746,8 +750,8 @@ def main():
         )
         plot_chisquare_values(
             chi2s=chi2s,
-            outdir=args.outdir,
-            tag=args.tag
+            outfile='%s_%dd_%s_hyperplane_chi2s.png'
+            % (args.tag, len(fits['sys_list']), '_'.join(fits['sys_list']))
         )
 
 
