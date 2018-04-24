@@ -941,6 +941,8 @@ class HypoTesting(Analysis):
             #   * fid trial = 0         : always 0 since data stays the same
             #                             for all fid trials in this data trial
             data_random_state = get_random_state([0, self.data_ind, 0])
+            logging.info('Fluctuating Asimov dataset: "%s",'
+                         % self.fluctuate_data_method)
 
             self.data_dist = self.toy_data_asimov_dist.fluctuate(
                 method=self.fluctuate_data_method, random_state=data_random_state
@@ -2020,7 +2022,7 @@ class HypoTesting(Analysis):
                     tgt = data_param.value - data_param.prior.stddev
             elif data_param.prior.kind == 'spline':
                 # 1 sigma variation is also doable in this case
-                bounds = get_prior_bounds(data_param.prior)
+                bounds = get_prior_bounds(data_param.prior)[1.0]
                 if direction == 'pve':
                     if not len(bounds) > 1:
                         # ok, this is fishy, fall back to the 10% case

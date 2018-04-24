@@ -29,6 +29,7 @@ from pisa.utils.minimization import set_minimizer_defaults, minimizer_x0_bounds,
                                     MINIMIZERS_USING_SYMM_GRAD,\
                                     LOCAL_MINIMIZERS_WITH_DEFAULTS
 from pisa.utils.pull_method import calculate_pulls
+from pisa.utils.random_numbers import get_random_state
 from pisa.utils.stats import METRICS_TO_MAXIMIZE, it_got_better
 
 
@@ -359,6 +360,91 @@ class Analysis(object):
         self._nit = 0
         self.counter = Counter()
 
+
+    def fit_from_startpoints(
+            self, data_dist, hypo_maker, hypo_param_selections,
+            extra_param_selections, metric, startpoints=None,
+            randomize_params=None, nstart=None, random_state=None,
+            fit_settings=None, minimizer_settings=None, other_metrics=None,
+            check_octant=True, blind=False, pprint=True, reset_free=False
+    ):
+        '''Rerun fit either from `nstart` random start points (seeds) or
+        definite start points defined in `startpoints`.'''
+
+        if not startpoints and not nstart:
+            # covers cases such as None, empty list, 0 etc.
+            raise ValueError(
+                'Provide either list of start points or number of points!'
+            )
+        if startpoints and nstart:
+            raise ValueError(
+                'Either provide list of start points or number of points,'
+                ' but not both!'
+            )
+        if startpoints:
+            randomize = False
+            if not isinstance(startpoints, Sequence):
+                raise TypeError('`startpoints` needs to be a sequence.'
+                                ' Got %s instead.' % type(startpoints))
+
+        elif nstart:
+            randomize = True
+            if not np.issubdtype(type(nstart), np.int):
+                raise TypeError('`nstart` needs to be an integer.'
+                                ' Got %s instead.' % type(nstart))
+
+        fit_infos = []
+        start_t = time.time()
+        nruns = nstart if randomize else len(startpoints)
+        for irun in range(nruns):
+            if randomize:
+                # each run uses initial random state moved forward by irun
+                if randomize_params is not None:
+                    # just randomise specified parameters
+                    for pname in randomize_params:
+                        hypo_maker.params[pname].randomize(
+                            random_state=get_random_state(random_state, jumpahead=irun)
+                        )
+                else:
+                    # randomise all free
+                    hypo_maker.params.randomize_free(
+                        random_state=get_random_state(random_state, jumpahead=irun)
+                    )
+            else:
+                for param in startpoints[irun]:
+                    if not param.name in hypo_maker.params.free:
+                        raise ValueError(
+                            'Param "%s" not among set of free hypothesis'
+                            ' parameters!'
+                        )
+                    hypo_maker.params[param.name].value = param.value
+            logging.info('Starting fit from point %s.' % hypo_maker.params.free)
+            irun_fit_info = self.optimize_discrete_selections(
+                data_dist=data_dist,
+                hypo_maker=hypo_maker,
+                hypo_param_selections=hypo_param_selections,
+                extra_param_selections=extra_param_selections,
+                metric=metric,
+                fit_settings=fit_settings,
+                reset_free=reset_free,
+                check_octant=check_octant,
+                minimizer_settings=minimizer_settings,
+                other_metrics=other_metrics,
+                blind=blind,
+                pprint=pprint
+            )[0]
+            fit_infos.append(irun_fit_info)
+
+        # TODO: find optimum, correctly report metadata
+        end_t = time.time()
+        multi_run_fit_t = end_t - start_t
+
+        logging.info(
+            'Total time to fit from all start points: %8.4f s.'
+            % multi_run_fit_t
+        )
+        return fit_infos
+
     def optimize_discrete_selections(
             self, data_dist, hypo_maker, hypo_param_selections,
             extra_param_selections, metric, fit_settings=None, reset_free=True,
@@ -437,7 +523,7 @@ class Analysis(object):
         bf_fit_times = np.sum(fit_times, axis=0) * ureg.sec
 
         # select the fitting infos corresponding to these best metric values
-        best_fit_infos = [fit_infos[dim][i] for i,dim in enumerate(bf_dims)]
+        best_fit_infos = [fit_infos[dim][i] for i, dim in enumerate(bf_dims)]
         for num_dist, fit_time, bf_info in \
             zip(bf_num_dists, bf_fit_times, best_fit_infos):
             bf_info['num_distributions_generated'] = num_dist
@@ -460,9 +546,18 @@ class Analysis(object):
                             hypo_maker, metric, minimizer_settings,
                             other_metrics, pprint, blind):
         # Hop to other octant by reflecting about 45 deg
+        old_octant = t23_octant(best_fit_info)
         theta23 = hypo_maker.params.theta23
         inflection_point = (45*ureg.deg).to(theta23.units)
-        theta23.value = 2*inflection_point - theta23.value
+        tgt = 2*inflection_point - theta23.value
+        if tgt > max(theta23.range):
+            theta23.value = (max(theta23.range) -
+                             0.01 * (max(theta23.range)-min(theta23.range)))
+        elif tgt < min(theta23.range):
+            theta23.value = (min(theta23.range) +
+                 0.01 * (max(theta23.range)-min(theta23.range)))
+        else:
+            theta23.value = tgt
         hypo_maker.update_params(theta23)
 
         # Re-run minimizer starting at new point
@@ -481,20 +576,38 @@ class Analysis(object):
         old_octant = t23_octant(best_fit_info)
         new_octant = t23_octant(new_fit_info)
 
+        # independent of whether the new octant is the same as the previous one:
+        # compare fit metrics
+        if it_got_better(
+            new_metric_val=new_fit_info['metric_val'],
+            old_metric_val=best_fit_info['metric_val'],
+            metric=metric
+        ):
+        # Take the one with the best fit
+            alternate_fits.append(best_fit_info)
+            best_fit_info = new_fit_info
+            if not blind:
+                logging.debug('Accepting other-octant fit')
+        else:
+            alternate_fits.append(new_fit_info)
+            if not blind:
+                logging.debug('Accepting initial-octant fit')
+
         if old_octant == new_octant:
             logging.warning(
-                'Checking other octant was NOT successful since both '
-                'fits have resulted in the same octant. Fit will be'
-                ' tried again starting at a point further into '
-                'the opposite octant.'
+                'Checking other octant *might* not have been successful since'
+                ' both fits have resulted in the same octant. Fit will be'
+                ' tried again starting at a point further into the opposite'
+                ' octant.'
             )
-            alternate_fits.append(new_fit_info)
             if old_octant > 0.0:
+                # either start at 55 deg or close to upper end of range
                 theta23.value = min(
                     (55.0*ureg.deg).to(theta23.units),
                     max(theta23.range) - 0.01 * (max(theta23.range)-min(theta23.range))
                 )
             else:
+                # either start at 35 deg or close to lower end of range
                 theta23.value = max(
                     (35.0*ureg.deg).to(theta23.units),
                     min(theta23.range) + 0.01 * (max(theta23.range)-min(theta23.range))
@@ -523,11 +636,11 @@ class Analysis(object):
                 alternate_fits.append(best_fit_info)
                 best_fit_info = new_fit_info
                 if not blind:
-                    logging.debug('Accepting other-octant fit')
+                    logging.debug('Accepting last other-octant fit')
             else:
                 alternate_fits.append(new_fit_info)
                 if not blind:
-                    logging.debug('Accepting initial-octant fit')
+                    logging.debug('Sticking to previous best fit')
 
         return best_fit_info
 
@@ -646,7 +759,7 @@ class Analysis(object):
                     check_octant = False
 
             scan_params = fit_settings['scan']['params']
-            for i,pname in enumerate(scan_params):
+            for i, pname in enumerate(scan_params):
                 scan_vals.append([(pname, val) for val in
                                   fit_settings['scan']['values'][i]])
             fit_settings.pop('scan')
