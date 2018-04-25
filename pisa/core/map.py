@@ -563,7 +563,8 @@ class Map(object):
 
         return comparisons
 
-    def plot(self, evtrate=True, symm=False, logz=False, fig=None, ax=None,
+    def plot(self, evtrate=True, symm=False, logx=False, logy=False, logz=False,
+             fig=None, ax=None,
              title=None, outdir=None, fname=None, backend='pdf', fmt='pdf',
              cmap=None, fig_kw=None, plt_kw=None, vmax=None, clabel=None,
              clabelsize=None, xlabelsize=None, ylabelsize=None,
@@ -656,7 +657,7 @@ class Map(object):
             shading='flat', edgecolors='face'
         )
         cbar = plt.colorbar(mappable=pcmesh, ax=ax)
-        cbar.ax.tick_params(labelsize='large')
+        cbar.ax.tick_params(labelsize='x-large')
         if clabel is not None:
             if clabelsize is not None:
                 cbar.set_label(label=clabel, size=clabelsize)
@@ -687,6 +688,11 @@ class Map(object):
         if to_plot.binning.dims[1].is_log:
             ax.set_yticks(np.log10(yticks))
             ax.set_yticklabels([str(int(yt)) for yt in yticks])
+
+        if logx:
+            plt.xscale('log')
+        if logy:
+            plt.yscale('log')
 
         if outdir is not None:
             if fname is None:
@@ -905,7 +911,8 @@ class Map(object):
                 valid_mask = ~nan_at
                 gauss = np.empty_like(orig_hist, dtype=np.float64)
                 gauss[valid_mask] = norm.rvs(
-                    loc=orig_hist[valid_mask], scale=sigma[valid_mask]
+                    loc=orig_hist[valid_mask], scale=sigma[valid_mask],
+                    random_state=random_state
                 )
 
                 hist_vals = np.empty_like(orig_hist, dtype=np.float64)
@@ -929,7 +936,8 @@ class Map(object):
                 valid_mask = ~nan_at
                 hist_vals = np.empty_like(orig_hist, dtype=np.float64)
                 hist_vals[valid_mask] = norm.rvs(loc=orig_hist[valid_mask],
-                                                 scale=sigma[valid_mask])
+                                                 scale=sigma[valid_mask],
+                                                 random_state=random_state)
                 hist_vals[nan_at] = np.nan
                 error_vals = np.empty_like(orig_hist, dtype=np.float64)
                 error_vals[valid_mask] = np.sqrt(orig_hist[valid_mask])
