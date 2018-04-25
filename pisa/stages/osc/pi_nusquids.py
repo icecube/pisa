@@ -22,13 +22,37 @@ from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.prob3numba.numba_osc import propagate_array, fill_probs
 from pisa.utils.numba_tools import WHERE
 from pisa.utils.resources import find_resource
+from pisa.utils import vectorizer
 from pisa.stages.osc.nusquids.nusquids_osc import NSQ_CONST, validate_calc_grid, compute_binning_constants, init_nusquids_prop, evolve_states, osc_probs, earth_model
 from pisa import ureg
 
+from scipy.interpolate import RectBivariateSpline
 
 __all__ = ['pi_nusquids']
 
 __author__ = 'T. Stuttard, T. Ehrhardt'
+
+
+#TODO Make into dedicated file, and document
+#TODO Is this really worth having, or can I just implement directly in the code (e.g. is this just not possible to make general enough)?
+#Make can make a geeneral E_coszen_spline_tool? The  also in e.g. flux?
+class OscSpline() :
+
+    def __init__(self,energy_nodes,coszen_nodes) :
+        #TODO Check inputs
+        self.energy_nodes = energy_nodes
+        self.coszen_nodes = coszen_nodes #TODO private?
+        self.prob_e_buffer = np.full( self.shape, np.NaN )
+        self.prob_mu_buffer = np.full( self.shape, np.NaN )
+
+    @property
+    def shape(self) :
+        return ( len(self.energy_nodes), len(self.coszen_nodes))
+
+    def generate_spline(self,prob_vs_energy_coszen_grid) :
+        assert prob_vs_energy_coszen_grid.shape == self.shape, "Probability grid must have shape matching the energy-coszen grid nodes"
+        return RectBivariateSpline( self.energy_nodes, self.coszen_nodes, prob_vs_energy_coszen_grid )
+
 
 
 class pi_nusquids(PiStage):
@@ -79,11 +103,13 @@ class pi_nusquids(PiStage):
                  use_decoherence=False,
                  use_nsi=False,
                  num_neutrinos=3,
+                 use_spline=False,
                 ):
 
         self.num_neutrinos = num_neutrinos
         self.use_nsi = use_nsi
         self.use_decoherence = use_decoherence
+        self.use_spline = use_spline
 
         # Define standard params
         expected_params = ['detector_depth',
@@ -171,7 +197,9 @@ class pi_nusquids(PiStage):
         # *anywhere* in between of the outermost bin edges
         self.en_calc_grid, self.cz_calc_grid = compute_binning_constants(self.calc_specs) #TODO Check what this actually does, and if I need it
 
-        # set up initial states, get the nuSQuIDS "propagator" instances
+        #TODO enforce all events within grid
+
+        # set up initial states, get the nuSQuIDS "propagator" instances (one per flavor)
         self.ini_states, self.props = init_nusquids_prop(
             cz_nodes=self.cz_calc_grid,
             en_nodes=self.en_calc_grid,
@@ -254,33 +282,59 @@ class pi_nusquids(PiStage):
         )
 
         t2 = datetime.datetime.now()
+        #print("+++ Evolve states took %s" % (t2-t1) )
 
         # Loop over containers
         for container in self.data:
 
-            # define the points where osc. probs. are to be evaluated
-            # this is just the energy/coszen values for each event, in the correct units
-            en_eval = container["true_energy"].get(WHERE) * NSQ_CONST.GeV #TODO Can I be more efficient here?
-            cz_eval = container["true_coszen"].get(WHERE)
+            # get the event energy and coszen values in nuSQuIDS units
+            en_nusq = container["true_energy"].get(WHERE) * NSQ_CONST.GeV # GeV -> eV
+            cz_nusq = container["true_coszen"].get(WHERE) # No conversion required
 
-            # Get the neutrino flavor (ignore the interaction)
+            # define the points where osc. probs. are to be evaluated in nuSQuIDS
+            # this is either the events themselves, or on a grid if using a spline
+            # this is just the energy/coszen values for each event, in the correct units
+            if self.use_spline : #TODO once only
+                en_eval_ax,cz_eval_ax = self.en_calc_grid,self.cz_calc_grid
+                en_eval_grid, cz_eval_grid = np.meshgrid(en_eval_ax,cz_eval_ax,indexing="ij")
+                en_eval,cz_eval = en_eval_grid.ravel(), cz_eval_grid.ravel()
+            else :
+                en_eval, cz_eval = en_nusq, cz_nusq
+
+            # get the neutrino flavor (ignore the interaction)
             nuflav = container.name.replace("_cc","").replace("_nc","") # TODO Update this once we have the new events class which has helper functions for this kind of thing
+
+            # Define the output arrays for the calculated oscillation probability.
+            # Can directly use container arrays whe calculating event-wise, or need a 
+            # buffer with one element per grid point if using a spline.
+            if self.use_spline :
+                prob_e_buff,prob_mu_buff = np.full_like(en_eval,np.NaN), np.full_like(cz_eval,np.NaN)
+            else :
+                prob_e_buff,prob_mu_buff = container['prob_e'].get(WHERE), container['prob_mu'].get(WHERE)
 
             # Get the oscillation probs, writing them to the container
             _,_ = osc_probs(  # pylint: disable=unused-variable
-                nuflav=nuflav,
+                nuflav=nuflav, 
                 propagators=self.props,
                 true_energies=en_eval,
                 true_coszens=cz_eval,
-                prob_e=container['prob_e'].get(WHERE),
-                prob_mu=container['prob_mu'].get(WHERE),
+                prob_e=prob_e_buff,
+                prob_mu=prob_mu_buff,
             )
+
+            # If using splines, create the spline using the probabilitis computed at each grid point, and evaluate for each event
+            if self.use_spline :
+                prob_e_spline = RectBivariateSpline( en_eval_ax, cz_eval_ax, prob_e_buff.reshape(en_eval_grid.shape) )
+                np.copyto( src=prob_e_spline.ev(en_nusq,cz_nusq), dst=container['prob_e'].get(WHERE) )
+                prob_mu_spline = RectBivariateSpline( en_eval_ax, cz_eval_ax, prob_mu_buff.reshape(en_eval_grid.shape) )
+                np.copyto( src=prob_mu_spline.ev(en_nusq,cz_nusq), dst=container['prob_mu'].get(WHERE) )
+
             container['prob_e'].mark_changed(WHERE)
             container['prob_mu'].mark_changed(WHERE)
 
         t3 = datetime.datetime.now() #TODO REMOVE THIS LOT
 
-        #print("+++ Time taken : evolve_states = %s : osc_probs = %s" % (t2-t1,t3-t2) )
+        #print("+++ Flavor eval took %s" % (t3-t2) )
 
 
     @profile

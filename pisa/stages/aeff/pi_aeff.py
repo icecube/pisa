@@ -11,7 +11,11 @@ from pisa.utils import vectorizer
 
 class pi_aeff(PiStage):
     """
-    PISA Pi stage to apply aeff weights
+    PISA Pi stage to apply aeff weights.
+    This combines the detector effective area with the flux weights calculated 
+    in an earlier stage to compute the weights.
+    Various scalings can be applied for particular event classes.
+    The weight is then multiplied by the livetime to get an event count.
 
     Paramaters
     ----------
@@ -83,7 +87,7 @@ class pi_aeff(PiStage):
     def apply_function(self):
 
         # read out
-        aeff_scale = self.params.aeff_scale.m_as('dimensionless') #TODO Should this be applie dto muon and noise triggers or reserved only for neutrinos?
+        aeff_scale = self.params.aeff_scale.m_as('dimensionless')
         livetime_s = self.params.livetime.m_as('sec')
         nutau_cc_norm = self.params.nutau_cc_norm.m_as('dimensionless')
         nutau_norm = self.params.nutau_norm.m_as('dimensionless')
