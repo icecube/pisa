@@ -874,6 +874,13 @@ class Analysis(object):
             fit_t, self.counter.count,
         )
 
+        # unfix any parameters which might have gotten fixed
+        if len(scan_params) >= 1:
+            hypo_maker.params.unfix(scan_params)
+            if reset_free:
+                for scan_param in scan_params:
+                    hypo_maker.params[scan_param].reset()
+
         # always return full list of alternate_fits for now
         if not return_full_scan:
             # interpret all points scanned as part of the fitting process
