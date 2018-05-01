@@ -226,7 +226,7 @@ def _gaussians_multithreaded(outbuf, x, mu, inv_sigma, inv_sigma_sq, weights,
         thread.join()
 
 
-@numba_jit(nopython=True, nogil=True, fastmath=True)
+@numba_jit(nopython=True, nogil=True, fastmath=True, cache=True)
 def _gaussians_singlethreaded(outbuf, x, mu, inv_sigma, inv_sigma_sq, weights,
                               n_gaussians, start, stop):
     """Sum of multiple Gaussians, optimized to be run in a single thread"""
@@ -299,9 +299,10 @@ if NUMBA_CUDA_AVAIL:
     def _gaussians_cuda_kernel(outbuf, x, mu, inv_sigma, inv_sigma_sq,
                                n_gaussians):
         pt_idx = cuda.grid(1) # pylint: disable=not-callable
+        x_pt = x[pt_idx]
         tot = 0.0
         for g_idx in range(n_gaussians):
-            xlessmu = x[pt_idx] - mu[g_idx]
+            xlessmu = x_pt - mu[g_idx]
             tot += (exp((xlessmu*xlessmu) * inv_sigma_sq[g_idx])
                     * inv_sigma[g_idx])
         outbuf[pt_idx] = tot
@@ -310,9 +311,10 @@ if NUMBA_CUDA_AVAIL:
     def _gaussians_weighted_cuda_kernel(outbuf, x, mu, inv_sigma, inv_sigma_sq,
                                         weights, n_gaussians):
         pt_idx = cuda.grid(1) # pylint: disable=not-callable
+        x_pt = x[pt_idx]
         tot = 0.0
         for g_idx in range(n_gaussians):
-            xlessmu = x[pt_idx] - mu[g_idx]
+            xlessmu = x_pt - mu[g_idx]
             tot += (exp((xlessmu*xlessmu) * inv_sigma_sq[g_idx])
                     * weights[g_idx] * inv_sigma[g_idx])
         outbuf[pt_idx] = tot
