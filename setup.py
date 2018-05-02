@@ -298,8 +298,7 @@ def do_setup():
                 'pycuda'
             ],
             'numba': [
-                'llvmlite>=0.16', # fastmath jit flag
-                'numba==0.35' # fastmath jit flag, version fixed because of issue #439
+                'numba==0.38' # fastmath jit flag, version fixed because of issue #439
             ],
             'develop': [
                 'pylint>=1.7',
@@ -307,14 +306,14 @@ def do_setup():
                 'sphinx>=1.3',
                 'sphinx_rtd_theme',
                 'versioneer',
+                'yapf',
             ],
             # TODO: get mceq install to work... this is non-trivial since that
             # project isn't exactly cleanly instllable via pip already, plus it
             # has "sub-projects" that won't get picked up by a simple single
             # URL (e.g. the data). Plus it's huge (~1GB).
             #'mceq': [
-            #    'llvmlite>=0.16',
-            #    'numba==0.35',
+            #    'numba==0.38',
             #    'progressbar',
             #    'MCEq'
             #]

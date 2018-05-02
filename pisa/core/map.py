@@ -724,7 +724,9 @@ class Map(object):
             shading='flat', edgecolors='face'
         )
         if logz:
-            defaults['norm'] = mpl.colors.LogNorm(1, 3000, clip=True)
+            defaults['norm'] = mpl.colors.LogNorm(
+                hist[hist > 0].min(), hist.max(), clip=True
+            )
         for key, dflt_val in defaults.items():
             if key not in pcolormesh_kw:
                 pcolormesh_kw[key] = dflt_val
