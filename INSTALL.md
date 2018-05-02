@@ -121,7 +121,7 @@ Optional dependencies. Some of these must be installed manually prior to install
 
 * [llvm](http://llvm.org) Compiler needed by Numba. This is automatically installed in Anaconda alongside `numba`, but must be installed manually on your system otherwise.
   * Anaconda<br>
-    `conda install numba=0.35`
+    `conda install numba=0.38`
   * In Ubuntu,<br>
     `sudo apt install llvm-3.9-dev`
 * [virtualenv](https://virtualenv.pypa.io/en/stable/) Use virtual environments to e.g. create a "clean" installation and/or to have multiple multiple versions installed, one version per virtual environment. To speed up installation (at the cost of a less "clean" environment), you can specify the `--system-site-packages` option to `virtualenv` to make use of already-installed Python packages.
@@ -132,7 +132,7 @@ Optional dependencies. Some of these must be installed manually prior to install
 * [OpenMP](http://www.openmp.org) Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.
   * Available from your compiler: gcc supports OpenMP 4.0 and Clang >= 3.8.0 supports OpenMP 3.1. Either version of OpenMP should work, but Clang has yet to be tested for its OpenMP support.
 * [ROOT >= 6.12.04 with PyROOT](https://root.cern.ch) Necessary for `xsec.genie` and `unfold.roounfold` services, and to read ROOT cross section files in the `crossSections` utils module. Due to a bug in ROOT's python support (documented here https://github.com/jllanfranchi/pisa/issues/430), you need at least version 6.12.04 of ROOT.
-* [numba=0.35](http://numba.pydata.org) Just-in-time compilation of decorated Python functions to native machine code via LLVM. This package is required to use PISA pi; also in cake it can accelerate certain routines significantly. If not using Anaconda to install, you must have LLVM installed already on your system (see above).
+* [numba=0.38](http://numba.pydata.org) Just-in-time compilation of decorated Python functions to native machine code via LLVM. This package is required to use PISA pi; also in cake it can accelerate certain routines significantly. If not using Anaconda to install, you must have LLVM installed already on your system (see above).
   * Installed alongside PISA if you specify option `['numba']` to `pip`
 * [Pylint](http://www.pylint.org): Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.<br>
   * Installed alongside PISA if you specify option `['develop']` to `pip`
@@ -145,7 +145,7 @@ Optional dependencies. Some of these must be installed manually prior to install
 * [versioneer](https://github.com/warner/python-versioneer) Automatically get versions from git and make these embeddable and usable in code. Note that the install process is unique since it first places `versioneer.py` in the PISA root directory, and then updates source files within the repository to provide static and dynamic version info.
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [MCEq](http://github.com/afedynitch/MCEq) Required for `flux.mceq` service.
-* [nuSQuiDS](https://github.com/arguelles/nuSQuIDS) Required for `osc.nusquids` service.
+* [nuSQuiDS](https://github.com/arguelles/nuSQuIDS) Required for `osc.cake_nusquids` and `osc.pi_nusqids` services.
 
 
 ### Set up your environment
