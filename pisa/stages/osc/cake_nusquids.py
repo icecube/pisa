@@ -35,7 +35,7 @@ from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 
 
-__all__ = ['nusquids']
+__all__ = ['cake_nusquids']
 
 __author__ = 'S. Mandalia'
 
@@ -54,7 +54,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  limitations under the License.'''
 
 
-class nusquids(Stage):
+class cake_nusquids(Stage):
     """osc service to provide oscillated fluxes via nuSQuIDS.
 
     Parameters
@@ -128,7 +128,7 @@ class nusquids(Stage):
         if input_binning != output_binning:
             raise AssertionError('Input binning must match output binning.')
 
-        super(nusquids, self).__init__(
+        super(cake_nusquids, self).__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
