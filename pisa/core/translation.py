@@ -19,10 +19,12 @@ from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.numba_tools import myjit, WHERE
 from pisa.utils import vectorizer
 
-__all__ = ['histogram',
-           'lookup',
-           'resample',
-          ]
+__all__ = [
+    'histogram',
+    'lookup',
+    'resample'
+]
+
 
 # --------- resampling ------------
 def resample(weights, old_sample, old_binning, new_sample, new_binning):
@@ -322,45 +324,49 @@ def find_index(x, bin_edges):
             last = i - 1
     return i
 
-if FTYPE == np.float64:
-    signature = '(f8, f8, f8[:], f8[:], f8[:], f8[:])'
+if FTYPE == np.float32:
+    _SIGNATURE = ['(f4[:], f4[:], f4[:], f4[:], f4[:], f4[:])']
 else:
-    signature = '(f4, f4, f4[:], f4[:], f4[:], f4[:])'
+    _SIGNATURE = ['(f8[:], f8[:], f8[:], f8[:], f8[:], f8[:])']
 
-@guvectorize([signature], '(),(),(j),(k),(l)->()', target=TARGET)
+@guvectorize(_SIGNATURE, '(),(),(j),(k),(l)->()', target=TARGET)
 def lookup_vectorized_2d(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights):
     '''
     Vectorized gufunc to perform the lookup
     '''
-    if (sample_x >= bin_edges_x[0]
-            and sample_x <= bin_edges_x[-1]
-            and sample_y >= bin_edges_y[0]
-            and sample_y <= bin_edges_y[-1]):
-        idx_x = find_index(sample_x, bin_edges_x)
-        idx_y = find_index(sample_y, bin_edges_y)
+    sample_x_ = sample_x[0]
+    sample_y_ = sample_y[0]
+    if (sample_x_ >= bin_edges_x[0]
+            and sample_x_ <= bin_edges_x[-1]
+            and sample_y_ >= bin_edges_y[0]
+            and sample_y_ <= bin_edges_y[-1]):
+        idx_x = find_index(sample_x_, bin_edges_x)
+        idx_y = find_index(sample_y_, bin_edges_y)
         idx = idx_x*(len(bin_edges_y)-1) + idx_y
         weights[0] = flat_hist[idx]
     else:
         weights[0] = 0.
 
 
-if FTYPE == np.float64:
-    signature = '(f8, f8, f8[:,:], f8[:], f8[:], f8[:])'
+if FTYPE == np.float32:
+    _SIGNATURE = ['(f4[:], f4[:], f4[:,:], f4[:], f4[:], f4[:])']
 else:
-    signature = '(f4, f4, f4[:,:], f4[:], f4[:], f4[:])'
+    _SIGNATURE = ['(f8[:], f8[:], f8[:,:], f8[:], f8[:], f8[:])']
 
-@guvectorize([signature], '(),(),(j,d),(k),(l)->(d)', target=TARGET)
+@guvectorize(_SIGNATURE, '(),(),(j,d),(k),(l)->(d)', target=TARGET)
 def lookup_vectorized_2d_arrays(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights):
     '''
     Vectorized gufunc to perform the lookup
     while flat hist and weights have both a second dimension
     '''
-    if (sample_x >= bin_edges_x[0]
-            and sample_x <= bin_edges_x[-1]
-            and sample_y >= bin_edges_y[0]
-            and sample_y <= bin_edges_y[-1]):
-        idx_x = find_index(sample_x, bin_edges_x)
-        idx_y = find_index(sample_y, bin_edges_y)
+    sample_x_ = sample_x[0]
+    sample_y_ = sample_y[0]
+    if (sample_x_ >= bin_edges_x[0]
+            and sample_x_ <= bin_edges_x[-1]
+            and sample_y_ >= bin_edges_y[0]
+            and sample_y_ <= bin_edges_y[-1]):
+        idx_x = find_index(sample_x_, bin_edges_x)
+        idx_y = find_index(sample_y_, bin_edges_y)
         idx = idx_x*(len(bin_edges_y)-1) + idx_y
         for i in range(weights.size):
             weights[i] = flat_hist[idx, i]
