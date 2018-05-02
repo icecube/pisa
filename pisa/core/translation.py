@@ -391,7 +391,8 @@ def test_histogram():
 
     histo = histogram(sample, weights, binning, averaged)
 
-    print(histo.reshape(10, 10))
+    assert np.array_equal(histo.reshape(10, 10), np.zeros(shape=(10, 10)))
+
 
 if __name__ == '__main__':
     test_histogram()

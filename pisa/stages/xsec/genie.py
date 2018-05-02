@@ -9,13 +9,12 @@ $PISA/pisa_examples/resources/settings/pipeline/example_xsec.cfg
 """
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 from itertools import product
 from operator import add
 
 import numpy as np
-import pint
 
 from pisa import ureg
 from pisa.core.stage import Stage
@@ -50,7 +49,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  limitations under the License.'''
 
 
-class genie(Stage):
+class genie(Stage): # pylint: disable=invalid-name
     """Aeff service to tranform from flux maps to event rate maps.
 
     Obtains in cross-section values from a ROOT file containing the GENIE
@@ -145,6 +144,8 @@ class genie(Stage):
                  transform_groups, error_method=None, debug_mode=None,
                  disk_cache=None, transforms_cache_depth=20,
                  outputs_cache_depth=20):
+        self.xsec = None
+
         self.xsec_hash = None
         """Hash of GENIE spline file"""
 
@@ -176,7 +177,7 @@ class genie(Stage):
         self.transform_groups = [NuFlavIntGroup(flavint)
                                  for flavint in output_names]
 
-        super(self.__class__, self).__init__(
+        super(genie, self).__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,
@@ -200,9 +201,9 @@ class genie(Stage):
 
         self.load_xsec_splines()
         livetime = self._ev_param(self.params['livetime'].value)
-        ice_p    = self._ev_param(self.params['ice_p'].value)
-        fid_vol  = self._ev_param(self.params['fid_vol'].value)
-        mr_h20   = self._ev_param(self.params['mr_h20'].value)
+        ice_p = self._ev_param(self.params['ice_p'].value)
+        fid_vol = self._ev_param(self.params['fid_vol'].value)
+        mr_h20 = self._ev_param(self.params['mr_h20'].value)
         x_energy_scale = self.params['x_energy_scale'].value
 
         input_binning = self.input_binning
@@ -214,25 +215,26 @@ class genie(Stage):
 
         xsec_transforms = {}
         for flav in self.input_names:
-            for Int in ALL_NUINT_TYPES:
-                flavint = flav + '_' + str(Int)
-                logging.debug('Obtaining cross-sections for '
-                              '{0}'.format(flavint))
+            for int_ in ALL_NUINT_TYPES:
+                flavint = flav + '_' + str(int_)
+                logging.debug('Obtaining cross-sections for %s', flavint)
                 xsec_map = self.xsec.get_map(
                     flavint, MultiDimBinning([ebins]),
                     x_energy_scale=x_energy_scale
                 )
 
-                def x(idx):
+                def func(idx):
                     if idx == e_idx:
                         return xsec_map.hist
-                    else:
-                        return range(input_binning.shape[idx])
+                    return tuple(range(input_binning.shape[idx]))
                 num_dims = input_binning.num_dims
-                xsec_trns = np.meshgrid(*map(x, range(num_dims)),
-                                        indexing='ij')[e_idx]
-                xsec_trns *= livetime * fid_vol * \
-                    (ice_p / mr_h20) * (6.022140857e+23 / ureg.mol)
+                xsec_trns = np.meshgrid(
+                    *map(func, range(num_dims)),
+                    indexing='ij'
+                )[e_idx]
+                xsec_trns *= (
+                    livetime * fid_vol * (ice_p / mr_h20) * (6.022140857e+23 / ureg.mol)
+                )
                 xsec_transforms[NuFlavInt(flavint)] = xsec_trns
 
         nominal_transforms = []
@@ -267,8 +269,7 @@ class genie(Stage):
             self.xsec.reset()
             return
 
-        logging.info('Extracting cross-section spline from file: '
-                     '{0}'.format(xsec_file))
+        logging.info('Extracting cross-section spline from file: %s', xsec_file)
         self.xsec = self.get_combined_xsec(xsec_file, ver='v2.10.0')
         self.xsec_hash = this_hash
 
@@ -281,28 +282,27 @@ class genie(Stage):
         import ROOT
 
         fpath = find_resource(fpath)
-        logging.info('Loading GENIE ROOT cross-section file {0}'.format(fpath))
+        logging.info('Loading GENIE ROOT cross-section file %s', fpath)
 
+        # Name of neutrino flavours in the ROOT file.
         flavs = (
             'nu_e', 'nu_mu', 'nu_tau',
             'nu_e_bar', 'nu_mu_bar', 'nu_tau_bar'
         )
-        """Name of neutrino flavours in the ROOT file."""
 
-        rfile = ROOT.TFile.Open(fpath, 'read')
+        rfile = ROOT.TFile.Open(fpath, 'read') # pylint: disable=no-member
         xsec_splines = FlavIntData()
         for flav in flavs:
-            for Int in ALL_NUINT_TYPES:
-                xsec_splines[flav, Int] = {}
+            for int_ in ALL_NUINT_TYPES:
+                xsec_splines[flav, int_] = {}
                 for part in ('O16', 'H1'):
-                    str_repr = flav+'_'+part+'/'+'tot_'+str(Int)
-                    xsec_splines[flav + str(Int)][part] = \
-                        ROOT.gDirectory.Get(str_repr)
+                    str_repr = flav+'_'+part+'/'+'tot_'+str(int_)
+                    xsec_splines[flav + str(int_)][part] = \
+                        ROOT.gDirectory.Get(str_repr) # pylint: disable=no-member
         rfile.Close()
 
-        def eval_spl(spline, binning, out_units=ureg.m**2, x_energy_scale=1.,
+        def eval_spl(spline, binning, out_units=ureg.m**2, x_energy_scale=1,
                      **kwargs):
-            num_dims = 1
             init_names = ['true_energy']
             init_units = [ureg.GeV]
 
@@ -335,8 +335,8 @@ class genie(Stage):
 
         inXSec = []
         for flav in flavs:
-            for Int in ALL_NUINT_TYPES:
-                flavint = NuFlavInt(flav+str(Int))
+            for int_ in ALL_NUINT_TYPES:
+                flavint = NuFlavInt(flav+str(int_))
                 xsec = Spline(
                     name=str(flavint), spline=xsec_splines[flavint],
                     eval_spl=eval_spl, validate_spl=validate_spl
@@ -353,9 +353,8 @@ class genie(Stage):
     @staticmethod
     def _ev_param(parameter):
         if isinstance(parameter, basestring):
-            return eval(parameter)
-        else:
-            return parameter
+            return eval(parameter) # pylint: disable=eval-used
+        return parameter
 
     def validate_params(self, params):
         assert isinstance(params['xsec_file'].value, basestring)
@@ -363,7 +362,7 @@ class genie(Stage):
         assert isinstance(self._ev_param(params['ice_p'].value), ureg.Quantity)
         assert isinstance(self._ev_param(params['fid_vol'].value), ureg.Quantity)
         assert isinstance(self._ev_param(params['mr_h20'].value), ureg.Quantity)
-        assert (params['x_energy_scale'].value > 1E-5)
+        assert params['x_energy_scale'].value > 1E-5
 
 
 def test_standard_plots(xsec_file, outdir='./'):
@@ -393,7 +392,7 @@ def test_per_e_plot(xsec_file, outdir='./'):
                        domain=(1E-1, 1E3)*ureg.GeV, is_log=True)]
     )
     xsec.compute_maps(e_bins)
-    xsec.scale_maps(1./e_bins.true_energy.bin_widths)
+    xsec.scale_maps(1/e_bins.true_energy.bin_widths.magnitude)
 
     logging.info('Making plots for genie xsec_maps per energy')
     plot_obj = Plotter(outdir=outdir, stamp='Cross-Section / Energy',
@@ -403,7 +402,8 @@ def test_per_e_plot(xsec_file, outdir='./'):
     plot_obj.plot_xsec(maps, ylim=(3.5E-41, 3E-40))
 
 
-if __name__ == '__main__':
+def main():
+    """Script function to run tests on a cross section file"""
     from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
     set_verbosity(3)
 
@@ -419,3 +419,7 @@ if __name__ == '__main__':
     # test_XSec(args.xsec_file)
     test_standard_plots(args.xsec_file, args.outdir+'/standard/')
     test_per_e_plot(args.xsec_file, args.outdir+'/per_e/')
+
+
+if __name__ == '__main__':
+    main()
