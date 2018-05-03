@@ -20,6 +20,14 @@ pisa.stages.aeff.param module
     :undoc-members:
     :show-inheritance:
 
+pisa.stages.aeff.pi\_aeff module
+--------------------------------
+
+.. automodule:: pisa.stages.aeff.pi_aeff
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.stages.aeff.smooth module
 ------------------------------
 
