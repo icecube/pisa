@@ -119,6 +119,9 @@ class pi_prob3(PiStage):
 
         self.layers = None
         self.osc_params = None
+        self.YeI = None
+        self.YeO = None
+        self.YeM = None
 
     def setup_function(self):
 
@@ -128,13 +131,13 @@ class pi_prob3(PiStage):
         # setup the layers
         #if self.params.earth_model.value is not None:
         earth_model = find_resource(self.params.earth_model.value)
-        YeI = self.params.YeI.value.m_as('dimensionless')
-        YeO = self.params.YeO.value.m_as('dimensionless')
-        YeM = self.params.YeM.value.m_as('dimensionless')
+        self.YeI = self.params.YeI.value.m_as('dimensionless')
+        self.YeO = self.params.YeO.value.m_as('dimensionless')
+        self.YeM = self.params.YeM.value.m_as('dimensionless')
         prop_height = self.params.prop_height.value.m_as('km')
         detector_depth = self.params.detector_depth.value.m_as('km')
         self.layers = Layers(earth_model, detector_depth, prop_height)
-        self.layers.setElecFrac(YeI, YeO, YeM)
+        self.layers.setElecFrac(self.YeI, self.YeO, self.YeM)
 
         # set the correct data mode
         self.data.data_specs = self.calc_specs
@@ -196,6 +199,18 @@ class pi_prob3(PiStage):
                                              'nue_nc', 'numu_nc', 'nutau_nc'])
             self.data.link_containers('nubar', ['nuebar_cc', 'numubar_cc', 'nutaubar_cc',
                                                 'nuebar_nc', 'numubar_nc', 'nutaubar_nc'])
+
+        # this can be done in a more clever way (don't have to recalculate all paths)
+        YeI = self.params.YeI.value.m_as('dimensionless')
+        YeO = self.params.YeO.value.m_as('dimensionless')
+        YeM = self.params.YeM.value.m_as('dimensionless')
+        if YeI != self.YeI or YeO != self.YeO or YeM != self.YeM:
+            self.YeI = YeI; self.YeO = YeO; self.YeM = YeM
+            self.layers.setElecFrac(self.YeI, self.YeO, self.YeM)
+            for container in self.data:
+                self.layers.calcLayers(container['true_coszen'].get('host'))
+                container['densities'] = self.layers.density.reshape((container.size, self.layers.max_layers))
+                container['distances'] = self.layers.distance.reshape((container.size, self.layers.max_layers))
 
         # --- update mixing params ---
         self.osc_params.theta12 = self.params.theta12.value.m_as('rad')

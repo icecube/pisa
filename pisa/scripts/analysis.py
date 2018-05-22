@@ -172,6 +172,17 @@ class AnalysisScript(object):
 
         init_args_d['fit_settings'] = fit_settings
 
+        init_args_d['randomize_params'] = init_args_d.pop(
+            'randomize_param', None
+        )
+        if ('randomize_startpoint' in init_args_d and
+            init_args_d['randomize_startpoint']):
+            init_args_d['randomize_params'] = True
+            init_args_d.pop('randomize_startpoint')
+        init_args_d['randomization_seed'] = init_args_d.pop(
+            'randomization_seed', None
+        )
+
         init_args_d['check_octant'] = (
             not init_args_d.pop('no_octant_check')
             if 'no_octant_check' in init_args_d else None
@@ -479,7 +490,7 @@ class AnalysisScript(object):
             '--force-fits',
             action='store_true',
             help='''Force all Asimov fits to be done, even for cases where
-            'the truth should be recovered by definition.'''
+            the truth should be recovered by definition.'''
         )
         parser.add_argument(
             '--no-min-history',
@@ -668,6 +679,33 @@ class AnalysisScript(object):
         self.metric_parser = parser
 
 
+    def parse_min(self):
+        """Parser for universal minimization settings"""
+        parser = ArgumentParser(
+            add_help=False
+        )
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument(
+            '--randomize-param', type=str, action='append',
+            help='''Randomize start point of minimization in this parameter.'''
+        )
+        group.add_argument(
+            '--randomize-startpoint', action='store_true', help='''Randomize all
+            free parameters' start values.'''
+        )
+        parser.add_argument('--randomization-seed', type=int, default=0,
+            help='''Seed for reproducibility of randomization of parameters' start
+            values.'''
+        )        
+        parser.add_argument(
+            '--no-octant-check',
+            action='store_true',
+            help='''Disable rerunning fit from theta23 octant opposite from
+            outcome of initial fit.'''
+        )
+        self.min_parser = parser
+            
+
     def parse_min_global(self):
         """Parser for global minimization method"""
         parser = ArgumentParser(
@@ -719,12 +757,6 @@ class AnalysisScript(object):
             help='''Minimizer option:value pair(s) (can specify multiple).
             Values specified here override any of the same name in the config
             file specified by --min-settings'''
-        )
-        parser.add_argument(
-            '--no-octant-check',
-            action='store_true',
-            help='''Disable rerunning fit from theta23 octant opposite from
-            outcome of initial fit.'''
         )
         self.min_local_parser = parser
 
@@ -868,7 +900,7 @@ class AnalysisScript(object):
     def command_discrete_hypo(self):
         parser = ArgumentParser(
             description='Discrete hypothesis test',
-            parents=[self.log_parser, self.git_info_parser,
+            parents=[self.log_parser, self.git_info_parser, self.min_parser,
                      self.min_local_parser, self.min_global_parser,
                      self.fit_parser, self.metric_parser, self.blindness_parser,
                      self.data_type_parser, self.data_pipeline_parser,
@@ -884,7 +916,7 @@ class AnalysisScript(object):
     def command_inj_param_scan(self):
         parser = ArgumentParser(
             description='Injected-parameter scan',
-            parents=[self.log_parser, self.git_info_parser,
+            parents=[self.log_parser, self.git_info_parser, self.min_parser,
                      self.min_local_parser, self.min_global_parser,
                      self.fit_parser, self.metric_parser,
                      self.single_pipeline_parser, self.data_prop_parser,
@@ -897,7 +929,7 @@ class AnalysisScript(object):
     def command_profile_scan(self):
         parser = ArgumentParser(
             description='Profile scan',
-            parents=[self.log_parser, self.git_info_parser,
+            parents=[self.log_parser, self.git_info_parser, self.min_parser,
                      self.min_local_parser, self.min_global_parser,
                      self.fit_parser, self.metric_parser, self.blindness_parser,
                      self.data_type_parser, self.data_pipeline_parser,
@@ -923,7 +955,7 @@ class AnalysisScript(object):
     def command_syst_tests(self):
         parser = ArgumentParser(
             description='Systematics tests',
-            parents=[self.log_parser, self.git_info_parser,
+            parents=[self.log_parser, self.git_info_parser, self.min_parser,
                      self.min_local_parser, self.min_global_parser,
                      self.fit_parser, self.metric_parser,
                      self.single_pipeline_parser, self.data_prop_parser,

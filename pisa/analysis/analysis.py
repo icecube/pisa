@@ -263,7 +263,7 @@ def apply_fit_settings(fit_settings, free_params):
                             )
                     nom = free_params[pname].nominal_value
                     prange = [nom - half_range, nom + half_range]
-                elif isinstance(prange, Q_):
+                elif isinstance(prange, Sequence):
                     #if not isinstance(prange, Sequence):
                     #    raise TypeError(
                     #        'Range specified for parameter "%s" is not'
@@ -274,16 +274,17 @@ def apply_fit_settings(fit_settings, free_params):
                             'Range "%s" specified for parameter "%s" is not'
                             ' of length 2.' % (prange, pname)
                         )
-                    try:
-                        prange.ito(target_units)
-                    except:
-                        logging.error(
-                            'The units ("%s") specified for parameter "%s" are'
-                            ' not compatible with those ("%s") of the'
-                            ' corresponding parameter in the `ParamSet` of free'
-                            ' parameters.' % (prange.units, pname, target_units)
-                        )
-                        raise
+                    for val in prange:
+                        try:
+                            val.ito(target_units)
+                        except:
+                            logging.error(
+                                'The units ("%s") specified for parameter "%s" are'
+                                ' not compatible with those ("%s") of the'
+                                ' corresponding parameter in the `ParamSet` of free'
+                                ' parameters.' % (val.units, pname, target_units)
+                            )
+                            raise
                 else:
                     raise TypeError(
                         'Range "%s" specified for parameter "%s" is of "%s" which'
@@ -411,13 +412,18 @@ class Analysis(object):
                         random_state=get_random_state(random_state, jumpahead=irun)
                     )
             else:
-                for param in startpoints[irun]:
-                    if not param.name in hypo_maker.params.free:
+                if len(startpoints[irun]) != len(hypo_maker.params.free):
+                    raise ValueError(
+                        'You have to provide as many start points as there'
+                        ' are free parameters!'
+                    )
+                for pname, pval in startpoints[irun]:
+                    if not pname in hypo_maker.params.free:
                         raise ValueError(
                             'Param "%s" not among set of free hypothesis'
                             ' parameters!'
                         )
-                    hypo_maker.params[param.name].value = param.value
+                    hypo_maker.params[pname].value = pval
             logging.info('Starting fit from point %s.' % hypo_maker.params.free)
             irun_fit_info = self.optimize_discrete_selections(
                 data_dist=data_dist,
@@ -449,7 +455,9 @@ class Analysis(object):
             self, data_dist, hypo_maker, hypo_param_selections,
             extra_param_selections, metric, fit_settings=None, reset_free=True,
             check_octant=True, minimizer_settings=None, other_metrics=None,
-            return_full_scan=False, blind=False, pprint=True
+            randomize_params=None, random_state=None,
+            return_full_scan=False, blind=False, pprint=True,
+            do_nsi_prescan=False, mirror_nsi=False
     ):
         # let someone pass just a single extra param selection
         # (which could just as well be part of the regular
@@ -484,6 +492,55 @@ class Analysis(object):
                 logging.info('Fitting discrete selection "%s".'
                              % extra_param_selection)
 
+            if do_nsi_prescan:
+                nsi_free = [pname for pname in hypo_maker.params.free.names if pname.startswith('eps_')]
+                any_nsi_free = len(nsi_free) > 0
+                if len(nsi_free) > 1:
+                    raise NotImplementedError(
+                        'Not yet made sure that logic works for more than one fitted NSI param.'
+                    )
+                if any_nsi_free:
+                    # these have to be unfixed again at the end
+                    all_free = hypo_maker.params.free.names
+                    fix_params = [pname for pname in hypo_maker.params.free.names if pname not in nsi_free]
+                    hypo_maker.params.fix(fix_params)
+                    prescan_settings = {'scan': {'params': {}}, 'minimize': {'params': {}}, 'pull': {'params': {}}}
+                    # define some fit settings for a scan
+                    for eps_param in nsi_free:
+                        low = min(hypo_maker.params[eps_param].range)
+                        high = max(hypo_maker.params[eps_param].range)
+                        width = high-low
+                        prescan_settings['scan']['params'][eps_param] = {
+                            'nvalues': 100, 'range': [low+0.01*width, high-0.01*width]
+                        }
+                    logging.info('Now running NSI prescan.')
+                    prescan, _ = self.fit_hypo(
+                        data_dist=data_dist,
+                        hypo_maker=hypo_maker,
+                        hypo_param_selections=full_param_selections,
+                        metric=metric,
+                        fit_settings=prescan_settings,
+                        reset_free=False,
+                        check_octant=False,
+                        minimizer_settings=None,
+                        other_metrics=None,
+                        return_full_scan=True,
+                        blind=blind,
+                        pprint=pprint
+                    )
+                    metric_vals = [scan_point['metric_val'] for scan_point in prescan]
+                    if metric in METRICS_TO_MAXIMIZE:
+                        bf_dim = np.argmax(metric_vals, axis=0)
+                    else:
+                        bf_dim = np.argmin(metric_vals, axis=0)
+                    best_fit_infos = prescan[bf_dim]
+                    print metric_vals, best_fit_infos['metric_val']
+                    hypo_maker.update_params(best_fit_infos['params'])
+                    hypo_maker.params.unfix(all_free)
+                    print hypo_maker.params.free
+                    logging.info('Setting NSI best guesses.')
+                    hypo_maker.params.set_nominal_by_current_values()
+
             # ignore alternate fits (it's complicated enough with the various
             # discrete hypo best fits we have already)
             this_hypo_fits, _ = self.fit_hypo(
@@ -494,24 +551,73 @@ class Analysis(object):
                 fit_settings=fit_settings,
                 reset_free=reset_free,
                 check_octant=check_octant,
+                randomize_params=randomize_params,
+                random_state=random_state,
                 minimizer_settings=minimizer_settings,
                 other_metrics=other_metrics,
                 return_full_scan=return_full_scan,
                 blind=blind,
                 pprint=pprint,
             )
+            this_hypo_metric_vals = [hypo_fit['metric_val'] for hypo_fit in this_hypo_fits]
+            this_hypo_num_dists = [hypo_fit['num_distributions_generated'] for hypo_fit in this_hypo_fits]
+            this_hypo_times = [hypo_fit['fit_time'].m_as('second') for hypo_fit in this_hypo_fits]
 
+            if mirror_nsi:
+                # determine bf for this specific hypo
+                if metric in METRICS_TO_MAXIMIZE:
+                    bf_dim = np.argmax([hypo_fit['metric_val'] for hypo_fit in this_hypo_fits], axis=0)
+                else:
+                    bf_dim = np.argmin([hypo_fit['metric_val'] for hypo_fit in this_hypo_fits], axis=0)
+                this_hypo_best_fit = this_hypo_fits[bf_dim]
+                for param in this_hypo_best_fit['params']:
+                    if param.name.startswith('eps_') and param.name in hypo_maker.params.free.names:
+                        fit_val = param.value
+                        tgt = -fit_val
+                        if tgt <= min(param.range):
+                            tgt = min(param.range) + 0.01*(max(param.range) - min(param.range))
+                        elif tgt >= max(param.range):
+                            tgt = max(param.range) - 0.01*(max(param.range) - min(param.range))
+                        logging.info('Mirroring "%s" to %s.' % (param.name, tgt))
+                        hypo_maker.params[param.name].value = tgt
+                        hypo_maker.params[param.name].nominal_value = tgt
+                print hypo_maker.params.free
+                mirrored_fits, _ = self.fit_hypo(
+                    data_dist=data_dist,
+                    hypo_maker=hypo_maker,
+                    hypo_param_selections=full_param_selections,
+                    metric=metric,
+                    fit_settings=fit_settings,
+                    reset_free=reset_free,
+                    check_octant=check_octant,
+                    randomize_params=None,
+                    minimizer_settings=minimizer_settings,
+                    other_metrics=other_metrics,
+                    return_full_scan=return_full_scan,
+                    blind=blind,
+                    pprint=pprint,
+                )
+                if metric in METRICS_TO_MAXIMIZE:
+                    bf_dim = np.argmax([mirrored_fit['metric_val'] for mirrored_fit in mirrored_fits], axis=0)
+                else:
+                    bf_dim = np.argmin([mirrored_fit['metric_val'] for mirrored_fit in mirrored_fits], axis=0)
+                mirrored_best_fit = mirrored_fits[bf_dim]
+                if it_got_better(
+                    new_metric_val=mirrored_best_fit['metric_val'],
+                    old_metric_val=this_hypo_best_fit['metric_val'],
+                    metric=metric
+                ):
+                    this_hypo_fits = mirrored_fits
+                    this_hypo_metric_vals = [mirrored_fit['metric_val'] for mirrored_fit in mirrored_fits]
+                    this_hypo_num_dists = [mirrored_fit['num_distributions_generated'] for mirrored_fit in mirrored_fits]
+                    this_hypo_times = [mirrored_fit['fit_time'].m_as('second') for mirrored_fit in mirrored_fits]
+                    logging.info('Accepting mirrored fit.')
             fit_infos.append(this_hypo_fits)
-            fit_metric_vals.append(
-                [hypo_fit['metric_val'] for hypo_fit in this_hypo_fits]
-            )
-            fit_num_dists.append(
-                [hypo_fit['num_distributions_generated'] for
-                 hypo_fit in this_hypo_fits]
-            )
-            fit_times.append(
-                [hypo_fit['fit_time'].m_as('second') for hypo_fit in this_hypo_fits]
-            )
+            fit_metric_vals.append(this_hypo_metric_vals)
+            # FIXME: following is obviously not correct in the case of the mirrored fit
+            fit_num_dists.append(this_hypo_num_dists)
+            fit_times.append(this_hypo_times)
+
         # what's returned by fit_hypo can either be a full scan or just
         # a single point - in any case, for each point we now optimize
         # the extra selections manually
@@ -647,6 +753,7 @@ class Analysis(object):
     # TODO: fix docstring (not just here)
     def fit_hypo(self, data_dist, hypo_maker, hypo_param_selections, metric,
                  fit_settings=None, reset_free=True, check_octant=True,
+                 randomize_params=None, random_state=None,
                  minimizer_settings=None, other_metrics=None,
                  return_full_scan=False, blind=False, pprint=True):
         """Fitter "outer" loop: If `check_octant` is True, run
@@ -688,6 +795,12 @@ class Analysis(object):
             If theta23 is a parameter to be used in the optimization (i.e.,
             free), the fit will be re-run in the second (first) octant if
             theta23 is initialized in the first (second) octant.
+
+        randomize_params : sequence of str
+            Names of params whose start values are to be randomized
+
+        random_state : random_state or instantiable thereto
+            Initial random state for randomization of parameter start values
 
         other_metrics : None, string, or list of strings
             After finding the best fit, these other metrics will be evaluated
@@ -749,12 +862,22 @@ class Analysis(object):
                         ' to `fit_hypo` used to override those in'
                         ' the fit settings!'
                     )
+                if isinstance(randomize_params, Sequence):
+                    excess = set(randomize_params).difference(set(minimize_params))
+                    for pname in excess:
+                        logging.warn(
+                            "Parameter '%s''s start value cannot be"
+                            " randomized as it is not among minimization"
+                            " parameters. Request has no effect."
+                        )
+                        randomize_params.remove(pname)
             else:
                 if check_octant:
                     logging.warn(
                         'Selecting "check_octant" only useful if theta23'
                         ' is among *minimization* parameters. No need or no'
                         ' point with any other fitting method.'
+                        ' Request has no effect.'
                     )
                     check_octant = False
 
@@ -816,6 +939,8 @@ class Analysis(object):
                 metric=metric,
                 fit_settings_inner=fit_settings,
                 minimizer_settings=minimizer_settings,
+                randomize_params=randomize_params,
+                random_state=random_state,
                 other_metrics=other_metrics,
                 pprint=pprint,
                 blind=blind
@@ -829,7 +954,7 @@ class Analysis(object):
                         ' necessary with a global minimizer. Doing so'
                         ' anyway right now.'
                     )
-                logging.debug('checking other octant of theta23')
+                logging.debug('Checking other octant of theta23.')
                 if reset_free:
                     hypo_maker.reset_free()
                 else:
@@ -894,8 +1019,9 @@ class Analysis(object):
 
 
     def _fit_hypo_inner(self, data_dist, hypo_maker, metric,
-                       fit_settings_inner=None, minimizer_settings=None,
-                       other_metrics=None, pprint=True, blind=False):
+                        fit_settings_inner=None, minimizer_settings=None,
+                        randomize_params=None, random_state=None,
+                        other_metrics=None, pprint=True, blind=False):
 
         if fit_settings_inner is not None:
             pull_params = fit_settings_inner['pull']['params']
@@ -928,6 +1054,8 @@ class Analysis(object):
                 data_dist=data_dist,
                 hypo_maker=hypo_maker,
                 minimizer_settings=minimizer_settings,
+                randomize_params=randomize_params,
+                random_state=random_state,
                 metric=metric,
                 other_metrics=other_metrics,
                 blind=blind,
@@ -953,6 +1081,7 @@ class Analysis(object):
 
 
     def fit_hypo_minimizer(self, data_dist, hypo_maker, metric, minimizer_settings,
+                           randomize_params=None, random_state=None,
                            other_metrics=None, pprint=True, blind=False):
         """Fitter "inner" loop: Run an arbitrary scipy minimizer to modify
         hypo dist maker's free params until the data_dist is most likely to have
@@ -974,6 +1103,11 @@ class Analysis(object):
         metric : string
 
         minimizer_settings : dict
+
+        randomize_params : sequence of str or boolean
+            list of param names or `True`/`False`
+
+        random_state : random_state or instantiable thereto
 
         other_metrics : None, string, or sequence of strings
 
@@ -1025,6 +1159,8 @@ class Analysis(object):
         # on whether the local minimizer uses gradients)
         x0, bounds = minimizer_x0_bounds(
             free_params=hypo_maker.params.free,
+            randomize_params=randomize_params,
+            random_state=random_state,
             minimizer_settings=minimizer_settings['local']
         )
 
@@ -1047,6 +1183,7 @@ class Analysis(object):
         # record start time
         start_t = time.time()
 
+        print 'Start minimization at point %s.' % hypo_maker.params.free
         # this is the function that does the heavy lifting
         optimize_result = run_minimizer(
             fun=self._minimizer_callable,

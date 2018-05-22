@@ -5,6 +5,8 @@ Common minimization tools and constants.
 
 from __future__ import absolute_import, division
 
+from collections import Sequence
+
 import re
 import sys
 
@@ -14,6 +16,7 @@ import scipy.optimize as optimize
 from pisa import EPSILON, FTYPE, ureg
 from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging
+from pisa.utils.random_numbers import get_random_state
 
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD', 'LOCAL_MINIMIZERS_WITH_DEFAULTS',
            'GLOBAL_MINIMIZERS_WITH_DEFAULTS', 'Counter',
@@ -248,7 +251,8 @@ def override_min_opt(minimizer_settings, min_opt):
         minimizer_settings['options'][opt] = val
 
 
-def minimizer_x0_bounds(free_params, minimizer_settings):
+def minimizer_x0_bounds(free_params, minimizer_settings,
+                        randomize_params=None, random_state=None):
     """Ensure values of free parameters are within their bounds
     (given floating point precision) and adapt minimizer bounds
     if necessary to prevent it from stepping outside of
@@ -260,6 +264,10 @@ def minimizer_x0_bounds(free_params, minimizer_settings):
         Obtain starting values and user-specified bounds
     minimizer_settings : dict
         Parsed minimizer cfg (method and stepsize relevant)
+    randomize_params : sequence of str or bool
+        list of param names or `True`/`False`
+    random_state : random state or instantiable thereto
+        initial random state
 
     Returns
     -------
@@ -269,6 +277,22 @@ def minimizer_x0_bounds(free_params, minimizer_settings):
         Normalised and possibly shrunk parameter bounds
 
     """
+    if isinstance(randomize_params, Sequence):
+        # just randomise specified parameters
+        for pname in randomize_params:
+            free_params[pname].randomize(
+                random_state=get_random_state(random_state)
+            )
+    elif isinstance(randomize_params, bool):
+        if randomize_params:
+            # randomise all free
+            free_params.randomize_free(
+                random_state=get_random_state(random_state)
+            )
+    elif randomize_params is not None:
+        raise TypeError('Unhandled type "%s" of `randomize_params`!'
+                        % type(randomize_params))
+
     # Get starting free parameter values
     x0 = free_params._rescaled_values # pylint: disable=protected-access
     bounds = [(0, 1)]*len(x0)

@@ -322,6 +322,14 @@ class HypoTesting(Analysis):
         Minimizer settings file or resource path. These will be processed
         internally and passed to the appropriate `scipy.optimize` backend.
 
+    randomize_params : sequence of strings or boolean
+        Parameters whose start values will be randomized for minimization. If
+        bool, either all or none will be randomized.
+
+    randomization_seed : random_state or instantiable thereto
+        Random state for reproducibility of parameter start values. Will be
+        moved forward for subsequent trials.
+
     data_maker : None, DistributionMaker or instantiable thereto
         Data maker specification, or None (specify an already-generated data
         distribution with `data_dist`).
@@ -489,6 +497,7 @@ class HypoTesting(Analysis):
                  data_is_data, fluctuate_data, fluctuate_fid, metric,
                  fluctuate_data_method=None, fluctuate_fid_method=None,
                  other_metrics=None, fit_settings=None, minimizer_settings=None,
+                 randomize_params=None, randomization_seed=None,
                  h0_name=None, h0_maker=None, h0_param_selections=None, h0_fid_asimov_dist=None,
                  h1_name=None, h1_maker=None, h1_param_selections=None, h1_fid_asimov_dist=None,
                  data_name=None, data_maker=None, data_param_selections=None, data_dist=None,
@@ -509,6 +518,8 @@ class HypoTesting(Analysis):
 
         # Make it possible to seed minimiser off truth
         self.reset_free = reset_free
+        # Fit even for cases where we know the best fit a-priori
+        # (e.g. for validating minimization)
         self.force_fits = force_fits
 
         # Instantiate h0 distribution maker to ensure it is a valid spec
@@ -704,12 +715,19 @@ class HypoTesting(Analysis):
                                 % (selection, regular_param_selections)
                             )
 
+        # Check whether parameter start points are to be randomized
+        if randomize_params is not None:
+            assert (isinstance(randomize_params, Sequence) or
+                    isinstance(randomize_params, bool))
+
         # Store variables to `self` for later access
         self.logdir = logdir
         self.minimizer_settings = minimizer_settings
         self.fit_settings = fit_settings
         self.check_octant = check_octant
         self.extra_param_selections = extra_param_selections
+        self.randomize_params = randomize_params
+        self.randomization_seed = randomization_seed
 
         self.h0_maker = h0_maker
         self.h0_param_selections = h0_param_selections
@@ -1001,6 +1019,8 @@ class HypoTesting(Analysis):
                 fit_settings=self.fit_settings,
                 minimizer_settings=self.minimizer_settings,
                 check_octant=self.check_octant,
+                randomize_params=self.randomize_params,
+                random_state=self.randomization_seed, #TODO: move this forward?
                 pprint=self.pprint,
                 blind=self.blind,
                 reset_free=self.reset_free,
@@ -1046,6 +1066,8 @@ class HypoTesting(Analysis):
                 fit_settings=self.fit_settings,
                 minimizer_settings=self.minimizer_settings,
                 check_octant=self.check_octant,
+                randomize_params=self.randomize_params,
+                random_state=self.randomization_seed, #TODO: move this forward?
                 pprint=self.pprint,
                 blind=self.blind,
                 reset_free=self.reset_free,
@@ -1131,6 +1153,8 @@ class HypoTesting(Analysis):
                     fit_settings=self.fit_settings,
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
+                    randomize_params=self.randomize_params,
+                    random_state=self.randomization_seed, #TODO: move this forward?
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free,
@@ -1172,6 +1196,8 @@ class HypoTesting(Analysis):
                     fit_settings=self.fit_settings,
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
+                    randomize_params=self.randomize_params,
+                    random_state=self.randomization_seed, #TODO: move this forward?
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free,
@@ -1215,6 +1241,8 @@ class HypoTesting(Analysis):
                     fit_settings=self.fit_settings,
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
+                    randomize_params=self.randomize_params,
+                    random_state=self.randomization_seed, #TODO: move this forward?
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free,
@@ -1255,6 +1283,8 @@ class HypoTesting(Analysis):
                     fit_settings=self.fit_settings,
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
+                    randomize_params=self.randomize_params,
+                    random_state=self.randomization_seed, #TODO: move this forward?
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free,
@@ -1408,9 +1438,17 @@ class HypoTesting(Analysis):
         self.minimizer_settings_hash = hash_obj(
             normQuant(self.minimizer_settings), hash_to='x'
         )
+        self.randomize_params_hash = hash_obj(
+            [self.randomize_params, self.randomization_seed], hash_to='x'
+        )
+        # also add a string giving random seed in human readable form
+        rs = 'rs%d' % self.randomization_seed if self.randomization_seed else ''
         co = 'co1' if self.check_octant else 'co0'
         self.minsettings_flabel = (
-            'min_' + '_'.join([self.minimizer_settings_hash, co, self.metric])
+            'min_' + '_'.join([
+                self.minimizer_settings_hash, self.randomize_params_hash, rs, co,
+                self.metric]
+            )
         )
 
         self.fit_settings_hash = hash_obj(
@@ -2051,6 +2089,15 @@ class HypoTesting(Analysis):
                     h1_param.is_fixed = True
         # Set up labels so that each file comes out unique
         if fit_wrong:
+            # remove priors so we can actually reproduce the injected value
+            for h0_param in self.h0_maker.params.free:
+                if h0_param.name == data_param.name:
+                    h0_param.prior = None
+                    logging.warn('Removed prior of "%s" in h0.' % data_param.name)
+            for h1_param in self.h1_maker.params.free:
+                if h1_param.name == data_param.name:
+                    h1_param.prior = None
+                    logging.warn('Removed prior of "%s" in h1.' % data_param.name)
             self.labels = Labels(
                 h0_name=h0_name,
                 h1_name=h1_name,
@@ -2354,6 +2401,8 @@ class HypoTesting(Analysis):
                     other_metrics=self.other_metrics,
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
+                    randomize_params=self.randomize_params,
+                    random_state=self.randomization_seed,
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free,

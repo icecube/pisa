@@ -61,6 +61,14 @@ def inj_param_scan(init_args_d, return_outputs=False):
             init_args_d['h0_param_selections']
         init_args_d['data_name'] = init_args_d['h0_name']
 
+    if (init_args_d['h1_param_selections'] is None or
+        init_args_d['h1_param_selections'] == init_args_d['h0_param_selections']):
+        # this will mean hypothesis testing will only work
+        # with a single hypothesis
+        init_args_d['h1_maker'] = None
+        # just to be clear
+        init_args_d['h1_name'] = init_args_d['h0_name']
+
     # we cannot allow a data_name or h0/1_name of None, or the actual method
     # in hypo_testing will fail, so set 'None' string
     if init_args_d['data_name'] is None:
@@ -83,7 +91,7 @@ def inj_param_scan(init_args_d, return_outputs=False):
     hypo_testing = HypoTesting(**init_args_d)
 
     logging.info(
-        'Scanning over injected %s between %.4f and %.4f with %i vals',
+        'Scanning over injected %s between %.4g and %.4g with %i vals',
         param_name, min(inj_vals), max(inj_vals), len(inj_vals)
     )
     # Modify parameters if necessary
