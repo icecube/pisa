@@ -451,7 +451,8 @@ class Analysis(object):
                 minimizer_settings=minimizer_settings,
                 other_metrics=other_metrics,
                 pprint=pprint,
-                blind=blind
+                blind=blind,
+                external_priors_penalty=external_priors_penalty
             )
             
 
@@ -482,7 +483,8 @@ class Analysis(object):
                     minimizer_settings=minimizer_settings,
                     other_metrics=other_metrics,
                     pprint=pprint,
-                    blind=blind
+                    blind=blind,
+                    external_priors_penalty=external_priors_penalty
                 )
 
                 # Check to make sure these two fits were either side of 45
@@ -517,7 +519,8 @@ class Analysis(object):
                             minimizer_settings=minimizer_settings,
                             other_metrics=other_metrics,
                             pprint=pprint,
-                            blind=blind
+                            blind=blind,
+                            external_priors_penalty=external_priors_penalty
                         )
                         # Make sure the new octant is sensible
                         check_t23_octant(new_fit_info)
