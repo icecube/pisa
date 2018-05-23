@@ -178,7 +178,8 @@ class AnalysisScript(object):
         if ('randomize_startpoint' in init_args_d and
             init_args_d['randomize_startpoint']):
             init_args_d['randomize_params'] = True
-            init_args_d.pop('randomize_startpoint')
+        init_args_d.pop('randomize_startpoint', None)
+
         init_args_d['randomization_seed'] = init_args_d.pop(
             'randomization_seed', None
         )
