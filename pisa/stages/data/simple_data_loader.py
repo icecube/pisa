@@ -79,7 +79,7 @@ class simple_data_loader(PiStage):
         assert self.calc_mode is None
 
         # check output names
-        assert len(self.output_names) > 0, "Must specify at least one element in `output_names`"
+        #assert len(self.output_names) > 0, "Must specify at least one element in `output_names`"
         assert len(self.output_names) == len(set(self.output_names)), "Found duplicates in `output_names`"
 
 
@@ -89,16 +89,20 @@ class simple_data_loader(PiStage):
 
         # open Events file
         evts = EventsPi(name="Events")
-        self.data_dict = eval(self.data_dict)
+        self.data_dict = None if self.data_dict is None else eval(self.data_dict)
         evts.load_events_file(self.events_file,self.data_dict)
 
-        #Apply any cuts that the user defined
+        # Apply any cuts that the user defined
         if self.mc_cuts is not None:
             logging.info('applying the following cuts to events: %s'%self.mc_cuts)
             evts = evts.apply_cut(self.mc_cuts)
+
+        # Define which  categories to include in the data
+        # User can manually specify what they want using `output_names`, or else just use everything
+        output_keys = self.output_names if len(self.output_names) > 0 else evts.keys()
                     
-        #Create containers from the events
-        for name in self.output_names:
+        # Create containers from the events
+        for name in output_keys:
 
             # check container doesn't already exist
             assert name not in self.data.names, "Cannot add `%s` data container, a container with this name already exists" % name 
@@ -107,8 +111,7 @@ class simple_data_loader(PiStage):
             container = Container(name)
             container.data_specs = 'events'
 
-            if name not in evts :
-                raise ValueError("Output name '%s' not found in events : %s" % (name,evts.keys()) )
+            assert name in evts, "Output name '%s' not found in events : %s" % (name,evts.keys())
 
             #Add the events data to the container
             for key,val in evts[name].items() :

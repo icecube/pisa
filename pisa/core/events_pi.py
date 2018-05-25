@@ -56,12 +56,17 @@ class EventsPi(collections.OrderedDict) :
                 else :
                     raise ValueError("'variable_mapping' 'src' (value) must be a string, or a list of strings")
 
-        # Open the input file
-        input_data = from_file(events_file)
+        # Open the input file (checking if already open)
+        if isinstance(events_file,basestring) : # File path
+            input_data = from_file(events_file) # Read file
+            assert isinstance(input_data,collections.Mapping), "Input data is not a dict, unknown format (%s)"%type(input_data)
+        elif isinstance(events_file,collections.Mapping) :
+            input_data = events_file # File has already been opened
+        else :
+            raise IOError("`events_file` type is not supported (%s)" % type(input_data))
 
-        # Input data should be a dict where each key is a category of data
-        if not isinstance(input_data,collections.Mapping) :
-            raise Exception("Input data is not a dict, unknown format (%s)" % type(input_data))
+        # Convert to keys like "numu_cc", "nutaubar_nc", etc...
+        input_data = split_nu_events_by_flavor_and_interaction(input_data)
 
         # The value for each category should itself be a dict of the event variables,
         # where each entry is has a variable name as the key and a np.array filled once 
@@ -255,6 +260,102 @@ class EventsPi(collections.OrderedDict) :
         return string
             
 
+
+
+
+    def _subdivide_neutrino_groups(self) :
+        '''
+        Split neutrino events by nu vs nubar, and CC vs NC
+        '''
+
+        # Loop over groups
+        neutrino_groups_found = []
+        for group in self.output_file.root :
+
+            # Select only neutrino groups
+            group_name = group._v_name #TODO How to "officialy" get name?
+            if group_name.startswith("nu") :
+
+                neutrino_groups_found.append(group_name)
+
+                # Get nubar mask by checking PDG code
+                if "pdg_code" not in group :
+                    raise Exception( "Could not find PDG code variable for %s" % group_name )
+                nubar_mask = group.pdg_code.read() < 0
+
+                # Get CC mask by checking interaction code
+                if "interaction" not in group :
+                    raise Exception( "Could not find interaction code for %s" % group_name )
+                cc_mask = group.interaction.read() == 1 #TODO Check code
+
+                # Create new groups
+                nu_cc_group = self.output_file.create_group(self.output_file.root,group_name+"_cc")
+                nu_nc_group = self.output_file.create_group(self.output_file.root,group_name+"_nc")
+                nubar_cc_group = self.output_file.create_group(self.output_file.root,group_name+"bar_cc")
+                nubar_nc_group = self.output_file.create_group(self.output_file.root,group_name+"bar_nc")
+
+                # Fill new groups
+                for array in group :
+                    array_data = array.read()
+                    self.output_file.create_array(nu_cc_group,array.name,array_data[(~nubar_mask)&cc_mask])
+                    self.output_file.create_array(nu_nc_group,array.name,array_data[(~nubar_mask)&(~cc_mask)])
+                    self.output_file.create_array(nubar_cc_group,array.name,array_data[nubar_mask&cc_mask])
+                    self.output_file.create_array(nubar_nc_group,array.name,array_data[nubar_mask&(~cc_mask)])
+
+                # Remove the old group
+                self.output_file.remove_node(self.output_file.root,group_name,recursive=True)
+
+
+def split_nu_events_by_flavor_and_interaction(input_data) :
+    '''
+    Split neutrino events by nu vs nubar, and CC vs NC
+    '''
+
+    #TODO Handle muons, noise, etc...
+
+    # Check input data format
+    assert isinstance(input_data,collections.Mapping)
+    assert len(input_data) > 0
+
+    # Define the expected keys
+    all_keys = []
+    flav_keys = ["nue","numu","nutau"]
+    flav_keys.extend([ k+"bar" for k in flav_keys])
+    for interaction in ["nc","cc"] :
+        all_keys.extend([ k+"_"+interaction for k in flav_keys])
+
+    output_data = collections.OrderedDict()
+
+    # Loop through categories in the input data
+    for cat_key,cat_data in input_data.items() :
+
+        # If key already is one of the expected keys, nothing new to do (just preserve the data)
+        if cat_key in all_keys :
+            output_data[cat_key] = cat_data
+            continue
+
+        # Check have required variables to do the splitting
+        assert "pdg_code" in cat_data
+        assert "interaction" in cat_data
+
+        # Do the splitting
+        for flav_code,flav_key in zip([12,14,16],["nue","numu","nutau"]) :
+            for nubar_sign,nubar_key in zip([1,-1],["","bar"]) :
+                for interaction_code,interaction_key in zip([1,2],["cc","nc"]) :
+                    mask = ( cat_data["pdg_code"] == (nubar_sign*flav_code) ) & ( cat_data["interaction"] == interaction_code )
+                    if np.sum(mask) > 0 :
+                        output_key = flav_key + nubar_key + "_" + interaction_key
+                        if output_key not in output_data :
+                            output_data[output_key] = collections.OrderedDict()
+                        for var_key,var_array in cat_data.items() :
+                            if var_key in output_data[output_key] :
+                                output_data[output_key][var_key] = np.append(output_data[output_key][var_key],var_array[mask])
+                            else :
+                                output_data[output_key][var_key] = var_array[mask]
+
+    assert len(output_data) > 0, "Failed splitting neutrino events by flavor/interaction"
+
+    return output_data
 
 
 def convert_nu_data_to_flat_format(input_data) :
