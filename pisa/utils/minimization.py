@@ -12,6 +12,7 @@ import sys
 
 import numpy as np
 import scipy.optimize as optimize
+from scipy.optimize import OptimizeResult
 
 from pisa import EPSILON, FTYPE, ureg
 from pisa.utils.comparisons import recursiveEquality
@@ -344,8 +345,9 @@ def minimizer_x0_bounds(free_params, minimizer_settings,
 
 class Bounds(object):
     def __init__(self, xmax, xmin):
-        """Acceptance test to make global minimizer
-        respect bounds.
+        """Acceptance test to make global minimizer respect bounds
+        (this does not mean it won't try to evaluate the objective function
+        outside the bounds though, which might lead to an exception).
         (source: `scipy.optimize.basinhopping` docs)
 
         Parameters
@@ -365,7 +367,57 @@ class Bounds(object):
         return tmax and tmin
 
 
-def _run_global_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
+class RandomDisplacementWithBounds(object):
+    """
+    Add a random displacement of maximum size `stepsize` to each coordinate,
+    respecting each parameter's bounds (modified from basinhopping's internal
+    random displacement method).
+    Calling this updates `x` in-place.
+    Parameters
+    ----------
+    stepsize : float, optional
+        Maximum stepsize in any dimension
+    random_state : None or `np.random.RandomState` instance, optional
+        The random number generator that generates the displacements
+    bounds : list, optional
+        Bounds in each dimension
+    """
+    def __init__(self, stepsize=0.5, random_state=None, bounds=None):
+        self.stepsize = stepsize
+        self.random_state = get_random_state(random_state)
+        self.bounds = bounds
+
+    def __call__(self, x):
+        if self.bounds is not None:
+            #print np.maximum(self.bounds[:, 0] - x, -self.stepsize),
+            perturbation = self.random_state.uniform(
+                np.maximum(self.bounds[:, 0] - x, -self.stepsize),
+                np.minimum(self.bounds[:, 1] - x, self.stepsize),
+                np.shape(x)
+            )
+        else:
+            perturbation = self.random_state.uniform(
+                -self.stepsize, self.stepsize,  np.shape(x)
+            )
+        logging.debug('Applying random parameter perturbation delta x: %s'
+                      % perturbation)
+        x += perturbation
+        return x
+
+def dummy(fun, x0, args, **kwargs):
+    """Just a dummy method that can be passed to the global optimization
+    routine to capture the latter's behaviour without a local minimizer.
+    """
+    return OptimizeResult( {'x' : x0,
+                            'success': True,
+                            'message' : 'Did nothing',
+                            'fun': fun(x0, *args),
+                            'nfev': 1,
+                            'nit': 0})
+
+
+def _run_global_minimizer(fun, x0, bounds, random_state,
+                          minimizer_settings, minimizer_callback,
                           hypo_maker, data_dist, metric, counter, fit_history,
                           pprint, blind):
     """Run global (+local) minimization routine via
@@ -383,7 +435,12 @@ def _run_global_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callbac
     """
 
     method = minimizer_settings['global']['method']
+    if method != 'basinhopping':
+        logging.warn('Global minimization only tested with basin hopping'
+                     ' algorithm. This might fail spectacularly as a result!')
     options = minimizer_settings['global']['options']
+    if minimizer_callback is not None:
+        options.update({'callback': minimizer_callback})
     logging.debug('Running the global "%s" minimizer...' % method )
 
     minimizer_kwargs = {
@@ -392,25 +449,34 @@ def _run_global_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callbac
     }
     if minimizer_settings['local'] is not None:
         minimizer_kwargs.update(minimizer_settings['local'])
-        # bounds for local minimizer,
+        # bounds for local minimizer
         minimizer_kwargs['bounds'] = bounds
+    else:
+        # make sure we don't use the default local minimizer when the user
+        # doesn't explicitly request a method
+        minimizer_kwargs.update({'method': dummy})
 
-    bounds = Bounds(xmax=np.array(bounds)[:,1], xmin=np.array(bounds)[:,0])
+    # custom random perturbation routine that respects all bounds
+    step = RandomDisplacementWithBounds(
+        stepsize=options['stepsize'], bounds=np.array(bounds, dtype=FTYPE),
+        random_state=random_state
+    )
+    bounds = Bounds(xmax=np.array(bounds)[:, 1], xmin=np.array(bounds)[:, 0])
     global_min = getattr(optimize, method)
-    # TODO: seed for reproducibility
-    # TODO: why are you running out of bounds with slsqp?
     optimize_result = global_min(
         func=fun,
         x0=x0,
         minimizer_kwargs=minimizer_kwargs,
         accept_test=bounds,
+        take_step=step,
         **options
     )
 
     return optimize_result
 
 
-def _run_local_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
+def _run_local_minimizer(fun, x0, bounds, random_state,
+                         minimizer_settings, minimizer_callback,
                          hypo_maker, data_dist, metric, counter, fit_history,
                          pprint, blind):
     """Run arbitrary local minimization routine
@@ -444,7 +510,8 @@ def _run_local_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback
     return optimize_result
 
 
-def run_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
+def run_minimizer(fun, x0, bounds, random_state,
+                  minimizer_settings, minimizer_callback,
                   hypo_maker, data_dist, metric, counter, fit_history, pprint,
                   blind):
     """A wrapper that dispatches a global or a local minimization
@@ -458,6 +525,8 @@ def run_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
         minimizer initial guess (normalized to [0,1])
     bounds : Sequence of 2-tuples
         minimizer bounds (one pair per value in x0)
+    random_state : random state or instantiable thereto
+        for reproducibility of (hopefully all) random processes
     minimizer_settings : dict
         dictionary containing parsed 'global' and/or 'local'
         minimizer configs
@@ -487,14 +556,16 @@ def run_minimizer(fun, x0, bounds, minimizer_settings, minimizer_callback,
         # can make use of both global and local minimizers, so pass in
         # whole minimizer_settings
         optimize_result = _run_global_minimizer(
-            fun, x0, bounds, minimizer_settings, minimizer_callback,
+            fun, x0, bounds, random_state,
+            minimizer_settings, minimizer_callback,
             hypo_maker, data_dist, metric, counter, fit_history,
             pprint, blind
         )
 
     elif minimizer_settings['local'] is not None:
         optimize_result = _run_local_minimizer(
-            fun, x0, bounds, minimizer_settings['local'], minimizer_callback,
+            fun, x0, bounds, random_state,
+            minimizer_settings['local'], minimizer_callback,
             hypo_maker, data_dist, metric, counter, fit_history,
             pprint, blind
         )

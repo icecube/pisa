@@ -1183,12 +1183,13 @@ class Analysis(object):
         # record start time
         start_t = time.time()
 
-        print 'Start minimization at point %s.' % hypo_maker.params.free
+        logging.debug('Start minimization at point %s.' % hypo_maker.params.free)
         # this is the function that does the heavy lifting
         optimize_result = run_minimizer(
             fun=self._minimizer_callable,
             x0=x0,
             bounds=bounds,
+            random_state=random_state,
             minimizer_settings=minimizer_settings,
             minimizer_callback=self._minimizer_callback,
             hypo_maker=hypo_maker,
@@ -1589,7 +1590,7 @@ class Analysis(object):
 
         return sign*metric_val
 
-    def _minimizer_callback(self, xk): # pylint: disable=unused-argument
+    def _minimizer_callback(self, xk, *args): # pylint: disable=unused-argument
         """Passed as `callback` parameter to `optimize.minimize`, and is called
         after each iteration. Keeps track of number of iterations.
 
