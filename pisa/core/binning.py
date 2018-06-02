@@ -773,6 +773,11 @@ class OneDimBinning(object):
         """pint.Unit : units of the bins' edges"""
         return self._units
 
+    @units.setter
+    def units(self, u):
+        """str or pint.Unit : units of the bins' edges"""
+        self.ito(u)
+
     @property
     def num_bins(self):
         """int : Number of bins"""
@@ -878,7 +883,7 @@ class OneDimBinning(object):
     def bin_widths(self):
         """Absolute widths of bins."""
         if self._bin_widths is None:
-            self._bin_widths = np.abs(np.diff(self.bin_edges))
+            self._bin_widths = np.abs(np.diff(self.bin_edges)) * self.units
         return self._bin_widths
 
     @property
@@ -1215,8 +1220,26 @@ class OneDimBinning(object):
         """Convert units in-place. Cf. Pint's `ito` method."""
         if units is None:
             units = ''
-        for attr in ['bin_edges', 'domain', 'midpoints', 'weighted_centers']:
-            getattr(self, attr).ito(units)
+
+        units = ureg.Unit(units)
+        if units == self._units:
+            return
+        self._units = units
+
+        # Invalidate (expensive) derived properties that rely on units
+        for attr in ['_inbounds_criteria']:
+            setattr(self, attr, None)
+
+        # Convert already-defined quantities
+        attrs = [
+            '_bin_edges', '_domain', '_midpoints', '_weighted_centers',
+            '_bin_widths', '_edge_magnitudes'
+        ]
+        for attr in attrs:
+            val = getattr(self, attr)
+            if val is None:
+                continue
+            val.ito(units)
 
     @_new_obj
     def to(self, units): # pylint: disable=invalid-name
@@ -1736,8 +1759,13 @@ class MultiDimBinning(object):
 
     @property
     def units(self):
-        """Return a list of the contained dimensions' units"""
+        """list : Return a list of the contained dimensions' units"""
         return [d.units for d in self]
+
+    @units.setter
+    def units(self, *args):
+        """sequence or *args containing units for each contained dim"""
+        self.ito(*args[0])
 
     @property
     def inbounds_criteria(self):
@@ -2073,10 +2101,11 @@ class MultiDimBinning(object):
         for dim_length in self.shape[::-1]:
             quot, rem = divmod(quot, dim_length)
             coord.append(rem)
-        return self.coord(*coord[::-1])
+        return self.coord(*coord[::-1]) # pylint: disable=not-callable
 
     # TODO: examples!
-    def reorder_dimensions(self, order, use_deepcopy=False, use_basenames=False):
+    def reorder_dimensions(self, order, use_deepcopy=False,
+                           use_basenames=False):
         """Return a new MultiDimBinning object with dimensions ordered
         according to `order`.
 
@@ -2507,7 +2536,7 @@ class MultiDimBinning(object):
         if 'dtype' not in kwargs:
             kwargs['dtype'] = FTYPE
         hist = np.empty(self.shape, **kwargs)
-        return self._map_class(name=name, hist=hist, binning=self, **map_kw)
+        return self._map_class(name=name, hist=hist, binning=self, **map_kw) # pylint: disable=not-callable
 
     def zeros(self, name, map_kw=None, **kwargs):
         """Return a numpy ndarray filled with 0's with same dimensions as this
@@ -2537,7 +2566,7 @@ class MultiDimBinning(object):
         if 'dtype' not in kwargs:
             kwargs['dtype'] = FTYPE
         hist = np.zeros(self.shape, **kwargs)
-        return self._map_class(name=name, hist=hist, binning=self, **map_kw)
+        return self._map_class(name=name, hist=hist, binning=self, **map_kw) # pylint: disable=not-callable
 
     def ones(self, name, map_kw=None, **kwargs):
         """Return a numpy ndarray filled with 1's with same dimensions as this
@@ -2567,7 +2596,7 @@ class MultiDimBinning(object):
         if 'dtype' not in kwargs:
             kwargs['dtype'] = FTYPE
         hist = np.ones(self.shape, **kwargs)
-        return self._map_class(name=name, hist=hist, binning=self, **map_kw)
+        return self._map_class(name=name, hist=hist, binning=self, **map_kw) # pylint: disable=not-callable
 
     def full(self, fill_value, name, map_kw=None, **kwargs):
         """Return a map whose `hist` is filled with `fill_value` of same
@@ -2600,7 +2629,7 @@ class MultiDimBinning(object):
         if 'dtype' not in kwargs:
             kwargs['dtype'] = FTYPE
         hist = np.full(self.shape, fill_value, **kwargs)
-        return self._map_class(name=name, hist=hist, binning=self, **map_kw)
+        return self._map_class(name=name, hist=hist, binning=self, **map_kw) # pylint: disable=not-callable
 
     def __contains__(self, x):
         if isinstance(x, OneDimBinning):
@@ -2783,7 +2812,7 @@ def test_OneDimBinning():
     _ = b3.hash
     _ = hash(b3)
     _ = hash_obj(b3[0])
-    _ = b3[0].hash
+    _ = b3[0].hash # pylint: disable=no-member
     _ = hash(b3[0])
 
     b3.normalize_values = True
@@ -2793,7 +2822,7 @@ def test_OneDimBinning():
     _ = b3.hash
     _ = hash(b3)
     _ = hash_obj(b3[0])
-    _ = b3[0].hash
+    _ = b3[0].hash # pylint: disable=no-member
     _ = hash(b3[0])
 
     # Without rounding, converting bin edges to base units yields different

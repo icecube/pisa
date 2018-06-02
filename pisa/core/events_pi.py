@@ -334,9 +334,17 @@ def split_nu_events_by_flavor_and_interaction(input_data) :
             output_data[cat_key] = cat_data
             continue
 
-        # Check have required variables to do the splitting
-        assert "pdg_code" in cat_data
-        assert "interaction" in cat_data
+        # Check have PDG code
+        assert "pdg_code" in cat_data, "No 'pdg_code' variable found for %s data" % cat_key
+
+        # Only split by interaction for neutrinos
+        is_neutrino = np.abs(cat_data["pdg_code"][0]) in [12,14,16]
+        if not is_neutrino :
+            output_data[cat_key] = cat_data #TODO convert name?
+            continue
+
+        # Check have the interaction
+        assert "interaction" in cat_data, "No 'interaction' variable found for %s data" % cat_key
 
         # Do the splitting
         for flav_code,flav_key in zip([12,14,16],["nue","numu","nutau"]) :

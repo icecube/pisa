@@ -251,7 +251,20 @@ def mod_factor(idx,
 # vectorized function to apply
 # must be outside class
 if FTYPE == np.float64:
-    pass
+    signature = '(f8[:], f8[:], i4, \
+                  f8[:], f8[:], f8, \
+                  f8[:], f8[:], f8, \
+                  f8[:], f8[:], f8, \
+                  f8[:], f8[:], f8, \
+                  f8[:], f8[:], f8, \
+                  f8[:], f8[:], f8, \
+                  f8[:], f8[:], f8, \
+                  f8[:], f8[:], f8, \
+                  f8[:], f8[:], f8, \
+                  f8[:], f8[:], f8, \
+                  f8[:], f8[:], f8, \
+                  f8[:], f8[:], f8, \
+                  f8[:])'
 else:
     signature = '(f4[:], f4[:], i4, \
                   f4[:], f4[:], f4, \

@@ -41,6 +41,7 @@ class toy_event_generator(PiStage):
                 ):
 
         expected_params = ('n_events',
+                           'random',
                            'seed',
                            )
         # init base class
@@ -65,9 +66,8 @@ class toy_event_generator(PiStage):
         np.random.seed(seed)
 
         for name in self.output_names:
-            # generate
-            true_energy = np.power(10, np.random.rand(n_events).astype(FTYPE) * 3)
-            true_coszen = np.random.rand(n_events).astype(FTYPE) * 2 - 1
+            container = Container(name)
+            container.data_specs = self.input_specs
             nubar = -1 if 'bar' in name else 1
             if 'e' in name:
                 flav = 0
@@ -75,22 +75,35 @@ class toy_event_generator(PiStage):
                 flav = 1
             if 'tau' in name:
                 flav = 2
-            event_weights = np.random.rand(n_events).astype(FTYPE)
-            weights = np.ones(n_events, dtype=FTYPE)
-            flux_nue = np.zeros(n_events, dtype=FTYPE)
-            flux_numu = np.ones(n_events, dtype=FTYPE)
+
+            if self.input_mode == 'events':
+                # generate
+                true_energy = np.power(10, np.random.rand(n_events).astype(FTYPE) * 3)
+                true_coszen = np.random.rand(n_events).astype(FTYPE) * 2 - 1
+                size = n_events
+                container['true_energy'] = true_energy
+                container['true_coszen'] = true_coszen
+            elif self.input_mode == 'binned':
+                size = self.input_specs.size
+
+            if self.params.random.value:
+                event_weights = np.random.rand(size).astype(FTYPE)
+            else:
+                event_weights = np.ones(size, dtype=FTYPE)
+            weights = np.ones(size, dtype=FTYPE)
+            flux_nue = np.zeros(size, dtype=FTYPE)
+            flux_numu = np.ones(size, dtype=FTYPE)
             flux = np.stack([flux_nue, flux_numu], axis=1)
 
             # make container
-            container = Container(name)
-            container.add_array_data('true_energy', true_energy)
-            container.add_array_data('true_coszen', true_coszen)
             container.add_scalar_data('nubar', nubar)
             container.add_scalar_data('flav', flav)
-            container.add_array_data('event_weights', event_weights)
-            container.add_array_data('weights', weights)
-            container.add_array_data('weighted_aeff', weights)
-            container.add_array_data('nominal_flux', flux)
+            container['event_weights'] = event_weights
+            container['weights'] = weights
+            container['weighted_aeff'] = weights
+            container['nominal_nu_flux'] = flux
+            container['nominal_nubar_flux'] = flux
+
             self.data.add_container(container)
 
 

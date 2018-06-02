@@ -42,29 +42,12 @@ if numba is None:
             pass
         def __call__(self, *args):
             return args[0]
-    signature = None
 else:
     jit = numba.jit
     ftype = numba.typeof(FTYPE(1))
-    signature = (
-        numba.types.Tuple((numba.int32[:], ftype[:], ftype[:]))(
-            ftype[:],
-            ftype,
-            ftype,
-            ftype,
-            numba.int32,
-            ftype,
-            ftype[:],
-            ftype[:],
-            ftype[:],
-            ftype,
-            ftype[:],
-            ftype[:]
-        )
-    )
 
 
-@jit(signature, nopython=True, nogil=True, cache=True)
+@jit(nopython=True, nogil=True, cache=True)
 def extCalcLayers(
         cz,
         r_detector,

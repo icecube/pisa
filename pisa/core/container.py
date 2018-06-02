@@ -39,14 +39,17 @@ class ContainerSet(object):
     def __init__(self, name, containers=None, data_specs=None):
         self.name = name
         self.linked_containers = []
+        self.containers = []
         if containers is None:
-            self.containers = []
-        else:
-            self.containers = containers
+            containers = []
+        for container in containers:
+            self.add_container(container)
         self._data_specs = None
         self.data_specs = data_specs
 
     def add_container(self, container):
+        if container.name in self.names:
+            raise ValueError('container with name %s already exists'%container.name)
         self.containers.append(container)
 
     @property
@@ -248,6 +251,17 @@ class Container(object):
         elif self.data_specs is None:
             return None
 
+    def keys(self):
+        '''
+        return list of available keys
+        '''
+        if self.data_mode == 'events':
+            return self.array_data.keys() + self.scalar_data.keys()
+        elif self.data_mode == 'binned':
+            return self.array_data.keys() + self.scalar_data.keys() + self.data_specs.bin_names
+        else:
+            raise ValueError('Need to set data specs first')
+
     @ property
     def size(self):
         '''
@@ -357,6 +371,12 @@ class Container(object):
                 self.add_array_data(key, value)
             elif self.data_mode == 'binned':
                 self.add_binned_data(key, (self.data_specs, value))
+
+    def __iter__(self):
+        '''
+        iterate over all keys in container
+        '''
+        return iter(self.keys())
 
     def array_to_binned(self, key, binning, averaged=True):
         '''
@@ -541,5 +561,20 @@ def test_container():
     container.binned_to_array('w')
     print(container.get_array_data('w').get('host'))
 
+
+def test_container_set():
+    container1 = Container('test1')
+    container2 = Container('test2')
+    
+    data = ContainerSet('data', [container1, container2])
+
+    try:
+        data.add_container(container1)
+    except ValueError:
+        pass
+    else:
+        raise Exception('identical containers added to a containerset, this should not be possible')
+
 if __name__ == '__main__':
     test_container()
+    test_container_set()

@@ -33,6 +33,7 @@ __all__ = ['pi_nusquids']
 __author__ = 'T. Stuttard, T. Ehrhardt'
 
 
+#TODO Probably just delete this...
 #TODO Make into dedicated file, and document
 #TODO Is this really worth having, or can I just implement directly in the code (e.g. is this just not possible to make general enough)?
 #Make can make a geeneral E_coszen_spline_tool? The  also in e.g. flux?
@@ -101,6 +102,7 @@ class pi_nusquids(PiStage):
                  calc_specs=None,
                  output_specs=None,
                  use_decoherence=False,
+                 num_decoherence_gamma=3,
                  use_nsi=False,
                  num_neutrinos=3,
                  use_spline=False,
@@ -110,6 +112,7 @@ class pi_nusquids(PiStage):
         self.use_nsi = use_nsi
         self.use_decoherence = use_decoherence
         self.use_spline = use_spline
+        self.num_decoherence_gamma = num_decoherence_gamma
 
         # Define standard params
         expected_params = ['detector_depth',
@@ -129,11 +132,14 @@ class pi_nusquids(PiStage):
                           ]
 
         # Add decoherence parameters
+        assert self.num_decoherence_gamma in [1,3], "Must choose either 1 or 3 decoherence gamma parameters"
         if self.use_decoherence :
-            #expected_params.extend(['gamma'])
-            expected_params.extend(['gamma21',
-                                    'gamma31',
-                                    'gamma32'])
+            if self.num_decoherence_gamma == 1 :
+                expected_params.extend(['gamma'])
+            elif self.num_decoherence_gamma == 3 :
+                expected_params.extend(['gamma21',
+                                        'gamma31',
+                                        'gamma32'])
 
         # Add NSI parameters
         #TODO
@@ -244,15 +250,14 @@ class pi_nusquids(PiStage):
 
         # update osc params specific to decoherence
         if self.use_decoherence :
-            '''
-            self.osc_params.gamma21 = self.params.gamma.value.m_as('eV')
-            self.osc_params.gamma31 = self.params.gamma.value.m_as('eV')
-            self.osc_params.gamma32 = self.params.gamma.value.m_as('eV')
-            '''
-            self.osc_params.gamma21 = self.params.gamma21.value.m_as('eV')
-            self.osc_params.gamma31 = self.params.gamma31.value.m_as('eV')
-            self.osc_params.gamma32 = self.params.gamma32.value.m_as('eV')
-            
+            if self.num_decoherence_gamma == 1 :
+                self.osc_params.gamma21 = self.params.gamma.value.m_as('eV')
+                self.osc_params.gamma31 = self.params.gamma.value.m_as('eV')
+                self.osc_params.gamma32 = self.params.gamma.value.m_as('eV')
+            elif self.num_decoherence_gamma == 3 :
+                self.osc_params.gamma21 = self.params.gamma21.value.m_as('eV')
+                self.osc_params.gamma31 = self.params.gamma31.value.m_as('eV')
+                self.osc_params.gamma32 = self.params.gamma32.value.m_as('eV')
 
         # TODO sterile params
         '''

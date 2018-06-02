@@ -481,10 +481,7 @@ _K0 = np.array([
 ])
 
 @optfunc
-@numba_jit(
-    '{f:s}({f:s}, int64, {f:s}[:], {f:s}[:], {f:s}[:])'.format(f='float64'),
-    nopython=True, nogil=True, cache=True, fastmath=True
-)
+@numba_jit(nopython=True, nogil=True, cache=True, fastmath=False)
 def fixed_point_numba_np(t, n_datapoints, i_range, log_i_range, a2):
     """ISJ fixed-point calculation as per Botev et al..
 
@@ -519,7 +516,7 @@ def fixed_point_numba_np(t, n_datapoints, i_range, log_i_range, a2):
 
 @optfunc
 @numba_jit('{f}({f}, int64, {f}[:], {f}[:], {f}[:])'.format(f='float64'),
-           nopython=True, nogil=True, cache=True, fastmath=True)
+           nopython=True, nogil=True, cache=True, fastmath=False)
 def fixed_point_numba_loops(t, n_datapoints, i_range, log_i_range, a2):
     """ISJ fixed-point calculation as per Botev et al..
 
@@ -568,8 +565,8 @@ def fixed_point_numba_loops(t, n_datapoints, i_range, log_i_range, a2):
 
 
 @optfunc
-@numba_jit('{f:s}({f:s}, int64, {f:s}[:], {f:s}[:])'.format(f='float64'),
-           nopython=True, nogil=True, cache=True, fastmath=True)
+@numba_jit('{f}({f}, int64, {f}[:], {f}[:])'.format(f='float64'),
+           nopython=True, nogil=True, cache=True, fastmath=False)
 def fixed_point_numba_orig(t, n_datapoints, i_range, a2):
     """Fixed point algorithm for Improved Sheather Jones bandwidth
     selection.
@@ -622,7 +619,7 @@ def fixed_point_numba_orig(t, n_datapoints, i_range, a2):
 def test_fbwkde():
     """Test speed of fbwkde implementation"""
     n_samp = int(1e4)
-    n_dct = int(2**14)
+    n_dct = int(2**12)
     n_eval = int(1e4)
     x = np.linspace(0, 20, n_eval)
     np.random.seed(0)
