@@ -180,7 +180,14 @@ class Pipeline(object):
 
                 # Instantiate service
                 logging.trace("initializing stage %s.%s with settings %s"%(stage_name, service_name, settings))
-                service = cls(**settings)
+                try :
+                    service = cls(**settings)
+                except Exception as e :
+                    raise IOError(
+                        'Failed to instantiate stage %s.%s with settings %s, error was: %s'
+                        %(service_name, stage_name, settings.keys(), e )
+                        )
+                   
 
                 cake_stage = isinstance(service, Stage)
                 pi_stage = isinstance(service, PiStage)

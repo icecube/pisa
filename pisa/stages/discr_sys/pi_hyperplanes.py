@@ -24,13 +24,15 @@ class pi_hyperplanes(PiStage):
     ----------
 
     fit_results_file : str
-    dom_eff : dimensionless quantity
-    hole_ice : dimensionless quantity
-    hole_ice_fwd : dimensionless quantity
-    spiciness : dimensionless quantity
-    bulk_scatter : dimensionless quantity
-    bulk_abs : dimensionless quantity
-    rde : dimensionless quantity
+
+    params : ParamSet
+        dom_eff : dimensionless quantity
+        hole_ice : dimensionless quantity
+        hole_ice_fwd : dimensionless quantity
+        spiciness : dimensionless quantity
+        bulk_scatter : dimensionless quantity
+        bulk_abs : dimensionless quantity
+        rde : dimensionless quantity
 
     Notes
     -----
