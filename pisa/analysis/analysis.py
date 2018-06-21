@@ -676,6 +676,9 @@ class Analysis(object):
             pprint=pprint,
             blind=blind
         )
+        previous_history = best_fit_info['fit_history']
+        rerun_history = new_fit_info['fit_history'][1:]
+        total_history = previous_history + rerun_history
 
         # Check to make sure these two fits were either side of 45
         # degrees.
@@ -732,6 +735,7 @@ class Analysis(object):
             )
             # Make sure the new octant is sensible
             t23_octant(new_fit_info)
+            total_history += new_fit_info['fit_history'][1:]
 
             if it_got_better(
                 new_metric_val=new_fit_info['metric_val'],
@@ -747,6 +751,8 @@ class Analysis(object):
                 alternate_fits.append(new_fit_info)
                 if not blind:
                     logging.debug('Sticking to previous best fit')
+
+        best_fit_info['fit_history'] = total_history
 
         return best_fit_info
 

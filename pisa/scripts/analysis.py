@@ -694,10 +694,11 @@ class AnalysisScript(object):
             '--randomize-startpoint', action='store_true', help='''Randomize all
             free parameters' start values.'''
         )
-        parser.add_argument('--randomization-seed', type=int, default=0,
+        parser.add_argument(
+            '--randomization-seed', type=int, default=0,
             help='''Seed for reproducibility of randomization of parameters' start
             values.'''
-        )        
+        )
         parser.add_argument(
             '--no-octant-check',
             action='store_true',
@@ -705,7 +706,7 @@ class AnalysisScript(object):
             outcome of initial fit.'''
         )
         self.min_parser = parser
-            
+
 
     def parse_min_global(self):
         """Parser for global minimization method"""
@@ -947,7 +948,7 @@ class AnalysisScript(object):
         parser = ArgumentParser(
             description='Simple fit',
             parents=[self.data_pipeline_parser, self.h0_pipeline_parser,
-                     self.metric_parser, self.simple_fit_parser,
+                     self.min_parser, self.metric_parser, self.simple_fit_parser,
                      self.verbosity_parser]
         )
         return parser
