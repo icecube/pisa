@@ -328,7 +328,7 @@ class Pipeline(object):
                               stage.stage_name, stage.service_name)
                 raise
 
-            logging.trace('outputs: %s' %(outputs,))
+            #logging.trace('outputs: %s' %(outputs,))
 
             if return_intermediate:
                 intermediate.append(outputs)

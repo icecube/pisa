@@ -252,7 +252,7 @@ def override_min_opt(minimizer_settings, min_opt):
         minimizer_settings['options'][opt] = val
 
 
-def minimizer_x0_bounds(free_params, minimizer_settings,
+def minimizer_x0_bounds(free_params, minimizer_settings, padding_factor=10.,
                         randomize_params=None, random_state=None):
     """Ensure values of free parameters are within their bounds
     (given floating point precision) and adapt minimizer bounds
@@ -265,6 +265,8 @@ def minimizer_x0_bounds(free_params, minimizer_settings,
         Obtain starting values and user-specified bounds
     minimizer_settings : dict
         Parsed minimizer cfg (method and stepsize relevant)
+    padding_factor : int or float
+        Bounds for gradient based minimization padded by this factor*stepsize
     randomize_params : sequence of str or bool
         list of param names or `True`/`False`
     random_state : random state or instantiable thereto
@@ -308,7 +310,7 @@ def minimizer_x0_bounds(free_params, minimizer_settings,
             minimizer_method
         )
         step_size = minimizer_settings['options']['eps']
-        bounds = [(0 + step_size, 1 - step_size)]*len(x0)
+        bounds = [(0 + padding_factor*step_size, 1 - padding_factor*step_size)]*len(x0)
 
     clipped_x0 = []
     for param, x0_val, bds in zip(free_params, x0, bounds):
@@ -389,7 +391,6 @@ class RandomDisplacementWithBounds(object):
 
     def __call__(self, x):
         if self.bounds is not None:
-            #print np.maximum(self.bounds[:, 0] - x, -self.stepsize),
             perturbation = self.random_state.uniform(
                 np.maximum(self.bounds[:, 0] - x, -self.stepsize),
                 np.minimum(self.bounds[:, 1] - x, self.stepsize),
@@ -399,9 +400,8 @@ class RandomDisplacementWithBounds(object):
             perturbation = self.random_state.uniform(
                 -self.stepsize, self.stepsize,  np.shape(x)
             )
-        logging.debug('Applying random parameter perturbation delta x: %s'
-                      % perturbation)
         x += perturbation
+        logging.info('New position after random perturbation: %s.' % x)
         return x
 
 def dummy(fun, x0, args, **kwargs):
