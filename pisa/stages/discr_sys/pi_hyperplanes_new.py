@@ -143,9 +143,7 @@ class pi_hyperplanes_new(PiStage):
                 self.data.link_containers(key, val)
 
         for container in self.data:
-            print( "+++ fit_params shape = %s" % (self.fit_results["hyperplanes"][container.name]["fit_params"].shape,) )
             container['hyperplane_results'] = self.fit_results["hyperplanes"][container.name]["fit_params"].reshape(container.size, -1) #TODO Why re-shape?
-            print( "+++ fit_params new shape = %s" % (container['hyperplane_results'].shape,) )
             container['hyperplane_scalefactors'] = np.empty(container.size, dtype=FTYPE)
 
 
