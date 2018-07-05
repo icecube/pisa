@@ -13,25 +13,20 @@ from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-from pisa.utils.numba_tools import WHERE, myjit, ftype
 
 
 class resolutions(PiStage):
     """
-    stage to change the reconstructed informations by a given fraction
+    stage to change the reconstructed information by a given amount
     This can be used to esimate the impact of improved recosntruction resolutions for instance
-
     Paramaters
     ----------
-
     energy_improvement : quantity (dimensionless)
+       scale the reco error down by this fraction
     coszen_improvement : quantity (dimensionless)
+        scale the reco error down by this fraction
     pid_improvement : quantity (dimensionless)
-
-
-    Notes
-    -----
-
+        applies a shift to the classification parameter
     """
 
     def __init__(self,
@@ -106,4 +101,3 @@ class resolutions(PiStage):
             else:
                 tmp -= self.params.pid_improvement.m_as('dimensionless')
             container['pid'].mark_changed('host')
-
