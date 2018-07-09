@@ -210,6 +210,7 @@ def make_discrete_sys_distributions(fit_cfg):
             # make a dedicated distribution maker for each systematics set
             distribution_maker = DistributionMaker(pipeline_cfg)
             mapset = distribution_maker.get_outputs(return_sum=False)[0]
+
             if combine_regex:
                 logging.info(
                     'Combining maps according to regular expression(s) %s'
@@ -330,7 +331,6 @@ def norm_sys_distributions(input_data):
 
             norm_sys_map = Map(name=sys_mapset[map_name].name, binning=sys_mapset[map_name].binning, hist=norm_sys_hist) #TODO Save the map
             dataset_dict["norm_mapset"].append(norm_sys_map)
-
 
     # Re-format
     for dataset_dict in input_data["datasets"] :
@@ -466,6 +466,18 @@ def fit_discrete_sys_distributions(input_data,p0=None) :
             y_values = unp.nominal_values(y)
             y_sigma = unp.std_devs(y)
             finite_mask = np.isfinite(y_values) & np.isfinite(y_sigma)
+
+            # empty bins have sigma=0 which causes the hyperplane fit to fail (silently)
+            # replace with sigma=inf (e.g. we know nothing in this bin)
+            empty_bin_mask = np.isclose(y_values,0.)
+            if np.any(empty_bin_mask) :
+                empty_bin_zero_sigma_mask = empty_bin_mask & np.isclose(y_sigma,0.)
+                if np.any(empty_bin_zero_sigma_mask) :
+                    y_sigma[empty_bin_zero_sigma_mask] = np.inf
+
+            # check no zero sigma values remaining
+            if np.any(np.isclose(y_sigma,0.)) :
+                raise ValueError("Found histogram sigma values that are 0., which is unphysical")
 
 
             #
