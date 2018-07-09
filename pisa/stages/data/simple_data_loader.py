@@ -1,6 +1,9 @@
 """
 A Stage to load data from a PISA style hdf5 file into a PISA pi ContainerSet
 """
+
+#TODO This class is become dcereasingly "simple"! Make it into a more specific stage for our purposes and recreate a much more simple HDF5 file loader that is generic for any PISA task
+
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
@@ -124,7 +127,7 @@ class simple_data_loader(PiStage):
 
         # define which  categories to include in the data
         # user can manually specify what they want using `output_names`, or else just use everything
-        output_keys = self.output_names if len(self.output_names) > 0 else evts.keys()
+        output_keys = self.output_names if len(self.output_names) > 0 else self.evts.keys()
 
         # create containers from the events
         for name in output_keys:
@@ -162,7 +165,7 @@ class simple_data_loader(PiStage):
                     np.ones(container.size, dtype=FTYPE)
                 )
             # add neutrino flavor information for neutrino events
-            if name.startswith("nu") :
+            if name.startswith("nu") : #TODO Make this less hacky by adding a `neutrinos` constuctor argument so class knows it should hold neutrinos
                 # this determination of flavour is the worst possible coding, ToDo
                 nubar = -1 if 'bar' in name else 1
                 if name.startswith('nutau'):

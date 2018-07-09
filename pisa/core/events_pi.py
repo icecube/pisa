@@ -37,6 +37,15 @@ class EventsPi(collections.OrderedDict) :
 
 
     def load_events_file(self,events_file,variable_mapping=None) :
+        '''
+        Fill this events container from an input HDF5 file filled with event data
+        Optionally can provide a variable mapping so select a subset of variables, 
+        rename them, etc 
+        '''
+
+        #
+        # Get inputs
+        #
 
         # Check format of variable_mapping
         # Should be a dict, where the keys are the destination variable names and the items
@@ -65,7 +74,16 @@ class EventsPi(collections.OrderedDict) :
         else :
             raise IOError("`events_file` type is not supported (%s)" % type(input_data))
 
-        # Convert to keys like "numu_cc", "nutaubar_nc", etc...
+
+        #
+        # Re-format inputs
+        #
+
+        # The following is intended to re-format input data into the desired format.
+        # This is required to handle various inout cases and to ensure backwards 
+        # compatibility with older input file formats.
+
+        # Convert to the required event keys, e.g. "numu_cc", "nutaubar_nc", etc...
         input_data = split_nu_events_by_flavor_and_interaction(input_data)
 
         # The value for each category should itself be a dict of the event variables,
@@ -83,8 +101,15 @@ class EventsPi(collections.OrderedDict) :
         # Ensure backwards compatibility wiht the old style "oppo" flux variables
         fix_oppo_flux(input_data)
 
+
+        #
+        # Load the event data
+        #
+
         # Load events
-        # Should be organised under a single layer of keys, each representing some cateogry of input data
+        # Should be organised under a single layer of keys, each representing some categogry of input data
+
+        # Loop over the input types
         for data_key in input_data.keys() :
 
             if data_key in self :
@@ -101,7 +126,9 @@ class EventsPi(collections.OrderedDict) :
             variable_mapping_to_use = zip(input_data[data_key].keys(),input_data[data_key].keys()) if variable_mapping is None else variable_mapping.items()
             for var_dst,var_src in variable_mapping_to_use :
 
-                #TODO What to do if variable doesn't exist? Right now just ignore it, but might want to raise exception. Will be complicated though by case of species with different variables (e.g. no axial mass in muons)
+                # Check the variable exists in the inout data
+                if var_src not in input_data[data_key] :
+                    raise ValueError("Variable '%s' cannot be found for '%s' events" % (var_src,data_key))
 
                 # Get the array data (stacking if multiple input variables defined) #TODO What about non-float data? Use dtype...
                 array_data = None
@@ -118,7 +145,8 @@ class EventsPi(collections.OrderedDict) :
                     #container.add_array_data(var_dst,array_data) #TODO use the special cases that Philipp added to simple_data_loader
                     self[data_key][var_dst] = array_data
                 else :
-                    logging.warn("Source variable(s) not present for '%s', skipping mapping : %s -> %s"%(data_key,var_src,var_dst))
+                    #logging.warn("Source variable(s) not present for '%s', skipping mapping : %s -> %s"%(data_key,var_src,var_dst))
+                    raise ValueError("Cannot find source variable(s) '%s' for '%s'"%(var_src,data_key))
 
             #self[data_key] = container
 
@@ -259,51 +287,6 @@ class EventsPi(collections.OrderedDict) :
         string += "-----------------------------"
         return string
             
-
-
-
-
-    def _subdivide_neutrino_groups(self) :
-        '''
-        Split neutrino events by nu vs nubar, and CC vs NC
-        '''
-
-        # Loop over groups
-        neutrino_groups_found = []
-        for group in self.output_file.root :
-
-            # Select only neutrino groups
-            group_name = group._v_name #TODO How to "officialy" get name?
-            if group_name.startswith("nu") :
-
-                neutrino_groups_found.append(group_name)
-
-                # Get nubar mask by checking PDG code
-                if "pdg_code" not in group :
-                    raise Exception( "Could not find PDG code variable for %s" % group_name )
-                nubar_mask = group.pdg_code.read() < 0
-
-                # Get CC mask by checking interaction code
-                if "interaction" not in group :
-                    raise Exception( "Could not find interaction code for %s" % group_name )
-                cc_mask = group.interaction.read() == 1 #TODO Check code
-
-                # Create new groups
-                nu_cc_group = self.output_file.create_group(self.output_file.root,group_name+"_cc")
-                nu_nc_group = self.output_file.create_group(self.output_file.root,group_name+"_nc")
-                nubar_cc_group = self.output_file.create_group(self.output_file.root,group_name+"bar_cc")
-                nubar_nc_group = self.output_file.create_group(self.output_file.root,group_name+"bar_nc")
-
-                # Fill new groups
-                for array in group :
-                    array_data = array.read()
-                    self.output_file.create_array(nu_cc_group,array.name,array_data[(~nubar_mask)&cc_mask])
-                    self.output_file.create_array(nu_nc_group,array.name,array_data[(~nubar_mask)&(~cc_mask)])
-                    self.output_file.create_array(nubar_cc_group,array.name,array_data[nubar_mask&cc_mask])
-                    self.output_file.create_array(nubar_nc_group,array.name,array_data[nubar_mask&(~cc_mask)])
-
-                # Remove the old group
-                self.output_file.remove_node(self.output_file.root,group_name,recursive=True)
 
 
 def split_nu_events_by_flavor_and_interaction(input_data) :
