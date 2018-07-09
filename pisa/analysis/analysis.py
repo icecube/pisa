@@ -803,12 +803,15 @@ class Analysis(object):
             )
             if external_priors_penalty is not None:
                 metric_val += external_priors_penalty(hypo_maker=hypo_maker,metric=metric)
-        except:
-            if not blind:
+        except Exception as e:
+            if blind:
+                logging.error('Minimizer failed')
+            else :
                 logging.error(
                     'Failed when computing metric with free params %s',
                     hypo_maker.params.free
                 )
+                logging.error(str(e))
             raise
 
         fit_info['metric_val'] = metric_val
@@ -932,12 +935,15 @@ class Analysis(object):
         # Get the Asimov map set
         try:
             hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
-        except:
-            if not blind:
+        except Exception as e:
+            if blind:
+                logging.error('Minimizer failed')
+            else:
                 logging.error(
                     'Failed to generate Asimov distribution with free'
                     ' params %s', hypo_maker.params.free
                 )
+                logging.error(str(e))
             raise
 
         # Assess the fit: whether the data came from the hypo_asimov_dist
@@ -949,12 +955,15 @@ class Analysis(object):
             )
             if external_priors_penalty is not None:
                 metric_val += external_priors_penalty(hypo_maker=hypo_maker,metric=metric)
-        except:
-            if not blind:
+        except Exception as e:
+            if blind:
+                logging.error('Minimizer failed')
+            else :
                 logging.error(
                     'Failed when computing metric with free params %s',
                     hypo_maker.params.free
                 )
+                logging.error(str(e))
             raise
 
         # Report status of metric & params (except if blinded)
