@@ -102,7 +102,7 @@ class pi_nusquids(PiStage):
                  calc_specs=None,
                  output_specs=None,
                  use_decoherence=False,
-                 num_decoherence_gamma=3,
+                 num_decoherence_gamma=1,
                  use_nsi=False,
                  num_neutrinos=3,
                  use_spline=False,
@@ -140,6 +140,7 @@ class pi_nusquids(PiStage):
                 expected_params.extend(['gamma21',
                                         'gamma31',
                                         'gamma32'])
+            expected_params.extend(['n_energy'])
 
         # Add NSI parameters
         #TODO
@@ -258,7 +259,9 @@ class pi_nusquids(PiStage):
                 self.osc_params.gamma21 = self.params.gamma21.value.m_as('eV')
                 self.osc_params.gamma31 = self.params.gamma31.value.m_as('eV')
                 self.osc_params.gamma32 = self.params.gamma32.value.m_as('eV')
+            self.osc_params.n_energy = self.params.n_energy.m_as('dimensionless')
 
+        
         # TODO sterile params
         '''
         self.osc_params.theta14 = np.deg2rad(0.0)
