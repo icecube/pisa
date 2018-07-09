@@ -13,12 +13,11 @@ hyperplanes functions
 """
 from __future__ import absolute_import, division
 
-import os, copy, sys
+import os
 
 from argparse import ArgumentParser
 from collections import Mapping, Sequence
 from uncertainties import unumpy as unp
-from uncertainties import ufloat
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -268,35 +267,20 @@ def norm_sys_distributions(nominal_mapset, sys_mapsets):
     """
     out_names = sorted(nominal_mapset.names)
     norm_sys_maps = {map_name: [] for map_name in out_names}
-
     for map_name in out_names:
         logging.info('Normalizing "%s" maps.' % map_name) # pylint: disable=logging-not-lazy
         nominal_map = nominal_mapset[map_name]
         chan_norm_sys_maps = []
-
         for sys_mapset in sys_mapsets:
-
             # TODO: think about the best way to perform unc. propagation
-
-            # calculate a normalised version of the systematic set histogram
-            # need to handle cases where the nominal histogram has empty bins
-            #norm_sys_map = sys_mapset[map_name].hist/nominal_map.nominal_values
-            norm_sys_map = copy.deepcopy(sys_mapset[map_name].hist)
-            finite_mask = np.isfinite( sys_mapset[map_name].nominal_values / nominal_map.nominal_values )
-            norm_sys_map[finite_mask] = sys_mapset[map_name].hist[finite_mask] / nominal_map.nominal_values[finite_mask]
-            norm_sys_map[~finite_mask] = ufloat(np.NaN,np.NaN)
-
-            #TODO Check for bins that are empty in the nominal hist but no in at least one of the sys sets, currently we do not support this...
-
+            norm_sys_map = sys_mapset[map_name].hist/nominal_map.nominal_values
             chan_norm_sys_maps.append(norm_sys_map)
-
         chan_norm_sys_maps = np.array(chan_norm_sys_maps)
         # move to last axis
         chan_norm_sys_maps = np.rollaxis(
             chan_norm_sys_maps, axis=0, start=len(chan_norm_sys_maps.shape)
         )
         norm_sys_maps[map_name] = chan_norm_sys_maps
-
     return norm_sys_maps
 
 
@@ -330,7 +314,7 @@ def fit_discrete_sys_distributions(
         stores fit results, i.e., map names, fit parameters for each map,
         parameter covariances under 'pcov', the names of
         the systematic parameters, the hash of the binning
-    chi2s : numpy array
+    chi2s : list
         individual chi-square residuals between fit and data points
     binning : MultiDimBinning
         binning of all maps
@@ -389,17 +373,13 @@ def fit_discrete_sys_distributions(
         fit_results[map_name] = np.full(shape_output, np.nan)
         fit_results['pcov'][map_name] = np.full(shape_output + [n_params], np.nan)
 
-        # loop over bins
         for idx in np.ndindex(*shape_map):
             y_values = unp.nominal_values(chan_norm_sys_maps[idx])
             y_sigma = unp.std_devs(chan_norm_sys_maps[idx])
-            finite_mask = np.isfinite(y_values) & np.isfinite(y_sigma)
-
-            # check if errors are present
-            if np.any(y_sigma[finite_mask]):
+            if np.any(y_sigma):
                 popt, pcov = curve_fit(
-                    hyperplane_fun, sys_param_points[:,finite_mask], y_values[finite_mask],
-                    sigma=y_sigma[finite_mask], p0=p0[map_name]
+                    hyperplane_fun, sys_param_points, y_values,
+                    sigma=y_sigma, p0=p0[map_name]
                 )
 
                 # calculate chi-square values
@@ -411,38 +391,18 @@ def fit_discrete_sys_distributions(
                     chi2 = ((predicted - observed)/sigma)**2
                     chi2s.append(chi2)
 
-
             else:
-
-                # if here, no errors are available for this bin
-
-                # check if there are at least central values
-                if np.any(y_values[finite_mask]):
-
-                    # without error estimates each point has the same weight
-                    # and we cannot get chi-square values (but can still fit)
-                    logging.warn( # pylint: disable=logging-not-lazy
-                        'No uncertainties for any of the normalised counts in bin'
-                        ' %s ("%s") found. Fit is performed unweighted and no'
-                        ' chisquare values will be available.' % (idx, map_name)
-                    )
-                    popt, pcov = curve_fit(
-                        hyperplane_fun, sys_param_points, y_values, p0=p0[map_name]
-                    )
-                    chi2s.append(np.nan)
-
-                else :
-
-                    # This is the worst case, where there are no central values or errors.
-                    # Most likely this came about because this bin is empty, which is not 
-                    # necessarily an error.
-
-                    # Store NaN for fit params and chi2
-                    popt = np.full_like(p0[map_name],np.NaN) 
-                    pcov = np.NaN #TODO Shape?
-                    chi2s.append(np.nan)
-
-
+                # without error estimates each point has the same weight
+                # and we cannot get chi-square values
+                logging.warn( # pylint: disable=logging-not-lazy
+                    'No uncertainties for any of the normalised counts in bin'
+                    ' %s ("%s") found. Fit is performed unweighted and no'
+                    ' chisquare values will be available.' % (idx, map_name)
+                )
+                popt, pcov = curve_fit(
+                    hyperplane_fun, sys_param_points, y_values, p0=p0[map_name]
+                )
+                chi2s.append(np.nan)
             fit_results[map_name][idx] = popt
             fit_results['pcov'][map_name][idx] = pcov
 
@@ -451,7 +411,7 @@ def fit_discrete_sys_distributions(
     fit_results['map_names'] = nominal_mapset.names
     fit_results['binning_hash'] = binning_hash
 
-    return fit_results, np.asarray(chi2s), binning
+    return fit_results, chi2s, binning
 
 
 def hyperplane(fit_cfg, set_param=None):
@@ -613,22 +573,14 @@ def plot_chisquare_values(chi2s, outfile, fit=True, fit_loc_scale=False,
             'Use `fit_loc_scale` only when `fit` is True.'
         )
 
-    # check there are some finite chi2 values to plot
-    finite_mask = np.isfinite(chi2s)
-    if finite_mask.size == 0 :
-        logging.warning( # pylint: disable=logging-not-lazy
-            'No finite chi2 values found, not plotting.'
-        )
-        return 
-
     logging.info('Histogramming %d chisquare values.' % len(chi2s)) # pylint: disable=logging-not-lazy
     if bins is None:
-        bins = 100
+        bins = np.linspace(0.99*min(chi2s), 1.01*max(chi2s), 100)
     fig = plt.figure()
     n, bins, _ = plt.hist(
-        chi2s[finite_mask], bins=bins, facecolor='firebrick', histtype='stepfilled',
-        weights=np.ones_like(chi2s[finite_mask])/len(chi2s[finite_mask]),
-        label='hyperplane residuals (%d)' % len(chi2s[finite_mask])
+        chi2s, bins=bins, facecolor='firebrick', histtype='stepfilled',
+        weights=np.ones_like(chi2s)/len(chi2s),
+        label='hyperplane residuals (%d)' % len(chi2s)
     )
     if fit:
         logging.info( # pylint: disable=logging-not-lazy
@@ -637,10 +589,10 @@ def plot_chisquare_values(chi2s, outfile, fit=True, fit_loc_scale=False,
         )
         if fit_loc_scale:
             # fit for d.o.f., location and scale of distribution of values
-            popt = stats.chi2.fit(chi2s[finite_mask])
+            popt = stats.chi2.fit(chi2s)
             fit_rv = stats.chi2(*popt[:-2], loc=popt[-2], scale=popt[-1])
         else:
-            popt = stats.chi2.fit(chi2s[finite_mask], floc=0, fscale=1)
+            popt = stats.chi2.fit(chi2s, floc=0, fscale=1)
             fit_rv = stats.chi2(df=popt[0])
         logging.info('Best fit parameters: %s' % list(popt)) # pylint: disable=logging-not-lazy
         # plot the binwise integrated fit pdf
@@ -728,29 +680,14 @@ def plot_binwise_variations_with_fits(
                     title = map_name + ': %s' % zstr.replace('_', ' ').strip()
                     fig.suptitle(title, fontsize='xx-large')
                 chan_norm_sys_maps_zind = chan_norm_sys_maps[:, :, zind]
-
                 # each unique idx corresponds to one bin
                 for idx in np.ndindex(*(shape_map[:2])):
-
-                    # get the points to plot, handling NaN
                     y_values = unp.nominal_values(chan_norm_sys_maps_zind[idx])
                     y_sigma = unp.std_devs(chan_norm_sys_maps_zind[idx])
-                    finite_mask = np.isfinite(y_values) & np.isfinite(y_sigma)
-
-                    # plot the points
                     ax2d[idx[1], idx[0]].errorbar(
-                        x=sys_vals[finite_mask], y=y_values[finite_mask], yerr=y_sigma[finite_mask], fmt='o',
+                        x=sys_vals, y=y_values, yerr=y_sigma, fmt='o',
                         mfc='firebrick', mec='firebrick', ecolor='firebrick'
                     )
-
-                    # show points that were NaN
-                    ax2d[idx[1], idx[0]].scatter(
-                        sys_vals[~finite_mask], np.ones_like(sys_vals[~finite_mask]), marker='x',
-                        c='black'
-                    )
-
-                    # TODO color/shade by chi2
-
                     # obtain the best fit parameters and plot the fit function
                     # for these
                     popt = np.array(hyperplane_fits[map_name][:, :, zind][idx])
@@ -758,7 +695,6 @@ def plot_binwise_variations_with_fits(
                     ax2d[idx[1], idx[0]].plot(
                         some_xs, y_opt, color='firebrick', lw=2
                     )
-
                     # label the bin numbers
                     if idx[1] == len(ax2d) - 1:
                         ax2d[idx[1], idx[0]].set_xlabel(
@@ -770,9 +706,6 @@ def plot_binwise_variations_with_fits(
                             '%s bin %d' % (binning.basenames[1], idx[1]),
                             fontsize='small', labelpad=10
                         )
-
-                    # formatting
-                    ax2d[idx[1], idx[0]].grid(True)
 
                 fig.text(0.5, 0.04, sys_name, ha='center', fontsize='xx-large')
                 fig.text(0.04, 0.5, 'normalised count', va='center',
@@ -817,8 +750,8 @@ def main():
         )
         plot_chisquare_values(
             chi2s=chi2s,
-            outfile='%s/%s_%dd_%s_hyperplane_chi2s.png'
-            % (args.outdir, args.tag, len(fits['sys_list']), '_'.join(fits['sys_list']))
+            outfile='%s_%dd_%s_hyperplane_chi2s.png'
+            % (args.tag, len(fits['sys_list']), '_'.join(fits['sys_list']))
         )
 
 
