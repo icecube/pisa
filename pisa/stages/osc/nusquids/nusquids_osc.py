@@ -154,13 +154,13 @@ def evolve_states(cz_shape, propagators, ini_states, nsq_earth_atm, osc_params):
             'nuSQuIDS interface does not seem to support NSI parameters,'
             ' but you have requested to set at least one.'
         )
-    import datetime
-    dt1 = datetime.timedelta(seconds=0.)
-    dt2 = datetime.timedelta(seconds=0.)
-    dt3 = datetime.timedelta(seconds=0.)
+    #import datetime
+    #dt1 = datetime.timedelta(seconds=0.)
+    #dt2 = datetime.timedelta(seconds=0.)
+    #dt3 = datetime.timedelta(seconds=0.)
     for (input_name, nuSQ) in propagators.iteritems():
 
-        t1 = datetime.datetime.now()
+        #t1 = datetime.datetime.now()
 
         nu_flav_no = nuSQ.GetNumNeu()
         nuSQ.Set_EarthModel(nsq_earth_atm)
@@ -192,21 +192,21 @@ def evolve_states(cz_shape, propagators, ini_states, nsq_earth_atm, osc_params):
             nuSQ.Set_DecoherenceGammaMatrix(osc_params.gamma21,osc_params.gamma31,osc_params.gamma32)
             nuSQ.Set_EnergyDependence(osc_params.n_energy)
 
-        t2 = datetime.datetime.now()
+        #t2 = datetime.datetime.now()
 
         #print("+++ %s INI STATE : SHAPE = %s : SIZE = %s : NUM KB = %s" % (input_name,ini_states[input_name].shape,ini_states[input_name].size,ini_states[input_name].nbytes*1.e-3) )
 
         nuSQ.Set_initial_state(ini_states[input_name], nsq.Basis.flavor)
 
-        t3 = datetime.datetime.now()
+        #t3 = datetime.datetime.now()
 
         nuSQ.EvolveState()
 
-        t4 = datetime.datetime.now()
+        #t4 = datetime.datetime.now()
 
-        dt1 = t2 - t1
-        dt2 = t3 - t2
-        dt2 = t4 - t3
+        #dt1 = t2 - t1
+        #dt2 = t3 - t2
+        #dt2 = t4 - t3
 
         #print("+++ Took : Setters = %s : Set_initial_state = %s : EvolveState = %s" % (dt1,dt2,dt3) )
 
@@ -256,8 +256,9 @@ def osc_probs(nuflav, propagators, true_energies, true_coszens, prob_e=None, pro
         raise ValueError('Only `nutype` values accepted are %s.'
                          ' Your choice: %s.' % (FLAV_INDS.keys(), nuflav))
     # needed by `EvalFlavor`:
-    nutype = 1 if not nuflav.endswith('bar') else 0
+    nutype = 1 if nuflav.endswith('bar') else 0
     kflav = FLAV_INDS[nuflav]
+    #TODO Check nu falvor type in the events... (not handled very consistently with e.g. prob3 right now)
 
     # create arrays to hold results, unless they already exist
     # initialise with Nan to check whether calculation was performed later on

@@ -37,6 +37,7 @@ __author__ = 'T. Stuttard, T. Ehrhardt'
 #TODO Make into dedicated file, and document
 #TODO Is this really worth having, or can I just implement directly in the code (e.g. is this just not possible to make general enough)?
 #Make can make a geeneral E_coszen_spline_tool? The  also in e.g. flux?
+'''
 class OscSpline() :
 
     def __init__(self,energy_nodes,coszen_nodes) :
@@ -53,7 +54,7 @@ class OscSpline() :
     def generate_spline(self,prob_vs_energy_coszen_grid) :
         assert prob_vs_energy_coszen_grid.shape == self.shape, "Probability grid must have shape matching the energy-coszen grid nodes"
         return RectBivariateSpline( self.energy_nodes, self.coszen_nodes, prob_vs_energy_coszen_grid )
-
+'''
 
 
 class pi_nusquids(PiStage):
@@ -82,14 +83,17 @@ class pi_nusquids(PiStage):
         rel_err : quantity (dimensionless)
         abs_err : quantity (dimensionless)
 
-    Additional params expected when using the `use_nsi` argument:
+    Additional ParamSet params expected when using the `use_nsi` argument:
         TODO
 
-    Additional params expected when using the `use_decoherence` argument:
-        gamma : quantity (energy)
-#        gamma12 : quantity (energy)
-#        gamma13 : quantity (energy)
-#        gamma23 : quantity (energy)
+    Additional ParamSet params expected when using the `use_decoherence` argument:
+        n_energy : quantity (dimensionless)
+        * If using `num_decoherence_gamma` == 1:
+            gamma : quantity (energy)
+        * If using `num_decoherence_gamma` == 3:
+            gamma12 : quantity (energy)
+            gamma13 : quantity (energy)
+            gamma23 : quantity (energy)
 
     """
     def __init__(self,
