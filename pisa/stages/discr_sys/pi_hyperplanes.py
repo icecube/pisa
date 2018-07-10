@@ -38,12 +38,12 @@ class pi_hyperplanes(PiStage):
     -----
 
     the fit_results_file must contain the following keys:
-        sys_list: containing the order of the parameters
-        <map_name> : the resulting hyperplane coeffs from the fits, first
-             entry is constant, followed by the linear ones in the order
-             defined in `sys_list`
+        param_names : list of the parameters fitted during the hyerplane fits (order is important)
         binning_hash : hash of binning used in fits
-
+        hyperplanes : container with hyperplane fit information for each data type, 
+            <map_name> : hyperplane data is subdivded by event types (map names)
+                fit_results : num params + 1 fit parameters per map bin
+                              order of params is the same as defined in param_names
     """
     def __init__(self,
                  fit_results_file,
@@ -139,12 +139,33 @@ class pi_hyperplanes(PiStage):
             for key, val in self.links.items():
                 self.data.link_containers(key, val)
 
+        # handle backwards compatibility for old style fit results files
+        if "hyperplanes" in self.fit_results :
+            self.using_old_fit_file = False
+        elif "sys_list" in self.fit_results :
+            self.using_old_fit_file = True
+        else :
+            raise ValueError(
+                'Unrecognised format for input fit file'
+            )
+
+        # get the hyperplane fits for each container type
+        # reshape to a 1D array to match container
         for container in self.data:
-            container['hyperplane_results'] = self.fit_results[container.name].reshape(container.size, -1)
+            if self.using_old_fit_file :
+                fits = self.fit_results[container.name]
+            else :
+                fits = self.fit_results["hyperplanes"][container.name]["fit_params"]
+            container['hyperplane_results'] = fits.reshape(container.size, -1)
             container['hyperplane_scalefactors'] = np.empty(container.size, dtype=FTYPE)
 
+        # get the list of systematicc parameter names fitted
         # need to conserve order here!
-        self.fit_sys_list = self.fit_results['sys_list']
+        if self.using_old_fit_file :
+            self.fit_sys_list = self.fit_results['sys_list']
+        else :
+            self.fit_sys_list = self.fit_results['param_names']
+
         # do not require all of the expected parameters to be in the fit file
         # as it should be possible to run this stage with a subset of all
         # supported systematics
@@ -154,6 +175,7 @@ class pi_hyperplanes(PiStage):
                 'Fit results contain systematic parameters unaccounted for'
                 ' by this service, i.e. %s.' % excess
             )
+            
         # record the "inactive" systematics, i.e. those which we have no handle
         # on and which can thus not be used in the computation
         self.inactive_sys_params = (self.sys_params).difference(set(self.fit_sys_list))

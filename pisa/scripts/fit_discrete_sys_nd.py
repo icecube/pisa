@@ -10,14 +10,19 @@ file (fit config).
 
 n-dimensional MapSets are supported to be fitted with m-dimensional, linear
 hyperplanes functions
+
+A script for making plots from the fit results  produced by this file can be
+found in fridge/analysis/common/scripts/plotting/plot_hyperplane_fits.py
 """
+
 from __future__ import absolute_import, division
 
-import os
+import os, copy, sys
 
 from argparse import ArgumentParser
-from collections import Mapping, Sequence
+from collections import Mapping, Sequence, OrderedDict
 from uncertainties import unumpy as unp
+from uncertainties import ufloat
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -54,12 +59,6 @@ def parse_args():
         help='Set output directory'
     )
     parser.add_argument(
-        '--plot', action='store_true',
-        help='''Plot distribution of fit parameters, bin-by-bin variations
-        from systematics sets, and the distribution of chi-square residuals
-        together with a chi-square fit.'''
-    )
-    parser.add_argument(
         '-v', action='count', default=None,
         help='set verbosity level'
     )
@@ -75,6 +74,7 @@ def hyperplane_fun(x, *p):
     x : list
         nested list holding the different assumed values of each parameter
         in the second dimension (i.e., m values for m discrete sets)
+        e.g. [ [vals for param 0], [vals for param 1], ... ]
     p : list
         list of fit function parameters values
         (one offset, n slopes, where n is the number of systematic parameters)
@@ -83,6 +83,8 @@ def hyperplane_fun(x, *p):
     -------
     fun : list
         function value vector (one value in each systematics dimension)
+
+    TODO Avoid duplication with pi_hyperplanes.eval_hyperplane
 
     """
     fun = p[0]
@@ -129,6 +131,7 @@ def parse_fit_config(fit_cfg):
     if combine_regex:
         combine_regex = combine_regex.replace(' ', '').split(',')
 
+
     return fit_cfg, sys_list, combine_regex
 
 
@@ -143,39 +146,39 @@ def make_discrete_sys_distributions(fit_cfg):
 
     Returns
     -------
-    nominal_mapset : MapSet
-        mapset corresponding to the nominal set (as defined in fit settings)
-    sys_list : list
-        list of systematic parameter names (as given in fit settings)
-    sys_param_points : list
-        a list holding the values of the systematic parameters in sys_list
-        for each discrete set (user is responsible to specify the correct
-        values in the fit settings)
-    sys_mapsets : list
-        list of mapsets, one for each point in sys_param_points
-
-    Notes
-    -----
-    The nominal mapset is also included in sys_mapsets. It is not treated
-    any differently than the systematics variations.
-
+    input_data : OrderedDict
+        container with the processed input data including MapSets 
+        resulting from each input pipelines
     """
+
     # parse the fit config and get other things which we need further down
     fit_cfg, sys_list, combine_regex = parse_fit_config(fit_cfg)
 
-    sys_param_points = []
-    sys_mapsets = []
-    nominal_mapset = None
+    # prepare the data container
+    input_data = OrderedDict()
+    input_data["param_names"] = sys_list
+    input_data["datasets"] = []
+
     # retrieve sets:
+    found_nominal = False
     for section in fit_cfg.sections():
+
+        # skip the general section
         if section == 'general':
             continue
+
+        # Handle a dataset definitjon (could be nominal)
         elif section.startswith('nominal_set:') or section.startswith('sys_set:'):
+
+            # Parse the list of parameter values
             sys_param_point = [float(x) for x in section.split(':')[1].split(',')]
+
             point_str = ' | '.join(['%s=%.2f' % (param, val) for param, val in
                                     zip(sys_list, sys_param_point)])
+
             # this is what "characterises" a systematics set
             sys_set_specifier = 'pipeline_cfg'
+
             # retreive settings
             section_keys = fit_cfg[section].keys()
             diff = set(section_keys).difference(set([sys_set_specifier]))
@@ -196,6 +199,7 @@ def make_discrete_sys_distributions(fit_cfg):
                        len(sys_param_point), sys_param_point,
                        sys_list)
                 )
+
             # retreive maps
             logging.info( # pylint: disable=logging-not-lazy
                 'Generating maps for discrete systematics point: %s. Using'
@@ -204,33 +208,41 @@ def make_discrete_sys_distributions(fit_cfg):
             # make a dedicated distribution maker for each systematics set
             distribution_maker = DistributionMaker(pipeline_cfg)
             mapset = distribution_maker.get_outputs(return_sum=False)[0]
+
             if combine_regex:
                 logging.info(
                     'Combining maps according to regular expression(s) %s'
                     % combine_regex
                 )
                 mapset = mapset.combine_re(combine_regex)
+
+        # handle unexpected cfg file section
         else:
             raise ValueError(
                 'Additional, unrecognized section in fit cfg. file: %s'
                 % section
             )
 
-        # add them to the right place
-        if section.startswith('nominal_set:'):
-            if nominal_mapset:
+        # handle the nominal dataset
+        nominal = section.startswith('nominal_set:')
+        if nominal :
+            if found_nominal :
                 raise ValueError(
                     'Found multiple nominal sets in fit cfg! There must be'
                     ' exactly one.'
                 )
-            nominal_mapset = mapset
-        # we have already checked that the section is either for the nominal
-        # or for the systematics variation sets, and the nominal set will be
-        # treated just the same as the variations
-        sys_mapsets.append(mapset)
-        sys_param_points.append(sys_param_point)
+            found_nominal = nominal
 
-    nsets = len(sys_mapsets)
+        # Store the info
+        dataset = OrderedDict()
+        dataset["name"] = os.path.splitext(os.path.basename(pipeline_cfg))[0] #TODO Do something better here...
+        dataset["param_values"] = sys_param_point
+        dataset["mapset"] = mapset
+        dataset["nominal"] = nominal
+        input_data["datasets"].append(dataset)
+
+    # perform some checks
+    nsets = len(input_data["datasets"])
     nsys = len(sys_list)
     if not nsets > nsys:
         logging.warn( # pylint: disable=logging-not-lazy
@@ -239,70 +251,100 @@ def make_discrete_sys_distributions(fit_cfg):
             % (nsets, nsys + 1)
         )
 
-    if not nominal_mapset:
+    if not found_nominal:
         raise ValueError(
             'Could not find a nominal discrete systematics set in fit cfg.'
             ' There must be exactly one.'
         )
 
-    return nominal_mapset, sys_list, sys_param_points, sys_mapsets
+    return input_data
 
 
-def norm_sys_distributions(nominal_mapset, sys_mapsets):
+def norm_sys_distributions(input_data):
+
     """Normalises systematics mapsets to the nominal mapset,
     performing error propagation.
 
     Parameters
     ----------
-    nominal_mapset : MapSet
-        the reference mapset at the nominal values of the systematics
-    sys_mapsets : MapSet
-        mapsets from variations of the systematics
+    input_data : dict
+        The data container returned by `make_discrete_sys_distributions`.
+        Note that this is modified to add the normalised distrbutions 
+        by this function.
 
     Returns
     -------
-    norm_sys_maps : dict
-        list of normalised maps (nominal + variations) for each event group
+    Nothing is returned, instead `input_data` is modified
 
     """
-    out_names = sorted(nominal_mapset.names)
-    norm_sys_maps = {map_name: [] for map_name in out_names}
-    for map_name in out_names:
+
+    #
+    # Get the input mapsets
+    #
+
+    nominal_mapset = [ dataset["mapset"] for dataset in input_data["datasets"] if dataset["nominal"] ]
+    assert len(nominal_mapset) == 1
+    nominal_mapset = nominal_mapset[0]
+
+    sys_mapsets = [ dataset["mapset"] for dataset in input_data["datasets"] ]
+
+    for dataset_dict in input_data["datasets"] :
+        dataset_dict["norm_mapset"] = []
+
+
+    #
+    # loop over types of event
+    #
+
+    for map_name in nominal_mapset.names:
+
         logging.info('Normalizing "%s" maps.' % map_name) # pylint: disable=logging-not-lazy
         nominal_map = nominal_mapset[map_name]
         chan_norm_sys_maps = []
-        for sys_mapset in sys_mapsets:
+
+
+        #
+        # loop over datasets
+        #
+
+        for dataset_dict in input_data["datasets"] :
+
+            #
+            # Normalise maps
+            #
+
+            sys_mapset = dataset_dict["mapset"]
+
             # TODO: think about the best way to perform unc. propagation
-            norm_sys_map = sys_mapset[map_name].hist/nominal_map.nominal_values
-            chan_norm_sys_maps.append(norm_sys_map)
-        chan_norm_sys_maps = np.array(chan_norm_sys_maps)
-        # move to last axis
-        chan_norm_sys_maps = np.rollaxis(
-            chan_norm_sys_maps, axis=0, start=len(chan_norm_sys_maps.shape)
-        )
-        norm_sys_maps[map_name] = chan_norm_sys_maps
-    return norm_sys_maps
+
+            # calculate a normalised version of the systematic set histogram
+            # need to handle cases where the nominal histogram has empty bins
+            #norm_sys_map = sys_mapset[map_name].hist/nominal_map.nominal_values
+            norm_sys_hist = copy.deepcopy(sys_mapset[map_name].hist)
+            finite_mask = np.isfinite( sys_mapset[map_name].nominal_values / nominal_map.nominal_values )
+            norm_sys_hist[finite_mask] = sys_mapset[map_name].hist[finite_mask] / nominal_map.nominal_values[finite_mask]
+            norm_sys_hist[~finite_mask] = ufloat(np.NaN,np.NaN)
+
+            #TODO Check for bins that are empty in the nominal hist but no in at least one of the sys sets, currently we do not support this...
+
+            norm_sys_map = Map(name=sys_mapset[map_name].name, binning=sys_mapset[map_name].binning, hist=norm_sys_hist) #TODO Save the map
+            dataset_dict["norm_mapset"].append(norm_sys_map)
+
+    # Re-format
+    for dataset_dict in input_data["datasets"] :
+        dataset_dict["norm_mapset"] = MapSet( maps=dataset_dict["norm_mapset"], name=dataset_dict["mapset"].name )
 
 
-def fit_discrete_sys_distributions(
-        nominal_mapset, sys_list, sys_param_points, sys_mapsets, p0=None
-    ):
+def fit_discrete_sys_distributions(input_data,p0=None) :
+
     """Fits a hyperplane to MapSets generated at given systematics parameters
     values.
 
     Parameters
     ----------
-    nominal_mapset : MapSet
-        nominal mapset, used for normalisation of the systematics variation
-        mapsets
-    sys_list : list
-        list of systematic parameter names (just to put in output dictionary)
-    sys_param_points : list
-        a list holding the values of the systematic parameters in sys_list
-        for each discrete set (passed as x values to the fitting function)
-    sys_mapsets : list
-        list of mapsets, one for each point in sys_param_points, should
-        include the nominal mapset also
+    input_data : OrderedDict
+        The data container returned by `make_discrete_sys_distributions` 
+        and modified by `norm_sys_distributions`.
     p0 : list or dict
         Initial guess list (same initial guess for all maps) or dictionary
         (keys have to correspond to event groups/channels in maps)
@@ -310,36 +352,58 @@ def fit_discrete_sys_distributions(
 
     Returns
     -------
-    fit_results : dict
-        stores fit results, i.e., map names, fit parameters for each map,
-        parameter covariances under 'pcov', the names of
-        the systematic parameters, the hash of the binning
-    chi2s : list
-        individual chi-square residuals between fit and data points
-    binning : MultiDimBinning
-        binning of all maps
-
+    fit_results : OrderedDict
+        Container of the hyerplane fit results + supporting data
     """
-    # transpose to get successive values of the same param in the second dim.
-    sys_param_points = np.array(sys_param_points).T
-    # for every bin in the map we need to store 1 + n terms for n systematics,
-    # i.e. 1 offset and n slopes
-    n_params = 1 + sys_param_points.shape[0]
 
-    logging.info('Number of params to fit: %d' % n_params) # pylint: disable=logging-not-lazy
+    #
+    # Prepare a few things before fitting
+    #
 
-    shape_map = list(nominal_mapset[0].shape)
-    # output will be array holding n_params fit parameters for each bin
-    shape_output = shape_map + [n_params]
-    binning = nominal_mapset[0].binning
-    binning_hash = binning.hash
+    # prepare an output data container
+    fit_results = OrderedDict()
+    fit_results["hyperplanes"] = OrderedDict()
 
-    fit_results = {'pcov': {}}
-    chi2s = []
+    # store info from the input data in the fit results
+    fit_results["datasets"] = input_data["datasets"]
+    fit_results["param_names"] = input_data["param_names"]
+
+    # get number of systematic parameters and datasets
+    n_sys_params = len(fit_results["param_names"])
+    n_datasets = len(fit_results["datasets"])
+
+    # get number of params in hyperplane fit
+    # this is one slope per systematic, plus a single intercept
+    n_fit_params = 1 + len(fit_results["param_names"])
+
+    # get binning info
+    binning =  fit_results["datasets"][0]["mapset"][0].binning
+    binning_shape = list(binning.shape)
 
     # normalise the systematics variations to the nominal distribution
     # with error propagation
-    norm_sys_maps = norm_sys_distributions(nominal_mapset, sys_mapsets)
+    norm_sys_distributions(input_data)
+
+    # re-organise normalised maps to be stored per event type (a list for each dataset)
+    norm_sys_maps = OrderedDict()
+    for map_name in input_data["datasets"][0]["norm_mapset"].names :
+        norm_sys_maps[map_name] = [ dataset_dict["norm_mapset"][map_name] for dataset_dict in input_data["datasets"] ]
+
+    # get an array of the systematic parameter points sampled across all datasets
+    # transpose to get format compatible with scipy.optimize.curve_fit
+    sys_param_points = np.asarray([ dataset_dict["param_values"] for dataset_dict in fit_results["datasets"] ]) #[datasets,params]
+    sys_param_points_T = sys_param_points.T
+    assert sys_param_points_T.shape[0] == n_sys_params
+    assert sys_param_points_T.shape[1] == n_datasets
+
+    # store some of this stuff 
+    fit_results["sys_param_points"] = sys_param_points
+    fit_results['binning_hash'] = binning.hash
+
+
+    #
+    # Prepare initial parameter guesses
+    #
 
     if p0:
         if isinstance(p0, Mapping):
@@ -351,9 +415,9 @@ def fit_discrete_sys_distributions(
                     ' same as %s in maps.' % (p0_keys, map_keys)
                 )
             for k, ini_guess in p0.items():
-                assert len(ini_guess) == n_params
+                assert len(ini_guess) == n_fit_params
         elif isinstance(p0, Sequence):
-            assert len(p0) == n_params
+            assert len(p0) == n_fit_params
             p0 = {map_name: p0 for map_name in norm_sys_maps.keys()}
         else:
             raise TypeError(
@@ -361,57 +425,123 @@ def fit_discrete_sys_distributions(
                 % type(p0)
             )
     else:
-        p0 = {map_name: np.ones(n_params) for map_name in norm_sys_maps.keys()}
+        p0 = {map_name: np.ones(n_fit_params) for map_name in norm_sys_maps.keys()}
+
+    fit_results['p0'] = p0
+
+
+    #
+    # Loop over event types
+    #
 
     for map_name, chan_norm_sys_maps in norm_sys_maps.items():
+
         logging.info( # pylint: disable=logging-not-lazy
             'Fitting "%s" maps with initial guess %s.'
             % (map_name, p0[map_name])
         )
 
-        # initialise data arrays with nans
-        fit_results[map_name] = np.full(shape_output, np.nan)
-        fit_results['pcov'][map_name] = np.full(shape_output + [n_params], np.nan)
+        # create a container for fit results for this event type
+        fit_results["hyperplanes"][map_name] = OrderedDict()
 
-        for idx in np.ndindex(*shape_map):
-            y_values = unp.nominal_values(chan_norm_sys_maps[idx])
-            y_sigma = unp.std_devs(chan_norm_sys_maps[idx])
-            if np.any(y_sigma):
+        # initialise data arrays with NaNs
+        fit_results["hyperplanes"][map_name]["fit_params"] = np.full(binning_shape+[n_fit_params], np.nan) #[bins..., hyperplane params]
+        fit_results["hyperplanes"][map_name]["chi2s"] = np.full(binning_shape+[n_datasets], np.nan) #[bins..., datasets]
+        fit_results["hyperplanes"][map_name]["cov_matrices"] = np.full(binning_shape+[n_fit_params,n_fit_params], np.nan) #[bins..., hyperplane params, hyperplane params]
+        fit_results["hyperplanes"][map_name]["finite_mask"] = np.full(binning_shape+[n_datasets], np.nan) #[bins..., datasets]
+
+
+        #
+        # loop over bins
+        #
+
+        for idx in np.ndindex(*binning_shape):
+
+            # get the bin content, including uncertainty and mask indicating if the bin is finite
+            # treat the bin content as y values in the fit, e.g. y(x0,...,xN) where N is the number of parameters
+            # each of these 1D arrays has one element per input dataset
+            y = np.asarray([ m.hist[idx] for m in chan_norm_sys_maps ])
+            y_values = unp.nominal_values(y)
+            y_sigma = unp.std_devs(y)
+            finite_mask = np.isfinite(y_values) & np.isfinite(y_sigma)
+
+            # empty bins have sigma=0 which causes the hyperplane fit to fail (silently)
+            # replace with sigma=inf (e.g. we know nothing in this bin)
+            empty_bin_mask = np.isclose(y_values,0.)
+            if np.any(empty_bin_mask) :
+                empty_bin_zero_sigma_mask = empty_bin_mask & np.isclose(y_sigma,0.)
+                if np.any(empty_bin_zero_sigma_mask) :
+                    y_sigma[empty_bin_zero_sigma_mask] = np.inf
+
+            # check no zero sigma values remaining
+            if np.any(np.isclose(y_sigma,0.)) :
+                raise ValueError("Found histogram sigma values that are 0., which is unphysical")
+
+
+            #
+            # Perform hyperplane fit in this bin
+            #
+
+            # case 1: uncertainties are available in the bins
+            if np.any(y_sigma[finite_mask]):
+
+                # fit
                 popt, pcov = curve_fit(
-                    hyperplane_fun, sys_param_points, y_values,
-                    sigma=y_sigma, p0=p0[map_name]
+                    hyperplane_fun, sys_param_points_T[:,finite_mask], y_values[finite_mask],
+                    sigma=y_sigma[finite_mask], p0=p0[map_name]
                 )
 
-                # calculate chi-square values
-                for point_idx in range(sys_param_points.shape[1]):
-                    point = sys_param_points[:, point_idx]
-                    predicted = hyperplane_fun(point, *popt)
+                # calculate chi-square values comparing the input data and the fit results at 
+                # each data point (e.g. per dataset, and of course in each bin)
+                for point_idx in range(n_datasets): # Loop over datasets
+                    point = sys_param_points[point_idx,:] # Get param values for this dataset
+                    predicted = hyperplane_fun(point,*popt) # Predict counts in this bin accoridng to hyperplane for this dataset
                     observed = y_values[point_idx]
                     sigma = y_sigma[point_idx]
-                    chi2 = ((predicted - observed)/sigma)**2
-                    chi2s.append(chi2)
+                    chi2 = ((predicted - observed)/sigma)**2 # Calc chi2 #TODO Is this correct?
+                    chi2_idx = tuple(list(idx)+[point_idx])
+                    fit_results["hyperplanes"][map_name]["chi2s"][chi2_idx] = chi2
 
             else:
-                # without error estimates each point has the same weight
-                # and we cannot get chi-square values
-                logging.warn( # pylint: disable=logging-not-lazy
-                    'No uncertainties for any of the normalised counts in bin'
-                    ' %s ("%s") found. Fit is performed unweighted and no'
-                    ' chisquare values will be available.' % (idx, map_name)
-                )
-                popt, pcov = curve_fit(
-                    hyperplane_fun, sys_param_points, y_values, p0=p0[map_name]
-                )
-                chi2s.append(np.nan)
-            fit_results[map_name][idx] = popt
-            fit_results['pcov'][map_name][idx] = pcov
 
-    fit_results['p0'] = p0
-    fit_results['sys_list'] = sys_list
-    fit_results['map_names'] = nominal_mapset.names
-    fit_results['binning_hash'] = binning_hash
+                # if here, no uncertainties are available for this bin
+                # note that cannot calculate chi2 without uncertainties
 
-    return fit_results, chi2s, binning
+                # case 2: there are at least central values in the bins
+                if np.any(y_values[finite_mask]):
+
+                    # without error estimates each point has the same weight
+                    # and we cannot get chi-square values (but can still fit)
+                    logging.warn( # pylint: disable=logging-not-lazy
+                        'No uncertainties for any of the normalised counts in bin'
+                        ' %s ("%s") found. Fit is performed unweighted and no'
+                        ' chisquare values will be available.' % (idx, map_name)
+                    )
+
+                    # fit
+                    popt, pcov = curve_fit(
+                        hyperplane_fun, sys_param_points_T[:,finite_mask], y_values, p0=p0[map_name]
+                    )
+
+
+                else :
+
+                    # case 3: no data in this bin
+                    # this is the worst case, where there are no central values or errors.
+                    # most likely this came about because this bin is empty, which is not 
+                    # necessarily an error.
+
+                    # Store NaN for fit params and chi2
+                    popt = np.full_like(p0[map_name],np.NaN) 
+                    pcov = np.NaN #TODO Shape?
+
+            # store the results for this bin
+            # note that chi2 is already stored above
+            fit_results["hyperplanes"][map_name]["fit_params"][idx] = popt
+            fit_results["hyperplanes"][map_name]["cov_matrices"][idx] = pcov #TODO need to np.copyto?
+            fit_results["hyperplanes"][map_name]["finite_mask"][idx] = finite_mask
+
+    return fit_results
 
 
 def hyperplane(fit_cfg, set_param=None):
@@ -425,294 +555,49 @@ def hyperplane(fit_cfg, set_param=None):
 
     Returns
     -------
-    nominal_mapset : MapSet
-        nominal mapset, used for normalisation of the systematics variation
-        mapsets
-    sys_param_points : list
-        a list holding the values of the systematic parameters
-        for each discrete set (passed as x values to the fitting function)
-    sys_mapsets : list
-        list of mapsets, one for each point in sys_param_points, should
-        include the nominal mapset also
-    binning : MultiDimBinning
-        binning of all maps
-    hyperplane_fits : dict
-        fit results
-    chi2s : list
-        chi-square values of fits
-
+    input_data : dict
+        container holding the input data provided by the user to be fitted with hyperplanes
+    fit_results : dict
+        container holding the results of the hyperplane fits
     """
 
     if set_param:
         raise NotImplementedError()
 
-    nominal_mapset, sys_list, sys_param_points, sys_mapsets =\
-        make_discrete_sys_distributions(fit_cfg=fit_cfg)
+    input_data = make_discrete_sys_distributions(fit_cfg=fit_cfg)
+    fit_results = fit_discrete_sys_distributions(input_data=input_data)
 
-    hyperplane_fits, chi2s, binning = fit_discrete_sys_distributions(
-        nominal_mapset=nominal_mapset,
-        sys_list=sys_list,
-        sys_param_points=sys_param_points,
-        sys_mapsets=sys_mapsets
-    )
-    return (nominal_mapset, sys_param_points, sys_mapsets, binning,
-            hyperplane_fits, chi2s)
+    return input_data,fit_results
 
 
-def save_hyperplane_fits(hyperplane_fits, chi2s, outdir, tag=None):
+def save_hyperplane_fits(input_data,fit_results,outdir,tag):
     """Store discrete systematics fits and chi-square values to a specified
     output location, with results identified by a tag.
 
     Parameters
     ----------
-    hyperplane_fits : dict
-        as output by fit_discrete_sys_distributions
-    chi2s : list
-        chi-square values
+    input_data : dict
+        input data container returned by `hyperplane` function
+    fit_results : dict
+        fit results data container returned by `hyperplane` function
     outdir : string
         output directory
     tag : string
         identifier for filenames holding fit results
-
     """
-    dim = len(hyperplane_fits['sys_list'])
-    param_str = '_'.join(hyperplane_fits['sys_list'])
+
+    # Get some strings to use when naming
+    dim = len(input_data["param_names"])
+    param_str = '_'.join(input_data["param_names"])
+
+    # Store as JSON
     res_path = os.path.join(
         outdir,
-        '%s_%dd_%s_hyperplane_fits.json' % (tag, dim, param_str)
+        '%s__%dd__%s__hyperplane_fits.json' % (tag, dim, param_str)
     )
-    to_file(hyperplane_fits, res_path)
-    chi2s = np.array(chi2s)
-    chi2s_path = os.path.join(
-        outdir,
-        '%s_%dd_%s_hyperplane_chi2s' % (tag, dim, param_str)
-    )
-    np.save(chi2s_path, chi2s)
+    to_file(fit_results,res_path)
 
 
-def plot_hyperplane_fit_params(hyperplane_fits, names, binning, outdir=None,
-                               tag=None):
-    """Plot 2D distributions of fit parameters.
-
-    Parameters
-    ----------
-    hyperplane_fits : dict
-        fit results as returned by `hyperplane`
-    names : list of strings
-        lists of event groups/types whose fit results are to be plotted
-    binning : MultiDimBinning
-        binning as used in fits
-    outdir : string
-        path to output directory for plots
-    tag : string
-        identifier for fit results to put in filenames
-
-    """
-    import matplotlib as mpl
-    mpl.use('pdf')
-    from pisa.utils.plotter import Plotter
-
-    sys_list = hyperplane_fits['sys_list']
-
-    # there are no. of systematic params + 1 fit parameters
-    for d in range(len(sys_list)+1):
-        if d == 0:
-            fit_param_id = 'offset'
-        else:
-            fit_param_id = 'slope_%s' % sys_list[d-1]
-        maps = []
-        for name in names:
-            map_to_plot = Map(
-                name='%s_raw' % name,
-                hist=hyperplane_fits[name][..., d],
-                binning=binning
-            )
-            maps.append(map_to_plot)
-        maps = MapSet(maps)
-        my_plotter = Plotter(
-            stamp='',
-            outdir=outdir,
-            fmt='pdf',
-            log=False,
-            label=''
-        )
-        my_plotter.plot_2d_array(
-            maps,
-            fname='%s_%s_%ddfits'%(tag, fit_param_id, len(sys_list)),
-        )
-
-
-def plot_chisquare_values(chi2s, outfile, fit=True, fit_loc_scale=False,
-                          bins=None, logy=True):
-    """Fit and plot distribution of chi-square values.
-
-    Parameters
-    ----------
-    chi2s : list
-        flat list of chi-square values to fit and histogram
-    outfile : str
-        plot output file
-    fit : bool
-        whether to fit the list of chi-square values with
-        a chi-square distribution
-    fit_loc_scale : bool
-        whether to allow the shape parameters "loc" and "scale"
-        to float in the fit
-    bins : sequence
-        binning to employ for histogramming
-    logy : bool
-        employ a logarithmic y scale
-    """
-    import matplotlib as mpl
-    mpl.use('agg')
-    import matplotlib.pyplot as plt
-    from scipy import stats
-
-    if fit_loc_scale and not fit:
-        raise ValueError(
-            'Use `fit_loc_scale` only when `fit` is True.'
-        )
-
-    logging.info('Histogramming %d chisquare values.' % len(chi2s)) # pylint: disable=logging-not-lazy
-    if bins is None:
-        bins = np.linspace(0.99*min(chi2s), 1.01*max(chi2s), 100)
-    fig = plt.figure()
-    n, bins, _ = plt.hist(
-        chi2s, bins=bins, facecolor='firebrick', histtype='stepfilled',
-        weights=np.ones_like(chi2s)/len(chi2s),
-        label='hyperplane residuals (%d)' % len(chi2s)
-    )
-    if fit:
-        logging.info( # pylint: disable=logging-not-lazy
-            'Performing chisquare fit with "loc" and "scale" %s.'
-            % ('floating' if fit_loc_scale else 'fixed')
-        )
-        if fit_loc_scale:
-            # fit for d.o.f., location and scale of distribution of values
-            popt = stats.chi2.fit(chi2s)
-            fit_rv = stats.chi2(*popt[:-2], loc=popt[-2], scale=popt[-1])
-        else:
-            popt = stats.chi2.fit(chi2s, floc=0, fscale=1)
-            fit_rv = stats.chi2(df=popt[0])
-        logging.info('Best fit parameters: %s' % list(popt)) # pylint: disable=logging-not-lazy
-        # plot the binwise integrated fit pdf
-        fit_cdf = fit_rv.cdf(bins[1:]) - fit_rv.cdf(bins[:-1])
-        centers = (bins[1:] + bins[:-1])/2.
-        plt.step(centers, fit_cdf, where='mid',
-                 color='black', label=r'$\chi^2$ fit (%.2f d.o.f.)' % popt[0],
-                 linestyle='solid')
-    plt.xlabel(r'$\chi^2$', fontsize='x-large')
-    plt.ylabel('AU', fontsize='x-large')
-    if not logy:
-        plt.ylim(0, 1.01*max(n))
-    else:
-        plt.yscale('log')
-    plt.xlim(min(bins), max(bins))
-    plt.legend(loc='best')
-    plt.tight_layout()
-    fig.savefig(outfile)
-
-
-def plot_binwise_variations_with_fits(
-        hyperplane_fits, sys_param_points,
-        nominal_mapset, sys_mapsets, outdir, tag=None,
-        subplot_kw=None, gridspec_kw=None, **fig_kw):
-    """Bin-by-bin plots of count variations as function of
-    systematic parameters together with projections of fit
-    function along each dimension in each bin.
-
-    Parameters
-    ----------
-    hyperplane_fits : dict
-    sys_param_points : list
-    nominal_mapset : MapSet
-    sys_mapsets : list of MapSets
-    outdir : str
-    tag : str
-    subplot_kw, gridspec_kw, fig_kw : dict
-        keyword arguments passed on to plt.subplots
-
-    """
-    import matplotlib.pyplot as plt
-    # normalise the systematics variations to the nominal distribution
-    # with error propagation
-    norm_sys_maps = norm_sys_distributions(nominal_mapset, sys_mapsets)
-    binning = nominal_mapset[0].binning
-    shape_map = binning.shape
-    if not (len(shape_map) == 2 or len(shape_map) == 3):
-        raise NotImplementedError(
-            'Need 2d or 3d maps currently.'
-        )
-    nx, ny = shape_map[0], shape_map[1]
-    try:
-        nz = shape_map[2]
-        is_3d = True
-    except IndexError:
-        nz = 0
-        is_3d = False
-    sys_list = hyperplane_fits['sys_list']
-    if not len(sys_list) == 1:
-        # TODO: allow for multi-sys. fits, but then project correctly
-        logging.warn(
-            'Plotting logic for more than 1 systematic not yet done. Returning.'
-        )
-        return
-    sys_param_points = np.array(sys_param_points)
-    for map_name, chan_norm_sys_maps in norm_sys_maps.items():
-        logging.info( # pylint: disable=logging-not-lazy
-            'Displaying binwise variations of "%s" maps.' % (map_name)
-        )
-        for i, sys_name in enumerate(sys_list):
-            # these are all values of the param in question, irrespective
-            # of the values of possible other parameters -> TODO: filter out
-            # those for which others are at not at nominal
-            sys_vals = sys_param_points[:, i]
-            some_xs = np.linspace(min(sys_vals), max(sys_vals), 100)
-            # make a new figure for each bin in the third dimension
-            ziter = range(nz) if nz else [0] # pylint: disable=range-builtin-not-iterating
-            for zind in ziter:
-                zstr = '_%s_bin_%d_' % (binning.names[2], zind) if is_3d else '_'
-                fig, ax2d = plt.subplots(
-                    nrows=ny, ncols=nx, sharex='col', sharey='row',
-                    subplot_kw=subplot_kw, gridspec_kw=gridspec_kw, **fig_kw
-                )
-                if is_3d:
-                    title = map_name + ': %s' % zstr.replace('_', ' ').strip()
-                    fig.suptitle(title, fontsize='xx-large')
-                chan_norm_sys_maps_zind = chan_norm_sys_maps[:, :, zind]
-                # each unique idx corresponds to one bin
-                for idx in np.ndindex(*(shape_map[:2])):
-                    y_values = unp.nominal_values(chan_norm_sys_maps_zind[idx])
-                    y_sigma = unp.std_devs(chan_norm_sys_maps_zind[idx])
-                    ax2d[idx[1], idx[0]].errorbar(
-                        x=sys_vals, y=y_values, yerr=y_sigma, fmt='o',
-                        mfc='firebrick', mec='firebrick', ecolor='firebrick'
-                    )
-                    # obtain the best fit parameters and plot the fit function
-                    # for these
-                    popt = np.array(hyperplane_fits[map_name][:, :, zind][idx])
-                    y_opt = hyperplane_fun([some_xs], *popt)
-                    ax2d[idx[1], idx[0]].plot(
-                        some_xs, y_opt, color='firebrick', lw=2
-                    )
-                    # label the bin numbers
-                    if idx[1] == len(ax2d) - 1:
-                        ax2d[idx[1], idx[0]].set_xlabel(
-                            '%s bin %d' % (binning.basenames[0], idx[0]),
-                            fontsize='small', labelpad=10
-                        )
-                    if idx[0] == 0:
-                        ax2d[idx[1], idx[0]].set_ylabel(
-                            '%s bin %d' % (binning.basenames[1], idx[1]),
-                            fontsize='small', labelpad=10
-                        )
-
-                fig.text(0.5, 0.04, sys_name, ha='center', fontsize='xx-large')
-                fig.text(0.04, 0.5, 'normalised count', va='center',
-                         rotation='vertical', fontsize='xx-large')
-                fname = ('%s_%s_%s%sbinwise_hyperplane.png'
-                         % (tag, sys_name, map_name, zstr))
-                fig.savefig(os.path.join(outdir, fname))
 
 
 def main():
@@ -722,37 +607,11 @@ def main():
     args = parse_args()
     set_verbosity(args.v)
 
-    nom_ms, sys_points, sys_ms, binning, fits, chi2s = hyperplane(
-        fit_cfg=args.fit_cfg,
-    )
-    save_hyperplane_fits(
-        hyperplane_fits=fits,
-        chi2s=chi2s,
-        outdir=args.outdir,
-        tag=args.tag
-    )
-    if args.plot:
-        plot_hyperplane_fit_params(
-            hyperplane_fits=fits,
-            names=nom_ms.names,
-            binning=binning,
-            outdir=args.outdir,
-            tag=args.tag
-        )
-        plot_binwise_variations_with_fits(
-            hyperplane_fits=fits,
-            nominal_mapset=nom_ms,
-            sys_param_points=sys_points,
-            sys_mapsets=sys_ms,
-            outdir=args.outdir,
-            tag=args.tag,
-            figsize=(16, 16)
-        )
-        plot_chisquare_values(
-            chi2s=chi2s,
-            outfile='%s_%dd_%s_hyperplane_chi2s.png'
-            % (args.tag, len(fits['sys_list']), '_'.join(fits['sys_list']))
-        )
+    # Read in data and fit hyperplanes to it
+    input_data,fit_results = hyperplane(fit_cfg=args.fit_cfg)
+
+    # Save to disk
+    save_hyperplane_fits(input_data=input_data,fit_results=fit_results,outdir=args.outdir,tag=args.tag)
 
 
 if __name__ == '__main__':
