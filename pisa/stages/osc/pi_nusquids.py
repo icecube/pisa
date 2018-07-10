@@ -21,10 +21,13 @@ from pisa.stages.osc.pi_osc_params import OscParams
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.prob3numba.numba_osc import propagate_array, fill_probs
 from pisa.utils.numba_tools import WHERE
+from pisa.stages.osc.pi_prob3 import apply_probs
+
 from pisa.utils.resources import find_resource
 from pisa.utils import vectorizer
 from pisa.stages.osc.nusquids.nusquids_osc import NSQ_CONST, validate_calc_grid, compute_binning_constants, init_nusquids_prop, evolve_states, osc_probs, earth_model
 from pisa import ureg
+
 
 from scipy.interpolate import RectBivariateSpline
 
@@ -282,9 +285,6 @@ class pi_nusquids(PiStage):
         self.osc_params.eps_tautau = 0.
         '''
 
-        import datetime
-        t1 = datetime.datetime.now()
-
         # evolve the states starting from initial ones, using the current state of the params
         evolve_states(
             cz_shape=self.cz_calc_grid.shape[0],
@@ -293,9 +293,6 @@ class pi_nusquids(PiStage):
             nsq_earth_atm=self.earth_atm,
             osc_params=self.osc_params
         )
-
-        t2 = datetime.datetime.now()
-        #print("+++ Evolve states took %s" % (t2-t1) )
 
         # Loop over containers
         for container in self.data:
@@ -345,10 +342,6 @@ class pi_nusquids(PiStage):
             container['prob_e'].mark_changed(WHERE)
             container['prob_mu'].mark_changed(WHERE)
 
-        t3 = datetime.datetime.now() #TODO REMOVE THIS LOT
-
-        #print("+++ Flavor eval took %s" % (t3-t2) )
-
 
     @profile
     def apply_function(self):
@@ -360,15 +353,3 @@ class pi_nusquids(PiStage):
                         container['prob_mu'].get(WHERE),
                         out=container['weights'].get(WHERE))
             container['weights'].mark_changed(WHERE)
-
-
-# vectorized function to apply (flux * prob)
-# must be outside class
-# TODO Is this really necessary?
-if FTYPE == np.float64:
-    signature = '(f8[:], f8, f8, f8[:])'
-else:
-    signature = '(f4[:], f4, f4, f4[:])'
-@guvectorize([signature], '(d),(),()->()', target=TARGET)
-def apply_probs(flux, prob_e, prob_mu, out):
-    out[0] *= (flux[0] * prob_e) + (flux[1] * prob_mu)

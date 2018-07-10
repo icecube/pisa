@@ -180,6 +180,7 @@ class Pipeline(object):
 
                 # Instantiate service
                 logging.trace("initializing stage %s.%s with settings %s"%(stage_name, service_name, settings))
+                service = cls(**settings)
                 try :
                     service = cls(**settings)
                 except Exception as e :

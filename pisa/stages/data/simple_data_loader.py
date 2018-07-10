@@ -36,6 +36,10 @@ class simple_data_loader(PiStage):
         key in the hdf5 file or lists of keys, and the data will be
         stacked into a 2d array.
 
+    neutrinos : bool
+        Flag indicating whether data events represent neutrinos
+        In this case, special handling for e.g. nu/nubar, CC vs NC, ...
+
     Notes
     -----
     Looks for `initial_weights` fields in events file, which will serve
@@ -47,6 +51,7 @@ class simple_data_loader(PiStage):
                  events_file,
                  mc_cuts,
                  data_dict,
+                 neutrinos=True,
                  data=None,
                  params=None,
                  input_names=None,
@@ -61,6 +66,7 @@ class simple_data_loader(PiStage):
         self.events_file = events_file
         self.mc_cuts = mc_cuts
         self.data_dict = data_dict
+        self.neutrinos = neutrinos
 
         # instead of adding params here, consider making them instantiation
         # args so nothing external will inadvertently try to change
@@ -107,12 +113,20 @@ class simple_data_loader(PiStage):
 
     def load_events(self):
         '''Loads events from events file'''
-        self.evts = EventsPi(name='Events')
-        self.data_dict = None if self.data_dict is None else eval(self.data_dict)
+
+        # Create the events structure
+        self.evts = EventsPi(name='Events',neutrinos=self.neutrinos)
+
+        # Parse the variable mapping string if one exists
+        if self.data_dict is not None:
+            self.data_dict = eval(self.data_dict)
+
+        # Load the event file into the events structure
         self.evts.load_events_file(
             events_file=self.events_file,
             variable_mapping=self.data_dict
         )
+        #TODO Add option to define eventual binning here so that can cut events now that will be cut later anyway (use EventsPi.keep_inbounds)
 
     def apply_cuts_to_events(self):
         '''Just apply any cuts that the user defined'''
@@ -131,6 +145,7 @@ class simple_data_loader(PiStage):
 
         # create containers from the events
         for name in output_keys:
+
             # make container
             container = Container(name)
             container.data_specs = 'events'
@@ -140,14 +155,17 @@ class simple_data_loader(PiStage):
                     'Output name "%s" not found in events. Only found %s.'
                     % (name, event_groups)
                 )
+
             # add the events data to the container
             for key, val in self.evts[name].items():
                 container.add_array_data(key, val)
+
             # create weights arrays:
             # * `initial_weights` as starting point (never modified)
             # * `weights` to be initialised from `initial_weights`
             #   and modified by the stages
             # * user can also provide `initial_weights` in input file
+            #TODO Maybe add this directly into EventsPi
             if 'weights' in container.array_data:
                 # raise manually to give user some helpful feedback
                 raise KeyError(
@@ -164,8 +182,10 @@ class simple_data_loader(PiStage):
                     'initial_weights',
                     np.ones(container.size, dtype=FTYPE)
                 )
+
             # add neutrino flavor information for neutrino events
-            if name.startswith("nu") : #TODO Make this less hacky by adding a `neutrinos` constuctor argument so class knows it should hold neutrinos
+            #TODO Maybe add this directly into EventsPi
+            if self.neutrinos :
                 # this determination of flavour is the worst possible coding, ToDo
                 nubar = -1 if 'bar' in name else 1
                 if name.startswith('nutau'):

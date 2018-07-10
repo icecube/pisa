@@ -2,7 +2,8 @@
 
 from __future__ import absolute_import, division, print_function
 
-import copy, collections
+import copy
+from collections import OrderedDict, Mapping, Iterable
 
 import numpy as np 
 
@@ -11,22 +12,29 @@ from pisa.utils.fileio import from_file, to_file
 #from pisa.core.container import Container
 from pisa import FTYPE
 from pisa.utils.numba_tools import WHERE
-
+from pisa.core.binning import OneDimBinning,MultiDimBinning
 
 
 __all__ = ["EventsPi","convert_nu_data_to_flat_format"]
 
 
-class EventsPi(collections.OrderedDict) :
+# Define the flavors and interactions for neutrino events
+FLAVORS = OrderedDict( nue=12, nuebar=-12, numu=14, numubar=-14, nutau=16, nutaubar=-16 )
+INTERACTIONS = OrderedDict( cc=1, nc=2 )
 
-    def __init__(self,name=None,*arg,**kw) :
+
+
+class EventsPi(OrderedDict) :
+
+    def __init__(self,name=None,neutrinos=True,*arg,**kw) :
 
         super(EventsPi, self).__init__(*arg, **kw)
 
         self.name = "events" if name is None else name
+        self.neutrinos = neutrinos
 
         # Define some metadata
-        self.metadata = collections.OrderedDict([
+        self.metadata = OrderedDict([
             ('detector', ''),
             ('geom', ''),
             ('runs', []),
@@ -51,14 +59,14 @@ class EventsPi(collections.OrderedDict) :
         # Should be a dict, where the keys are the destination variable names and the items
         # are either the source variable names, or a list of source variables names that will be combined
         if variable_mapping is not None :
-            if not isinstance(variable_mapping,collections.Mapping) :
+            if not isinstance(variable_mapping,Mapping) :
                 raise ValueError("'variable_mapping' must be a dict")
             for dst,src in variable_mapping.items() :
                 if not isinstance(dst,basestring) :
                     raise ValueError("'variable_mapping' 'dst' (key) must be a string")
                 if isinstance(src,basestring) :
                     pass #Nothing to do
-                elif isinstance(src,collections.Iterable) :
+                elif isinstance(src,Iterable) :
                     for v in src :
                         if not isinstance(v,basestring) :
                             raise ValueError("'variable_mapping' 'dst' (value) has at least one element that is not a string")
@@ -68,8 +76,8 @@ class EventsPi(collections.OrderedDict) :
         # Open the input file (checking if already open)
         if isinstance(events_file,basestring) : # File path
             input_data = from_file(events_file) # Read file
-            assert isinstance(input_data,collections.Mapping), "Input data is not a dict, unknown format (%s)"%type(input_data)
-        elif isinstance(events_file,collections.Mapping) :
+            assert isinstance(input_data,Mapping), "Input data is not a dict, unknown format (%s)"%type(input_data)
+        elif isinstance(events_file,Mapping) :
             input_data = events_file # File has already been opened
         else :
             raise IOError("`events_file` type is not supported (%s)" % type(input_data))
@@ -84,22 +92,25 @@ class EventsPi(collections.OrderedDict) :
         # compatibility with older input file formats.
 
         # Convert to the required event keys, e.g. "numu_cc", "nutaubar_nc", etc...
-        input_data = split_nu_events_by_flavor_and_interaction(input_data)
+        if self.neutrinos :
+            input_data = split_nu_events_by_flavor_and_interaction(input_data)
 
         # The value for each category should itself be a dict of the event variables,
         # where each entry is has a variable name as the key and a np.array filled once 
         # per event as the value.
         # For backwards compatibility, convert to thisfromat from known older formats first
-        convert_nu_data_to_flat_format(input_data)
-        for cat_key,cat_dict in input_data.items() :
-            if not isinstance(cat_dict,collections.Mapping) :
-                raise Exception("'%s' input data is not a dict, unknown format (%s)" % (cat_key,type(cat_dict)))
-            for var_key,var_data in cat_dict.items() :
-                if not isinstance(var_data,np.ndarray) :
-                    raise Exception("'%s/%s' input data is not a numpy array, unknown format (%s)" % (cat_key,var_key,type(var_data)))
+        if self.neutrinos :
+            convert_nu_data_to_flat_format(input_data)
+            for sub_key,cat_dict in input_data.items() :
+                if not isinstance(cat_dict,Mapping) :
+                    raise Exception("'%s' input data is not a dict, unknown format (%s)" % (sub_key,type(cat_dict)))
+                for var_key,var_data in cat_dict.items() :
+                    if not isinstance(var_data,np.ndarray) :
+                        raise Exception("'%s/%s' input data is not a numpy array, unknown format (%s)" % (sub_key,var_key,type(var_data)))
 
         # Ensure backwards compatibility wiht the old style "oppo" flux variables
-        fix_oppo_flux(input_data)
+        if self.neutrinos :
+            fix_oppo_flux(input_data)
 
 
         #
@@ -119,7 +130,7 @@ class EventsPi(collections.OrderedDict) :
             #container = Container(data_key)
             #container.data_specs = "events"
 
-            self[data_key] = collections.OrderedDict()
+            self[data_key] = OrderedDict()
 
             # Loop through variable mapping
             # If none provided, just use all variables and keep the input names
@@ -251,26 +262,13 @@ class EventsPi(collections.OrderedDict) :
             binning = [binning]
         binning = MultiDimBinning(binning)
 
-        # Check that the current cuts have not alrady been applied
-        current_cuts = self.metadata['cuts']
-        new_cuts = [dim.inbounds_criteria for dim in binning]
-        unapplied_cuts = [c for c in new_cuts if c not in current_cuts]
-        if len(unapplied_cuts) == 0:
-            logging.debug("All inbounds criteria '%s' have already been"
-                          " applied. Returning events unmodified.", new_cuts)
-            return self
-        all_cuts = deepcopy(current_cuts) + unapplied_cuts
+        # Define a cut to remove events outside of the binned region
+        bin_edge_cuts = [dim.inbounds_criteria for dim in binning]
+        bin_edge_cuts = " & ".join([ str(x) for x in bin_edge_cuts ])
 
-        # Create a single cut from all unapplied cuts
-        keep_criteria = ' & '.join(['(%s)' % c for c in unapplied_cuts])
+        # Apply the cut
+        return self.apply_cut(bin_edge_cuts)
 
-        # Do the cutting
-        cut_data = self.apply_cut(keep_criteria=keep_criteria)
-
-        # Replace the combined 'cuts' string with individual cut strings
-        #cut_data.metadata['cuts'].append = all_cuts
-
-        return cut_data
 
 
     def __str__(self) : #TODO Handle non-array data cases
@@ -294,56 +292,51 @@ def split_nu_events_by_flavor_and_interaction(input_data) :
     Split neutrino events by nu vs nubar, and CC vs NC
     '''
 
-    #TODO Handle muons, noise, etc...
-
     # Check input data format
-    assert isinstance(input_data,collections.Mapping)
+    assert isinstance(input_data,Mapping)
     assert len(input_data) > 0
 
-    # Define the expected keys
-    all_keys = []
-    flav_keys = ["nue","numu","nutau"]
-    flav_keys.extend([ k+"bar" for k in flav_keys])
-    for interaction in ["nc","cc"] :
-        all_keys.extend([ k+"_"+interaction for k in flav_keys])
+    # Define the desired keys
+    desired_keys = [ "%s_%s"%(fk,ik) for fk,fc in FLAVORS.items() for ik,ic in INTERACTIONS.items() ]
 
-    output_data = collections.OrderedDict()
+    # Output data container to fill
+    output_data = OrderedDict()
 
-    # Loop through categories in the input data
-    for cat_key,cat_data in input_data.items() :
+    # Loop through subcategories in the input data
+    for sub_key,sub_data in input_data.items() :
 
-        # If key already is one of the expected keys, nothing new to do (just preserve the data)
-        if cat_key in all_keys :
-            output_data[cat_key] = cat_data
+        sub_key = "genie" #TODO REMOVE
+
+        # If key already is one of the desired keys, nothing new to do
+        # Just move the data to the output container
+        if sub_key in desired_keys :
+            if sub_key in output_data :
+                output_data = np.append(output_data[sub_key],sub_data)
+            else :
+                output_data[sub_key] = sub_data
             continue
 
         # Check have PDG code
-        assert "pdg_code" in cat_data, "No 'pdg_code' variable found for %s data" % cat_key
+        assert "pdg_code" in sub_data, "No 'pdg_code' variable found for %s data" % sub_key
 
-        # Only split by interaction for neutrinos
-        is_neutrino = np.abs(cat_data["pdg_code"][0]) in [12,14,16]
-        if not is_neutrino :
-            output_data[cat_key] = cat_data #TODO convert name?
-            continue
+        # Check these are neutrino events
+        assert np.all(np.isin(np.abs(sub_data["pdg_code"]),FLAVORS.values())), "%s data does not appear to be a neutrino data" % sub_key
 
-        # Check have the interaction
-        assert "interaction" in cat_data, "No 'interaction' variable found for %s data" % cat_key
+        # Check have the interaction information
+        assert "interaction" in sub_data, "No 'interaction' variable found for %s data" % sub_key
 
-        # Do the splitting
-        for flav_code,flav_key in zip([12,14,16],["nue","numu","nutau"]) :
-            for nubar_sign,nubar_key in zip([1,-1],["","bar"]) :
-                for interaction_code,interaction_key in zip([1,2],["cc","nc"]) :
-                    mask = ( cat_data["pdg_code"] == (nubar_sign*flav_code) ) & ( cat_data["interaction"] == interaction_code )
-                    if np.sum(mask) > 0 :
-                        output_key = flav_key + nubar_key + "_" + interaction_key
-                        if output_key not in output_data :
-                            output_data[output_key] = collections.OrderedDict()
-                        for var_key,var_array in cat_data.items() :
-                            if var_key in output_data[output_key] :
-                                output_data[output_key][var_key] = np.append(output_data[output_key][var_key],var_array[mask])
-                            else :
-                                output_data[output_key][var_key] = var_array[mask]
+        # Define a mask to select the events for each desired output key
+        key_mask_pairs = [ ( "%s_%s"%(fk,ik), (sub_data["pdg_code"]==fc)&(sub_data["interaction"]==ic) ) for fk,fc in FLAVORS.items() for ik,ic in INTERACTIONS.items() ]
 
+        # Loop over the keys/masks and write the data for each casse to the output container
+        for key,mask in key_mask_pairs :
+            if np.any(mask) : # Only if mask has some data
+                if key in output_data :
+                    output_data = np.append(output_data[key],sub_data)
+                else :
+                    output_data[key] = sub_data
+
+    # Check how it went
     assert len(output_data) > 0, "Failed splitting neutrino events by flavor/interaction"
 
     return output_data
@@ -356,14 +349,12 @@ def convert_nu_data_to_flat_format(input_data) :
     the format [nu_flavor][nc/cc], whilst new ones are [nu_flavor_nc/cc]
 
     """
-
-    int_keys = ["nc","cc"]
     for top_key,top_dict in input_data.items() :
-        if set(top_dict.keys()) == set(int_keys) :
+        if set(top_dict.keys()) == set(INTERACTIONS.keys()) :
             for int_key in int_keys :
                 new_top_key = top_key + "_" + int_key
                 if "_bar" in top_key :
-                    new_top_key = new_top_key.replace("_bar","bar") #numu_bar -> numubar conversion
+                    new_top_key = new_top_key.replace("_bar","bar") # numu_bar -> numubar conversion
                 input_data[new_top_key] = top_dict.pop(int_key)
             input_data.pop(top_key)
 

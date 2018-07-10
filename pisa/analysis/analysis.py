@@ -236,25 +236,45 @@ def check_t23_octant(fit_info):
 
 
 def get_separate_t23_octant_params(hypo_maker,inflection_point) :
+    '''
+    This function creates versions of the theta23 param that are confined to 
+    a single octant. It does this for both octant cases. This is used to allow 
+    fits to be done where only one of the octants is allowed. The fit can then 
+    be done for the two octant cases and compared to find the best fit. 
 
-    #TODO Document
+    Parameters
+    ----------
+    hypo_maker : DistributionMaker
+        The hypothesis maker being used by the fitter
+    inflection_point : quantity
+        Point distinguishing between the two octants, e.g. 45 degrees
 
-    #Reset theta23 before starting
+    Returns
+    -------
+    theta23_orig : Param
+        theta23 param as it was before applying the octant separation
+    theta23_case1 : Param
+        theta23 param confined to first octant
+    theta23_case2 : Param
+        theta23 param confined to second octant
+    '''
+
+    # Reset theta23 before starting
     theta23 = hypo_maker.params.theta23
     theta23.reset()
 
-    #Store the original theat23 param before we mess with it
+    # Store the original theat23 param before we mess with it
     theta23_orig = deepcopy(theta23)
 
-    #Get the octant definition
+    # Get the octant definition
     octants = (
         (theta23.range[0],inflection_point) ,
         (inflection_point,theta23.range[1])
         )
 
-    #If theta23 is very close to maximal (e.g. the transition between octants)
-    #offset it slightly to be clearly in one octant (note that fit can still
-    #move the value back to maximal)
+    # If theta23 is very close to maximal (e.g. the transition between octants)
+    # offset it slightly to be clearly in one octant (note that fit can still
+    # move the value back to maximal)
     tolerance = 1. * ureg.degree
     if np.isclose(theta23.value.m_as("degree"),45.,atol=tolerance.m_as("degree")) : 
         theta23.value -= tolerance
@@ -262,11 +282,11 @@ def get_separate_t23_octant_params(hypo_maker,inflection_point) :
     theta23_case1 = deepcopy(theta23)
     theta23_case2 = deepcopy(theta23)
 
-    #Get case 1, e.g. the current octant
+    # Get case 1, e.g. the current octant
     case1_octant_index = 0 if theta23_case1.value < inflection_point else 1
     theta23_case1.range = octants[case1_octant_index]
 
-    #Also get case 2, e.g. the other octant
+    # Also get case 2, e.g. the other octant
     case2_octant_index = 0 if case1_octant_index == 1 else 1
     theta23_case2.value = 2*inflection_point - theta23_case2.value
     theta23_case2.range = octants[case2_octant_index]
@@ -430,7 +450,7 @@ class Analysis(object):
                 minimizer_start_params = hypo_maker.params
 
             # Determine if checking theta23 octant
-            peforming_octant_check = check_octant and 'theta23' in hypo_maker.params.free.names
+            peforming_octant_check = check_octant and ( 'theta23' in hypo_maker.params.free.names )
 
             #Determine inflection point, e.g. transition between octants
             if peforming_octant_check :
