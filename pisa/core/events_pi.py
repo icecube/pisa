@@ -305,8 +305,6 @@ def split_nu_events_by_flavor_and_interaction(input_data) :
     # Loop through subcategories in the input data
     for sub_key,sub_data in input_data.items() :
 
-        sub_key = "genie" #TODO REMOVE
-
         # If key already is one of the desired keys, nothing new to do
         # Just move the data to the output container
         if sub_key in desired_keys :
