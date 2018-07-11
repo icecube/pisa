@@ -2,34 +2,39 @@
 
 from __future__ import absolute_import, division, print_function
 
-import copy, collections
+import copy
+from collections import OrderedDict, Mapping, Iterable
 
-import numpy as np
-import os
+import numpy as np 
 
-from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.log import logging
 from pisa.utils.fileio import from_file, to_file
 #from pisa.core.container import Container
 from pisa import FTYPE
-from pisa.utils.hdf import HDF5_EXTS
 from pisa.utils.numba_tools import WHERE
-
+from pisa.core.binning import OneDimBinning,MultiDimBinning
 
 
 __all__ = ["EventsPi","convert_nu_data_to_flat_format"]
 
 
-class EventsPi(collections.OrderedDict) :
+# Define the flavors and interactions for neutrino events
+FLAVORS = OrderedDict( nue=12, nuebar=-12, numu=14, numubar=-14, nutau=16, nutaubar=-16 )
+INTERACTIONS = OrderedDict( cc=1, nc=2 )
 
-    def __init__(self,name=None,*arg,**kw) :
+
+
+class EventsPi(OrderedDict) :
+
+    def __init__(self,name=None,neutrinos=True,*arg,**kw) :
 
         super(EventsPi, self).__init__(*arg, **kw)
 
         self.name = "events" if name is None else name
+        self.neutrinos = neutrinos
 
         # Define some metadata
-        self.metadata = collections.OrderedDict([
+        self.metadata = OrderedDict([
             ('detector', ''),
             ('geom', ''),
             ('runs', []),
@@ -40,63 +45,82 @@ class EventsPi(collections.OrderedDict) :
 
 
     def load_events_file(self,events_file,variable_mapping=None) :
+        '''
+        Fill this events container from an input HDF5 file filled with event data
+        Optionally can provide a variable mapping so select a subset of variables, 
+        rename them, etc 
+        '''
+
+        #
+        # Get inputs
+        #
 
         # Check format of variable_mapping
         # Should be a dict, where the keys are the destination variable names and the items
         # are either the source variable names, or a list of source variables names that will be combined
         if variable_mapping is not None :
-            if not isinstance(variable_mapping,collections.Mapping) :
+            if not isinstance(variable_mapping,Mapping) :
                 raise ValueError("'variable_mapping' must be a dict")
             for dst,src in variable_mapping.items() :
                 if not isinstance(dst,basestring) :
                     raise ValueError("'variable_mapping' 'dst' (key) must be a string")
                 if isinstance(src,basestring) :
                     pass #Nothing to do
-                elif isinstance(src,collections.Iterable) :
+                elif isinstance(src,Iterable) :
                     for v in src :
                         if not isinstance(v,basestring) :
                             raise ValueError("'variable_mapping' 'dst' (value) has at least one element that is not a string")
                 else :
                     raise ValueError("'variable_mapping' 'src' (value) must be a string, or a list of strings")
 
-        # Open the input file
-        rootname, ext = os.path.splitext(events_file)
-        ext = ext.replace('.', '').lower()
-        # read in entry-level attributes as metadata in the case of an hdf5 file
-        if ext in HDF5_EXTS:
-            input_data, attrs = from_file(events_file, return_attrs=True)
-            self.metadata.update(attrs)
-        else:
-            input_data = from_file(events_file)
-        cuts = self.metadata['cuts']
-        # ensure uniform type of 'cuts' entry independent of how it
-        # is stored in the events file (if at all) - this will be
-        # updated with user-defined cuts if applicable
-        if not isinstance(cuts, np.ndarray):
-            self.metadata['cuts'] = np.array(cuts)
+        # Open the input file (checking if already open)
+        if isinstance(events_file,basestring) : # File path
+            input_data = from_file(events_file) # Read file
+            assert isinstance(input_data,Mapping), "Input data is not a dict, unknown format (%s)"%type(input_data)
+        elif isinstance(events_file,Mapping) :
+            input_data = events_file # File has already been opened
+        else :
+            raise IOError("`events_file` type is not supported (%s)" % type(input_data))
 
 
-        # Input data should be a dict where each key is a category of data
-        if not isinstance(input_data,collections.Mapping) :
-            raise Exception("Input data is not a dict, unknown format (%s)" % type(input_data))
+        #
+        # Re-format inputs
+        #
+
+        # The following is intended to re-format input data into the desired format.
+        # This is required to handle various inout cases and to ensure backwards 
+        # compatibility with older input file formats.
+
+        # Convert to the required event keys, e.g. "numu_cc", "nutaubar_nc", etc...
+        if self.neutrinos :
+            input_data = split_nu_events_by_flavor_and_interaction(input_data)
 
         # The value for each category should itself be a dict of the event variables,
         # where each entry is has a variable name as the key and a np.array filled once 
         # per event as the value.
-        # For backwards compatibility, convert to thisfromat from knwon older formats first
-        convert_nu_data_to_flat_format(input_data)
-        for cat_key,cat_dict in input_data.items() :
-            if not isinstance(cat_dict,collections.Mapping) :
-                raise Exception("'%s' input data is not a dict, unknown format (%s)" % (cat_key,type(cat_dict)))
-            for var_key,var_data in cat_dict.items() :
-                if not isinstance(var_data,np.ndarray) :
-                    raise Exception("'%s/%s' input data is not a numpy array, unknown format (%s)" % (cat_key,var_key,type(var_data)))
+        # For backwards compatibility, convert to thisfromat from known older formats first
+        if self.neutrinos :
+            convert_nu_data_to_flat_format(input_data)
+            for sub_key,cat_dict in input_data.items() :
+                if not isinstance(cat_dict,Mapping) :
+                    raise Exception("'%s' input data is not a dict, unknown format (%s)" % (sub_key,type(cat_dict)))
+                for var_key,var_data in cat_dict.items() :
+                    if not isinstance(var_data,np.ndarray) :
+                        raise Exception("'%s/%s' input data is not a numpy array, unknown format (%s)" % (sub_key,var_key,type(var_data)))
 
         # Ensure backwards compatibility wiht the old style "oppo" flux variables
-        fix_oppo_flux(input_data)
+        if self.neutrinos :
+            fix_oppo_flux(input_data)
+
+
+        #
+        # Load the event data
+        #
 
         # Load events
-        # Should be organised under a single layer of keys, each representing some cateogry of input data
+        # Should be organised under a single layer of keys, each representing some categogry of input data
+
+        # Loop over the input types
         for data_key in input_data.keys() :
 
             if data_key in self :
@@ -106,14 +130,16 @@ class EventsPi(collections.OrderedDict) :
             #container = Container(data_key)
             #container.data_specs = "events"
 
-            self[data_key] = collections.OrderedDict()
+            self[data_key] = OrderedDict()
 
             # Loop through variable mapping
             # If none provided, just use all variables and keep the input names
             variable_mapping_to_use = zip(input_data[data_key].keys(),input_data[data_key].keys()) if variable_mapping is None else variable_mapping.items()
             for var_dst,var_src in variable_mapping_to_use :
 
-                #TODO What to do if variable doesn't exist? Right now just ignore it, but might want to raise exception. Will be complicated though by case of species with different variables (e.g. no axial mass in muons)
+                # Check the variable exists in the inout data
+                if var_src not in input_data[data_key] :
+                    raise ValueError("Variable '%s' cannot be found for '%s' events" % (var_src,data_key))
 
                 # Get the array data (stacking if multiple input variables defined) #TODO What about non-float data? Use dtype...
                 array_data = None
@@ -130,7 +156,8 @@ class EventsPi(collections.OrderedDict) :
                     #container.add_array_data(var_dst,array_data) #TODO use the special cases that Philipp added to simple_data_loader
                     self[data_key][var_dst] = array_data
                 else :
-                    logging.warn("Source variable(s) not present for '%s', skipping mapping : %s -> %s"%(data_key,var_src,var_dst))
+                    #logging.warn("Source variable(s) not present for '%s', skipping mapping : %s -> %s"%(data_key,var_src,var_dst))
+                    raise ValueError("Cannot find source variable(s) '%s' for '%s'"%(var_src,data_key))
 
             #self[data_key] = container
 
@@ -164,14 +191,8 @@ class EventsPi(collections.OrderedDict) :
 
         assert isinstance(keep_criteria, basestring)
 
-        if not keep_criteria:
-            logging.debug(
-                'Empty criteria. Returning events unmodified.'
-            )
-            return self
-
         # Check if have already applied these cuts
-        if keep_criteria in self.metadata['cuts']:
+        if keep_criteria in self.metadata['cuts'] :
             logging.debug("Criteria '%s' have already been applied. Returning"
                           " events unmodified.", keep_criteria)
             return self
@@ -181,10 +202,6 @@ class EventsPi(collections.OrderedDict) :
         # Prepare the post-cut data container
         cut_data = EventsPi(name=self.name)
         cut_data.metadata = copy.deepcopy(self.metadata)
-
-        logging.debug(
-            'Applying cuts "%s".' % keep_criteria
-        )
 
         # Loop over the data containers
         for key in self.keys() :
@@ -217,9 +234,7 @@ class EventsPi(collections.OrderedDict) :
         #TODO update to GPUs?
 
         # Record the cuts
-        # TODO: this can lead to many 'duplicate' 'cuts' in here
-        # -> implement parsing mechanism to prevent this
-        cut_data.metadata['cuts'] = np.append(cut_data.metadata['cuts'], keep_criteria)
+        cut_data.metadata["cuts"].append(keep_criteria)
 
         return cut_data
 
@@ -247,22 +262,13 @@ class EventsPi(collections.OrderedDict) :
             binning = [binning]
         binning = MultiDimBinning(binning)
 
-        # Check that the current cuts have not alrady been applied
-        current_cuts = self.metadata['cuts']
-        new_cuts = [dim.inbounds_criteria for dim in binning]
-        unapplied_cuts = [c for c in new_cuts if c not in current_cuts]
-        if len(unapplied_cuts) == 0:
-            logging.debug("All inbounds criteria '%s' have already been"
-                          " applied. Returning events unmodified.", new_cuts)
-            return self
+        # Define a cut to remove events outside of the binned region
+        bin_edge_cuts = [dim.inbounds_criteria for dim in binning]
+        bin_edge_cuts = " & ".join([ str(x) for x in bin_edge_cuts ])
 
-        # Create a single cut from all unapplied cuts
-        keep_criteria = ' & '.join(['(%s)' % c for c in unapplied_cuts])
+        # Apply the cut
+        return self.apply_cut(bin_edge_cuts)
 
-        # Do the cutting
-        cut_data = self.apply_cut(keep_criteria=keep_criteria)
-
-        return cut_data
 
 
     def __str__(self) : #TODO Handle non-array data cases
@@ -281,6 +287,58 @@ class EventsPi(collections.OrderedDict) :
             
 
 
+def split_nu_events_by_flavor_and_interaction(input_data) :
+    '''
+    Split neutrino events by nu vs nubar, and CC vs NC
+    '''
+
+    # Check input data format
+    assert isinstance(input_data,Mapping)
+    assert len(input_data) > 0
+
+    # Define the desired keys
+    desired_keys = [ "%s_%s"%(fk,ik) for fk,fc in FLAVORS.items() for ik,ic in INTERACTIONS.items() ]
+
+    # Output data container to fill
+    output_data = OrderedDict()
+
+    # Loop through subcategories in the input data
+    for sub_key,sub_data in input_data.items() :
+
+        # If key already is one of the desired keys, nothing new to do
+        # Just move the data to the output container
+        if sub_key in desired_keys :
+            if sub_key in output_data :
+                output_data = np.append(output_data[sub_key],sub_data)
+            else :
+                output_data[sub_key] = sub_data
+            continue
+
+        # Check have PDG code
+        assert "pdg_code" in sub_data, "No 'pdg_code' variable found for %s data" % sub_key
+
+        # Check these are neutrino events
+        assert np.all(np.isin(np.abs(sub_data["pdg_code"]),FLAVORS.values())), "%s data does not appear to be a neutrino data" % sub_key
+
+        # Check have the interaction information
+        assert "interaction" in sub_data, "No 'interaction' variable found for %s data" % sub_key
+
+        # Define a mask to select the events for each desired output key
+        key_mask_pairs = [ ( "%s_%s"%(fk,ik), (sub_data["pdg_code"]==fc)&(sub_data["interaction"]==ic) ) for fk,fc in FLAVORS.items() for ik,ic in INTERACTIONS.items() ]
+
+        # Loop over the keys/masks and write the data for each casse to the output container
+        for key,mask in key_mask_pairs :
+            if np.any(mask) : # Only if mask has some data
+                if key in output_data :
+                    output_data = np.append(output_data[key],sub_data)
+                else :
+                    output_data[key] = sub_data
+
+    # Check how it went
+    assert len(output_data) > 0, "Failed splitting neutrino events by flavor/interaction"
+
+    return output_data
+
 
 def convert_nu_data_to_flat_format(input_data) :
     """Format for events files is now a single layer of categories.
@@ -289,14 +347,12 @@ def convert_nu_data_to_flat_format(input_data) :
     the format [nu_flavor][nc/cc], whilst new ones are [nu_flavor_nc/cc]
 
     """
-
-    int_keys = ["nc","cc"]
     for top_key,top_dict in input_data.items() :
-        if set(top_dict.keys()) == set(int_keys) :
+        if set(top_dict.keys()) == set(INTERACTIONS.keys()) :
             for int_key in int_keys :
                 new_top_key = top_key + "_" + int_key
                 if "_bar" in top_key :
-                    new_top_key = new_top_key.replace("_bar","bar") #numu_bar -> numubar conversion
+                    new_top_key = new_top_key.replace("_bar","bar") # numu_bar -> numubar conversion
                 input_data[new_top_key] = top_dict.pop(int_key)
             input_data.pop(top_key)
 
