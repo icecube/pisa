@@ -154,13 +154,8 @@ def evolve_states(cz_shape, propagators, ini_states, nsq_earth_atm, osc_params):
             'nuSQuIDS interface does not seem to support NSI parameters,'
             ' but you have requested to set at least one.'
         )
-    #import datetime
-    #dt1 = datetime.timedelta(seconds=0.)
-    #dt2 = datetime.timedelta(seconds=0.)
-    #dt3 = datetime.timedelta(seconds=0.)
-    for (input_name, nuSQ) in propagators.iteritems():
 
-        #t1 = datetime.datetime.now()
+    for (input_name, nuSQ) in propagators.iteritems():
 
         nu_flav_no = nuSQ.GetNumNeu()
         nuSQ.Set_EarthModel(nsq_earth_atm)
@@ -170,10 +165,8 @@ def evolve_states(cz_shape, propagators, ini_states, nsq_earth_atm, osc_params):
         if nu_flav_no == 4:
             nuSQ.Set_SquareMassDifference(3, osc_params.dm41)
             nuSQ.Set_MixingAngle(1, 3, osc_params.theta14)
-
         nuSQ.Set_SquareMassDifference(1, osc_params.dm21)
         nuSQ.Set_SquareMassDifference(2, osc_params.dm31) #TODO Should this be dm32?
-
         nuSQ.Set_CPPhase(0, 2, osc_params.deltacp)
 
         # invoke odd mechanism to set NSI parameters
@@ -192,23 +185,9 @@ def evolve_states(cz_shape, propagators, ini_states, nsq_earth_atm, osc_params):
             nuSQ.Set_DecoherenceGammaMatrix(osc_params.gamma21,osc_params.gamma31,osc_params.gamma32)
             nuSQ.Set_EnergyDependence(osc_params.n_energy)
 
-        #t2 = datetime.datetime.now()
-
-        #print("+++ %s INI STATE : SHAPE = %s : SIZE = %s : NUM KB = %s" % (input_name,ini_states[input_name].shape,ini_states[input_name].size,ini_states[input_name].nbytes*1.e-3) )
-
         nuSQ.Set_initial_state(ini_states[input_name], nsq.Basis.flavor)
 
-        #t3 = datetime.datetime.now()
-
         nuSQ.EvolveState()
-
-        #t4 = datetime.datetime.now()
-
-        #dt1 = t2 - t1
-        #dt2 = t3 - t2
-        #dt2 = t4 - t3
-
-        #print("+++ Took : Setters = %s : Set_initial_state = %s : EvolveState = %s" % (dt1,dt2,dt3) )
 
 
 def osc_probs(nuflav, propagators, true_energies, true_coszens, prob_e=None, prob_mu=None ):
@@ -270,8 +249,10 @@ def osc_probs(nuflav, propagators, true_energies, true_coszens, prob_e=None, pro
     # evaluate oscillation probabilties
     for (i, (cz, en)) in enumerate(zip(true_coszens, true_energies)):
         for (input_name, nuSQ) in propagators.iteritems():
-            if not isinstance(en.dtype,np.float64) : en = np.float64(en)  #TODO Current nuSQuIDS pybindings can only accept double, not float. Fix this (overload) and remove this hack
-            if not isinstance(cz.dtype,np.float64) : cz = np.float64(cz)  #TODO Current nuSQuIDS pybindings can only accept double, not float. Fix this (overload) and remove this hack
+            if not isinstance(en.dtype,np.float64) : 
+                en = np.float64(en)  #TODO Current nuSQuIDS pybindings can only accept double, not float. Fix this (overload) and remove this hack
+            if not isinstance(cz.dtype,np.float64) : 
+                cz = np.float64(cz)  #TODO Current nuSQuIDS pybindings can only accept double, not float. Fix this (overload) and remove this hack
             chan_prob = nuSQ.EvalFlavor(kflav, cz, en, nutype)
             if input_name == "nue":
                 prob_e[i] = chan_prob

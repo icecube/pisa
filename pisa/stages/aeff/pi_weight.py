@@ -17,13 +17,12 @@ class pi_weight(PiStage):
 
     Paramaters
     ----------
-
-    livetime : Quantity with time units
-
-    weight_scale : dimensionless Quantity
-
-    Notes
-    -----
+    params : ParamSet or sequence with which to instantiate a ParamSet.
+      Expected params are:
+        livetime : Quantity [time]
+          Detector livetime for scaling template 
+        weight_scale : Quantity [dimensionless]
+          Overall scaling/normalisation of template
 
     """
     def __init__(self,

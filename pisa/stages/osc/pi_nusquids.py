@@ -70,6 +70,19 @@ class pi_nusquids(PiStage):
 
     Uses the standard parameters as required by a PISA pi stage (see `pisa/core/pi_stage.py`)
 
+    use_decoherence : bool
+        set to true to include neutrino decoherence in the oscillation probability calculation
+    num_decoherence_gamma : int
+        number of decoherence gamma parameters to be considered in the decoherence model
+        must be ether 1 or 3
+
+    use_nsi : bool
+        set to true to include Non-Standard Interactions (NSI) in the oscillation probability calculation
+
+    num_neutrinos=3,
+        use_spline=False,
+                ):
+
     Expected contents of `params` ParamSet:
         detector_depth : float
         earth_model : PREM file path
@@ -323,7 +336,7 @@ class pi_nusquids(PiStage):
                 prob_e_buff,prob_mu_buff = container['prob_e'].get(WHERE), container['prob_mu'].get(WHERE)
 
             # Get the oscillation probs, writing them to the container
-            _,_ = osc_probs(  # pylint: disable=unused-variable
+            osc_probs(  # pylint: disable=unused-variable
                 nuflav=nuflav, 
                 propagators=self.props,
                 true_energies=en_eval,
