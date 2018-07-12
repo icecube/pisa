@@ -252,7 +252,7 @@ def override_min_opt(minimizer_settings, min_opt):
         minimizer_settings['options'][opt] = val
 
 
-def minimizer_x0_bounds(free_params, minimizer_settings, padding_factor=10.,
+def minimizer_x0_bounds(free_params, minimizer_settings, padding_factor=1.,
                         randomize_params=None, random_state=None):
     """Ensure values of free parameters are within their bounds
     (given floating point precision) and adapt minimizer bounds
@@ -315,15 +315,17 @@ def minimizer_x0_bounds(free_params, minimizer_settings, padding_factor=10.,
     clipped_x0 = []
     for param, x0_val, bds in zip(free_params, x0, bounds):
         if x0_val < bds[0] - EPSILON:
-            raise ValueError(
+            logging.warn(
                 'Param %s, initial scaled value %.17e is below lower bound'
-                ' %.17e.' % (param.name, x0_val, bds[0])
+                ' %.17e. Fixing this.' % (param.name, x0_val, bds[0])
             )
+            x0_val = bds[0] + EPSILON
         if x0_val > bds[1] + EPSILON:
-            raise ValueError(
+            logging.warn(
                 'Param %s, initial scaled value %.17e exceeds upper bound'
-                ' %.17e.' % (param.name, x0_val, bds[1])
+                ' %.17e. Fixing this.' % (param.name, x0_val, bds[1])
             )
+            x0_val = bds[1] - EPSILON
 
         clipped_x0_val = np.clip(x0_val, a_min=bds[0], a_max=bds[1])
         clipped_x0.append(clipped_x0_val)
