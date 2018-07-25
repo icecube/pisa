@@ -91,10 +91,6 @@ class EventsPi(OrderedDict) :
         # This is required to handle various inout cases and to ensure backwards 
         # compatibility with older input file formats.
 
-        # Convert to the required event keys, e.g. "numu_cc", "nutaubar_nc", etc...
-        if self.neutrinos :
-            input_data = split_nu_events_by_flavor_and_interaction(input_data)
-
         # The value for each category should itself be a dict of the event variables,
         # where each entry is has a variable name as the key and a np.array filled once 
         # per event as the value.
@@ -107,6 +103,10 @@ class EventsPi(OrderedDict) :
                 for var_key,var_data in cat_dict.items() :
                     if not isinstance(var_data,np.ndarray) :
                         raise Exception("'%s/%s' input data is not a numpy array, unknown format (%s)" % (sub_key,var_key,type(var_data)))
+
+        # Convert to the required event keys, e.g. "numu_cc", "nutaubar_nc", etc...
+        if self.neutrinos :
+            input_data = split_nu_events_by_flavor_and_interaction(input_data)
 
         # Ensure backwards compatibility wiht the old style "oppo" flux variables
         if self.neutrinos :
@@ -137,19 +137,20 @@ class EventsPi(OrderedDict) :
             variable_mapping_to_use = zip(input_data[data_key].keys(),input_data[data_key].keys()) if variable_mapping is None else variable_mapping.items()
             for var_dst,var_src in variable_mapping_to_use :
 
-                # Check the variable exists in the inout data
-                if var_src not in input_data[data_key] :
-                    raise ValueError("Variable '%s' cannot be found for '%s' events" % (var_src,data_key))
-
                 # Get the array data (stacking if multiple input variables defined) #TODO What about non-float data? Use dtype...
                 array_data = None
                 if not np.isscalar(var_src) :
+                    for this_var_src in var_src :
+                        if this_var_src not in input_data[data_key] :
+                            raise ValueError("Variable '%s' cannot be found for '%s' events" % (this_var_src,data_key))
                     array_data_to_stack = [ input_data[data_key][var].astype(FTYPE) for var in var_src if var in input_data[data_key] ]
                     if len(array_data_to_stack) == len(var_src) :
                         array_data = np.stack(array_data_to_stack,axis=1)
                 else :
                     if var_src in input_data[data_key] :
                         array_data = input_data[data_key][var_src].astype(FTYPE)
+                    else : 
+                        raise ValueError("Variable '%s' cannot be found for '%s' events" % (var_src,data_key))
 
                 # Add each array to the event #TODO Memory copies?
                 if array_data is not None :
@@ -349,7 +350,7 @@ def convert_nu_data_to_flat_format(input_data) :
     """
     for top_key,top_dict in input_data.items() :
         if set(top_dict.keys()) == set(INTERACTIONS.keys()) :
-            for int_key in int_keys :
+            for int_key in INTERACTIONS.keys() :
                 new_top_key = top_key + "_" + int_key
                 if "_bar" in top_key :
                     new_top_key = new_top_key.replace("_bar","bar") # numu_bar -> numubar conversion
