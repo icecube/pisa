@@ -31,6 +31,7 @@ from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.map import Map, MapSet
 from pisa.utils.fileio import from_file, to_file
 from pisa.utils.log import logging, set_verbosity
+from pisa import ureg
 
 
 __all__ = ['parse_args', 'main']
@@ -135,7 +136,7 @@ def parse_fit_config(fit_cfg):
     return fit_cfg, sys_list, combine_regex
 
 
-def make_discrete_sys_distributions(fit_cfg):
+def make_discrete_sys_distributions(fit_cfg,set_params=None):
     """Generate and store mapsets for different discrete systematics sets
     (with a single set characterised by a dedicated pipeline configuration)
 
@@ -150,6 +151,13 @@ def make_discrete_sys_distributions(fit_cfg):
         container with the processed input data including MapSets 
         resulting from each input pipelines
     """
+
+    # check optional `set_params`
+    if set_params is not None :
+        assert isinstance(set_params,Mapping), "`set_params` must be dict-like"
+        for param_name,param_value in set_params.items() :
+            assert isinstance(param_name,basestring), "`set_params` keys must be strings (parameter name)"
+            assert isinstance(param_value,ureg.Quantity), "`set_params` values must be Quantities (parameter values)"
 
     # parse the fit config and get other things which we need further down
     fit_cfg, sys_list, combine_regex = parse_fit_config(fit_cfg)
@@ -205,9 +213,20 @@ def make_discrete_sys_distributions(fit_cfg):
                 'Generating maps for discrete systematics point: %s. Using'
                 ' pipeline config at %s.' % (point_str, pipeline_cfg)
             ) # pylint: disable=logging-not-lazy
+
             # make a dedicated distribution maker for each systematics set
             distribution_maker = DistributionMaker(pipeline_cfg)
-            mapset = distribution_maker.get_outputs(return_sum=False)[0]
+
+            # update param if requested
+            if set_params is not None :
+                for param_name,param_value in set_params.items() :
+                    assert param_name in distribution_maker.params.names, "Unknown param '%s' in `set_params`" % param_name
+                    assert param_value.units == distribution_maker.params[param_name].units, "Incorrect units for param '%s' in `set_params`" % param_name
+                    distribution_maker.params[param_name].value = param_value
+                    print("Changed param '%s' to %s" % (param_name,param_value))
+
+            # run the distrobutuon maker to get the mapset
+            mapset = distribution_maker.get_outputs(return_sum=False)[0] #TODO This assumes only one pipeline, either make more general or enforce
 
             if combine_regex:
                 logging.info(
@@ -544,14 +563,15 @@ def fit_discrete_sys_distributions(input_data,p0=None) :
     return fit_results
 
 
-def hyperplane(fit_cfg, set_param=None):
+def hyperplane(fit_cfg, set_params=None):
     """Wrapper around distribution generation and fitting functions.
 
     Parameters
     ----------
     fit_cfg : string
         path to a fit cfg file
-    set_param : not implemented
+    set_params : dict
+        dictionary of param names and values to manually set
 
     Returns
     -------
@@ -561,10 +581,7 @@ def hyperplane(fit_cfg, set_param=None):
         container holding the results of the hyperplane fits
     """
 
-    if set_param:
-        raise NotImplementedError()
-
-    input_data = make_discrete_sys_distributions(fit_cfg=fit_cfg)
+    input_data = make_discrete_sys_distributions(fit_cfg=fit_cfg,set_params=set_params)
     fit_results = fit_discrete_sys_distributions(input_data=input_data)
 
     return input_data,fit_results
