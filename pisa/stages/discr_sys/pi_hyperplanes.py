@@ -24,24 +24,26 @@ class pi_hyperplanes(PiStage):
     ----------
 
     fit_results_file : str
-    dom_eff : dimensionless quantity
-    hole_ice : dimensionless quantity
-    hole_ice_fwd : dimensionless quantity
-    spiciness : dimensionless quantity
-    bulk_scatter : dimensionless quantity
-    bulk_abs : dimensionless quantity
-    rde : dimensionless quantity
+
+    params : ParamSet
+        dom_eff : dimensionless quantity
+        hole_ice : dimensionless quantity
+        hole_ice_fwd : dimensionless quantity
+        spiciness : dimensionless quantity
+        bulk_scatter : dimensionless quantity
+        bulk_abs : dimensionless quantity
+        rde : dimensionless quantity
 
     Notes
     -----
 
     the fit_results_file must contain the following keys:
-        sys_list: containing the order of the parameters
-        <map_name> : the resulting hyperplane coeffs from the fits, first
-             entry is constant, followed by the linear ones in the order
-             defined in `sys_list`
+        param_names : list of the parameters fitted during the hyerplane fits (order is important)
         binning_hash : hash of binning used in fits
-
+        hyperplanes : container with hyperplane fit information for each data type, 
+            <map_name> : hyperplane data is subdivded by event types (map names)
+                fit_results : num params + 1 fit parameters per map bin
+                              order of params is the same as defined in param_names
     """
     def __init__(self,
                  fit_results_file,
@@ -61,7 +63,7 @@ class pi_hyperplanes(PiStage):
 
         expected_params = (
             'dom_eff',
-            #'rde',
+            'rde',
             'hole_ice',
             'hole_ice_fwd',
             'spiciness',
@@ -124,12 +126,12 @@ class pi_hyperplanes(PiStage):
         compatibility"""
         self.fit_results = from_file(self.fit_results_file)
         self.fit_binning_hash = self.fit_results.get('binning_hash', None)
-        #if not self.fit_binning_hash:
-        #    raise KeyError(
-        #        'Cannot determine the hash of the binning employed'
-        #        ' for the hyperplane fits. Correct application of'
-        #        ' fits would not be guaranteed!'
-        #    )
+        if not self.fit_binning_hash:
+            raise KeyError(
+                'Cannot determine the hash of the binning employed'
+                ' for the hyperplane fits. Correct application of'
+                ' fits would not be guaranteed!'
+            )
 
         self.data.data_specs = self.calc_specs
 
@@ -137,12 +139,33 @@ class pi_hyperplanes(PiStage):
             for key, val in self.links.items():
                 self.data.link_containers(key, val)
 
+        # handle backwards compatibility for old style fit results files
+        if "hyperplanes" in self.fit_results :
+            self.using_old_fit_file = False
+        elif "sys_list" in self.fit_results :
+            self.using_old_fit_file = True
+        else :
+            raise ValueError(
+                'Unrecognised format for input fit file'
+            )
+
+        # get the hyperplane fits for each container type
+        # reshape to a 1D array to match container
         for container in self.data:
-            container['hyperplane_results'] = self.fit_results[container.name].reshape(container.size, -1)
+            if self.using_old_fit_file :
+                fits = self.fit_results[container.name]
+            else :
+                fits = self.fit_results["hyperplanes"][container.name]["fit_params"]
+            container['hyperplane_results'] = fits.reshape(container.size, -1)
             container['hyperplane_scalefactors'] = np.empty(container.size, dtype=FTYPE)
 
+        # get the list of systematicc parameter names fitted
         # need to conserve order here!
-        self.fit_sys_list = self.fit_results['sys_list']
+        if self.using_old_fit_file :
+            self.fit_sys_list = self.fit_results['sys_list']
+        else :
+            self.fit_sys_list = self.fit_results['param_names']
+
         # do not require all of the expected parameters to be in the fit file
         # as it should be possible to run this stage with a subset of all
         # supported systematics
@@ -152,21 +175,22 @@ class pi_hyperplanes(PiStage):
                 'Fit results contain systematic parameters unaccounted for'
                 ' by this service, i.e. %s.' % excess
             )
+            
         # record the "inactive" systematics, i.e. those which we have no handle
         # on and which can thus not be used in the computation
         self.inactive_sys_params = (self.sys_params).difference(set(self.fit_sys_list))
 
         # check compatibility
-        #if self.data.data_mode == 'binned':
-        #    # let's be extremely strict here for now: require
-        #    # the absolutely identical binning (full hash)
-        #    binning_hash = self.data.data_specs.hash
-        #    if not binning_hash == self.fit_binning_hash:
-        #        raise ValueError(
-        #            'Disagreeing hash values between fit binning and the'
-        #            ' one to be used in the application of the hyperplane'
-        #            ' fits!'
-        #        )
+        if self.data.data_mode == 'binned':
+            # let's be extremely strict here for now: require
+            # the absolutely identical binning (full hash)
+            binning_hash = self.data.data_specs.hash
+            if not binning_hash == self.fit_binning_hash:
+                raise ValueError(
+                    'Disagreeing hash values between fit binning and the'
+                    ' one to be used in the application of the hyperplane'
+                    ' fits!'
+                )
         self.data.unlink_containers()
 
     @profile
