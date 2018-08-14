@@ -20,46 +20,6 @@ pisa.stages.flux.honda module
     :undoc-members:
     :show-inheritance:
 
-pisa.stages.flux.mceq module
-----------------------------
-
-.. automodule:: pisa.stages.flux.mceq
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.stages.flux.pi\_honda\_ip module
--------------------------------------
-
-.. automodule:: pisa.stages.flux.pi_honda_ip
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.stages.flux.pi\_mceq\_barr module
---------------------------------------
-
-.. automodule:: pisa.stages.flux.pi_mceq_barr
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.stages.flux.pi\_mceq\_barr.yapf module
--------------------------------------------
-
-.. automodule:: pisa.stages.flux.pi_mceq_barr.yapf
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.stages.flux.pi\_simple module
-----------------------------------
-
-.. automodule:: pisa.stages.flux.pi_simple
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 Module contents
 ---------------

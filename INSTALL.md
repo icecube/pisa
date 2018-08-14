@@ -26,13 +26,11 @@ _Note that terminal commands below are intended for the bash shell. You'll have 
     `git clone https://github.com/jllanfranchi/pisa.git $PISA`
 1. Install the ***Python 2.7 / 64 bit*** Anaconda or Miniconda python distribution for either Mac or Linux (as your user, _not_ as root), if you don’t have it already
     * Anaconda (full-featured Python distribution, ~500 MB)<br>
-        https://www.anaconda.com/download
+        https://www.anaconda.com/download/#linux
     * Miniconda (just the essentials, ~40 MB)<br>
         https://conda.io/miniconda.html
-1. Install required dependencies<br>
-    `conda install swig`
-1. Install PISA including optional packages for GPU (`cuda`), PISA pi stages (`numba`) and development tools (`develop`), if desired<br>
-    `pip install -e $PISA[cuda,numba,develop] -r $PISA/requirements.txt -vvv`
+1. Install PISA including optional packages for GPU (`cuda` and `numba`) and development tools (`develop`)<br>
+`pip install -e $PISA[cuda,numba,develop] -r $PISA/requirements.txt -vvv`
 1. Run a quick test: generate templates in the staged mode<br>
 `$PISA/pisa/core/pipeline.py --pipeline settings/pipeline/example.cfg  --outdir /tmp/pipeline_output --intermediate --pdf -v`
 
@@ -74,11 +72,6 @@ Also note that Python, HDF5, and pip support come pre-packaged or as `conda`-ins
 * [hdf5](http://www.hdfgroup.org/HDF5) — install with `--enable-cxx` option
   * In Ubuntu,<br>
     `sudo apt install libhdf5-10`
-* [swig](http://swig.org)
-  * Using Anaconda/Miniconda:<br>
-    `conda install swig`
-  * In Ubuntu, you can also install via:<br>
-    `sudo apt install swig`
 
 Required Python modules that are installed automatically when you use the `pip` command detailed later:
 * [configparser](https://pypi.python.org/pypi/configparser)
@@ -95,12 +88,6 @@ Required Python modules that are installed automatically when you use the `pip` 
 * [simplejson](https://github.com/simplejson/simplejson) version >= 3.2.0 required
 * [tables](http://www.pytables.org)
 * [uncertainties](https://pythonhosted.org/uncertainties)
-* [kde](svn co http://code.icecube.wisc.edu/svn/sandbox/schoenen/kde/releases/V00-01-01 kde)
-  * You can install the `kde` module manually if it fails to install automatically:
-    * Including CUDA support:<br>
-      `pip install svn+http://code.icecube.wisc.edu/svn/sandbox/schoenen/kde/releases/V00-01-01#egg=kde[cuda]`
-    * Without CUDA support:<br>
-      `pip install svn+http://code.icecube.wisc.edu/svn/sandbox/schoenen/kde/releases/V00-01-01#egg=kde`
 
 
 ### Optional Dependencies

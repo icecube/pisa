@@ -1,35 +1,19 @@
-pisa.stages.discr\_sys package
-==============================
+pisa.stages.discr_sys package
+=============================
 
 Submodules
 ----------
 
-pisa.stages.discr\_sys.fit module
----------------------------------
+pisa.stages.discr_sys.fit module
+--------------------------------
 
 .. automodule:: pisa.stages.discr_sys.fit
     :members:
     :undoc-members:
     :show-inheritance:
 
-pisa.stages.discr\_sys.hyperplane module
-----------------------------------------
-
-.. automodule:: pisa.stages.discr_sys.hyperplane
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.stages.discr\_sys.pi\_hyperplanes module
----------------------------------------------
-
-.. automodule:: pisa.stages.discr_sys.pi_hyperplanes
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.stages.discr\_sys.polyfits module
---------------------------------------
+pisa.stages.discr_sys.polyfits module
+-------------------------------------
 
 .. automodule:: pisa.stages.discr_sys.polyfits
     :members:

@@ -12,14 +12,6 @@ pisa.stages.xsec.genie module
     :undoc-members:
     :show-inheritance:
 
-pisa.stages.xsec.genie\_sys module
-----------------------------------
-
-.. automodule:: pisa.stages.xsec.genie_sys
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 Module contents
 ---------------

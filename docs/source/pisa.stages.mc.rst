@@ -36,14 +36,6 @@ pisa.stages.mc.gpu module
     :undoc-members:
     :show-inheritance:
 
-pisa.stages.mc.mc module
-------------------------
-
-.. automodule:: pisa.stages.mc.mc
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pisa.stages.mc.weight module
 ----------------------------
 

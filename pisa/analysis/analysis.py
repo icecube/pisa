@@ -999,8 +999,9 @@ class Analysis(object):
                              for p in hypo_maker.params.free])
 
         if pprint:
-            sys.stdout.write('\r' + msg)
+            sys.stdout.write(msg)
             sys.stdout.flush()
+            sys.stdout.write('\b' * len(msg))
         else:
             logging.trace(msg)
 
