@@ -1,5 +1,5 @@
 """
-PISA pi stage to apply effective area weights
+PISA pi stage to apply weights
 """
 from __future__ import absolute_import, print_function, division
 
@@ -9,29 +9,20 @@ from pisa.utils.profiler import profile
 from pisa.utils import vectorizer
 
 
-class pi_aeff(PiStage):
+class pi_weight(PiStage):
     """
-    PISA Pi stage to apply aeff weights.
-    This combines the detector effective area with the flux weights calculated 
-    in an earlier stage to compute the weights.
-    Various scalings can be applied for particular event classes.
+    PISA Pi stage to apply weights.
+    This assumes a weight has already been calculated.
     The weight is then multiplied by the livetime to get an event count.
 
     Paramaters
     ----------
-
-    livetime : Quantity with time units
-
-    aeff_scale : dimensionless Quantity
-
-    nutau_cc_norm : dimensionless Quantity
-
-    nutau_norm : dimensionless Quantity
-
-    nu_nc_norm : dimensionless Quantity
-
-    Notes
-    -----
+    params : ParamSet or sequence with which to instantiate a ParamSet.
+      Expected params are:
+        livetime : Quantity [time]
+          Detector livetime for scaling template 
+        weight_scale : Quantity [dimensionless]
+          Overall scaling/normalisation of template
 
     """
     def __init__(self,
@@ -46,23 +37,20 @@ class pi_aeff(PiStage):
                 ):
 
         expected_params = ('livetime',
-                           'aeff_scale',
-                           'nutau_cc_norm',
-                           'nutau_norm',
-                           'nu_nc_norm',
+                           'weight_scale',
                           )
         input_names = ()
         output_names = ()
 
         # what are the keys used from the inputs during apply
-        input_apply_keys = ('weighted_aeff',
+        input_apply_keys = ('weights',
                            )
         # what keys are added or altered for the outputs during apply
         output_apply_keys = ('weights',
                             )
 
         # init base class
-        super(pi_aeff, self).__init__(data=data,
+        super(pi_weight, self).__init__(data=data,
                                       params=params,
                                       expected_params=expected_params,
                                       input_names=input_names,
@@ -86,22 +74,9 @@ class pi_aeff(PiStage):
     @profile
     def apply_function(self):
 
-        # read out
-        aeff_scale = self.params.aeff_scale.m_as('dimensionless')
+        weight_scale = self.params.weight_scale.m_as('dimensionless')
         livetime_s = self.params.livetime.m_as('sec')
-        nutau_cc_norm = self.params.nutau_cc_norm.m_as('dimensionless')
-        nutau_norm = self.params.nutau_norm.m_as('dimensionless')
-        nu_nc_norm = self.params.nu_nc_norm.m_as('dimensionless')
+        scale = weight_scale * livetime_s
 
         for container in self.data:
-            scale = aeff_scale * livetime_s
-            if container.name in ['nutau_cc', 'nutaubar_cc']:
-                scale *= nutau_cc_norm
-            if 'nutau' in container.name:
-                scale *= nutau_norm
-            if 'nc' in container.name:
-                scale *= nu_nc_norm
-            vectorizer.multiply_and_scale(scale,
-                                          container['weighted_aeff'],
-                                          out=container['weights'],
-                                         )
+            vectorizer.scale(scale,container['weights'],out=container['weights'])

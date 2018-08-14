@@ -31,7 +31,6 @@ class atm_muons(PiStage):
 
     Paramaters
     ----------
-
     params : ParamSet or instantiable thereto
         Parameters for steering the stage. The following parameters must be included:
 

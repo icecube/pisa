@@ -31,7 +31,7 @@ __all__ = ['DecoherenceParams', 'calc_decoherence_probs', "decoherence"]
 __author__ = 'T. Stuttard, M. Jensen'
 
 
-class DecoherenceParams(OscParams) :
+class DecoherenceParams(OscParams) : #TODO Start using pi_osc_params instead...
     '''
     Container for decoherence oscillation params
     This includes standard oscillation params plus additional 'Gamma' terms parameterising decoherence
