@@ -403,7 +403,7 @@ class Analysis(object):
             Whether to carry out a blind analysis. This hides actual parameter
             values from display and disallows these (as well as Jacobian,
             Hessian, etc.) from ending up in logfiles.
-            
+
         external_priors_penalty : func
             User defined prior penalty function. Adds an extra penalty
             to the metric that is minimized, depending on the input function.
@@ -416,7 +416,7 @@ class Analysis(object):
         alternate_fits : list of `fit_info` from other fits run
 
         """
-        
+
         if ( not check_octant ) and fit_octants_separately :
             raise ValueError("If 'check_octant' is False, 'fit_octants_separately' must be False")
 
@@ -449,7 +449,7 @@ class Analysis(object):
             else:
                 # Saves the current minimizer start values for the octant check
                 minimizer_start_params = hypo_maker.params
-                
+
             # Determine if checking theta23 octant
             peforming_octant_check = check_octant and ( 'theta23' in hypo_maker.params.free.names )
 
@@ -485,7 +485,7 @@ class Analysis(object):
                 else:
                     for param in minimizer_start_params:
                         hypo_maker.params[param.name].value = param.value
-                
+
                 #Determine new values for theta23 parameter in the other octant
                 if fit_octants_separately :
                     #Use with the second case
@@ -570,7 +570,7 @@ class Analysis(object):
                     alternate_fits.append(new_fit_info)
                     if not blind:
                         logging.debug('Accepting initial-octant fit')
-                        
+
                 # If changed the range of the theta23 param whilst checking octants
                 # reset the range now.
                 # Keep the final value though (is up to the reset_free param
@@ -610,7 +610,7 @@ class Analysis(object):
             Whether to show live-update of minimizer progress.
 
         blind : bool
-        
+
         external_priors_penalty : func
             User defined prior penalty function
 
@@ -984,7 +984,7 @@ class Analysis(object):
             fits the width of your TTY).
 
         blind : bool
-        
+
         external_priors_penalty : func
             User defined prior penalty function
 
@@ -1064,8 +1064,9 @@ class Analysis(object):
                              for p in hypo_maker.params.free])
 
         if pprint:
-            sys.stdout.write('\r' + msg)
+            sys.stdout.write(msg)
             sys.stdout.flush()
+            sys.stdout.write('\b' * len(msg))
         else:
             logging.trace(msg)
 

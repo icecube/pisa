@@ -17,7 +17,7 @@ required, in addition to a ``[binning]`` section:
     #include file_y.cfg as y
 
     [pipeline]
-    order = stageA.serviceA, stageB.serviceB
+    order = stageA:serviceA, stageB:serviceB
 
     [binning]
     #include generic_binning.cfg
@@ -28,7 +28,7 @@ required, in addition to a ``[binning]`` section:
     binning1.axis2 = {'num_bins':10, 'is_lin':True,
                       'domain':[1,5], 'tex': r'A_2'}
 
-    [stageA.serviceA]
+    [stageA:serviceA]
     input_binning = bining1
     output_binning = binning1
     error_method = None
@@ -38,7 +38,7 @@ required, in addition to a ``[binning]`` section:
     param.p1.fixed = False
     param.p1.range = nominal + [-2.0, +2.0] * sigma
 
-    [stageB.serviceB]
+    [stageB:serviceB]
     ...
 
 * ``#include`` statements can be used to include other config files. The
