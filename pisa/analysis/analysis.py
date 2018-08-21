@@ -17,12 +17,13 @@ import numpy as np
 import scipy.optimize as optimize
 
 from pisa import EPSILON, FTYPE, ureg
+from pisa.core.detectors import Detectors
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
 from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging
 from pisa.utils.fileio import to_file
-from pisa.utils.stats import METRICS_TO_MAXIMIZE
+from pisa.utils.stats import METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE
 
 
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD',
@@ -244,7 +245,7 @@ def get_separate_t23_octant_params(hypo_maker,inflection_point) :
 
     Parameters
     ----------
-    hypo_maker : DistributionMaker
+    hypo_maker : DistributionMaker or Detector
         The hypothesis maker being used by the fitter
     inflection_point : quantity
         Point distinguishing between the two octants, e.g. 45 degrees
@@ -349,11 +350,11 @@ class Analysis(object):
 
         Parameters
         ----------
-        data_dist : MapSet
+        data_dist : MapSet or List of MapSets
             Data distribution(s). These are what the hypothesis is tasked to
             best describe during the optimization process.
 
-        hypo_maker : DistributionMaker or instantiable thereto
+        hypo_maker : Detectors, DistributionMaker or instantiable thereto
             Generates the expectation distribution under a particular
             hypothesis. This typically has (but is not required to have) some
             free parameters which can be modified by the minimizer to optimize
@@ -402,7 +403,7 @@ class Analysis(object):
             Whether to carry out a blind analysis. This hides actual parameter
             values from display and disallows these (as well as Jacobian,
             Hessian, etc.) from ending up in logfiles.
-
+            
         external_priors_penalty : func
             User defined prior penalty function. Adds an extra penalty
             to the metric that is minimized, depending on the input function.
@@ -415,7 +416,7 @@ class Analysis(object):
         alternate_fits : list of `fit_info` from other fits run
 
         """
-
+        
         if ( not check_octant ) and fit_octants_separately :
             raise ValueError("If 'check_octant' is False, 'fit_octants_separately' must be False")
 
@@ -448,7 +449,7 @@ class Analysis(object):
             else:
                 # Saves the current minimizer start values for the octant check
                 minimizer_start_params = hypo_maker.params
-
+                
             # Determine if checking theta23 octant
             peforming_octant_check = check_octant and ( 'theta23' in hypo_maker.params.free.names )
 
@@ -484,7 +485,7 @@ class Analysis(object):
                 else:
                     for param in minimizer_start_params:
                         hypo_maker.params[param.name].value = param.value
-
+                
                 #Determine new values for theta23 parameter in the other octant
                 if fit_octants_separately :
                     #Use with the second case
@@ -569,7 +570,7 @@ class Analysis(object):
                     alternate_fits.append(new_fit_info)
                     if not blind:
                         logging.debug('Accepting initial-octant fit')
-
+                        
                 # If changed the range of the theta23 param whilst checking octants
                 # reset the range now.
                 # Keep the final value though (is up to the reset_free param
@@ -594,10 +595,10 @@ class Analysis(object):
 
         Parameters
         ----------
-        data_dist : MapSet
+        data_dist : MapSet or List of MapSets
             Data distribution(s)
 
-        hypo_maker : DistributionMaker or convertible thereto
+        hypo_maker : Detectors, DistributionMaker or convertible thereto
 
         metric : string
 
@@ -609,7 +610,7 @@ class Analysis(object):
             Whether to show live-update of minimizer progress.
 
         blind : bool
-
+        
         external_priors_penalty : func
             User defined prior penalty function
 
@@ -624,7 +625,17 @@ class Analysis(object):
         minimizer_settings = set_minimizer_defaults(minimizer_settings)
         validate_minimizer_settings(minimizer_settings)
 
-        sign = -1 if metric in METRICS_TO_MAXIMIZE else +1
+        if isinstance(metric,list):
+            sign = 0
+            for m in metric:
+                if m in METRICS_TO_MAXIMIZE and sign != +1:
+                    sign = -1
+                elif m in METRICS_TO_MINIMIZE and sign != -1:
+                    sign = +1
+                else:
+                    raise ValueError('Defined metrics are not compatible')
+        else:
+            sign = -1 if metric in METRICS_TO_MAXIMIZE else +1
 
         # Get starting free parameter values
         x0 = hypo_maker.params.free._rescaled_values # pylint: disable=protected-access
@@ -680,7 +691,11 @@ class Analysis(object):
         counter = Counter()
         
         fit_history = []
-        fit_history.append( [metric] + [v.name for v in hypo_maker.params.free])
+        
+        if isinstance(metric,list):
+            fit_history.append(metric + [v.name for v in hypo_maker.params.free])
+        else:
+            fit_history.append([metric] + [v.name for v in hypo_maker.params.free])
 
         start_t = time.time()
 
@@ -765,10 +780,18 @@ class Analysis(object):
             fit_info['params'] = ParamSet()
         else:
             fit_info['params'] = deepcopy(hypo_maker.params)
-        fit_info['detailed_metric_info'] = self.get_detailed_metric_info(
-            data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist,
-            params=hypo_maker.params, metric=metric, other_metrics=other_metrics
-        )
+        if isinstance(hypo_maker, Detectors): # Detectors object
+            fit_info['detailed_metric_info'] = [self.get_detailed_metric_info(
+                data_dist=data_dist[i], hypo_asimov_dist=hypo_asimov_dist[i],
+                params=hypo_maker._distribution_makers[i].params, metric=metric[i],
+                other_metrics=other_metrics, detector_name=hypo_maker.det_names[i]
+            ) for i in range(len(data_dist))]
+        else:                                 # DistributionMaker object
+            fit_info['detailed_metric_info'] = self.get_detailed_metric_info(
+                data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist,
+                params=hypo_maker.params, metric=metric, other_metrics=other_metrics,
+                detector_name=hypo_maker._detector_name
+            )
         fit_info['minimizer_time'] = minimizer_time * ureg.sec
         fit_info['num_distributions_generated'] = counter.count
         fit_info['minimizer_metadata'] = metadata
@@ -796,15 +819,14 @@ class Analysis(object):
 
         Parameters
         ----------
-        data_dist : MapSet
-        hypo_maker : DistributionMaker
+        data_dist : MapSet or List of MapSets
+        hypo_maker : Detectors or DistributionMaker
         hypo_param_selections : None, string, or sequence of strings
-        hypo_asimov_dist : MapSet
+        hypo_asimov_dist : MapSet or List of MapSets
         metric : string
         other_metrics : None, string, or sequence of strings
         blind : bool
         external_priors_penalty : func
-           
 
         """
         fit_info = OrderedDict()
@@ -814,14 +836,26 @@ class Analysis(object):
         # the current (presumably already optimal) param values
         hypo_maker.select_params(hypo_param_selections)
 
+        # One metric for all detectors
+        if isinstance(metric,list) and len(metric) == 1:
+            metric = metric * len(hypo_maker._distribution_makers)
+
         # Assess the fit: whether the data came from the hypo_asimov_dist
         try:
-            metric_val = (
-                data_dist.metric_total(expected_values=hypo_asimov_dist,
-                                       metric=metric)
-                + hypo_maker.params.priors_penalty(metric=metric) 
-            )
-            if external_priors_penalty is not None:
+            if isinstance(hypo_maker, Detectors): # Detectors object
+                metric_val = 0
+                for i in range(len(hypo_maker._distribution_makers)):
+                    data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],metric=metric[i])
+                    metric_val += data
+                priors = hypo_maker.params.priors_penalty(metric=metric[0]) # not entirely correct
+                metric_val += priors
+            else:                                # DistributionMaker object
+                metric_val = (
+                    data_dist.metric_total(expected_values=hypo_asimov_dist,
+                                           metric=metric)
+                    + hypo_maker.params.priors_penalty(metric=metric)
+                )
+                if external_priors_penalty is not None:
                 metric_val += external_priors_penalty(hypo_maker=hypo_maker,metric=metric)
         except Exception as e:
             if blind:
@@ -843,10 +877,18 @@ class Analysis(object):
             fit_info['params'] = ParamSet()
         else:
             fit_info['params'] = deepcopy(hypo_maker.params)
-        fit_info['detailed_metric_info'] = self.get_detailed_metric_info(
-            data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist,
-            params=hypo_maker.params, metric=metric, other_metrics=other_metrics
-        )
+        if isinstance(hypo_maker, Detectors): # Detectors object
+            fit_info['detailed_metric_info'] = [self.get_detailed_metric_info(
+                data_dist=data_dist[i], hypo_asimov_dist=hypo_asimov_dist[i],
+                params=hypo_maker._distribution_makers[i].params, metric=metric[i],
+                other_metrics=other_metrics, detector_name=hypo_maker.det_names[i]
+            ) for i in range(len(data_dist))]
+        else:                                 # DistributionMaker object
+            fit_info['detailed_metric_info'] = self.get_detailed_metric_info(
+                data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist,
+                params=hypo_maker.params, metric=metric, other_metrics=other_metrics,
+                detector_name=hypo_maker._detector_name
+            )
         fit_info['minimizer_time'] = 0 * ureg.sec
         fit_info['num_distributions_generated'] = 0
         fit_info['minimizer_metadata'] = OrderedDict()
@@ -855,7 +897,7 @@ class Analysis(object):
 
     @staticmethod
     def get_detailed_metric_info(data_dist, hypo_asimov_dist, params, metric,
-                                 other_metrics=None):
+                                 other_metrics=None,detector_name=None):
         """Get detailed fit information, including e.g. maps that yielded the
         metric.
 
@@ -878,6 +920,8 @@ class Analysis(object):
             other_metrics = [other_metrics]
         all_metrics = sorted(set([metric] + other_metrics))
         detailed_metric_info = OrderedDict()
+        if detector_name != None:
+            detailed_metric_info['detector_name'] = detector_name
         for m in all_metrics:
             name_vals_d = OrderedDict()
             name_vals_d['maps'] = data_dist.metric_per_map(
@@ -918,12 +962,12 @@ class Analysis(object):
             their original (physical) ranges (including units) is handled
             within this method.
 
-        hypo_maker : DistributionMaker
+        hypo_maker : Detectors or DistributionMaker
             Creates the per-bin expectation values per map (aka Asimov
             distribution) based on its param values. Free params in the
             `hypo_maker` are modified by the minimizer to achieve a "best" fit.
 
-        data_dist : MapSet
+        data_dist : List of MapSets or MapSet
             Data distribution to be fit. Can be an actual-, Asimov-, or
             pseudo-data distribution (where the latter two are derived from
             simulation and so aren't technically "data").
@@ -940,14 +984,24 @@ class Analysis(object):
             fits the width of your TTY).
 
         blind : bool
-
+        
         external_priors_penalty : func
             User defined prior penalty function
 
         """
         # Want to *maximize* e.g. log-likelihood but we're using a minimizer,
         # so flip sign of metric in those cases.
-        sign = -1 if metric in METRICS_TO_MAXIMIZE else +1
+        if isinstance(metric,list):
+            sign = 0
+            for m in metric:
+                if m in METRICS_TO_MAXIMIZE and sign != +1:
+                    sign = -1
+                elif m in METRICS_TO_MINIMIZE and sign != -1:
+                    sign = +1
+                else:
+                    raise ValueError('Defined metrics are not compatible')
+        else:
+            sign = -1 if metric in METRICS_TO_MAXIMIZE else +1
 
         # Set param values from the scaled versions the minimizer works with
         hypo_maker._set_rescaled_free_params(scaled_param_vals) # pylint: disable=protected-access
@@ -966,15 +1020,26 @@ class Analysis(object):
                 logging.error(str(e))
             raise
 
+        # One metric for all detectors
+        if isinstance(metric,list) and len(metric) == 1:
+            metric = metric * len(hypo_maker._distribution_makers)
+
         # Assess the fit: whether the data came from the hypo_asimov_dist
         try:
-            metric_val = (
-                data_dist.metric_total(expected_values=hypo_asimov_dist,
-                                       metric=metric)
-                + hypo_maker.params.priors_penalty(metric=metric)
-            )
-            if external_priors_penalty is not None:
-                metric_val += external_priors_penalty(hypo_maker=hypo_maker,metric=metric)
+            if isinstance(hypo_maker, Detectors): # Detectors object
+                metric_val = 0
+                for i in range(len(hypo_maker._distribution_makers)):
+                    data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],
+                                                  metric=metric[i])
+                    metric_val += data
+                priors = hypo_maker.params.priors_penalty(metric=metric[0])
+                metric_val += priors
+            else:                                 # DistributionMaker object
+                metric_val = (
+                    data_dist.metric_total(expected_values=hypo_asimov_dist,
+                                           metric=metric)
+                    + hypo_maker.params.priors_penalty(metric=metric)
+                )
         except Exception as e:
             if blind:
                 logging.error('Minimizer failed')
@@ -999,9 +1064,8 @@ class Analysis(object):
                              for p in hypo_maker.params.free])
 
         if pprint:
-            sys.stdout.write(msg)
+            sys.stdout.write('\r' + msg)
             sys.stdout.flush()
-            sys.stdout.write('\b' * len(msg))
         else:
             logging.trace(msg)
 
@@ -1050,11 +1114,11 @@ class Analysis(object):
 
         Parameters
         ----------
-        data_dist : MapSet
+        data_dist : List of MapSets or MapSet
             Data distribution(s). These are what the hypothesis is tasked to
             best describe during the optimization/comparison process.
 
-        hypo_maker : DistributionMaker or instantiable thereto
+        hypo_maker : Detectors, DistributionMaker or instantiable thereto
             Generates the expectation distribution under a particular
             hypothesis. This typically has (but is not required to have) some
             free parameters which will be modified by the minimizer to optimize
@@ -1276,9 +1340,14 @@ class Analysis(object):
             best_fit['params'] = deepcopy(
                 best_fit['params'].serializable_state
             )
-            best_fit['hypo_asimov_dist'] = deepcopy(
-                best_fit['hypo_asimov_dist'].serializable_state
-            )
+            if isinstance(best_fit['hypo_asimov_dist'],list):
+                best_fit['hypo_asimov_dist'] = [deepcopy(
+                    best_fit['hypo_asimov_dist'][i].serializable_state
+                ) for i in range(len(best_fit['hypo_asimov_dist']))]
+            else:
+                best_fit['hypo_asimov_dist'] = deepcopy(
+                    best_fit['hypo_asimov_dist'].serializable_state
+                )
 
             # decide which information to retain based on chosen debug mode
             if debug_mode == 0 or debug_mode == 1:
