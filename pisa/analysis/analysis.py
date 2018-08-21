@@ -828,6 +828,7 @@ class Analysis(object):
         blind : bool
         external_priors_penalty : func
 
+
         """
         fit_info = OrderedDict()
         fit_info['metric'] = metric
@@ -856,7 +857,7 @@ class Analysis(object):
                     + hypo_maker.params.priors_penalty(metric=metric)
                 )
                 if external_priors_penalty is not None:
-                metric_val += external_priors_penalty(hypo_maker=hypo_maker,metric=metric)
+                    metric_val += external_priors_penalty(hypo_maker=hypo_maker,metric=metric)
         except Exception as e:
             if blind:
                 logging.error('Minimizer failed')
