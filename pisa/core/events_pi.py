@@ -107,6 +107,7 @@ class EventsPi(OrderedDict) :
         # Convert to the required event keys, e.g. "numu_cc", "nutaubar_nc", etc...
         if self.neutrinos :
             input_data = split_nu_events_by_flavor_and_interaction(input_data)
+        #TODO Optional flag
 
         # Ensure backwards compatibility wiht the old style "oppo" flux variables
         if self.neutrinos :
@@ -129,8 +130,14 @@ class EventsPi(OrderedDict) :
             # Create a container for this events category
             #container = Container(data_key)
             #container.data_specs = "events"
-
             self[data_key] = OrderedDict()
+
+            # Convert zenith -> cos(zenith) where present
+            for prefix in ["true_","reco_"] :
+                zenith_key,coszen_key = prefix+"zenith",prefix+"coszen"
+                if (zenith_key in input_data[data_key]) and (coszen_key not in input_data[data_key]) :
+                    input_data[data_key][coszen_key] = np.cos(input_data[data_key][zenith_key])
+                    logging.info("Converting %s -> %s for %s"%(zenith_key,coszen_key,data_key))
 
             # Loop through variable mapping
             # If none provided, just use all variables and keep the input names
@@ -161,6 +168,7 @@ class EventsPi(OrderedDict) :
                     raise ValueError("Cannot find source variable(s) '%s' for '%s'"%(var_src,data_key))
 
             #self[data_key] = container
+
 
 
     def apply_cut(self, keep_criteria):
@@ -293,6 +301,8 @@ def split_nu_events_by_flavor_and_interaction(input_data) :
     Split neutrino events by nu vs nubar, and CC vs NC
     '''
 
+    #TODO Split into one function fir nu.nubar and one for CC/NC?
+
     # Check input data format
     assert isinstance(input_data,Mapping)
     assert len(input_data) > 0
@@ -330,10 +340,13 @@ def split_nu_events_by_flavor_and_interaction(input_data) :
         # Loop over the keys/masks and write the data for each casse to the output container
         for key,mask in key_mask_pairs :
             if np.any(mask) : # Only if mask has some data
-                if key in output_data :
-                    output_data = np.append(output_data[key],sub_data)
-                else :
-                    output_data[key] = sub_data
+                if key not in output_data :
+                    output_data[key] = OrderedDict()
+                for var_key,var_data in sub_data.items() :
+                    if var_key in output_data[key] :
+                        output_data = np.append(output_data[key][var_key],var_data[mask])
+                    else :
+                        output_data[key][var_key] = var_data[mask]
 
     # Check how it went
     assert len(output_data) > 0, "Failed splitting neutrino events by flavor/interaction"
