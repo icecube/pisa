@@ -7,8 +7,9 @@ This directory contains example pipeline configuration files for most of the sta
 
 | File/directory              | Description
 | --------------------------- | -----------
-| `example.cfg`               | simplest `hist`-based ("staged-approach") pipeline with no smoothing
+| `example.cfg`               | simplest MC pipeline with no smoothing
 | `example_aeffsmooth.cfg`    | "staged approach"; upgoing-only events with stages `flux`, `osc`, and `aeff`; smoothing is used in the `aeff` stage
+| `example_cake.cfg`          | simplest `hist`-based ("staged-approach") pipeline with no smoothing
 | `example_cfx.cfg`           | MC-reweighting unfolding pipeline that uses the `roounfold` service and includes treatment of discrete systematics 
 | `example_dummy.cfg`         | Demonstrates a simple pipeline using just the flux/dummy and osc/dummy file
 | `example_gen_lvl.cfg`       | simple MC-reweighting pipeline that processes generator-level events
