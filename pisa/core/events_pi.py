@@ -137,19 +137,22 @@ class EventsPi(OrderedDict) :
             variable_mapping_to_use = zip(input_data[data_key].keys(),input_data[data_key].keys()) if variable_mapping is None else variable_mapping.items()
             for var_dst,var_src in variable_mapping_to_use :
 
-                # Check the variable exists in the inout data
-                if var_src not in input_data[data_key] :
-                    raise ValueError("Variable '%s' cannot be found for '%s' events" % (var_src,data_key))
-
-                # Get the array data (stacking if multiple input variables defined) #TODO What about non-float data? Use dtype...
+                # Get the array data (stacking if multiple input variables defined) and check the variable exists in the input data
+                #TODO What about non-float data? Use dtype...
                 array_data = None
                 if not np.isscalar(var_src) :
-                    array_data_to_stack = [ input_data[data_key][var].astype(FTYPE) for var in var_src if var in input_data[data_key] ]
-                    if len(array_data_to_stack) == len(var_src) :
-                        array_data = np.stack(array_data_to_stack,axis=1)
+                    array_data_to_stack = []
+                    for var in var_src:
+                        if var in input_data[data_key]:
+                            array_data_to_stack.append( input_data[data_key][var].astype(FTYPE) )
+                        else:
+                            raise KeyError("Variable '%s' cannot be found for '%s' events" % (var,data_key))
+                    array_data = np.stack(array_data_to_stack,axis=1)
                 else :
                     if var_src in input_data[data_key] :
                         array_data = input_data[data_key][var_src].astype(FTYPE)
+                    else:
+                        raise KeyError("Variable '%s' cannot be found for '%s' events" % (var_src,data_key))
 
                 # Add each array to the event #TODO Memory copies?
                 if array_data is not None :
