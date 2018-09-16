@@ -150,7 +150,7 @@ class placeholder(PiStage):
     Notes
     -----
     If using parameterised reco/pid, input file must contain 
-    `deposited_energy` variable. This represents the charge in 
+    `deposited_energy` variable. This represents the energy in 
     the event in the detector region from detectable particles 
     (e.g. no neutrinos).
 
