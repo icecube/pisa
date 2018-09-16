@@ -8,7 +8,7 @@ from __future__ import absolute_import, print_function, division
 
 import math
 import numpy as np
-from numba import guvectorize, cuda
+#from numba import guvectorize, cuda
 
 from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
@@ -59,7 +59,7 @@ def reco_coszen_placeholder(true_coszen,random_state=None) :
 
     # Smear the cos(zenith)
     # Using a Gaussian smearing, indepedent of the true zenith angle
-    sigma = 0.1
+    sigma = 0.2
     reco_coszen = np.random.normal(true_coszen,sigma)
 
     # Enforce rotational bounds
@@ -114,7 +114,7 @@ def pid_placeholder(particle_key,deposited_energy,track_pid=100.,cascade_pid=5.,
 
     # Define whether each particle is a track
     if has_muon(particle_key) : # Maybe treat atmopsheric muons differently???
-        track_prob = logistic_function(0.8,0.1,20.,deposited_energy)
+        track_prob = logistic_function(0.8,0.2,20.,deposited_energy)
     else :
         track_prob = logistic_function(0.3,0.05,10.,deposited_energy)
     track_mask = np.random.uniform(0.,1.,size=deposited_energy.size) < track_prob
