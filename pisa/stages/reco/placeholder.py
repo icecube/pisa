@@ -1,14 +1,15 @@
 # pylint: disable=not-callable
 """
 Create placeholder reconstructed and PID variables in a file
-TODO Merge with param.py
+These are tuned to sensible values for DeepCore/ICU-like detector
+TODO Merge with param.py (needs updating from cake to pi)
+
 Tom Stuttard
 """
 from __future__ import absolute_import, print_function, division
 
 import math
 import numpy as np
-#from numba import guvectorize, cuda
 
 from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
@@ -131,11 +132,27 @@ class placeholder(PiStage):
     """
     stage to generate placeholder reconstructed parameters
 
-    Paramaters
+    Parameters
     ----------
+    params : ParamSet
+        Must exclusively have parameters:
+
+        perfect_reco : bool
+            If True, use "perfect reco": reco == true, numu(bar)_cc -> tracks, rest to cascades
+            If False, use the parametrised energy, coszen and pid functions
+
+        track_pid : float
+            The numerical 'pid' variable value to assign for tracks
+
+        cascade_pid : float
+            The numerical 'pid' variable value to assign for cascades
 
     Notes
     -----
+    If using parameterised reco/pid, input file must contain 
+    `deposited_energy` variable. This represents the charge in 
+    the event in the detector region from detectable particles 
+    (e.g. no neutrinos).
 
     """
 
