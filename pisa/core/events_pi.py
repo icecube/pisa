@@ -15,18 +15,32 @@ from pisa.utils.numba_tools import WHERE
 from pisa.core.binning import OneDimBinning,MultiDimBinning
 
 
-__all__ = ["EventsPi","convert_nu_data_to_flat_format"]
+__all__ = ["EventsPi","convert_nu_data_to_flat_format","split_nu_events_by_flavor_and_interaction"]
 
 
 # Define the flavors and interactions for neutrino events
+#TODO Merge with FlavInt etc stuff, but think that is deprecated so needs thought...
 FLAVORS = OrderedDict( nue=12, nuebar=-12, numu=14, numubar=-14, nutau=16, nutaubar=-16 )
 INTERACTIONS = OrderedDict( cc=1, nc=2 )
 
 
 
 class EventsPi(OrderedDict) :
+    '''
+    Container for events for use with PISA pi
+
+    Parameters
+    ----------
+    name : string
+        Name to identify events
+    neutrinos : bool
+        Flag indicating if events represent neutrinos
+        Toggles special behaviour such as splitting into nu/nubar and CC/NC
+
+    '''
 
     def __init__(self,name=None,neutrinos=True,*arg,**kw) :
+
 
         super(EventsPi, self).__init__(*arg, **kw)
 
@@ -41,7 +55,6 @@ class EventsPi(OrderedDict) :
             ('proc_ver', ''),
             ('cuts', []),
         ])
-
 
 
     def load_events_file(self,events_file,variable_mapping=None) :
@@ -91,6 +104,10 @@ class EventsPi(OrderedDict) :
         # This is required to handle various inout cases and to ensure backwards 
         # compatibility with older input file formats.
 
+        # Convert to the required event keys, e.g. "numu_cc", "nutaubar_nc", etc...
+        if self.neutrinos :
+            input_data = split_nu_events_by_flavor_and_interaction(input_data)
+
         # The value for each category should itself be a dict of the event variables,
         # where each entry is has a variable name as the key and a np.array filled once 
         # per event as the value.
@@ -103,11 +120,6 @@ class EventsPi(OrderedDict) :
                 for var_key,var_data in cat_dict.items() :
                     if not isinstance(var_data,np.ndarray) :
                         raise Exception("'%s/%s' input data is not a numpy array, unknown format (%s)" % (sub_key,var_key,type(var_data)))
-
-        # Convert to the required event keys, e.g. "numu_cc", "nutaubar_nc", etc...
-        if self.neutrinos :
-            input_data = split_nu_events_by_flavor_and_interaction(input_data)
-        #TODO Optional flag
 
         # Ensure backwards compatibility wiht the old style "oppo" flux variables
         if self.neutrinos :
@@ -144,20 +156,22 @@ class EventsPi(OrderedDict) :
             variable_mapping_to_use = zip(input_data[data_key].keys(),input_data[data_key].keys()) if variable_mapping is None else variable_mapping.items()
             for var_dst,var_src in variable_mapping_to_use :
 
-                # Get the array data (stacking if multiple input variables defined) #TODO What about non-float data? Use dtype...
+                # Get the array data (stacking if multiple input variables defined) and check the variable exists in the input data
+                #TODO What about non-float data? Use dtype...
                 array_data = None
                 if not np.isscalar(var_src) :
-                    for this_var_src in var_src :
-                        if this_var_src not in input_data[data_key] :
-                            raise ValueError("Variable '%s' cannot be found for '%s' events" % (this_var_src,data_key))
-                    array_data_to_stack = [ input_data[data_key][var].astype(FTYPE) for var in var_src if var in input_data[data_key] ]
-                    if len(array_data_to_stack) == len(var_src) :
-                        array_data = np.stack(array_data_to_stack,axis=1)
+                    array_data_to_stack = []
+                    for var in var_src:
+                        if var in input_data[data_key]:
+                            array_data_to_stack.append( input_data[data_key][var].astype(FTYPE) )
+                        else:
+                            raise KeyError("Variable '%s' cannot be found for '%s' events" % (var,data_key))
+                    array_data = np.stack(array_data_to_stack,axis=1)
                 else :
                     if var_src in input_data[data_key] :
                         array_data = input_data[data_key][var_src].astype(FTYPE)
-                    else : 
-                        raise ValueError("Variable '%s' cannot be found for '%s' events" % (var_src,data_key))
+                    else:
+                        raise KeyError("Variable '%s' cannot be found for '%s' events" % (var_src,data_key))
 
                 # Add each array to the event #TODO Memory copies?
                 if array_data is not None :
@@ -301,7 +315,7 @@ def split_nu_events_by_flavor_and_interaction(input_data) :
     Split neutrino events by nu vs nubar, and CC vs NC
     '''
 
-    #TODO Split into one function fir nu.nubar and one for CC/NC?
+    #TODO Split into one function for nu/nubar and one for CC/NC?
 
     # Check input data format
     assert isinstance(input_data,Mapping)
@@ -347,6 +361,7 @@ def split_nu_events_by_flavor_and_interaction(input_data) :
                         output_data = np.append(output_data[key][var_key],var_data[mask])
                     else :
                         output_data[key][var_key] = var_data[mask]
+
 
     # Check how it went
     assert len(output_data) > 0, "Failed splitting neutrino events by flavor/interaction"

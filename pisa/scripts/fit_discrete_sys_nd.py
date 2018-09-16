@@ -280,7 +280,6 @@ def make_discrete_sys_distributions(fit_cfg,set_params=None):
 
 
 def norm_sys_distributions(input_data):
-
     """Normalises systematics mapsets to the nominal mapset,
     performing error propagation.
 
