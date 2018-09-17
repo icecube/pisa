@@ -63,7 +63,7 @@ class pi_hyperplanes(PiStage):
 
         expected_params = (
             'dom_eff',
-            'rde',
+            #'rde',
             'hole_ice',
             'hole_ice_fwd',
             'spiciness',
@@ -82,29 +82,27 @@ class pi_hyperplanes(PiStage):
         output_calc_keys = ('hyperplane_scalefactors')
         # what keys are added or altered for the outputs during apply
         if error_method in ['sumw2']:
-            output_apply_keys = ('weights',
-                                 'errors',
-                                )
+            output_apply_keys = ('weights', 'errors')
             input_apply_keys = output_apply_keys
         else:
-            output_apply_keys = ('weights',
-                                )
+            output_apply_keys = ('weights',)
             input_apply_keys = output_apply_keys
 
         # init base class
-        super(pi_hyperplanes, self).__init__(data=data,
-                                             params=params,
-                                             expected_params=expected_params,
-                                             input_names=input_names,
-                                             output_names=output_names,
-                                             debug_mode=debug_mode,
-                                             error_method=error_method,
-                                             input_specs=input_specs,
-                                             calc_specs=calc_specs,
-                                             output_specs=output_specs,
-                                             input_apply_keys=input_apply_keys,
-                                             output_apply_keys=output_apply_keys,
-                                            )
+        super(pi_hyperplanes, self).__init__(
+            data=data,
+            params=params,
+            expected_params=expected_params,
+            input_names=input_names,
+            output_names=output_names,
+            debug_mode=debug_mode,
+            error_method=error_method,
+            input_specs=input_specs,
+            calc_specs=calc_specs,
+            output_specs=output_specs,
+            input_apply_keys=input_apply_keys,
+            output_apply_keys=output_apply_keys,
+        )
 
         assert self.input_mode is not None
         assert self.calc_mode == 'binned'
@@ -112,10 +110,13 @@ class pi_hyperplanes(PiStage):
 
         self.fit_results = None
         """Parsed results of the hyperplane fit"""
+
         self.fit_sys_list = None
         """List of systematic parameters participating in the external fit"""
+
         self.fit_binning_hash = None
         """Hash of the binning used in the external fit"""
+
         self.inactive_sys_params = None
         """Inactive systematic parameters"""
 
@@ -126,12 +127,12 @@ class pi_hyperplanes(PiStage):
         compatibility"""
         self.fit_results = from_file(self.fit_results_file)
         self.fit_binning_hash = self.fit_results.get('binning_hash', None)
-        if not self.fit_binning_hash:
-            raise KeyError(
-                'Cannot determine the hash of the binning employed'
-                ' for the hyperplane fits. Correct application of'
-                ' fits would not be guaranteed!'
-            )
+        #if not self.fit_binning_hash:
+        #    raise KeyError(
+        #        'Cannot determine the hash of the binning employed'
+        #        ' for the hyperplane fits. Correct application of'
+        #        ' fits would not be guaranteed!'
+        #    )
 
         self.data.data_specs = self.calc_specs
 
@@ -182,15 +183,16 @@ class pi_hyperplanes(PiStage):
 
         # check compatibility
         if self.data.data_mode == 'binned':
+            pass
             # let's be extremely strict here for now: require
             # the absolutely identical binning (full hash)
-            binning_hash = self.data.data_specs.hash
-            if not binning_hash == self.fit_binning_hash:
-                raise ValueError(
-                    'Disagreeing hash values between fit binning and the'
-                    ' one to be used in the application of the hyperplane'
-                    ' fits!'
-                )
+            #binning_hash = self.data.data_specs.hash
+            #if not binning_hash == self.fit_binning_hash:
+            #    raise ValueError(
+            #        'Disagreeing hash values between fit binning and the'
+            #        ' one to be used in the application of the hyperplane'
+            #        ' fits!'
+            #    )
         self.data.unlink_containers()
 
     @profile
