@@ -28,12 +28,7 @@ __all__ = [
 
 # Define the flavors and interactions for neutrino events
 NU_FLAVORS = OrderedDict(
-    nue=12,
-    nuebar=-12,
-    numu=14,
-    numubar=-14,
-    nutau=16,
-    nutaubar=-16,
+    nue=12, nuebar=-12, numu=14, numubar=-14, nutau=16, nutaubar=-16
 )
 NU_INTERACTIONS = OrderedDict(cc=1, nc=2)
 OUTPUT_NUFLAVINT_KEYS = tuple(
@@ -42,15 +37,15 @@ OUTPUT_NUFLAVINT_KEYS = tuple(
     for ik, ic in NU_INTERACTIONS.items()
 )
 LEGACY_FLAVKEY_XLATION = dict(
-    nue='nue',
-    nuebar='nuebar',
-    nue_bar='nuebar',
-    numu='numu',
-    numubar='numubar',
-    numu_bar='numubar',
-    nutau='nutau',
-    nutaubar='nutaubar',
-    nutau_bar='nutaubar',
+    nue="nue",
+    nuebar="nuebar",
+    nue_bar="nuebar",
+    numu="numu",
+    numubar="numubar",
+    numu_bar="numubar",
+    nutau="nutau",
+    nutaubar="nutaubar",
+    nutau_bar="nutaubar",
 )
 
 
@@ -68,9 +63,10 @@ class EventsPi(OrderedDict):
         behavior such as splitting into nu/nubar and CC/NC. Default is True.
 
     """
+
     def __init__(self, *arg, **kw):
-        name = kw.pop('name', None)
-        neutrinos = kw.pop('neutrinos', True)
+        name = kw.pop("name", None)
+        neutrinos = kw.pop("neutrinos", True)
 
         super(EventsPi, self).__init__(*arg, **kw)
 
@@ -78,13 +74,15 @@ class EventsPi(OrderedDict):
         self.neutrinos = neutrinos
 
         # Define some metadata
-        self.metadata = OrderedDict([
-            ('detector', ''),
-            ('geom', ''),
-            ('runs', []),
-            ('proc_ver', ''),
-            ('cuts', []),
-        ])
+        self.metadata = OrderedDict(
+            [
+                ("detector", ""),
+                ("geom", ""),
+                ("runs", []),
+                ("proc_ver", ""),
+                ("cuts", []),
+            ]
+        )
 
     def load_events_file(self, events_file, variable_mapping=None):
         """Fill this events container from an input HDF5 file filled with event
@@ -116,15 +114,13 @@ class EventsPi(OrderedDict):
         # Validate `variable_mapping`
         if variable_mapping is not None:
             if not isinstance(variable_mapping, Mapping):
-                raise TypeError(
-                    "'variable_mapping' must be a mapping (e.g., dict)"
-                )
+                raise TypeError("'variable_mapping' must be a mapping (e.g., dict)")
             for dst, src in variable_mapping.items():
                 if not isinstance(dst, basestring):
                     raise TypeError("`variable_mapping` 'dst' (key) must be a string")
 
                 if isinstance(src, basestring):
-                    pass # Nothing to do
+                    pass  # Nothing to do
                 elif isinstance(src, Iterable):
                     for v in src:
                         if not isinstance(v, basestring):
@@ -145,7 +141,7 @@ class EventsPi(OrderedDict):
                     'Contents loaded from "%s" must be a mapping; got: %s'
                     % (events_file, type(input_data))
                 )
-        else: # isinstance(events_file, Mapping)
+        else:  # isinstance(events_file, Mapping)
             input_data = events_file
 
         #
@@ -204,10 +200,9 @@ class EventsPi(OrderedDict):
             # Loop through variable mapping
             # If none provided, just use all variables and keep the input names
             if variable_mapping is None:
-                variable_mapping_to_use = tuple(zip(
-                    input_data[data_key].keys(),
-                    input_data[data_key].keys(),
-                ))
+                variable_mapping_to_use = tuple(
+                    zip(input_data[data_key].keys(), input_data[data_key].keys())
+                )
             else:
                 variable_mapping_to_use = variable_mapping.items()
 
@@ -274,9 +269,12 @@ class EventsPi(OrderedDict):
         assert isinstance(keep_criteria, basestring)
 
         # Check if have already applied these cuts
-        if keep_criteria in self.metadata['cuts']:
-            logging.debug("Criteria '%s' have already been applied. Returning"
-                          " events unmodified.", keep_criteria)
+        if keep_criteria in self.metadata["cuts"]:
+            logging.debug(
+                "Criteria '%s' have already been applied. Returning"
+                " events unmodified.",
+                keep_criteria,
+            )
             return self
 
         # TODO Get everything from the GPU first ?
@@ -298,10 +296,9 @@ class EventsPi(OrderedDict):
             crit_str = keep_criteria
             for variable_name in variables:
                 crit_str = crit_str.replace(
-                    variable_name,
-                    'self["%s"]["%s"]'%(key, variable_name)
+                    variable_name, 'self["%s"]["%s"]' % (key, variable_name)
                 )
-            mask = eval(crit_str) # pylint: disable=eval-used
+            mask = eval(crit_str)  # pylint: disable=eval-used
 
             # Fill a new container with the post-cut data
             for variable_name in variables:
@@ -332,7 +329,7 @@ class EventsPi(OrderedDict):
         # Get the binning instance
         try:
             binning = OneDimBinning(binning)
-        except: # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except
             pass
         if isinstance(binning, OneDimBinning):
             binning = [binning]
@@ -345,7 +342,7 @@ class EventsPi(OrderedDict):
         # Apply the cut
         return self.apply_cut(bin_edge_cuts)
 
-    def __str__(self): # TODO Handle non-array data cases
+    def __str__(self):  # TODO Handle non-array data cases
         string = "-----------------------------\n"
         string += "EventsPi container %s :" % self.name
         for key, container in self.items():
@@ -356,10 +353,15 @@ class EventsPi(OrderedDict):
                     array_data_string = str(array_data)
                 else:
                     array_data_string = "[%s, %s, ..., %s, %s]" % (
-                        array_data[0], array_data[1], array_data[-2], array_data[-1]
+                        array_data[0],
+                        array_data[1],
+                        array_data[-2],
+                        array_data[-1],
                     )
                 string += "    %s : %i elements : %s\n" % (
-                    var, len(array_data), array_data_string
+                    var,
+                    len(array_data),
+                    array_data_string,
                 )
         string += "-----------------------------"
         return string
@@ -383,7 +385,7 @@ def split_nu_events_by_flavor_and_interaction(input_data):
     """
     # TODO Split into one function for nu/nubar and one for CC/NC?
     assert isinstance(input_data, Mapping)
-    assert input_data, '`input_data` has no members'
+    assert input_data, "`input_data` has no members"
 
     output_data = OrderedDict()
 
@@ -408,12 +410,11 @@ def split_nu_events_by_flavor_and_interaction(input_data):
         if key in LEGACY_FLAVKEY_XLATION:
             new_flav_key = LEGACY_FLAVKEY_XLATION[key]
             for sub_key, sub_data in data.items():
-                assert sub_key in ('cc', 'nc'), str(sub_key)
-                output_key = new_flav_key + '_' + sub_key
+                assert sub_key in ("cc", "nc"), str(sub_key)
+                output_key = new_flav_key + "_" + sub_key
                 if output_key in output_data:
                     output_data[output_key] = np.concatenate(
-                        output_data[output_key],
-                        sub_data,
+                        output_data[output_key], sub_data
                     )
                 else:
                     output_data[output_key] = sub_data
@@ -421,30 +422,31 @@ def split_nu_events_by_flavor_and_interaction(input_data):
 
         assert "pdg_code" in data, "No 'pdg_code' variable found for %s data" % key
         # Check these are neutrino events
-        assert np.all(np.isin(data["pdg_code"], NU_FLAVORS.values())), \
-                "%s data does not appear to be a neutrino data" % key
-        assert "interaction" in data, \
-                "No 'interaction' variable found for %s data" % key
+        assert np.all(np.isin(data["pdg_code"], NU_FLAVORS.values())), (
+            "%s data does not appear to be a neutrino data" % key
+        )
+        assert "interaction" in data, (
+            "No 'interaction' variable found for %s data" % key
+        )
 
         # Define a mask to select the events for each desired output key
         key_mask_pairs = [
-            ("%s_%s"%(fk, ik), (data["pdg_code"] == fc) & (data["interaction"] == ic))
-            for fk, fc in NU_FLAVORS.items() for ik, ic in NU_INTERACTIONS.items()
+            ("%s_%s" % (fk, ik), (data["pdg_code"] == fc) & (data["interaction"] == ic))
+            for fk, fc in NU_FLAVORS.items()
+            for ik, ic in NU_INTERACTIONS.items()
         ]
 
         # Loop over the keys/masks and write the data for each class to the
         # output container
         for mkey, mask in key_mask_pairs:
-            if np.any(mask): # Only if mask has some data
+            if np.any(mask):  # Only if mask has some data
                 if mkey in output_data:
                     output_data[mkey] = np.concatenate(output_data[mkey], data)
                 else:
                     output_data[mkey] = data
 
     if len(output_data) == 0:
-        raise ValueError(
-            "Failed splitting neutrino events by flavor/interaction"
-        )
+        raise ValueError("Failed splitting neutrino events by flavor/interaction")
 
     return output_data
 
@@ -457,43 +459,40 @@ def fix_oppo_flux(input_data):
 
     """
     for key, val in input_data.items():
-        if 'neutrino_oppo_nue_flux' not in val:
+        if "neutrino_oppo_nue_flux" not in val:
             continue
         logging.warning(
             'renaming the outdated "oppo" flux keys in "%s", in the future do'
-            ' not use those anymore',
-            key
+            " not use those anymore",
+            key,
         )
-        if 'bar' in key:
-            val['nominal_nue_flux'] = val.pop('neutrino_oppo_nue_flux')
-            val['nominal_numu_flux'] = val.pop('neutrino_oppo_numu_flux')
-            val['nominal_nuebar_flux'] = val.pop('neutrino_nue_flux')
-            val['nominal_numubar_flux'] = val.pop('neutrino_numu_flux')
+        if "bar" in key:
+            val["nominal_nue_flux"] = val.pop("neutrino_oppo_nue_flux")
+            val["nominal_numu_flux"] = val.pop("neutrino_oppo_numu_flux")
+            val["nominal_nuebar_flux"] = val.pop("neutrino_nue_flux")
+            val["nominal_numubar_flux"] = val.pop("neutrino_numu_flux")
         else:
-            val['nominal_nue_flux'] = val.pop('neutrino_nue_flux')
-            val['nominal_numu_flux'] = val.pop('neutrino_numu_flux')
-            val['nominal_nuebar_flux'] = val.pop('neutrino_oppo_nue_flux')
-            val['nominal_numubar_flux'] = val.pop('neutrino_oppo_numu_flux')
+            val["nominal_nue_flux"] = val.pop("neutrino_nue_flux")
+            val["nominal_numu_flux"] = val.pop("neutrino_numu_flux")
+            val["nominal_nuebar_flux"] = val.pop("neutrino_oppo_nue_flux")
+            val["nominal_numubar_flux"] = val.pop("neutrino_oppo_numu_flux")
 
 
 def main():
     """Load an events file and print the contents"""
     parser = argparse.ArgumentParser(description="Events parsing")
     parser.add_argument(
-        "--input-file",
-        type=str,
-        required=True,
-        help="Input HDF5 events file",
+        "--input-file", type=str, required=True, help="Input HDF5 events file"
     )
     args = parser.parse_args()
 
     events = EventsPi()
     events.load_events_file(args.input_file)
 
-    print("Loaded events from : %s"%args.input_file)
+    print("Loaded events from : %s" % args.input_file)
 
     print(events)
 
 
-if  __name__ == "__main__":
+if __name__ == "__main__":
     main()

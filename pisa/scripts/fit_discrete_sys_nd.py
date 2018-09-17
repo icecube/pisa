@@ -38,15 +38,15 @@ from pisa import ureg
 
 
 __all__ = [
-    'parse_args',
-    'hyperplane_fun',
-    'parse_fit_config',
-    'make_discrete_sys_distributions',
-    'norm_sys_distributions',
-    'fit_discrete_sys_distributions',
-    'hyperplane',
-    'save_hyperplane_fits',
-    'main',
+    "parse_args",
+    "hyperplane_fun",
+    "parse_fit_config",
+    "make_discrete_sys_distributions",
+    "norm_sys_distributions",
+    "fit_discrete_sys_distributions",
+    "hyperplane",
+    "save_hyperplane_fits",
+    "main",
 ]
 
 
@@ -54,27 +54,29 @@ def parse_args():
     """Parse arguments from command line."""
     parser = ArgumentParser(description=main.__doc__)
     parser.add_argument(
-        '-f', '--fit-cfg', type=str,
-        metavar='configfile', required=True,
-        help='Settings for the hyperplane fit'
+        "-f",
+        "--fit-cfg",
+        type=str,
+        metavar="configfile",
+        required=True,
+        help="Settings for the hyperplane fit",
     )
     parser.add_argument(
-        '-sp', '--set-param', type=str, default=None, action='append',
-        help='''Currently *NOT* implemented. Set one or multiple parameters
-        to a certain value (e.g. to test stability of parameterisation).'''
+        "-sp",
+        "--set-param",
+        type=str,
+        default=None,
+        action="append",
+        help="""Currently *NOT* implemented. Set one or multiple parameters
+        to a certain value (e.g. to test stability of parameterisation).""",
     )
     parser.add_argument(
-        '--tag', type=str, default='deepcore',
-        help='Tag for the filename.'
+        "--tag", type=str, default="deepcore", help="Tag for the filename."
     )
     parser.add_argument(
-        '-o', '--outdir', type=str, required=True,
-        help='Set output directory'
+        "-o", "--outdir", type=str, required=True, help="Set output directory"
     )
-    parser.add_argument(
-        '-v', action='count', default=None,
-        help='set verbosity level'
-    )
+    parser.add_argument("-v", action="count", default=None, help="set verbosity level")
     args = parser.parse_args()
     return args
 
@@ -101,7 +103,7 @@ def hyperplane_fun(x, *p):
     # TODO Avoid duplication with pi_hyperplanes.eval_hyperplane
     fun = p[0]
     for xval, pval in zip(x, p[1:]):
-        fun += xval*pval
+        fun += xval * pval
     return fun
 
 
@@ -124,25 +126,22 @@ def parse_fit_config(fit_cfg):
 
     """
     fit_cfg = from_file(fit_cfg)
-    general_key = 'general'
+    general_key = "general"
     if not fit_cfg.has_section(general_key):
-        raise KeyError(
-            'Fit config is missing the "%s" section!' % general_key
-        )
-    sys_list_key = 'sys_list'
+        raise KeyError('Fit config is missing the "%s" section!' % general_key)
+    sys_list_key = "sys_list"
     if not sys_list_key in fit_cfg[general_key]:
         raise KeyError(
-            'Fit config has to specify systematic parameters as'
+            "Fit config has to specify systematic parameters as"
             ' "%s" option in "%s" section (comma-separated list of names).'
             % (sys_list_key, general_key)
         )
-    sys_list = fit_cfg.get(general_key, sys_list_key).replace(' ', '').split(',')
-    logging.info('Found systematic parameters %s.', sys_list)
-    combine_regex_key = 'combine_regex'
+    sys_list = fit_cfg.get(general_key, sys_list_key).replace(" ", "").split(",")
+    logging.info("Found systematic parameters %s.", sys_list)
+    combine_regex_key = "combine_regex"
     combine_regex = fit_cfg.get(general_key, combine_regex_key, fallback=None)
     if combine_regex:
-        combine_regex = combine_regex.replace(' ', '').split(',')
-
+        combine_regex = combine_regex.replace(" ", "").split(",")
 
     return fit_cfg, sys_list, combine_regex
 
@@ -167,10 +166,12 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
     if set_params is not None:
         assert isinstance(set_params, Mapping), "`set_params` must be dict-like"
         for param_name, param_value in set_params.items():
-            assert isinstance(param_name, basestring), \
-                    "`set_params` keys must be strings (parameter name)"
-            assert isinstance(param_value, ureg.Quantity), \
-                    "`set_params` values must be Quantities (parameter values)"
+            assert isinstance(
+                param_name, basestring
+            ), "`set_params` keys must be strings (parameter name)"
+            assert isinstance(
+                param_value, ureg.Quantity
+            ), "`set_params` values must be Quantities (parameter values)"
 
     # parse the fit config and get other things which we need further down
     fit_cfg, sys_list, combine_regex = parse_fit_config(fit_cfg)
@@ -184,28 +185,30 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
     found_nominal = False
     for section in fit_cfg.sections():
         # skip the general section
-        if section == 'general':
+        if section == "general":
             continue
 
         # Handle a dataset definitjon (could be nominal)
-        elif section.startswith('nominal_set:') or section.startswith('sys_set:'):
+        elif section.startswith("nominal_set:") or section.startswith("sys_set:"):
             # Parse the list of parameter values
-            sys_param_point = [float(x) for x in section.split(':')[1].split(',')]
+            sys_param_point = [float(x) for x in section.split(":")[1].split(",")]
 
-            point_str = ' | '.join(
-                ['%s=%.2f' % (param, val)
-                 for param, val in zip(sys_list, sys_param_point)]
+            point_str = " | ".join(
+                [
+                    "%s=%.2f" % (param, val)
+                    for param, val in zip(sys_list, sys_param_point)
+                ]
             )
 
             # this is what "characterises" a systematics set
-            sys_set_specifier = 'pipeline_cfg'
+            sys_set_specifier = "pipeline_cfg"
 
             # retreive settings
             section_keys = fit_cfg[section].keys()
             diff = set(section_keys).difference(set([sys_set_specifier]))
             if diff:
                 raise KeyError(
-                    'Systematics sets in fit config must be specified via'
+                    "Systematics sets in fit config must be specified via"
                     ' the "%s" key, and no more. Found "%s".'
                     % (sys_set_specifier, diff)
                 )
@@ -214,21 +217,24 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
             if not len(sys_param_point) == len(sys_list):
                 raise ValueError(
                     '%s "%s" specifies %d systematic parameter values'
-                    ' (%s), but list of systematics is %s. Make sure'
-                    ' number of values in section headers agree with'
-                    ' number of systematic parameters.' % (
-                        section[:section.find(':')],
+                    " (%s), but list of systematics is %s. Make sure"
+                    " number of values in section headers agree with"
+                    " number of systematic parameters."
+                    % (
+                        section[: section.find(":")],
                         pipeline_cfg,
                         len(sys_param_point),
                         sys_param_point,
-                        sys_list
+                        sys_list,
                     )
                 )
 
             # retreive maps
             logging.info(
-                'Generating maps for discrete systematics point: %s. Using'
-                ' pipeline config at %s.', point_str, pipeline_cfg
+                "Generating maps for discrete systematics point: %s. Using"
+                " pipeline config at %s.",
+                point_str,
+                pipeline_cfg,
             )
 
             # make a dedicated distribution maker for each systematics set
@@ -237,10 +243,12 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
             # update param if requested
             if set_params is not None:
                 for pname, pval in set_params.items():
-                    assert pname in distribution_maker.params.names, \
-                            "Unknown param '%s' in `set_params`" % pname
-                    assert pval.units == distribution_maker.params[pname].units, \
-                            "Incorrect units for param '%s' in `set_params`" % pname
+                    assert pname in distribution_maker.params.names, (
+                        "Unknown param '%s' in `set_params`" % pname
+                    )
+                    assert pval.units == distribution_maker.params[pname].units, (
+                        "Incorrect units for param '%s' in `set_params`" % pname
+                    )
                     distribution_maker.params[pname].value = pval
                     logging.info("Changed param '%s' to %s", pname, pval)
 
@@ -250,25 +258,24 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
 
             if combine_regex:
                 logging.info(
-                    'Combining maps according to regular expression(s) %s',
-                    combine_regex
+                    "Combining maps according to regular expression(s) %s",
+                    combine_regex,
                 )
                 mapset = mapset.combine_re(combine_regex)
 
         # handle unexpected cfg file section
         else:
             raise ValueError(
-                'Additional, unrecognized section in fit cfg. file: %s'
-                % section
+                "Additional, unrecognized section in fit cfg. file: %s" % section
             )
 
         # handle the nominal dataset
-        nominal = section.startswith('nominal_set:')
+        nominal = section.startswith("nominal_set:")
         if nominal:
             if found_nominal:
                 raise ValueError(
-                    'Found multiple nominal sets in fit cfg! There must be'
-                    ' exactly one.'
+                    "Found multiple nominal sets in fit cfg! There must be"
+                    " exactly one."
                 )
             found_nominal = True
 
@@ -286,15 +293,16 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
     nsys = len(sys_list)
     if not nsets > nsys:
         logging.warn(
-            'Fit will either fail or be unreliable since the number of'
-            ' systematics sets to be fit is small (%d <= %d).',
-            nsets, nsys + 1
+            "Fit will either fail or be unreliable since the number of"
+            " systematics sets to be fit is small (%d <= %d).",
+            nsets,
+            nsys + 1,
         )
 
     if not found_nominal:
         raise ValueError(
-            'Could not find a nominal discrete systematics set in fit cfg.'
-            ' There must be exactly one.'
+            "Could not find a nominal discrete systematics set in fit cfg."
+            " There must be exactly one."
         )
 
     return input_data
@@ -320,11 +328,12 @@ def norm_sys_distributions(input_data):
     # Get the input mapsets
     #
 
-    nominal_mapset = (
-        [dataset["mapset"] for dataset in input_data["datasets"] if dataset["nominal"]]
+    nominal_mapset = [
+        dataset["mapset"] for dataset in input_data["datasets"] if dataset["nominal"]
+    ]
+    assert len(nominal_mapset) == 1, "need 1 but got {} nominal mapsets".format(
+        len(nominal_mapset)
     )
-    assert len(nominal_mapset) == 1, \
-            'need 1 but got {} nominal mapsets'.format(len(nominal_mapset))
     nominal_mapset = nominal_mapset[0]
 
     for dataset_dict in input_data["datasets"]:
@@ -388,8 +397,7 @@ def norm_sys_distributions(input_data):
     # Re-format
     for dataset_dict in input_data["datasets"]:
         dataset_dict["norm_mapset"] = MapSet(
-            maps=dataset_dict["norm_mapset"],
-            name=dataset_dict["mapset"].name,
+            maps=dataset_dict["norm_mapset"], name=dataset_dict["mapset"].name
         )
 
 
@@ -453,14 +461,14 @@ def fit_discrete_sys_distributions(input_data, p0=None):
     # transpose to get format compatible with scipy.optimize.curve_fit
     sys_param_points = np.asarray(
         [dataset_dict["param_values"] for dataset_dict in fit_results["datasets"]]
-    ) #[datasets, params]
+    )  # [datasets, params]
     sys_param_points_T = sys_param_points.T
     assert sys_param_points_T.shape[0] == n_sys_params
     assert sys_param_points_T.shape[1] == n_datasets
 
     # store some of this stuff
     fit_results["sys_param_points"] = sys_param_points
-    fit_results['binning_hash'] = binning.hash
+    fit_results["binning_hash"] = binning.hash
 
     #
     # Prepare initial parameter guesses
@@ -472,8 +480,8 @@ def fit_discrete_sys_distributions(input_data, p0=None):
             map_keys = sorted(norm_sys_maps.keys())
             if not p0_keys == map_keys:
                 raise KeyError(
-                    'Initial guess mapping contains keys %s which are not the'
-                    ' same as %s in maps.' % (p0_keys, map_keys)
+                    "Initial guess mapping contains keys %s which are not the"
+                    " same as %s in maps." % (p0_keys, map_keys)
                 )
             for ini_guess in p0.values():
                 assert len(ini_guess) == n_fit_params
@@ -482,43 +490,41 @@ def fit_discrete_sys_distributions(input_data, p0=None):
             p0 = {map_name: p0 for map_name in norm_sys_maps.keys()}
         else:
             raise TypeError(
-                'Initial guess must be a mapping or a sequence. Found %s.'
-                % type(p0)
+                "Initial guess must be a mapping or a sequence. Found %s." % type(p0)
             )
     else:
         p0 = {map_name: np.ones(n_fit_params) for map_name in norm_sys_maps.keys()}
 
-    fit_results['p0'] = p0
+    fit_results["p0"] = p0
 
     #
     # Loop over event types
     #
 
     for map_name, chan_norm_sys_maps in norm_sys_maps.items():
-        logging.info(
-            'Fitting "%s" maps with initial guess %s.',
-            map_name, p0[map_name]
-        )
+        logging.info('Fitting "%s" maps with initial guess %s.', map_name, p0[map_name])
 
         # create a container for fit results for this event type
         fit_results["hyperplanes"][map_name] = OrderedDict()
 
         # initialise data arrays with NaNs
         fit_results["hyperplanes"][map_name]["fit_params"] = np.full(
-            shape=binning_shape + [n_fit_params], # [bins..., hyperplane params]
+            shape=binning_shape + [n_fit_params],  # [bins..., hyperplane params]
             fill_value=np.nan,
         )
         fit_results["hyperplanes"][map_name]["chi2s"] = np.full(
-            shape=binning_shape + [n_datasets], # [bins..., datasets]
-            fill_value=np.nan,
+            shape=binning_shape + [n_datasets], fill_value=np.nan  # [bins..., datasets]
         )
         fit_results["hyperplanes"][map_name]["cov_matrices"] = np.full(
-            shape=binning_shape + [n_fit_params, n_fit_params], # [bins..., hyperplane params, hyperplane params]
+            shape=binning_shape
+            + [
+                n_fit_params,
+                n_fit_params,
+            ],  # [bins..., hyperplane params, hyperplane params]
             fill_value=np.nan,
         )
         fit_results["hyperplanes"][map_name]["finite_mask"] = np.full(
-            shape=binning_shape + [n_datasets], # [bins..., datasets]
-            fill_value=np.nan,
+            shape=binning_shape + [n_datasets], fill_value=np.nan  # [bins..., datasets]
         )
 
         #
@@ -546,8 +552,7 @@ def fit_discrete_sys_distributions(input_data, p0=None):
             # check no zero sigma values remaining
             if np.any(np.isclose(y_sigma, 0.)):
                 raise ValueError(
-                    "Found histogram sigma values that are 0., which is"
-                    " unphysical"
+                    "Found histogram sigma values that are 0., which is" " unphysical"
                 )
 
             #
@@ -568,7 +573,7 @@ def fit_discrete_sys_distributions(input_data, p0=None):
                 # Calculate chi-square values comparing the input data and the
                 # fit results at each data point (e.g. per dataset, and of
                 # course in each bin)
-                for point_idx in range(n_datasets): # Loop over datasets
+                for point_idx in range(n_datasets):  # Loop over datasets
                     # Get param values for this dataset
                     point = sys_param_points[point_idx, :]
                     # Predict counts in this bin accoridng to hyperplane for
@@ -577,7 +582,7 @@ def fit_discrete_sys_distributions(input_data, p0=None):
                     observed = y_values[point_idx]
                     sigma = y_sigma[point_idx]
                     # TODO Is chi2 computation correct?
-                    chi2 = ((predicted - observed)/sigma)**2
+                    chi2 = ((predicted - observed) / sigma) ** 2
                     chi2_idx = tuple(list(idx) + [point_idx])
                     fit_results["hyperplanes"][map_name]["chi2s"][chi2_idx] = chi2
 
@@ -590,10 +595,11 @@ def fit_discrete_sys_distributions(input_data, p0=None):
                     # without error estimates each point has the same weight
                     # and we cannot get chi-square values (but can still fit)
                     logging.warn(
-                        'No uncertainties for any of the normalised counts in bin'
+                        "No uncertainties for any of the normalised counts in bin"
                         ' %s ("%s") found. Fit is performed unweighted and no'
-                        ' chisquare values will be available.',
-                        idx, map_name
+                        " chisquare values will be available.",
+                        idx,
+                        map_name,
                     )
 
                     # fit
@@ -611,7 +617,7 @@ def fit_discrete_sys_distributions(input_data, p0=None):
                 else:
                     # Store NaN for fit params and chi2
                     popt = np.full_like(p0[map_name], np.NaN)
-                    pcov = np.NaN # TODO Shape?
+                    pcov = np.NaN  # TODO Shape?
 
             # store the results for this bin
             # note that chi2 is already stored above
@@ -668,13 +674,10 @@ def save_hyperplane_fits(input_data, fit_results, outdir, tag):
     """
     # Get some strings to use when naming
     dim = len(input_data["param_names"])
-    param_str = '_'.join(input_data["param_names"])
+    param_str = "_".join(input_data["param_names"])
 
     # Store as JSON
-    res_path = join(
-        outdir,
-        '%s__%dd__%s__hyperplane_fits.json' % (tag, dim, param_str)
-    )
+    res_path = join(outdir, "%s__%dd__%s__hyperplane_fits.json" % (tag, dim, param_str))
     to_file(fit_results, res_path)
 
 
@@ -688,12 +691,9 @@ def main():
 
     # Save to disk
     save_hyperplane_fits(
-        input_data=input_data,
-        fit_results=fit_results,
-        outdir=args.outdir,
-        tag=args.tag,
+        input_data=input_data, fit_results=fit_results, outdir=args.outdir, tag=args.tag
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
