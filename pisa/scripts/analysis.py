@@ -94,7 +94,7 @@ def parse_args(command, description):
         the ordering is NOT the discrete hypothesis being tested'''
     )
     parser.add_argument(
-        '-sp', '--shared-params', type=str, default=None,
+        '--shared-params', type=str, default=None,
         action='append',
         help='''Shared parameters for multi det analysis (repeat for multiple).
         The values of these parameters are kept the same in all detectors, 

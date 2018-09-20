@@ -190,7 +190,7 @@ class HypoTesting(Analysis):
     data_name : None or string
         Name for data distribution. If None, a name is auto-generated.
 
-    data_dist : None, list of MapSets, MapSet or instantiable thereto
+    data_dist : None, sequence of MapSets, MapSet or instantiable thereto
         Specify an existing distribution as the data distribution instead of a
         generating a new one. Use this instead of `data_maker`.
 
@@ -204,7 +204,7 @@ class HypoTesting(Analysis):
         Param selections to use for hypothesis 0, or None to accept any param
         selections already made in `h0_maker`.
 
-    h0_fid_asimov_dist : None, list of MapSets, MapSet or instantiable thereto
+    h0_fid_asimov_dist : None, sequence of MapSets, MapSet or instantiable thereto
         TODO: this parameter is NOT currently used, but is intended to remove
         requirement to re-generate this distribution if it's already been
         generated in a previous run
@@ -221,7 +221,7 @@ class HypoTesting(Analysis):
         Param selections to use for hypothesis 1, or None to accept any param
         selections already made in `h1_maker`.
 
-    h1_fid_asimov_dist : None, list of MapSets, MapSet or instantiable thereto
+    h1_fid_asimov_dist : None, sequence of MapSets, MapSet or instantiable thereto
         TODO: this parameter is NOT currently used, but is intended to remove
         requirement to re-generate this distribution if it's already been
         generated in a previous run
@@ -347,11 +347,11 @@ class HypoTesting(Analysis):
         assert num_fid_trials >= 1
         assert data_start_ind >= 0
         assert fid_start_ind >= 0
-        if isinstance(metric,list):
-            for m in metric:
-                assert m in ALL_METRICS
-        else:
-            assert metric in ALL_METRICS
+        
+        if isinstance(metric, basestring):
+            metric = [metric]
+        for m in metric:
+            assert m in ALL_METRICS
 
         # Make it possible to seed minimiser off truth
         self.reset_free = reset_free
@@ -359,7 +359,7 @@ class HypoTesting(Analysis):
         # Instantiate h0 distribution maker to ensure it is a valid spec
         if h0_maker is None:
             raise ValueError('`h0_maker` must be specified (and not None)')
-        if not isinstance(h0_maker, DistributionMaker) and not isinstance(h0_maker, Detectors):
+        if not isinstance(h0_maker, (DistributionMaker, Detectors)):
             try:
                 h0_maker = DistributionMaker(h0_maker)
             except:
@@ -399,7 +399,8 @@ class HypoTesting(Analysis):
             assert data_maker is None
             assert data_param_selections is None
             assert num_data_trials == 1
-            if isinstance(data_dist,list):
+            
+            if isinstance(data_dist, (list, tuple)):
                 for i in range(len(data_dist)):
                     if isinstance(data_dist[i], basestring):
                         data_dist[i] = from_file(data_dist[i])
@@ -468,13 +469,13 @@ class HypoTesting(Analysis):
                              ' is invalid.')
 
         # Instantiate distribution makers only where necessary (otherwise copy)
-        if not isinstance(h1_maker, DistributionMaker) and not isinstance(h1_maker, Detectors):
+        if not isinstance(h1_maker, (DistributionMaker, Detectors)):
             if self.h1_maker_is_h0_maker:
                 h1_maker = h0_maker
             elif isinstance(h0_maker, DistributionMaker):
                 h1_maker = DistributionMaker(h1_maker)
             else:
-                h1_maker = Detectors(h1_maker,shared_params=shared_params)
+                h1_maker = Detectors(h1_maker, shared_params=shared_params)
 
         # Cannot know if data came from same dist maker if we're given the data
         # distribution directly
@@ -483,7 +484,7 @@ class HypoTesting(Analysis):
             self.data_maker_is_h1_maker = False
         # Otherwise instantiate or copy the data dist maker
         else:
-            if not isinstance(data_maker, DistributionMaker) and not isinstance(data_maker, Detectors):
+            if not isinstance(data_maker, (DistributionMaker, Detectors)):
                 if self.data_maker_is_h0_maker:
                     data_maker = h0_maker
                 elif self.data_maker_is_h1_maker:
@@ -491,7 +492,7 @@ class HypoTesting(Analysis):
                 elif isinstance(h0_maker, DistributionMaker):
                     data_maker = DistributionMaker(data_maker)
                 else:
-                    data_maker = Detectors(data_maker,shared_params=shared_params)
+                    data_maker = Detectors(data_maker, shared_params=shared_params)
 
         # Read in minimizer settings
         if isinstance(minimizer_settings, basestring):
@@ -515,12 +516,7 @@ class HypoTesting(Analysis):
         self.data_maker = data_maker
         self.data_param_selections = data_param_selections
 
-        if isinstance(h0_maker, DistributionMaker) and isinstance(metric, list):
-            self.metric = metric[0]
-        elif isinstance(h0_maker, Detectors) and not isinstance(metric, list):
-            self.metric = [metric]
-        else:
-            self.metric = metric
+        self.metric = metric        
         self.other_metrics = other_metrics
         self.fluctuate_data = fluctuate_data
         self.fluctuate_fid = fluctuate_fid
@@ -734,12 +730,12 @@ class HypoTesting(Analysis):
             #   * fid trial = 0         : always 0 since data stays the same
             #                             for all fid trials in this data trial
             
-            if isinstance(self.toy_data_asimov_dist,list):
+            if isinstance(self.toy_data_asimov_dist, Sequence):
                 self.data_dist = []
                 for i in range(len(self.toy_data_asimov_dist)):
                     self.data_dist.append(self.toy_data_asimov_dist[i].fluctuate(
                         method='poisson', random_state=get_random_state([0, self.data_ind, 0]))
-                                         )
+                    )
             else:
                 data_random_state = get_random_state([0, self.data_ind, 0])             
                 self.data_dist = self.toy_data_asimov_dist.fluctuate(
@@ -1277,13 +1273,7 @@ class HypoTesting(Analysis):
             normQuant(self.minimizer_settings), hash_to='x'
         )
         co = 'co1' if self.check_octant else 'co0'
-        if isinstance(self.metric,list):
-            met = '('
-            for m in self.metric:
-                met += m + '_'
-            met = met[:-1] + ')'
-        else:
-            met = self.metric
+        met = '({})'.format('_'.join(self.metric))
         self.minsettings_flabel = (
             'min_' + '_'.join([self.minimizer_settings_hash, co, met])
         )

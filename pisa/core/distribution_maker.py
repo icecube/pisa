@@ -90,10 +90,10 @@ class DistributionMaker(object):
         #                           error_on_missing=False)
         
         # Make sure that all the pipelines have the same detector name (or None)
-        self._detector_name = 0
+        self._detector_name = 'no_name'
         for p in self._pipelines:
             name = p._detector_name
-            if name != self._detector_name and self._detector_name != 0:
+            if name != self._detector_name and self._detector_name != 'no_name':
                 raise NameError('Different detector names in distribution_maker pipelines')
             
             self._detector_name = name

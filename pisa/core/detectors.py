@@ -2,11 +2,10 @@
 """
 Detector class definition and a simple script to generate, save, and
 plot distributions for different detectors from pipeline config file(s).
-A detector is represented by a distribution_maker.
+A detector is represented by a DistributionMaker.
 
-Pipeline: A special detector setting for a single detector
-Distribution_maker: A single detector
-Detectors: A set (list) of detectors
+DistributionMaker: A single detector
+Detectors: A sequence of detectors
 """
 
 from __future__ import absolute_import
@@ -143,13 +142,14 @@ class Detectors(object):
                     params.extend(distribution_maker.params[p_name])
                     break  # shared param found, can continue with the next shared param
                 except:
-                    continue # shared param was not in this distribution_maker, so search in the next one
+                    continue # shared param was not in this DistributionMaker, so search in the next one
                     
         for distribution_maker in self:
             for param in distribution_maker.params:
                 if param.name in params.names and param.name in self.shared_params:
                     continue # shared param is already in param set, can continue with the next param
-                elif param.name in params.names: # need new name
+                elif param.name in params.names: # two parameters with the same name but not shared 
+                    # add detector name to the parameter name
                     changed_param = deepcopy(param)
                     changed_param.name = param.name + '_' + distribution_maker._detector_name
                     params.extend(changed_param)
@@ -160,7 +160,7 @@ class Detectors(object):
     @property
     def shared_param_ind_list(self):
         """ A list of lists (one for each detector) containing the position of the shared 
-        params in the free params of the distribution_maker (that belongs to the detector)
+        params in the free params of the DistributionMaker (that belongs to the detector)
         together with their position in the shared parameter list.
         """
         if not self.shared_params: return []
@@ -257,7 +257,7 @@ class Detectors(object):
                 d._set_rescaled_free_params(rp)
                 
         else:
-            sp = []         # first get the shared params
+            sp = [] # first get the shared params
             for i in range(len(self.shared_params)):
                 sp.append(rvalues.pop(0))
             spi = self.shared_param_ind_list
@@ -284,7 +284,7 @@ def parse_args():
         help='''Settings file for each pipeline (repeat for multiple).'''
     )
     parser.add_argument(
-        '-sp', '--shared_params', type=str, default=None,
+        '--shared_params', type=str, default=None,
         action='append',
         help='''Shared parameters for multi det analysis (repeat for multiple).'''
     )
