@@ -21,7 +21,8 @@ from pisa.utils.numba_tools import WHERE, myjit, ftype
 __all__ = ["placeholder","reco_energy_placeholder","reco_coszen_placeholder","pid_placeholder"]
 
 
-def reco_energy_placeholder(deposited_energy,random_state=None) :
+
+def reco_energy_placeholder_deposite_energy(deposited_energy,random_state=None) :
     '''
     Function to produce a smeared reconstructed energy distribution.
     Use as a placeholder if real reconstructions are not currently available.
@@ -38,6 +39,65 @@ def reco_energy_placeholder(deposited_energy,random_state=None) :
     reco_energy = np.random.normal(deposited_energy,sigma)
 
     # Ensure physics values
+    reco_energy[reco_energy < 0.] = 0.
+
+    return reco_energy
+
+
+def get_visible_energy(particle_key,true_energy) :
+    '''
+    Quick and dirty way to get the amount of visible energy in the event.
+
+    Right now considering cases with final state neutrinos, such as NC events, 
+    and nutau CC events (where the tau decays to a tau neutrino).
+
+    Neglecting the much lower losses due to muon decay for numu CC.
+    Also neglecting fact that different particle types produce differing photon yields.
+
+    I've tuned these by eye due to the biases seen in GRECO pegleg, which to first 
+    order I'm assuming are due to this missing energy
+    There is also a bias in numu CC in GRECO, but suspect this is due to containment
+    or stochastics, but either way not reproducing this here.
+    '''
+    visible_energy_mod = np.ones_like(true_energy)
+    '''
+    nc_mask = interaction.astype(int) == 2
+    nutau_cc_mask = (np.abs(pdg_code.astype(int)) == 16) & (interaction.astype(int) == 1)
+    '''
+    nc_mask = np.full_like(true_energy, particle_key.endswith("_nc"), dtype=bool)
+    nutau_cc_mask = np.full_like(true_energy, particle_key.startswith("nutau") and particle_key.endswith("_cc"), dtype=bool)
+    atm_muon_mask = np.full_like(true_energy, particle_key == "muons", dtype=bool)
+    visible_energy_mod[nc_mask] = 0.4 #TODO Calculate, for now just eye-balling GRECO
+    visible_energy_mod[nutau_cc_mask] = 0.6 #TODO Calculate, for now just eye-balling GRECO
+    visible_energy_mod[atm_muon_mask] = 0.1 #TODO Calculate, for now just eye-balling GRECO
+    visible_energy = true_energy * visible_energy_mod
+    return visible_energy
+
+
+def reco_energy_placeholder(particle_key,true_energy,random_state=None) :
+    '''
+    Function to produce a smeared reconstructed energy distribution.
+    Use as a placeholder if real reconstructions are not currently available.
+    Uses the true energy of the particle.    '''
+
+    # Default random state with no fixed seed
+    if random_state is None :
+        random_state = np.random.RandomState()
+        
+    # Define an energy-dependent smearing based on the true energy
+    # Define a different smearing for atmospheric muons, which behave a little differently 
+    if particle_key == "muons" :
+        sigma = true_energy / 8. #TODO Tune this value, just eye-balling something GRECO-like for now
+    else :
+        sigma = true_energy / 4. #TODO Tune this value, just eye-balling something GRECO-like for now
+
+    # Get the visible energy
+    visible_energy = get_visible_energy(particle_key,true_energy)
+
+    # Now apply the smearing (AFTER the conversion to visible energy so that the smearing isn't suppressed by the bias)
+    reco_energy = random_state.normal(visible_energy,sigma)
+
+    # Ensure physical values
     reco_energy[reco_energy < 0.] = 0.
 
     return reco_energy
@@ -61,7 +121,7 @@ def reco_coszen_placeholder(true_coszen,random_state=None) :
     # Smear the cos(zenith)
     # Using a Gaussian smearing, indepedent of the true zenith angle
     sigma = 0.2
-    reco_coszen = np.random.normal(true_coszen,sigma)
+    reco_coszen = random_state.normal(true_coszen,sigma)
 
     # Enforce rotational bounds
     out_of_bounds_mask = reco_coszen > 1.
@@ -95,7 +155,7 @@ def has_muon(particle_key) :
     return ( (particle_key.startswith("numu") and particle_key.endswith("_cc")) or particle_key.startswith("muon") )
 
 
-def pid_placeholder(particle_key,deposited_energy,track_pid=100.,cascade_pid=5.,random_state=None) :
+def pid_placeholder(particle_key,true_energy,track_pid=100.,cascade_pid=5.,random_state=None) :
     '''
     Function to assign a PID based on truth information.
     Use as a placeholder if real reconstructions are not currently available.
@@ -110,18 +170,27 @@ def pid_placeholder(particle_key,deposited_energy,track_pid=100.,cascade_pid=5.,
         random_state = np.random.RandomState()
 
     # Track/cascade ID is energy dependent.
-    # Using deposited energy, and assigning one dependence for events with muon 
+    # Considering energy-dependence, and assigning one dependence for events with muon 
     # tracks (numu CC, atmospheric muons) and another for all other events.
 
+    # Get the visible energy
+    #visible_energy = get_visible_energy(particle_key,true_energy) #TODO Use this?
+    #TODO Use deposited energy?
+
     # Define whether each particle is a track
-    if has_muon(particle_key) : # Maybe treat atmopsheric muons differently???
-        track_prob = logistic_function(0.8,0.2,20.,deposited_energy)
+    if ( particle_key.startswith("numu") and particle_key.endswith("_cc") ) :
+        # numu CC, good track ID
+        track_prob = logistic_function(0.9,0.5,5.,true_energy)
+    elif particle_key == "muons" :
+        # Atmospheric muons, totally random #TODO Can probably do better here, but this is broadly consistent with GRECO and given only super weird events survive it isn't so crazy
+        track_prob = 0.5
     else :
-        track_prob = logistic_function(0.3,0.05,10.,deposited_energy)
-    track_mask = np.random.uniform(0.,1.,size=deposited_energy.size) < track_prob
+        # Everything else is a cascade
+        track_prob = logistic_function(0.3,0.05,10.,true_energy)
+    track_mask = random_state.uniform(0.,1.,size=true_energy.size) < track_prob
 
     # Assign PID values
-    pid = np.full_like(deposited_energy,np.NaN)
+    pid = np.full_like(true_energy,np.NaN)
     pid[track_mask] = track_pid
     pid[~track_mask] = cascade_pid
 
@@ -226,7 +295,7 @@ class placeholder(PiStage):
             particle_key = container.name
             true_energy = container["true_energy"].get(WHERE)
             true_coszen = container["true_coszen"].get(WHERE)
-            deposited_energy = container["deposited_energy"].get(WHERE)
+            #deposited_energy = container["deposited_energy"].get(WHERE)
 
 
             #
@@ -241,7 +310,8 @@ class placeholder(PiStage):
             if perfect_reco :
                 reco_energy = true_energy
             else :
-                reco_energy = reco_energy_placeholder(deposited_energy,random_state=random_state)
+                #reco_energy = reco_energy_placeholder_deposited_energy(deposited_energy,random_state=random_state)
+                reco_energy = reco_energy_placeholder(particle_key,true_energy,random_state=random_state)
 
             # Write to the container
             np.copyto( src=reco_energy, dst=container["reco_energy"].get("host") )
