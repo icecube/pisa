@@ -498,7 +498,7 @@ def main():
     """Load an events file and print the contents"""
     parser = argparse.ArgumentParser(description="Events parsing")
     parser.add_argument(
-        "--input-file", type=str, required=True, help="Input HDF5 events file"
+        "-i","--input-file", type=str, required=True, help="Input HDF5 events file"
     )
     args = parser.parse_args()
 
