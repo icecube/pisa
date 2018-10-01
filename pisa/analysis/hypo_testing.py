@@ -400,7 +400,12 @@ class HypoTesting(Analysis):
             assert data_param_selections is None
             assert num_data_trials == 1
             
-            if isinstance(data_dist, (list, tuple)):
+            # In case of many detectors data_dist has to be a list
+            if isinstance(h0_maker, Detectors):
+                assert isinstance(data_dist, list)
+
+            # Convert `data_dist` into a `MapSet` or list of `MapSet`s if not already
+            if isinstance(data_dist, list):
                 for i in range(len(data_dist)):
                     if isinstance(data_dist[i], basestring):
                         data_dist[i] = from_file(data_dist[i])
