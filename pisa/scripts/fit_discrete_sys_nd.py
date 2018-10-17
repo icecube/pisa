@@ -161,7 +161,7 @@ def parse_fit_config(fit_cfg):
     return fit_cfg, sys_list, combine_regex
 
 
-def make_discrete_sys_distributions(fit_cfg, set_params=None):
+def make_discrete_sys_distributions(fit_cfg, set_params=None,settings_patches=None):
     """Generate and store mapsets for different discrete systematics sets
     (with a single set characterised by a dedicated pipeline configuration)
 
@@ -253,7 +253,7 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
             )
 
             # make a dedicated distribution maker for each systematics set
-            distribution_maker = DistributionMaker(pipeline_cfg)
+            distribution_maker = DistributionMaker(pipeline_cfg,settings_patches=settings_patches)
 
             # update param if requested
             if set_params is not None:
@@ -416,7 +416,7 @@ def norm_sys_distributions(input_data):
         )
 
 
-def fit_discrete_sys_distributions(input_data, p0=None):
+def fit_discrete_sys_distributions(input_data, p0=None, fit_method=None):
 
     """Fits a hyperplane to MapSets generated at given systematics parameters
     values.
@@ -430,15 +430,27 @@ def fit_discrete_sys_distributions(input_data, p0=None):
         Initial guess list (same initial guess for all maps) or dictionary
         (keys have to correspond to event groups/channels in maps)
         with one offset and len(sys_list) slopes. Default is list of ones.
+    fit_method : None or string
+        `method` arg to pass to `curve_fit` (see curve_fit docs).
+        If None, will default to `trf` (this method supports covariance matrix 
+        calculation in the dimensionality we're dealing with).
+
 
     Returns
     -------
     fit_results : OrderedDict
         Container of the hyerplane fit results + supporting data
     """
+
+
     #
     # Prepare a few things before fitting
     #
+
+    # Set a default fit method for curve_fit
+    if fit_method is None :
+        fit_method = "trf" #lm, trf, dogbox
+    #TODO Store in output data
 
     # prepare an output data container
     fit_results = OrderedDict()
@@ -574,8 +586,9 @@ def fit_discrete_sys_distributions(input_data, p0=None):
             # Perform hyperplane fit in this bin
             #
 
-            # case 1: uncertainties are available in the bins
+            # case 1: uncertainties are available in the bins (ideal case)
             if np.any(y_sigma[finite_mask]):
+
                 # fit
                 popt, pcov = curve_fit(
                     hyperplane_fun,
@@ -583,6 +596,8 @@ def fit_discrete_sys_distributions(input_data, p0=None):
                     y_values[finite_mask],
                     sigma=y_sigma[finite_mask],
                     p0=p0[map_name],
+                    absolute_sigma=True, #TODO Should we use this?
+                    method=fit_method,
                 )
 
                 # Calculate chi-square values comparing the input data and the
@@ -607,6 +622,7 @@ def fit_discrete_sys_distributions(input_data, p0=None):
 
                 # case 2: there are at least central values in the bins
                 if np.any(y_values[finite_mask]):
+
                     # without error estimates each point has the same weight
                     # and we cannot get chi-square values (but can still fit)
                     logging.warn(
@@ -623,6 +639,7 @@ def fit_discrete_sys_distributions(input_data, p0=None):
                         sys_param_points_T[:, finite_mask],
                         y_values,
                         p0=p0[map_name],
+                        methods=fit_method,
                     )
 
                 # case 3: no data in this bin
@@ -630,13 +647,13 @@ def fit_discrete_sys_distributions(input_data, p0=None):
                 # errors. Most likely this came about because this bin is
                 # empty, which is not necessarily an error.
                 else:
+
                     # Store NaN for fit params and chi2
                     popt = np.full_like(p0[map_name], np.NaN)
                     pcov = np.NaN  # TODO Shape?
 
             # store the results for this bin
             # note that chi2 is already stored above
-            # TODO need to np.copyto?
             fit_results["hyperplanes"][map_name]["fit_params"][idx] = popt
             fit_results["hyperplanes"][map_name]["cov_matrices"][idx] = pcov
             fit_results["hyperplanes"][map_name]["finite_mask"][idx] = finite_mask
@@ -644,7 +661,7 @@ def fit_discrete_sys_distributions(input_data, p0=None):
     return fit_results
 
 
-def hyperplane(fit_cfg, set_params=None):
+def hyperplane(fit_cfg, set_params=None, settings_patches=None, fit_method=None ):
     """Wrapper around distribution generation and fitting functions.
 
     Parameters
@@ -663,10 +680,12 @@ def hyperplane(fit_cfg, set_params=None):
     fit_results : OrderedDict
         Container holding the results of the hyperplane fits, as produced by
         `fit_discrete_sys_distributions`
+    fit_method : None or string
+        See description in `fit_discrete_sys_distributions` method documentation
 
     """
-    input_data = make_discrete_sys_distributions(fit_cfg=fit_cfg, set_params=set_params)
-    fit_results = fit_discrete_sys_distributions(input_data=input_data)
+    input_data = make_discrete_sys_distributions(fit_cfg=fit_cfg, set_params=set_params, settings_patches=settings_patches)
+    fit_results = fit_discrete_sys_distributions(input_data=input_data, fit_method=fit_method)
 
     return input_data, fit_results
 

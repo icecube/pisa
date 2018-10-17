@@ -83,7 +83,7 @@ class Pipeline(object):
         OrderedDict. If `OrderedDict`, use directly as pipeline configuration.
 
     """
-    def __init__(self, config):
+    def __init__(self, config, settings_patches):
         if isinstance(config, (basestring, PISAConfigParser)):
             config = parse_pipeline_config(config=config)
         elif isinstance(config, OrderedDict):
@@ -93,6 +93,8 @@ class Pipeline(object):
                 '`config` passed is of type %s but must be string,'
                 ' PISAConfigParser, or OrderedDict' % type(config).__name__
             )
+
+        self.settings_patches = settings_patches #TODO Maybe just modify config passing here...
 
         self.pisa_version = None
 
@@ -177,6 +179,14 @@ class Pipeline(object):
 
                 # Get service class from module
                 cls = getattr(module, service_name)
+
+                # Patch settings
+                if self.settings_patches is not None :
+                    stage_key = (stage_name,service_name)
+                    if stage_key in self.settings_patches :
+                        patch_kwargs = self.settings_patches[stage_key]
+                        for k,v in patch_kwargs.items() :
+                            settings[k] = v
 
                 # Instantiate service
                 logging.trace("initializing stage %s.%s with settings %s"%(stage_name, service_name, settings))
