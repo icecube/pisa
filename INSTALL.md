@@ -21,9 +21,9 @@ _Note that terminal commands below are intended for the bash shell. You'll have 
     `mkdir -p $PISA`
 1. Clone the PISA repo to your local computer (at command line)
     * If you set up shared-key auth above<br>
-    `git clone git@github.com:jllanfranchi/pisa.git $PISA`
+    `git clone git@github.com:<YOUR GITHUB USER ID HERE>/pisa.git $PISA`
     * Otherwise<br>
-    `git clone https://github.com/jllanfranchi/pisa.git $PISA`
+    `git clone https://github.com/<YOUR GITHUB USER ID HERE>/pisa.git $PISA`
 1. Install the ***Python 2.7 / 64 bit*** Anaconda or Miniconda python distribution for either Mac or Linux (as your user, _not_ as root), if you don’t have it already
     * Anaconda (full-featured Python distribution, ~500 MB)<br>
         https://www.anaconda.com/download
