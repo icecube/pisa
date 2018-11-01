@@ -29,8 +29,8 @@ _Note that terminal commands below are intended for the bash shell. You'll have 
         https://www.anaconda.com/download
     * Miniconda (just the essentials, ~40 MB)<br>
         https://conda.io/miniconda.html
-1. Install required dependencies<br>
-    `conda install swig`
+1. Install required dependencies (include cudatoolkit if you will use Numba with a GPU)<br>
+    `conda install swig cudatoolkit`
 1. Install PISA including optional packages for GPU (`cuda`), PISA pi stages (`numba`) and development tools (`develop`), if desired<br>
     `pip install -e $PISA[cuda,numba,develop] -r $PISA/requirements.txt -vvv`
 1. Run a quick test: generate templates in the staged mode<br>
