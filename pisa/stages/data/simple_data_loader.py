@@ -42,6 +42,8 @@ class simple_data_loader(PiStage):
 
     fraction_events_to_keep : float
         Fraction of loaded events to use (use to downsample).
+        Must be in range [0.,1.], or disable by setting to `None`.
+        Default in None.
 
     Notes
     -----

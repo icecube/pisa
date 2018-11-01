@@ -78,6 +78,11 @@ class EventsPi(OrderedDict):
         Flag indicating if events represent neutrinos; toggles special
         behavior such as splitting into nu/nubar and CC/NC. Default is True.
 
+    fraction_events_to_keep : float
+        Fraction of loaded events to use (use to downsample).
+        Must be in range [0.,1.], or disable by setting to `None`.
+        Default in None.
+
     """
 
     def __init__(self, *arg, **kw):
@@ -93,7 +98,7 @@ class EventsPi(OrderedDict):
 
         # Check `fraction_events_to_keep` value is required range
         if self.fraction_events_to_keep is not None :
-            assert (self.fraction_events_to_keep >= 0.) and (self.fraction_events_to_keep <= 1.), "`fraction_events_to_keep` must be in range [0,1], or None"
+            assert (self.fraction_events_to_keep >= 0.) and (self.fraction_events_to_keep <= 1.), "`fraction_events_to_keep` must be in range [0.,1.], or None to disable"
 
         # Define some metadata
         self.metadata = OrderedDict(
