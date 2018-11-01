@@ -1,11 +1,13 @@
 # pylint: disable=not-callable
-"""
-Create placeholder reconstructed and PID variables in a file
-These are tuned to sensible values for DeepCore/ICU-like detector
-TODO Merge with param.py (needs updating from cake to pi)
 
-Tom Stuttard
 """
+Create reconstructed and PID variables based on truth information 
+for MC events using simple parameterisations.
+"""
+
+#TODO In future this could be integrated with param.py (but, that meed updating from cake to pi first)
+
+
 from __future__ import absolute_import, print_function, division
 
 import math
@@ -18,35 +20,29 @@ from pisa.utils.profiler import profile
 from pisa.utils.numba_tools import WHERE, myjit, ftype
 
 
-__all__ = ["placeholder","reco_energy_placeholder","reco_coszen_placeholder","pid_placeholder"]
 
+__all__ = ["simple_param","simple_reco_energy_parameterization","simple_reco_cozen_parameterization","simple_pid_parameterization"]
 
+__author__ = 'T. Stuttard'
 
-def reco_energy_placeholder_deposite_energy(deposited_energy,random_state=None) :
-    '''
-    Function to produce a smeared reconstructed energy distribution.
-    Use as a placeholder if real reconstructions are not currently available.
-    Uses the deposited energy of the particle.
-    '''
+__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 
-    # Default random state with no fixed seed
-    if random_state is None :
-        random_state = np.random.RandomState()
-        
-    # Smear the deposited energy
-    # Gaussian smearing that is dependent on the amount of deposited energy
-    sigma = deposited_energy / 8. #TODO Tune this value, just eye-balling something GRECO-like for now
-    reco_energy = np.random.normal(deposited_energy,sigma)
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
 
-    # Ensure physics values
-    reco_energy[reco_energy < 0.] = 0.
+   http://www.apache.org/licenses/LICENSE-2.0
 
-    return reco_energy
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 
 def get_visible_energy(particle_key,true_energy) :
     '''
-    Quick and dirty way to get the amount of visible energy in the event.
+    Simple way to estimate the amount of visible energy in the event.
 
     Right now considering cases with final state neutrinos, such as NC events, 
     and nutau CC events (where the tau decays to a tau neutrino).
@@ -58,7 +54,24 @@ def get_visible_energy(particle_key,true_energy) :
     order I'm assuming are due to this missing energy
     There is also a bias in numu CC in GRECO, but suspect this is due to containment
     or stochastics, but either way not reproducing this here.
+
+    Parameters
+    ----------
+    particle_key : string
+        Key identifiying the particle type, e.g. numu_cc, nutau_nc, muon, etc.
+
+    true_energy : array
+        True energy array.
+
+    Returns
+    -------
+    visible_energy : array
+        Estimated visible energy in each event
+
     '''
+
+    #TODO Add some smearing
+
     visible_energy_mod = np.ones_like(true_energy)
     '''
     nc_mask = interaction.astype(int) == 2
@@ -74,11 +87,29 @@ def get_visible_energy(particle_key,true_energy) :
     return visible_energy
 
 
-def reco_energy_placeholder(particle_key,true_energy,random_state=None) :
+def simple_reco_energy_parameterization(particle_key,true_energy,random_state=None) :
     '''
     Function to produce a smeared reconstructed energy distribution.
     Use as a placeholder if real reconstructions are not currently available.
-    Uses the true energy of the particle.    '''
+    Uses the true energy of the particle.
+
+    Parameters
+    ----------
+    particle_key : string
+        Key identifiying the particle type, e.g. numu_cc, nutau_nc, muon, etc.
+
+    true_energy : array
+        True energy array.
+
+    random_state : None or np.random.RandomState
+        Optionally can provide an external random state.
+        Useful when whant to get reproducible results when calling multiple times.
+
+    Returns
+    -------
+    reco_energy : array
+        Reconstructed energy array.
+    '''
 
     # Default random state with no fixed seed
     if random_state is None :
@@ -103,12 +134,26 @@ def reco_energy_placeholder(particle_key,true_energy,random_state=None) :
     return reco_energy
 
 
-def reco_coszen_placeholder(true_coszen,random_state=None) :
+def simple_reco_cozen_parameterization(true_coszen,random_state=None) :
     '''
     Function to produce a smeared reconstructed cos(zenith) distribution.
     Use as a placeholder if real reconstructions are not currently available.
     Uses the true coszen of the particle as an input.
     Keep within the rotational bounds
+
+    Parameters
+    ----------
+    true_coszen : array
+        True cos(zenith angle) array.
+
+    random_state : None or np.random.RandomState
+        Optionally can provide an external random state.
+        Useful when whant to get reproducible results when calling multiple times.
+
+    Returns
+    -------
+    reco_coszen : array
+        Reconstructed cos(zenith angle) array.
     '''
 
     #TODO Energy and PID dependence
@@ -138,10 +183,21 @@ def logistic_function(a,b,c,x) :
     Logistic function as defined here: https://en.wikipedia.org/wiki/Logistic_function.
     Starts off slowly rising, before stteply rising, then plateaus.
 
-    Params: 
-        a = normalisation (e.g. plateau height) 
-        b = steepness of rise
-        c = x value at half-height of curve
+    Parameters
+    ----------
+    a : float
+        Normalisation (e.g. plateau height) 
+    b : float
+        Steepness of rise
+    c : float 
+        x value at half-height of curve
+    x : array
+        The continuous parameter
+
+    Returns
+    -------
+    f(x) : array
+        The results of applying the logistic function to x
     '''
     return a / (1 + np.exp( -b * (x-c) ) )
 
@@ -150,19 +206,55 @@ def has_muon(particle_key) :
     '''
     Function returning True if the particle type has muons in the final state
     This is numu CC and atmopsheric muons
-    TODO In future consider adding nutau CC where the tau decays to muons
+
+    Parameters
+    ----------
+    particle_key : string
+        Key identifiying the particle type, e.g. numu_cc, nutau_nc, muon, etc.
+
+
+    Returns
+    -------
+    has_muon : bool
+        Flag set to try if particle has muon in final state
     '''
+
+    #TODO consider adding nutau CC where the tau decays to muons
+
     return ( (particle_key.startswith("numu") and particle_key.endswith("_cc")) or particle_key.startswith("muon") )
 
 
-def pid_placeholder(particle_key,true_energy,track_pid=100.,cascade_pid=5.,random_state=None) :
+def simple_pid_parameterization(particle_key,true_energy,track_pid=100.,cascade_pid=5.,random_state=None) :
     '''
     Function to assign a PID based on truth information.
     Use as a placeholder if real reconstructions are not currently available.
     Uses the flavor and interaction type of the particle
 
     Approximating energy dependence using a logistic function.
-    Tuned to roughly match GRECO (https://wiki.icecube.wisc.edu/index.php/IC86_Tau_Appearance_Analysis#Track_Length_as_Particle_ID) 
+    Tuned to roughly match GRECO (https://wiki.icecube.wisc.edu/index.php/IC86_Tau_Appearance_Analysis#Track_Length_as_Particle_ID)
+
+    Parameters
+    ----------
+    particle_key : string
+        Key identifiying the particle type, e.g. numu_cc, nutau_nc, muon, etc.
+
+    true_energy : array
+        True energy array.
+
+    track_pid : float
+        A PID value to assign to track-like events
+
+    cascade_pid : float
+        A PID value to assign to cascade-like events
+
+    random_state : None or np.random.RandomState
+        Optionally can provide an external random state.
+        Useful when whant to get reproducible results when calling multiple times.
+
+    Returns
+    -------
+    reco_energy : array
+        Reconstructed energy array.
     '''
 
     # Default random state with no fixed seed
@@ -172,10 +264,6 @@ def pid_placeholder(particle_key,true_energy,track_pid=100.,cascade_pid=5.,rando
     # Track/cascade ID is energy dependent.
     # Considering energy-dependence, and assigning one dependence for events with muon 
     # tracks (numu CC, atmospheric muons) and another for all other events.
-
-    # Get the visible energy
-    #visible_energy = get_visible_energy(particle_key,true_energy) #TODO Use this?
-    #TODO Use deposited energy?
 
     # Define whether each particle is a track
     if ( particle_key.startswith("numu") and particle_key.endswith("_cc") ) :
@@ -197,9 +285,13 @@ def pid_placeholder(particle_key,true_energy,track_pid=100.,cascade_pid=5.,rando
     return pid
 
 
-class placeholder(PiStage):
+class simple_param(PiStage):
     """
-    stage to generate placeholder reconstructed parameters
+    Stage to generate reconstructed parameters (energy, coszen, pid) using simple parameterizations.
+    These are not fit to any input data, but are simple and easily understandable and require no 
+    input reconstructed events.
+
+    Can easily be tuned to any desired physics case, rught now repesent a DeepCore/ICU-like detector.
 
     Parameters
     ----------
@@ -215,13 +307,6 @@ class placeholder(PiStage):
 
         cascade_pid : float
             The numerical 'pid' variable value to assign for cascades
-
-    Notes
-    -----
-    If using parameterised reco/pid, input file must contain 
-    `deposited_energy` variable. This represents the energy in 
-    the event in the detector region from detectable particles 
-    (e.g. no neutrinos).
 
     """
 
@@ -242,7 +327,10 @@ class placeholder(PiStage):
                         "cascade_pid",
                         )
         
-        input_names = ()
+        input_names = (
+                    'true_energy',
+                    'true_coszen',
+                    )
         output_names = ()
 
         # what keys are added or altered for the outputs during apply
@@ -253,7 +341,7 @@ class placeholder(PiStage):
                             )
 
         # init base class
-        super(placeholder, self).__init__(data=data,
+        super(simple_param, self).__init__(data=data,
                                         params=params,
                                         expected_params=expected_params,
                                         input_names=input_names,
@@ -273,9 +361,9 @@ class placeholder(PiStage):
 
     def setup_function(self):
 
-        self.data.data_specs = self.input_specs
+        #TODO Could add a number of discrete cases here that can be selected betweeen, e.g. ICU baseline (LoI?), DeepCore current best, etc...
 
-        #TODO Add useful cases here, e.g. perfect reco/PID, ICU baseline (LoI?), DeepCore current best, etc...
+        self.data.data_specs = self.input_specs
 
         # Get params
         perfect_reco = self.params.perfect_reco.value
@@ -295,11 +383,10 @@ class placeholder(PiStage):
             particle_key = container.name
             true_energy = container["true_energy"].get(WHERE)
             true_coszen = container["true_coszen"].get(WHERE)
-            #deposited_energy = container["deposited_energy"].get(WHERE)
 
 
             #
-            # Smear energy
+            # Get reco energy
             #
 
             # Create container if not already present
@@ -310,8 +397,7 @@ class placeholder(PiStage):
             if perfect_reco :
                 reco_energy = true_energy
             else :
-                #reco_energy = reco_energy_placeholder_deposited_energy(deposited_energy,random_state=random_state)
-                reco_energy = reco_energy_placeholder(particle_key,true_energy,random_state=random_state)
+                reco_energy = simple_reco_energy_parameterization(particle_key,true_energy,random_state=random_state)
 
             # Write to the container
             np.copyto( src=reco_energy, dst=container["reco_energy"].get("host") )
@@ -319,7 +405,7 @@ class placeholder(PiStage):
 
 
             #
-            # Smear coszen
+            # Get reco coszen
             #
 
             # Create container if not already present
@@ -330,7 +416,7 @@ class placeholder(PiStage):
             if perfect_reco :
                 reco_coszen = true_coszen
             else :
-                reco_coszen = reco_coszen_placeholder(true_coszen,random_state=random_state)
+                reco_coszen = simple_reco_cozen_parameterization(true_coszen,random_state=random_state)
 
             # Write to the container
             np.copyto( src=reco_coszen, dst=container["reco_coszen"].get("host") )
@@ -350,7 +436,7 @@ class placeholder(PiStage):
                 pid_value = track_pid if has_muon(particle_key) else cascade_pid
                 pid = np.full_like(true_energy,pid_value)
             else :
-                pid = pid_placeholder(particle_key,true_energy,track_pid=track_pid,cascade_pid=cascade_pid,random_state=random_state)
+                pid = simple_pid_parameterization(particle_key,true_energy,track_pid=track_pid,cascade_pid=cascade_pid,random_state=random_state)
 
             # Write to the container
             np.copyto( src=pid, dst=container["pid"].get("host") )
