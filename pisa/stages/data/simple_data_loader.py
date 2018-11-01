@@ -40,6 +40,9 @@ class simple_data_loader(PiStage):
         Flag indicating whether data events represent neutrinos
         In this case, special handling for e.g. nu/nubar, CC vs NC, ...
 
+    fraction_events_to_keep : float
+        Fraction of loaded events to use (use to downsample).
+
     Notes
     -----
     Looks for `initial_weights` fields in events file, which will serve
@@ -60,6 +63,7 @@ class simple_data_loader(PiStage):
                  input_specs=None,
                  calc_specs=None,
                  output_specs=None,
+                 fraction_events_to_keep=None,
                 ):
 
         # instantiation args that should not change
@@ -67,6 +71,7 @@ class simple_data_loader(PiStage):
         self.mc_cuts = mc_cuts
         self.data_dict = data_dict
         self.neutrinos = neutrinos
+        self.fraction_events_to_keep = fraction_events_to_keep
 
         # instead of adding params here, consider making them instantiation
         # args so nothing external will inadvertently try to change
@@ -115,7 +120,7 @@ class simple_data_loader(PiStage):
         '''Loads events from events file'''
 
         # Create the events structure
-        self.evts = EventsPi(name='Events',neutrinos=self.neutrinos)
+        self.evts = EventsPi(name='Events',neutrinos=self.neutrinos, fraction_events_to_keep=self.fraction_events_to_keep)
 
         # Parse the variable mapping string if one exists
         if self.data_dict is not None:

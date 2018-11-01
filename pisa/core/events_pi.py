@@ -83,11 +83,17 @@ class EventsPi(OrderedDict):
     def __init__(self, *arg, **kw):
         name = kw.pop("name", None)
         neutrinos = kw.pop("neutrinos", True)
+        fraction_events_to_keep = kw.pop("fraction_events_to_keep", None)
 
         super(EventsPi, self).__init__(*arg, **kw)
 
         self.name = name
         self.neutrinos = neutrinos
+        self.fraction_events_to_keep = fraction_events_to_keep
+
+        # Check `fraction_events_to_keep` value is required range
+        if self.fraction_events_to_keep is not None :
+            assert (self.fraction_events_to_keep >= 0.) and (self.fraction_events_to_keep <= 1.), "`fraction_events_to_keep` must be in range [0,1], or None"
 
         # Define some metadata
         self.metadata = OrderedDict(
@@ -254,6 +260,13 @@ class EventsPi(OrderedDict):
                         % (var_src, data_key)
                     )
                 else:
+                    # Down sample events if required
+                    if self.fraction_events_to_keep is not None :
+                        np.random.seed(123456) # Enforce same sample each time
+                        num_events_to_keep = int(np.round(self.fraction_events_to_keep*float(array_data.size)))
+                        array_data = np.random.choice(array_data,size=num_events_to_keep)
+
+                    # Add to array
                     self[data_key][var_dst] = array_data
 
     def apply_cut(self, keep_criteria):
