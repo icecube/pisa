@@ -161,7 +161,7 @@ def parse_fit_config(fit_cfg):
     return fit_cfg, sys_list, combine_regex
 
 
-def make_discrete_sys_distributions(fit_cfg, set_params=None,settings_patches=None):
+def make_discrete_sys_distributions(fit_cfg, set_params=None):
     """Generate and store mapsets for different discrete systematics sets
     (with a single set characterised by a dedicated pipeline configuration)
 
@@ -253,7 +253,7 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None,settings_patches=No
             )
 
             # make a dedicated distribution maker for each systematics set
-            distribution_maker = DistributionMaker(pipeline_cfg,settings_patches=settings_patches)
+            distribution_maker = DistributionMaker(pipeline_cfg)
 
             # update param if requested
             if set_params is not None:
@@ -661,7 +661,7 @@ def fit_discrete_sys_distributions(input_data, p0=None, fit_method=None):
     return fit_results
 
 
-def hyperplane(fit_cfg, set_params=None, settings_patches=None, fit_method=None ):
+def hyperplane(fit_cfg, set_params=None, fit_method=None ):
     """Wrapper around distribution generation and fitting functions.
 
     Parameters
@@ -684,7 +684,7 @@ def hyperplane(fit_cfg, set_params=None, settings_patches=None, fit_method=None 
         See description in `fit_discrete_sys_distributions` method documentation
 
     """
-    input_data = make_discrete_sys_distributions(fit_cfg=fit_cfg, set_params=set_params, settings_patches=settings_patches)
+    input_data = make_discrete_sys_distributions(fit_cfg=fit_cfg, set_params=set_params)
     fit_results = fit_discrete_sys_distributions(input_data=input_data, fit_method=fit_method)
 
     return input_data, fit_results
