@@ -73,10 +73,10 @@ def get_visible_energy(particle_key,true_energy) :
     #TODO Add some smearing
 
     visible_energy_mod = np.ones_like(true_energy)
-    '''
-    nc_mask = interaction.astype(int) == 2
-    nutau_cc_mask = (np.abs(pdg_code.astype(int)) == 16) & (interaction.astype(int) == 1)
-    '''
+
+#    nc_mask = interaction.astype(int) == 2
+#    nutau_cc_mask = (np.abs(pdg_code.astype(int)) == 16) & (interaction.astype(int) == 1)
+
     nc_mask = np.full_like(true_energy, particle_key.endswith("_nc"), dtype=bool)
     nutau_cc_mask = np.full_like(true_energy, particle_key.startswith("nutau") and particle_key.endswith("_cc"), dtype=bool)
     atm_muon_mask = np.full_like(true_energy, particle_key == "muons", dtype=bool)
@@ -87,7 +87,7 @@ def get_visible_energy(particle_key,true_energy) :
     return visible_energy
 
 
-def simple_reco_energy_parameterization(particle_key,true_energy,random_state=None) :
+def simple_reco_energy_parameterization(particle_key,true_energy,random_state) :
     '''
     Function to produce a smeared reconstructed energy distribution.
     Use as a placeholder if real reconstructions are not currently available.
@@ -101,15 +101,17 @@ def simple_reco_energy_parameterization(particle_key,true_energy,random_state=No
     true_energy : array
         True energy array.
 
-    random_state : None or np.random.RandomState
-        Optionally can provide an external random state.
-        Useful when whant to get reproducible results when calling multiple times.
+    random_state : np.random.RandomState
+        User must provide the random state, meaning that reproducible results 
+        can be obtained when calling multiple times.
 
     Returns
     -------
     reco_energy : array
         Reconstructed energy array.
     '''
+
+    #TODO Make sigma an arg, and a parameter in the stage
 
     # Default random state with no fixed seed
     if random_state is None :
@@ -134,7 +136,7 @@ def simple_reco_energy_parameterization(particle_key,true_energy,random_state=No
     return reco_energy
 
 
-def simple_reco_cozen_parameterization(true_coszen,random_state=None) :
+def simple_reco_cozen_parameterization(true_coszen,random_state) :
     '''
     Function to produce a smeared reconstructed cos(zenith) distribution.
     Use as a placeholder if real reconstructions are not currently available.
@@ -146,9 +148,9 @@ def simple_reco_cozen_parameterization(true_coszen,random_state=None) :
     true_coszen : array
         True cos(zenith angle) array.
 
-    random_state : None or np.random.RandomState
-        Optionally can provide an external random state.
-        Useful when whant to get reproducible results when calling multiple times.
+    random_state : np.random.RandomState
+        User must provide the random state, meaning that reproducible results 
+        can be obtained when calling multiple times.
 
     Returns
     -------
@@ -158,6 +160,7 @@ def simple_reco_cozen_parameterization(true_coszen,random_state=None) :
 
     #TODO Energy and PID dependence
     #TODO Include neutrino opening angle model: 30. deg / np.sqrt(true_energy)
+    #TODO Make sigma an arg, and a parameter in the stage
 
     # Default random state with no fixed seed
     if random_state is None :
@@ -224,7 +227,7 @@ def has_muon(particle_key) :
     return ( (particle_key.startswith("numu") and particle_key.endswith("_cc")) or particle_key.startswith("muon") )
 
 
-def simple_pid_parameterization(particle_key,true_energy,track_pid=100.,cascade_pid=5.,random_state=None) :
+def simple_pid_parameterization(particle_key,true_energy,random_state,track_pid=100.,cascade_pid=5.) :
     '''
     Function to assign a PID based on truth information.
     Use as a placeholder if real reconstructions are not currently available.
@@ -247,9 +250,9 @@ def simple_pid_parameterization(particle_key,true_energy,track_pid=100.,cascade_
     cascade_pid : float
         A PID value to assign to cascade-like events
 
-    random_state : None or np.random.RandomState
-        Optionally can provide an external random state.
-        Useful when whant to get reproducible results when calling multiple times.
+    random_state : np.random.RandomState
+        User must provide the random state, meaning that reproducible results 
+        can be obtained when calling multiple times.
 
     Returns
     -------
