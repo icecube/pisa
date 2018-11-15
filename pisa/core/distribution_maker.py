@@ -73,6 +73,7 @@ class DistributionMaker(object):
 
     """
     def __init__(self, pipelines, label=None):
+
         self.label = label
         self._source_code_hash = None
 
