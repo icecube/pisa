@@ -341,6 +341,7 @@ def do_setup():
                 'pisa-compare = pisa.scripts.compare:main',
                 'pisa-convert_config_format = pisa.scripts.convert_config_format:main',
                 'pisa-fit_discrete_sys = pisa.scripts.fit_discrete_sys:main',
+                'pisa-fit_discrete_sys_nd = pisa.scripts.fit_discrete_sys_nd:main',
                 'pisa-make_asymmetry_plots = pisa.scripts.make_asymmetry_plots:main',
                 'pisa-make_events_file = pisa.scripts.make_events_file:main',
                 'pisa-make_nufit_theta23_spline_priors = pisa.scripts.make_nufit_theta23_spline_priors:main',

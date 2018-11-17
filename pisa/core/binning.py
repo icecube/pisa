@@ -13,6 +13,9 @@ classes have many useful methods for working with binning.
 #       takes 10 seconds.
 # TODO: Create non-validated version of OneDimBinning.__init__ to make
 #       iterbins() fast
+# TODO: explicitly set is_bin_spacing_log and is_bin_spacing_lin to FP32
+#       precision (since binning can be defined/saved in FP32 but want code
+#       able to run in FP64
 
 
 from __future__ import absolute_import, division
@@ -26,7 +29,7 @@ import re
 
 import numpy as np
 
-from pisa import FTYPE, EPSILON, HASH_SIGFIGS, ureg
+from pisa import FTYPE, HASH_SIGFIGS, ureg
 from pisa.utils.comparisons import isbarenumeric, normQuant, recursiveEquality
 from pisa.utils.format import (make_valid_python_name, text2tex,
                                strip_outer_dollars)
@@ -969,9 +972,9 @@ class OneDimBinning(object):
                 log_spacing = bin_edges[1:] / bin_edges[:-1]
             except (AssertionError, FloatingPointError, ZeroDivisionError):
                 return False
-        if any(np.abs(ls - log_spacing[0]) > EPSILON for ls in log_spacing[1:]):
-            return False
-        return True
+        if np.allclose(log_spacing, log_spacing[0]):
+            return True
+        return False
 
     @staticmethod
     def is_bin_spacing_lin(bin_edges):

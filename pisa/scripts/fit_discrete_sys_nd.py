@@ -3,14 +3,14 @@
 """
 Fit a hyperplane to discrete systematics datasets
 
-Produce fit results for sets of discrete systematics (i.e. for example
-several simulations for different DOM efficiencies); there is one dimension in
-the hyperplane per systematic.
+Produce fit results for sets of discrete systematics (e.g. several simulations
+for different DOM efficiencies); there is one dimension in the hyperplane per
+systematic.
 
 The parameters and settings going into the fit are given by an external cfg
 file (fit config).
 
-n-dimensional MapSets are supported to be fitted by an m-dimensional
+n-dimensional MapSets are supported to be fit by an m-dimensional
 hyperplane (one dimension per discrete parameter).
 
 A script for making plots from the fit results produced by this file can be
@@ -432,7 +432,7 @@ def fit_discrete_sys_distributions(input_data, p0=None, fit_method=None):
         with one offset and len(sys_list) slopes. Default is list of ones.
     fit_method : None or string
         `method` arg to pass to `curve_fit` (see curve_fit docs).
-        If None, will default to `trf` (this method supports covariance matrix 
+        If None, will default to `trf` (this method supports covariance matrix
         calculation in the dimensionality we're dealing with).
 
 
@@ -448,7 +448,7 @@ def fit_discrete_sys_distributions(input_data, p0=None, fit_method=None):
     #
 
     # Set a default fit method for curve_fit
-    if fit_method is None :
+    if fit_method is None:
         fit_method = "trf" #lm, trf, dogbox
     #TODO Store in output data
 
@@ -579,7 +579,8 @@ def fit_discrete_sys_distributions(input_data, p0=None, fit_method=None):
             # check no zero sigma values remaining
             if np.any(np.isclose(y_sigma, 0.)):
                 raise ValueError(
-                    "Found histogram sigma values that are 0., which is" " unphysical"
+                    "Found histogram sigma values that are 0., which is"
+                    " unphysical"
                 )
 
             #
@@ -661,7 +662,7 @@ def fit_discrete_sys_distributions(input_data, p0=None, fit_method=None):
     return fit_results
 
 
-def hyperplane(fit_cfg, set_params=None, fit_method=None ):
+def hyperplane(fit_cfg, set_params=None, fit_method=None):
     """Wrapper around distribution generation and fitting functions.
 
     Parameters
@@ -685,7 +686,9 @@ def hyperplane(fit_cfg, set_params=None, fit_method=None ):
 
     """
     input_data = make_discrete_sys_distributions(fit_cfg=fit_cfg, set_params=set_params)
-    fit_results = fit_discrete_sys_distributions(input_data=input_data, fit_method=fit_method)
+    fit_results = fit_discrete_sys_distributions(
+        input_data=input_data, fit_method=fit_method
+    )
 
     return input_data, fit_results
 

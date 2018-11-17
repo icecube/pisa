@@ -22,22 +22,20 @@ from pisa.utils.flavInt import NuFlavIntGroup
 from pisa.utils.log import logging, set_verbosity
 
 
-__all__ = ['WHITESPACE_RE', 'NUMBER_RESTR', 'NUMBER_RE', 'HRGROUP_RESTR',
-           'HRGROUP_RE', 'IGNORE_CHARS_RE', 'TEX_BACKSLASH_CHARS',
-           'TEX_SPECIAL_CHARS_MAPPING', 'SI_PREFIX_TO_ORDER_OF_MAG',
-           'ORDER_OF_MAG_TO_SI_PREFIX', 'BIN_PREFIX_TO_POWER_OF_1024',
-           'POWER_OF_1024_TO_BIN_PREFIX',
-           'split', 'hr_range_formatter', 'test_hr_range_formatter',
-           'list2hrlist', 'test_list2hrlist', 'hrlist2list',
-           'hrlol2lol', 'hrbool2bool', 'engfmt',
-           'text2tex', 'tex_join', 'tex_dollars', 'default_map_tex', 'is_tex',
-           'int2hex', 'hash2hex',
-           'strip_outer_dollars', 'strip_outer_parens',
-           'make_valid_python_name', 'sep_three_tens',
-           'format_num',
-           'test_format_num',
-           'timediff', 'test_timediff', 'timestamp', 'test_timestamp',
-	    'arg_str_seq_none']
+__all__ = [
+    'WHITESPACE_RE', 'NUMBER_RESTR', 'NUMBER_RE', 'HRGROUP_RESTR',
+    'HRGROUP_RE', 'IGNORE_CHARS_RE', 'TEX_BACKSLASH_CHARS',
+    'TEX_SPECIAL_CHARS_MAPPING', 'SI_PREFIX_TO_ORDER_OF_MAG',
+    'ORDER_OF_MAG_TO_SI_PREFIX', 'BIN_PREFIX_TO_POWER_OF_1024',
+    'POWER_OF_1024_TO_BIN_PREFIX', 'split', 'hr_range_formatter',
+    'test_hr_range_formatter', 'list2hrlist', 'test_list2hrlist',
+    'hrlist2list', 'hrlol2lol', 'hrbool2bool', 'engfmt', 'text2tex',
+    'tex_join', 'tex_dollars', 'default_map_tex', 'is_tex', 'int2hex',
+    'hash2hex', 'strip_outer_dollars', 'strip_outer_parens',
+    'make_valid_python_name', 'sep_three_tens', 'format_num',
+    'test_format_num', 'timediff', 'test_timediff', 'timestamp',
+    'test_timestamp', 'arg_str_seq_none'
+]
 
 
 __author__ = 'J.L. Lanfranchi'
@@ -342,7 +340,7 @@ def list2hrlist(lst):
             result.append(str(lst[scan]))
             scan += 1
             continue
-        for j in xrange(scan+2, n-1):
+        for j in range(scan+2, n-1):
             if not np.isclose(lst[j+1] - lst[j], step, rtol=rtol):
                 result.append(hr_range_formatter(lst[scan], lst[j], step))
                 scan = j+1
@@ -613,7 +611,7 @@ def text2tex(txt):
     for c in TEX_BACKSLASH_CHARS:
         txt = txt.replace(c, r'\%s'%c)
 
-    for c, v in TEX_SPECIAL_CHARS_MAPPING.iteritems():
+    for c, v in TEX_SPECIAL_CHARS_MAPPING.items():
         txt = txt.replace(c, '{%s}'%v)
 
     # A single character is taken to be a variable name, and so do not make
@@ -798,7 +796,7 @@ def sep_three_tens(strval, direction, sep=None):
 
     formatted = []
     if direction == 'left':
-        indices = range(len(strval)-1, -1, -1)
+        indices = tuple(range(len(strval)-1, -1, -1))
         edge_indices = (indices[0], indices[-1])
         delta = len(strval)-1
         for c_num in indices:
@@ -807,7 +805,7 @@ def sep_three_tens(strval, direction, sep=None):
                 formatted = [sep] + formatted
         return formatted
 
-    indices = range(len(strval))
+    indices = tuple(range(len(strval)))
     edge_indices = (indices[0], indices[-1])
     for c_num in indices:
         formatted = formatted + [strval[c_num]]
@@ -817,24 +815,26 @@ def sep_three_tens(strval, direction, sep=None):
     return formatted
 
 
-def format_num(value,
-               sigfigs=None,
-               precision=None,
-               fmt=None,
-               sci_thresh=(6, -4),
-               exponent=None,
-               inf_thresh=np.infty,
-               trailing_zeros=False,
-               always_show_sign=False,
-               decstr='.',
-               thousands_sep=None,
-               thousandths_sep=None,
-               left_delimiter=None,
-               right_delimiter=None,
-               expprefix=None,
-               exppostfix=None,
-               nanstr='nan',
-               infstr='inf'):
+def format_num(
+    value,
+    sigfigs=None,
+    precision=None,
+    fmt=None,
+    sci_thresh=(6, -4),
+    exponent=None,
+    inf_thresh=np.infty,
+    trailing_zeros=False,
+    always_show_sign=False,
+    decstr='.',
+    thousands_sep=None,
+    thousandths_sep=None,
+    left_delimiter=None,
+    right_delimiter=None,
+    expprefix=None,
+    exppostfix=None,
+    nanstr='nan',
+    infstr='inf',
+):
     r"""Fine-grained control over formatting a number as a string.
 
 
@@ -1109,9 +1109,15 @@ def format_num(value,
                 if fmt == 'sipre':
                     exponent = ORDER_OF_MAG_TO_SI_PREFIX[exponent]
             elif fmt == 'binpre':
-                exponent = value.ln() // d_1024.ln()
-                scale = 1 / d_1024**exponent
-                exponent = POWER_OF_1024_TO_BIN_PREFIX[exponent]
+                if value < 0:
+                    raise ValueError('Binary prefix valid only for value >= 0')
+                elif value == 0:
+                    exponent = 0
+                    scale = 1
+                else:
+                    exponent = value.ln() // d_1024.ln()
+                    scale = 1 / d_1024**exponent
+                    exponent = POWER_OF_1024_TO_BIN_PREFIX[exponent]
         elif exponent in BIN_PREFIX_TO_POWER_OF_1024:
             scale = 1 / d_1024**BIN_PREFIX_TO_POWER_OF_1024[exponent]
         elif exponent in SI_PREFIX_TO_ORDER_OF_MAG:
@@ -1273,6 +1279,16 @@ def test_format_num():
     v = format_num(0, sigfigs=5, exponent=None, trailing_zeros=True)
     assert v == '0.0000', v
     v = format_num(0, sigfigs=5, exponent=None, trailing_zeros=False)
+    assert v == '0'
+    v = format_num(0, sigfigs=5, fmt='sci')
+    assert v == '0e0'
+    v = format_num(0, sigfigs=5, fmt='eng')
+    assert v == '0e0'
+    v = format_num(0, sigfigs=5, fmt='sipre')
+    assert v == '0 '
+    v = format_num(0, sigfigs=5, fmt='binpre')
+    assert v == '0 '
+    v = format_num(0, sigfigs=5, fmt='full')
     assert v == '0'
 
     # exponent + sigfigs or precision causes underflow
