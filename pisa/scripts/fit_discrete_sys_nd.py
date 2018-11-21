@@ -23,6 +23,7 @@ from argparse import ArgumentParser
 from collections import Mapping, Sequence, OrderedDict
 import copy
 from os.path import basename, join, splitext
+import re
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -48,7 +49,7 @@ __all__ = [
     "main",
 ]
 
-__author__ = "P. Eller, T. Stuttard, T. Ehrhardt"
+__author__ = "P. Eller, T. Stuttard, T. Ehrhardt, J.L. Lanfranchi"
 
 __license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
 
@@ -63,6 +64,20 @@ __license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License."""
+
+
+SYS_SET_OPTION = "pipeline_cfg"
+"""systematics set config file is specified by this option"""
+
+MOD_OPTION_RE = re.compile(r"\s*modify\s*\[(.*)\]\s*(\S*)")
+"""mods to pipeline configs are specified by options following this pattern, e.g. ::
+
+  modify [data.simple_data_loader] events_file = settings/pipeline/example.cfg
+
+"""
+
+WS_RE = re.compile(r"\s+", flags=re.UNICODE)
+"""regex to match all whitespace characters"""
 
 
 def parse_args():
@@ -151,14 +166,68 @@ def parse_fit_config(fit_cfg):
             ' "%s" option in "%s" section (comma-separated list of names).'
             % (sys_list_key, general_key)
         )
-    sys_list = fit_cfg.get(general_key, sys_list_key).replace(" ", "").split(",")
+    sys_list = WS_RE.sub("", fit_cfg.get(general_key, sys_list_key)).split(",")
     logging.info("Found systematic parameters %s.", sys_list)
     combine_regex_key = "combine_regex"
     combine_regex = fit_cfg.get(general_key, combine_regex_key, fallback=None)
     if combine_regex:
-        combine_regex = combine_regex.replace(" ", "").split(",")
+        combine_regex = WS_RE.sub("", combine_regex).split(",")
 
     return fit_cfg, sys_list, combine_regex
+
+
+def load_and_modify_pipeline_cfg(fit_cfg, section):
+    """Load and modify the pipeline config file as specified in that section of the fit
+    config.
+
+    Parameters
+    ----------
+    fit_cfg : pisa.utils.config_parser.PISAConfigParser
+        any subclass of :class:`configparser.RawConfigParser` should work as well
+
+    section : str
+        name of the section to extract from the `fit_cfg`
+
+    Returns
+    -------
+    pipeline_cfg : pisa.utils.config_parser.PISAConfigParser
+        pipeline config
+
+    pipeline_cfg_path : str
+        path to the pipeline config as it is specified in the fit config
+
+    """
+    pipeline_cfg_path = fit_cfg.get(section, SYS_SET_OPTION)
+    other_options = fit_cfg.options(section)
+    other_options.remove(SYS_SET_OPTION)
+
+    pipeline_cfg = from_file(pipeline_cfg_path)
+
+    # Get a no-whitespace version of the section names
+    section_map = {WS_RE.sub("", s): s for s in pipeline_cfg.sections()}
+
+    for option in other_options:
+        match = MOD_OPTION_RE.match(option)
+        if not match:
+            raise ValueError("Unhandled option in fit config: {}".format(option))
+        section_spec, mod_option = match.groups()
+        section_spec = WS_RE.sub("", section_spec)
+
+        mod_value = fit_cfg.get(section, option).strip()
+
+        if section_spec not in section_map:
+            raise ValueError(
+                'Section [{}] not found in pipeline config "{}"'
+                .format(section_spec, pipeline_cfg_path)
+            )
+
+        logging.info(
+            'Modifying pipeline config "%s" section [%s] option "%s" to have value %s',
+            pipeline_cfg_path, section_map[section_spec], mod_option, mod_value
+        )
+        pipeline_cfg.set(section_map[section_spec], mod_option, mod_value)
+
+    return pipeline_cfg, pipeline_cfg_path
 
 
 def make_discrete_sys_distributions(fit_cfg, set_params=None):
@@ -198,7 +267,8 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
 
     # retrieve sets:
     found_nominal = False
-    for section in fit_cfg.sections():
+    for orig_section in fit_cfg.sections():
+        section = WS_RE.sub("", orig_section)
         # skip the general section
         if section == "general":
             continue
@@ -215,55 +285,39 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
                 ]
             )
 
-            # this is what "characterises" a systematics set
-            sys_set_specifier = "pipeline_cfg"
-
-            # retreive settings
-            section_keys = fit_cfg[section].keys()
-            diff = set(section_keys).difference(set([sys_set_specifier]))
-            if diff:
-                raise KeyError(
-                    "Systematics sets in fit config must be specified via"
-                    ' the "%s" key, and no more. Found "%s".'
-                    % (sys_set_specifier, diff)
-                )
-
-            pipeline_cfg = fit_cfg.get(section, sys_set_specifier)
-            if not len(sys_param_point) == len(sys_list):
+            if len(sys_param_point) != len(sys_list):
                 raise ValueError(
-                    '%s "%s" specifies %d systematic parameter values'
-                    " (%s), but list of systematics is %s. Make sure"
-                    " number of values in section headers agree with"
-                    " number of systematic parameters."
-                    % (
-                        section[: section.find(":")],
-                        pipeline_cfg,
-                        len(sys_param_point),
-                        sys_param_point,
-                        sys_list,
-                    )
+                    "Section heading [{}] specifies {:d} systematic"
+                    " parameter values, but list of systematics contains {:d}."
+                    .format(orig_section, len(sys_param_point), len(sys_list))
                 )
 
-            # retreive maps
+            # -- Retreive maps -- #
+
+            parsed_pipeline_cfg, pipeline_cfg_path = load_and_modify_pipeline_cfg(
+                fit_cfg=fit_cfg, section=orig_section
+            )
+
             logging.info(
                 "Generating maps for discrete systematics point: %s. Using"
-                " pipeline config at %s.",
+                ' pipeline config at "%s"',
                 point_str,
-                pipeline_cfg,
+                pipeline_cfg_path,
             )
 
             # make a dedicated distribution maker for each systematics set
-            distribution_maker = DistributionMaker(pipeline_cfg)
+            distribution_maker = DistributionMaker(parsed_pipeline_cfg)
 
-            # update param if requested
+            # update params if requested
             if set_params is not None:
                 for pname, pval in set_params.items():
                     assert pname in distribution_maker.params.names, (
                         "Unknown param '%s' in `set_params`" % pname
                     )
-                    assert pval.units == distribution_maker.params[pname].units, (
-                        "Incorrect units for param '%s' in `set_params`" % pname
-                    )
+                    assert (
+                        pval.dimensionality
+                        == distribution_maker.params[pname].dimensionality
+                    ), 'Incorrect units for param "%s" in `set_params`' % pname
                     distribution_maker.params[pname].value = pval
                     logging.info("Changed param '%s' to %s", pname, pval)
 
@@ -281,7 +335,7 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
         # handle unexpected cfg file section
         else:
             raise ValueError(
-                "Additional, unrecognized section in fit cfg. file: %s" % section
+                "Additional, unrecognized section in fit cfg. file: %s" % orig_section
             )
 
         # handle the nominal dataset
@@ -297,7 +351,7 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
         # Store the info
         dataset = OrderedDict()
         # TODO something better for name?
-        dataset["name"] = splitext(basename(pipeline_cfg))[0]
+        dataset["name"] = splitext(basename(pipeline_cfg_path))[0]
         dataset["param_values"] = sys_param_point
         dataset["mapset"] = mapset
         dataset["nominal"] = nominal
