@@ -30,17 +30,26 @@ from scipy.optimize import curve_fit
 from uncertainties import unumpy as unp
 from uncertainties import ufloat
 
+from pisa import ureg
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.map import Map, MapSet
-from pisa.utils.fileio import from_file, to_file
+from pisa.utils.fileio import mkdir, from_file, to_file
 from pisa.utils.log import logging, set_verbosity
-from pisa import ureg
 
 
 __all__ = [
+    "GENERAL_SECTION_NAME",
+    "APPLY_ALL_SECTION_NAME",
+    "COMBINE_REGEX_OPTION",
+    "SYS_LIST_OPTION",
+    "SYS_SET_OPTION",
+    "SET_OPTION_RE",
+    "REMOVE_OPTION_RE",
+    "WS_RE",
     "parse_args",
     "hyperplane_fun",
     "parse_fit_config",
+    "load_and_modify_pipeline_cfg",
     "make_discrete_sys_distributions",
     "norm_sys_distributions",
     "fit_discrete_sys_distributions",
@@ -66,14 +75,49 @@ __license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
  limitations under the License."""
 
 
+GENERAL_SECTION_NAME = "general"
+
+APPLY_ALL_SECTION_NAME = "apply_to_all_sets"
+
+COMBINE_REGEX_OPTION = "combine_regex"
+
+SYS_LIST_OPTION = "sys_list"
+
+NOMINAL_SET_PFX = "nominal_set:"
+
+SYS_SET_PFX = "sys_set:"
+
 SYS_SET_OPTION = "pipeline_cfg"
 """systematics set config file is specified by this option"""
 
-MOD_OPTION_RE = re.compile(r"\s*modify\s*\[(.*)\]\s*(\S*)")
-"""mods to pipeline configs are specified by options following this pattern, e.g. ::
+SET_OPTION_RE = re.compile(r"\s*set\s*\[(.*)\]\s*(\S*.*)")
+"""defining a section and/or an option within a section in a pipeline configs is
+specified by following this pattern. E.g. ::
 
-  modify [data.simple_data_loader] events_file = settings/pipeline/example.cfg
+  set [data.simple_data_loader] events_file = settings/pipeline/example.cfg
 
+where the section is created if it doesn't exist and the option "events_file" is added
+if it doesn't exist and is set to have value "settings/pipeline/example.cfg"; use ::
+
+  set [data.simple_data_loader] =
+
+to create the section "data.simple_data_loader" if it doesn't already exist. Note that
+you have to have an equals sign (or colon) for the file to parse correctly, but
+everything from the equals (or colon) on is ignored.
+"""
+
+REMOVE_OPTION_RE = re.compile(r"\s*remove\s*\[(.*)\]\s*(\S*.*)")
+"""modifications to pipeline configs are specified by options following this pattern,
+e.g. to remove an entire section ::
+
+  remove [discr_sys.pi_hyperplanes] =
+
+or to remove a single option within a section ::
+
+  remove [data.simple_data_loader] events_file =
+
+Note that you have to have an equals sign (or colon) for the file to parse correctly,
+but everything from the equals (or colon) on is ignored.
 """
 
 WS_RE = re.compile(r"\s+", flags=re.UNICODE)
@@ -81,7 +125,13 @@ WS_RE = re.compile(r"\s+", flags=re.UNICODE)
 
 
 def parse_args():
-    """Parse arguments from command line."""
+    """Parse arguments from command line.
+
+    Returns
+    -------
+    args : namespace
+
+    """
     parser = ArgumentParser(description=main.__doc__)
     parser.add_argument(
         "-f",
@@ -156,22 +206,36 @@ def parse_fit_config(fit_cfg):
 
     """
     fit_cfg = from_file(fit_cfg)
-    general_key = "general"
-    if not fit_cfg.has_section(general_key):
-        raise KeyError('Fit config is missing the "%s" section!' % general_key)
-    sys_list_key = "sys_list"
-    if not sys_list_key in fit_cfg[general_key]:
+    no_ws_section_map = {WS_RE.sub("", s): s for s in fit_cfg.sections()}
+
+    if GENERAL_SECTION_NAME not in no_ws_section_map.values():
+        raise KeyError('Fit config is missing the "%s" section!' % GENERAL_SECTION_NAME)
+
+    general_section = fit_cfg[GENERAL_SECTION_NAME]
+    if SYS_LIST_OPTION not in general_section:
         raise KeyError(
             "Fit config has to specify systematic parameters as"
             ' "%s" option in "%s" section (comma-separated list of names).'
-            % (sys_list_key, general_key)
+            % (SYS_LIST_OPTION, GENERAL_SECTION_NAME)
         )
-    sys_list = WS_RE.sub("", fit_cfg.get(general_key, sys_list_key)).split(",")
+    sys_list = WS_RE.sub("", general_section[SYS_LIST_OPTION]).split(",")
     logging.info("Found systematic parameters %s.", sys_list)
-    combine_regex_key = "combine_regex"
-    combine_regex = fit_cfg.get(general_key, combine_regex_key, fallback=None)
+
+    combine_regex = general_section.get(COMBINE_REGEX_OPTION, None)
     if combine_regex:
         combine_regex = WS_RE.sub("", combine_regex).split(",")
+
+    if APPLY_ALL_SECTION_NAME in no_ws_section_map:
+        apply_all_section = fit_cfg[no_ws_section_map[APPLY_ALL_SECTION_NAME]]
+        for no_ws_sname, sname in no_ws_section_map.items():
+            if not (
+                no_ws_sname.startswith(NOMINAL_SET_PFX)
+                or no_ws_sname.startswith(SYS_SET_PFX)
+            ):
+                continue
+            sys_set_section = fit_cfg[sname]
+            for option, val in apply_all_section.items():
+                sys_set_section[option] = val
 
     return fit_cfg, sys_list, combine_regex
 
@@ -207,25 +271,64 @@ def load_and_modify_pipeline_cfg(fit_cfg, section):
     section_map = {WS_RE.sub("", s): s for s in pipeline_cfg.sections()}
 
     for option in other_options:
-        match = MOD_OPTION_RE.match(option)
-        if not match:
+        set_match = SET_OPTION_RE.match(option)
+        remove_match = REMOVE_OPTION_RE.match(option) if not set_match else None
+        if set_match:
+            section_spec, set_option = set_match.groups()
+            no_ws_section_spec = WS_RE.sub("", section_spec)
+            set_option = set_option.strip()
+            if no_ws_section_spec not in section_map:
+                logging.debug(
+                    'Adding section [%s] to in-memory copy of pipeline config "%s"',
+                    section_spec,
+                    pipeline_cfg_path,
+                )
+                pipeline_cfg.add_section(section_spec)
+                section_map[no_ws_section_spec] = section_spec
+            if set_option:
+                set_value = fit_cfg.get(section, option).strip()
+                logging.debug(
+                    'Setting section [%s] option "%s = %s" in in-memory'
+                    ' copy of pipeline config "%s"',
+                    pipeline_cfg_path,
+                    section_map[no_ws_section_spec],
+                    set_option,
+                    set_value,
+                )
+                pipeline_cfg.set(section_map[no_ws_section_spec], set_option, set_value)
+        elif remove_match:
+            section_spec, remove_option = remove_match.groups()
+            no_ws_section_spec = WS_RE.sub("", section_spec)
+            remove_option = remove_option.strip()
+            if no_ws_section_spec in section_map:
+                if remove_option:
+                    logging.debug(
+                        'Removing section [%s] option "%s" from in-memory copy of'
+                        ' pipeline config "%s"',
+                        section_spec,
+                        remove_option,
+                        pipeline_cfg_path,
+                    )
+                    pipeline_cfg.remove_option(
+                        section_map[no_ws_section_spec], remove_option
+                    )
+                else:
+                    logging.debug(
+                        "Removing section [%s] from in-memory copy of pipeline config"
+                        ' "%s"',
+                        section_spec,
+                        pipeline_cfg_path,
+                    )
+                    pipeline_cfg.remove_section(section_map[no_ws_section_spec])
+            else:
+                logging.warn(
+                    "Told to remove section [%s] but section does not exist in"
+                    ' pipline config "%s"',
+                    section_spec,
+                    pipeline_cfg_path,
+                )
+        else:
             raise ValueError("Unhandled option in fit config: {}".format(option))
-        section_spec, mod_option = match.groups()
-        section_spec = WS_RE.sub("", section_spec)
-
-        mod_value = fit_cfg.get(section, option).strip()
-
-        if section_spec not in section_map:
-            raise ValueError(
-                'Section [{}] not found in pipeline config "{}"'
-                .format(section_spec, pipeline_cfg_path)
-            )
-
-        logging.info(
-            'Modifying pipeline config "%s" section [%s] option "%s" to have value %s',
-            pipeline_cfg_path, section_map[section_spec], mod_option, mod_value
-        )
-        pipeline_cfg.set(section_map[section_spec], mod_option, mod_value)
 
     return pipeline_cfg, pipeline_cfg_path
 
@@ -270,11 +373,11 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
     for orig_section in fit_cfg.sections():
         section = WS_RE.sub("", orig_section)
         # skip the general section
-        if section == "general":
+        if section in (GENERAL_SECTION_NAME, APPLY_ALL_SECTION_NAME):
             continue
 
-        # Handle a dataset definitjon (could be nominal)
-        elif section.startswith("nominal_set:") or section.startswith("sys_set:"):
+        # Handle a dataset definition (could be nominal)
+        elif section.startswith(NOMINAL_SET_PFX) or section.startswith(SYS_SET_PFX):
             # Parse the list of parameter values
             sys_param_point = [float(x) for x in section.split(":")[1].split(",")]
 
@@ -288,8 +391,9 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
             if len(sys_param_point) != len(sys_list):
                 raise ValueError(
                     "Section heading [{}] specifies {:d} systematic"
-                    " parameter values, but list of systematics contains {:d}."
-                    .format(orig_section, len(sys_param_point), len(sys_list))
+                    " parameter values, but list of systematics contains {:d}.".format(
+                        orig_section, len(sys_param_point), len(sys_list)
+                    )
                 )
 
             # -- Retreive maps -- #
@@ -317,7 +421,9 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
                     assert (
                         pval.dimensionality
                         == distribution_maker.params[pname].dimensionality
-                    ), 'Incorrect units for param "%s" in `set_params`' % pname
+                    ), (
+                        'Incorrect units for param "%s" in `set_params`' % pname
+                    )
                     distribution_maker.params[pname].value = pval
                     logging.info("Changed param '%s' to %s", pname, pval)
 
@@ -339,7 +445,7 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
             )
 
         # handle the nominal dataset
-        nominal = section.startswith("nominal_set:")
+        nominal = section.startswith(NOMINAL_SET_PFX)
         if nominal:
             if found_nominal:
                 raise ValueError(
@@ -471,7 +577,6 @@ def norm_sys_distributions(input_data):
 
 
 def fit_discrete_sys_distributions(input_data, p0=None, fit_method=None):
-
     """Fits a hyperplane to MapSets generated at given systematics parameters
     values.
 
@@ -489,22 +594,20 @@ def fit_discrete_sys_distributions(input_data, p0=None, fit_method=None):
         If None, will default to `trf` (this method supports covariance matrix
         calculation in the dimensionality we're dealing with).
 
-
     Returns
     -------
     fit_results : OrderedDict
         Container of the hyerplane fit results + supporting data
+
     """
-
-
     #
     # Prepare a few things before fitting
     #
 
     # Set a default fit method for curve_fit
     if fit_method is None:
-        fit_method = "trf" #lm, trf, dogbox
-    #TODO Store in output data
+        fit_method = "trf"  # lm, trf, dogbox
+    # TODO Store in output data
 
     # prepare an output data container
     fit_results = OrderedDict()
@@ -633,8 +736,7 @@ def fit_discrete_sys_distributions(input_data, p0=None, fit_method=None):
             # check no zero sigma values remaining
             if np.any(np.isclose(y_sigma, 0.)):
                 raise ValueError(
-                    "Found histogram sigma values that are 0., which is"
-                    " unphysical"
+                    "Found histogram sigma values that are 0., which is unphysical"
                 )
 
             #
@@ -651,7 +753,7 @@ def fit_discrete_sys_distributions(input_data, p0=None, fit_method=None):
                     y_values[finite_mask],
                     sigma=y_sigma[finite_mask],
                     p0=p0[map_name],
-                    absolute_sigma=True, #TODO Should we use this?
+                    absolute_sigma=True,  # TODO Should we use this?
                     method=fit_method,
                 )
 
@@ -768,6 +870,7 @@ def save_hyperplane_fits(input_data, fit_results, outdir, tag):
     param_str = "_".join(input_data["param_names"])
 
     # Store as JSON
+    mkdir(outdir)
     res_path = join(outdir, "%s__%dd__%s__hyperplane_fits.json" % (tag, dim, param_str))
     to_file(fit_results, res_path)
 
