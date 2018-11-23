@@ -290,10 +290,10 @@ def load_and_modify_pipeline_cfg(fit_cfg, section):
                 logging.debug(
                     'Setting section [%s] option "%s = %s" in in-memory'
                     ' copy of pipeline config "%s"',
-                    pipeline_cfg_path,
-                    section_map[no_ws_section_spec],
+                    section_spec,
                     set_option,
                     set_value,
+                    pipeline_cfg_path,
                 )
                 pipeline_cfg.set(section_map[no_ws_section_spec], set_option, set_value)
         elif remove_match:
@@ -652,6 +652,7 @@ def fit_discrete_sys_distributions(input_data, p0=None, fit_method=None):
 
     # store some of this stuff
     fit_results["sys_param_points"] = sys_param_points
+    fit_results["binning"] = binning
     fit_results["binning_hash"] = binning.hash
 
     #
