@@ -50,16 +50,15 @@ class pi_hyperplanes(PiStage):  # pyint: disable=invalid-name
         spiciness : dimensionless quantity
         bulk_scatter : dimensionless quantity
         bulk_abs : dimensionless quantity
-        rde : dimensionless quantity
 
     Notes
     -----
     the fit_results_file must contain the following keys:
         "param_names" : sequence of strings
-            Params fitted during the hyerplane fits (order is important)
+            Params fitted during the hyperplane fits (order is important)
         "binning_hash" : string (not present in old file format)
             Hash of binning used in fits
-        "hyerplanes" : OrderedDict
+        "hyperplanes" : OrderedDict
             container with hyperplane fit information for each data type,
             <map_name> : hyperplane data is subdivded by event types (map names)
                 fit_results : num params + 1 fit parameters per map bin
@@ -84,7 +83,6 @@ class pi_hyperplanes(PiStage):  # pyint: disable=invalid-name
 
         expected_params = (
             "dom_eff",
-            # 'rde',
             "hole_ice",
             "hole_ice_fwd",
             "spiciness",
