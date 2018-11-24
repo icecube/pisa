@@ -22,8 +22,9 @@ from __future__ import absolute_import, division, print_function
 from argparse import ArgumentParser
 from collections import Mapping, Sequence, OrderedDict
 import copy
-from os.path import basename, join, splitext
+from os.path import join
 import re
+from StringIO import StringIO
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -351,102 +352,38 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
     """
     # check optional `set_params`
     if set_params is not None:
-        assert isinstance(set_params, Mapping), "`set_params` must be dict-like"
+        if not isinstance(set_params, Mapping):
+            raise TypeError("`set_params` must be dict-like")
         for param_name, param_value in set_params.items():
-            assert isinstance(
-                param_name, basestring
-            ), "`set_params` keys must be strings (parameter name)"
-            assert isinstance(
-                param_value, ureg.Quantity
-            ), "`set_params` values must be Quantities (parameter values)"
+            if not isinstance(param_name, basestring):
+                raise TypeError("`set_params` keys must be strings (parameter name)")
+            if not isinstance(param_value, ureg.Quantity):
+                raise TypeError("`set_params` values must be Quantities")
 
-    # parse the fit config and get other things which we need further down
-    fit_cfg, sys_list, combine_regex = parse_fit_config(fit_cfg)
+    parsed_fit_cfg, sys_list, combine_regex = parse_fit_config(fit_cfg)
+    fit_cfg_txt_buf = StringIO()
+    parsed_fit_cfg.write(fit_cfg_txt_buf)
+    fit_cfg_txt = fit_cfg_txt_buf.getvalue()
 
     # prepare the data container
     input_data = OrderedDict()
+    input_data["fit_cfg_path"] = fit_cfg
+    input_data["fit_cfg_txt"] = fit_cfg_txt
     input_data["param_names"] = sys_list
     input_data["datasets"] = []
 
-    # retrieve sets:
+    # -- Load systematics sets -- #
+
     found_nominal = False
-    for orig_section in fit_cfg.sections():
-        section = WS_RE.sub("", orig_section)
-        # skip the general section
-        if section in (GENERAL_SECTION_NAME, APPLY_ALL_SECTION_NAME):
-            continue
+    sys_sets_info = OrderedDict()
 
-        # Handle a dataset definition (could be nominal)
-        elif section.startswith(NOMINAL_SET_PFX) or section.startswith(SYS_SET_PFX):
-            # Parse the list of parameter values
-            sys_param_point = [float(x) for x in section.split(":")[1].split(",")]
+    for section in parsed_fit_cfg.sections():
+        no_ws_section = WS_RE.sub("", section)
 
-            point_str = " | ".join(
-                [
-                    "%s=%.2f" % (param, val)
-                    for param, val in zip(sys_list, sys_param_point)
-                ]
-            )
+        is_nominal = no_ws_section.startswith(NOMINAL_SET_PFX)
+        is_sys_set = is_nominal or no_ws_section.startswith(SYS_SET_PFX)
 
-            if len(sys_param_point) != len(sys_list):
-                raise ValueError(
-                    "Section heading [{}] specifies {:d} systematic"
-                    " parameter values, but list of systematics contains {:d}.".format(
-                        orig_section, len(sys_param_point), len(sys_list)
-                    )
-                )
-
-            # -- Retreive maps -- #
-
-            parsed_pipeline_cfg, pipeline_cfg_path = load_and_modify_pipeline_cfg(
-                fit_cfg=fit_cfg, section=orig_section
-            )
-
-            logging.info(
-                "Generating maps for discrete systematics point: %s. Using"
-                ' pipeline config at "%s"',
-                point_str,
-                pipeline_cfg_path,
-            )
-
-            # make a dedicated distribution maker for each systematics set
-            distribution_maker = DistributionMaker(parsed_pipeline_cfg)
-
-            # update params if requested
-            if set_params is not None:
-                for pname, pval in set_params.items():
-                    assert pname in distribution_maker.params.names, (
-                        "Unknown param '%s' in `set_params`" % pname
-                    )
-                    assert (
-                        pval.dimensionality
-                        == distribution_maker.params[pname].dimensionality
-                    ), (
-                        'Incorrect units for param "%s" in `set_params`' % pname
-                    )
-                    distribution_maker.params[pname].value = pval
-                    logging.info("Changed param '%s' to %s", pname, pval)
-
-            # run the distrobutuon maker to get the mapset
-            # TODO This assumes only one pipeline, either make more general or enforce
-            mapset = distribution_maker.get_outputs(return_sum=False)[0]
-
-            if combine_regex:
-                logging.info(
-                    "Combining maps according to regular expression(s) %s",
-                    combine_regex,
-                )
-                mapset = mapset.combine_re(combine_regex)
-
-        # handle unexpected cfg file section
-        else:
-            raise ValueError(
-                "Additional, unrecognized section in fit cfg. file: %s" % orig_section
-            )
-
-        # handle the nominal dataset
-        nominal = section.startswith(NOMINAL_SET_PFX)
-        if nominal:
+        if is_nominal:
             if found_nominal:
                 raise ValueError(
                     "Found multiple nominal sets in fit cfg! There must be"
@@ -454,19 +391,48 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
                 )
             found_nominal = True
 
-        # Store the info
-        dataset = OrderedDict()
-        # TODO something better for name?
-        dataset["name"] = splitext(basename(pipeline_cfg_path))[0]
-        dataset["param_values"] = sys_param_point
-        dataset["mapset"] = mapset
-        dataset["nominal"] = nominal
-        input_data["datasets"].append(dataset)
+        if is_sys_set:
+            # Parse the list of systematics parameter values from the section name
+            sys_param_point = tuple(float(x) for x in section.split(":")[1].split(","))
 
-    # perform some checks
-    nsets = len(input_data["datasets"])
+            if len(sys_param_point) != len(sys_list):
+                raise ValueError(
+                    "Section heading [{}] specifies {:d} systematic"
+                    " parameter values, but there are {:d} systematics".format(
+                        section, len(sys_param_point), len(sys_list)
+                    )
+                )
+
+            parsed_pipeline_cfg, pipeline_cfg_path = load_and_modify_pipeline_cfg(
+                fit_cfg=parsed_fit_cfg, section=section
+            )
+
+            pipeline_cfg_txt_buf = StringIO()
+            parsed_pipeline_cfg.write(pipeline_cfg_txt_buf)
+            pipeline_cfg_txt = pipeline_cfg_txt_buf.getvalue()
+
+            sys_sets_info[sys_param_point] = dict(
+                is_nominal=is_nominal,
+                parsed_pipeline_cfgs=[parsed_pipeline_cfg],
+                pipeline_cfg_paths=[pipeline_cfg_path],
+                pipeline_cfg_txts=[pipeline_cfg_txt],
+            )
+
+        # In this loop, nothing to do for general / apply all sections
+        elif no_ws_section not in (GENERAL_SECTION_NAME, APPLY_ALL_SECTION_NAME):
+            raise ValueError(
+                "Invalid section in fit cfg file: %s" % section
+            )
+
+    if not found_nominal:
+        raise ValueError(
+            "Could not find a nominal discrete systematics set in fit cfg."
+            " There must be exactly one."
+        )
+
+    nsets = len(sys_sets_info)
     nsys = len(sys_list)
-    if not nsets > nsys:
+    if nsets <= nsys:
         logging.warn(
             "Fit will either fail or be unreliable since the number of"
             " systematics sets to be fit is small (%d <= %d).",
@@ -474,11 +440,61 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
             nsys + 1,
         )
 
-    if not found_nominal:
-        raise ValueError(
-            "Could not find a nominal discrete systematics set in fit cfg."
-            " There must be exactly one."
+    for sys_param_point, info in sys_sets_info.items():
+        point_str = " | ".join(
+            ["%s=%.2f" % (p, v) for p, v in zip(sys_list, sys_param_point)]
         )
+
+        logging.info(
+            "Generating maps for discrete systematics point: %s. Using"
+            ' pipeline config(s) at "%s"',
+            point_str,
+            info["pipeline_cfg_paths"],
+        )
+
+        # make a dedicated distribution maker for each systematics set
+        distribution_maker = DistributionMaker(info["parsed_pipeline_cfgs"])
+
+        # update params if requested
+        if set_params is not None:
+            for pname, pval in set_params.items():
+                if pname not in distribution_maker.params.names:
+                    raise ValueError("Unknown param '%s' in `set_params`" % pname)
+                if (
+                    pval.dimensionality
+                    != distribution_maker.params[pname].dimensionality
+                ):
+                    raise ValueError(
+                        'Incorrect units for param "%s" in `set_params`' % pname
+                    )
+                distribution_maker.params[pname].value = pval
+                logging.info("Changed param '%s' to %s", pname, pval)
+
+        distribution_maker_param_values = OrderedDict()
+        for dmpname in sorted(distribution_maker.params.names):
+            dmpval = distribution_maker.params[dmpname].value
+            distribution_maker_param_values[dmpname] = dmpval
+
+        # run the distribution maker to get the mapset
+        # TODO This assumes only one pipeline, either make more general or enforce
+        mapset = distribution_maker.get_outputs(return_sum=False)[0]
+
+        if combine_regex:
+            logging.info(
+                "Combining maps according to regular expression(s) %s",
+                combine_regex,
+            )
+            mapset = mapset.combine_re(combine_regex)
+
+        # Store the info
+        dataset = OrderedDict()
+        dataset["pipeline_cfg_paths"] = info["pipeline_cfg_paths"]
+        dataset["pipeline_cfg_txts"] = info["pipeline_cfg_txts"]
+        dataset["distribution_maker_param_values"] = distribution_maker_param_values
+        dataset["param_values"] = sys_param_point
+        dataset["mapset"] = mapset
+        dataset["nominal"] = info["is_nominal"]
+        input_data["datasets"].append(dataset)
 
     return input_data
 
@@ -506,9 +522,10 @@ def norm_sys_distributions(input_data):
     nominal_mapset = [
         dataset["mapset"] for dataset in input_data["datasets"] if dataset["nominal"]
     ]
-    assert len(nominal_mapset) == 1, "need 1 but got {} nominal mapsets".format(
-        len(nominal_mapset)
-    )
+    if len(nominal_mapset) != 1:
+        raise ValueError(
+            "need 1 but got {} nominal mapsets".format(len(nominal_mapset))
+        )
     nominal_mapset = nominal_mapset[0]
 
     for dataset_dict in input_data["datasets"]:
@@ -616,6 +633,8 @@ def fit_discrete_sys_distributions(input_data, p0=None, fit_method=None):
     # store info from the input data in the fit results
     fit_results["datasets"] = input_data["datasets"]
     fit_results["param_names"] = input_data["param_names"]
+    fit_results["fit_cfg_path"] = input_data["fit_cfg_path"]
+    fit_results["fit_cfg_txt"] = input_data["fit_cfg_txt"]
 
     # get number of systematic parameters and datasets
     n_sys_params = len(fit_results["param_names"])
