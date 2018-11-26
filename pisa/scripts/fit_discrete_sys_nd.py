@@ -43,6 +43,7 @@ __all__ = [
     "APPLY_ALL_SECTION_NAME",
     "COMBINE_REGEX_OPTION",
     "SYS_LIST_OPTION",
+    "UNITS_OPTION",
     "SYS_SET_OPTION",
     "SET_OPTION_RE",
     "REMOVE_OPTION_RE",
@@ -83,6 +84,8 @@ APPLY_ALL_SECTION_NAME = "apply_to_all_sets"
 COMBINE_REGEX_OPTION = "combine_regex"
 
 SYS_LIST_OPTION = "sys_list"
+
+UNITS_OPTION = "units"
 
 NOMINAL_SET_PFX = "nominal_set:"
 
@@ -202,6 +205,7 @@ def parse_fit_config(fit_cfg):
         parsed fit configuration
     sys_list : list of str
         parsed names of systematic parameters
+    units : list
     combine_regex : list of str
         parsed regular expressions for combining pipeline outputs
 
@@ -219,8 +223,31 @@ def parse_fit_config(fit_cfg):
             ' "%s" option in "%s" section (comma-separated list of names).'
             % (SYS_LIST_OPTION, GENERAL_SECTION_NAME)
         )
+
     sys_list = WS_RE.sub("", general_section[SYS_LIST_OPTION]).split(",")
-    logging.info("Found systematic parameters %s.", sys_list)
+
+    if UNITS_OPTION in general_section:
+        units_list = []
+        for unit_str in general_section[UNITS_OPTION].split(","):
+            unit_str = unit_str.strip().split(".")[-1]
+            if unit_str.lower() in ("", "none"):
+                unit_str = "dimensionless"
+            # Make sure unit is interpret-able by Pint
+            ureg.Unit(unit_str)
+            units_list.append(unit_str)
+    else:
+        units_list = ["dimensionless" for s in sys_list]
+        logging.warn(
+            "No %s option found in %s section; assuming systematic parameters are"
+            " dimensionless",
+            UNITS_OPTION,
+            GENERAL_SECTION_NAME,
+        )
+
+    logging.info(
+        "Found systematic parameters %s",
+        ["{} ({})".format(s, u) for s, u in zip(sys_list, units_list)],
+    )
 
     combine_regex = general_section.get(COMBINE_REGEX_OPTION, None)
     if combine_regex:
@@ -238,7 +265,7 @@ def parse_fit_config(fit_cfg):
             for option, val in apply_all_section.items():
                 sys_set_section[option] = val
 
-    return fit_cfg, sys_list, combine_regex
+    return fit_cfg, sys_list, units_list, combine_regex
 
 
 def load_and_modify_pipeline_cfg(fit_cfg, section):
@@ -360,7 +387,7 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
             if not isinstance(param_value, ureg.Quantity):
                 raise TypeError("`set_params` values must be Quantities")
 
-    parsed_fit_cfg, sys_list, combine_regex = parse_fit_config(fit_cfg)
+    parsed_fit_cfg, sys_list, units_list, combine_regex = parse_fit_config(fit_cfg)
     fit_cfg_txt_buf = StringIO()
     parsed_fit_cfg.write(fit_cfg_txt_buf)
     fit_cfg_txt = fit_cfg_txt_buf.getvalue()
@@ -370,6 +397,7 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
     input_data["fit_cfg_path"] = fit_cfg
     input_data["fit_cfg_txt"] = fit_cfg_txt
     input_data["param_names"] = sys_list
+    input_data["param_units"] = units_list
     input_data["datasets"] = []
 
     # -- Load systematics sets -- #
@@ -420,9 +448,7 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
 
         # In this loop, nothing to do for general / apply all sections
         elif no_ws_section not in (GENERAL_SECTION_NAME, APPLY_ALL_SECTION_NAME):
-            raise ValueError(
-                "Invalid section in fit cfg file: %s" % section
-            )
+            raise ValueError("Invalid section in fit cfg file: %s" % section)
 
     if not found_nominal:
         raise ValueError(
@@ -481,8 +507,7 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
 
         if combine_regex:
             logging.info(
-                "Combining maps according to regular expression(s) %s",
-                combine_regex,
+                "Combining maps according to regular expression(s) %s", combine_regex
             )
             mapset = mapset.combine_re(combine_regex)
 
