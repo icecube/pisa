@@ -2453,7 +2453,9 @@ class MultiDimBinning(object):
 
         Returns
         -------
-        numpy ndarray or Pint quantity of the same
+        [X1, X2,..., XN] : list of numpy ndarray or Pint quantities of the same
+            One ndarray or quantity is returned per dimension; see docs for
+            `numpy.meshgrid` for details
 
         See Also
         --------
@@ -2462,22 +2464,25 @@ class MultiDimBinning(object):
         """
         entity = entity.lower().strip()
         if entity == 'midpoints':
-            mg = np.meshgrid(*[d.midpoints for d in self.iterdims()],
-                             indexing='ij')
+            arrays = tuple(d.midpoints for d in self.iterdims())
         elif entity == 'weighted_centers':
-            mg = np.meshgrid(*[d.weighted_centers for d in self.iterdims()],
-                             indexing='ij')
+            arrays = tuple(d.weighted_centers for d in self.iterdims())
         elif entity == 'bin_edges':
-            mg = np.meshgrid(*[d.bin_edges for d in self.iterdims()],
-                             indexing='ij')
+            arrays = tuple(d.bin_edges for d in self.iterdims())
         elif entity == 'bin_widths':
-            mg = np.meshgrid(*[d.bin_widths for d in self.iterdims()],
-                             indexing='ij')
+            arrays = tuple(d.bin_widths for d in self.iterdims())
         else:
-            raise ValueError('Unrecognized `entity`: "%s"' %entity)
+            raise ValueError('Unrecognized `entity`: "%s"' % entity)
+
+        # NOTE: numpy versions prior to 1.13.0, meshgrid returned float64 even
+        # if inputs are float32 to mesghrid. Use `astype` as a fix. Note that
+        # `astype` creates a copy of the array even if dtype of input is the
+        # same, copy=False is ok in the argument to meshgrid.
+        mg = [a.astype(FTYPE) for a in np.meshgrid(*arrays, indexing='ij', copy=False)]
 
         if attach_units:
             return [m*dim.units for m, dim in izip(mg, self.iterdims())]
+
         return mg
 
     # TODO: modify technique depending upon grid size for memory concerns, or
