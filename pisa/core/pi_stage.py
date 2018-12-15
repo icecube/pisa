@@ -188,38 +188,37 @@ class PiStage(BaseStage):
             logging.trace("cached output")
             return
 
-        else:
-            self.data.data_specs = self.input_specs
-            # convert any inputs if necessary:
-            if self.mode == 'EBB':
-                for container in self.data:
-                    for key in self.input_calc_keys:
-                        container.array_to_binned(key, self.calc_specs)
+        self.data.data_specs = self.input_specs
+        # convert any inputs if necessary:
+        if self.mode == "EBB":
+            for container in self.data:
+                for key in self.input_calc_keys:
+                    container.array_to_binned(key, self.calc_specs)
 
-            elif self.mode == 'EBE':
-                for container in self.data:
-                    for key in self.input_calc_keys:
-                        container.binned_to_array(key)
+        elif self.mode == "EBE":
+            for container in self.data:
+                for key in self.input_calc_keys:
+                    container.binned_to_array(key)
 
-            #elif self.mode == 'BBE':
-            #    for container in self.data:
-            #        for key in self.input_calc_keys:
-            #            container.binned_to_array(key)
+        #elif self.mode == "BBE":
+        #    for container in self.data:
+        #        for key in self.input_calc_keys:
+        #            container.binned_to_array(key)
 
-            self.data.data_specs = self.calc_specs
-            self.compute_function()
-            self.param_hash = new_param_hash
+        self.data.data_specs = self.calc_specs
+        self.compute_function()
+        self.param_hash = new_param_hash
 
-            # convert any outputs if necessary:
-            if self.mode[1:] == 'EB':
-                for container in self.data:
-                    for key in self.output_calc_keys:
-                        container.array_to_binned(key, self.output_specs)
+        # convert any outputs if necessary:
+        if self.mode[1:] == "EB":
+            for container in self.data:
+                for key in self.output_calc_keys:
+                    container.array_to_binned(key, self.output_specs)
 
-            elif self.mode[1:] == 'BE':
-                for container in self.data:
-                    for key in self.output_calc_keys:
-                        container.binned_to_array(key)
+        elif self.mode[1:] == "BE":
+            for container in self.data:
+                for key in self.output_calc_keys:
+                    container.binned_to_array(key)
 
     def compute_function(self):
         """Implement in services (subclasses of PiStage)"""
