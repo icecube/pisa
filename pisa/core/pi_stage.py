@@ -190,7 +190,8 @@ class PiStage(BaseStage):
 
         self.data.data_specs = self.input_specs
         # convert any inputs if necessary:
-        if self.mode == "EBB":
+        #if self.mode == "EBB":
+        if self.mode[:2] == "EB":
             for container in self.data:
                 for key in self.input_calc_keys:
                     container.array_to_binned(key, self.calc_specs)
