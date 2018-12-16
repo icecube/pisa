@@ -100,7 +100,7 @@ class pi_hyperplanes(PiStage):  # pyint: disable=invalid-name
 
         # what keys are added or altered for the outputs during apply
 
-        input_calc_keys =  ("hyperplane_results",)
+        input_calc_keys =  ()
         output_calc_keys = ("hyperplane_scalefactors",)
 
         if error_method == "sumw2":
