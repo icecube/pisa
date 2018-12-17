@@ -6,7 +6,7 @@ functionality is built-in.
 """
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 from numba import SmartArray
 
@@ -190,7 +190,6 @@ class PiStage(BaseStage):
 
         self.data.data_specs = self.input_specs
         # convert any inputs if necessary:
-        #if self.mode == "EBB":
         if self.mode[:2] == "EB":
             for container in self.data:
                 for key in self.input_calc_keys:
