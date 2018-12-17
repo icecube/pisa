@@ -451,7 +451,6 @@ class Stage(BaseStage):
             self.nominal_outputs_hash = nominal_outputs_hash
 
     # for PI compatibility
-    # TODO: why is there an "inputs" arg?
     def run(self, inputs=None):
         return self.get_outputs(inputs=inputs)
 

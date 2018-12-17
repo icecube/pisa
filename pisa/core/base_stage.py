@@ -136,7 +136,7 @@ class BaseStage(object):
     def setup(self):
         pass
 
-    def run(self):
+    def run(self, inputs=None):
         return None
 
     def select_params(self, selections, error_on_missing=False):

@@ -257,9 +257,12 @@ class PiStage(BaseStage):
         """Implement in services (subclasses of PiStage)"""
         pass
 
-    def run(self):
+    def run(self, inputs=None):
+        if not inputs is None:
+            raise ValueError("PISA pi requires there not be any inputs.")
         self.compute()
         self.apply()
+        return None
 
     def get_outputs(self):
         """Function for compatibility with PISA cake"""

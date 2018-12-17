@@ -320,36 +320,33 @@ class Pipeline(object):
 
         """
         intermediate = []
+
         if isinstance(idx, basestring):
             idx = self.stage_names.index(idx)
+
         if idx is not None:
             if idx < 0:
                 raise ValueError("Integer `idx` must be >= 0")
             idx += 1
-        assert len(self) > 0
-        last = len(self.stages[:idx]) - 1
-        for i, stage in enumerate(self.stages[:idx]):
+
+        if len(self) == 0:
+            raise ValueError("No stages in the pipeline to run")
+
+        for stage in self.stages[:idx]:
+            name = "{}.{}".format(stage.stage_name, stage.service_name)
             logging.debug(
                 '>> Working on stage "%s" service "%s"',
                 stage.stage_name,
                 stage.service_name,
             )
             try:
-                logging.trace(">>> BEGIN: get_outputs")
-                if self.pisa_version == "pi":
-                    stage.run()
-                    outputs = None
-                    # return pisa cake style ouput if we're the last stage
-                    if i == last:
-                        # try:
+                logging.trace(">>> BEGIN: {}.run(...)".format(name))
+                outputs = stage.run(inputs=inputs) # pylint: disable=redefined-outer-name
+                if return_intermediate:
+                    if outputs is None:  # e.g. for PISA pi
                         outputs = stage.get_outputs()
-                        # except:
-                        #    pass
-                else:
-                    outputs = stage.run(
-                        inputs=inputs
-                    )  # pylint: disable=redefined-outer-name
-                logging.trace(">>> END  : get_outputs")
+                    intermediate.append(outputs)
+                logging.trace(">>> END  : {}.run(...)".format(name))
             except:
                 logging.error(
                     "Error occurred computing outputs in stage %s /" " service %s ...",
@@ -357,13 +354,11 @@ class Pipeline(object):
                     stage.service_name,
                 )
                 raise
-
             logging.trace("outputs: %s" % (outputs,))
-
-            if return_intermediate:
-                intermediate.append(outputs)
-
             inputs = outputs
+
+        if outputs is None:  # e.g. for PISA pi
+            outputs = stage.get_outputs()
 
         if return_intermediate:
             return intermediate
