@@ -15,11 +15,125 @@ hyperplane (one dimension per discrete parameter).
 
 A script for making plots from the fit results produced by this file can be
 found in fridge/analysis/common/scripts/plotting/plot_hyperplane_fits.py
+
+See example config files in directory `pisa_examples/resources/discr_sys/`.
+
+
+Config file syntax
+==================
+
+"general" section
+-----------------
+You must define a "general" section which must have at least option "sys_list" and can
+optionally include options "units" and "combine_regex". You can add more options to the
+"general" section to reference elsewhere in your config, but they will be ignored by
+PISA otherwise. E.g., with all three required and optional options ::
+
+  [general]
+  sys_list = dom_eff, hole_ice, hole_ice_fwd
+  units = dimensionless, dimensionless, dimensionless
+  combine_regex = ["nue.*_cc", "numu.*_cc", "nutau.*_cc", ".*_nc"]
+
+If "units" is not specified, units default to "dimensionless" for all systematics. If specified,
+there must be the same number of comma-separated units strings (interpret-able by the
+Pint module) as there are options in the "sys_list".
+
+Note that "combine_regex" must be Python-evaulatable to a string or a sequence of
+strings. Previously the syntax allowed values like ::
+
+  combine_re = nue.*_cc,numu.*_cc,nutau.*_cc,.*_nc
+
+but unambiguously parsing such a single comma-separated string of one or more regexes
+(which themselves can contian commas) is difficult if not impossible, so this syntax is
+deprecated and should be avoided.
+
+"apply_to_all_sets" section
+---------------------------
+You can optionally include an "apply_to_all_sets" section in your config that, true to
+its name, defines options applied to all systematic sets sections in the file. E.g., ::
+
+  [apply_to_all_sets]
+  pipeline_cfg = settings/pipeline/nutau_mc_baseline.cfg
+  remove [discr_sys.pi_hyperplanes] =
+  set [data.simple_data_loader] data_dict = {
+      'true_energy': 'true_energy',
+      'true_coszen': 'true_coszen',
+      'reco_energy': 'reco_energy',
+      'reco_coszen': 'reco_coszen',
+      'pid': 'pid',
+      'weighted_aeff': 'weighted_aeff',
+      'dunkman_L5': 'dunkman_L5',
+      }
+
+The above sets "pipeline_cfg" for all discr sets, removes the "discr_sys.pi_hyperplanes"
+service, and redefines the "data_dict" in the "data.simple_data_loader" section. Any
+options defined in the discrete set sections of the config will start with this as their
+configuration. Details of the above syntax are described more below.
+
+"nominal_set" and "sys_set" sections
+------------------------------------
+All other required sections in the config file describe the discrete sets and must
+define a "pipeline_cfg" for that systematics set (whether explicitly in the section or
+via the "apply_to_all_sets" section). A systematics set section either starts with
+"nominal_set" (for one and only one set) or "sys_set" (for all remaining sets), followed
+by a colon and magnitudes of the values of each systematic specified in "general"
+section / "sys_list" option (in the same order as defined there). E.g., continuing the
+example config file defined in the above examples, ::
+
+  [nominal_set : 1.00 , 25 , 0.0]
+  set [data.simple_data_loader] events_file = /path/to/nominal_set.hdf5
+
+  [sys_set : 0.88 , 22 , 0.1]
+  set [data.simple_data_loader] events_file = /path/to/sys_set_1.hdf5
+
+  [sys_set : 1.12 , 28 , 0.2]
+  set [data.simple_data_loader] events_file = /path/to/sys_set_2.hdf5
+
+and so forth. Note that all magnitudes must be specified in the same units specified in
+"general" section / "units" option, or if that option is not specified, all magnitudes must
+represent dimensionless quantities. Also note that the "pipeline_cfg" is already defined
+in the above "apply_to_all_sets" section, so each of these sys set sections simply swap
+out the events_file in that pipeline config file for the appropriate events file.
+
+Syntax for modifying a "pipeline_cfg"
+-------------------------------------
+The following syntax is interpreted if specified in "apply_to_all_sets", "sys_set",
+and/or "nominal_set" sections. Note an "apply_to_all_sets" section must specify a
+"pipeline_cfg" for any of the following syntax to be used.
+
+Define or redefine an option via the "set" keyword followed by the section in square
+brackets, the option, either equals (=) or colon (:), and finally the value to set the
+option to. E.g., "events_file" in config section "data.simple_data_loader" is set to
+"settings/pipeline/example.cfg" via ::
+
+  set [data.simple_data_loader] events_file = settings/pipeline/example.cfg
+
+the section is created if it doesn't exist and the option "events_file" is added to that
+section if it doesn't already exist.
+
+You can create a new section (if it doesn't already exist) via the "set" keyword
+followed by the section in square brackets and either equals (=) or colon (:). Anything
+following the equals/colon is ignored. E.g. to add the "data.simple_data_loader" section
+(if it doesn't already exist), ::
+
+  set [data.simple_data_loader] =
+
+Notes on whitespace
+-------------------
+Whitespace is ignored in section names and in lists, so the following are interpreted
+equivalently ::
+
+  [xyz:12,34]
+  [ x y z : 1 2 , 3 4 ]
+
+and the following are equivalent
+
 """
 
 from __future__ import absolute_import, division, print_function
 
 from argparse import ArgumentParser
+from ast import literal_eval
 from collections import Mapping, Sequence, OrderedDict
 import copy
 from os.path import join
@@ -44,9 +158,11 @@ __all__ = [
     "COMBINE_REGEX_OPTION",
     "SYS_LIST_OPTION",
     "UNITS_OPTION",
+    "UNIT_SPECIFIERS",
     "SYS_SET_OPTION",
     "SET_OPTION_RE",
     "REMOVE_OPTION_RE",
+    "NO_LEADING_TRAILING_WS_RE",
     "WS_RE",
     "parse_args",
     "hyperplane_fun",
@@ -87,6 +203,8 @@ SYS_LIST_OPTION = "sys_list"
 
 UNITS_OPTION = "units"
 
+UNIT_SPECIFIERS = ["units"]
+
 NOMINAL_SET_PFX = "nominal_set:"
 
 SYS_SET_PFX = "sys_set:"
@@ -126,6 +244,9 @@ but everything from the equals (or colon) on is ignored.
 
 WS_RE = re.compile(r"\s+", flags=re.UNICODE)
 """regex to match all whitespace characters"""
+
+NO_LEADING_TRAILING_WS_RE = re.compile(r"\s+", flags=re.UNICODE)
+"""regex to remove leading and trailing whitespace"""
 
 
 def parse_args():
@@ -206,8 +327,9 @@ def parse_fit_config(fit_cfg):
     sys_list : list of str
         parsed names of systematic parameters
     units : list
-    combine_regex : list of str
-        parsed regular expressions for combining pipeline outputs
+    combine_re : list of str
+        each string is a regular expression for combining pipeline outputs; see
+        :func:`pisa.core.map.MapSet.combine_re` for details.
 
     """
     fit_cfg = from_file(fit_cfg)
@@ -224,16 +346,34 @@ def parse_fit_config(fit_cfg):
             % (SYS_LIST_OPTION, GENERAL_SECTION_NAME)
         )
 
-    sys_list = WS_RE.sub("", general_section[SYS_LIST_OPTION]).split(",")
+    sys_list = [s.strip() for s in general_section[SYS_LIST_OPTION].split(",")]
 
     if UNITS_OPTION in general_section:
         units_list = []
-        for unit_str in general_section[UNITS_OPTION].split(","):
-            unit_str = unit_str.strip().split(".")[-1]
-            if unit_str.lower() in ("", "none"):
-                unit_str = "dimensionless"
-            # Make sure unit is interpret-able by Pint
-            ureg.Unit(unit_str)
+        for orig_unit_spec in general_section[UNITS_OPTION].split(","):
+            try:
+                # Allow for "units.meter" or "meter"
+                split_unit_spec = orig_unit_spec.strip().split(".")
+                if len(split_unit_spec) == 1:
+                    unit_str = split_unit_spec[0]
+                elif len(split_unit_spec) == 2:
+                    unit_specifier, unit_str = split_unit_spec
+                    if unit_specifier not in UNIT_SPECIFIERS:
+                        raise ValueError(
+                            "Units must be specified by one of {}"
+                            .format(UNIT_SPECIFIERS)
+                        )
+                else:
+                    raise ValueError("Illegal unit spec")
+                unit_str = unit_str.strip().split(".")[-1]
+                # Make sure unit is interpret-able by Pint
+                ureg.Unit(unit_str)
+            except:
+                logging.error(
+                    'Unit "{}" specified by "{}" option in "general" section is not'
+                    'interpret-able by Pint'.format(orig_unit_spec, UNITS_OPTION)
+                )
+                raise
             units_list.append(unit_str)
     else:
         units_list = ["dimensionless" for s in sys_list]
@@ -244,14 +384,25 @@ def parse_fit_config(fit_cfg):
             GENERAL_SECTION_NAME,
         )
 
+    if len(units_list) != len(sys_list):
+        raise ValueError(
+            '{} units specified by "{}" option but {} systematics specified by "{}"'
+            'option; must be same number of each.'.format(
+                len(units_list), UNITS_OPTION, len(sys_list), SYS_LIST_OPTION
+            )
+        )
+
     logging.info(
         "Found systematic parameters %s",
         ["{} ({})".format(s, u) for s, u in zip(sys_list, units_list)],
     )
 
-    combine_regex = general_section.get(COMBINE_REGEX_OPTION, None)
-    if combine_regex:
-        combine_regex = WS_RE.sub("", combine_regex).split(",")
+    combine_re = general_section.get(COMBINE_REGEX_OPTION, None)
+    if combine_re:
+        try:
+            combine_re = literal_eval(combine_re)
+        except:
+            combine_re = WS_RE.sub("", combine_re).split(",")
 
     if APPLY_ALL_SECTION_NAME in no_ws_section_map:
         apply_all_section = fit_cfg[no_ws_section_map[APPLY_ALL_SECTION_NAME]]
@@ -265,7 +416,7 @@ def parse_fit_config(fit_cfg):
             for option, val in apply_all_section.items():
                 sys_set_section[option] = val
 
-    return fit_cfg, sys_list, units_list, combine_regex
+    return fit_cfg, sys_list, units_list, combine_re
 
 
 def load_and_modify_pipeline_cfg(fit_cfg, section):
