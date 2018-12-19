@@ -27,7 +27,7 @@ except IOError:
                      ''')
 sys.path.append(os.path.dirname(path))
 
-from barr_parameterization import *
+from barr_parameterization import modRatioNuBar, modRatioUpHor
 
 class pi_simple(PiStage):
     """
