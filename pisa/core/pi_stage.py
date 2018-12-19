@@ -6,7 +6,7 @@ functionality is built-in.
 """
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 from numba import SmartArray
 
@@ -200,7 +200,7 @@ class PiStage(BaseStage):
                 for key in self.input_calc_keys:
                     container.binned_to_array(key)
 
-        # elif self.mode == 'BBE':
+        #elif self.mode == "BBE":
         #    for container in self.data:
         #        for key in self.input_calc_keys:
         #            container.binned_to_array(key)
@@ -257,24 +257,24 @@ class PiStage(BaseStage):
         """Implement in services (subclasses of PiStage)"""
         pass
 
-    def run(self):
+    def run(self, inputs=None):
+        if not inputs is None:
+            raise ValueError("PISA pi requires there not be any inputs.")
         self.compute()
         self.apply()
+        return None
 
     def get_outputs(self):
         """Function for compatibility with PISA cake"""
-        # output keys need to be exactly 1 to generate pisa cake style mapset
-        if len(self.output_apply_keys) == 1:
+        # output keys need to be exactly 1 and in binned mode to generate pisa cake
+        # style mapset
+        if self.output_mode == 'binned' and len(self.output_apply_keys) == 1:
             self.outputs = self.data.get_mapset(self.output_apply_keys[0])
+        elif len(self.output_apply_keys) == 2 and 'errors' in self.output_apply_keys:
+            other_key = [key for key in self.output_apply_keys if not key == 'errors'][0]
+            self.outputs = self.data.get_mapset(other_key, error='errors')
         else:
-            if not (
-                len(self.output_apply_keys) == 2 and "errors" in self.output_apply_keys
-            ):
-                raise ValueError(
-                    "Cannot transfor this output into PISA style maps with output keys"
-                    " %s" % self.output_apply_keys
-                )
-            other_key = [key for key in self.output_apply_keys if key != "errors"][0]
-            self.outputs = self.data.get_mapset(other_key, error="errors")
+            self.outputs = None
+            logging.warning('Cannot create CAKE style output mapset')
 
         return self.outputs
