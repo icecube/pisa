@@ -134,10 +134,12 @@ equivalently ::
 
 Likewise, the following are all equivalent ::
 
-  sys_list = a,b,c
-  sys_list = a , b , c
+  sys_list = aa,bb,cc
+  sys_list = aa , bb , cc
 
 """
+
+# TODO: document hyperplane fit JSON file produced by this script
 
 from __future__ import absolute_import, division, print_function
 
@@ -162,6 +164,7 @@ from pisa.utils.log import logging, set_verbosity
 
 
 __all__ = [
+    # constants
     "GENERAL_SECTION_NAME",
     "APPLY_ALL_SECTION_NAME",
     "COMBINE_REGEX_OPTION",
@@ -171,7 +174,7 @@ __all__ = [
     "SYS_SET_OPTION",
     "SET_OPTION_RE",
     "REMOVE_OPTION_RE",
-    "WS_RE",
+    # functions
     "parse_args",
     "hyperplane_fun",
     "parse_fit_config",
@@ -217,11 +220,13 @@ UNITS_OPTION = "units"
 """Option in general section to specify units of discrete systematics"""
 
 UNITS_SPECIFIER = "units."
-"""User is allowed to use e.g. UNITS_SPECIFIER.meter or simply meter in UNITS_OPTION"""
+"""User is allowed to use e.g. <UNITS_SPECIFIER>meter or simply meter in UNITS_OPTION"""
 
-NOMINAL_SET_PFX = "nominal_set:"
+NOMINAL_SET_PFX = "nominal_set"
+"""the section name with this followed by a colon indicates the nominal set"""
 
-SYS_SET_PFX = "sys_set:"
+SYS_SET_PFX = "sys_set"
+"""section names with this followed by a colon indicate non-nominal systematics sets"""
 
 SYS_SET_OPTION = "pipeline_cfg"
 """systematics set config file is specified by this option"""
@@ -232,9 +237,6 @@ specified by following this pattern"""
 
 REMOVE_OPTION_RE = re.compile(r"\s*remove\s*\[(.*)\]\s*(\S*.*)")
 """modifications to pipeline configs are specified by options following this pattern"""
-
-WS_RE = re.compile(r"\s+", flags=re.UNICODE)
-"""regex to match all whitespace characters"""
 
 
 def parse_args():
@@ -322,7 +324,6 @@ def parse_fit_config(fit_cfg):
 
     """
     fit_cfg = from_file(fit_cfg)
-    # no_ws_section_map = {WS_RE.sub("", s): s for s in fit_cfg.sections()}
     no_ws_section_map = {s.strip(): s for s in fit_cfg.sections()}
 
     if GENERAL_SECTION_NAME not in no_ws_section_map.values():
@@ -341,9 +342,7 @@ def parse_fit_config(fit_cfg):
     if UNITS_OPTION in general_section:
         units_list = []
         units_specs = (
-            general_section[UNITS_OPTION]
-            .replace(UNITS_SPECIFIER + ".", "")
-            .split(",")
+            general_section[UNITS_OPTION].replace(UNITS_SPECIFIER, "").split(",")
         )
         for units_spec in units_specs:
             # Make sure units are interpret-able by Pint
@@ -435,7 +434,6 @@ def load_and_modify_pipeline_cfg(fit_cfg, section):
     pipeline_cfg = from_file(pipeline_cfg_path)
 
     # Get a no-whitespace version of the section names
-    #section_map = {WS_RE.sub("", s): s for s in pipeline_cfg.sections()}
     section_map = {s.strip(): s for s in pipeline_cfg.sections()}
 
     for option in other_options:
@@ -443,7 +441,6 @@ def load_and_modify_pipeline_cfg(fit_cfg, section):
         remove_match = REMOVE_OPTION_RE.match(option) if not set_match else None
         if set_match:
             section_spec, set_option = set_match.groups()
-            #no_ws_section_spec = WS_RE.sub("", section_spec)
             no_ws_section_spec = section_spec.strip()
             set_option = set_option.strip()
             if no_ws_section_spec not in section_map:
@@ -467,7 +464,6 @@ def load_and_modify_pipeline_cfg(fit_cfg, section):
                 pipeline_cfg.set(section_map[no_ws_section_spec], set_option, set_value)
         elif remove_match:
             section_spec, remove_option = remove_match.groups()
-            #no_ws_section_spec = WS_RE.sub("", section_spec)
             no_ws_section_spec = section_spec.strip()
             remove_option = remove_option.strip()
             if no_ws_section_spec in section_map:
@@ -550,7 +546,7 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
     for section in parsed_fit_cfg.sections():
         no_ws_section = section.strip()
 
-        section_pfx = no_ws_section.split(":")[0]
+        section_pfx = no_ws_section.split(":")[0].strip()
         is_nominal = section_pfx == NOMINAL_SET_PFX
         is_sys_set = is_nominal or section_pfx == SYS_SET_PFX
 
@@ -595,7 +591,7 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
 
         # Do not allow any other sections in the config
         else:
-            raise ValueError("Invalid section in fit cfg file: %s" % section)
+            raise ValueError("Invalid section in fit config file: [%s]" % section)
 
     if not found_nominal:
         raise ValueError(
