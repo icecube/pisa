@@ -1,22 +1,26 @@
 #!/usr/bin/env python
 
 """
-Fit a hyperplane to discrete systematics datasets
+Fit a hyperplane to discrete systematics datasets -- as specified by a fit config
+file -- and produce a fit file usable by, e.g., the `discr_sys.pi_hyperplanes` service.
 
-Produce fit results for sets of discrete systematics (e.g. several simulations
-for different DOM efficiencies); there is one dimension in the hyperplane per
-systematic.
+There are as many dimensions in the hyperplane as there are discrete systematics, i.e.,
+with N discrete systematics, a bin's value is found by ::
 
-The parameters and settings going into the fit are given by an external cfg
-file (fit config).
+  bin_value = C_0 + C_1*x_1 + C_2*x_2 + C_3*x_3 + ... + C_N*x_N
 
-n-dimensional MapSets are supported to be fit by an m-dimensional
-hyperplane (one dimension per discrete parameter).
+where C's are constants found from the fit here in this script and x's are values of the
+discrete systematics.
 
-A script for making plots from the fit results produced by this file can be
-found in fridge/analysis/common/scripts/plotting/plot_hyperplane_fits.py
+There is one such hyperplane defined for each bin in each map produced by the pipeline
+(after the optional combination(s) of some of those maps).
 
-See example config files in directory `pisa_examples/resources/discr_sys/`.
+A script for making plots from the fit results produced by this file can be found in the
+Fridge (private repository) at
+
+  fridge/analysis/common/scripts/plotting/plot_hyperplane_fits.py
+
+See example fit config files in directory `pisa_examples/resources/discr_sys/`.
 
 
 Config file syntax
@@ -26,26 +30,27 @@ Config file syntax
 -----------------
 You must define a "general" section which must have at least option "sys_list" and can
 optionally include options "units" and "combine_regex". You can add more options to the
-"general" section to reference elsewhere in your config, but they will be ignored by
-PISA otherwise. E.g., with all three required and optional options ::
+"general" section, but they will be ignored by PISA unless they are explicitly
+referenced elsewhere in your config file. E.g., a "general" section with all three
+required and optional options (and no more) ::
 
   [general]
   sys_list = dom_eff, hole_ice, hole_ice_fwd
   units = dimensionless, dimensionless, dimensionless
   combine_regex = ["nue.*_cc", "numu.*_cc", "nutau.*_cc", ".*_nc"]
 
-If "units" is not specified, units default to "dimensionless" for all systematics. If specified,
-there must be the same number of comma-separated units strings (interpret-able by the
-Pint module) as there are options in the "sys_list".
+If "units" is not specified, units default to "dimensionless" for all systematics. If
+specified, there must be the same number of comma-separated units strings
+(interpret-able by the Pint module) as there are options in the "sys_list".
 
-Note that "combine_regex" must be Python-evaulatable to a string or a sequence of
-strings. Previously the syntax allowed values like ::
+Note that "combine_regex" should be Python-evaulatable to a string or a sequence of
+strings. Old versions of this script allowed values like ::
 
-  combine_re = nue.*_cc,numu.*_cc,nutau.*_cc,.*_nc
+  combine_regex = nue.*_cc,numu.*_cc,nutau.*_cc,.*_nc
 
 but unambiguously parsing such a single comma-separated string of one or more regexes
-(which themselves can contian commas) is difficult if not impossible, so this syntax is
-deprecated and should be avoided.
+(which themselves can contian commas) is probably impossible, so this syntax is
+deprecated (a warning is emitted if it is detected) and should be avoided.
 
 "apply_to_all_sets" section
 ---------------------------
@@ -90,13 +95,14 @@ example config file defined in the above examples, ::
   set [data.simple_data_loader] events_file = /path/to/sys_set_2.hdf5
 
 and so forth. Note that all magnitudes must be specified in the same units specified in
-"general" section / "units" option, or if that option is not specified, all magnitudes must
-represent dimensionless quantities. Also note that the "pipeline_cfg" is already defined
-in the above "apply_to_all_sets" section, so each of these sys set sections simply swap
-out the events_file in that pipeline config file for the appropriate events file.
+"general" section / "units" option, or if that option is not specified, all magnitudes
+must represent dimensionless quantities. Also note that the "pipeline_cfg" is already
+defined in the above "apply_to_all_sets" section, so each of these sys set sections
+simply swap out the events_file in that pipeline config file for the appropriate events
+file.
 
-Syntax for modifying a "pipeline_cfg"
--------------------------------------
+Syntax for modifying the specified "pipeline_cfg"
+-------------------------------------------------
 The following syntax is interpreted if specified in "apply_to_all_sets", "sys_set",
 and/or "nominal_set" sections. Note an "apply_to_all_sets" section must specify a
 "pipeline_cfg" for any of the following syntax to be used.
@@ -123,10 +129,13 @@ Notes on whitespace
 Whitespace is ignored in section names and in lists, so the following are interpreted
 equivalently ::
 
-  [xyz:12,34]
-  [ x y z : 1 2 , 3 4 ]
+  [ sys_set : 0.88 , 22 , 0.1 ]
+  [sys_set:0.88,22,0.1]
 
-and the following are equivalent
+Likewise, the following are all equivalent ::
+
+  sys_list = a,b,c
+  sys_list = a , b , c
 
 """
 
@@ -162,7 +171,6 @@ __all__ = [
     "SYS_SET_OPTION",
     "SET_OPTION_RE",
     "REMOVE_OPTION_RE",
-    "NO_LEADING_TRAILING_WS_RE",
     "WS_RE",
     "parse_args",
     "hyperplane_fun",
@@ -214,39 +222,13 @@ SYS_SET_OPTION = "pipeline_cfg"
 
 SET_OPTION_RE = re.compile(r"\s*set\s*\[(.*)\]\s*(\S*.*)")
 """defining a section and/or an option within a section in a pipeline configs is
-specified by following this pattern. E.g. ::
-
-  set [data.simple_data_loader] events_file = settings/pipeline/example.cfg
-
-where the section is created if it doesn't exist and the option "events_file" is added
-if it doesn't exist and is set to have value "settings/pipeline/example.cfg"; use ::
-
-  set [data.simple_data_loader] =
-
-to create the section "data.simple_data_loader" if it doesn't already exist. Note that
-you have to have an equals sign (or colon) for the file to parse correctly, but
-everything from the equals (or colon) on is ignored.
-"""
+specified by following this pattern"""
 
 REMOVE_OPTION_RE = re.compile(r"\s*remove\s*\[(.*)\]\s*(\S*.*)")
-"""modifications to pipeline configs are specified by options following this pattern,
-e.g. to remove an entire section ::
-
-  remove [discr_sys.pi_hyperplanes] =
-
-or to remove a single option within a section ::
-
-  remove [data.simple_data_loader] events_file =
-
-Note that you have to have an equals sign (or colon) for the file to parse correctly,
-but everything from the equals (or colon) on is ignored.
-"""
+"""modifications to pipeline configs are specified by options following this pattern"""
 
 WS_RE = re.compile(r"\s+", flags=re.UNICODE)
 """regex to match all whitespace characters"""
-
-NO_LEADING_TRAILING_WS_RE = re.compile(r"\s+", flags=re.UNICODE)
-"""regex to remove leading and trailing whitespace"""
 
 
 def parse_args():
@@ -326,14 +308,16 @@ def parse_fit_config(fit_cfg):
         parsed fit configuration
     sys_list : list of str
         parsed names of systematic parameters
-    units : list
-    combine_re : list of str
+    units_list : list of str
+        units corresponding to each discrete systematic
+    combine_regex : list of str
         each string is a regular expression for combining pipeline outputs; see
-        :func:`pisa.core.map.MapSet.combine_re` for details.
+        :func:`pisa.core.map.MapSet.combine_regex` for details.
 
     """
     fit_cfg = from_file(fit_cfg)
-    no_ws_section_map = {WS_RE.sub("", s): s for s in fit_cfg.sections()}
+    # no_ws_section_map = {WS_RE.sub("", s): s for s in fit_cfg.sections()}
+    no_ws_section_map = {s.strip(): s for s in fit_cfg.sections()}
 
     if GENERAL_SECTION_NAME not in no_ws_section_map.values():
         raise KeyError('Fit config is missing the "%s" section!' % GENERAL_SECTION_NAME)
@@ -360,8 +344,9 @@ def parse_fit_config(fit_cfg):
                     unit_specifier, unit_str = split_unit_spec
                     if unit_specifier not in UNIT_SPECIFIERS:
                         raise ValueError(
-                            "Units must be specified by one of {}"
-                            .format(UNIT_SPECIFIERS)
+                            "Units must be specified by one of {}".format(
+                                UNIT_SPECIFIERS
+                            )
                         )
                 else:
                     raise ValueError("Illegal unit spec")
@@ -370,8 +355,10 @@ def parse_fit_config(fit_cfg):
                 ureg.Unit(unit_str)
             except:
                 logging.error(
-                    'Unit "{}" specified by "{}" option in "general" section is not'
-                    'interpret-able by Pint'.format(orig_unit_spec, UNITS_OPTION)
+                    'Unit "%s" specified by "%s" option in "general" section is not'
+                    "interpret-able by Pint",
+                    orig_unit_spec,
+                    UNITS_OPTION,
                 )
                 raise
             units_list.append(unit_str)
@@ -387,7 +374,7 @@ def parse_fit_config(fit_cfg):
     if len(units_list) != len(sys_list):
         raise ValueError(
             '{} units specified by "{}" option but {} systematics specified by "{}"'
-            'option; must be same number of each.'.format(
+            "option; must be same number of each.".format(
                 len(units_list), UNITS_OPTION, len(sys_list), SYS_LIST_OPTION
             )
         )
@@ -397,12 +384,17 @@ def parse_fit_config(fit_cfg):
         ["{} ({})".format(s, u) for s, u in zip(sys_list, units_list)],
     )
 
-    combine_re = general_section.get(COMBINE_REGEX_OPTION, None)
-    if combine_re:
+    combine_regex = general_section.get(COMBINE_REGEX_OPTION, None)
+    if combine_regex:
         try:
-            combine_re = literal_eval(combine_re)
-        except:
-            combine_re = WS_RE.sub("", combine_re).split(",")
+            combine_regex = literal_eval(combine_regex)
+        except (SyntaxError, ValueError):
+            logging.warn(
+                'Deprecated syntax for "combine_re" (make into a Python-evaluatable'
+                "sequence of strings instead) :: combine_regex = %s",
+                combine_regex,
+            )
+            combine_regex = [r.strip() for r in combine_regex.split(",")]
 
     if APPLY_ALL_SECTION_NAME in no_ws_section_map:
         apply_all_section = fit_cfg[no_ws_section_map[APPLY_ALL_SECTION_NAME]]
@@ -416,7 +408,7 @@ def parse_fit_config(fit_cfg):
             for option, val in apply_all_section.items():
                 sys_set_section[option] = val
 
-    return fit_cfg, sys_list, units_list, combine_re
+    return fit_cfg, sys_list, units_list, combine_regex
 
 
 def load_and_modify_pipeline_cfg(fit_cfg, section):
@@ -557,10 +549,12 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
     sys_sets_info = OrderedDict()
 
     for section in parsed_fit_cfg.sections():
-        no_ws_section = WS_RE.sub("", section)
+        # no_ws_section = WS_RE.sub("", section)
+        no_ws_section = section.strip()
 
-        is_nominal = no_ws_section.startswith(NOMINAL_SET_PFX)
-        is_sys_set = is_nominal or no_ws_section.startswith(SYS_SET_PFX)
+        section_pfx = no_ws_section.split(":")[0]
+        is_nominal = section_pfx == NOMINAL_SET_PFX
+        is_sys_set = is_nominal or section_pfx == SYS_SET_PFX
 
         if is_nominal:
             if found_nominal:
@@ -597,8 +591,12 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
                 pipeline_cfg_txts=[pipeline_cfg_txt],
             )
 
-        # In this loop, nothing to do for general / apply all sections
-        elif no_ws_section not in (GENERAL_SECTION_NAME, APPLY_ALL_SECTION_NAME):
+        # In this loop, nothing to do for general & apply_to_all_sets sections
+        elif no_ws_section in (GENERAL_SECTION_NAME, APPLY_ALL_SECTION_NAME):
+            pass
+
+        # Do not allow any other sections in the config
+        else:
             raise ValueError("Invalid section in fit cfg file: %s" % section)
 
     if not found_nominal:
@@ -923,14 +921,14 @@ def fit_discrete_sys_distributions(input_data, p0=None, fit_method=None):
 
             # empty bins have sigma=0 which causes the hyperplane fit to fail (silently)
             # replace with sigma=inf (e.g. we know nothing in this bin)
-            empty_bin_mask = np.isclose(y_values, 0.)
+            empty_bin_mask = np.isclose(y_values, 0.0)
             if np.any(empty_bin_mask):
-                empty_bin_zero_sigma_mask = empty_bin_mask & np.isclose(y_sigma, 0.)
+                empty_bin_zero_sigma_mask = empty_bin_mask & np.isclose(y_sigma, 0.0)
                 if np.any(empty_bin_zero_sigma_mask):
                     y_sigma[empty_bin_zero_sigma_mask] = np.inf
 
             # check no zero sigma values remaining
-            if np.any(np.isclose(y_sigma, 0.)):
+            if np.any(np.isclose(y_sigma, 0.0)):
                 raise ValueError(
                     "Found histogram sigma values that are 0., which is unphysical"
                 )
