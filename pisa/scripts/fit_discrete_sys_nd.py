@@ -167,7 +167,7 @@ __all__ = [
     "COMBINE_REGEX_OPTION",
     "SYS_LIST_OPTION",
     "UNITS_OPTION",
-    "UNIT_SPECIFIERS",
+    "UNITS_SPECIFIER",
     "SYS_SET_OPTION",
     "SET_OPTION_RE",
     "REMOVE_OPTION_RE",
@@ -202,16 +202,22 @@ __license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
 
 
 GENERAL_SECTION_NAME = "general"
+"""general section name"""
 
 APPLY_ALL_SECTION_NAME = "apply_to_all_sets"
+"""section name that defines pipeline config / options for all discr sets"""
 
 COMBINE_REGEX_OPTION = "combine_regex"
+"""Option in general section to specify map(s) to combine before performing fit"""
 
 SYS_LIST_OPTION = "sys_list"
+"""Option in general section to specify discrete systematics"""
 
 UNITS_OPTION = "units"
+"""Option in general section to specify units of discrete systematics"""
 
-UNIT_SPECIFIERS = ["units"]
+UNITS_SPECIFIER = "units."
+"""User is allowed to use e.g. UNITS_SPECIFIER.meter or simply meter in UNITS_OPTION"""
 
 NOMINAL_SET_PFX = "nominal_set:"
 
@@ -334,34 +340,24 @@ def parse_fit_config(fit_cfg):
 
     if UNITS_OPTION in general_section:
         units_list = []
-        for orig_unit_spec in general_section[UNITS_OPTION].split(","):
+        units_specs = (
+            general_section[UNITS_OPTION]
+            .replace(UNITS_SPECIFIER + ".", "")
+            .split(",")
+        )
+        for units_spec in units_specs:
+            # Make sure units are interpret-able by Pint
             try:
-                # Allow for "units.meter" or "meter"
-                split_unit_spec = orig_unit_spec.strip().split(".")
-                if len(split_unit_spec) == 1:
-                    unit_str = split_unit_spec[0]
-                elif len(split_unit_spec) == 2:
-                    unit_specifier, unit_str = split_unit_spec
-                    if unit_specifier not in UNIT_SPECIFIERS:
-                        raise ValueError(
-                            "Units must be specified by one of {}".format(
-                                UNIT_SPECIFIERS
-                            )
-                        )
-                else:
-                    raise ValueError("Illegal unit spec")
-                unit_str = unit_str.strip().split(".")[-1]
-                # Make sure unit is interpret-able by Pint
-                ureg.Unit(unit_str)
+                ureg.Unit(units_spec)
             except:
                 logging.error(
                     'Unit "%s" specified by "%s" option in "general" section is not'
                     "interpret-able by Pint",
-                    orig_unit_spec,
+                    units_spec,
                     UNITS_OPTION,
                 )
                 raise
-            units_list.append(unit_str)
+            units_list.append(units_spec)
     else:
         units_list = ["dimensionless" for s in sys_list]
         logging.warn(
@@ -439,14 +435,16 @@ def load_and_modify_pipeline_cfg(fit_cfg, section):
     pipeline_cfg = from_file(pipeline_cfg_path)
 
     # Get a no-whitespace version of the section names
-    section_map = {WS_RE.sub("", s): s for s in pipeline_cfg.sections()}
+    #section_map = {WS_RE.sub("", s): s for s in pipeline_cfg.sections()}
+    section_map = {s.strip(): s for s in pipeline_cfg.sections()}
 
     for option in other_options:
         set_match = SET_OPTION_RE.match(option)
         remove_match = REMOVE_OPTION_RE.match(option) if not set_match else None
         if set_match:
             section_spec, set_option = set_match.groups()
-            no_ws_section_spec = WS_RE.sub("", section_spec)
+            #no_ws_section_spec = WS_RE.sub("", section_spec)
+            no_ws_section_spec = section_spec.strip()
             set_option = set_option.strip()
             if no_ws_section_spec not in section_map:
                 logging.debug(
@@ -469,7 +467,8 @@ def load_and_modify_pipeline_cfg(fit_cfg, section):
                 pipeline_cfg.set(section_map[no_ws_section_spec], set_option, set_value)
         elif remove_match:
             section_spec, remove_option = remove_match.groups()
-            no_ws_section_spec = WS_RE.sub("", section_spec)
+            #no_ws_section_spec = WS_RE.sub("", section_spec)
+            no_ws_section_spec = section_spec.strip()
             remove_option = remove_option.strip()
             if no_ws_section_spec in section_map:
                 if remove_option:
@@ -549,7 +548,6 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
     sys_sets_info = OrderedDict()
 
     for section in parsed_fit_cfg.sections():
-        # no_ws_section = WS_RE.sub("", section)
         no_ws_section = section.strip()
 
         section_pfx = no_ws_section.split(":")[0]
