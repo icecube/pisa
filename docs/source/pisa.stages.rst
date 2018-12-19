@@ -11,7 +11,6 @@ Subpackages
     pisa.stages.data
     pisa.stages.discr_sys
     pisa.stages.flux
-    pisa.stages.mc
     pisa.stages.osc
     pisa.stages.pid
     pisa.stages.reco

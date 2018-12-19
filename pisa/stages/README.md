@@ -10,7 +10,6 @@ Directories are PISA stages, and within each directory can be found the services
 * `data/` - All stages relating to the handling of data.
 * `discr_sys/` - All stages relating to the handling of discrete systematics.
 * `flux/` - All stages relating to the atmospheric neutrino flux.
-* `mc/` - All stages relating to Monte Carlo re-weighting.
 * `osc/` - All stages relating to neutrino oscillations. 
 * `pid/` - All stages relating to particle identification.
 * `reco/` - All stages relating to applying reconstruction kernels.
