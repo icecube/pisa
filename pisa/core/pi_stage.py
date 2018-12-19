@@ -262,12 +262,14 @@ class PiStage(BaseStage):
         '''
         function for cake style outputs
         '''
-        # output keys need to be exactly 1 to generate pisa cake style mapset
-        if len(self.output_apply_keys) == 1:
+        # output keys need to be exactly 1 and in binned mode to generate pisa cake style mapset
+        if self.output_mode == 'binned' and len(self.output_apply_keys) == 1:
             self.outputs = self.data.get_mapset(self.output_apply_keys[0])
-        else:
-            assert len(self.output_apply_keys) == 2 and 'errors' in self.output_apply_keys, 'Cannot transfor this output into PISA style maps with output keys %s'%self.output_apply_keys
+        elif len(self.output_apply_keys) == 2 and 'errors' in self.output_apply_keys:
             other_key = [key for key in self.output_apply_keys if not key == 'errors'][0]
             self.outputs = self.data.get_mapset(other_key, error='errors')
+        else:
+            self.outputs = None
+            logging.warning('Cannot create CAKE style output mapset')
 
         return self.outputs
