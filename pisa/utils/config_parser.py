@@ -89,14 +89,14 @@ equivalent values for params `p1` and `p2`:
 
 .. code-block:: cfg
 
-    param.p1 = 12.5 * unit.GeV
-    param.p2 = 12.5 * unit.gigaelectronvolt
+    param.p1 = 12.5 * units.GeV
+    param.p2 = 12.5 * units.gigaelectronvolt
 
 and this can be combined with the Gaussian-prior ``+/-`` notation:
 
 .. code-block:: cfg
 
-    param.p1 = 12.5 +/- 2.3 * unit.GeV
+    param.p1 = 12.5 +/- 2.3 * units.GeV
 
 Additional arguments to a parameter are passed in with the ``.`` notation, for
 example ``param.p1.fixed = False``, which makes p1 a free parameter in the
