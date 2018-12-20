@@ -35,11 +35,11 @@ from pisa.utils.log import logging, set_verbosity
 from pisa.utils.profiler import profile
 
 
-__all__ = ['Pipeline', 'test_Pipeline', 'parse_args', 'main']
+__all__ = ["Pipeline", "test_Pipeline", "parse_args", "main"]
 
-__author__ = 'J.L. Lanfranchi, P. Eller'
+__author__ = "J.L. Lanfranchi, P. Eller"
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
- limitations under the License.'''
+ limitations under the License."""
 
 
 # TODO: should we check that the output binning of a previous stage produces
@@ -83,6 +83,7 @@ class Pipeline(object):
         OrderedDict. If `OrderedDict`, use directly as pipeline configuration.
 
     """
+
     def __init__(self, config):
         if isinstance(config, (basestring, PISAConfigParser)):
             config = parse_pipeline_config(config=config)
@@ -90,8 +91,8 @@ class Pipeline(object):
             pass
         else:
             raise TypeError(
-                '`config` passed is of type %s but must be string,'
-                ' PISAConfigParser, or OrderedDict' % type(config).__name__
+                "`config` passed is of type %s but must be string,"
+                " PISAConfigParser, or OrderedDict" % type(config).__name__
             )
 
         self.pisa_version = None
@@ -137,18 +138,19 @@ class Pipeline(object):
         if isinstance(idx, (int, slice)):
             return self.stages[idx]
 
-        raise ValueError('Cannot locate stage "%s" in pipeline. Stages'
-                         ' available are %s.' %(idx, self.stage_names))
+        raise ValueError(
+            'Cannot locate stage "%s" in pipeline. Stages'
+            " available are %s." % (idx, self.stage_names)
+        )
 
     def __getattr__(self, attr):
         for stage in self:
             if stage.stage_name == attr:
                 return stage
-        #else:
-        #    return .__getattr__(self, attr)
-        #raise AttributeError('"%s" is not a stage in this pipeline or "%s" is'
-        #                     ' a property of Pipeline that failed to execute.'
-        #                     %(attr, attr))
+        raise AttributeError(
+            '"%s" is neither a stage in this pipeline nor an attribute/property'
+            " of the `Pipeline` object." % attr
+        )
 
     def _init_stages(self):
         """Stage factory: Instantiate stages specified by self.config.
@@ -161,34 +163,35 @@ class Pipeline(object):
 
         """
         stages = []
-        data = ContainerSet('events')
-        for stage_num, ((stage_name, service_name), settings) \
-                in enumerate(self.config.items()):
+        data = ContainerSet("events")
+        for stage_num, ((stage_name, service_name), settings) in enumerate(
+            self.config.items()
+        ):
             try:
-                logging.debug('instantiating stage %s / service %s',
-                              stage_name, service_name)
+                logging.debug(
+                    "instantiating stage %s / service %s", stage_name, service_name
+                )
 
                 # Import service's module
-                logging.trace('Importing: pisa.stages.%s.%s',
-                              stage_name, service_name)
-                module = import_module(
-                    'pisa.stages.%s.%s' % (stage_name, service_name)
-                )
+                logging.trace("Importing: pisa.stages.%s.%s", stage_name, service_name)
+                module = import_module("pisa.stages.%s.%s" % (stage_name, service_name))
 
                 # Get service class from module
                 cls = getattr(module, service_name)
 
                 # Instantiate service
-                logging.trace("initializing stage %s.%s with settings %s"%(stage_name, service_name, settings))
+                logging.trace(
+                    "initializing stage %s.%s with settings %s"
+                    % (stage_name, service_name, settings)
+                )
                 service = cls(**settings)
-                try :
+                try:
                     service = cls(**settings)
-                except Exception as e :
+                except Exception as e:
                     raise IOError(
-                        'Failed to instantiate stage %s.%s with settings %s, error was: %s'
-                        %(service_name, stage_name, settings.keys(), e )
-                        )
-                   
+                        "Failed to instantiate stage %s.%s with settings %s, error"
+                        " was: %s" % (service_name, stage_name, settings.keys(), e)
+                    )
 
                 cake_stage = isinstance(service, Stage)
                 pi_stage = isinstance(service, PiStage)
@@ -196,35 +199,38 @@ class Pipeline(object):
                 if not (cake_stage or pi_stage):
                     raise TypeError(
                         'Trying to create service "%s" for stage #%d (%s),'
-                        ' but object %s instantiated from class %s is not a'
-                        ' PISA Stage type but instead is of type %s.'
-                        %(service_name, stage_num, stage_name, service, cls,
-                           type(service))
+                        " but object %s instantiated from class %s is not a"
+                        " PISA Stage type but instead is of type %s."
+                        % (
+                            service_name,
+                            stage_num,
+                            stage_name,
+                            service,
+                            cls,
+                            type(service),
                         )
+                    )
 
                 # first stage can determine type of pipeline
                 if self.pisa_version is None:
-                    self.pisa_version = 'cake' if cake_stage else 'pi'
-                
-                elif self.pisa_version == 'cake' and pi_stage:
+                    self.pisa_version = "cake" if cake_stage else "pi"
+
+                elif self.pisa_version == "cake" and pi_stage:
                     raise TypeError(
-                        'Trying to use the PISA Pi Stage in '
-                        'a PISA cake pipeline.'
+                        "Trying to use the PISA Pi Stage in " "a PISA cake pipeline."
                     )
 
-                elif self.pisa_version == 'pi' and cake_stage:
+                elif self.pisa_version == "pi" and cake_stage:
                     raise TypeError(
-                        'Trying to use the PISA cake Stage in '
-                        'a PISA Pi pipeline.'
+                        "Trying to use the PISA cake Stage in " "a PISA Pi pipeline."
                     )
-
 
                 # Append service to pipeline
 
-                if self.pisa_version == 'pi':
+                if self.pisa_version == "pi":
                     service.data = data
                 # add events object
-                
+
                 # run setup on service
                 service.setup()
 
@@ -232,8 +238,10 @@ class Pipeline(object):
 
             except:
                 logging.error(
-                    'Failed to initialize stage #%d (stage=%s, service=%s).',
-                    stage_num, stage_name, service_name
+                    "Failed to initialize stage #%d (stage=%s, service=%s).",
+                    stage_num,
+                    stage_name,
+                    service_name,
                 )
                 raise
 
@@ -242,30 +250,38 @@ class Pipeline(object):
             stage.select_params(self.param_selections, error_on_missing=False)
             if previous_stage is not None:
                 prev_has_binning = (
-                    hasattr(previous_stage, 'output_binning')
+                    hasattr(previous_stage, "output_binning")
                     and previous_stage.output_binning is not None
                 )
                 this_has_binning = (
-                    hasattr(stage, 'input_binning')
-                    and stage.input_binning is not None
+                    hasattr(stage, "input_binning") and stage.input_binning is not None
                 )
                 if this_has_binning != prev_has_binning:
                     raise ValueError(
                         'hasattr(%s, "output_binning") is %s but'
                         ' hasattr(%s, "input_binning") is %s.'
-                        % (previous_stage.stage_name, prev_has_binning,
-                           stage.stage_name, this_has_binning)
+                        % (
+                            previous_stage.stage_name,
+                            prev_has_binning,
+                            stage.stage_name,
+                            this_has_binning,
+                        )
                     )
                 if this_has_binning:
                     is_compat = stage.input_binning.is_compat(
                         previous_stage.output_binning
                     )
                     if not is_compat:
-                        logging.error('Stage %s output binning: %s',
-                                      previous_stage.stage_name,
-                                      previous_stage.output_binning)
-                        logging.error('Stage %s input binning: %s',
-                                      stage.stage_name, stage.input_binning)
+                        logging.error(
+                            "Stage %s output binning: %s",
+                            previous_stage.stage_name,
+                            previous_stage.output_binning,
+                        )
+                        logging.error(
+                            "Stage %s input binning: %s",
+                            stage.stage_name,
+                            stage.input_binning,
+                        )
                         raise ValueError(
                             "%s stage's output binning is incompatible with"
                             " %s stage's input binning."
@@ -277,8 +293,7 @@ class Pipeline(object):
 
     # TODO: handle other container(s)
     @profile
-    def get_outputs(self, inputs=None, idx=None,
-                    return_intermediate=False):
+    def get_outputs(self, inputs=None, idx=None, return_intermediate=False):
         """Run the pipeline to compute its outputs.
 
         Parameters
@@ -305,43 +320,45 @@ class Pipeline(object):
 
         """
         intermediate = []
+
         if isinstance(idx, basestring):
             idx = self.stage_names.index(idx)
+
         if idx is not None:
             if idx < 0:
-                raise ValueError('Integer `idx` must be >= 0')
+                raise ValueError("Integer `idx` must be >= 0")
             idx += 1
-        assert len(self) > 0
-        last = len(self.stages[:idx]) - 1
-        for i, stage in enumerate(self.stages[:idx]):
-            logging.debug('>> Working on stage "%s" service "%s"',
-                          stage.stage_name, stage.service_name)
+
+        if len(self) == 0:
+            raise ValueError("No stages in the pipeline to run")
+
+        for stage in self.stages[:idx]:
+            name = "{}.{}".format(stage.stage_name, stage.service_name)
+            logging.debug(
+                '>> Working on stage "%s" service "%s"',
+                stage.stage_name,
+                stage.service_name,
+            )
             try:
-                logging.trace('>>> BEGIN: get_outputs')
-                if self.pisa_version == 'pi':
-                    stage.run()
-                    outputs = None
-                    # return pisa cake style ouput if we're the last stage
-                    if i==last:
-                        #try:
+                logging.trace(">>> BEGIN: {}.run(...)".format(name))
+                outputs = stage.run(inputs=inputs) # pylint: disable=redefined-outer-name
+                if return_intermediate:
+                    if outputs is None:  # e.g. for PISA pi
                         outputs = stage.get_outputs()
-                        #except:
-                        #    pass
-                else:
-                    outputs = stage.run(inputs=inputs) # pylint: disable=redefined-outer-name
-                logging.trace('>>> END  : get_outputs')
+                    intermediate.append(outputs)
+                logging.trace(">>> END  : {}.run(...)".format(name))
             except:
-                logging.error('Error occurred computing outputs in stage %s /'
-                              ' service %s ...',
-                              stage.stage_name, stage.service_name)
+                logging.error(
+                    "Error occurred computing outputs in stage %s /" " service %s ...",
+                    stage.stage_name,
+                    stage.service_name,
+                )
                 raise
-
-            logging.trace('outputs: %s' %(outputs,))
-
-            if return_intermediate:
-                intermediate.append(outputs)
-
+            logging.trace("outputs: %s" % (outputs,))
             inputs = outputs
+
+        if outputs is None:  # e.g. for PISA pi
+            outputs = stage.get_outputs()
 
         if return_intermediate:
             return intermediate
@@ -388,8 +405,8 @@ class Pipeline(object):
 
         if error_on_missing and successes == 0:
             raise KeyError(
-                'None of the stages in this pipeline has all of the'
-                ' selections %s available.' %(selections,)
+                "None of the stages in this pipeline has all of the"
+                " selections %s available." % (selections,)
             )
 
     @property
@@ -440,8 +457,7 @@ class Pipeline(object):
         """int : Hash of the state of the pipeline. This hashes together a hash
         of the Pipeline class's source code and a hash of the state of each
         contained stage."""
-        return hash_obj([self.source_code_hash]
-                        + [stage.hash for stage in self])
+        return hash_obj([self.source_code_hash] + [stage.hash for stage in self])
 
     def __hash__(self):
         return self.hash
@@ -455,54 +471,70 @@ def test_Pipeline():
     # Test: select_params and param_selections
     #
 
-    hierarchies = ['nh', 'ih']
-    materials = ['iron', 'pyrolite']
+    hierarchies = ["nh", "ih"]
+    materials = ["iron", "pyrolite"]
 
-    t23 = dict(
-        ih=49.5 * ureg.deg,
-        nh=42.3 * ureg.deg
-    )
-    YeO = dict(
-        iron=0.4656,
-        pyrolite=0.4957
-    )
+    t23 = dict(ih=49.5 * ureg.deg, nh=42.3 * ureg.deg)
+    YeO = dict(iron=0.4656, pyrolite=0.4957)
 
     # Instantiate with two pipelines: first has both nh/ih and iron/pyrolite
     # param selectors, while the second only has nh/ih param selectors.
-    pipeline = Pipeline('tests/settings/test_Pipeline.cfg') # pylint: disable=redefined-outer-name
+    pipeline = Pipeline(
+        "tests/settings/test_Pipeline.cfg"
+    )  # pylint: disable=redefined-outer-name
 
-    current_mat = 'iron'
-    current_hier = 'nh'
+    current_mat = "iron"
+    current_hier = "nh"
 
     for new_hier, new_mat in product(hierarchies, materials):
         _ = YeO[new_mat]
 
-        assert pipeline.param_selections == sorted([current_hier, current_mat]), str(pipeline.params.param_selections)
-        assert pipeline.params.theta23.value == t23[current_hier], str(pipeline.params.theta23)
+        assert pipeline.param_selections == sorted([current_hier, current_mat]), str(
+            pipeline.params.param_selections
+        )
+        assert pipeline.params.theta23.value == t23[current_hier], str(
+            pipeline.params.theta23
+        )
         assert pipeline.params.YeO.value == YeO[current_mat], str(pipeline.params.YeO)
 
         # Select just the hierarchy
         pipeline.select_params(new_hier)
-        assert pipeline.param_selections == sorted([new_hier, current_mat]), str(pipeline.param_selections)
-        assert pipeline.params.theta23.value == t23[new_hier], str(pipeline.params.theta23)
+        assert pipeline.param_selections == sorted([new_hier, current_mat]), str(
+            pipeline.param_selections
+        )
+        assert pipeline.params.theta23.value == t23[new_hier], str(
+            pipeline.params.theta23
+        )
         assert pipeline.params.YeO.value == YeO[current_mat], str(pipeline.params.YeO)
 
         # Select just the material
         pipeline.select_params(new_mat)
-        assert pipeline.param_selections == sorted([new_hier, new_mat]), str(pipeline.param_selections)
-        assert pipeline.params.theta23.value == t23[new_hier], str(pipeline.params.theta23)
+        assert pipeline.param_selections == sorted([new_hier, new_mat]), str(
+            pipeline.param_selections
+        )
+        assert pipeline.params.theta23.value == t23[new_hier], str(
+            pipeline.params.theta23
+        )
         assert pipeline.params.YeO.value == YeO[new_mat], str(pipeline.params.YeO)
 
         # Reset both to "current"
         pipeline.select_params([current_mat, current_hier])
-        assert pipeline.param_selections == sorted([current_hier, current_mat]), str(pipeline.param_selections)
-        assert pipeline.params.theta23.value == t23[current_hier], str(pipeline.params.theta23)
+        assert pipeline.param_selections == sorted([current_hier, current_mat]), str(
+            pipeline.param_selections
+        )
+        assert pipeline.params.theta23.value == t23[current_hier], str(
+            pipeline.params.theta23
+        )
         assert pipeline.params.YeO.value == YeO[current_mat], str(pipeline.params.YeO)
 
         # Select both hierarchy and material
         pipeline.select_params([new_mat, new_hier])
-        assert pipeline.param_selections == sorted([new_hier, new_mat]), str(pipeline.param_selections)
-        assert pipeline.params.theta23.value == t23[new_hier], str(pipeline.params.theta23)
+        assert pipeline.param_selections == sorted([new_hier, new_mat]), str(
+            pipeline.param_selections
+        )
+        assert pipeline.params.theta23.value == t23[new_hier], str(
+            pipeline.params.theta23
+        )
         assert pipeline.params.YeO.value == YeO[new_mat], str(pipeline.params.YeO)
 
         current_hier = new_hier
@@ -512,86 +544,101 @@ def test_Pipeline():
 def parse_args():
     """Parse command line arguments if `pipeline.py` is called as a script."""
     parser = ArgumentParser(
-        #formatter_class=ArgumentDefaultsHelpFormatter,
-        description='''Instantiate and run a pipeline from a config file.
-        Optionally store the resulting distribution(s) and plot(s) to disk.'''
+        # formatter_class=ArgumentDefaultsHelpFormatter,
+        description="""Instantiate and run a pipeline from a config file.
+        Optionally store the resulting distribution(s) and plot(s) to disk."""
     )
 
-    required = parser.add_argument_group('required arguments')
+    required = parser.add_argument_group("required arguments")
     required.add_argument(
-        '-p', '--pipeline', metavar='CONFIGFILE', type=str, required=True,
-        help='File containing settings for the pipeline.'
+        "-p",
+        "--pipeline",
+        metavar="CONFIGFILE",
+        type=str,
+        required=True,
+        help="File containing settings for the pipeline.",
     )
 
     parser.add_argument(
-        '-a', '--arg', metavar='SECTION ARG=VAL', nargs='+', action='append',
-        help='''Set config arg(s) manually. SECTION can be e.g.
+        "-a",
+        "--arg",
+        metavar="SECTION ARG=VAL",
+        nargs="+",
+        action="append",
+        help="""Set config arg(s) manually. SECTION can be e.g.
         "stage:<stage_name>" (like "stage:flux", "stage:reco", etc.),
         "pipeline", and so forth. Arg values specified here take precedence
         over those in the config file, but note that the sections specified
-        must already exist in the config file.'''
+        must already exist in the config file.""",
     )
     parser.add_argument(
-        '--select', metavar='PARAM_SELECTIONS', nargs='+', default=None,
-        help='''Param selectors (separated by spaces) to use to override any
-        defaults in the config file.'''
+        "--select",
+        metavar="PARAM_SELECTIONS",
+        nargs="+",
+        default=None,
+        help="""Param selectors (separated by spaces) to use to override any
+        defaults in the config file.""",
     )
     parser.add_argument(
-        '--inputs', metavar='FILE', type=str,
-        help='''File from which to read inputs to be fed to the pipeline.'''
+        "--inputs",
+        metavar="FILE",
+        type=str,
+        help="""File from which to read inputs to be fed to the pipeline.""",
     )
     parser.add_argument(
-        '--only-stage', metavar='STAGE', type=str,
-        help='''Test stage: Instantiate a single stage in the pipeline
+        "--only-stage",
+        metavar="STAGE",
+        type=str,
+        help="""Test stage: Instantiate a single stage in the pipeline
         specification and run it in isolation (as the sole stage in a
         pipeline). If it is a stage that requires inputs, these can be
         specified with the --infile argument, or else dummy stage input maps
         (numpy.ones(...), matching the input binning specification) are
-        generated for testing purposes.'''
+        generated for testing purposes.""",
     )
     parser.add_argument(
-        '--stop-after-stage', metavar='STAGE',
-        help='''Instantiate a pipeline up to and including STAGE, but stop
+        "--stop-after-stage",
+        metavar="STAGE",
+        help="""Instantiate a pipeline up to and including STAGE, but stop
         there. Can specify a stage by index in the pipeline config (e.g., 0, 1,
-        etc.) or name (e.g., flux, osc, etc.)'''
+        etc.) or name (e.g., flux, osc, etc.)""",
     )
     parser.add_argument(
-        '--outdir', metavar='DIR', type=str,
-        help='''Store all output files (data and plots) to this directory.
+        "--outdir",
+        metavar="DIR",
+        type=str,
+        help="""Store all output files (data and plots) to this directory.
         Directory will be created (including missing parent directories) if it
         does not exist already. If no dir is provided, no outputs will be
-        saved.'''
+        saved.""",
     )
     parser.add_argument(
-        '--intermediate', action='store_true',
-        help='''Store all intermediate outputs, not just the final stage's
-        outputs.'''
+        "--intermediate",
+        action="store_true",
+        help="""Store all intermediate outputs, not just the final stage's
+        outputs.""",
     )
     parser.add_argument(
-        '--transforms', action='store_true',
-        help='''Store all transforms (for stages that use transforms).'''
+        "--transforms",
+        action="store_true",
+        help="""Store all transforms (for stages that use transforms).""",
     )
     # TODO: optionally store the transform sets from each stage
-    #parser.add_argument(
+    # parser.add_argument(
     #    '-T', '--transform-file', metavar='FILE', type=str,
     #    help='''File into which to store transform(s) from the pipeline.'''
-    #)
+    # )
+    parser.add_argument("--pdf", action="store_true", help="""Produce pdf plot(s).""")
+    parser.add_argument("--png", action="store_true", help="""Produce png plot(s).""")
     parser.add_argument(
-        '--pdf', action='store_true',
-        help='''Produce pdf plot(s).'''
+        "--annotate", action="store_true", help="""Annotate plots with counts per bin"""
     )
     parser.add_argument(
-        '--png', action='store_true',
-        help='''Produce png plot(s).'''
-    )
-    parser.add_argument(
-        '--annotate', action='store_true',
-        help='''Annotate plots with counts per bin'''
-    )
-    parser.add_argument(
-        '-v', action='count', default=None,
-        help='''Set verbosity level. Repeat for increased verbosity. -v is
-        info-level, -vv is debug-level and -vvv is trace-level output.'''
+        "-v",
+        action="count",
+        default=None,
+        help="""Set verbosity level. Repeat for increased verbosity. -v is
+        info-level, -vv is debug-level and -vvv is trace-level output.""",
     )
     args = parser.parse_args()
     return args
@@ -620,7 +667,7 @@ def main(return_outputs=False):
         mkdir(args.outdir)
     else:
         if args.pdf or args.png:
-            raise ValueError('No --outdir provided, so cannot save images.')
+            raise ValueError("No --outdir provided, so cannot save images.")
 
     # Most basic parsing of the pipeline config (parsing only to this level
     # allows for simple strings to be specified as args for updating)
@@ -633,26 +680,28 @@ def main(return_outputs=False):
             if len(arg_list) < 2:
                 raise ValueError(
                     'Args must be formatted as: "section arg=val". Got "%s"'
-                    ' instead.' % ' '.join(arg_list)
+                    " instead." % " ".join(arg_list)
                 )
             section = arg_list[0]
-            remainder = ' '.join(arg_list[1:])
-            eq_split = remainder.split('=')
+            remainder = " ".join(arg_list[1:])
+            eq_split = remainder.split("=")
             newarg = eq_split[0].strip()
-            value = ('='.join(eq_split[1:])).strip()
-            logging.debug('Setting config section "%s" arg "%s" = "%s"',
-                          section, newarg, value)
+            value = ("=".join(eq_split[1:])).strip()
+            logging.debug(
+                'Setting config section "%s" arg "%s" = "%s"', section, newarg, value
+            )
             try:
                 bcp.set(section, newarg, value)
             except NoSectionError:
                 logging.error(
                     'Invalid section "%s" specified. Must be one of %s',
-                    section, bcp.sections()
+                    section,
+                    bcp.sections(),
                 )
                 raise
 
     # Instantiate the pipeline
-    pipeline = Pipeline(bcp) # pylint: disable=redefined-outer-name
+    pipeline = Pipeline(bcp)  # pylint: disable=redefined-outer-name
 
     if args.select is not None:
         pipeline.select_params(args.select, error_on_missing=True)
@@ -665,7 +714,9 @@ def main(return_outputs=False):
             pass
         if isinstance(stop_idx, basestring):
             stop_idx = pipeline.index(stop_idx)
-        outputs = pipeline.get_outputs(idx=stop_idx) # pylint: disable=redefined-outer-name
+        outputs = pipeline.get_outputs(
+            idx=stop_idx
+        )  # pylint: disable=redefined-outer-name
         if stop_idx is not None:
             stop_idx += 1
         indices = slice(0, stop_idx)
@@ -673,46 +724,46 @@ def main(return_outputs=False):
         assert args.stop_after_stage is None
         idx = pipeline.index(args.only_stage)
         stage = pipeline[idx]
-        indices = slice(idx, idx+1)
+        indices = slice(idx, idx + 1)
 
         # Create dummy inputs if necessary
         inputs = None
-        if hasattr(stage, 'input_binning'):
+        if hasattr(stage, "input_binning"):
             logging.warn(
-                'Stage requires input, so building dummy'
-                ' inputs of random numbers, with random state set to the input'
-                ' index according to alphabetical ordering of input names and'
-                ' filled in alphabetical ordering of dimension names.'
+                "Stage requires input, so building dummy"
+                " inputs of random numbers, with random state set to the input"
+                " index according to alphabetical ordering of input names and"
+                " filled in alphabetical ordering of dimension names."
             )
             input_maps = []
             tmp = deepcopy(stage.input_binning)
             alphabetical_binning = tmp.reorder_dimensions(sorted(tmp.names))
             for input_num, input_name in enumerate(sorted(stage.input_names)):
                 # Create a new map with all 3's; name according to the input
-                hist = np.full(shape=alphabetical_binning.shape,
-                               fill_value=3.0)
-                input_map = Map(name=input_name, binning=alphabetical_binning,
-                                hist=hist)
+                hist = np.full(shape=alphabetical_binning.shape, fill_value=3.0)
+                input_map = Map(
+                    name=input_name, binning=alphabetical_binning, hist=hist
+                )
 
                 # Apply Poisson fluctuations to randomize the values in the map
-                input_map.fluctuate(method='poisson', random_state=input_num)
+                input_map.fluctuate(method="poisson", random_state=input_num)
 
                 # Reorder dimensions according to user's original binning spec
                 input_map.reorder_dimensions(stage.input_binning)
                 input_maps.append(input_map)
-            inputs = MapSet(maps=input_maps, name='ones', hash=1)
+            inputs = MapSet(maps=input_maps, name="ones", hash=1)
 
         outputs = stage.run(inputs=inputs)
 
     for stage in pipeline[indices]:
         if not args.outdir:
             break
-        stg_svc = stage.stage_name + '__' + stage.service_name
+        stg_svc = stage.stage_name + "__" + stage.service_name
         fbase = os.path.join(args.outdir, stg_svc)
         if args.intermediate or stage == pipeline[indices][-1]:
-            stage.outputs.to_json(fbase + '__output.json.bz2')
+            stage.outputs.to_json(fbase + "__output.json.bz2")
         if args.transforms and stage.use_transforms:
-            stage.transforms.to_json(fbase + '__transforms.json.bz2')
+            stage.transforms.to_json(fbase + "__transforms.json.bz2")
 
         # also only plot if args intermediate or last stage
         if args.intermediate or stage == pipeline[indices][-1]:
@@ -723,15 +774,15 @@ def main(return_outputs=False):
                 # (one workaround is to turn on "memcache_deepcopy")
                 # TODO(shivesh): intermediate stages have no output binning
                 if stage.output_binning is None:
-                    logging.debug('Skipping plot of intermediate stage %s', stage)
+                    logging.debug("Skipping plot of intermediate stage %s", stage)
                     continue
                 outputs = stage.outputs.histogram_set(
                     binning=stage.output_binning,
-                    nu_weights_col='pisa_weight',
-                    mu_weights_col='pisa_weight',
-                    noise_weights_col='pisa_weight',
+                    nu_weights_col="pisa_weight",
+                    mu_weights_col="pisa_weight",
+                    noise_weights_col="pisa_weight",
                     mapset_name=stg_svc,
-                    errors=True
+                    errors=True,
                 )
             elif isinstance(stage.outputs, (MapSet, TransformSet)):
                 outputs = stage.outputs
@@ -741,20 +792,21 @@ def main(return_outputs=False):
                     if not enabled:
                         continue
                     my_plotter = Plotter(
-                        stamp='Event rate',
+                        stamp="Event rate",
                         outdir=args.outdir,
-                        fmt=fmt, log=False,
-                        annotate=args.annotate
+                        fmt=fmt,
+                        log=False,
+                        annotate=args.annotate,
                     )
                     my_plotter.ratio = True
                     my_plotter.plot_2d_array(
-                        outputs,
-                        fname=stg_svc + '__output',
-                        cmap='RdBu',
+                        outputs, fname=stg_svc + "__output", cmap="RdBu"
                     )
             except ValueError as exc:
-                logging.error('Failed to save plot to format %s. See exception'
-                              ' message below', fmt)
+                logging.error(
+                    "Failed to save plot to format %s. See exception" " message below",
+                    fmt,
+                )
                 traceback.format_exc()
                 logging.exception(exc)
                 logging.warning("I can't go on, I'll go on.")
@@ -763,5 +815,5 @@ def main(return_outputs=False):
         return pipeline, outputs
 
 
-if __name__ == '__main__':
-    pipeline, outputs = main(return_outputs=True) # pylint: disable=invalid-name
+if __name__ == "__main__":
+    pipeline, outputs = main(return_outputs=True)  # pylint: disable=invalid-name
