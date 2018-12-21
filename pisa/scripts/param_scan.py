@@ -161,6 +161,8 @@ def parameter_scan(data_settings, template_settings, param_name, steps, Min, Max
                             )
 
     for res in results:
+        if isinstance(res, list): # error message
+            continue
         if 'hess_inv' in res['minimizer_metadata'].keys():
             res['minimizer_metadata'].pop('hess_inv')
 
@@ -188,7 +190,7 @@ def parse_args():
         this option to define multiple pipelines.'''
     )
     parser.add_argument(
-        '-sp', '--shared-params', type=str, default=None,
+        '--shared-params', type=str, default=None,
         action='append',
         help='''Shared parameters for multi det analysis (repeat for multiple).'''
     )
