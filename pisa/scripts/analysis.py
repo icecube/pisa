@@ -96,9 +96,9 @@ def parse_args(command, description):
     parser.add_argument(
         '--shared-params', type=str, default=None,
         action='append',
-        help='''Shared parameters for multi det analysis (repeat for multiple).
-        The values of these parameters are kept the same in all detectors, 
-        that contain the param.'''
+        help='''Shared parameters for multi detector analysis (repeat for 
+        multiple). The values of these parameters are kept the same in all 
+        detectors that contain the param.'''
     )
 
     if command == discrete_hypo_test:

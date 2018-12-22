@@ -144,10 +144,9 @@ def parameter_scan(data_settings, template_settings, param_name, steps, Min, Max
             except:
                 e = str(sys.exc_info()[1])
                 message = 'Error while working on ' + param_name + ' = ' + str(pv)
-                print(message)
-                print(e)
+                logging.warning(message)
+                logging.warning(e)
                 results.append([message,e])
-                continue
 
         else:
             hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
@@ -203,11 +202,11 @@ def parse_args():
         help='''Provide a number of steps for the parameter.'''
     )
     parser.add_argument(
-        '--Min', type=float, required=True,
+        '--min', type=float, required=True,
         help='''Provide a min value.'''
     )
     parser.add_argument(
-        '--Max', type=float, required=True,
+        '--max', type=float, required=True,
         help='''Provide a max value.'''
     )
     parser.add_argument(

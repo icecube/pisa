@@ -97,7 +97,10 @@ class Pipeline(object):
         self.pisa_version = None
 
         self._stages = []
-        self._detector_name = config.pop('detector_name')
+        try:
+            self._detector_name = config.pop('detector_name')
+        except:
+            self._detector_name = None
         self._config = config
         self._init_stages()
         self._source_code_hash = None
