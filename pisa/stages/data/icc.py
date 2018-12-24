@@ -37,25 +37,21 @@ class icc(Stage):
     Paramaters
     ----------
     params : ParamSet
-        icc_bg_file : string
-            path pointing to the hdf5 file containing the events
-        pid_bound : float
-            boundary between cascade and track channel
-        pid_remo : float
-            lower cutoff value, below which events get rejected
-        sim_ver: string
-            indicating the sim version, wither 4digit, 5digit or dima
-        bdt_cut : float
-            further cut applied to events for the atm. muon rejections BDT
-        livetime : time quantity
-            livetime scale factor
-        alt_icc_bg_file : string
-            path pointing to an hdf5 file containing the events for an
-            alternate selection/model, used to generate shape uncertainty terms
         atm_muon_scale: float
             scale factor to be apllied to outputs
+        icc_bg_file : string
+            path pointing to the hdf5 file containing the events
         use_def1 : bool
             whether ICC definition 1 is used
+        sim_ver: string
+            indicating the sim version, wither 4digit, 5digit or dima
+        livetime : time quantity
+            livetime scale factor
+        bdt_cut : float
+            further cut applied to events for the atm. muon rejections BDT
+        alt_icc_bg_file : string
+            path pointing to an hdf5 file containing the events for an
+        kde_hist : bool
         fixed_scale_factor : float
             scale fixed errors
 
