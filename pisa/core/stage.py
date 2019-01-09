@@ -6,16 +6,13 @@ functionality is built-in.
 
 from __future__ import absolute_import, division, print_function
 
-from collections import Iterable, Mapping, Sequence
-from copy import deepcopy
-import inspect
 import os
 
 from pisa import CACHE_DIR
 from pisa.core.base_stage import BaseStage
 from pisa.core.events import Events
 from pisa.core.map import Map, MapSet
-from pisa.core.param import Param, ParamSelector
+from pisa.core.param import Param
 from pisa.core.transform import TransformSet
 from pisa.utils.cache import DiskCache, MemoryCache
 from pisa.utils.comparisons import normQuant
@@ -24,16 +21,14 @@ from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
-from pisa.utils.format import arg_str_seq_none
 
 
-__all__ = ['Stage']
-__author__ = 'Justin Lanfranchi'
-__version__ = 'Cake'
+__all__ = ["Stage"]
+__version__ = "Cake"
 
-__author__ = 'J.L. Lanfranchi'
+__author__ = "J.L. Lanfranchi"
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -45,7 +40,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
- limitations under the License.'''
+ limitations under the License."""
 
 
 # TODO: mode for not propagating errors. Probably needs hooks here, but meat of
@@ -132,15 +127,25 @@ class Stage(BaseStage):
             Perform validation on any parameters.
 
     """
-    def __init__(self, use_transforms,
-                 params=None, expected_params=None, input_names=None,
-                 output_names=None, error_method=None, disk_cache=None,
-                 memcache_deepcopy=True, transforms_cache_depth=10,
-                 outputs_cache_depth=0, input_binning=None,
-                 output_binning=None, debug_mode=None):
+
+    def __init__(
+        self,
+        use_transforms,
+        params=None,
+        expected_params=None,
+        input_names=None,
+        output_names=None,
+        error_method=None,
+        disk_cache=None,
+        memcache_deepcopy=True,
+        transforms_cache_depth=10,
+        outputs_cache_depth=0,
+        input_binning=None,
+        output_binning=None,
+        debug_mode=None,
+    ):
         # Allow for string inputs, but have to populate into lists for
         # consistent interfacing to one or multiple of these things
-
 
         self.use_transforms = use_transforms
         """Whether or not stage uses transforms"""
@@ -152,14 +157,14 @@ class Stage(BaseStage):
         self.validate_binning()
 
         # init base class!
-        super(Stage, self).__init__(params=params,
-                                             expected_params=expected_params,
-                                             input_names=input_names,
-                                             output_names=output_names,
-                                             debug_mode=debug_mode,
-                                             error_method=error_method,
-                                             )
-
+        super(Stage, self).__init__(
+            params=params,
+            expected_params=expected_params,
+            input_names=input_names,
+            output_names=output_names,
+            debug_mode=debug_mode,
+            error_method=error_method,
+        )
 
         # Storage of latest transforms and outputs; default to empty
         # TransformSet and None, respectively.
@@ -183,12 +188,14 @@ class Stage(BaseStage):
         """Whether to do full hashing if true, otherwise do fast hashing"""
 
         self.transforms_cache = MemoryCache(
-            max_depth=self.transforms_cache_depth, is_lru=True,
-            deepcopy=self.memcache_deepcopy
+            max_depth=self.transforms_cache_depth,
+            is_lru=True,
+            deepcopy=self.memcache_deepcopy,
         )
         self.nominal_transforms_cache = MemoryCache(
-            max_depth=self.transforms_cache_depth, is_lru=True,
-            deepcopy=self.memcache_deepcopy
+            max_depth=self.transforms_cache_depth,
+            is_lru=True,
+            deepcopy=self.memcache_deepcopy,
         )
 
         self.outputs_cache_depth = int(outputs_cache_depth)
@@ -200,8 +207,9 @@ class Stage(BaseStage):
         self.outputs_cache = None
         if self.outputs_cache_depth > 0:
             self.outputs_cache = MemoryCache(
-                max_depth=self.outputs_cache_depth, is_lru=True,
-                deepcopy=self.memcache_deepcopy
+                max_depth=self.outputs_cache_depth,
+                is_lru=True,
+                deepcopy=self.memcache_deepcopy,
             )
 
         self.disk_cache = disk_cache
@@ -212,8 +220,12 @@ class Stage(BaseStage):
 
         # Include each attribute here for hashing if it is defined and its
         # value is not None
-        default_attrs_to_hash = ['input_names', 'output_names',
-                                 'input_binning', 'output_binning']
+        default_attrs_to_hash = [
+            "input_names",
+            "output_names",
+            "input_binning",
+            "output_binning",
+        ]
         self._attrs_to_hash = set([])
         for attr in default_attrs_to_hash:
             if not hasattr(self, attr):
@@ -297,11 +309,12 @@ class Stage(BaseStage):
 
         recompute = True
         # If hash found in memory cache, load nominal transforms from there
-        if nominal_transforms_hash in self.nominal_transforms_cache \
-                and self.debug_mode is None:
-            nominal_transforms = \
-                    self.nominal_transforms_cache[nominal_transforms_hash]
-            self.nominal_transforms_loaded_from_cache = 'memory'
+        if (
+            nominal_transforms_hash in self.nominal_transforms_cache
+            and self.debug_mode is None
+        ):
+            nominal_transforms = self.nominal_transforms_cache[nominal_transforms_hash]
+            self.nominal_transforms_loaded_from_cache = "memory"
             recompute = False
 
         # Otherwise try to load from an extant disk cache
@@ -311,11 +324,12 @@ class Stage(BaseStage):
             except KeyError:
                 pass
             else:
-                self.nominal_transforms_loaded_from_cache = 'disk'
+                self.nominal_transforms_loaded_from_cache = "disk"
                 recompute = False
                 # Save to memory cache
-                self.nominal_transforms_cache[nominal_transforms_hash] = \
-                        nominal_transforms
+                self.nominal_transforms_cache[
+                    nominal_transforms_hash
+                ] = nominal_transforms
 
         if recompute:
             self.nominal_transforms_computed = True
@@ -325,19 +339,18 @@ class Stage(BaseStage):
                 nominal_transforms_hash = None
             else:
                 nominal_transforms.hash = nominal_transforms_hash
-                self.nominal_transforms_cache[nominal_transforms_hash] = \
-                        nominal_transforms
+                self.nominal_transforms_cache[
+                    nominal_transforms_hash
+                ] = nominal_transforms
                 if self.disk_cache is not None:
-                    self.disk_cache[nominal_transforms_hash] = \
-                            nominal_transforms
+                    self.disk_cache[nominal_transforms_hash] = nominal_transforms
 
         self.nominal_transforms = nominal_transforms
         self.nominal_transforms_hash = nominal_transforms_hash
         return nominal_transforms, nominal_transforms_hash
 
     @profile
-    def get_transforms(self, transforms_hash=None,
-                       nominal_transforms_hash=None):
+    def get_transforms(self, transforms_hash=None, nominal_transforms_hash=None):
         """Load a cached transform (keyed on hash of parameter values) if it
         is in the cache, or else compute a new transform from currently-set
         parameter values and store this new transform to the cache.
@@ -370,10 +383,8 @@ class Stage(BaseStage):
         # Compute nominal transforms; if feature is not used, this doesn't
         # actually do much of anything. To do more than this, override the
         # `_compute_nominal_transforms` method.
-        _, nominal_transforms_hash = (
-            self.get_nominal_transforms(
-                nominal_transforms_hash=nominal_transforms_hash
-            )
+        _, nominal_transforms_hash = self.get_nominal_transforms(
+            nominal_transforms_hash=nominal_transforms_hash
         )
 
         # Generate hash from param values
@@ -381,20 +392,22 @@ class Stage(BaseStage):
             transforms_hash = self._derive_transforms_hash(
                 nominal_transforms_hash=nominal_transforms_hash
             )
-        logging.trace('transforms_hash: %s' %str(transforms_hash))
+        logging.trace("transforms_hash: %s" % str(transforms_hash))
 
         # Load and return existing transforms if in the cache
-        if self.transforms_cache is not None \
-                and transforms_hash in self.transforms_cache \
-                and self.debug_mode is None:
-            self.transforms_loaded_from_cache = 'memory'
-            logging.trace('loading transforms from cache.')
+        if (
+            self.transforms_cache is not None
+            and transforms_hash in self.transforms_cache
+            and self.debug_mode is None
+        ):
+            self.transforms_loaded_from_cache = "memory"
+            logging.trace("loading transforms from cache.")
             transforms = self.transforms_cache[transforms_hash]
 
         # Otherwise: compute transforms, set hash, and store to cache
         else:
             self.transforms_computed = True
-            logging.trace('computing transforms.')
+            logging.trace("computing transforms.")
             transforms = self._compute_transforms()
             transforms.hash = transforms_hash
             if self.transforms_cache is not None:
@@ -430,8 +443,10 @@ class Stage(BaseStage):
         if nominal_outputs_hash is None:
             nominal_outputs_hash = self._derive_nominal_outputs_hash()
 
-        if (self.nominal_outputs_hash is None
-                or self.nominal_outputs_hash != nominal_outputs_hash):
+        if (
+            self.nominal_outputs_hash is None
+            or self.nominal_outputs_hash != nominal_outputs_hash
+        ):
             self._compute_nominal_outputs()
             self.nominal_outputs_hash = nominal_outputs_hash
 
@@ -477,33 +492,36 @@ class Stage(BaseStage):
         # Keep inputs for internal use and for inspection later
         self.inputs = inputs
 
-        outputs_hash, transforms_hash, nominal_transforms_hash = \
-                self._derive_outputs_hash()
+        outputs_hash, transforms_hash, nominal_transforms_hash = (
+            self._derive_outputs_hash()
+        )
 
         # Compute nominal outputs; if feature is not used, this doesn't
         # actually do much of anything. To do more than this, override the
         # `_compute_nominal_outputs` method.
         self.get_nominal_outputs(nominal_outputs_hash=nominal_transforms_hash)
 
-        logging.trace('outputs_hash: %s' %outputs_hash)
+        logging.trace("outputs_hash: %s" % outputs_hash)
 
-        if self.outputs_cache is not None \
-                and outputs_hash is not None \
-                and outputs_hash in self.outputs_cache \
-                and self.debug_mode is None:
-            self.outputs_loaded_from_cache = 'memory'
-            logging.trace('Loading outputs from cache.')
+        if (
+            self.outputs_cache is not None
+            and outputs_hash is not None
+            and outputs_hash in self.outputs_cache
+            and self.debug_mode is None
+        ):
+            self.outputs_loaded_from_cache = "memory"
+            logging.trace("Loading outputs from cache.")
             outputs = self.outputs_cache[outputs_hash]
         else:
-            logging.trace('Need to compute outputs...')
+            logging.trace("Need to compute outputs...")
 
             if self.use_transforms:
                 self.get_transforms(
                     transforms_hash=transforms_hash,
-                    nominal_transforms_hash=nominal_transforms_hash
+                    nominal_transforms_hash=nominal_transforms_hash,
                 )
 
-            logging.trace('... now computing outputs.')
+            logging.trace("... now computing outputs.")
             outputs = self._compute_outputs(inputs=self.inputs)
             self.check_outputs(outputs)
 
@@ -541,9 +559,11 @@ class Stage(BaseStage):
 
             return augmented_outputs
         else:
-            raise TypeError('Outputs are %s, but must currently be a MapSet in'
-                            ' the case that the input includes sideband'
-                            ' objects.' % type(outputs))
+            raise TypeError(
+                "Outputs are %s, but must currently be a MapSet in"
+                " the case that the input includes sideband"
+                " objects." % type(outputs)
+            )
 
     def check_transforms(self, transforms):
         """Check that transforms' inputs and outputs match those specified
@@ -558,21 +578,29 @@ class Stage(BaseStage):
         ValueError if transforms' inputs/outputs don't match stage spec
 
         """
-        assert set(transforms.input_names) == set(self.input_names), \
-                "Transforms' inputs: " + str(transforms.input_names) + \
-                "\nStage inputs: " + str(self.input_names)
+        assert set(transforms.input_names) == set(self.input_names), (
+            "Transforms' inputs: "
+            + str(transforms.input_names)
+            + "\nStage inputs: "
+            + str(self.input_names)
+        )
 
-        assert set(transforms.output_names) == set(self.output_names), \
-                "Transforms' outputs: " + str(transforms.output_names) + \
-                "\nStage outputs: " + str(self.output_names)
+        assert set(transforms.output_names) == set(self.output_names), (
+            "Transforms' outputs: "
+            + str(transforms.output_names)
+            + "\nStage outputs: "
+            + str(self.output_names)
+        )
 
     def check_outputs(self, outputs):
         """Check that the output names are those expected"""
         if set(outputs.names) != set(self.output_names):
             raise ValueError(
-                "'%s' : Outputs found do not match expected outputs for this stage:\n"%self.stage_name +
-                "  Outputs found: " + str(outputs.names) + "\n"
-                "  Expected stage outputs: " + str(self.output_names)
+                "'{}' : Outputs found do not match expected outputs for this stage:\n"
+                "  Outputs found: {}\n"
+                "  Expected stage outputs: {}".format(
+                    self.stage_name, outputs.names, self.output_names
+                )
             )
 
     def load_events(self, events):
@@ -592,7 +620,7 @@ class Stage(BaseStage):
         this_hash = hash_obj(events, full_hash=self.full_hash)
         if self._events_hash is not None and this_hash == self._events_hash:
             return
-        logging.debug('Extracting events from Events obj or file: %s', events)
+        logging.debug("Extracting events from Events obj or file: %s", events)
         events_obj = Events(events)
         events_hash = this_hash
 
@@ -637,26 +665,20 @@ class Stage(BaseStage):
             if os.path.isabs(dirpath):
                 self.disk_cache_path = os.path.join(dirpath, filename)
             else:
-                self.disk_cache_path = os.path.join(
-                    CACHE_DIR, dirpath, filename
-                )
+                self.disk_cache_path = os.path.join(CACHE_DIR, dirpath, filename)
         elif self.disk_cache is True:
             dirs = [CACHE_DIR, self.stage_name]
-            dirpath = os.path.expandvars(os.path.expanduser(
-                os.path.join(*dirs)
-            ))
-            if self.service_name is not None and self.service_name != '':
-                filename = self.service_name + '.sqlite'
+            dirpath = os.path.expandvars(os.path.expanduser(os.path.join(*dirs)))
+            if self.service_name is not None and self.service_name != "":
+                filename = self.service_name + ".sqlite"
             else:
-                filename = 'generic.sqlite'
+                filename = "generic.sqlite"
             mkdir(dirpath, warn=False)
             self.disk_cache_path = os.path.join(dirpath, filename)
         else:
-            raise ValueError("Don't know what to do with a %s."
-                             % type(self.disk_cache))
+            raise ValueError("Don't know what to do with a %s." % type(self.disk_cache))
 
-        self.disk_cache = DiskCache(self.disk_cache_path, max_depth=10,
-                                    is_lru=False)
+        self.disk_cache = DiskCache(self.disk_cache_path, max_depth=10, is_lru=False)
 
     def _derive_outputs_hash(self):
         """Derive a hash value that unique identifies the outputs that will be
@@ -677,16 +699,15 @@ class Stage(BaseStage):
         # If stage uses inputs, grab hash from the inputs container object
         if self.outputs_cache is not None and len(self.input_names) > 0:
             inhash = self.inputs.hash
-            logging.trace('inputs.hash = %s' %inhash)
+            logging.trace("inputs.hash = %s" % inhash)
             id_objects.append(inhash)
 
         # If stage uses transforms, get hash from the transforms
         transforms_hash = None
         if self.use_transforms:
-            transforms_hash, nominal_transforms_hash = \
-                    self._derive_transforms_hash()
+            transforms_hash, nominal_transforms_hash = self._derive_transforms_hash()
             id_objects.append(transforms_hash)
-            logging.trace('derived transforms hash = %s' %id_objects[-1])
+            logging.trace("derived transforms hash = %s" % id_objects[-1])
 
         # Otherwise, generate sub-hash on binning and param values here
         else:
@@ -700,12 +721,11 @@ class Stage(BaseStage):
                 # Include additional attributes of this object
                 for attr in sorted(self._attrs_to_hash):
                     val = getattr(self, attr)
-                    if hasattr(val, 'hash'):
+                    if hasattr(val, "hash"):
                         attr_hash = val.hash
                     elif self.full_hash:
                         norm_val = normQuant(val)
-                        attr_hash = hash_obj(norm_val,
-                                             full_hash=self.full_hash)
+                        attr_hash = hash_obj(norm_val, full_hash=self.full_hash)
                     else:
                         attr_hash = hash_obj(val, full_hash=self.full_hash)
                     id_subobjects.append(attr_hash)
@@ -714,8 +734,7 @@ class Stage(BaseStage):
                 if any([(h is None) for h in id_subobjects]):
                     sub_hash = None
                 else:
-                    sub_hash = hash_obj(id_subobjects,
-                                        full_hash=self.full_hash)
+                    sub_hash = hash_obj(id_subobjects, full_hash=self.full_hash)
                 id_objects.append(sub_hash)
 
         # If any hashes are missing (i.e, None), invalidate the entire hash
@@ -736,7 +755,7 @@ class Stage(BaseStage):
         """
         id_objects = []
         h = self.params.values_hash
-        logging.trace('self.params.values_hash = %s' %h)
+        logging.trace("self.params.values_hash = %s" % h)
         id_objects.append(h)
 
         # Grab any provided nominal transforms hash, or derive it again
@@ -748,7 +767,7 @@ class Stage(BaseStage):
 
         for attr in sorted(self._attrs_to_hash):
             val = getattr(self, attr)
-            if hasattr(val, 'hash'):
+            if hasattr(val, "hash"):
                 attr_hash = val.hash
             elif self.full_hash:
                 norm_val = normQuant(val)
@@ -806,7 +825,7 @@ class Stage(BaseStage):
         id_objects.append(self.params.nominal_values_hash)
         for attr in sorted(self._attrs_to_hash):
             val = getattr(self, attr)
-            if hasattr(val, 'hash'):
+            if hasattr(val, "hash"):
                 attr_hash = val.hash
             elif self.full_hash:
                 norm_val = normQuant(val)
@@ -820,26 +839,25 @@ class Stage(BaseStage):
         if any([(h is None) for h in id_objects]):
             nominal_transforms_hash = None
         else:
-            nominal_transforms_hash = hash_obj(id_objects,
-                                               full_hash=self.full_hash)
+            nominal_transforms_hash = hash_obj(id_objects, full_hash=self.full_hash)
         return nominal_transforms_hash
 
     def _derive_nominal_outputs_hash(self):
         return self._derive_nominal_transforms_hash()
 
-    def _compute_nominal_transforms(self): # pylint: disable=no-self-use
+    def _compute_nominal_transforms(self):  # pylint: disable=no-self-use
         """Stages that start with a nominal transform and use systematic
         parameters to modify the nominal transform in order to obtain the final
         transforms should override this method for deriving the nominal
         transform."""
         return None
 
-    def _compute_transforms(self): # pylint: disable=no-self-use
+    def _compute_transforms(self):  # pylint: disable=no-self-use
         """Stages that apply transforms to inputs should override this method
         for deriving the transform. No-input stages should leave this as-is."""
         return TransformSet([])
 
-    def _compute_nominal_outputs(self): # pylint: disable=no-self-use
+    def _compute_nominal_outputs(self):  # pylint: disable=no-self-use
         return None
 
     @profile
@@ -849,7 +867,7 @@ class Stage(BaseStage):
         work for computing outputs is done by the TransfromSet below."""
         return self.transforms.apply(inputs)
 
-    def validate_binning(self): # pylint: disable=no-self-use
+    def validate_binning(self):  # pylint: disable=no-self-use
         """Override this method to test if the input and output binning
         (e.g., dimensionality, domains, separately or in combination)
         conform to the transform applied by the stage."""
