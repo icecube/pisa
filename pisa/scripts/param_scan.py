@@ -140,6 +140,7 @@ def parameter_scan(data_settings, template_settings, param_name, steps, Min, Max
                                     pprint=False
                                     )
                 result.pop('fit_history')
+                result['minimizer_metadata'].pop('hess_inv', 'x')
                 results.append(result)
             except:
                 e = str(sys.exc_info()[1])
@@ -158,12 +159,6 @@ def parameter_scan(data_settings, template_settings, param_name, steps, Min, Max
                                 metric=metric,
                                 )
                             )
-
-    for res in results:
-        if isinstance(res, list): # error message
-            continue
-        if 'hess_inv' in res['minimizer_metadata'].keys():
-            res['minimizer_metadata'].pop('hess_inv')
 
     to_file(results, outfile)    
     logging.info("Done.")
