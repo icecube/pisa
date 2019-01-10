@@ -713,7 +713,7 @@ class Analysis(object):
 
             # Header names
             hdr += ('iter'.center(6) + ' ' + 'funcalls'.center(10) + ' ' +
-                    metric[0:12].center(12) + ' | ')
+                    metric[0][0:12].center(12) + ' | ')
             hdr += ' '.join([p.name[0:12].center(12) for p in free_p])
             hdr += '\n'
 
