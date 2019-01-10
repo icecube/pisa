@@ -140,7 +140,7 @@ def parameter_scan(data_settings, template_settings, param_name, steps, Min, Max
                                     pprint=False
                                     )
                 result.pop('fit_history')
-                result['minimizer_metadata'].pop('hess_inv', 'x')
+                result['minimizer_metadata'].pop('hess_inv', None)
                 results.append(result)
             except:
                 e = str(sys.exc_info()[1])
