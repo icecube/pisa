@@ -20,6 +20,22 @@ pisa.stages.reco.param module
     :undoc-members:
     :show-inheritance:
 
+pisa.stages.reco.resolutions module
+-----------------------------------
+
+.. automodule:: pisa.stages.reco.resolutions
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.stages.reco.simple\_param module
+-------------------------------------
+
+.. automodule:: pisa.stages.reco.simple_param
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.stages.reco.vbwkde module
 ------------------------------
 

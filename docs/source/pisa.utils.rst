@@ -44,8 +44,8 @@ pisa.utils.confInterval module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.config_parser module
--------------------------------
+pisa.utils.config\_parser module
+--------------------------------
 
 .. automodule:: pisa.utils.config_parser
     :members:
@@ -92,8 +92,8 @@ pisa.utils.flavInt module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.flux_weights module
-------------------------------
+pisa.utils.flux\_weights module
+-------------------------------
 
 .. automodule:: pisa.utils.flux_weights
     :members:
@@ -116,16 +116,16 @@ pisa.utils.gaussians module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.gaussians_cython module
-----------------------------------
+pisa.utils.gaussians\_cython module
+-----------------------------------
 
 .. automodule:: pisa.utils.gaussians_cython
     :members:
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.gpu_hist module
---------------------------
+pisa.utils.gpu\_hist module
+---------------------------
 
 .. automodule:: pisa.utils.gpu_hist
     :members:
@@ -164,8 +164,8 @@ pisa.utils.jsons module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.kde_hist module
---------------------------
+pisa.utils.kde\_hist module
+---------------------------
 
 .. automodule:: pisa.utils.kde_hist
     :members:
@@ -184,6 +184,14 @@ pisa.utils.mcSimRunSettings module
 ----------------------------------
 
 .. automodule:: pisa.utils.mcSimRunSettings
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.utils.numba\_tools module
+------------------------------
+
+.. automodule:: pisa.utils.numba_tools
     :members:
     :undoc-members:
     :show-inheritance:
@@ -220,8 +228,8 @@ pisa.utils.profiler module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.random_numbers module
---------------------------------
+pisa.utils.random\_numbers module
+---------------------------------
 
 .. automodule:: pisa.utils.random_numbers
     :members:
@@ -244,6 +252,14 @@ pisa.utils.rooutils module
     :undoc-members:
     :show-inheritance:
 
+pisa.utils.scripting module
+---------------------------
+
+.. automodule:: pisa.utils.scripting
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.utils.spline module
 ------------------------
 
@@ -252,8 +268,8 @@ pisa.utils.spline module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.spline_smooth module
--------------------------------
+pisa.utils.spline\_smooth module
+--------------------------------
 
 .. automodule:: pisa.utils.spline_smooth
     :members:
@@ -268,16 +284,8 @@ pisa.utils.stats module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.systematicFunctions module
--------------------------------------
-
-.. automodule:: pisa.utils.systematicFunctions
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pisa.utils.test_gaussians module
---------------------------------
+pisa.utils.test\_gaussians module
+---------------------------------
 
 .. automodule:: pisa.utils.test_gaussians
     :members:
@@ -292,10 +300,10 @@ pisa.utils.tests module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.timing module
-------------------------
+pisa.utils.timer module
+-----------------------
 
-.. automodule:: pisa.utils.timing
+.. automodule:: pisa.utils.timer
     :members:
     :undoc-members:
     :show-inheritance:
@@ -304,6 +312,14 @@ pisa.utils.vbwkde module
 ------------------------
 
 .. automodule:: pisa.utils.vbwkde
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.utils.vectorizer module
+----------------------------
+
+.. automodule:: pisa.utils.vectorizer
     :members:
     :undoc-members:
     :show-inheritance:
