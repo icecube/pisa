@@ -298,7 +298,7 @@ def do_setup():
                 'pycuda'
             ],
             'numba': [
-                'numba==0.38' # fastmath jit flag, version fixed because of issue #439
+                'numba>=0.38' # >=0.35: fastmath jit flag; >=0.38: issue #439
             ],
             'develop': [
                 'pylint>=1.7',
