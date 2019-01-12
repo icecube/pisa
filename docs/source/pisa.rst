@@ -8,7 +8,6 @@ Subpackages
 
     pisa.analysis
     pisa.core
-    pisa.resources
     pisa.scripts
     pisa.stages
     pisa.utils
