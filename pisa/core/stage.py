@@ -147,6 +147,8 @@ class Stage(BaseStage):
         # Allow for string inputs, but have to populate into lists for
         # consistent interfacing to one or multiple of these things
 
+        logging.warning('This is a cake-style PISA stage, which is DEPRECATED!')
+
         self.use_transforms = use_transforms
         """Whether or not stage uses transforms"""
 

@@ -148,6 +148,14 @@ pisa.utils.hdf module
     :undoc-members:
     :show-inheritance:
 
+pisa.utils.hdf.yapf module
+--------------------------
+
+.. automodule:: pisa.utils.hdf.yapf
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.utils.hdfchain module
 --------------------------
 
