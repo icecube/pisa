@@ -60,18 +60,18 @@ pisa.utils.coords module
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.crossSections module
+pisa.utils.cross_sections module
 -------------------------------
 
-.. automodule:: pisa.utils.crossSections
+.. automodule:: pisa.utils.cross_sections
     :members:
     :undoc-members:
     :show-inheritance:
 
-pisa.utils.dataProcParams module
+pisa.utils.data_proc_params module
 --------------------------------
 
-.. automodule:: pisa.utils.dataProcParams
+.. automodule:: pisa.utils.data_proc_params
     :members:
     :undoc-members:
     :show-inheritance:
