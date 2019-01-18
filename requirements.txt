@@ -8,7 +8,7 @@ simplejson>=3.2.0
 pint>=0.8
 h5py
 line_profiler
-matplotlib>=2.0
+matplotlib>=2.0,<3.0
 uncertainties
 decorator
 svn+http://code.icecube.wisc.edu/svn/sandbox/schoenen/kde/releases/V00-01-01#egg=kde

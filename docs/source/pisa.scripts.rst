@@ -124,6 +124,14 @@ pisa.scripts.make\_toy\_events module
     :undoc-members:
     :show-inheritance:
 
+pisa.scripts.param\_scan module
+-------------------------------
+
+.. automodule:: pisa.scripts.param_scan
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.scripts.profile\_scan module
 ---------------------------------
 

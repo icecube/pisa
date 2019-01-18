@@ -28,6 +28,14 @@ pisa.stages.aeff.pi\_aeff module
     :undoc-members:
     :show-inheritance:
 
+pisa.stages.aeff.pi\_weight module
+----------------------------------
+
+.. automodule:: pisa.stages.aeff.pi_weight
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.stages.aeff.smooth module
 ------------------------------
 

@@ -44,14 +44,6 @@ pisa.stages.flux.pi\_mceq\_barr module
     :undoc-members:
     :show-inheritance:
 
-pisa.stages.flux.pi\_mceq\_barr.yapf module
--------------------------------------------
-
-.. automodule:: pisa.stages.flux.pi_mceq_barr.yapf
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pisa.stages.flux.pi\_simple module
 ----------------------------------
 

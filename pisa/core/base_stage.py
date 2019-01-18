@@ -1,22 +1,22 @@
 """
-Stage base class designed to be inherited by PISA core stages, such that all basic
+Stage base class designed to be inherited by PISA core stages (i.e., the PISA cake base
+class, `stage` , and the PISA pi base class, `pi_stage`) such that all basic
 functionality is built-in.
-
 """
 
+from __future__ import absolute_import
 
-from collections import Iterable, Mapping, Sequence
+__all__ = ["BaseStage"]
+
+from collections import Mapping
 from copy import deepcopy
 import inspect
-import os
 
-from pisa.core.param import Param, ParamSelector
+from pisa.core.param import ParamSelector
+from pisa.utils.format import arg_str_seq_none
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
-from pisa.utils.format import arg_str_seq_none
 
-
-__all__ = ['BaseStage']
 
 class BaseStage(object):
     """
@@ -27,8 +27,7 @@ class BaseStage(object):
 
     Parameters
     ----------
-    params : ParamSelector, dict of ParamSelector kwargs, ParamSet, or object
-             instantiable to ParamSet
+    params : ParamSelector, dict of ParamSelector kwargs, ParamSet, or object instantiable to ParamSet
 
     expected_params : list of strings
         List containing required `params` names.
@@ -63,22 +62,23 @@ class BaseStage(object):
             Perform validation on any parameters.
 
     """
-    def __init__(self,
-                 params=None,
-                 expected_params=None,
-                 input_names=None,
-                 output_names=None, 
-                 debug_mode=None,
-                 error_method=None,
-                 ):
 
+    def __init__(
+        self,
+        params=None,
+        expected_params=None,
+        input_names=None,
+        output_names=None,
+        debug_mode=None,
+        error_method=None,
+    ):
         # Allow for string inputs, but have to populate into lists for
         # consistent interfacing to one or multiple of these things
-        expected_params = arg_str_seq_none(expected_params, 'expected_params')
-        input_names = arg_str_seq_none(input_names, 'input_names')
-        output_names = arg_str_seq_none(output_names, 'output_names')
+        expected_params = arg_str_seq_none(expected_params, "expected_params")
+        input_names = arg_str_seq_none(input_names, "input_names")
+        output_names = arg_str_seq_none(output_names, "output_names")
 
-        module_path = self.__module__.split('.')
+        module_path = self.__module__.split(".")
 
         self.stage_name = module_path[-2]
         """Name of the stage (e.g. flux, osc, aeff, reco, pid, etc."""
@@ -98,14 +98,16 @@ class BaseStage(object):
         self.outputs = None
         """Last-computed outputs; None if no outputs have been computed yet."""
 
+        self._attrs_to_hash = set([])
+        """Attributes of the stage that are to be included in its hash value"""
+
         self.full_hash = True
         """Whether to do full hashing if true, otherwise do fast hashing"""
 
-        param_selector_keys = set([
-            'regular_params', 'selector_param_sets', 'selections'
-        ])
-        if isinstance(params, Mapping) \
-                and set(params.keys()) == param_selector_keys:
+        param_selector_keys = set(
+            ["regular_params", "selector_param_sets", "selections"]
+        )
+        if isinstance(params, Mapping) and set(params.keys()) == param_selector_keys:
             self._param_selector = ParamSelector(**params)
         elif isinstance(params, ParamSelector):
             self._param_selector = params
@@ -131,36 +133,33 @@ class BaseStage(object):
 
         self.inputs = None
 
-
     def setup(self):
         pass
 
-    def run(self):
+    def run(self, inputs=None):
         return None
-
 
     def select_params(self, selections, error_on_missing=False):
         """Apply the `selections` to contained ParamSet.
+
         Parameters
         ----------
         selections : string or iterable
         error_on_missing : bool
+
         """
         try:
-            self._param_selector.select_params(
-                selections, error_on_missing=True
-            )
+            self._param_selector.select_params(selections, error_on_missing=True)
         except KeyError:
-            msg = 'Not all of the selections %s found in this stage.' \
-                    %(selections,)
+            msg = "Not all of the selections %s found in this stage." % (selections,)
             if error_on_missing:
-                #logging.error(msg)
+                # logging.error(msg)
                 raise
             logging.trace(msg)
         else:
-            logging.trace('`selections` = %s yielded `params` = %s'
-                          %(selections, self.params))
-
+            logging.trace(
+                "`selections` = %s yielded `params` = %s" % (selections, self.params)
+            )
 
     def _check_params(self, params):
         """Make sure that `expected_params` is defined and that exactly the
@@ -175,14 +174,13 @@ class BaseStage(object):
         missing = exp_p.difference(got_p)
         err_strs = []
         if len(excess) > 0:
-            err_strs.append('Excess params provided: %s'
-                            %', '.join(sorted(excess)))
+            err_strs.append("Excess params provided: %s" % ", ".join(sorted(excess)))
         if len(missing) > 0:
-            err_strs.append('Missing params: %s'
-                            %', '.join(sorted(missing)))
-        raise ValueError('Expected parameters: %s;\n'
-                         %', '.join(sorted(exp_p))
-                         + ';\n'.join(err_strs))
+            err_strs.append("Missing params: %s" % ", ".join(sorted(missing)))
+        raise ValueError(
+            "Expected parameters: %s;\n" % ", ".join(sorted(exp_p))
+            + ";\n".join(err_strs)
+        )
 
     @property
     def params(self):
@@ -213,8 +211,7 @@ class BaseStage(object):
         """
         if self._source_code_hash is None:
             self._source_code_hash = hash_obj(
-                inspect.getsource(self.__class__),
-                full_hash=self.full_hash
+                inspect.getsource(self.__class__), full_hash=self.full_hash
             )
         return self._source_code_hash
 
@@ -223,9 +220,10 @@ class BaseStage(object):
         """Combines source_code_hash and params.hash for checking/tagging
         provenance of persisted (on-disk) objects."""
         objects_to_hash = [self.source_code_hash, self.params.hash]
-        for attr in self._attrs_to_hash:
-            objects_to_hash.append(hash_obj(getattr(self, attr),
-                                            full_hash=self.full_hash))
+        for attr in sorted(self._attrs_to_hash):
+            objects_to_hash.append(
+                hash_obj(getattr(self, attr), full_hash=self.full_hash)
+            )
         return hash_obj(objects_to_hash, full_hash=self.full_hash)
 
     def __hash__(self):
@@ -256,9 +254,11 @@ class BaseStage(object):
         for attr in attrs:
             assert isinstance(attr, basestring)
             if not hasattr(self, attr):
-                raise ValueError('"%s" not an attribute of the class; not'
-                                 ' adding *any* of the passed attributes %s to'
-                                 ' attrs to hash.' %(attr, attrs))
+                raise ValueError(
+                    '"%s" not an attribute of the class; not'
+                    " adding *any* of the passed attributes %s to"
+                    " attrs to hash." % (attr, attrs)
+                )
 
         # Include the attribute names
         for attr in attrs:
@@ -271,9 +271,10 @@ class BaseStage(object):
         indicates a debug mode."""
         return self._debug_mode
 
-    def validate_params(self, params):
+    def validate_params(self, params):  # pylint: disable=unused-argument
         """Override this method to test if params are valid; e.g., check range
-        and dimensionality."""
+        and dimensionality. Invalid params should be indicated by raising an
+        exception; no value should be returned."""
         return
 
     @property
@@ -282,4 +283,3 @@ class BaseStage(object):
         errors for its transforms and outputs (whichever is applicable). Errors
         on inputs are propagated regardless of this setting."""
         return self._error_method
-

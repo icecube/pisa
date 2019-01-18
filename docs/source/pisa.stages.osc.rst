@@ -62,6 +62,14 @@ pisa.stages.osc.osc\_params module
     :undoc-members:
     :show-inheritance:
 
+pisa.stages.osc.pi\_nusquids module
+-----------------------------------
+
+.. automodule:: pisa.stages.osc.pi_nusquids
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.stages.osc.pi\_osc\_params module
 --------------------------------------
 

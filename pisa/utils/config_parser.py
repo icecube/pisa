@@ -89,14 +89,14 @@ equivalent values for params `p1` and `p2`:
 
 .. code-block:: cfg
 
-    param.p1 = 12.5 * unit.GeV
-    param.p2 = 12.5 * unit.gigaelectronvolt
+    param.p1 = 12.5 * units.GeV
+    param.p2 = 12.5 * units.gigaelectronvolt
 
 and this can be combined with the Gaussian-prior ``+/-`` notation:
 
 .. code-block:: cfg
 
-    param.p1 = 12.5 +/- 2.3 * unit.GeV
+    param.p1 = 12.5 +/- 2.3 * units.GeV
 
 Additional arguments to a parameter are passed in with the ``.`` notation, for
 example ``param.p1.fixed = False``, which makes p1 a free parameter in the
@@ -342,6 +342,25 @@ def parse_string_literal(string):
 
 
 def interpret_param_subfields(subfields, selector=None, pname=None, attr=None):
+    """Recursively interpret and parse parameter subfields.
+
+    Parameters
+    ----------
+    subfields : list of strings
+    selector : string
+    pname : string
+    attr : list of strings
+
+    Returns
+    -------
+    infodict : dict
+
+    Examples
+    --------
+    >>> print interpret_param_subfields(subfields=['nh', 'deltam31', 'range'])
+    {'pname': 'deltam31', 'subfields': [], 'attr': ['range'], 'selector': 'nh'}
+
+    """
     infodict = dict(subfields=subfields, selector=selector, pname=pname,
                     attr=attr)
 
@@ -446,7 +465,11 @@ def parse_param(config, section, selector, fullname, pname, value):
         if prior == 'uniform':
             kwargs['prior'] = Prior(kind='uniform')
         elif prior == 'jeffreys':
-            kwargs['prior'] = Prior(kind='jeffreys', A=kwargs['range'][0], B=kwargs['range'][1])
+            kwargs['prior'] = Prior(
+                kind='jeffreys',
+                A=kwargs['range'][0],
+                B=kwargs['range'][1]
+            )
         elif prior == 'spline':
             priorname = pname
             if selector is not None:
@@ -577,18 +600,28 @@ def parse_pipeline_config(config):
     if config.has_option(section, 'param_selections'):
         param_selections = split(config.get(section, 'param_selections'))
 
+    detector_name = None
+    if config.has_option(section, 'detector_name'):
+        detector_name = config.get(section, 'detector_name')    
+        
     # Parse [stage.<stage_name>] sections and store to stage_dicts
     stage_dicts = OrderedDict()
     for stage, service in order:
         old_section_header = 'stage%s%s' % (STAGE_SEP, stage)
         new_section_header = '%s%s%s' % (stage, STAGE_SEP, service)
         if config.has_section(old_section_header):
-            logging.warning('%s is an old-style section header, in the future use %s'%(old_section_header, new_section_header))
+            logging.warning(
+                '"%s" is an old-style section header, in the future use "%s"'
+                %(old_section_header, new_section_header)
+            )
             section = old_section_header
         elif config.has_section(new_section_header):
             section = new_section_header
         else:
-            raise IOError('missing section in cfg for stage %s service %s'%(stage, service))
+            raise IOError(
+                'missing section in cfg for stage "%s" service "%s"'
+                % (stage, service)
+            )
 
         # Instantiate dict to store args to pass to this stage
         service_kwargs = OrderedDict()
@@ -597,7 +630,15 @@ def parse_pipeline_config(config):
         service_kwargs['params'] = param_selector
 
         n_params = 0
-        for fullname, value in config.items(section):
+        for fullname in config.options(section):
+            try:
+                value = config.get(section, fullname)
+            except:
+                logging.error(
+                    'Unable to obtain value of option "%s" in section "%s".'
+                    % (fullname, section)
+                )
+                raise
             # See if this matches a param specification
             param_match = PARAM_RE.match(fullname)
             if param_match is not None:
@@ -698,6 +739,7 @@ def parse_pipeline_config(config):
         # Store the service's kwargs to the stage_dicts
         stage_dicts[(stage, service)] = service_kwargs
 
+    stage_dicts['detector_name'] = detector_name    
     return stage_dicts
 
 
@@ -1153,10 +1195,10 @@ class PISAConfigParser(RawConfigParser):
                 if self._empty_lines_in_values:
                     # add empty line to the value, but only if there was no
                     # comment on the line
-                    if (comment_start is None and
-                        cursect is not None and
-                        optname and
-                        cursect[optname] is not None):
+                    if (comment_start is None
+                            and cursect is not None
+                            and optname
+                            and cursect[optname] is not None):
                         cursect[optname].append('') # newlines added at join
                 else:
                     # empty line marks end of value
@@ -1165,8 +1207,9 @@ class PISAConfigParser(RawConfigParser):
             # continuation line?
             first_nonspace = self.NONSPACECRE.search(line)
             cur_indent_level = first_nonspace.start() if first_nonspace else 0
-            if (cursect is not None and optname and
-                cur_indent_level > indent_level):
+            if (cursect is not None
+                    and optname
+                    and cur_indent_level > indent_level):
                 cursect[optname].append(value)
             # a section header or option header?
             else:
@@ -1197,12 +1240,12 @@ class PISAConfigParser(RawConfigParser):
                 else:
                     mo = self._optcre.match(value)
                     if mo:
-                        optname, vi, optval = mo.group('option', 'vi', 'value')
+                        optname, vi, optval = mo.group('option', 'vi', 'value') # pylint: disable=unused-variable
                         if not optname:
                             e = self._handle_error(e, fpname, lineno, line)
                         optname = self.optionxform(optname.rstrip())
-                        if (self._strict and
-                            (sectname, optname) in elements_added):
+                        if (self._strict
+                                and (sectname, optname) in elements_added):
                             raise DuplicateOptionError(sectname, optname,
                                                        fpname, lineno)
                         elements_added.add((sectname, optname))

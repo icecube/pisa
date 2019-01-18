@@ -28,6 +28,14 @@ pisa.core.container module
     :undoc-members:
     :show-inheritance:
 
+pisa.core.detectors module
+--------------------------
+
+.. automodule:: pisa.core.detectors
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.core.distribution\_maker module
 ------------------------------------
 

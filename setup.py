@@ -285,7 +285,7 @@ def do_setup():
             'dill',
             'h5py',
             'line_profiler',
-            'matplotlib>=2.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
+            'matplotlib>=2.0,<3.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
             'pint>=0.8', # earlier versions buggy
             'kde',
             'simplejson>=3.2',
@@ -298,7 +298,7 @@ def do_setup():
                 'pycuda'
             ],
             'numba': [
-                'numba==0.38' # fastmath jit flag, version fixed because of issue #439
+                'numba>=0.38' # >=0.35: fastmath jit flag; >=0.38: issue #439
             ],
             'develop': [
                 'pylint>=1.7',
@@ -341,6 +341,7 @@ def do_setup():
                 'pisa-compare = pisa.scripts.compare:main',
                 'pisa-convert_config_format = pisa.scripts.convert_config_format:main',
                 'pisa-fit_discrete_sys = pisa.scripts.fit_discrete_sys:main',
+                'pisa-fit_discrete_sys_nd = pisa.scripts.fit_discrete_sys_nd:main',
                 'pisa-make_asymmetry_plots = pisa.scripts.make_asymmetry_plots:main',
                 'pisa-make_events_file = pisa.scripts.make_events_file:main',
                 'pisa-make_nufit_theta23_spline_priors = pisa.scripts.make_nufit_theta23_spline_priors:main',
