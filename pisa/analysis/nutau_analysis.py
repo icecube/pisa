@@ -5,7 +5,7 @@
 from collections import Sequence
 import sys
 import scipy.optimize as opt
-from scipy.stats import chisqprob
+from scipy.stats import chi2
 import time
 from uncertainties import unumpy as unp
 import random
@@ -74,7 +74,7 @@ class Analysis(object):
         template = self.template_maker.get_outputs(return_sum=True)
         template = template.combine_wildcard('*')
 
-        n_bins = sum(map.binning.tot_num_bins for map in template)
+        n_bins = sum(map.binning.tot_num_bins for map in [template])
         self.n_free_params = len(self.template_maker.params.free)
         n_gauss_priors = 0
         for param in self.template_maker.params.free:
@@ -101,7 +101,7 @@ class Analysis(object):
             self.pseudodata = self.data.fluctuate('gauss', random_state=data_random_state)
         else:
             raise Exception('unknown method %s'%method)
-        self.N_data = sum([map.nominal_values.sum() for map in self.pseudodata])
+        self.N_data = sum([map.nominal_values.sum() for map in [self.pseudodata]])
 
     # TODO: move the complexity of defining a scan into a class with various
     # factory methods, and just pass that class to the scan method; we will
@@ -226,7 +226,7 @@ class Analysis(object):
         self.template_maker.params.free._rescaled_values = scaled_param_vals
         template = self.template_maker.get_outputs()
         template = [t.combine_wildcard('*') for t in template]
-        template[0][0].name = 'total'
+        template[0].name = 'total'
         #N_mc = sum([unp.nominal_values(map.hist).sum() for map in template])
         #scale = self.N_data/N_mc
         #scale=1.
@@ -248,12 +248,12 @@ class Analysis(object):
         # Report status of metric & params
         if self.blind:
             msg = '%s=%.6e | %s blinded parameters' %(self.metric, metric_val, self.n_free_params)
-            msg += '    mod_chi2 = %.6e / %i DOF, p = %.4f' %(mod_chi2_val, self.dof, chisqprob(mod_chi2_val, self.dof))
-            msg += '    chi2 = %.6e / %i DOF, p = %.4f' %(chi2_val, self.dof, chisqprob(chi2_val,self.dof))
+            msg += '    mod_chi2 = %.6e / %i DOF, p = %.4f' %(mod_chi2_val, self.dof, chi2.sf(mod_chi2_val, self.dof))
+            msg += '    chi2 = %.6e / %i DOF, p = %.4f' %(chi2_val, self.dof, chi2.sf(chi2_val,self.dof))
         else:
             msg = '%s=%.6e , mod_chi2 = %.6e / %i DOF, p = %.4f, chi2 = %.6e / %i DOF, p = %.4f | %s' %(self.metric, metric_val,
-                                    mod_chi2_val, self.dof, chisqprob(mod_chi2_val, self.dof),
-                                    chi2_val, self.dof, chisqprob(chi2_val,self.dof),
+                                    mod_chi2_val, self.dof, chi2.sf(mod_chi2_val, self.dof),
+                                    chi2_val, self.dof, chi2.sf(chi2_val,self.dof),
                                     self.template_maker.params.free)
         if pprint:
             sys.stdout.write(msg)
@@ -304,7 +304,7 @@ class Analysis(object):
             metric_val = minim_result.fun
             template = self.template_maker.get_outputs()
             template = [t.combine_wildcard('*') for t in template]
-            template[0][0].name = 'total'
+            template[0].name = 'total'
             dict_flags = {}
             mod_chi2_val = (self.pseudodata.metric_total(expected_values=template, metric='mod_chi2')
                 + template_maker.params.priors_penalty(metric='mod_chi2'))
@@ -323,7 +323,7 @@ class Analysis(object):
         all_metrics = {}
         template = self.template_maker.get_outputs()
         template = [t.combine_wildcard('*') for t in template]
-        template[0][0].name = 'total'
+        template[0].name = 'total'
         #for metric in ['llh', 'conv_llh', 'barlow_llh','chi2', 'mod_chi2']:
         for metric in ['llh','chi2']:
             all_metrics[metric] = self.pseudodata.metric_total(expected_values=template, metric=metric) + template_maker.params.priors_penalty(metric=metric) 

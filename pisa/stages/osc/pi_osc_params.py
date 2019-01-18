@@ -15,18 +15,13 @@ class OscParams(object):
     """
     Holds neutrino oscillation parameters, i.e., mixing angles, squared-mass
     differences, and a Dirac-type CPV phase. The neutrino mixing (PMNS) matrix
-    constructed from these parameters is given in the standard parameterization.
+    constructed from these parameters is given in the standard
+    3x3 parameterization.
 
     Parameters
     ----------
-    dm_solar : float
-        "Solar" mass splitting (delta M^2_{21}) expected to be given in [eV^2]
-
-    dm_atm : float
-        "Atmospheric" mass splitting (delta M^2_{3i}) expected to be given in
-        [eV^2]. Note that i=2 if dm_atm > 0 (normal mass ordering), but i=1
-        if dm_atm < 0 (inverted mass ordering). This follows the convention
-        employed by the core libraries.
+    dm21, dm31, dm41 : float
+        Mass splittings (delta M^2_{21,31,41}) expected to be given in [eV^2]
 
     sin12, sin13, sin23 : float
         1-2, 1-3 and 2-3 mixing angles, interpreted as sin(theta_{ij})
@@ -37,11 +32,14 @@ class OscParams(object):
 
     Attributes
     ----------
-    dm_solar, dm_atm : float
+    dm21, dm31, dm41 : float
         Cf. parameters
 
-    sin12, sin13, sin23 : float
+    sin12, sin13, sin23, sin14 : float
         Cf. parameters
+
+    theta12, theta13, theta23, theta14 : float
+        Mixing angles (corresponding to sinXY)
 
     deltacp : float
         Cf. parameters
@@ -59,10 +57,15 @@ class OscParams(object):
         self._sin12 = 0.
         self._sin13 = 0.
         self._sin23 = 0.
+        self._sin14 = 0.
         self._deltacp = 0.
         self.dm21 = 0.
         self.dm31 = 0.
+        self.dm41 = 0.
         self.nsi_eps = np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3,3), dtype=FTYPE)
+        self.gamma21 = 0. # TODO Add full 3x3 matrix option, TODO update docs, TODO getters/setters to enforce values ranges?
+        self.gamma31 = 0.
+        self.gamma32 = 0.
 
     # --- theta12 ---
     @property
@@ -76,7 +79,7 @@ class OscParams(object):
         self._sin12 = value
 
     @property
-    def theta12(self, value):
+    def theta12(self):
         return np.arcsin(self.sin12)
 
     @theta12.setter
@@ -95,14 +98,14 @@ class OscParams(object):
         self._sin13 = value
 
     @property
-    def theta13(self, value):
+    def theta13(self):
         return np.arcsin(self.sin13)
 
     @theta13.setter
     def theta13(self, value):
         self.sin13 = np.sin(value)
 
-    # --- theta13 ---
+    # --- theta23 ---
     @property
     def sin23(self):
         """Sine of 2-3 mixing angle"""
@@ -114,12 +117,31 @@ class OscParams(object):
         self._sin23 = value
 
     @property
-    def theta23(self, value):
+    def theta23(self):
         return np.arcsin(self.sin23)
 
     @theta23.setter
     def theta23(self, value):
         self.sin23 = np.sin(value)
+
+    # --- theta14 ---
+    @property
+    def sin14(self):
+        """Sine of 1-4 mixing angle"""
+        return self._sin14
+
+    @sin14.setter
+    def sin14(self, value):
+        assert (abs(value) <= 1)
+        self._sin14 = value
+
+    @property
+    def theta14(self):
+        return np.arcsin(self.sin14)
+
+    @theta14.setter
+    def theta14(self, value):
+        self.sin14 = np.sin(value)
 
     # --- deltaCP ---
     @property
@@ -155,12 +177,37 @@ class OscParams(object):
     @property
     def eps_etau(self):
         """nue-nutau NSI coupling parameter"""
-        return self.nsi_eps[2, 0].real()
+        return self.nsi_eps[2, 0].real
 
     @eps_etau.setter
     def eps_etau(self, value):
         self.nsi_eps[2, 0] = value + 1.j * self.nsi_eps[2, 0].imag
         self.nsi_eps[0, 2] = value + 1.j * self.nsi_eps[0, 2].imag
+
+    @property
+    def eps_mumu(self):
+        return self.nsi_eps[1,1].real
+
+    @eps_mumu.setter
+    def eps_mumu(self, value):
+        self.nsi_eps[1,1] = value + 1.j * self.nsi_eps[1, 1].imag
+
+    @property
+    def eps_mutau(self):
+        return self.nsi_eps[1, 2].real
+
+    @eps_etau.setter
+    def eps_mutau(self, value):
+        self.nsi_eps[2, 1] = value + 1.j * self.nsi_eps[2, 1].imag
+        self.nsi_eps[1, 2] = value + 1.j * self.nsi_eps[1, 2].imag
+
+    @property
+    def eps_tautau(self):
+        return self.nsi_eps[2,2].real
+
+    @eps_tautau.setter
+    def eps_tautau(self, value):
+        self.nsi_eps[2,2] = value + 1.j * self.nsi_eps[2, 2].imag
 
     @property
     def mix_matrix(self):

@@ -4,6 +4,14 @@ pisa.core package
 Submodules
 ----------
 
+pisa.core.base\_stage module
+----------------------------
+
+.. automodule:: pisa.core.base_stage
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pisa.core.binning module
 ------------------------
 
@@ -12,8 +20,24 @@ pisa.core.binning module
     :undoc-members:
     :show-inheritance:
 
-pisa.core.distribution_maker module
------------------------------------
+pisa.core.container module
+--------------------------
+
+.. automodule:: pisa.core.container
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.core.detectors module
+--------------------------
+
+.. automodule:: pisa.core.detectors
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.core.distribution\_maker module
+------------------------------------
 
 .. automodule:: pisa.core.distribution_maker
     :members:
@@ -24,6 +48,14 @@ pisa.core.events module
 -----------------------
 
 .. automodule:: pisa.core.events
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.core.events\_pi module
+---------------------------
+
+.. automodule:: pisa.core.events_pi
     :members:
     :undoc-members:
     :show-inheritance:
@@ -40,6 +72,14 @@ pisa.core.param module
 ----------------------
 
 .. automodule:: pisa.core.param
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.core.pi\_stage module
+--------------------------
+
+.. automodule:: pisa.core.pi_stage
     :members:
     :undoc-members:
     :show-inheritance:
@@ -72,6 +112,14 @@ pisa.core.transform module
 --------------------------
 
 .. automodule:: pisa.core.transform
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pisa.core.translation module
+----------------------------
+
+.. automodule:: pisa.core.translation
     :members:
     :undoc-members:
     :show-inheritance:

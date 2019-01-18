@@ -93,6 +93,13 @@ def parse_args(command, description):
         help='''Fit both ordering hypotheses. This should only be flagged if
         the ordering is NOT the discrete hypothesis being tested'''
     )
+    parser.add_argument(
+        '--shared-params', type=str, default=None,
+        action='append',
+        help='''Shared parameters for multi detector analysis (repeat for 
+        multiple). The values of these parameters are kept the same in all 
+        detectors that contain the param.'''
+    )
 
     if command == discrete_hypo_test:
         # Data cannot be data for MC studies e.g. injected parameter scans so
@@ -227,9 +234,14 @@ def parse_args(command, description):
         )
     parser.add_argument(
         '--metric',
-        type=str, required=True, metavar='METRIC', choices=ALL_METRICS,
-        help='''Name of metric to use for optimizing the fit. Must be one of
-        %s.''' % (ALL_METRICS,)
+        type=str, required=True, metavar='METRIC', action='append',
+        choices=sorted(ALL_METRICS),
+        help='''Name of metric(s) to use for optimizing the fit. Must be one of
+        %s. Repeat this argument if you want to use different metrics for
+        different detectors. If only one metric is specified, all detectors will
+        use the same. Otherwise you have to specify one metric for each detector
+        (even if two use the same) and pay attention to the order.'''
+        % (ALL_METRICS,)
     )
     parser.add_argument(
         '--other-metric',
@@ -427,8 +439,9 @@ def parse_args(command, description):
         other_metrics = [s.strip().lower() for s in other_metrics]
         if 'all' in other_metrics:
             other_metrics = sorted(ALL_METRICS)
-        if init_args_d['metric'] in other_metrics:
-            other_metrics.remove(init_args_d['metric'])
+        for m in init_args_d['metric']:
+            if m in other_metrics:
+                other_metrics.remove(m)
         if not other_metrics:
             other_metrics = None
         else:

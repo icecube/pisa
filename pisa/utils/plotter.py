@@ -196,7 +196,7 @@ class Plotter(object):
                       **kwargs):
         """plot all maps or transforms in a single plot"""
         if fname is None:
-            fname = 'test2d'
+            fname = map_set.name
         # if dimensionality is 3, then still define a spli_axis automatically
         new_maps = []
         split_axis = kwargs.pop('split_axis', None)

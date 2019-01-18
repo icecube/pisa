@@ -608,7 +608,7 @@ class Map(object):
             this is only done, however, if `ax` is None and so a new figure
             needs to be created.
 
-        plot_kw : mapping, optional
+        pcolormesh_kw : mapping, optional
             Keyword arguments to pass to call to `matplotlib.pyplot.pcolormesh`
             (if Map is two or more dimensions).
 
@@ -653,7 +653,6 @@ class Map(object):
         # to allow for both symm and logz (and to implement logz in the first
         # place!)
         assert not(symm and logz)
-        assert not logz, 'log not implemented'
 
         if title is None:
             title = '$%s$' % (self.name if self.tex is None else self.tex)
@@ -724,6 +723,10 @@ class Map(object):
             vmin=vmin_, vmax=vmax_, cmap=cmap,
             shading='flat', edgecolors='face'
         )
+        if logz:
+            defaults['norm'] = mpl.colors.LogNorm(
+                hist[hist > 0].min(), hist.max(), clip=True
+            )
         for key, dflt_val in defaults.items():
             if key not in pcolormesh_kw:
                 pcolormesh_kw[key] = dflt_val

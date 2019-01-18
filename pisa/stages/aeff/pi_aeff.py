@@ -11,7 +11,11 @@ from pisa.utils import vectorizer
 
 class pi_aeff(PiStage):
     """
-    PISA Pi stage to apply aeff weights
+    PISA Pi stage to apply aeff weights.
+    This combines the detector effective area with the flux weights calculated 
+    in an earlier stage to compute the weights.
+    Various scalings can be applied for particular event classes.
+    The weight is then multiplied by the livetime to get an event count.
 
     Paramaters
     ----------
