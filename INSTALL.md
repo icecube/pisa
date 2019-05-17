@@ -106,6 +106,7 @@ Optional dependencies. Some of these must be installed manually prior to install
 
 * [MCEq](http://github.com/afedynitch/MCEq) Required for `flux.mceq` service.
 * [nuSQuiDS](https://github.com/arguelles/nuSQuIDS) Required for `osc.nusquids` service.
+* [pandas](https://pandas.pydata.org/) Required for datarelease (csv) stages.
 * [OpenMP](http://www.openmp.org) Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.
   * Available from your compiler: gcc supports OpenMP 4.0 and Clang >= 3.8.0 supports OpenMP 3.1. Either version of OpenMP should work, but Clang has yet to be tested for its OpenMP support.
 * [Pylint](http://www.pylint.org): Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.<br>

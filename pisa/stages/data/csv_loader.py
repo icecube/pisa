@@ -12,7 +12,6 @@ from pisa.core.pi_stage import PiStage
 from pisa.utils import vectorizer
 from pisa.utils.profiler import profile
 from pisa.core.container import Container
-from pisa.core.events_pi import EventsPi
 
 
 class csv_loader(PiStage):
@@ -23,12 +22,6 @@ class csv_loader(PiStage):
     ----------
 
     events_file : csv file path
-        output from make_events, including flux weights
-        and Genie systematics coefficients
-
-    Notes
-    -----
-    No fields named `weights` may already be present.
 
     """
     def __init__(self,
@@ -41,7 +34,6 @@ class csv_loader(PiStage):
                  input_specs=None,
                  calc_specs=None,
                  output_specs=None,
-                 fraction_events_to_keep=None,
                 ):
 
         # instantiation args that should not change
@@ -107,7 +99,7 @@ class csv_loader(PiStage):
             # cut out right part
             pdg = nubar * (12 + 2 * flav)
 
-	    mask = raw_data['pdg'] == pdg
+            mask = raw_data['pdg'] == pdg
             if 'cc' in name:
                 mask = np.logical_and(mask, raw_data['type'] > 0)
             else:

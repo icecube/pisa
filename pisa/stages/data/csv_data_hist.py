@@ -23,12 +23,6 @@ class csv_data_hist(PiStage):
     ----------
 
     events_file : csv file path
-        output from make_events, including flux weights
-        and Genie systematics coefficients
-
-    Notes
-    -----
-    No fields named `weights` may already be present.
 
     """
     def __init__(self,
@@ -41,7 +35,6 @@ class csv_data_hist(PiStage):
                  input_specs=None,
                  calc_specs=None,
                  output_specs=None,
-                 fraction_events_to_keep=None,
                 ):
 
         # instantiation args that should not change
@@ -76,15 +69,15 @@ class csv_data_hist(PiStage):
 
         events = pd.read_csv(self.events_file)
 
-	container = Container('data')
-	container.data_specs = 'events'
+        container = Container('data')
+        container.data_specs = 'events'
 
-	container['weights'] = events['count'].values.astype(FTYPE)
-	container['reco_energy'] = events['reco_energy'].values.astype(FTYPE)
-	container['reco_coszen'] = events['reco_coszen'].values.astype(FTYPE)
-	container['pid'] = events['pid'].values.astype(FTYPE) 
+        container['weights'] = events['count'].values.astype(FTYPE)
+        container['reco_energy'] = events['reco_energy'].values.astype(FTYPE)
+        container['reco_coszen'] = events['reco_coszen'].values.astype(FTYPE)
+        container['pid'] = events['pid'].values.astype(FTYPE) 
 
-	self.data.add_container(container)
+        self.data.add_container(container)
 
         # check created at least one container
         if len(self.data.names) == 0:
@@ -92,4 +85,4 @@ class csv_data_hist(PiStage):
                 'No containers created during data loading for some reason.'
             )
 
-	container.array_to_binned('weights', self.output_specs)
+        container.array_to_binned('weights', self.output_specs)

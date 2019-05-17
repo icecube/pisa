@@ -131,7 +131,20 @@ class pi_hyperplanes(PiStage):  # pyint: disable=invalid-name
     ):
         # -- Read fit_results_file and extract necessary info -- #
 
-        if fit_results_file.endswith('.json'):
+        if fit_results_file.endswith('.csv'):
+            # in this case those are datarelease files
+            form = 'datarelease'
+            import pandas as pd
+            fit_results = {}
+            fit_results['nue_cc+nuebar_cc'] = pd.read_csv(fit_results_file.replace('*', 'nue_cc'))
+            fit_results['numu_cc+numubar_cc'] = pd.read_csv(fit_results_file.replace('*', 'numu_cc'))
+            fit_results['nutau_cc+nutaubar_cc'] = pd.read_csv(fit_results_file.replace('*', 'nutau_cc'))
+            fit_results['nu_nc+nubar_nc'] = pd.read_csv(fit_results_file.replace('*', 'all_nc'))
+
+            fit_param_names = [a for a in fit_results['nu_nc+nubar_nc'].columns if a not in ['pid', 'reco_energy', 'reco_coszen', 'offset']]
+            fit_binning = calc_specs
+
+        else: 
 
             fit_results = from_file(fit_results_file)
 
@@ -162,19 +175,6 @@ class pi_hyperplanes(PiStage):  # pyint: disable=invalid-name
             else:
                 fit_binning = None
 
-
-        elif fit_results_file.endswith('.csv'):
-            # in this case those are datarelease files
-            form = 'datarelease'
-            import pandas as pd
-            fit_results = {}
-            fit_results['nue_cc+nuebar_cc'] = pd.read_csv(fit_results_file.replace('*', 'nue_cc'))
-            fit_results['numu_cc+numubar_cc'] = pd.read_csv(fit_results_file.replace('*', 'numu_cc'))
-            fit_results['nutau_cc+nutaubar_cc'] = pd.read_csv(fit_results_file.replace('*', 'nutau_cc'))
-            fit_results['nu_nc+nubar_nc'] = pd.read_csv(fit_results_file.replace('*', 'all_nc'))
-
-            fit_param_names = [a for a in fit_results['nu_nc+nubar_nc'].columns if a not in ['pid', 'reco_energy', 'reco_coszen', 'offset']]
-            fit_binning = calc_specs
 
         if "param_units" in fit_results:
             fit_param_units = fit_results["param_units"]
