@@ -508,6 +508,7 @@ class Map(object):
         -------
         comparisons : OrderedDict containing the following key/value pairs:
           * 'diff' : Map, `self - ref`
+          * 'fract' : Map, `self / ref`
           * 'fractdiff' : Map, `(self - ref) / ref`
           * 'max_abs_diff' : float, `max(abs(diff))`
           * 'max_abs_fractdiff' : float, `max(abs(fractdiff))`
@@ -518,6 +519,8 @@ class Map(object):
         assert isinstance(ref, Map)
         assert ref.binning == self.binning
         diff = self - ref
+        with np.errstate(divide='ignore', invalid='ignore'):
+            fract = self / ref
         with np.errstate(divide='ignore', invalid='ignore'):
             fractdiff = diff / ref
 
@@ -554,6 +557,7 @@ class Map(object):
 
         comparisons = OrderedDict([
             ('diff', diff),
+            ('fract', fract),
             ('fractdiff', fractdiff),
             ('max_abs_fractdiff', max_abs_fractdiff),
             ('max_abs_diff', max_abs_diff),
@@ -567,7 +571,7 @@ class Map(object):
              ax=None, title=None, cmap=None, clabel=None, clabelsize=None,
              xlabelsize=None, ylabelsize=None, titlesize=None, fig_kw=None,
              pcolormesh_kw=None, colorbar_kw=None, outdir=None, fname=None,
-             fmt=None):
+             fmt=None, binlabel_format=None):
         """Plot a 2D map.
 
         Parameters
@@ -628,6 +632,10 @@ class Map(object):
              Custom filename to set for saved figure. If not provided, a name
              is derived from the `name` attribute of the Map. Note that if
              `fmt` is None, then this argument is irrelevant.
+        
+        binlabel_format : string, optional
+            Format string to label the content in each bin. If None (default), the bins will not
+            be labeled.
 
         Returns
         -------
@@ -733,6 +741,14 @@ class Map(object):
 
         X, Y = np.meshgrid(x, y)
         pcmesh = ax.pcolormesh(X, Y, hist.T, **pcolormesh_kw)
+        if not binlabel_format is None:
+            X_mid = np.true_divide(X[1:, 1:] + X[1:, :-1], 2)
+            Y_mid = np.true_divide(Y[1:, 1:] + Y[:-1, 1:], 2)
+            for xi, yi, zi in zip(np.ravel(X_mid), np.ravel(Y_mid), np.ravel(hist.T)):
+                ax.text(xi, yi, binlabel_format.format(zi),
+                                horizontalalignment='center',
+                                verticalalignment='center',
+                                fontsize=10)
         colorbar = plt.colorbar(mappable=pcmesh, ax=ax, **colorbar_kw)
         colorbar.ax.tick_params(labelsize='large')
         if clabel is not None:
