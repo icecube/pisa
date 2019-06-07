@@ -8,10 +8,8 @@ _Note that terminal commands below are intended for the bash shell. You'll have 
     https://github.com
     * Sign up for Github education pack for many features for free, too<br>
         https://education.github.com/pack
-1. Request access to the PISA repo by emailing (including your github user ID) John Kelley and Justin Lanfranchi<br>
-    [jkelley@icecube.wisc.edu](mailto:jkelley@icecube.wisc.edu), [jll1062+pisa@phys.psu.edu](mailto:jll1062+pisa@phys.psu.edu)
 1. Fork PISA on github so you have your own copy to work from<br>
-    https://github.com/jllanfranchi/pisa#fork-destination-box
+    https://github.com/IceCubeOpenSource/pisa#fork-destination-box
 1. _(optional)_ Set up shared-key ssh access to github so you don’t have to enter passwords<br>
     https://help.github.com/articles/connecting-to-github-with-ssh
 1. In your terminal, define a directory for PISA sourcecode to live in. For example:<br>
@@ -34,9 +32,9 @@ _Note that terminal commands below are intended for the bash shell. You'll have 
 1. Run a quick test: generate templates in the staged mode<br>
 `$PISA/pisa/core/pipeline.py --pipeline settings/pipeline/example.cfg  --outdir /tmp/pipeline_output --intermediate --pdf -v`
 
-See [github.com/jllanfranchi/pisa/wiki/installation_specific_examples](https://github.com/jllanfranchi/pisa/wiki/installation_specific_examples) for users' recipes for installing PISA under various circumstances.
+See [github.com/IceCubeOpenSource/pisa/wiki/installation_specific_examples](https://github.com/IceCubeOpenSource/pisa/wiki/installation_specific_examples) for users' recipes for installing PISA under various circumstances.
 Please add notes there and/or add your own recipe if your encounter a unique installation issue.
-Also, for instructions on running PISA on Open Science Grid (OSG) nodes, see [github.com/jllanfranchi/pisa/wiki/Running-PISA-on-GRID-nodes-with-access-to-CVMFS](https://github.com/jllanfranchi/pisa/wiki/Running-PISA-on-GRID-nodes-with-access-to-CVMFS)
+Also, for instructions on running PISA on Open Science Grid (OSG) nodes, see [github.com/IceCubeOpenSource/pisa/wiki/Running-PISA-on-GRID-nodes-with-access-to-CVMFS](https://github.com/jllanfranchi/pisa/wiki/Running-PISA-on-GRID-nodes-with-access-to-CVMFS)
 
 The following sections delve into deeper detail on installing PISA.
 
@@ -106,13 +104,14 @@ Optional dependencies. Some of these must be installed manually prior to install
 
 * [MCEq](http://github.com/afedynitch/MCEq) Required for `flux.mceq` service.
 * [nuSQuiDS](https://github.com/arguelles/nuSQuIDS) Required for `osc.nusquids` service.
+* [pandas](https://pandas.pydata.org/) Required for datarelease (csv) stages.
 * [OpenMP](http://www.openmp.org) Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.
   * Available from your compiler: gcc supports OpenMP 4.0 and Clang >= 3.8.0 supports OpenMP 3.1. Either version of OpenMP should work, but Clang has yet to be tested for its OpenMP support.
 * [Pylint](http://www.pylint.org): Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.<br>
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [recommonmark](http://recommonmark.readthedocs.io/en/latest/) Translator to allow markdown docs/docstrings to be used; plugin for Sphinx. (Required to compile PISA's documentation.)
   * Installed alongside PISA if you specify option `['develop']` to `pip`
-* [ROOT >= 6.12.04 with PyROOT](https://root.cern.ch) Necessary for `xsec.genie` and `unfold.roounfold` services, and to read ROOT cross section files in the `crossSections` utils module. Due to a bug in ROOT's python support (documented here https://github.com/jllanfranchi/pisa/issues/430), you need at least version 6.12.04 of ROOT.
+* [ROOT >= 6.12.04 with PyROOT](https://root.cern.ch) Necessary for `xsec.genie` and `unfold.roounfold` services, and to read ROOT cross section files in the `crossSections` utils module. Due to a bug in ROOT's python support (documented here https://github.com/IceCubeOpenSource/pisa/issues/430), you need at least version 6.12.04 of ROOT.
 * [Sphinx](http://www.sphinx-doc.org/en/stable/) version >= 1.3
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [versioneer](https://github.com/warner/python-versioneer) Automatically get versions from git and make these embeddable and usable in code. Note that the install process is unique since it first places `versioneer.py` in the PISA root directory, and then updates source files within the repository to provide static and dynamic version info.
@@ -125,14 +124,14 @@ Optional dependencies. Some of these must be installed manually prior to install
 
 #### Develop PISA: Fork then clone
 
-If you wish to modify PISA and contribute your code changes back to the PISA project (*highly recommended!*), fork `jllanfranchi/pisa` from Github.
+If you wish to modify PISA and contribute your code changes back to the PISA project (*highly recommended!*), fork `IceCubeOpenSource/pisa` from Github.
 *(How to work with the `cake` branch of PISA will be detailed below.)*
 
 Forking creates your own version of PISA within your Github account.
 You can freely create your own *branch*, modify the code, and then *add* and *commit* changes to that branch within your fork of PISA.
-When you want to share your changes with `jllanfranchi/pisa`, you can then submit a *pull request* to `jllanfranchi/pisa` which can be merged by the PISA administrator (after the code is reviewed and tested, of course).
+When you want to share your changes with `IceCubeOpenSource/pisa`, you can then submit a *pull request* to `IceCubeOpenSource/pisa` which can be merged by the PISA administrator (after the code is reviewed and tested, of course).
 
-* Navigate to the [PISA github page](https://github.com/jllanfranchi/pisa) and fork the repository by clicking on the ![fork](images/ForkButton.png) button.
+* Navigate to the [PISA github page](https://github.com/IceCubeOpenSource/pisa) and fork the repository by clicking on the ![fork](images/ForkButton.png) button.
 * Clone the repository into the `$PISA` directory via one of the following commands (`<github username>` is your Github username):
   * either SSH access to repo:<br>
 `git clone git@github.com:<github username>/pisa.git $PISA
@@ -147,9 +146,9 @@ If you just wish to pull changes from github (and not submit any changes back), 
 
 * Clone the repository into the `$PISA` directory via one of the following commands:
   * either SSH access to repo:<br>
-`git clone git@github.com:jllanfranchi/pisa.git $PISA`
+`git clone git@github.com:IceCubeOpenSource/pisa.git $PISA`
   * or HTTPS access to repo:<br>
-`git clone https://github.com/jllanfranchi/pisa.git $PISA`
+`git clone https://github.com/IceCubeOpenSource/pisa.git $PISA`
 
 
 ### Ensure a clean install using virtualenv or conda env

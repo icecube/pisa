@@ -380,7 +380,7 @@ class Analysis(object):
 
         return best_fit
 
-    def profile(self, p_name, values, check_octant=True):
+    def profile(self, p_name, values, check_octant=True, pprint=True):
         """Run profile log likelihood method for param `p_name`.
 
         Parameters
@@ -398,7 +398,7 @@ class Analysis(object):
             prm = template_maker.params[p_name]
             prm.value = value
             template_maker.update_params(prm)
-            condMLE = self.find_best_fit(check_octant=check_octant)
+            condMLE = self.find_best_fit(check_octant=check_octant, pprint=pprint)
             condMLE[p_name] = self.template_maker.params[p_name].value
             append_results(condMLEs,condMLE)
             # report MLEs and LLH
@@ -412,7 +412,7 @@ class Analysis(object):
             skip = True
         else:
             skip = False
-        globMLE = self.find_best_fit(skip=skip, check_octant=check_octant)
+        globMLE = self.find_best_fit(skip=skip, check_octant=check_octant, pprint=pprint)
         # report MLEs and LLH
         return [condMLEs, globMLE]
 
@@ -422,7 +422,7 @@ class Analysis(object):
         results = []
         for template_maker in [template_makerA, template_makerB]:
             self.template_maker = template_maker
-            results.append(self.find_best_fit(check_octant=check_octant))
+            results.append(self.find_best_fit(check_octant=check_octant), pprint=pprint)
         return results
 
 
@@ -454,6 +454,8 @@ if __name__ == '__main__':
                         help='number of trials')
     parser.add_argument('-b', '--blind', action='store_true',
                         help='run blindly i.e. only reporting goodness of fit, no parameter values')
+    parser.add_argument('-q', '--quiet', action='store_true',
+                        help='more quiet')
     parser.add_argument('--no-check-octant', action='store_true',
                         help='Do not check the second octant of theta23. Careful with that axe Eugene!')
     parser.add_argument('-m', '--minimizer-settings', type=str,
@@ -564,18 +566,18 @@ if __name__ == '__main__':
             
             if args.function == 'profile':
                 if args.mode == 'H0':
-                    results.append(analysis.profile(args.var,[0.]*ureg.dimensionless, check_octant=not args.no_check_octant))
+                    results.append(analysis.profile(args.var,[0.]*ureg.dimensionless, check_octant=not args.no_check_octant, pprint=not args.quiet))
                 elif args.mode == 'scan':
-                    results.append(analysis.profile(args.var,eval(args.range), check_octant=not args.no_check_octant))
+                    results.append(analysis.profile(args.var,eval(args.range), check_octant=not args.no_check_octant, pprint=not args.quiet))
                 elif args.mode == 'feldman_cousins':
                     assert(data_fixed_param!=None)
                     p_name, value = data_fixed_param.items()[0][0], data_fixed_param.items()[0][1]
                     print "save the fixed_param_data to output: ", p_name, " ", value
-                    return_result=analysis.profile(p_name,[value], check_octant=not args.no_check_octant)
+                    return_result=analysis.profile(p_name,[value], check_octant=not args.no_check_octant, pprint=not args.quiet)
                     return_result.append({'data_%s'%p_name:value})
                     results.append(return_result)
             elif args.function == 'fit':
-                best_fit_result=analysis.find_best_fit(check_octant=not args.no_check_octant)
+                best_fit_result=analysis.find_best_fit(check_octant=not args.no_check_octant, pprint=not args.quiet)
                 if (data_fixed_param!=None):
                     p_name, value = data_fixed_param.items()[0][0], data_fixed_param.items()[0][1]
                     best_fit_result['data_'+p_name]=value

@@ -131,40 +131,56 @@ class pi_hyperplanes(PiStage):  # pyint: disable=invalid-name
     ):
         # -- Read fit_results_file and extract necessary info -- #
 
-        fit_results = from_file(fit_results_file)
+        if fit_results_file.endswith('.csv'):
+            # in this case those are datarelease files
+            form = 'datarelease'
+            import pandas as pd
+            fit_results = {}
+            fit_results['nue_cc+nuebar_cc'] = pd.read_csv(fit_results_file.replace('*', 'nue_cc'))
+            fit_results['numu_cc+numubar_cc'] = pd.read_csv(fit_results_file.replace('*', 'numu_cc'))
+            fit_results['nutau_cc+nutaubar_cc'] = pd.read_csv(fit_results_file.replace('*', 'nutau_cc'))
+            fit_results['nu_nc+nubar_nc'] = pd.read_csv(fit_results_file.replace('*', 'all_nc'))
 
-        # handle backwards compatibility for old style fit results files
-        if "hyperplanes" in fit_results:
-            using_old_fit_file = False
-        elif "sys_list" in fit_results:
-            using_old_fit_file = True
-        else:
-            raise ValueError("Unrecognised format for input fit file")
+            fit_param_names = [a for a in fit_results['nu_nc+nubar_nc'].columns if a not in ['pid', 'reco_energy', 'reco_coszen', 'offset']]
+            fit_binning = calc_specs
 
-        # get list of systematic parameter names fitted; need to conserve order here!
-        if using_old_fit_file:
-            fit_param_names = fit_results["sys_list"]
-        else:
-            fit_param_names = fit_results["param_names"]
+        else: 
+
+            fit_results = from_file(fit_results_file)
+
+            # handle backwards compatibility for old style fit results files
+            if "hyperplanes" in fit_results:
+                form = 'linear'
+            elif "sys_list" in fit_results:
+                form = 'legacy'
+            else:
+                raise ValueError("Unrecognised format for input fit file")
+
+            # get list of systematic parameter names fitted; need to conserve order here!
+            if form == 'legacy':
+                fit_param_names = fit_results["sys_list"]
+            else:
+                fit_param_names = fit_results["param_names"]
+
+            # Perfer to have the actual binning, so we can compare bin edges to
+            # "reasonable" precision to make sure the hyperplane fits are applicable to the
+            # current binning.
+            #
+            # If there is no binning in the hyperplane fit results file, look for a hash
+            # value; barring that, just ensure that the dimensionality & number of bins
+            # match.
+            binning_spec = fit_results.get("binning", None)
+            if binning_spec is not None:
+                fit_binning = MultiDimBinning(**binning_spec)
+            else:
+                fit_binning = None
+
 
         if "param_units" in fit_results:
             fit_param_units = fit_results["param_units"]
         else:
             fit_param_units = ["dimensionless" for _ in fit_param_names]
         fit_param_units = [ureg.Unit(u) for u in fit_param_units]
-
-        # Perfer to have the actual binning, so we can compare bin edges to
-        # "reasonable" precision to make sure the hyperplane fits are applicable to the
-        # current binning.
-        #
-        # If there is no binning in the hyperplane fit results file, look for a hash
-        # value; barring that, just ensure that the dimensionality & number of bins
-        # match.
-        binning_spec = fit_results.get("binning", None)
-        if binning_spec is not None:
-            fit_binning = MultiDimBinning(**binning_spec)
-        else:
-            fit_binning = None
 
         if fit_binning is not None:
             fit_binning_hash = fit_binning.hash
@@ -227,9 +243,6 @@ class pi_hyperplanes(PiStage):  # pyint: disable=invalid-name
         self.fit_results_file = fit_results_file
         """str : path to hyperplane fit results file"""
 
-        self.using_old_fit_file = using_old_fit_file
-        """bool : whether the hyperplane fit file is in the "old" format"""
-
         self.fit_results = fit_results
         """OrderedDict : parsed hyperplane fit file"""
 
@@ -245,6 +258,9 @@ class pi_hyperplanes(PiStage):  # pyint: disable=invalid-name
         self.fit_binning_hash = fit_binning_hash
         """str : hash of the binning used for hyperplane fits"""
 
+        self.form = form
+        """str : format of input file"""
+
     def setup_function(self):
         """Load the fit results from the file and make some check compatibility"""
         self.data.data_specs = self.calc_specs
@@ -257,7 +273,7 @@ class pi_hyperplanes(PiStage):  # pyint: disable=invalid-name
         # reshape to a 1D array to match container
         for container in self.data:
             container_name = container.name
-            if self.using_old_fit_file:
+            if self.form == 'legacy':
                 if container_name not in self.fit_results:
                     raise KeyError(
                         "'{}' not in fit results; valid keys are {}".format(
@@ -265,7 +281,8 @@ class pi_hyperplanes(PiStage):  # pyint: disable=invalid-name
                         )
                     )
                 fits = self.fit_results[container_name]
-            else:
+
+            elif self.form == 'linear':
                 if not container_name in self.fit_results["hyperplanes"]:
                     raise KeyError(
                         "'{}' not in fit results; valid keys are {}".format(
@@ -273,6 +290,16 @@ class pi_hyperplanes(PiStage):  # pyint: disable=invalid-name
                         )
                     )
                 fits = self.fit_results["hyperplanes"][container_name]["fit_params"]
+
+            elif self.form == 'datarelease':
+                fits = np.empty(list(self.calc_specs.shape) + [len(self.fit_param_names) + 1], dtype=FTYPE)
+                # convert the numbers from the file back into 3d hists
+                bin_edges = [edges.magnitude for edges in self.calc_specs.bin_edges]
+                sample = [self.fit_results[container_name][s].values for s in self.calc_specs.names]
+                for i,p in enumerate(['offset'] + self.fit_param_names):
+                    hist, _ = np.histogramdd(sample=sample, weights=self.fit_results[container_name][p].values, bins=bin_edges)
+                    fits[...,i] = hist
+
             container["hyperplane_results"] = fits.reshape(container.size, -1)
             container["hyperplane_scalefactors"] = np.empty(container.size, dtype=FTYPE)
 
