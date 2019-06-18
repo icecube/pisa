@@ -10,7 +10,6 @@ with protons and neutrons.
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
-import ROOT
 
 from numba import guvectorize
 
@@ -22,24 +21,42 @@ from pisa.stages.osc.layers import Layers
 from pisa.utils.numba_tools import WHERE
 from pisa.utils import vectorizer
 from pisa.utils.resources import find_resource
-from pisa.core.map import Map
 
+FLAV_BAR_STR_MAPPING = {
+    (0, -1): "e_bar",
+    (0, +1): "e",
+    (1, -1): "mu_bar",
+    (1, +1): "mu",
+    (2, -1): "tau_bar",
+    (2, +1): "tau",
+}
+"""
+Mapping from flav and nubar container content to
+the string for this neutrino in the ROOT file.
+"""
+        
 class pi_earth_absorption(PiStage):
     """
     earth absorption PISA Pi class
 
     Paramaters
     ----------
-    earth_model : PREM file path
-    xsec_file : path to ROOT file containing cross-sections
-    detector_depth : detector depth in km
-    prop_height : height of neutrino production in the atmosphere in km
+    earth_model : str
+        PREM file path
+    xsec_file : str
+        path to ROOT file containing cross-sections
+    detector_depth : float, optional
+        detector depth in km
+    prop_height : float, optional
+        height of neutrino production in the atmosphere in km
     
     Notes
     -----
     
     """
     def __init__(self,
+                 earth_model,
+                 xsec_file,
                  data=None,
                  params=None,
                  input_names=None,
@@ -48,24 +65,21 @@ class pi_earth_absorption(PiStage):
                  input_specs=None,
                  calc_specs=None,
                  output_specs=None,
+                 detector_depth=1.,
+                 prop_height=2.
                 ):
 
-        expected_params = ('earth_model',
-                           'xsec_file',
-                           'detector_depth',
-                           'prop_height',
-                          )
-
+        expected_params = ()
         input_names = ()
         output_names = ()
 
-        # what are the keys used from the inputs during apply
-        input_apply_keys = ('weights', )
-        # what are keys added or altered in the calculation used during apply
+        input_apply_keys = ('weights',
+                           )
         # The weights are simply scaled by the earth survival probability
-        output_calc_keys = ('survival_prob', )
-        # what keys are added or altered for the outputs during apply
-        output_apply_keys = ('weights', )
+        output_calc_keys = ('survival_prob',
+                           )
+        output_apply_keys = ('weights',
+                            )
 
         # init base class
         super(pi_earth_absorption, self).__init__(data=data,
@@ -88,23 +102,25 @@ class pi_earth_absorption(PiStage):
 
         self.layers = None
         self.xsroot = None
-        
+        self.earth_model = earth_model
+        self.xsec_file = xsec_file
+        self.detector_depth = detector_depth
+        self.prop_height = prop_height
         # this does nothing for speed, but makes for convenient numpy style broadcasting
         # TODO: Use numba vectorization (not sure how that works with splines)
         self.calculate_xsections = np.vectorize(self.calculate_xsections)  
         
     def setup_function(self):
+        import ROOT
         # setup the layers
-        earth_model = find_resource(self.params.earth_model.value)
-        prop_height = self.params.prop_height.value.m_as('km')
-        detector_depth = self.params.detector_depth.value.m_as('km')
-        self.layers = Layers(earth_model, detector_depth, prop_height)
+        earth_model = find_resource(self.earth_model)
+        self.layers = Layers(earth_model, self.detector_depth, self.prop_height)
         # This is a bit hacky, but setting the electron density to 1. 
         # gives us the total density of matter, which is what we want.
         self.layers.setElecFrac(1., 1., 1.)
         
         # setup cross-sections
-        self.xsroot = ROOT.TFile(self.params.xsec_file.value)
+        self.xsroot = ROOT.TFile(self.xsec_file)
         # set the correct data mode
         self.data.data_specs = self.calc_specs
 
@@ -187,11 +203,7 @@ class pi_earth_absorption(PiStage):
         target is calculated by taking the xsection for O16
         and dividing it by 16. 
         '''
-        if flav == 0: pdg = 12
-        if flav == 1: pdg = 14
-        if flav == 2: pdg = 16
-        in_flavor = pdg*nubar
-        flavor = {12: 'e', -12: 'e_bar', 14: 'mu', -14: 'mu_bar', 16: 'tau', -16: 'tau_bar'}[in_flavor]
+        flavor = FLAV_BAR_STR_MAPPING[(flav, nubar)]
         return (self.xsroot.Get('nu_'+flavor+'_O16').Get('tot_cc').Eval(energy)+
                 self.xsroot.Get('nu_'+flavor+'_O16').Get('tot_nc').Eval(energy))*10**(-38)/16. # this gives cm^2
 
@@ -241,4 +253,4 @@ def calculate_survivalprob(int_rho, xsection, out):
     # So the units work out to:
     # int_rho [cm] * 1 [g/cm^3] * xsection [cm^2] * 1 [mol/g] * Na [1/mol] = [ 1 ] (all units cancel)
     out[0] = np.exp(-int_rho[0]*xsection[0]*Na)
-    
+
