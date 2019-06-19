@@ -14,6 +14,7 @@ import numpy as np
 from numba import guvectorize
 
 from pisa import FTYPE, TARGET
+from pisa import ureg
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
@@ -65,8 +66,8 @@ class pi_earth_absorption(PiStage):
                  input_specs=None,
                  calc_specs=None,
                  output_specs=None,
-                 detector_depth=1.,
-                 prop_height=2.
+                 detector_depth=2.*ureg.km,
+                 prop_height=20.*ureg.km
                 ):
 
         expected_params = ()
@@ -104,8 +105,8 @@ class pi_earth_absorption(PiStage):
         self.xsroot = None
         self.earth_model = earth_model
         self.xsec_file = xsec_file
-        self.detector_depth = detector_depth
-        self.prop_height = prop_height
+        self.detector_depth = detector_depth.m_as('km')
+        self.prop_height = prop_height.m_as('km')
         # this does nothing for speed, but makes for convenient numpy style broadcasting
         # TODO: Use numba vectorization (not sure how that works with splines)
         self.calculate_xsections = np.vectorize(self.calculate_xsections)  
