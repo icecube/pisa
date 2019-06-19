@@ -46,10 +46,10 @@ class pi_earth_absorption(PiStage):
         PREM file path
     xsec_file : str
         path to ROOT file containing cross-sections
-    detector_depth : float, optional
-        detector depth in km
-    prop_height : float, optional
-        height of neutrino production in the atmosphere in km
+    detector_depth : quantity (distance), optional
+        detector depth
+    prop_height : quantity (distance), optional
+        height of neutrino production in the atmosphere
     
     Notes
     -----
