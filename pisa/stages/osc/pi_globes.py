@@ -1,10 +1,13 @@
 """
 PISA pi stage wrapping GLoBES for the calculation of neutrino oscillation probabilities.
 
-This allows for the calculation of sterile neutrino oscillation probabilities.
-Requires GLoBES (duh...), install pybindings from Andrii's sandbox as described in
+Allows for the calculation of sterile neutrino oscillation probabilities.
+This needs Andrii's GLoBES wrapper:
 
-https://wiki.icecube.wisc.edu/index.php/GLoBES_installation
+https://github.com/terliuk/GLoBES_wrapper
+
+To import, this stage takes as input the path to the GLoBES wrapper. This is necessary
+because GLoBES has to be imported while in the wrapper directory.
 """
 from __future__ import absolute_import, print_function, division
 
