@@ -111,7 +111,7 @@ Optional dependencies. Some of these must be installed manually prior to install
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [recommonmark](http://recommonmark.readthedocs.io/en/latest/) Translator to allow markdown docs/docstrings to be used; plugin for Sphinx. (Required to compile PISA's documentation.)
   * Installed alongside PISA if you specify option `['develop']` to `pip`
-* [ROOT >= 6.12.04 with PyROOT](https://root.cern.ch) Necessary for `xsec.genie`, `unfold.roounfold` and `abs.pi_earth_absorption` services, and to read ROOT cross section files in the `crossSections` utils module. Due to a bug in ROOT's python support (documented here https://github.com/IceCubeOpenSource/pisa/issues/430), you need at least version 6.12.04 of ROOT.
+* [ROOT >= 6.12.04 with PyROOT](https://root.cern.ch) Necessary for `xsec.genie`, `unfold.roounfold` and `absorption.pi_earth_absorption` services, and to read ROOT cross section files in the `crossSections` utils module. Due to a bug in ROOT's python support (documented here https://github.com/IceCubeOpenSource/pisa/issues/430), you need at least version 6.12.04 of ROOT.
 * [Sphinx](http://www.sphinx-doc.org/en/stable/) version >= 1.3
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [versioneer](https://github.com/warner/python-versioneer) Automatically get versions from git and make these embeddable and usable in code. Note that the install process is unique since it first places `versioneer.py` in the PISA root directory, and then updates source files within the repository to provide static and dynamic version info.
