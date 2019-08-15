@@ -1356,6 +1356,59 @@ class Map(object):
 
         return np.sum(stats.llh(actual_values=self.hist,
                                 expected_values=expected_values))
+    
+    def thorsten_llh(self, expected_values, binned=False):
+        """Calculate the total thorsten log-likelihood value between this map and the
+        map described by `expected_values`; self is taken to be the "actual
+        values" (or (pseudo)data), and `expected_values` are the expectation
+        values for each bin.
+
+        Parameters
+        ----------
+        expected_values : numpy.ndarray or Map of same dimension as this
+
+        binned : bool
+
+        Returns
+        -------
+        total_llh : float or binned_llh if binned=True
+
+        """
+        expected_values = reduceToHist(expected_values)
+
+        if binned:
+            return stats.thorsten_llh(actual_values=self.hist,
+                             expected_values=expected_values)
+
+        return np.sum(stats.thorsten_llh(actual_values=self.hist,
+                                expected_values=expected_values))
+
+
+    def say_llh(self, expected_values, binned=False):
+        """Calculate the total SAY log-likelihood value between this map and the
+        map described by `expected_values`; self is taken to be the "actual
+        values" (or (pseudo)data), and `expected_values` are the expectation
+        values for each bin.
+
+        Parameters
+        ----------
+        expected_values : numpy.ndarray or Map of same dimension as this
+
+        binned : bool
+
+        Returns
+        -------
+        total_llh : float or binned_llh if binned=True
+
+        """
+        expected_values = reduceToHist(expected_values)
+
+        if binned:
+            return stats.say_llh(actual_values=self.hist,
+                             expected_values=expected_values)
+
+        return np.sum(stats.say_llh(actual_values=self.hist,
+                                expected_values=expected_values))
 
     def conv_llh(self, expected_values, binned=False):
         """Calculate the total convoluted log-likelihood value between this map
