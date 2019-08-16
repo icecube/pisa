@@ -212,7 +212,7 @@ def llh(actual_values, expected_values):
     return llh_val
 
 def thorsten_llh(actual_values, expected_values):
-    """Compute the log-likelihood (llh) based on eq. 21 - https://arxiv.org/abs/1712.01293
+    """Compute the log-likelihood (llh) based on eq. 20 - https://doi.org/10.1140/epjp/i2018-12042-x
     accounting for finite MC statistics. It is a good analytical approximation to the 
     convolutional approach described later in the paper.
 
@@ -269,7 +269,7 @@ def thorsten_llh(actual_values, expected_values):
 
 
 def say_llh(actual_values, expected_values):
-    """Compute the log-likelihood (llh) based on eq. 3.16 - https://arxiv.org/pdf/1901.04645.pdf
+    """Compute the log-likelihood (llh) based on eq. 3.16 - https://doi.org/10.1007/JHEP06(2019)030
     accounting for finite MC statistics.
 
     Parameters
@@ -471,7 +471,7 @@ def conv_llh(actual_values, expected_values):
 
 def barlow_llh(actual_values, expected_values):
     """Compute the Barlow LLH taking into account finite statistics.
-
+    The likelihood is described in this paper: https://doi.org/10.1016/0010-4655(93)90005-W
     Parameters
     ----------
     actual_values, expected_values : numpy.ndarrays of same shape

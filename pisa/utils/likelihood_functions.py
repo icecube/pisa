@@ -26,8 +26,8 @@ def poisson_gamma(data, sum_w, sum_w2, a=1, b=0):
     data = data histogram
     sum_w = MC histogram
     sum_w2 = Uncertainty map (sum of weights squared in each bin)
-    a, b = hyperparameters of gamma prior for MC counts; default values of a = 1 and b = 0 corresponds to SAY LLH (eq 3.16) https://arxiv.org/pdf/1901.04645.pdf
-                                                             a = 0 and b = 0 corresponds to Thorsten LLH (eq 21) https://arxiv.org/pdf/1712.01293.pdf
+    a, b = hyperparameters of gamma prior for MC counts; default values of a = 1 and b = 0 corresponds to SAY LLH (eq 3.16) https://doi.org/10.1007/JHEP06(2019)030
+                                                             a = 0 and b = 0 corresponds to Thorsten LLH (eq 20) https://doi.org/10.1140/epjp/i2018-12042-x
     -- Output --
     llh = LLH values in each bin
 
@@ -78,6 +78,7 @@ def poissonLLH(data, mc):
 def barlowLLH(data, unweighted_mc, weights):
     """
     Barlow-Beeston log-likelihood (constant terms not omitted)
+    Link to paper: https://doi.org/10.1016/0010-4655(93)90005-W
     -- Input variables --
     data = data histogram
     mc = weighted MC histogram
