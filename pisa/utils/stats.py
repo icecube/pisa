@@ -10,7 +10,6 @@ from scipy.special import gammaln
 from uncertainties import unumpy as unp
 
 from pisa import FTYPE
-from pisa.utils.barlow import Likelihoods
 from pisa.utils.comparisons import FTYPE_PREC, isbarenumeric
 from pisa.utils.log import logging
 from pisa.utils import likelihood_functions
@@ -482,11 +481,40 @@ def barlow_llh(actual_values, expected_values):
     barlow_llh: numpy.ndarray
 
     """
-    
+     
     actual_values = unp.nominal_values(actual_values).ravel()
     sigmas = unp.std_devs(expected_values).ravel()
     expected_values = unp.nominal_values(expected_values).ravel()
 
+    with np.errstate(invalid='ignore'):
+        # Mask off any nan expected values (these are assumed to be ok)
+        actual_values = np.ma.masked_invalid(actual_values)
+        expected_values = np.ma.masked_invalid(expected_values)
+
+        # Check that new array contains all valid entries
+        if np.any(actual_values < 0):
+            msg = ('`actual_values` must all be >= 0...\n'
+                   + maperror_logmsg(actual_values))
+            raise ValueError(msg)
+
+        # TODO: How should we handle nan / masked values in the "data"
+        # (actual_values) distribution? How about negative numbers?
+
+        # Make sure actual values (aka "data") are valid -- no infs, no nans,
+        # etc.
+        if np.any((actual_values < 0) | ~np.isfinite(actual_values)):
+            msg = ('`actual_values` must be >= 0 and neither inf nor nan...\n'
+                   + maperror_logmsg(actual_values))
+            raise ValueError(msg)
+
+        # Check that new array contains all valid entries
+        if np.any(expected_values < 0.0):
+            msg = ('`expected_values` must all be >= 0...\n'
+                   + maperror_logmsg(expected_values))
+            raise ValueError(msg)
+    
+    # TODO(tahmid): Run checks in case expected_values and/or corresponding sigma == 0
+    # and handle these appropriately. If sigma/ev == 0 the code below will fail.
     unweighted = np.array([(ev/s)**2 for ev, s in zip(expected_values, sigmas)])
     weights = np.array([s**2/ev for ev, s in zip(expected_values, sigmas)])
 

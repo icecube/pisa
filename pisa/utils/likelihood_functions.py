@@ -111,14 +111,23 @@ def barlowLLH(data, unweighted_mc, weights):
     
     # Find values of A such that llh in each bin is a maximum
     for i, val in enumerate(A):
-        # If the counts in the bin is 0, A = 0
+        # If the unweighted MC counts in the bin is 0, A = 0
         if val == 0:
             continue
         # Otherwise, find the value of A
         arg = (data[i], weights[i], unweighted_mc[i])
         # Powell works fast and is fine for our purposes
         result = optimize.minimize(fun=llh, x0=val, args=arg, method='Powell')
-        A[i] = result.x
+        
+        # Check that the minimisation ran properly
+        if result.success:
+            A[i] = result.x
+        else:
+            print "Something went wrong..."
+            print "Minimiser message: "
+            print "------------------"
+            print result.message
+            return -np.inf
 
     LLH = llh(A, data, weights, unweighted_mc)
 
