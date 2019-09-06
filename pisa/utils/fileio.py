@@ -5,7 +5,7 @@ Generic file I/O, dispatching specific file readers/writers as necessary
 
 from __future__ import absolute_import
 
-import cPickle
+import pickle
 import errno
 import operator
 import os
@@ -17,6 +17,7 @@ from pisa.utils import log
 from pisa.utils import resources
 
 import numpy as np
+from functools import reduce
 
 
 __all__ = [
@@ -400,7 +401,7 @@ def from_cfg(fname):
 def from_pickle(fname):
     """Load from a Python pickle file"""
     try:
-        return cPickle.load(file(fname, 'rb'))
+        return pickle.load(file(fname, 'rb'))
     except:
         log.logging.error('Failed to load pickle file, `fname`="%s"', fname)
         raise
@@ -409,8 +410,8 @@ def from_pickle(fname):
 def to_pickle(obj, fname, overwrite=True, warn=True):
     """Save object to a pickle file"""
     check_file_exists(fname=fname, overwrite=overwrite, warn=warn)
-    return cPickle.dump(obj, file(fname, 'wb'),
-                        protocol=cPickle.HIGHEST_PROTOCOL)
+    return pickle.dump(obj, file(fname, 'wb'),
+                        protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def from_txt(fname, as_array=False):

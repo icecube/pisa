@@ -12,7 +12,7 @@ from __future__ import absolute_import, division
 from collections import OrderedDict, Iterable, Mapping, Sequence
 from copy import deepcopy, copy
 from fnmatch import fnmatch
-from itertools import izip, permutations
+from itertools import permutations
 from operator import add, getitem, setitem
 import os
 import re
@@ -192,7 +192,7 @@ def _new_obj(original_function):
         new_state = OrderedDict()
         state_updates = func(self, *args, **kwargs)
         for slot in self._state_attrs:
-            if state_updates is not None and state_updates.has_key(slot):
+            if state_updates is not None and slot in state_updates:
                 new_state[slot] = state_updates[slot]
             else:
                 new_state[slot] = deepcopy(getattr(self, slot))
@@ -2357,7 +2357,7 @@ class MapSet(object):
         """
         assert isinstance(ref, MapSet) and len(self) == len(ref)
         rslt = OrderedDict()
-        for m, r in izip(self, ref):
+        for m, r in zip(self, ref):
             out = m.compare(r)
             rslt[m.name] = out
         return rslt
@@ -2438,7 +2438,7 @@ class MapSet(object):
 
     def collate_with_names(self, vals):
         ret_dict = OrderedDict()
-        for name, val in izip(self.names, vals):
+        for name, val in zip(self.names, vals):
             setitem(ret_dict, name, val)
         return ret_dict
 
@@ -2527,7 +2527,7 @@ class MapSet(object):
 
         # Make the method calls and collect returned values
         returned_vals = [meth(*args)
-                         for meth, args in izip(method_per_map, args_per_map)]
+                         for meth, args in zip(method_per_map, args_per_map)]
 
         # If all results are maps, put them into a new map set & return
         if all([isinstance(r, Map) for r in returned_vals]):
@@ -2816,7 +2816,7 @@ class MapSet(object):
 # TODO: add tests for llh, chi2 methods
 def test_Map():
     """Unit tests for Map class"""
-    import cPickle as pickle
+    import pickle
     n_ebins = 10
     n_czbins = 5
     n_azbins = 2
@@ -2987,7 +2987,7 @@ def test_Map():
 # TODO: make tests use assert rather than rely on logging.debug(str((!)))
 def test_MapSet():
     """Unit tests for MapSet class"""
-    import cPickle as pickle
+    import pickle
     n_ebins = 6
     n_czbins = 3
     e_binning = OneDimBinning(name='energy', tex=r'E_\nu', num_bins=n_ebins,

@@ -10,7 +10,7 @@ from __future__ import absolute_import
 
 from argparse import ArgumentParser
 from collections import OrderedDict
-from ConfigParser import NoSectionError
+from configparser import NoSectionError
 from copy import deepcopy
 from importlib import import_module
 from itertools import product

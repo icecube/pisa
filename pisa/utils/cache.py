@@ -121,7 +121,7 @@ class MemoryCache(object):
         self.__cache[key] = value
 
     def __contains__(self, key):
-        return self.has_key(key)
+        return key in self
 
     def __delitem__(self, key):
         return self.__cache.__delitem__(self, key)
@@ -142,9 +142,6 @@ class MemoryCache(object):
         if key in self.__cache:
             return self[key]
         return dflt
-
-    def has_key(self, k):
-        return self.__cache.has_key(k)
 
     def keys(self):
         return self.__cache.keys()
@@ -472,14 +469,7 @@ class DiskCache(object):
         return conn
 
     def __contains__(self, key):
-        return self.has_key(key)
-
-    def has_key(self, key):
-        try:
-            self[key]
-        except KeyError:
-            return False
-        return True
+        return key in self
 
     @property
     def now(self):

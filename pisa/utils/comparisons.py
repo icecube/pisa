@@ -22,7 +22,6 @@ in turn is essential for caching to work correctly.
 
 from __future__ import absolute_import, division
 
-from itertools import izip
 from collections import Iterable, Iterator, Mapping, OrderedDict, Sequence
 from numbers import Number
 import re
@@ -248,7 +247,7 @@ def recursiveEquality(x, y):
             logging.trace('len(y): %s' %len(y))
             return False
         else:
-            for xs, ys in izip(x, y):
+            for xs, ys in zip(x, y):
                 if not recursiveEquality(xs, ys):
                     logging.trace('xs: %s' %xs)
                     logging.trace('ys: %s' %ys)
@@ -313,7 +312,7 @@ def recursiveAllclose(x, y, *args, **kwargs):
             # as the contents are allclose
             if not isinstance(y, list) or isinstance(y, tuple):
                 return False
-            for xs, ys in izip(x, y):
+            for xs, ys in zip(x, y):
                 if not recursiveAllclose(xs, ys, *args, **kwargs):
                     return False
         elif isinstance(x, np.ndarray):

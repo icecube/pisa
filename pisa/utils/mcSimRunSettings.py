@@ -323,9 +323,9 @@ class DetMCSimRunsSettings(dict):
         # Determine how deeply nested runs are in the dict to allow for
         # user to specify a dict that has multiple detectors in it OR
         # a dict with just a single detector in it
-        if rsd.values()[0].has_key('flavints'):
+        if 'flavints' in rsd.values()[0]:
             runs_d = rsd
-        elif rsd.values()[0].values()[0].has_key('flavints'):
+        elif 'flavints' in rsd.values()[0].values()[0]:
             if self.detector is None:
                 if len(rsd) == 1:
                     runs_d = rsd.values()[0]

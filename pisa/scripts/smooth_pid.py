@@ -21,7 +21,6 @@ V36, V38, and V39.
 import os,sys
 from copy import deepcopy
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-from itertools import izip
 
 import numpy as np
 from scipy.interpolate import splrep, splev, interp1d

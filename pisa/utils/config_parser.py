@@ -660,7 +660,7 @@ def parse_pipeline_config(config):
                 # instantiated.
                 for kw in stage_dicts.values():
                     # Stage did not get a `params` argument from config
-                    if not kw.has_key('params'):
+                    if not 'params' in kw:
                         continue
 
                     # Retrieve the param from the ParamSelector

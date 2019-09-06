@@ -39,7 +39,7 @@ from __future__ import absolute_import, division
 from collections import MutableSequence, MutableMapping, Mapping, Sequence
 from copy import deepcopy
 from functools import total_ordering
-from itertools import product, combinations, izip
+from itertools import product, combinations
 from operator import add
 import re
 
@@ -49,6 +49,7 @@ from pisa import ureg
 from pisa.utils import fileio
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.comparisons import recursiveAllclose, recursiveEquality
+from functools import reduce
 
 
 __all__ = ['NuFlav', 'NuFlavInt', 'NuFlavIntGroup', 'FlavIntData',
@@ -1252,11 +1253,11 @@ class FlavIntData(dict):
                 it = str(flavint.int_type)
             assert isinstance(fi_container, dict), "container must be of" \
                     " type 'dict'; instead got %s" % type(fi_container)
-            assert fi_container.has_key(f), "container missing flavor '%s'" % f
+            assert f in fi_container, "container missing flavor '%s'" % f
             assert isinstance(fi_container[f], dict), \
                     "Child of flavor '%s': must be type 'dict' but" \
                     " got %s instead" % (f, type(fi_container[f]))
-            assert fi_container[f].has_key(it), \
+            assert it in fi_container[f], \
                     "Flavor '%s' sub-dict must contain a both interaction" \
                     " types, but missing (at least) int_type '%s'" % (f, it)
 
@@ -1819,7 +1820,7 @@ class CombinedFlavIntData(FlavIntData):
         exception if obsolete groupings are specified).
         """
         dupe_kgs, dupe_kgs_data = self.id_dupes(rtol=rtol, atol=atol)
-        d = {str(kg): dat for kg, dat in izip(dupe_kgs, dupe_kgs_data)}
+        d = {str(kg): dat for kg, dat in zip(dupe_kgs, dupe_kgs_data)}
         self.validate(d)
         self.grouped = [kg for kg in dupe_kgs if len(kg) > 1]
         self.ungrouped = [kg for kg in dupe_kgs if len(kg) == 1]

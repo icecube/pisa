@@ -127,8 +127,8 @@ class PIDSpec(object):
         #    assert signature == signature.strip()
         #    # Has appropriate keys (and no extra)
         #    assert len(pidspec) == 2
-        #    assert pidspec.has_key('fields')
-        #    assert pidspec.has_key('criteria')
+        #    assert 'fields' in pidspec
+        #    assert 'criteria' in pidspec
         #    assert not isinstance(pidspec['fields'], basestring)
         #    # 'fields' contains a sequence
         #    assert hasattr(pidspec['fields'], '__iter__') and \

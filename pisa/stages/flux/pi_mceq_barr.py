@@ -12,7 +12,7 @@ from __future__ import absolute_import, print_function, division
 import math
 import numpy as np
 from numba import guvectorize, cuda
-import cPickle as pickle
+import pickle
 from bz2 import BZ2File
 from scipy.interpolate import RectBivariateSpline
 

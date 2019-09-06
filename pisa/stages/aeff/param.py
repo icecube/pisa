@@ -11,7 +11,6 @@ benchmark scenarios.
 from __future__ import absolute_import, division
 
 from collections import Mapping, OrderedDict
-from itertools import izip
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -331,7 +330,7 @@ class param(Stage):
         sources = [energy_param_source, coszen_param_source]
         hashes = [energy_param_hash, coszen_param_hash]
 
-        for dim, load, source, hash_ in izip(dims, loads, sources, hashes):
+        for dim, load, source, hash_ in zip(dims, loads, sources, hashes):
             if not load:
                 continue
             self._param_hashes[dim] = None

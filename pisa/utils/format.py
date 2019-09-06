@@ -9,7 +9,6 @@ from __future__ import absolute_import, division, print_function
 
 from collections import OrderedDict, Iterable, Sequence
 import decimal
-from itertools import imap
 from numbers import Integral, Number
 import re
 import time
@@ -351,7 +350,7 @@ def list2hrlist(lst):
     if n - scan == 1:
         result.append(str(lst[scan]))
     elif n - scan == 2:
-        result.append(','.join(imap(str, lst[scan:])))
+        result.append(','.join(map(str, lst[scan:])))
 
     return ','.join(result)
 
@@ -584,7 +583,7 @@ def engfmt(n, sigfigs=3, decimals=None, sign_always=False):
 
 def append_results(results_dict, result_dict):
     for key, val in result_dict.items():
-        if results_dict.has_key(key):
+        if key in results_dict:
             results_dict[key].append(val)
         else:
             results_dict[key] = [val]

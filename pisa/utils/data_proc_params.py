@@ -10,7 +10,6 @@ from __future__ import absolute_import, division
 
 from collections import Mapping, OrderedDict, Sequence
 from copy import deepcopy
-from itertools import izip
 import os
 import re
 
@@ -262,7 +261,7 @@ class DataProcParams(dict):
         self.update(ps)
 
         self.trans_nu_code = False
-        if self.has_key('nu_code_to_pdg_map'):
+        if 'nu_code_to_pdg_map' in self:
             self.trans_nu_code = True
             try:
                 self.nu_code_to_pdg_map = {
@@ -312,8 +311,8 @@ class DataProcParams(dict):
             assert cutname == cutname.strip()
             # Has appropriate keys (and no extra)
             assert len(cutspec) == 2
-            assert cutspec.has_key('fields')
-            assert cutspec.has_key('pass_if')
+            assert 'fields' in cutspec
+            assert 'pass_if' in cutspec
             assert not isinstance(cutspec['fields'], basestring)
             # 'fields' contains a sequence
             assert hasattr(cutspec['fields'], '__iter__') and \
@@ -332,8 +331,8 @@ class DataProcParams(dict):
             assert particle_name == particle_name.strip()
             # Has appropriate keys (and no extra)
             assert len(pidspec) == 2
-            assert pidspec.has_key('fields')
-            assert pidspec.has_key('criteria')
+            assert 'fields' in pidspec
+            assert 'criteria' in pidspec
             assert not isinstance(pidspec['fields'], basestring)
             # 'fields' contains a sequence
             assert hasattr(pidspec['fields'], '__iter__') and \
@@ -523,7 +522,7 @@ class DataProcParams(dict):
                     new_datum = []
                     this_evt = np.nan
                     this_d = None
-                    for d, evt, pdg, egy in izip(datum, evts, pdgs, energies):
+                    for d, evt, pdg, egy in zip(datum, evts, pdgs, energies):
                         if evt != this_evt:
                             if this_d is not None:
                                 new_datum.append(this_d)
@@ -626,7 +625,7 @@ class DataProcParams(dict):
         for cut in cuts:
             if isinstance(cut, dict):
                 self.validate_cut_spec(cut)
-            elif self['cuts'].has_key(cut.lower()):
+            elif cut.lower() in self['cuts']:
                 cut = self['cuts'][cut.lower()]
             else:
                 raise Exception('Unrecognized or invalid cut: "'+str(cut)+'"')

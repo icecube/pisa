@@ -23,7 +23,7 @@ from __future__ import absolute_import, division
 from collections import Iterable, Mapping, OrderedDict, Sequence, namedtuple
 from copy import copy, deepcopy
 from functools import wraps
-from itertools import chain, izip, product
+from itertools import chain, product
 from operator import mul
 import re
 
@@ -631,7 +631,7 @@ class OneDimBinning(object):
 
         """
         mags = self.edge_magnitudes
-        return ((e0, e1) for e0, e1 in izip(mags[:-1], mags[1:]))
+        return ((e0, e1) for e0, e1 in zip(mags[:-1], mags[1:]))
 
     @property
     def serializable_state(self):
@@ -1163,7 +1163,7 @@ class OneDimBinning(object):
                                     self.num_bins * factor + 1)
         else: # irregularly-spaced
             bin_edges = []
-            for lower, upper in izip(self.edge_magnitudes[:-1],
+            for lower, upper in zip(self.edge_magnitudes[:-1],
                                      self.edge_magnitudes[1:]):
                 this_bin_new_edges = np.linspace(lower, upper, factor+1)
                 # Exclude the last edge, as this will be first edge for the
@@ -2297,7 +2297,7 @@ class MultiDimBinning(object):
                     kwargs[name] = 1
         factors = self._args_kwargs_to_list(*args, **kwargs)
         new_binning = [dim.oversample(f)
-                       for dim, f in izip(self._dimensions, factors)]
+                       for dim, f in zip(self._dimensions, factors)]
         return MultiDimBinning(new_binning)
 
     def downsample(self, *args, **kwargs):
@@ -2346,7 +2346,7 @@ class MultiDimBinning(object):
                     kwargs[name] = 1
         factors = self._args_kwargs_to_list(*args, **kwargs)
         new_binning = [dim.downsample(f)
-                       for dim, f in izip(self._dimensions, factors)]
+                       for dim, f in zip(self._dimensions, factors)]
         return MultiDimBinning(new_binning)
 
     def assert_array_fits(self, array):
@@ -2436,7 +2436,7 @@ class MultiDimBinning(object):
     def ito(self, *args, **kwargs):
         """Convert units in-place. Cf. Pint's `ito` method."""
         units_list = self._args_kwargs_to_list(*args, **kwargs)
-        for dim, units in izip(self.iterdims(), units_list):
+        for dim, units in zip(self.iterdims(), units_list):
             dim.ito(units)
 
     def to(self, *args, **kwargs): # pylint: disable=invalid-name
@@ -2446,7 +2446,7 @@ class MultiDimBinning(object):
         """
         units_list = self._args_kwargs_to_list(*args, **kwargs)
         new_binnings = [dim.to(units)
-                        for dim, units in izip(self.iterdims(), units_list)]
+                        for dim, units in zip(self.iterdims(), units_list)]
         return MultiDimBinning(new_binnings)
 
     def meshgrid(self, entity, attach_units=True):
@@ -2492,7 +2492,7 @@ class MultiDimBinning(object):
         mg = [a.astype(FTYPE) for a in np.meshgrid(*arrays, indexing='ij', copy=False)]
 
         if attach_units:
-            return [m*dim.units for m, dim in izip(mg, self.iterdims())]
+            return [m*dim.units for m, dim in zip(mg, self.iterdims())]
 
         return mg
 
@@ -2742,7 +2742,7 @@ class MultiDimBinning(object):
                              %(self.num_dims, input_dim))
 
         new_binning = {'dimensions': [dim[idx] for dim, idx in
-                                      izip(self.iterdims(), index)]}
+                                      zip(self.iterdims(), index)]}
 
         return MultiDimBinning(**new_binning)
 
@@ -2760,7 +2760,7 @@ class MultiDimBinning(object):
 def test_OneDimBinning():
     """Unit tests for OneDimBinning class"""
     # pylint: disable=line-too-long
-    import cPickle as pickle
+    import pickle
     import os
     import shutil
     import tempfile
@@ -2895,7 +2895,7 @@ def test_OneDimBinning():
 
 def test_MultiDimBinning():
     """Unit tests for MultiDimBinning class"""
-    import cPickle as pickle
+    import pickle
     import os
     import shutil
     import tempfile

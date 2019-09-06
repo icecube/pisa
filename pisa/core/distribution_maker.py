@@ -10,7 +10,7 @@ from __future__ import absolute_import
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
 import inspect
-from itertools import izip, product
+from itertools import product
 import os
 
 import numpy as np
@@ -204,7 +204,7 @@ class DistributionMaker(object):
         values : list of quantities
 
         """
-        for name, value in izip(self.params.free.names, values):
+        for name, value in zip(self.params.free.names, values):
             for pipeline in self:
                 if name in pipeline.params.free.names:
                     pipeline.params[name] = value
@@ -245,7 +245,7 @@ class DistributionMaker(object):
         """
         names = self.params.free.names
         for pipeline in self:
-            for name, rvalue in izip(names, rvalues):
+            for name, rvalue in zip(names, rvalues):
                 if name in pipeline.params.free.names:
                     pipeline.params[name]._rescaled_value = rvalue # pylint: disable=protected-access
                 elif name in pipeline.params.names:

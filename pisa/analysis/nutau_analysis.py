@@ -311,7 +311,7 @@ class Analysis(object):
             dict_flags['agreement_mod_chi2'] = mod_chi2_val
             dict_flags['warnflag'] = minim_result.status
             dict_flags['task'] = minim_result.message
-            if minim_result.has_key('jac'):
+            if 'jac' in minim_result:
                 dict_flags['grad'] = minim_result.jac
             dict_flags['funcalls'] = minim_result.nfev
             dict_flags['nit'] = minim_result.nit

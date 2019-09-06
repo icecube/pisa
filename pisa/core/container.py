@@ -417,7 +417,7 @@ class Container(object):
         try:
             binning, hist = self.binned_data[key]
         except KeyError:
-            if self.array_data.has_key(key):
+            if self.key in array_data:
                 logging.debug('No transformation for `%s` array data in container `%s`'%(key,self.name))
                 return
             else:

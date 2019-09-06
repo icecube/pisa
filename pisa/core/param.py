@@ -10,7 +10,6 @@ from __future__ import absolute_import, division
 from collections import OrderedDict, Sequence
 from copy import deepcopy
 from functools import total_ordering
-from itertools import izip
 from operator import setitem
 import sys
 
@@ -893,14 +892,14 @@ class ParamSet(Sequence):
     @property
     def name_val_dict(self):
         d = OrderedDict()
-        for name, val in izip(self.names, self.values):
+        for name, val in zip(self.names, self.values):
             d[name] = val
         return d
 
     @property
     def is_nominal(self):
         return np.all([(v0 == v1)
-                       for v0, v1 in izip(self.values, self.nominal_values)])
+                       for v0, v1 in zip(self.values, self.nominal_values)])
 
     @property
     def nominal_values(self):

@@ -10,13 +10,13 @@ multiple processes.
 from __future__ import division
 
 from copy import copy
-from itertools import izip
 import Queue
 import threading
 import time
 
 from pisa import OMP_NUM_THREADS
 from pisa.utils.log import logging, set_verbosity
+from functools import reduce
 
 
 __all__ = ['parallel_run']
@@ -224,7 +224,7 @@ def parallel_run(func, kind, num_parallel, scalar_func, divided_args_mask,
 
             worker_args = []
             if args:
-                for mask, arg in izip(divided_args_mask, args):
+                for mask, arg in zip(divided_args_mask, args):
                     if mask:
                         worker_args.append(arg[chunk_slice][subselector])
                     else:

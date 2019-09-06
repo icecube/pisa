@@ -548,7 +548,7 @@ def _new_obj(original_function):
         new_state = OrderedDict()
         state_updates = original_function(self, *args, **kwargs)
         for slot in self._state_attrs: # pylint: disable=protected-access
-            if state_updates.has_key(slot):
+            if slot in state_updates:
                 new_state[slot] = state_updates[slot]
             else:
                 new_state[slot] = deepcopy(getattr(self, slot))
