@@ -173,14 +173,14 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
     ext = ext.replace('.', '').lower()
     assert ext == 'json' or ext in ZIP_EXTS + XOR_EXTS
 
-    with open(filename, 'w') as outfile:
+    with open(filename, 'wb') as outfile:
         if ext == 'bz2':
             outfile.write(
                 bz2.compress(
                     json.dumps(
                         content, outfile, indent=indent, cls=NumpyEncoder,
                         sort_keys=sort_keys, allow_nan=True, ignore_nan=False
-                    )
+                    ).encode()
                 )
             )
         elif ext == 'xor':
@@ -190,19 +190,19 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
                 json.dumps(
                     content, temp, indent=indent, cls=NumpyEncoder,
                     sort_keys=sort_keys, allow_nan=True, ignore_nan=False
-                )
+                ).encode()
             )
             # Rewind
             temp.seek(0)
             for line in temp:
                 # Decrypt with key 42
                 line = ''.join([chr(ord(c)^42) for c in line])
-                outfile.write(line)
+                outfile.write(line.encode())
         else:
             json.dump(
                 content, outfile, indent=indent, cls=NumpyEncoder,
                 sort_keys=sort_keys, allow_nan=True, ignore_nan=False
-            )
+            ).encode()
         logging.debug('Wrote %.2f kB to %s', outfile.tell()/1024., filename)
 
 
