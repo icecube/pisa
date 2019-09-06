@@ -195,7 +195,7 @@ def recursiveEquality(x, y):
             return False
 
     # Simple things can be compared directly
-    elif (isinstance(x, basestring) or isinstance(y, basestring) or
+    elif (isinstance(x, str) or isinstance(y, str) or
           not (isinstance(x, COMPLEX_TYPES)
                or isinstance(y, COMPLEX_TYPES))):
         if x != y:
@@ -487,7 +487,7 @@ def normQuant(obj, sigfigs=None, full_norm=True):
         return obj
 
     # Nothing to convert for strings, None, ...
-    if isinstance(obj, basestring) or obj is None:
+    if isinstance(obj, str) or obj is None:
         return obj
 
     round_result = False

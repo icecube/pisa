@@ -59,7 +59,7 @@ def add_fluxes_to_file(data_file_path, flux_table, flux_name,
     if label is None:
         label = ''
     else:
-        assert isinstance(label, basestring)
+        assert isinstance(label, str)
         label = '_' + label
 
     outpath = join(outdir, '{}__with_fluxes{}{}'.format(bname, label, ext))

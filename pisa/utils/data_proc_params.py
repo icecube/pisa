@@ -235,7 +235,7 @@ class DataProcParams(dict):
         super(DataProcParams, self).__init__()
         if data_proc_params is None:
             data_proc_params = 'events/data_proc_params.json'
-        if isinstance(data_proc_params, basestring):
+        if isinstance(data_proc_params, str):
             ps = jsons.from_json(resources.find_resource(data_proc_params))
         elif isinstance(data_proc_params, dict):
             ps = data_proc_params
@@ -306,19 +306,19 @@ class DataProcParams(dict):
         """Validate a cut specification dictionary"""
         for cutname, cutspec in cuts.iteritems():
             # Cut names are lower-case strings with no surrounding whitespace
-            assert isinstance(cutname, basestring)
+            assert isinstance(cutname, str)
             assert cutname == cutname.lower()
             assert cutname == cutname.strip()
             # Has appropriate keys (and no extra)
             assert len(cutspec) == 2
             assert 'fields' in cutspec
             assert 'pass_if' in cutspec
-            assert not isinstance(cutspec['fields'], basestring)
+            assert not isinstance(cutspec['fields'], str)
             # 'fields' contains a sequence
             assert hasattr(cutspec['fields'], '__iter__') and \
-                    not isinstance(cutspec['fields'], basestring)
+                    not isinstance(cutspec['fields'], str)
             # 'pass_if' contains a string
-            assert isinstance(cutspec['pass_if'], basestring)
+            assert isinstance(cutspec['pass_if'], str)
 
     @staticmethod
     def validate_pid_spec(pids):
@@ -326,19 +326,19 @@ class DataProcParams(dict):
         for particle_name, pidspec in pids.iteritems():
             # Particle names are lower-case strings with no surrounding
             # whitespace
-            assert isinstance(particle_name, basestring)
+            assert isinstance(particle_name, str)
             assert particle_name == particle_name.lower()
             assert particle_name == particle_name.strip()
             # Has appropriate keys (and no extra)
             assert len(pidspec) == 2
             assert 'fields' in pidspec
             assert 'criteria' in pidspec
-            assert not isinstance(pidspec['fields'], basestring)
+            assert not isinstance(pidspec['fields'], str)
             # 'fields' contains a sequence
             assert hasattr(pidspec['fields'], '__iter__') and \
-                    not isinstance(pidspec['fields'], basestring)
+                    not isinstance(pidspec['fields'], str)
             # 'criteria' contains a string
-            assert isinstance(pidspec['criteria'], basestring)
+            assert isinstance(pidspec['criteria'], str)
 
     # TODO: prefix the field names with e.g. "$" such that anything that is
     # _not_ prefixed by this is not replaced. This allows for righer
@@ -488,7 +488,7 @@ class DataProcParams(dict):
         not_fields_in_data = ['I3MCWeightDict', 'PrimaryNu', 'trueNeutrino']
         myfile = False
         try:
-            if isinstance(h5, basestring):
+            if isinstance(h5, str):
                 myfile = True
                 h5 = h5py.File(os.path.expandvars(os.path.expanduser(h5)),
                                mode='r')
@@ -609,7 +609,7 @@ class DataProcParams(dict):
                 )
             return outdata
 
-        if isinstance(cuts, (basestring, dict)):
+        if isinstance(cuts, (str, dict)):
             cuts = [cuts]
 
         # Default is to return all fields

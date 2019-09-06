@@ -348,7 +348,7 @@ class HypoTesting(Analysis):
         assert data_start_ind >= 0
         assert fid_start_ind >= 0
         
-        if isinstance(metric, basestring):
+        if isinstance(metric, str):
             metric = [metric]
         for m in metric:
             assert m in ALL_METRICS
@@ -364,19 +364,19 @@ class HypoTesting(Analysis):
                 h0_maker = DistributionMaker(h0_maker)
             except:
                 h0_maker = Detectors(h0_maker,shared_params=shared_params)
-        if isinstance(h0_param_selections, basestring):
+        if isinstance(h0_param_selections, str):
             h0_param_selections = h0_param_selections.strip().lower()
             if h0_param_selections == '':
                 h0_param_selections = None
             else:
                 h0_param_selections = [h0_param_selections]
-        if isinstance(h1_param_selections, basestring):
+        if isinstance(h1_param_selections, str):
             h1_param_selections = h1_param_selections.strip().lower()
             if h1_param_selections == '':
                 h1_param_selections = None
             else:
                 h1_param_selections = [h1_param_selections]
-        if isinstance(data_param_selections, basestring):
+        if isinstance(data_param_selections, str):
             data_param_selections = data_param_selections.strip().lower()
             if data_param_selections == '':
                 data_param_selections = None
@@ -407,12 +407,12 @@ class HypoTesting(Analysis):
             # Convert `data_dist` into a `MapSet` or list of `MapSet`s if not already
             if isinstance(data_dist, list):
                 for i in range(len(data_dist)):
-                    if isinstance(data_dist[i], basestring):
+                    if isinstance(data_dist[i], str):
                         data_dist[i] = from_file(data_dist[i])
                     if not isinstance(data_dist[i], MapSet):
                         data_dist[i] = MapSet(data_dist[i])
             else:
-                if isinstance(data_dist, basestring):
+                if isinstance(data_dist, str):
                     data_dist = from_file(data_dist)
                 if not isinstance(data_dist, MapSet):
                     data_dist = MapSet(data_dist)
@@ -500,7 +500,7 @@ class HypoTesting(Analysis):
                     data_maker = Detectors(data_maker, shared_params=shared_params)
 
         # Read in minimizer settings
-        if isinstance(minimizer_settings, basestring):
+        if isinstance(minimizer_settings, str):
             minimizer_settings = from_file(minimizer_settings)
         assert isinstance(minimizer_settings, Mapping)
 

@@ -520,7 +520,7 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
         if not isinstance(set_params, Mapping):
             raise TypeError("`set_params` must be dict-like")
         for param_name, param_value in set_params.items():
-            if not isinstance(param_name, basestring):
+            if not isinstance(param_name, str):
                 raise TypeError("`set_params` keys must be strings (parameter name)")
             if not isinstance(param_value, ureg.Quantity):
                 raise TypeError("`set_params` values must be Quantities")

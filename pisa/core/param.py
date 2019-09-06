@@ -345,7 +345,7 @@ class Param(object):
         penalty : float prior penalty value
 
         """
-        assert isinstance(metric, basestring)
+        assert isinstance(metric, str)
         metric = metric.strip().lower()
         if metric not in ALL_METRICS:
             raise ValueError('Metric "%s" is invalid; must be one of %s'
@@ -590,7 +590,7 @@ class ParamSet(Sequence):
         ValueError : if any index cannot be found
 
         """
-        if isinstance(x, (Param, int, basestring)):
+        if isinstance(x, (Param, int, str)):
             x = [x]
         indices = set()
         for obj in x:
@@ -619,7 +619,7 @@ class ParamSet(Sequence):
         ValueError : if any index cannot be found
 
         """
-        if isinstance(x, (Param, int, basestring)):
+        if isinstance(x, (Param, int, str)):
             x = [x]
         indices = set()
         for obj in x:
@@ -691,7 +691,7 @@ class ParamSet(Sequence):
     def __setitem__(self, i, val):
         if isinstance(i, int):
             self._params[i].value = val
-        elif isinstance(i, basestring):
+        elif isinstance(i, str):
             self._by_name[i].value = val
 
     def __deepcopy__(self, memo):
@@ -705,7 +705,7 @@ class ParamSet(Sequence):
     def __getitem__(self, i):
         if isinstance(i, int):
             return self._params[i]
-        elif isinstance(i, basestring):
+        elif isinstance(i, str):
             return self._by_name[i]
 
     def __getattr__(self, attr):
@@ -1022,7 +1022,7 @@ class ParamSelector(object):
             return self.select_params(selections=self._selections,
                                       error_on_missing=error_on_missing)
 
-        if isinstance(selections, basestring):
+        if isinstance(selections, str):
             selections = selections.split(',')
 
         assert isinstance(selections, Sequence)
@@ -1031,7 +1031,7 @@ class ParamSelector(object):
         for selection in selections:
             if selection is None:
                 continue
-            if not isinstance(selection, basestring):
+            if not isinstance(selection, str):
                 raise ValueError(
                     "Selection should be a basestring. Got %s instead."%(
                         type(selection))
@@ -1088,7 +1088,7 @@ class ParamSelector(object):
             self._regular_params.update(p)
             self._current_params.update(p)
         else:
-            assert isinstance(selector, basestring)
+            assert isinstance(selector, str)
             selector = selector.strip().lower()
             if selector not in self._selector_params:
                 self._selector_params[selector] = ParamSet()

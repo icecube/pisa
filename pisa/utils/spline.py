@@ -110,7 +110,7 @@ class Spline(object):
 
     @name.setter
     def name(self, value):
-        assert isinstance(value, basestring)
+        assert isinstance(value, str)
         self._name = value
 
     @property
@@ -119,7 +119,7 @@ class Spline(object):
 
     @tex.setter
     def tex(self, value):
-        assert isinstance(value, basestring)
+        assert isinstance(value, str)
         self._tex = value
 
     @property

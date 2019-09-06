@@ -13,6 +13,8 @@ import struct
 from collections import Iterable
 from pkg_resources import resource_filename
 
+from io import IOBase
+
 import numpy as np
 
 from pisa.utils.log import logging, set_verbosity
@@ -113,14 +115,14 @@ def hash_obj(obj, hash_to='int', full_hash=True):
         return hash_obj(sub_elements.tostring(), **pass_on_kw)
 
     # Handle an open file object as a special case
-    if isinstance(obj, file):
+    if isinstance(obj, IOBase):
         if full_hash:
             return hash_obj(obj.read(), **pass_on_kw)
         return hash_obj(obj.read(FAST_HASH_FILESIZE_BYTES), **pass_on_kw)
 
     # Convert to string (if not one already) in a fast and generic way: pickle;
     # this creates a binary string, which is fine for sending to hashlib
-    if not isinstance(obj, basestring):
+    if not isinstance(obj, str):
         try:
             pkl = pickle.dumps(obj, pickle.HIGHEST_PROTOCOL)
         except (PickleError, PicklingError, TypeError):

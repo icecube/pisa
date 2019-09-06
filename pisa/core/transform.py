@@ -256,7 +256,7 @@ class TransformSet(object):
         transform : Transform object
 
         """
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = [input_names]
         for transform in self:
             if set(input_names) == set(transform.input_names) \
@@ -333,13 +333,13 @@ class Transform(object):
                  output_binning=None, tex=None, hash=None, error_method=None): # pylint: disable=redefined-builtin
         # Convert to sequence of single string if a single string was passed
         # for uniform interfacing
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = [input_names]
         else:
             input_names = [name for name in input_names]
         self._input_names = input_names
 
-        assert isinstance(output_name, basestring)
+        assert isinstance(output_name, str)
         self._output_name = output_name
 
         if input_binning is not None:
@@ -478,7 +478,7 @@ class Transform(object):
 
     @tex.setter
     def tex(self, val):
-        assert val is None or isinstance(val, basestring)
+        assert val is None or isinstance(val, str)
         self._tex = val
 
     @property
@@ -910,7 +910,7 @@ class BinnedTensorTransform(Transform):
 
         # Transform same shape: element-by-element multiplication
         if self.xform_array.shape == input_array.shape:
-            if (isinstance(self.error_method, basestring) and
+            if (isinstance(self.error_method, str) and
                     self.error_method.strip().lower() == 'fixed'):
                 # don't scale errors here
                 output = unp.uarray(

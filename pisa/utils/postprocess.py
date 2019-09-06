@@ -988,7 +988,7 @@ class Postprocessor(object):
             raise RuntimeError("Cannot read from file located at %s."%fpath)
         if keys is None:
             return info
-        if isinstance(keys, basestring):
+        if isinstance(keys, str):
             keys = [keys]
         for key in info.keys():
             if key not in keys:
@@ -2304,7 +2304,7 @@ class Postprocessor(object):
             linelist = []
             for point, label in zip(self.extra_points,
                                     self.extra_points_labels):
-                if isinstance(point, basestring):
+                if isinstance(point, str):
                     if os.path.isfile(point):
                         point = np.genfromtxt(point)
                     try:
@@ -3413,7 +3413,7 @@ class Postprocessor(object):
             line += "%.3g"%val
         if dataval is not None:
             line += " &"
-            if isinstance(dataval, basestring):
+            if isinstance(dataval, str):
                 line += "%s"%dataval
             else:
                 delta = val - dataval
@@ -5156,7 +5156,7 @@ class Postprocessor(object):
         function!"""
         if isinstance(label, list):
             label = label[0]
-        if not isinstance(label, basestring):
+        if not isinstance(label, str):
             raise ValueError("Label must be a string. Got %s of "
                              "type %s"%(label, type(label)))
         label = label.lower()

@@ -36,6 +36,7 @@ from pisa.utils.format import (make_valid_python_name, text2tex,
 from pisa.utils.hash import hash_obj
 from pisa.utils import jsons
 from pisa.utils.log import logging, set_verbosity, tprofile
+from functools import reduce
 
 
 __all__ = ['NAME_FIXES', 'NAME_SEPCHARS', 'NAME_FIXES_REGEXES',
@@ -97,7 +98,7 @@ def basename(n):
     orig_type = type(n)
     if isinstance(n, OneDimBinning):
         n = n.name
-    if not isinstance(n, basestring):
+    if not isinstance(n, str):
         raise ValueError('Unhandled type %s' %orig_type)
     # Remove all (pre/suf)fixes and any separator chars
     for regex in NAME_FIXES_REGEXES:
@@ -226,15 +227,15 @@ class OneDimBinning(object):
                  num_bins=None, is_lin=None, is_log=None, bin_names=None):
         # Basic validation and translation of args; note that iterables are
         # converted to sequences later on
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             raise TypeError('`name` must be a string; got "%s".' %type(name))
         if domain is not None:
             assert isinstance(domain, Iterable) or ( isinstance(domain,ureg.Quantity) and domain.size > 1 )
         if bin_names is not None:
-            if isinstance(bin_names, basestring):
+            if isinstance(bin_names, str):
                 bin_names = (bin_names,)
             if (isinstance(bin_names, Iterable)
-                    and all(isinstance(n, basestring) and n
+                    and all(isinstance(n, str) and n
                             for n in bin_names)):
                 bin_names = tuple(bin_names)
             else:
@@ -576,7 +577,7 @@ class OneDimBinning(object):
 
         """
         try:
-            if isinstance(x, basestring):
+            if isinstance(x, str):
                 assert self.bin_names is not None
                 return self.bin_names.index(x)
             if isinstance(x, int):
@@ -724,7 +725,7 @@ class OneDimBinning(object):
     def tex(self, val):
         """None or TeX string for dimension; surrounding dollars-signs ($) are
         stripped off (and must be added prior to e.g. plotting)"""
-        assert val is None or isinstance(val, basestring)
+        assert val is None or isinstance(val, str)
         if val is not None:
             val = strip_outer_dollars(val)
         self._tex = val
@@ -1313,7 +1314,7 @@ class OneDimBinning(object):
         bin_names = self.bin_names
 
         # Deal with indexing by name first so as to not break anything else
-        if isinstance(index, basestring):
+        if isinstance(index, str):
             assert bin_names is not None
             index = bin_names.index(index)
 
@@ -1827,7 +1828,7 @@ class MultiDimBinning(object):
                     'Dimension %s not present. Valid dimensions are in range %s'
                     %(d, [0, len(self)-1])
                 )
-        elif isinstance(dim, basestring):
+        elif isinstance(dim, str):
             d = basename(dim) if use_basenames else dim
             try:
                 idx = names.index(d)
@@ -1862,7 +1863,7 @@ class MultiDimBinning(object):
             Identical binning as this but with `dims` removed.
 
         """
-        if isinstance(dims, (basestring, int)):
+        if isinstance(dims, (str, int)):
             dims = [dims]
 
         keep_idx = list(range(len(self)))
@@ -1940,7 +1941,7 @@ class MultiDimBinning(object):
         for dim in self.dims:
             if dim.name in kwargs:
                 val = kwargs[dim.name]
-                if isinstance(val, basestring):
+                if isinstance(val, str):
                     val = dim.index(val)
                 indexer.append(val)
             else:
@@ -2015,7 +2016,7 @@ class MultiDimBinning(object):
             broadcasting it. E.g. use as `np.array([0,1,2])[bcast]`.
 
         """
-        if isinstance(to_dims, basestring):
+        if isinstance(to_dims, str):
             to_dims = [to_dims]
 
         bcast = []
@@ -2650,7 +2651,7 @@ class MultiDimBinning(object):
     def __contains__(self, x):
         if isinstance(x, OneDimBinning):
             return x in self.dims
-        if isinstance(x, basestring):
+        if isinstance(x, str):
             return x in self.names
         return False
 
@@ -2720,7 +2721,7 @@ class MultiDimBinning(object):
         if index is Ellipsis:
             return self
 
-        if isinstance(index, basestring):
+        if isinstance(index, str):
             for d in self.iterdims():
                 if d.name == index:
                     return d

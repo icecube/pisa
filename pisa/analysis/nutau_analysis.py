@@ -2,6 +2,7 @@
 # authors: J.Lanfranchi/P.Eller
 # date:    March 20, 2016
 
+from __future__ import print_function
 from collections import Sequence
 import sys
 import scipy.optimize as opt
@@ -65,7 +66,7 @@ class Analysis(object):
         assert isinstance(template_maker, DistributionMaker)
         self.data_maker = data_maker
         self.template_maker = template_maker
-        assert isinstance(metric, basestring)
+        assert isinstance(metric, str)
         self.metric = metric.lower()
         self.minimizer_settings = None
         self.blind = blind
@@ -172,7 +173,7 @@ class Analysis(object):
 
         """
         assert not (steps is not None and values is not None)
-        if isinstance(param_names, basestring):
+        if isinstance(param_names, str):
             param_names = [param_names]
 
         if values is not None and np.isscalar(values):
@@ -297,8 +298,8 @@ class Analysis(object):
             end_t = time.time()
             if pprint:
                 # clear the line
-                print ''
-            print '\naverage template generation time during minimizer run: %.4f ms'%((end_t - start_t) * 1000./self.n_minimizer_calls)
+                print('')
+            print('\naverage template generation time during minimizer run: %.4f ms'%((end_t - start_t) * 1000./self.n_minimizer_calls))
             avg_tmp_time = (end_t - start_t) * 1000./self.n_minimizer_calls
             best_fit_vals = minim_result.x
             metric_val = minim_result.fun
@@ -492,7 +493,7 @@ if __name__ == '__main__':
     set_verbosity(args.v)
 
     if os.path.isfile(args.outfile):
-        print "Output file ", args.outfile, " already existed, delete or remove it."
+        print("Output file ", args.outfile, " already existed, delete or remove it.")
     else:
         if args.blind:
             assert(args.function == 'fit')
@@ -511,23 +512,23 @@ if __name__ == '__main__':
         if args.set_param is not None:
             for one_set_param in args.set_param:
                 p_name,value = one_set_param.split("=")
-                print "set_parm ", p_name, " to  ", value
+                print("set_parm ", p_name, " to  ", value)
                 value = parse_quantity(value)
                 value = value.n * value.units
                 prm = template_maker.params[p_name]
-                print "old", p_name,".value for template= ", prm.value
+                print("old", p_name,".value for template= ", prm.value)
                 prm.value = value
                 template_maker.update_params(prm)
-                print "new ", p_name,".value for template= ", prm.value
+                print("new ", p_name,".value for template= ", prm.value)
                 if p_name in data_maker.params.names:
                     prm = data_maker.params[p_name]
-                    print "old", p_name,".value for data= ", prm.value
+                    print("old", p_name,".value for data= ", prm.value)
                     prm.value = value
-                    print "new", p_name,".value for data= ", prm.value
+                    print("new", p_name,".value for data= ", prm.value)
                     data_maker.update_params(prm)
         if not args.fix_param_scan == '':
             p_name,value = args.fix_param_scan.split("=")
-            print "p_name,value= ", p_name, " ", value
+            print("p_name,value= ", p_name, " ", value)
             value = parse_quantity(value)
             value = value.n * value.units
             prm = template_maker.params[p_name]
@@ -538,7 +539,7 @@ if __name__ == '__main__':
         data_fixed_param=None
         if not args.set_param_data == '':
             p_name,value = args.set_param_data.split("=")
-            print "set param ", p_name, "to  ", value, "for data"
+            print("set param ", p_name, "to  ", value, "for data")
             value = parse_quantity(value)
             data_fixed_param={p_name:value.n}
             value = value.n * value.units
@@ -572,7 +573,7 @@ if __name__ == '__main__':
                 elif args.mode == 'feldman_cousins':
                     assert(data_fixed_param!=None)
                     p_name, value = data_fixed_param.items()[0][0], data_fixed_param.items()[0][1]
-                    print "save the fixed_param_data to output: ", p_name, " ", value
+                    print("save the fixed_param_data to output: ", p_name, " ", value)
                     return_result=analysis.profile(p_name,[value], check_octant=not args.no_check_octant, pprint=not args.quiet)
                     return_result.append({'data_%s'%p_name:value})
                     results.append(return_result)
@@ -581,7 +582,7 @@ if __name__ == '__main__':
                 if (data_fixed_param!=None):
                     p_name, value = data_fixed_param.items()[0][0], data_fixed_param.items()[0][1]
                     best_fit_result['data_'+p_name]=value
-                    print "save the fixed_param_data to output: ", p_name, " ", value
+                    print("save the fixed_param_data to output: ", p_name, " ", value)
                 results.append(best_fit_result)
 
         to_file(results, args.outfile)

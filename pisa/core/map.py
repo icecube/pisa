@@ -38,6 +38,7 @@ from pisa.utils.format import (make_valid_python_name, strip_outer_dollars,
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.random_numbers import get_random_state
 from pisa.utils import stats
+from functools import reduce
 
 
 __all__ = ['type_error', 'reduceToHist', 'rebin', 'valid_nominal_values',
@@ -671,7 +672,7 @@ class Map(object):
         pcolormesh_kw = {} if pcolormesh_kw is None else pcolormesh_kw
         colorbar_kw = {} if colorbar_kw is None else colorbar_kw
         if fmt is not None:
-            if isinstance(fmt, basestring):
+            if isinstance(fmt, str):
                 fmt = [fmt]
             fmt = set(f.strip().lower().lstrip('.') for f in fmt)
             if outdir is None:
@@ -853,7 +854,7 @@ class Map(object):
         """
         if axis is None:
             axis = self.binning.names
-        if isinstance(axis, (basestring, int)):
+        if isinstance(axis, (str, int)):
             axis = [axis]
         # Note that the tuple is necessary here (I think...)
         sum_indices = tuple([self.binning.index(dim) for dim in axis])
@@ -1278,7 +1279,7 @@ class Map(object):
 
         singleton = False
         if bin is not None:
-            if isinstance(bin, (int, basestring)):
+            if isinstance(bin, (int, str)):
                 bin_indices = [spliton_dim.index(bin)]
             elif isinstance(bin, slice):
                 bin_indices = list(range(len(spliton_dim)))[bin]
@@ -1539,7 +1540,7 @@ class Map(object):
     @name.setter
     def name(self, value):
         """map name"""
-        assert isinstance(value, basestring)
+        assert isinstance(value, str)
         return super(Map, self).__setattr__('_name', value)
 
     @property
@@ -1551,7 +1552,7 @@ class Map(object):
 
     @tex.setter
     def tex(self, value):
-        assert value is None or isinstance(value, basestring)
+        assert value is None or isinstance(value, str)
         if value is not None:
             value = strip_outer_dollars(value)
         return super(Map, self).__setattr__('_tex', value)
@@ -2077,7 +2078,7 @@ class MapSet(object):
                 assert x >= -l and x < l
             elif isinstance(x, Map):
                 x = self.names.index(x.name)
-            elif isinstance(x, basestring):
+            elif isinstance(x, str):
                 x = self.names.index(x)
             else:
                 raise TypeError('Unhandled type "%s" for `x`' % type(x))
@@ -2190,7 +2191,7 @@ class MapSet(object):
 
         """
         is_scalar = False
-        if isinstance(regexes, (basestring, re._pattern_type)):
+        if isinstance(regexes, (str, re._pattern_type)):
             is_scalar = True
             regexes = [regexes]
 
@@ -2290,7 +2291,7 @@ class MapSet(object):
 
         """
         is_scalar = False
-        if isinstance(expressions, basestring):
+        if isinstance(expressions, str):
             is_scalar = True
             expressions = [expressions]
 
@@ -2446,7 +2447,7 @@ class MapSet(object):
         idx = None
         if isinstance(value, Map):
             pass
-        elif isinstance(value, basestring):
+        elif isinstance(value, str):
             try:
                 idx = self.names.index(value)
             except ValueError:
@@ -2502,7 +2503,7 @@ class MapSet(object):
             for arg in args:
                 if (np.isscalar(arg) or
                         type(arg) is uncertainties.core.Variable or
-                        isinstance(arg, (basestring, np.ndarray))):
+                        isinstance(arg, (str, np.ndarray))):
                     this_map_args.append(arg)
                 elif isinstance(arg, MapSet):
                     if self.collate_by_name:
@@ -2577,7 +2578,7 @@ class MapSet(object):
             in an ordered dict with format {<map name>: <values>, ...}
 
         """
-        if isinstance(item, basestring):
+        if isinstance(item, str):
             return self.find_map(item)
 
         if isinstance(item, (int, slice)):
@@ -2741,7 +2742,7 @@ class MapSet(object):
                       collate_by_name=self.collate_by_name)
 
     def metric_per_map(self, expected_values, metric):
-        if isinstance(metric, basestring):
+        if isinstance(metric, str):
             metric = metric.lower()
             if 'binned_' in metric:
                 metric = metric.replace('binned_', '')

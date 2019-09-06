@@ -24,6 +24,7 @@ from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import set_verbosity, logging
 from pisa.utils.random_numbers import get_random_state
+from functools import reduce
 
 
 __all__ = ['DistributionMaker', 'test_DistributionMaker', 'parse_args', 'main']
@@ -78,7 +79,7 @@ class DistributionMaker(object):
         self._source_code_hash = None
 
         self._pipelines = []
-        if isinstance(pipelines, (basestring, PISAConfigParser, OrderedDict,
+        if isinstance(pipelines, (str, PISAConfigParser, OrderedDict,
                                   Pipeline)):
             pipelines = [pipelines]
 

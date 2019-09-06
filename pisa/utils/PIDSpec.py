@@ -86,7 +86,7 @@ class PIDSpec(object):
 
         if pid_specs is None:
             pid_specs = 'pid/pid_specifications.json'
-        if isinstance(pid_specs, basestring):
+        if isinstance(pid_specs, str):
             pid_specs = from_json(resources.find_resource(pid_specs))
         elif isinstance(pid_specs, collections.Mapping):
             pass
@@ -141,10 +141,10 @@ class PIDSpec(object):
         return sorted(self.pid_spec['criteria'].keys())
 
     def validate_signatures(self, signatures):
-        if isinstance(signatures, basestring):
+        if isinstance(signatures, str):
             signatures = [signatures]
         for signature in signatures:
-            assert isinstance(signature, basestring), \
+            assert isinstance(signature, str), \
                     'Signature "%s" is not string.' % signature
             if signature not in self.pid_spec['criteria']:
                 raise ValueError(
@@ -179,14 +179,14 @@ class PIDSpec(object):
         }
         """
         # Interpret `signatures`
-        if isinstance(signatures, basestring):
+        if isinstance(signatures, str):
             signatures = [signatures]
         elif signatures is None:
             signatures = self.get_signatures()
 
         self.validate_signatures(signatures)
 
-        if isinstance(return_fields, basestring):
+        if isinstance(return_fields, str):
             return_fields = [return_fields]
 
         separated_events = flavInt.FlavIntData()

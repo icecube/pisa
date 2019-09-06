@@ -87,7 +87,7 @@ def get_random_state(random_state, jumpahead=0):
     elif isinstance(random_state, np.random.RandomState):
         new_random_state = random_state
 
-    elif isinstance(random_state, basestring):
+    elif isinstance(random_state, str):
         allowed_strings = ['rand', 'random']
         rs = random_state.lower().strip()
         if rs not in allowed_strings:

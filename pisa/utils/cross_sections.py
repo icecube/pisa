@@ -73,7 +73,7 @@ class CrossSections(FlavIntData):
             pass
         elif isinstance(xsec, dict):
             xsec = deepcopy(xsec)
-        elif isinstance(xsec, basestring):
+        elif isinstance(xsec, str):
             assert self.energy is None
             self.energy, xsec = self.load(fpath=xsec, ver=ver)
         else:
@@ -585,7 +585,7 @@ class CrossSections(FlavIntData):
             leg.get_title().set_fontsize(leg_fs)
         plt.tight_layout()
 
-        if isinstance(save, basestring):
+        if isinstance(save, str):
             logging.info('Saving cross sections plots to file ' + save)
             f.savefig(save)
         elif isinstance(save, dict):

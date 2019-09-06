@@ -340,7 +340,7 @@ def find_files(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
 
     """
     root = expand(root)
-    if isinstance(regex, basestring):
+    if isinstance(regex, str):
         regex = re.compile(regex)
 
     # Define a function for accepting a filename as a match

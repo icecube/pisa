@@ -530,7 +530,7 @@ def parse_pipeline_config(config):
     from pisa.core.binning import MultiDimBinning, OneDimBinning
     from pisa.core.param import ParamSelector
 
-    if isinstance(config, basestring):
+    if isinstance(config, str):
         config = from_file(config)
     elif isinstance(config, PISAConfigParser):
         pass
@@ -809,7 +809,7 @@ class MutableMultiFileIterator(object):
         self._iter_stack.append(record)
         self.file_hierarchy = OrderedDict([(fpname, OrderedDict())])
 
-    def next(self):
+    def __next__(self):
         """Iterate through lines in the file(s).
 
         Returns
@@ -1059,7 +1059,7 @@ class PISAConfigParser(RawConfigParser):
         :method:`~backports.configparser.configparser.read`
 
         """
-        if isinstance(filenames, basestring):
+        if isinstance(filenames, str):
             filenames = [filenames]
         resource_locations = []
         for filename in filenames:
@@ -1180,7 +1180,10 @@ class PISAConfigParser(RawConfigParser):
                 if include_info['as']:
                     as_header = '[%s]\n' % include_info['as']
                     file_iter.switch_to_file(
-                        fp=StringIO(as_header.decode('utf-8'))
+                        # Aaron Fienberg
+                        # commented out as part of python3 update
+                        # fp=StringIO(as_header.decode('utf-8'))
+                        fp=StringIO(as_header)
                     )
                 continue
             # strip full line comments

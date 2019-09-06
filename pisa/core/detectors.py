@@ -56,7 +56,7 @@ class Detectors(object):
         else:
             self.shared_params = shared_params
 
-        if isinstance(pipelines, (basestring, PISAConfigParser, OrderedDict,
+        if isinstance(pipelines, (str, PISAConfigParser, OrderedDict,
                                   Pipeline)):
             pipelines = [pipelines]
         

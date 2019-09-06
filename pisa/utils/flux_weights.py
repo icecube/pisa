@@ -215,7 +215,7 @@ def load_2d_table(flux_file, enpow=1, return_table=False):
         raise TypeError('Energy power must be an integer')
     if not isinstance(return_table, bool):
         raise TypeError('return_table must be a boolean')
-    if not isinstance(flux_file, basestring):
+    if not isinstance(flux_file, str):
         raise TypeError('Flux file name must be a string')
     if 'aa' not in flux_file:
         raise ValueError('Azimuth-averaged tables are expected')
@@ -434,7 +434,7 @@ def load_3d_table(flux_file, enpow=1, return_table=False):
         raise TypeError('Energy power must be an integer')
     if not isinstance(return_table, bool):
         raise TypeError('return_table must be a boolean')
-    if not isinstance(flux_file, basestring):
+    if not isinstance(flux_file, str):
         raise ValueError('Flux file name must be a string')
     if 'aa' in flux_file:
         raise ValueError('Azimuth-dependent tables are expected')

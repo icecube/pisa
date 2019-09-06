@@ -92,7 +92,7 @@ def from_hdf(val, return_node=None, return_attrs=False):
     data = OrderedDict()
     attrs = OrderedDict()
     myfile = False
-    if isinstance(val, basestring):
+    if isinstance(val, str):
         try:
             root = h5py.File(find_resource(val), 'r')
         except:
@@ -183,7 +183,7 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
                 pass
 
             for key in sorted(node.keys()):
-                if isinstance(key, basestring):
+                if isinstance(key, str):
                     key_str = key
                 else:
                     key_str = str(key)
@@ -222,7 +222,7 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
                 # Store the node_hash for linking to later if this is more than
                 # a scalar datatype. Assumed that "None" has
                 node_hashes[node_hash] = full_path
-            if isinstance(node, basestring):
+            if isinstance(node, str):
                 # TODO: Treat strings as follows? Would this break
                 # compatibility with pytables/Pandas? What are benefits?
                 # Leaving the following two lines out for now...
@@ -261,7 +261,7 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
                     dset.attrs[key] = attrs[key]
 
     # Perform the actual operation using the dict passed in by user
-    if isinstance(tgt, basestring):
+    if isinstance(tgt, str):
         from pisa.utils.fileio import check_file_exists
         fpath = check_file_exists(fname=tgt, overwrite=overwrite, warn=warn)
         h5file = h5py.File(fpath, 'w')

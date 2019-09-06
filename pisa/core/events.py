@@ -98,7 +98,7 @@ class Events(FlavIntData):
         ])
         meta = {}
         data = FlavIntData()
-        if isinstance(val, (basestring, h5py.Group)):
+        if isinstance(val, (str, h5py.Group)):
             data, meta = self.__load(val)
         elif isinstance(val, Events):
             meta = deepcopy(val.metadata)
@@ -207,9 +207,9 @@ class Events(FlavIntData):
 
         if not isinstance(kinds, NuFlavIntGroup):
             kinds = NuFlavIntGroup(kinds)
-        if isinstance(binning_cols, basestring):
+        if isinstance(binning_cols, str):
             binning_cols = [binning_cols]
-        assert weights_col is None or isinstance(weights_col, basestring)
+        assert weights_col is None or isinstance(weights_col, str)
 
         # TODO: units of columns, and convert bin edges if necessary
         if isinstance(binning, OneDimBinning):
@@ -308,7 +308,7 @@ class Events(FlavIntData):
         if keep_criteria is None:
             return
 
-        assert isinstance(keep_criteria, basestring)
+        assert isinstance(keep_criteria, str)
 
         #Only get the flavints for which we have data
         flavints_to_process = self.flavints_present 
@@ -452,7 +452,7 @@ class Data(FlavIntDataGroup):
 
         # Get data and metadata from val
         meta = {}
-        if isinstance(val, (basestring, h5py.Group)):
+        if isinstance(val, (str, h5py.Group)):
             data, meta = self.__load(val)
         elif isinstance(val, Data):
             data = val
@@ -640,7 +640,7 @@ class Data(FlavIntDataGroup):
         if keep_criteria in self.metadata['cuts']:
             return
 
-        assert isinstance(keep_criteria, basestring)
+        assert isinstance(keep_criteria, str)
 
         fig_to_process = []
         if self.contains_neutrinos:
@@ -733,13 +733,13 @@ class Data(FlavIntDataGroup):
 
     def digitize(self, kinds, binning, binning_cols=None):
         """Wrapper for numpy's digitize function."""
-        if isinstance(kinds, basestring):
+        if isinstance(kinds, str):
             kinds = [kinds]
         if 'muons' not in kinds and 'noise' not in kinds:
             kinds = self._parse_flavint_groups(kinds)
         kinds = kinds[0]
 
-        if isinstance(binning_cols, basestring):
+        if isinstance(binning_cols, str):
             binning_cols = [binning_cols]
 
         # TODO: units of columns, and convert bin edges if necessary
@@ -814,15 +814,15 @@ class Data(FlavIntDataGroup):
         # with units in the Data columns--generate an appropriate
         # MultiDimBinning object, attach this and return the package as a Map.
 
-        if isinstance(kinds, basestring):
+        if isinstance(kinds, str):
             kinds = [kinds]
         if 'muons' not in kinds and 'noise' not in kinds:
             kinds = self._parse_flavint_groups(kinds)
         kinds = kinds[0]
 
-        if isinstance(binning_cols, basestring):
+        if isinstance(binning_cols, str):
             binning_cols = [binning_cols]
-        assert weights_col is None or isinstance(weights_col, basestring)
+        assert weights_col is None or isinstance(weights_col, str)
 
         # TODO: units of columns, and convert bin edges if necessary
         if isinstance(binning, OneDimBinning):
@@ -924,11 +924,11 @@ class Data(FlavIntDataGroup):
                 raise TypeError('binning should be either MultiDimBinning or '
                                 'OneDimBinning object. Got %s.' % type(binning))
         if nu_weights_col is not None:
-            if not isinstance(nu_weights_col, basestring):
+            if not isinstance(nu_weights_col, str):
                 raise TypeError('nu_weights_col should be a string. Got %s'
                                 % type(nu_weights_col))
         if mu_weights_col is not None:
-            if not isinstance(mu_weights_col, basestring):
+            if not isinstance(mu_weights_col, str):
                 raise TypeError('mu_weights_col should be a string. Got %s'
                                 % type(mu_weights_col))
         if not isinstance(errors, bool):
@@ -979,7 +979,7 @@ class Data(FlavIntDataGroup):
         return data, meta
 
     def __getitem__(self, arg):
-        if isinstance(arg, basestring):
+        if isinstance(arg, str):
             arg = arg.strip().lower()
             if arg == 'muons':
                 return self.muons
@@ -989,7 +989,7 @@ class Data(FlavIntDataGroup):
         return tgt_obj
 
     def __setitem__(self, arg, value):
-        if isinstance(arg, basestring):
+        if isinstance(arg, str):
             arg = arg.strip().lower()
             if arg == 'muons':
                 self.muons = value

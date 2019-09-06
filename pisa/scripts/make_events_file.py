@@ -191,7 +191,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
       https://wikispaces.psu.edu/download/attachments/282040606/meff_report_jllanfranchi_v05_2015-10-21.pdf
 
     """
-    if isinstance(run_settings, basestring):
+    if isinstance(run_settings, str):
         run_settings = DetMCSimRunsSettings(
             find_resource(run_settings),
             detector=detector
@@ -199,7 +199,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
     assert isinstance(run_settings, DetMCSimRunsSettings)
     assert run_settings.detector == detector
 
-    if isinstance(data_proc_params, basestring):
+    if isinstance(data_proc_params, str):
         data_proc_params = DataProcParams(
             detector=detector,
             proc_ver=proc_ver,
