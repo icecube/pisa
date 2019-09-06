@@ -716,7 +716,7 @@ class ParamSet(Sequence):
             try:
                 return self[attr]
             except KeyError:
-                raise t(v).with_traceback(tb)
+                raise t, v, tb
 
     def __setattr__(self, attr, val):
         try:
