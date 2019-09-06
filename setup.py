@@ -225,7 +225,7 @@ def do_setup():
             'scipy>=0.17',
             'h5py',
             'line_profiler',
-            'matplotlib>=2.0,<3.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
+            'matplotlib>=3.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
             'pint>=0.8', # earlier versions buggy
             'kde',
             'simplejson>=3.2',
