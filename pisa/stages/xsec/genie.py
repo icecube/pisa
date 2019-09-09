@@ -157,7 +157,7 @@ class genie(Stage): # pylint: disable=invalid-name
         def suffix_channel(sign, suf):
             return '%s_%s' % (sign, suf)
 
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = (''.join(input_names.split(' '))).split(',')
 
         self.output_channels = ('cc', 'nc')
@@ -352,12 +352,12 @@ class genie(Stage): # pylint: disable=invalid-name
 
     @staticmethod
     def _ev_param(parameter):
-        if isinstance(parameter, basestring):
+        if isinstance(parameter, str):
             return eval(parameter) # pylint: disable=eval-used
         return parameter
 
     def validate_params(self, params):
-        assert isinstance(params['xsec_file'].value, basestring)
+        assert isinstance(params['xsec_file'].value, str)
         assert isinstance(self._ev_param(params['livetime'].value), ureg.Quantity)
         assert isinstance(self._ev_param(params['ice_p'].value), ureg.Quantity)
         assert isinstance(self._ev_param(params['fid_vol'].value), ureg.Quantity)

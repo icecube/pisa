@@ -113,10 +113,10 @@ def load_reco_param(source):
         - Callable with one argument
         - String such that `eval(val)` yields a callable with one argument
     """
-    if not (source is None or isinstance(source, (basestring, Mapping))):
+    if not (source is None or isinstance(source, (str, Mapping))):
         raise TypeError('`source` must be string, mapping, or None')
 
-    if isinstance(source, basestring):
+    if isinstance(source, str):
         orig_dict = from_file(source)
 
     elif isinstance(source, Mapping):
@@ -137,7 +137,7 @@ def load_reco_param(source):
         for dimension in dim_dict.iterkeys():
             dim_dist_list = []
 
-            if not isinstance(dimension, basestring):
+            if not isinstance(dimension, str):
                 raise TypeError("The dimension needs to be given as a string!"
                                 " Allowed: %s."%valid_dimensions)
 
@@ -164,7 +164,7 @@ def load_reco_param(source):
 
                 dist_spec = dist_dict['dist']
 
-                if not isinstance(dist_spec, basestring):
+                if not isinstance(dist_spec, str):
                     raise TypeError(" The resolution function needs to be"
                                     " given as a string!")
 
@@ -191,7 +191,7 @@ def load_reco_param(source):
 
                 frac = dist_dict['fraction']
 
-                if isinstance(frac, basestring):
+                if isinstance(frac, str):
                     frac_func = eval(frac)
 
                 elif callable(frac):
@@ -217,7 +217,7 @@ def load_reco_param(source):
                 dist_spec_dict['kwargs'] = kwargs
                 for kwarg, kwarg_spec in kwargs.iteritems():
 
-                    if isinstance(kwarg_spec, basestring):
+                    if isinstance(kwarg_spec, str):
                         kwarg_eval = eval(kwarg_spec)
 
                     elif callable(kwarg_spec) or isscalar(kwarg_spec):
@@ -445,7 +445,7 @@ class param(Stage):
             'e_reco_bias', 'cz_reco_bias'
         )
 
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = (''.join(input_names.split(' '))).split(',')
 
         # Define the names of objects expected in inputs and produced as

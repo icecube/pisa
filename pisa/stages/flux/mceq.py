@@ -80,25 +80,25 @@ class mceq(Stage): # pylint: disable=invalid-name
         Parameters which set everything besides the binning
 
         Parameters required by this service are
-            * interaction_model : basestring
+            * interaction_model : str
                 Hadronic interaction model
 
-            * primary_model : basestring
+            * primary_model : str
                 Primary flux model
                 Default options are listed in the CRFluxModels docs:
                 https://crfluxmodels.readthedocs.io/en/latest/index.html#module-CRFluxModels
 
-            * density_model : basestring
+            * density_model : str
                 Density model of Earth's atmosphere
                 Default options are listed in the MCEq docs:
                 https://mceq.readthedocs.io/en/latest/physics.html#module-MCEq.density_profiles
 
-            * location : basestring
+            * location : str
                 Location to evaluate the fluxes
                 Default options are listed in the MCEq docs:
                 https://mceq.readthedocs.io/en/latest/physics.html#MCEq.density_profiles.CorsikaAtmosphere.init_parameters
 
-            * season : basestring
+            * season : str
                 Season in which to evaluate the fluxes
                 Default options are listed in the MCEq docs:
                 https://mceq.readthedocs.io/en/latest/physics.html#MCEq.density_profiles.CorsikaAtmosphere.init_parameters
@@ -255,11 +255,11 @@ class mceq(Stage): # pylint: disable=invalid-name
     def validate_params(self, params):
         pq = ureg.Quantity
         param_types = [
-            ('interaction_model', basestring),
-            ('primary_model', basestring),
-            ('density_model', basestring),
-            ('location', basestring),
-            ('season', basestring),
+            ('interaction_model', str),
+            ('primary_model', str),
+            ('density_model', str),
+            ('location', str),
+            ('season', str),
             ('smoothing', pq)
         ]
 

@@ -555,7 +555,7 @@ class sample(Stage):
                 del events[r_k]
 
     def validate_params(self, params):
-        assert isinstance(params['data_sample_config'].value, basestring)
-        assert isinstance(params['dataset'].value, basestring)
+        assert isinstance(params['data_sample_config'].value, str)
+        assert isinstance(params['dataset'].value, str)
         assert params['keep_criteria'].value is None or \
-            isinstance(params['keep_criteria'].value, basestring)
+            isinstance(params['keep_criteria'].value, str)

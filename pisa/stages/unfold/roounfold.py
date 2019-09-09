@@ -442,7 +442,7 @@ class roounfold(Stage):
     def load_gen_data(self):
         logging.debug('Loading generator level sample')
         unfold_pipeline_cfg = self.params['unfold_pipeline_cfg'].value
-        if isinstance(unfold_pipeline_cfg, basestring):
+        if isinstance(unfold_pipeline_cfg, str):
             pipeline_cfg = from_file(unfold_pipeline_cfg)
             pipeline_hash = pipeline_cfg
             sa_cfg = from_file(
@@ -763,5 +763,5 @@ class roounfold(Stage):
                     'Param "%s" must be type %s but is %s instead'
                     % (p, type(t), type(val))
                 )
-        assert isinstance(params['unfold_pipeline_cfg'].value, basestring) or \
+        assert isinstance(params['unfold_pipeline_cfg'].value, str) or \
                 isinstance(params['unfold_pipeline_cfg'].value, Pipeline)

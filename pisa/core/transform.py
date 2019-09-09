@@ -312,7 +312,7 @@ class TransformSet(object):
         if isinstance(idx, (int, slice)):
             return self._transforms[idx]
         # TODO: search for transform by output name?
-        #if isinstance(idx, basestring):
+        #if isinstance(idx, str):
         raise IndexError('`idx` %s not found in map set.' %idx)
 
 

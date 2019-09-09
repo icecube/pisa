@@ -216,7 +216,7 @@ class smooth(Stage):
             'pid_weights_name'
         )
 
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = input_names.replace(' ', '').split(',')
 
         # Define the names of objects that get produced by this stage
@@ -378,7 +378,7 @@ class smooth(Stage):
         # do some checks on the parameters
 
         # Check type of pid_events
-        assert isinstance(params.pid_events.value, (basestring, Events))
+        assert isinstance(params.pid_events.value, (str, Events))
 
         # Check the groupings of the pid_events file
         events = Events(params.pid_events.value)

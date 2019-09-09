@@ -191,6 +191,6 @@ class events_to_data(Stage):
 
 
     def validate_params(self, params):
-        assert isinstance(params['dataset'].value, basestring)
+        assert isinstance(params['dataset'].value, str)
         assert params['keep_criteria'].value is None or \
-            isinstance(params['keep_criteria'].value, basestring)
+            isinstance(params['keep_criteria'].value, str)

@@ -1033,7 +1033,7 @@ class ParamSelector(object):
                 continue
             if not isinstance(selection, str):
                 raise ValueError(
-                    "Selection should be a basestring. Got %s instead."%(
+                    "Selection should be a str. Got %s instead."%(
                         type(selection))
                 )
             selection = selection.strip().lower()

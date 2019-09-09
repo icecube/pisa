@@ -87,10 +87,10 @@ def load_aeff_param(source):
           maps energy or coszen values to aeff values..
 
     """
-    if not (source is None or isinstance(source, (basestring, Mapping))):
+    if not (source is None or isinstance(source, (str, Mapping))):
         raise TypeError('`source` must be string, mapping, or None')
 
-    if isinstance(source, basestring):
+    if isinstance(source, str):
         orig_dict = from_file(source)
     elif isinstance(source, Mapping):
         orig_dict = source
@@ -104,7 +104,7 @@ def load_aeff_param(source):
     for flavint_key, param_spec in orig_dict.iteritems():
         flavintgroup = NuFlavIntGroup(flavint_key)
 
-        if isinstance(param_spec, basestring):
+        if isinstance(param_spec, str):
             param_func = eval(param_spec)
 
         elif callable(param_spec):
@@ -230,7 +230,7 @@ class param(Stage):
         if particles == 'neutrinos':
             expected_params.append('nutau_cc_norm')
 
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = input_names.replace(' ', '').split(',')
         elif input_names is None:
             if particles == 'neutrinos':

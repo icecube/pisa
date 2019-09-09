@@ -130,7 +130,7 @@ class smooth(Stage):
         if particles == 'neutrinos':
             expected_params.append('nutau_cc_norm')
 
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = input_names.replace(' ', '').split(',')
         elif input_names is None:
             if particles == 'neutrinos':

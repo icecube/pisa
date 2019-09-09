@@ -700,14 +700,14 @@ class vbwkde(Stage): # pylint: disable=invalid-name
 
         # `particles` ...
 
-        assert isinstance(particles, basestring)
+        assert isinstance(particles, str)
         particles = particles.strip().lower()
         assert particles in ['neutrinos']
         self.particles = particles
 
         # `transform_groups` ...
 
-        if isinstance(transform_groups, basestring):
+        if isinstance(transform_groups, str):
             transform_groups = flavintGroupsFromString(transform_groups)
         elif transform_groups is None:
             transform_groups = flavintGroupsFromString('')
@@ -725,30 +725,30 @@ class vbwkde(Stage): # pylint: disable=invalid-name
 
         # `char_deps_downsampling` ...
 
-        if isinstance(char_deps_downsampling, basestring):
+        if isinstance(char_deps_downsampling, str):
             char_deps_downsampling = literal_eval(char_deps_downsampling)
 
         new_dict = dict()
         for char_dim_name, deps in char_deps_downsampling.items():
-            assert isinstance(char_dim_name, basestring)
+            assert isinstance(char_dim_name, str)
             new_dict[char_dim_name] = OrderedDict()
 
-            if isinstance(deps, basestring):
+            if isinstance(deps, str):
                 char_deps_downsampling[char_dim_name] = [deps]
                 new_dict[char_dim_name][deps] = 1
                 continue
 
             if isinstance(deps, Sequence):
-                if (len(deps) == 2 and isinstance(deps[0], basestring)
+                if (len(deps) == 2 and isinstance(deps[0], str)
                         and isscalar(deps[1])):
                     new_dict[char_dim_name][deps[0]] = deps[1]
                     continue
 
                 for subseq in deps:
-                    if isinstance(subseq, basestring):
+                    if isinstance(subseq, str):
                         new_dict[char_dim_name][subseq] = 1
                     elif isinstance(subseq, Sequence):
-                        assert isinstance(subseq[0], basestring)
+                        assert isinstance(subseq[0], str)
                         if len(subseq) == 2:
                             assert isscalar(subseq[1])
                             new_dict[char_dim_name][subseq[0]] = subseq[1]
@@ -769,7 +769,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
 
         # `min_num_events` ...
 
-        if isinstance(min_num_events, basestring):
+        if isinstance(min_num_events, str):
             min_num_events = literal_eval(min_num_events)
 
         if isscalar(min_num_events):
@@ -780,7 +780,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
 
         # `tgt_num_events` ...
 
-        if isinstance(tgt_num_events, basestring):
+        if isinstance(tgt_num_events, str):
             tgt_num_events = literal_eval(tgt_num_events)
 
         if isscalar(tgt_num_events):
@@ -791,7 +791,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
 
         # `tgt_max_binwidth_factors` ...
 
-        if isinstance(tgt_max_binwidth_factors, basestring):
+        if isinstance(tgt_max_binwidth_factors, str):
             tgt_max_binwidth_factors = literal_eval(tgt_max_binwidth_factors)
 
         if isscalar(tgt_max_binwidth_factors):
@@ -815,7 +815,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
 
         # `input_names` ...
 
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = (''.join(input_names.split(' '))).split(',')
 
         # Define the names of objects expected in inputs and produced as

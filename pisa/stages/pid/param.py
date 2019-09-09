@@ -65,7 +65,7 @@ def load_pid_energy_param(source):
 
     """
     # Get the original dict
-    if isinstance(source, basestring):
+    if isinstance(source, str):
         orig_dict = from_file(source)
     elif isinstance(source, Mapping):
         orig_dict = source
@@ -83,7 +83,7 @@ def load_pid_energy_param(source):
         pid_energy_param_dict[flavintgroup] = OrderedDict()
 
         for signature, sig_param_spec in subdict.iteritems():
-            if isinstance(sig_param_spec, basestring):
+            if isinstance(sig_param_spec, str):
                 sig_param_func = eval(sig_param_spec)
                 if not callable(sig_param_func):
                     raise ValueError(
@@ -218,7 +218,7 @@ class param(Stage):
             'pid_energy_paramfile'
         )
 
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = input_names.replace(' ', '').split(',')
 
         if self.particles == 'neutrinos':
@@ -441,7 +441,7 @@ class param(Stage):
     def validate_params(self, params):
         """Do checks on the parameters"""
         val = params.pid_energy_paramfile.value
-        if not isinstance(val, (basestring, Mapping)):
+        if not isinstance(val, (str, Mapping)):
             raise TypeError(
                 'Expecting either a path to a file or a dictionary provided'
                 ' as the store of the parameterisations. Got "%s".' % type(val)

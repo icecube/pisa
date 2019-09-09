@@ -122,19 +122,19 @@ class PIDSpec(object):
         #for signature, pidspec in pids.iteritems():
         #    # Particle names are lower-case strings with no surrounding
         #    # whitespace
-        #    assert isinstance(signature, basestring)
+        #    assert isinstance(signature, str)
         #    assert signature == signature.lower()
         #    assert signature == signature.strip()
         #    # Has appropriate keys (and no extra)
         #    assert len(pidspec) == 2
         #    assert 'fields' in pidspec
         #    assert 'criteria' in pidspec
-        #    assert not isinstance(pidspec['fields'], basestring)
+        #    assert not isinstance(pidspec['fields'], str)
         #    # 'fields' contains a sequence
         #    assert hasattr(pidspec['fields'], '__iter__') and \
-        #            not isinstance(pidspec['fields'], basestring)
+        #            not isinstance(pidspec['fields'], str)
         #    # 'criteria' contains a string
-        #    assert isinstance(pidspec['criteria'], basestring)
+        #    assert isinstance(pidspec['criteria'], str)
         return
 
     def get_signatures(self):

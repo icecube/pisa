@@ -126,7 +126,7 @@ class MCSimRunSettings(dict):
     def __init__(self, run_settings, run=None, detector=None):
         super(MCSimRunSettings, self).__init__()
         # TODO: clean up this constructor!
-        #if isinstance(run_settings, basestring):
+        #if isinstance(run_settings, str):
         #    rsd = jsons.from_json(resources.find_resource(run_settings))
         if isinstance(run_settings, dict):
             rsd = run_settings

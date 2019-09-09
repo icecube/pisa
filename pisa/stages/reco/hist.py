@@ -147,7 +147,7 @@ class hist(Stage):
             'e_reco_bias', 'cz_reco_bias'
         )
 
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = (''.join(input_names.split(' '))).split(',')
 
         # Define the names of objects expected in inputs and produced as
