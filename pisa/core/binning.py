@@ -20,7 +20,8 @@ classes have many useful methods for working with binning.
 
 from __future__ import absolute_import, division
 
-from collections import Iterable, Mapping, OrderedDict, Sequence, namedtuple
+from collections.abc import Iterable, Mapping, Sequence
+from collections import OrderedDict, namedtuple
 from copy import copy, deepcopy
 from functools import wraps
 from itertools import chain, product
