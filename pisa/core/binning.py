@@ -7,7 +7,7 @@ classes have many useful methods for working with binning.
 # TODO: include Iterables where only Sequence is allowed now?
 # TODO: iterbins, itercoords are _*slow*_. Figure out how to speed these up, if
 #       that is possible in pure-Python loops... E.g.
-#           `indices = [i for i in xrange(mdb.size)]`
+#           `indices = [i for i in range(mdb.size)]`
 #       takes 70 ms while
 #           `coords = [c for c in mdb.itercoords()]`
 #       takes 10 seconds.
@@ -1717,7 +1717,7 @@ class MultiDimBinning(object):
         for inspecting the contents of each state attribute pre-hashing
         """
         state = OrderedDict()
-        state['dimensions'] = [d.normalized_state() for d in self]
+        state['dimensions'] = [d.normalized_state for d in self]
         return state
 
     @property
@@ -2879,9 +2879,9 @@ def test_OneDimBinning():
 
             # Now try with pickle
             b_file = os.path.join(testdir, 'one_dim_binning.pkl')
-            pickle.dump(struct, file(b_file, 'wb'),
+            pickle.dump(struct, open(b_file, 'wb'),
                         protocol=pickle.HIGHEST_PROTOCOL)
-            loaded = pickle.load(file(b_file, 'r'))
+            loaded = pickle.load(open(b_file, 'rb'))
             b_ = loaded[0][0]['odb']
             assert b_ == b
 
@@ -2995,9 +2995,9 @@ def test_MultiDimBinning():
 
         # Now try with pickle
         b_file = os.path.join(testdir, 'multi_dim_binning.pkl')
-        pickle.dump(struct, file(b_file, 'wb'),
+        pickle.dump(struct, open(b_file, 'wb'),
                     protocol=pickle.HIGHEST_PROTOCOL)
-        loaded = pickle.load(file(b_file, 'r'))
+        loaded = pickle.load(open(b_file, 'rb'))
         b_ = loaded[0][0]['mdb']
         assert b_ == b
 

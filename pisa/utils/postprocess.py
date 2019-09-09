@@ -1313,7 +1313,7 @@ class Postprocessor(object):
         xlims = [self.inj_param_vals[0]-0.1*hrange,
                  self.inj_param_vals[-1]+0.1*hrange]
 
-        for i in xrange(len(self.data_sets)):
+        for i in range(len(self.data_sets)):
 
             significances = self.deltachi2_significance(
                 wh_to_th_metrics=self.wh_to_th[i]['metrics'],
@@ -2425,7 +2425,7 @@ class Postprocessor(object):
         if median_p_value:
             # Quantify the uncertainty on the median by bootstrapping
             sampled_medians = []
-            for _ in xrange(1000):
+            for _ in range(1000):
                 sampled_medians.append(
                     np.median(
                         np.random.choice(

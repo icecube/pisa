@@ -44,7 +44,7 @@ def convert_to_th1d(in_map, errors=False):
     array2hist(unp.nominal_values(in_map.hist), th1d)
     if errors:
         map_errors = unp.std_devs(in_map.hist)
-        for idx in xrange(n_bins):
+        for idx in range(n_bins):
             th1d.SetBinError(idx+1, map_errors[idx])
     return th1d
 
@@ -70,7 +70,7 @@ def unflatten_thist(in_th1d, binning, name='', errors=False, **kwargs):
     flat_hist = hist2array(in_th1d)
     if errors:
         map_errors = [in_th1d.GetBinError(idx+1)
-                      for idx in xrange(len(flat_hist))]
+                      for idx in range(len(flat_hist))]
         flat_hist = unp.uarray(flat_hist, map_errors)
     hist = flat_hist.reshape(binning.shape)
     return Map(hist=hist, binning=binning, name=name, **kwargs)

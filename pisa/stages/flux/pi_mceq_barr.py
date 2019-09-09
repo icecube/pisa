@@ -141,10 +141,10 @@ class pi_mceq_barr(PiStage):
         dumb function to iterate trhouh all E, CZ values
         and evlauate all 8 Barr splines at these points
         '''
-        for i in xrange(len(true_energy)):
+        for i in range(len(true_energy)):
             abs_cos = abs(true_coszen[i])
             log_e = np.log(true_energy[i])
-            for j in xrange(len(splines)):
+            for j in range(len(splines)):
                 out[i,j] = splines[j](abs_cos, log_e)[0,0]
 
 

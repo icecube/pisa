@@ -199,10 +199,12 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
                 line = ''.join([chr(ord(c)^42) for c in line])
                 outfile.write(line.encode())
         else:
-            json.dump(
-                content, outfile, indent=indent, cls=NumpyEncoder,
-                sort_keys=sort_keys, allow_nan=True, ignore_nan=False
-            ).encode()
+            outfile.write(
+                json.dumps(
+                    content, indent=indent, cls=NumpyEncoder,
+                    sort_keys=sort_keys, allow_nan=True, ignore_nan=False
+                ).encode()
+            )
         logging.debug('Wrote %.2f kB to %s', outfile.tell()/1024., filename)
 
 
@@ -277,7 +279,7 @@ class NumpyDecoder(json.JSONDecoder):
 
     def json_python_string(self, s, end, encoding, strict):
         values, end = json.decoder.scanstring(s, end, encoding, strict)
-        return values.encode('utf-8'), end
+        return values, end
 
 
 # TODO: finish this little bit

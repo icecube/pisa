@@ -228,7 +228,7 @@ class DiskCache(object):
 
     Demonstrate max_depth (limit on number of entries / cache depth)
 
-    >>> x = [disk_cache.__setitem__(i, 'foo') for i in xrange(10)]
+    >>> x = [disk_cache.__setitem__(i, 'foo') for i in range(10)]
     >>> len(disk_cache)
     5
 

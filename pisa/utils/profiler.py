@@ -87,7 +87,7 @@ def test_line_profile():
     @line_profile
     def get_number():
         log.logging.trace('hello, i am get_number')
-        for x in xrange(500000):
+        for x in range(500000):
             yield x
 
     @line_profile
@@ -137,7 +137,7 @@ def test_profile():
     @profile
     def get_number():
         log.logging.trace('hello, i am get_number')
-        for x in xrange(500000):
+        for x in range(500000):
             yield x
 
     @profile

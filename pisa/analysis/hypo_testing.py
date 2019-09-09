@@ -617,7 +617,7 @@ class HypoTesting(Analysis):
         t0 = time.time()
         try:
             # Loop for multiple (if fluctuated) data distributions
-            for self.data_ind in xrange(self.data_start_ind,
+            for self.data_ind in range(self.data_start_ind,
                                         self.data_start_ind
                                         + self.num_data_trials):
                 data_trials_complete = self.data_ind-self.data_start_ind
@@ -639,7 +639,7 @@ class HypoTesting(Analysis):
                 self.fit_hypos_to_data()
 
                 # Loop for multiple (if fluctuated) fiducial data distributions
-                for self.fid_ind in xrange(self.fid_start_ind,
+                for self.fid_ind in range(self.fid_start_ind,
                                            self.fid_start_ind
                                            + self.num_fid_trials):
                     fid_trials_complete = self.fid_ind-self.fid_start_ind

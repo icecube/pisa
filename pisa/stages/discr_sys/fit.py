@@ -341,7 +341,7 @@ class fit(Stage):
 
                     if self.params['smoothing'].value == 'gauss':
                         # TODO(shivesh): new MapSet functions?
-                        for d in xrange(degree):
+                        for d in range(degree):
                             fit_map[..., d] = gaussian_filter(
                                 fit_map[..., d], sigma=1
                             )
@@ -386,7 +386,7 @@ class fit(Stage):
 
                 if self.params['smoothing'].value == 'gauss':
                     # TODO(shivesh): new MapSet functions?
-                    for d in xrange(degree):
+                    for d in range(degree):
                         fit_map[..., d] = gaussian_filter(
                             fit_map[..., d], sigma=1
                         )

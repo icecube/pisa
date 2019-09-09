@@ -318,7 +318,7 @@ class roounfold(Stage):
         # Find optimum value for regularisation parameter
         if self.params['optimize_reg'].value:
             chisq = None
-            for r_idx in xrange(regularisation):
+            for r_idx in range(regularisation):
                 unfold = RooUnfoldBayes(
                     response, r_th1d, r_idx+1
                 )

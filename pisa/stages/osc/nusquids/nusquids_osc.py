@@ -170,7 +170,7 @@ def evolve_states(cz_shape, propagators, ini_states, nsq_earth_atm, osc_params):
         nuSQ.Set_CPPhase(0, 2, osc_params.deltacp)
 
         # invoke odd mechanism to set NSI parameters
-        for icz in xrange(cz_shape): # pylint: disable=xrange-builtin
+        for icz in range(cz_shape): # pylint: disable=xrange-builtin
             nuSQ_icz = nuSQ.GetnuSQuIDS(icz)
             if hasattr(nuSQ_icz,"Set_epsilon_ee") : #TODO Find a nicer way to do this (maybe make all this into a class?)
                 nuSQ_icz.Set_epsilon_ee(osc_params.eps_ee)

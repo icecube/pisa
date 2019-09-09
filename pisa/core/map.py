@@ -1158,7 +1158,7 @@ class Map(object):
         Map object containing one of each bin of this Map
 
         """
-        for i in xrange(self.size):
+        for i in range(self.size):
             idx_coord = self.binning.index2coord(i)
             idx_view = [slice(x, x+1) for x in idx_coord]
             single_bin_map = Map(

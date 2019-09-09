@@ -203,13 +203,13 @@ def parallel_run(func, kind, num_parallel, scalar_func, divided_args_mask,
     #
 
     item_num = 0
-    for batch_num in xrange(batches):
+    for batch_num in range(batches):
         if uniform_chunksize == 0 and singles == 0:
             break
 
         items_in_batch = 0
         chunks = []
-        for worker in xrange(num_parallel):
+        for worker in range(num_parallel):
             if uniform_chunksize == 0 and singles == 0:
                 break
 
