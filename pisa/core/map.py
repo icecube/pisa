@@ -1357,8 +1357,8 @@ class Map(object):
         return np.sum(stats.llh(actual_values=self.hist,
                                 expected_values=expected_values))
     
-    def thorsten_llh(self, expected_values, binned=False):
-        """Calculate the total thorsten log-likelihood value between this map and the
+    def mcllh_mean(self, expected_values, binned=False):
+        """Calculate the total LMean log-likelihood value between this map and the
         map described by `expected_values`; self is taken to be the "actual
         values" (or (pseudo)data), and `expected_values` are the expectation
         values for each bin.
@@ -1377,15 +1377,15 @@ class Map(object):
         expected_values = reduceToHist(expected_values)
 
         if binned:
-            return stats.thorsten_llh(actual_values=self.hist,
+            return stats.mcllh_mean(actual_values=self.hist,
                              expected_values=expected_values)
 
-        return np.sum(stats.thorsten_llh(actual_values=self.hist,
+        return np.sum(stats.mcllh_mean(actual_values=self.hist,
                                 expected_values=expected_values))
 
 
-    def say_llh(self, expected_values, binned=False):
-        """Calculate the total SAY log-likelihood value between this map and the
+    def mcllh_eff(self, expected_values, binned=False):
+        """Calculate the total LEff log-likelihood value between this map and the
         map described by `expected_values`; self is taken to be the "actual
         values" (or (pseudo)data), and `expected_values` are the expectation
         values for each bin.
@@ -1404,10 +1404,10 @@ class Map(object):
         expected_values = reduceToHist(expected_values)
 
         if binned:
-            return stats.say_llh(actual_values=self.hist,
+            return stats.mcllh_eff(actual_values=self.hist,
                              expected_values=expected_values)
 
-        return np.sum(stats.say_llh(actual_values=self.hist,
+        return np.sum(stats.mcllh_eff(actual_values=self.hist,
                                 expected_values=expected_values))
 
     def conv_llh(self, expected_values, binned=False):

@@ -17,7 +17,7 @@ from pisa.utils import likelihood_functions
 __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
            'maperror_logmsg',
            'chi2', 'llh', 'log_poisson', 'log_smear', 'conv_poisson',
-           'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2', 'thorsten_llh', 'say_llh']
+           'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2', 'mcllh_mean', 'mcllh_eff']
 
 __author__ = 'P. Eller, T. Ehrhardt, J.L. Lanfranchi'
 
@@ -42,7 +42,7 @@ SMALL_POS = 1e-10 #if FTYPE == np.float64 else FTYPE_PREC
 CHI2_METRICS = ['chi2', 'mod_chi2']
 """Metrics defined that result in measures of chi squared"""
 
-LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh', 'thorsten_llh', 'say_llh']
+LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh', 'mcllh_mean', 'mcllh_eff']
 """Metrics defined that result in measures of log likelihood"""
 
 ALL_METRICS = LLH_METRICS + CHI2_METRICS
@@ -211,10 +211,9 @@ def llh(actual_values, expected_values):
 
     return llh_val
 
-def thorsten_llh(actual_values, expected_values):
-    """Compute the log-likelihood (llh) based on eq. 20 - https://doi.org/10.1140/epjp/i2018-12042-x
-    accounting for finite MC statistics. It is a good analytical approximation to the 
-    convolutional approach described later in the paper.
+def mcllh_eff(actual_values, expected_values):
+    """Compute the log-likelihood (llh) based LEff in table 2 - https://doi.org/10.1007/JHEP06(2019)030
+    accounting for finite MC statistics.
 
     Parameters
     ----------
@@ -268,7 +267,7 @@ def thorsten_llh(actual_values, expected_values):
     return llh_val
 
 
-def say_llh(actual_values, expected_values):
+def mcllh_eff(actual_values, expected_values):
     """Compute the log-likelihood (llh) based on eq. 3.16 - https://doi.org/10.1007/JHEP06(2019)030
     accounting for finite MC statistics.
 
