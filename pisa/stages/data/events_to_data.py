@@ -23,6 +23,7 @@ from pisa.utils.flavInt import ALL_NUFLAVINTS, NuFlavIntGroup, FlavIntDataGroup
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
+from functools import reduce
 
 
 __all__ = ['SEP', 'events_to_data']

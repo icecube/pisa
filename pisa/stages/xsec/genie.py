@@ -28,6 +28,7 @@ from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
+from functools import reduce
 
 
 __all__ = ['genie', 'test_standard_plots', 'test_per_e_plot']
