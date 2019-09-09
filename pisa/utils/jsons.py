@@ -89,8 +89,8 @@ def from_json(filename):
     assert ext in JSON_EXTS or ext in ZIP_EXTS + XOR_EXTS
     try:
         if ext == 'bz2':
-            bz2_content = open_resource(filename).read()
-            decompressed = bz2.decompress(bz2_content)
+            bz2_content = open_resource(filename, 'rb').read()
+            decompressed = bz2.decompress(bz2_content).decode()
             del bz2_content
             content = json.loads(
                 decompressed,
@@ -100,8 +100,8 @@ def from_json(filename):
             del decompressed
         elif ext == 'xor':
             # Create tempfile
-            temp = tempfile.TemporaryFile(mode='w+b')
-            with open(filename, 'rb') as infile:
+            temp = tempfile.TemporaryFile(mode='w+')
+            with open(filename, 'r') as infile:
                 for line in infile:
                     # Decrypt with key 42
                     line = ''.join([chr(ord(c)^42) for c in line])
@@ -185,12 +185,12 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
             )
         elif ext == 'xor':
             # Create tempfile
-            temp = tempfile.TemporaryFile(mode='w+b')
+            temp = tempfile.TemporaryFile(mode='w+')
             temp.write(
                 json.dumps(
                     content, temp, indent=indent, cls=NumpyEncoder,
                     sort_keys=sort_keys, allow_nan=True, ignore_nan=False
-                ).encode()
+                )
             )
             # Rewind
             temp.seek(0)
