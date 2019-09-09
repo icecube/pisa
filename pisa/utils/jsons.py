@@ -99,16 +99,16 @@ def from_json(filename):
             )
             del decompressed
         elif ext == 'xor':
-            # Create tempfile
-            temp = tempfile.TemporaryFile(mode='w+')
-            with open(filename, 'r') as infile:
-                for line in infile:
-                    # Decrypt with key 42
-                    line = ''.join([chr(ord(c)^42) for c in line])
-                    temp.write(line)
-            # Rewind
-            temp.seek(0)
-            content = json.load(temp,
+            
+            with open(filename, 'rb') as infile:
+                encrypted_bytes = infile.read()
+
+            # decrypt with key 42
+            decypted_bytes = bytearray()
+            for byte in encrypted_bytes:
+                decypted_bytes.append(byte ^ 42)
+
+            content = json.loads(decypted_bytes.decode(),
                                 cls=NumpyDecoder,
                                 object_pairs_hook=OrderedDict)
         else:
@@ -184,20 +184,17 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
                 )
             )
         elif ext == 'xor':
-            # Create tempfile
-            temp = tempfile.TemporaryFile(mode='w+')
-            temp.write(
-                json.dumps(
-                    content, temp, indent=indent, cls=NumpyEncoder,
-                    sort_keys=sort_keys, allow_nan=True, ignore_nan=False
-                )
-            )
-            # Rewind
-            temp.seek(0)
-            for line in temp:
-                # Decrypt with key 42
-                line = ''.join([chr(ord(c)^42) for c in line])
-                outfile.write(line.encode())
+            json_bytes = json.dumps(
+                content, indent=indent, cls=NumpyEncoder, 
+                sort_keys=sort_keys, allow_nan=True, ignore_nan=False
+                ).encode()
+
+            # encrypt with key 42
+            encrypted_bytes = bytearray()
+            for byte in json_bytes:
+                encrypted_bytes.append(byte ^ 42)
+
+            outfile.write(encrypted_bytes)
         else:
             outfile.write(
                 json.dumps(
