@@ -121,7 +121,7 @@ class MemoryCache(object):
         self.__cache[key] = value
 
     def __contains__(self, key):
-        return key in self
+        return key in self.__cache
 
     def __delitem__(self, key):
         return self.__cache.__delitem__(self, key)
@@ -469,7 +469,11 @@ class DiskCache(object):
         return conn
 
     def __contains__(self, key):
-        return key in self
+        try:
+            _ = self[key]
+            return True 
+        except KeyError:
+            return False
 
     @property
     def now(self):
