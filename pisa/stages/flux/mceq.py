@@ -146,7 +146,7 @@ class mceq(Stage): # pylint: disable=invalid-name
             'nue', 'numu', 'nuebar', 'numubar'
         )
 
-        super(mceq, self).__init__(
+        super().__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
@@ -156,7 +156,7 @@ class mceq(Stage): # pylint: disable=invalid-name
             disk_cache=disk_cache,
             memcache_deepcopy=memcache_deepcopy,
             outputs_cache_depth=outputs_cache_depth,
-            output_binning=output_binning
+            output_binning=output_binning,
         )
 
     @profile

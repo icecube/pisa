@@ -659,7 +659,7 @@ def make_toy_events(outdir, num_events, energy_range, spectral_index,
         )
         mcevts_fpath = os.path.join(outdir, mcevts_fname)
         if os.path.isfile(mcevts_fpath):
-            logging.warn('File already exists, skipping: "%s"', mcevts_fpath)
+            logging.warning('File already exists, skipping: "%s"', mcevts_fpath)
             continue
 
         logging.info('Working on set "%s"', mcevts_fname)

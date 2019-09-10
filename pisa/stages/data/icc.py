@@ -79,7 +79,7 @@ class icc(Stage):
 
         output_names = ('total')
 
-        super(self.__class__, self).__init__(
+        super().__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,

@@ -1168,7 +1168,7 @@ class Postprocessor(object):
                 good_trials = modified_z_score < thresh
                 if not np.all(good_trials):
                     bad_trials = np.where(not good_trials)[0]
-                    logging.warn(
+                    logging.warning(
                         'Outlier(s) detected for %s in trial(s) %s. Will be '
                         'removed. If you think this should not happen, please '
                         'change the value of the threshold used for the '
@@ -1508,13 +1508,13 @@ class Postprocessor(object):
                 )
             try:
                 import matplotlib.patheffects as PathEffects
-                logging.warn(
+                logging.warning(
                     "PathEffects could be imported, so the correlation values"
                     " will be written on the bins. This is slow."
                 )
                 pe = True
             except ImportError:
-                logging.warn(
+                logging.warning(
                     "PathEffects could not be imported, so the correlation"
                     " values will not be written on the bins.")
                 pe = False
@@ -4021,7 +4021,7 @@ class Postprocessor(object):
             bin_cens = []
             if isinstance(all_steps[step_variable][0][1], list):
                 if len(all_steps[step_variable][0][1]) == 0:
-                    logging.warn(
+                    logging.warning(
                         "No units have been found for the scan "
                         "parameter. Making it dimensionless."
                     )
@@ -5054,14 +5054,14 @@ class Postprocessor(object):
     def get_correlation_coefficient(self, xdata, ydata, xsystkey, ysystkey):
         """Calculate the correlation coefficient between x and y"""
         if len(set(xdata)) == 1:
-            logging.warn(
+            logging.warning(
                 "Parameter %s appears to not have been varied. "
                 "i.e. all of the values in the set are the "
                 "same. This will lead to NaN in the correlation "
                 "calculation and so it will not be done."%xsystkey
             )
         if len(set(ydata)) == 1:
-            logging.warn(
+            logging.warning(
                 "Parameter %s appears to not have been varied. "
                 "i.e. all of the values in the set are the "
                 "same. This will lead to NaN in the correlation "
@@ -5239,8 +5239,7 @@ class Postprocessor(object):
         pretty_labels["livetime"] = r"Livetime"
         pretty_labels["julian_year"] = r"Years"
         if label not in pretty_labels.keys():
-            logging.warn("I have no nice label for %s. "
-                         "Returning as is."%label)
+            logging.warning("I have no nice label for %s. Returning as is."%label)
             return label
         return pretty_labels[label]
 

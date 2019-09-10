@@ -48,7 +48,7 @@ class csv_data_hist(PiStage):
             'weights',
         )
         # init base class
-        super(csv_data_hist, self).__init__(
+        super().__init__(
             data=data,
             params=params,
             expected_params=expected_params,

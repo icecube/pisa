@@ -278,9 +278,11 @@ def main():
 
         pid_names = baseline_map.binning['pid'].bin_names
         if pid_names is None:
-            logging.warn('There are no names given for the PID bins, thus '
-                         'they will just be numbered in both the the plot '
-                         'save names and titles.')
+            logging.warning(
+                'There are no names given for the PID bins, thus '
+                'they will just be numbered in both the the plot '
+                'save names and titles.'
+            )
             pid_names = [x for x in range(
                 0, baseline_map.binning['pid'].num_bins)]
 

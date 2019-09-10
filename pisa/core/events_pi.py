@@ -91,7 +91,7 @@ class EventsPi(OrderedDict):
         neutrinos = kw.pop("neutrinos", True)
         fraction_events_to_keep = kw.pop("fraction_events_to_keep", None)
 
-        super(EventsPi, self).__init__(*arg, **kw)
+        super().__init__(*arg, **kw)
 
         self.name = name
         self.neutrinos = neutrinos

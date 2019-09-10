@@ -38,7 +38,7 @@ from __future__ import absolute_import, division
 
 from collections.abc import MutableSequence, MutableMapping, Mapping, Sequence
 from copy import deepcopy
-from functools import total_ordering
+from functools import reduce, total_ordering
 from itertools import product, combinations
 from operator import add
 import re
@@ -49,7 +49,6 @@ from pisa import ureg
 from pisa.utils import fileio
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.comparisons import recursiveAllclose, recursiveEquality
-from functools import reduce
 
 
 __all__ = ['NuFlav', 'NuFlavInt', 'NuFlavIntGroup', 'FlavIntData',
@@ -1191,7 +1190,7 @@ class FlavIntData(dict):
 
     """
     def __init__(self, val=None):
-        super(FlavIntData, self).__init__()
+        super().__init__()
         if isinstance(val, str):
             d = self.__load(val)
         elif isinstance(val, dict):
@@ -1224,7 +1223,7 @@ class FlavIntData(dict):
     def __getitem__(self, *args):
         assert len(args) <= 2
         key_list = self._interpret_index(args)
-        tgt_obj = super(FlavIntData, self).__getitem__(key_list[0])
+        tgt_obj = super().__getitem__(key_list[0])
         if len(key_list) == 2:
             tgt_obj = tgt_obj[key_list[1]]
         return tgt_obj
@@ -1399,7 +1398,7 @@ class FlavIntDataGroup(dict):
             interpreted as a NuFlavIntGroup.
     """
     def __init__(self, val=None, flavint_groups=None):
-        super(FlavIntDataGroup, self).__init__()
+        super().__init__()
         self._flavint_groups = None
         if flavint_groups is None:
             if val is None:
@@ -1602,14 +1601,14 @@ class FlavIntDataGroup(dict):
 
     def __getitem__(self, arg):
         key = self._interpret_index(arg)
-        tgt_obj = super(FlavIntDataGroup, self).__getitem__(key)
+        tgt_obj = super().__getitem__(key)
         return tgt_obj
 
     def __setitem__(self, arg, value):
         key = self._interpret_index(arg)
         if NuFlavIntGroup(key) not in self.flavint_groups:
             self.flavint_groups += [NuFlavIntGroup(key)]
-        super(FlavIntDataGroup, self).__setitem__(key, value)
+        super().__setitem__(key, value)
 
     def __eq__(self, other):
         """Recursive, exact equality"""
@@ -1766,8 +1765,10 @@ class CombinedFlavIntData(FlavIntData):
 
         elif val is None:
             if flavint_groupings is None:
-                logging.warn('CombinedFlavIntData object instantiated without'
-                             ' flavint groupings specified.')
+                logging.warning(
+                    'CombinedFlavIntData object instantiated without'
+                    ' flavint groupings specified.'
+                )
             named_g = grouped
             named_ung = ungrouped
             # Instantiate empty dict with groupings as keys
@@ -1806,10 +1807,10 @@ class CombinedFlavIntData(FlavIntData):
         return recursiveEquality(self, other)
 
     #def __getitem__(self, item):
-    #    return super(CombinedFlavIntData, self).__getitem__(item)
+    #    return super().__getitem__(item)
 
     #def __setitem__(self, item, value):
-    #    return super(CombinedFlavIntData, self).__setitem__(item, value)
+    #    return super().__setitem__(item, value)
 
     def deduplicate(self, rtol=None, atol=None):
         """Identify duplicate datasets and combine the associated flavints

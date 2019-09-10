@@ -10,13 +10,13 @@ multiple processes.
 from __future__ import division
 
 from copy import copy
-import Queue
+from functools import reduce
+import queue
 import threading
 import time
 
 from pisa import OMP_NUM_THREADS
 from pisa.utils.log import logging, set_verbosity
-from functools import reduce
 
 
 __all__ = ['parallel_run']
@@ -46,7 +46,7 @@ def wrapper(func, retvals_queue, chunk):
     Parameters
     ----------
     func : callable
-    retvals_queue : Queue.Queue
+    retvals_queue : queue.Queue
     chunk : dict containing {'args': (...), 'kwargs': {...}}
 
     """
@@ -177,7 +177,7 @@ def parallel_run(func, kind, num_parallel, scalar_func, divided_args_mask,
                 has_str = 'all have'
             else:
                 has_str = 'has'
-            logging.error('%s%s %s length %d', pargstr, pkwargsstr, has_str,
+            logging.error('%s%s %s length %d', pargstr, pkwargstr, has_str,
                           length)
 
         raise ValueError('Each divided arg and each divided keyword arg must'
@@ -237,7 +237,7 @@ def parallel_run(func, kind, num_parallel, scalar_func, divided_args_mask,
                 else:
                     worker_kwargs[name] = val
 
-            chunk = dict(indices=range(start_ind, end_ind),
+            chunk = dict(indices=list(range(start_ind, end_ind)),
                          args=tuple(worker_args),
                          kwargs=worker_kwargs)
             chunks.append(chunk)
@@ -250,7 +250,7 @@ def parallel_run(func, kind, num_parallel, scalar_func, divided_args_mask,
                 ' items', batch_num + 1, len(chunks), items_in_batch
             )
 
-            return_values = Queue.Queue()
+            return_values = queue.Queue()
             threads = []
             for chunk in chunks:
                 thread = threading.Thread(

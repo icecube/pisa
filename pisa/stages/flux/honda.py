@@ -351,7 +351,7 @@ class honda(Stage): #pylint: disable=invalid-name
         # there are no "inputs" used by this stage. (Of course there are
         # parameters, and files with info, but no maps or MC events are used
         # and transformed directly by this stage to produce its output.)
-        super(honda, self).__init__(
+        super().__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
@@ -361,7 +361,7 @@ class honda(Stage): #pylint: disable=invalid-name
             memcache_deepcopy=memcache_deepcopy,
             outputs_cache_depth=outputs_cache_depth,
             output_binning=output_binning,
-            debug_mode=debug_mode
+            debug_mode=debug_mode,
         )
 
         # Set the neutrio primaries
@@ -375,17 +375,17 @@ class honda(Stage): #pylint: disable=invalid-name
         if set(output_binning.names) == set(['true_energy', 'true_coszen',
                                              'true_azimuth']):
             self.load_3d_table(smooth=0.05)
-            logging.warn('!! ############################################ !!')
-            logging.warn('')
-            logging.warn('You have requested a full 3D calculation from the '
-                         'tables.')
-            logging.warn('Please be aware that this version is '
-                         'currently untested and so you should put your '
-                         'results under extra scrutiny.')
-            logging.warn('Please also keep in contact with the developers '
-                         'about your findings!')
-            logging.warn('')
-            logging.warn('!! ############################################ !!')
+            logging.warning('!! ############################################ !!')
+            logging.warning('')
+            logging.warning('You have requested a full 3D calculation from the '
+                            'tables.')
+            logging.warning('Please be aware that this version is '
+                            'currently untested and so you should put your '
+                            'results under extra scrutiny.')
+            logging.warning('Please also keep in contact with the developers '
+                            'about your findings!')
+            logging.warning('')
+            logging.warning('!! ############################################ !!')
         elif set(self.output_binning.names) == set(['true_energy',
                                                     'true_coszen']):
             self.load_2d_table(smooth=0.05)

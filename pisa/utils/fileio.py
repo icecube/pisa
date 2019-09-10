@@ -5,19 +5,19 @@ Generic file I/O, dispatching specific file readers/writers as necessary
 
 from __future__ import absolute_import
 
-import pickle
 import errno
+from functools import reduce
 import operator
 import os
+import pickle
 import re
+
+import numpy as np
 
 from pisa.utils import hdf
 from pisa.utils import jsons
 from pisa.utils import log
 from pisa.utils import resources
-
-import numpy as np
-from functools import reduce
 
 
 __all__ = [
@@ -155,7 +155,7 @@ def check_file_exists(fname, overwrite=True, warn=True):
     if os.path.exists(fpath):
         if overwrite:
             if warn:
-                log.logging.warn("Overwriting file at '%s'", fpath)
+                log.logging.warning("Overwriting file at '%s'", fpath)
         else:
             raise Exception("Refusing to overwrite path '%s'", fpath)
     return fpath
@@ -180,7 +180,7 @@ def mkdir(d, mode=0o0750, warn=True):
     except OSError as err:
         if err.errno == errno.EEXIST:
             if warn:
-                log.logging.warn('Directory "%s" already exists', d)
+                log.logging.warning('Directory "%s" already exists', d)
         else:
             raise err
     else:

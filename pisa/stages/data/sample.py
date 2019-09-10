@@ -14,6 +14,7 @@ from __future__ import absolute_import
 
 from os import path
 from copy import deepcopy
+from functools import reduce
 from operator import add
 import re
 
@@ -28,7 +29,6 @@ from pisa.utils.flavInt import ALL_NUFLAVINTS, NuFlavIntGroup, FlavIntDataGroup
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-from functools import reduce
 
 
 __all__ = ['SEP', 'sample','split','parse_event_type_names']
@@ -64,7 +64,7 @@ def split(string):
 def parse_event_type_names(names,return_flags=False) :
 
     #Split into list if has not already been done
-    if isinstance(names,str) or isinstance(names,unicode) :
+    if isinstance(names, str):
         names = split(names)
 
     #Parse the names
@@ -165,7 +165,7 @@ class sample(Stage):
             output_binning = None
         self.output_events = output_events
 
-        super(sample, self).__init__(
+        super().__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
@@ -176,7 +176,7 @@ class sample(Stage):
             memcache_deepcopy=memcache_deepcopy,
             outputs_cache_depth=outputs_cache_depth,
             transforms_cache_depth=transforms_cache_depth,
-            output_binning=output_binning
+            output_binning=output_binning,
         )
 
         #User can specify that truth variables have their names prefixed with "truth_"

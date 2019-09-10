@@ -13,6 +13,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from collections import OrderedDict 
 from copy import deepcopy, copy
 from fnmatch import fnmatch
+from functools import reduce
 from itertools import permutations
 from operator import add, getitem, setitem
 import os
@@ -39,7 +40,6 @@ from pisa.utils.format import (make_valid_python_name, strip_outer_dollars,
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.random_numbers import get_random_state
 from pisa.utils import stats
-from functools import reduce
 
 
 __all__ = ['type_error', 'reduceToHist', 'rebin', 'valid_nominal_values',
@@ -301,10 +301,10 @@ class Map(object):
     def __init__(self, name, hist, binning, error_hist=None, hash=None,
                  tex=None, full_comparison=False):
         # Set Read/write attributes via their defined setters
-        super(Map, self).__setattr__('_name', name)
-        super(Map, self).__setattr__('_tex', tex)
-        super(Map, self).__setattr__('_hash', hash)
-        super(Map, self).__setattr__('_full_comparison', full_comparison)
+        super().__setattr__('_name', name)
+        super().__setattr__('_tex', tex)
+        super().__setattr__('_hash', hash)
+        super().__setattr__('_full_comparison', full_comparison)
 
         if not isinstance(binning, MultiDimBinning):
             if isinstance(binning, Sequence):
@@ -317,9 +317,9 @@ class Map(object):
         self.parent_indexer = None
 
         # Do the work here to set read-only attributes
-        super(Map, self).__setattr__('_binning', binning)
+        super().__setattr__('_binning', binning)
         binning.assert_array_fits(hist)
-        super(Map, self).__setattr__(
+        super().__setattr__(
             '_hist', np.ascontiguousarray(hist)
         )
         if error_hist is not None:
@@ -464,7 +464,7 @@ class Map(object):
     def set_poisson_errors(self):
         """Approximate poisson errors using sqrt(n)."""
         nom_values = self.nominal_values
-        super(Map, self).__setattr__(
+        super().__setattr__(
             '_hist',
             unp.uarray(nom_values, np.sqrt(nom_values))
         )
@@ -482,12 +482,12 @@ class Map(object):
 
         """
         if error_hist is None:
-            super(Map, self).__setattr__(
+            super().__setattr__(
                 '_hist', self.nominal_values
             )
             return
         self.assert_compat(error_hist)
-        super(Map, self).__setattr__(
+        super().__setattr__(
             '_hist',
             unp.uarray(self._hist, np.ascontiguousarray(error_hist))
         )
@@ -1184,10 +1184,10 @@ class Map(object):
         """Only allow setting attributes defined in slots"""
         if attr not in self._slots:
             raise ValueError('Attribute "%s" not allowed to be set.' % attr)
-        super(Map, self).__setattr__(attr, value)
+        super().__setattr__(attr, value)
 
     def __getattr__(self, attr):
-        return super(Map, self).__getattribute__(attr)
+        return super().__getattribute__(attr)
 
     def _slice_or_index(self, idx):
         """Slice or index into the map. Indexing single element in self.hist
@@ -1542,7 +1542,7 @@ class Map(object):
     def name(self, value):
         """map name"""
         assert isinstance(value, str)
-        return super(Map, self).__setattr__('_name', value)
+        return super().__setattr__('_name', value)
 
     @property
     def tex(self):
@@ -1556,7 +1556,7 @@ class Map(object):
         assert value is None or isinstance(value, str)
         if value is not None:
             value = strip_outer_dollars(value)
-        return super(Map, self).__setattr__('_tex', value)
+        return super().__setattr__('_tex', value)
 
     @property
     def hash(self):
@@ -1567,7 +1567,7 @@ class Map(object):
     def hash(self, value):
         """Hash must be an immutable type (i.e., have a __hash__ method)"""
         assert hasattr(value, '__hash__')
-        super(Map, self).__setattr__('_hash', value)
+        super().__setattr__('_hash', value)
 
     @property
     def hist(self):
@@ -1597,7 +1597,7 @@ class Map(object):
     @full_comparison.setter
     def full_comparison(self, value):
         assert isinstance(value, bool)
-        super(Map, self).__setattr__('_full_comparison', value)
+        super().__setattr__('_full_comparison', value)
 
     # Common mathematical operators
 
@@ -1947,13 +1947,13 @@ class MapSet(object):
             else:
                 maps_.append(Map(**m))
 
-        super(MapSet, self).__setattr__('maps', maps_)
-        super(MapSet, self).__setattr__('name', name)
-        super(MapSet, self).__setattr__('tex', tex)
-        super(MapSet, self).__setattr__(
+        super().__setattr__('maps', maps_)
+        super().__setattr__('name', name)
+        super().__setattr__('tex', tex)
+        super().__setattr__(
             'collate_by_name', collate_by_name
         )
-        super(MapSet, self).__setattr__('collate_by_num', not collate_by_name)
+        super().__setattr__('collate_by_num', not collate_by_name)
         self.hash = hash
 
     def __repr__(self):
@@ -2370,12 +2370,12 @@ class MapSet(object):
     @property
     def name(self):
         """string : name of the map (legal Python name)"""
-        return super(MapSet, self).__getattribute__('_name')
+        return super().__getattribute__('_name')
 
     @name.setter
     def name(self, name):
         """string : name of the map (legal Python name)"""
-        return super(MapSet, self).__setattr__('_name', name)
+        return super().__setattr__('_name', name)
 
     @property
     def hash(self):

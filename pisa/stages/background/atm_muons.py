@@ -85,17 +85,18 @@ class atm_muons(PiStage):
                             )
 
         # init base class
-        super(atm_muons, self).__init__(data=data,
-                                        params=params,
-                                        expected_params=expected_params,
-                                        input_names=input_names,
-                                        output_names=output_names,
-                                        debug_mode=debug_mode,
-                                        input_specs=input_specs,
-                                        calc_specs=calc_specs,
-                                        output_specs=output_specs,
-                                        output_apply_keys=output_apply_keys,
-                                       )
+        super().__init__(
+            data=data,
+            params=params,
+            expected_params=expected_params,
+            input_names=input_names,
+            output_names=output_names,
+            debug_mode=debug_mode,
+            input_specs=input_specs,
+            calc_specs=calc_specs,
+            output_specs=output_specs,
+            output_apply_keys=output_apply_keys,
+        )
 
         assert self.input_mode is not None
         assert self.calc_mode is not None

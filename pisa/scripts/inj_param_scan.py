@@ -210,7 +210,7 @@ def inj_param_scan(return_outputs=False):
     if hypo_testing.data_maker.params[test_name].prior is not None:
         if hypo_testing.data_maker.params[test_name].prior.kind != 'uniform':
             if force_prior:
-                logging.warn(
+                logging.warning(
                     'Parameter to be scanned, %s, has a %s prior that you have'
                     ' requested to be left on. This will likely make the'
                     ' results wrong.',

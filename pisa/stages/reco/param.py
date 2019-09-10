@@ -7,8 +7,8 @@ transforms.
 
 from __future__ import division
 
-from collections.abc import Mapping
 from collections import OrderedDict
+from collections.abc import Mapping
 from copy import deepcopy
 import itertools
 
@@ -160,8 +160,9 @@ def load_reco_param(source):
 
                 for k in dist_dict.keys():
                     if k not in required_keys:
-                        logging.warn("Unrecognised key in distribution"
-                                     " property dict: '%s'"%k)
+                        logging.warning(
+                            "Unrecognised key in distribution property dict: '%s'"%k
+                        )
 
                 dist_spec = dist_dict['dist']
 
@@ -494,7 +495,7 @@ class param(Stage):
 
         # Invoke the init method from the parent class, which does a lot of
         # work for you.
-        super(self.__class__, self).__init__(
+        super().__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,

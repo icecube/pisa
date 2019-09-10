@@ -23,7 +23,7 @@ from __future__ import absolute_import, division
 from collections.abc import Iterable, Mapping, Sequence
 from collections import OrderedDict, namedtuple
 from copy import copy, deepcopy
-from functools import wraps
+from functools import reduce, wraps
 from itertools import chain, product
 from operator import mul
 import re
@@ -37,7 +37,6 @@ from pisa.utils.format import (make_valid_python_name, text2tex,
 from pisa.utils.hash import hash_obj
 from pisa.utils import jsons
 from pisa.utils.log import logging, set_verbosity, tprofile
-from functools import reduce
 
 
 __all__ = ['NAME_FIXES', 'NAME_SEPCHARS', 'NAME_FIXES_REGEXES',
@@ -305,10 +304,12 @@ class OneDimBinning(object):
                             ' %s.' % (be_units, units)
                         )
                     if be_units != units:
-                        logging.warn('`bin_edges` are specified in units of %s'
-                                     ' but `units` is specified as %s.'
-                                     ' Converting `bin_edges` to the latter.',
-                                     be_units, units)
+                        logging.warning(
+                            '`bin_edges` are specified in units of %s'
+                            ' but `units` is specified as %s.'
+                            ' Converting `bin_edges` to the latter.',
+                            be_units, units
+                        )
                         bin_edges.ito(units)
                 dimensionless_bin_edges = bin_edges.magnitude
 
@@ -330,8 +331,11 @@ class OneDimBinning(object):
                             ' %s.' % (domain_units, units)
                         )
                     if domain_units != units:
-                        logging.warn('`domain` units %s will be converted to'
-                                     ' %s.', domain_units, units)
+                        logging.warning(
+                            '`domain` units %s will be converted to' ' %s.',
+                            domain_units,
+                            units,
+                        )
                         domain.ito(units)
                 dimensionless_domain = domain.magnitude
 
@@ -1273,7 +1277,7 @@ class OneDimBinning(object):
         return {'bin_edges': self.bin_edges.to(ureg(str(units)))}
 
     def __getattr__(self, attr):
-        return super(OneDimBinning, self).__getattribute__(attr)
+        return super().__getattribute__(attr)
 
     # TODO: make this actually grab the bins specified (and be able to grab
     # disparate bins, whether or not they are adjacent)... i.e., fill in all
@@ -2685,7 +2689,7 @@ class MultiDimBinning(object):
         except (KeyError, ValueError):
             # If that failed, re-run parent's __getattribute__ which will raise
             # an appropriate exception
-            return super(MultiDimBinning, self).__getattribute__(attr)
+            return super().__getattribute__(attr)
 
     # TODO: refine handling of ellipsis such that the following work as in
     # Numpy:

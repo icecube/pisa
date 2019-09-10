@@ -8,8 +8,9 @@ unfolding.
 
 from __future__ import absolute_import
 
-from operator import add
 from copy import deepcopy
+from functools import reduce
+from operator import add
 
 import numpy as np
 from uncertainties import unumpy as unp
@@ -34,7 +35,6 @@ from pisa.utils.comparisons import normQuant
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-from functools import reduce
 
 
 __author__ = 'S. Mandalia'
@@ -120,7 +120,7 @@ class roounfold(Stage):
                 output_str.append(NuFlavIntGroup(name))
         output_str = [str(f) for f in output_str]
 
-        super(self.__class__, self).__init__(
+        super().__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,

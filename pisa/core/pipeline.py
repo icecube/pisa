@@ -730,7 +730,7 @@ def main(return_outputs=False):
         # Create dummy inputs if necessary
         inputs = None
         if hasattr(stage, "input_binning"):
-            logging.warn(
+            logging.warning(
                 "Stage requires input, so building dummy"
                 " inputs of random numbers, with random state set to the input"
                 " index according to alphabetical ordering of input names and"

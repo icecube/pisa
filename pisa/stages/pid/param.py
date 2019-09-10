@@ -230,7 +230,7 @@ class param(Stage):
         elif self.particles == 'muons':
             raise NotImplementedError('%s not implemented.' % self.particles)
 
-        super(self.__class__, self).__init__(
+        super().__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,
@@ -254,7 +254,7 @@ class param(Stage):
 
         # If no bin names are present, use the integer bin indices instead
         if self.signatures is None:
-            self.signatures = range(len(output_binning.pid))
+            self.signatures = list(range(len(output_binning.pid)))
 
         # Define the transform binnning...
 

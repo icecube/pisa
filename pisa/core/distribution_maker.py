@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
+from functools import reduce
 import inspect
 from itertools import product
 import os
@@ -24,7 +25,6 @@ from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import set_verbosity, logging
 from pisa.utils.random_numbers import get_random_state
-from functools import reduce
 
 
 __all__ = ['DistributionMaker', 'test_DistributionMaker', 'parse_args', 'main']
@@ -159,10 +159,11 @@ class DistributionMaker(object):
             for pipeline in self:
                 possible_selections = pipeline.param_selections
                 if possible_selections:
-                    logging.warn("Although you didn't make a parameter "
-                                 "selection, the following were available: %s."
-                                 " This may cause issues.",
-                                 possible_selections)
+                    logging.warning(
+                        "Although you didn't make a parameter "
+                        "selection, the following were available: %s."
+                        " This may cause issues.", possible_selections
+                    )
 
     @property
     def pipelines(self):

@@ -391,7 +391,7 @@ def main():
                     " in order to make the asymmetry plots"
                 )
             if pid_names is None:
-                logging.warn(
+                logging.warning(
                     "There are no names given for the PID bins, thus "
                     "they will just be numbered in both the the plot "
                     "save names and titles."

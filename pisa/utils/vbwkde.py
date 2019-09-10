@@ -159,7 +159,7 @@ def fbwkde(data, weights=None, n_dct=None, min=None, max=None,
 
     # Histogram the data to get a crude first approximation of the density
     data_hist, bins = np.histogram(
-        data, bins=n_dct, range=(min, max), normed=False, weights=weights
+        data, bins=n_dct, range=(min, max), density=False, weights=weights
     )
 
     # Make into a probability mass function
