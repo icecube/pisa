@@ -36,7 +36,7 @@ __all__ = ["Client", "get_llh", "setup_sampler", "main"]
 
 
 from argparse import ArgumentParser
-from collections import Mapping
+from collections.abc import Mapping
 from itertools import cycle
 from multiprocessing import Manager
 import socket

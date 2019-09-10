@@ -259,7 +259,7 @@ class fit(Stage):
             trans_nu_data = self._data.transform_groups(
                 self._output_nu_groups
             )
-            for fig in trans_nu_data.iterkeys():
+            for fig in trans_nu_data.keys():
                 outputs.append(
                     trans_nu_data.histogram(
                         kinds=fig,
@@ -330,13 +330,13 @@ class fit(Stage):
         if self.neutrinos:
             sys_list = parse(sample_config.get('neutrinos', 'sys_list'))
 
-            for fig in self._data.iterkeys():
+            for fig in self._data.keys():
                 self._data[fig]['fit_weight'] = \
                     deepcopy(self._data[fig]['weight_weight'])
 
             for sys in sys_list:
                 nominal = sample_config.get('neutrinos|' + sys, 'nominal')
-                for fig in self._data.iterkeys():
+                for fig in self._data.keys():
                     fit_map = unp.nominal_values(fit_coeffs[sys][fig].hist)
 
                     if self.params['smoothing'].value == 'gauss':
@@ -371,7 +371,7 @@ class fit(Stage):
                         else:
                             wght *= transform[tuple([x-1 for x in idx_slice])]
 
-            for fig in self._data.iterkeys():
+            for fig in self._data.keys():
                 self._data[fig]['pisa_weight'] = \
                     deepcopy(self._data[fig]['fit_weight'])
 
@@ -556,7 +556,7 @@ class fit(Stage):
                             )
 
                     outputs = []
-                    for fig in template.iterkeys():
+                    for fig in template.keys():
                         outputs.append(template.histogram(
                             kinds       = fig,
                             binning     = fit_binning,
@@ -593,7 +593,7 @@ class fit(Stage):
                 combined_binning = fit_binning + coeff_binning
 
                 params_mapset = []
-                for fig in template.iterkeys():
+                for fig in template.keys():
                     # TODO(shivesh): Fix numpy warning on this line
                     pvals_hist = np.empty(map(int, combined_binning.shape),
                                           dtype=object)

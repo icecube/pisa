@@ -3,7 +3,8 @@
 from __future__ import absolute_import, division, print_function
 
 import argparse
-from collections import OrderedDict, Mapping, Iterable
+from collections.abc import Mapping, Iterable
+from collections import OrderedDict 
 import copy
 
 import numpy as np

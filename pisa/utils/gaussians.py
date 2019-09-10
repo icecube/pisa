@@ -7,7 +7,8 @@ Multiple implementations of sum-of-gaussians for compatibility and speed
 
 from __future__ import absolute_import, division
 
-from collections import Iterable, OrderedDict
+from collections.abc import Iterable
+from collections import OrderedDict
 from math import exp, sqrt
 import threading
 from time import time

@@ -155,7 +155,7 @@ def evolve_states(cz_shape, propagators, ini_states, nsq_earth_atm, osc_params):
             ' but you have requested to set at least one.'
         )
 
-    for (input_name, nuSQ) in propagators.iteritems():
+    for (input_name, nuSQ) in propagators.items():
 
         nu_flav_no = nuSQ.GetNumNeu()
         nuSQ.Set_EarthModel(nsq_earth_atm)
@@ -248,7 +248,7 @@ def osc_probs(nuflav, propagators, true_energies, true_coszens, prob_e=None, pro
 
     # evaluate oscillation probabilties
     for (i, (cz, en)) in enumerate(zip(true_coszens, true_energies)):
-        for (input_name, nuSQ) in propagators.iteritems():
+        for (input_name, nuSQ) in propagators.items():
             if not isinstance(en.dtype,np.float64) : 
                 en = np.float64(en)  #TODO Current nuSQuIDS pybindings can only accept double, not float. Fix this (overload) and remove this hack
             if not isinstance(cz.dtype,np.float64) : 

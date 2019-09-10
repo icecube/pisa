@@ -5,7 +5,8 @@ Prior class for use in pisa.core.Param objects
 
 from __future__ import absolute_import, division
 
-from collections import Iterable, OrderedDict
+from collections.abc import Iterable
+from collections import OrderedDict
 from numbers import Number
 from operator import setitem
 

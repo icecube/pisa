@@ -9,7 +9,8 @@ with arbitrary Monte Carlo and datasets
 from __future__ import absolute_import, division, print_function
 
 from copy import deepcopy
-from collections import Iterable, Mapping, OrderedDict, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from collections import OrderedDict
 
 import h5py
 import numpy as np
@@ -335,7 +336,7 @@ class Events(FlavIntData):
                 )
             mask = eval(crit_str)
             remaining_data[flavint] = (
-                {k : v[mask] for k, v in self[flavint].iteritems()}
+                {k : v[mask] for k, v in self[flavint].items()}
             )
             flavints_processed.append(flavint)
 
@@ -673,7 +674,7 @@ class Data(FlavIntDataGroup):
                 )
             mask = eval(crit_str)
             remaining_data[fig] = {k: v[mask]
-                                   for k, v in self[fig].iteritems()}
+                                   for k, v in self[fig].items()}
             fig_processed.append(fig)
 
         remaining_events = Events()
@@ -936,7 +937,7 @@ class Data(FlavIntDataGroup):
                             'should be a boolean. Got %s.' % type(errors))
         outputs = []
         if self.contains_neutrinos:
-            for fig in self.iterkeys():
+            for fig in self.keys():
                 outputs.append(
                     self.histogram(
                         kinds=fig,

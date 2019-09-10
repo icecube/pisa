@@ -30,7 +30,7 @@ def fit_fun(X,*P):
     '''
     ret_val = P[0]
     for x,p in zip(X,P[1:]):
-	ret_val += x*p
+        ret_val += x*p
     return ret_val
 
 

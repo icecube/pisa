@@ -10,7 +10,7 @@ import pickle
 from pickle import PickleError, PicklingError
 import hashlib
 import struct
-from collections import Iterable
+from collections.abc import Iterable
 from pkg_resources import resource_filename
 
 from io import IOBase
@@ -137,13 +137,16 @@ def hash_obj(obj, hash_to='int', full_hash=True):
         obj = pkl
 
     if full_hash:
-        md5hash = hashlib.md5(obj)
+        try:
+            md5hash = hashlib.md5(obj)
+        except TypeError:
+            md5hash = hashlib.md5(obj.encode())
     else:
         # Grab just a subset of the string by changing the stride taken in the
         # character array (but if the string is less than
         # FAST_HASH_FILESIZE_BYTES, use a stride length of 1)
         stride = 1 + (len(obj) // FAST_HASH_STR_BYTES)
-        md5hash = hashlib.md5(obj[0::stride])
+        md5hash = hashlib.md5(obj[0::stride].encode())
 
     if hash_to in ['i', 'int', 'integer']:
         hash_val, = struct.unpack('<q', md5hash.digest()[:8])

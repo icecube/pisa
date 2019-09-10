@@ -8,7 +8,8 @@ parameters (e.g., PINGU's V5 processing).
 
 from __future__ import absolute_import, division
 
-from collections import Mapping, OrderedDict, Sequence
+from collections.abc import Mapping, Sequence
+from collections import OrderedDict
 from copy import deepcopy
 import os
 import re
@@ -304,7 +305,7 @@ class DataProcParams(dict):
     @staticmethod
     def validate_cut_spec(cuts):
         """Validate a cut specification dictionary"""
-        for cutname, cutspec in cuts.iteritems():
+        for cutname, cutspec in cuts.items():
             # Cut names are lower-case strings with no surrounding whitespace
             assert isinstance(cutname, str)
             assert cutname == cutname.lower()
@@ -323,7 +324,7 @@ class DataProcParams(dict):
     @staticmethod
     def validate_pid_spec(pids):
         """Validate a PID specification dictionary"""
-        for particle_name, pidspec in pids.iteritems():
+        for particle_name, pidspec in pids.items():
             # Particle names are lower-case strings with no surrounding
             # whitespace
             assert isinstance(particle_name, str)

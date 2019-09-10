@@ -22,7 +22,8 @@ in turn is essential for caching to work correctly.
 
 from __future__ import absolute_import, division
 
-from collections import Iterable, Iterator, Mapping, OrderedDict, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections import OrderedDict
 from numbers import Number
 import re
 

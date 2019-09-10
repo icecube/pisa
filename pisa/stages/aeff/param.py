@@ -10,7 +10,8 @@ benchmark scenarios.
 
 from __future__ import absolute_import, division
 
-from collections import Mapping, OrderedDict
+from collections.abc import Mapping
+from collections import OrderedDict
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -101,7 +102,7 @@ def load_aeff_param(source):
     # Build dict of parameterizations (each a callable) per flavintgroup
 
     aeff_params = OrderedDict()
-    for flavint_key, param_spec in orig_dict.iteritems():
+    for flavint_key, param_spec in orig_dict.items():
         flavintgroup = NuFlavIntGroup(flavint_key)
 
         if isinstance(param_spec, str):

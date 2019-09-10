@@ -100,7 +100,7 @@ class PIDSpec(object):
         all_k = []
         for wanted_key in [detector, geom, proc_ver, pid_spec_ver]:
             wanted_key = wanted_key.replace("'","").lower()
-            for orig_dict_key, subdict in d.iteritems():
+            for orig_dict_key, subdict in d.items():
                 dict_key = orig_dict_key.replace("'","").lower()
                 if (dict_key == wanted_key):
                     d = subdict
@@ -119,7 +119,7 @@ class PIDSpec(object):
     def validatePIDSpec(pids):
         """Validate a PID specification"""
         # TODO: implement validation
-        #for signature, pidspec in pids.iteritems():
+        #for signature, pidspec in pids.items():
         #    # Particle names are lower-case strings with no surrounding
         #    # whitespace
         #    assert isinstance(signature, str)
@@ -226,13 +226,13 @@ class PIDSpec(object):
     def aggregate(separated_events):
         agg_events = {}
         for flavint in separated_events.flavints:
-            for sig, datadict in separated_events[flavint].iteritems():
+            for sig, datadict in separated_events[flavint].items():
                 if sig not in agg_events:
                     agg_events[sig] = {}
-                for field, data in datadict.iteritems():
+                for field, data in datadict.items():
                     if field not in agg_events[sig]:
                         agg_events[sig][field] = []
                     agg_events[sig][field].append(data)
         # Concatenate the collected data arrays for final output
-        return {sig: {k:np.concatenate(v) for k,v in dat.iteritems()}
-                for sig,dat in  agg_events.iteritems()}
+        return {sig: {k:np.concatenate(v) for k,v in dat.items()}
+                for sig,dat in  agg_events.items()}

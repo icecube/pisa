@@ -256,7 +256,7 @@ class cake_nusquids(Stage):
         os_out_binning = out_binning.oversample(os)
 
         outputs = []
-        for key in fs.iterkeys():
+        for key in fs.keys():
             if np.any(np.isnan(fs[key])):
                 raise AssertionError(
                     'Invalid value computed for {0} oscillated output: '

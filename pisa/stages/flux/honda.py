@@ -16,7 +16,7 @@ changes/improvements applied.
 
 from __future__ import absolute_import, division
 
-from collections import Mapping
+from collections.abc import Mapping
 
 import numpy as np
 import scipy.interpolate as interpolate
@@ -430,7 +430,7 @@ class honda(Stage): #pylint: disable=invalid-name
         table = table[~mask].T
 
         flux_dict = dict(zip(cols, table))
-        for key in flux_dict.iterkeys():
+        for key in flux_dict.keys():
             # There are 20 lines per zenith range
             flux_dict[key] = np.array(np.split(flux_dict[key], 20))
 
@@ -450,7 +450,7 @@ class honda(Stage): #pylint: disable=invalid-name
 
             # bisplrep needs this to be transposed.
             # Not exactly sure why, but there you go!
-            for key in flux_dict.iterkeys():
+            for key in flux_dict.keys():
                 if key != 'energy' and key != 'coszen':
                     flux_dict[key] = flux_dict[key].T
 
@@ -553,7 +553,7 @@ class honda(Stage): #pylint: disable=invalid-name
         table = table[~mask].T
 
         flux_dict = dict(zip(cols, table))
-        for key in flux_dict.iterkeys():
+        for key in flux_dict.keys():
 
             # There are 20 lines per zenith range
             coszenith_lists = np.array(np.split(flux_dict[key], 20))

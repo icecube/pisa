@@ -7,7 +7,8 @@ defining and applying linear transforms.
 
 from __future__ import absolute_import, division
 
-from collections import OrderedDict, Sequence
+from collections.abc import Sequence
+from collections import OrderedDict
 from copy import deepcopy
 from functools import wraps
 import importlib

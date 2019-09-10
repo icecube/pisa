@@ -8,7 +8,7 @@ from __future__ import absolute_import
 
 __all__ = ["BaseStage"]
 
-from collections import Mapping
+from collections.abc import Mapping
 from copy import deepcopy
 import inspect
 

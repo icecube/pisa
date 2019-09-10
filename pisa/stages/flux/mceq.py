@@ -208,7 +208,7 @@ class mceq(Stage): # pylint: disable=invalid-name
             flux['numu'].append(mceq_run.get_solution('total_numu', mag))
             flux['numubar'].append(mceq_run.get_solution('total_antinumu', mag))
 
-        for nu in flux.iterkeys():
+        for nu in flux.keys():
             flux[nu] = np.array(flux[nu])
 
         smoothing = self.params['smoothing'].value.m
@@ -224,7 +224,7 @@ class mceq(Stage): # pylint: disable=invalid-name
             ev_flux[nu] = ev_flux[nu] *  ureg('cm**-2 s**-1 sr**-1 GeV**-1')
 
         mapset = []
-        for nu in ev_flux.iterkeys():
+        for nu in ev_flux.keys():
             mapset.append(Map(name=nu, hist=ev_flux[nu], binning=binning))
 
         return MapSet(mapset)
@@ -236,7 +236,7 @@ class mceq(Stage): # pylint: disable=invalid-name
         Cz, logE = np.meshgrid(cz_centers, np.log10(en_centers))
 
         spline_dict = OrderedDict()
-        for nu in flux_dict.iterkeys():
+        for nu in flux_dict.keys():
             log_flux = np.log10(flux_dict[nu]).T
             spline = interpolate.bisplrep(Cz, logE, log_flux, s=smooth)
             spline_dict[nu] = spline
@@ -246,7 +246,7 @@ class mceq(Stage): # pylint: disable=invalid-name
     def bivariate_evaluate(spline_dict, czvals, evals):
         """Evaluate the bivariate spline to get the flux."""
         fluxes = OrderedDict()
-        for nu in spline_dict.iterkeys():
+        for nu in spline_dict.keys():
             fluxes[nu] = np.power(10., interpolate.bisplev(
                 czvals, np.log10(evals), spline_dict[nu]
             ))

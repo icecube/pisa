@@ -231,7 +231,7 @@ def parallel_run(func, kind, num_parallel, scalar_func, divided_args_mask,
                         worker_args.append(arg)
 
             worker_kwargs = {}
-            for name, val in kwargs.iteritems():
+            for name, val in kwargs.items():
                 if name in divided_kwargs_names:
                     worker_kwargs[name] = val[chunk_slice][subselector]
                 else:

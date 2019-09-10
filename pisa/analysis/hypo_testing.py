@@ -12,7 +12,8 @@ logged by this script.
 from __future__ import absolute_import, division
 
 
-from collections import Mapping, OrderedDict, Sequence
+from collections.abc import Mapping, Sequence
+from collections import OrderedDict
 from copy import copy
 import getpass
 from itertools import chain, product
@@ -1483,7 +1484,7 @@ class HypoTesting(Analysis):
             run_info.append('%s = %s' %(env_var, val))
 
         for prefix in ['PBS_']:
-            for env_var, val in os.environ.iteritems():
+            for env_var, val in os.environ.items():
                 if env_var.startswith(prefix):
                     run_info.append('%s = %s' %(env_var, val))
 
@@ -1541,7 +1542,7 @@ class HypoTesting(Analysis):
             serialize.append('fit_history')
 
         info = OrderedDict()
-        for k, v in fit_info.iteritems():
+        for k, v in fit_info.items():
             if k not in serialize:
                 continue
             if k == 'params':

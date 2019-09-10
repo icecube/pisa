@@ -83,11 +83,11 @@ class HDFTableProxy(object):
 
 class TableAccessor(object):
     def __init__(self, tabledict):
-        for tabname, proxy in tabledict.iteritems():
+        for tabname, proxy in tabledict.items():
             self.__dict__[tabname] = proxy
 
     def __repr__(self):
-        return ", ".join([key for (key,value) in self.__dict__.iteritems() if type(value) is HDFTableProxy])
+        return ", ".join([key for (key,value) in self.__dict__.items() if type(value) is HDFTableProxy])
 
 class HDFChain(object):
     def __init__(self, files, maxdepth=1, verbose=False, **kwargs):
@@ -134,7 +134,7 @@ class HDFChain(object):
         self.root = TableAccessor(self._tables)
 
     def __del__(self):
-        for tabname, tabproxy in self._tables.iteritems():
+        for tabname, tabproxy in self._tables.items():
             tabproxy.file = None
 
         for file in self.files:

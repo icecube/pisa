@@ -29,7 +29,8 @@ events.
 from __future__ import absolute_import, division
 
 from ast import literal_eval
-from collections import Mapping, namedtuple, OrderedDict, Sequence
+from collections.abc import Mapping, Sequence
+from collections import OrderedDict, namedtuple
 from copy import deepcopy
 from os import path
 from math import exp, log

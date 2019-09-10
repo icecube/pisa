@@ -216,7 +216,7 @@ class sample(Stage):
             trans_nu_data = self._data.transform_groups(
                 self._output_nu_groups
             )
-            for fig in trans_nu_data.iterkeys():
+            for fig in trans_nu_data.keys():
                 outputs.append(trans_nu_data.histogram(
                     kinds       = fig,
                     binning     = self.output_binning,
@@ -534,7 +534,7 @@ class sample(Stage):
             t_mask = nu_mask if flavint.particle else nubar_mask
 
             flav_fidg[flavint] = {var: events[var][i_mask & t_mask]
-                                  for var in events.iterkeys()}
+                                  for var in events.keys()}
         return flav_fidg
 
     @staticmethod
@@ -549,7 +549,7 @@ class sample(Stage):
                         'Key "{0}" not found in file, which contains keys '
                         '{1}'.format(k_key, events.keys())
                     )
-            for d_key in events.iterkeys():
+            for d_key in events.keys():
                 if d_key not in keep_keys:
                     remove_keys.append(d_key)
             for r_k in remove_keys:

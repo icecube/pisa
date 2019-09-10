@@ -9,7 +9,8 @@ containers but that get passed down to operate on the contained data.
 
 from __future__ import absolute_import, division
 
-from collections import OrderedDict, Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from collections import OrderedDict 
 from copy import deepcopy, copy
 from fnmatch import fnmatch
 from itertools import permutations
@@ -2191,7 +2192,7 @@ class MapSet(object):
 
         """
         is_scalar = False
-        if isinstance(regexes, (str, re._pattern_type)):
+        if isinstance(regexes, (str, re.Pattern)):
             is_scalar = True
             regexes = [regexes]
 
@@ -2904,9 +2905,9 @@ def test_Map():
             assert m_ == m
             # Now try with pickle
             m_file = os.path.join(testdir, m.name + '.pkl')
-            pickle.dump(struct, file(m_file, 'wb'),
+            pickle.dump(struct, open(m_file, 'wb'),
                         protocol=pickle.HIGHEST_PROTOCOL)
-            loaded = pickle.load(file(m_file, 'r'))
+            loaded = pickle.load(open(m_file, 'rb'))
             m_ = loaded[0][0]['map']
             assert m_ == m
     finally:
@@ -3151,9 +3152,9 @@ def test_MapSet():
 
             # Now try with pickle
             ms_file = os.path.join(testdir, ms.name + '.pkl')
-            pickle.dump(struct, file(ms_file, 'wb'),
+            pickle.dump(struct, open(ms_file, 'wb'),
                         protocol=pickle.HIGHEST_PROTOCOL)
-            loaded = pickle.load(file(ms_file, 'r'))
+            loaded = pickle.load(open(ms_file, 'rb'))
             ms_ = loaded[0][0]['mapset']
             assert ms_ == ms
 

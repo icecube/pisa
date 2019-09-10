@@ -3,7 +3,8 @@
 
 from __future__ import absolute_import
 
-from collections import Mapping, OrderedDict
+from collections.abc import Mapping
+from collections import OrderedDict
 import os
 
 import numpy as np

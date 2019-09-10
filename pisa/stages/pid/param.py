@@ -11,7 +11,8 @@ which has as many bins as PID signatures.
 
 from __future__ import division
 
-from collections import Mapping, OrderedDict
+from collections.abc import Mapping
+from collections import OrderedDict
 
 import numpy as np
 import scipy as sp
@@ -77,12 +78,12 @@ def load_pid_energy_param(source):
     # and callables as values
     pid_energy_param_dict = OrderedDict()
 
-    for flavintgroup_str, subdict in orig_dict.iteritems():
+    for flavintgroup_str, subdict in orig_dict.items():
         flavintgroup = NuFlavIntGroup(flavintgroup_str)
 
         pid_energy_param_dict[flavintgroup] = OrderedDict()
 
-        for signature, sig_param_spec in subdict.iteritems():
+        for signature, sig_param_spec in subdict.items():
             if isinstance(sig_param_spec, str):
                 sig_param_func = eval(sig_param_spec)
                 if not callable(sig_param_func):
@@ -330,7 +331,7 @@ class param(Stage):
         pid_energy_param_dict = load_pid_energy_param(source)
 
         # Perform validation
-        for flavintgroup, subdict in pid_energy_param_dict.iteritems():
+        for flavintgroup, subdict in pid_energy_param_dict.items():
             if set(subdict.keys()) != set(self.signatures):
                 raise ValueError(
                     'Expected PID specs for %s, but the energy PID'
@@ -378,7 +379,7 @@ class param(Stage):
             xform_array = np.empty(self.transform_output_binning.shape)
 
             subdict = self.pid_energy_param_dict[xform_flavints]
-            for signature, sig_param_func in subdict.iteritems():
+            for signature, sig_param_func in subdict.items():
                 # Get the PID probabilities vs. energy at the energy bins'
                 # (weighted) centers
                 pid1d = sig_param_func(self.ebin_centers)

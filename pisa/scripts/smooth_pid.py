@@ -193,7 +193,7 @@ if __name__ == '__main__':
     histdata = {}
     smooth_energy_dep = {}
     esmooth_store = {'ebin_midpoints': ebin_midpoints}
-    for label, label_data in pidmc.pid_maps.iteritems():
+    for label, label_data in pidmc.pid_maps.items():
         if label == 'binning':
             continue
         pid_fract_totals = np.zeros(n_ebins)
@@ -370,7 +370,7 @@ if __name__ == '__main__':
     histdata = {}
     smooth_coszen_dep = {}
     czdep_store = {'czbin_midpoints': czbin_midpoints}
-    for label, label_data in pidmc.pid_maps.iteritems():
+    for label, label_data in pidmc.pid_maps.items():
         if label == 'binning':
             continue
         pid_fract_totals = np.zeros(n_czbins)

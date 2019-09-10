@@ -3,7 +3,7 @@
 # date:    March 20, 2016
 
 from __future__ import print_function
-from collections import Sequence
+from collections.abc import Sequence
 import sys
 import scipy.optimize as opt
 from scipy.stats import chi2

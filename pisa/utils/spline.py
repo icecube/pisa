@@ -6,7 +6,7 @@ Classes to store and handle the evaluation of splines.
 from __future__ import division
 
 import inspect
-from collections import Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 from pisa.core.map import Map, MapSet
 from pisa.core.binning import MultiDimBinning
@@ -214,12 +214,12 @@ class CombinedSpline(flavInt.FlavIntData):
 
     def return_mapset(self, **kwargs):
         """Return a MapSet of stored spline maps."""
-        for signature in self._spline_data.iterkeys():
+        for signature in self._spline_data.keys():
             if not isinstance(self._spline_data[signature], Map):
                 raise ValueError('Error: map {0} has not yet been '
                                  'computed'.format(signature))
         maps = [self._spline_data[signature]
-                for signature in self._spline_data.iterkeys()]
+                for signature in self._spline_data.keys()]
         return MapSet(maps=maps, **kwargs)
 
     def get_spline(self, signature, centers, **kwargs):
@@ -247,7 +247,7 @@ class CombinedSpline(flavInt.FlavIntData):
         """Compute the map of spline values for a given signature and binning,
         then store it internally.
         """
-        for signature in self._spline_data.iterkeys():
+        for signature in self._spline_data.keys():
             self._spline_data[signature] = self.get_map(
                 signature, binning, **kwargs
             )
@@ -257,7 +257,7 @@ class CombinedSpline(flavInt.FlavIntData):
         """Compute the map of spline values for a given signature integrated
         over the input binning, then store it internally.
         """
-        for signature in self._spline_data.iterkeys():
+        for signature in self._spline_data.keys():
             self._spline_data[signature] = self.get_integrated_map(
                 signature, binning, **kwargs
             )
@@ -273,13 +273,13 @@ class CombinedSpline(flavInt.FlavIntData):
 
     def scale_maps(self, value):
         """Scale the stored spline maps by an input value."""
-        for signature in self._spline_data.iterkeys():
+        for signature in self._spline_data.keys():
             self._spline_data[signature] *= value
         self._update_data_dict()
 
     def reset(self):
         """Reset the flux maps to the original input maps."""
-        for signature in self._spline_data.iterkeys():
+        for signature in self._spline_data.keys():
             self._spline_data[signature] = None
         self._update_data_dict()
 
@@ -303,7 +303,7 @@ class CombinedSpline(flavInt.FlavIntData):
         with flavInt.BarSep('_'):
             spline = {str(f): {str(it): None for it in flavInt.ALL_NUINT_TYPES}
                       for f in flavInt.ALL_NUFLAVS}
-            for x in self._spline_data.iterkeys():
+            for x in self._spline_data.keys():
                 for y in flavInt.ALL_NUINT_TYPES:
                     if self.interactions:
                         spline[str(flavInt.NuFlav(x))][str(y)] = \
@@ -322,7 +322,7 @@ class CombinedSpline(flavInt.FlavIntData):
                 sign = str(flavInt.NuFlav(attr))
         except:
             raise ValueError('{0} is not a value signature'.format(attr))
-        for signature in self._spline_data.iterkeys():
+        for signature in self._spline_data.keys():
             if self._spline_data[signature].name == sign:
                 return self._spline_data[signature]
         return super(CombinedSpline, self).__getattribute__(sign)

@@ -7,7 +7,8 @@ transforms.
 
 from __future__ import division
 
-from collections import Mapping, OrderedDict
+from collections.abc import Mapping
+from collections import OrderedDict
 from copy import deepcopy
 import itertools
 
@@ -131,10 +132,10 @@ def load_reco_param(source):
 
     # Build dict of parameterizations (each a callable) per flavintgroup
     reco_params = OrderedDict()
-    for flavint_key, dim_dict in orig_dict.iteritems():
+    for flavint_key, dim_dict in orig_dict.items():
         flavintgroup = NuFlavIntGroup(flavint_key)
         reco_params[flavintgroup] = {}
-        for dimension in dim_dict.iterkeys():
+        for dimension in dim_dict.keys():
             dim_dist_list = []
 
             if not isinstance(dimension, str):
@@ -157,7 +158,7 @@ def load_reco_param(source):
                                          "%s - %s!"
                                          %(required, flavintgroup, dimension))
 
-                for k in dist_dict.iterkeys():
+                for k in dist_dict.keys():
                     if k not in required_keys:
                         logging.warn("Unrecognised key in distribution"
                                      " property dict: '%s'"%k)
@@ -215,7 +216,7 @@ def load_reco_param(source):
                     )
 
                 dist_spec_dict['kwargs'] = kwargs
-                for kwarg, kwarg_spec in kwargs.iteritems():
+                for kwarg, kwarg_spec in kwargs.items():
 
                     if isinstance(kwarg_spec, str):
                         kwarg_eval = eval(kwarg_spec)
@@ -578,10 +579,10 @@ class param(Stage):
         n_e = len(self.input_binning['true_energy'].weighted_centers.magnitude)
         n_cz = len(self.input_binning['true_coszen'].weighted_centers.magnitude)
         eval_dict = deepcopy(self.param_dict)
-        for flavintgroup, dim_dict in eval_dict.iteritems():
-            for dim, dist_list in dim_dict.iteritems():
+        for flavintgroup, dim_dict in eval_dict.items():
+            for dim, dist_list in dim_dict.items():
                 for dist_prop_dict in dist_list:
-                    for dist_prop in dist_prop_dict.iterkeys():
+                    for dist_prop in dist_prop_dict.keys():
                         if dist_prop == 'dist':
                             continue
                         if callable(dist_prop_dict[dist_prop]):
@@ -591,7 +592,7 @@ class param(Stage):
                                 np.repeat(vals,n_cz).reshape((n_e,n_cz))
                         elif isinstance(dist_prop_dict[dist_prop], dict):
                             assert dist_prop == 'kwargs'
-                            for kwarg in dist_prop_dict['kwargs'].iterkeys():
+                            for kwarg in dist_prop_dict['kwargs'].keys():
                                 func = dist_prop_dict['kwargs'][kwarg]
                                 vals = func(evals)
                                 dist_prop_dict['kwargs'][kwarg] =\
@@ -611,7 +612,7 @@ class param(Stage):
         binwise_cdfs = []
         for this_dist_dict in dist_params:
             dist_kwargs = {}
-            for dist_prop, prop_vals in this_dist_dict['kwargs'].iteritems():
+            for dist_prop, prop_vals in this_dist_dict['kwargs'].items():
                 dist_kwargs[dist_prop] = prop_vals[enindex, czindex]
             frac = this_dist_dict['fraction'][enindex,czindex]
 
@@ -652,7 +653,7 @@ class param(Stage):
         e_reco_bias = self.params.e_reco_bias.value.m_as('GeV')
         cz_reco_bias = self.params.cz_reco_bias.value.m_as('dimensionless')
         eval_dict_mod = deepcopy(self.eval_dict)
-        for flavintgroup in eval_dict_mod.iterkeys():
+        for flavintgroup in eval_dict_mod.keys():
             for (dim, dim_scale, dim_bias) in \
               (('energy', e_res_scale, e_reco_bias),
                ('coszen', cz_res_scale, cz_reco_bias)):

@@ -36,7 +36,7 @@ Define convenience tuples ALL_{x} for easy iteration
 
 from __future__ import absolute_import, division
 
-from collections import MutableSequence, MutableMapping, Mapping, Sequence
+from collections.abc import MutableSequence, MutableMapping, Mapping, Sequence
 from copy import deepcopy
 from functools import total_ordering
 from itertools import product, combinations
@@ -1731,7 +1731,7 @@ class CombinedFlavIntData(FlavIntData):
                     flav = NuFlav(top_key)
                     if isinstance(top_val, Mapping):
                         int_types = []
-                        for level2_key, level2_data in top_val.iteritems():
+                        for level2_key, level2_data in top_val.items():
                             # If *any* keys are invalid interaction type specs,
                             # invalidate the entire sequence
                             is_valid = True

@@ -8,7 +8,8 @@ The data lives in SmartArrays on both CPU and GPU
 """
 from __future__ import absolute_import, print_function
 
-from collections import OrderedDict, Sequence
+from collections.abc import Sequence
+from collections import OrderedDict
 
 import numpy as np
 from numba import SmartArray

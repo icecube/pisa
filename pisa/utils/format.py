@@ -7,7 +7,8 @@ Utilities for interpreting and returning formatted strings.
 
 from __future__ import absolute_import, division, print_function
 
-from collections import OrderedDict, Iterable, Sequence
+from collections.abc import Iterable, Sequence
+from collections import OrderedDict
 import decimal
 from numbers import Integral, Number
 import re

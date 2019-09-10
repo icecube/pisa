@@ -205,7 +205,7 @@ class roounfold(Stage):
 
             efficiencies = []
             assert set(fin_data.keys()) == set(gen_data.keys())
-            for fig in fin_data.iterkeys():
+            for fig in fin_data.keys():
                 figd_f = fin_data[fig]
                 figd_g = gen_data[fig]
                 inv_eff = self._get_inv_eff(

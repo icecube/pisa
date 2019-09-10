@@ -355,7 +355,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
     filecount = {}
     detector_geom = None
     bad_files = []
-    for run, fnames in data_files.iteritems():
+    for run, fnames in data_files.items():
         file_count = 0
         for fname in fnames:
             # Retrieve data from all nodes specified in the processing
@@ -461,8 +461,8 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
             for int_type in set([fi.intType for fi in
                                  flavint_group.flavints]):
                 ngen_it_tot = 0
-                for run, run_counts in ngen[grp_n][int_type].iteritems():
-                    for barnobar, barnobar_counts in run_counts.iteritems():
+                for run, run_counts in ngen[grp_n][int_type].items():
+                    for barnobar, barnobar_counts in run_counts.items():
                         ngen_it_tot += barnobar_counts
                         logging.info(
                             fmt, flavint_group.simple_str(), int_type,
