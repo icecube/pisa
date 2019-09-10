@@ -1488,7 +1488,7 @@ class HypoTesting(Analysis):
                 if env_var.startswith(prefix):
                     run_info.append('%s = %s' %(env_var, val))
 
-        with file(self.run_info_fpath, 'w') as f:
+        with open(self.run_info_fpath, 'w') as f:
             f.write('\n'.join(run_info) + '\n')
         logging.info('Run info written to: ' + self.run_info_fpath)
 
@@ -1528,7 +1528,7 @@ class HypoTesting(Analysis):
             )
             run_info.append('traceback = %s' %formatted_tb)
 
-        with file(self.run_info_fpath, 'a') as f:
+        with open(self.run_info_fpath, 'a') as f:
             f.write('\n'.join(run_info) + '\n')
 
         logging.info('Run stop info written to: ' + self.run_info_fpath)

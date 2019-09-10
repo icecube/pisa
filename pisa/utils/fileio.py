@@ -157,7 +157,7 @@ def check_file_exists(fname, overwrite=True, warn=True):
             if warn:
                 log.logging.warning("Overwriting file at '%s'", fpath)
         else:
-            raise Exception("Refusing to overwrite path '%s'", fpath)
+            raise Exception("Refusing to overwrite path '%s'" % fpath)
     return fpath
 
 
@@ -410,8 +410,7 @@ def from_pickle(fname):
 def to_pickle(obj, fname, overwrite=True, warn=True):
     """Save object to a pickle file"""
     check_file_exists(fname=fname, overwrite=overwrite, warn=warn)
-    return pickle.dump(obj, file(fname, 'wb'),
-                        protocol=pickle.HIGHEST_PROTOCOL)
+    return pickle.dump(obj, open(fname, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def from_txt(fname, as_array=False):
