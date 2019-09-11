@@ -11,6 +11,7 @@ $PISA/pisa_examples/resources/settings/pipeline/example_xsec.cfg
 
 from __future__ import absolute_import, division
 
+from functools import reduce
 from itertools import product
 from operator import add
 
@@ -28,7 +29,6 @@ from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
-from functools import reduce
 
 
 __all__ = ['genie', 'test_standard_plots', 'test_per_e_plot']
@@ -178,7 +178,7 @@ class genie(Stage): # pylint: disable=invalid-name
         self.transform_groups = [NuFlavIntGroup(flavint)
                                  for flavint in output_names]
 
-        super(genie, self).__init__(
+        super().__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,

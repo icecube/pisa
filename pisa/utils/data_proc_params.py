@@ -233,7 +233,7 @@ class DataProcParams(dict):
 
     """
     def __init__(self, detector, proc_ver, data_proc_params=None):
-        super(DataProcParams, self).__init__()
+        super().__init__()
         if data_proc_params is None:
             data_proc_params = 'events/data_proc_params.json'
         if isinstance(data_proc_params, str):

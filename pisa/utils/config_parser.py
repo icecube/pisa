@@ -1002,7 +1002,7 @@ class PISAConfigParser(RawConfigParser):
     def __init__(self):
         #self.default_section = None #DEFAULTSECT
         # Instantiate parent class with PISA-specific options
-        #super(PISAConfigParser, self).__init__(
+        #super().__init__(
         RawConfigParser.__init__(
             self,
             interpolation=ExtendedInterpolation(),
@@ -1015,14 +1015,14 @@ class PISAConfigParser(RawConfigParser):
         interpolation syntax on the value."""
         _, option, value = self._validate_value_types(option=option,
                                                       value=value)
-        super(PISAConfigParser, self).set(section, option, value)
+        super().set(section, option, value)
 
     def add_section(self, section):
         """Create a new section in the configuration.  Extends
         RawConfigParser.add_section by validating if the section name is
         a string."""
         section, _, _ = self._validate_value_types(section=section)
-        super(PISAConfigParser, self).add_section(section)
+        super().add_section(section)
 
     def optionxform(self, optionstr):
         """Enable case-sensitive options in .cfg files, and force all values to

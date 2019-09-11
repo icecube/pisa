@@ -329,8 +329,10 @@ def plot_comparisons(ref_map, new_map, ref_abv, new_abv, outdir, subdir, name,
     # This isn't necessarily a fail, since all it means is the referene was
     # zero If the new value is sufficiently close to zero then it's still fine
     if max_diff_ratio == float('inf'):
-        logging.warn('Infinite value found in ratio tests. Difference tests '
-                     'now also being calculated')
+        logging.warning(
+            'Infinite value found in ratio tests. Difference tests '
+            'now also being calculated'
+        )
         # First find all the finite elements
         finite_map = np.isfinite(diff_ratio_map['map'])
         # Then find the nanmax of this, will be our new test value
@@ -439,8 +441,10 @@ def plot_map_comparisons(ref_map, new_map, ref_abv, new_abv, outdir, subdir,
     # This isn't necessarily a fail, since all it means is the referene was
     # zero If the new value is sufficiently close to zero then it's still fine
     if max_diff_ratio == float('inf'):
-        logging.warn('Infinite value found in ratio tests. Difference tests '
-                     'now also being calculated')
+        logging.warning(
+            'Infinite value found in ratio tests. Difference tests '
+            'now also being calculated'
+        )
         # First find all the finite elements
         finite_map = np.isfinite(diff_ratio_map.hist)
         # Then find the nanmax of this, will be our new test value
@@ -591,8 +595,10 @@ def plot_cmp(new, ref, new_label, ref_label, plot_label, file_label, outdir,
         # zero. If the new value is sufficiently close to zero then it's stil
         # fine.
         if max_diff_ratio == np.inf:
-            logging.warn('Infinite value found in ratio tests. Difference tests'
-                         ' now also being calculated')
+            logging.warning(
+                'Infinite value found in ratio tests. Difference tests'
+                ' now also being calculated'
+            )
             # First find all the finite elements
             finite_mask = np.isfinite(fract_diff.hist)
             # Then find the nanmax of this, will be our new test value
@@ -721,13 +727,13 @@ def pisa2_map_to_pisa3_map(pisa2_map, ebins_name='ebins', czbins_name='czbins',
         name=ebins_name,
         bin_edges=pisa2_map['ebins'] * ureg.GeV,
         is_log=is_log,
-        tex='E_{\nu}'
+        tex=r'E_{\nu}'
     )
     czbins = OneDimBinning(
         name=czbins_name,
         bin_edges=pisa2_map['czbins'],
         is_lin=is_lin,
-        tex='\cos\theta_Z'
+        tex=r'\cos\theta_Z'
     )
     bins = MultiDimBinning([ebins, czbins])
     return Map(

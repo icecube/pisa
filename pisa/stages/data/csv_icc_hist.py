@@ -50,7 +50,7 @@ class csv_icc_hist(PiStage):
             'weights',
         )
         # init base class
-        super(csv_icc_hist, self).__init__(
+        super().__init__(
             data=data,
             params=params,
             expected_params=expected_params,

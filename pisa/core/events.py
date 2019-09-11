@@ -505,7 +505,7 @@ class Data(FlavIntDataGroup):
         if data == dict():
             self._flavint_groups = []
         else:
-            super(Data, self).__init__(val=data, flavint_groups=flavint_groups)
+            super().__init__(val=data, flavint_groups=flavint_groups)
             self.contains_neutrinos = True
 
         # Check consistency of flavints_joined
@@ -717,7 +717,7 @@ class Data(FlavIntDataGroup):
         -------
         t_data : Data
         """
-        t_fidg = super(Data, self).transform_groups(flavint_groups)
+        t_fidg = super().transform_groups(flavint_groups)
         metadata = deepcopy(self.metadata)
         metadata['flavints_joined'] = [str(f) for f in t_fidg.flavint_groups]
         t_dict = dict(t_fidg)
@@ -986,7 +986,7 @@ class Data(FlavIntDataGroup):
                 return self.muons
             if arg == 'noise':
                 return self.noise
-        tgt_obj = super(Data, self).__getitem__(arg)
+        tgt_obj = super().__getitem__(arg)
         return tgt_obj
 
     def __setitem__(self, arg, value):
@@ -998,7 +998,7 @@ class Data(FlavIntDataGroup):
             if arg == 'noise':
                 self.noise = value
                 return
-        super(Data, self).__setitem__(arg, value)
+        super().__setitem__(arg, value)
 
     def __add__(self, other):
         muons = None
@@ -1058,7 +1058,7 @@ class Data(FlavIntDataGroup):
         elif len(other.flavint_groups) == 0:
             a_fidg = FlavIntDataGroup(self)
         else:
-            a_fidg = super(Data, self).__add__(other)
+            a_fidg = super().__add__(other)
         metadata['flavints_joined'] = [str(f) for f in a_fidg.flavint_groups]
 
         if muons is not None:

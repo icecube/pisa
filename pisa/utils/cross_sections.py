@@ -65,7 +65,7 @@ class CrossSections(FlavIntData):
     """
     def __init__(self, ver=None, energy=None,
                  xsec='cross_sections/cross_sections.json'):
-        super(CrossSections, self).__init__()
+        super().__init__()
         self.energy = energy
         self._ver = ver
         self._interpolants = {}
@@ -80,7 +80,7 @@ class CrossSections(FlavIntData):
             raise TypeError('Unhandled xsec type passed in arg: ' +
                             str(type(xsec)))
         if xsec is not None:
-            super(CrossSections, self).validate(xsec)
+            super().validate(xsec)
             self.validate_xsec(self.energy, xsec)
             self.update(xsec)
             self._define_interpolant()

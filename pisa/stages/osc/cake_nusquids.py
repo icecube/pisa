@@ -128,7 +128,7 @@ class cake_nusquids(Stage):
         if input_binning != output_binning:
             raise AssertionError('Input binning must match output binning.')
 
-        super(cake_nusquids, self).__init__(
+        super().__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
@@ -140,7 +140,7 @@ class cake_nusquids(Stage):
             memcache_deepcopy=memcache_deepcopy,
             outputs_cache_depth=outputs_cache_depth,
             input_binning=input_binning,
-            output_binning=output_binning
+            output_binning=output_binning,
         )
 
     @profile

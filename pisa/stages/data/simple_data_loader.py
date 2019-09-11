@@ -88,7 +88,7 @@ class simple_data_loader(PiStage):
             'weights',
         )
         # init base class
-        super(simple_data_loader, self).__init__(
+        super().__init__(
             data=data,
             params=params,
             expected_params=expected_params,

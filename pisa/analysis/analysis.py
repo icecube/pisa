@@ -162,8 +162,7 @@ def validate_minimizer_settings(minimizer_settings):
                 raise ValueError(eps_msg % (method, s, val, err_lim, 'FTYPE',
                                             ftype_eps))
             if val < warn_lim * ftype_eps:
-                logging.warn(eps_msg, method, s, val, warn_lim, 'FTYPE',
-                             ftype_eps)
+                logging.warning(eps_msg, method, s, val, warn_lim, 'FTYPE', ftype_eps)
 
         val = options['eps']
         err_lim, warn_lim = 1, 10
@@ -171,14 +170,13 @@ def validate_minimizer_settings(minimizer_settings):
             raise ValueError(eps_msg % (method, 'eps', val, err_lim, 'FP64',
                                         fp64_eps))
         if val < warn_lim * ftype_eps:
-            logging.warn(eps_msg, method, 'eps', val, warn_lim, 'FTYPE',
-                         ftype_eps)
+            logging.warning(eps_msg, method, 'eps', val, warn_lim, 'FTYPE', ftype_eps)
 
         err_lim, warn_lim = 0.25, 0.1
         if val > err_lim:
             raise ValueError(eps_gt_msg % (method, 'eps', val, err_lim))
         if val > warn_lim:
-            logging.warn(eps_gt_msg, method, 'eps', val, warn_lim)
+            logging.warning(eps_gt_msg, method, 'eps', val, warn_lim)
 
     if method == 'slsqp':
         err_lim, warn_lim = 2, 10
@@ -187,8 +185,7 @@ def validate_minimizer_settings(minimizer_settings):
             raise ValueError(eps_msg % (method, 'ftol', val, err_lim, 'FTYPE',
                                         ftype_eps))
         if val < warn_lim * ftype_eps:
-            logging.warn(eps_msg, method, 'ftol', val, warn_lim, 'FTYPE',
-                         ftype_eps)
+            logging.warning(eps_msg, method, 'ftol', val, warn_lim, 'FTYPE', ftype_eps)
 
         val = options['eps']
         err_lim, warn_lim = 1, 10
@@ -196,14 +193,13 @@ def validate_minimizer_settings(minimizer_settings):
             raise ValueError(eps_msg % (method, 'eps', val, 1, 'FP64',
                                         fp64_eps))
         if val < warn_lim * ftype_eps:
-            logging.warn(eps_msg, method, 'eps', val, warn_lim, 'FP64',
-                         fp64_eps)
+            logging.warning(eps_msg, method, 'eps', val, warn_lim, 'FP64', fp64_eps)
 
         err_lim, warn_lim = 0.25, 0.1
         if val > err_lim:
             raise ValueError(eps_gt_msg % (method, 'eps', val, err_lim))
         if val > warn_lim:
-            logging.warn(eps_gt_msg, method, 'eps', val, warn_lim)
+            logging.warning(eps_gt_msg, method, 'eps', val, warn_lim)
 
 
 def check_t23_octant(fit_info):
@@ -672,13 +668,13 @@ class Analysis(object):
             clipped_x0.append(clipped_x0_val)
 
             if recursiveEquality(clipped_x0_val, bds[0]):
-                logging.warn(
+                logging.warning(
                     'Param %s, initial scaled value %e is at the lower bound;'
                     ' minimization may fail as a result.',
                     param.name, clipped_x0_val
                 )
             if recursiveEquality(clipped_x0_val, bds[1]):
-                logging.warn(
+                logging.warning(
                     'Param %s, initial scaled value %e is at the upper bound;'
                     ' minimization may fail as a result.',
                     param.name, clipped_x0_val

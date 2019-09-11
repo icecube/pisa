@@ -159,7 +159,7 @@ class Stage(BaseStage):
         self.validate_binning()
 
         # init base class!
-        super(Stage, self).__init__(
+        super().__init__(
             params=params,
             expected_params=expected_params,
             input_names=input_names,

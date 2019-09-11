@@ -1545,8 +1545,10 @@ def main():
                 title_filename += ' Sudbury'
                 legend_filename += ' SNO'
             else:
-                logging.warn('Don\'t know what to do with site %s.'
-                             'Omitting from titles', site)
+                logging.warning(
+                    'Don\'t know what to do with site %s.'
+                    'Omitting from titles', site
+                )
 
             title_filename += ' %s'%year
             legend_filename += ' %s'%year
@@ -1617,8 +1619,10 @@ def main():
             title_filename += ' Sudbury'
             legend_filename += ' SNO'
         else:
-            logging.warn('Don\'t know what to do with site %s.'
-                         'Omitting from titles', site)
+            logging.warning(
+                'Don\'t know what to do with site %s.'
+                'Omitting from titles', site
+            )
 
         title_filename += ' %s'%year
         legend_filename += ' %s'%year

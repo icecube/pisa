@@ -84,7 +84,7 @@ def from_hdf(val, return_node=None, return_attrs=False):
         """Iteratively parse `obj` to create the dictionary `sdict`"""
         name = obj.name.split('/')[-1]
         if isinstance(obj, h5py.Dataset):
-            sdict[name] = obj.value
+            sdict[name] = obj[()]
         if isinstance(obj, (h5py.Group, h5py.File)):
             sdict[name] = OrderedDict()
             for sobj in obj.values():
@@ -188,8 +188,10 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
                     key_str = key
                 else:
                     key_str = str(key)
-                    logging.warn('Making string from key "%s", %s for use as'
-                                 ' name in HDF5 file', key_str, type(key))
+                    logging.warning(
+                        'Making string from key "%s", %s for use as'
+                        ' name in HDF5 file', key_str, type(key)
+                    )
                 val = node[key]
                 new_path = path + [key_str]
                 store_recursively(fhandle=fhandle, node=val, path=new_path,
@@ -207,8 +209,10 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
             # None
             if node is None:
                 node = np.nan
-                logging.warn('  encountered `None` at node "%s"; converting to'
-                             ' np.nan', full_path)
+                logging.warning(
+                    '  encountered `None` at node "%s"; converting to'
+                    ' np.nan', full_path
+                )
             # "Scalar datasets don't support chunk/filter options". Shuffling
             # is a good idea otherwise since subsequent compression will
             # generally benefit; shuffling requires chunking. Compression is
@@ -277,7 +281,7 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
         store_recursively(fhandle=tgt, node=data_dict, attrs=attrs)
 
     else:
-        raise TypeError('to_hdf: Invalid `tgt` type: %s', type(tgt))
+        raise TypeError('to_hdf: Invalid `tgt` type: %s' % type(tgt))
 
 
 def test_hdf():

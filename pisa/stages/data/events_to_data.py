@@ -7,23 +7,16 @@ The outputs should be consistent with the 'sample' stage
 
 from __future__ import absolute_import
 
-from os import path
 from copy import deepcopy
+from functools import reduce
 from operator import add
-import re
 
-import numpy as np
-
-from pisa import ureg
 from pisa.core.events import Data, Events
-from pisa.core.map import MapSet
 from pisa.core.stage import Stage
-from pisa.utils.fileio import from_file
 from pisa.utils.flavInt import ALL_NUFLAVINTS, NuFlavIntGroup, FlavIntDataGroup
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-from functools import reduce
 
 
 __all__ = ['SEP', 'events_to_data']
@@ -129,7 +122,7 @@ class events_to_data(Stage):
             output_binning = None
         self.output_events = output_events
 
-        super(events_to_data, self).__init__(
+        super().__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
@@ -140,7 +133,7 @@ class events_to_data(Stage):
             memcache_deepcopy=memcache_deepcopy,
             outputs_cache_depth=outputs_cache_depth,
             transforms_cache_depth=transforms_cache_depth,
-            output_binning=output_binning
+            output_binning=output_binning,
         )
 
         self._compute_outputs()

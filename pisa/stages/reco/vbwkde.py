@@ -300,7 +300,7 @@ def weight_coszen_tails(cz_diff, cz_bin_edges, input_weights):
     return new_weights, diff_limits
 
 
-@numba_jit(nogil=True, fastmath=True, cache=True)
+#@numba_jit(nogil=True, nopython=True, fastmath=True, cache=True)
 def coszen_error_edges(true_edges, reco_edges):
     """Return a list of edges in coszen-error space given 2 true-coszen
     edges and reco-coszen edges. Systematics are not implemented at this time.
@@ -334,17 +334,17 @@ def coszen_error_edges(true_edges, reco_edges):
     true_bin_midpoint = (true_lower_binedge + true_upper_binedge) / 2
 
     full_reco_range_lower_binedge = np.round(
-        FTYPE(-1) - true_upper_binedge, EQUALITY_SIGFIGS
+        FTYPE(-1) - true_upper_binedge, np.int64(EQUALITY_SIGFIGS)
     )
     full_reco_range_upper_binedge = np.round(
-        FTYPE(+1) - true_lower_binedge, EQUALITY_SIGFIGS
+        FTYPE(+1) - true_lower_binedge, np.int64(EQUALITY_SIGFIGS)
     )
 
     dcz_lower_binedges = np.round(
-        reco_lower_binedges - true_upper_binedge, EQUALITY_SIGFIGS
+        reco_lower_binedges - true_upper_binedge, np.int64(EQUALITY_SIGFIGS)
     )
     dcz_upper_binedges = np.round(
-        reco_upper_binedges - true_lower_binedge, EQUALITY_SIGFIGS
+        reco_upper_binedges - true_lower_binedge, np.int64(EQUALITY_SIGFIGS)
     )
 
     all_dcz_binedges, indices = np.unique(
@@ -835,7 +835,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
 
         # Invoke the init method from the parent class, which does a lot of
         # work for you.
-        super(vbwkde, self).__init__(
+        super().__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,
@@ -848,7 +848,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
             memcache_deepcopy=memcache_deepcopy,
             input_binning=input_binning,
             output_binning=output_binning,
-            debug_mode=debug_mode
+            debug_mode=debug_mode,
         )
 
         # We have some number of dimensions to characterize (KDE). Each one of
@@ -1493,7 +1493,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
             pid_total = np.sum(pid_kde_profile.counts)
             if pid_total == 0:
                 pid_fractions = np.zeros(size=len(pid_edges) - 1, dtype=FTYPE)
-                logging.warn('Zero events in PID bin!')
+                logging.warning('Zero events in PID bin!')
             else:
                 pid_norm = 1 / pid_total
                 pid_counts, _ = HIST_FUNC(
@@ -1539,7 +1539,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
                         shape=len(reco_e_edges) - 1,
                         dtype=FTYPE
                     )
-                    logging.warn('Zero events in energy bin!')
+                    logging.warning('Zero events in energy bin!')
                 else:
                     # TODO: scale about the mode of the KDE! i.e., implement
                     #       `res_scale_ref`

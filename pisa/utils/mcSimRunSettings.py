@@ -124,7 +124,7 @@ class MCSimRunSettings(dict):
 
     """
     def __init__(self, run_settings, run=None, detector=None):
-        super(MCSimRunSettings, self).__init__()
+        super().__init__()
         # TODO: clean up this constructor!
         #if isinstance(run_settings, str):
         #    rsd = jsons.from_json(resources.find_resource(run_settings))
@@ -307,7 +307,7 @@ class DetMCSimRunsSettings(dict):
 
     """
     def __init__(self, run_settings, detector=None):
-        super(DetMCSimRunsSettings, self).__init__()
+        super().__init__()
         if isinstance(run_settings, str):
             rsd = fileio.from_file(resources.find_resource(run_settings))
         elif isinstance(run_settings, dict):

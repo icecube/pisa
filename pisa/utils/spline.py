@@ -191,7 +191,7 @@ class CombinedSpline(flavInt.FlavIntData):
 
     """
     def __init__(self, inSpline, interactions=True, ver=None):
-        super(CombinedSpline, self).__init__()
+        super().__init__()
         self.interactions = interactions
 
         if isinstance(inSpline, Spline):
@@ -310,7 +310,7 @@ class CombinedSpline(flavInt.FlavIntData):
                                 self._spline_data[x]
                     else:
                         spline[str(x)][str(y)] = self._spline_data[x]
-        super(CombinedSpline, self).validate(spline)
+        super().validate(spline)
         self.validate_spline(spline)
         self.update(spline)
 
@@ -325,7 +325,7 @@ class CombinedSpline(flavInt.FlavIntData):
         for signature in self._spline_data.keys():
             if self._spline_data[signature].name == sign:
                 return self._spline_data[signature]
-        return super(CombinedSpline, self).__getattribute__(sign)
+        return super().__getattribute__(sign)
 
     def _validate_NuFlav(self, signature):
         if self.interactions:

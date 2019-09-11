@@ -181,19 +181,20 @@ class pi_nusquids(PiStage):
                       )
 
         # init base class
-        super(pi_nusquids, self).__init__(data=data,
-                                       params=params,
-                                       expected_params=expected_params,
-                                       input_names=input_names,
-                                       output_names=output_names,
-                                       debug_mode=debug_mode,
-                                       input_specs=input_specs,
-                                       calc_specs=calc_specs,
-                                       output_specs=output_specs,
-                                       input_apply_keys=input_apply_keys,
-                                       output_calc_keys=output_calc_keys,
-                                       output_apply_keys=output_apply_keys,
-                                      )
+        super().__init__(
+            data=data,
+            params=params,
+            expected_params=expected_params,
+            input_names=input_names,
+            output_names=output_names,
+            debug_mode=debug_mode,
+            input_specs=input_specs,
+            calc_specs=calc_specs,
+            output_specs=output_specs,
+            input_apply_keys=input_apply_keys,
+            output_calc_keys=output_calc_keys,
+            output_apply_keys=output_apply_keys,
+        )
 
         assert self.num_neutrinos == 3, "Only 3-flavor oscillations implemented right now" # TODO Add interface to nuSQuIDS 3+N handling
         assert self.use_nsi == False, "NSI support not yet implemented" # TODO

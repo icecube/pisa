@@ -366,7 +366,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
                     fname, run_settings=run_settings
                 )
             except (ValueError, KeyError, IOError):
-                logging.warn('Bad file encountered: %s', fname)
+                logging.warning('Bad file encountered: %s', fname)
                 bad_files.append(fname)
                 continue
 
@@ -488,9 +488,11 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
         logging.info('Files read, run %s: %d', run, count)
         ref_num_i3_files = run_settings[run]['num_i3_files']
         if count != ref_num_i3_files:
-            logging.warn('Run %s, Number of files read (%d) != number of '
-                         'source I3 files (%d), which may indicate an error.',
-                         run, count, ref_num_i3_files)
+            logging.warning(
+                'Run %s, Number of files read (%d) != number of '
+                'source I3 files (%d), which may indicate an error.',
+                run, count, ref_num_i3_files
+            )
 
     # Generate output data
     for flavint in ALL_NUFLAVINTS:

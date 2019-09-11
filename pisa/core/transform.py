@@ -304,7 +304,7 @@ class TransformSet(object):
 
     def __getattr__(self, attr):
         if attr in TRANS_SET_SLOTS:
-            return super(TransformSet, self).__getattribute__(attr)
+            return super().__getattribute__(attr)
         # TODO: return maps based upon name?
         #if attr in
         return TransformSet([getattr(t, attr) for t in self], name=self.name)
@@ -648,7 +648,7 @@ class BinnedTensorTransform(Transform):
     def __init__(self, input_names, output_name, input_binning, output_binning,
                  xform_array, sum_inputs=False, error_array=None, tex=None,
                  error_method=None, hash=None): # pylint: disable=redefined-builtin
-        super(BinnedTensorTransform, self).__init__(
+        super().__init__(
             input_names=input_names, output_name=output_name,
             input_binning=input_binning, output_binning=output_binning,
             tex=tex, hash=hash, error_method=error_method
@@ -662,7 +662,7 @@ class BinnedTensorTransform(Transform):
     @property
     def serializable_state(self):
         """OrderedDict : State of the object in a format that is serializable"""
-        state = super(BinnedTensorTransform, self).serializable_state
+        state = super().serializable_state
         state['xform_array'] = self.nominal_values
         state['error_array'] = self.std_devs
         return state
@@ -670,7 +670,7 @@ class BinnedTensorTransform(Transform):
     @property
     def hashable_state(self):
         """OrderedDict : State of the objec that can be used for hashing"""
-        state = super(BinnedTensorTransform, self).hashable_state
+        state = super().hashable_state
         state['xform_array'] = normQuant(self.nominal_values,
                                          sigfigs=HASH_SIGFIGS)
         state['error_array'] = normQuant(self.std_devs, sigfigs=HASH_SIGFIGS)
@@ -689,12 +689,12 @@ class BinnedTensorTransform(Transform):
 
         """
         if error_array is None:
-            super(BinnedTensorTransform, self).__setattr__(
+            super().__setattr__(
                 '_xform_array', self.nominal_values
             )
             return
         assert error_array.shape == self.xform_array.shape
-        super(BinnedTensorTransform, self).__setattr__(
+        super().__setattr__(
             '_xform_array',
             unp.uarray(self.xform_array, np.ascontiguousarray(error_array))
         )

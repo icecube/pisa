@@ -342,7 +342,7 @@ class HypoTesting(Analysis):
                  allow_dirty=False, allow_no_git_info=False,
                  blind=False, store_minimizer_history=True, pprint=False,
                  reset_free=True, shared_params=None):
-        super(HypoTesting, self).__init__()
+        super().__init__()
 
         assert num_data_trials >= 1
         assert num_fid_trials >= 1
@@ -420,7 +420,7 @@ class HypoTesting(Analysis):
 
         # Ensure num_{fid_}data_trials is one if fluctuate_{fid_}data is False
         if not fluctuate_data and num_data_trials != 1:
-            logging.warn(
+            logging.warning(
                 'More than one data trial is unnecessary because'
                 ' `fluctuate_data` is False (i.e., all `num_data_trials` data'
                 ' distributions will be identical). Forcing `num_data_trials`'
@@ -429,7 +429,7 @@ class HypoTesting(Analysis):
             num_data_trials = 1
 
         if not fluctuate_fid and num_fid_trials != 1:
-            logging.warn(
+            logging.warning(
                 'More than one fid trial is unnecessary because'
                 ' `fluctuate_fid` is False (i.e., all'
                 ' `num_fid_trials` data distributions will be identical).'
@@ -1292,7 +1292,7 @@ class HypoTesting(Analysis):
         if no_git_info:
             msg = 'No info about git repo. Version info: %s' %self.version_info
             if self.allow_no_git_info:
-                logging.warn(msg)
+                logging.warning(msg)
             else:
                 raise Exception(msg)
 
@@ -1300,7 +1300,7 @@ class HypoTesting(Analysis):
         if dirty_git_repo:
             msg = 'Dirty git repo. Version info: %s' %self.version_info
             if self.allow_dirty:
-                logging.warn(msg)
+                logging.warning(msg)
             else:
                 raise Exception(msg)
 
@@ -1488,7 +1488,7 @@ class HypoTesting(Analysis):
                 if env_var.startswith(prefix):
                     run_info.append('%s = %s' %(env_var, val))
 
-        with file(self.run_info_fpath, 'w') as f:
+        with open(self.run_info_fpath, 'w') as f:
             f.write('\n'.join(run_info) + '\n')
         logging.info('Run info written to: ' + self.run_info_fpath)
 
@@ -1528,7 +1528,7 @@ class HypoTesting(Analysis):
             )
             run_info.append('traceback = %s' %formatted_tb)
 
-        with file(self.run_info_fpath, 'a') as f:
+        with open(self.run_info_fpath, 'a') as f:
             f.write('\n'.join(run_info) + '\n')
 
         logging.info('Run stop info written to: ' + self.run_info_fpath)
