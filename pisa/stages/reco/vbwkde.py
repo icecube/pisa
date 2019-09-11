@@ -300,7 +300,7 @@ def weight_coszen_tails(cz_diff, cz_bin_edges, input_weights):
     return new_weights, diff_limits
 
 
-@numba_jit(nogil=True, nopython=True, fastmath=True, cache=True)
+#@numba_jit(nogil=True, nopython=True, fastmath=True, cache=True)
 def coszen_error_edges(true_edges, reco_edges):
     """Return a list of edges in coszen-error space given 2 true-coszen
     edges and reco-coszen edges. Systematics are not implemented at this time.
