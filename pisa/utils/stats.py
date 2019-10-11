@@ -10,15 +10,14 @@ from scipy.special import gammaln
 from uncertainties import unumpy as unp
 
 from pisa import FTYPE
-from pisa.utils.barlow import Likelihoods
 from pisa.utils.comparisons import FTYPE_PREC, isbarenumeric
 from pisa.utils.log import logging
-
+from pisa.utils import likelihood_functions
 
 __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
            'maperror_logmsg',
            'chi2', 'llh', 'log_poisson', 'log_smear', 'conv_poisson',
-           'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2']
+           'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2', 'mcllh_mean', 'mcllh_eff']
 
 __author__ = 'P. Eller, T. Ehrhardt, J.L. Lanfranchi'
 
@@ -43,7 +42,7 @@ SMALL_POS = 1e-10 #if FTYPE == np.float64 else FTYPE_PREC
 CHI2_METRICS = ['chi2', 'mod_chi2']
 """Metrics defined that result in measures of chi squared"""
 
-LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh']
+LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh', 'mcllh_mean', 'mcllh_eff']
 """Metrics defined that result in measures of log likelihood"""
 
 ALL_METRICS = LLH_METRICS + CHI2_METRICS
@@ -212,6 +211,118 @@ def llh(actual_values, expected_values):
 
     return llh_val
 
+def mcllh_eff(actual_values, expected_values):
+    """Compute the log-likelihood (llh) based LEff in table 2 - https://doi.org/10.1007/JHEP06(2019)030
+    accounting for finite MC statistics.
+
+    Parameters
+    ----------
+    actual_values, expected_values : numpy.ndarrays of same shape
+
+    Returns
+    -------
+    llh : numpy.ndarray of same shape as the inputs
+        llh corresponding to each pair of elements in `actual_values` and
+        `expected_values`.
+
+    Notes
+    -----
+    * 
+    """
+    assert actual_values.shape == expected_values.shape
+
+    # Convert to simple numpy arrays containing floats
+    actual_values = unp.nominal_values(actual_values).ravel()
+    sigma = unp.std_devs(expected_values).ravel()
+    expected_values = unp.nominal_values(expected_values).ravel() 
+    
+    with np.errstate(invalid='ignore'):
+        # Mask off any nan expected values (these are assumed to be ok)
+        actual_values = np.ma.masked_invalid(actual_values)
+        expected_values = np.ma.masked_invalid(expected_values)
+
+        # Check that new array contains all valid entries
+        if np.any(actual_values < 0):
+            msg = ('`actual_values` must all be >= 0...\n'
+                   + maperror_logmsg(actual_values))
+            raise ValueError(msg)
+
+        # TODO: How should we handle nan / masked values in the "data"
+        # (actual_values) distribution? How about negative numbers?
+
+        # Make sure actual values (aka "data") are valid -- no infs, no nans,
+        # etc.
+        if np.any((actual_values < 0) | ~np.isfinite(actual_values)):
+            msg = ('`actual_values` must be >= 0 and neither inf nor nan...\n'
+                   + maperror_logmsg(actual_values))
+            raise ValueError(msg)
+
+        # Check that new array contains all valid entries
+        if np.any(expected_values < 0.0):
+            msg = ('`expected_values` must all be >= 0...\n'
+                   + maperror_logmsg(expected_values))
+            raise ValueError(msg)
+
+    llh_val = likelihood_functions.poisson_gamma(actual_values, expected_values, sigma**2, a=0, b=0)
+    return llh_val
+
+
+def mcllh_eff(actual_values, expected_values):
+    """Compute the log-likelihood (llh) based on eq. 3.16 - https://doi.org/10.1007/JHEP06(2019)030
+    accounting for finite MC statistics.
+
+    Parameters
+    ----------
+    actual_values, expected_values : numpy.ndarrays of same shape
+
+    Returns
+    -------
+    llh : numpy.ndarray of same shape as the inputs
+        llh corresponding to each pair of elements in `actual_values` and
+        `expected_values`.
+
+    Notes
+    -----
+    * 
+    """
+    assert actual_values.shape == expected_values.shape
+
+    # Convert to simple numpy arrays containing floats
+    actual_values = unp.nominal_values(actual_values).ravel()
+    sigma = unp.std_devs(expected_values).ravel()
+    expected_values = unp.nominal_values(expected_values).ravel() 
+    
+    with np.errstate(invalid='ignore'):
+        # Mask off any nan expected values (these are assumed to be ok)
+        actual_values = np.ma.masked_invalid(actual_values)
+        expected_values = np.ma.masked_invalid(expected_values)
+
+        # Check that new array contains all valid entries
+        if np.any(actual_values < 0):
+            msg = ('`actual_values` must all be >= 0...\n'
+                   + maperror_logmsg(actual_values))
+            raise ValueError(msg)
+
+        # TODO: How should we handle nan / masked values in the "data"
+        # (actual_values) distribution? How about negative numbers?
+
+        # Make sure actual values (aka "data") are valid -- no infs, no nans,
+        # etc.
+        if np.any((actual_values < 0) | ~np.isfinite(actual_values)):
+            msg = ('`actual_values` must be >= 0 and neither inf nor nan...\n'
+                   + maperror_logmsg(actual_values))
+            raise ValueError(msg)
+
+        # Check that new array contains all valid entries
+        if np.any(expected_values < 0.0):
+            msg = ('`expected_values` must all be >= 0...\n'
+                   + maperror_logmsg(expected_values))
+            raise ValueError(msg)
+
+    llh_val = likelihood_functions.poisson_gamma(actual_values, expected_values, sigma**2, a=1, b=0)
+    return llh_val
+
+
 
 def log_poisson(k, l):
     r"""Calculate the log of a poisson pdf
@@ -357,34 +468,57 @@ def conv_llh(actual_values, expected_values):
         total -= np.log(max(SMALL_POS, norm_conv_poisson(*norm_triplets[i])))
     return total
 
-
 def barlow_llh(actual_values, expected_values):
     """Compute the Barlow LLH taking into account finite statistics.
-
+    The likelihood is described in this paper: https://doi.org/10.1016/0010-4655(93)90005-W
     Parameters
     ----------
     actual_values, expected_values : numpy.ndarrays of same shape
 
     Returns
     -------
-    barlow_llh
+    barlow_llh: numpy.ndarray
 
     """
-    likelihoods = Likelihoods()
+     
     actual_values = unp.nominal_values(actual_values).ravel()
-    sigmas = [unp.std_devs(ev.ravel()) for ev in expected_values]
-    expected_values = [unp.nominal_values(ev).ravel() for ev in expected_values]
-    unweighted = np.array(
-        [(ev/s)**2 for ev, s in zip(expected_values, sigmas)]
-    )
-    weights = np.array(
-        [s**2/ev for ev, s in zip(expected_values, sigmas)]
-    )
-    likelihoods.set_data(actual_values)
-    likelihoods.set_mc(weights)
-    likelihoods.set_unweighted(unweighted)
-    return -likelihoods.get_llh(llh_type='barlow')
+    sigmas = unp.std_devs(expected_values).ravel()
+    expected_values = unp.nominal_values(expected_values).ravel()
 
+    with np.errstate(invalid='ignore'):
+        # Mask off any nan expected values (these are assumed to be ok)
+        actual_values = np.ma.masked_invalid(actual_values)
+        expected_values = np.ma.masked_invalid(expected_values)
+
+        # Check that new array contains all valid entries
+        if np.any(actual_values < 0):
+            msg = ('`actual_values` must all be >= 0...\n'
+                   + maperror_logmsg(actual_values))
+            raise ValueError(msg)
+
+        # TODO: How should we handle nan / masked values in the "data"
+        # (actual_values) distribution? How about negative numbers?
+
+        # Make sure actual values (aka "data") are valid -- no infs, no nans,
+        # etc.
+        if np.any((actual_values < 0) | ~np.isfinite(actual_values)):
+            msg = ('`actual_values` must be >= 0 and neither inf nor nan...\n'
+                   + maperror_logmsg(actual_values))
+            raise ValueError(msg)
+
+        # Check that new array contains all valid entries
+        if np.any(expected_values < 0.0):
+            msg = ('`expected_values` must all be >= 0...\n'
+                   + maperror_logmsg(expected_values))
+            raise ValueError(msg)
+    
+    # TODO(tahmid): Run checks in case expected_values and/or corresponding sigma == 0
+    # and handle these appropriately. If sigma/ev == 0 the code below will fail.
+    unweighted = np.array([(ev/s)**2 for ev, s in zip(expected_values, sigmas)])
+    weights = np.array([s**2/ev for ev, s in zip(expected_values, sigmas)])
+
+    llh = likelihood_functions.barlowLLH(actual_values, unweighted, weights)
+    return llh
 
 def mod_chi2(actual_values, expected_values):
     """Compute the chi-square value taking into account uncertainty terms
