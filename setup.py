@@ -232,7 +232,7 @@ def do_setup():
             'tables',
             'uncertainties',
             'decorator',
-            'numba>=0.38', # >=0.35: fastmath jit flag; >=0.38: issue #439
+            'numba==0.43.1', # >=0.35: fastmath jit flag; >=0.38: issue #439, <0.44 because SmartArray deprication
         ],
         extras_require={
             'develop': [
