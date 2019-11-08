@@ -73,7 +73,6 @@ class atm_muons(PiStage):
             'delta_gamma_mu_variable',
             'delta_gamma_mu'
         )
-        input_names = ()
         output_names = ()
 
         # what are the keys used from the inputs during apply
@@ -83,6 +82,11 @@ class atm_muons(PiStage):
         # what keys are added or altered for the outputs during apply
         output_apply_keys = ('weights',
                             )
+
+        # input_names should specify the key that the muon data can be found under in the input file
+        if input_names is None :
+            input_names = ("muons",)
+        assert len(input_names) == 1
 
         # init base class
         super().__init__(
@@ -102,16 +106,13 @@ class atm_muons(PiStage):
         assert self.calc_mode is not None
         assert self.output_mode is not None
 
-        # Define the key for muon events in the data container
-        self.muon_key = "muons"
-
 
     def setup_function(self):
 
         self.data.data_specs = self.calc_specs
 
         # Check there are muons in the data
-        assert self.muon_key in self.data.names, "No `%s` events found in the input data, only found %s" % (self.muon_key,self.data.names)
+        assert self.input_names[0] in self.data.names, "No `%s` events found in the input data, only found %s" % (self.input_names[0],self.data.names)
 
         # Create the primary uncertainties spline that will be used for
         # re-weighting the muon flux
@@ -119,10 +120,10 @@ class atm_muons(PiStage):
 
         # Get variable that the flux uncertainties are spline w.r.t
         rw_variable = self.params['delta_gamma_mu_variable'].value
-        #assert rw_variable in self.data["muons"], "Cannot find the variable `%s` in the muon container, cannot interpret spline" % rw_variable #TODO Fix in container.py, `in` doesn't work...
+        #assert rw_variable in self.data[self.input_names[0]], "Cannot find the variable `%s` in the muon container, cannot interpret spline" % rw_variable #TODO Fix in container.py, `in` doesn't work...
 
         # Get primary CR systematic spline (using correcr FTYPE)
-        self.rw_array = self.prim_unc_spline(self.data["muons"][rw_variable]).astype(FTYPE)
+        self.rw_array = self.prim_unc_spline(self.data[self.input_names[0]][rw_variable]).astype(FTYPE)
 
         # Reweighting term is positive-only by construction, so normalise
         # it by shifting the whole array down by a normalisation factor
@@ -150,9 +151,9 @@ class atm_muons(PiStage):
         # Write to the output container
         apply_atm_muon_sys(weight_mod,
                         atm_muon_scale,
-                        out=self.data[self.muon_key]['weights'].get(WHERE),
+                        out=self.data[self.input_names[0]]['weights'].get(WHERE),
                        )
-        self.data[self.muon_key]['weights'].mark_changed(WHERE)
+        self.data[self.input_names[0]]['weights'].mark_changed(WHERE)
 
 
 
