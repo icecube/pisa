@@ -211,9 +211,10 @@ def llh(actual_values, expected_values):
 
     return llh_val
 
-def mcllh_eff(actual_values, expected_values):
-    """Compute the log-likelihood (llh) based LEff in table 2 - https://doi.org/10.1007/JHEP06(2019)030
+def mcllh_mean(actual_values, expected_values):
+    """Compute the log-likelihood (llh) based on LMean in table 2 - https://doi.org/10.1007/JHEP06(2019)030
     accounting for finite MC statistics.
+    This is the second most recommended likelihood in the paper.
 
     Parameters
     ----------
@@ -270,6 +271,7 @@ def mcllh_eff(actual_values, expected_values):
 def mcllh_eff(actual_values, expected_values):
     """Compute the log-likelihood (llh) based on eq. 3.16 - https://doi.org/10.1007/JHEP06(2019)030
     accounting for finite MC statistics.
+    This is the most recommended likelihood in the paper.
 
     Parameters
     ----------
