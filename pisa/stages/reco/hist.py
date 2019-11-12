@@ -147,7 +147,7 @@ class hist(Stage):
             'e_reco_bias', 'cz_reco_bias'
         )
 
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = (''.join(input_names.split(' '))).split(',')
 
         # Define the names of objects expected in inputs and produced as
@@ -160,7 +160,7 @@ class hist(Stage):
 
         # Invoke the init method from the parent class, which does a lot of
         # work for you.
-        super(self.__class__, self).__init__(
+        super().__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,

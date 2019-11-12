@@ -403,8 +403,10 @@ def main():
     known_weights = [None, 'weighted_aeff']
 
     if args.weighting not in known_weights:
-        logging.warn('''%s weighting field not known to be in events file.
-                     Tests may not work in this case!'''%args.weighting)
+        logging.warning(
+            '''%s weighting field not known to be in events file.
+            Tests may not work in this case!'''%args.weighting
+        )
 
     # Want these for all tests
     pisa_standard_settings = os.path.join(

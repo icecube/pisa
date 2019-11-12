@@ -530,7 +530,7 @@ def parse_pipeline_config(config):
     from pisa.core.binning import MultiDimBinning, OneDimBinning
     from pisa.core.param import ParamSelector
 
-    if isinstance(config, basestring):
+    if isinstance(config, str):
         config = from_file(config)
     elif isinstance(config, PISAConfigParser):
         pass
@@ -660,7 +660,7 @@ def parse_pipeline_config(config):
                 # instantiated.
                 for kw in stage_dicts.values():
                     # Stage did not get a `params` argument from config
-                    if not kw.has_key('params'):
+                    if not 'params' in kw:
                         continue
 
                     # Retrieve the param from the ParamSelector
@@ -809,7 +809,7 @@ class MutableMultiFileIterator(object):
         self._iter_stack.append(record)
         self.file_hierarchy = OrderedDict([(fpname, OrderedDict())])
 
-    def next(self):
+    def __next__(self):
         """Iterate through lines in the file(s).
 
         Returns
@@ -1002,7 +1002,7 @@ class PISAConfigParser(RawConfigParser):
     def __init__(self):
         #self.default_section = None #DEFAULTSECT
         # Instantiate parent class with PISA-specific options
-        #super(PISAConfigParser, self).__init__(
+        #super().__init__(
         RawConfigParser.__init__(
             self,
             interpolation=ExtendedInterpolation(),
@@ -1015,14 +1015,14 @@ class PISAConfigParser(RawConfigParser):
         interpolation syntax on the value."""
         _, option, value = self._validate_value_types(option=option,
                                                       value=value)
-        super(PISAConfigParser, self).set(section, option, value)
+        super().set(section, option, value)
 
     def add_section(self, section):
         """Create a new section in the configuration.  Extends
         RawConfigParser.add_section by validating if the section name is
         a string."""
         section, _, _ = self._validate_value_types(section=section)
-        super(PISAConfigParser, self).add_section(section)
+        super().add_section(section)
 
     def optionxform(self, optionstr):
         """Enable case-sensitive options in .cfg files, and force all values to
@@ -1059,7 +1059,7 @@ class PISAConfigParser(RawConfigParser):
         :method:`~backports.configparser.configparser.read`
 
         """
-        if isinstance(filenames, basestring):
+        if isinstance(filenames, str):
             filenames = [filenames]
         resource_locations = []
         for filename in filenames:
@@ -1180,7 +1180,10 @@ class PISAConfigParser(RawConfigParser):
                 if include_info['as']:
                     as_header = '[%s]\n' % include_info['as']
                     file_iter.switch_to_file(
-                        fp=StringIO(as_header.decode('utf-8'))
+                        # Aaron Fienberg
+                        # commented out as part of python3 update
+                        # fp=StringIO(as_header.decode('utf-8'))
+                        fp=StringIO(as_header)
                     )
                 continue
             # strip full line comments

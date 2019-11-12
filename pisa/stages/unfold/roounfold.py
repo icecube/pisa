@@ -8,8 +8,9 @@ unfolding.
 
 from __future__ import absolute_import
 
-from operator import add
 from copy import deepcopy
+from functools import reduce
+from operator import add
 
 import numpy as np
 from uncertainties import unumpy as unp
@@ -119,7 +120,7 @@ class roounfold(Stage):
                 output_str.append(NuFlavIntGroup(name))
         output_str = [str(f) for f in output_str]
 
-        super(self.__class__, self).__init__(
+        super().__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
@@ -204,7 +205,7 @@ class roounfold(Stage):
 
             efficiencies = []
             assert set(fin_data.keys()) == set(gen_data.keys())
-            for fig in fin_data.iterkeys():
+            for fig in fin_data.keys():
                 figd_f = fin_data[fig]
                 figd_g = gen_data[fig]
                 inv_eff = self._get_inv_eff(
@@ -317,7 +318,7 @@ class roounfold(Stage):
         # Find optimum value for regularisation parameter
         if self.params['optimize_reg'].value:
             chisq = None
-            for r_idx in xrange(regularisation):
+            for r_idx in range(regularisation):
                 unfold = RooUnfoldBayes(
                     response, r_th1d, r_idx+1
                 )
@@ -442,7 +443,7 @@ class roounfold(Stage):
     def load_gen_data(self):
         logging.debug('Loading generator level sample')
         unfold_pipeline_cfg = self.params['unfold_pipeline_cfg'].value
-        if isinstance(unfold_pipeline_cfg, basestring):
+        if isinstance(unfold_pipeline_cfg, str):
             pipeline_cfg = from_file(unfold_pipeline_cfg)
             pipeline_hash = pipeline_cfg
             sa_cfg = from_file(
@@ -763,5 +764,5 @@ class roounfold(Stage):
                     'Param "%s" must be type %s but is %s instead'
                     % (p, type(t), type(val))
                 )
-        assert isinstance(params['unfold_pipeline_cfg'].value, basestring) or \
+        assert isinstance(params['unfold_pipeline_cfg'].value, str) or \
                 isinstance(params['unfold_pipeline_cfg'].value, Pipeline)

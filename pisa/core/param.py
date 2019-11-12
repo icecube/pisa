@@ -7,10 +7,10 @@ values.
 
 from __future__ import absolute_import, division
 
-from collections import OrderedDict, Sequence
+from collections.abc import Sequence
+from collections import OrderedDict
 from copy import deepcopy
 from functools import total_ordering
-from itertools import izip
 from operator import setitem
 import sys
 
@@ -346,7 +346,7 @@ class Param(object):
         penalty : float prior penalty value
 
         """
-        assert isinstance(metric, basestring)
+        assert isinstance(metric, str)
         metric = metric.strip().lower()
         if metric not in ALL_METRICS:
             raise ValueError('Metric "%s" is invalid; must be one of %s'
@@ -591,7 +591,7 @@ class ParamSet(Sequence):
         ValueError : if any index cannot be found
 
         """
-        if isinstance(x, (Param, int, basestring)):
+        if isinstance(x, (Param, int, str)):
             x = [x]
         indices = set()
         for obj in x:
@@ -620,7 +620,7 @@ class ParamSet(Sequence):
         ValueError : if any index cannot be found
 
         """
-        if isinstance(x, (Param, int, basestring)):
+        if isinstance(x, (Param, int, str)):
             x = [x]
         indices = set()
         for obj in x:
@@ -692,7 +692,7 @@ class ParamSet(Sequence):
     def __setitem__(self, i, val):
         if isinstance(i, int):
             self._params[i].value = val
-        elif isinstance(i, basestring):
+        elif isinstance(i, str):
             self._by_name[i].value = val
 
     def __deepcopy__(self, memo):
@@ -706,22 +706,22 @@ class ParamSet(Sequence):
     def __getitem__(self, i):
         if isinstance(i, int):
             return self._params[i]
-        elif isinstance(i, basestring):
+        elif isinstance(i, str):
             return self._by_name[i]
 
     def __getattr__(self, attr):
         try:
-            return super(ParamSet, self).__getattribute__(attr)
+            return super().__getattribute__(attr)
         except AttributeError:
             t, v, tb = sys.exc_info()
             try:
                 return self[attr]
             except KeyError:
-                raise t, v, tb
+                raise t(v).with_traceback(tb)
 
     def __setattr__(self, attr, val):
         try:
-            params = super(ParamSet, self).__getattribute__('_params')
+            params = super().__getattribute__('_params')
             param_names = [p.name for p in params]
         except AttributeError:
             params = []
@@ -729,7 +729,7 @@ class ParamSet(Sequence):
         try:
             idx = param_names.index(attr)
         except ValueError:
-            super(ParamSet, self).__setattr__(attr, val)
+            super().__setattr__(attr, val)
         else:
             # `attr` (should be) param name
             if isinstance(val, Param):
@@ -893,14 +893,14 @@ class ParamSet(Sequence):
     @property
     def name_val_dict(self):
         d = OrderedDict()
-        for name, val in izip(self.names, self.values):
+        for name, val in zip(self.names, self.values):
             d[name] = val
         return d
 
     @property
     def is_nominal(self):
         return np.all([(v0 == v1)
-                       for v0, v1 in izip(self.values, self.nominal_values)])
+                       for v0, v1 in zip(self.values, self.nominal_values)])
 
     @property
     def nominal_values(self):
@@ -1023,7 +1023,7 @@ class ParamSelector(object):
             return self.select_params(selections=self._selections,
                                       error_on_missing=error_on_missing)
 
-        if isinstance(selections, basestring):
+        if isinstance(selections, str):
             selections = selections.split(',')
 
         assert isinstance(selections, Sequence)
@@ -1032,9 +1032,9 @@ class ParamSelector(object):
         for selection in selections:
             if selection is None:
                 continue
-            if not isinstance(selection, basestring):
+            if not isinstance(selection, str):
                 raise ValueError(
-                    "Selection should be a basestring. Got %s instead."%(
+                    "Selection should be a str. Got %s instead."%(
                         type(selection))
                 )
             selection = selection.strip().lower()
@@ -1089,7 +1089,7 @@ class ParamSelector(object):
             self._regular_params.update(p)
             self._current_params.update(p)
         else:
-            assert isinstance(selector, basestring)
+            assert isinstance(selector, str)
             selector = selector.strip().lower()
             if selector not in self._selector_params:
                 self._selector_params[selector] = ParamSet()

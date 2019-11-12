@@ -7,7 +7,8 @@ defining and applying linear transforms.
 
 from __future__ import absolute_import, division
 
-from collections import OrderedDict, Sequence
+from collections.abc import Sequence
+from collections import OrderedDict
 from copy import deepcopy
 from functools import wraps
 import importlib
@@ -256,7 +257,7 @@ class TransformSet(object):
         transform : Transform object
 
         """
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = [input_names]
         for transform in self:
             if set(input_names) == set(transform.input_names) \
@@ -303,7 +304,7 @@ class TransformSet(object):
 
     def __getattr__(self, attr):
         if attr in TRANS_SET_SLOTS:
-            return super(TransformSet, self).__getattribute__(attr)
+            return super().__getattribute__(attr)
         # TODO: return maps based upon name?
         #if attr in
         return TransformSet([getattr(t, attr) for t in self], name=self.name)
@@ -312,7 +313,7 @@ class TransformSet(object):
         if isinstance(idx, (int, slice)):
             return self._transforms[idx]
         # TODO: search for transform by output name?
-        #if isinstance(idx, basestring):
+        #if isinstance(idx, str):
         raise IndexError('`idx` %s not found in map set.' %idx)
 
 
@@ -333,13 +334,13 @@ class Transform(object):
                  output_binning=None, tex=None, hash=None, error_method=None): # pylint: disable=redefined-builtin
         # Convert to sequence of single string if a single string was passed
         # for uniform interfacing
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = [input_names]
         else:
             input_names = [name for name in input_names]
         self._input_names = input_names
 
-        assert isinstance(output_name, basestring)
+        assert isinstance(output_name, str)
         self._output_name = output_name
 
         if input_binning is not None:
@@ -478,7 +479,7 @@ class Transform(object):
 
     @tex.setter
     def tex(self, val):
-        assert val is None or isinstance(val, basestring)
+        assert val is None or isinstance(val, str)
         self._tex = val
 
     @property
@@ -548,7 +549,7 @@ def _new_obj(original_function):
         new_state = OrderedDict()
         state_updates = original_function(self, *args, **kwargs)
         for slot in self._state_attrs: # pylint: disable=protected-access
-            if state_updates.has_key(slot):
+            if slot in state_updates:
                 new_state[slot] = state_updates[slot]
             else:
                 new_state[slot] = deepcopy(getattr(self, slot))
@@ -647,7 +648,7 @@ class BinnedTensorTransform(Transform):
     def __init__(self, input_names, output_name, input_binning, output_binning,
                  xform_array, sum_inputs=False, error_array=None, tex=None,
                  error_method=None, hash=None): # pylint: disable=redefined-builtin
-        super(BinnedTensorTransform, self).__init__(
+        super().__init__(
             input_names=input_names, output_name=output_name,
             input_binning=input_binning, output_binning=output_binning,
             tex=tex, hash=hash, error_method=error_method
@@ -661,7 +662,7 @@ class BinnedTensorTransform(Transform):
     @property
     def serializable_state(self):
         """OrderedDict : State of the object in a format that is serializable"""
-        state = super(BinnedTensorTransform, self).serializable_state
+        state = super().serializable_state
         state['xform_array'] = self.nominal_values
         state['error_array'] = self.std_devs
         return state
@@ -669,7 +670,7 @@ class BinnedTensorTransform(Transform):
     @property
     def hashable_state(self):
         """OrderedDict : State of the objec that can be used for hashing"""
-        state = super(BinnedTensorTransform, self).hashable_state
+        state = super().hashable_state
         state['xform_array'] = normQuant(self.nominal_values,
                                          sigfigs=HASH_SIGFIGS)
         state['error_array'] = normQuant(self.std_devs, sigfigs=HASH_SIGFIGS)
@@ -688,12 +689,12 @@ class BinnedTensorTransform(Transform):
 
         """
         if error_array is None:
-            super(BinnedTensorTransform, self).__setattr__(
+            super().__setattr__(
                 '_xform_array', self.nominal_values
             )
             return
         assert error_array.shape == self.xform_array.shape
-        super(BinnedTensorTransform, self).__setattr__(
+        super().__setattr__(
             '_xform_array',
             unp.uarray(self.xform_array, np.ascontiguousarray(error_array))
         )
@@ -910,7 +911,7 @@ class BinnedTensorTransform(Transform):
 
         # Transform same shape: element-by-element multiplication
         if self.xform_array.shape == input_array.shape:
-            if (isinstance(self.error_method, basestring) and
+            if (isinstance(self.error_method, str) and
                     self.error_method.strip().lower() == 'fixed'):
                 # don't scale errors here
                 output = unp.uarray(

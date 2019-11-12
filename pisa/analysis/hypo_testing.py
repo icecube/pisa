@@ -12,7 +12,8 @@ logged by this script.
 from __future__ import absolute_import, division
 
 
-from collections import Mapping, OrderedDict, Sequence
+from collections.abc import Mapping, Sequence
+from collections import OrderedDict
 from copy import copy
 import getpass
 from itertools import chain, product
@@ -341,14 +342,14 @@ class HypoTesting(Analysis):
                  allow_dirty=False, allow_no_git_info=False,
                  blind=False, store_minimizer_history=True, pprint=False,
                  reset_free=True, shared_params=None):
-        super(HypoTesting, self).__init__()
+        super().__init__()
 
         assert num_data_trials >= 1
         assert num_fid_trials >= 1
         assert data_start_ind >= 0
         assert fid_start_ind >= 0
         
-        if isinstance(metric, basestring):
+        if isinstance(metric, str):
             metric = [metric]
         for m in metric:
             assert m in ALL_METRICS
@@ -364,19 +365,19 @@ class HypoTesting(Analysis):
                 h0_maker = DistributionMaker(h0_maker)
             except:
                 h0_maker = Detectors(h0_maker,shared_params=shared_params)
-        if isinstance(h0_param_selections, basestring):
+        if isinstance(h0_param_selections, str):
             h0_param_selections = h0_param_selections.strip().lower()
             if h0_param_selections == '':
                 h0_param_selections = None
             else:
                 h0_param_selections = [h0_param_selections]
-        if isinstance(h1_param_selections, basestring):
+        if isinstance(h1_param_selections, str):
             h1_param_selections = h1_param_selections.strip().lower()
             if h1_param_selections == '':
                 h1_param_selections = None
             else:
                 h1_param_selections = [h1_param_selections]
-        if isinstance(data_param_selections, basestring):
+        if isinstance(data_param_selections, str):
             data_param_selections = data_param_selections.strip().lower()
             if data_param_selections == '':
                 data_param_selections = None
@@ -407,19 +408,19 @@ class HypoTesting(Analysis):
             # Convert `data_dist` into a `MapSet` or list of `MapSet`s if not already
             if isinstance(data_dist, list):
                 for i in range(len(data_dist)):
-                    if isinstance(data_dist[i], basestring):
+                    if isinstance(data_dist[i], str):
                         data_dist[i] = from_file(data_dist[i])
                     if not isinstance(data_dist[i], MapSet):
                         data_dist[i] = MapSet(data_dist[i])
             else:
-                if isinstance(data_dist, basestring):
+                if isinstance(data_dist, str):
                     data_dist = from_file(data_dist)
                 if not isinstance(data_dist, MapSet):
                     data_dist = MapSet(data_dist)
 
         # Ensure num_{fid_}data_trials is one if fluctuate_{fid_}data is False
         if not fluctuate_data and num_data_trials != 1:
-            logging.warn(
+            logging.warning(
                 'More than one data trial is unnecessary because'
                 ' `fluctuate_data` is False (i.e., all `num_data_trials` data'
                 ' distributions will be identical). Forcing `num_data_trials`'
@@ -428,7 +429,7 @@ class HypoTesting(Analysis):
             num_data_trials = 1
 
         if not fluctuate_fid and num_fid_trials != 1:
-            logging.warn(
+            logging.warning(
                 'More than one fid trial is unnecessary because'
                 ' `fluctuate_fid` is False (i.e., all'
                 ' `num_fid_trials` data distributions will be identical).'
@@ -500,7 +501,7 @@ class HypoTesting(Analysis):
                     data_maker = Detectors(data_maker, shared_params=shared_params)
 
         # Read in minimizer settings
-        if isinstance(minimizer_settings, basestring):
+        if isinstance(minimizer_settings, str):
             minimizer_settings = from_file(minimizer_settings)
         assert isinstance(minimizer_settings, Mapping)
 
@@ -617,7 +618,7 @@ class HypoTesting(Analysis):
         t0 = time.time()
         try:
             # Loop for multiple (if fluctuated) data distributions
-            for self.data_ind in xrange(self.data_start_ind,
+            for self.data_ind in range(self.data_start_ind,
                                         self.data_start_ind
                                         + self.num_data_trials):
                 data_trials_complete = self.data_ind-self.data_start_ind
@@ -639,7 +640,7 @@ class HypoTesting(Analysis):
                 self.fit_hypos_to_data()
 
                 # Loop for multiple (if fluctuated) fiducial data distributions
-                for self.fid_ind in xrange(self.fid_start_ind,
+                for self.fid_ind in range(self.fid_start_ind,
                                            self.fid_start_ind
                                            + self.num_fid_trials):
                     fid_trials_complete = self.fid_ind-self.fid_start_ind
@@ -692,10 +693,10 @@ class HypoTesting(Analysis):
                 for line in format_exception(*exc_l):
                     for sl in line.splitlines():
                         logging.error(' '*4 + sl)
-                raise exc_l[0], exc_l[1], exc_l[2]
+                raise exc_l[0](exc_l[1]).with_traceback(exc_l[2])
 
             if exc[0] is not None:
-                raise exc[0], exc[1], exc[2]
+                raise exc[0](exc[1]).with_traceback(exc[2])
 
     def generate_data(self):
         """Geneerate "data" distribution"""
@@ -1291,7 +1292,7 @@ class HypoTesting(Analysis):
         if no_git_info:
             msg = 'No info about git repo. Version info: %s' %self.version_info
             if self.allow_no_git_info:
-                logging.warn(msg)
+                logging.warning(msg)
             else:
                 raise Exception(msg)
 
@@ -1299,7 +1300,7 @@ class HypoTesting(Analysis):
         if dirty_git_repo:
             msg = 'Dirty git repo. Version info: %s' %self.version_info
             if self.allow_dirty:
-                logging.warn(msg)
+                logging.warning(msg)
             else:
                 raise Exception(msg)
 
@@ -1483,11 +1484,11 @@ class HypoTesting(Analysis):
             run_info.append('%s = %s' %(env_var, val))
 
         for prefix in ['PBS_']:
-            for env_var, val in os.environ.iteritems():
+            for env_var, val in os.environ.items():
                 if env_var.startswith(prefix):
                     run_info.append('%s = %s' %(env_var, val))
 
-        with file(self.run_info_fpath, 'w') as f:
+        with open(self.run_info_fpath, 'w') as f:
             f.write('\n'.join(run_info) + '\n')
         logging.info('Run info written to: ' + self.run_info_fpath)
 
@@ -1527,7 +1528,7 @@ class HypoTesting(Analysis):
             )
             run_info.append('traceback = %s' %formatted_tb)
 
-        with file(self.run_info_fpath, 'a') as f:
+        with open(self.run_info_fpath, 'a') as f:
             f.write('\n'.join(run_info) + '\n')
 
         logging.info('Run stop info written to: ' + self.run_info_fpath)
@@ -1541,7 +1542,7 @@ class HypoTesting(Analysis):
             serialize.append('fit_history')
 
         info = OrderedDict()
-        for k, v in fit_info.iteritems():
+        for k, v in fit_info.items():
             if k not in serialize:
                 continue
             if k == 'params':

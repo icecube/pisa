@@ -79,7 +79,7 @@ class icc(Stage):
 
         output_names = ('total')
 
-        super(self.__class__, self).__init__(
+        super().__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
@@ -129,7 +129,7 @@ class icc(Stage):
             bg_file = h5py.File(find_resource(icc_bg_file),'r')
             if alt_icc_bg_file is not None:
                 alt_bg_file = h5py.File(find_resource(alt_icc_bg_file),'r')
-        except IOError,e:
+        except IOError as e:
             logging.error("Unable to open icc_bg_file %s"%icc_bg_file)
             logging.error(e)
             sys.exit(1)

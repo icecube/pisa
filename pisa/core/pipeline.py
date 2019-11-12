@@ -10,7 +10,7 @@ from __future__ import absolute_import
 
 from argparse import ArgumentParser
 from collections import OrderedDict
-from ConfigParser import NoSectionError
+from configparser import NoSectionError
 from copy import deepcopy
 from importlib import import_module
 from itertools import product
@@ -85,7 +85,7 @@ class Pipeline(object):
     """
 
     def __init__(self, config):
-        if isinstance(config, (basestring, PISAConfigParser)):
+        if isinstance(config, (str, PISAConfigParser)):
             config = parse_pipeline_config(config=config)
         elif isinstance(config, OrderedDict):
             pass
@@ -120,7 +120,7 @@ class Pipeline(object):
         ValueError : if `stage_id` not in pipeline.
 
         """
-        assert isinstance(stage_id, (int, basestring))
+        assert isinstance(stage_id, (int, str))
         for stage_num, stage in enumerate(self):
             if stage_id in [stage_num, stage.stage_name]:
                 return stage_num
@@ -133,7 +133,7 @@ class Pipeline(object):
         return iter(self._stages)
 
     def __getitem__(self, idx):
-        if isinstance(idx, basestring):
+        if isinstance(idx, str):
             return self.stages[self.index(idx)]
 
         if isinstance(idx, (int, slice)):
@@ -322,7 +322,7 @@ class Pipeline(object):
         """
         intermediate = []
 
-        if isinstance(idx, basestring):
+        if isinstance(idx, str):
             idx = self.stage_names.index(idx)
 
         if idx is not None:
@@ -713,7 +713,7 @@ def main(return_outputs=False):
             stop_idx = int(stop_idx)
         except (TypeError, ValueError):
             pass
-        if isinstance(stop_idx, basestring):
+        if isinstance(stop_idx, str):
             stop_idx = pipeline.index(stop_idx)
         outputs = pipeline.get_outputs(
             idx=stop_idx
@@ -730,7 +730,7 @@ def main(return_outputs=False):
         # Create dummy inputs if necessary
         inputs = None
         if hasattr(stage, "input_binning"):
-            logging.warn(
+            logging.warning(
                 "Stage requires input, so building dummy"
                 " inputs of random numbers, with random state set to the input"
                 " index according to alphabetical ordering of input names and"

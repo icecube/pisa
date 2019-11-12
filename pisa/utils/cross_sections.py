@@ -65,7 +65,7 @@ class CrossSections(FlavIntData):
     """
     def __init__(self, ver=None, energy=None,
                  xsec='cross_sections/cross_sections.json'):
-        super(CrossSections, self).__init__()
+        super().__init__()
         self.energy = energy
         self._ver = ver
         self._interpolants = {}
@@ -73,14 +73,14 @@ class CrossSections(FlavIntData):
             pass
         elif isinstance(xsec, dict):
             xsec = deepcopy(xsec)
-        elif isinstance(xsec, basestring):
+        elif isinstance(xsec, str):
             assert self.energy is None
             self.energy, xsec = self.load(fpath=xsec, ver=ver)
         else:
             raise TypeError('Unhandled xsec type passed in arg: ' +
                             str(type(xsec)))
         if xsec is not None:
-            super(CrossSections, self).validate(xsec)
+            super().validate(xsec)
             self.validate_xsec(self.energy, xsec)
             self.update(xsec)
             self._define_interpolant()
@@ -585,7 +585,7 @@ class CrossSections(FlavIntData):
             leg.get_title().set_fontsize(leg_fs)
         plt.tight_layout()
 
-        if isinstance(save, basestring):
+        if isinstance(save, str):
             logging.info('Saving cross sections plots to file ' + save)
             f.savefig(save)
         elif isinstance(save, dict):

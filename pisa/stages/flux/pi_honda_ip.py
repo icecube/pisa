@@ -62,19 +62,20 @@ class pi_honda_ip(PiStage):
                             )
 
         # init base class
-        super(pi_honda_ip, self).__init__(data=data,
-                                        params=params,
-                                        expected_params=expected_params,
-                                        input_names=input_names,
-                                        output_names=output_names,
-                                        debug_mode=debug_mode,
-                                        input_specs=input_specs,
-                                        calc_specs=calc_specs,
-                                        output_specs=output_specs,
-                                        input_calc_keys=input_calc_keys,
-                                        output_calc_keys=output_calc_keys,
-                                        output_apply_keys=output_apply_keys,
-                                       )
+        super().__init__(
+            data=data,
+            params=params,
+            expected_params=expected_params,
+            input_names=input_names,
+            output_names=output_names,
+            debug_mode=debug_mode,
+            input_specs=input_specs,
+            calc_specs=calc_specs,
+            output_specs=output_specs,
+            input_calc_keys=input_calc_keys,
+            output_calc_keys=output_calc_keys,
+            output_apply_keys=output_apply_keys,
+        )
 
         assert self.input_mode is None
         assert self.calc_mode is not None

@@ -14,6 +14,7 @@ from __future__ import absolute_import
 
 from os import path
 from copy import deepcopy
+from functools import reduce
 from operator import add
 import re
 
@@ -63,7 +64,7 @@ def split(string):
 def parse_event_type_names(names,return_flags=False) :
 
     #Split into list if has not already been done
-    if isinstance(names,str) or isinstance(names,unicode) :
+    if isinstance(names, str):
         names = split(names)
 
     #Parse the names
@@ -164,7 +165,7 @@ class sample(Stage):
             output_binning = None
         self.output_events = output_events
 
-        super(sample, self).__init__(
+        super().__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
@@ -175,7 +176,7 @@ class sample(Stage):
             memcache_deepcopy=memcache_deepcopy,
             outputs_cache_depth=outputs_cache_depth,
             transforms_cache_depth=transforms_cache_depth,
-            output_binning=output_binning
+            output_binning=output_binning,
         )
 
         #User can specify that truth variables have their names prefixed with "truth_"
@@ -215,7 +216,7 @@ class sample(Stage):
             trans_nu_data = self._data.transform_groups(
                 self._output_nu_groups
             )
-            for fig in trans_nu_data.iterkeys():
+            for fig in trans_nu_data.keys():
                 outputs.append(trans_nu_data.histogram(
                     kinds       = fig,
                     binning     = self.output_binning,
@@ -533,7 +534,7 @@ class sample(Stage):
             t_mask = nu_mask if flavint.particle else nubar_mask
 
             flav_fidg[flavint] = {var: events[var][i_mask & t_mask]
-                                  for var in events.iterkeys()}
+                                  for var in events.keys()}
         return flav_fidg
 
     @staticmethod
@@ -548,14 +549,14 @@ class sample(Stage):
                         'Key "{0}" not found in file, which contains keys '
                         '{1}'.format(k_key, events.keys())
                     )
-            for d_key in events.iterkeys():
+            for d_key in events.keys():
                 if d_key not in keep_keys:
                     remove_keys.append(d_key)
             for r_k in remove_keys:
                 del events[r_k]
 
     def validate_params(self, params):
-        assert isinstance(params['data_sample_config'].value, basestring)
-        assert isinstance(params['dataset'].value, basestring)
+        assert isinstance(params['data_sample_config'].value, str)
+        assert isinstance(params['dataset'].value, str)
         assert params['keep_criteria'].value is None or \
-            isinstance(params['keep_criteria'].value, basestring)
+            isinstance(params['keep_criteria'].value, str)

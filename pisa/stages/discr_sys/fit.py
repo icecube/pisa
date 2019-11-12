@@ -212,7 +212,7 @@ class fit(Stage):
             output_binning = None
         self.output_events = output_events
 
-        super(self.__class__, self).__init__(
+        super().__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
@@ -259,7 +259,7 @@ class fit(Stage):
             trans_nu_data = self._data.transform_groups(
                 self._output_nu_groups
             )
-            for fig in trans_nu_data.iterkeys():
+            for fig in trans_nu_data.keys():
                 outputs.append(
                     trans_nu_data.histogram(
                         kinds=fig,
@@ -330,18 +330,18 @@ class fit(Stage):
         if self.neutrinos:
             sys_list = parse(sample_config.get('neutrinos', 'sys_list'))
 
-            for fig in self._data.iterkeys():
+            for fig in self._data.keys():
                 self._data[fig]['fit_weight'] = \
                     deepcopy(self._data[fig]['weight_weight'])
 
             for sys in sys_list:
                 nominal = sample_config.get('neutrinos|' + sys, 'nominal')
-                for fig in self._data.iterkeys():
+                for fig in self._data.keys():
                     fit_map = unp.nominal_values(fit_coeffs[sys][fig].hist)
 
                     if self.params['smoothing'].value == 'gauss':
                         # TODO(shivesh): new MapSet functions?
-                        for d in xrange(degree):
+                        for d in range(degree):
                             fit_map[..., d] = gaussian_filter(
                                 fit_map[..., d], sigma=1
                             )
@@ -371,7 +371,7 @@ class fit(Stage):
                         else:
                             wght *= transform[tuple([x-1 for x in idx_slice])]
 
-            for fig in self._data.iterkeys():
+            for fig in self._data.keys():
                 self._data[fig]['pisa_weight'] = \
                     deepcopy(self._data[fig]['fit_weight'])
 
@@ -386,7 +386,7 @@ class fit(Stage):
 
                 if self.params['smoothing'].value == 'gauss':
                     # TODO(shivesh): new MapSet functions?
-                    for d in xrange(degree):
+                    for d in range(degree):
                         fit_map[..., d] = gaussian_filter(
                             fit_map[..., d], sigma=1
                         )
@@ -556,7 +556,7 @@ class fit(Stage):
                             )
 
                     outputs = []
-                    for fig in template.iterkeys():
+                    for fig in template.keys():
                         outputs.append(template.histogram(
                             kinds       = fig,
                             binning     = fit_binning,
@@ -593,7 +593,7 @@ class fit(Stage):
                 combined_binning = fit_binning + coeff_binning
 
                 params_mapset = []
-                for fig in template.iterkeys():
+                for fig in template.keys():
                     # TODO(shivesh): Fix numpy warning on this line
                     pvals_hist = np.empty(map(int, combined_binning.shape),
                                           dtype=object)
@@ -737,8 +737,8 @@ class fit(Stage):
     def validate_params(self, params):
         pq = pint.quantity._Quantity
         param_types = [
-            ('pipeline_config', basestring),
-            ('discr_sys_sample_config', basestring),
+            ('pipeline_config', str),
+            ('discr_sys_sample_config', str),
             ('stop_after_stage', pq),
             ('poly_degree', pq),
             ('force_through_nominal', bool),
@@ -753,10 +753,10 @@ class fit(Stage):
                 ('mu_dom_eff', pq),
                 ('mu_hole_ice', pq)
             ])
-        if not isinstance(params['smoothing'].value, basestring) \
+        if not isinstance(params['smoothing'].value, str) \
            and params['smoothing'].value is not None:
             raise TypeError(
-                'Param "smoothing" must be type basestring or NoneType but is '
+                'Param "smoothing" must be type str or NoneType but is '
                 '{0} instead'.format(type(params['smoothing'].value))
             )
         for p, t in param_types:

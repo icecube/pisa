@@ -36,10 +36,10 @@ Define convenience tuples ALL_{x} for easy iteration
 
 from __future__ import absolute_import, division
 
-from collections import MutableSequence, MutableMapping, Mapping, Sequence
+from collections.abc import MutableSequence, MutableMapping, Mapping, Sequence
 from copy import deepcopy
-from functools import total_ordering
-from itertools import product, combinations, izip
+from functools import reduce, total_ordering
+from itertools import product, combinations
 from operator import add
 import re
 
@@ -134,7 +134,7 @@ def set_bar_ssep(val):
 
     """
     global __BAR_SSEP__
-    assert isinstance(val, basestring)
+    assert isinstance(val, str)
     __BAR_SSEP__ = val
 
 
@@ -193,7 +193,7 @@ class NuFlav(object):
         # Instantiate this neutrino flavor object by interpreting val
         orig_val = val
         try:
-            if isinstance(val, basestring):
+            if isinstance(val, str):
                 # Sanitize the string
                 sanitized_val = self.IGNORE.sub('', val.lower())
                 matches = self.FLAV_RE.findall(sanitized_val)
@@ -422,7 +422,7 @@ class IntType(object):
         # Interpret `val`
         try:
             orig_val = val
-            if isinstance(val, basestring):
+            if isinstance(val, str):
                 sanitized_val = self.IGNORE.sub('', val.lower())
                 int_type = self.IT_RE.findall(sanitized_val)
                 if len(int_type) != 1:
@@ -553,11 +553,11 @@ class NuFlavInt(object):
             elif len(args) > 2:
                 raise TypeError('More than two args')
 
-        if not isinstance(flavint, basestring) \
+        if not isinstance(flavint, str) \
                 and hasattr(flavint, '__len__') and len(flavint) == 1:
             flavint = flavint[0]
 
-        if isinstance(flavint, basestring):
+        if isinstance(flavint, str):
             orig_flavint = flavint
             try:
                 flavint = ''.join(self.TOKENS.findall(flavint.lower()))
@@ -894,7 +894,7 @@ class NuFlavIntGroup(MutableSequence):
     @staticmethod
     def interpret(val):
         """Interpret a NuFlavIntGroup arg"""
-        if isinstance(val, basestring):
+        if isinstance(val, str):
             orig_val = val
             try:
                 flavints = []
@@ -1190,8 +1190,8 @@ class FlavIntData(dict):
 
     """
     def __init__(self, val=None):
-        super(FlavIntData, self).__init__()
-        if isinstance(val, basestring):
+        super().__init__()
+        if isinstance(val, str):
             d = self.__load(val)
         elif isinstance(val, dict):
             d = val
@@ -1207,7 +1207,7 @@ class FlavIntData(dict):
 
     @staticmethod
     def _interpret_index(idx):
-        if not isinstance(idx, basestring) and hasattr(idx, '__len__') \
+        if not isinstance(idx, str) and hasattr(idx, '__len__') \
                 and len(idx) == 1:
             idx = idx[0]
         with BarSep('_'):
@@ -1223,7 +1223,7 @@ class FlavIntData(dict):
     def __getitem__(self, *args):
         assert len(args) <= 2
         key_list = self._interpret_index(args)
-        tgt_obj = super(FlavIntData, self).__getitem__(key_list[0])
+        tgt_obj = super().__getitem__(key_list[0])
         if len(key_list) == 2:
             tgt_obj = tgt_obj[key_list[1]]
         return tgt_obj
@@ -1252,11 +1252,11 @@ class FlavIntData(dict):
                 it = str(flavint.int_type)
             assert isinstance(fi_container, dict), "container must be of" \
                     " type 'dict'; instead got %s" % type(fi_container)
-            assert fi_container.has_key(f), "container missing flavor '%s'" % f
+            assert f in fi_container, "container missing flavor '%s'" % f
             assert isinstance(fi_container[f], dict), \
                     "Child of flavor '%s': must be type 'dict' but" \
                     " got %s instead" % (f, type(fi_container[f]))
-            assert fi_container[f].has_key(it), \
+            assert it in fi_container[f], \
                     "Flavor '%s' sub-dict must contain a both interaction" \
                     " types, but missing (at least) int_type '%s'" % (f, it)
 
@@ -1273,7 +1273,7 @@ class FlavIntData(dict):
     @staticmethod
     def __translate_inttype_dict(d):
         for key in d.keys():
-            if not isinstance(key, basestring) or key.lower() != key:
+            if not isinstance(key, str) or key.lower() != key:
                 val = d.pop(key)
                 d[str(key).lower()] = val
         return d
@@ -1398,7 +1398,7 @@ class FlavIntDataGroup(dict):
             interpreted as a NuFlavIntGroup.
     """
     def __init__(self, val=None, flavint_groups=None):
-        super(FlavIntDataGroup, self).__init__()
+        super().__init__()
         self._flavint_groups = None
         if flavint_groups is None:
             if val is None:
@@ -1411,7 +1411,7 @@ class FlavIntDataGroup(dict):
             # Instantiate empty FlavIntDataGroup
             d = {str(group): None for group in self.flavint_groups}
         else:
-            if isinstance(val, basestring):
+            if isinstance(val, str):
                 d = self.__load(val)
             elif isinstance(val, dict):
                 d = val
@@ -1515,7 +1515,7 @@ class FlavIntDataGroup(dict):
 
     @staticmethod
     def _parse_flavint_groups(flavint_groups):
-        if isinstance(flavint_groups, basestring):
+        if isinstance(flavint_groups, str):
             return flavintGroupsFromString(flavint_groups)
         elif isinstance(flavint_groups, NuFlavIntGroup):
             return [flavint_groups]
@@ -1524,7 +1524,7 @@ class FlavIntDataGroup(dict):
                 return flavint_groups
             elif all(isinstance(f, NuFlavInt) for f in flavint_groups):
                 return [NuFlavIntGroup(f) for f in flavint_groups]
-            elif all(isinstance(f, basestring) for f in flavint_groups):
+            elif all(isinstance(f, str) for f in flavint_groups):
                 return [NuFlavIntGroup(f) for f in flavint_groups]
             else:
                 raise ValueError(
@@ -1601,14 +1601,14 @@ class FlavIntDataGroup(dict):
 
     def __getitem__(self, arg):
         key = self._interpret_index(arg)
-        tgt_obj = super(FlavIntDataGroup, self).__getitem__(key)
+        tgt_obj = super().__getitem__(key)
         return tgt_obj
 
     def __setitem__(self, arg, value):
         key = self._interpret_index(arg)
         if NuFlavIntGroup(key) not in self.flavint_groups:
             self.flavint_groups += [NuFlavIntGroup(key)]
-        super(FlavIntDataGroup, self).__setitem__(key, value)
+        super().__setitem__(key, value)
 
     def __eq__(self, other):
         """Recursive, exact equality"""
@@ -1704,7 +1704,7 @@ class CombinedFlavIntData(FlavIntData):
         if flavint_groupings is None:
             grouped = []
             ungrouped = list(ALL_NUFLAVINTS)
-        elif isinstance(flavint_groupings, basestring):
+        elif isinstance(flavint_groupings, str):
             grouped, ungrouped = xlateGroupsStr(flavint_groupings)
         elif hasattr(flavint_groupings, '__iter__'):
             strkgs = ','.join([str(x) for x in flavint_groupings])
@@ -1716,7 +1716,7 @@ class CombinedFlavIntData(FlavIntData):
         # Interpret the val arg
         named_g = None
         named_ung = None
-        if isinstance(val, basestring):
+        if isinstance(val, str):
             val = self.__load(val)
 
         if isinstance(val, dict):
@@ -1730,7 +1730,7 @@ class CombinedFlavIntData(FlavIntData):
                     flav = NuFlav(top_key)
                     if isinstance(top_val, Mapping):
                         int_types = []
-                        for level2_key, level2_data in top_val.iteritems():
+                        for level2_key, level2_data in top_val.items():
                             # If *any* keys are invalid interaction type specs,
                             # invalidate the entire sequence
                             is_valid = True
@@ -1765,8 +1765,10 @@ class CombinedFlavIntData(FlavIntData):
 
         elif val is None:
             if flavint_groupings is None:
-                logging.warn('CombinedFlavIntData object instantiated without'
-                             ' flavint groupings specified.')
+                logging.warning(
+                    'CombinedFlavIntData object instantiated without'
+                    ' flavint groupings specified.'
+                )
             named_g = grouped
             named_ung = ungrouped
             # Instantiate empty dict with groupings as keys
@@ -1805,10 +1807,10 @@ class CombinedFlavIntData(FlavIntData):
         return recursiveEquality(self, other)
 
     #def __getitem__(self, item):
-    #    return super(CombinedFlavIntData, self).__getitem__(item)
+    #    return super().__getitem__(item)
 
     #def __setitem__(self, item, value):
-    #    return super(CombinedFlavIntData, self).__setitem__(item, value)
+    #    return super().__setitem__(item, value)
 
     def deduplicate(self, rtol=None, atol=None):
         """Identify duplicate datasets and combine the associated flavints
@@ -1819,7 +1821,7 @@ class CombinedFlavIntData(FlavIntData):
         exception if obsolete groupings are specified).
         """
         dupe_kgs, dupe_kgs_data = self.id_dupes(rtol=rtol, atol=atol)
-        d = {str(kg): dat for kg, dat in izip(dupe_kgs, dupe_kgs_data)}
+        d = {str(kg): dat for kg, dat in zip(dupe_kgs, dupe_kgs_data)}
         self.validate(d)
         self.grouped = [kg for kg in dupe_kgs if len(kg) > 1]
         self.ungrouped = [kg for kg in dupe_kgs if len(kg) == 1]
@@ -2069,7 +2071,7 @@ def test_NuFlavInt():
         ref = NuFlavInt(f, i)
         assert NuFlavInt((f, i)) == ref
         assert NuFlavInt(flav=f, int_type=i) == ref
-        if isinstance(f, basestring) and isinstance(i, basestring):
+        if isinstance(f, str) and isinstance(i, str):
             assert NuFlavInt(f+i) == ref
             assert NuFlavInt(f + '_' + i) == ref
             assert NuFlavInt(f + ' ' + i) == ref

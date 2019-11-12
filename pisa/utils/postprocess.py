@@ -988,7 +988,7 @@ class Postprocessor(object):
             raise RuntimeError("Cannot read from file located at %s."%fpath)
         if keys is None:
             return info
-        if isinstance(keys, basestring):
+        if isinstance(keys, str):
             keys = [keys]
         for key in info.keys():
             if key not in keys:
@@ -1168,7 +1168,7 @@ class Postprocessor(object):
                 good_trials = modified_z_score < thresh
                 if not np.all(good_trials):
                     bad_trials = np.where(not good_trials)[0]
-                    logging.warn(
+                    logging.warning(
                         'Outlier(s) detected for %s in trial(s) %s. Will be '
                         'removed. If you think this should not happen, please '
                         'change the value of the threshold used for the '
@@ -1313,7 +1313,7 @@ class Postprocessor(object):
         xlims = [self.inj_param_vals[0]-0.1*hrange,
                  self.inj_param_vals[-1]+0.1*hrange]
 
-        for i in xrange(len(self.data_sets)):
+        for i in range(len(self.data_sets)):
 
             significances = self.deltachi2_significance(
                 wh_to_th_metrics=self.wh_to_th[i]['metrics'],
@@ -1508,13 +1508,13 @@ class Postprocessor(object):
                 )
             try:
                 import matplotlib.patheffects as PathEffects
-                logging.warn(
+                logging.warning(
                     "PathEffects could be imported, so the correlation values"
                     " will be written on the bins. This is slow."
                 )
                 pe = True
             except ImportError:
-                logging.warn(
+                logging.warning(
                     "PathEffects could not be imported, so the correlation"
                     " values will not be written on the bins.")
                 pe = False
@@ -2304,7 +2304,7 @@ class Postprocessor(object):
             linelist = []
             for point, label in zip(self.extra_points,
                                     self.extra_points_labels):
-                if isinstance(point, basestring):
+                if isinstance(point, str):
                     if os.path.isfile(point):
                         point = np.genfromtxt(point)
                     try:
@@ -2425,7 +2425,7 @@ class Postprocessor(object):
         if median_p_value:
             # Quantify the uncertainty on the median by bootstrapping
             sampled_medians = []
-            for _ in xrange(1000):
+            for _ in range(1000):
                 sampled_medians.append(
                     np.median(
                         np.random.choice(
@@ -3413,7 +3413,7 @@ class Postprocessor(object):
             line += "%.3g"%val
         if dataval is not None:
             line += " &"
-            if isinstance(dataval, basestring):
+            if isinstance(dataval, str):
                 line += "%s"%dataval
             else:
                 delta = val - dataval
@@ -4021,7 +4021,7 @@ class Postprocessor(object):
             bin_cens = []
             if isinstance(all_steps[step_variable][0][1], list):
                 if len(all_steps[step_variable][0][1]) == 0:
-                    logging.warn(
+                    logging.warning(
                         "No units have been found for the scan "
                         "parameter. Making it dimensionless."
                     )
@@ -5054,14 +5054,14 @@ class Postprocessor(object):
     def get_correlation_coefficient(self, xdata, ydata, xsystkey, ysystkey):
         """Calculate the correlation coefficient between x and y"""
         if len(set(xdata)) == 1:
-            logging.warn(
+            logging.warning(
                 "Parameter %s appears to not have been varied. "
                 "i.e. all of the values in the set are the "
                 "same. This will lead to NaN in the correlation "
                 "calculation and so it will not be done."%xsystkey
             )
         if len(set(ydata)) == 1:
-            logging.warn(
+            logging.warning(
                 "Parameter %s appears to not have been varied. "
                 "i.e. all of the values in the set are the "
                 "same. This will lead to NaN in the correlation "
@@ -5156,7 +5156,7 @@ class Postprocessor(object):
         function!"""
         if isinstance(label, list):
             label = label[0]
-        if not isinstance(label, basestring):
+        if not isinstance(label, str):
             raise ValueError("Label must be a string. Got %s of "
                              "type %s"%(label, type(label)))
         label = label.lower()
@@ -5239,8 +5239,7 @@ class Postprocessor(object):
         pretty_labels["livetime"] = r"Livetime"
         pretty_labels["julian_year"] = r"Years"
         if label not in pretty_labels.keys():
-            logging.warn("I have no nice label for %s. "
-                         "Returning as is."%label)
+            logging.warning("I have no nice label for %s. Returning as is."%label)
             return label
         return pretty_labels[label]
 

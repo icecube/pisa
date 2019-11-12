@@ -10,8 +10,8 @@ multiple processes.
 from __future__ import division
 
 from copy import copy
-from itertools import izip
-import Queue
+from functools import reduce
+import queue
 import threading
 import time
 
@@ -46,7 +46,7 @@ def wrapper(func, retvals_queue, chunk):
     Parameters
     ----------
     func : callable
-    retvals_queue : Queue.Queue
+    retvals_queue : queue.Queue
     chunk : dict containing {'args': (...), 'kwargs': {...}}
 
     """
@@ -177,7 +177,7 @@ def parallel_run(func, kind, num_parallel, scalar_func, divided_args_mask,
                 has_str = 'all have'
             else:
                 has_str = 'has'
-            logging.error('%s%s %s length %d', pargstr, pkwargsstr, has_str,
+            logging.error('%s%s %s length %d', pargstr, pkwargstr, has_str,
                           length)
 
         raise ValueError('Each divided arg and each divided keyword arg must'
@@ -203,13 +203,13 @@ def parallel_run(func, kind, num_parallel, scalar_func, divided_args_mask,
     #
 
     item_num = 0
-    for batch_num in xrange(batches):
+    for batch_num in range(batches):
         if uniform_chunksize == 0 and singles == 0:
             break
 
         items_in_batch = 0
         chunks = []
-        for worker in xrange(num_parallel):
+        for worker in range(num_parallel):
             if uniform_chunksize == 0 and singles == 0:
                 break
 
@@ -224,20 +224,20 @@ def parallel_run(func, kind, num_parallel, scalar_func, divided_args_mask,
 
             worker_args = []
             if args:
-                for mask, arg in izip(divided_args_mask, args):
+                for mask, arg in zip(divided_args_mask, args):
                     if mask:
                         worker_args.append(arg[chunk_slice][subselector])
                     else:
                         worker_args.append(arg)
 
             worker_kwargs = {}
-            for name, val in kwargs.iteritems():
+            for name, val in kwargs.items():
                 if name in divided_kwargs_names:
                     worker_kwargs[name] = val[chunk_slice][subselector]
                 else:
                     worker_kwargs[name] = val
 
-            chunk = dict(indices=range(start_ind, end_ind),
+            chunk = dict(indices=list(range(start_ind, end_ind)),
                          args=tuple(worker_args),
                          kwargs=worker_kwargs)
             chunks.append(chunk)
@@ -250,7 +250,7 @@ def parallel_run(func, kind, num_parallel, scalar_func, divided_args_mask,
                 ' items', batch_num + 1, len(chunks), items_in_batch
             )
 
-            return_values = Queue.Queue()
+            return_values = queue.Queue()
             threads = []
             for chunk in chunks:
                 thread = threading.Thread(

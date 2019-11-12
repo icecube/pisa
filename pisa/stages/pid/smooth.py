@@ -216,7 +216,7 @@ class smooth(Stage):
             'pid_weights_name'
         )
 
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = input_names.replace(' ', '').split(',')
 
         # Define the names of objects that get produced by this stage
@@ -224,7 +224,7 @@ class smooth(Stage):
         output_names = [self.suffix_channel(in_name, out_chan) for in_name,
                         out_chan in product(input_names, self.output_channels)]
 
-        super(self.__class__, self).__init__(
+        super().__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,
@@ -236,7 +236,7 @@ class smooth(Stage):
             memcache_deepcopy=memcache_deepcopy,
             input_binning=input_binning,
             output_binning=output_binning,
-            debug_mode=debug_mode
+            debug_mode=debug_mode,
         )
 
         # Can do these now that binning has been set up in call to Stage's init
@@ -331,7 +331,7 @@ class smooth(Stage):
 
                 num_invalid = np.sum(~np.isfinite(xform_array))
                 if num_invalid > 0:
-                    logging.warn(
+                    logging.warning(
                         'Group "%s", PID signature "%s" has %d bins with no'
                         ' events (and hence the ability to separate events'
                         ' by PID cannot be ascertained). These are being'
@@ -378,7 +378,7 @@ class smooth(Stage):
         # do some checks on the parameters
 
         # Check type of pid_events
-        assert isinstance(params.pid_events.value, (basestring, Events))
+        assert isinstance(params.pid_events.value, (str, Events))
 
         # Check the groupings of the pid_events file
         events = Events(params.pid_events.value)

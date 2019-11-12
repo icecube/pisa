@@ -9,6 +9,7 @@ The functions are called in stats.py to apply them to histograms.
 
 Note that these likelihoods are NOT centered around 0 (i.e. if data == expectation, LLH != 0)
 """
+from __future__ import print_function
 
 import numpy as np
 from scipy import special
@@ -125,10 +126,10 @@ def barlowLLH(data, unweighted_mc, weights):
         if result.success:
             A[i] = result.x
         else:
-            print "Something went wrong..."
-            print "Minimiser message: "
-            print "------------------"
-            print result.message
+            print("Something went wrong...")
+            print("Minimiser message: ")
+            print("------------------")
+            print(result.message)
             return -np.inf
 
     LLH = llh(A, data, weights, unweighted_mc)

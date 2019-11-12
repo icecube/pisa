@@ -130,7 +130,7 @@ class smooth(Stage):
         if particles == 'neutrinos':
             expected_params.append('nutau_cc_norm')
 
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = input_names.replace(' ', '').split(',')
         elif input_names is None:
             if particles == 'neutrinos':
@@ -155,7 +155,7 @@ class smooth(Stage):
 
         # Invoke the init method from the parent class, which does a lot of
         # work for you.
-        super(self.__class__, self).__init__(
+        super().__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,

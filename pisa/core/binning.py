@@ -7,7 +7,7 @@ classes have many useful methods for working with binning.
 # TODO: include Iterables where only Sequence is allowed now?
 # TODO: iterbins, itercoords are _*slow*_. Figure out how to speed these up, if
 #       that is possible in pure-Python loops... E.g.
-#           `indices = [i for i in xrange(mdb.size)]`
+#           `indices = [i for i in range(mdb.size)]`
 #       takes 70 ms while
 #           `coords = [c for c in mdb.itercoords()]`
 #       takes 10 seconds.
@@ -20,10 +20,11 @@ classes have many useful methods for working with binning.
 
 from __future__ import absolute_import, division
 
-from collections import Iterable, Mapping, OrderedDict, Sequence, namedtuple
+from collections.abc import Iterable, Mapping, Sequence
+from collections import OrderedDict, namedtuple
 from copy import copy, deepcopy
-from functools import wraps
-from itertools import chain, izip, product
+from functools import reduce, wraps
+from itertools import chain, product
 from operator import mul
 import re
 
@@ -97,7 +98,7 @@ def basename(n):
     orig_type = type(n)
     if isinstance(n, OneDimBinning):
         n = n.name
-    if not isinstance(n, basestring):
+    if not isinstance(n, str):
         raise ValueError('Unhandled type %s' %orig_type)
     # Remove all (pre/suf)fixes and any separator chars
     for regex in NAME_FIXES_REGEXES:
@@ -226,15 +227,15 @@ class OneDimBinning(object):
                  num_bins=None, is_lin=None, is_log=None, bin_names=None):
         # Basic validation and translation of args; note that iterables are
         # converted to sequences later on
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             raise TypeError('`name` must be a string; got "%s".' %type(name))
         if domain is not None:
             assert isinstance(domain, Iterable) or ( isinstance(domain,ureg.Quantity) and domain.size > 1 )
         if bin_names is not None:
-            if isinstance(bin_names, basestring):
+            if isinstance(bin_names, str):
                 bin_names = (bin_names,)
             if (isinstance(bin_names, Iterable)
-                    and all(isinstance(n, basestring) and n
+                    and all(isinstance(n, str) and n
                             for n in bin_names)):
                 bin_names = tuple(bin_names)
             else:
@@ -303,10 +304,12 @@ class OneDimBinning(object):
                             ' %s.' % (be_units, units)
                         )
                     if be_units != units:
-                        logging.warn('`bin_edges` are specified in units of %s'
-                                     ' but `units` is specified as %s.'
-                                     ' Converting `bin_edges` to the latter.',
-                                     be_units, units)
+                        logging.warning(
+                            '`bin_edges` are specified in units of %s'
+                            ' but `units` is specified as %s.'
+                            ' Converting `bin_edges` to the latter.',
+                            be_units, units
+                        )
                         bin_edges.ito(units)
                 dimensionless_bin_edges = bin_edges.magnitude
 
@@ -328,8 +331,11 @@ class OneDimBinning(object):
                             ' %s.' % (domain_units, units)
                         )
                     if domain_units != units:
-                        logging.warn('`domain` units %s will be converted to'
-                                     ' %s.', domain_units, units)
+                        logging.warning(
+                            '`domain` units %s will be converted to' ' %s.',
+                            domain_units,
+                            units,
+                        )
                         domain.ito(units)
                 dimensionless_domain = domain.magnitude
 
@@ -576,7 +582,7 @@ class OneDimBinning(object):
 
         """
         try:
-            if isinstance(x, basestring):
+            if isinstance(x, str):
                 assert self.bin_names is not None
                 return self.bin_names.index(x)
             if isinstance(x, int):
@@ -631,7 +637,7 @@ class OneDimBinning(object):
 
         """
         mags = self.edge_magnitudes
-        return ((e0, e1) for e0, e1 in izip(mags[:-1], mags[1:]))
+        return ((e0, e1) for e0, e1 in zip(mags[:-1], mags[1:]))
 
     @property
     def serializable_state(self):
@@ -724,7 +730,7 @@ class OneDimBinning(object):
     def tex(self, val):
         """None or TeX string for dimension; surrounding dollars-signs ($) are
         stripped off (and must be added prior to e.g. plotting)"""
-        assert val is None or isinstance(val, basestring)
+        assert val is None or isinstance(val, str)
         if val is not None:
             val = strip_outer_dollars(val)
         self._tex = val
@@ -1163,7 +1169,7 @@ class OneDimBinning(object):
                                     self.num_bins * factor + 1)
         else: # irregularly-spaced
             bin_edges = []
-            for lower, upper in izip(self.edge_magnitudes[:-1],
+            for lower, upper in zip(self.edge_magnitudes[:-1],
                                      self.edge_magnitudes[1:]):
                 this_bin_new_edges = np.linspace(lower, upper, factor+1)
                 # Exclude the last edge, as this will be first edge for the
@@ -1271,7 +1277,7 @@ class OneDimBinning(object):
         return {'bin_edges': self.bin_edges.to(ureg(str(units)))}
 
     def __getattr__(self, attr):
-        return super(OneDimBinning, self).__getattribute__(attr)
+        return super().__getattribute__(attr)
 
     # TODO: make this actually grab the bins specified (and be able to grab
     # disparate bins, whether or not they are adjacent)... i.e., fill in all
@@ -1313,7 +1319,7 @@ class OneDimBinning(object):
         bin_names = self.bin_names
 
         # Deal with indexing by name first so as to not break anything else
-        if isinstance(index, basestring):
+        if isinstance(index, str):
             assert bin_names is not None
             index = bin_names.index(index)
 
@@ -1716,7 +1722,7 @@ class MultiDimBinning(object):
         for inspecting the contents of each state attribute pre-hashing
         """
         state = OrderedDict()
-        state['dimensions'] = [d.normalized_state() for d in self]
+        state['dimensions'] = [d.normalized_state for d in self]
         return state
 
     @property
@@ -1827,7 +1833,7 @@ class MultiDimBinning(object):
                     'Dimension %s not present. Valid dimensions are in range %s'
                     %(d, [0, len(self)-1])
                 )
-        elif isinstance(dim, basestring):
+        elif isinstance(dim, str):
             d = basename(dim) if use_basenames else dim
             try:
                 idx = names.index(d)
@@ -1862,7 +1868,7 @@ class MultiDimBinning(object):
             Identical binning as this but with `dims` removed.
 
         """
-        if isinstance(dims, (basestring, int)):
+        if isinstance(dims, (str, int)):
             dims = [dims]
 
         keep_idx = list(range(len(self)))
@@ -1940,7 +1946,7 @@ class MultiDimBinning(object):
         for dim in self.dims:
             if dim.name in kwargs:
                 val = kwargs[dim.name]
-                if isinstance(val, basestring):
+                if isinstance(val, str):
                     val = dim.index(val)
                 indexer.append(val)
             else:
@@ -2015,7 +2021,7 @@ class MultiDimBinning(object):
             broadcasting it. E.g. use as `np.array([0,1,2])[bcast]`.
 
         """
-        if isinstance(to_dims, basestring):
+        if isinstance(to_dims, str):
             to_dims = [to_dims]
 
         bcast = []
@@ -2297,7 +2303,7 @@ class MultiDimBinning(object):
                     kwargs[name] = 1
         factors = self._args_kwargs_to_list(*args, **kwargs)
         new_binning = [dim.oversample(f)
-                       for dim, f in izip(self._dimensions, factors)]
+                       for dim, f in zip(self._dimensions, factors)]
         return MultiDimBinning(new_binning)
 
     def downsample(self, *args, **kwargs):
@@ -2346,7 +2352,7 @@ class MultiDimBinning(object):
                     kwargs[name] = 1
         factors = self._args_kwargs_to_list(*args, **kwargs)
         new_binning = [dim.downsample(f)
-                       for dim, f in izip(self._dimensions, factors)]
+                       for dim, f in zip(self._dimensions, factors)]
         return MultiDimBinning(new_binning)
 
     def assert_array_fits(self, array):
@@ -2436,7 +2442,7 @@ class MultiDimBinning(object):
     def ito(self, *args, **kwargs):
         """Convert units in-place. Cf. Pint's `ito` method."""
         units_list = self._args_kwargs_to_list(*args, **kwargs)
-        for dim, units in izip(self.iterdims(), units_list):
+        for dim, units in zip(self.iterdims(), units_list):
             dim.ito(units)
 
     def to(self, *args, **kwargs): # pylint: disable=invalid-name
@@ -2446,7 +2452,7 @@ class MultiDimBinning(object):
         """
         units_list = self._args_kwargs_to_list(*args, **kwargs)
         new_binnings = [dim.to(units)
-                        for dim, units in izip(self.iterdims(), units_list)]
+                        for dim, units in zip(self.iterdims(), units_list)]
         return MultiDimBinning(new_binnings)
 
     def meshgrid(self, entity, attach_units=True):
@@ -2492,7 +2498,7 @@ class MultiDimBinning(object):
         mg = [a.astype(FTYPE) for a in np.meshgrid(*arrays, indexing='ij', copy=False)]
 
         if attach_units:
-            return [m*dim.units for m, dim in izip(mg, self.iterdims())]
+            return [m*dim.units for m, dim in zip(mg, self.iterdims())]
 
         return mg
 
@@ -2650,7 +2656,7 @@ class MultiDimBinning(object):
     def __contains__(self, x):
         if isinstance(x, OneDimBinning):
             return x in self.dims
-        if isinstance(x, basestring):
+        if isinstance(x, str):
             return x in self.names
         return False
 
@@ -2683,7 +2689,7 @@ class MultiDimBinning(object):
         except (KeyError, ValueError):
             # If that failed, re-run parent's __getattribute__ which will raise
             # an appropriate exception
-            return super(MultiDimBinning, self).__getattribute__(attr)
+            return super().__getattribute__(attr)
 
     # TODO: refine handling of ellipsis such that the following work as in
     # Numpy:
@@ -2720,7 +2726,7 @@ class MultiDimBinning(object):
         if index is Ellipsis:
             return self
 
-        if isinstance(index, basestring):
+        if isinstance(index, str):
             for d in self.iterdims():
                 if d.name == index:
                     return d
@@ -2742,7 +2748,7 @@ class MultiDimBinning(object):
                              %(self.num_dims, input_dim))
 
         new_binning = {'dimensions': [dim[idx] for dim, idx in
-                                      izip(self.iterdims(), index)]}
+                                      zip(self.iterdims(), index)]}
 
         return MultiDimBinning(**new_binning)
 
@@ -2760,7 +2766,7 @@ class MultiDimBinning(object):
 def test_OneDimBinning():
     """Unit tests for OneDimBinning class"""
     # pylint: disable=line-too-long
-    import cPickle as pickle
+    import pickle
     import os
     import shutil
     import tempfile
@@ -2878,9 +2884,9 @@ def test_OneDimBinning():
 
             # Now try with pickle
             b_file = os.path.join(testdir, 'one_dim_binning.pkl')
-            pickle.dump(struct, file(b_file, 'wb'),
+            pickle.dump(struct, open(b_file, 'wb'),
                         protocol=pickle.HIGHEST_PROTOCOL)
-            loaded = pickle.load(file(b_file, 'r'))
+            loaded = pickle.load(open(b_file, 'rb'))
             b_ = loaded[0][0]['odb']
             assert b_ == b
 
@@ -2895,7 +2901,7 @@ def test_OneDimBinning():
 
 def test_MultiDimBinning():
     """Unit tests for MultiDimBinning class"""
-    import cPickle as pickle
+    import pickle
     import os
     import shutil
     import tempfile
@@ -2994,9 +3000,9 @@ def test_MultiDimBinning():
 
         # Now try with pickle
         b_file = os.path.join(testdir, 'multi_dim_binning.pkl')
-        pickle.dump(struct, file(b_file, 'wb'),
+        pickle.dump(struct, open(b_file, 'wb'),
                     protocol=pickle.HIGHEST_PROTOCOL)
-        loaded = pickle.load(file(b_file, 'r'))
+        loaded = pickle.load(open(b_file, 'rb'))
         b_ = loaded[0][0]['mdb']
         assert b_ == b
 

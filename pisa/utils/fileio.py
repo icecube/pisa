@@ -5,18 +5,19 @@ Generic file I/O, dispatching specific file readers/writers as necessary
 
 from __future__ import absolute_import
 
-import cPickle
 import errno
+from functools import reduce
 import operator
 import os
+import pickle
 import re
+
+import numpy as np
 
 from pisa.utils import hdf
 from pisa.utils import jsons
 from pisa.utils import log
 from pisa.utils import resources
-
-import numpy as np
 
 
 __all__ = [
@@ -154,9 +155,9 @@ def check_file_exists(fname, overwrite=True, warn=True):
     if os.path.exists(fpath):
         if overwrite:
             if warn:
-                log.logging.warn("Overwriting file at '%s'", fpath)
+                log.logging.warning("Overwriting file at '%s'", fpath)
         else:
-            raise Exception("Refusing to overwrite path '%s'", fpath)
+            raise Exception("Refusing to overwrite path '%s'" % fpath)
     return fpath
 
 
@@ -179,7 +180,7 @@ def mkdir(d, mode=0o0750, warn=True):
     except OSError as err:
         if err.errno == errno.EEXIST:
             if warn:
-                log.logging.warn('Directory "%s" already exists', d)
+                log.logging.warning('Directory "%s" already exists', d)
         else:
             raise err
     else:
@@ -339,7 +340,7 @@ def find_files(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
 
     """
     root = expand(root)
-    if isinstance(regex, basestring):
+    if isinstance(regex, str):
         regex = re.compile(regex)
 
     # Define a function for accepting a filename as a match
@@ -400,7 +401,7 @@ def from_cfg(fname):
 def from_pickle(fname):
     """Load from a Python pickle file"""
     try:
-        return cPickle.load(file(fname, 'rb'))
+        return pickle.load(file(fname, 'rb'))
     except:
         log.logging.error('Failed to load pickle file, `fname`="%s"', fname)
         raise
@@ -409,8 +410,7 @@ def from_pickle(fname):
 def to_pickle(obj, fname, overwrite=True, warn=True):
     """Save object to a pickle file"""
     check_file_exists(fname=fname, overwrite=overwrite, warn=warn)
-    return cPickle.dump(obj, file(fname, 'wb'),
-                        protocol=cPickle.HIGHEST_PROTOCOL)
+    return pickle.dump(obj, open(fname, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
 
 
 def from_txt(fname, as_array=False):

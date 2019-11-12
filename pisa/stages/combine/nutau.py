@@ -65,7 +65,7 @@ class nutau(Stage):
             self.combine_groups[key] = split(val, sep=',')
         output_names = self.combine_groups.keys()
 
-        super(self.__class__, self).__init__(
+        super().__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,

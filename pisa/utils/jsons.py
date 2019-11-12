@@ -89,8 +89,8 @@ def from_json(filename):
     assert ext in JSON_EXTS or ext in ZIP_EXTS + XOR_EXTS
     try:
         if ext == 'bz2':
-            bz2_content = open_resource(filename).read()
-            decompressed = bz2.decompress(bz2_content)
+            bz2_content = open_resource(filename, 'rb').read()
+            decompressed = bz2.decompress(bz2_content).decode()
             del bz2_content
             content = json.loads(
                 decompressed,
@@ -99,16 +99,16 @@ def from_json(filename):
             )
             del decompressed
         elif ext == 'xor':
-            # Create tempfile
-            temp = tempfile.TemporaryFile(mode='w+b')
+            
             with open(filename, 'rb') as infile:
-                for line in infile:
-                    # Decrypt with key 42
-                    line = ''.join([chr(ord(c)^42) for c in line])
-                    temp.write(line)
-            # Rewind
-            temp.seek(0)
-            content = json.load(temp,
+                encrypted_bytes = infile.read()
+
+            # decrypt with key 42
+            decypted_bytes = bytearray()
+            for byte in encrypted_bytes:
+                decypted_bytes.append(byte ^ 42)
+
+            content = json.loads(decypted_bytes.decode(),
                                 cls=NumpyDecoder,
                                 object_pairs_hook=OrderedDict)
         else:
@@ -173,35 +173,34 @@ def to_json(content, filename, indent=2, overwrite=True, warn=True,
     ext = ext.replace('.', '').lower()
     assert ext == 'json' or ext in ZIP_EXTS + XOR_EXTS
 
-    with open(filename, 'w') as outfile:
+    with open(filename, 'wb') as outfile:
         if ext == 'bz2':
             outfile.write(
                 bz2.compress(
                     json.dumps(
                         content, outfile, indent=indent, cls=NumpyEncoder,
                         sort_keys=sort_keys, allow_nan=True, ignore_nan=False
-                    )
+                    ).encode()
                 )
             )
         elif ext == 'xor':
-            # Create tempfile
-            temp = tempfile.TemporaryFile(mode='w+b')
-            temp.write(
-                json.dumps(
-                    content, temp, indent=indent, cls=NumpyEncoder,
-                    sort_keys=sort_keys, allow_nan=True, ignore_nan=False
-                )
-            )
-            # Rewind
-            temp.seek(0)
-            for line in temp:
-                # Decrypt with key 42
-                line = ''.join([chr(ord(c)^42) for c in line])
-                outfile.write(line)
-        else:
-            json.dump(
-                content, outfile, indent=indent, cls=NumpyEncoder,
+            json_bytes = json.dumps(
+                content, indent=indent, cls=NumpyEncoder, 
                 sort_keys=sort_keys, allow_nan=True, ignore_nan=False
+                ).encode()
+
+            # encrypt with key 42
+            encrypted_bytes = bytearray()
+            for byte in json_bytes:
+                encrypted_bytes.append(byte ^ 42)
+
+            outfile.write(encrypted_bytes)
+        else:
+            outfile.write(
+                json.dumps(
+                    content, indent=indent, cls=NumpyEncoder,
+                    sort_keys=sort_keys, allow_nan=True, ignore_nan=False
+                ).encode()
             )
         logging.debug('Wrote %.2f kB to %s', outfile.tell()/1024., filename)
 
@@ -246,7 +245,7 @@ class NumpyDecoder(json.JSONDecoder):
     def __init__(self, encoding=None, object_hook=None, parse_float=None,
                  parse_int=None, parse_constant=None, strict=True,
                  object_pairs_hook=None):
-        super(NumpyDecoder, self).__init__(
+        super().__init__(
             encoding=encoding, object_hook=object_hook,
             parse_float=parse_float, parse_int=parse_int,
             parse_constant=parse_constant, strict=strict,
@@ -277,7 +276,7 @@ class NumpyDecoder(json.JSONDecoder):
 
     def json_python_string(self, s, end, encoding, strict):
         values, end = json.decoder.scanstring(s, end, encoding, strict)
-        return values.encode('utf-8'), end
+        return values, end
 
 
 # TODO: finish this little bit

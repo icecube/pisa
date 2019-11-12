@@ -8,9 +8,9 @@ parameters (e.g., PINGU's V5 processing).
 
 from __future__ import absolute_import, division
 
-from collections import Mapping, OrderedDict, Sequence
+from collections.abc import Mapping, Sequence
+from collections import OrderedDict
 from copy import deepcopy
-from itertools import izip
 import os
 import re
 
@@ -233,10 +233,10 @@ class DataProcParams(dict):
 
     """
     def __init__(self, detector, proc_ver, data_proc_params=None):
-        super(DataProcParams, self).__init__()
+        super().__init__()
         if data_proc_params is None:
             data_proc_params = 'events/data_proc_params.json'
-        if isinstance(data_proc_params, basestring):
+        if isinstance(data_proc_params, str):
             ps = jsons.from_json(resources.find_resource(data_proc_params))
         elif isinstance(data_proc_params, dict):
             ps = data_proc_params
@@ -262,7 +262,7 @@ class DataProcParams(dict):
         self.update(ps)
 
         self.trans_nu_code = False
-        if self.has_key('nu_code_to_pdg_map'):
+        if 'nu_code_to_pdg_map' in self:
             self.trans_nu_code = True
             try:
                 self.nu_code_to_pdg_map = {
@@ -305,41 +305,41 @@ class DataProcParams(dict):
     @staticmethod
     def validate_cut_spec(cuts):
         """Validate a cut specification dictionary"""
-        for cutname, cutspec in cuts.iteritems():
+        for cutname, cutspec in cuts.items():
             # Cut names are lower-case strings with no surrounding whitespace
-            assert isinstance(cutname, basestring)
+            assert isinstance(cutname, str)
             assert cutname == cutname.lower()
             assert cutname == cutname.strip()
             # Has appropriate keys (and no extra)
             assert len(cutspec) == 2
-            assert cutspec.has_key('fields')
-            assert cutspec.has_key('pass_if')
-            assert not isinstance(cutspec['fields'], basestring)
+            assert 'fields' in cutspec
+            assert 'pass_if' in cutspec
+            assert not isinstance(cutspec['fields'], str)
             # 'fields' contains a sequence
             assert hasattr(cutspec['fields'], '__iter__') and \
-                    not isinstance(cutspec['fields'], basestring)
+                    not isinstance(cutspec['fields'], str)
             # 'pass_if' contains a string
-            assert isinstance(cutspec['pass_if'], basestring)
+            assert isinstance(cutspec['pass_if'], str)
 
     @staticmethod
     def validate_pid_spec(pids):
         """Validate a PID specification dictionary"""
-        for particle_name, pidspec in pids.iteritems():
+        for particle_name, pidspec in pids.items():
             # Particle names are lower-case strings with no surrounding
             # whitespace
-            assert isinstance(particle_name, basestring)
+            assert isinstance(particle_name, str)
             assert particle_name == particle_name.lower()
             assert particle_name == particle_name.strip()
             # Has appropriate keys (and no extra)
             assert len(pidspec) == 2
-            assert pidspec.has_key('fields')
-            assert pidspec.has_key('criteria')
-            assert not isinstance(pidspec['fields'], basestring)
+            assert 'fields' in pidspec
+            assert 'criteria' in pidspec
+            assert not isinstance(pidspec['fields'], str)
             # 'fields' contains a sequence
             assert hasattr(pidspec['fields'], '__iter__') and \
-                    not isinstance(pidspec['fields'], basestring)
+                    not isinstance(pidspec['fields'], str)
             # 'criteria' contains a string
-            assert isinstance(pidspec['criteria'], basestring)
+            assert isinstance(pidspec['criteria'], str)
 
     # TODO: prefix the field names with e.g. "$" such that anything that is
     # _not_ prefixed by this is not replaced. This allows for righer
@@ -489,7 +489,7 @@ class DataProcParams(dict):
         not_fields_in_data = ['I3MCWeightDict', 'PrimaryNu', 'trueNeutrino']
         myfile = False
         try:
-            if isinstance(h5, basestring):
+            if isinstance(h5, str):
                 myfile = True
                 h5 = h5py.File(os.path.expandvars(os.path.expanduser(h5)),
                                mode='r')
@@ -523,7 +523,7 @@ class DataProcParams(dict):
                     new_datum = []
                     this_evt = np.nan
                     this_d = None
-                    for d, evt, pdg, egy in izip(datum, evts, pdgs, energies):
+                    for d, evt, pdg, egy in zip(datum, evts, pdgs, energies):
                         if evt != this_evt:
                             if this_d is not None:
                                 new_datum.append(this_d)
@@ -610,7 +610,7 @@ class DataProcParams(dict):
                 )
             return outdata
 
-        if isinstance(cuts, (basestring, dict)):
+        if isinstance(cuts, (str, dict)):
             cuts = [cuts]
 
         # Default is to return all fields
@@ -626,7 +626,7 @@ class DataProcParams(dict):
         for cut in cuts:
             if isinstance(cut, dict):
                 self.validate_cut_spec(cut)
-            elif self['cuts'].has_key(cut.lower()):
+            elif cut.lower() in self['cuts']:
                 cut = self['cuts'][cut.lower()]
             else:
                 raise Exception('Unrecognized or invalid cut: "'+str(cut)+'"')

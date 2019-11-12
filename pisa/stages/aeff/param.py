@@ -10,8 +10,8 @@ benchmark scenarios.
 
 from __future__ import absolute_import, division
 
-from collections import Mapping, OrderedDict
-from itertools import izip
+from collections.abc import Mapping
+from collections import OrderedDict
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -88,10 +88,10 @@ def load_aeff_param(source):
           maps energy or coszen values to aeff values..
 
     """
-    if not (source is None or isinstance(source, (basestring, Mapping))):
+    if not (source is None or isinstance(source, (str, Mapping))):
         raise TypeError('`source` must be string, mapping, or None')
 
-    if isinstance(source, basestring):
+    if isinstance(source, str):
         orig_dict = from_file(source)
     elif isinstance(source, Mapping):
         orig_dict = source
@@ -102,10 +102,10 @@ def load_aeff_param(source):
     # Build dict of parameterizations (each a callable) per flavintgroup
 
     aeff_params = OrderedDict()
-    for flavint_key, param_spec in orig_dict.iteritems():
+    for flavint_key, param_spec in orig_dict.items():
         flavintgroup = NuFlavIntGroup(flavint_key)
 
-        if isinstance(param_spec, basestring):
+        if isinstance(param_spec, str):
             param_func = eval(param_spec)
 
         elif callable(param_spec):
@@ -231,7 +231,7 @@ class param(Stage):
         if particles == 'neutrinos':
             expected_params.append('nutau_cc_norm')
 
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = input_names.replace(' ', '').split(',')
         elif input_names is None:
             if particles == 'neutrinos':
@@ -256,7 +256,7 @@ class param(Stage):
         logging.trace('transform_groups = %s', self.transform_groups)
         logging.trace('output_names = %s', ' :: '.join(output_names))
 
-        super(self.__class__, self).__init__(
+        super().__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,
@@ -331,7 +331,7 @@ class param(Stage):
         sources = [energy_param_source, coszen_param_source]
         hashes = [energy_param_hash, coszen_param_hash]
 
-        for dim, load, source, hash_ in izip(dims, loads, sources, hashes):
+        for dim, load, source, hash_ in zip(dims, loads, sources, hashes):
             if not load:
                 continue
             self._param_hashes[dim] = None

@@ -3,7 +3,8 @@
 from __future__ import absolute_import, division, print_function
 
 import argparse
-from collections import OrderedDict, Mapping, Iterable
+from collections.abc import Mapping, Iterable
+from collections import OrderedDict 
 import copy
 
 import numpy as np
@@ -90,7 +91,7 @@ class EventsPi(OrderedDict):
         neutrinos = kw.pop("neutrinos", True)
         fraction_events_to_keep = kw.pop("fraction_events_to_keep", None)
 
-        super(EventsPi, self).__init__(*arg, **kw)
+        super().__init__(*arg, **kw)
 
         self.name = name
         self.neutrinos = neutrinos
@@ -132,7 +133,7 @@ class EventsPi(OrderedDict):
 
         """
         # Validate `events_file`
-        if not isinstance(events_file, (basestring, Mapping)):
+        if not isinstance(events_file, (str, Mapping)):
             raise TypeError(
                 "`events_file` must be either string or mapping; got (%s)"
                 % type(events_file)
@@ -143,14 +144,14 @@ class EventsPi(OrderedDict):
             if not isinstance(variable_mapping, Mapping):
                 raise TypeError("'variable_mapping' must be a mapping (e.g., dict)")
             for dst, src in variable_mapping.items():
-                if not isinstance(dst, basestring):
+                if not isinstance(dst, str):
                     raise TypeError("`variable_mapping` 'dst' (key) must be a string")
 
-                if isinstance(src, basestring):
+                if isinstance(src, str):
                     pass  # Nothing to do
                 elif isinstance(src, Iterable):
                     for v in src:
-                        if not isinstance(v, basestring):
+                        if not isinstance(v, str):
                             raise TypeError(
                                 "`variable_mapping` 'src' (value) has at least"
                                 " one element that is not a string"
@@ -161,7 +162,7 @@ class EventsPi(OrderedDict):
                         " an iterable of strings"
                     )
 
-        if isinstance(events_file, basestring):
+        if isinstance(events_file, str):
             input_data = from_file(events_file)
             if not isinstance(input_data, Mapping):
                 raise TypeError(
@@ -238,7 +239,7 @@ class EventsPi(OrderedDict):
             for var_dst, var_src in variable_mapping_to_use:
                 # TODO What about non-float data? Use dtype...
                 array_data = None
-                if isinstance(var_src, basestring):
+                if isinstance(var_src, str):
                     var_src = [var_src]
 
                 array_data_to_stack = []
@@ -300,7 +301,7 @@ class EventsPi(OrderedDict):
         >>> events = events.apply_cut("np.log10(true_energy) >= 0")
 
         """
-        assert isinstance(keep_criteria, basestring)
+        assert isinstance(keep_criteria, str)
 
         # Check if have already applied these cuts
         if keep_criteria in self.metadata["cuts"]:

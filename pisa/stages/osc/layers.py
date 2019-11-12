@@ -398,7 +398,7 @@ def test_Layers():
     logging.info('Test layers calculation:')
     layer = Layers('osc/PREM_4layer.dat')
     layer.setElecFrac(0.4656, 0.4656, 0.4957)
-    cz = np.linspace(-1, 1, 1e5, dtype=FTYPE)
+    cz = np.linspace(-1, 1, int(1e5), dtype=FTYPE)
     layer.calcLayers(cz)
     logging.info('n_layers = %s' %layer.n_layers)
     logging.info('density  = %s' %layer.density)

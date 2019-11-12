@@ -124,9 +124,9 @@ class MCSimRunSettings(dict):
 
     """
     def __init__(self, run_settings, run=None, detector=None):
-        super(MCSimRunSettings, self).__init__()
+        super().__init__()
         # TODO: clean up this constructor!
-        #if isinstance(run_settings, basestring):
+        #if isinstance(run_settings, str):
         #    rsd = jsons.from_json(resources.find_resource(run_settings))
         if isinstance(run_settings, dict):
             rsd = run_settings
@@ -174,7 +174,7 @@ class MCSimRunSettings(dict):
             'zenith_min',
         ]
         for f in numeric_fields:
-            if isinstance(d[f], basestring):
+            if isinstance(d[f], str):
                 d[f] = eval(d[f])
 
         return d
@@ -307,8 +307,8 @@ class DetMCSimRunsSettings(dict):
 
     """
     def __init__(self, run_settings, detector=None):
-        super(DetMCSimRunsSettings, self).__init__()
-        if isinstance(run_settings, basestring):
+        super().__init__()
+        if isinstance(run_settings, str):
             rsd = fileio.from_file(resources.find_resource(run_settings))
         elif isinstance(run_settings, dict):
             rsd = run_settings
@@ -323,9 +323,9 @@ class DetMCSimRunsSettings(dict):
         # Determine how deeply nested runs are in the dict to allow for
         # user to specify a dict that has multiple detectors in it OR
         # a dict with just a single detector in it
-        if rsd.values()[0].has_key('flavints'):
+        if 'flavints' in rsd.values()[0]:
             runs_d = rsd
-        elif rsd.values()[0].values()[0].has_key('flavints'):
+        elif 'flavints' in rsd.values()[0].values()[0]:
             if self.detector is None:
                 if len(rsd) == 1:
                     runs_d = rsd.values()[0]

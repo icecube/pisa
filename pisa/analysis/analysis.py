@@ -6,7 +6,8 @@ Common tools for performing an analysis collected into a single class
 
 from __future__ import absolute_import, division
 
-from collections import OrderedDict, Sequence
+from collections.abc import Sequence
+from collections import OrderedDict 
 from copy import deepcopy
 from itertools import product
 import re
@@ -161,8 +162,7 @@ def validate_minimizer_settings(minimizer_settings):
                 raise ValueError(eps_msg % (method, s, val, err_lim, 'FTYPE',
                                             ftype_eps))
             if val < warn_lim * ftype_eps:
-                logging.warn(eps_msg, method, s, val, warn_lim, 'FTYPE',
-                             ftype_eps)
+                logging.warning(eps_msg, method, s, val, warn_lim, 'FTYPE', ftype_eps)
 
         val = options['eps']
         err_lim, warn_lim = 1, 10
@@ -170,14 +170,13 @@ def validate_minimizer_settings(minimizer_settings):
             raise ValueError(eps_msg % (method, 'eps', val, err_lim, 'FP64',
                                         fp64_eps))
         if val < warn_lim * ftype_eps:
-            logging.warn(eps_msg, method, 'eps', val, warn_lim, 'FTYPE',
-                         ftype_eps)
+            logging.warning(eps_msg, method, 'eps', val, warn_lim, 'FTYPE', ftype_eps)
 
         err_lim, warn_lim = 0.25, 0.1
         if val > err_lim:
             raise ValueError(eps_gt_msg % (method, 'eps', val, err_lim))
         if val > warn_lim:
-            logging.warn(eps_gt_msg, method, 'eps', val, warn_lim)
+            logging.warning(eps_gt_msg, method, 'eps', val, warn_lim)
 
     if method == 'slsqp':
         err_lim, warn_lim = 2, 10
@@ -186,8 +185,7 @@ def validate_minimizer_settings(minimizer_settings):
             raise ValueError(eps_msg % (method, 'ftol', val, err_lim, 'FTYPE',
                                         ftype_eps))
         if val < warn_lim * ftype_eps:
-            logging.warn(eps_msg, method, 'ftol', val, warn_lim, 'FTYPE',
-                         ftype_eps)
+            logging.warning(eps_msg, method, 'ftol', val, warn_lim, 'FTYPE', ftype_eps)
 
         val = options['eps']
         err_lim, warn_lim = 1, 10
@@ -195,14 +193,13 @@ def validate_minimizer_settings(minimizer_settings):
             raise ValueError(eps_msg % (method, 'eps', val, 1, 'FP64',
                                         fp64_eps))
         if val < warn_lim * ftype_eps:
-            logging.warn(eps_msg, method, 'eps', val, warn_lim, 'FP64',
-                         fp64_eps)
+            logging.warning(eps_msg, method, 'eps', val, warn_lim, 'FP64', fp64_eps)
 
         err_lim, warn_lim = 0.25, 0.1
         if val > err_lim:
             raise ValueError(eps_gt_msg % (method, 'eps', val, err_lim))
         if val > warn_lim:
-            logging.warn(eps_gt_msg, method, 'eps', val, warn_lim)
+            logging.warning(eps_gt_msg, method, 'eps', val, warn_lim)
 
 
 def check_t23_octant(fit_info):
@@ -416,7 +413,7 @@ class Analysis(object):
         alternate_fits : list of `fit_info` from other fits run
 
         """
-        if isinstance(metric, basestring):
+        if isinstance(metric, str):
             metric = [metric]
 
         if ( not check_octant ) and fit_octants_separately :
@@ -627,7 +624,7 @@ class Analysis(object):
         minimizer_settings = set_minimizer_defaults(minimizer_settings)
         validate_minimizer_settings(minimizer_settings)
 
-        if isinstance(metric, basestring):
+        if isinstance(metric, str):
             metric = [metric]
         sign = 0
         for m in metric:
@@ -671,13 +668,13 @@ class Analysis(object):
             clipped_x0.append(clipped_x0_val)
 
             if recursiveEquality(clipped_x0_val, bds[0]):
-                logging.warn(
+                logging.warning(
                     'Param %s, initial scaled value %e is at the lower bound;'
                     ' minimization may fail as a result.',
                     param.name, clipped_x0_val
                 )
             if recursiveEquality(clipped_x0_val, bds[1]):
-                logging.warn(
+                logging.warning(
                     'Param %s, initial scaled value %e is at the upper bound;'
                     ' minimization may fail as a result.',
                     param.name, clipped_x0_val
@@ -828,7 +825,7 @@ class Analysis(object):
 
         """
         fit_info = OrderedDict()
-        if isinstance(metric, basestring):
+        if isinstance(metric, str):
             metric = [metric]
         fit_info['metric'] = metric
 
@@ -921,7 +918,7 @@ class Analysis(object):
         """
         if other_metrics is None:
             other_metrics = []
-        elif isinstance(other_metrics, basestring):
+        elif isinstance(other_metrics, str):
             other_metrics = [other_metrics]
         all_metrics = sorted(set([metric] + other_metrics))
         detailed_metric_info = OrderedDict()
@@ -996,7 +993,7 @@ class Analysis(object):
         """
         # Want to *maximize* e.g. log-likelihood but we're using a minimizer,
         # so flip sign of metric in those cases.
-        if isinstance(metric, basestring):
+        if isinstance(metric, str):
             metric = [metric]
         sign = 0
         for m in metric:
@@ -1230,7 +1227,7 @@ class Analysis(object):
         # Either `steps` or `values` must be specified, but not both (xor)
         assert (steps is None) != (values is None)
 
-        if isinstance(param_names, basestring):
+        if isinstance(param_names, str):
             param_names = [param_names]
 
         nparams = len(param_names)

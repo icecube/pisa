@@ -7,6 +7,8 @@
 [Contributors](CONTRIBUTORS.md) |
 [Others' work](EXTERNAL_ATTRIBUTION.md)
 
+:warning: **PISA master branch now uses python 3!** :warning:
+
 PISA (PINGU Simulation and Analysis) is software written to analyze the results (or expected results) of an experiment based on Monte Carlo simulation.
 
 In particular, PISA was written by and for the IceCube Collaboration for analyses employing the [IceCube Neutrino Observatory](https://icecube.wisc.edu/), including the [DeepCore](https://arxiv.org/abs/1109.6096) and the proposed [PINGU](https://arxiv.org/abs/1401.2046) low-energy in-fill arrays.

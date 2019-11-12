@@ -12,7 +12,7 @@ from __future__ import absolute_import, print_function, division
 import math
 import numpy as np
 from numba import guvectorize, cuda
-import cPickle as pickle
+import pickle
 from bz2 import BZ2File
 from scipy.interpolate import RectBivariateSpline
 
@@ -86,19 +86,20 @@ class pi_mceq_barr(PiStage):
                             )
 
         # init base class
-        super(pi_mceq_barr, self).__init__(data=data,
-                                        params=params,
-                                        expected_params=expected_params,
-                                        input_names=input_names,
-                                        output_names=output_names,
-                                        debug_mode=debug_mode,
-                                        input_specs=input_specs,
-                                        calc_specs=calc_specs,
-                                        output_specs=output_specs,
-                                        input_calc_keys=input_calc_keys,
-                                        output_calc_keys=output_calc_keys,
-                                        output_apply_keys=output_apply_keys,
-                                       )
+        super().__init__(
+            data=data,
+            params=params,
+            expected_params=expected_params,
+            input_names=input_names,
+            output_names=output_names,
+            debug_mode=debug_mode,
+            input_specs=input_specs,
+            calc_specs=calc_specs,
+            output_specs=output_specs,
+            input_calc_keys=input_calc_keys,
+            output_calc_keys=output_calc_keys,
+            output_apply_keys=output_apply_keys,
+        )
 
         assert self.input_mode is not None
         assert self.calc_mode is not None
@@ -141,10 +142,10 @@ class pi_mceq_barr(PiStage):
         dumb function to iterate trhouh all E, CZ values
         and evlauate all 8 Barr splines at these points
         '''
-        for i in xrange(len(true_energy)):
+        for i in range(len(true_energy)):
             abs_cos = abs(true_coszen[i])
             log_e = np.log(true_energy[i])
-            for j in xrange(len(splines)):
+            for j in range(len(splines)):
                 out[i,j] = splines[j](abs_cos, log_e)[0,0]
 
 

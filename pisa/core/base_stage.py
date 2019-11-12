@@ -8,7 +8,7 @@ from __future__ import absolute_import
 
 __all__ = ["BaseStage"]
 
-from collections import Mapping
+from collections.abc import Mapping
 from copy import deepcopy
 import inspect
 
@@ -247,12 +247,12 @@ class BaseStage(object):
             invoked.
 
         """
-        if isinstance(attrs, basestring):
+        if isinstance(attrs, str):
             attrs = [attrs]
 
         # Validate that all are actually attrs before setting any
         for attr in attrs:
-            assert isinstance(attr, basestring)
+            assert isinstance(attr, str)
             if not hasattr(self, attr):
                 raise ValueError(
                     '"%s" not an attribute of the class; not'

@@ -80,7 +80,7 @@ class pi_simple(PiStage):  # pylint: disable=invalid-name
         output_apply_keys = ("sys_flux",)
 
         # init base class
-        super(pi_simple, self).__init__(
+        super().__init__(
             data=data,
             params=params,
             expected_params=expected_params,

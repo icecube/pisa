@@ -111,7 +111,7 @@ class Plotter(object):
 
         self.outdir = outdir
         self.stamp = stamp
-        if isinstance(fmt, basestring):
+        if isinstance(fmt, str):
             fmt = [fmt]
         self.fmt = fmt
         self.size = size

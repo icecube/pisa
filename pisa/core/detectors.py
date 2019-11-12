@@ -13,7 +13,7 @@ from __future__ import absolute_import
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
 import inspect
-from itertools import izip, product
+from itertools import product
 import os
 from copy import deepcopy
 
@@ -56,7 +56,7 @@ class Detectors(object):
         else:
             self.shared_params = shared_params
 
-        if isinstance(pipelines, (basestring, PISAConfigParser, OrderedDict,
+        if isinstance(pipelines, (str, PISAConfigParser, OrderedDict,
                                   Pipeline)):
             pipelines = [pipelines]
         
@@ -210,7 +210,7 @@ class Detectors(object):
         for dist_maker in self:
             dist_values = []
             for dist_name in dist_maker.params.free.names:
-                for name, value in izip(self.params.free.names, values):
+                for name, value in zip(self.params.free.names, values):
                     if name == dist_name:
                         v = value
                     if name == dist_name + '_' + dist_maker.detector_name:
