@@ -80,7 +80,7 @@ class genie_sys(PiStage): # pylint: disable=invalid-name
         )
 
         # init base class
-        super(genie_sys, self).__init__(
+        super().__init__(
             data=data,
             params=params,
             expected_params=expected_params,

@@ -119,7 +119,7 @@ def test_example_pipelines(ignore_gpu=False, ignore_root=False,
         finally:
             if exc is not None:
                 if allow_error:
-                    logging.warn(msg)
+                    logging.warning(msg)
                 else:
                     logging.error(
                         '    FAILURE! %s failed to run. Please review the'
@@ -133,8 +133,10 @@ def test_example_pipelines(ignore_gpu=False, ignore_root=False,
                 logging.info('    Seems fine!')
 
     if skip_count > 0:
-        logging.warn('%d of %d example pipeline config files were skipped',
-                     skip_count, num_configs)
+        logging.warning(
+            '%d of %d example pipeline config files were skipped',
+            skip_count, num_configs
+        )
 
     if failure_count > 0:
         msg = ('<< FAIL : test_example_pipelines : (%d of %d EXAMPLE PIPELINE'

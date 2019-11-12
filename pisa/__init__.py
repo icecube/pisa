@@ -112,7 +112,7 @@ if 'NUMBA_CACHE_DIR' not in os.environ:
 OMP_NUM_THREADS = 1
 """Number of threads OpenMP is allocated"""
 
-if os.environ.has_key('OMP_NUM_THREADS'):
+if 'OMP_NUM_THREADS' in os.environ:
     OMP_NUM_THREADS = int(os.environ['OMP_NUM_THREADS'])
     assert OMP_NUM_THREADS >= 1
 

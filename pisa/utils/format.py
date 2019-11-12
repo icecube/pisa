@@ -7,9 +7,9 @@ Utilities for interpreting and returning formatted strings.
 
 from __future__ import absolute_import, division, print_function
 
-from collections import OrderedDict, Iterable, Sequence
+from collections.abc import Iterable, Sequence
+from collections import OrderedDict
 import decimal
-from itertools import imap
 from numbers import Integral, Number
 import re
 import time
@@ -231,7 +231,7 @@ def arg_str_seq_none(inputs, name):
     ------
     TypeError if unrecognized type
     """
-    if isinstance(inputs, basestring):
+    if isinstance(inputs, str):
         inputs = [inputs]
     elif isinstance(inputs, (Iterable, Sequence)):
         inputs = list(inputs)
@@ -351,7 +351,7 @@ def list2hrlist(lst):
     if n - scan == 1:
         result.append(str(lst[scan]))
     elif n - scan == 2:
-        result.append(','.join(imap(str, lst[scan:])))
+        result.append(','.join(map(str, lst[scan:])))
 
     return ','.join(result)
 
@@ -584,7 +584,7 @@ def engfmt(n, sigfigs=3, decimals=None, sign_always=False):
 
 def append_results(results_dict, result_dict):
     for key, val in result_dict.items():
-        if results_dict.has_key(key):
+        if key in results_dict:
             results_dict[key].append(val)
         else:
             results_dict[key] = [val]
@@ -982,7 +982,7 @@ def format_num(
             )
         assert all(isinstance(s, Integral) for s in sci_thresh), str(sci_thresh)
 
-        if isinstance(fmt, basestring):
+        if isinstance(fmt, str):
             fmt = fmt.strip().lower()
         assert fmt is None or fmt in ('sci', 'eng', 'sipre', 'binpre', 'full')
         if fmt == 'full':
@@ -1013,7 +1013,7 @@ def format_num(
                             POWER_OF_1024_TO_BIN_PREFIX.keys()
                         )
                     )
-            if (not isinstance(exponent, basestring) and not
+            if (not isinstance(exponent, str) and not
                     isinstance(exponent, Integral)):
                 assert float(exponent) == int(exponent)
                 exponent = int(exponent)
@@ -1079,7 +1079,7 @@ def format_num(
         # exponent (if it's a binary or SI prefix) OR the order of magnitude of
         # the number w.r.t. `sci_thresh`.
         if fmt is None:
-            if isinstance(exponent, basestring):
+            if isinstance(exponent, str):
                 if exponent in BIN_PREFIX_TO_POWER_OF_1024:
                     fmt = 'binpre'
                 elif exponent in SI_PREFIX_TO_ORDER_OF_MAG:
@@ -1194,13 +1194,13 @@ def format_num(
                 else:
                     expprefix = ''
 
-            if not isinstance(exponent, basestring):
+            if not isinstance(exponent, str):
                 if fmt == 'sipre':
                     exponent = ORDER_OF_MAG_TO_SI_PREFIX[exponent]
                 elif fmt == 'binpre':
                     exponent = POWER_OF_1024_TO_BIN_PREFIX[exponent]
 
-            if isinstance(exponent, basestring):
+            if isinstance(exponent, str):
                 num_str += expprefix + exponent + exppostfix
             else:
                 if exponent < 0:

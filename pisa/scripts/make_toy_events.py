@@ -349,7 +349,7 @@ def generate_mc_events(num_events, energy_range, coszen_range, spec_ind,
                           num_events, dimension)
 
             aeff_func = None
-            for flavintgroup, func in aeff_param[dimension].iteritems():
+            for flavintgroup, func in aeff_param[dimension].items():
                 if flavint in flavintgroup:
                     aeff_func = func
 
@@ -401,7 +401,7 @@ def populate_reco_observables(mc_events, param_source, random_state=None):
         logging.debug('Processing %s.', flavint)
 
         all_dist_info = None
-        for flavintgroup, info in reco_params.iteritems():
+        for flavintgroup, info in reco_params.items():
             if flavint in flavintgroup:
                 all_dist_info = info
 
@@ -412,7 +412,7 @@ def populate_reco_observables(mc_events, param_source, random_state=None):
         true_energies = mc_events[flavint]['true_energy']
         num_events = len(true_energies)
 
-        for true_dimension in mc_events[flavint].keys():
+        for true_dimension in list(mc_events[flavint]):
             if 'true' not in true_dimension:
                 continue
             base_dim = basename(true_dimension)
@@ -426,7 +426,7 @@ def populate_reco_observables(mc_events, param_source, random_state=None):
             dist_info = dist_info[0]
             dist_class = dist_info['dist']
             dist_kwargs = {}
-            for key, func in dist_info['kwargs'].iteritems():
+            for key, func in dist_info['kwargs'].items():
                 dist_kwargs[key] = func(true_energies)
             #dist_frac = dist_info['fraction']
             reco_dist = dist_class(**dist_kwargs)
@@ -494,7 +494,7 @@ def populate_pid(mc_events, param_source, cut_val=0, random_state=None,
 
     for flavint in mc_events.flavints:
         pid_funcs = None
-        for flavintgroup, funcs in pid_param.iteritems():
+        for flavintgroup, funcs in pid_param.items():
             if flavint in flavintgroup:
                 pid_funcs = funcs
         if pid_funcs is None:
@@ -659,7 +659,7 @@ def make_toy_events(outdir, num_events, energy_range, spectral_index,
         )
         mcevts_fpath = os.path.join(outdir, mcevts_fname)
         if os.path.isfile(mcevts_fpath):
-            logging.warn('File already exists, skipping: "%s"', mcevts_fpath)
+            logging.warning('File already exists, skipping: "%s"', mcevts_fpath)
             continue
 
         logging.info('Working on set "%s"', mcevts_fname)

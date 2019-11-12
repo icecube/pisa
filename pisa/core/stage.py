@@ -159,7 +159,7 @@ class Stage(BaseStage):
         self.validate_binning()
 
         # init base class!
-        super(Stage, self).__init__(
+        super().__init__(
             params=params,
             expected_params=expected_params,
             input_names=input_names,
@@ -617,7 +617,7 @@ class Stage(BaseStage):
         """
         if isinstance(events, Param):
             events = events.value
-        elif isinstance(events, basestring):
+        elif isinstance(events, str):
             events = find_resource(events)
         this_hash = hash_obj(events, full_hash=self.full_hash)
         if self._events_hash is not None and this_hash == self._events_hash:
@@ -660,7 +660,7 @@ class Stage(BaseStage):
             self.disk_cache_path = None
             return
 
-        if isinstance(self.disk_cache, basestring):
+        if isinstance(self.disk_cache, str):
             dirpath, filename = os.path.split(
                 os.path.expandvars(os.path.expanduser(self.disk_cache))
             )

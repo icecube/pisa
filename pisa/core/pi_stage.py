@@ -77,7 +77,7 @@ class PiStage(BaseStage):
         input_calc_keys=(),
         output_calc_keys=(),
     ):
-        super(PiStage, self).__init__(
+        super().__init__(
             params=params,
             expected_params=expected_params,
             input_names=input_names,

@@ -36,7 +36,7 @@ __all__ = ["Client", "get_llh", "setup_sampler", "main"]
 
 
 from argparse import ArgumentParser
-from collections import Mapping
+from collections.abc import Mapping
 from itertools import cycle
 from multiprocessing import Manager
 import socket
@@ -51,7 +51,7 @@ from pisa.utils.llh_server import send_obj, receive_obj
 class Client(object):
     def __init__(self, server_address):
         self.addr = server_address
-        if isinstance(self.addr, basestring):
+        if isinstance(self.addr, str):
             address_family = socket.AF_UNIX
         else:
             address_family = socket.AF_INET
@@ -142,7 +142,7 @@ def setup_sampler(nwalkers, ndim, host_port_num, **kwargs):
 
     """
     host_port_num = tuple(host_port_num)
-    if isinstance(host_port_num[0], basestring):
+    if isinstance(host_port_num[0], str):
         host_port_num = (host_port_num,)
 
     # Construct (lock, host, port) dict per port per host, each with a unique lock

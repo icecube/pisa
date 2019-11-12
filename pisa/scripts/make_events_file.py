@@ -191,7 +191,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
       https://wikispaces.psu.edu/download/attachments/282040606/meff_report_jllanfranchi_v05_2015-10-21.pdf
 
     """
-    if isinstance(run_settings, basestring):
+    if isinstance(run_settings, str):
         run_settings = DetMCSimRunsSettings(
             find_resource(run_settings),
             detector=detector
@@ -199,7 +199,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
     assert isinstance(run_settings, DetMCSimRunsSettings)
     assert run_settings.detector == detector
 
-    if isinstance(data_proc_params, basestring):
+    if isinstance(data_proc_params, str):
         data_proc_params = DataProcParams(
             detector=detector,
             proc_ver=proc_ver,
@@ -355,7 +355,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
     filecount = {}
     detector_geom = None
     bad_files = []
-    for run, fnames in data_files.iteritems():
+    for run, fnames in data_files.items():
         file_count = 0
         for fname in fnames:
             # Retrieve data from all nodes specified in the processing
@@ -366,7 +366,7 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
                     fname, run_settings=run_settings
                 )
             except (ValueError, KeyError, IOError):
-                logging.warn('Bad file encountered: %s', fname)
+                logging.warning('Bad file encountered: %s', fname)
                 bad_files.append(fname)
                 continue
 
@@ -461,8 +461,8 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
             for int_type in set([fi.intType for fi in
                                  flavint_group.flavints]):
                 ngen_it_tot = 0
-                for run, run_counts in ngen[grp_n][int_type].iteritems():
-                    for barnobar, barnobar_counts in run_counts.iteritems():
+                for run, run_counts in ngen[grp_n][int_type].items():
+                    for barnobar, barnobar_counts in run_counts.items():
                         ngen_it_tot += barnobar_counts
                         logging.info(
                             fmt, flavint_group.simple_str(), int_type,
@@ -488,9 +488,11 @@ def makeEventsFile(data_files, detector, proc_ver, cut, outdir,
         logging.info('Files read, run %s: %d', run, count)
         ref_num_i3_files = run_settings[run]['num_i3_files']
         if count != ref_num_i3_files:
-            logging.warn('Run %s, Number of files read (%d) != number of '
-                         'source I3 files (%d), which may indicate an error.',
-                         run, count, ref_num_i3_files)
+            logging.warning(
+                'Run %s, Number of files read (%d) != number of '
+                'source I3 files (%d), which may indicate an error.',
+                run, count, ref_num_i3_files
+            )
 
     # Generate output data
     for flavint in ALL_NUFLAVINTS:

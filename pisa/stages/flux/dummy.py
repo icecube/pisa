@@ -55,7 +55,7 @@ class dummy(Stage): # pylint: disable=invalid-name
         # there are no "inputs" used by this stage. (Of course there are
         # parameters, and files with info, but no maps or MC events are used
         # and transformed directly by this stage to produce its output.)
-        super(dummy, self).__init__(
+        super().__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
@@ -65,7 +65,7 @@ class dummy(Stage): # pylint: disable=invalid-name
             memcache_deepcopy=memcache_deepcopy,
             outputs_cache_depth=outputs_cache_depth,
             output_binning=output_binning,
-            debug_mode=debug_mode
+            debug_mode=debug_mode,
         )
 
         # There might be other things to do at init time than what Stage does,

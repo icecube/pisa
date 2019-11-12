@@ -3,7 +3,8 @@
 
 from __future__ import absolute_import
 
-from collections import Mapping, OrderedDict
+from collections.abc import Mapping
+from collections import OrderedDict
 import os
 
 import numpy as np
@@ -83,7 +84,7 @@ def from_hdf(val, return_node=None, return_attrs=False):
         """Iteratively parse `obj` to create the dictionary `sdict`"""
         name = obj.name.split('/')[-1]
         if isinstance(obj, h5py.Dataset):
-            sdict[name] = obj.value
+            sdict[name] = obj[()]
         if isinstance(obj, (h5py.Group, h5py.File)):
             sdict[name] = OrderedDict()
             for sobj in obj.values():
@@ -92,7 +93,7 @@ def from_hdf(val, return_node=None, return_attrs=False):
     data = OrderedDict()
     attrs = OrderedDict()
     myfile = False
-    if isinstance(val, basestring):
+    if isinstance(val, str):
         try:
             root = h5py.File(find_resource(val), 'r')
         except:
@@ -183,12 +184,14 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
                 pass
 
             for key in sorted(node.keys()):
-                if isinstance(key, basestring):
+                if isinstance(key, str):
                     key_str = key
                 else:
                     key_str = str(key)
-                    logging.warn('Making string from key "%s", %s for use as'
-                                 ' name in HDF5 file', key_str, type(key))
+                    logging.warning(
+                        'Making string from key "%s", %s for use as'
+                        ' name in HDF5 file', key_str, type(key)
+                    )
                 val = node[key]
                 new_path = path + [key_str]
                 store_recursively(fhandle=fhandle, node=val, path=new_path,
@@ -206,8 +209,10 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
             # None
             if node is None:
                 node = np.nan
-                logging.warn('  encountered `None` at node "%s"; converting to'
-                             ' np.nan', full_path)
+                logging.warning(
+                    '  encountered `None` at node "%s"; converting to'
+                    ' np.nan', full_path
+                )
             # "Scalar datasets don't support chunk/filter options". Shuffling
             # is a good idea otherwise since subsequent compression will
             # generally benefit; shuffling requires chunking. Compression is
@@ -222,7 +227,7 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
                 # Store the node_hash for linking to later if this is more than
                 # a scalar datatype. Assumed that "None" has
                 node_hashes[node_hash] = full_path
-            if isinstance(node, basestring):
+            if isinstance(node, str):
                 # TODO: Treat strings as follows? Would this break
                 # compatibility with pytables/Pandas? What are benefits?
                 # Leaving the following two lines out for now...
@@ -261,7 +266,7 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
                     dset.attrs[key] = attrs[key]
 
     # Perform the actual operation using the dict passed in by user
-    if isinstance(tgt, basestring):
+    if isinstance(tgt, str):
         from pisa.utils.fileio import check_file_exists
         fpath = check_file_exists(fname=tgt, overwrite=overwrite, warn=warn)
         h5file = h5py.File(fpath, 'w')
@@ -276,7 +281,7 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
         store_recursively(fhandle=tgt, node=data_dict, attrs=attrs)
 
     else:
-        raise TypeError('to_hdf: Invalid `tgt` type: %s', type(tgt))
+        raise TypeError('to_hdf: Invalid `tgt` type: %s' % type(tgt))
 
 
 def test_hdf():

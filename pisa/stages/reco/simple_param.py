@@ -60,7 +60,7 @@ def dict_lookup_wildcard(dict_obj,key) :
     '''
 
     assert isinstance(dict_obj,collections.Mapping)
-    assert isinstance(key,basestring)
+    assert isinstance(key,str)
 
     matches = collections.OrderedDict([ (k,v) for k,v in dict_obj.items() if fnmatch.fnmatch(key,k) ])
 
@@ -440,17 +440,18 @@ class simple_param(PiStage):
                             )
 
         # init base class
-        super(simple_param, self).__init__(data=data,
-                                        params=params,
-                                        expected_params=expected_params,
-                                        input_names=input_names,
-                                        output_names=output_names,
-                                        debug_mode=debug_mode,
-                                        input_specs=input_specs,
-                                        calc_specs=calc_specs,
-                                        output_specs=output_specs,
-                                        output_apply_keys=output_apply_keys,
-                                       )
+        super().__init__(
+            data=data,
+            params=params,
+            expected_params=expected_params,
+            input_names=input_names,
+            output_names=output_names,
+            debug_mode=debug_mode,
+            input_specs=input_specs,
+            calc_specs=calc_specs,
+            output_specs=output_specs,
+            output_apply_keys=output_apply_keys,
+        )
 
         #TODO Suport other modes
         assert self.input_mode == "events"

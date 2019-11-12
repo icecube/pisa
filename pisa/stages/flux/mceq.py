@@ -80,25 +80,25 @@ class mceq(Stage): # pylint: disable=invalid-name
         Parameters which set everything besides the binning
 
         Parameters required by this service are
-            * interaction_model : basestring
+            * interaction_model : str
                 Hadronic interaction model
 
-            * primary_model : basestring
+            * primary_model : str
                 Primary flux model
                 Default options are listed in the CRFluxModels docs:
                 https://crfluxmodels.readthedocs.io/en/latest/index.html#module-CRFluxModels
 
-            * density_model : basestring
+            * density_model : str
                 Density model of Earth's atmosphere
                 Default options are listed in the MCEq docs:
                 https://mceq.readthedocs.io/en/latest/physics.html#module-MCEq.density_profiles
 
-            * location : basestring
+            * location : str
                 Location to evaluate the fluxes
                 Default options are listed in the MCEq docs:
                 https://mceq.readthedocs.io/en/latest/physics.html#MCEq.density_profiles.CorsikaAtmosphere.init_parameters
 
-            * season : basestring
+            * season : str
                 Season in which to evaluate the fluxes
                 Default options are listed in the MCEq docs:
                 https://mceq.readthedocs.io/en/latest/physics.html#MCEq.density_profiles.CorsikaAtmosphere.init_parameters
@@ -146,7 +146,7 @@ class mceq(Stage): # pylint: disable=invalid-name
             'nue', 'numu', 'nuebar', 'numubar'
         )
 
-        super(mceq, self).__init__(
+        super().__init__(
             use_transforms=False,
             params=params,
             expected_params=expected_params,
@@ -156,7 +156,7 @@ class mceq(Stage): # pylint: disable=invalid-name
             disk_cache=disk_cache,
             memcache_deepcopy=memcache_deepcopy,
             outputs_cache_depth=outputs_cache_depth,
-            output_binning=output_binning
+            output_binning=output_binning,
         )
 
     @profile
@@ -208,7 +208,7 @@ class mceq(Stage): # pylint: disable=invalid-name
             flux['numu'].append(mceq_run.get_solution('total_numu', mag))
             flux['numubar'].append(mceq_run.get_solution('total_antinumu', mag))
 
-        for nu in flux.iterkeys():
+        for nu in flux.keys():
             flux[nu] = np.array(flux[nu])
 
         smoothing = self.params['smoothing'].value.m
@@ -224,7 +224,7 @@ class mceq(Stage): # pylint: disable=invalid-name
             ev_flux[nu] = ev_flux[nu] *  ureg('cm**-2 s**-1 sr**-1 GeV**-1')
 
         mapset = []
-        for nu in ev_flux.iterkeys():
+        for nu in ev_flux.keys():
             mapset.append(Map(name=nu, hist=ev_flux[nu], binning=binning))
 
         return MapSet(mapset)
@@ -236,7 +236,7 @@ class mceq(Stage): # pylint: disable=invalid-name
         Cz, logE = np.meshgrid(cz_centers, np.log10(en_centers))
 
         spline_dict = OrderedDict()
-        for nu in flux_dict.iterkeys():
+        for nu in flux_dict.keys():
             log_flux = np.log10(flux_dict[nu]).T
             spline = interpolate.bisplrep(Cz, logE, log_flux, s=smooth)
             spline_dict[nu] = spline
@@ -246,7 +246,7 @@ class mceq(Stage): # pylint: disable=invalid-name
     def bivariate_evaluate(spline_dict, czvals, evals):
         """Evaluate the bivariate spline to get the flux."""
         fluxes = OrderedDict()
-        for nu in spline_dict.iterkeys():
+        for nu in spline_dict.keys():
             fluxes[nu] = np.power(10., interpolate.bisplev(
                 czvals, np.log10(evals), spline_dict[nu]
             ))
@@ -255,11 +255,11 @@ class mceq(Stage): # pylint: disable=invalid-name
     def validate_params(self, params):
         pq = ureg.Quantity
         param_types = [
-            ('interaction_model', basestring),
-            ('primary_model', basestring),
-            ('density_model', basestring),
-            ('location', basestring),
-            ('season', basestring),
+            ('interaction_model', str),
+            ('primary_model', str),
+            ('density_model', str),
+            ('location', str),
+            ('season', str),
             ('smoothing', pq)
         ]
 

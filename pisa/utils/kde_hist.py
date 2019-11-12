@@ -375,8 +375,9 @@ def test_kde_histogramdd():
         rmtree(temp_dir)
         raise
     else:
-        logging.warn('Inspect and manually clean up output(s) saved to %s'
-                     % temp_dir)
+        logging.warning(
+            'Inspect and manually clean up output(s) saved to %s' % temp_dir
+        )
 
 
 if __name__ == '__main__':

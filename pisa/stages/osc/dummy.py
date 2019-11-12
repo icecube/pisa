@@ -110,7 +110,7 @@ class dummy(Stage): # pylint: disable=invalid-name
 
         # Invoke the init method from the parent class, which does a lot of
         # work for you.
-        super(dummy, self).__init__(
+        super().__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,
@@ -123,7 +123,7 @@ class dummy(Stage): # pylint: disable=invalid-name
             transforms_cache_depth=transforms_cache_depth,
             input_binning=input_binning,
             output_binning=output_binning,
-            debug_mode=debug_mode
+            debug_mode=debug_mode,
         )
 
         # There might be other things to do at init time than what Stage does,
@@ -174,7 +174,7 @@ class dummy(Stage): # pylint: disable=invalid-name
 
         # Illustrate how to find input binning dimensions which the transforms
         # created by this service will not depend on.
-        self.extra_dim_nums = range(self.input_binning.num_dims)
+        self.extra_dim_nums = list(range(self.input_binning.num_dims))
         [self.extra_dim_nums.remove(d) for d in (self.e_dim_num,
                                                  self.cz_dim_num)]
 

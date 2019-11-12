@@ -30,7 +30,7 @@ def fit_fun(X,*P):
     '''
     ret_val = P[0]
     for x,p in zip(X,P[1:]):
-	ret_val += x*p
+        ret_val += x*p
     return ret_val
 
 
@@ -59,7 +59,7 @@ class hyperplane(Stage):
 
         # Invoke the init method from the parent class, which does a lot of
         # work for you.
-        super(self.__class__, self).__init__(
+        super().__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,
@@ -70,7 +70,7 @@ class hyperplane(Stage):
             error_method=error_method,
             transforms_cache_depth=transforms_cache_depth,
             input_binning=input_binning,
-            output_binning=output_binning
+            output_binning=output_binning,
         )
         self.fit_results = None
         self.sys_list = None

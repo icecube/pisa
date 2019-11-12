@@ -1,6 +1,7 @@
 """
 class to access hdf5 files chained together.
 """
+from __future__ import print_function
 
 
 import numpy as n
@@ -25,7 +26,7 @@ class HDFTableProxy(object):
             try:
                 lengths[i] = len(file.getNode(self.path))
             except tables.NoSuchNodeError:
-                print "WARN: node %s does not exist in file %s" % (self.path, file.filename)
+                print("WARN: node %s does not exist in file %s" % (self.path, file.filename))
                 lengths[i] = 0
 
         # create result array ...
@@ -56,7 +57,7 @@ class HDFTableProxy(object):
             try:
                 lengths[i] = len(file.getNode(self.path))
             except tables.NoSuchNodeError:
-                print "WARN: node %s does not exist in file %s" % (self.path, file.filename)
+                print("WARN: node %s does not exist in file %s" % (self.path, file.filename))
                 lengths[i] = 0
 
         # create result array ...
@@ -82,11 +83,11 @@ class HDFTableProxy(object):
 
 class TableAccessor(object):
     def __init__(self, tabledict):
-        for tabname, proxy in tabledict.iteritems():
+        for tabname, proxy in tabledict.items():
             self.__dict__[tabname] = proxy
 
     def __repr__(self):
-        return ", ".join([key for (key,value) in self.__dict__.iteritems() if type(value) is HDFTableProxy])
+        return ", ".join([key for (key,value) in self.__dict__.items() if type(value) is HDFTableProxy])
 
 class HDFChain(object):
     def __init__(self, files, maxdepth=1, verbose=False, **kwargs):
@@ -102,7 +103,7 @@ class HDFChain(object):
         self.pathes = dict()
 
         if self.verbose:
-            print "opening files in chain..."
+            print("opening files in chain...")
         if type(files) is list:
             if len(files) == 0:
                 raise ValueError("provided file list is empty!")
@@ -117,13 +118,13 @@ class HDFChain(object):
 
         file = self.files[0]
         if self.verbose:
-            print "walking through first file %s" % file.filename
+            print("walking through first file %s" % file.filename)
         for table in file.walkNodes(classname="Table"):
             if table._v_depth > maxdepth:
                 continue
             if table.name in self._tables:
-                print "WARN: skipping additional occurence of table %s at %s (using %s)!" % (table.name,
-                      table._v_pathname, self._tables[table.name].path)
+                print("WARN: skipping additional occurence of table %s at %s (using %s)!" % (table.name,
+                      table._v_pathname, self._tables[table.name].path))
                 continue
             else:
                 proxy = HDFTableProxy(table, self.files)
@@ -133,7 +134,7 @@ class HDFChain(object):
         self.root = TableAccessor(self._tables)
 
     def __del__(self):
-        for tabname, tabproxy in self._tables.iteritems():
+        for tabname, tabproxy in self._tables.items():
             tabproxy.file = None
 
         for file in self.files:

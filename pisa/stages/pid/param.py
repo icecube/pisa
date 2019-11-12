@@ -11,7 +11,8 @@ which has as many bins as PID signatures.
 
 from __future__ import division
 
-from collections import Mapping, OrderedDict
+from collections.abc import Mapping
+from collections import OrderedDict
 
 import numpy as np
 import scipy as sp
@@ -65,7 +66,7 @@ def load_pid_energy_param(source):
 
     """
     # Get the original dict
-    if isinstance(source, basestring):
+    if isinstance(source, str):
         orig_dict = from_file(source)
     elif isinstance(source, Mapping):
         orig_dict = source
@@ -77,13 +78,13 @@ def load_pid_energy_param(source):
     # and callables as values
     pid_energy_param_dict = OrderedDict()
 
-    for flavintgroup_str, subdict in orig_dict.iteritems():
+    for flavintgroup_str, subdict in orig_dict.items():
         flavintgroup = NuFlavIntGroup(flavintgroup_str)
 
         pid_energy_param_dict[flavintgroup] = OrderedDict()
 
-        for signature, sig_param_spec in subdict.iteritems():
-            if isinstance(sig_param_spec, basestring):
+        for signature, sig_param_spec in subdict.items():
+            if isinstance(sig_param_spec, str):
                 sig_param_func = eval(sig_param_spec)
                 if not callable(sig_param_func):
                     raise ValueError(
@@ -218,7 +219,7 @@ class param(Stage):
             'pid_energy_paramfile'
         )
 
-        if isinstance(input_names, basestring):
+        if isinstance(input_names, str):
             input_names = input_names.replace(' ', '').split(',')
 
         if self.particles == 'neutrinos':
@@ -229,7 +230,7 @@ class param(Stage):
         elif self.particles == 'muons':
             raise NotImplementedError('%s not implemented.' % self.particles)
 
-        super(self.__class__, self).__init__(
+        super().__init__(
             use_transforms=True,
             params=params,
             expected_params=expected_params,
@@ -253,7 +254,7 @@ class param(Stage):
 
         # If no bin names are present, use the integer bin indices instead
         if self.signatures is None:
-            self.signatures = range(len(output_binning.pid))
+            self.signatures = list(range(len(output_binning.pid)))
 
         # Define the transform binnning...
 
@@ -330,7 +331,7 @@ class param(Stage):
         pid_energy_param_dict = load_pid_energy_param(source)
 
         # Perform validation
-        for flavintgroup, subdict in pid_energy_param_dict.iteritems():
+        for flavintgroup, subdict in pid_energy_param_dict.items():
             if set(subdict.keys()) != set(self.signatures):
                 raise ValueError(
                     'Expected PID specs for %s, but the energy PID'
@@ -378,7 +379,7 @@ class param(Stage):
             xform_array = np.empty(self.transform_output_binning.shape)
 
             subdict = self.pid_energy_param_dict[xform_flavints]
-            for signature, sig_param_func in subdict.iteritems():
+            for signature, sig_param_func in subdict.items():
                 # Get the PID probabilities vs. energy at the energy bins'
                 # (weighted) centers
                 pid1d = sig_param_func(self.ebin_centers)
@@ -441,7 +442,7 @@ class param(Stage):
     def validate_params(self, params):
         """Do checks on the parameters"""
         val = params.pid_energy_paramfile.value
-        if not isinstance(val, (basestring, Mapping)):
+        if not isinstance(val, (str, Mapping)):
             raise TypeError(
                 'Expecting either a path to a file or a dictionary provided'
                 ' as the store of the parameterisations. Got "%s".' % type(val)

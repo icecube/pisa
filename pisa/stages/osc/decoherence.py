@@ -41,7 +41,7 @@ class DecoherenceParams(OscParams) : #TODO Start using pi_osc_params instead...
     def __init__(self, deltam21, deltam31, theta12, theta13, theta23, deltacp, gamma21, gamma31, gamma32):
 
         # Call base class constructor
-        super(DecoherenceParams, self).__init__()
+        super().__init__()
 
         # Store args
         # Note that keeping them as quantities here

@@ -463,7 +463,7 @@ def conv_llh(actual_values, expected_values):
     triplets = np.array([actual_values, expected_values, sigma]).T
     norm_triplets = np.array([actual_values, actual_values, sigma]).T
     total = 0
-    for i in xrange(len(triplets)):
+    for i in range(len(triplets)):
         total += np.log(max(SMALL_POS, norm_conv_poisson(*triplets[i])))
         total -= np.log(max(SMALL_POS, norm_conv_poisson(*norm_triplets[i])))
     return total

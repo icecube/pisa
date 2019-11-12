@@ -188,7 +188,7 @@ class pi_hyperplanes(PiStage):  # pyint: disable=invalid-name
             fit_binning_hash = fit_results.get("binning_hash", None)
 
         if fit_binning_hash is None:
-            logging.warn(
+            logging.warning(
                 "Cannot determine the hash of the binning employed"
                 " for the hyperplane fits. Correct application of"
                 " fits is not guaranteed!"
@@ -213,7 +213,7 @@ class pi_hyperplanes(PiStage):  # pyint: disable=invalid-name
 
         # -- Initialize base class -- #
 
-        super(pi_hyperplanes, self).__init__(
+        super().__init__(
             data=data,
             params=params,
             expected_params=fit_param_names,

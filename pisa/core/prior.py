@@ -5,7 +5,8 @@ Prior class for use in pisa.core.Param objects
 
 from __future__ import absolute_import, division
 
-from collections import Iterable, OrderedDict
+from collections.abc import Iterable
+from collections import OrderedDict
 from numbers import Number
 from operator import setitem
 
@@ -147,7 +148,7 @@ class Prior(object):
     def __init__(self, kind, **kwargs):
         self._state_attrs = ['kind', 'max_at', 'units', 'valid_range']
         self.units = None
-        kind = kind.lower() if isinstance(kind, basestring) else kind
+        kind = kind.lower() if isinstance(kind, str) else kind
 
         self.chi2 = lambda x: -2*self.llh(x)
         # Dispatch the correct initialization method
@@ -398,7 +399,7 @@ def plot_prior(obj, param=None, x_xform=None, ax1=None, ax2=None, **plt_kwargs):
     import matplotlib as mpl
     mpl.use('pdf')
     import matplotlib.pyplot as plt
-    if isinstance(obj, basestring):
+    if isinstance(obj, str):
         obj = from_file(obj)
     if param is not None and param in obj:
         obj = obj[param]
@@ -482,7 +483,7 @@ def get_prior_bounds(obj, param=None, stddev=1.0):
     for s in stddev:
         bounds[s] = []
 
-    if isinstance(obj, basestring):
+    if isinstance(obj, str):
         obj = from_file(obj)
 
     if 'params' in obj:

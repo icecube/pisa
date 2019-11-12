@@ -159,7 +159,7 @@ def fbwkde(data, weights=None, n_dct=None, min=None, max=None,
 
     # Histogram the data to get a crude first approximation of the density
     data_hist, bins = np.histogram(
-        data, bins=n_dct, range=(min, max), normed=False, weights=weights
+        data, bins=n_dct, range=(min, max), density=False, weights=weights
     )
 
     # Make into a probability mass function
@@ -332,7 +332,7 @@ def vbwkde(data, weights=None, n_dct=None, min=None, max=None, n_addl_iter=0,
     pilot_dens_at_datapoints = interp(data).astype(FTYPE)
 
     n_iter = 1 + n_addl_iter
-    for n in xrange(n_iter):
+    for n in range(n_iter):
         # Note below diverges from the published Abramson method, by forcing
         # the bandwidth at the max of the density distribution to be exactly
         # the bandwidth found above with the improved Sheather-Jones BW
@@ -624,7 +624,7 @@ def test_fbwkde():
     x = np.linspace(0, 20, n_eval)
     np.random.seed(0)
     times = []
-    for _ in xrange(3):
+    for _ in range(3):
         enuerr = np.random.noncentral_chisquare(df=3, nonc=1, size=n_samp)
         t0 = time()
         fbwkde(data=enuerr, n_dct=n_dct, evaluate_at=x)
@@ -645,7 +645,7 @@ def test_vbwkde():
     x = np.linspace(0, 20, n_samp)
     np.random.seed(0)
     times = []
-    for _ in xrange(3):
+    for _ in range(3):
         enuerr = np.random.noncentral_chisquare(df=3, nonc=1, size=n_eval)
         t0 = time()
         vbwkde(data=enuerr, n_dct=n_dct, evaluate_at=x, n_addl_iter=n_addl)
@@ -666,7 +666,7 @@ def test_weighted_vbwkde():
     x = np.linspace(0, 20, n_samp)
     np.random.seed(0)
     times = []
-    for _ in xrange(3):
+    for _ in range(3):
         enuerr = np.random.noncentral_chisquare(df=3, nonc=1, size=n_eval)
         weights = np.random.rand(n_eval)
         t0 = time()

@@ -145,11 +145,12 @@ from __future__ import absolute_import, division, print_function
 
 from argparse import ArgumentParser
 from ast import literal_eval
-from collections import Mapping, Sequence, OrderedDict
+from collections import OrderedDict
+from collections.abc import Mapping, Sequence
 import copy
+from io import StringIO
 from os.path import join
 import re
-from StringIO import StringIO
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -359,7 +360,7 @@ def parse_fit_config(fit_cfg):
             units_list.append(units_spec)
     else:
         units_list = ["dimensionless" for s in sys_list]
-        logging.warn(
+        logging.warning(
             "No %s option found in %s section; assuming systematic parameters are"
             " dimensionless",
             UNITS_OPTION,
@@ -384,7 +385,7 @@ def parse_fit_config(fit_cfg):
         try:
             combine_regex = literal_eval(combine_regex)
         except (SyntaxError, ValueError):
-            logging.warn(
+            logging.warning(
                 'Deprecated syntax for "combine_re" (make into a Python-evaluatable'
                 "sequence of strings instead) :: combine_regex = %s",
                 combine_regex,
@@ -487,7 +488,7 @@ def load_and_modify_pipeline_cfg(fit_cfg, section):
                     )
                     pipeline_cfg.remove_section(section_map[no_ws_section_spec])
             else:
-                logging.warn(
+                logging.warning(
                     "Told to remove section [%s] but section does not exist in"
                     ' pipline config "%s"',
                     section_spec,
@@ -520,7 +521,7 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
         if not isinstance(set_params, Mapping):
             raise TypeError("`set_params` must be dict-like")
         for param_name, param_value in set_params.items():
-            if not isinstance(param_name, basestring):
+            if not isinstance(param_name, str):
                 raise TypeError("`set_params` keys must be strings (parameter name)")
             if not isinstance(param_value, ureg.Quantity):
                 raise TypeError("`set_params` values must be Quantities")
@@ -602,7 +603,7 @@ def make_discrete_sys_distributions(fit_cfg, set_params=None):
     nsets = len(sys_sets_info)
     nsys = len(sys_list)
     if nsets <= nsys:
-        logging.warn(
+        logging.warning(
             "Fit will either fail or be unreliable since the number of"
             " systematics sets to be fit is small (%d <= %d).",
             nsets,
@@ -970,7 +971,7 @@ def fit_discrete_sys_distributions(input_data, p0=None, fit_method=None):
 
                     # without error estimates each point has the same weight
                     # and we cannot get chi-square values (but can still fit)
-                    logging.warn(
+                    logging.warning(
                         "No uncertainties for any of the normalised counts in bin"
                         ' %s ("%s") found. Fit is performed unweighted and no'
                         " chisquare values will be available.",

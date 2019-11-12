@@ -22,8 +22,8 @@ in turn is essential for caching to work correctly.
 
 from __future__ import absolute_import, division
 
-from itertools import izip
-from collections import Iterable, Iterator, Mapping, OrderedDict, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections import OrderedDict
 from numbers import Number
 import re
 
@@ -196,7 +196,7 @@ def recursiveEquality(x, y):
             return False
 
     # Simple things can be compared directly
-    elif (isinstance(x, basestring) or isinstance(y, basestring) or
+    elif (isinstance(x, str) or isinstance(y, str) or
           not (isinstance(x, COMPLEX_TYPES)
                or isinstance(y, COMPLEX_TYPES))):
         if x != y:
@@ -248,7 +248,7 @@ def recursiveEquality(x, y):
             logging.trace('len(y): %s' %len(y))
             return False
         else:
-            for xs, ys in izip(x, y):
+            for xs, ys in zip(x, y):
                 if not recursiveEquality(xs, ys):
                     logging.trace('xs: %s' %xs)
                     logging.trace('ys: %s' %ys)
@@ -313,7 +313,7 @@ def recursiveAllclose(x, y, *args, **kwargs):
             # as the contents are allclose
             if not isinstance(y, list) or isinstance(y, tuple):
                 return False
-            for xs, ys in izip(x, y):
+            for xs, ys in zip(x, y):
                 if not recursiveAllclose(xs, ys, *args, **kwargs):
                     return False
         elif isinstance(x, np.ndarray):
@@ -488,7 +488,7 @@ def normQuant(obj, sigfigs=None, full_norm=True):
         return obj
 
     # Nothing to convert for strings, None, ...
-    if isinstance(obj, basestring) or obj is None:
+    if isinstance(obj, str) or obj is None:
         return obj
 
     round_result = False

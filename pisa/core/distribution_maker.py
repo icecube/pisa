@@ -9,8 +9,9 @@ from __future__ import absolute_import
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
+from functools import reduce
 import inspect
-from itertools import izip, product
+from itertools import product
 import os
 
 import numpy as np
@@ -78,7 +79,7 @@ class DistributionMaker(object):
         self._source_code_hash = None
 
         self._pipelines = []
-        if isinstance(pipelines, (basestring, PISAConfigParser, OrderedDict,
+        if isinstance(pipelines, (str, PISAConfigParser, OrderedDict,
                                   Pipeline)):
             pipelines = [pipelines]
 
@@ -158,10 +159,11 @@ class DistributionMaker(object):
             for pipeline in self:
                 possible_selections = pipeline.param_selections
                 if possible_selections:
-                    logging.warn("Although you didn't make a parameter "
-                                 "selection, the following were available: %s."
-                                 " This may cause issues.",
-                                 possible_selections)
+                    logging.warning(
+                        "Although you didn't make a parameter "
+                        "selection, the following were available: %s."
+                        " This may cause issues.", possible_selections
+                    )
 
     @property
     def pipelines(self):
@@ -204,7 +206,7 @@ class DistributionMaker(object):
         values : list of quantities
 
         """
-        for name, value in izip(self.params.free.names, values):
+        for name, value in zip(self.params.free.names, values):
             for pipeline in self:
                 if name in pipeline.params.free.names:
                     pipeline.params[name] = value
@@ -245,7 +247,7 @@ class DistributionMaker(object):
         """
         names = self.params.free.names
         for pipeline in self:
-            for name, rvalue in izip(names, rvalues):
+            for name, rvalue in zip(names, rvalues):
                 if name in pipeline.params.free.names:
                     pipeline.params[name]._rescaled_value = rvalue # pylint: disable=protected-access
                 elif name in pipeline.params.names:

@@ -218,8 +218,8 @@ def open_resource(resource, mode='r'):
             msg = ('Could not locate resource "%s" in filesystem OR in'
                    ' installed PISA package.' %resource)
             raise IOError(msg)
-        raise fs_exc_info[0], fs_exc_info[1], fs_exc_info[2]
-    raise pkg_exc_info[0], pkg_exc_info[1], pkg_exc_info[2]
+        raise fs_exc_info[0](fs_exc_info[1]).with_traceback(fs_exc_info[2])
+    raise pkg_exc_info[0](pkg_exc_info[1]).with_traceback(pkg_exc_info[2])
 
 
 def find_path(pathspec, fail=True):

@@ -86,7 +86,7 @@ class PIDSpec(object):
 
         if pid_specs is None:
             pid_specs = 'pid/pid_specifications.json'
-        if isinstance(pid_specs, basestring):
+        if isinstance(pid_specs, str):
             pid_specs = from_json(resources.find_resource(pid_specs))
         elif isinstance(pid_specs, collections.Mapping):
             pass
@@ -100,7 +100,7 @@ class PIDSpec(object):
         all_k = []
         for wanted_key in [detector, geom, proc_ver, pid_spec_ver]:
             wanted_key = wanted_key.replace("'","").lower()
-            for orig_dict_key, subdict in d.iteritems():
+            for orig_dict_key, subdict in d.items():
                 dict_key = orig_dict_key.replace("'","").lower()
                 if (dict_key == wanted_key):
                     d = subdict
@@ -119,32 +119,32 @@ class PIDSpec(object):
     def validatePIDSpec(pids):
         """Validate a PID specification"""
         # TODO: implement validation
-        #for signature, pidspec in pids.iteritems():
+        #for signature, pidspec in pids.items():
         #    # Particle names are lower-case strings with no surrounding
         #    # whitespace
-        #    assert isinstance(signature, basestring)
+        #    assert isinstance(signature, str)
         #    assert signature == signature.lower()
         #    assert signature == signature.strip()
         #    # Has appropriate keys (and no extra)
         #    assert len(pidspec) == 2
-        #    assert pidspec.has_key('fields')
-        #    assert pidspec.has_key('criteria')
-        #    assert not isinstance(pidspec['fields'], basestring)
+        #    assert 'fields' in pidspec
+        #    assert 'criteria' in pidspec
+        #    assert not isinstance(pidspec['fields'], str)
         #    # 'fields' contains a sequence
         #    assert hasattr(pidspec['fields'], '__iter__') and \
-        #            not isinstance(pidspec['fields'], basestring)
+        #            not isinstance(pidspec['fields'], str)
         #    # 'criteria' contains a string
-        #    assert isinstance(pidspec['criteria'], basestring)
+        #    assert isinstance(pidspec['criteria'], str)
         return
 
     def get_signatures(self):
         return sorted(self.pid_spec['criteria'].keys())
 
     def validate_signatures(self, signatures):
-        if isinstance(signatures, basestring):
+        if isinstance(signatures, str):
             signatures = [signatures]
         for signature in signatures:
-            assert isinstance(signature, basestring), \
+            assert isinstance(signature, str), \
                     'Signature "%s" is not string.' % signature
             if signature not in self.pid_spec['criteria']:
                 raise ValueError(
@@ -179,14 +179,14 @@ class PIDSpec(object):
         }
         """
         # Interpret `signatures`
-        if isinstance(signatures, basestring):
+        if isinstance(signatures, str):
             signatures = [signatures]
         elif signatures is None:
             signatures = self.get_signatures()
 
         self.validate_signatures(signatures)
 
-        if isinstance(return_fields, basestring):
+        if isinstance(return_fields, str):
             return_fields = [return_fields]
 
         separated_events = flavInt.FlavIntData()
@@ -226,13 +226,13 @@ class PIDSpec(object):
     def aggregate(separated_events):
         agg_events = {}
         for flavint in separated_events.flavints:
-            for sig, datadict in separated_events[flavint].iteritems():
+            for sig, datadict in separated_events[flavint].items():
                 if sig not in agg_events:
                     agg_events[sig] = {}
-                for field, data in datadict.iteritems():
+                for field, data in datadict.items():
                     if field not in agg_events[sig]:
                         agg_events[sig][field] = []
                     agg_events[sig][field].append(data)
         # Concatenate the collected data arrays for final output
-        return {sig: {k:np.concatenate(v) for k,v in dat.iteritems()}
-                for sig,dat in  agg_events.iteritems()}
+        return {sig: {k:np.concatenate(v) for k,v in dat.items()}
+                for sig,dat in  agg_events.items()}
