@@ -376,6 +376,9 @@ class Analysis(object):
             free), the fit will be re-run in the second (first) octant if
             theta23 is initialized in the first (second) octant.
 
+        reset_free : bool
+            Resets all free parameters to values defined in stages when starting a fit
+
         fit_octants_separately : bool
             If 'check_octant' is set so that the two octants of theta23 are
             individually checked, this flag enforces that each theta23 can
