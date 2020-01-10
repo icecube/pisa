@@ -33,9 +33,10 @@ sys.path.append(os.path.dirname(PATH))
 from barr_parameterization import modRatioNuBar, modRatioUpHor
 
 
-class pi_simple(PiStage):  # pylint: disable=invalid-name
+class pi_barr_simple(PiStage):  # pylint: disable=invalid-name
     """
     stage to apply Barr style flux uncertainties
+    uses parameterisations of plots from Barr 2006 paper
 
     Paramaters
     ----------
@@ -73,14 +74,14 @@ class pi_simple(PiStage):  # pylint: disable=invalid-name
         output_names = ()
 
         # what are the keys used from the inputs during apply
-        input_calc_keys = ("weights", "nominal_nu_flux", "nominal_nubar_flux")
+        input_calc_keys = ("weights", "nu_flux_nominal", "nubar_flux_nominal")
         # what are keys added or altered in the calculation used during apply
-        output_calc_keys = ("sys_flux",)
+        output_calc_keys = ("nu_flux",)
         # what keys are added or altered for the outputs during apply
-        output_apply_keys = ("sys_flux",)
+        output_apply_keys = ("nu_flux",)
 
         # init base class
-        super().__init__(
+        super(pi_barr_simple, self).__init__(
             data=data,
             params=params,
             expected_params=expected_params,
@@ -99,10 +100,12 @@ class pi_simple(PiStage):  # pylint: disable=invalid-name
         assert self.calc_mode is not None
         assert self.output_mode is not None
 
+
     def setup_function(self):
         self.data.data_specs = self.calc_specs
         for container in self.data:
-            container["sys_flux"] = np.empty((container.size, 2), dtype=FTYPE)
+            container["nu_flux"] = np.empty((container.size, 2), dtype=FTYPE)
+
 
     @profile
     def compute_function(self):
@@ -112,25 +115,23 @@ class pi_simple(PiStage):  # pylint: disable=invalid-name
         nu_nubar_ratio = self.params.nu_nubar_ratio.value.m_as("dimensionless")
         delta_index = self.params.delta_index.value.m_as("dimensionless")
         Barr_uphor_ratio = self.params.Barr_uphor_ratio.value.m_as("dimensionless")
-        Barr_nu_nubar_ratio = self.params.Barr_nu_nubar_ratio.value.m_as(
-            "dimensionless"
-        )
+        Barr_nu_nubar_ratio = self.params.Barr_nu_nubar_ratio.value.m_as("dimensionless")
 
         for container in self.data:
             apply_sys_vectorized(
                 container["true_energy"].get(WHERE),
                 container["true_coszen"].get(WHERE),
-                container["nominal_nu_flux"].get(WHERE),
-                container["nominal_nubar_flux"].get(WHERE),
+                container["nu_flux_nominal"].get(WHERE),
+                container["nubar_flux_nominal"].get(WHERE),
                 container["nubar"],
                 nue_numu_ratio,
                 nu_nubar_ratio,
                 delta_index,
                 Barr_uphor_ratio,
                 Barr_nu_nubar_ratio,
-                out=container["sys_flux"].get(WHERE),
+                out=container["nu_flux"].get(WHERE),
             )
-            container["sys_flux"].mark_changed(WHERE)
+            container["nu_flux"].mark_changed(WHERE)
 
 
 @myjit
@@ -177,8 +178,8 @@ def spectral_index_scale(true_energy, egy_pivot, delta_index):
 def apply_sys_kernel(
     true_energy,
     true_coszen,
-    nominal_nu_flux,
-    nominal_nubar_flux,
+    nu_flux_nominal,
+    nubar_flux_nominal,
     nubar,
     nue_numu_ratio,
     nu_nubar_ratio,
@@ -191,13 +192,13 @@ def apply_sys_kernel(
     new_nu_flux = cuda.local.array(shape=(2), dtype=ftype)
     new_nubar_flux = cuda.local.array(2, dtype=ftype)
     apply_ratio_scale(
-        nue_numu_ratio, True, nominal_nu_flux[0], nominal_nu_flux[1], new_nu_flux
+        nue_numu_ratio, True, nu_flux_nominal[0], nu_flux_nominal[1], new_nu_flux
     )
     apply_ratio_scale(
         nue_numu_ratio,
         True,
-        nominal_nubar_flux[0],
-        nominal_nubar_flux[1],
+        nubar_flux_nominal[0],
+        nubar_flux_nominal[1],
         new_nubar_flux,
     )
 
@@ -245,8 +246,8 @@ else:
 def apply_sys_vectorized(
     true_energy,
     true_coszen,
-    nominal_nu_flux,
-    nominal_nubar_flux,
+    nu_flux_nominal,
+    nubar_flux_nominal,
     nubar,
     nue_numu_ratio,
     nu_nubar_ratio,
@@ -258,8 +259,8 @@ def apply_sys_vectorized(
     apply_sys_kernel(
         true_energy,
         true_coszen,
-        nominal_nu_flux,
-        nominal_nubar_flux,
+        nu_flux_nominal,
+        nubar_flux_nominal,
         nubar,
         nue_numu_ratio,
         nu_nubar_ratio,

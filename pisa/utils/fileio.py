@@ -401,7 +401,19 @@ def from_cfg(fname):
 def from_pickle(fname):
     """Load from a Python pickle file"""
     try:
-        return pickle.load(file(fname, 'rb'))
+
+        # Open the file (binary)
+        f = open(fname, 'rb')
+
+        # Try standard pickle load
+        try :
+            return pickle.load(f)
+
+        # Can get encoding errors when using python3 to open pickle files created with python2
+        # Handle this case
+        except UnicodeDecodeError as e :
+            return pickle.load(f, encoding="latin1")
+            
     except:
         log.logging.error('Failed to load pickle file, `fname`="%s"', fname)
         raise

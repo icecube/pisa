@@ -52,13 +52,13 @@ class pi_honda_ip(PiStage):
                           )
         # what are keys added or altered in the calculation used during apply
         output_calc_keys = (
-                            'nominal_nu_flux',
-                            'nominal_nubar_flux',
+                            'nu_flux_nominal',
+                            'nubar_flux_nominal',
                            )
         # what keys are added or altered for the outputs during apply
         output_apply_keys = (
-                            'nominal_nu_flux',
-                            'nominal_nubar_flux',
+                            'nu_flux_nominal',
+                            'nubar_flux_nominal',
                             )
 
         # init base class
@@ -94,8 +94,9 @@ class pi_honda_ip(PiStage):
                                              'nuebar_cc', 'numubar_cc', 'nutaubar_cc',
                                              'nuebar_nc', 'numubar_nc', 'nutaubar_nc'])
         for container in self.data:
-            container['nominal_nu_flux'] = np.empty((container.size, 2), dtype=FTYPE)
-            container['nominal_nubar_flux'] = np.empty((container.size, 2), dtype=FTYPE)
+            container['nu_flux_nominal'] = np.empty((container.size, 2), dtype=FTYPE)
+            container['nubar_flux_nominal'] = np.empty((container.size, 2), dtype=FTYPE)
+            # container['nu_flux'] = np.empty((container.size, 2), dtype=FTYPE)
 
         # don't forget to un-link everything again
         self.data.unlink_containers()
@@ -114,7 +115,7 @@ class pi_honda_ip(PiStage):
                                              'nuebar_nc', 'numubar_nc', 'nutaubar_nc'])
 
         # create lists for iteration
-        out_names = ['nominal_nu_flux']*2 + ['nominal_nubar_flux']*2
+        out_names = ['nu_flux_nominal']*2 + ['nubar_flux_nominal']*2
         indices = [0, 1, 0, 1]
         tables = ['nue', 'numu', 'nuebar', 'numubar']
         for container in self.data:
@@ -125,9 +126,20 @@ class pi_honda_ip(PiStage):
                                            en_splines=self.flux_table[table],
                                            out=container[out_name].get('host')[:,index]
                                           )
-            container['nominal_nu_flux'].mark_changed('host')
-            container['nominal_nubar_flux'].mark_changed('host')
+            container['nu_flux_nominal'].mark_changed('host')
+            container['nubar_flux_nominal'].mark_changed('host')
 
         # don't forget to un-link everything again
         self.data.unlink_containers()
+
+
+    # def apply_function(self):
+
+    #     self.data.data_specs = self.output_specs
+
+    #     # Set flux to be the nominal flux (choosing correct nu vs nubar flux for the container)
+    #     # Note that a subsequent systematic flux stage may change this
+    #     for container in self.data:
+    #         np.copyto( src=container["nu%s_flux_nominal"%("" if container["nubar"] > 0 else "bar")].get("host"), dst=container["nu_flux"].get("host") )
+    #         container['nu_flux'].mark_changed('host')
 

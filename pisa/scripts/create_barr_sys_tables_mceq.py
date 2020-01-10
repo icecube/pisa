@@ -1,28 +1,25 @@
-from __future__ import print_function
 # Calculates the differentials for Jacobian matrix wrt. particle
 # production uncertainty.
 #
 # Author: Anatoli Fedynitch
 # August 2017
 #
+# Update for IceCube oscillation analyss by Ida Storehaug & Tom Stuttard (2019)
+# See https://github.com/afedynitch/MCEq/blob/master/examples/KPi_demonstration.ipynb for a related example
+#
 
+from __future__ import print_function
 
-import os, sys, gzip, bz2
+import os, sys, gzip, bz2, collections
 import numpy as np
 import pickle
 
 from scipy.interpolate import RectBivariateSpline
 
-sys.path.append('../../MCEq')
-#sys.path.append('calculations')
-
-#import solver related modules
 from MCEq.core import MCEqRun
 from MCEq.misc import normalize_hadronic_model_name
-from mceq_config import config, mceq_config_without
-
-#import primary model choices
-import CRFluxModels as pm
+from mceq_config import config
+import crflux.models as crf
 
 # Global Barr parameter table
 # format (x_min, x_max, E_min, E_max) | x is x_lab= E_pi/E, E projectile-air interaction energy
@@ -93,40 +90,43 @@ def compute_abs_derivatives(mceq_run, pid, barr_param, zenith_list):
     print('Parameters corresponding to selection', barr_pars)
     dim_res = len(zenith_list), etr.shape[0]
     gs = mceq_run.get_solution
+    unit=1e4
 
+    # Solving nominal MCEq flux
     numu, anumu, nue, anue = (np.zeros(dim_res), np.zeros(dim_res),
                               np.zeros(dim_res), np.zeros(dim_res))
 
     for iz, zen_deg in enumerate(zenith_list):
         mceq_run.set_theta_deg(zen_deg)
         mceq_run.solve()
-        numu[iz] = gs('total_numu', 0)[tr]
-        anumu[iz] = gs('total_antinumu', 0)[tr]
-        nue[iz] = gs('total_nue', 0)[tr]
-        anue[iz] = gs('total_antinue', 0)[tr]
+        numu[iz] = gs('total_numu', 0)[tr]*unit
+        anumu[iz] = gs('total_antinumu', 0)[tr]*unit
+        nue[iz] = gs('total_nue', 0)[tr]*unit
+        anue[iz] = gs('total_antinue', 0)[tr]*unit
 
+    # Solving for plus one sigma 
     mceq_run.unset_mod_pprod(dont_fill=True)
     for p in barr_pars:
-        mceq_run.set_mod_pprod(2212, pid, barr_unc, (p, delta))
-#     mceq_run.y.print_mod_pprod()
-    mceq_run._init_default_matrices(skip_D_matrix=True)
+        mceq_run.set_mod_pprod(primary_particle, pid, barr_unc, (p, delta))        
+
+    mceq_run.regenerate_matrices(skip_decay_matrix=True)
 
     numu_up, anumu_up, nue_up, anue_up = (np.zeros(dim_res), np.zeros(dim_res),
                                           np.zeros(dim_res), np.zeros(dim_res))
     for iz, zen_deg in enumerate(zenith_list):
         mceq_run.set_theta_deg(zen_deg)
         mceq_run.solve()
-        numu_up[iz] = gs('total_numu', 0)[tr]
-        anumu_up[iz] = gs('total_antinumu', 0)[tr]
-        nue_up[iz] = gs('total_nue', 0)[tr]
-        anue_up[iz] = gs('total_antinue', 0)[tr]
+        numu_up[iz] = gs('total_numu', 0)[tr]*unit
+        anumu_up[iz] = gs('total_antinumu', 0)[tr]*unit
+        nue_up[iz] = gs('total_nue', 0)[tr]*unit
+        anue_up[iz] = gs('total_antinue', 0)[tr]*unit
 
+    # Solving for minus one sigma
     mceq_run.unset_mod_pprod(dont_fill=True)
     for p in barr_pars:
-        mceq_run.set_mod_pprod(2212, pid, barr_unc, (p, -delta))
+        mceq_run.set_mod_pprod(primary_particle, pid, barr_unc, (p, -delta))
 
-#     mceq_run.y.print_mod_pprod()
-    mceq_run._init_default_matrices(skip_D_matrix=True)
+    mceq_run.regenerate_matrices(skip_decay_matrix=True)
 
     numu_down, anumu_down, nue_down, anue_down = (np.zeros(dim_res),
                                                   np.zeros(dim_res),
@@ -135,37 +135,59 @@ def compute_abs_derivatives(mceq_run, pid, barr_param, zenith_list):
     for iz, zen_deg in enumerate(zenith_list):
         mceq_run.set_theta_deg(zen_deg)
         mceq_run.solve()
-        numu_down[iz] = gs('total_numu', 0)[tr]
-        anumu_down[iz] = gs('total_antinumu', 0)[tr]
-        nue_down[iz] = gs('total_nue', 0)[tr]
-        anue_down[iz] = gs('total_antinue', 0)[tr]
+        numu_down[iz] = gs('total_numu', 0)[tr]*unit
+        anumu_down[iz] = gs('total_antinumu', 0)[tr]*unit
+        nue_down[iz] = gs('total_nue', 0)[tr]*unit
+        anue_down[iz] = gs('total_antinue', 0)[tr]*unit
 
+    # calculating derivatives
     fd_derivative = lambda up, down: (up - down) / (2. * delta)
 
     dnumu = fd_derivative(numu_up, numu_down)
     danumu = fd_derivative(anumu_up, anumu_down)
     dnue = fd_derivative(nue_up, nue_down)
     danue = fd_derivative(anue_up, anue_down)
-    return [
-        RectBivariateSpline(cos_theta, np.log(etr), dist)
-        for dist in [numu, dnumu, anumu, danumu, nue, dnue, anue, danue]
-    ]
+
+    result = collections.OrderedDict()
+    result_type = ["numu", "dnumu", "numubar", "dnumubar", "nue", "dnue", "nuebar", "dnuebar"]
+
+    for dist, sp in zip([numu, dnumu, anumu, danumu, nue, dnue, anue, danue], result_type): 
+        result[sp] = RectBivariateSpline(cos_theta, np.log(etr), dist)
+
+    return result
 
 if __name__ == '__main__':
-    iamod = normalize_hadronic_model_name(sys.argv[1]) #the interaction model
-    iatag = sys.argv[2] # Tag name for the interaction model
-    
-    CRModel = pm.GaisserHonda
 
-    print('Running with', iamod)
-    idjob = 0  # int(os.path.expandvars('$SGE_TASK_ID')) - 1
+    # Get command line args
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument( "-i", "--interaction-model", type=str, required=False, default="sibyll23c", help="Hadronic interaction model" )
+    parser.add_argument( "-c", "--cosmic-ray-model", type=str, required=False, default="GlobalSplineFitBeta", help="Primary cosmic ray spectrum model" )
+    parser.add_argument( "-o", "--output-dir", type=str, required=False, default="", help="Output directory" )
+    args = parser.parse_args()
+
+    # Get interaction model
+    interaction_model = normalize_hadronic_model_name(args.interaction_model)
+
+    # Get primary cosmic ray spectrum model
+    assert hasattr(crf, args.cosmic_ray_model), "Unknown primary cosmic ray spectrum model"
+    CRModel = getattr(crf, args.cosmic_ray_model) # Gettting class (NOT instantiating)
+    assert issubclass(CRModel, crf.PrimaryFlux), "Unknown primary cosmic ray spectrum model"
+
+    # define CR model parameters
+    if args.cosmic_ray_model=="HillasGaisser2012": 
+        CR_vers = "H3a"
+    elif args.cosmic_ray_model=="GaisserStanevTilav": 
+        CR_vers = "4-gen"
+    else: 
+        CR_vers = None
 
     mceq_run = MCEqRun(
         #provide the string of the interaction model
-        interaction_model=iamod,
+        interaction_model=interaction_model,
         #primary cosmic ray flux model
         #support a tuple (primary model class (not instance!), arguments)
-        primary_model=(CRModel, None),
+        primary_model=(CRModel, CR_vers),
         # Zenith angle in degrees. 0=vertical, 90=horizontal
         theta_deg=0.,
         #GPU device id
@@ -175,8 +197,8 @@ if __name__ == '__main__':
     # is currently no good reason why
 
     # Primary proton projectile (neutron is included automatically
-    # vie isosping symmetries)
-    p = 2212
+    # vie isospin symmetries)
+    primary_particle = 2212
     # The parameter delta for finite differences computation
     delta = 0.001
     # Energy grid will be truncated below this value (saves some
@@ -188,7 +210,9 @@ if __name__ == '__main__':
     # atmosphere is sufficiently accurate. It would be wrong to
     # choose here anything related to South Pole, since stuff
     # comes from/from below horizon.
-    mceq_run.set_density_model(('CORSIKA', ('BK_USStd', None)))
+    atm_model = "CORSIKA" #TODO Try varying this...
+    atm_model_config = ('BK_USStd', None)
+    mceq_run.set_density_model((atm_model,atm_model_config))
 
     # Define equidistant grid in cos(theta) for 2D interpolation
     # (Can be increased to 20 after debugging is done)
@@ -197,38 +221,55 @@ if __name__ == '__main__':
     cos_theta = np.linspace(0, 1, 21)
     angles = np.arccos(cos_theta) / np.pi * 180.
 
+    # Report settings
+    print("Running with :")
+    print("  Interaction model : %s" % interaction_model)
+    print("  Primary cosmic ray spectrum model : %s" % args.cosmic_ray_model)
+
     # Some technical shortcuts
     solution = {}
-    gs = mceq_run.get_solution
-    pidx = mceq_run.pdg2pref[2212].lidx()
-    nidx = mceq_run.pdg2pref[2112].lidx()
-    mag = 0.
-    tr = np.where(mceq_run.e_grid < 1e5)
+    tr = np.where(mceq_run.e_grid < E_tr)
     etr = mceq_run.e_grid[tr]
+
 
     # Barr variables related to pions
     barr_pivars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
 
     for bp in barr_pivars:
-        # if bp != 'h':
-        #     continue
         solution[bp + '+'] = compute_abs_derivatives(mceq_run, 211, bp, angles)
         solution[bp + '-'] = compute_abs_derivatives(mceq_run, -211, bp, angles)
 
     # Barr variables related to kaons
-    barr_kvars = ['w', 'y', 'z']
+    barr_kvars = ['w', 'x',  'y', 'z']
 
     for bp in barr_kvars:
-        # if bp != 'y':
-        #     continue
         solution[bp + '+'] = compute_abs_derivatives(mceq_run, 321, bp, angles)
         solution[bp + '-'] = compute_abs_derivatives(mceq_run, -321, bp, angles)
 
+    # Store some metadata
+    solution["metadata"] = {
+        "primary_particle" : primary_particle,
+        "cosmic_ray_model" : args.cosmic_ray_model,
+        "interaction_model" : interaction_model,
+        "barr_variables": barr_pivars+barr_kvars,
+        "atmospheric_model": atm_model
+        #TODO atmosphere
+    }
+
+    # Write th output file
+    output_file = 'MCEq_flux_gradient_splines_{primary_particle}_{cosmic_ray_model}_{interaction_model}.pckl.bz2'.format( #TODO atm model, prod height, etc
+        cosmic_ray_model=args.cosmic_ray_model,
+        interaction_model=interaction_model,
+        primary_particle=primary_particle,
+    )
+    output_file = os.path.join( args.output_dir, output_file )
+
     pickle.dump(
         solution,
-        bz2.BZ2File(
-            os.path.join(
-                os.getcwd(),
-                'SA_superfast_jacobians_20170820_1e5_GH_{0}.ppd.bz2'.format(iatag)),
-            'wb'),
-        protocol=-1)
+        bz2.BZ2File(output_file, 'wb'),
+        protocol=-1
+    )
+
+    #TODO store settings used in pickle file too (and make name more explicit)
+
+    print("\nFinished : Output file is %s\n" % output_file)
