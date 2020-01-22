@@ -11,10 +11,10 @@ from __future__ import absolute_import, print_function
 from collections.abc import Sequence
 from collections import OrderedDict
 
+from itertools import chain
+
 import numpy as np
 from numba import SmartArray
-
-from itertools import chain
 
 from pisa import FTYPE
 from pisa.core.binning import OneDimBinning, MultiDimBinning
