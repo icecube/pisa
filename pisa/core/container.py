@@ -10,7 +10,6 @@ from __future__ import absolute_import, print_function
 
 from collections.abc import Sequence
 from collections import OrderedDict
-
 from itertools import chain
 
 import numpy as np
