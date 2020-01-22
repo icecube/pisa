@@ -14,13 +14,14 @@ from collections import OrderedDict
 import numpy as np
 from numba import SmartArray
 
+from itertools import chain
+
 from pisa import FTYPE
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.core.map import Map, MapSet
 from pisa.core.translation import histogram, lookup, resample
 from pisa.utils.log import logging
 
-from itertools import chain
 
 class ContainerSet(object):
     '''
