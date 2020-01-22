@@ -20,6 +20,7 @@ from pisa.core.map import Map, MapSet
 from pisa.core.translation import histogram, lookup, resample
 from pisa.utils.log import logging
 
+from itertools import chain
 
 class ContainerSet(object):
     '''
@@ -257,9 +258,9 @@ class Container(object):
         return list of available keys
         '''
         if self.data_mode == 'events':
-            return self.array_data.keys() + self.scalar_data.keys()
+            return chain(self.array_data.keys(), self.scalar_data.keys())
         elif self.data_mode == 'binned':
-            return self.array_data.keys() + self.scalar_data.keys() + self.data_specs.names
+            return chain(self.array_data.keys(), self.scalar_data.keys(), self.data_specs.names)
         else:
             raise ValueError('Need to set data specs first')
 
@@ -377,7 +378,7 @@ class Container(object):
         '''
         iterate over all keys in container
         '''
-        return iter(self.keys())
+        return self.keys()
 
     def array_to_binned(self, key, binning, averaged=True):
         '''
