@@ -228,19 +228,19 @@ class pi_globes(PiStage):
     @profile
     def compute_function(self):
         # --- update mixing params ---
-        params = np.array([self.params.theta12.value.m_as('rad'),
-                           self.params.theta13.value.m_as('rad'),
-                           self.params.theta23.value.m_as('rad'),
-                           self.params.deltacp.value.m_as('rad'),
-                           self.params.deltam21.value.m_as('eV**2'),
-                           self.params.deltam31.value.m_as('eV**2'),
-                           self.params.deltam41.value.m_as('eV**2'),
-                           0.0,
-                           self.params.theta24.value.m_as('rad'),
-                           self.params.theta34.value.m_as('rad'),
-                           0.0,
-                           0.0
-                           ], dtype=float)
+        params = [self.params.theta12.value.m_as('rad'),
+                  self.params.theta13.value.m_as('rad'),
+                  self.params.theta23.value.m_as('rad'),
+                  self.params.deltacp.value.m_as('rad'),
+                  self.params.deltam21.value.m_as('eV**2'),
+                  self.params.deltam31.value.m_as('eV**2'),
+                  self.params.deltam41.value.m_as('eV**2'),
+                  0.0,
+                  self.params.theta24.value.m_as('rad'),
+                  self.params.theta34.value.m_as('rad'),
+                  0.0,
+                  0.0
+                 ]
         self.globes_calc.SetParametersArr(params)
         # set the correct data mode
         self.data.data_specs = self.calc_specs
