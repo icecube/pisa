@@ -3,6 +3,10 @@
 """
 OscParams: Characterize neutrino oscillation parameters
            (mixing angles, Dirac-type CP-violating phase, mass splittings)
+
+changed by Elisa Lohfink (ellohfin; elohfink@icecube.wisc.edu) 
+to include NSI changes made by Thomas Ehrhardt on his branch:  
+original version can be found in thehrh/pisa nsi_reparameterisation branch 
 """
 
 from __future__ import division
@@ -209,9 +213,10 @@ class OscParams(object):
     def eps_tautau(self, value):
         self.nsi_eps[2,2] = value + 1.j * self.nsi_eps[2, 2].imag
 
+
     @property
     def mix_matrix(self):
-        """Neutrino mixing matrix"""
+        """Neutrino mixing matrix in its 'standard' form"""
         mix = np.zeros((3, 3, 2), dtype=FTYPE)
 
         sd = np.sin(self.deltacp)
@@ -244,8 +249,61 @@ class OscParams(object):
 
     @property
     def mix_matrix_complex(self):
-        ''' mixing matrix as complex 2-d array'''
-        return self.mix_matrix[:, :, 0] + self.mix_matrix[:, :, 1] * 1.j
+        """Mixing matrix as complex 2-d array"""
+        mix = self.mix_matrix
+        return mix[:, :, 0] + mix[:, :, 1] * 1.j
+
+    @property
+    def mix_matrix_reparam(self):
+        """
+        Neutrino mixing matrix reparameterised in a way
+        such that the CPT trafo Hvac -> -Hvac*  is exactly implemented by
+        the simultaneous transformations
+            * deltamsq31 -> -deltamsq32
+            * theta12 -> pi/2 - theta12
+            * deltacp -> pi - deltacp
+
+        which hence leave vacuum propagation invariant.
+
+        This representation follows from the standard form U
+        as diag(exp(i*deltacp), 0, 0) * U * diag(exp(-i*deltacp), 0, 0).
+
+        """
+        mix = np.zeros((3, 3, 2), dtype=FTYPE)
+
+        sd = np.sin(self.deltacp)
+        cd = np.cos(self.deltacp)
+
+        c12 = np.sqrt(1. - self.sin12**2)
+        c23 = np.sqrt(1. - self.sin23**2)
+        c13 = np.sqrt(1. - self.sin13**2)
+
+        mix[0, 0, 0] = c12 * c13
+        mix[0, 0, 1] = 0.
+        mix[0, 1, 0] = self.sin12 * c13 * cd
+        mix[0, 1, 1] = self.sin12 * c13 * sd
+        mix[0, 2, 0] = self.sin13
+        mix[0, 2, 1] = 0.
+        mix[1, 0, 0] = - self.sin12 * c23 * cd - c12 * self.sin23 * self.sin13
+        mix[1, 0, 1] = self.sin12 * c23 * sd
+        mix[1, 1, 0] = c12 * c23 - self.sin12 * self.sin23 * self.sin13 * cd
+        mix[1, 1, 1] = - self.sin12 * self.sin23 * self.sin13 * sd
+        mix[1, 2, 0] = self.sin23 * c13
+        mix[1, 2, 1] = 0.
+        mix[2, 0, 0] = self.sin12 * self.sin23 * cd - c12 * c23 * self.sin13
+        mix[2, 0, 1] = - self.sin12 * self.sin23 * sd
+        mix[2, 1, 0] = - c12 * self.sin23 - self.sin12 * c23 * self.sin13 * cd
+        mix[2, 1, 1] = - self.sin12 * c23 * self.sin13 * sd
+        mix[2, 2, 0] = c23 * c13
+        mix[2, 2, 1] = 0.
+
+        return mix
+
+    @property
+    def mix_matrix_reparam_complex(self):
+        """Reparameterised mixing matrix as complex 2-d array"""
+        mix_reparam = self.mix_matrix_reparam
+        return mix_reparam[:, :, 0] + mix_reparam[:, :, 1] * 1.j
 
     @property
     def dm_matrix(self):
