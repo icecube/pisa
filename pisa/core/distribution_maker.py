@@ -103,7 +103,7 @@ class DistributionMaker(object):
     def __iter__(self):
         return iter(self._pipelines)
 
-    def get_outputs(self, return_sum=False, sum_map_name='total',
+    def get_outputs(self, return_sum=False, pipeline_split=False,sum_map_name='total',
                     sum_map_tex_name='Total', **kwargs):
         """Compute and return the outputs.
 
@@ -115,6 +115,11 @@ class DistributionMaker(object):
             If False, return a list where each element is the full MapSet
             returned by each pipeline in the DistributionMaker.
 
+        pipeline_split: bool
+            If True, will return maps from different pipeline in separate lists
+            If used with return_sum set to True, output will be N maps, wher N is
+            The total number of pipelines in the DistributionMaker
+
         **kwargs
             Passed on to each pipeline's `get_outputs1` method.
 
@@ -123,16 +128,38 @@ class DistributionMaker(object):
         MapSet if `return_sum=True` or list of MapSets if `return_sum=False`
 
         """
-        outputs = [pipeline.get_outputs(**kwargs) for pipeline in self] # pylint: disable=redefined-outer-name
-        if return_sum:
-            if len(outputs) > 1:
-                outputs = reduce(lambda x, y: sum(x) + sum(y), outputs)
-            else:
-                outputs = sum(sum(outputs))
-            outputs.name = sum_map_name
-            outputs.tex = sum_map_tex_name
-            outputs = MapSet(outputs)
+
+        if pipeline_split:
+
+            outputs = []
+
+            for pipeline in self:
+                pipeout = pipeline.get_outputs(**kwargs)
+
+                if return_sum:
+                    if len(pipeout) > 1:
+                        pipeout = reduce(lambda x, y: sum(x) + sum(y), pipeout)
+                    else:
+                        pipeout = sum(sum(pipeout))
+
+                    pipeout.name = sum_map_name
+                    pipeout.tex = sum_map_tex_name
+                    pipeout = MapSet(pipeout)
+            outputs.append(pipeout)
+        else:
+            outputs = [pipeline.get_outputs(**kwargs) for pipeline in self] # pylint: disable=redefined-outer-name
+            if return_sum:
+                if len(outputs) > 1:
+                    outputs = reduce(lambda x, y: sum(x) + sum(y), outputs)
+                else:
+                    outputs = sum(sum(outputs))
+                outputs.name = sum_map_name
+                outputs.tex = sum_map_tex_name
+                outputs = MapSet(outputs)
+
+
         return outputs
+
 
     def update_params(self, params):
         for pipeline in self:

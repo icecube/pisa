@@ -756,7 +756,18 @@ class Analysis(object):
         hypo_maker._set_rescaled_free_params(rescaled_pvals) # pylint: disable=protected-access
 
         # Record the Asimov distribution with the optimal param values
-        hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
+        #
+        # HACKY HACK To handle pipeline specific outputs
+        #
+        hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True,pipeline_split=True)
+
+        print(hypo_asimov_dist)
+        print('HA!')
+        return Exception
+        raise Exception
+
+
+
 
         # Get the best-fit metric value
         metric_val = sign * optimize_result.pop('fun')

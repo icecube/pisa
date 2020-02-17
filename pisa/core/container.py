@@ -257,9 +257,9 @@ class Container(object):
         return list of available keys
         '''
         if self.data_mode == 'events':
-            return self.array_data.keys() + self.scalar_data.keys()
+            return list(self.array_data.keys()) + list(self.scalar_data.keys())
         elif self.data_mode == 'binned':
-            return self.array_data.keys() + self.scalar_data.keys() + self.data_specs.names
+            return list(self.array_data.keys()) + list(self.scalar_data.keys()) + self.data_specs.names
         else:
             raise ValueError('Need to set data specs first')
 
