@@ -24,7 +24,8 @@ from pisa.core.param import ParamSet
 from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging
 from pisa.utils.fileio import to_file
-from pisa.utils.stats import METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE
+from pisa.utils.stats import METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE, generalized_poisson_llh
+
 
 
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD',
@@ -416,6 +417,7 @@ class Analysis(object):
         alternate_fits : list of `fit_info` from other fits run
 
         """
+
         if isinstance(metric, str):
             metric = [metric]
 
@@ -624,8 +626,10 @@ class Analysis(object):
             'minimizer_metadata'
 
         """
+
         minimizer_settings = set_minimizer_defaults(minimizer_settings)
         validate_minimizer_settings(minimizer_settings)
+
 
         if isinstance(metric, str):
             metric = [metric]
@@ -687,6 +691,7 @@ class Analysis(object):
 
         logging.debug('Running the %s minimizer...', minimizer_method)
 
+
         # Using scipy.optimize.minimize allows a whole host of minimizers to be
         # used.
         counter = Counter()
@@ -725,6 +730,12 @@ class Analysis(object):
 
         # reset number of iterations before each minimization
         self._nit = 0
+
+
+        #
+        # From that point on, optimize starts using the metric and 
+        # iterates, no matter what you do 
+        #
         optimize_result = optimize.minimize(
             fun=self._minimizer_callable,
             x0=x0,
@@ -735,6 +746,8 @@ class Analysis(object):
             options=minimizer_settings['options']['value'],
             callback=self._minimizer_callback
         )
+        print('HERE?')
+        raise Exception
         end_t = time.time()
         if pprint:
             # clear the line
@@ -756,18 +769,7 @@ class Analysis(object):
         hypo_maker._set_rescaled_free_params(rescaled_pvals) # pylint: disable=protected-access
 
         # Record the Asimov distribution with the optimal param values
-        #
-        # HACKY HACK To handle pipeline specific outputs
-        #
-        hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True,pipeline_split=True)
-
-        print(hypo_asimov_dist)
-        print('HA!')
-        return Exception
-        raise Exception
-
-
-
+        hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
 
         # Get the best-fit metric value
         metric_val = sign * optimize_result.pop('fun')
@@ -1021,6 +1023,13 @@ class Analysis(object):
         # Set param values from the scaled versions the minimizer works with
         hypo_maker._set_rescaled_free_params(scaled_param_vals) # pylint: disable=protected-access
 
+        # HACKY:
+        hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
+        #print(hypo_asimov_dist)
+        #print(type(hypo_maker.pipelines[0].stages[-1].data))
+        #raise Exception
+
+
         # Get the Asimov map set
         try:
             hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
@@ -1045,6 +1054,10 @@ class Analysis(object):
             assert len(metric) == 1
 
         # Assess the fit: whether the data came from the hypo_asimov_dist
+        #
+        # THIS IS WHERE THE METRIC IS BEING CALLED
+
+        #raise Exception
         try:
             if isinstance(hypo_maker, Detectors):
                 metric_val = 0
@@ -1055,11 +1068,15 @@ class Analysis(object):
                 priors = hypo_maker.params.priors_penalty(metric=metric[0]) # uses just the "first" metric for prior
                 metric_val += priors
             else: # DistributionMaker object
-                metric_val = (
-                    data_dist.metric_total(expected_values=hypo_asimov_dist,
-                                           metric=metric[0])
-                    + hypo_maker.params.priors_penalty(metric=metric[0])
-                )
+
+                if 'generalized_poisson_llh' in metric:
+                    metric_val = generalized_poisson_llh(expected_values=hypo_maker,actual_values=data_dist)
+                else:
+                    metric_val = (
+                        data_dist.metric_total(expected_values=hypo_asimov_dist,
+                                               metric=metric[0])
+                        + hypo_maker.params.priors_penalty(metric=metric[0])
+                    )
         except Exception as e:
             if blind:
                 logging.error('Minimizer failed')
