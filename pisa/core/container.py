@@ -10,6 +10,7 @@ from __future__ import absolute_import, print_function
 
 from collections.abc import Sequence
 from collections import OrderedDict
+from itertools import chain
 
 import numpy as np
 from numba import SmartArray
@@ -377,7 +378,7 @@ class Container(object):
         '''
         iterate over all keys in container
         '''
-        return iter(self.keys())
+        return self.keys()
 
     def array_to_binned(self, key, binning, averaged=True):
         '''

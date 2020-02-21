@@ -26,9 +26,10 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 
 
 import os, sys, collections, copy, inspect
+import pdb
 
 import numpy as np
-from scipy.optimize import curve_fit
+from iminuit import Minuit 
 
 from pisa import FTYPE, TARGET, ureg
 from pisa.utils import vectorizer
@@ -63,11 +64,11 @@ def get_num_args(func) :
     '''
 
     #TODO numba funcs
-
-    if isinstance(func, np.ufunc):
-        return func.nargs
-    else :
-        return len(inspect.getargspec(func).args)
+    return func.nargs
+#     if isinstance(func, np.ufunc):
+#         return func.nargs
+#     else :
+#         return len(inspect.getargspec(func).args)
 
 
 '''
@@ -91,34 +92,95 @@ Hypersurface functional forms
          representing the hypersurfaces of all bins per bin.
 '''
 
-#TODO support uncertainty propagation (difficult because `uncertainties` modules not compatible with numba)
-
-def linear_hypersurface_func(p,m,out) :
+class linear_hypersurface_func(object) :
     '''
     Linear hypersurface functional form
 
     f(p) = m * p
     '''
-    result = m * p
-    np.copyto(src=result,dst=out)
+    def __init__(self):
+        self.nargs = 1
+        
+    def __call__(self, p,m,out):
+        result = m * p
+        np.copyto(src=result,dst=out)
+    
+    def grad(self,p, m, out):
+        # because m itself is not in the actual calculation, we have to broadcast 
+        # manually to yield the same shape as if we had done m*p and added one axis
+        foo = m*p
+        result = np.broadcast_to(p, foo.shape)[..., np.newaxis]
+        np.copyto(src=result, dst=out)
 
+class quadratic_hypersurface_func(object) :
+    '''
+    Quadratic hypersurface functional form
 
-def exponential_hypersurface_func(p,a,b,out) :
+    f(p) = m1*p + m2*p**2
+    '''
+    def __init__(self):
+        self.nargs = 2
+    
+    def __call__(self,p,m1,m2,out):
+        result = m1*p + m2*p**2
+        np.copyto(src=result,dst=out)
+    
+    def grad(self, p, m1, m2, out):
+        # because m itself is not in the actual calculation, we have to broadcast 
+        # manually to yield the same shape as if we had done m*p and stacked on the last axis
+        foo = m1*p
+        result = np.stack([np.broadcast_to(p, foo.shape),
+                           np.broadcast_to(p**2, foo.shape)],
+                          axis=-1
+                         )
+        np.copyto(src=result,dst=out)
+    
+class exponential_hypersurface_func(object) :
     '''
     Exponential hypersurface functional form
 
     f(p) = a * exp(b*p)
     '''
-    result = a * np.exp(b*p)
-    np.copyto(src=result,dst=out)
+    def __init__(self):
+        self.nargs = 2
+    
+    def __call__(self,p,a,b,out):
+        result = a * np.exp(b*p)
+        np.copyto(src=result,dst=out)
+    
+    def grad(self,p,a,b,out):
+        # because parameters and coefficients both appear, everything is broadcast automatically
+        result = np.stack([np.exp(b*p), a*p*np.exp(b*p)], axis=-1)
+        np.copyto(src=result,dst=out)
 
+class logarithmic_hypersurface_func(object):
+    '''
+    Logarithmic hypersurface functional form
+    
+    f(p) = log(1 + mp)
+    
+    Allows the fit of an effectively linear multiplicative
+    function while in logmode, since:
+    exp(log(1 + mp) + h) = (1 + mp) exp(h)
+    '''
+    def __init__(self):
+        self.nargs = 1
+    
+    def __call__(p, m, out):
+        result = np.log(1 + m*p)
+        np.copyto(src=result,dst=out)
+    
+    def grad(p, m, out):
+        # because parameters and coefficients both appear, everything is broadcast automatically
+        result = np.array([p/(1 + m*p)])[:, np.newaxis]
+        np.copyto(src=result, dst=out)
 
 # Container holding all possible functions
 HYPERSURFACE_PARAM_FUNCTIONS = collections.OrderedDict()
 HYPERSURFACE_PARAM_FUNCTIONS["linear"] = linear_hypersurface_func
+HYPERSURFACE_PARAM_FUNCTIONS["quadratic"] = quadratic_hypersurface_func
 HYPERSURFACE_PARAM_FUNCTIONS["exponential"] = exponential_hypersurface_func
-
-
+HYPERSURFACE_PARAM_FUNCTIONS["logarithmic"] = logarithmic_hypersurface_func
 
 '''
 Core hypersurface classes
@@ -173,19 +235,23 @@ class Hypersurface(object) :
 
     initial_intercept : float
         Starting point for the hypersurface intercept in any fits
+    
+    log : bool, optional
+        Set hypersurface to log mode. The surface is fit to the log of the bin counts.
+        The fitted surface is exponentiated during evaluation. Default: False
     '''
 
-    def __init__(self, params, initial_intercept=None ) :
+    def __init__(self, params, initial_intercept=None, log=False):
 
         # Store args
         self.initial_intercept = initial_intercept
-
         # Store params as dict for ease of lookup
         self.params = collections.OrderedDict()
         for param in params :
             assert param.name not in self.params, "Duplicate param name found : %s" % param.name
             self.params[param.name] = param
-
+            
+        self.log = log
         # Internal state
         self._initialized = False
 
@@ -221,7 +287,7 @@ class Hypersurface(object) :
 
         # Set a default initial intercept value if none provided
         if self.initial_intercept is None :
-            self.initial_intercept = 0.
+            self.initial_intercept = 0. if self.log else 1.
 
         # Create the fit coefficient arrays
         # Have one fit per bin
@@ -265,7 +331,7 @@ class Hypersurface(object) :
         return list(self.params.keys())
 
 
-    def evaluate(self, param_values, bin_idx=None) :
+    def evaluate(self, param_values, bin_idx=None, return_uncertainty=False) :
         '''
         Evaluate the hypersurface, using the systematic parameter values provided.
         Uses the current internal values for all functional form coefficients.
@@ -282,6 +348,9 @@ class Hypersurface(object) :
         bin_idx : tuple or None
             Optionally can specify a particular bin (using numpy indexing). d
             Othewise will evaluate all bins.
+        
+        return_uncertainty : bool, optional
+            return the uncertainty on the output (default: False)
         '''
 
         assert self._initialized, "Cannot evaluate hypersurface, it haas not been initialized"
@@ -328,7 +397,6 @@ class Hypersurface(object) :
         # Create the output array
         out = np.full(out_shape,np.NaN,dtype=FTYPE)
 
-
         #
         # Evaluate the hypersurface
         #
@@ -342,13 +410,44 @@ class Hypersurface(object) :
 
         # Evaluate each individual parameter
         for k,p in list(self.params.items()) :
-            p.evaluate(param_values[k],out=out,bin_idx=bin_idx)
+            p.evaluate(param_values[k] - p.nominal_value,out=out,bin_idx=bin_idx)
+        
+        output_factors = np.exp(out) if self.log else out
+        
+        if return_uncertainty:
+            # create buffer array for the gradients
+            n_coeffs = 1 # start with 1 because intercept is an additional coefficient
+            for param in list(self.params.values()):
+                n_coeffs += param.num_fit_coeffts
+            gradient_buffer = np.full(out_shape + (n_coeffs,), np.NaN, dtype=FTYPE)
+            # Start with the intercept, its gradient is always 1
+            gradient_buffer[..., 0] = 1.
 
-        return out
+            # Evaluate gradient each individual parameter and store in buffer.
+            i = 1 # start at one because the intercept was already treated
+            for k,p in list(self.params.items()):
+                gbuf = np.full(out_shape + (p.num_fit_coeffts,), np.NaN, dtype=FTYPE)
+                p.gradient(param_values[k] - p.nominal_value, out=gbuf, bin_idx=bin_idx)
+                for j in range(p.num_fit_coeffts):
+                    gradient_buffer[..., i] = gbuf[..., j]
+                    i += 1
+            
+            # In log-mode, the output is exponentiated. For the gradient this simply means multiplying 
+            # with the output itself.
+            if self.log:
+                gradient_buffer = output_factors[..., np.newaxis]*gradient_buffer
+            # Calculate uncertainty from gradients and covariance matrix
+            transformed_jacobian = np.einsum('...j,...kj->...k', gradient_buffer, self.fit_cov_mat[bin_idx])
+            variance = np.einsum('...j,...j', transformed_jacobian, gradient_buffer)
+        
+        if return_uncertainty:
+            return output_factors, np.sqrt(variance)
+        else:
+            return output_factors
 
-
-
-    def fit(self, nominal_map, nominal_param_values, sys_maps, sys_param_values, norm=True, method="lm", smooth=False, smooth_kw=None ) :
+    def fit(self, nominal_map, nominal_param_values, sys_maps, sys_param_values, norm=True, method="L-BFGS-B",
+            smooth=False, smooth_kw=None, fix_intercept=False, intercept_bounds=None, intercept_sigma=None,
+            include_empty=False ) :
         '''
         Fit the hypersurface coefficients (in every bin) to best match the provided nominal
         and systematic datasets.
@@ -377,7 +476,7 @@ class Hypersurface(object) :
             In principal the hypersurfaces are more general though and could be used for other tasks too, hence this option.
 
         method : str
-            `method` arg to pass to `scipy.optimize.curve_fit`
+            `method` arg to pass to `scipy.optimize.minimiza`
 
         smooth : str
             Smoothing method to use. Choose `None` if do not want smoothing.
@@ -390,13 +489,17 @@ class Hypersurface(object) :
               `gaussian_filter`
                  kwargs for `scipy.ndimage.filters.gaussian_filter`
                  MUST include `sigma`, `order`
+        
+        fix_intercept : bool
+            Fix intercept to the initial intercept.
+        
+        intercept_bounds : 2-tuple, optional
+            Bounds on the intercept. Default is None (no bounds)
+        
+        include_empty : bool
+            Include empty bins in the fit. If True, empty bins are included with value 0 and sigma 1.
+            Default: False
         '''
-
-        #TODO Add option to exclude bins with too few stats from the fit, leving null hypersurface for them.
-        #     This is to avoid issues with bins with tiny stats having crazy gradients from statistical 
-        #     fluctuations (if there are very few events in that bin for that species then that bin shouldn't
-        #     be significant in the fit).
-
 
         #
         # Check inputs
@@ -408,7 +511,6 @@ class Hypersurface(object) :
         assert set(nominal_param_values.keys()) == set(self.param_names)
         assert all([ isinstance(k, str) for k in nominal_param_values.keys() ])
         assert all([ np.isscalar(v) for v in nominal_param_values.values() ])
-
         # Check systematic dataset definitions
         assert isinstance(sys_maps, collections.Sequence)
         assert isinstance(sys_param_values, collections.Sequence)
@@ -421,7 +523,7 @@ class Hypersurface(object) :
             assert all([ np.isscalar(v) for v in sys_param_vals.values() ])
             assert sys_map.binning == nominal_map.binning
 
-
+        assert not (include_empty and self.log), "empty bins cannot be included in log mode"
         #
         # Format things before getting started
         #
@@ -449,7 +551,6 @@ class Hypersurface(object) :
         # Format the fit `x` values : [ [sys param 0 values], [sys param 1 values], ... ]
         # Order of the params must match the order in `self.params`
         x = np.asarray( [ param_values_dict[param_name] for param_name in list(self.params.keys()) ], dtype=FTYPE )
-
         # Prepare covariance matrix array
         self.fit_cov_mat = np.full( list(self.binning.shape)+[self.num_fit_coeffts,self.num_fit_coeffts] ,np.NaN )
 
@@ -506,7 +607,7 @@ class Hypersurface(object) :
             normed_maps = []
             for m in maps :
                 norm_m = copy.deepcopy(m)
-                norm_m.hist[finite_mask] = norm_m.hist[finite_mask] / nominal_map.hist[finite_mask]
+                norm_m.hist[finite_mask] = norm_m.hist[finite_mask] / unp.nominal_values(nominal_map.hist[finite_mask])
                 norm_m.hist[~finite_mask] = ufloat(np.NaN, np.NaN)
                 normed_maps.append(norm_m)
 
@@ -547,14 +648,16 @@ class Hypersurface(object) :
             # May remove some points before fitting if find issues
             scan_point_mask = np.ones( y.shape, dtype=bool) 
 
-            # Cases where we have a y_sigma element = 0 (normally because the corresponding y element = 0) screw up the fits (least squares divides by sigma, so get infs)
-            # Need to handle these cases here
-            # For now, I assing an new non-zero sigma value instead
-            # Could also try masking off the points, but find that I have cases where I then don't have enough sets to fit the number of parameters I need
-            #TODO Look into a good solution to this in more detail
+            # Cases where we have a y_sigma element = 0 (normally because the corresponding y element = 0)
+            # screw up the fits (least squares divides by sigma, so get infs)
+            # By default, we ignore empty bins. If the user wishes to include them, it can be done with 
+            # a value of zero and standard deviation of 1. 
             bad_sigma_mask = y_sigma == 0.
-            if bad_sigma_mask.sum() > 0 :
-                y_sigma[bad_sigma_mask] = 1.
+            if bad_sigma_mask.sum() > 0:
+                if include_empty:
+                    y_sigma[bad_sigma_mask] = 1.
+                else:
+                    scan_point_mask = scan_point_mask & ~bad_sigma_mask
 
             # Apply the mask to get the values I will actually use
             x_to_use = np.array([ xx[scan_point_mask] for xx in x ])
@@ -569,7 +672,10 @@ class Hypersurface(object) :
             # The param coefficients are ordered as [ param 0 cft 0, ..., param 0 cft N, ..., param M cft 0, ..., param M cft N ]
             p0_intercept = self.intercept[bin_idx]
             p0_param_coeffts = [ param.get_fit_coefft(bin_idx=bin_idx,coefft_idx=i_cft) for param in list(self.params.values()) for i_cft in range(param.num_fit_coeffts) ]
-            p0 = np.array( [p0_intercept] + p0_param_coeffts, dtype=FTYPE )
+            if fix_intercept:
+                p0 = np.array( p0_param_coeffts, dtype=FTYPE )
+            else:
+                p0 = np.array( [p0_intercept] + p0_param_coeffts, dtype=FTYPE )
 
 
             #
@@ -597,7 +703,7 @@ class Hypersurface(object) :
 
                 # Must have at least as many sets as free params in fit or else curve_fit will fail
                 assert y.size >= p0.size, "Number of datasets used for fitting (%i) must be >= num free params (%i)" % (y.size, p0.size)
-
+                
                 # Define a callback function for use with `curve_fit`
                 #   x : sys params
                 #   p : func/shape params
@@ -607,8 +713,8 @@ class Hypersurface(object) :
                     # an arg as `curve_fit` cannot handle fixed parameters.
 
                     # Unflatten list of the func/shape params, and write them to the hypersurface structure
-                    self.intercept[bin_idx] = p[0]
-                    i = 1
+                    self.intercept[bin_idx] = self.initial_intercept if fix_intercept else p[0]
+                    i = 0 if fix_intercept else 1
                     for param in list(self.params.values()) :
                         for j in range(param.num_fit_coeffts) :
                             bin_fit_idx = tuple( list(bin_idx) + [j] )
@@ -622,47 +728,94 @@ class Hypersurface(object) :
                         params_unflattened[param_name] = x[i]
 
                     return self.evaluate(params_unflattened,bin_idx=bin_idx)
+                
+                inv_param_sigma = []
+                if intercept_sigma is not None:
+                    inv_param_sigma.append(1./intercept_sigma)
+                else:
+                    inv_param_sigma.append(0.)
+                for param in list(self.params.values()):
+                    if param.coeff_prior_sigma is not None:
+                        for j in range(param.num_fit_coeffts):
+                            inv_param_sigma.append(1./param.coeff_prior_sigma[j])
+                    else:
+                        for j in range(param.num_fit_coeffts):
+                            inv_param_sigma.append(0.)
+                inv_param_sigma = np.array(inv_param_sigma)
+                assert np.all(np.isfinite(inv_param_sigma)), "invalid values found in prior sigma. They must not be zero."
+                
+                # coefficient names to pass to Minuit. Not strictly necessary 
+                coeff_names = [] if fix_intercept else ['intercept']
+                for name, param in self.params.items():
+                    for j in range(param.num_fit_coeffts):
+                        coeff_names.append(name + '_p{:d}'.format(j))
+                
+                def loss(p):
+                    '''
+                    Loss to be minimized during the fit. 
+                    '''
+                    fvals = callback(x_to_use, *p)
+                    return np.sum(((fvals - y_to_use)/y_sigma_to_use)**2) + np.sum((inv_param_sigma*p)**2)
+                
+                # Define fit bounds for `minimize`. Bounds are pairs of (min, max) values for 
+                # each parameter in the fit. Use 'None' in place of min/max if there is 
+                # no bound in that direction.
+                fit_bounds = []
+                if intercept_bounds is None:
+                    fit_bounds.append((None, None))
+                else:
+                    assert (len(intercept_bounds) == 2) and (np.ndim(intercept_bounds) == 1), "intercept bounds must be given as 2-tuple"
+                    fit_bounds.append(intercept_bounds)
 
-
+                
+                for param in self.params.values():
+                    if param.bounds is None:
+                        fit_bounds.extend(((None, None),)*param.num_fit_coeffts)
+                    else:
+                        if np.ndim(param.bounds) == 1:
+                            assert len(param.bounds) == 2, "bounds on single coefficients must be given as 2-tuples"
+                            fit_bounds.append(param.bounds)
+                        elif np.ndim(param.bounds) == 2:
+                            assert np.all([len(t) == 2 for t in param.bounds]), "bounds must be given as a tuple of 2-tuples" 
+                            fit_bounds.extend(param.bounds)
+                
                 # Define the EPS (step length) used by the fitter
                 # Need to take care with floating type precision, don't want to go smaller than the FTYPE being used by PISA can handle
                 eps = np.finfo(FTYPE).eps
  
                 # Debug logging
-                test_bin_idx = (0,0,0) 
+                test_bin_idx = (0, 0, 0)
                 if bin_idx == test_bin_idx :
-                    msg = ">>>>>>>>>>>>>>>>>>>>>>>"
-                    msg += "Curve fit inputs to bin %s :" % (bin_idx,) 
-                    msg += "  x           : %s" % x
-                    msg += "  y           : %s" % y
-                    msg += "  y sigma     : %s" % y_sigma
-                    msg += "  p0          : %s" % p0
-                    msg += "  fit method  : %s" % self.fit_method
+                    msg = ">>>>>>>>>>>>>>>>>>>>>>>\n"
+                    msg += "Curve fit inputs to bin %s :\n" % (bin_idx,) 
+                    msg += "  x           : \n%s\n" % x
+                    msg += "  y           : \n%s\n" % y
+                    msg += "  y sigma     : \n%s\n" % y_sigma
+                    msg += "  x used      : \n%s\n" % x_to_use
+                    msg += "  y used      : \n%s\n" % y_to_use
+                    msg += "  y sigma used: \n%s\n" % y_sigma_to_use
+                    msg += "  p0          : %s\n" % p0
+                    msg += "  bounds      : \n%s\n" % fit_bounds
+                    msg += "  inv sigma   : \n%s\n" % inv_param_sigma
+                    msg += "  fit method  : %s\n" % self.fit_method
                     msg += "<<<<<<<<<<<<<<<<<<<<<<<"
                     logging.debug(msg)
 
-                # Define some settings to use with `curve_fit` that vary with fit method
-                curve_fit_kw = {}
-                if self.fit_method == "lm" :
-                    curve_fit_kw["epsfcn"] = eps
-
                 # Perform fit
-                #TODO rescale all params to [0,1] as we do for minimizers?
-                popt, pcov = curve_fit(
-                    callback,
-                    x_to_use,
-                    y_to_use,
-                    p0=p0,
-                    sigma=y_sigma_to_use,
-                    absolute_sigma=True, #TODO check this is really what we want
-                    maxfev=1000000, #TODO arg?
-                    method=self.fit_method,
-                    **curve_fit_kw
-                )
-
-                # Check the fit was successful
-                #TODO curve_fit doesn't return anything that use here, so need another method. Check on chi2 could work...
-
+                m = Minuit.from_array_func(loss, p0,
+                                           error=(0.1)*len(p0), # only initial step size, not very important
+                                           limit=fit_bounds, # same format as for scipy minimization 
+                                           name=coeff_names,
+                                           errordef=1) # =1 for least squares fit and 0.5 for nllh fit, used to estimate errors
+                m.migrad()
+                m.hesse()
+                popt = m.np_values()
+                pcov = m.np_matrix()
+                if bin_idx == test_bin_idx:
+                    logging.debug(m.get_fmin())
+                    logging.debug(m.get_param_states())
+                    logging.debug(m.covariance)
+                #TODO Check the fit was successful
 
             #
             # Re-format fit results
@@ -675,18 +828,21 @@ class Hypersurface(object) :
 
             # Write the fitted param results (and sigma, if available) back to the hypersurface structure
             i = 0
-            self.intercept[bin_idx] = popt[i]
-            self.intercept_sigma[bin_idx] = np.NaN if corr_vals is None else corr_vals[i].std_dev
-            i += 1
+            if not fix_intercept:
+                self.intercept[bin_idx] = popt[i]
+                self.intercept_sigma[bin_idx] = np.NaN if corr_vals is None else corr_vals[i].std_dev
+                i += 1
             for param in list(self.params.values()) :
                 for j in range(param.num_fit_coeffts) :
                     idx = param.get_fit_coefft_idx(bin_idx=bin_idx,coefft_idx=j)
                     param.fit_coeffts[idx] = popt[i]
                     param.fit_coeffts_sigma[idx] = np.NaN if corr_vals is None else corr_vals[i].std_dev
                     i += 1
-
             # Store the covariance matrix
-            self.fit_cov_mat[bin_idx] = pcov #TODO copyto?
+            if fix_intercept and np.all(np.isfinite(pcov)):
+                self.fit_cov_mat[bin_idx] = np.pad(pcov, ((1, 0), (1, 0)))
+            else:
+                self.fit_cov_mat[bin_idx] = pcov
 
 
         #
@@ -895,6 +1051,7 @@ class Hypersurface(object) :
             state["_initialized"] = self._initialized
             state["binning"] = self.binning.serializable_state
             state["initial_intercept"] = self.initial_intercept
+            state["log"] = self.log
             state["intercept"] = self.intercept
             state["intercept_sigma"] = self.intercept_sigma
             state["fit_complete"] = self.fit_complete
@@ -1010,10 +1167,21 @@ class HypersurfaceParam(object) :
     initial_fit_coeffts : array
         Initial values for the coefficients of the functional form
         Number and meaning of coefficients depends on functional form
+    
+    bounds : 2-tuple of array_like, optional
+        Lower and upper bounds on independent variables. Defaults to no bounds.
+        Each element of the tuple must be either an array with the length equal
+        to the number of parameters, or a scalar (in which case the bound is
+        taken to be the same for all parameters.) Use ``np.inf`` with an
+        appropriate sign to disable bounds on all or some parameters.
+    
+    coeff_prior_sigma : array, optional
+        Prior sigma values for the coefficients. If None (default), no regularization will
+        be applied during the fit. 
     '''
 
 
-    def __init__(self, name, func_name, initial_fit_coeffts=None ) :
+    def __init__(self, name, func_name, initial_fit_coeffts=None, bounds=None, coeff_prior_sigma=None ) :
 
         # Store basic members
         self.name = name
@@ -1022,7 +1190,9 @@ class HypersurfaceParam(object) :
         self.fit_coeffts = None # Fit params container, not yet populated
         self.fit_coeffts_sigma = None # Fit param sigma container, not yet populated
         self.initial_fit_coeffts = initial_fit_coeffts # The initial values for the fit parameters
-
+        self.bounds = bounds
+        self.coeff_prior_sigma = coeff_prior_sigma
+        
         # Record information relating to the fitting
         self.fitted = False # Flag indicating whether fit has been performed
         self.fit_param_values = None # The values of this sys param in each of the fitting datasets
@@ -1043,9 +1213,9 @@ class HypersurfaceParam(object) :
         self._hypersurface_func = self._get_hypersurface_func(self.func_name)
 
         # Get the number of functional form parameters
-        # This is the functional form function parameters, excluding the systematic paramater and the output object
-        self.num_fit_coeffts = get_num_args(self._hypersurface_func) - 2
-
+        self.num_fit_coeffts = get_num_args(self._hypersurface_func)
+        if self.coeff_prior_sigma is not None:
+            assert len(self.coeff_prior_sigma) == self.num_fit_coeffts, "number of prior sigma values must equal the number of parameters."
         # Check and init the fit param initial values
         #TODO Add support for "per bin" initial values
         if initial_fit_coeffts is None :
@@ -1070,7 +1240,7 @@ class HypersurfaceParam(object) :
         assert isinstance(func_name,str), "'func_name' must be a string"
 
         assert func_name in HYPERSURFACE_PARAM_FUNCTIONS, "Cannot find hypersurface function '%s', choose from %s" % ( func_name, list(HYPERSURFACE_PARAM_FUNCTIONS.keys()) )
-        return HYPERSURFACE_PARAM_FUNCTIONS[func_name]
+        return HYPERSURFACE_PARAM_FUNCTIONS[func_name]()
 
 
     def _init_fit_coefft_arrays(self, binning) :
@@ -1120,6 +1290,28 @@ class HypersurfaceParam(object) :
 
         # Add to overall hypersurface result
         out += this_out
+        
+    def gradient(self, param, out, bin_idx=None) :
+        '''
+        Evaluate gradient of the functional form for the given `param` values.
+        Uses the current values of the fit coefficients.
+
+        By default evaluates all bins, but optionally can specify a particular bin (used when fitting).
+        '''
+        # Create an array to fill with the gradient
+        this_out = np.full_like(out, np.NaN, dtype=FTYPE)
+
+        # Form the arguments to pass to the functional form
+        # Need to be flexible in terms of the number of fit parameters
+        args = [param]
+        for cft_idx in range(self.num_fit_coeffts) :
+            args += [self.get_fit_coefft(bin_idx=bin_idx,coefft_idx=cft_idx)]
+        args += [this_out]
+
+        # Call the function
+        self._hypersurface_func.grad(*args)
+        # Copy to wherever the gradient is to be stored
+        np.copyto(src=this_out, dst=out)
 
 
     def get_fit_coefft_idx(self, bin_idx=None, coefft_idx=None) :
@@ -1177,7 +1369,7 @@ class HypersurfaceParam(object) :
             state["fit_param_values"] = self.fit_param_values
             state["binning_shape"] = self.binning_shape
             state["nominal_value"] = self.nominal_value
-
+            state["bounds"] = self.bounds
             self._serializable_state = state
 
         return self._serializable_state 
@@ -1200,7 +1392,8 @@ def get_hypersurface_file_name(hypersurface, tag) :
     return output_file
 
 
-def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, combine_regex=None, **hypersurface_fit_kw) :
+def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, combine_regex=None,
+                      log=True, **hypersurface_fit_kw) :
     '''
     A helper function that a user can use to fit hypersurfaces to a bunch of simulation datasets,
     and save the results to a file. Basically a wrapper of Hypersurface.fit, handling common pre-fitting tasks
@@ -1341,7 +1534,8 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
         # Create the hypersurface
         hypersurface = Hypersurface( 
             params=copy.deepcopy(params),
-            initial_intercept=1., # Initial value for intercept
+            initial_intercept=0. if log else 1., # Initial value for intercept
+            log=log
         )
 
         # Perform fit
@@ -1525,7 +1719,7 @@ def _load_hypersurfaces_legacy(input_data) :
         # Create the hypersurface
         hypersurface = Hypersurface( 
             params=params, # Specify the systematic parameters
-            initial_intercept=0., # Intercept value (or first guess for fit)
+            initial_intercept=1., # Intercept value (or first guess for fit)
         )
 
         # Set some internal members that would normally be configured during fitting
@@ -1633,7 +1827,7 @@ def _load_hypersurfaces_data_release(input_file_prototype, binning) :
         # Create the hypersurface
         hypersurface = Hypersurface( 
             params=params, # Specify the systematic parameters
-            initial_intercept=0., # Intercept value (or first guess for fit)
+            initial_intercept=1., # Intercept value (or first guess for fit)
         )
 
         # Set some internal members that would normally be configured during fitting
@@ -1671,7 +1865,7 @@ def _load_hypersurfaces_data_release(input_file_prototype, binning) :
 Plotting
 '''
 
-def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None, show_nominal=False) :
+def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None, show_nominal=False, show_offaxis=True, show_zero=False) :
     '''
     Plot the hypersurface for a given bin, in 1D w.r.t. to a single specified parameter.
     Plots the following:
@@ -1712,18 +1906,38 @@ def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None,
     assert len(bin_idx) == len(hypersurface.binning.shape)
 
     # Get bin values for this bin only
-    chosen_bin_values = [ m.nominal_values[bin_idx] for m in hypersurface.fit_maps ]
-    chosen_bin_sigma = [ m.std_devs[bin_idx] for m in hypersurface.fit_maps ]
+    chosen_bin_values = np.squeeze([ m.nominal_values[bin_idx] for m in hypersurface.fit_maps ])
+    chosen_bin_sigma = np.squeeze([ m.std_devs[bin_idx] for m in hypersurface.fit_maps ])
 
     # Define a mask for selecting on-axis points only
     on_axis_mask = hypersurface.get_on_axis_mask(param.name)
+    include_mask = np.ones_like(on_axis_mask) if show_zero else (np.asarray(chosen_bin_values) > 0.)
 
     # Plot the points from the datasets used for fitting
-    x = np.asarray(param.fit_param_values)[on_axis_mask]
-    y = np.asarray(chosen_bin_values)[on_axis_mask]
-    yerr = np.asarray(chosen_bin_sigma)[on_axis_mask]
+    x = np.asarray(param.fit_param_values)[on_axis_mask & include_mask]
+    y = np.asarray(chosen_bin_values)[on_axis_mask & include_mask]
+    yerr = np.asarray(chosen_bin_sigma)[on_axis_mask & include_mask]
+
     ax.errorbar( x=x, y=y, yerr=yerr, marker="o", color=("black" if color is None else color), linestyle="None", label=label )
 
+    # Plot off-axis points by projecting them along the fitted surface on the axis. 
+    if show_offaxis:
+        x = np.asarray(param.fit_param_values)
+        y = np.asarray(chosen_bin_values)
+        yerr = np.asarray(chosen_bin_sigma)
+        prediction = hypersurface.evaluate(hypersurface.fit_param_values, bin_idx=bin_idx)
+        params_for_projection = {param.name: x}
+        for p in list(hypersurface.params.values()) :
+            if p.name != param.name :
+                params_for_projection[p.name] = np.full_like(x, hypersurface.nominal_values[p.name])
+        prediction_on_axis = hypersurface.evaluate(params_for_projection, bin_idx=bin_idx)
+        y_projected = y - prediction + prediction_on_axis
+        ax.errorbar(x=x[~on_axis_mask & include_mask],
+                    y=y_projected[~on_axis_mask & include_mask],
+                    yerr=yerr[~on_axis_mask & include_mask],
+                    marker="o", color=("black" if color is None else color), linestyle="None",
+                    alpha=0.5,
+                   )
     # Plot the hypersurface
     # Generate as bunch of values along the sys param axis to make the plot
     # Then calculate the hypersurface value at each point, using the nominal values for all other sys params
@@ -1732,8 +1946,10 @@ def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None,
     for p in list(hypersurface.params.values()) :
         if p.name != param.name :
             params_for_plot[p.name] = np.full_like(x_plot,hypersurface.nominal_values[p.name])
-    y_plot = hypersurface.evaluate(params_for_plot,bin_idx=bin_idx)
+    y_plot, y_sigma = hypersurface.evaluate(params_for_plot, bin_idx=bin_idx, return_uncertainty=True)
     ax.plot( x_plot, y_plot, color=("red" if color is None else color) )
+    # y_sigma = hypersurface.uncertainty(params_for_plot, bin_idx=bin_idx)
+    ax.fill_between(x_plot, y_plot - y_sigma, y_plot + y_sigma, color=("red" if color is None else color), alpha=0.2)
 
     #TODO Add fit uncertainty. Problem using uarrays with np.exp at the minute, may need to shift to bin-wise calc...
     # ax.fill_between( curve_x[i,:], unp.nominal_values(y_opt)-unp.std_devs(y_opt), unp.nominal_values(y_opt)+unp.std_devs(y_opt), color='red', alpha=0.2 )
@@ -1747,9 +1963,9 @@ def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None,
     #     y_opt_uncorr = hypersurface_fun(curve_x, *fit_params_uncorr)
     #     ax.fill_between( curve_x[i,:], unp.nominal_values(y_opt_uncorr)-unp.std_devs(y_opt_uncorr), unp.nominal_values(y_opt_uncorr)+unp.std_devs(y_opt_uncorr), color='blue', alpha=0.5 )
 
-    # Mark the nominal value
+    # Show the nominal value
     if show_nominal :
-        ax.axvline( x=param.nominal_value, color="blue", alpha=0.7, linestyle="-", label="Nominal", zorder=-1 )
+        ax.axvline( x=param.nominal_value, color="blue", alpha=0.7, linestyle="-", zorder=-1 )
 
     # Format ax
     ax.set_xlabel(param.name)
@@ -1838,7 +2054,170 @@ def plot_bin_fits_2d(ax, hypersurface, bin_idx, param_names ) :
 #
 # Test/example
 #
-
+def generate_asimov_testdata(binning, parameters, true_param_coeffs,
+                             nominal_param_values, sys_param_values,
+                             error_scale=0.1, log=False, intercept=2.,
+                            ):
+    hypersurface = Hypersurface( 
+        params=parameters, # Specify the systematic parameters
+        initial_intercept=intercept, # Intercept value (or first guess for fit)
+        log=log,
+    )
+    assert set(hypersurface.params.keys()) == set(nominal_param_values.keys())
+    assert set(hypersurface.params.keys()) == set(true_param_coeffs.keys())
+    
+    hypersurface._init(binning=binning, nominal_param_values=nominal_param_values)
+    from pisa.core.map import Map, MapSet
+    for bin_idx in np.ndindex(binning.shape):
+        for name, coeffs in true_param_coeffs.items():
+            assert len(coeffs) == hypersurface.params[name].num_fit_coeffts, "number of coefficients in the parameter must match"
+            for j, c in enumerate(coeffs):
+                idx = hypersurface.params[name].get_fit_coefft_idx(bin_idx=bin_idx, coefft_idx=j)
+                hypersurface.params[name].fit_coeffts[idx] = c 
+    logging.info("Truth hypersurface report:\n%s" % str(hypersurface))
+    
+    # Only consider one particle type for simplicity
+    particle_key = "nue_cc"
+    # Create each dataset, e.g. set the systematic parameter values, calculate a bin count
+    hist = hypersurface.evaluate(nominal_param_values)
+    assert np.all(hist >= 0.), "nominal map has negative values! Choose different true parameters."
+    nom_map = Map(name=particle_key, binning=binning, hist=hist, error_hist=np.sqrt(hist)*error_scale)
+    logging.info("Nominal hist: \n%s" % str(nom_map.hist))
+    sys_maps = []
+    for i in range(len(sys_param_values)):
+        hist = hypersurface.evaluate(sys_param_values[i])
+        assert np.all(hist > 0.), "a systematic map has negative values! values: %s systematics: %s" % (str(hist), str(sys_param_values[i]))
+        sys_maps.append(Map(name=particle_key, binning=binning, hist=hist, error_hist=np.sqrt(hist)*error_scale))
+        # logging.info("Systematic params: \n%s" % str(sys_param_values[i]))
+        # logging.info("Systematic hist: \n%s" % str(sys_maps[-1].hist))
+    return nom_map, sys_maps
+    
+def test_hypersurface_uncertainty(logmode=True):
+    '''
+    Simple test of hypersurface fits + uncertainty
+    1. Creates some Asimov test data matching a true hypersurface and checks the ability
+       to fit back the truth.
+    2. Fluctuates Asimov test data randomly to check uncertainties claimed by hypersurface
+    '''
+    import matplotlib.pyplot as plt
+    # Define systematic parameters in the hypersurface
+    params = [
+        HypersurfaceParam(name="foo", func_name="linear", initial_fit_coeffts=[1.],),
+        HypersurfaceParam(name="bar", func_name="quadratic", initial_fit_coeffts=[1., -1.],),
+    ]
+    # Create the hypersurface
+    hypersurface = Hypersurface( 
+        params=params, # Specify the systematic parameters
+        initial_intercept=1., # Intercept value (or first guess for fit)
+        log=logmode
+    )
+    from pisa.core.map import Map, MapSet
+    # Define binning with one dummy bin
+    binning = MultiDimBinning([OneDimBinning(name="reco_energy", domain=[0.,10.], num_bins=1, units=ureg.GeV,is_lin=True)])
+    # Define true coefficients
+    true_coeffs = {'foo': [0.4], 'bar': [0.2, -1.]}
+    nominal_param_values = {'foo': 1., 'bar': 0.}
+    # making combinations of systematic values
+    foo_vals = np.linspace(-1., 2., 6)
+    bar_vals = np.linspace(-.5, 0.5, 5)
+    sys_param_values = []
+    for f in foo_vals:
+        for b in bar_vals:
+            sys_param_values.append({'foo': f, 'bar': b})
+    
+    nom_map, sys_maps = generate_asimov_testdata(binning,
+                                                 params,
+                                                 true_coeffs,
+                                                 nominal_param_values,
+                                                 sys_param_values,
+                                                 log=logmode,
+                                                 error_scale=0.2,
+                                                )
+    # Perform fit
+    hypersurface.fit(
+        nominal_map=nom_map,
+        nominal_param_values=nominal_param_values,
+        sys_maps=sys_maps,
+        sys_param_values=sys_param_values,
+        norm=False,
+    )
+    # Report the results
+    logging.info("Fitted hypersurface report:\n%s" % hypersurface)
+    
+    fig, ax = plt.subplots()
+    plot_bin_fits(ax, hypersurface, bin_idx=[0], param_name='foo', label='Asimov test map')
+    ax.grid()
+    plt.savefig('test_hypersurface_foo.pdf')
+    
+    fig, ax = plt.subplots()
+    plot_bin_fits(ax, hypersurface, bin_idx=[0], param_name='bar', label='Asimov test map')
+    ax.grid()
+    plt.savefig('test_hypersurface_bar.pdf')
+    
+    # Evaluate hypersurface and uncertainties at some points
+    # that just happen to be the systematic values (but choice could be different)
+    asimov_true_points = []
+    asimov_fit_points = []
+    asimov_fit_errs = []
+    for i in range(len(sys_param_values)):
+        hist, errs = hypersurface.evaluate(sys_param_values[i], return_uncertainty=True)
+        asimov_fit_points.append(hist)
+        asimov_fit_errs.append(errs)
+        asimov_true_points.append(sys_maps[i].nominal_values)
+    asimov_true_points = np.concatenate(asimov_true_points)
+    asimov_fit_points = np.concatenate(asimov_fit_points)
+    asimov_fit_errs = np.concatenate(asimov_fit_errs)
+    logging.info("Asimov true points:\n%s" % str(asimov_true_points))
+    logging.info("Asimov fit points:\n%s" % str(asimov_fit_points))
+    logging.info("Asimov fit errors:\n%s" % str(asimov_fit_errs))
+    logging.info("Fluctuating maps and re-fitting...")
+    # do several rounds of fluctuation, re-fit and storage of results
+    n_rounds = 100
+    fluctuated_fit_points = []
+    for i in range(n_rounds):
+        #logging.info("Round %d/%d" % (i+1, n_rounds))
+        nom_map_fluct = nom_map.fluctuate(method='gauss')
+        sys_maps_fluct = []
+        for s in sys_maps:
+            sys_maps_fluct.append(s.fluctuate(method='gauss'))
+        hypersurface.fit(
+            nominal_map=nom_map_fluct,
+            nominal_param_values=nominal_param_values,
+            sys_maps=sys_maps_fluct,
+            sys_param_values=sys_param_values,
+            norm=False,
+        )
+        fluctuated_fit_points.append([])
+        for j in range(len(sys_param_values)):
+            hist = hypersurface.evaluate(sys_param_values[j], return_uncertainty=False)
+            fluctuated_fit_points[-1].append(hist)
+        fluctuated_fit_points[-1] = np.concatenate(fluctuated_fit_points[-1])
+        logging.debug("Fluctuated fit points:\n%s" % str(fluctuated_fit_points[-1]))
+    # evaluate whether the actual fluctuations match the estimated errors
+    fluctuated_fit_points = np.array(fluctuated_fit_points)
+    fit_differences = fluctuated_fit_points - asimov_fit_points
+    all_pulls = fit_differences / asimov_fit_errs
+    avg_fit_differences = np.mean(fit_differences, axis=0)
+    mean_fluctuated_fits = np.mean(fluctuated_fit_points, axis=0)
+    std_fluctuated_fits = np.std(fluctuated_fit_points, axis=0)
+    std_pulls = np.std(all_pulls, axis=0)
+    logging.info("Average fluctuated fit difference:\n%s" % str(avg_fit_differences))
+    #logging.info("Average fluctuated fit points:\n%s" % str(mean_fluctuated_fits))
+    #logging.info("Fluctuated fit standard deviations:\n%s" % str(std_fluctuated_fits))
+    # pulls = np.mean(all_pulls, axis=0)
+    logging.info("Mean pulls per point:\n%s" % str(std_pulls))
+    logging.info("Mean pull: %.3f" % np.mean(std_pulls))
+    # plotting
+    plt.figure()
+    plt.hist(all_pulls.flatten(), bins=50, density=True, label='fluctuated fits')
+    x_plot = np.linspace(-4, 4, 100)
+    plt.plot(x_plot, np.exp(-x_plot**2/2.)/np.sqrt(2.*np.pi), label='expectation')
+    plt.title('pull distribution')
+    plt.xlabel('pull')
+    plt.ylabel('density')
+    plt.legend()
+    plt.savefig('test_hypersurface_pull.pdf')
+    
 def hypersurface_example() :
     '''
     Simple hypersurface example covering:
@@ -1867,7 +2246,7 @@ def hypersurface_example() :
     # Create the hypersurface
     hypersurface = Hypersurface( 
         params=params, # Specify the systematic parameters
-        initial_intercept=0., # Intercept value (or first guess for fit)
+        initial_intercept=1., # Intercept value (or first guess for fit)
     )
 
 
@@ -1948,6 +2327,7 @@ def hypersurface_example() :
         assert np.allclose( hypersurface.params[param_name].fit_coeffts, true_hypersurface.params[param_name].fit_coeffts )
     logging.info("... fit was successful!")
 
+    print(hypersurface.evaluate(nom_param_values, return_uncertainty=True))
 
     #
     # Save/load
