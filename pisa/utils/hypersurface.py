@@ -694,7 +694,8 @@ class Hypersurface(object) :
 
         # Evaluate each individual parameter
         for k,p in list(self.params.items()) :
-            p.evaluate(param_values[k] - p.nominal_value,out=out,bin_idx=bin_idx)
+            param_val = param_values[k] if self.using_legacy_data else param_values[k] - p.nominal_value
+            p.evaluate(param_val,out=out,bin_idx=bin_idx)
         
         output_factors = np.exp(out) if self.log else out
         
@@ -711,7 +712,8 @@ class Hypersurface(object) :
             i = 1 # start at one because the intercept was already treated
             for k,p in list(self.params.items()):
                 gbuf = np.full(out_shape + (p.num_fit_coeffts,), np.NaN, dtype=FTYPE)
-                p.gradient(param_values[k] - p.nominal_value, out=gbuf, bin_idx=bin_idx)
+                param_val = param_values[k] if self.using_legacy_data else param_values[k] - p.nominal_value
+                p.gradient(param_val, out=gbuf, bin_idx=bin_idx)
                 for j in range(p.num_fit_coeffts):
                     gradient_buffer[..., i] = gbuf[..., j]
                     i += 1
@@ -1049,7 +1051,7 @@ class Hypersurface(object) :
                 # no bound in that direction.
                 fit_bounds = []
                 if intercept_bounds is None:
-                    fit_bounds.append((None, None))
+                    fit_bounds.append(tuple([None, None]))
                 else:
                     assert (len(intercept_bounds) == 2) and (np.ndim(intercept_bounds) == 1), "intercept bounds must be given as 2-tuple"
                     fit_bounds.append(intercept_bounds)
@@ -1095,14 +1097,16 @@ class Hypersurface(object) :
                                            name=coeff_names,
                                            errordef=1) # =1 for least squares fit and 0.5 for nllh fit, used to estimate errors
                 m.migrad()
-                m.hesse()
+                try:
+                    m.hesse()
+                except iminuit.HesseFailedWarning as e :
+                    raise Exception("Hesse failed for bin %s, cannot determine covariance matrix" % (bin_idx,))
                 popt = m.np_values()
                 pcov = m.np_matrix()
                 if bin_idx == test_bin_idx:
                     logging.debug(m.get_fmin())
                     logging.debug(m.get_param_states())
                     logging.debug(m.covariance)
-                #TODO Check the fit was successful
 
             #
             # Re-format fit results
@@ -2285,7 +2289,7 @@ def _load_hypersurfaces_data_release(input_file_prototype, binning) :
 Plotting
 '''
 
-def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None, show_nominal=False, show_offaxis=True, show_zero=False) :
+def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None, show_nominal=False, show_offaxis=True, show_zero=False, show_uncertainty=True) :
     '''
     Plot the hypersurface for a given bin, in 1D w.r.t. to a single specified parameter.
     Plots the following:
@@ -2315,6 +2319,9 @@ def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None,
 
     show_nominal : bool
         Indicate the nominal value of the param on the plot
+
+    show_uncertainty : bool
+        Indicate the hypersurface uncertainty on the plot
     '''
 
     import matplotlib.pyplot as plt
@@ -2369,10 +2376,8 @@ def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None,
     y_plot, y_sigma = hypersurface.evaluate(params_for_plot, bin_idx=bin_idx, return_uncertainty=True)
     ax.plot( x_plot, y_plot, color=("red" if color is None else color) )
     # y_sigma = hypersurface.uncertainty(params_for_plot, bin_idx=bin_idx)
-    ax.fill_between(x_plot, y_plot - y_sigma, y_plot + y_sigma, color=("red" if color is None else color), alpha=0.2)
-
-    #TODO Add fit uncertainty. Problem using uarrays with np.exp at the minute, may need to shift to bin-wise calc...
-    # ax.fill_between( curve_x[i,:], unp.nominal_values(y_opt)-unp.std_devs(y_opt), unp.nominal_values(y_opt)+unp.std_devs(y_opt), color='red', alpha=0.2 )
+    if show_uncertainty :
+        ax.fill_between(x_plot, y_plot - y_sigma, y_plot + y_sigma, color=("red" if color is None else color), alpha=0.2)
 
     # # Optional : For testing, overlay the uncertainty one would find under the assumption fit parameters are uncorrelated
     #TODO This is removed until hyperplane uncertainty is re-implemented
