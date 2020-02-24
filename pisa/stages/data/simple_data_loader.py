@@ -57,6 +57,7 @@ class simple_data_loader(PiStage):
                  mc_cuts,
                  data_dict,
                  neutrinos=True,
+                 detector_data=False,
                  data=None,
                  params=None,
                  input_names=None,
@@ -73,6 +74,7 @@ class simple_data_loader(PiStage):
         self.mc_cuts = mc_cuts
         self.data_dict = data_dict
         self.neutrinos = neutrinos
+        self.detector_data = detector_data
         self.fraction_events_to_keep = fraction_events_to_keep
 
         # instead of adding params here, consider making them instantiation

@@ -13,7 +13,7 @@ from pisa import FTYPE
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.fileio import from_file
 from pisa.utils.log import logging
-
+from pisa import ureg
 
 __all__ = [
     "NU_FLAVORS",
@@ -89,12 +89,16 @@ class EventsPi(OrderedDict):
     def __init__(self, *arg, **kw):
         name = kw.pop("name", None)
         neutrinos = kw.pop("neutrinos", True)
+
+        is_data   = kw.pop("detector_data",False)
+
         fraction_events_to_keep = kw.pop("fraction_events_to_keep", None)
 
         super().__init__(*arg, **kw)
 
         self.name = name
         self.neutrinos = neutrinos
+        self.detector_data = is_data
         self.fraction_events_to_keep = fraction_events_to_keep
 
         # Check `fraction_events_to_keep` value is required range
@@ -163,7 +167,12 @@ class EventsPi(OrderedDict):
                     )
 
         if isinstance(events_file, str):
-            input_data = from_file(events_file)
+            input_data,metadata = from_file(events_file,return_attrs=True)
+            
+            # Special Case for detector data: fetch the livetime from the metadata
+            if self.detector_data and ('livetime' in metadata.keys()):
+                self.metadata['livetime'] = metadata['livetime']*ureg.second
+
             if not isinstance(input_data, Mapping):
                 raise TypeError(
                     'Contents loaded from "%s" must be a mapping; got: %s'
