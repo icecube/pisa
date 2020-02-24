@@ -51,7 +51,7 @@ Also note that where a service implements `FTYPE` and relies on C extension code
 | `flux.dummy`               | :black_square_button:    | :black_square_button: | :black_square_button: | :black_square_button: |
 | `flux.honda`               | :heavy_check_mark:       | :black_square_button: | :black_square_button: | :black_square_button: |
 | `flux.mceq`                | :black_square_button:    | :black_square_button: | :black_square_button: | :black_square_button: |
-| `flux.pi_simple`           | :heavy_exclamation_mark: | :heavy_check_mark:    | :black_square_button: | :heavy_check_mark:    |
+| `flux.pi_barr_simple`      | :heavy_exclamation_mark: | :heavy_check_mark:    | :black_square_button: | :heavy_check_mark:    |
 | `osc.pi_prob3`             | :heavy_exclamation_mark: | :heavy_check_mark:    | :black_square_button: | :heavy_check_mark:    |
 | `pid.hist`                 | :black_square_button:    | :black_square_button: | :black_square_button: | :black_square_button: |
 | `pid.param`                | :black_square_button:    | :black_square_button: | :black_square_button: | :black_square_button: |

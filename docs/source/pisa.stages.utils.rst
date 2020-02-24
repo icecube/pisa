@@ -1,11 +1,11 @@
-pisa.stages.utils package
-=========================
+pisa\.stages\.utils package
+===========================
 
 Submodules
 ----------
 
-pisa.stages.utils.pi\_hist module
----------------------------------
+pisa\.stages\.utils\.pi\_hist module
+------------------------------------
 
 .. automodule:: pisa.stages.utils.pi_hist
     :members:

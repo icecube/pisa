@@ -17,18 +17,21 @@ required, in addition to a ``[binning]`` section:
     #include file_y.cfg as y
 
     [pipeline]
+
     order = stageA.serviceA, stageB.serviceB
 
+
     [binning]
+
     #include generic_binning.cfg
 
     binning1.order = axis1, axis2
-    binning1.axis1 = {'num_bins':40, 'is_log':True,
-                      'domain':[1,80] units.GeV, 'tex': r'A_1'}
-    binning1.axis2 = {'num_bins':10, 'is_lin':True,
-                      'domain':[1,5], 'tex': r'A_2'}
+    binning1.axis1 = {'num_bins': 40, 'is_log': True, 'domain': [1,80] units.GeV, 'tex': r'A_1'}
+    binning1.axis2 = {'num_bins': 10, 'is_lin': True, 'domain': [1,5], 'tex': r'A_2'}
+
 
     [stageA.serviceA]
+
     input_binning = bining1
     output_binning = binning1
     error_method = None
@@ -38,7 +41,25 @@ required, in addition to a ``[binning]`` section:
     param.p1.fixed = False
     param.p1.range = nominal + [-2.0, +2.0] * sigma
 
+    param.selector1.p2 = 0.5 +/- 0.5 units.deg
+    param.selector1.p2.fixed = False
+    param.selector1.p2.range = nominal + [-2.0, +2.0] * sigma
+
+    param.selector2.p2 = -0.5 +/- 0.1 units.deg
+    param.selector2.p2.fixed = False
+    param.selector2.p2.range = nominal + [-2.0, +2.0] * sigma
+
+
     [stageB.serviceB]
+
+    input_binning = bining1
+    output_binning = binning1
+    error_method = None
+    debug_mode = False
+
+    param.p1 = ${stageA.serviceA:param.p1}
+    param.selector1.p2 = ${stageA.serviceA:param.selector1.p2}
+    param.selector2.p2 = ${stageA.serviceA:param.selector2.p2}
     ...
 
 * ``#include`` statements can be used to include other config files. The
@@ -198,15 +219,12 @@ from io import StringIO
 from os.path import abspath, expanduser, expandvars, isfile, join
 import re
 import sys
-import warnings
 
-from backports.configparser import (
+from configparser import (
     RawConfigParser, ExtendedInterpolation, DuplicateOptionError,
     SectionProxy, MissingSectionHeaderError, DuplicateSectionError,
     NoSectionError
 )
-from backports.configparser.helpers import open as c_open
-from backports.configparser.helpers import PY2
 import numpy as np
 from uncertainties import ufloat, ufloat_fromstr
 
@@ -602,8 +620,8 @@ def parse_pipeline_config(config):
 
     detector_name = None
     if config.has_option(section, 'detector_name'):
-        detector_name = config.get(section, 'detector_name')    
-        
+        detector_name = config.get(section, 'detector_name')
+
     # Parse [stage.<stage_name>] sections and store to stage_dicts
     stage_dicts = OrderedDict()
     for stage, service in order:
@@ -611,8 +629,8 @@ def parse_pipeline_config(config):
         new_section_header = '%s%s%s' % (stage, STAGE_SEP, service)
         if config.has_section(old_section_header):
             logging.warning(
-                '"%s" is an old-style section header, in the future use "%s"'
-                %(old_section_header, new_section_header)
+                '"%s" is an old-style section header, in the future use "%s"',
+                old_section_header, new_section_header
             )
             section = old_section_header
         elif config.has_section(new_section_header):
@@ -635,8 +653,8 @@ def parse_pipeline_config(config):
                 value = config.get(section, fullname)
             except:
                 logging.error(
-                    'Unable to obtain value of option "%s" in section "%s".'
-                    % (fullname, section)
+                    'Unable to obtain value of option "%s" in section "%s".',
+                    fullname, section
                 )
                 raise
             # See if this matches a param specification
@@ -739,7 +757,7 @@ def parse_pipeline_config(config):
         # Store the service's kwargs to the stage_dicts
         stage_dicts[(stage, service)] = service_kwargs
 
-    stage_dicts['detector_name'] = detector_name    
+    stage_dicts['detector_name'] = detector_name
     return stage_dicts
 
 
@@ -873,7 +891,7 @@ class MutableMultiFileIterator(object):
             else:
                 self._cleanup()
                 raise ValueError('`fpname` "%s" is not a file')
-            fp_ = c_open(fpath, encoding=None)
+            fp_ = open(fpath, encoding=None)
         else:
             fp_ = fp
             if fpname is None:
@@ -1075,23 +1093,11 @@ class PISAConfigParser(RawConfigParser):
         # NOTE: From here on, most of the `read` method is copied, but
         # ignoring IOError exceptions is removed here. Python copyrights apply.
 
-        if PY2 and isinstance(filenames, bytes):
-            # we allow for a little unholy magic for Python 2 so that
-            # people not using unicode_literals can still use the library
-            # conveniently
-            warnings.warn(
-                "You passed a bytestring as `filenames`. This will not work"
-                " on Python 3. Use `cp.read_file()` or switch to using Unicode"
-                " strings across the board.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            filenames = [filenames]
-        elif isinstance(filenames, str):
+        if isinstance(filenames, str):
             filenames = [filenames]
         read_ok = []
         for filename in filenames:
-            with c_open(filename, encoding=encoding) as fp:
+            with open(filename, encoding=encoding) as fp:
                 self._read(fp, filename)
             read_ok.append(filename)
         return read_ok

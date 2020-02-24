@@ -221,19 +221,18 @@ def do_setup():
             'numpy>=1.17'
         ],
         install_requires=[
-            'configparser',
-            'scipy>=0.17',
+            'decorator',
+            'kde @ git+https://github.com/icecubeopensource/kde.git',
             'h5py',
+            'iminuit',
             'line_profiler',
             'matplotlib>=3.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
+            'numba==0.43.1', # >=0.35: fastmath jit flag; >=0.38: issue #439, <0.44 because SmartArray deprication
             'pint>=0.8', # earlier versions buggy
-            'kde @ git+https://github.com/icecubeopensource/kde.git',
+            'scipy>=0.17',
             'simplejson>=3.2',
             'tables',
             'uncertainties',
-            'decorator',
-            'iminuit',
-            'numba==0.43.1', # >=0.35: fastmath jit flag; >=0.38: issue #439, <0.44 because SmartArray deprication
         ],
         extras_require={
             'develop': [

@@ -77,27 +77,27 @@ Also note that Python, HDF5, and pip support come pre-packaged or as `conda`-ins
     `sudo apt install llvm-3.9-dev`
 
 Required Python modules that are installed automatically when you use the `pip` command detailed later:
-* [configparser](https://pypi.python.org/pypi/configparser)
 * [decorator](https://pypi.python.org/pypi/decorator)
 * [h5py](http://www.h5py.org)
-* [line_profiler](https://pypi.python.org/pypi/line_profiler): detailed profiling output<br>
-  * if automatic pip installation of line_profiler fails, you may want to try `conda install line_profiler` if you are using anaconda
-* [matplotlib](http://matplotlib.org) >= 2.0 required
-* [numpy](http://www.numpy.org) version >= 1.11.0 required
-* [pint](https://pint.readthedocs.org) >= 0.8 required
-  * if automatic pip installation of pint fails, you may want to try `conda install pint` if you are using anaconda
-* [scipy](http://www.scipy.org) version >= 0.17 required
-* [setuptools](https://setuptools.readthedocs.io) version >= 0.18 required
-* [simplejson](https://github.com/simplejson/simplejson) version >= 3.2.0 required
-* [tables](http://www.pytables.org)
-* [uncertainties](https://pythonhosted.org/uncertainties)
-* [numba>=0.38](http://numba.pydata.org) Just-in-time compilation of decorated Python functions to native machine code via LLVM. This package is required to use PISA pi; also in cake it can accelerate certain routines significantly. If not using Anaconda to install, you must have LLVM installed already on your system (see above).
+* [iminuit](): Python interface to the MINUIT2 C++ package, used for proper covariance matrices during minimization
 * [kde](https://github.com/IceCubeOpenSource/kde)
   * You can install the `kde` module manually if it fails to install automatically:
     * Including CUDA support:<br>
       `pip install git+https://github.com/icecubeopensource/kde.git#egg=kde[cuda]`
     * Without CUDA support:<br>
       `pip install git+https://github.com/icecubeopensource/kde.git#egg=kde`
+* [line_profiler](https://pypi.python.org/pypi/line_profiler): detailed profiling output<br>
+  * if automatic pip installation of line_profiler fails, you may want to try `conda install line_profiler` if you are using anaconda
+* [matplotlib](http://matplotlib.org) >= 2.0 required
+* [numba==0.43.1](http://numba.pydata.org) Just-in-time compilation of decorated Python functions to native machine code via LLVM. This package is required to use PISA pi; also in cake it can accelerate certain routines significantly. If not using Anaconda to install, you must have LLVM installed already on your system (see above).
+* [numpy](http://www.numpy.org) version >= 1.17 required
+* [pint>=0.8](https://pint.readthedocs.org) >= 0.8 required
+  * if automatic pip installation of pint fails, you may want to try `conda install pint` if you are using anaconda
+* [scipy](http://www.scipy.org) version >= 0.17 required
+* [setuptools](https://setuptools.readthedocs.io) version >= 18.5 required
+* [simplejson](https://github.com/simplejson/simplejson) version >= 3.2.0 required
+* [tables](http://www.pytables.org)
+* [uncertainties](https://pythonhosted.org/uncertainties)
 
 
 ### Optional Dependencies
