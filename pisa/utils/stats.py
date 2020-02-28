@@ -16,7 +16,7 @@ from pisa.utils import likelihood_functions
 import sys,os
 sys.path.append('/home/bourdeet/NBI/IceCube/PISA/')
 
-from mc_uncertainty.llh_defs.poisson import generic_pdf
+
 
 __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
            'maperror_logmsg',
@@ -552,6 +552,82 @@ def mod_chi2(actual_values, expected_values):
     )
     return m_chi2
 
+
+def format_input_to_generalized_poisson(actual_values, expected_values):
+    '''
+
+    Format pisa inputs to fit the generalized poisson likelihood structure
+
+    Inputs: 
+    ---------
+
+    actual_values: MapSet from the data
+
+    expected_values = DistributionMaker from the Simulation
+    '''
+
+    from pisa.core.container import Container,ContainerSet 
+    from pisa.core.distribution_maker import DistributionMaker
+    from pisa.core.map import MapSet,Map 
+    
+    import collections
+
+    #
+    # First, handle the experimental data (or pseudo data)
+    #
+    # This flattening is done row-major, which is what the inner translation_indices function does
+    # ie:  idx = (idx_x*(len(bin_edges_y)-1) + idx_y)*(len(bin_edges_z)-1) + idx_z
+    # 
+    # Result is a 1Dnumpy array
+    flattened_actual = actual_values.hist.flatten(order='C')
+    n_bins = flattened_actual.shape[0]
+    n_bins_multi = actual_values.binning
+
+    #
+    # Next, retrieve the expected data, dividing it into pipeline
+    assert len(expected_values.pipelines)==2,'ERROR: found more than 2 pipelines in simulation..'
+    neutrino_expectation, muon_expectation = expected_values.pipelines
+
+
+    #
+    # We Now have a Pipeline object for each simulated pipeline.
+    # From there, we collect the indices and the weights of each event
+    #
+    dataset_weights = collections.OrderedDict()
+
+    def construct_weight_dict(container_set=None,dataset_weights=None):
+
+        for container in container_set.stages[-1].data:
+
+            # Create a weight entry if it doesn't exist yet
+            if container.name not in dataset_weights.keys():
+                dataset_weights[container.name] = [None for x in range(n_bins)]
+
+            # Check if a bin_indices array is present
+            if 'bin_indices' not in container.array_data.keys():
+                from pisa.core.bin_indexing import lookup_indices
+                indices = lookup_indices(sample=[container.array_data['reco_energy'],container.array_data['reco_coszen'],container.array_data['pid']],binning=n_bins_multi)
+                container.add_array_data(key='bin_indices',data=indices.get())
+
+            # Iterate over each analysis bin, picking up weights that are 
+            # falling into bin i
+            for i in range(n_bins):
+
+                mask = container.array_data['bin_indices'].get()==i 
+                w =container.array_data['weights'].get()[mask]
+                assert w.shape[0]==sum(mask),'I am not picking the weights right.'
+                dataset_weights[container.name][i] = w
+
+        return dataset_weights
+
+    dataset_weights = construct_weight_dict(container_set=neutrino_expectation,dataset_weights=dataset_weights)
+    dataset_weights = construct_weight_dict(container_set=muon_expectation,dataset_weights=dataset_weights)
+
+    return flattened_actual, dataset_weights
+    
+
+
+
 def generalized_poisson_llh(actual_values,expected_values):
     '''
     Compute the generalized Poisson likelihood as formulated in https://arxiv.org/abs/1902.08831
@@ -566,6 +642,7 @@ def generalized_poisson_llh(actual_values,expected_values):
     expected_values: DistributionMaker 
 
     '''
+    from mc_uncertainty.llh_defs.poisson import generic_pdf
 
     # We need to reformat the data to fit the way things are fed into the
     # generalized likelihood. The latter requires the following inputs:
@@ -588,71 +665,13 @@ def generalized_poisson_llh(actual_values,expected_values):
     # default settings (as stated towards the end of the paper): gen2 , empty_bin_strategy=1, mead_adjustment=True
     #
 
-    #
-    # First, handle the experimental data (or pseudo data)
-    #
-    assert len(actual_values)==1,'ERROR: actual values should have exactly one Map in its MapSet'
-    actual_values = actual_values[0]
 
-    #This flattening is done row-major, which is what the inner translation_indices function does
-    # ie:  idx = (idx_x*(len(bin_edges_y)-1) + idx_y)*(len(bin_edges_z)-1) + idx_z
-    #
-    flattened_actual = actual_values.hist.flatten(order='C')
+    flattened_actual, weights_dict = format_input_to_generalized_poisson(actual_values, expected_values)
 
 
-    #
-    # Next, handle the expected data, with one histogram per pipeline
-    #
-    expected_outputs = [sum(p.get_outputs()) for p in expected_values.pipelines]
-
-    # We Now have a Map object for each simulated pipeline, which can be converted into their respective
-    # histograms
-    flattened_expected = [m.hist.flatten(order='C') for m in expected_outputs]
-
-    # Finally, we need to retrieve the array_indices vectors from each pipeline. Those
-    # Are stored in the last stage's array data
-    containersets_per_pipeline = [p.stages[-1].data for p in expected_values.pipelines]
-
-    weights_per_pipelines = []
-    indices_per_pipelines = []
-    for pipeline in containersets_per_pipeline:
-        weights_per_pipelines.append(np.concatenate([c.array_data['weights'].get() for c in pipeline]))
-        indices_per_pipelines.append(np.concatenate([c.array_data['bin_indices'].get() for c in pipeline]))
-
-
-    weight_dict={}
-    names = ['neutrinos','muons']
-
-    for n,w,index in  zip(names,weights_per_pipelines,indices_per_pipelines):
-
-        weight_dict[n] = []
-        for i in range(flattened_actual.shape[0]):
-            mask = index==i
-            weight_dict[n].append(w[mask])
-
-    '''
-    print('k_list: ',flattened_actual)
-    print('k_list shape: ',flattened_actual.shape)
-    print('\n----\n')
-    print('dataset_weights type: ',type(weight_dict))
-    print('dataset keys: ',weight_dict.keys())
-    print('dataset substructure: ',type(weight_dict['muons']))
-    print('len of substructure (should be 200): ',len(weight_dict['muons']))
-    print('dataset_substructure: ',[a.shape for a in weight_dict['muons']])
-    '''
-
-
-    # Convert numpy array of uncertainties into the nominal values
-    flattened_actual = np.array([a.nominal_value for a in flattened_actual])
-
-    print(np.isfinite(flattened_actual).sum()-flattened_actual.shape[0])
-
-    print([np.isfinite(a).sum()-a.shape[0] for a in weight_dict['muons']])
-    print([np.isfinite(a).sum()-a.shape[0] for a in weight_dict['neutrinos']])
-
-
-    llh = generic_pdf(k_list=flattened_actual,
-                               dataset_weights=weight_dict,
+    print('COMPUTING THE LLH!!')
+    llh = generic_pdf(data=flattened_actual,
+                               dataset_weights=weights_dict,
                                type="gen2",
                                empty_bin_strategy=1,
                                empty_bin_weight="max",
