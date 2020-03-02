@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 import argparse
 from collections.abc import Mapping, Iterable
-from collections import OrderedDict 
+from collections import OrderedDict
 import copy
 
 import numpy as np
@@ -84,21 +84,27 @@ class EventsPi(OrderedDict):
         Must be in range [0.,1.], or disable by setting to `None`.
         Default in None.
 
+    *args, **kwargs
+        Passed on to `__init__` method of OrderedDict
+
     """
 
-    def __init__(self, *arg, **kw):
-        name = kw.pop("name", None)
-        neutrinos = kw.pop("neutrinos", True)
-        fraction_events_to_keep = kw.pop("fraction_events_to_keep", None)
-
-        super().__init__(*arg, **kw)
+    def __init__(
+        self,
+        *args,
+        name=None,
+        neutrinos=True,
+        fraction_events_to_keep=None,
+        **kwargs
+    ):
+        super().__init__(*args, **kwargs)
 
         self.name = name
         self.neutrinos = neutrinos
         self.fraction_events_to_keep = fraction_events_to_keep
 
         # Check `fraction_events_to_keep` value is required range
-        if self.fraction_events_to_keep is not None :
+        if self.fraction_events_to_keep is not None:
             assert (self.fraction_events_to_keep >= 0.) and (self.fraction_events_to_keep <= 1.), "`fraction_events_to_keep` must be in range [0.,1.], or None to disable"
 
         # Define some metadata
@@ -171,6 +177,25 @@ class EventsPi(OrderedDict):
                 )
         else:  # isinstance(events_file, Mapping)
             input_data = events_file
+
+        # Events and EventsPi objects have attr `metadata`
+        metadata = getattr(input_data, 'metadata', None)
+
+        # HDF files have attr `attrs` attached, if present (see pisa.utils.hdf)
+        if not metadata:
+            metadata = getattr(input_data, 'attrs', None)
+
+        if metadata:
+            if not isinstance(metadata, Mapping):
+                raise TypeError(
+                    "metadata or attrs expected to be a Mapping, but got {}".format(
+                        type(metadata)
+                    )
+                )
+            # TODO: events.py calls `tolist` method on all values that have
+            # that method (e.g., convert numpy arrays to lists). Why? Is this
+            # necessary? Should we do that here, too?
+            self.metadata.update(metadata)
 
         #
         # Re-format inputs
@@ -267,10 +292,10 @@ class EventsPi(OrderedDict):
                     )
                 else:
                     # Down sample events if required
-                    if self.fraction_events_to_keep is not None :
+                    if self.fraction_events_to_keep is not None:
                         rand = np.random.RandomState(123456) # Enforce same sample each time
                         num_events_to_keep = int(np.round(self.fraction_events_to_keep*float(array_data.size)))
-                        array_data = rand.choice(array_data,size=num_events_to_keep,replace=False)
+                        array_data = rand.choice(array_data, size=num_events_to_keep, replace=False)
 
                     # Add to array
                     self[data_key][var_dst] = array_data
@@ -517,15 +542,22 @@ def main():
     """Load an events file and print the contents"""
     parser = argparse.ArgumentParser(description="Events parsing")
     parser.add_argument(
-        "-i","--input-file", type=str, required=True, help="Input HDF5 events file"
+        "--neutrinos",
+        action="store_true",
+        help="Treat input file as if it contains neutrino MC",
+    )
+    parser.add_argument(
+        "-i", "--input-file", type=str, required=True, help="Input HDF5 events file"
     )
     args = parser.parse_args()
 
-    events = EventsPi()
+    events = EventsPi(neutrinos=args.neutrinos)
     events.load_events_file(args.input_file)
 
-    print("Loaded events from : %s" % args.input_file)
+    logging.info("Loaded events from : %s", args.input_file)
 
+    print("Metadata:")
+    print(events.metadata)
     print(events)
 
 
