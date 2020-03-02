@@ -108,10 +108,10 @@ class Events(FlavIntData):
             data = deepcopy(val)
         elif isinstance(val, Mapping):
             data = deepcopy(val)
-            if hasattr(data, 'metadata'):
-                meta = deepcopy(data.metadata)
-            elif hasattr(data, 'attrs'):
-                meta = deepcopy(data.attrs)
+            if hasattr(val, 'metadata'):
+                meta = deepcopy(val.metadata)
+            elif hasattr(val, 'attrs'):
+                meta = deepcopy(val.attrs)
 
         for key, val_ in meta.items():
             if hasattr(val_, 'tolist') and callable(val_.tolist):
