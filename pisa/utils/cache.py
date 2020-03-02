@@ -58,8 +58,8 @@ class MemoryCache(object):
         returned from the cache. This can guard aganst an object in the cache
         being modifed after it has been stored to the cache.
 
-    Class attributes
-    ----------------
+    Attributes
+    ----------
     GLOBAL_MEMCACHE_DEPTH_OVERRIDE : None or int >= 0
         Set to an integer to override the cache depth for *all* memory caches.
         E.g., set this to 0 to disable caching everywhere.
