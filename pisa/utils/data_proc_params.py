@@ -90,137 +90,137 @@ class DataProcParams(dict):
        'true_upgoing_zen' : Select true-upgoing events by zenith angle
     'true_upgoing_coszen' : Select true-upgoing events by cos(zenith) angle
 
-    data_proc_params dictionary format (and same for corresponding JSON file):
+    data_proc_params dictionary format (and same for corresponding JSON file)::
 
-    {
-      # Specify the detector name, lower case
+        {
+          # Specify the detector name, lower case
 
-      "<lower-case detector name>": {
-
-
-        # Specify the processing version, lower case
-        # Examples in PINGU include "4", "5", and "5.1"
-
-        "<lower-case processing version>": {
+          "<lower-case detector name>": {
 
 
-          # Mapping from standard names to path where these can be found in
-          # source HDF5 file; separate HDF5 path nodes with a forward-slash.
-          #
-          # Fields that cuts or particles in the "cuts"/"pid" sections below
-          # require (e.g., "cuts_step_1" for PINGU v5 processing), must be
-          # added here so the code knows how to extract the info from the
-          # source HDF5 file.
-          #
-          # Outputting a PID field to the destination PISA HDF5 file will *not*
-          # be done if the "pid" field is omitted below.
-          #
-          # In addition to the below-named fields, "true_coszen" and
-          # "reco_coszen" are generated from the data from the "true_zenith"
-          # and "reco_zenith" fields, respectively. So any of those fields can
-          # be used via the aforementioned names.
+            # Specify the processing version, lower case
+            # Examples in PINGU include "4", "5", and "5.1"
 
-          "field_map": {
-            "run": "<HDF5 path to corresponding node>",
-            "nu_code": "<HDF5 path to corresponding node>",
-            "true_energy": "<HDF5 path to corresponding node>",
-            "true_zenith": "<HDF5 path to corresponding node>",
-            "reco_energy": "<HDF5 path to corresponding node>",
-            "reco_zenith": "<HDF5 path to corresponding node>",
-            "one_weight": "<HDF5 path to corresponding node>",
-            "generator_volume": "<HDF5 path to corresponding node>",
-            "generator_radius": "<HDF5 path to corresponding node>",
-            "detection_length": "<HDF5 path to corresponding node>",
-            "interaction_type": "<HDF5 path to corresponding node>",
-            "azimuth_min": "<HDF5 path to corresponding node>",
-            "azimuth_max": "<HDF5 path to corresponding node>",
-            "zenith_min": "<HDF5 path to corresponding node>",
-            "zenith_max": "<HDF5 path to corresponding node>",
-            "energy_log_min": "<HDF5 path to corresponding node>",
-            "energy_log_max": "<HDF5 path to corresponding node>",
-            "num_events_per_file": "<HDF5 path to corresponding node>",
-            "sim_spectral_index": "<HDF5 path to corresponding node>",
-            "pid": "<HDF5 path to corresponding node>",
-          },
+            "<lower-case processing version>": {
 
 
-          # Mapping from file's nu code to PDG nu codes (only necessary if
-          # nu_code values are not the PDG codes listed below)
+              # Mapping from standard names to path where these can be found in
+              # source HDF5 file; separate HDF5 path nodes with a forward-slash.
+              #
+              # Fields that cuts or particles in the "cuts"/"pid" sections below
+              # require (e.g., "cuts_step_1" for PINGU v5 processing), must be
+              # added here so the code knows how to extract the info from the
+              # source HDF5 file.
+              #
+              # Outputting a PID field to the destination PISA HDF5 file will *not*
+              # be done if the "pid" field is omitted below.
+              #
+              # In addition to the below-named fields, "true_coszen" and
+              # "reco_coszen" are generated from the data from the "true_zenith"
+              # and "reco_zenith" fields, respectively. So any of those fields can
+              # be used via the aforementioned names.
 
-          "nu_code_to_pdg_map": {
-            "<source nue code>":        12,
-            "<source nue_bar code>":   -12,
-            "<source numu code>":       14,
-            "<source numu_bar code>":  -14,
-            "<source nutau code>":      16,
-            "<source nutau_bar code>": -16
-          },
-
-
-          # Specify standard cuts
-
-          "cuts": {
-
-
-            # Cut name; "bjrej" and "analysis" listed here are just example
-            # names for cuts one might specify
-
-            "bgrej": {
-
-              # Which of the fields in the field_map (and the derived fields
-              # such as true_coszen and reco_coszen) are required for this cut?
-
-              "fields": ["<field1>", "<field2>", ... ],
-
-              # Expression for an event to pass the cut (not get thrown away);
-              # see below for details on specifying an expression
-
-              "pass_if": "<expression>"
-            },
-
-            "analysis": {
-              "fields": ["<field1>", "<field2>", ... ],
-              "pass_if": "<expression>"
-            },
-
-            "<cut name>": {
-              "fields": ["<field1>", "<field2>", ... ],
-              "pass_if": "<expression>"
-            }
-          },
+              "field_map": {
+                "run": "<HDF5 path to corresponding node>",
+                "nu_code": "<HDF5 path to corresponding node>",
+                "true_energy": "<HDF5 path to corresponding node>",
+                "true_zenith": "<HDF5 path to corresponding node>",
+                "reco_energy": "<HDF5 path to corresponding node>",
+                "reco_zenith": "<HDF5 path to corresponding node>",
+                "one_weight": "<HDF5 path to corresponding node>",
+                "generator_volume": "<HDF5 path to corresponding node>",
+                "generator_radius": "<HDF5 path to corresponding node>",
+                "detection_length": "<HDF5 path to corresponding node>",
+                "interaction_type": "<HDF5 path to corresponding node>",
+                "azimuth_min": "<HDF5 path to corresponding node>",
+                "azimuth_max": "<HDF5 path to corresponding node>",
+                "zenith_min": "<HDF5 path to corresponding node>",
+                "zenith_max": "<HDF5 path to corresponding node>",
+                "energy_log_min": "<HDF5 path to corresponding node>",
+                "energy_log_max": "<HDF5 path to corresponding node>",
+                "num_events_per_file": "<HDF5 path to corresponding node>",
+                "sim_spectral_index": "<HDF5 path to corresponding node>",
+                "pid": "<HDF5 path to corresponding node>",
+              },
 
 
-          # Particle identification section
+              # Mapping from file's nu code to PDG nu codes (only necessary if
+              # nu_code values are not the PDG codes listed below)
 
-          "pid": {
-
-
-            # Name of the particle (case-insensitive); e.g., in PINGU this
-            # would be "trck" or "cscd"
-
-            "<particle name 1>": {
-
-
-              # Which of the fields in the field_map (and the derived fields
-              # such as true_coszen and reco_coszen) are required for this cut?
-
-              "field": [<field1>, <field2>, ...],
+              "nu_code_to_pdg_map": {
+                "<source nue code>":        12,
+                "<source nue_bar code>":   -12,
+                "<source numu code>":       14,
+                "<source numu_bar code>":  -14,
+                "<source nutau code>":      16,
+                "<source nutau_bar code>": -16
+              },
 
 
-              # Expression for an event to be classified as this type of
-              # particle; # see below for details on specifying an expression
+              # Specify standard cuts
 
-              "criteria": "<expression>"
-            }
+              "cuts": {
 
-            "<particle name 2>": {
-              "field": [<field1>, <field2>, ...],
-              "criteria": "<expression>"
+
+                # Cut name; "bjrej" and "analysis" listed here are just example
+                # names for cuts one might specify
+
+                "bgrej": {
+
+                  # Which of the fields in the field_map (and the derived fields
+                  # such as true_coszen and reco_coszen) are required for this cut?
+
+                  "fields": ["<field1>", "<field2>", ... ],
+
+                  # Expression for an event to pass the cut (not get thrown away);
+                  # see below for details on specifying an expression
+
+                  "pass_if": "<expression>"
+                },
+
+                "analysis": {
+                  "fields": ["<field1>", "<field2>", ... ],
+                  "pass_if": "<expression>"
+                },
+
+                "<cut name>": {
+                  "fields": ["<field1>", "<field2>", ... ],
+                  "pass_if": "<expression>"
+                }
+              },
+
+
+              # Particle identification section
+
+              "pid": {
+
+
+                # Name of the particle (case-insensitive); e.g., in PINGU this
+                # would be "trck" or "cscd"
+
+                "<particle name 1>": {
+
+
+                  # Which of the fields in the field_map (and the derived fields
+                  # such as true_coszen and reco_coszen) are required for this cut?
+
+                  "field": [<field1>, <field2>, ...],
+
+
+                  # Expression for an event to be classified as this type of
+                  # particle; # see below for details on specifying an expression
+
+                  "criteria": "<expression>"
+                }
+
+                "<particle name 2>": {
+                  "field": [<field1>, <field2>, ...],
+                  "criteria": "<expression>"
+                }
+              }
             }
           }
         }
-      }
-    }
 
     Note that cuts "pass_if" and pid "criteria" expressions can make use of the
     numpy namespace and have access to any columns extracted from the source
