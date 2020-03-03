@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
+from collections.abc import Mapping
 from functools import reduce
 import inspect
 from itertools import product
@@ -57,6 +58,17 @@ class DistributionMaker(object):
         are already-instantiated Pipelines and anything interpret-able by the
         Pipeline init method.
 
+    label : str or None, optional
+        A label for the DistributionMaker.
+
+    set_livetime_from_data : bool, optional
+        If a (data) pipeline is found with the attr `metadata` and which has
+        the contained key "livetime", this livetime is used to set the livetime
+        on all pipelines which have param `params.livetime`. If multiple such
+        data pipelines are found and `set_livetime_from_data` is True, all are
+        checked for consistency (you should use multiple `Detector`s if you
+        have incompatible data sets).
+
     Notes
     -----
     Free params with the same name in two pipelines are updated at the same
@@ -73,7 +85,7 @@ class DistributionMaker(object):
     intervals are non-physical.
 
     """
-    def __init__(self, pipelines, label=None):
+    def __init__(self, pipelines, label=None, set_livetime_from_data=True):
 
         self.label = label
         self._source_code_hash = None
@@ -87,17 +99,71 @@ class DistributionMaker(object):
             if not isinstance(pipeline, Pipeline):
                 pipeline = Pipeline(pipeline)
             self._pipelines.append(pipeline)
+
+        data_run_livetime = None
+        if set_livetime_from_data:
+            #
+            # Get livetime metadata if defined in any stage in any pipeline
+            #
+            for pipeline_idx, pipeline in enumerate(self):
+                for stage_idx, stage in enumerate(pipeline):
+                    if not (
+                        hasattr(stage, "metadata")
+                        and isinstance(pipeline.metadata, Mapping)
+                        and "livetime" in pipeline.metadata
+                    ):
+                        continue
+
+                    if data_run_livetime is None:
+                        data_run_livetime = stage.metadata["livetime"]
+
+                    if stage.metadata["livetime"] != data_run_livetime:
+                        raise ValueError(
+                            "Pipeline index {}, stage index {} has data"
+                            " livetime = {}, in disagreement with"
+                            " previously-found livetime = {}".format(
+                                pipeline_idx,
+                                stage_idx,
+                                stage.metadata["livetime"],
+                                data_run_livetime,
+                            )
+                        )
+            #
+            # Set param `params.livetime` for any pipelines that have it
+            #
+            if data_run_livetime is not None:
+                data_run_livetime *= ureg.sec
+                for pipeline_idx, pipeline in enumerate(self):
+                    if "livetime" not in pipeline.params.names:
+                        continue
+
+                    pipeline.params.livetime.is_fixed = True
+                    if pipeline.params.livetime != data_run_livetime:
+                        logging.warning(
+                            "Pipeline index %d has params.livetime = %f, in"
+                            " disagreement with data livetime = %f defined by"
+                            " data. The pipeline's livetime param will be"
+                            " reset to the latter value and set to be fixed"
+                            " (if it is not alredy).",
+                            pipeline_idx,
+                            pipeline.params.livetime,
+                            data_run_livetime,
+                        )
+                        pipeline.params.livetime = data_run_livetime
+
         #for pipeline in self:
         #    pipeline.select_params(self.param_selections,
         #                           error_on_missing=False)
-        
+
         # Make sure that all the pipelines have the same detector name (or None)
         self._detector_name = 'no_name'
         for p in self._pipelines:
             name = p._detector_name
             if name != self._detector_name and self._detector_name != 'no_name':
-                raise NameError('Different detector names in distribution_maker pipelines')
-            
+                raise NameError(
+                    'Different detector names in distribution_maker pipelines'
+                )
+
             self._detector_name = name
 
     def __iter__(self):

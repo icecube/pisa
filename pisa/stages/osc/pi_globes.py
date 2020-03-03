@@ -2,9 +2,10 @@
 PISA pi stage wrapping GLoBES for the calculation of neutrino oscillation probabilities.
 
 Allows for the calculation of sterile neutrino oscillation probabilities.
-This needs Andrii's GLoBES wrapper:
+This needs Andrii's GLoBES wrapper, which has been forked to be 
+made compatible with Python3:
 
-https://github.com/terliuk/GLoBES_wrapper
+https://github.com/atrettin/GLoBES_wrapper
 
 To import, this stage takes as input the path to the GLoBES wrapper. This is necessary
 because GLoBES has to be imported while in the wrapper directory.
@@ -82,7 +83,7 @@ class pi_globes(PiStage):
 
         # what are the keys used from the inputs during apply
         input_apply_keys = ('weights',
-                            'sys_flux',
+                            'nu_flux',
                            )
         # what are keys added or altered in the calculation used during apply
         output_calc_keys = ('prob_e',
@@ -121,13 +122,8 @@ class pi_globes(PiStage):
         self.prop_height = prop_height
 
         self.globes_calc = None
-        # This does nothing for speed, but just allows one to use numpy broadcasting on the
-        # arguments of the function. The internal implementation is basically a for-loop.
-        # The signature is chosen so that the function for a single event expects an array
-        # of n layer distances and densities.
-        self.calc_prob_e_mu = np.vectorize(self.calc_prob_e_mu, signature='(),(),(),(n),(n)->(),()')
-        self.calc_prob_nonsterile = np.vectorize(self.calc_prob_nonsterile,
-                                                 signature='(),(),(),(n),(n)->()')
+
+    @profile
     def setup_function(self):
         sys.path.append(self.globes_wrapper)
         import GLoBES
@@ -135,7 +131,7 @@ class pi_globes(PiStage):
         # therefore we go to the folder, load GLoBES and then go back
         curdir = os.getcwd()
         os.chdir(self.globes_wrapper)
-        self.globes_calc =  GLoBES.GLoBESCalculator("calc")
+        self.globes_calc = GLoBES.GLoBESCalculator("calc")
         os.chdir(curdir)
         self.globes_calc.InitSteriles(2)
         # object for oscillation parameters
@@ -175,7 +171,21 @@ class pi_globes(PiStage):
             container['prob_e'] = np.empty((container.size), dtype=FTYPE)
             container['prob_mu'] = np.empty((container.size), dtype=FTYPE)
             container['prob_nonsterile'] = np.empty((container.size), dtype=FTYPE)
-
+            if '_cc' in container.name:
+                container['prob_nonsterile'] = np.ones(container.size)
+            elif '_nc' in container.name:
+                if 'nue' in container.name:
+                    container['prob_e'] = np.ones(container.size)
+                    container['prob_mu'] = np.zeros(container.size)
+                elif 'numu' in container.name:
+                    container['prob_e'] = np.zeros(container.size)
+                    container['prob_mu'] = np.ones(container.size)
+                elif 'nutau' in container.name:
+                    container['prob_e'] = np.zeros(container.size)
+                    container['prob_mu'] = np.zeros(container.size)
+                else:
+                    raise Exception('unknown container name: %s' % container.name)
+            
     def calc_prob_e_mu(self, flav, nubar, energy, rho_array, len_array):
         '''Calculates probability for an electron/muon neutrino to oscillate into
         the flavour of a given event, including effects from sterile neutrinos.
@@ -218,21 +228,20 @@ class pi_globes(PiStage):
 
     @profile
     def compute_function(self):
-
         # --- update mixing params ---
-        params = np.array([self.params.theta12.value.m_as('rad'),
-                           self.params.theta13.value.m_as('rad'),
-                           self.params.theta23.value.m_as('rad'),
-                           self.params.deltacp.value.m_as('rad'),
-                           self.params.deltam21.value.m_as('eV**2'),
-                           self.params.deltam31.value.m_as('eV**2'),
-                           self.params.deltam41.value.m_as('eV**2'),
-                           0.0,
-                           self.params.theta24.value.m_as('rad'),
-                           self.params.theta34.value.m_as('rad'),
-                           0.0,
-                           0.0
-                           ], dtype=float)
+        params = [self.params.theta12.value.m_as('rad'),
+                  self.params.theta13.value.m_as('rad'),
+                  self.params.theta23.value.m_as('rad'),
+                  self.params.deltacp.value.m_as('rad'),
+                  self.params.deltam21.value.m_as('eV**2'),
+                  self.params.deltam31.value.m_as('eV**2'),
+                  self.params.deltam41.value.m_as('eV**2'),
+                  0.0,
+                  self.params.theta24.value.m_as('rad'),
+                  self.params.theta34.value.m_as('rad'),
+                  0.0,
+                  0.0
+                 ]
         self.globes_calc.SetParametersArr(params)
         # set the correct data mode
         self.data.data_specs = self.calc_specs
@@ -241,34 +250,35 @@ class pi_globes(PiStage):
             # standard oscillations are only applied to charged current events,
             # while the loss due to oscillation into sterile neutrinos is only
             # applied to neutral current events.
+            # Accessing single entries from containers is very slow. 
+            # For this reason, we make a copy of the content we need that is 
+            # a simple numpy array.
+            flav = container['flav']
+            nubar = container['nubar']
+            energies = np.array(container['true_energy'])
+            densities = np.array(container['densities'])
+            distances = np.array(container['distances'])
+            prob_e = np.zeros(container.size)
+            prob_mu = np.zeros(container.size)
+            prob_nonsterile = np.zeros(container.size)
             if '_cc' in container.name:
-                prob_e, prob_mu = self.calc_prob_e_mu(container['flav'],
-                                                      container['nubar'],
-                                                      container['true_energy'],
-                                                      container['densities'],
-                                                      container['distances']
-                                                     )
+                for i in range(container.size):
+                    prob_e[i], prob_mu[i] = self.calc_prob_e_mu(flav,
+                                                                nubar,
+                                                                energies[i],
+                                                                densities[i],
+                                                                distances[i]
+                                                               )
                 container['prob_e'] = prob_e
                 container['prob_mu'] = prob_mu
-                container['prob_nonsterile'] = np.ones_like(prob_e)
             elif '_nc' in container.name:
-                prob_nonsterile = self.calc_prob_nonsterile(container['flav'],
-                                                            container['nubar'],
-                                                            container['true_energy'],
-                                                            container['densities'],
-                                                            container['distances']
-                                                           )
-                if 'nue' in container.name:
-                    container['prob_e'] = np.ones_like(prob_nonsterile)
-                    container['prob_mu'] = np.zeros_like(prob_nonsterile)
-                elif 'numu' in container.name:
-                    container['prob_e'] = np.zeros_like(prob_nonsterile)
-                    container['prob_mu'] = np.ones_like(prob_nonsterile)
-                elif 'nutau' in container.name:
-                    container['prob_e'] = np.zeros_like(prob_nonsterile)
-                    container['prob_mu'] = np.zeros_like(prob_nonsterile)
-                else:
-                    raise Exception('unknown container name: %s' % container.name)
+                for i in range(container.size):
+                    prob_nonsterile[i] = self.calc_prob_nonsterile(flav,
+                                                                   nubar,
+                                                                   energies[i],
+                                                                   densities[i],
+                                                                   distances[i]
+                                                                  )
                 container['prob_nonsterile'] = prob_nonsterile
             else:
                 raise Exception('unknown container name: %s' % container.name)
@@ -280,7 +290,7 @@ class pi_globes(PiStage):
     def apply_function(self):
         # update the outputted weights
         for container in self.data:
-            apply_probs(container['sys_flux'].get(WHERE),
+            apply_probs(container['nu_flux'].get(WHERE),
                         container['prob_e'].get(WHERE),
                         container['prob_mu'].get(WHERE),
                         container['prob_nonsterile'].get(WHERE),

@@ -2,35 +2,28 @@
 PISA pi stage to apply hypersurface fits from discrete systematics parameterizations
 """
 
-#TODO Currently have to defined the `links` value in the stage config to match what the `combine_regex` does in 
-#     the Hypersurface fitting. The `combine_regex` is stored in the hypersurface instance, so should make the 
-#     scontainer linking use this instead of having to manually specify links. To do this, should make a variant 
+#TODO Currently have to defined the `links` value in the stage config to match what the `combine_regex` does in
+#     the Hypersurface fitting. The `combine_regex` is stored in the hypersurface instance, so should make the
+#     scontainer linking use this instead of having to manually specify links. To do this, should make a variant
 #     of the container linking function that accepts a regex (using shared code with Map.py).
-
-#TODO Store hypersurface uncertainty and propagate this
-
 
 from __future__ import absolute_import, print_function, division
 
 import ast
 
-import math
 from numba import guvectorize
 import numpy as np
 
-from pisa import FTYPE, TARGET, ureg
-from pisa.core.binning import MultiDimBinning
+from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
-from pisa.utils.fileio import from_file
 from pisa.utils.log import logging
 from pisa.utils.numba_tools import WHERE
 from pisa.utils import vectorizer
-from pisa.utils.hypersurface import load_hypersurfaces
-from numba import vectorize
+import pisa.utils.hypersurface as hs
 
 __all__ = ["pi_hypersurfaces",]
 
-__author__ = "P. Eller, T. Ehrhardt, T. Stuttard, J.L. Lanfranchi"
+__author__ = "P. Eller, T. Ehrhardt, T. Stuttard, J.L. Lanfranchi, A. Trettin"
 
 __license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
 
@@ -47,7 +40,7 @@ __license__ = """Copyright (c) 2014-2018, The IceCube Collaboration
  limitations under the License."""
 
 
-class pi_hypersurfaces(PiStage):  # pyint: disable=invalid-name
+class pi_hypersurfaces(PiStage): # pylint: disable=invalid-name
     """
     Service to apply hypersurface parameterisation produced by
     `scripts.fit_discrete_sys_nd`
@@ -57,20 +50,20 @@ class pi_hypersurfaces(PiStage):  # pyint: disable=invalid-name
     fit_results_file : str
         Path to hypersurface fit results file, i.e. the JSON file produced by the
         `pisa.scripts.fit_discrete_sys_nd.py` script
-    
+
     propagate_uncertainty : bool, optional
-        Propagate the uncertainties from the hypersurface to the uncertainty of 
+        Propagate the uncertainties from the hypersurface to the uncertainty of
         the output
-        
+
     params : ParamSet
         Note that the params required to be in `params` are determined from
         those listed in the `fit_results_file`.
     """
-
     def __init__(
         self,
         fit_results_file,
         propagate_uncertainty=False,
+        interpolated=False,
         data=None,
         params=None,
         input_names=None,
@@ -82,7 +75,7 @@ class pi_hypersurfaces(PiStage):  # pyint: disable=invalid-name
         output_specs=None,
         links=None,
     ):
-
+        # pylint: disable=line-too-long
         # -- Expected input / output names -- #
         input_names = ()
         output_names = ()
@@ -91,9 +84,9 @@ class pi_hypersurfaces(PiStage):  # pyint: disable=invalid-name
 
         input_calc_keys = ()
         if propagate_uncertainty:
-            output_calc_keys = ("hypersurface_scalefactors", "hypersurface_scalefactors_uncertainty")
+            output_calc_keys = ("hs_scales", "hs_scales_uncertainty")
         else:
-            output_calc_keys = ("hypersurface_scalefactors",)
+            output_calc_keys = ("hs_scales",)
 
         if error_method == "sumw2":
             output_apply_keys = ("weights", "errors")
@@ -107,19 +100,24 @@ class pi_hypersurfaces(PiStage):  # pyint: disable=invalid-name
         # Store args
         self.fit_results_file = fit_results_file
         self.propagate_uncertainty = propagate_uncertainty
-        
-        # Load hypersurfaces
-        self.hypersurfaces = load_hypersurfaces(self.fit_results_file, calc_specs)
-
-        # Get the expected param names
-        # These are used as the expected param names for the stage
-        self.hypersurface_param_names = list(self.hypersurfaces.values())[0].param_names
+        self.interpolated = interpolated
+        # expected parameter names depend on the hypersurface and, if applicable,
+        # on the parameters in which the hypersurfaces are interpolated
+        if self.interpolated:
+            hs_params, inter_params = hs.extract_interpolated_hypersurface_params(self.fit_results_file)
+            self.hypersurface_param_names = hs_params
+            self.inter_params = inter_params
+            expected_params = hs_params+inter_params
+        else:
+            hypersurfaces = hs.load_hypersurfaces(self.fit_results_file, calc_specs)
+            self.hypersurface_param_names = list(hypersurfaces.values())[0].param_names
+            expected_params = self.hypersurface_param_names
 
         # -- Initialize base class -- #
         super(pi_hypersurfaces, self).__init__(
             data=data,
             params=params,
-            expected_params=self.hypersurface_param_names,
+            expected_params=expected_params,
             input_names=input_names,
             output_names=output_names,
             debug_mode=debug_mode,
@@ -140,11 +138,16 @@ class pi_hypersurfaces(PiStage):  # pyint: disable=invalid-name
         assert self.output_mode is not None
 
         self.links = ast.literal_eval(links)
-
-
+        self.warning_issued = False # don't warn more than once about empty bins
+        self.hypersurfaces = None
+    # pylint: disable=line-too-long
     def setup_function(self):
         """Load the fit results from the file and make some check compatibility"""
-
+        # load hypersurfaces
+        if self.interpolated:
+            self.hypersurfaces = hs.load_interpolated_hypersurfaces(self.fit_results_file, self.calc_specs)
+        else:
+            self.hypersurfaces = hs.load_hypersurfaces(self.fit_results_file, self.calc_specs)
         self.data.data_specs = self.calc_specs
 
         if self.links is not None:
@@ -152,18 +155,19 @@ class pi_hypersurfaces(PiStage):  # pyint: disable=invalid-name
                 self.data.link_containers(key, val)
 
         # create containers for scale factors
-        for container in self.data :
-            container["hypersurface_scalefactors"] = np.empty(container.size, dtype=FTYPE)
+        for container in self.data:
+            container["hs_scales"] = np.empty(container.size, dtype=FTYPE)
             if self.propagate_uncertainty:
-                container["hypersurface_scalefactors_uncertainty"] = np.empty(container.size, dtype=FTYPE)
+                container["hs_scales_uncertainty"] = np.empty(container.size, dtype=FTYPE)
 
         # Check map names match between data container and hypersurfaces
         for container in self.data:
-            assert container.name in self.hypersurfaces, "No match for map %s found in the hypersurfaces" % (container.name)
+            assert container.name in self.hypersurfaces, f"No match for map {container.name} found in the hypersurfaces"
 
         self.data.unlink_containers()
 
-
+    # the linter thinks that "logging" refers to Python's built-in
+    # pylint: disable=line-too-long, logging-not-lazy, deprecated-method
     def compute_function(self):
 
         self.data.data_specs = self.calc_specs
@@ -175,34 +179,42 @@ class pi_hypersurfaces(PiStage):  # pyint: disable=invalid-name
 
         # Format the params dict that will be passed to `Hypersurface.evaluate`
         #TODO checks on param units
-        param_values = { sys_param_name: self.params[sys_param_name].m for sys_param_name in self.hypersurface_param_names }
-
+        param_values = {sys_param_name: self.params[sys_param_name].m
+                        for sys_param_name in self.hypersurface_param_names}
+        if self.interpolated:
+            osc_params = {name: self.params[name] for name in self.inter_params}
         # Evaluate the hypersurfaces
         for container in self.data:
-
+            if self.interpolated:
+                # in the case of interpolated hypersurfaces, the actual hypersurface
+                # must be generated for the given oscillation parameters first
+                container_hs = self.hypersurfaces[container.name].get_hypersurface(**osc_params)
+            else:
+                container_hs = self.hypersurfaces[container.name]
             # Get the hypersurface scale factors (reshape to 1D array)
             if self.propagate_uncertainty:
-                scalefactors, uncertainties = self.hypersurfaces[container.name].evaluate(param_values, return_uncertainty=True)
-                scalefactors = scalefactors.reshape(container.size)
+                scales, uncertainties = container_hs.evaluate(param_values, return_uncertainty=True)
+                scales = scales.reshape(container.size)
                 uncertainties = uncertainties.reshape(container.size)
             else:
-                scalefactors = self.hypersurfaces[container.name].evaluate(param_values).reshape(container.size)
+                scales = container_hs.evaluate(param_values).reshape(container.size)
 
-            # Where there are no scalefactors (e.g. empty bins), set scale factor to 1 
-            empty_bins_mask = ~np.isfinite(scalefactors)
+            # Where there are no scales (e.g. empty bins), set scale factor to 1
+            empty_bins_mask = ~np.isfinite(scales)
             num_empty_bins = np.sum(empty_bins_mask)
-            if num_empty_bins > 0. :
+            if num_empty_bins > 0. and not self.warning_issued:
                 logging.warn("%i empty bins found in hypersurface" % num_empty_bins)
-            scalefactors[empty_bins_mask] = 1.
+                self.warning_issued = True
+            scales[empty_bins_mask] = 1.
             if self.propagate_uncertainty:
                 uncertainties[empty_bins_mask] = 0.
-            
+
             # Add to container
-            np.copyto(src=scalefactors, dst=container["hypersurface_scalefactors"].get('host'))
-            container["hypersurface_scalefactors"].mark_changed()
+            np.copyto(src=scales, dst=container["hs_scales"].get('host'))
+            container["hs_scales"].mark_changed()
             if self.propagate_uncertainty:
-                np.copyto(src=uncertainties, dst=container["hypersurface_scalefactors_uncertainty"].get('host'))
-                container["hypersurface_scalefactors_uncertainty"].mark_changed()
+                np.copyto(src=uncertainties, dst=container["hs_scales_uncertainty"].get('host'))
+                container["hs_scales_uncertainty"].mark_changed()
 
         # Unlink the containers again
         self.data.unlink_containers()
@@ -214,31 +226,30 @@ class pi_hypersurfaces(PiStage):  # pyint: disable=invalid-name
             if self.error_method == "sumw2":
                 if self.propagate_uncertainty:
                     calc_uncertainty(container["weights"].get(WHERE),
-                                     container["hypersurface_scalefactors_uncertainty"].get(WHERE),
+                                     container["hs_scales_uncertainty"].get(WHERE),
                                      container["errors"].get(WHERE),
-                                    )                                     
+                                    )
                 else:
-                    vectorizer.multiply(container["hypersurface_scalefactors"], container["errors"])
+                    vectorizer.multiply(container["hs_scales"], container["errors"])
                 container['errors'].mark_changed()
             # Update weights according to hypersurfaces
             vectorizer.multiply(
-                container["hypersurface_scalefactors"], container["weights"]
+                container["hs_scales"], container["weights"]
             )
             container['weights'].mark_changed()
             # Correct negative event counts that can be introduced by hypersurfaces (due to intercept)
             weights = container["weights"].get('host')
             neg_mask = weights < 0.
-            if neg_mask.sum() > 0 :
+            if neg_mask.sum() > 0:
                 weights[neg_mask] = 0.
-                np.copyto( src=weights, dst=container["weights"].get('host') )
+                np.copyto(src=weights, dst=container["weights"].get('host'))
                 container["weights"].mark_changed()
 
-# vectorized function to apply uncertainty
-# must be outside class
 if FTYPE == np.float32:
     _SIGNATURE = ['(f4[:], f4[:], f4[:])']
 else:
     _SIGNATURE = ['(f8[:], f8[:], f8[:])']
 @guvectorize(_SIGNATURE, '(),()->()', target=TARGET)
 def calc_uncertainty(weight, scale_uncertainty, out):
+    '''vectorized error propagation'''
     out[0] = weight[0]*scale_uncertainty[0]

@@ -97,15 +97,26 @@ class Events(FlavIntData):
             ('cuts', []),
             ('flavints_joined', []),
         ])
-        meta = {}
+
+        meta = OrderedDict()
         data = FlavIntData()
         if isinstance(val, (str, h5py.Group)):
-            data, meta = self.__load(val)
+            data = hdf.from_hdf(val)
+            meta = getattr(data, 'attrs', OrderedDict())
         elif isinstance(val, Events):
             meta = deepcopy(val.metadata)
             data = deepcopy(val)
-        elif isinstance(val, dict):
+        elif isinstance(val, Mapping):
             data = deepcopy(val)
+            if hasattr(val, 'metadata'):
+                meta = deepcopy(val.metadata)
+            elif hasattr(val, 'attrs'):
+                meta = deepcopy(val.attrs)
+
+        for key, val_ in meta.items():
+            if hasattr(val_, 'tolist') and callable(val_.tolist):
+                meta[key] = val_.tolist()
+
         self.metadata.update(meta)
         self.validate(data)
         self.update(data)
@@ -158,17 +169,6 @@ class Events(FlavIntData):
 
     def __eq__(self, other):
         return self.meta_eq(other) and self.data_eq(other)
-
-    def __load(self, fname):
-        fpath = resources.find_resource(fname)
-        with h5py.File(fpath, 'r') as open_file:
-            meta = dict(open_file.attrs)
-            for k, v in meta.items():
-                if hasattr(v, 'tolist'):
-                    meta[k] = v.tolist()
-            data = hdf.from_hdf(open_file)
-        self.validate(data)
-        return data, meta
 
     def save(self, fname, **kwargs):
         hdf.to_hdf(self, fname, attrs=self.metadata, **kwargs)
@@ -307,12 +307,12 @@ class Events(FlavIntData):
 
         # Nothing to do if no cuts specified
         if keep_criteria is None:
-            return
+            return self
 
         assert isinstance(keep_criteria, str)
 
         #Only get the flavints for which we have data
-        flavints_to_process = self.flavints_present 
+        flavints_to_process = self.flavints_present
         flavints_processed = []
         remaining_data = {}
         for flavint in flavints_to_process:
@@ -364,7 +364,7 @@ class Events(FlavIntData):
         """
         try:
             binning = OneDimBinning(binning)
-        except:
+        except Exception:
             pass
         if isinstance(binning, OneDimBinning):
             binning = [binning]
@@ -377,6 +377,7 @@ class Events(FlavIntData):
             logging.debug("All inbounds criteria '%s' have already been"
                           " applied. Returning events unmodified.", new_cuts)
             return self
+
         all_cuts = deepcopy(current_cuts) + unapplied_cuts
 
         # Create a single cut from all unapplied cuts
@@ -393,9 +394,7 @@ class Events(FlavIntData):
 
     @property
     def flavints_present(self):
-        '''
-        returns a tuple of the flavints that are present in the events
-        '''
+        """Returns a tuple of the flavints that are present in the events"""
 
         flavints_present_list = []
 
@@ -411,7 +410,7 @@ class Events(FlavIntData):
             try:
                 if np.isnan(self[flavint]):
                     found_data_for_this_flavint = False
-            except TypeError: 
+            except TypeError:
                 pass
             if found_data_for_this_flavint:
                 flavints_present_list.append(flavint)
@@ -452,17 +451,25 @@ class Data(FlavIntDataGroup):
         self.contains_noise = False
 
         # Get data and metadata from val
-        meta = {}
+        meta = OrderedDict()
         if isinstance(val, (str, h5py.Group)):
-            data, meta = self.__load(val)
+            data = hdf.from_hdf(val)
+            meta = getattr(data, 'attrs', OrderedDict())
         elif isinstance(val, Data):
             data = val
-            meta = val.metadata
+            meta = getattr(val, 'metadata', OrderedDict())
         elif isinstance(val, (Mapping, FlavIntDataGroup)):
             data = val
-            meta = None
+            if hasattr(data, 'metadata'):
+                meta = data.metadata
+            elif hasattr(data, 'attrs'):
+                meta = data.attrs
         else:
             raise TypeError('Unrecognized `val` type %s' % type(val))
+
+        for key, val_ in meta.items():
+            if hasattr(val_, 'tolist') and callable(val_.tolist):
+                meta[key] = val_.tolist()
 
         # Check consistency of metadata from val and from input
         if meta is not None:
@@ -639,7 +646,9 @@ class Data(FlavIntDataGroup):
         raise NotImplementedError
 
         if keep_criteria in self.metadata['cuts']:
-            return
+            logging.debug("Criteria '%s' have already been applied. Returning"
+                          " events unmodified.", keep_criteria)
+            return self
 
         assert isinstance(keep_criteria, str)
 
@@ -651,7 +660,7 @@ class Data(FlavIntDataGroup):
         if self.contains_noise:
             fig_to_process += ['noise']
 
-        logging.info("Applying cut to %s : %s" %(fig_to_process,keep_criteria))
+        logging.info("Applying cut to %s : %s", fig_to_process, keep_criteria)
 
         fig_processed = []
         remaining_data = {}
@@ -876,7 +885,7 @@ class Data(FlavIntDataGroup):
                 try:
                     tex = kinds.tex
                 # TODO: specify specific exception(s)
-                except:
+                except Exception:
                     tex = r'{0}'.format(kinds)
                 if weights_col is not None:
                     tex += r', \; {\rm weights} =' + text2tex(weights_col)
@@ -970,14 +979,6 @@ class Data(FlavIntDataGroup):
                 )
             )
         return MapSet(maps=outputs, name=mapset_name)
-
-    def __load(self, fname):
-        try:
-            data, meta = from_file(fname, return_attrs=True)
-        except TypeError:
-            data = from_file(fname)
-            meta = None
-        return data, meta
 
     def __getitem__(self, arg):
         if isinstance(arg, str):
@@ -1174,7 +1175,7 @@ def test_Data():
     logging.debug(str((data.neutrinos.keys())))
 
     noise_file = 'GRECO/new_style_files/Level7_VuvuzelaPureNoise_V2.990015.pckl'
-    n = {'noise': from_file(muon_file)}
+    n = {'noise': from_file(noise_file)}
     n = Data(val=n)
     assert n.contains_noise
     assert not n.contains_neutrinos

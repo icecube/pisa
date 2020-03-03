@@ -6,6 +6,7 @@ Subpackages
 
 .. toctree::
 
+    pisa.stages.absorption
     pisa.stages.aeff
     pisa.stages.background
     pisa.stages.combine

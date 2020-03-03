@@ -1,11 +1,11 @@
-pisa.stages.osc.nusquids package
-================================
+pisa\.stages\.osc\.nusquids package
+===================================
 
 Submodules
 ----------
 
-pisa.stages.osc.nusquids.nusquids\_osc module
----------------------------------------------
+pisa\.stages\.osc\.nusquids\.nusquids\_osc module
+-------------------------------------------------
 
 .. automodule:: pisa.stages.osc.nusquids.nusquids_osc
     :members:

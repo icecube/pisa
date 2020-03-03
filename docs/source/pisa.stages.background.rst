@@ -1,11 +1,11 @@
-pisa.stages.background package
-==============================
+pisa\.stages\.background package
+================================
 
 Submodules
 ----------
 
-pisa.stages.background.atm\_muons module
-----------------------------------------
+pisa\.stages\.background\.atm\_muons module
+-------------------------------------------
 
 .. automodule:: pisa.stages.background.atm_muons
     :members:

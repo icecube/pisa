@@ -42,7 +42,7 @@ HDF5_EXTS = ['hdf', 'h5', 'hdf5']
 # TODO: convert to allow reading of icetray-produced HDF5 files
 
 
-def from_hdf(val, return_node=None, return_attrs=False):
+def from_hdf(val, return_node=None):
     """Return the contents of an HDF5 file or node as a nested dict; optionally
     return a second dict containing any HDF5 attributes attached to the
     entry-level HDF5 entity.
@@ -58,28 +58,17 @@ def from_hdf(val, return_node=None, return_attrs=False):
     return_node : None or string
         Not yet implemented
 
-    return_attrs : bool
-        Whether to return attrs attached to entry-level entity
-
     Returns
     -------
-    data : OrderedDict
+    data : OrderedDict with additional attr of type OrderedDict named `attrs`
         Nested dictionary; keys are HDF5 node names and values contain the
-        contents of that node.
-
-    (attrs : OrderedDict)
-        Attributes of entry-level entity; only returned if return_attrs=True
+        contents of that node. If the entry-level entity of `val` has "attrs",
+        these are extracted and attached as an OrderedDict at `data.attrs`;
+        otherwise, this entity is an empty OrderedDict.
 
     """
     if return_node is not None:
         raise NotImplementedError('`return_node` is not yet implemented.')
-
-    # NOTE: It's generally sub-optimal to have different return type signatures
-    # (1 or 2 return values in this case), but defaulting to a single return
-    # value (just returning `data`) preserves compatibility with
-    # previously-written routines that just assume a single return value; only
-    # when the caller explicitly specifies for the function to do so is the
-    # second return value returned, which seems the safest compromise for now.
 
     def visit_group(obj, sdict):
         """Iteratively parse `obj` to create the dictionary `sdict`"""
@@ -91,22 +80,23 @@ def from_hdf(val, return_node=None, return_attrs=False):
             for sobj in obj.values():
                 visit_group(sobj, sdict[name])
 
-    data = OrderedDict()
-    attrs = OrderedDict()
     myfile = False
     if isinstance(val, str):
         try:
             root = h5py.File(find_resource(val), 'r')
-        except:
+        except Exception:
             logging.error('Failed to load HDF5 file, `val`="%s"', val)
             raise
         myfile = True
     else:
         root = val
         logging.trace('root = %s, root.values() = %s', root, root.values())
+
+    data = OrderedDict()
+    attrs = OrderedDict()
     try:
-        # Retrieve attrs if told to return attrs
-        if return_attrs and hasattr(root, 'attrs'):
+        # Retrieve attrs if present
+        if hasattr(root, 'attrs'):
             attrs = OrderedDict(root.attrs)
         # Run over the whole dataset
         for obj in root.values():
@@ -115,8 +105,7 @@ def from_hdf(val, return_node=None, return_attrs=False):
         if myfile:
             root.close()
 
-    if return_attrs:
-        return data, attrs
+    data.attrs = attrs
 
     return data
 
@@ -276,7 +265,7 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
                         name=full_path, data=node, chunks=chunks,
                         compression=None, shuffle=shuffle, fletcher32=False
                     )
-                except:
+                except Exception:
                     logging.error('  full_path: "%s"', full_path)
                     logging.error('  chunks   : %s', str(chunks))
                     logging.error('  shuffle  : %s', str(shuffle))
@@ -412,7 +401,8 @@ def test_hdf():
 
         fpath = os.path.join(temp_dir, 'to_hdf_withattrs.hdf5')
         to_hdf(data, fpath, attrs=attrs, overwrite=True, warn=False)
-        loaded_data2, loaded_attrs = from_hdf(fpath, return_attrs=True)
+        loaded_data2 = from_hdf(fpath)
+        loaded_attrs = loaded_data2.attrs
         assert data.keys() == loaded_data2.keys()
         assert attrs.keys() == loaded_attrs.keys(), \
                 '\n' + str(attrs.keys()) + '\n' + str(loaded_attrs.keys())

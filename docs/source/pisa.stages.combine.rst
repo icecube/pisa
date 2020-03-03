@@ -1,11 +1,11 @@
-pisa.stages.combine package
-===========================
+pisa\.stages\.combine package
+=============================
 
 Submodules
 ----------
 
-pisa.stages.combine.nutau module
---------------------------------
+pisa\.stages\.combine\.nutau module
+-----------------------------------
 
 .. automodule:: pisa.stages.combine.nutau
     :members:
