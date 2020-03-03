@@ -131,6 +131,7 @@ class DistributionMaker(object):
                         )
 
             # Save the last livetime found inside the pipeline's metadata
+            # TODO: implement metadata in the pipeline class instead
             self.metadata['livetime'] = data_run_livetime
             #
             # Set param `params.livetime` for any pipelines that have it
