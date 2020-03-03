@@ -109,8 +109,8 @@ class DistributionMaker(object):
                 for stage_idx, stage in enumerate(pipeline):
                     if not (
                         hasattr(stage, "metadata")
-                        and isinstance(pipeline.metadata, Mapping)
-                        and "livetime" in pipeline.metadata
+                        and isinstance(stage.metadata, Mapping)
+                        and "livetime" in stage.metadata
                     ):
                         continue
 
@@ -132,13 +132,17 @@ class DistributionMaker(object):
             # Set param `params.livetime` for any pipelines that have it
             #
             if data_run_livetime is not None:
-                data_run_livetime *= ureg.sec
+               # data_run_livetime *= ureg.sec
+
                 for pipeline_idx, pipeline in enumerate(self):
+
                     if "livetime" not in pipeline.params.names:
                         continue
 
                     pipeline.params.livetime.is_fixed = True
+
                     if pipeline.params.livetime != data_run_livetime:
+
                         logging.warning(
                             "Pipeline index %d has params.livetime = %f, in"
                             " disagreement with data livetime = %f defined by"
@@ -146,8 +150,8 @@ class DistributionMaker(object):
                             " reset to the latter value and set to be fixed"
                             " (if it is not alredy).",
                             pipeline_idx,
-                            pipeline.params.livetime,
-                            data_run_livetime,
+                            float(pipeline.params.livetime.value),
+                            float(data_run_livetime),
                         )
                         pipeline.params.livetime = data_run_livetime
 
