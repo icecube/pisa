@@ -105,7 +105,7 @@ class DistributionMaker(object):
             #
             # Get livetime metadata if defined in any stage in any pipeline
             #
-            for pipeline_idx, pipeline in enumerate(pipelines):
+            for pipeline_idx, pipeline in enumerate(self):
                 for stage_idx, stage in enumerate(pipeline):
                     if not (
                         hasattr(stage, "metadata")
@@ -133,11 +133,11 @@ class DistributionMaker(object):
             #
             if data_run_livetime is not None:
                 data_run_livetime *= ureg.sec
-                for pipeline_idx, pipeline in enumerate(pipelines):
+                for pipeline_idx, pipeline in enumerate(self):
                     if "livetime" not in pipeline.params.names:
                         continue
 
-                    pipeline.params.livetime.fixed = True
+                    pipeline.params.livetime.is_fixed = True
                     if pipeline.params.livetime != data_run_livetime:
                         logging.warning(
                             "Pipeline index %d has params.livetime = %f, in"
