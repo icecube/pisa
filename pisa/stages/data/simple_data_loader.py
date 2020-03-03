@@ -78,7 +78,7 @@ class simple_data_loader(PiStage):
         # instead of adding params here, consider making them instantiation
         # args so nothing external will inadvertently try to change
         # their values
-        expected_params = ()
+        expected_params = ('livetime')
         # created as ones if not already present
         input_apply_keys = (
             'initial_weights',
