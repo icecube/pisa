@@ -89,6 +89,7 @@ class DistributionMaker(object):
 
         self.label = label
         self._source_code_hash = None
+        self.metadata = OrderedDict()
 
         self._pipelines = []
         if isinstance(pipelines, (str, PISAConfigParser, OrderedDict,
@@ -128,11 +129,15 @@ class DistributionMaker(object):
                                 data_run_livetime,
                             )
                         )
+
+            # Save the last livetime found inside the pipeline's metadata
+            self.metadata['livetime'] = data_run_livetime
             #
             # Set param `params.livetime` for any pipelines that have it
             #
             if data_run_livetime is not None:
-               # data_run_livetime *= ureg.sec
+
+                data_run_livetime *= ureg.sec
 
                 for pipeline_idx, pipeline in enumerate(self):
 
@@ -144,16 +149,17 @@ class DistributionMaker(object):
                     if pipeline.params.livetime != data_run_livetime:
 
                         logging.warning(
-                            "Pipeline index %d has params.livetime = %f, in"
-                            " disagreement with data livetime = %f defined by"
+                            "Pipeline index %d has params.livetime = %s, in"
+                            " disagreement with data livetime = %s defined by"
                             " data. The pipeline's livetime param will be"
                             " reset to the latter value and set to be fixed"
                             " (if it is not alredy).",
                             pipeline_idx,
-                            float(pipeline.params.livetime.value),
-                            float(data_run_livetime),
+                            pipeline.params.livetime.value,
+                            data_run_livetime,
                         )
                         pipeline.params.livetime = data_run_livetime
+
 
         #for pipeline in self:
         #    pipeline.select_params(self.param_selections,
