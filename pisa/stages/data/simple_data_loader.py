@@ -57,7 +57,6 @@ class simple_data_loader(PiStage):
                  mc_cuts,
                  data_dict,
                  neutrinos=True,
-                 detector_data=False,
                  data=None,
                  params=None,
                  input_names=None,
@@ -74,16 +73,12 @@ class simple_data_loader(PiStage):
         self.mc_cuts = mc_cuts
         self.data_dict = data_dict
         self.neutrinos = neutrinos
-        self.detector_data = detector_data
         self.fraction_events_to_keep = fraction_events_to_keep
 
         # instead of adding params here, consider making them instantiation
         # args so nothing external will inadvertently try to change
         # their values
-        if detector_data:
-            expected_params=('livetime')
-        else:
-            expected_params = ()
+        expected_params = ()
         # created as ones if not already present
         input_apply_keys = (
             'initial_weights',
@@ -148,14 +143,6 @@ class simple_data_loader(PiStage):
 
         # TODO Add option to define eventual binning here so that can cut events
         # now that will be cut later anyway (use EventsPi.keep_inbounds)
-
-        # If we are dealing with detector data, extract the livetime from the file's
-        # metadata and store it as a parameter that other stages will be able to use
-        if self.detector_data:
-
-            if 'livetime' in self.evts.metadata.keys():
-                self.params.livetime.value = self.evts.metadata['livetime']
-
 
     def apply_cuts_to_events(self):
         '''Just apply any cuts that the user defined'''
