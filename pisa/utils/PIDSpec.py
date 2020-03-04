@@ -169,15 +169,17 @@ class PIDSpec(object):
         Returns
         -------
         Separated events FlavIntData object with each flavint leaf node
-        populated by a dictionary formatted as follows:
-        {
-          '<signature1>': {
-            '<return_field1>': array,
-            '<return_field2>': array,
-             ...
-          },
-          ...
-        }
+        populated by a dictionary formatted as follows::
+
+            {
+              '<signature1>': {
+                '<return_field1>': array,
+                '<return_field2>': array,
+                 ...
+              },
+              ...
+            }
+
         """
         # Interpret `signatures`
         if isinstance(signatures, str):
