@@ -122,7 +122,11 @@ class simple_data_loader(PiStage):
         '''Loads events from events file'''
 
         # Create the events structure
-        self.evts = EventsPi(name='Events',neutrinos=self.neutrinos, fraction_events_to_keep=self.fraction_events_to_keep)
+        self.evts = EventsPi(
+            name='Events',
+            neutrinos=self.neutrinos,
+            fraction_events_to_keep=self.fraction_events_to_keep,
+        )
 
         # Parse the variable mapping string if one exists
         if self.data_dict is not None:
@@ -133,7 +137,12 @@ class simple_data_loader(PiStage):
             events_file=self.events_file,
             variable_mapping=self.data_dict
         )
-        #TODO Add option to define eventual binning here so that can cut events now that will be cut later anyway (use EventsPi.keep_inbounds)
+
+        if hasattr(self.evts, "metadata"):
+            self.metadata = self.evts.metadata
+
+        # TODO Add option to define eventual binning here so that can cut events
+        # now that will be cut later anyway (use EventsPi.keep_inbounds)
 
     def apply_cuts_to_events(self):
         '''Just apply any cuts that the user defined'''
@@ -192,7 +201,7 @@ class simple_data_loader(PiStage):
 
             # add neutrino flavor information for neutrino events
             #TODO Maybe add this directly into EventsPi
-            if self.neutrinos :
+            if self.neutrinos:
                 # this determination of flavour is the worst possible coding, ToDo
                 nubar = -1 if 'bar' in name else 1
                 if name.startswith('nutau'):
