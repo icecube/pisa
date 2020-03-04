@@ -228,7 +228,7 @@ def do_setup():
             'line_profiler',
             'matplotlib>=3.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
             'numba==0.43.1', # >=0.35: fastmath jit flag; >=0.38: issue #439, <0.44 because SmartArray deprication
-            'pint>=0.8', # earlier versions buggy
+            'pint>=0.8.1', # see https://github.com/hgrecco/pint/issues/512
             'scipy>=0.17',
             'simplejson>=3.2',
             'tables',

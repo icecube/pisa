@@ -91,7 +91,7 @@ Required Python modules that are installed automatically when you use the `pip` 
 * [matplotlib](http://matplotlib.org) >= 2.0 required
 * [numba==0.43.1](http://numba.pydata.org) Just-in-time compilation of decorated Python functions to native machine code via LLVM. This package is required to use PISA pi; also in cake it can accelerate certain routines significantly. If not using Anaconda to install, you must have LLVM installed already on your system (see above).
 * [numpy](http://www.numpy.org) version >= 1.17 required
-* [pint>=0.8](https://pint.readthedocs.org) >= 0.8 required
+* [pint>=0.8.1](https://pint.readthedocs.org) >= 0.8.1 required
   * if automatic pip installation of pint fails, you may want to try `conda install pint` if you are using anaconda
 * [scipy](http://www.scipy.org) version >= 0.17 required
 * [setuptools](https://setuptools.readthedocs.io) version >= 18.5 required
