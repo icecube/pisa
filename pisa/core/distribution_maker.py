@@ -195,6 +195,7 @@ class DistributionMaker(object):
             If False, return a list where each element is the full MapSet
             returned by each pipeline in the DistributionMaker.
 
+
         **kwargs
             Passed on to each pipeline's `get_outputs1` method.
 
@@ -203,6 +204,7 @@ class DistributionMaker(object):
         MapSet if `return_sum=True` or list of MapSets if `return_sum=False`
 
         """
+
         outputs = [pipeline.get_outputs(**kwargs) for pipeline in self] # pylint: disable=redefined-outer-name
         if return_sum:
             if len(outputs) > 1:
@@ -212,7 +214,10 @@ class DistributionMaker(object):
             outputs.name = sum_map_name
             outputs.tex = sum_map_tex_name
             outputs = MapSet(outputs)
+
+
         return outputs
+
 
     def update_params(self, params):
         for pipeline in self:

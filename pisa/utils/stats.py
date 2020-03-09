@@ -8,16 +8,20 @@ from __future__ import absolute_import, division
 import numpy as np
 from scipy.special import gammaln
 from uncertainties import unumpy as unp
-
+from functools import reduce
 from pisa import FTYPE
 from pisa.utils.comparisons import FTYPE_PREC, isbarenumeric
 from pisa.utils.log import logging
 from pisa.utils import likelihood_functions
+import sys,os
+sys.path.append('/home/bourdeet/NBI/IceCube/PISA/')
+
+from mc_uncertainty.llh_defs.poisson import generic_pdf
 
 __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
            'maperror_logmsg',
            'chi2', 'llh', 'log_poisson', 'log_smear', 'conv_poisson',
-           'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2', 'mcllh_mean', 'mcllh_eff']
+           'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2', 'mcllh_mean', 'mcllh_eff','generalized_poisson_llh']
 
 __author__ = 'P. Eller, T. Ehrhardt, J.L. Lanfranchi'
 
@@ -42,7 +46,7 @@ SMALL_POS = 1e-10 #if FTYPE == np.float64 else FTYPE_PREC
 CHI2_METRICS = ['chi2', 'mod_chi2']
 """Metrics defined that result in measures of chi squared"""
 
-LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh', 'mcllh_mean', 'mcllh_eff']
+LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh', 'mcllh_mean', 'mcllh_eff','generalized_poisson_llh']
 """Metrics defined that result in measures of log likelihood"""
 
 ALL_METRICS = LLH_METRICS + CHI2_METRICS
@@ -547,3 +551,116 @@ def mod_chi2(actual_values, expected_values):
         (actual_values - expected_values)**2 / (sigma**2 + expected_values)
     )
     return m_chi2
+
+def generalized_poisson_llh(actual_values,expected_values):
+    '''
+    Compute the generalized Poisson likelihood as formulated in https://arxiv.org/abs/1902.08831
+
+    Code that computes the likelihood is contained in the 
+    mc_uncertainty repository of github
+
+    Inputs are the following:
+
+    actual_values: MapSet
+
+    expected_values: DistributionMaker 
+
+    '''
+
+    # We need to reformat the data to fit the way things are fed into the
+    # generalized likelihood. The latter requires the following inputs:
+    # 
+    # k_list: a numpy array of counts for each bin
+    #
+    # dataset_weights: a dictionary of lists of numpy arrays. Each list corresponds to a dataset and contains numpy arrays with weights for a given bin. empty bins here mean an empty array
+    #
+    # type [basic_pg/gen1/gen2/gen2_effective/gen3] - handles the various formulas from the two papers - (basic_pg (paper 1), all others (paper 2))
+    #
+    # empty_bin_strategy [0/1/2] - no filling, fill up bins which have at least one event from other sources OR fill up all bins
+    #
+    # empty_bin_weight - what weight to use for pseudo counts in empty  bins? "max" , maximum of all weights of dataset (used in paper) .. could be mean etc
+    #
+    # mead_adjustment - apply mean adjustment as implemented in the paper? yes/no
+    #
+    # weight_moments - change to more "unbiased" way of determining weight distribution moments as implemented in the paper
+    #
+    #***************************************************************************************************************
+    # default settings (as stated towards the end of the paper): gen2 , empty_bin_strategy=1, mead_adjustment=True
+    #
+
+    #
+    # First, handle the experimental data (or pseudo data)
+    #
+    assert len(actual_values)==1,'ERROR: actual values should have exactly one Map in its MapSet'
+    actual_values = actual_values[0]
+
+    #This flattening is done row-major, which is what the inner translation_indices function does
+    # ie:  idx = (idx_x*(len(bin_edges_y)-1) + idx_y)*(len(bin_edges_z)-1) + idx_z
+    #
+    flattened_actual = actual_values.hist.flatten(order='C')
+
+
+    #
+    # Next, handle the expected data, with one histogram per pipeline
+    #
+    expected_outputs = [sum(p.get_outputs()) for p in expected_values.pipelines]
+
+    # We Now have a Map object for each simulated pipeline, which can be converted into their respective
+    # histograms
+    flattened_expected = [m.hist.flatten(order='C') for m in expected_outputs]
+
+    # Finally, we need to retrieve the array_indices vectors from each pipeline. Those
+    # Are stored in the last stage's array data
+    containersets_per_pipeline = [p.stages[-1].data for p in expected_values.pipelines]
+
+    weights_per_pipelines = []
+    indices_per_pipelines = []
+    for pipeline in containersets_per_pipeline:
+        weights_per_pipelines.append(np.concatenate([c.array_data['weights'].get() for c in pipeline]))
+        indices_per_pipelines.append(np.concatenate([c.array_data['bin_indices'].get() for c in pipeline]))
+
+
+    weight_dict={}
+    names = ['neutrinos','muons']
+
+    for n,w,index in  zip(names,weights_per_pipelines,indices_per_pipelines):
+
+        weight_dict[n] = []
+        for i in range(flattened_actual.shape[0]):
+            mask = index==i
+            weight_dict[n].append(w[mask])
+
+    '''
+    print('k_list: ',flattened_actual)
+    print('k_list shape: ',flattened_actual.shape)
+    print('\n----\n')
+    print('dataset_weights type: ',type(weight_dict))
+    print('dataset keys: ',weight_dict.keys())
+    print('dataset substructure: ',type(weight_dict['muons']))
+    print('len of substructure (should be 200): ',len(weight_dict['muons']))
+    print('dataset_substructure: ',[a.shape for a in weight_dict['muons']])
+    '''
+
+
+    # Convert numpy array of uncertainties into the nominal values
+    flattened_actual = np.array([a.nominal_value for a in flattened_actual])
+
+    print(np.isfinite(flattened_actual).sum()-flattened_actual.shape[0])
+
+    print([np.isfinite(a).sum()-a.shape[0] for a in weight_dict['muons']])
+    print([np.isfinite(a).sum()-a.shape[0] for a in weight_dict['neutrinos']])
+
+
+    llh = generic_pdf(k_list=flattened_actual,
+                               dataset_weights=weight_dict,
+                               type="gen2",
+                               empty_bin_strategy=1,
+                               empty_bin_weight="max",
+                               mean_adjustment=True,
+                               s_factor=1.0,
+                               larger_weight_variance=False,
+                               log_stirling=None)
+    
+    print(llh)
+    raise Exception
+    return llh
