@@ -713,6 +713,7 @@ def generalized_poisson_llh(actual_values,expected_values):
     #***************************************************************************************************************
     # default settings (as stated towards the end of the paper): gen2 , empty_bin_strategy=1, mead_adjustment=True
     #
+    '''
     import pickle
 
     if os.path.isfile('rearranged_weights.pckl'):
@@ -720,12 +721,14 @@ def generalized_poisson_llh(actual_values,expected_values):
     else:
         flattened_actual, weights_dict = format_input_to_generalized_poisson(actual_values, expected_values)
         pickle.dump([flattened_actual,weights_dict], open('rearranged_weights.pckl','wb'))
+    '''
+    flattened_actual, weights_dict = format_input_to_generalized_poisson(actual_values, expected_values)
+    #print('output has been formatted')
+    #print('Type of actual data: ',type(flattened_actual))
+    #print('Type of weight dict: ',type(weights_dict))
 
-    print('output has been formatted')
-    print('Type of actual data: ',type(flattened_actual))
-    print('Type of weight dict: ',type(weights_dict))
-
-    print('COMPUTING THE LLH!!')
+    #print('COMPUTING THE LLH!!')
+        
     llh = generic_pdf(data=flattened_actual,
                                dataset_weights=weights_dict,
                                type="gen2",
@@ -737,5 +740,5 @@ def generalized_poisson_llh(actual_values,expected_values):
                                log_stirling=None)
     
     print('llh value output in stats.py: ',llh)
-    raise Exception
+
     return llh

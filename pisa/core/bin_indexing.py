@@ -40,7 +40,7 @@ from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.numba_tools import WHERE
 
-from translation import find_index
+from pisa.core.translation import find_index
 
 __all__ = ["lookup_indices", "test_lookup_indices"]
 
