@@ -16,7 +16,7 @@ from pisa.utils import likelihood_functions
 import sys,os
 sys.path.append('/home/bourdeet/NBI/IceCube/PISA/')
 
-from mc_uncertainty.llh_defs.poisson import generic_pdf
+
 
 __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
            'maperror_logmsg',
@@ -552,6 +552,123 @@ def mod_chi2(actual_values, expected_values):
     )
     return m_chi2
 
+
+def format_input_to_generalized_poisson(actual_values, expected_values, merge_neutrinos = False):
+    '''
+
+    Format pisa inputs to fit the generalized poisson likelihood structure
+
+    Inputs: 
+    ---------
+
+    actual_values: Map from the data
+
+    expected_values:  DistributionMaker from the Simulation
+
+    merge_neutrinos: If merge, merge all neutrino channels into a single container
+
+    '''
+
+    from pisa.core.container import Container,ContainerSet 
+    from pisa.core.distribution_maker import DistributionMaker
+    from pisa.core.map import MapSet,Map 
+    
+    import collections
+
+    assert isinstance(actual_values,Map),'ERROR: actual_values must be a Map object'
+    assert isinstance(expected_values,DistributionMaker),'ERROR: expected_values must be a DistributionMaker object'
+
+    #
+    # First, handle the experimental data (or pseudo data)
+    #
+    # This flattening is done row-major, which is what the inner translation_indices function does
+    # ie:  idx = (idx_x*(len(bin_edges_y)-1) + idx_y)*(len(bin_edges_z)-1) + idx_z
+    # 
+    # Result is a 1Dnumpy array
+    flattened_actual = actual_values.hist.flatten(order='C')
+    n_bins = flattened_actual.shape[0]
+    n_bins_multi = actual_values.binning
+    flattened_actual = np.array([x.nominal_value for x in flattened_actual]).astype(float)
+
+    #
+    # Next, retrieve the expected data, dividing it into pipeline
+    #
+    assert len(expected_values.pipelines)==2,'ERROR: found more than 2 pipelines in simulation. I expect one from neutrino and one from muons.'
+    neutrino_expectation, muon_expectation = expected_values.pipelines
+    muon_container = muon_expectation.stages[-1].data.containers[0]
+
+
+    if merge_neutrinos:
+        #
+        # If required, create a new ContainerSet that will merge all
+        # neutrino flavor arrays together
+        neutrino_container = Container(name='neutrinos',data_specs=n_bins_multi)
+
+        all_nu_containers = neutrino_expectation.stages[-1].data
+        for variable in all_nu_containers.containers[0].array_data.keys():
+            new_array = np.concatenate([c.array_data[variable] for c in all_nu_containers])
+            neutrino_container.add_array_data(key=variable, data=new_array)
+        neutrino_container_set = ContainerSet( name='neutrinos', containers=neutrino_container, data_specs=n_bins_multi)
+
+    else:
+        neutrino_container_set = neutrino_expectation.stages[-1].data 
+
+
+    all_container_sets = ContainerSet(name='sim',containers = [c for c in neutrino_container_set.containers]+[muon_container])
+    dataset_weights = construct_weight_dict(container_set=neutrino_container_set, n_bins=n_bins, binning_spec=n_bins_multi)
+
+    return flattened_actual, dataset_weights
+    
+
+
+
+def construct_weight_dict(container_set=None, n_bins=None, binning_spec=None):
+    '''
+    Generate the thorstenllh-compatible dictionnary of weights
+
+    container_set: ContainerSet object. Each container in the Set
+                   will result in a separate dict entry in the 
+                   output weight disct
+
+    returns:
+    -------
+
+    dataset_weights: A dictionary of lists of numpy arrays. 
+                     Each list corresponds to a dataset and 
+                     contains numpy arrays with weights for 
+                     a given bin. empty bins here mean an 
+                     empty array.
+
+    '''
+    from pisa.core.container import ContainerSet,Container
+    import collections
+    assert isinstance(container_set,ContainerSet),'ERROR: container_Set must be a ContainerSet instance.'
+
+    dataset_weights = collections.OrderedDict()
+
+    for container in container_set:
+
+        # Create a weight entry if it doesn't exist yet
+        if container.name not in dataset_weights.keys():
+            dataset_weights[container.name] = [None for x in range(n_bins)]
+
+        # Check if a bin_indices array is present.
+        # If not compute it
+        if 'bin_indices' not in container.array_data.keys():
+            from pisa.core.bin_indexing import lookup_indices
+            indices = lookup_indices(sample=[container.array_data['reco_energy'],container.array_data['reco_coszen'],container.array_data['pid']],binning=binning_spec)
+            container.add_array_data(key='bin_indices',data=indices.get())
+
+        # Iterate over each analysis bin, picking up weights that are 
+        # falling into bin i
+        for i in range(n_bins):
+            mask = container.array_data['bin_indices'].get()==i 
+            w =container.array_data['weights'].get()[mask]
+            assert w.shape[0]==sum(mask),'I am not picking the weights right.'
+            dataset_weights[container.name][i] = w
+
+    return dataset_weights
+
 def generalized_poisson_llh(actual_values,expected_values):
     '''
     Compute the generalized Poisson likelihood as formulated in https://arxiv.org/abs/1902.08831
@@ -566,6 +683,15 @@ def generalized_poisson_llh(actual_values,expected_values):
     expected_values: DistributionMaker 
 
     '''
+    from mc_uncertainty.llh_defs.poisson import generic_pdf
+    from pisa.core.container import Container,ContainerSet 
+    from pisa.core.distribution_maker import DistributionMaker
+    from pisa.core.map import MapSet,Map 
+
+    assert isinstance(actual_values,Map) or isinstance(actual_values,MapSet),'ERROR: generalized llh only takes in Map or MapSets as inputs'
+
+    if isinstance(actual_values,MapSet):
+        actual_values = actual_values.maps[0]
 
     # We need to reformat the data to fit the way things are fed into the
     # generalized likelihood. The latter requires the following inputs:
@@ -587,72 +713,24 @@ def generalized_poisson_llh(actual_values,expected_values):
     #***************************************************************************************************************
     # default settings (as stated towards the end of the paper): gen2 , empty_bin_strategy=1, mead_adjustment=True
     #
-
-    #
-    # First, handle the experimental data (or pseudo data)
-    #
-    assert len(actual_values)==1,'ERROR: actual values should have exactly one Map in its MapSet'
-    actual_values = actual_values[0]
-
-    #This flattening is done row-major, which is what the inner translation_indices function does
-    # ie:  idx = (idx_x*(len(bin_edges_y)-1) + idx_y)*(len(bin_edges_z)-1) + idx_z
-    #
-    flattened_actual = actual_values.hist.flatten(order='C')
-
-
-    #
-    # Next, handle the expected data, with one histogram per pipeline
-    #
-    expected_outputs = [sum(p.get_outputs()) for p in expected_values.pipelines]
-
-    # We Now have a Map object for each simulated pipeline, which can be converted into their respective
-    # histograms
-    flattened_expected = [m.hist.flatten(order='C') for m in expected_outputs]
-
-    # Finally, we need to retrieve the array_indices vectors from each pipeline. Those
-    # Are stored in the last stage's array data
-    containersets_per_pipeline = [p.stages[-1].data for p in expected_values.pipelines]
-
-    weights_per_pipelines = []
-    indices_per_pipelines = []
-    for pipeline in containersets_per_pipeline:
-        weights_per_pipelines.append(np.concatenate([c.array_data['weights'].get() for c in pipeline]))
-        indices_per_pipelines.append(np.concatenate([c.array_data['bin_indices'].get() for c in pipeline]))
-
-
-    weight_dict={}
-    names = ['neutrinos','muons']
-
-    for n,w,index in  zip(names,weights_per_pipelines,indices_per_pipelines):
-
-        weight_dict[n] = []
-        for i in range(flattened_actual.shape[0]):
-            mask = index==i
-            weight_dict[n].append(w[mask])
-
     '''
-    print('k_list: ',flattened_actual)
-    print('k_list shape: ',flattened_actual.shape)
-    print('\n----\n')
-    print('dataset_weights type: ',type(weight_dict))
-    print('dataset keys: ',weight_dict.keys())
-    print('dataset substructure: ',type(weight_dict['muons']))
-    print('len of substructure (should be 200): ',len(weight_dict['muons']))
-    print('dataset_substructure: ',[a.shape for a in weight_dict['muons']])
+    import pickle
+
+    if os.path.isfile('rearranged_weights.pckl'):
+        flattened_actual,weights_dict = pickle.load(open('rearranged_weights.pckl','rb'))
+    else:
+        flattened_actual, weights_dict = format_input_to_generalized_poisson(actual_values, expected_values)
+        pickle.dump([flattened_actual,weights_dict], open('rearranged_weights.pckl','wb'))
     '''
+    flattened_actual, weights_dict = format_input_to_generalized_poisson(actual_values, expected_values)
+    #print('output has been formatted')
+    #print('Type of actual data: ',type(flattened_actual))
+    #print('Type of weight dict: ',type(weights_dict))
 
-
-    # Convert numpy array of uncertainties into the nominal values
-    flattened_actual = np.array([a.nominal_value for a in flattened_actual])
-
-    print(np.isfinite(flattened_actual).sum()-flattened_actual.shape[0])
-
-    print([np.isfinite(a).sum()-a.shape[0] for a in weight_dict['muons']])
-    print([np.isfinite(a).sum()-a.shape[0] for a in weight_dict['neutrinos']])
-
-
-    llh = generic_pdf(k_list=flattened_actual,
-                               dataset_weights=weight_dict,
+    #print('COMPUTING THE LLH!!')
+        
+    llh = generic_pdf(data=flattened_actual,
+                               dataset_weights=weights_dict,
                                type="gen2",
                                empty_bin_strategy=1,
                                empty_bin_weight="max",
@@ -661,6 +739,6 @@ def generalized_poisson_llh(actual_values,expected_values):
                                larger_weight_variance=False,
                                log_stirling=None)
     
-    print(llh)
-    raise Exception
+    print('llh value output in stats.py: ',llh)
+
     return llh
