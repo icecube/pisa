@@ -1,11 +1,11 @@
-pisa.stages.unfold package
-==========================
+pisa\.stages\.unfold package
+============================
 
 Submodules
 ----------
 
-pisa.stages.unfold.roounfold module
------------------------------------
+pisa\.stages\.unfold\.roounfold module
+--------------------------------------
 
 .. automodule:: pisa.stages.unfold.roounfold
     :members:

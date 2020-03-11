@@ -839,7 +839,7 @@ class ParamSet(Sequence):
             if isinstance(val, Param):
                 assert val.name == attr
                 self._params[idx] = val
-            elif isbarenumeric(val):
+            elif isinstance(val, ureg.Quantity) or isbarenumeric(val):
                 self._params[idx].value = val
             else:
                 raise ValueError('Cannot set param "%s" to `val`=%s'
@@ -1486,6 +1486,10 @@ def test_ParamSet():
     assert param_set.reco_coszen.value == -1.0
     param_set.reco_coszen = -1
     assert param_set.reco_coszen.value == -1.0
+    param_set.reco_coszen = ureg.Quantity("0.1 dimensionless")
+    assert param_set.reco_coszen.value == 0.1 == ureg.Quantity("0.1 dimensionless")
+    param_set.reco_energy = ureg.Quantity("10.1 GeV")
+    assert param_set.reco_energy.value == ureg.Quantity("10.1 GeV")
 
     # Test deepcopy
     param_set2 = deepcopy(param_set)

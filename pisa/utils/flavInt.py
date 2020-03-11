@@ -629,11 +629,13 @@ class NuFlavInt(object):
         """Extract data from a nested dictionary `d` whose format is commonly
         found in PISA
 
-        The dictionary must have the format
+        The dictionary must have the format::
+
             d = {"<flavor>": {"<interaction type>": <data object>}}
             <flavor> is one of "nue", "nue_bar", "numu", "numu_bar", "nutau",
                 "nutau_bar"
             <interaction type> is one of "cc", "nc"
+
         """
 
         with BarSep('_'):
@@ -1052,12 +1054,14 @@ class NuFlavIntGroup(MutableSequence):
         """Return a dictionary with flavors grouped by the interaction types
         represented in this group.
 
-        The returned dictionary has format
-        {
-            'all_int_type_flavs': [<NuFlav object>, <NuFlav object>, ...],
-            'cc_only_flavs':      [<NuFlav object>, <NuFlav object>, ...],
-            'nc_only_flavs':      [<NuFlav object>, <NuFlav object>, ...],
-        }
+        The returned dictionary has format::
+
+            {
+                'all_int_type_flavs': [<NuFlav object>, <NuFlav object>, ...],
+                'cc_only_flavs':      [<NuFlav object>, <NuFlav object>, ...],
+                'nc_only_flavs':      [<NuFlav object>, <NuFlav object>, ...],
+            }
+
         where the lists of NuFlav objects are mutually exclusive
         """
         uniqueF = self.flavs
@@ -1169,6 +1173,7 @@ class FlavIntData(dict):
     returned.
 
     Initializing, setting and getting data in various ways:
+
     >>> fi_dat = FlavIntData()
     >>> fi_dat['nue', 'cc'] = 1
     >>> fi_dat['nuenc'] = 2

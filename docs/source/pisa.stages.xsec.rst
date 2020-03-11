@@ -1,19 +1,19 @@
-pisa.stages.xsec package
-========================
+pisa\.stages\.xsec package
+==========================
 
 Submodules
 ----------
 
-pisa.stages.xsec.genie module
------------------------------
+pisa\.stages\.xsec\.genie module
+--------------------------------
 
 .. automodule:: pisa.stages.xsec.genie
     :members:
     :undoc-members:
     :show-inheritance:
 
-pisa.stages.xsec.genie\_sys module
-----------------------------------
+pisa\.stages\.xsec\.genie\_sys module
+-------------------------------------
 
 .. automodule:: pisa.stages.xsec.genie_sys
     :members:

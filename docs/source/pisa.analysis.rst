@@ -1,27 +1,27 @@
-pisa.analysis package
-=====================
+pisa\.analysis package
+======================
 
 Submodules
 ----------
 
-pisa.analysis.analysis module
------------------------------
+pisa\.analysis\.analysis module
+-------------------------------
 
 .. automodule:: pisa.analysis.analysis
     :members:
     :undoc-members:
     :show-inheritance:
 
-pisa.analysis.hypo\_testing module
-----------------------------------
+pisa\.analysis\.hypo\_testing module
+------------------------------------
 
 .. automodule:: pisa.analysis.hypo_testing
     :members:
     :undoc-members:
     :show-inheritance:
 
-pisa.analysis.nutau\_analysis module
-------------------------------------
+pisa\.analysis\.nutau\_analysis module
+--------------------------------------
 
 .. automodule:: pisa.analysis.nutau_analysis
     :members:

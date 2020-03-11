@@ -60,66 +60,66 @@ class MCSimRunSettings(dict):
 
     (Also note that expressions for numerical values utilizing the Python/numpy
     namespace are valid, e.g. "2*pi" will be evaluated within the code to its
-    decimal value.)
+    decimal value.)::
 
-    {
+        {
 
-      # Specify the detector name, lower case
-      "pingu": {
+          # Specify the detector name, lower case
+          "pingu": {
 
-        # Monte Carlo run number for this detector
-        "388": {
+            # Monte Carlo run number for this detector
+            "388": {
 
-          # Version of geometry, lower-case. E.g., ic86 for IceCube/DeepCore
-          "geom": "v36",
+              # Version of geometry, lower-case. E.g., ic86 for IceCube/DeepCore
+              "geom": "v36",
 
-          # A straightforward way of computing aeff/veff/meff is to keep all
-          # simulated events and compare the #analysis/#simulated. If all
-          # simulated events are kept, then the filename containing these is
-          # recorded here.
-          "all_gen_events_file": None,
+              # A straightforward way of computing aeff/veff/meff is to keep all
+              # simulated events and compare the #analysis/#simulated. If all
+              # simulated events are kept, then the filename containing these is
+              # recorded here.
+              "all_gen_events_file": None,
 
-          # Max and min azimuth angle simulated (rad)
-          "azimuth_max": "2*pi",
-          "azimuth_min": 0,
+              # Max and min azimuth angle simulated (rad)
+              "azimuth_max": "2*pi",
+              "azimuth_min": 0,
 
-          # Max and min energy simulated (GeV)
-          "energy_max": 80,
-          "energy_min": 1,
+              # Max and min energy simulated (GeV)
+              "energy_max": 80,
+              "energy_min": 1,
 
-          # GENIE simulates some un-physica events (interactions that will not
-          # occur in nature). The number below was arrived at by Ken Clark, so
-          # ask him for more info.
-          "physical_events_fract": 0.8095,
+              # GENIE simulates some un-physica events (interactions that will not
+              # occur in nature). The number below was arrived at by Ken Clark, so
+              # ask him for more info.
+              "physical_events_fract": 0.8095,
 
-          # GENIE has a prescale factor (TODO: generalize or eliminate for
-          # other xsec?)
-          "genie_prescale_factor": 1.2,
+              # GENIE has a prescale factor (TODO: generalize or eliminate for
+              # other xsec?)
+              "genie_prescale_factor": 1.2,
 
-          # Neutrino flavors simulated
-          "flavints": "nutau,nutaubar",
+              # Neutrino flavors simulated
+              "flavints": "nutau,nutaubar",
 
-          # #nu / (#nu + #nubar) simulated
-          "nu_to_total_fract": 0.5,
+              # #nu / (#nu + #nubar) simulated
+              "nu_to_total_fract": 0.5,
 
-          # Number of events simulated per I3 file
-          "num_events_per_file": 250000,
+              # Number of events simulated per I3 file
+              "num_events_per_file": 250000,
 
-          # Number of I3 files used
-          "num_i3_files": 195,
+              # Number of I3 files used
+              "num_i3_files": 195,
 
-          # Simulated spectral inde gamma; value of 1 => E*{-1}
-          "sim_spectral_index": 1,
+              # Simulated spectral inde gamma; value of 1 => E*{-1}
+              "sim_spectral_index": 1,
 
-          # Version of neutrino/ice cross sections used for the simulation
-          "xsec_version": "genie_2.6.4",
+              # Version of neutrino/ice cross sections used for the simulation
+              "xsec_version": "genie_2.6.4",
 
-          # Max and min zenith angle simulated (rad)
-          "zenith_max": "pi",
-          "zenith_min": 0
+              # Max and min zenith angle simulated (rad)
+              "zenith_max": "pi",
+              "zenith_min": 0
+            }
+          }
         }
-      }
-    }
 
 
     """

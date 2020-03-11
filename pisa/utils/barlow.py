@@ -63,38 +63,40 @@ class ArgValueError(Exception):
 
 class Likelihoods(object):
     """
-    A class to handle the likelihood calculations in OscFit. It can
-     be used in other poisson binned-likelihood calculators as well.
-     The class includes two likelihood spaces: the Poisson and the
-     Barlow LLH.
+A class to handle the likelihood calculations in OscFit. It can
+be used in other poisson binned-likelihood calculators as well.
+The class includes two likelihood spaces: the Poisson and the
+Barlow LLH.
 
-    The Poisson likelihood is the ideal case and assumes infinite
-     statistical accuracy on the Monte Carlo distributions. This is
-     the simple case and has been used in the past for analyses, but
-     should not be used if there's a significant statistical error on
-     one of the samples.
+The Poisson likelihood is the ideal case and assumes infinite
+statistical accuracy on the Monte Carlo distributions. This is
+the simple case and has been used in the past for analyses, but
+should not be used if there's a significant statistical error on
+one of the samples.
 
-    The Barlow likelihood is an implementation of the likelihood model
-     given in doi:10.1016/0010-4655(93)90005-W ("Fitting using finite
-     Monte Carlo samples" by Barlow and Beeston). This requires the
-     unweighted distributions of the MC and involves assuming that each
-     MC samples is drawn from an underlying "true" expectation distribution
-     which should be fit. This gives (number of bins)x(number of samples)
-     new parameters to fit and allows the shape of the distributions to
-     fluctuate in order to fit both the observed MC and the observed
-     data. This gives a more informed result and allows one to estimate
-     the effect of the finite MC samples.
+The Barlow likelihood is an implementation of the likelihood model
+given in doi:10.1016/0010-4655(93)90005-W ("Fitting using finite
+Monte Carlo samples" by Barlow and Beeston). This requires the
+unweighted distributions of the MC and involves assuming that each
+MC samples is drawn from an underlying "true" expectation distribution
+which should be fit. This gives (number of bins)x(number of samples)
+new parameters to fit and allows the shape of the distributions to
+fluctuate in order to fit both the observed MC and the observed
+data. This gives a more informed result and allows one to estimate
+the effect of the finite MC samples.
 
-    To use this, you need to run set_data, set_mc, and the set_unweighted
-     functions. THE set_mc FUNCTION TAKES A HISTOGRAM OF THE AVERAGE
-     WEIGHT PER EVENT FOR EACH BIN! NOT THE TOTAL WEIGHTED HISTOGRAM!
+To use this, you need to run set_data, set_mc, and the set_unweighted
+functions. 
 
-     Simply calling the get_llh function after these will return the
-     best fit LLH for your chosen likelihood function. The function takes
-     the name of the likelihood space ("Poisson" or "Barlow"). You can
-     retrieve the best fit weighted plots using the get_plot (total best-fit
-     histogram including all samples) and the get_single_plots (the list
-     of best-fit weighted histograms for each sample).
+.. important:: the `set_mc` function takes a histogram of the average
+    weight per event for each bin! not the total weighted histogram!
+
+Simply calling the get_llh function after these will return the
+best fit LLH for your chosen likelihood function. The function takes
+the name of the likelihood space ("Poisson" or "Barlow"). You can
+retrieve the best fit weighted plots using the get_plot (total best-fit
+histogram including all samples) and the get_single_plots (the list
+of best-fit weighted histograms for each sample).
     """
     mc_histograms = None
     unweighted_histograms = None
