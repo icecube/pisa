@@ -42,25 +42,25 @@ def scale(scale, value, out):
     out.mark_changed(WHERE)
 
 
-def multiply(multiplier, out):
+def multiply(val, out):
     """Multipy one array by another .. ::
 
-        out *= multiplier
+        out *= val
 
     """
-    multiply_gufunc(multiplier.get(WHERE),
+    multiply_gufunc(val.get(WHERE),
                     out=out.get(WHERE))
     out.mark_changed(WHERE)
 
 
-def divide(divisor, out):
+def divide(val, out):
     """Divide one array by another .. ::
 
-        out /= divisor
+        out /= val
 
     Division by zero results in 0 for that element.
     """
-    divide_gufunc(divisor.get(WHERE), out=out.get(WHERE))
+    divide_gufunc(val.get(WHERE), out=out.get(WHERE))
     out.mark_changed(WHERE)
 
 
@@ -123,27 +123,27 @@ def scale_gufunc(scale, value, out):
 
 
 @guvectorize([f'({FX}[:], {FX}[:])'], '()->()', target=TARGET)
-def multiply_gufunc(multiplier, out):
+def multiply_gufunc(val, out):
     """Multipy one array by another .. ::
 
-        out *= multiplier
+        out *= val
 
     """
-    out[0] *= multiplier[0]
+    out[0] *= val[0]
 
 
 @guvectorize([f'({FX}[:], {FX}[:])'], '()->()', target=TARGET)
-def divide_gufunc(divisor, out):
+def divide_gufunc(val, out):
     """Divide one array by another .. ::
 
-        out /= divisor
+        out /= val
 
     Division by zero results in 0 for that element.
     """
-    if divisor[0] == 0.:
+    if val[0] == 0.:
         out[0] = 0.
     else:
-        out[0] /= divisor[0]
+        out[0] /= val[0]
 
 
 @guvectorize([f'({FX}[:], {FX}[:])'], '()->()', target=TARGET)
