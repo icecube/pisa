@@ -2651,8 +2651,12 @@ def hypersurface_example() :
       - Saving and re-loading the hypersurfaces
       - Plotting the results
     '''
-
     import sys
+    import matplotlib as mpl
+    mpl.use("agg")
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    from pisa.core.map import Map, MapSet
 
     #TODO turn this into a PASS/FAIL test, and add more detailed test of specific functions
 
@@ -2677,12 +2681,9 @@ def hypersurface_example() :
         log=False,
     )
 
-
     #
     # Create fake datasets
     #
-
-    from pisa.core.map import Map, MapSet
 
     # Just doing something quick here for demonstration purposes
     # Here I'm only assigning a single value per dataset, e.g. one bin, for simplicity, but idea extends to realistic binning
@@ -2791,8 +2792,6 @@ def hypersurface_example() :
     # 1D plot
     #
 
-    import matplotlib.pyplot as plt
-
     # Create the figure
     fig,ax = plt.subplots(1,len(hypersurface.params))
 
@@ -2827,9 +2826,6 @@ def hypersurface_example() :
     #
 
     if len(hypersurface.params) > 1 :
-
-        from mpl_toolkits.mplot3d import Axes3D
-
         # Create the figure
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
@@ -2841,8 +2837,6 @@ def hypersurface_example() :
             bin_idx=bin_idx,
             param_names=["foo","bar"],
         )
-
-        plt.show()
 
         # Format
         fig.tight_layout()

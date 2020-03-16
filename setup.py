@@ -214,7 +214,7 @@ def do_setup():
         author_email='jll1062+pisa@phys.psu.edu',
         url='http://github.com/icecubeopensource/pisa',
         cmdclass=cmdclasses,
-        python_requires='>3.6',
+        python_requires='>=3.6, <3.8', # e.g. f-strings require Py>=3.6; numba doesn't support Python 3.8 until numba 0.47 but we need numba==0.45.1
         setup_requires=[
             'pip>=1.8',
             'setuptools>18.5', # versioneer requires >18.5
@@ -227,7 +227,7 @@ def do_setup():
             'iminuit',
             'line_profiler',
             'matplotlib>=3.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
-            'numba==0.43.1', # >=0.35: fastmath jit flag; >=0.38: issue #439, <0.44 because SmartArray deprication
+            'numba==0.45.1', # >=0.35: fastmath jit flag; >=0.38: issue #439; 0.44 segfaults; 0.46 removes SmartArray
             'pint>=0.8.1', # see https://github.com/hgrecco/pint/issues/512
             'scipy>=0.17',
             'simplejson>=3.2',
