@@ -399,44 +399,42 @@ def find_index(val, bin_edges):
     underflow_idx = -1
     overflow_idx = num_bins
 
-    # First check: NaN or ouside binning?
-    if np.isnan(val):
+    if val >= bin_edges[0]:
+        if val <= bin_edges[-1]:
+            #
+            # Binary search within binning (inclusive of left and right edges)
+            #
+
+            # Initialize to point to left-most edge
+            left_edge_idx = 0
+
+            # Initialize to point to right-most edge
+            right_edge_idx = num_edges - 1
+
+            while left_edge_idx < right_edge_idx:
+                # See where value falls w.r.t. an edge ~midway between left and right edges
+                # ``>> 1``: integer division by 2 (i.e., divide w/ truncation)
+                test_edge_idx = (left_edge_idx + right_edge_idx) >> 1
+
+                # ``>=``: bin left edges are inclusive
+                if val >= bin_edges[test_edge_idx]:
+                    left_edge_idx = test_edge_idx + 1
+                else:
+                    right_edge_idx = test_edge_idx
+
+            # break condition of while loop is that left_edge_idx points to the
+            # right edge of the bin that `val` is inside of; that is one more than
+            # that _bin's_ index
+            bin_idx = left_edge_idx - 1
+
+            # Paranoia: In case of unforseen numerical issues, force clipping of
+            # returned bin index to [0, num_bins - 1] (any `val` outside of binning
+            # is already handled, so this should be valid)
+            bin_idx = min(max(0, bin_idx), num_bins - 1)
+        else:
+            bin_idx = overflow_idx
+    else:  # either value is below first bin or is NaN
         bin_idx = underflow_idx
-    elif val < bin_edges[0]:
-        bin_idx = underflow_idx
-    elif val > bin_edges[-1]:
-        bin_idx = overflow_idx
-    else:
-        #
-        # Binary search within binning (inclusive of left and right edges)
-        #
-
-        # Initialize to point to left-most edge
-        left_edge_idx = 0
-
-        # Initialize to point to right-most edge
-        right_edge_idx = num_edges - 1
-
-        while left_edge_idx < right_edge_idx:
-            # See where value falls w.r.t. an edge ~midway between left and right edges
-            # ``>> 1``: integer division by 2 (i.e., divide w/ truncation)
-            test_edge_idx = (left_edge_idx + right_edge_idx) >> 1
-
-            # ``>=``: bin left edges are inclusive
-            if val >= bin_edges[test_edge_idx]:
-                left_edge_idx = test_edge_idx + 1
-            else:
-                right_edge_idx = test_edge_idx
-
-        # break condition of while loop is that left_edge_idx points to the
-        # right edge of the bin that `val` is inside of; that is one more than
-        # that _bin's_ index
-        bin_idx = left_edge_idx - 1
-
-        # Paranoia: In case of unforseen numerical issues, force clipping of
-        # returned bin index to [0, num_bins - 1] (any `val` outside of binning
-        # is already handled, so this should be valid)
-        bin_idx = min(max(0, bin_idx), num_bins - 1)
 
     return bin_idx
 
