@@ -27,6 +27,8 @@ _Note that terminal commands below are intended for the bash shell. You'll have 
         https://www.anaconda.com/download
     * Miniconda (just the essentials, ~40 MB)<br>
         https://conda.io/miniconda.html
+1. Create a new conda environment, ideally with a python version compatible with the python requirements below (cf. conda's getting started guide).
+1. Active your new conda environment.
 1. Install PISA including optional packages and development tools (`develop`), if desired<br>
     `pip install -e $PISA[develop] -vvv`
 1. Run a quick test: generate templates in the staged mode<br>
