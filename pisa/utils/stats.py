@@ -17,11 +17,12 @@ from pisa.utils import likelihood_functions
 __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
            'maperror_logmsg',
            'chi2', 'llh', 'log_poisson', 'log_smear', 'conv_poisson',
-           'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2', 'mcllh_mean', 'mcllh_eff']
+           'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2',
+           'mcllh_mean', 'mcllh_eff']
 
 __author__ = 'P. Eller, T. Ehrhardt, J.L. Lanfranchi'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -58,6 +59,26 @@ METRICS_TO_MINIMIZE = CHI2_METRICS
 # TODO(philippeller):
 # * unit tests to ensure these don't break
 
+def it_got_better(new_metric_val, old_metric_val, metric):
+    """Compare metric values and report whether improvement found.
+    """
+    to_maximize = is_metric_to_maximize(metric)
+    if to_maximize:
+        got_better = new_metric_val > old_metric_val
+    else:
+        got_better = new_metric_val < old_metric_val
+    return got_better
+
+def is_metric_to_maximize(metric):
+    """Check whether the resulting metric has to be maximized or minimized.
+    """
+    if isinstance(metric, str):
+        metric = [metric]
+    if all(m in METRICS_TO_MAXIMIZE for m in metric):
+        return True
+    if all(m in METRICS_TO_MINIMIZE for m in metric):
+        return False
+    raise ValueError('Defined metrics %s are not compatible' % metric)
 
 def maperror_logmsg(m):
     """Create message with thorough info about a map for logging purposes"""
@@ -228,15 +249,15 @@ def mcllh_mean(actual_values, expected_values):
 
     Notes
     -----
-    * 
+    *
     """
     assert actual_values.shape == expected_values.shape
 
     # Convert to simple numpy arrays containing floats
     actual_values = unp.nominal_values(actual_values).ravel()
     sigma = unp.std_devs(expected_values).ravel()
-    expected_values = unp.nominal_values(expected_values).ravel() 
-    
+    expected_values = unp.nominal_values(expected_values).ravel()
+
     with np.errstate(invalid='ignore'):
         # Mask off any nan expected values (these are assumed to be ok)
         actual_values = np.ma.masked_invalid(actual_values)
@@ -264,7 +285,9 @@ def mcllh_mean(actual_values, expected_values):
                    + maperror_logmsg(expected_values))
             raise ValueError(msg)
 
-    llh_val = likelihood_functions.poisson_gamma(actual_values, expected_values, sigma**2, a=0, b=0)
+    llh_val = likelihood_functions.poisson_gamma(
+        data=actual_values, sum_w=expected_values, sum_w2=sigma**2, a=0, b=0
+    )
     return llh_val
 
 
@@ -285,15 +308,15 @@ def mcllh_eff(actual_values, expected_values):
 
     Notes
     -----
-    * 
+    *
     """
     assert actual_values.shape == expected_values.shape
 
     # Convert to simple numpy arrays containing floats
     actual_values = unp.nominal_values(actual_values).ravel()
     sigma = unp.std_devs(expected_values).ravel()
-    expected_values = unp.nominal_values(expected_values).ravel() 
-    
+    expected_values = unp.nominal_values(expected_values).ravel()
+
     with np.errstate(invalid='ignore'):
         # Mask off any nan expected values (these are assumed to be ok)
         actual_values = np.ma.masked_invalid(actual_values)
@@ -321,7 +344,9 @@ def mcllh_eff(actual_values, expected_values):
                    + maperror_logmsg(expected_values))
             raise ValueError(msg)
 
-    llh_val = likelihood_functions.poisson_gamma(actual_values, expected_values, sigma**2, a=1, b=0)
+    llh_val = likelihood_functions.poisson_gamma(
+        data=actual_values, sum_w=expected_values, sum_w2=sigma**2, a=1, b=0
+    )
     return llh_val
 
 
@@ -466,8 +491,8 @@ def conv_llh(actual_values, expected_values):
     norm_triplets = np.array([actual_values, actual_values, sigma]).T
     total = 0
     for i in range(len(triplets)):
-        total += np.log(max(SMALL_POS, norm_conv_poisson(*triplets[i])))
-        total -= np.log(max(SMALL_POS, norm_conv_poisson(*norm_triplets[i])))
+        total += np.log(max(SMALL_POS, norm_conv_poisson(*triplets[i]))) # FIXME? (cf. pylint)
+        total -= np.log(max(SMALL_POS, norm_conv_poisson(*norm_triplets[i]))) # FIXME? (cf. pylint)
     return total
 
 def barlow_llh(actual_values, expected_values):
@@ -482,7 +507,7 @@ def barlow_llh(actual_values, expected_values):
     barlow_llh: numpy.ndarray
 
     """
-     
+
     actual_values = unp.nominal_values(actual_values).ravel()
     sigmas = unp.std_devs(expected_values).ravel()
     expected_values = unp.nominal_values(expected_values).ravel()
@@ -513,14 +538,14 @@ def barlow_llh(actual_values, expected_values):
             msg = ('`expected_values` must all be >= 0...\n'
                    + maperror_logmsg(expected_values))
             raise ValueError(msg)
-    
+
     # TODO(tahmid): Run checks in case expected_values and/or corresponding sigma == 0
     # and handle these appropriately. If sigma/ev == 0 the code below will fail.
     unweighted = np.array([(ev/s)**2 for ev, s in zip(expected_values, sigmas)])
     weights = np.array([s**2/ev for ev, s in zip(expected_values, sigmas)])
 
-    llh = likelihood_functions.barlowLLH(actual_values, unweighted, weights)
-    return llh
+    llh_val = likelihood_functions.barlowLLH(actual_values, unweighted, weights)
+    return llh_val
 
 def mod_chi2(actual_values, expected_values):
     """Compute the chi-square value taking into account uncertainty terms
