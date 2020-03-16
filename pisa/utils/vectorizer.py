@@ -196,6 +196,8 @@ def test_multiply_and_scale():
 
     assert np.allclose(out.get('host'), np.linspace(0, 10, 1000, dtype=FTYPE))
 
+    logging.info('<< PASS : test_multiply_and_scale >>')
+
 
 if __name__ == '__main__':
     test_multiply_and_scale()
