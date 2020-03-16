@@ -24,10 +24,10 @@ from pisa.utils import vectorizer
 
 __all__ = [
     'resample',
-    'get_hist',
     'histogram',
     'lookup',
     'find_index',
+    'find_index_cuda',
     'resample',
     'test_histogram',
     'test_find_index',
@@ -59,13 +59,17 @@ def resample(weights, old_sample, old_binning, new_sample, new_binning):
     # this is a two step process, first histogram the weights into the new binning:
     # and keep the flat_hist_counts
     if TARGET == 'cuda':
-        flat_hist = get_hist_gpu(old_sample, weights, new_binning, apply_weights=True)
-        flat_hist_counts = get_hist_gpu(old_sample, weights, new_binning, apply_weights=False)
+        flat_hist = histogram_gpu(old_sample, weights, new_binning, apply_weights=True)
+        flat_hist_counts = histogram_gpu(
+            old_sample, weights, new_binning, apply_weights=False
+        )
     else:
         #print(old_sample[0].get('host'))
         #print(weights.get('host'))
-        flat_hist = get_hist_np(old_sample, weights, new_binning, apply_weights=True)
-        flat_hist_counts = get_hist_np(old_sample, weights, new_binning, apply_weights=False)
+        flat_hist = histogram_np(old_sample, weights, new_binning, apply_weights=True)
+        flat_hist_counts = histogram_np(
+            old_sample, weights, new_binning, apply_weights=False
+        )
     vectorizer.divide(flat_hist_counts, flat_hist)
 
     # now do the inverse, a lookup
@@ -79,7 +83,7 @@ def resample(weights, old_sample, old_binning, new_sample, new_binning):
 
 # --------- histogramming methods ---------------
 
-def get_hist(sample, weights, binning, averaged):
+def histogram(sample, weights, binning, averaged):
     """Histogram `sample` points, weighting by `weights`, according to `binning`.
 
     Paramters
@@ -98,13 +102,13 @@ def get_hist(sample, weights, binning, averaged):
 
     """
     if TARGET == 'cuda':
-        flat_hist = get_hist_gpu(sample, weights, binning, apply_weights=True)
+        flat_hist = histogram_gpu(sample, weights, binning, apply_weights=True)
         if averaged:
-            flat_hist_counts = get_hist_gpu(sample, weights, binning, apply_weights=False)
+            flat_hist_counts = histogram_gpu(sample, weights, binning, apply_weights=False)
     else:
-        flat_hist = get_hist_np(sample, weights, binning, apply_weights=True)
+        flat_hist = histogram_np(sample, weights, binning, apply_weights=True)
         if averaged:
-            flat_hist_counts = get_hist_np(sample, weights, binning, apply_weights=False)
+            flat_hist_counts = histogram_np(sample, weights, binning, apply_weights=False)
     if averaged:
         #print(flat_hist_counts.get('host').shape)
         #print(flat_hist.get('host').shape)
@@ -112,15 +116,8 @@ def get_hist(sample, weights, binning, averaged):
     return flat_hist
 
 
-def histogram(sample, weights, binning, averaged):
-    return get_hist(sample, weights, binning, averaged)
-
-histogram.__doc__ = get_hist.__doc__
-
-
-def get_hist_gpu(sample, weights, binning, apply_weights=True):
-    # ToDo:
-    # * make for d > 3
+def histogram_gpu(sample, weights, binning, apply_weights=True):
+    # TODO: make for d > 3
     if binning.num_dims in [2, 3]:
         bin_edges = [edges.magnitude for edges in binning.bin_edges]
         if len(weights.shape) > 1:
@@ -186,10 +183,10 @@ def get_hist_gpu(sample, weights, binning, apply_weights=True):
             'Other dimesnions that 2 and 3 on the GPU not supported right now'
         )
 
-get_hist_gpu.__doc__ = get_hist.__doc__
+histogram_gpu.__doc__ = histogram.__doc__
 
 
-def get_hist_np(sample, weights, binning, apply_weights=True):
+def histogram_np(sample, weights, binning, apply_weights=True):
     """helper function for numoy historams"""
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
     sample = [s.get('host') for s in sample]
@@ -308,7 +305,7 @@ def lookup(sample, flat_hist, binning):
     #print(binning)
     assert binning.num_dims in [2, 3], 'can only do 2d and 3d at the moment'
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
-    # todo: directly return smart array
+    # TODO: directly return smart array
     if flat_hist.ndim == 1:
         #print 'looking up 1D'
         array = SmartArray(np.zeros_like(sample[0]))
@@ -437,6 +434,23 @@ def find_index(val, bin_edges):
         bin_idx = underflow_idx
 
     return bin_idx
+
+
+@cuda.jit
+def find_index_cuda(val, bin_edges, out):
+    """CUDA wrapper of `find_index` kernel e.g. for running tests on GPU
+
+    Parameters
+    ----------
+    val : array
+    bin_edges : array
+    out : array of same size as `val`
+        Results are stored to `out`
+
+    """
+    i = cuda.grid(1)
+    if i < val.size:
+        out[i] = find_index(val[i], bin_edges)
 
 
 if FTYPE == np.float32:
@@ -609,7 +623,7 @@ def test_find_index():
             if len(bin_edges) < 2:
                 continue
             logging.debug("bin_edges being tested: %s", bin_edges)
-            bin_edges = np.array(bin_edges, dtype=FTYPE)
+            bin_edges = SmartArray(np.array(bin_edges, dtype=FTYPE))
 
             num_bins = len(bin_edges) - 1
             underflow_idx = -1
@@ -676,11 +690,22 @@ def test_find_index():
                     assert len(nonzero_indices) == 1
                     expected_idx = nonzero_indices[0]
 
-                found_idx = find_index(val, bin_edges)
+                if TARGET == 'cpu':
+                    found_idx = find_index(val, bin_edges)
+                elif TARGET == 'cuda':
+                    found_idx_ary = SmartArray(np.zeros(1, dtype=np.int))
+                    find_index_cuda(
+                        SmartArray(np.array([val], dtype=FTYPE)).get('gpu'),
+                        bin_edges.get('gpu'),
+                        found_idx_ary,
+                    )
+                    found_idx = found_idx_ary.get()[0]
+                else:
+                    raise NotImplementedError(f"TARGET='{TARGET}'")
 
                 if found_idx != expected_idx:
                     msg = "val={}, edges={}: Expected idx={}, found idx={}".format(
-                        val, bin_edges, expected_idx, found_idx
+                        val, bin_edges.get(), expected_idx, found_idx
                     )
                     assert False, msg
 
