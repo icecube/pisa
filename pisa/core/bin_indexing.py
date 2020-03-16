@@ -262,7 +262,7 @@ def test_lookup_indices():
     indices = lookup_indices([x, y], binning_2d)
     logging.trace("indices of each array element: {}".format(indices.get(WHERE)))
     logging.trace("*********************************")
-    assert np.array_equal(indices.get(WHERE), np.array([-1, 0, 5, 25, 26, 28, 26]))
+    assert np.array_equal(indices.get(WHERE), np.array([-1, 0, 5, 25, 27, 28, 26]))
 
     # 3D case:
     #
@@ -280,7 +280,7 @@ def test_lookup_indices():
     indices = lookup_indices([x, y, z], binning_3d)
     logging.trace("indices of each array element: {}".format(indices.get(WHERE)))
     logging.trace("*********************************")
-    assert np.array_equal(indices.get(WHERE), np.array([-1, 0, 11, 51, 52, 56, 52]))
+    assert np.array_equal(indices.get(WHERE), np.array([-1, 0, 11, 51, 54, 56, 52]))
 
     logging.info("<< PASS : test_lookup_indices >>")
 
