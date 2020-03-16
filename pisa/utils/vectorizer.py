@@ -13,9 +13,10 @@ __author__ = 'Philipp Eller (pde3@psu.edu)'
 import math
 
 import numpy as np
-from numba import guvectorize
+from numba import guvectorize, SmartArray
 
 from pisa import FTYPE, TARGET
+from pisa.utils.log import logging, set_verbosity
 from pisa.utils.numba_tools import WHERE
 
 
@@ -185,7 +186,6 @@ def replace_gufunc(counts, min_count, vals, out):
 
 def test_multiply_and_scale():
     """Unit tests for function ``multiply_and_scale``"""
-    from numba import SmartArray
     a = np.linspace(0, 1, 1000, dtype=FTYPE)
     a = SmartArray(a)
 
@@ -200,4 +200,5 @@ def test_multiply_and_scale():
 
 
 if __name__ == '__main__':
+    set_verbosity(1)
     test_multiply_and_scale()
