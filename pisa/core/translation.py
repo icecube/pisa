@@ -45,8 +45,8 @@ def resample(weights, old_sample, old_binning, new_sample, new_binning):
     """Resample binned data with a given binning into any arbitrary
     `new_binning`
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     weights : SmartArray
 
     old_sample : list of SmartArrays
@@ -93,8 +93,8 @@ def resample(weights, old_sample, old_binning, new_sample, new_binning):
 def histogram(sample, weights, binning, averaged):
     """Histogram `sample` points, weighting by `weights`, according to `binning`.
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     sample : list of SmartArrays
 
     weights : SmartArray
@@ -355,8 +355,8 @@ def lookup(sample, flat_hist, binning):
     """The inverse of histograming: Extract the histogram values at `sample`
     points.
 
-    Paramters
-    --------
+    Parameters
+    ----------
     sample : num_dims list of length-num_samples SmartArrays
         Points at which to find histogram's values
     flat_hist : SmartArray

@@ -134,8 +134,8 @@ class pi_barr_simple(PiStage):  # pylint: disable=invalid-name
 def apply_ratio_scale(ratio_scale, sum_constant, in1, in2, out):
     """ apply ratio scale to flux values
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     ratio_scale : float
 
     sum_constant : bool

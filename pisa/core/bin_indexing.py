@@ -105,8 +105,8 @@ def lookup_indices_vectorized_3d(
 def lookup_indices(sample, binning):
     """Lookup (flattened) bin index for sample points.
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     sample : length-M_dimensions sequence of length-N_events SmartArrays
         All smart arrays must have the same lengths; corresponding elements of
         the arrays are the coordinates of an event in the dimensions each array
