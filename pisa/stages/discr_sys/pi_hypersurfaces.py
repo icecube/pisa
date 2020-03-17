@@ -219,7 +219,6 @@ class pi_hypersurfaces(PiStage): # pylint: disable=invalid-name
         # Unlink the containers again
         self.data.unlink_containers()
 
-
     def apply_function(self):
         for container in self.data:
             # update uncertainty first, before the weights are changed
@@ -230,12 +229,10 @@ class pi_hypersurfaces(PiStage): # pylint: disable=invalid-name
                                      container["errors"].get(WHERE),
                                     )
                 else:
-                    vectorizer.multiply(container["hs_scales"], container["errors"])
+                    vectorizer.imul(container["hs_scales"], out=container["errors"])
                 container['errors'].mark_changed()
             # Update weights according to hypersurfaces
-            vectorizer.multiply(
-                container["hs_scales"], container["weights"]
-            )
+            vectorizer.imul(container["hs_scales"], out=container["weights"])
             container['weights'].mark_changed()
             # Correct negative event counts that can be introduced by hypersurfaces (due to intercept)
             weights = container["weights"].get('host')
@@ -244,6 +241,7 @@ class pi_hypersurfaces(PiStage): # pylint: disable=invalid-name
                 weights[neg_mask] = 0.
                 np.copyto(src=weights, dst=container["weights"].get('host'))
                 container["weights"].mark_changed()
+
 
 if FTYPE == np.float32:
     _SIGNATURE = ['(f4[:], f4[:], f4[:])']

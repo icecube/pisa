@@ -2,7 +2,7 @@
 PISA pi stage wrapping GLoBES for the calculation of neutrino oscillation probabilities.
 
 Allows for the calculation of sterile neutrino oscillation probabilities.
-This needs Andrii's GLoBES wrapper, which has been forked to be 
+This needs Andrii's GLoBES wrapper, which has been forked to be
 made compatible with Python3:
 
 https://github.com/atrettin/GLoBES_wrapper
@@ -10,89 +10,87 @@ https://github.com/atrettin/GLoBES_wrapper
 To import, this stage takes as input the path to the GLoBES wrapper. This is necessary
 because GLoBES has to be imported while in the wrapper directory.
 """
+
 from __future__ import absolute_import, print_function, division
 
-import sys, os
+import os
+import sys
+
 import numpy as np
 from numba import guvectorize
 
 from pisa import FTYPE, TARGET, ureg
 from pisa.core.pi_stage import PiStage
-from pisa.utils.log import logging
-from pisa.utils.profiler import profile
-from pisa.stages.osc.pi_osc_params import OscParams
 from pisa.stages.osc.layers import Layers
+from pisa.stages.osc.pi_osc_params import OscParams
 from pisa.utils.numba_tools import WHERE
+from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
+
 
 class pi_globes(PiStage):
     """
     GLoBES PISA Pi class
 
-    Paramaters
+    Parameters
     ----------
-    detector_depth : float
     earth_model : PREM file path
     globes_wrapper : path to globes wrapper
+    detector_depth : float
     prop_height : quantity (dimensionless)
     params : ParamSet or sequence with which to instantiate a ParamSet.
-      Expected params are:
-        theta12 : quantity (angle)
-        theta13 : quantity (angle)
-        theta23 : quantity (angle)
-        deltam21 : quantity (mass^2)
-        deltam31 : quantity (mass^2)
-        deltam41 : quantity (mass^2)
-        theta24 : quantity (angle)
-        theta34 : quantity (angle)
-        deltacp : quantity (angle)
+        Expected params .. ::
 
-    Notes
-    -----
+            theta12 : quantity (angle)
+            theta13 : quantity (angle)
+            theta23 : quantity (angle)
+            deltam21 : quantity (mass^2)
+            deltam31 : quantity (mass^2)
+            deltam41 : quantity (mass^2)
+            theta24 : quantity (angle)
+            theta34 : quantity (angle)
+            deltacp : quantity (angle)
 
     """
-    def __init__(self,
-                 earth_model,
-                 globes_wrapper,
-                 data=None,
-                 params=None,
-                 input_names=None,
-                 output_names=None,
-                 debug_mode=None,
-                 input_specs=None,
-                 calc_specs=None,
-                 output_specs=None,
-                 detector_depth=2.*ureg.km,
-                 prop_height=20.*ureg.km
-                ):
+    def __init__(
+        self,
+        earth_model,
+        globes_wrapper,
+        detector_depth=2.*ureg.km,
+        prop_height=20.*ureg.km,
+        data=None,
+        params=None,
+        input_names=None,
+        output_names=None,
+        debug_mode=None,
+        input_specs=None,
+        calc_specs=None,
+        output_specs=None,
+    ):
 
         expected_params = (
-                           'theta12',
-                           'theta13',
-                           'theta23',
-                           'deltam21',
-                           'deltam31',
-                           'deltam41',
-                           'theta24',
-                           'theta34',
-                           'deltacp',
-                          )
+            'theta12',
+            'theta13',
+            'theta23',
+            'deltam21',
+            'deltam31',
+            'deltam41',
+            'theta24',
+            'theta34',
+            'deltacp',
+        )
 
         input_names = ()
         output_names = ()
 
         # what are the keys used from the inputs during apply
-        input_apply_keys = ('weights',
-                            'nu_flux',
-                           )
+        input_apply_keys = ('weights', 'nu_flux')
+
         # what are keys added or altered in the calculation used during apply
-        output_calc_keys = ('prob_e',
-                            'prob_mu',
-                            'prob_nonsterile',
-                           )
+        output_calc_keys = ('prob_e', 'prob_mu', 'prob_nonsterile',)
+
         # what keys are added or altered for the outputs during apply
-        output_apply_keys = ('weights',
-                      )
+        output_apply_keys = ('weights',)
 
         # init base class
         super().__init__(
@@ -185,7 +183,7 @@ class pi_globes(PiStage):
                     container['prob_mu'] = np.zeros(container.size)
                 else:
                     raise Exception('unknown container name: %s' % container.name)
-            
+
     def calc_prob_e_mu(self, flav, nubar, energy, rho_array, len_array):
         '''Calculates probability for an electron/muon neutrino to oscillate into
         the flavour of a given event, including effects from sterile neutrinos.
@@ -250,8 +248,8 @@ class pi_globes(PiStage):
             # standard oscillations are only applied to charged current events,
             # while the loss due to oscillation into sterile neutrinos is only
             # applied to neutral current events.
-            # Accessing single entries from containers is very slow. 
-            # For this reason, we make a copy of the content we need that is 
+            # Accessing single entries from containers is very slow.
+            # For this reason, we make a copy of the content we need that is
             # a simple numpy array.
             flav = container['flav']
             nubar = container['nubar']

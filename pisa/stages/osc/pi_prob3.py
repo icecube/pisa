@@ -5,6 +5,7 @@ Maybe it would amke sense to split this up into a seperate earth layer stage
 and an osc. stage....todo
 
 """
+
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
@@ -12,7 +13,6 @@ from numba import guvectorize
 
 from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
-from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.stages.osc.pi_osc_params import OscParams
 from pisa.stages.osc.layers import Layers
@@ -25,66 +25,66 @@ class pi_prob3(PiStage):
     """
     prob3 osc PISA Pi class
 
-    Paramaters
+    Parameters
     ----------
-    detector_depth : float
-    earth_model : PREM file path
-    prop_height : quantity (dimensionless)
-    YeI : quantity (dimensionless)
-    YeO : quantity (dimensionless)
-    YeM : quantity (dimensionless)
-    theta12 : quantity (angle)
-    theta13 : quantity (angle)
-    theta23 : quantity (angle)
-    deltam21 : quantity (mass^2)
-    deltam31 : quantity (mass^2)
-    deltacp : quantity (angle)
+    params
+        Expected params .. ::
 
-    None
+            detector_depth : float
+            earth_model : PREM file path
+            prop_height : quantity (dimensionless)
+            YeI : quantity (dimensionless)
+            YeO : quantity (dimensionless)
+            YeM : quantity (dimensionless)
+            theta12 : quantity (angle)
+            theta13 : quantity (angle)
+            theta23 : quantity (angle)
+            deltam21 : quantity (mass^2)
+            deltam31 : quantity (mass^2)
+            deltacp : quantity (angle)
 
-    Notes
-    -----
+    **kwargs
+        Other kwargs are handled by PiStage
 
     """
-    def __init__(self,
-                 data=None,
-                 params=None,
-                 input_names=None,
-                 output_names=None,
-                 debug_mode=None,
-                 input_specs=None,
-                 calc_specs=None,
-                 output_specs=None,
-                ):
+    def __init__(
+        self,
+        data=None,
+        params=None,
+        input_names=None,
+        output_names=None,
+        debug_mode=None,
+        input_specs=None,
+        calc_specs=None,
+        output_specs=None,
+    ):
 
-        expected_params = ('detector_depth',
-                           'earth_model',
-                           'prop_height',
-                           'YeI',
-                           'YeO',
-                           'YeM',
-                           'theta12',
-                           'theta13',
-                           'theta23',
-                           'deltam21',
-                           'deltam31',
-                           'deltacp',
-                          )
+        expected_params = (
+            'detector_depth',
+            'earth_model',
+            'prop_height',
+            'YeI',
+            'YeO',
+            'YeM',
+            'theta12',
+            'theta13',
+            'theta23',
+            'deltam21',
+            'deltam31',
+            'deltacp',
+        )
 
         input_names = ()
         output_names = ()
 
         # what are the keys used from the inputs during apply
-        input_apply_keys = ('weights',
-                            'nu_flux',
-                           )
+        input_apply_keys = ('weights', 'nu_flux')
+
         # what are keys added or altered in the calculation used during apply
-        output_calc_keys = ('prob_e',
-                            'prob_mu',
-                           )
+        output_calc_keys = ('prob_e', 'prob_mu')
+
         # what keys are added or altered for the outputs during apply
-        output_apply_keys = ('weights',
-                      )
+        output_apply_keys = ('weights',)
 
         # init base class
         super().__init__(

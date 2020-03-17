@@ -38,20 +38,18 @@ class pi_barr_simple(PiStage):  # pylint: disable=invalid-name
     stage to apply Barr style flux uncertainties
     uses parameterisations of plots from Barr 2006 paper
 
-    Paramaters
+    Parameters
     ----------
+    params
+        Expected params are .. ::
 
-    nue_numu_ratio : quantity (dimensionless)
-    nu_nubar_ratio : quantity (dimensionless)
-    delta_index : quantity (dimensionless)
-    Barr_uphor_ratio : quantity (dimensionless)
-    Barr_nu_nubar_ratio : quantity (dimensionless)
-
-    Notes
-    -----
+            nue_numu_ratio : quantity (dimensionless)
+            nu_nubar_ratio : quantity (dimensionless)
+            delta_index : quantity (dimensionless)
+            Barr_uphor_ratio : quantity (dimensionless)
+            Barr_nu_nubar_ratio : quantity (dimensionless)
 
     """
-
     def __init__(
         self,
         data=None,
@@ -100,12 +98,10 @@ class pi_barr_simple(PiStage):  # pylint: disable=invalid-name
         assert self.calc_mode is not None
         assert self.output_mode is not None
 
-
     def setup_function(self):
         self.data.data_specs = self.calc_specs
         for container in self.data:
             container["nu_flux"] = np.empty((container.size, 2), dtype=FTYPE)
-
 
     @profile
     def compute_function(self):
@@ -138,8 +134,8 @@ class pi_barr_simple(PiStage):  # pylint: disable=invalid-name
 def apply_ratio_scale(ratio_scale, sum_constant, in1, in2, out):
     """ apply ratio scale to flux values
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     ratio_scale : float
 
     sum_constant : bool

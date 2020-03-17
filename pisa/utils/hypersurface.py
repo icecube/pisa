@@ -36,7 +36,7 @@ from scipy import interpolate
 from iminuit import Minuit 
 
 from pisa import FTYPE, TARGET, ureg
-from pisa.utils import vectorizer, matrix
+from pisa.utils import matrix
 from pisa.utils.jsons import from_json, to_json
 from pisa.core.pipeline import Pipeline
 from pisa.core.binning import OneDimBinning, MultiDimBinning, is_binning
