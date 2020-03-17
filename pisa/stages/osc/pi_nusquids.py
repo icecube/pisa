@@ -12,6 +12,7 @@ from __future__ import absolute_import, print_function, division
 import math
 import numpy as np
 from numba import guvectorize
+from scipy.interpolate import RectBivariateSpline
 
 from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
