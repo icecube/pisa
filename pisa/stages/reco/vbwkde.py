@@ -40,7 +40,7 @@ import traceback
 import numpy as np
 from numpy import inf # pylint: disable=unused-import
 
-from pisa import EPSILON, FTYPE, NUMBA_AVAIL, OMP_NUM_THREADS, numba_jit
+from pisa import EPSILON, FTYPE, OMP_NUM_THREADS, numba_jit
 from pisa.core.binning import MultiDimBinning
 from pisa.core.stage import Stage
 from pisa.core.transform import BinnedTensorTransform, TransformSet
@@ -503,12 +503,6 @@ def fast_histogram(a, bins, weights):
                 lo = mid
         hist[lo] += weights[idx]
     return hist, bins
-
-
-if NUMBA_AVAIL:
-    HIST_FUNC = fast_histogram
-else:
-    HIST_FUNC = np.histogram
 
 
 class vbwkde(Stage): # pylint: disable=invalid-name
@@ -976,7 +970,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
         output_names = set(self.output_binning.names)
         outs1 = set(['reco_energy', 'reco_coszen'])
         outs2 = set(['reco_energy', 'reco_coszen', 'pid'])
-        assert output_names == outs1 or output_names == outs2
+        assert output_names in (outs1, outs2)
 
         input_basenames = set(self.input_binning.basenames)
         output_basenames = set(self.output_binning.basenames)
@@ -1340,7 +1334,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
     def generate_all_kernels(self):
         """Dispatches `generate_single_kernel` for all specified transform
         flavintgroups, in parallel if that is possible."""
-        if not NUMBA_AVAIL or OMP_NUM_THREADS == 1:
+        if OMP_NUM_THREADS == 1:
             for flavintgroup in self.transform_groups:
                 self.generate_single_kernel(flavintgroup)
             return
@@ -1492,11 +1486,11 @@ class vbwkde(Stage): # pylint: disable=invalid-name
 
             pid_total = np.sum(pid_kde_profile.counts)
             if pid_total == 0:
-                pid_fractions = np.zeros(size=len(pid_edges) - 1, dtype=FTYPE)
+                pid_fractions = np.zeros(shape=len(pid_edges) - 1, dtype=FTYPE)
                 logging.warning('Zero events in PID bin!')
             else:
                 pid_norm = 1 / pid_total
-                pid_counts, _ = HIST_FUNC(
+                pid_counts, _ = fast_histogram(
                     pid_kde_profile.x, weights=pid_kde_profile.counts,
                     bins=pid_edges
                 )
@@ -1571,7 +1565,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
 
                     energy_norm = 1 / energy_total
 
-                    reco_energy_counts, _ = HIST_FUNC(
+                    reco_energy_counts, _ = fast_histogram(
                         e_kde_profile.x, weights=y,
                         bins=e_err_edges
                     )
@@ -1634,7 +1628,7 @@ class vbwkde(Stage): # pylint: disable=invalid-name
                     else:
                         y = dcz_kde_profile.counts
 
-                    reco_coszen_counts, _ = HIST_FUNC(
+                    reco_coszen_counts, _ = fast_histogram(
                         dcz_kde_profile.x, weights=y,
                         #bins=dcz_edge_info['all_dcz_binedges']
                         bins=dcz_edge_info['simple_dcz_binedges']
@@ -1737,5 +1731,5 @@ def test_coszen_error_edges():
 
 
 if __name__ == '__main__':
-    set_verbosity(2)
+    set_verbosity(1)
     test_coszen_error_edges()

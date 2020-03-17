@@ -241,12 +241,12 @@ def test_lookup_indices():
     #
     logging.trace("TEST 1D:")
     logging.trace("Total number of bins: {}".format(7))
-    logging.trace("array in 1D: {}".format(x.get(WHERE)))
+    logging.trace("array in 1D: {}".format(x.get()))
     logging.trace("Binning: {}".format(binning_1d.bin_edges[0]))
     indices = lookup_indices([x], binning_1d)
-    logging.trace("indices of each array element: {}".format(indices.get(WHERE)))
+    logging.trace("indices of each array element: {}".format(indices.get()))
     logging.trace("*********************************")
-    assert np.array_equal(indices.get(WHERE), np.array([-1, 0, 1, 6, 6, 7, 6]))
+    assert np.array_equal(indices.get(), np.array([-1, 0, 1, 6, 6, 7, 6]))
 
     # 2D case:
     #
@@ -256,13 +256,13 @@ def test_lookup_indices():
     logging.trace("TEST 2D:")
     logging.trace("Total number of bins: {}".format(7 * 4))
     logging.trace(
-        "array in 2D: {}".format([(i, j) for i, j in zip(x.get(WHERE), y.get(WHERE))])
+        "array in 2D: {}".format([(i, j) for i, j in zip(x.get(), y.get())])
     )
     logging.trace("Binning: {}".format(binning_2d.bin_edges))
     indices = lookup_indices([x, y], binning_2d)
-    logging.trace("indices of each array element: {}".format(indices.get(WHERE)))
+    logging.trace("indices of each array element: {}".format(indices.get()))
     logging.trace("*********************************")
-    assert np.array_equal(indices.get(WHERE), np.array([-1, 0, 5, 25, 27, 28, 26]))
+    assert np.array_equal(indices.get(), np.array([-1, 0, 5, 25, 27, 28, 26]))
 
     # 3D case:
     #
@@ -273,14 +273,14 @@ def test_lookup_indices():
     logging.trace("Total number of bins: {}".format(7 * 4 * 2))
     logging.trace(
         "array in 3D: {}".format(
-            [(i, j, k) for i, j, k in zip(x.get(WHERE), y.get(WHERE), z.get(WHERE))]
+            [(i, j, k) for i, j, k in zip(x.get(), y.get(), z.get())]
         )
     )
     logging.trace("Binning: {}".format(binning_3d.bin_edges))
     indices = lookup_indices([x, y, z], binning_3d)
-    logging.trace("indices of each array element: {}".format(indices.get(WHERE)))
+    logging.trace("indices of each array element: {}".format(indices.get()))
     logging.trace("*********************************")
-    assert np.array_equal(indices.get(WHERE), np.array([-1, 0, 11, 51, 54, 56, 52]))
+    assert np.array_equal(indices.get(), np.array([-1, 0, 11, 51, 54, 56, 52]))
 
     logging.info("<< PASS : test_lookup_indices >>")
 

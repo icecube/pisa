@@ -8,12 +8,17 @@ from __future__ import absolute_import
 from collections import namedtuple, OrderedDict
 import os
 import sys
+import warnings
 
-from numpy import (array, inf, nan,
-                   float32, float64,
-                   int0, int8, int16, int32, int64,
-                   uint0, uint8, uint16, uint32, uint64,
-                   complex64, complex128, complex256)
+from numba import jit as numba_jit
+from numba import NumbaDeprecationWarning
+from numpy import (
+    array, inf, nan,
+    float32, float64,
+    int0, int8, int16, int32, int64,
+    uint0, uint8, uint16, uint32, uint64,
+    complex64, complex128, complex256,
+)
 import numpy as np
 from pint import UnitRegistry
 
@@ -57,7 +62,6 @@ __all__ = [
     'complex64', 'complex128', 'complex256',
 
     # Constants
-    'NUMBA_AVAIL',
     'NUMBA_CUDA_AVAIL',
     'TARGET',
     'OMP_NUM_THREADS',
@@ -117,25 +121,14 @@ if 'OMP_NUM_THREADS' in os.environ:
     assert OMP_NUM_THREADS >= 1
 
 
-NUMBA_AVAIL = False
+# Get SmartArray DeprecationWarning out of the way silently
+warnings.filterwarnings("ignore", category=NumbaDeprecationWarning)
+
+NUMBA_CUDA_AVAIL = False
 def dummy_func(x):
     """Decorate to to see if Numba actually works"""
     x += 1
-try:
-    from numba import jit as numba_jit
-    numba_jit(dummy_func)
-except Exception:
-    #logging.debug('Failed to import or use numba', exc_info=True)
-    def numba_jit(*args, **kwargs): # pylint: disable=unused-argument
-        """Dummy decorator to replace `numba.jit` when Numba is not present"""
-        def decorator(func):
-            """Decorator that smply returns the function being decorated"""
-            return func
-        return decorator
-else:
-    NUMBA_AVAIL = True
 
-NUMBA_CUDA_AVAIL = False
 try:
     from numba import cuda
     assert cuda.gpus, 'No GPUs detected'
@@ -178,10 +171,8 @@ del FLOAT32_STRINGS, FLOAT64_STRINGS
 # set default target
 if NUMBA_CUDA_AVAIL:
     TARGET = 'cuda'
-elif NUMBA_AVAIL:
-    TARGET = 'cpu'
 else:
-    TARGET = None
+    TARGET = 'cpu'
 
 cpu_targets = ['cpu', 'numba'] # pylint: disable=invalid-name
 parallel_targets = ['parallel', 'multicore'] # pylint: disable=invalid-name
@@ -193,20 +184,14 @@ if TARGET is not None and 'PISA_TARGET' in os.environ:
     ini_msgs.append('PISA_TARGET env var is defined as: "%s"' % PISA_TARGET)
     try_target = PISA_TARGET.strip().lower() # pylint: disable=invalid-name
     if try_target in gpu_targets:
-        if not NUMBA_CUDA_AVAIL:
+        if NUMBA_CUDA_AVAIL:
+            TARGET = 'cuda'
+        else:
             raise ValueError(
                 'Environment var PISA_TARGET="%s" set, even though numba-cuda'
                 ' is not available\n'%(PISA_TARGET)
             )
-        else:
-            TARGET = 'cuda'
     elif try_target in cpu_targets or try_target in parallel_targets:
-        if not NUMBA_AVAIL:
-            # is NUMBA_CUDA_AVAIL but not NUMBA_AVAIL even possible?
-            raise ValueError(
-                'Environment var PISA_TARGET="%s" set, even though numba'
-                ' is not available\n'%(PISA_TARGET)
-            )
         if try_target in cpu_targets:
             TARGET = 'cpu'
         elif try_target in parallel_targets:

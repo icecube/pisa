@@ -51,7 +51,7 @@ echo "Storing results to"
 echo "  $OUTDIR"
 echo "=============================================================================="
 PISA_FTYPE=float32 python $PISA/pisa/scripts/analysis.py discrete_hypo \
-	--h0-pipeline settings/pipeline/test_repeated_params.cfg \
+	--h0-pipeline settings/pipeline/example.cfg \
 	--h0-param-selections="ih" \
 	--h1-param-selections="nh" \
 	--data-param-selections="nh" \

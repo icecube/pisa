@@ -539,9 +539,10 @@ def test_Prior():
     else:
         assert False
 
+    # Asking for value at quantity with invalid units
     try:
         linterp.chi2(-1000*ureg.km)
-    except ValueError:
+    except pint.DimensionalityError:
         pass
     else:
         assert False
@@ -571,7 +572,7 @@ def test_Prior():
     # ... or vice versa
     try:
         gaussian.llh(10*ureg.meter)
-    except (TypeError, pint.DimensionalityError):
+    except pint.DimensionalityError:
         pass
     else:
         assert False
