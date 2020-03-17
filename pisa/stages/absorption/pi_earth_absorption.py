@@ -7,6 +7,7 @@ using the same Layers module that is also used for oscillation.
 The survival probability is then calculated from the average cross-section
 with protons and neutrons.
 """
+
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
@@ -16,12 +17,12 @@ from numba import guvectorize
 from pisa import FTYPE, TARGET
 from pisa import ureg
 from pisa.core.pi_stage import PiStage
-from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.stages.osc.layers import Layers
 from pisa.utils.numba_tools import WHERE
 from pisa.utils import vectorizer
 from pisa.utils.resources import find_resource
+
 
 FLAV_BAR_STR_MAPPING = {
     (0, -1): "e_bar",
@@ -35,12 +36,13 @@ FLAV_BAR_STR_MAPPING = {
 Mapping from flav and nubar container content to
 the string for this neutrino in the ROOT file.
 """
-        
+
+
 class pi_earth_absorption(PiStage):
     """
     earth absorption PISA Pi class
 
-    Paramaters
+    Parameters
     ----------
     earth_model : str
         PREM file path
@@ -50,37 +52,33 @@ class pi_earth_absorption(PiStage):
         detector depth
     prop_height : quantity (distance), optional
         height of neutrino production in the atmosphere
-    
-    Notes
-    -----
-    
+
     """
-    def __init__(self,
-                 earth_model,
-                 xsec_file,
-                 data=None,
-                 params=None,
-                 input_names=None,
-                 output_names=None,
-                 debug_mode=None,
-                 input_specs=None,
-                 calc_specs=None,
-                 output_specs=None,
-                 detector_depth=2.*ureg.km,
-                 prop_height=20.*ureg.km
-                ):
+    def __init__(
+        self,
+        earth_model,
+        xsec_file,
+        detector_depth=2.*ureg.km,
+        prop_height=20.*ureg.km,
+        data=None,
+        params=None,
+        input_names=None,
+        output_names=None,
+        debug_mode=None,
+        input_specs=None,
+        calc_specs=None,
+        output_specs=None,
+    ):
 
         expected_params = ()
         input_names = ()
         output_names = ()
 
-        input_apply_keys = ('weights',
-                           )
+        input_apply_keys = ('weights',)
+
         # The weights are simply scaled by the earth survival probability
-        output_calc_keys = ('survival_prob',
-                           )
-        output_apply_keys = ('weights',
-                            )
+        output_calc_keys = ('survival_prob',)
+        output_apply_keys = ('weights',)
 
         # init base class
         super().__init__(
@@ -110,17 +108,17 @@ class pi_earth_absorption(PiStage):
         self.prop_height = prop_height.m_as('km')
         # this does nothing for speed, but makes for convenient numpy style broadcasting
         # TODO: Use numba vectorization (not sure how that works with splines)
-        self.calculate_xsections = np.vectorize(self.calculate_xsections)  
-        
+        self.calculate_xsections = np.vectorize(self.calculate_xsections)
+
     def setup_function(self):
         import ROOT
         # setup the layers
         earth_model = find_resource(self.earth_model)
         self.layers = Layers(earth_model, self.detector_depth, self.prop_height)
-        # This is a bit hacky, but setting the electron density to 1. 
+        # This is a bit hacky, but setting the electron density to 1.
         # gives us the total density of matter, which is what we want.
         self.layers.setElecFrac(1., 1., 1.)
-        
+
         # setup cross-sections
         self.xsroot = ROOT.TFile(self.xsec_file)
         # set the correct data mode
@@ -142,7 +140,7 @@ class pi_earth_absorption(PiStage):
         # don't forget to un-link everything again
         self.data.unlink_containers()
 
-        # --- setup cross section and survival probability --- 
+        # --- setup cross section and survival probability ---
         if self.calc_mode == 'binned':
             # The cross-sections do not depend on nc/cc, so we can at least link those containers
             self.data.link_containers('nue', ['nue_cc', 'nue_nc'])
@@ -155,7 +153,7 @@ class pi_earth_absorption(PiStage):
             container['xsection'] = np.empty((container.size), dtype=FTYPE)
             container['survival_prob'] = np.empty((container.size), dtype=FTYPE)
         self.data.unlink_containers()
-    
+
     @profile
     def compute_function(self):
         # --- calculate the integrated density in the layers ---
@@ -173,7 +171,7 @@ class pi_earth_absorption(PiStage):
         # don't forget to un-link everything again
         self.data.unlink_containers()
 
-        # --- calculate survival probability --- 
+        # --- calculate survival probability ---
         if self.calc_mode == 'binned':
             # The cross-sections do not depend on nc/cc, so we can at least link those containers
             self.data.link_containers('nue', ['nue_cc', 'nue_nc'])
@@ -193,21 +191,22 @@ class pi_earth_absorption(PiStage):
                                   )
             container['survival_prob'].mark_changed(WHERE)
         self.data.unlink_containers()
-      
+
     @profile
     def apply_function(self):
         for container in self.data:
-            vectorizer.multiply(container['survival_prob'], out=container['weights'])
-            
+            vectorizer.imul(vals=container['survival_prob'], out=container['weights'])
+
     def calculate_xsections(self, flav, nubar, energy):
         '''Calculates the cross-sections on isoscalar targets.
-        The result is returned in cm^2. The xsection on one 
+        The result is returned in cm^2. The xsection on one
         target is calculated by taking the xsection for O16
-        and dividing it by 16. 
+        and dividing it by 16.
         '''
         flavor = FLAV_BAR_STR_MAPPING[(flav, nubar)]
         return (self.xsroot.Get('nu_'+flavor+'_O16').Get('tot_cc').Eval(energy)+
                 self.xsroot.Get('nu_'+flavor+'_O16').Get('tot_nc').Eval(energy))*10**(-38)/16. # this gives cm^2
+
 
 signatures = [
     '(f4[::1], f4[::1], f4[::1])',
@@ -220,7 +219,7 @@ signatures = [
 def calculate_integrated_rho(layer_dists, layer_densities, out):
     """Calculate density integrated over the path through all layers.
     Gives the length of a matter-equivalent water column in cm.
-    
+
     Parameters
     ----------
     layer_dists : vector
@@ -233,11 +232,12 @@ def calculate_integrated_rho(layer_dists, layer_densities, out):
     """
     out[0] = np.dot(layer_dists, layer_densities)*1e5 #distances are converted from km to cm
 
+
 @guvectorize(signatures, '(),()->()', target=TARGET)
 def calculate_survivalprob(int_rho, xsection, out):
     """Calculate survival probability given layer distances,
     layer densities and (pre-computed) cross-sections.
-    
+
     Parameters
     ----------
     int_rho : scalar

@@ -26,23 +26,24 @@ class atm_muons(PiStage):
     Note that this stage only modifies an weights based on the systematics,
     it does not determine the nominal flux (this is assumed to either already
     available in the input files, or written by an upstream stage).
-    Paramaters
+
+    Parameters
     ----------
     params : ParamSet or instantiable thereto
-        Parameters for steering the stage. The following parameters must be included:
-        atm_muon_scale : quantity (dimensionless)
-            Normalisation of atmospheric muons
-        delta_gamma_mu_file : str
-            Path to file containing spectral index data
-        delta_gamma_mu_spline_kind : str
-            'kind' of spline, as per kwargs in scipy interp1d
-        delta_gamma_mu_variable : str
-            Name of variable in which the delta spectral index is splined
-            Currently only supported variable is 'coszen'
-        delta_gamma_mu : quantity (dimensionless)
-            Parameter controlling variation in spectral index
-    Notes
-    -----
+        Parameters for steering the stage. The following parameters must be included: .. ::
+
+            atm_muon_scale : quantity (dimensionless)
+                Normalisation of atmospheric muons
+            delta_gamma_mu_file : str
+                Path to file containing spectral index data
+            delta_gamma_mu_spline_kind : str
+                'kind' of spline, as per kwargs in scipy interp1d
+            delta_gamma_mu_variable : str
+                Name of variable in which the delta spectral index is splined
+                Currently only supported variable is 'coszen'
+            delta_gamma_mu : quantity (dimensionless)
+                Parameter controlling variation in spectral index
+
     """
 
     def __init__(self,

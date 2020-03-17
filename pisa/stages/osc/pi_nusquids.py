@@ -24,12 +24,9 @@ from pisa.utils.numba_tools import WHERE
 from pisa.stages.osc.pi_prob3 import apply_probs
 
 from pisa.utils.resources import find_resource
-from pisa.utils import vectorizer
 from pisa.stages.osc.nusquids.nusquids_osc import NSQ_CONST, validate_calc_grid, compute_binning_constants, init_nusquids_prop, evolve_states, osc_probs, earth_model
 from pisa import ureg
 
-
-from scipy.interpolate import RectBivariateSpline
 
 __all__ = ['pi_nusquids']
 
