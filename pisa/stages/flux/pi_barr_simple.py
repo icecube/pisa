@@ -18,19 +18,7 @@ from pisa.core.pi_stage import PiStage
 from pisa.utils.profiler import profile
 from pisa.utils.numba_tools import WHERE, myjit, ftype
 from pisa.utils.resources import find_resource
-
-try:
-    PATH = find_resource("utils/barr_parameterization.py")
-except IOError:
-    raise IOError(
-        "Cannot find `utils/barr_parameterization.py`."
-        " This file is in the fridge under `analysis/common/`."
-        " Please make sure to add `analysis/common/` to your `PISA_RESOURCES`"
-        " environement variable."
-    )
-sys.path.append(os.path.dirname(PATH))
-
-from barr_parameterization import modRatioNuBar, modRatioUpHor
+from pisa.utils.barr_parameterization import modRatioNuBar, modRatioUpHor
 
 
 class pi_barr_simple(PiStage):  # pylint: disable=invalid-name
