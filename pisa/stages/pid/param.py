@@ -90,7 +90,7 @@ def load_pid_energy_param(source):
                     raise ValueError(
                         'Group %s PID signature %s param spec "%s" does'
                         ' not evaluate to a callable.'
-                        % (xform_flavints, signature, sig_param_spec)
+                        % (flavintgroup_str, signature, sig_param_spec)
                     )
             elif callable(sig_param_spec):
                 sig_param_func = sig_param_spec
@@ -98,7 +98,7 @@ def load_pid_energy_param(source):
                 raise TypeError(
                     'Group %s PID signature %s parameterization is a "%s"'
                     ' but must be a string or callable.'
-                    % (xform_flavints, signature, type(sig_param_spec))
+                    % (flavintgroup_str, signature, type(sig_param_spec))
                 )
 
             pid_energy_param_dict[flavintgroup][signature] = sig_param_func

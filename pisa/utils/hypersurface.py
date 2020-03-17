@@ -33,10 +33,11 @@ import pdb
 
 import numpy as np
 from scipy import interpolate
-from iminuit import Minuit 
+from iminuit import Minuit
+from iminuit.iminuit_warnings import HesseFailedWarning
 
 from pisa import FTYPE, TARGET, ureg
-from pisa.utils import vectorizer, matrix
+from pisa.utils import matrix
 from pisa.utils.jsons import from_json, to_json
 from pisa.core.pipeline import Pipeline
 from pisa.core.binning import OneDimBinning, MultiDimBinning, is_binning
@@ -1099,7 +1100,7 @@ class Hypersurface(object) :
                 m.migrad()
                 try:
                     m.hesse()
-                except iminuit.HesseFailedWarning as e :
+                except HesseFailedWarning as e :
                     raise Exception("Hesse failed for bin %s, cannot determine covariance matrix" % (bin_idx,))
                 popt = m.np_values()
                 pcov = m.np_matrix()

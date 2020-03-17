@@ -657,14 +657,18 @@ def test_Prior_plot(ts_fname, param_name='theta23'):
         xlim = 2.15, 2.8
     elif param_name == 'deltacp':
         xlabel = r'$\delta_{\rm CP} \; {\rm [deg]}$'
-    plot_prior(select_hierarchy(ts['params'], normal_hierarchy=True),
-               param=param_name,
-               x_xform=x_xform, ax1=ax1, ax2=ax2,
-               color='r', label=r'${\rm NH}$')
-    plot_prior(select_hierarchy(ts['params'], normal_hierarchy=False),
-               param=param_name,
-               x_xform=x_xform, ax1=ax1, ax2=ax2,
-               color='b', linestyle='--', label=r'${\rm IH}$')
+
+    # FIX ME!
+    # should use `select_params`
+
+    #plot_prior(select_hierarchy(ts['params'], normal_hierarchy=True),
+    #           param=param_name,
+    #           x_xform=x_xform, ax1=ax1, ax2=ax2,
+    #           color='r', label=r'${\rm NH}$')
+    #plot_prior(select_hierarchy(ts['params'], normal_hierarchy=False),
+    #           param=param_name,
+    #           x_xform=x_xform, ax1=ax1, ax2=ax2,
+    #           color='b', linestyle='--', label=r'${\rm IH}$')
 
     ax1.set_ylim([-0.5*y for y in ylim[::-1]])
     ax2.set_ylim(ylim)

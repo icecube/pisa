@@ -20,34 +20,35 @@ class csv_loader(PiStage):
 
     Parameters
     ----------
-
     events_file : csv file path
+    **kwargs
+        Passed to PiStage
 
     """
-    def __init__(self,
-                 events_file,
-                 data=None,
-                 params=None,
-                 input_names=None,
-                 output_names=None,
-                 debug_mode=None,
-                 input_specs=None,
-                 calc_specs=None,
-                 output_specs=None,
-                ):
+    def __init__(
+        self,
+        events_file,
+        data=None,
+        params=None,
+        input_names=None,
+        output_names=None,
+        debug_mode=None,
+        input_specs=None,
+        calc_specs=None,
+        output_specs=None,
+    ):
 
         # instantiation args that should not change
         self.events_file = events_file
 
         expected_params = ()
+
         # created as ones if not already present
-        input_apply_keys = (
-            'initial_weights',
-        )
+        input_apply_keys = ('initial_weights',)
+
         # copy of initial weights, to be modified by later stages
-        output_apply_keys = (
-            'weights',
-        )
+        output_apply_keys = ('weights',)
+
         # init base class
         super().__init__(
             data=data,
@@ -134,5 +135,4 @@ class csv_loader(PiStage):
     @profile
     def apply_function(self):
         for container in self.data:
-            vectorizer.set(container['initial_weights'],
-                           out=container['weights'])
+            vectorizer.assign(container['initial_weights'], out=container['weights'])
