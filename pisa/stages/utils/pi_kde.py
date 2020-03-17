@@ -16,7 +16,7 @@ from pisa.utils.kde_hist import kde_histogramdd
 class pi_kde(PiStage):
     """stage to KDE-map events
 
-    Paramaters
+    Parameters
     ----------
 
     bw_method: string
