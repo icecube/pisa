@@ -14,8 +14,7 @@ from pisa.utils import vectorizer
 from pisa.utils.kde_hist import kde_histogramdd
 
 class pi_kde(PiStage):
-    """
-    stage to kde map events
+    """stage to KDE-map events
 
     Paramaters
     ----------
