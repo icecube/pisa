@@ -233,6 +233,7 @@ def do_setup():
             'simplejson>=3.2',
             'tables',
             'uncertainties',
+            'llvmlite<=0.30.0',
         ],
         extras_require={
             'develop': [
