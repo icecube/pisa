@@ -43,7 +43,7 @@ def scale(vals, scale, out):
         out[:] = vals[:] * scale
 
     """
-    scale_gufunc(vals.get(WHERE), scale, out=out.get(WHERE))
+    scale_gufunc(vals.get(WHERE), FTYPE(scale), out=out.get(WHERE))
     out.mark_changed(WHERE)
 
 @guvectorize([f'({FX}[:], {FX}, {FX}[:])'], '(), () -> ()', target=TARGET)
@@ -88,7 +88,7 @@ def imul_and_scale(vals, scale, out):
         out[:] *= vals[:] * scale
 
     """
-    imul_and_scale_gufunc(vals.get(WHERE), scale, out=out.get(WHERE))
+    imul_and_scale_gufunc(vals.get(WHERE), FTYPE(scale), out=out.get(WHERE))
     out.mark_changed(WHERE)
 
 @guvectorize([f'({FX}[:], {FX}, {FX}[:])'], '(), () -> ()', target=TARGET)
@@ -151,7 +151,7 @@ def pow(vals, pwr, out):  # pylint: disable=redefined-builtin
         out[:] = vals[:]**pwr
 
     """
-    pow_gufunc(vals.get(WHERE), pwr, out=out.get(WHERE))
+    pow_gufunc(vals.get(WHERE), FTYPE(pwr), out=out.get(WHERE))
     out.mark_changed(WHERE)
 
 @guvectorize([f'({FX}[:], {FX}, {FX}[:])'], '(), () -> ()', target=TARGET)
