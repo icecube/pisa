@@ -9,6 +9,7 @@ from collections.abc import Mapping, Sequence
 from copy import deepcopy
 import numpy as np
 from pisa import Q_
+from pisa.utils.config_parser import parse_quantity
 from pisa.utils.log import logging
 
 # TODO: get rid of scanning method
