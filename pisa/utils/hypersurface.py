@@ -743,8 +743,8 @@ class Hypersurface(object):
             norm=True, method="L-BFGS-B", fix_intercept=False, intercept_bounds=None,
             intercept_sigma=None, include_empty=False):
         '''
-        Fit the hypersurface coefficients (in every bin) to best match the provided nominal
-        and systematic datasets.
+        Fit the hypersurface coefficients (in every bin) to best match the provided
+        nominal and systematic datasets.
 
         Writes the results directly into this data structure.
 
@@ -761,13 +761,15 @@ class Hypersurface(object):
             List containing the Map from each systematic dataset
 
         sys_param_values : list of dicts
-            List where each element if a dict containing the values of each systematic param used to generate the that dataset
-            Each list element specified the parameters for the corresponding element in `sys_maps`
+            List where each element if a dict containing the values of each systematic
+            param used to generate the that dataset Each list element specified the
+            parameters for the corresponding element in `sys_maps`
 
         norm : bool
-            Normalise the maps to the nominal map.
-            This is what you want to do when using the hypersurface to re-weight simulation (which is the main use case).
-            In principal the hypersurfaces are more general though and could be used for other tasks too, hence this option.
+            Normalise the maps to the nominal map. This is what you want to do when
+            using the hypersurface to re-weight simulation (which is the main use case).
+            In principal the hypersurfaces are more general though and could be used for
+            other tasks too, hence this option.
 
         method : str
             `method` arg to pass to `scipy.optimize.minimiza`
@@ -779,7 +781,8 @@ class Hypersurface(object):
             Bounds on the intercept. Default is None (no bounds)
 
         include_empty : bool
-            Include empty bins in the fit. If True, empty bins are included with value 0 and sigma 1.
+            Include empty bins in the fit. If True, empty bins are included with value 0
+            and sigma 1.
             Default: False
         '''
 
