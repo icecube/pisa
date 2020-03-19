@@ -6,10 +6,10 @@ Hypersurfaces can be used to model systematic uncertainties derived from discret
 simulation datasets, for example for detedctor uncertainties.
 """
 
-__all__ = ['get_num_args', 'HypersurfaceInterpolator', 'Hypersurface',
-           'HypersurfaceParam', 'fit_hypersurfaces', 'load_hypersurfaces',
-           'load_interpolated_hypersurfaces', 'extract_interpolated_hypersurface_params',
-           'plot_bin_fits', 'plot_bin_fits_2d']
+__all__ = ['HypersurfaceInterpolator', 'Hypersurface', 'HypersurfaceParam',
+           'fit_hypersurfaces', 'load_hypersurfaces', 'load_interpolated_hypersurfaces',
+           'extract_interpolated_hypersurface_params', 'plot_bin_fits',
+           'plot_bin_fits_2d']
 
 __author__ = 'T. Stuttard, A. Trettin'
 
