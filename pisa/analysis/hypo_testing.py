@@ -1089,7 +1089,6 @@ class HypoTesting(Analysis):
             self.data_maker.select_params(self.data_param_selections)
             self.data_maker.reset_free()
 
-            # FIXME (TE): are these the correct arguments?
             self.h0_fit_to_data = self.nofit_hypo(
                 data_dist=self.data_dist,
                 hypo_maker=self.data_maker,
@@ -1196,20 +1195,40 @@ class HypoTesting(Analysis):
             #                                trial
             fid_random_state = get_random_state([1, self.data_ind,
                                                  self.fid_ind])
-            # FIXME (TE): cf. issue #584
+
             # Fluctuate h0 fid Asimov
-            self.h0_fid_dist = self.h0_fid_asimov_dist.fluctuate(
-                method=self.fluctuate_fid_method,
-                random_state=fid_random_state
-            )
-            # The state of `random_state` will be moved forward now as compared
-            # to what it was upon definition above. This is the desired
+            if isinstance(self.h0_fid_asimov_dist, Sequence):
+                self.h0_fid_dist = []
+                for i in range(len(self.h0_fid_asimov_dist)):
+                    self.h0_fid_dist.append(self.h0_fid_asimov_dist[i].fluctuate(
+                        method=self.fluctuate_fid_method,
+                        random_state=fid_random_state)
+                    )
+
+            else:
+                self.h0_fid_dist = self.h0_fid_asimov_dist.fluctuate(
+                    method=self.fluctuate_fid_method,
+                    random_state=fid_random_state
+                )
+
+            # FIXME (the following statement doesn't seem to be the case):
+            # The state of `random_state` will be moved forward now as
+            # compared to what it was upon definition above. This is the desired
             # behavior, so the *exact* same random state isn't used to
             # fluctuate h1 as was used to fluctuate h0.
-            self.h1_fid_dist = self.h1_fid_asimov_dist.fluctuate(
-                method=self.fluctuate_fid_method,
-                random_state=fid_random_state
-            )
+            if isinstance(self.h1_fid_asimov_dist, Sequence):
+                self.h1_fid_dist = []
+                for i in range(len(self.h1_fid_asimov_dist)):
+                    self.h1_fid_dist.append(self.h1_fid_asimov_dist[i].fluctuate(
+                        method=self.fluctuate_fid_method,
+                        random_state=fid_random_state)
+                    )
+            else:
+                self.h1_fid_dist = self.h1_fid_asimov_dist.fluctuate(
+                    method=self.fluctuate_fid_method,
+                    random_state=fid_random_state
+                )
+
         else:
             self.h0_fid_dist = self.h0_fid_asimov_dist
             self.h1_fid_dist = self.h1_fid_asimov_dist
@@ -1234,7 +1253,6 @@ class HypoTesting(Analysis):
                     self.labels.h0_name, self.labels.fid_disp,
                     self.labels.fid_disp
                 )
-                # FIXME (TE): hypo param selections?
                 self.h0_fit_to_h0_fid = self.nofit_hypo(
                     data_dist=self.h0_fid_dist,
                     hypo_maker=self.h0_maker,
@@ -1278,7 +1296,6 @@ class HypoTesting(Analysis):
                     self.labels.h1_name, self.labels.fid_disp,
                     self.labels.fid_disp
                 )
-                # FIXME (TE): hypo_param_selections?
                 self.h1_fit_to_h1_fid = self.nofit_hypo(
                     data_dist=self.h1_fid_dist,
                     hypo_maker=self.h1_maker,
