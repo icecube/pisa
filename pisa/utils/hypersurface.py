@@ -49,32 +49,6 @@ from pisa.utils.log import logging, set_verbosity
 from uncertainties import ufloat, correlated_values
 from uncertainties import unumpy as unp
 
-
-'''
-Helper functions
-'''
-
-
-def get_num_args(func):
-    '''
-    Function for grabbing the number of arguments to a function
-
-    Parameters
-    ----------
-    func : function
-        Function to determine args for.
-        Can be a standard pythin function or a numpy ufunc
-
-    '''
-
-    # TODO numba funcs
-    return func.nargs
-#     if isinstance(func, np.ufunc):
-#         return func.nargs
-#     else :
-#         return len(inspect.getargspec(func).args)
-
-
 '''
 Hypersurface functional forms
 
@@ -1573,7 +1547,7 @@ class HypersurfaceParam(object):
         self._hypersurface_func = self._get_hypersurface_func(self.func_name)
 
         # Get the number of functional form parameters
-        self.num_fit_coeffts = get_num_args(self._hypersurface_func)
+        self.num_fit_coeffts = self._hypersurface_func.nargs
         if self.coeff_prior_sigma is not None:
             assert len(
                 self.coeff_prior_sigma) == self.num_fit_coeffts, "number of prior sigma values must equal the number of parameters."
