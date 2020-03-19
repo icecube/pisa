@@ -739,9 +739,9 @@ class Hypersurface(object):
         else:
             return output_factors
 
-    def fit(self, nominal_map, nominal_param_values, sys_maps, sys_param_values, norm=True, method="L-BFGS-B",
-            smooth=False, smooth_kw=None, fix_intercept=False, intercept_bounds=None, intercept_sigma=None,
-            include_empty=False):
+    def fit(self, nominal_map, nominal_param_values, sys_maps, sys_param_values,
+            norm=True, method="L-BFGS-B", fix_intercept=False, intercept_bounds=None,
+            intercept_sigma=None, include_empty=False):
         '''
         Fit the hypersurface coefficients (in every bin) to best match the provided nominal
         and systematic datasets.
@@ -771,18 +771,6 @@ class Hypersurface(object):
 
         method : str
             `method` arg to pass to `scipy.optimize.minimiza`
-
-        smooth : str
-            Smoothing method to use. Choose `None` if do not want smoothing.
-            Smoothing methods supported:
-                - `gaussian_filter`
-
-        smooth_kw : dict
-            kwargs to pass to smoothing method underlying function
-            Format depends on smoothing method:
-              `gaussian_filter`
-                 kwargs for `scipy.ndimage.filters.gaussian_filter`
-                 MUST include `sigma`, `order`
 
         fix_intercept : bool
             Fix intercept to the initial intercept.
@@ -852,43 +840,6 @@ class Hypersurface(object):
         # Prepare covariance matrix array
         self.fit_cov_mat = np.full(
             list(self.binning.shape)+[self.num_fit_coeffts, self.num_fit_coeffts], np.NaN)
-
-        #
-        # Smoothing
-        #
-
-        # TODO Factor out smoothing functions so can use them in other places too
-        # TODO Add handling for user to provide their own smoothing function
-
-        # Optionally can apply smoothing to histograms before the fit
-        # Can be useful for poorlt populated templates
-        if smooth:
-
-            assert isinstance(smooth, str), "`smooth` should be a string, found %s %s" % (
-                smooth, type(smooth))
-
-            if smooth_kw is None:
-                smooth_kw = {}
-
-            # Use Gaussian filter smoothing (useful for noisy data)
-            if smooth.lower() == "gaussian_filter":
-
-                from scipy.ndimage.filters import gaussian_filter
-
-                assert "sigma" in smooth_kw
-                assert "order" in smooth_kw
-
-                for i, m in enumerate(self.fit_maps_raw):
-                    new_map_state = m.serializable_state
-                    new_map_state["hist"] = gaussian_filter(
-                        m.nominal_values, sigma=smooth_kw["sigma"], order=smooth_kw["order"])
-                    # TODO Not sure this is a good way to handle sigma?
-                    new_map_state["error_hist"] = gaussian_filter(
-                        m.std_devs, sigma=smooth_kw["sigma"], order=smooth_kw["order"])
-                    # TODO Store smoothed maps separately to raw version
-                    self.fit_maps_raw[i] = Map(**new_map_state)
-
-            # TODO also consider zoom smoothing?
 
         #
         # Normalisation
