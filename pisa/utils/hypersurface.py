@@ -37,7 +37,7 @@ from scipy import interpolate
 from iminuit import Minuit
 from iminuit.iminuit_warnings import HesseFailedWarning
 
-from pisa import FTYPE,  ureg
+from pisa import FTYPE, ureg
 from pisa.utils import matrix
 from pisa.utils.jsons import from_json, to_json
 from pisa.core.pipeline import Pipeline
@@ -132,7 +132,7 @@ class quadratic_hypersurface_func(object):
     def __call__(self, p, m1, m2, out):
         result = m1*p + m2*p**2
         np.copyto(src=result, dst=out)
-
+    # the gradient *must* have all these arguments, even if they are un-used!
     def grad(self, p, m1, m2, out):
         # because m itself is not in the actual calculation, we have to broadcast
         # manually to yield the same shape as if we had done m*p and stacked on the last axis
