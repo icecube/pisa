@@ -6,17 +6,18 @@ Peform systematics tests based on command line args. Meant to be called from
 
 from __future__ import absolute_import, division
 
-from pisa.analysis.hypo_testing import HypoTesting
-from pisa.core.distribution_maker import DistributionMaker
+from pisa.analysis.hypo_testing import (
+    HypoTesting, setup_makers_from_pipelines,
+    collect_maker_selections, select_maker_params
+)
 from pisa.utils.log import logging
-from pisa.utils.scripting import normcheckpath
 
 
 __all__ = ['systematics_tests']
 
-__author__ = 'S. Wren'
+__author__ = 'S. Wren, T. Ehrhardt'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -31,7 +32,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  limitations under the License.'''
 
 
-def systematics_tests(return_outputs=False):
+def systematics_tests(init_args_d, return_outputs=False):
     """Load the HypoTesting class and use it to do a systematic study
     in Asimov.
 
@@ -40,14 +41,8 @@ def systematics_tests(return_outputs=False):
     user will have the option to fix this systematic to either the baseline or
     some shifted value (+/- 1 sigma, or appropriate). One also has the ability
     in the case of the latter to still fit with this systematically incorrect
-    hypothesis."""
-    # NOTE: import here to avoid circular refs
-    from pisa.scripts.analysis import parse_args
-    init_args_d = parse_args(description=systematics_tests.__doc__,
-                             command=systematics_tests)
-
-    # NOTE: Removing extraneous args that won't get passed to instantiate the
-    # HypoTesting object via dictionary's `pop()` method.
+    hypothesis.
+    """
     inject_wrong = init_args_d.pop('inject_wrong')
     fit_wrong = init_args_d.pop('fit_wrong')
     only_syst = init_args_d.pop('only_syst')
@@ -74,38 +69,29 @@ def systematics_tests(return_outputs=False):
                          ' systematic is fixed to the baseline value'
                          ' one-by-one.')
 
-    # Normalize and convert `pipeline` filenames; store to `*_maker`
-    # (which is argument naming convention that HypoTesting init accepts).
-    # For this test, pipeline is required so we don't need the try arguments
-    # or the checks on it being None
-    filenames = init_args_d.pop('pipeline')
-    filenames = sorted(
-        [normcheckpath(fname) for fname in filenames]
-    )
-    init_args_d['h0_maker'] = filenames
-    # However, we do need them for the selections, since they can be different
-    for maker in ['h0', 'h1', 'data']:
-        ps_name = maker + '_param_selections'
-        ps_str = init_args_d[ps_name]
-        if ps_str is None:
-            ps_list = None
-        else:
-            ps_list = [x.strip().lower() for x in ps_str.split(',')]
-        init_args_d[ps_name] = ps_list
+    # only have a single distribution maker, the h0_maker
+    # first set up all distribution makers the same
+    setup_makers_from_pipelines(init_args_d=init_args_d, ref_maker_names=['h0'])
 
-    init_args_d['data_maker'] = init_args_d['h0_maker']
-    init_args_d['h1_maker'] = init_args_d['h0_maker']
-    init_args_d['h0_maker'] = DistributionMaker(init_args_d['h0_maker'])
-    init_args_d['h1_maker'] = DistributionMaker(init_args_d['h1_maker'])
-    init_args_d['h1_maker'].select_params(init_args_d['h1_param_selections'])
-    init_args_d['data_maker'] = DistributionMaker(init_args_d['data_maker'])
+    # process param selections for each of h0, h1, and data
+    collect_maker_selections(init_args_d=init_args_d, maker_names=['h0', 'h1', 'data'])
+
+    # apply h0 selections to data if data doesn't have selections defined
     if init_args_d['data_param_selections'] is None:
         init_args_d['data_param_selections'] = \
             init_args_d['h0_param_selections']
         init_args_d['data_name'] = init_args_d['h0_name']
-    init_args_d['data_maker'].select_params(
-        init_args_d['data_param_selections']
-    )
+
+    if (init_args_d['h1_param_selections'] is None or
+        init_args_d['h1_param_selections'] == init_args_d['h0_param_selections']):
+        # this will mean hypothesis testing will only work
+        # with a single hypothesis
+        init_args_d['h1_maker'] = None
+        # just to be clear
+        init_args_d['h1_name'] = init_args_d['h0_name']
+
+    # apply param selections to data distribution maker if applicable
+    select_maker_params(init_args_d=init_args_d, maker_names=['data'])
 
     if only_syst is not None:
         for syst in only_syst:
@@ -124,7 +110,7 @@ def systematics_tests(return_outputs=False):
     # Instantiate the analysis object
     hypo_testing = HypoTesting(**init_args_d)
     # Everything is set up so do the tests
-    outputs = hypo_testing.asimov_syst_tests( # pylint: disable=redefined-outer-name
+    hypo_testing.asimov_syst_tests( # pylint: disable=redefined-outer-name
         inject_wrong=inject_wrong,
         fit_wrong=fit_wrong,
         only_syst=only_syst,
@@ -135,4 +121,4 @@ def systematics_tests(return_outputs=False):
     )
 
     if return_outputs:
-        return outputs
+        return hypo_testing

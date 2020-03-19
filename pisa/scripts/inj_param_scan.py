@@ -10,18 +10,19 @@ from __future__ import absolute_import, division
 import numpy
 
 from pisa import ureg
-from pisa.analysis.hypo_testing import HypoTesting
-from pisa.core.distribution_maker import DistributionMaker
+from pisa.analysis.hypo_testing import (
+    HypoTesting, setup_makers_from_pipelines,
+    collect_maker_selections, select_maker_params
+)
 from pisa.core.prior import Prior
 from pisa.utils.log import logging
-from pisa.utils.scripting import normcheckpath
 
 
 __all__ = ['inj_param_scan']
 
-__author__ = 'S. Wren'
+__author__ = 'S. Wren, T. Ehrhardt'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -39,7 +40,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 np = numpy # pylint: disable=invalid-name
 
 
-def inj_param_scan(return_outputs=False):
+def inj_param_scan(init_args_d, return_outputs=False):
     """Load the HypoTesting class and use it to do an Asimov test across the
     space of one of the injected parameters.
 
@@ -49,43 +50,37 @@ def inj_param_scan(return_outputs=False):
     will then be evaluated to figure out a space of theta23 to inject and run
     Asimov tests.
     """
-    # NOTE: import here to avoid circular refs
-    from pisa.scripts.analysis import parse_args
-    init_args_d = parse_args(description=inj_param_scan.__doc__,
-                             command=inj_param_scan)
+    # only have a single distribution maker, the h0_maker
+    setup_makers_from_pipelines(init_args_d=init_args_d, ref_maker_names=['h0'])
 
-    # Normalize and convert `*_pipeline` filenames; store to `*_maker`
-    # (which is argument naming convention that HypoTesting init accepts).
-    # For this test, pipeline is required so we don't need the try arguments
-    # or the checks on it being None
-    filenames = init_args_d.pop('pipeline')
-    filenames = sorted(
-        [normcheckpath(fname) for fname in filenames]
-    )
-    init_args_d['h0_maker'] = filenames
-    # However, we do need them for the selections, since they can be different
-    for maker in ['h0', 'h1', 'data']:
-        ps_name = maker + '_param_selections'
-        ps_str = init_args_d[ps_name]
-        if ps_str is None:
-            ps_list = None
-        else:
-            ps_list = [x.strip().lower() for x in ps_str.split(',')]
-        init_args_d[ps_name] = ps_list
+    # process param selections for each of h0, h1, and data
+    collect_maker_selections(init_args_d=init_args_d, maker_names=['h0', 'h1', 'data'])
 
-    init_args_d['data_maker'] = init_args_d['h0_maker']
-    init_args_d['h1_maker'] = init_args_d['h0_maker']
-    init_args_d['h0_maker'] = DistributionMaker(init_args_d['h0_maker'])
-    init_args_d['h1_maker'] = DistributionMaker(init_args_d['h1_maker'])
-    init_args_d['h1_maker'].select_params(init_args_d['h1_param_selections'])
-    init_args_d['data_maker'] = DistributionMaker(init_args_d['data_maker'])
+    # apply h0 selections to data if data doesn't have selections defined
     if init_args_d['data_param_selections'] is None:
         init_args_d['data_param_selections'] = \
             init_args_d['h0_param_selections']
         init_args_d['data_name'] = init_args_d['h0_name']
-    init_args_d['data_maker'].select_params(
-        init_args_d['data_param_selections']
-    )
+
+    if (init_args_d['h1_param_selections'] is None or
+        init_args_d['h1_param_selections'] == init_args_d['h0_param_selections']):
+        # this will mean hypothesis testing will only work
+        # with a single hypothesis
+        init_args_d['h1_maker'] = None
+        # just to be clear
+        init_args_d['h1_name'] = init_args_d['h0_name']
+
+    # we cannot allow a data_name or h0/1_name of None, or the actual method
+    # in hypo_testing will fail, so set 'None' string
+    if init_args_d['data_name'] is None:
+        init_args_d['data_name'] = 'None'
+    if init_args_d['h0_name'] is None:
+        init_args_d['h0_name'] = 'None'
+    if init_args_d['h1_name'] is None:
+        init_args_d['h1_name'] = 'None'
+
+    # apply param selections to h1 and data distribution makers
+    select_maker_params(init_args_d=init_args_d, maker_names=['h1', 'data'])
 
     # Remove final parameters that don't want to be passed to HypoTesting
     param_name = init_args_d.pop('param_name')
@@ -97,7 +92,7 @@ def inj_param_scan(return_outputs=False):
     hypo_testing = HypoTesting(**init_args_d)
 
     logging.info(
-        'Scanning over %s between %.4f and %.4f with %i vals',
+        'Scanning over injected %s between %.4g and %.4g with %i vals',
         param_name, min(inj_vals), max(inj_vals), len(inj_vals)
     )
     # Modify parameters if necessary
@@ -239,15 +234,12 @@ def inj_param_scan(return_outputs=False):
                          ' So nothing needs to be done.', test_name)
 
     # Everything is set up. Now do the scan.
-    outputs = hypo_testing.asimov_inj_param_scan( # pylint: disable=redefined-outer-name
+    hypo_testing.asimov_inj_param_scan( # pylint: disable=redefined-outer-name
         param_name=param_name,
         test_name=test_name,
         inj_vals=inj_vals,
-        requested_vals=requested_vals,
-        h0_name=init_args_d['h0_name'],
-        h1_name=init_args_d['h1_name'],
-        data_name=init_args_d['data_name']
+        requested_vals=requested_vals
     )
 
     if return_outputs:
-        return outputs
+        return hypo_testing

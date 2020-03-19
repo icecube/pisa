@@ -1276,6 +1276,7 @@ class Analysis(object):
 
         return fit_info
 
+    # FIXME (TE): add hypo_param_selections back in?
     def nofit_hypo(self, data_dist, hypo_maker, hypo_asimov_dist,
                    metric, other_metrics=None, blind=False,
                    external_priors_penalty=None):

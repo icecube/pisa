@@ -22,7 +22,9 @@ from pisa.utils.random_numbers import get_random_state
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD', 'LOCAL_MINIMIZERS_WITH_DEFAULTS',
            'GLOBAL_MINIMIZERS_WITH_DEFAULTS', 'Counter',
            'set_minimizer_defaults', 'validate_minimizer_settings',
-           'override_min_opt', '_run_minimizer', 'minimizer_x0_bounds']
+           'override_min_opt', '_run_minimizer', 'minimizer_x0_bounds',
+           'display_minimizer_header', '_run_local_minimizer',
+           '_run_global_minimizer', 'Bounds', 'RandomDisplacementWithBounds']
 
 __author__ = 'J.L. Lanfranchi, P. Eller, S. Wren, T. Ehrhardt'
 
@@ -379,6 +381,7 @@ class RandomDisplacementWithBounds(object):
     respecting each parameter's bounds (modified from basinhopping's internal
     random displacement method).
     Calling this updates `x` in-place.
+
     Parameters
     ----------
     stepsize : float, optional
@@ -387,6 +390,7 @@ class RandomDisplacementWithBounds(object):
         The random number generator that generates the displacements
     bounds : list, optional
         Bounds in each dimension
+
     """
     def __init__(self, stepsize=0.5, random_state=None, bounds=None):
         self.stepsize = stepsize

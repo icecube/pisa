@@ -484,17 +484,21 @@ def get_prior_bounds(obj, param=None, stddev=1.0):
     for s in stddev:
         bounds[s] = []
 
-    if isinstance(obj, str):
-        obj = from_file(obj)
+    if isinstance(obj, Prior):
+        prior = obj
 
-    if 'params' in obj:
-        obj = obj['params']
-    if param is not None and param in obj:
-        obj = obj[param]
-    if 'prior' in obj:
-        obj = obj['prior']
+    else:
+        if isinstance(obj, str):
+            obj = from_file(obj)
 
-    prior = Prior(**obj)
+        if 'params' in obj:
+            obj = obj['params']
+        if param is not None and param in obj:
+            obj = obj[param]
+        if 'prior' in obj:
+            obj = obj['prior']
+
+        prior = Prior(**obj)
 
     logging.debug('Getting confidence region from prior: %s', prior)
     x0 = prior.valid_range[0]

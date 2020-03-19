@@ -6,15 +6,16 @@ Ment to be called from `pisa.scripts.analysis` as a subcommand.
 
 from __future__ import absolute_import, division
 
-from pisa.analysis.hypo_testing import HypoTesting
-from pisa.utils.scripting import normcheckpath
+from pisa.analysis.hypo_testing import (
+    HypoTesting, setup_makers_from_pipelines, collect_maker_selections
+)
 
 
 __all__ = ['discrete_hypo_test']
 
-__author__ = 'S. Wren'
+__author__ = 'S. Wren, T. Ehrhardt'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -29,7 +30,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  limitations under the License.'''
 
 
-def discrete_hypo_test(return_outputs=False):
+def discrete_hypo_test(init_args_d, return_outputs=False):
     """Setup distribution makers and run the hypo_testing process.
 
     Parameters
@@ -45,35 +46,8 @@ def discrete_hypo_test(return_outputs=False):
         shell).
 
     """
-    # NOTE: import here to avoid circular refs
-    from pisa.scripts.analysis import parse_args
-
-    # NOTE: Removing extraneous args that won't get passed to instantiate the
-    # HypoTesting object via dictionary's `pop()` method.
-    init_args_d = parse_args(
-        command=discrete_hypo_test,
-        description=('Test the ability to distinguish between two hypotheses'
-                     ' based on "data": real data, toy data, or fluctuated toy'
-                     ' data (aka psuedodata)')
-    )
-
-    # Normalize and convert `*_pipeline` filenames; store to `*_maker`
-    # (which is argument naming convention that HypoTesting init accepts).
-    for maker in ['h0', 'h1', 'data']:
-        filenames = init_args_d.pop(maker + '_pipeline')
-        if filenames is not None:
-            filenames = sorted(
-                [normcheckpath(fname) for fname in filenames]
-            )
-        init_args_d[maker + '_maker'] = filenames
-
-        ps_name = maker + '_param_selections'
-        ps_str = init_args_d[ps_name]
-        if ps_str is None:
-            ps_list = None
-        else:
-            ps_list = [x.strip().lower() for x in ps_str.split(',')]
-        init_args_d[ps_name] = ps_list
+    setup_makers_from_pipelines(init_args_d, ref_maker_names=['h0', 'h1', 'data'])
+    collect_maker_selections(init_args_d, maker_names=['h0', 'h1', 'data'])
 
     # Instantiate the analysis object
     hypo_testing = HypoTesting(**init_args_d)

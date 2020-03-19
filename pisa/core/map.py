@@ -988,7 +988,8 @@ class Map(object):
                 valid_mask = ~nan_at
                 gauss = np.empty_like(orig_hist, dtype=np.float64)
                 gauss[valid_mask] = norm.rvs(
-                    loc=orig_hist[valid_mask], scale=sigma[valid_mask]
+                    loc=orig_hist[valid_mask], scale=sigma[valid_mask],
+                    random_state=random_state
                 )
 
                 hist_vals = np.empty_like(orig_hist, dtype=np.float64)
@@ -1012,7 +1013,8 @@ class Map(object):
                 valid_mask = ~nan_at
                 hist_vals = np.empty_like(orig_hist, dtype=np.float64)
                 hist_vals[valid_mask] = norm.rvs(loc=orig_hist[valid_mask],
-                                                 scale=sigma[valid_mask])
+                                                 scale=sigma[valid_mask],
+                                                 random_state=random_state)
                 hist_vals[nan_at] = np.nan
                 error_vals = np.empty_like(orig_hist, dtype=np.float64)
                 error_vals[valid_mask] = np.sqrt(orig_hist[valid_mask])
@@ -1524,6 +1526,27 @@ class Map(object):
 
         return np.sum(stats.chi2(actual_values=self.hist,
                                  expected_values=expected_values))
+
+    def signed_sqrt_mod_chi2(self, expected_values):
+        """Calculate the binwise (signed) square-root of the modified chi2 value
+        between this map and the map described by `expected_values`; self is
+        taken to be the "actual values" (or (pseudo)data), and `expected_values`
+        are the expectation values for each bin.
+
+        Parameters
+        ----------
+        expected_values : numpy.ndarray or Map of same dimension as this.
+
+        Returns
+        -------
+        m_pulls : signed_sqrt_mod_chi2
+
+        """
+        expected_values = reduceToHist(expected_values)
+
+        return stats.signed_sqrt_mod_chi2(actual_values=self.hist,
+                                          expected_values=expected_values)
+
 
     def metric_total(self, expected_values, metric):
         # TODO: should this use reduceToHist as in chi2 and llh above?

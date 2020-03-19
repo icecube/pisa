@@ -18,7 +18,7 @@ __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
            'maperror_logmsg',
            'chi2', 'llh', 'log_poisson', 'log_smear', 'conv_poisson',
            'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2',
-           'mcllh_mean', 'mcllh_eff']
+           'mcllh_mean', 'mcllh_eff', 'signed_sqrt_mod_chi2']
 
 __author__ = 'P. Eller, T. Ehrhardt, J.L. Lanfranchi'
 
@@ -572,3 +572,28 @@ def mod_chi2(actual_values, expected_values):
         (actual_values - expected_values)**2 / (sigma**2 + expected_values)
     )
     return m_chi2
+
+def signed_sqrt_mod_chi2(actual_values, expected_values):
+    """Compute a (signed) pull value taking into account uncertainty terms.
+
+    Parameters
+    ----------
+    actual_values, expected_values : numpy.ndarrays of same shape
+
+    Returns
+    -------
+    m_pull : numpy.ndarray of same shape as inputs
+        Pull values corresponding to each pair of elements in
+        the inputs
+
+    """
+    # Replace 0's with small positive numbers to avoid inf in log
+    np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
+            out=expected_values)
+    actual_values = unp.nominal_values(actual_values).ravel()
+    sigma = unp.std_devs(expected_values).ravel()
+    expected_values = unp.nominal_values(expected_values).ravel()
+    m_pull = (
+        (actual_values - expected_values) / np.sqrt(sigma**2 + expected_values)
+    )
+    return m_pull
