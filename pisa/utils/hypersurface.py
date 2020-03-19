@@ -2640,7 +2640,6 @@ def test_hypersurface_uncertainty(plot=False):
         initial_intercept=1.,  # Intercept value (or first guess for fit)
         log=False
     )
-    from pisa.core.map import Map, MapSet
     # Define binning with one dummy bin
     binning = MultiDimBinning([OneDimBinning(name="reco_energy",
                                              domain=[0., 10.],
@@ -2747,8 +2746,6 @@ def test_hypersurface_uncertainty(plot=False):
     fit_differences = fluctuated_fit_points - asimov_fit_points
     all_pulls = fit_differences / asimov_fit_errs
     avg_fit_differences = np.mean(fit_differences, axis=0)
-    mean_fluctuated_fits = np.mean(fluctuated_fit_points, axis=0)
-    std_fluctuated_fits = np.std(fluctuated_fit_points, axis=0)
     std_pulls = np.std(all_pulls, axis=0)
     logging.debug("Average fluctuated fit difference:\n%s" %
                   str(avg_fit_differences))
@@ -2777,7 +2774,7 @@ def test_hypersurface_basics():
     Test basic fitting, inject/recover, storing and loading
     '''
     import tempfile
-    from pisa.core.map import Map, MapSet
+    from pisa.core.map import Map
 
     params = [HypersurfaceParam(name="foo", func_name="linear",
                                 initial_fit_coeffts=[1.],
