@@ -2496,52 +2496,64 @@ def generate_asimov_testdata(binning, parameters, true_param_coeffs,
     from pisa.core.map import Map, MapSet
     for bin_idx in np.ndindex(binning.shape):
         for name, coeffs in true_param_coeffs.items():
-            assert len(coeffs) == hypersurface.params[name].num_fit_coeffts, "number of coefficients in the parameter must match"
+            assert len(coeffs) == hypersurface.params[name].num_fit_coeffts, ("number "
+                   "of coefficients in the parameter must match")
             for j, c in enumerate(coeffs):
-                idx = hypersurface.params[name].get_fit_coefft_idx(bin_idx=bin_idx, coefft_idx=j)
+                idx = hypersurface.params[name].get_fit_coefft_idx(bin_idx=bin_idx,
+                                                                   coefft_idx=j,
+                                                                  )
                 hypersurface.params[name].fit_coeffts[idx] = c 
-    logging.info("Truth hypersurface report:\n%s" % str(hypersurface))
+    logging.debug("Truth hypersurface report:\n%s" % str(hypersurface))
     
     # Only consider one particle type for simplicity
     particle_key = "nue_cc"
     # Create each dataset, e.g. set the systematic parameter values, calculate a bin count
     hist = hypersurface.evaluate(nominal_param_values)
-    assert np.all(hist >= 0.), "nominal map has negative values! Choose different true parameters."
-    nom_map = Map(name=particle_key, binning=binning, hist=hist, error_hist=np.sqrt(hist)*error_scale)
-    logging.info("Nominal hist: \n%s" % str(nom_map.hist))
+    assert np.all(hist >= 0.), ("nominal map has negative values! "
+                                "Choose different true parameters.")
+    nom_map = Map(name=particle_key, binning=binning,
+                  hist=hist, error_hist=np.sqrt(hist)*error_scale,
+                 )
+    logging.debug("Nominal hist: \n%s" % str(nom_map.hist))
     sys_maps = []
     for i in range(len(sys_param_values)):
         hist = hypersurface.evaluate(sys_param_values[i])
-        assert np.all(hist > 0.), "a systematic map has negative values! values: %s systematics: %s" % (str(hist), str(sys_param_values[i]))
-        sys_maps.append(Map(name=particle_key, binning=binning, hist=hist, error_hist=np.sqrt(hist)*error_scale))
-        # logging.info("Systematic params: \n%s" % str(sys_param_values[i]))
-        # logging.info("Systematic hist: \n%s" % str(sys_maps[-1].hist))
+        assert np.all(hist > 0.), ("a systematic map has negative values! values: "
+                                   "%s systematics: %s" % (str(hist), str(sys_param_values[i])))
+        sys_maps.append(Map(name=particle_key, binning=binning,
+                            hist=hist, error_hist=np.sqrt(hist)*error_scale))
     return nom_map, sys_maps
     
-def test_hypersurface_uncertainty(logmode=True):
+def test_hypersurface_uncertainty(plot=False):
     '''
     Simple test of hypersurface fits + uncertainty
     1. Creates some Asimov test data matching a true hypersurface and checks the ability
        to fit back the truth.
-    2. Fluctuates Asimov test data randomly to check uncertainties claimed by hypersurface
+    2. Fluctuates Asimov test data randomly to check uncertainties of hypersurface
     '''
-    import matplotlib.pyplot as plt
+
     # Define systematic parameters in the hypersurface
     params = [
-        HypersurfaceParam(name="foo", func_name="linear", initial_fit_coeffts=[1.],),
-        HypersurfaceParam(name="bar", func_name="quadratic", initial_fit_coeffts=[1., -1.],),
+        HypersurfaceParam(name="foo", func_name="linear", initial_fit_coeffts=[1.]),
+        HypersurfaceParam(name="bar", func_name="quadratic", initial_fit_coeffts=[1., -1.]),
     ]
     # Create the hypersurface
     hypersurface = Hypersurface( 
         params=params, # Specify the systematic parameters
         initial_intercept=1., # Intercept value (or first guess for fit)
-        log=logmode
+        log=False
     )
     from pisa.core.map import Map, MapSet
     # Define binning with one dummy bin
-    binning = MultiDimBinning([OneDimBinning(name="reco_energy", domain=[0.,10.], num_bins=1, units=ureg.GeV,is_lin=True)])
+    binning = MultiDimBinning([OneDimBinning(name="reco_energy",
+                                             domain=[0.,10.],
+                                             num_bins=1,
+                                             units=ureg.GeV,
+                                             is_lin=True
+                                            )])
     # Define true coefficients
     true_coeffs = {'foo': [0.4], 'bar': [0.2, -1.]}
+    true_intercept = 2.
     nominal_param_values = {'foo': 1., 'bar': 0.}
     # making combinations of systematic values
     foo_vals = np.linspace(-1., 2., 6)
@@ -2556,7 +2568,8 @@ def test_hypersurface_uncertainty(logmode=True):
                                                  true_coeffs,
                                                  nominal_param_values,
                                                  sys_param_values,
-                                                 log=logmode,
+                                                 intercept=true_intercept,
+                                                 log=False,
                                                  error_scale=0.2,
                                                 )
     # Perform fit
@@ -2568,17 +2581,25 @@ def test_hypersurface_uncertainty(logmode=True):
         norm=False,
     )
     # Report the results
-    logging.info("Fitted hypersurface report:\n%s" % hypersurface)
+    logging.debug("Fitted hypersurface report:\n%s" % hypersurface)
     
-    fig, ax = plt.subplots()
-    plot_bin_fits(ax, hypersurface, bin_idx=[0], param_name='foo', label='Asimov test map')
-    ax.grid()
-    plt.savefig('test_hypersurface_foo.pdf')
+    assert np.allclose(hypersurface.intercept, true_intercept)
+    for param_name in hypersurface.param_names:
+        assert np.allclose(hypersurface.params[param_name].fit_coeffts,
+                           true_coeffs[param_name])
+    if plot:
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots()
+        plot_bin_fits(ax, hypersurface, bin_idx=[0], param_name='foo',
+                      label='Asimov test map')
+        ax.grid()
+        plt.savefig('test_hypersurface_foo.pdf')
     
-    fig, ax = plt.subplots()
-    plot_bin_fits(ax, hypersurface, bin_idx=[0], param_name='bar', label='Asimov test map')
-    ax.grid()
-    plt.savefig('test_hypersurface_bar.pdf')
+        fig, ax = plt.subplots()
+        plot_bin_fits(ax, hypersurface, bin_idx=[0], param_name='bar',
+                      label='Asimov test map')
+        ax.grid()
+        plt.savefig('test_hypersurface_bar.pdf')
     
     # Evaluate hypersurface and uncertainties at some points
     # that just happen to be the systematic values (but choice could be different)
@@ -2593,10 +2614,12 @@ def test_hypersurface_uncertainty(logmode=True):
     asimov_true_points = np.concatenate(asimov_true_points)
     asimov_fit_points = np.concatenate(asimov_fit_points)
     asimov_fit_errs = np.concatenate(asimov_fit_errs)
-    logging.info("Asimov true points:\n%s" % str(asimov_true_points))
-    logging.info("Asimov fit points:\n%s" % str(asimov_fit_points))
-    logging.info("Asimov fit errors:\n%s" % str(asimov_fit_errs))
-    logging.info("Fluctuating maps and re-fitting...")
+    
+    logging.debug("Asimov true points:\n%s" % str(asimov_true_points))
+    logging.debug("Asimov fit points:\n%s" % str(asimov_fit_points))
+    logging.debug("Asimov fit error estimates:\n%s" % str(asimov_fit_errs))
+    assert np.allclose(asimov_true_points, asimov_fit_points)
+    logging.debug("Fluctuating maps and re-fitting...")
     # do several rounds of fluctuation, re-fit and storage of results
     n_rounds = 100
     fluctuated_fit_points = []
@@ -2618,7 +2641,7 @@ def test_hypersurface_uncertainty(logmode=True):
             hist = hypersurface.evaluate(sys_param_values[j], return_uncertainty=False)
             fluctuated_fit_points[-1].append(hist)
         fluctuated_fit_points[-1] = np.concatenate(fluctuated_fit_points[-1])
-        logging.debug("Fluctuated fit points:\n%s" % str(fluctuated_fit_points[-1]))
+        logging.trace("Fluctuated fit points:\n%s" % str(fluctuated_fit_points[-1]))
     # evaluate whether the actual fluctuations match the estimated errors
     fluctuated_fit_points = np.array(fluctuated_fit_points)
     fit_differences = fluctuated_fit_points - asimov_fit_points
@@ -2627,82 +2650,64 @@ def test_hypersurface_uncertainty(logmode=True):
     mean_fluctuated_fits = np.mean(fluctuated_fit_points, axis=0)
     std_fluctuated_fits = np.std(fluctuated_fit_points, axis=0)
     std_pulls = np.std(all_pulls, axis=0)
-    logging.info("Average fluctuated fit difference:\n%s" % str(avg_fit_differences))
-    #logging.info("Average fluctuated fit points:\n%s" % str(mean_fluctuated_fits))
-    #logging.info("Fluctuated fit standard deviations:\n%s" % str(std_fluctuated_fits))
-    # pulls = np.mean(all_pulls, axis=0)
-    logging.info("Mean pulls per point:\n%s" % str(std_pulls))
-    logging.info("Mean pull: %.3f" % np.mean(std_pulls))
-    # plotting
-    plt.figure()
-    plt.hist(all_pulls.flatten(), bins=50, density=True, label='fluctuated fits')
-    x_plot = np.linspace(-4, 4, 100)
-    plt.plot(x_plot, np.exp(-x_plot**2/2.)/np.sqrt(2.*np.pi), label='expectation')
-    plt.title('pull distribution')
-    plt.xlabel('pull')
-    plt.ylabel('density')
-    plt.legend()
-    plt.savefig('test_hypersurface_pull.pdf')
+    logging.debug("Average fluctuated fit difference:\n%s" % str(avg_fit_differences))
+    logging.debug("Mean pulls per point:\n%s" % str(std_pulls))
+    logging.debug("Mean pull: %.3f" % np.mean(std_pulls))
+    assert np.abs(np.mean(std_pulls) - 1.) < 0.1, "avg. pulls too far from expectation"
     
-def hypersurface_example() :
+    if plot:
+        plt.figure()
+        plt.hist(all_pulls.flatten(), bins=50, density=True, label='fluctuated fits')
+        x_plot = np.linspace(-4, 4, 100)
+        plt.plot(x_plot, np.exp(-x_plot**2/2.)/np.sqrt(2.*np.pi), label='expectation')
+        plt.title('pull distribution')
+        plt.xlabel('pull')
+        plt.ylabel('density')
+        plt.legend()
+        plt.savefig('test_hypersurface_pull.pdf')
+    logging.info('<< PASS : test_hypersurface_uncertainty >>')
+    
+def test_hypersurface_basics() :
     '''
-    Simple hypersurface example covering:
-      - Defining the hypersurface
-      - Fitting the coefficients (to toy data)
-      - Saving and re-loading the hypersurfaces
-      - Plotting the results
+    Test basic fitting, inject/recover, storing and loading
     '''
-    import sys
-    import matplotlib as mpl
-    mpl.use("agg")
-    import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
+    import tempfile
     from pisa.core.map import Map, MapSet
 
-    #TODO turn this into a PASS/FAIL test, and add more detailed test of specific functions
-
-    set_verbosity(2)
-
-    #
-    # Create hypersurface
-    #
-
-    # Define systematic parameters in the hypersurface
-    params = [
-        HypersurfaceParam( name="foo", func_name="linear", initial_fit_coeffts=[1.], ),
-        # the exponential HS function did not reliably recover injected true parameters,
-        # probably due to the degeneracy with the intercept. 
-        HypersurfaceParam( name="bar", func_name="quadratic", initial_fit_coeffts=[.1, .1], ),
-    ]
+    params = [HypersurfaceParam(name="foo", func_name="linear",
+                                initial_fit_coeffts=[1.],
+                               ),
+              # the exponential HS function did not reliably recover injected true
+              # parameters, probably due to the degeneracy with the intercept. 
+              HypersurfaceParam(name="bar", func_name="quadratic",
+                                initial_fit_coeffts=[.1, .1],
+                               ),
+             ]
 
     # Create the hypersurface
-    hypersurface = Hypersurface( 
-        params=params, # Specify the systematic parameters
-        initial_intercept=1., # Intercept value (or first guess for fit)
-        log=False,
-    )
+    hypersurface = Hypersurface(params=params, # Specify the systematic parameters
+                                initial_intercept=1., # Intercept first guess for fit)
+                                log=False,
+                               )
 
-    #
-    # Create fake datasets
-    #
-
-    # Just doing something quick here for demonstration purposes
-    # Here I'm only assigning a single value per dataset, e.g. one bin, for simplicity, but idea extends to realistic binning
-
-    # Define binning
-    binning = MultiDimBinning([ OneDimBinning(name="reco_energy",domain=[0.,10.],num_bins=3,units=ureg.GeV,is_lin=True) ])
+    binning = MultiDimBinning([OneDimBinning(name="reco_energy",
+                                             domain=[0., 10.],
+                                             num_bins=3,
+                                             units=ureg.GeV,
+                                             is_lin=True,
+                                            )])
 
     # Define the values for the parameters for each dataset
     nom_param_values = {}
     sys_param_values_dict = {}
 
-    if "foo" in [ p.name for p in params ] :
+    if "foo" in [p.name for p in params]:
         nom_param_values["foo"] = 0.
-        sys_param_values_dict["foo"] = [ 0., 0., 0.,-1.,+1., 1. ]
+        sys_param_values_dict["foo"] = [0., 0., 0., -1., +1., 1.]
 
-    if "bar" in [ p.name for p in params ] :
+    if "bar" in [p.name for p in params]:
         nom_param_values["bar"] = 10.
-        sys_param_values_dict["bar"] = [ 20.,30.,0.,10.,10., 15. ]
+        sys_param_values_dict["bar"] = [20., 30., 0., 10., 10., 15.]
 
     # Get number of datasets
     num_sys_datasets = len(list(sys_param_values_dict.values())[0])
@@ -2710,7 +2715,8 @@ def hypersurface_example() :
     # Only consider one particle type for simplicity
     particle_key = "nue_cc"
 
-    # Create a dummy "true" hypersurface that can be used to generate some fake bin values for the dataset 
+    # Create a dummy "true" hypersurface that can be used to generate
+    # some fake bin values for the dataset 
     true_hypersurface = copy.deepcopy(hypersurface)
     true_hypersurface._init(binning=binning, nominal_param_values=nom_param_values)
     true_hypersurface.intercept.fill(10.)
@@ -2720,134 +2726,73 @@ def hypersurface_example() :
         true_hypersurface.params["bar"].fit_coeffts[...,0].fill(-.1)
         true_hypersurface.params["bar"].fit_coeffts[...,1].fill(0.05)
 
-    logging.info("Truth hypersurface report:\n%s" % str(true_hypersurface) )
+    logging.debug("Truth hypersurface report:\n%s" % str(true_hypersurface))
 
-    # Create each dataset, e.g. set the systematic parameter values, calculate a bin count
+    # Create each dataset, e.g. set the systematic parameter values, calculate bin count
     hist = true_hypersurface.evaluate(nom_param_values)
-    nom_map = Map(name=particle_key,binning=binning,hist=hist, error_hist=np.sqrt(hist))
+    nom_map = Map(name=particle_key, binning=binning,
+                  hist=hist, error_hist=np.sqrt(hist),
+                 )
     sys_maps = []
     sys_param_values = []
-    for i in range(num_sys_datasets) :
-        sys_param_values.append( { name:sys_param_values_dict[name][i] for name in list(true_hypersurface.params.keys()) } )
+    for i in range(num_sys_datasets):
+        sys_param_values.append({name:sys_param_values_dict[name][i]
+                                 for name in list(true_hypersurface.params.keys())
+                                })
         hist = true_hypersurface.evaluate(sys_param_values[-1])
-        sys_maps.append( Map(name=particle_key,binning=binning,hist=hist,error_hist=np.sqrt(hist)) )
-
-
-    #
-    # Fit hypersurfaces
-    #
+        sys_maps.append(Map(name=particle_key, binning=binning,
+                            hist=hist, error_hist=np.sqrt(hist),
+                           )
+                       )
 
     # Perform fit
-    hypersurface.fit(
-        nominal_map=nom_map,
-        nominal_param_values=nom_param_values,
-        sys_maps=sys_maps,
-        sys_param_values=sys_param_values,
-        norm=False,
-    )
-   
-    # Report the results
-    logging.info("Fitted hypersurface report:\n%s" % hypersurface)
+    hypersurface.fit(nominal_map=nom_map,
+                     nominal_param_values=nom_param_values,
+                     sys_maps=sys_maps,
+                     sys_param_values=sys_param_values,
+                     norm=False,
+                    )
+
+    logging.debug("Fitted hypersurface report:\n%s" % hypersurface)
 
     # Check the fitted parameter values match the truth
     # This only works if `norm=False` in the `hypersurface.fit` call just above
-    logging.info("Checking fit recovered truth...")
-    assert np.allclose( hypersurface.intercept, true_hypersurface.intercept )
-    for param_name in hypersurface.param_names :
-        assert np.allclose( hypersurface.params[param_name].fit_coeffts, true_hypersurface.params[param_name].fit_coeffts )
-    logging.info("... fit was successful!")
+    logging.debug("Checking fit recovered truth...")
+    assert np.allclose( hypersurface.intercept, true_hypersurface.intercept)
+    for param_name in hypersurface.param_names:
+        assert np.allclose(hypersurface.params[param_name].fit_coeffts,
+                           true_hypersurface.params[param_name].fit_coeffts)
+    logging.debug("... fit was successful!")
 
-    #
-    # Save/load
-    #
+    # testing save/reload
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        file_name = "hypersurface.json.bz2"
+        file_path = os.path.join(tmpdirname, file_name)
+        to_json(hypersurface, file_path)
 
-    # Save
-    file_path = "hypersurface.json.bz2"
-    to_json(hypersurface,file_path)
+        reloaded_hypersurface = Hypersurface.from_state(file_path)
 
-    # Re-load
-    reloaded_hypersurface = Hypersurface.from_state(file_path)
-
-    # Test the re-loaded hypersurface matches the one we saved
-    logging.info("Checking saved and re-loaded hypersurfaces are identical...")
-    assert np.allclose( hypersurface.intercept, reloaded_hypersurface.intercept )
-    for param_name in hypersurface.param_names :
-        assert np.allclose( hypersurface.params[param_name].fit_coeffts, reloaded_hypersurface.params[param_name].fit_coeffts )
-    logging.info("... save+re-load was successful!")
+        logging.debug("Checking saved and re-loaded hypersurfaces are identical...")
+        assert np.allclose(hypersurface.intercept, reloaded_hypersurface.intercept)
+        for param_name in hypersurface.param_names:
+            assert np.allclose(hypersurface.params[param_name].fit_coeffts,
+                               reloaded_hypersurface.params[param_name].fit_coeffts
+                              )
+        logging.debug("... save+re-load was successful!")
     
     # test getting and setting coefficients
     coeffts = hypersurface.fit_coeffts
     reloaded_hypersurface.fit_coeffts = coeffts
-    logging.info("Checking hypersurfaces are identical after getting and setting coeffts...")
+    logging.debug("Checking hypersurfaces are identical after getting and setting coeffts...")
     assert np.allclose(hypersurface.intercept, reloaded_hypersurface.intercept)
     for param_name in hypersurface.param_names:
         assert np.allclose(hypersurface.params[param_name].fit_coeffts,
                            reloaded_hypersurface.params[param_name].fit_coeffts)
-    logging.info("... setting and getting coefficients was successful!")
-    
-    # Continue with the reloaded version
-    hypersurface = reloaded_hypersurface
-
-
-    #
-    # 1D plot
-    #
-
-    # Create the figure
-    fig,ax = plt.subplots(1,len(hypersurface.params))
-
-    # Choose an arbitrary bin for plotting
-    bin_idx = tuple([ 0 for i in range(hypersurface.binning.num_dims) ])
-
-    # Plot each param
-    for i,param in enumerate(hypersurface.params.values()) :
-
-        plot_ax = ax if len(hypersurface.params) == 1 else ax[i]
-
-        plot_bin_fits(
-            ax=plot_ax,
-            hypersurface=hypersurface,
-            bin_idx=bin_idx,
-            param_name=param.name,
-            show_nominal=True,
-        )
-
-    # Format
-    fig.tight_layout()
-
-
-    # Save
-    fig_file_path = "hypersurface_1d.pdf"
-    fig.savefig(fig_file_path)
-    logging.info("Figure saved : %s" % fig_file_path)
-
-
-    #
-    # 2D plot
-    #
-
-    if len(hypersurface.params) > 1 :
-        # Create the figure
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-
-        # Plot
-        plot_bin_fits_2d(
-            ax=ax,
-            hypersurface=hypersurface,
-            bin_idx=bin_idx,
-            param_names=["foo","bar"],
-        )
-
-        # Format
-        fig.tight_layout()
-
-        # Save
-        fig_file_path = "hypersurface_2d.pdf"
-        fig.savefig(fig_file_path)
-        logging.info("Figure saved : %s" % fig_file_path)
-
+    logging.debug("... setting and getting coefficients was successful!")
+    logging.info('<< PASS : test_hypersurface_basics >>')
 
 # Run the examp'es/tests
-if __name__ == "__main__" : 
-    hypersurface_example()
+if __name__ == "__main__":
+    set_verbosity(2)
+    test_hypersurface_basics()
+    test_hypersurface_uncertainty()
