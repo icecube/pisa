@@ -43,7 +43,7 @@ __all__ = [
     'OMP_TEST_PROGRAM',
     'check_openmp',
     'CustomBuild',
-     'CustomBuildExt',
+    'CustomBuildExt',
     'do_setup',
 ]
 
@@ -288,7 +288,8 @@ def do_setup():
 
                 # Scripts in pisa_tests dir
                 'pisa-test_changes_with_combined_pidreco = pisa_tests.test_changes_with_combined_pidreco:main',
-                'pisa-test_example_pipelines = pisa_tests.test_example_pipelines:main'
+                'pisa-test_example_pipelines = pisa_tests.test_example_pipelines:main',
+                'pisa-run_unit_tests = pisa_tests.run_unit_tests:run_unit_tests',
             ]
         }
     )

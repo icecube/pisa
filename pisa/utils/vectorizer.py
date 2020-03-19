@@ -178,13 +178,13 @@ def sqrt_gufunc(vals, out):
 def replace_where_counts_gt(vals, counts, min_count, out):
     """Replace `out[i]` with `vals[i]` where `counts[i]` > `min_count`"""
     replace_where_counts_gt_gufunc(
-        counts.get(WHERE),
-        min_count,
         vals.get(WHERE),
+        counts.get(WHERE),
+        FTYPE(min_count),
         out=out.get(WHERE),
     )
 
-@guvectorize([f'({FX}[:], {FX}[:], i4, {FX}[:])'], '(), (), () -> ()', target=TARGET)
+@guvectorize([f'({FX}[:], {FX}[:], {FX}, {FX}[:])'], '(), (), () -> ()', target=TARGET)
 def replace_where_counts_gt_gufunc(vals, counts, min_count, out):
     """Replace `out[i]` with `vals[i]` where `counts[i]` > `min_count`"""
     if counts[0] > min_count:

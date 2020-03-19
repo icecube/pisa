@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6,]
+        python-version: [3.6, 3.7]
 
     steps:
     - uses: actions/checkout@v2
@@ -34,11 +34,9 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test pisa
+    - name: Test PISA example pipelines
       run: |
-        ./pisa_tests/test_command_lines.sh
-        
-#     - name: Test with pytest
-#       run: |
-#         pip install pytest
-#         pytest
+        pisa-test_example_pipelines -v
+    - name: Test PISA imports and unit tests
+      run: |
+        pisa-run_unit_tests -v

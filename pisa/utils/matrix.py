@@ -116,8 +116,10 @@ def fronebius_nearest_psd(A, return_distance=False):
         return X, dist
     return X
 
-def test_frob_psd(A):
-    """Test approximation of Frobenius-closest PSD on given matrix
+def check_frob_psd(A):
+    """Check approximation of Frobenius-closest PSD on given matrix.
+    
+    This is not a unit test.
     
     Parameters
     ----------
@@ -136,10 +138,10 @@ def test_matrix_random():
     approximated matrix is indeed PSD.
     """
     m_test = np.array([[1, -1], [2, 4]])
-    test_frob_psd(m_test)
+    check_frob_psd(m_test)
     for i in range(100):
         m_test = np.random.randn(3, 3)
-        test_frob_psd(m_test)
+        check_frob_psd(m_test)
     logging.info('<< PASS : test_matrix_random >>')
 
 if __name__ == '__main__':
