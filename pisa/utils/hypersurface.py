@@ -183,11 +183,11 @@ class logarithmic_hypersurface_func(object):
     def __init__(self):
         self.nargs = 1
 
-    def __call__(p, m, out):
+    def __call__(self, p, m, out):
         result = np.log(1 + m*p)
         np.copyto(src=result, dst=out)
 
-    def grad(p, m, out):
+    def grad(self, p, m, out):
         # because parameters and coefficients both appear, everything is broadcast automatically
         result = np.array([p/(1 + m*p)])[:, np.newaxis]
         np.copyto(src=result, dst=out)
