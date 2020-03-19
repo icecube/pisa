@@ -1560,7 +1560,8 @@ class HypersurfaceParam(object):
         Evaluate the functional form for the given `param` values.
         Uses the current values of the fit coefficients.
 
-        By default evaluates all bins, but optionally can specify a particular bin (used when fitting).
+        By default evaluates all bins, but optionally can specify a particular bin (used
+        when fitting).
         '''
 
         # TODO properly use SmartArrays
