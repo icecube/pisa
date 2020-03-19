@@ -1235,15 +1235,6 @@ class Hypersurface(object):
             " (using legacy data)" if self.using_legacy_data else "")
         return collections.OrderedDict([(name, param.fit_param_values) for name, param in list(self.params.items())])
 
-    @property
-    def num_fit_sets(self):
-        '''
-        Return number of datasets used for fitting
-        '''
-        assert self.fit_info_stored, "Cannot get fit datasets, fit info not stored%s" % (
-            " (using legacy data)" if self.using_legacy_data else "")
-        return list(self.params.values())[0].num_fit_sets
-
     def get_nominal_mask(self):
         '''
         Return a mask indicating which datasets have nominal values for all parameters
