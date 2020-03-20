@@ -5,7 +5,7 @@
   * Call functions and methods using full keyword names. E.g.:<br>`my_function(x=1, y=2, z='blahblah')`
   * Avoid positional arguments wherever possible and reasonable (both for Python methods/functions and for command-line interfaces)
   * Always give the user double-dash (`--three-word-arg`) command-line keyword options. Separate words in the option with single-dashes, *not* underscores. Optionally provide single-dash/single-letter options (`-a`) in addition to the double-sash keyword options.
-  * Always import matplotlib such that it is usable on headless servers (i.e. without X). To achieve this, prior to any other matplotlib imports, use either `import matplotlib as mpl; mpl.use('Agg')` (for png output) or `import matplotlib as mpl; mpl.use('pdf')` (for pdf output).
+  * To use matplotlib on a headless server, you can specify at the command line the environment variable `MPLBACKEND=agg` or `=pdf`, etc.
 
 # Naming conventions
 * Stage/service naming: see [creating a service](creating_a_service). (Note that the all-lower-case class naming scheme for services is one of the few exceptions we make to the general Python conventions above.)

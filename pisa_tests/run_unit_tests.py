@@ -1,23 +1,34 @@
 #!/usr/bin/env python
-# pylint: disable=exec-used, eval-used
+# pylint: disable=exec-used, eval-used, logging-format-interpolation, logging-not-lazy
 
 
 """
 Find and run PISA unit test functions
 """
 
+from __future__ import absolute_import
 
-from argparse import ArgumentParser
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from os import walk
 from os.path import dirname, expanduser, expandvars, isfile, join, relpath
+import sys
 
 import pisa
 from pisa.utils.fileio import nsort_key_func
 from pisa.utils.log import Levels, logging, set_verbosity
 
+pycuda, nbcuda = None, None  # pylint: disable=invalid-name
+if pisa.TARGET == "cuda":
+    try:
+        import pycuda
+    except Exception:
+        pass
 
-# TODO: is it a problem to leave already-imported modules imported? I.e., any
-# issues we might miss from not doing a "fresh" import of a module?
+    # See TODO below
+    # try:
+    #    from numba import cuda as nbcuda
+    # except Exception:
+    #    pass
 
 
 __all__ = ["PISA_PATH", "run_unit_tests", "find_unit_tests", "find_unit_tests_in_file"]
@@ -41,9 +52,20 @@ __license__ = """Copyright (c) 2020, The IceCube Collaboration
 
 
 PISA_PATH = dirname(pisa.__file__)
+OPTIONAL_DEPS = (
+    "pandas",
+    "emcee",
+    "pycuda",
+    "pycuda.driver",
+    "ROOT",
+    "libPyROOT",
+    "MCEq",
+    "nuSQUIDSpy",
+)
+PFX = "[T] "
 
 
-def run_unit_tests(path=PISA_PATH, verbosity=Levels.WARN):
+def run_unit_tests(path=PISA_PATH, allow_missing=OPTIONAL_DEPS, verbosity=Levels.WARN):
     """Run all tests found at `path` (or recursively below if `path` is a
     directory).
 
@@ -58,20 +80,30 @@ def run_unit_tests(path=PISA_PATH, verbosity=Levels.WARN):
     path : str
         Path to file or directory
 
+    allow_missing : None or sequence of str
+
+    verbosity : int in pisa.utils.log.Levels
+
     Raises
     ------
     Exception
-        If any import or test fails
+        If any import or test fails not in `allow_missing`
 
     """
     path = expanduser(expandvars(path))
+    if allow_missing is None:
+        allow_missing = []
+    elif isinstance(allow_missing, str):
+        allow_missing = [allow_missing]
 
     tests = find_unit_tests(path)
 
     module_pypaths_succeeded = []
     module_pypaths_failed = []
+    module_pypaths_failed_ignored = []
     test_pypaths_succeeded = []
     test_pypaths_failed = []
+    test_pypaths_failed_ignored = []
 
     for rel_file_path, test_func_names in tests.items():
         pypath = ["pisa"] + rel_file_path[:-3].split("/")
@@ -83,19 +115,31 @@ def run_unit_tests(path=PISA_PATH, verbosity=Levels.WARN):
             cmd = f"from {parent_pypath} import {module}"
 
             set_verbosity(verbosity)
-            logging.info(f'exec("{cmd}") ...')
+            logging.info(PFX + f'exec("{cmd}")')
 
             set_verbosity(Levels.WARN)
             exec(cmd)
 
         except Exception as err:
+            if (
+                isinstance(err, ImportError)
+                and hasattr(err, "name")
+                and err.name in allow_missing  # pylint: disable=no-member
+            ):
+                err_name = err.name  # pylint: disable=no-member
+                module_pypaths_failed_ignored.append(module_pypath)
+                logging.warning(
+                    PFX + f"module {err_name} failed to load, but ok to ignore"
+                )
+                continue
+
             module_pypaths_failed.append(module_pypath)
 
             set_verbosity(verbosity)
             msg = f"<< FAILURE IMPORTING : {module_pypath} >>"
-            logging.error("=" * len(msg))
-            logging.error(msg)
-            logging.error("=" * len(msg))
+            logging.error(PFX + "=" * len(msg))
+            logging.error(PFX + msg)
+            logging.error(PFX + "=" * len(msg))
 
             # Reproduce the failure with full output
             set_verbosity(Levels.TRACE)
@@ -108,7 +152,7 @@ def run_unit_tests(path=PISA_PATH, verbosity=Levels.WARN):
             logging.exception(err)
 
             set_verbosity(verbosity)
-            logging.error("#" * len(msg))
+            logging.error(PFX + "#" * len(msg))
 
             continue
 
@@ -122,25 +166,39 @@ def run_unit_tests(path=PISA_PATH, verbosity=Levels.WARN):
                 func_pypath = f"{module}.{test_func_name}"
 
                 set_verbosity(verbosity)
-                logging.debug(f"Retrieving function: {func_pypath} ...")
+                logging.debug(PFX + f"eval({func_pypath})")
 
                 set_verbosity(Levels.WARN)
                 test_func = eval(func_pypath)
 
                 set_verbosity(verbosity)
-                logging.debug(f"Running function: {func_pypath}() ...")
+                logging.info(PFX + f"{test_pypath}()")
 
                 set_verbosity(Levels.WARN)
                 test_func()
 
             except Exception as err:
+                if (
+                    isinstance(err, ImportError)
+                    and hasattr(err, "name")
+                    and err.name in allow_missing  # pylint: disable=no-member
+                ):
+                    err_name = err.name  # pylint: disable=no-member
+                    test_pypaths_failed_ignored.append(module_pypath)
+                    logging.warning(
+                        PFX
+                        + f"{test_pypath} failed because module {err_name} failed to"
+                        + f" load, but ok to ignore"
+                    )
+                    continue
+
                 test_pypaths_failed.append(test_pypath)
 
                 set_verbosity(verbosity)
                 msg = f"<< FAILURE RUNNING : {test_pypath} >>"
-                logging.error("=" * len(msg))
-                logging.error(msg)
-                logging.error("=" * len(msg))
+                logging.error(PFX + "=" * len(msg))
+                logging.error(PFX + msg)
+                logging.error(PFX + "=" * len(msg))
 
                 # Reproduce the error with full output
 
@@ -155,26 +213,67 @@ def run_unit_tests(path=PISA_PATH, verbosity=Levels.WARN):
                 logging.exception(err)
 
                 set_verbosity(verbosity)
-                logging.error("#" * len(msg))
+                logging.error(PFX + "#" * len(msg))
 
             else:
                 test_pypaths_succeeded.append(test_pypath)
+
+            finally:
+                # remove references to the test function, e.g. to remove refs
+                # to pycuda / numba.cuda contexts so these can be closed
+                try:
+                    del test_func
+                except NameError:
+                    pass
+
+        # NOTE: Until we get all GPU code into Numba, need to unload pycuda
+        # and/or numba.cuda contexts before a module requiring the other one is
+        # to be imported.
+        # NOTE: the following causes a traceback to be emitted at the very end
+        # of the script, regardless of the exception catching here.
+        if (
+            pisa.TARGET == "cuda"
+            and pycuda is not None
+            and hasattr(pycuda, "autoinit")
+            and hasattr(pycuda.autoinit, "context")
+        ):
+            try:
+                pycuda.autoinit.context.detach()
+            except Exception:
+                pass
+
+        # Attempt to unload the imported module
+
+        if module in sys.modules:
+            del sys.modules[module]
+        exec(f"del {module}")
+
+        # TODO: crashes program; subseqeunt calls in same shell crash(!?!?)
+        # if pisa.TARGET == 'cuda' and nbcuda is not None:
+        #    try:
+        #        nbcuda.close()
+        #    except Exception:
+        #        pass
 
     # Summarize results
 
     n_import_successes = len(module_pypaths_succeeded)
     n_import_failures = len(module_pypaths_failed)
+    n_import_failures_ignored = len(module_pypaths_failed_ignored)
     n_test_successes = len(test_pypaths_succeeded)
     n_test_failures = len(test_pypaths_failed)
+    n_test_failures_ignored = len(test_pypaths_failed_ignored)
 
     set_verbosity(verbosity)
     logging.info(
-        f"<< IMPORT TESTS : {n_import_successes} modules loaded,"
-        f" {n_import_failures} modules failed to load >>"
+        PFX + f"<< IMPORT TESTS : {n_import_successes} imported,"
+        f" {n_import_failures} failed,"
+        f" {n_import_failures_ignored} failed to import but ok to ignore >>"
     )
     logging.info(
-        f"<< UNIT TESTS : {n_test_successes} tests succeeded,"
-        f" {n_test_failures} tests failed >>"
+        PFX + f"<< UNIT TESTS : {n_test_successes} succeeded,"
+        f" {n_test_failures} failed,"
+        f" {n_test_failures_ignored} failed but ok to ignore >>"
     )
 
     # Exit with error if any failures (import or unit test)
@@ -191,7 +290,13 @@ def run_unit_tests(path=PISA_PATH, verbosity=Levels.WARN):
                 f"{n_test_failures} unit test(s) failed:\n  "
                 + ", ".join(test_pypaths_failed)
             )
-        raise Exception("\n".join(msgs))
+
+        # Note the extra newlines before the exception to make it stand out;
+        # and newlines after the exception are due to the pycuda error message
+        # that is emitted when we call pycuda.autoinit.context.detach()
+        sys.stdout.flush()
+        sys.stderr.write("\n\n\n")
+        raise Exception("\n".join(msgs) + "\n\n\n")
 
 
 def find_unit_tests(path):
@@ -216,7 +321,9 @@ def find_unit_tests(path):
 
     tests = {}
     if isfile(path):
-        return find_unit_tests_in_file(path)
+        filerelpath = relpath(path, start=PISA_PATH)
+        tests[filerelpath] = find_unit_tests_in_file(path)
+        return tests
 
     for dirpath, dirs, files in walk(path, followlinks=True):
         files.sort(key=nsort_key_func)
@@ -257,8 +364,22 @@ def find_unit_tests_in_file(filepath):
 
 def main(description=__doc__):
     """Script interface to `run_unit_tests` function"""
-    parser = ArgumentParser(description=description)
-    parser.add_argument("--path", default=PISA_PATH)
+    parser = ArgumentParser(
+        description=description, formatter_class=ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "path",
+        nargs="?",
+        default=PISA_PATH,
+        help="""Specify a specific path to a file or directory in which to find
+        and run unit tests""",
+    )
+    parser.add_argument(
+        "--allow-missing",
+        nargs="+",
+        default=list(OPTIONAL_DEPS),
+        help="""Allow ImportError (or subclasses) for these modules""",
+    )
     parser.add_argument(
         "-v", action="count", default=Levels.WARN, help="set verbosity level"
     )

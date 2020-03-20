@@ -1,4 +1,4 @@
-# pylint: disable = not-callable, bad-whitespace
+# pylint: disable = not-callable, bad-whitespace, invalid-name
 '''Neutrino flavour oscillation in matter calculation
 Based on the original prob3++ implementation of Roger Wendell
 http://www.phy.duke.edu/~raw22/public/Prob3++/ (2012)
@@ -14,12 +14,35 @@ __all__ = ['get_transition_matrix',
           ]
 __version__ = '0.1'
 
-import math, cmath
+import cmath
+import math
 import numpy as np
-from numba import jit, float64, complex64, int32, float32, complex128, guvectorize
+from numba import guvectorize
 
 from pisa import FTYPE, TARGET
-from pisa.utils.numba_tools import myjit, conjugate_transpose, conjugate, matrix_dot_matrix, matrix_dot_vector, clear_matrix, copy_matrix, cuda, ctype, ftype
+from pisa.utils.numba_tools import (
+    myjit,
+    conjugate_transpose,
+    conjugate,
+    matrix_dot_matrix,
+    matrix_dot_vector,
+    clear_matrix,
+    copy_matrix,
+    cuda,
+    ctype,
+    ftype,
+)
+
+
+if FTYPE == np.float64:
+    FX = "f8"
+    CX = "c16"
+elif FTYPE == np.float32:
+    FX = "f4"
+    CX = "c8"
+else:
+    raise TypeError(str(FTYPE))
+
 
 @myjit
 def get_H_vac(mix_nubar, mix_nubar_conj_transp, dm_vac_vac, H_vac):
@@ -822,24 +845,25 @@ def test_osc_probs_layers_kernel():
 
 # define numba functions
 
-if FTYPE == np.float64:
-    signature = '(f8[:,:], c16[:,:], c16[:,:], i4, f8, f8[:], f8[:], f8[:,:])'
-    signature_vac = '(f8[:,:], c16[:,:], i4, f8, f8[:], f8[:,:])'
-    signature_fill = '(f8[:,:], i4, i4, f8[:])'
-else:
-    signature = '(f4[:,:], c8[:,:], c8[:,:], i4, f4, f4[:], f4[:], f4[:,:])'
-    signature_vac = '(f4[:,:], c8[:,:], i4, f4, f4[:], f4[:,:])'
-    signature_fill = '(f4[:,:], i4, i4, f4[:])'
-
-@guvectorize([signature], '(a,b),(c,d),(e,f),(),(),(g),(h)->(a,b)', target=TARGET)
+@guvectorize(
+    [f'({FX}[:,:], {CX}[:,:], {CX}[:,:], i4, {FX}, {FX}[:], {FX}[:], {FX}[:,:])'],
+    '(a,b), (c,d), (e,f), (), (), (g), (h) -> (a,b)',
+    target=TARGET,
+)
 def propagate_array(dm, mix, nsi_eps, nubar, energy, densities, distances, probability):
     osc_probs_layers_kernel(dm, mix, nsi_eps, nubar, energy, densities, distances, probability)
 
-@guvectorize([signature_vac], '(a,b),(c,d),(),(),(i)->(a,b)', target=TARGET)
+
+@guvectorize(
+    [f'({FX}[:,:], {CX}[:,:], i4, {FX}, {FX}[:], {FX}[:,:])'],
+    '(a,b), (c,d), (), (), (i) -> (a,b)',
+    target=TARGET,
+)
 def propagate_array_vacuum(dm, mix, nubar, energy, distances, probability):
     osc_probs_vacuum_kernel(dm, mix, nubar, energy, distances, probability)
 
-@guvectorize([signature_fill], '(a,b),(),()->()', target=TARGET)
+
+@guvectorize([f'({FX}[:,:], i4, i4, {FX}[:])'], '(a,b), (), () -> ()', target=TARGET)
 def fill_probs(probability, initial_flav, flav, out):
     out[0] = probability[initial_flav,flav]
 

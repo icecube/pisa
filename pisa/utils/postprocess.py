@@ -9,6 +9,7 @@ from collections import OrderedDict
 import os
 import re
 import sys
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import spearmanr
 
@@ -819,7 +820,6 @@ class Postprocessor(object):
     def make_nminusone_systtests_plots(self, data, injkey):
         """Make the N-1 test plots showing the importance of
         the systematics."""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
 
         mkdir(self.outdir)
@@ -1295,7 +1295,6 @@ class Postprocessor(object):
         
     def make_asimov_significance_plots(self):
         """Makes the Asimov significance plots."""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         outdir = os.path.join(self.outdir, 'Significances')
         mkdir(outdir)
@@ -1384,7 +1383,6 @@ class Postprocessor(object):
         """Makes the plots of the fitted parameters in the injected
         parameter scans. The combined argument will plot these on the
         same canvas for the same hypothesis fit."""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         
         if combined:
@@ -1497,7 +1495,6 @@ class Postprocessor(object):
     def make_scatter_plots(self, combined=False,
                            singlesyst=False, matrix=False):
         """Make scatter plots."""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         if matrix:
             if combined or singlesyst:
@@ -1723,7 +1720,6 @@ class Postprocessor(object):
         """Make posterior plots. With combined=False they will be saved
         each time but with combined=True they will be saved on a single
         canvas for each fiducial/hypothesis combination."""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
 
         if combined:
@@ -1827,7 +1823,6 @@ class Postprocessor(object):
         pseudos. With combined=False they will be saved each time but
         with combined=True they will be saved on a single canvas for
         each fiducial hypothesis."""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
 
         if combined:
@@ -1984,7 +1979,6 @@ class Postprocessor(object):
     def add_prior_region(self, systkey, injkey=None, fhkey=None,
                          smalllabel=False):
         """Add a shaded region to show the 1 sigma band of the prior"""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         # TODO - Deal with non-gaussian priors
         # Adding priors to 1D scan plots
@@ -2053,7 +2047,6 @@ class Postprocessor(object):
     def add_inj_fid_lines(self, injkey, systkey, fhkey, smalllabel=False):
         """Add lines to show the injected and fiducial fit lines
         where appropriate"""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         h0_params, h1_params = self.get_resulting_hypo_params(
             injkey=injkey
@@ -2156,7 +2149,6 @@ class Postprocessor(object):
         minimiser. This is a good cross-check of pseudo-experiments that
         the minimiser did not end abruptly since you would see significant
         pile-up if it did."""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
 
         outdir = os.path.join(self.outdir, 'MinimiserPlots')
@@ -2292,7 +2284,6 @@ class Postprocessor(object):
     def add_extra_points(self, ymax=None):
         """Add extra points specified by self.extra_points and label them
         with self.extra_points_labels`"""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
 
         if self.test_type == 'analysis':
@@ -2454,7 +2445,6 @@ class Postprocessor(object):
                             greater=True, cls=False):
         """Plot the llr histograms. The `greater` argument is intended to be
         used the same as in the p value function above."""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
 
         for llrarray, label, color in zip(llrarrays, labels, colors):
@@ -2564,7 +2554,6 @@ class Postprocessor(object):
         extra_points and extra_points_labels arguments can be used to specify
         extra points to be added to the plot for e.g. other fit llr values.
         """
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
 
         outdir = os.path.join(self.outdir, 'LLRDistributions')
@@ -4242,7 +4231,6 @@ class Postprocessor(object):
         """Makes the 1D scan plots. The x values as well as their
         labels/units can be specified here, or else they will be generated
         from what is stored in self"""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         if xvals is None:
             xvals = self.all_bin_cens[0]
@@ -4297,7 +4285,6 @@ class Postprocessor(object):
         """Makes the 2D scan plots. The x and y bins as well as their
         labels/units can be specified here, or else they will be generated
         from what is stored in self"""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         if xbins is None:
             xbins = self.all_bin_edges[0]
@@ -4517,7 +4504,6 @@ class Postprocessor(object):
         self.values[injkey][fhkey] on to whatever is currently in
         plt. The idea is to overlay them on top of contours, so it
         will find the appropriate dimensions from xlabel and ylabel."""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         xdata = self.values[injkey][fhkey][xlabel]
         ydata = self.values[injkey][fhkey][ylabel]
@@ -4530,7 +4516,6 @@ class Postprocessor(object):
 
     def make_other_contour(self, contour_vals, xlabel, ylabel,
                            contour_dict, do_label=1):
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         """Makes the actual other contour plot. The do_label argument sets
         whether to label it or not. This allows multiple contours to have
@@ -4602,7 +4587,6 @@ class Postprocessor(object):
     def add_other_contours(self, xlabel, ylabel):
         """Adds the other contours stored in self.contours_dict to the
         plot if they exist and if the variables match."""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         for contour_dict in self.contour_dicts:
             if (xlabel in contour_dict['vars']) and \
@@ -4697,7 +4681,6 @@ class Postprocessor(object):
         """Generic 1D histogram plotting function. Set subplots_adjust to
         True if the title goes over two lines and you need the plot to
         account for this."""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         plt.grid(axis='y', zorder=0)
         plt.hist(
@@ -4731,7 +4714,6 @@ class Postprocessor(object):
         the edges of the xvals unless overwritten. Set this to None to
         leave it as matplotlib dictates. The y limits will be left alone
         unless overwritten."""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         plt.plot(
             xvals,
@@ -4780,7 +4762,6 @@ class Postprocessor(object):
         self.tex_axis_label to the string passed in either xlabel, ylabel
         or zlabel. Set xxvals/xyvals and yxvals/yyvals to add 1D projections
         to the edges of the plots."""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         if (xxvals is not None) or (xyvals is not None):
             if not ((xxvals is not None) and (xyvals is not None)):
@@ -4950,12 +4931,8 @@ class Postprocessor(object):
     def add_annotation_to_2d_hist(self, annotations):
         """Adds annotations to bins of 2D hist. Expects to be able
         to import PathEffects and will fail if it can't."""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
-        try:
-            import matplotlib.patheffects as PathEffects
-        except:
-            raise ImportError()
+        import matplotlib.patheffects as PathEffects
 
         for i in range(0, len(annotations)):
             for j in range(0, len(annotations[0])):
@@ -4974,7 +4951,6 @@ class Postprocessor(object):
                              subplotnum=None, num_rows=None,
                              plot_cor=True, set_range=True):
         """Generic 2D scatter plotting function."""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
 
         if not set_range:
@@ -5077,7 +5053,6 @@ class Postprocessor(object):
     def save_plot(self, outdir, end, fid=None, hypo=None,
                   fhkey=None, truth=None):
         """Save plot as each type of file format specified in self.formats"""
-        import matplotlib.pyplot as plt
         plt.rcParams['text.usetex'] = True
         save_name = ""
         if hasattr(self, 'labels') and \

@@ -11,6 +11,7 @@ from collections.abc import Iterable, Sequence
 from collections import OrderedDict
 import decimal
 from numbers import Integral, Number
+import os
 import re
 import time
 
@@ -19,7 +20,7 @@ import uncertainties
 
 from pisa import FTYPE, ureg
 from pisa.utils.flavInt import NuFlavIntGroup
-from pisa.utils.log import logging, set_verbosity
+from pisa.utils.log import Levels, logging, set_verbosity
 
 
 __all__ = [
@@ -1507,6 +1508,15 @@ def timestamp(d=True, t=True, tz=True, utc=False, winsafe=False):
     """Simple utility to print out a time, date, or time+date stamp for the
     time at which the function is called.
 
+    Calling via defaults (explcitly provided here for reference) .. ::
+
+        timestamp(d=True, t=True, tz=True, utc=False, winsafe=False)
+
+    should be equivalent to the shell command .. ::
+
+        date +'%Y-%m-%dT%H:%M:%S%z'
+
+
     Parameters
     ----------:
     d : bool
@@ -1553,12 +1563,23 @@ def timestamp(d=True, t=True, tz=True, utc=False, winsafe=False):
 
 def test_timestamp():
     """Unit tests for timestamp function"""
-    print(timestamp())
+    date_cmd = "date +'%Y-%m-%dT%H:%M:%S%z'"
+
+    # In case we call these on either side of a second, repeat a few times if not equal
+    for _ in range(10):
+        ref = os.popen(date_cmd).read().strip()
+        test = timestamp(winsafe=False)
+        if test == ref:
+            break
+        time.sleep(0.05)
+
+    assert test == ref, f'{date_cmd} = "{ref}" but timestamp = "{test}"'
+
     logging.info('<< PASS : test_timestamp >>')
 
 
 if __name__ == '__main__':
-    set_verbosity(1)
+    set_verbosity(Levels.INFO)
     test_hr_range_formatter()
     test_list2hrlist()
     test_format_num()

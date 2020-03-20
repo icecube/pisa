@@ -11,8 +11,6 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import os
 
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 plt.rcParams['text.usetex'] = True
 import matplotlib.colors as colors
