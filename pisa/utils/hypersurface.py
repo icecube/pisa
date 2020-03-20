@@ -45,7 +45,7 @@ from pisa.core.binning import OneDimBinning, MultiDimBinning, is_binning
 from pisa.core.map import Map
 from pisa.utils.fileio import mkdir
 from pisa.utils.log import logging, set_verbosity
-
+from pisa.utils.comparisons import ALLCLOSE_KW
 from uncertainties import ufloat, correlated_values
 from uncertainties import unumpy as unp
 
@@ -110,6 +110,7 @@ class quadratic_hypersurface_func(object):
         result = m1*p + m2*p**2
         np.copyto(src=result, dst=out)
     # the gradient *must* have all these arguments, even if they are un-used!
+
     def grad(self, p, m1, m2, out):
         # because m itself is not in the actual calculation, we have to broadcast
         # manually to yield the same shape as if we had done m*p and stacked on the last
@@ -348,7 +349,7 @@ class HypersurfaceInterpolator(object):
         for bin_idx in np.ndindex(state['fit_cov_mat'].shape[:-2]):
             m = state['fit_cov_mat'][bin_idx]
             assert np.allclose(
-                m, m.T), f'cov matrix not symmetric in bin {bin_idx}'
+                m, m.T, rtol=ALLCLOSE_KW['rtol']*10.), f'cov matrix not symmetric in bin {bin_idx}'
             if not matrix.is_psd(m):
                 state['fit_cov_mat'][bin_idx] = matrix.fronebius_nearest_psd(m)
                 if not bin_idx in self.covar_bins_warning_issued:
@@ -442,7 +443,7 @@ class HypersurfaceInterpolator(object):
             # since there are no corrections on the fitted coefficients, there
             # really should not be a difference between the original splines and
             # the coefficients in the hypersurface. If there are, there is a bug.
-            if not np.allclose(z_plot, z_slice):
+            if not np.allclose(z_plot, z_slice, rtol=ALLCLOSE_KW['rtol']*10.):
                 ax[i, 0].plot(x_plot, z_slice, label='actual output')
             ax[i, 0].scatter(self._x, self._coeff_z[bin_idx][i],
                              color='k', marker='x', label='truth')
@@ -457,7 +458,7 @@ class HypersurfaceInterpolator(object):
                 ax[i, j+1].scatter(self._x, self._covar_z[bin_idx][coeff_idx],
                                    color='k', marker='x', label='truth')
                 z_slice = covar_slices[bin_idx][coeff_idx]
-                if not np.allclose(z_plot, z_slice):
+                if not np.allclose(z_plot, z_slice, rtol=ALLCLOSE_KW['rtol']*10.):
                     ax[i, j+1].plot(x_plot, z_slice,
                                     label='after psd correction')
 
@@ -1248,9 +1249,9 @@ class Hypersurface(object):
             self.binning.shape) if bin_idx is None else [bin_idx]
         for bin_idx in bin_indices:
             msg += "  Bin %s :" % (bin_idx,) + "\n"
-            msg += "     Intercept : %0.3g" % (self.intercept[bin_idx],) + "\n"
+            msg += "     Intercept : %0.5g" % (self.intercept[bin_idx],) + "\n"
             for param in list(self.params.values()):
-                msg += "     %s : %s" % (param.name, ", ".join(["%0.3g" % param.get_fit_coefft(
+                msg += "     %s : %s" % (param.name, ", ".join(["%0.5g" % param.get_fit_coefft(
                     bin_idx=bin_idx, coefft_idx=cft_idx) for cft_idx in range(param.num_fit_coeffts)])) + "\n"
         msg += "<<<<<< Fit coefficients <<<<<<" + "\n"
 
@@ -2514,8 +2515,7 @@ def generate_asimov_testdata(binning, parameters, true_param_coeffs,
     assert set(hypersurface.params.keys()) == set(nominal_param_values.keys())
     assert set(hypersurface.params.keys()) == set(true_param_coeffs.keys())
 
-    hypersurface._init(
-        binning=binning, nominal_param_values=nominal_param_values)
+    hypersurface._init(binning=binning, nominal_param_values=nominal_param_values)
     from pisa.core.map import Map, MapSet
     for bin_idx in np.ndindex(binning.shape):
         for name, coeffs in true_param_coeffs.items():
@@ -2577,12 +2577,12 @@ def test_hypersurface_uncertainty(plot=False):
                                              is_lin=True
                                              )])
     # Define true coefficients
-    true_coeffs = {'foo': [0.4], 'bar': [0.2, -1.]}
-    true_intercept = 2.
+    true_coeffs = {'foo': [-0.4], 'bar': [0.5, 1.]}
+    true_intercept = 5.
     nominal_param_values = {'foo': 1., 'bar': 0.}
     # making combinations of systematic values
-    foo_vals = np.linspace(-1., 2., 6)
-    bar_vals = np.linspace(-.5, 0.5, 5)
+    foo_vals = np.linspace(-2., 2., 6)
+    bar_vals = np.linspace(-2, 1.5, 8)
     sys_param_values = []
     for f in foo_vals:
         for b in bar_vals:
@@ -2608,10 +2608,11 @@ def test_hypersurface_uncertainty(plot=False):
     # Report the results
     logging.debug("Fitted hypersurface report:\n%s" % hypersurface)
 
-    assert np.allclose(hypersurface.intercept, true_intercept)
+    assert np.allclose(hypersurface.intercept, true_intercept,
+                       rtol=ALLCLOSE_KW['rtol']*10.)
     for param_name in hypersurface.param_names:
         assert np.allclose(hypersurface.params[param_name].fit_coeffts,
-                           true_coeffs[param_name])
+                           true_coeffs[param_name], rtol=ALLCLOSE_KW['rtol']*10.)
     if plot:
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
@@ -2644,7 +2645,7 @@ def test_hypersurface_uncertainty(plot=False):
     logging.debug("Asimov true points:\n%s" % str(asimov_true_points))
     logging.debug("Asimov fit points:\n%s" % str(asimov_fit_points))
     logging.debug("Asimov fit error estimates:\n%s" % str(asimov_fit_errs))
-    assert np.allclose(asimov_true_points, asimov_fit_points)
+    assert np.allclose(asimov_true_points, asimov_fit_points, rtol=ALLCLOSE_KW['rtol']*10.)
     logging.debug("Fluctuating maps and re-fitting...")
     # do several rounds of fluctuation, re-fit and storage of results
     n_rounds = 100
@@ -2790,10 +2791,13 @@ def test_hypersurface_basics():
     # Check the fitted parameter values match the truth
     # This only works if `norm=False` in the `hypersurface.fit` call just above
     logging.debug("Checking fit recovered truth...")
-    assert np.allclose(hypersurface.intercept, true_hypersurface.intercept)
+    assert np.allclose(hypersurface.intercept,
+                       true_hypersurface.intercept, rtol=ALLCLOSE_KW['rtol']*10.)
     for param_name in hypersurface.param_names:
         assert np.allclose(hypersurface.params[param_name].fit_coeffts,
-                           true_hypersurface.params[param_name].fit_coeffts)
+                           true_hypersurface.params[param_name].fit_coeffts,
+                           rtol=ALLCLOSE_KW['rtol']*10.
+                           )
     logging.debug("... fit was successful!")
 
     # testing save/reload
@@ -2807,10 +2811,13 @@ def test_hypersurface_basics():
         logging.debug(
             "Checking saved and re-loaded hypersurfaces are identical...")
         assert np.allclose(hypersurface.intercept,
-                           reloaded_hypersurface.intercept)
+                           reloaded_hypersurface.intercept,
+                           rtol=ALLCLOSE_KW['rtol']*10.
+                           )
         for param_name in hypersurface.param_names:
             assert np.allclose(hypersurface.params[param_name].fit_coeffts,
-                               reloaded_hypersurface.params[param_name].fit_coeffts
+                               reloaded_hypersurface.params[param_name].fit_coeffts,
+                               rtol=ALLCLOSE_KW['rtol']*10.
                                )
         logging.debug("... save+re-load was successful!")
 
@@ -2819,10 +2826,12 @@ def test_hypersurface_basics():
     reloaded_hypersurface.fit_coeffts = coeffts
     logging.debug(
         "Checking hypersurfaces are identical after getting and setting coeffts...")
-    assert np.allclose(hypersurface.intercept, reloaded_hypersurface.intercept)
+    assert np.allclose(hypersurface.intercept, reloaded_hypersurface.intercept,
+                       rtol=ALLCLOSE_KW['rtol']*10.)
     for param_name in hypersurface.param_names:
         assert np.allclose(hypersurface.params[param_name].fit_coeffts,
-                           reloaded_hypersurface.params[param_name].fit_coeffts)
+                           reloaded_hypersurface.params[param_name].fit_coeffts,
+                           rtol=ALLCLOSE_KW['rtol']*10.)
     logging.debug("... setting and getting coefficients was successful!")
     logging.info('<< PASS : test_hypersurface_basics >>')
 
