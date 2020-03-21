@@ -1166,9 +1166,15 @@ class Hypersurface(object):
             # Get the observed value
             observed = self.fit_maps[i_set].nominal_values
             sigma = self.fit_maps[i_set].std_devs
+            # we have to apply the same condition on which values we include
+            # as we did during the fit above
+            valid_idx = sigma > 0.
+            if include_empty:
+                sigma[~valid_idx] = 1.
 
             # Compute chi2
-            chi2 = ((predicted - observed) / sigma) ** 2
+            with np.errstate(divide='ignore'):
+                chi2 = ((predicted - observed) / sigma) ** 2
 
             # Add to container
             self.fit_chi2.append(chi2)
