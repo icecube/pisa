@@ -122,32 +122,51 @@ class quadratic_hypersurface_func(object):
                           )
         np.copyto(src=result, dst=out)
 
-
 class exponential_hypersurface_func(object):
     '''
     Exponential hypersurface functional form
 
-    f(p) = a * exp(b*p)
+    f(p) = exp(b*p) - 1
 
-    Caution: This hypersurface function causes a degeneracy with
-    the intercept and you may not recover injected coefficients!
-    To fit hypersurfaces with exponential shapes, it is more robust
-    to use the log-mode.
+    The functional form ensures that it is zero at the nominal point.
+    '''
+
+    def __init__(self):
+        self.nargs = 1
+
+    def __call__(self, p, b, out):
+        result = np.exp(b*p) - 1.
+        np.copyto(src=result, dst=out)
+
+    def grad(self, p, b, out):
+        # because parameters and coefficients both appear, everything is broadcast
+        # automatically
+        result = np.array([p*np.exp(b*p)])[..., np.newaxis]
+        np.copyto(src=result, dst=out)
+
+class scaled_exponential_hypersurface_func(object):
+    '''
+    Exponential hypersurface functional form
+
+    f(p) = (a + 1) * (exp(b*p) - 1)
+
+    The functional form is chosen such that it is zero at the nominal point.
+    If a strong prior is imposed on a, it becomes equivalent to the un-scaled
+    exponential hypersurface function.
     '''
 
     def __init__(self):
         self.nargs = 2
 
     def __call__(self, p, a, b, out):
-        result = a * np.exp(b*p)
+        result = (a + 1.) * (np.exp(b*p) - 1.)
         np.copyto(src=result, dst=out)
 
     def grad(self, p, a, b, out):
         # because parameters and coefficients both appear, everything is broadcast
         # automatically
-        result = np.stack([np.exp(b*p), a*p*np.exp(b*p)], axis=-1)
+        result = np.stack([np.exp(b*p) - 1., (a + 1.)*p*np.exp(b*p)], axis=-1)
         np.copyto(src=result, dst=out)
-
 
 class logarithmic_hypersurface_func(object):
     '''
@@ -179,6 +198,7 @@ HYPERSURFACE_PARAM_FUNCTIONS = collections.OrderedDict()
 HYPERSURFACE_PARAM_FUNCTIONS["linear"] = linear_hypersurface_func
 HYPERSURFACE_PARAM_FUNCTIONS["quadratic"] = quadratic_hypersurface_func
 HYPERSURFACE_PARAM_FUNCTIONS["exponential"] = exponential_hypersurface_func
+HYPERSURFACE_PARAM_FUNCTIONS["exponential_scaled"] = scaled_exponential_hypersurface_func
 HYPERSURFACE_PARAM_FUNCTIONS["logarithmic"] = logarithmic_hypersurface_func
 
 
