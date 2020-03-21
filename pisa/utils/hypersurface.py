@@ -170,7 +170,7 @@ class logarithmic_hypersurface_func(object):
     def grad(self, p, m, out):
         # because parameters and coefficients both appear, everything is broadcast
         # automatically
-        result = np.array([p/(1 + m*p)])[:, np.newaxis]
+        result = np.array(p/(1 + m*p))[..., np.newaxis]
         np.copyto(src=result, dst=out)
 
 
