@@ -203,13 +203,13 @@ class pi_prob3(PiStage):
         # setup the layers
         #if self.params.earth_model.value is not None:
         earth_model = find_resource(self.params.earth_model.value)
-        YeI = self.params.YeI.value.m_as('dimensionless')
-        YeO = self.params.YeO.value.m_as('dimensionless')
-        YeM = self.params.YeM.value.m_as('dimensionless')
+        self.YeI = self.params.YeI.value.m_as('dimensionless')
+        self.YeO = self.params.YeO.value.m_as('dimensionless')
+        self.YeM = self.params.YeM.value.m_as('dimensionless')
         prop_height = self.params.prop_height.value.m_as('km')
         detector_depth = self.params.detector_depth.value.m_as('km')
         self.layers = Layers(earth_model, detector_depth, prop_height)
-        self.layers.setElecFrac(YeI, YeO, YeM)
+        self.layers.setElecFrac(self.YeI, self.YeO, self.YeM)
 
         # set the correct data mode
         self.data.data_specs = self.calc_specs

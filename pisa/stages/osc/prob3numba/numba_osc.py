@@ -66,7 +66,7 @@ def test_get_H_vac():
 
 
 @myjit
-def get_H_mat(rho, nsi_eps, nubar, H_mat):
+def get_H_mat(rho, mat_pot, nubar, H_mat):
     ''' Calculate matter Hamiltonian in flavor basis
 
     Parameters:
@@ -78,7 +78,7 @@ def get_H_mat(rho, nsi_eps, nubar, H_mat):
         since the number of grams per cm^3 corresponds to
         the number of moles of nucleons per cm^3)
 
-    nsi_eps : complex 2-d array
+    mat_pot : complex 2-d array
         general matter potential flavor structure
         (will be multiplied with "a" factor)
 
@@ -110,17 +110,17 @@ def get_H_mat(rho, nsi_eps, nubar, H_mat):
         for j in range(3):
             # matter potential V -> -V* for anti-neutrinos
             if nubar == -1:
-                H_mat[i, j] = -a * nsi_eps[i, j].conjugate()
+                H_mat[i, j] = -a * mat_pot[i, j].conjugate()
             elif nubar == 1:
-                H_mat[i, j] = a * nsi_eps[i, j]
+                H_mat[i, j] = a * mat_pot[i, j]
 
 def test_get_H_mat():
     rho = 1.
     nubar = -1
-    nsi_eps = np.ones(shape=(3,3), dtype=ctype)
+    mat_pot = np.ones(shape=(3,3), dtype=ctype)
     H_mat = np.ones(shape=(3,3), dtype=ctype)
 
-    get_H_mat(rho, nsi_eps, nubar, H_mat)
+    get_H_mat(rho, mat_pot, nubar, H_mat)
     #print(H_mat)
 
 
@@ -446,7 +446,7 @@ def get_transition_matrix(nubar,
                           baseline,
                           mix_nubar,
                           mix_nubar_conj_transp,
-                          nsi_eps,
+                          mat_pot,
                           H_vac,
                           dm,
                           transition_matrix):
@@ -469,7 +469,7 @@ def get_transition_matrix(nubar,
     mix_nubar_conj_transp : comjugate 2d-array
         conjugate transpose of mixing matrix
 
-    nsi_eps : 2d-array
+    mat_pot : 2d-array
 
     H_vac : 2d-array
 
@@ -495,7 +495,7 @@ def get_transition_matrix(nubar,
 
     # Compute the matter potential including possible generalised interactions
     # in the flavor basis
-    get_H_mat(rho, nsi_eps, nubar, H_mat)
+    get_H_mat(rho, mat_pot, nubar, H_mat)
 
     # Get the full Hamiltonian by adding together matter and vacuum parts
     one_over_two_e = 0.5 / energy
@@ -528,7 +528,7 @@ def test_get_transition_matrix():
     rho = 1.
     baseline = 1.
     mix_nubar = np.ones(shape=(3,3), dtype=ctype)
-    nsi_eps = np.ones(shape=(3,3), dtype=ctype)
+    mat_pot = np.ones(shape=(3,3), dtype=ctype)
     H_vac = np.ones(shape=(3,3), dtype=ctype)
     m = np.linspace(0,1,9, dtype=ftype)
     dm = m.reshape(3,3)
@@ -540,7 +540,7 @@ def test_get_transition_matrix():
                           baseline,
                           mix_nubar,
                           mix_nubar.conj().T,
-                          nsi_eps,
+                          mat_pot,
                           H_vac,
                           dm,
                           transition_matrix)
@@ -629,7 +629,7 @@ def osc_probs_vacuum_kernel(dm,
 @myjit
 def osc_probs_layers_kernel(dm,
                             mix,
-                            nsi_eps,
+                            mat_pot,
                             nubar,
                             energy,
                             density_in_layer,
@@ -651,7 +651,7 @@ def osc_probs_layers_kernel(dm,
     H_vac : complex 2-d array
         Hamiltonian in vacuum, without the 1/2E term
 
-    nsi_eps : 2d-array
+    mat_pot : 2d-array
         Generalised matter potential matrix without a factor
         (set to diag(1, 0, 0) for only standard oscillations)
 
@@ -754,7 +754,7 @@ def osc_probs_layers_kernel(dm,
                                           distance,
                                           mix_nubar,
                                           mix_nubar_conj_transp,
-                                          nsi_eps,
+                                          mat_pot,
                                           H_vac,
                                           dm,
                                           transition_matrix,
@@ -801,7 +801,7 @@ def osc_probs_layers_kernel(dm,
                                       distance,
                                       mix_nubar,
                                       mix_nubar_conj_transp,
-                                      nsi_eps,
+                                      mat_pot,
                                       H_vac,
                                       dm,
                                       transition_matrix,
@@ -834,7 +834,7 @@ def osc_probs_layers_kernel(dm,
 
 def test_osc_probs_layers_kernel():
     mix = np.ones(shape=(3,3), dtype=ctype)
-    nsi_eps = np.ones(shape=(3,3), dtype=ctype)
+    mat_pot = np.ones(shape=(3,3), dtype=ctype)
     M = np.linspace(0,1,9, dtype=ftype)
     dm = M.reshape(3,3)
     nubar = 1
@@ -846,7 +846,7 @@ def test_osc_probs_layers_kernel():
 
     osc_probs_layers_kernel(dm,
                             mix,
-                            nsi_eps,
+                            mat_pot,
                             nubar,
                             energy,
                             density_in_layer,
@@ -865,8 +865,8 @@ else:
     signature_fill = '(f4[:,:], i4, i4, f4[:])'
 
 @guvectorize([signature], '(a,b),(c,d),(e,f),(),(),(g),(h)->(a,b)', target=TARGET)
-def propagate_array(dm, mix, nsi_eps, nubar, energy, densities, distances, probability):
-    osc_probs_layers_kernel(dm, mix, nsi_eps, nubar, energy, densities, distances, probability)
+def propagate_array(dm, mix, mat_pot, nubar, energy, densities, distances, probability):
+    osc_probs_layers_kernel(dm, mix, mat_pot, nubar, energy, densities, distances, probability)
 
 @guvectorize([signature_vac], '(a,b),(c,d),(),(),(i)->(a,b)', target=TARGET)
 def propagate_array_vacuum(dm, mix, nubar, energy, distances, probability):
@@ -888,3 +888,4 @@ if __name__=='__main__':
     test_convert_from_mass_eigenstate()
     test_get_transition_matrix()
     test_osc_probs_layers_kernel()
+

@@ -1,5 +1,5 @@
 # author: T. Ehrhardt
-# date:   June 29, 2017
+# date:   2018
 """
 OscParams: Characterize neutrino oscillation parameters
            (mixing angles, Dirac-type CP-violating phase, mass splittings)
@@ -14,13 +14,19 @@ from __future__ import division
 import numpy as np
 
 from pisa import FTYPE
+A
+
+__all__ = ['OscParams']
+
 
 class OscParams(object):
     """
     Holds neutrino oscillation parameters, i.e., mixing angles, squared-mass
     differences, and a Dirac-type CPV phase. The neutrino mixing (PMNS) matrix
     constructed from these parameters is given in the standard
-    3x3 parameterization.
+    3x3 parameterization. Also holds the generalised matter potential matrix
+    (divided by the matter potential a), i.e. diag(1, 0, 0) for the standard
+    case.
 
     Parameters
     ----------
@@ -52,6 +58,15 @@ class OscParams(object):
         Neutrino mixing (PMNS) matrix in standard parameterization. The third
         dimension holds the real and imaginary parts of each matrix element.
 
+    mix_matrix_complex : 3d complex array
+
+    mix_matrix_reparam : 3d float array of shape (3, 3, 2)
+        Reparameterized neutrino mixing matrix, such that CPT invariance
+        of vacuum propagation implemented by 3 simultaneous osc. param.
+        transformations.
+
+    mix_matrix_reparam_complex : 3d complex array
+
     dm_matrix : 2d float array of shape (3, 3)
         Antisymmetric matrix of squared-mass differences in vacuum
 
@@ -66,10 +81,6 @@ class OscParams(object):
         self.dm21 = 0.
         self.dm31 = 0.
         self.dm41 = 0.
-        self.nsi_eps = np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3,3), dtype=FTYPE)
-        self.gamma21 = 0. # TODO Add full 3x3 matrix option, TODO update docs, TODO getters/setters to enforce values ranges?
-        self.gamma31 = 0.
-        self.gamma32 = 0.
 
     # --- theta12 ---
     @property
@@ -157,62 +168,6 @@ class OscParams(object):
     def deltacp(self, value):
         assert value >= 0. and value <= 2*np.pi
         self._deltacp = value
-
-    # --- NSI epsilons ---
-    @property
-    def eps_ee(self):
-        """nue-nue NSI coupling parameter"""
-        return self.nsi_eps[0, 0].real
-
-    @eps_ee.setter
-    def eps_ee(self, value):
-        self.nsi_eps[0, 0] = value + 1.j * self.nsi_eps[0, 0].imag
-
-    @property
-    def eps_emu(self):
-        """nue-numu NSI coupling parameter"""
-        return self.nsi_eps[1, 0].real
-
-    @eps_emu.setter
-    def eps_emu(self, value):
-        self.nsi_eps[1, 0] = value + 1.j * self.nsi_eps[1, 0].imag
-        self.nsi_eps[0, 1] = value + 1.j * self.nsi_eps[0, 1].imag
-
-    @property
-    def eps_etau(self):
-        """nue-nutau NSI coupling parameter"""
-        return self.nsi_eps[2, 0].real
-
-    @eps_etau.setter
-    def eps_etau(self, value):
-        self.nsi_eps[2, 0] = value + 1.j * self.nsi_eps[2, 0].imag
-        self.nsi_eps[0, 2] = value + 1.j * self.nsi_eps[0, 2].imag
-
-    @property
-    def eps_mumu(self):
-        return self.nsi_eps[1,1].real
-
-    @eps_mumu.setter
-    def eps_mumu(self, value):
-        self.nsi_eps[1,1] = value + 1.j * self.nsi_eps[1, 1].imag
-
-    @property
-    def eps_mutau(self):
-        return self.nsi_eps[1, 2].real
-
-    @eps_etau.setter
-    def eps_mutau(self, value):
-        self.nsi_eps[2, 1] = value + 1.j * self.nsi_eps[2, 1].imag
-        self.nsi_eps[1, 2] = value + 1.j * self.nsi_eps[1, 2].imag
-
-    @property
-    def eps_tautau(self):
-        return self.nsi_eps[2,2].real
-
-    @eps_tautau.setter
-    def eps_tautau(self, value):
-        self.nsi_eps[2,2] = value + 1.j * self.nsi_eps[2, 2].imag
-
 
     @property
     def mix_matrix(self):
@@ -333,3 +288,19 @@ class OscParams(object):
         dmVacVac[2, 1] = - dmVacVac[1, 2]
 
         return dmVacVac
+
+
+def test_pi_osc_params():
+    """
+    # TODO: implement me!
+    """
+    pass
+
+
+if __name__=='__main__':
+    from pisa import TARGET
+    from pisa.utils.log import set_verbosity, logging
+    assert TARGET == 'cpu', "Cannot test functions on GPU, set PISA_TARGET to 'cpu'"
+    set_verbosity(1)
+    test_pi_osc_params()
+

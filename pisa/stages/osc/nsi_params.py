@@ -1,9 +1,9 @@
 # author: T. Ehrhardt
-# date:   June 28, 2017
+# date:   Nov 8, 2018
 """
 NSIParams: Characterize non-standard neutrino interaction coupling strengths
 
-changed by Elisa Lohfink (ellohfin; elohfink@icecube.wisc.edu)
+merged in by Elisa Lohfink (ellohfin; elohfink@icecube.wisc.edu)
 to include NSI changes made by Thomas Ehrhardt on his branch:
 original version can be found in thehrh/pisa nsi_reparameterisation branch
 """
@@ -33,109 +33,31 @@ def _set_magnitude_phase(magn_phase_tuple):
 class NSIParams(object):
     """
     Holds non-standard neutrino interaction parameters of neutral current type
-    for propagating neutrinos, interacting with a 1st generation Standard Model
-    quark (u or d). The NSI matrix is assumed to be symmetric
-    (real-valued coupling strengths in addition to Hermiticity of matter NSIs).
-
-    Parameters
-    ----------
-    eps_ee, eps_emu, eps_etau, eps_mumu, eps_mutau, eps_tautau : float
-        Coupling parameters describing strengths of NSI transitions between
-        the two specified neutrino flavors, via NC-type interaction with one 1st
-        generation SM quark.
+    for propagating neutrinos, interacting with 1st generation Standard Model
+    background quarks (u or d) or electrons in the Earth.
 
 
     Attributes
     ----------
-    eps_ee, eps_emu, eps_etau, eps_mumu, eps_mutau, eps_tautau
-        Cf. parameters
-
     eps_matrix : 2d float array of shape (3, 3)
-        Symmetric NSI matrix holding the epsilon parameters.
+        Hermitian NSI matrix holding the effective epsilon parameters describing
+        strengths of NSI transitions between the two specified neutrino flavors,
+        via NC-type interaction with 1st generation quarks or electrons in the
+        Earth.
+        Flavour-preserving (diagonal) ones are real, while the flavour-changing
+        (off-diagonal) ones are complex.
+        Note that these parameters are not the Lagrangian-level couplings but
+        rather the sums over these weighted by the respective relative number
+        densities (approx. constant) of each possible scattering partner
+        in the Earth.
 
     """
 
-    def __init__(self, eps_ee, eps_emu, eps_etau, eps_mumu, eps_mutau,
-                 eps_tautau):
+    def __init__(self):
         """Set NSI parameters."""
-        self._eps_matrix = (np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3,3), dtype=FTYPE))
-        self._eps_type = (float,)
-        self.eps_ee = eps_ee
-        self.eps_emu = eps_emu
-        self.eps_etau = eps_etau
-        self.eps_mumu = eps_mumu
-        self.eps_mutau = eps_mutau
-        self.eps_tautau = eps_tautau
-
-    @property
-    def eps_type(self):
-        """Allowed numerical type of NSI coupling parameters."""
-        return self._eps_type
-
-    @property
-    def eps_matrix(self):
-        """Symmetric matrix of NSI coupling parameters."""
-        return self._eps_matrix
-
-    @property
-    def eps_ee(self):
-        """nue-nue NSI coupling parameter"""
-        return self._eps_ee
-
-    @eps_ee.setter
-    def eps_ee(self, value):
-        assert isinstance(value, self.eps_type)
-        self._eps_matrix[0][0] = self._eps_ee = value
-
-    @property
-    def eps_emu(self):
-        """nue-numu NSI coupling parameter"""
-        return self._eps_emu
-
-    @eps_emu.setter
-    def eps_emu(self, value):
-        assert isinstance(value, self.eps_type)
-        self._eps_matrix[1][0] = self._eps_matrix[0][1] = self._eps_emu = value
-
-    @property
-    def eps_etau(self):
-        """nue-nutau NSI coupling parameter"""
-        return self._eps_etau
-
-    @eps_etau.setter
-    def eps_etau(self, value):
-        assert isinstance(value, self.eps_type)
-        self._eps_matrix[2][0] = self._eps_matrix[0][2] = self._eps_etau = value
-
-    @property
-    def eps_mumu(self):
-        """numu-numu NSI coupling parameter"""
-        return self._eps_mumu
-
-    @eps_mumu.setter
-    def eps_mumu(self, value):
-        assert isinstance(value, self.eps_type)
-        self._eps_matrix[1][1] = self._eps_mumu = value
-
-    @property
-    def eps_mutau(self):
-        """numu-nutau NSI coupling parameter"""
-        return self._eps_mutau
-
-    @eps_mutau.setter
-    def eps_mutau(self, value):
-        assert isinstance(value, self.eps_type)
-        self._eps_matrix[1][2] = self._eps_matrix[2][1] = self._eps_mutau = value
-
-    @property
-    def eps_tautau(self):
-        """nutau-nutau NSI coupling parameter"""
-        return self._eps_tautau
-
-    @eps_tautau.setter
-    def eps_tautau(self, value):
-        assert isinstance(value, self.eps_type)
-        self._eps_matrix[2][2] = self._eps_tautau = value
+        self.eps_matrix = (
+            np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3,3), dtype=FTYPE)
+        )
 
 
 class StdNSIParams(NSIParams):
@@ -153,13 +75,13 @@ class StdNSIParams(NSIParams):
     """
 
     def __init__(self):
-        super(StdNSIParams, self).__init__(0.,(0.,0.),(0.,0.),0.,(0.,0.),0.)
-        '''self._eps_ee = 0.
+        super(StdNSIParams, self).__init__()
+        self._eps_ee = 0.
         self._eps_emu = 0.
         self._eps_etau = 0.
         self._eps_mumu = 0.
         self._eps_mutau = 0.
-        self._eps_tautau = 0.'''
+        self._eps_tautau = 0.
 
     # --- NSI epsilons ---
     @property
@@ -169,10 +91,6 @@ class StdNSIParams(NSIParams):
 
     @eps_ee.setter
     def eps_ee(self, value):
-        part1 = self.eps_matrix[0, 0].imag
-        part2 = 1.j * part1
-        part3 = value + part2
-        self.eps_matrix[0, 0] = part3
         self.eps_matrix[0, 0] = value + 1.j * self.eps_matrix[0, 0].imag
 
     @property
@@ -693,4 +611,5 @@ if __name__=='__main__':
     assert TARGET == 'cpu', "Cannot test functions on GPU, set PISA_TARGET to 'cpu'"
     set_verbosity(1)
     test_nsi_parameterization()
+
 
