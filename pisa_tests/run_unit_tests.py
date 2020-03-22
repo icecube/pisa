@@ -10,11 +10,11 @@ from __future__ import absolute_import
 
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from os import walk
-from os.path import dirname, expanduser, expandvars, isfile, join, relpath
+from os.path import dirname, isfile, join, relpath
 import sys
 
 import pisa
-from pisa.utils.fileio import nsort_key_func
+from pisa.utils.fileio import expand, nsort_key_func
 from pisa.utils.log import Levels, logging, set_verbosity
 
 pycuda, nbcuda = None, None  # pylint: disable=invalid-name
@@ -51,7 +51,8 @@ __license__ = """Copyright (c) 2020, The IceCube Collaboration
  limitations under the License."""
 
 
-PISA_PATH = dirname(pisa.__file__)
+PISA_PATH = expand(dirname(pisa.__file__), absolute=True, resolve_symlinks=True)
+
 OPTIONAL_DEPS = (
     "pandas",
     "emcee",
@@ -62,7 +63,11 @@ OPTIONAL_DEPS = (
     "MCEq",
     "nuSQUIDSpy",
 )
+"""Okay if imports or test_* functions fail due to these not being import-able"""
+
 PFX = "[T] "
+"""Prefix each line output by this script to clearly delineate output from this
+script vs. output from test functions being run"""
 
 
 def run_unit_tests(path=PISA_PATH, allow_missing=OPTIONAL_DEPS, verbosity=Levels.WARN):
@@ -90,7 +95,7 @@ def run_unit_tests(path=PISA_PATH, allow_missing=OPTIONAL_DEPS, verbosity=Levels
         If any import or test fails not in `allow_missing`
 
     """
-    path = expanduser(expandvars(path))
+    path = expand(path, absolute=True, resolve_symlinks=True)
     if allow_missing is None:
         allow_missing = []
     elif isinstance(allow_missing, str):
@@ -317,7 +322,7 @@ def find_unit_tests(path):
         if no such functions are found)
 
     """
-    path = expanduser(expandvars(path))
+    path = expand(path, absolute=True, resolve_symlinks=True)
 
     tests = {}
     if isfile(path):
@@ -352,6 +357,8 @@ def find_unit_tests_in_file(filepath):
     tests : list of str
 
     """
+    filepath = expand(filepath, absolute=True, resolve_symlinks=True)
+    assert isfile(filepath), str(filepath)
     tests = []
     with open(filepath, "r") as f:
         for line in f.readlines():
