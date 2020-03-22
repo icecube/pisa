@@ -750,10 +750,7 @@ class Hypersurface(object):
                 '...j,...kj->...k', gradient_buffer, self.fit_cov_mat[bin_idx])
             variance = np.einsum(
                 '...j,...j', transformed_jacobian, gradient_buffer)
-            if np.any(variance < 0.):
-                logging.warn(
-                    "Negative variances found in hypersurface, replacing with zeros.")
-                variance[variance < 0.] = 0.
+            assert np.all(variance[np.isfinite(variance)] >= 0.), "invalid covariance"
 
         if return_uncertainty:
             return output_factors, np.sqrt(variance)
