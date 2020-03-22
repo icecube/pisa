@@ -2374,8 +2374,9 @@ def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None,
 
     # Define a mask for selecting on-axis points only
     on_axis_mask = hypersurface.get_on_axis_mask(param.name)
-    include_mask = np.ones_like(on_axis_mask) if show_zero else (
-        np.asarray(chosen_bin_values) > 0.)
+    with np.errstate(invalid='ignore'):  # empty bins are a regular occurrence
+        include_mask = np.ones_like(on_axis_mask) if show_zero else (
+            np.asarray(chosen_bin_values) > 0.)
 
     # Plot the points from the datasets used for fitting
     x = np.asarray(param.fit_param_values)[on_axis_mask & include_mask]
