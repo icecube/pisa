@@ -373,7 +373,6 @@ def lookup(sample, flat_hist, binning):
     Only handles 2d and 3d right now
 
     """
-    #print(binning)
     assert binning.num_dims in [2, 3], 'can only do 2d and 3d at the moment'
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
     # TODO: directly return smart array
@@ -697,7 +696,7 @@ def test_histogram():
     n_evts = 10000
     rand = np.random.RandomState(seed=0)
 
-    weights = SmartArray(rand.random(n_evts).astype(FTYPE))
+    weights = SmartArray(rand.rand(n_evts).astype(FTYPE))
     binning = []
     sample = []
     for num_dims, num_bins in enumerate(all_num_bins, start=1):
@@ -711,8 +710,11 @@ def test_histogram():
         )
 
         sample.append(
-            SmartArray(rand.random(n_evts).astype(FTYPE) * num_bins)
+            SmartArray(rand.rand(n_evts).astype(FTYPE) * num_bins)
         )
+
+        if TARGET == "cuda" and num_dims == 1:
+            continue
 
         bin_edges = [b.edge_magnitudes for b in binning]
         test = histogram(sample, weights, binning, averaged=False).get()
@@ -742,6 +744,7 @@ def test_find_index():
     # Negative, positive, integer, non-integer, binary-unrepresentable (0.1) edges
     basic_bin_edges = [-1, -0.5, -0.1, 0, 0.1, 0.5, 1, 2, 3, 4]
 
+    failures = 0
     for basic_bin_edges in [
         # Negative, positive, integer, non-integer, binary-unrepresentable (0.1) edges
         [-1, -0.5, -0.1, 0, 0.1, 0.5, 1, 2, 3, 4],
@@ -825,16 +828,16 @@ def test_find_index():
                 np_histvals, _ = np.histogramdd([val], np.atleast_2d(bin_edges))
                 nonzero_indices = np.nonzero(np_histvals)[0]  # select first & only dim
                 if np.isnan(val):
-                    assert len(nonzero_indices) == 0
+                    assert len(nonzero_indices) == 0, str(len(nonzero_indices))
                     expected_idx = underflow_idx
                 elif val < bin_edges[0]:
-                    assert len(nonzero_indices) == 0
+                    assert len(nonzero_indices) == 0, str(len(nonzero_indices))
                     expected_idx = underflow_idx
                 elif val > bin_edges[-1]:
-                    assert len(nonzero_indices) == 0
+                    assert len(nonzero_indices) == 0, str(len(nonzero_indices))
                     expected_idx = overflow_idx
                 else:
-                    assert len(nonzero_indices) == 1
+                    assert len(nonzero_indices) == 1, str(len(nonzero_indices))
                     expected_idx = nonzero_indices[0]
 
                 if TARGET == 'cpu':
@@ -842,19 +845,23 @@ def test_find_index():
                 elif TARGET == 'cuda':
                     found_idx_ary = SmartArray(np.zeros(1, dtype=np.int))
                     find_index_cuda(
-                        SmartArray(np.array([val], dtype=FTYPE)).get('gpu'),
-                        bin_edges.get('gpu'),
-                        found_idx_ary,
+                        SmartArray(np.array([val], dtype=FTYPE)).get(WHERE),
+                        bin_edges.get(WHERE),
+                        found_idx_ary.get(WHERE),
                     )
+                    found_idx_ary.mark_changed(WHERE)
                     found_idx = found_idx_ary.get()[0]
                 else:
                     raise NotImplementedError(f"TARGET='{TARGET}'")
 
                 if found_idx != expected_idx:
+                    failures += 1
                     msg = 'val={}, edges={}: Expected idx={}, found idx={}'.format(
-                        val, bin_edges, expected_idx, found_idx
+                        val, bin_edges.get(), expected_idx, found_idx
                     )
-                    assert False, msg
+                    logging.error(msg)
+
+    assert failures == 0, f"{failures} failures, inspect ERROR messages above for info"
 
     logging.info('<< PASS : test_find_index >>')
 

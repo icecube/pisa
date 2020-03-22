@@ -134,9 +134,11 @@ class BaseStage(object):
         self.inputs = None
 
     def setup(self):
+        """Override in inheriting class"""
         pass
 
-    def run(self, inputs=None):
+    def run(self, inputs=None):  # pylint: disable=unused-argument, no-self-use
+        """Override in inheriting class"""
         return None
 
     def select_params(self, selections, error_on_missing=False):
@@ -271,7 +273,7 @@ class BaseStage(object):
         indicates a debug mode."""
         return self._debug_mode
 
-    def validate_params(self, params):  # pylint: disable=unused-argument
+    def validate_params(self, params):  # pylint: disable=unused-argument, no-self-use
         """Override this method to test if params are valid; e.g., check range
         and dimensionality. Invalid params should be indicated by raising an
         exception; no value should be returned."""

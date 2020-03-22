@@ -606,8 +606,6 @@ def main():
     make sure everything looks sensible.
 
     """
-    import matplotlib
-    matplotlib.use('pdf')
     from matplotlib import pyplot as plt
 
     spline_dict = load_2d_table('flux/honda-2015-spl-solmax-aa.d')

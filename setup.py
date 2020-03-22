@@ -218,7 +218,7 @@ def do_setup():
         setup_requires=[
             'pip>=1.8',
             'setuptools>18.5', # versioneer requires >18.5
-            'numpy>=1.17'
+            'numpy>=1.17',
         ],
         install_requires=[
             'decorator',
@@ -228,6 +228,7 @@ def do_setup():
             'line_profiler',
             'matplotlib>=3.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
             'numba==0.45.1', # >=0.35: fastmath jit flag; >=0.38: issue #439; 0.44 segfaults; 0.46 removes SmartArray
+            'numpy>=1.17',
             'pint>=0.8.1', # see https://github.com/hgrecco/pint/issues/512
             'scipy>=0.17',
             'simplejson>=3.2',

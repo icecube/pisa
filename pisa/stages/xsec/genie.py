@@ -31,7 +31,7 @@ from pisa.utils.profiler import profile
 from pisa.utils.resources import find_resource
 
 
-__all__ = ['genie', 'test_standard_plots', 'test_per_e_plot']
+__all__ = ['genie', 'standard_plots_test', 'per_e_plot_test']
 
 __author__ = 'S. Mandalia'
 
@@ -366,7 +366,7 @@ class genie(Stage): # pylint: disable=invalid-name
         assert params['x_energy_scale'].value > 1E-5
 
 
-def test_standard_plots(xsec_file, outdir='./'):
+def standard_plots_test(xsec_file, outdir='./'):
     from pisa.utils.plotter import Plotter
     xsec = genie.get_combined_xsec(xsec_file)
 
@@ -384,7 +384,7 @@ def test_standard_plots(xsec_file, outdir='./'):
     plot_obj.plot_xsec(maps, ylim=(1E-43, 1E-37))
 
 
-def test_per_e_plot(xsec_file, outdir='./'):
+def per_e_plot_test(xsec_file, outdir='./'):
     from pisa.utils.plotter import Plotter
     xsec = genie.get_combined_xsec(xsec_file)
 
@@ -418,8 +418,8 @@ def main():
 
     # TODO(shivesh): tests
     # test_XSec(args.xsec_file)
-    test_standard_plots(args.xsec_file, args.outdir+'/standard/')
-    test_per_e_plot(args.xsec_file, args.outdir+'/per_e/')
+    standard_plots_test(args.xsec_file, args.outdir+'/standard/')
+    per_e_plot_test(args.xsec_file, args.outdir+'/per_e/')
 
 
 if __name__ == '__main__':

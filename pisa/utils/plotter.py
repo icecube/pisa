@@ -13,8 +13,6 @@ import numpy as np
 from uncertainties import unumpy as unp
 
 import matplotlib as mpl
-# Headless mode; must set prior to pyplot import
-mpl.use('Agg')
 from matplotlib import pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 

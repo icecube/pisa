@@ -647,9 +647,6 @@ class Map(object):
 
         """
         import matplotlib as mpl
-        if (backend is not None
-                and mpl.get_backend().lower() != backend.lower()):
-            mpl.use(backend)
         import matplotlib.pyplot as plt
 
         cmap_seq = plt.cm.inferno

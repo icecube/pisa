@@ -36,7 +36,10 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test PISA example pipelines
       run: |
-        pisa-test_example_pipelines -v
-    - name: Test PISA imports and unit tests
+        PISA_FTYPE=fp32 PISA_TARGET=cpu MPLBACKEND=agg ./pisa_tests/test_example_pipelines.py -v
+    - name: Test PISA imports and unit tests, double precision
       run: |
-        pisa-run_unit_tests -v
+        PISA_FTYPE=fp64 PISA_TARGET=cpu MPLBACKEND=agg ./pisa_tests/run_unit_tests.py -v
+    - name: Test PISA imports and unit tests, single precision
+      run: |
+        PISA_FTYPE=fp32 PISA_TARGET=cpu MPLBACKEND=agg ./pisa_tests/run_unit_tests.py -v

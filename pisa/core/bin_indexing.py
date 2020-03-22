@@ -47,7 +47,7 @@ FX = "f4" if FTYPE == np.float32 else "f8"
 def lookup_indices_vectorized_1d(sample_x, bin_edges_x, out):
     """Lookup bin indices for sample_x values, where binning is defined by
     `bin_edges_x`."""
-    out[0] = find_index(val=sample_x[0], bin_edges=bin_edges_x)
+    out[0] = find_index(sample_x[0], bin_edges_x)
 
 
 @guvectorize(
@@ -57,8 +57,8 @@ def lookup_indices_vectorized_1d(sample_x, bin_edges_x, out):
 )
 def lookup_indices_vectorized_2d(sample_x, sample_y, bin_edges_x, bin_edges_y, out):
     """Same as above, except we get back the index"""
-    idx_x = find_index(val=sample_x[0], bin_edges=bin_edges_x)
-    idx_y = find_index(val=sample_y[0], bin_edges=bin_edges_y)
+    idx_x = find_index(sample_x[0], bin_edges_x)
+    idx_y = find_index(sample_y[0], bin_edges_y)
 
     n_x_bins = len(bin_edges_x) - 1
     n_y_bins = len(bin_edges_y) - 1
@@ -83,9 +83,9 @@ def lookup_indices_vectorized_3d(
     sample_x, sample_y, sample_z, bin_edges_x, bin_edges_y, bin_edges_z, out
 ):
     """Vectorized gufunc to perform the lookup"""
-    idx_x = find_index(val=sample_x[0], bin_edges=bin_edges_x)
-    idx_y = find_index(val=sample_y[0], bin_edges=bin_edges_y)
-    idx_z = find_index(val=sample_z[0], bin_edges=bin_edges_z)
+    idx_x = find_index(sample_x[0], bin_edges_x)
+    idx_y = find_index(sample_y[0], bin_edges_y)
+    idx_z = find_index(sample_z[0], bin_edges_z)
 
     n_x_bins = len(bin_edges_x) - 1
     n_y_bins = len(bin_edges_y) - 1
@@ -154,7 +154,7 @@ def lookup_indices(sample, binning):
 
     lookup_func_args = (
         [a.get(WHERE) for a in sample]
-        + [SmartArray(dim.edge_magnitudes).get(WHERE) for dim in binning]
+        + [SmartArray(dim.edge_magnitudes.astype(FTYPE)).get(WHERE) for dim in binning]
     )
     logging.trace("lookup_func_args = {}".format(lookup_func_args))
 
