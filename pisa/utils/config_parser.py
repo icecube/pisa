@@ -1531,17 +1531,35 @@ def test_parse_pipeline_config(config='settings/pipeline/example.cfg'):
         logging.info('%s: %s', key, vals)
         assert vals == config0[key]
 
-def test_parse_minimizer_config():
+def test_parse_minimizer_config(
+    config='settings/minimizer/slsqp_ftol1e-6_eps1e-4_maxiter1000.cfg'
+):
     """Unit test for function `parse_minimizer_config`"""
-    # TODO
-    # logging.info('<< PASS : test_parse_minimizer_config >>')
-    raise NotImplementedError()
+    config0 = PISAConfigParser()
+    config0.read(config)
+    config0 = parse_minimizer_config(config0)
 
-def test_parse_fit_config():
+    config1 = parse_minimizer_config(config)
+
+    logging.info('Keys and values found in config:')
+    for key, vals in config1.items():
+        logging.info('%s: %s', key, vals)
+        assert vals == config0[key]
+
+def test_parse_fit_config(
+    config='settings/fit/example_basinhopping_lbfgsb.cfg'
+):
     """Unit test for function `parse_fit_config`"""
-    # TODO
-    # logging.info('<< PASS : test_parse_fit_config >>')
-    raise NotImplementedError()
+    config0 = PISAConfigParser()
+    config0.read(config)
+    config0 = parse_fit_config(config0)
+
+    config1 = parse_fit_config(config)
+
+    logging.info('Keys and values found in config:')
+    for key, vals in config1.items():
+        logging.info('%s: %s', key, vals)
+        assert vals == config0[key]
 
 def test_MutableMultiFileIterator():
     """Unit test for class `MutableMultiFileIterator`"""
