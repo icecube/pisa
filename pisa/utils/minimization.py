@@ -306,7 +306,7 @@ def minimizer_x0_bounds(free_params, minimizer_settings, padding_factor=1.,
         return x0, bounds
     minimizer_method = minimizer_settings['method'].lower()
     if minimizer_method in MINIMIZERS_USING_SYMM_GRAD:
-        logging.info(
+        logging.debug(
             'Local minimizer %s requires artificial boundaries SMALLER than'
             ' the user-specified boundaries (so that numerical gradients do'
             ' not exceed the user-specified boundaries).',
@@ -472,7 +472,7 @@ class RandomDisplacementWithBounds(object):
                 -self.stepsize, self.stepsize, np.shape(x)
             )
         x += perturbation
-        logging.info('New position after random perturbation: %s.' % x)
+        logging.debug('New position after random perturbation: %s.' % x)
         return x
 
 

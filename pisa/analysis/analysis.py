@@ -1557,23 +1557,41 @@ class Analysis(object):
 # --------------------------------------------------------------------------- #
 def test_fit_hypo_local_minimizer(
     pipeline_cfg='settings/pipeline/example.cfg',
-    minimizer_cfg='settings/minimizer/l-bfgs-b_ftol2e-9_gtol1e-5_eps1e-7_maxiter200.cfg'
+    local_minimizer_cfg='settings/minimizer/l-bfgs-b_ftol2e-9_gtol1e-5_eps1e-7_maxiter200.cfg',
+    fit_cfg='settings/fit/example_basinhopping_lbfgsb.cfg'
 ):
     """Unit test for local-minimizer fitting routine.
     """
     from pisa.core.distribution_maker import DistributionMaker
     from pisa.utils.config_parser import parse_minimizer_config
+    from pisa.utils.minimization import override_min_opt
     d = DistributionMaker(pipeline_cfg)
     data_dist = d.get_outputs(return_sum=True)
     hypo_maker = d
     metric = 'chi2'
-    minimizer_settings = parse_minimizer_config(minimizer_cfg)
-
+    minimizer_settings = parse_minimizer_config(local_minimizer_cfg)
+    override_min_opt(minimizer_settings, ('disp:0',))
     for i, param in enumerate(sorted(hypo_maker.params.free)):
         # just use two free parameters for testing
         if i > 1:
             param.is_fixed = True
     a = Analysis()
+    fit_info = a._fit_hypo_minimizer(
+        data_dist=data_dist, hypo_maker=hypo_maker, metric=metric,
+        minimizer_settings=minimizer_settings,
+        randomize_params=True, random_state=None,
+        other_metrics=['mod_chi2'], pprint=False, blind=False,
+        external_priors_penalty=None
+    )
+
+    fit_settings = apply_fit_settings(fit_cfg, hypo_maker.params.free)
+    minimize_params = fit_settings['minimize']['params']
+    minimizer_settings = {
+        'global': fit_settings['minimize']['global'],
+        'local': fit_settings['minimize']['local']
+    }
+    # ensure the fit finishes up quickly
+    override_min_opt(minimizer_settings['global'], ('niter_success:2','niter:5'))
     fit_info = a._fit_hypo_minimizer(
         data_dist=data_dist, hypo_maker=hypo_maker, metric=metric,
         minimizer_settings=minimizer_settings,
