@@ -214,7 +214,7 @@ def do_setup():
         author_email='jll1062+pisa@phys.psu.edu',
         url='http://github.com/icecubeopensource/pisa',
         cmdclass=cmdclasses,
-        python_requires='>=3.7, <3.8', # e.g. f-strings require Py>=3.6; numba numerical inconsistency for numba_osc.py on github CI w/ 3.6; numba doesn't support Python 3.8 until numba 0.47 but we need numba==0.45.1
+        python_requires='>=3.7, <3.8', # e.g. f-strings require Py>=3.6; numba numerical inconsistency for numba_osc_* on github CI w/ 3.6; numba doesn't support Python 3.8 until numba 0.47 but we need numba==0.45.1
         setup_requires=[
             'pip>=1.8',
             'setuptools>18.5', # versioneer requires >18.5

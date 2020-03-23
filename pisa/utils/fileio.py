@@ -432,17 +432,20 @@ def from_pickle(fname):
         f = open(fname, 'rb')
 
         # Try standard pickle load
-        try :
+        try:
             return pickle.load(f)
 
-        # Can get encoding errors when using python3 to open pickle files created with python2
-        # Handle this case
-        except UnicodeDecodeError as e :
+        # Can get encoding errors when using python3 to open pickle files
+        # created with python2 Handle this case
+        except UnicodeDecodeError:
             return pickle.load(f, encoding="latin1")
-            
+
     except:
         log.logging.error('Failed to load pickle file, `fname`="%s"', fname)
         raise
+
+    finally:
+        f.close()
 
 
 def to_pickle(obj, fname, overwrite=True, warn=True):

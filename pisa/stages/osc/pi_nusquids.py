@@ -20,7 +20,7 @@ from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.stages.osc.pi_osc_params import OscParams
 from pisa.stages.osc.layers import Layers
-from pisa.stages.osc.prob3numba.numba_osc import propagate_array, fill_probs
+from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import propagate_array, fill_probs
 from pisa.utils.numba_tools import WHERE
 from pisa.stages.osc.pi_prob3 import apply_probs
 
