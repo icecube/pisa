@@ -13,6 +13,8 @@ from __future__ import division
 import numpy as np
 
 from pisa import FTYPE
+from pisa import TARGET
+from pisa.utils.log import set_verbosity, logging
 
 __all__ = ['NSIParams', 'StdNSIParams', 'VacuumLikeNSIParams']
 
@@ -606,8 +608,6 @@ def test_sympy_mat_mult(
 
 
 if __name__=='__main__':
-    from pisa import TARGET
-    from pisa.utils.log import set_verbosity, logging
     assert TARGET == 'cpu', "Cannot test functions on GPU, set PISA_TARGET to 'cpu'"
     set_verbosity(1)
     test_nsi_parameterization()
