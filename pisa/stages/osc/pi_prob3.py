@@ -13,6 +13,7 @@ from numba import guvectorize
 
 from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
+from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.stages.osc.nsi_params import StdNSIParams, VacuumLikeNSIParams
 from pisa.stages.osc.pi_osc_params import OscParams
