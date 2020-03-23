@@ -336,7 +336,7 @@ class VacuumLikeNSIParams(NSIParams):
         nsi_eps = mat_pot
         # explicitly nullify imaginary parts of diagonal entries which
         # are only there due to numerical inaccuracies
-        for i in xrange(3):
+        for i in range(3):
             nsi_eps[i, i] = nsi_eps[i, i].real + 0 * 1.j
 
         # make sure this is a valid Hermitian potential matrix
