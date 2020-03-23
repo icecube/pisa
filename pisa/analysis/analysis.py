@@ -1042,8 +1042,6 @@ class Analysis(object):
 
         logging.debug('Start minimization at point %s.' % hypo_maker.params.free)
         # this is the function that does the heavy lifting
-        # TODO: external priors penalty?
-        # TODO: deal with list of metrics
         optimize_result = _run_minimizer(
             fun=self._minimizer_callable,
             x0=x0,
@@ -1386,7 +1384,7 @@ class Analysis(object):
         data_dist
         hypo_asimov_dist
         params
-        metric : str !
+        metric : str or sequence of str
         other_metrics
 
         Returns
@@ -1398,7 +1396,9 @@ class Analysis(object):
             other_metrics = []
         elif isinstance(other_metrics, str):
             other_metrics = [other_metrics]
-        all_metrics = sorted(set([metric] + other_metrics))
+        if isinstance(metric, str):
+            metric = [metric]
+        all_metrics = sorted(set(metric + other_metrics))
         detailed_metric_info = OrderedDict()
         if detector_name is not None:
             detailed_metric_info['detector_name'] = detector_name
@@ -1420,7 +1420,7 @@ class Analysis(object):
                 )
                 maps_binned.append(map_binned)
             name_vals_d['maps_binned'] = MapSet(maps_binned)
-            name_vals_d['priors'] = params.priors_penalties(metric=metric)
+            name_vals_d['priors'] = params.priors_penalties(metric=m)
             detailed_metric_info[m] = name_vals_d
         return detailed_metric_info
 
@@ -1554,13 +1554,36 @@ class Analysis(object):
         """
         self._nit += 1
 
-# TODO: how to do something fast, that doesn't rely too much on external stuff?
-def test_fitting():
-    """Unit test for fitting routine(s).
+# --------------------------------------------------------------------------- #
+def test_fit_hypo_local_minimizer(
+    pipeline_cfg='settings/pipeline/example.cfg',
+    minimizer_cfg='settings/minimizer/l-bfgs-b_ftol2e-9_gtol1e-5_eps1e-7_maxiter200.cfg'
+):
+    """Unit test for local-minimizer fitting routine.
     """
-    return
+    from pisa.core.distribution_maker import DistributionMaker
+    from pisa.utils.config_parser import parse_minimizer_config
+    d = DistributionMaker(pipeline_cfg)
+    data_dist = d.get_outputs(return_sum=True)
+    hypo_maker = d
+    metric = 'chi2'
+    minimizer_settings = parse_minimizer_config(minimizer_cfg)
+
+    for i, param in enumerate(sorted(hypo_maker.params.free)):
+        # just use two free parameters for testing
+        if i > 1:
+            param.is_fixed = True
+    a = Analysis()
+    fit_info = a._fit_hypo_minimizer(
+        data_dist=data_dist, hypo_maker=hypo_maker, metric=metric,
+        minimizer_settings=minimizer_settings,
+        randomize_params=True, random_state=None,
+        other_metrics=['mod_chi2'], pprint=False, blind=False,
+        external_priors_penalty=None
+    )
+# --------------------------------------------------------------------------- #
 
 if __name__ == "__main__":
     set_verbosity(1)
-    test_fitting()
+    test_fit_hypo_local_minimizer()
 
