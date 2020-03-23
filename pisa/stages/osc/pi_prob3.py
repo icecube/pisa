@@ -114,19 +114,6 @@ class pi_prob3(PiStage):
            diag(e^(i*delta_CP), 1, 1). This has no impact on
            oscillation probabilities in the *absence* of NSI."""
 
-        expected_params = ('detector_depth',
-                           'earth_model',
-                           'prop_height',
-                           'YeI',
-                           'YeO',
-                           'YeM',
-                           'theta12',
-                           'theta13',
-                           'theta23',
-                           'deltam21',
-                           'deltam31',
-                           'deltacp'
-        )
         if self.nsi_type is None:
             nsi_params = ()
         elif self.nsi_type == 'vacuum-like':
