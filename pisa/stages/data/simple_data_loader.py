@@ -244,5 +244,4 @@ class simple_data_loader(PiStage):
         self.data.data_specs = self.output_specs
         # reset weights to initial weights prior to downstream stages running
         for container in self.data:
-            vectorizer.set(container['initial_weights'],
-                           out=container['weights'])
+            vectorizer.assign(container['initial_weights'], out=container['weights'])

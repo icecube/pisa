@@ -233,14 +233,14 @@ def recursiveEquality(x, y):
         if not isinstance(y, pint.unit._Unit):
             logging.trace('type(x)=%s but type(y)=%s', type(x), type(y))
         if repr(x) != repr(y):
-            logging.trace('x: %s' %x)
-            logging.trace('y: %s' %y)
+            logging.trace('x: %s', x)
+            logging.trace('y: %s', y)
             return False
 
     # pint quantities
     elif isinstance(x, pint.quantity._Quantity):
         if not isinstance(y, pint.quantity._Quantity):
-            logging.trace('type(x)=%s but type(y)=%s' %(type(x), type(y)))
+            logging.trace('type(x)=%s but type(y)=%s', type(x), type(y))
             return False
 
         # use a string for `x`'s units so we can compare across unit
@@ -251,8 +251,8 @@ def recursiveEquality(x, y):
         try:
             converted_y = y.to(xunit)
         except pint.DimensionalityError:
-            logging.trace('Incompatible units: x.units=%s, y.units=%s'
-                          %(x.units, y.units))
+            logging.trace('Incompatible units: x.units=%s, y.units=%s',
+                          x.units, y.units)
             return False
 
         return recursiveEquality(x.magnitude, converted_y.magnitude)
@@ -271,17 +271,17 @@ def recursiveEquality(x, y):
             except TypeError:
                 pass
             if not is_eq:
-                logging.trace('Simple types (type(x)=%s, type(y)=%s) not equal.'
-                              %(type(x), type(y)))
-                logging.trace('x: %s' %x)
-                logging.trace('y: %s' %y)
+                logging.trace('Simple types (type(x)=%s, type(y)=%s) not equal.',
+                              type(x), type(y))
+                logging.trace('x: %s', x)
+                logging.trace('y: %s', y)
                 return False
 
     # Numpy types
     elif isinstance(x, NP_TYPES) or isinstance(y, NP_TYPES):
         if np.shape(x) != np.shape(y):
-            logging.trace('shape(x): %s' %np.shape(x))
-            logging.trace('shape(y): %s' %np.shape(y))
+            logging.trace('shape(x): %s', np.shape(x))
+            logging.trace('shape(y): %s', np.shape(y))
             return False
 
         if isinstance(x, NP_TYPES):
@@ -293,8 +293,8 @@ def recursiveEquality(x, y):
 
         if issubclass(dtype, np.floating):
             if not np.allclose(x, y, **ALLCLOSE_KW):
-                logging.trace('x: %s' %x)
-                logging.trace('y: %s' %y)
+                logging.trace('x: %s', x)
+                logging.trace('y: %s', y)
                 return False
         elif isinstance(first_element, (AffineScalarFunc, Variable)):
             if not (
@@ -304,8 +304,8 @@ def recursiveEquality(x, y):
                 return False
         else:
             if not np.all(x == y):
-                logging.trace('x: %s' %x)
-                logging.trace('y: %s' %y)
+                logging.trace('x: %s', x)
+                logging.trace('y: %s', y)
                 return False
 
     # dict
@@ -314,13 +314,13 @@ def recursiveEquality(x, y):
             return False
         xkeys = sorted(x.keys())
         if xkeys != sorted(y.keys()):
-            logging.trace('xkeys: %s' %(xkeys,))
-            logging.trace('ykeys: %s' %(sorted(y.keys()),))
+            logging.trace('xkeys: %s', xkeys)
+            logging.trace('ykeys: %s', sorted(y.keys()))
             return False
         else:
             for k in xkeys:
                 if not recursiveEquality(x[k], y[k]):
-                    logging.trace('not equal found at key: "%s"' %k)
+                    logging.trace('not equal found at key: "%s"', k)
                     return False
 
     # Non-numpy sequence
@@ -328,14 +328,14 @@ def recursiveEquality(x, y):
         if not isinstance(y, Sequence):
             return False
         if len(x) != len(y):
-            logging.trace('len(x): %s' %len(x))
-            logging.trace('len(y): %s' %len(y))
+            logging.trace('len(x): %s', len(x))
+            logging.trace('len(y): %s', len(y))
             return False
         else:
             for xs, ys in zip(x, y):
                 if not recursiveEquality(xs, ys):
-                    logging.trace('xs: %s' %xs)
-                    logging.trace('ys: %s' %ys)
+                    logging.trace('xs: %s', xs)
+                    logging.trace('ys: %s', ys)
                     return False
 
     # Unhandled

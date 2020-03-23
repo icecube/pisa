@@ -18,7 +18,7 @@ import simplejson as json
 from six import string_types
 
 from pisa import ureg
-
+from pisa.utils.log import logging, set_verbosity
 
 __all__ = [
     'JSON_EXTS',
@@ -535,8 +535,9 @@ def test_to_json_from_json():
     finally:
         rmtree(temp_dir)
 
-    sys.stdout.write('<< PASS : test_to_json_from_json >>\n')
+    logging.info('<< PASS : test_to_json_from_json >>')
 
 
 if __name__ == '__main__':
+    set_verbosity(1)
     test_to_json_from_json()

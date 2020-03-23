@@ -33,6 +33,7 @@ __all__ = [
     'mkdir',
     'get_valid_filename',
     'nsort',
+    'nsort_key_func',
     'fsort',
     'find_files',
     'from_cfg',
@@ -245,6 +246,26 @@ def nsort(l, reverse=False):
         return reduce(operator.concat, zip(non_numbers, numbers))
 
     return sorted(l, key=_field_splitter, reverse=reverse)
+
+
+def nsort_key_func(s):
+    """Use as the `key` argument to the `sorted` function or `sort` method.
+
+    Code adapted from nedbatchelder.com/blog/200712/human_sorting.html#comments
+
+    Examples
+    --------
+    >>> l = ['f1.10.0.txt', 'f1.01.2.txt', 'f1.1.1.txt', 'f9.txt', 'f10.txt']
+    >>> sorted(l, key=nsort_key_func)
+    ['f1.1.1.txt', 'f1.01.2.txt', 'f1.10.0.txt', 'f9.txt', 'f10.txt']
+
+    """
+    spl = NSORT_RE.split(s)
+    key = []
+    for non_number, number in zip(spl[::2], spl[1::2]):
+        key.append(non_number)
+        key.append(int(number))
+    return key
 
 
 def fsort(l, signed=True, reverse=False):

@@ -23,7 +23,7 @@ from pisa.utils.fileio import from_file, to_file
 from pisa.utils.log import logging, set_verbosity
 
 
-__all__ = ['Prior', 'plot_prior', 'get_prior_bounds', 'test_Prior', 'test_Prior_plot']
+__all__ = ['Prior', 'get_prior_bounds', 'test_Prior']
 
 __author__ = 'J.L. Lanfranchi'
 
@@ -369,84 +369,6 @@ class Prior(object):
         return newfunc
 
 
-def plot_prior(obj, param=None, x_xform=None, ax1=None, ax2=None, **plt_kwargs):
-    """Plot prior for param from template settings, params, or prior filename
-    or dict.
-
-    Arguments
-    ---------
-    obj : str or dict
-        if str, interpret as path from which to load a dict
-        if (nested) dict, (innermost) must be dict of prior properties :
-            either supply `param` to choose which parameter's prior in `obj`
-            to plot, or prior dict, in which case `param` need not be specified
-    param
-        Param name to plot; necessary if obj is either pipeline settings or
-        params dict
-    x_xform
-        Transform to apply to x-values. E.g., to plot against sin^2 theta, use
-        x_xform = lambda x: np.sin(x)**2
-    ax1, ax2
-        Axes onto which to plot LLH and chi-squared, respectively. If none are
-        provided, new figures & axes will be created.
-    plt_kwargs
-        Keyword arguments to pass on to the plot function
-
-    Returns
-    -------
-    ax1, ax2
-        The axes onto which plots were drawn (ax1 = LLH, ax2 = chi^2)
-    """
-    import matplotlib as mpl
-    mpl.use('pdf')
-    import matplotlib.pyplot as plt
-    if isinstance(obj, str):
-        obj = from_file(obj)
-    if param is not None and param in obj:
-        obj = obj[param]
-    if 'prior' in obj:
-        obj = obj['prior']
-
-    prior = Prior(**obj)
-    logging.info('Plotting Prior: %s', prior)
-    x0 = prior.valid_range[0]
-    x1 = prior.valid_range[1]
-    if prior.kind == 'gaussian':
-        x0 = max(x0, prior.max_at - 5*prior.stddev)
-        x1 = min(x1, prior.max_at + 5*prior.stddev)
-    if np.isinf(x0):
-        x0 = -1
-    if np.isinf(x1):
-        x1 = +1
-    # if prior.units is None, will result in dimensionless quantity
-    x = ureg.Quantity(np.linspace(x0, x1, 5000), prior.units)
-
-    llh = prior.llh(x)
-    chi2 = prior.chi2(x)
-
-    if x_xform is not None:
-        x = x_xform(x)
-
-    if ax1 is None:
-        f = plt.figure()
-        ax1 = f.add_subplot(111)
-    if ax2 is None:
-        f = plt.figure()
-        ax2 = f.add_subplot(111)
-
-    ax1.plot(x, llh, **plt_kwargs)
-    ax2.plot(x, chi2, **plt_kwargs)
-
-    ax1.set_title(str(prior), fontsize=8, y=1.02)
-    ax2.set_title(str(prior), fontsize=8, y=1.02)
-    ax1.set_xlabel(param)
-    ax2.set_xlabel(param)
-    ax1.set_ylabel('LLH')
-    ax2.set_ylabel(r'$\Delta\chi^2$')
-
-    return ax1, ax2
-
-
 def get_prior_bounds(obj, param=None, stddev=1.0):
     """Obtain confidence regions for CL corresponding to given number of
     stddevs from parameter prior.
@@ -539,9 +461,10 @@ def test_Prior():
     else:
         assert False
 
+    # Asking for value at quantity with invalid units
     try:
         linterp.chi2(-1000*ureg.km)
-    except ValueError:
+    except pint.DimensionalityError:
         pass
     else:
         assert False
@@ -571,7 +494,7 @@ def test_Prior():
     # ... or vice versa
     try:
         gaussian.llh(10*ureg.meter)
-    except (TypeError, pint.DimensionalityError):
+    except pint.DimensionalityError:
         pass
     else:
         assert False
@@ -595,91 +518,6 @@ def test_Prior():
                 raise
 
     logging.info('<< PASS : test_Prior >>')
-
-
-# TODO: FIX ME
-def test_Prior_plot(ts_fname, param_name='theta23'):
-    """Produce plots roughly like NuFIT's 1D chi-squared projections.
-
-    Parameters
-    ----------
-    ts_fname : string
-    param_name : string
-
-
-    Returns
-    -------
-    ax1, ax2 : Matplotlib.axis
-        The plot axes are returned for further manipulation
-
-    """
-    import matplotlib as mpl
-    mpl.use('pdf')
-    import matplotlib.pyplot as plt
-    stddev = [1, 2, 3, 4, 5]
-    chi2 = [s**2 for s in stddev]
-
-    ts = from_file(ts_fname)
-    f1 = plt.figure(1) #,figsize=(8,14),dpi=60)
-    f2 = plt.figure(2) #,figsize=(8,14),dpi=60)
-    f1.clf()
-    f2.clf()
-    ax1 = f1.add_subplot(111)
-    ax2 = f2.add_subplot(111)
-
-    # Defaults
-    x_xform = None
-    xlabel = param_name
-    xlim = None
-    ylim = 0, 15
-
-    # Special cases
-    if param_name == 'theta12':
-        x_xform = lambda x: np.sin(x)**2
-        xlabel = r'$\sin^2\theta_{12}$'
-        xlim = 0.2, 0.42
-    elif param_name == 'theta23':
-        x_xform = lambda x: np.sin(x)**2
-        xlabel = r'$\sin^2\theta_{23}$'
-        xlim = 0.26, 0.74
-    elif param_name == 'theta13':
-        x_xform = lambda x: np.sin(x)**2
-        xlabel = r'$\sin^2\theta_{13}$'
-        xlim = 0.012, 0.032
-    elif param_name == 'deltam21':
-        x_xform = lambda x: x*1e5
-        xlabel = r'$\Delta m^2_{21} \; {\rm[10^{-5}\;eV^2]}$'
-        xlim = 6.5, 8.7
-    elif param_name == 'deltam31':
-        x_xform = lambda x: np.abs(x)*1e3
-        xlabel = r'$|\Delta m^2_{31}| \; {\rm[10^{-3}\;eV^2]}$'
-        xlim = 2.15, 2.8
-    elif param_name == 'deltacp':
-        xlabel = r'$\delta_{\rm CP} \; {\rm [deg]}$'
-    plot_prior(select_hierarchy(ts['params'], normal_hierarchy=True),
-               param=param_name,
-               x_xform=x_xform, ax1=ax1, ax2=ax2,
-               color='r', label=r'${\rm NH}$')
-    plot_prior(select_hierarchy(ts['params'], normal_hierarchy=False),
-               param=param_name,
-               x_xform=x_xform, ax1=ax1, ax2=ax2,
-               color='b', linestyle='--', label=r'${\rm IH}$')
-
-    ax1.set_ylim([-0.5*y for y in ylim[::-1]])
-    ax2.set_ylim(ylim)
-    plt.tight_layout()
-
-    for ax in [ax1, ax2]:
-        ax.legend(loc='best', frameon=False)
-        ax.set_xlim(xlim)
-        ax.set_xlabel(xlabel)
-        ax.grid(which='both', b=True)
-        ax.set_title('')
-
-    for c2 in chi2:
-        ax2.plot(xlim, [c2, c2], 'k-', lw=1.0, alpha=0.4)
-
-    return ax1, ax2
 
 
 if __name__ == '__main__':

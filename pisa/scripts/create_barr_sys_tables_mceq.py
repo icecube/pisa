@@ -104,10 +104,10 @@ def compute_abs_derivatives(mceq_run, pid, barr_param, zenith_list):
         nue[iz] = gs('total_nue', 0)[tr]*unit
         anue[iz] = gs('total_antinue', 0)[tr]*unit
 
-    # Solving for plus one sigma 
+    # Solving for plus one sigma
     mceq_run.unset_mod_pprod(dont_fill=True)
     for p in barr_pars:
-        mceq_run.set_mod_pprod(primary_particle, pid, barr_unc, (p, delta))        
+        mceq_run.set_mod_pprod(primary_particle, pid, barr_unc, (p, delta))
 
     mceq_run.regenerate_matrices(skip_decay_matrix=True)
 
@@ -151,7 +151,7 @@ def compute_abs_derivatives(mceq_run, pid, barr_param, zenith_list):
     result = collections.OrderedDict()
     result_type = ["numu", "dnumu", "numubar", "dnumubar", "nue", "dnue", "nuebar", "dnuebar"]
 
-    for dist, sp in zip([numu, dnumu, anumu, danumu, nue, dnue, anue, danue], result_type): 
+    for dist, sp in zip([numu, dnumu, anumu, danumu, nue, dnue, anue, danue], result_type):
         result[sp] = RectBivariateSpline(cos_theta, np.log(etr), dist)
 
     return result
@@ -175,11 +175,11 @@ if __name__ == '__main__':
     assert issubclass(CRModel, crf.PrimaryFlux), "Unknown primary cosmic ray spectrum model"
 
     # define CR model parameters
-    if args.cosmic_ray_model=="HillasGaisser2012": 
+    if args.cosmic_ray_model=="HillasGaisser2012":
         CR_vers = "H3a"
-    elif args.cosmic_ray_model=="GaisserStanevTilav": 
+    elif args.cosmic_ray_model=="GaisserStanevTilav":
         CR_vers = "4-gen"
-    else: 
+    else:
         CR_vers = None
 
     mceq_run = MCEqRun(

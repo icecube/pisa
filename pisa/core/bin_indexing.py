@@ -1,32 +1,23 @@
 """
-Functions to retrieve the bin location of each elements
-of an array, inside a Container, based on its specified
-output binning.
+Functions to retrieve the bin index for a 1- to 3-dimensional sample.
 
-functions were adapted from translation.py
+Functions were adapted from translation.py
 
 
-NOTE:
-----
+Notes
+-----
+The binning convention in PISA (from numpy.histogramdd) is that the lower edge
+is inclusive and upper edge is exclusive for a given bin, except for the
+upper-most bin whose upper edge is also inclusive. Visually, for 1D:
 
-binning convention in pisa is that both lower and upper
-bounds of an inner bin edges is included in the lower bin
+    [ bin 0 ) [ bin 1 ) ... [ bin num_bins - 1 ]
 
-first bin is bin 0
+First bin is index = 0 and last bin is index = (num_bins - 1)
 
-last bin is bin (NBins -1)
-
-bounds falling on the lowest bin edge is included in bin 0
-
-bounds falling in the highest bin edge is included in bin Nbins
-
-values falling below the lowest edge have index -1
-
-values falling above the highest edge have index Nbins
-
-if a value falls on an inner edge, it is included in the lowest
-bin bound by that edge
-
+* Values below the lowermost-edge of any dimension's binning return index = -1
+* NaN values return index = -1
+* Otherwise, values above the uppermost-edge of any dimension's binning return
+  index = num_bins
 
 """
 
@@ -37,124 +28,37 @@ from numba import guvectorize, SmartArray
 
 from pisa import FTYPE, TARGET
 from pisa.core.binning import OneDimBinning, MultiDimBinning
+from pisa.core.translation import find_index
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.numba_tools import WHERE
 
-from translation import find_index
 
 __all__ = ["lookup_indices", "test_lookup_indices"]
 
 
-# ---------- Lookup methods ---------------
+FX = "f4" if FTYPE == np.float32 else "f8"
 
 
-def lookup_indices(sample, binning):
-    """The inverse of histograming
-
-    Paramters
-    ---------
-    sample : list of SmartArrays
-
-    binning : pisa.core.binning.OneDimBinning or pisa.core.binning.MultiDimBinning
-
-    Returns: for each event the index of the histogram in which it falls into
-
-    Notes
-    -----
-    this method works for 1d, 2d and 3d histogram only
-
-    """
-    if isinstance(binning, OneDimBinning):
-        binning = MultiDimBinning(binning)
-    if not isinstance(binning, MultiDimBinning):
-        raise TypeError(
-            "binning must be OneDimBinning or MultiDimBinning; got {}".format(
-                type(binning)
-            )
-        )
-    assert 1 <= binning.num_dims <= 3, "can only do 1d, 2d and 3d at the moment"
-
-    bin_edges = [edges.magnitude for edges in binning.bin_edges]
-
-    array = SmartArray(np.zeros_like(sample[0], dtype=np.int64))
-
-    if binning.num_dims == 1:
-
-        assert (
-            len(sample) == 1
-        ), "ERROR: binning provided has 1 dimension, but sample provided has not"
-
-        lookup_index_vectorized_1d(
-            sample[0].get(WHERE), bin_edges[0], out=array.get(WHERE)
-        )
-
-    elif binning.num_dims == 2:
-
-        assert (
-            len(sample) == 2
-        ), "ERROR: binning provided has 2 dimensions, but sample provided has not."
-
-        lookup_index_vectorized_2d(
-            sample[0].get(WHERE),
-            sample[1].get(WHERE),
-            bin_edges[0],
-            bin_edges[1],
-            out=array.get(WHERE),
-        )
-
-    elif binning.num_dims == 3:
-
-        assert (
-            len(sample) == 3
-        ), "ERROR: binning provided has 3 dimensions, but sample provided has not."
-
-        lookup_index_vectorized_3d(
-            sample[0].get(WHERE),
-            sample[1].get(WHERE),
-            sample[2].get(WHERE),
-            bin_edges[0],
-            bin_edges[1],
-            bin_edges[2],
-            out=array.get(WHERE),
-        )
-
-    else:
-        raise NotImplementedError()
-
-    array.mark_changed(WHERE)
-    return array
+@guvectorize(
+    [f"({FX}[:], {FX}[:], i8[:])"],
+    "(), (j) -> ()",
+    target=TARGET,
+)
+def lookup_indices_vectorized_1d(sample_x, bin_edges_x, out):
+    """Lookup bin indices for sample_x values, where binning is defined by
+    `bin_edges_x`."""
+    out[0] = find_index(sample_x[0], bin_edges_x)
 
 
-# -----------------------------------------------------------------------
-# Numba vectorized functions
-
-if FTYPE == np.float32:
-    _SIGNATURE = ["(f4[:], f4[:], i8[:])"]
-else:
-    _SIGNATURE = ["(f8[:], f8[:], i8[:])"]
-
-
-@guvectorize(_SIGNATURE, "(), (j) -> ()", target=TARGET)
-def lookup_index_vectorized_1d(sample_x, bin_edges_x, out):
-    sample_x_ = sample_x[0]
-    idx = find_index(sample_x_, bin_edges_x)
-    out[0] = idx
-
-
-if FTYPE == np.float32:
-    _SIGNATURE = ["(f4[:], f4[:], f4[:], f4[:], i8[:])"]
-else:
-    _SIGNATURE = ["(f8[:], f8[:], f8[:], f8[:], i8[:])"]
-
-
-@guvectorize(_SIGNATURE, "(), (), (j), (k) -> ()", target=TARGET)
-def lookup_index_vectorized_2d(sample_x, sample_y, bin_edges_x, bin_edges_y, out):
+@guvectorize(
+    [f"({FX}[:], {FX}[:], {FX}[:], {FX}[:], i8[:])"],
+    "(), (), (a), (b) -> ()",
+    target=TARGET,
+)
+def lookup_indices_vectorized_2d(sample_x, sample_y, bin_edges_x, bin_edges_y, out):
     """Same as above, except we get back the index"""
-    sample_x_ = sample_x[0]
-    sample_y_ = sample_y[0]
-
-    idx_x = find_index(sample_x_, bin_edges_x)
-    idx_y = find_index(sample_y_, bin_edges_y)
+    idx_x = find_index(sample_x[0], bin_edges_x)
+    idx_y = find_index(sample_y[0], bin_edges_y)
 
     n_x_bins = len(bin_edges_x) - 1
     n_y_bins = len(bin_edges_y) - 1
@@ -167,28 +71,21 @@ def lookup_index_vectorized_2d(sample_x, sample_y, bin_edges_x, bin_edges_y, out
         # any dim overflowed
         out[0] = n_bins
     else:
-        idx = idx_x * n_y_bins + idx_y
-        out[0] = idx
+        out[0] = idx_x * n_y_bins + idx_y
 
 
-if FTYPE == np.float32:
-    _SIGNATURE = ["(f4[:], f4[:], f4[:], f4[:], f4[:], f4[:], i8[:])"]
-else:
-    _SIGNATURE = ["(f8[:], f8[:], f8[:], f8[:], f8[:], f8[:], i8[:])"]
-
-
-@guvectorize(_SIGNATURE, "(), (), (), (j), (k), (l) -> ()", target=TARGET)
-def lookup_index_vectorized_3d(
+@guvectorize(
+    [f"({FX}[:], {FX}[:], {FX}[:], {FX}[:], {FX}[:], {FX}[:], i8[:])"],
+    "(), (), (), (a), (b), (c) -> ()",
+    target=TARGET,
+)
+def lookup_indices_vectorized_3d(
     sample_x, sample_y, sample_z, bin_edges_x, bin_edges_y, bin_edges_z, out
 ):
     """Vectorized gufunc to perform the lookup"""
-    sample_x_ = sample_x[0]
-    sample_y_ = sample_y[0]
-    sample_z_ = sample_z[0]
-
-    idx_x = find_index(sample_x_, bin_edges_x)
-    idx_y = find_index(sample_y_, bin_edges_y)
-    idx_z = find_index(sample_z_, bin_edges_z)
+    idx_x = find_index(sample_x[0], bin_edges_x)
+    idx_y = find_index(sample_y[0], bin_edges_y)
+    idx_z = find_index(sample_z[0], bin_edges_z)
 
     n_x_bins = len(bin_edges_x) - 1
     n_y_bins = len(bin_edges_y) - 1
@@ -202,8 +99,74 @@ def lookup_index_vectorized_3d(
         # any dim overflowed
         out[0] = n_bins
     else:
-        idx = (idx_x * n_y_bins + idx_y) * n_z_bins + idx_z
-        out[0] = idx
+        out[0] = (idx_x * n_y_bins + idx_y) * n_z_bins + idx_z
+
+
+def lookup_indices(sample, binning):
+    """Lookup (flattened) bin index for sample points.
+
+    Parameters
+    ----------
+    sample : length-M_dimensions sequence of length-N_events SmartArrays
+        All smart arrays must have the same lengths; corresponding elements of
+        the arrays are the coordinates of an event in the dimensions each array
+        represents.
+
+    binning : pisa.core.binning.MultiDimBinning or convertible thereto
+        `binning` is passed to instantiate ``MultiDimBinning``, so e.g., a
+        pisa.core.binning.OneDimBinning is valid to pass as `binning`
+
+    Returns
+    -------
+    indices : length-N_events SmartArray
+        One for each event the index of the histogram in which it falls into
+
+    Notes
+    -----
+    this method works for 1d, 2d and 3d histogram only
+
+    """
+    # Convert non-MultiDimBinning objects into MultiDimBinning if possible;
+    # if this fails, an error will result, as it should
+    binning = MultiDimBinning(binning)
+
+    if len(sample) != binning.num_dims:
+        raise ValueError(
+            f"`binning` has {binning.num_dims} dimension(s), but `sample`"
+            f"contains {len(sample)} arrays (so represents {len(sample)}"
+            f" dimensions)"
+        )
+
+    lookup_funcs = {
+        1: lookup_indices_vectorized_1d,
+        2: lookup_indices_vectorized_2d,
+        3: lookup_indices_vectorized_3d,
+    }
+
+    if binning.num_dims not in lookup_funcs:
+        raise NotImplementedError(
+            "binning must have num_dims in {}; got {}".format(
+                sorted(lookup_funcs.keys()), binning.num_dims
+            )
+        )
+
+    lookup_func = lookup_funcs[binning.num_dims]
+
+    lookup_func_args = (
+        [a.get(WHERE) for a in sample]
+        + [SmartArray(dim.edge_magnitudes.astype(FTYPE)).get(WHERE) for dim in binning]
+    )
+    logging.trace("lookup_func_args = {}".format(lookup_func_args))
+
+    # Create an array to store the results
+    indices = SmartArray(np.empty_like(sample[0], dtype=np.int64))
+
+    # Perform the lookup
+    lookup_func(*lookup_func_args, out=indices.get(WHERE))
+
+    indices.mark_changed(WHERE)
+
+    return indices
 
 
 def test_lookup_indices():
@@ -241,12 +204,14 @@ def test_lookup_indices():
     #
     logging.trace("TEST 1D:")
     logging.trace("Total number of bins: {}".format(7))
-    logging.trace("array in 1D: {}".format(x.get(WHERE)))
+    logging.trace("array in 1D: {}".format(x.get()))
     logging.trace("Binning: {}".format(binning_1d.bin_edges[0]))
     indices = lookup_indices([x], binning_1d)
-    logging.trace("indices of each array element: {}".format(indices.get(WHERE)))
+    logging.trace("indices of each array element: {}".format(indices.get()))
     logging.trace("*********************************")
-    assert np.array_equal(indices.get(WHERE), np.array([-1, 0, 1, 6, 6, 7, 6]))
+    test = indices.get()
+    ref = np.array([-1, 0, 1, 6, 6, 7, 6])
+    assert np.array_equal(test, ref), "test={} != ref={}".format(test, ref)
 
     # 2D case:
     #
@@ -255,14 +220,14 @@ def test_lookup_indices():
     #
     logging.trace("TEST 2D:")
     logging.trace("Total number of bins: {}".format(7 * 4))
-    logging.trace(
-        "array in 2D: {}".format([(i, j) for i, j in zip(x.get(WHERE), y.get(WHERE))])
-    )
+    logging.trace("array in 2D: {}".format(list(zip(x.get(), y.get()))))
     logging.trace("Binning: {}".format(binning_2d.bin_edges))
     indices = lookup_indices([x, y], binning_2d)
-    logging.trace("indices of each array element: {}".format(indices.get(WHERE)))
+    logging.trace("indices of each array element: {}".format(indices.get()))
     logging.trace("*********************************")
-    assert np.array_equal(indices.get(WHERE), np.array([-1, 0, 5, 25, 26, 28, 26]))
+    test = indices.get()
+    ref = np.array([-1, 0, 5, 25, 27, 28, 26])
+    assert np.array_equal(test, ref), "test={} != ref={}".format(test, ref)
 
     # 3D case:
     #
@@ -271,16 +236,14 @@ def test_lookup_indices():
     #
     logging.trace("TEST 3D:")
     logging.trace("Total number of bins: {}".format(7 * 4 * 2))
-    logging.trace(
-        "array in 3D: {}".format(
-            [(i, j, k) for i, j, k in zip(x.get(WHERE), y.get(WHERE), z.get(WHERE))]
-        )
-    )
+    logging.trace("array in 3D: {}".format(list(zip(x.get(), y.get(), z.get()))))
     logging.trace("Binning: {}".format(binning_3d.bin_edges))
     indices = lookup_indices([x, y, z], binning_3d)
-    logging.trace("indices of each array element: {}".format(indices.get(WHERE)))
+    logging.trace("indices of each array element: {}".format(indices.get()))
     logging.trace("*********************************")
-    assert np.array_equal(indices.get(WHERE), np.array([-1, 0, 11, 51, 52, 56, 52]))
+    test = indices.get()
+    ref = np.array([-1, 0, 11, 51, 54, 56, 52])
+    assert np.array_equal(test, ref), "test={} != ref={}".format(test, ref)
 
     logging.info("<< PASS : test_lookup_indices >>")
 

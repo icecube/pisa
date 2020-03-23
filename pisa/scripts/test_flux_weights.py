@@ -11,8 +11,6 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import os
 
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 plt.rcParams['text.usetex'] = True
 import matplotlib.colors as colors
@@ -1655,27 +1653,6 @@ def main():
                 flav=args.flavor,
                 flavtex=flavortex,
                 enpow=args.enpow
-            )
-
-        if args.ip_checks:
-            if args.flavor is None:
-                raise ValueError('You must specify a flavor for these tests!')
-            if args.flavor not in PRIMARIES:
-                raise ValueError('Invalid flavor chosen. Please specify one '
-                                 'from the following: %s'%PRIMARIES)
-            flavortex = TEXPRIMARIES[PRIMARIES.index(args.flavor)]
-            do_ip_3d_honda_test(
-                spline_dict=spline_dict_3d,
-                flux_dict=flux_dict_3d,
-                outdir=args.outdir,
-                oversample=args.oversample,
-                save_name=save_name,
-                title_filename=title_filename,
-                flav=args.flavor,
-                flavtex=flavortex,
-                enpow=args.enpow,
-                az_linear=not args.ip_az
-
             )
 
     if args.comparisons:

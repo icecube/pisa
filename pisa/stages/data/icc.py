@@ -1,14 +1,11 @@
-import os
 import sys
 
 import h5py
 import numpy as np
 
-from pisa import ureg, Q_, FTYPE
-from pisa.core.binning import OneDimBinning, MultiDimBinning
+from pisa import ureg
 from pisa.core.map import Map, MapSet
 from pisa.core.stage import Stage
-from pisa.utils.comparisons import normQuant
 from pisa.utils.log import logging
 from pisa.utils.resources import find_resource
 
@@ -34,26 +31,28 @@ class icc(Stage):
     """
     Data loader stage
 
-    Paramaters
+    Parameters
     ----------
     params : ParamSet
-        atm_muon_scale: float
-            scale factor to be apllied to outputs
-        icc_bg_file : string
-            path pointing to the hdf5 file containing the events
-        use_def1 : bool
-            whether ICC definition 1 is used
-        sim_ver: string
-            indicating the sim version, wither 4digit, 5digit or dima
-        livetime : time quantity
-            livetime scale factor
-        bdt_cut : float
-            further cut applied to events for the atm. muon rejections BDT
-        alt_icc_bg_file : string
-            path pointing to an hdf5 file containing the events for an
-        kde_hist : bool
-        fixed_scale_factor : float
-            scale fixed errors
+        Expected params .. ::
+
+            atm_muon_scale: float
+                scale factor to be apllied to outputs
+            icc_bg_file : string
+                path pointing to the hdf5 file containing the events
+            use_def1 : bool
+                whether ICC definition 1 is used
+            sim_ver: string
+                indicating the sim version, wither 4digit, 5digit or dima
+            livetime : time quantity
+                livetime scale factor
+            bdt_cut : float
+                further cut applied to events for the atm. muon rejections BDT
+            alt_icc_bg_file : string
+                path pointing to an hdf5 file containing the events for an
+            kde_hist : bool
+            fixed_scale_factor : float
+                scale fixed errors
 
     Notes
     -----
@@ -123,14 +122,14 @@ class icc(Stage):
 
         # the rest of this function is PISA v2 legacy code...
         logging.info('Initializing BackgroundServiceICC...')
-        logging.info('Opening file: %s'%(icc_bg_file))
+        logging.info('Opening file: %s', icc_bg_file)
 
         try:
-            bg_file = h5py.File(find_resource(icc_bg_file),'r')
+            bg_file = h5py.File(find_resource(icc_bg_file), 'r')
             if alt_icc_bg_file is not None:
-                alt_bg_file = h5py.File(find_resource(alt_icc_bg_file),'r')
+                alt_bg_file = h5py.File(find_resource(alt_icc_bg_file), 'r')
         except IOError as e:
-            logging.error("Unable to open icc_bg_file %s"%icc_bg_file)
+            logging.error("Unable to open icc_bg_file %s", icc_bg_file)
             logging.error(e)
             sys.exit(1)
 
@@ -141,18 +140,18 @@ class icc(Stage):
         l5 = bg_file['IC86_Dunkman_L5']['bdt_score']
         l6 = bg_file['IC86_Dunkman_L6']
         if use_def1:
-            l4_pass = np.all(l4==1)
+            l4_pass = np.all(l4 == 1)
         else:
             if sim_ver in ['5digit', 'dima']:
                 l4_invVICH = bg_file['IC86_Dunkman_L4']['result_invertedVICH']
-                l4_pass = np.all(np.logical_or(l4==1, l4_invVICH==1))
+                l4_pass = np.all(np.logical_or(l4 == 1, l4_invVICH == 1))
             else:
                 logging.info(
                     'For the old simulation, def.2 background not done yet,'
                     ' so still use def1 for it.'
                 )
-                l4_pass = np.all(l4==1)
-        assert (np.all(santa_doms>=3) and np.all(l3 == 1) and l4_pass and
+                l4_pass = np.all(l4 == 1)
+        assert (np.all(santa_doms >= 3) and np.all(l3 == 1) and l4_pass and
                 np.all(l5 >= 0.1))
         corridor_doms_over_threshold = l6['corridor_doms_over_threshold']
 
@@ -164,7 +163,7 @@ class icc(Stage):
 
         #load events
         if sim_ver == '4digit':
-            variable ='IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino'
+            variable = 'IC86_Dunkman_L6_MultiNest8D_PDG_Neutrino'
         elif sim_ver in ['5digit', 'dima']:
             variable = 'IC86_Dunkman_L6_PegLeg_MultiNest8D_NumuCC'
         else:
@@ -181,7 +180,7 @@ class icc(Stage):
         # Cut: Only keep bdt score >= 0.2 (from MSU latest result, make data/MC
         # agree much better)
         cut_events = {}
-        cut = l5>=bdt_cut
+        cut = l5 >= bdt_cut
         cut_events['reco_energy'] = reco_energy_all[cut]
         cut_events['reco_coszen'] = reco_coszen_all[cut]
         cut_events['pid'] = pid_all[cut]
@@ -190,7 +189,7 @@ class icc(Stage):
             # Cut: Only keep bdt score >= 0.2 (from MSU latest result, make
             # data/MC agree much better)
             alt_cut_events = {}
-            alt_cut = alt_l5>=bdt_cut
+            alt_cut = alt_l5 >= bdt_cut
             alt_cut_events['reco_energy'] = alt_reco_energy_all[alt_cut]
             alt_cut_events['reco_coszen'] = alt_reco_coszen_all[alt_cut]
             alt_cut_events['pid'] = alt_pid_all[alt_cut]
@@ -210,11 +209,11 @@ class icc(Stage):
                         adaptive=True
                     )
         else:
-            self.icc_bg_hist,_ = np.histogramdd(sample = np.array([cut_events[bin_name] for bin_name in self.bin_names]).T, bins=self.bin_edges)
+            self.icc_bg_hist, _ = np.histogramdd(sample=np.array([cut_events[bin_name] for bin_name in self.bin_names]).T, bins=self.bin_edges)
 
 
         conversion = self.params.atm_muon_scale.value.m_as('dimensionless') / ureg('common_year').to('seconds').m
-        logging.info('nominal ICC rate at %.6E Hz'%(self.icc_bg_hist.sum()*conversion))
+        logging.info('nominal ICC rate at %.6E Hz', self.icc_bg_hist.sum()*conversion)
 
         if alt_icc_bg_file is not None:
             if self.params.kde_hist.value:
@@ -230,7 +229,7 @@ class icc(Stage):
                     adaptive=True
                 )
             else:
-                self.alt_icc_bg_hist,_ = np.histogramdd(sample = np.array([alt_cut_events[bin_name] for bin_name in self.bin_names]).T, bins=self.bin_edges)
+                self.alt_icc_bg_hist, _ = np.histogramdd(sample=np.array([alt_cut_events[bin_name] for bin_name in self.bin_names]).T, bins=self.bin_edges)
             # only interested in shape difference, not rate
             scale = self.icc_bg_hist.sum()/self.alt_icc_bg_hist.sum()
             self.alt_icc_bg_hist *= scale
@@ -251,21 +250,21 @@ class icc(Stage):
         fixed_scale *= self.params.fixed_scale_factor.value.m_as('dimensionless')
 
         if self.error_method == 'sumw2':
-            maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), error_hist=(np.sqrt(self.icc_bg_hist) * scale) ,binning=self.output_binning)]
+            maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), error_hist=(np.sqrt(self.icc_bg_hist) * scale), binning=self.output_binning)]
         elif self.error_method == 'sumw2+shape':
-            error = scale * np.sqrt(self.icc_bg_hist + (self.icc_bg_hist - self.alt_icc_bg_hist)**2 )
-            maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), error_hist=error ,binning=self.output_binning)]
+            error = scale * np.sqrt(self.icc_bg_hist + (self.icc_bg_hist - self.alt_icc_bg_hist)**2)
+            maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), error_hist=error, binning=self.output_binning)]
         elif self.error_method == 'shape':
             error = scale * np.abs(self.icc_bg_hist - self.alt_icc_bg_hist)
         elif self.error_method == 'fixed_shape':
             error = fixed_scale * np.abs(self.icc_bg_hist - self.alt_icc_bg_hist)
-            maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), error_hist=error ,binning=self.output_binning)]
+            maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), error_hist=error, binning=self.output_binning)]
         elif self.error_method == 'fixed_sumw2+shape':
-            error = fixed_scale * np.sqrt(self.icc_bg_hist + (self.icc_bg_hist - self.alt_icc_bg_hist)**2 )
-            maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), error_hist=error ,binning=self.output_binning)]
+            error = fixed_scale * np.sqrt(self.icc_bg_hist + (self.icc_bg_hist - self.alt_icc_bg_hist)**2)
+            maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), error_hist=error, binning=self.output_binning)]
         elif self.error_method == 'fixed_doublesumw2+shape':
-            error = fixed_scale * np.sqrt(2*self.icc_bg_hist + (self.icc_bg_hist - self.alt_icc_bg_hist)**2 )
-            maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), error_hist=error ,binning=self.output_binning)]
+            error = fixed_scale * np.sqrt(2*self.icc_bg_hist + (self.icc_bg_hist - self.alt_icc_bg_hist)**2)
+            maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), error_hist=error, binning=self.output_binning)]
         else:
             maps = [Map(name=self.output_names[0], hist=(self.icc_bg_hist * scale), binning=self.output_binning)]
 

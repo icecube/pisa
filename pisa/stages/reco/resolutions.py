@@ -1,61 +1,62 @@
 # pylint: disable=not-callable
+
 """
 Stage for resolution improvement studies
 
 """
+
 from __future__ import absolute_import, print_function, division
 
-import math
-import numpy as np
-from numba import guvectorize, cuda
-
-from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
-from pisa.utils.profiler import profile
 
 
 class resolutions(PiStage):
     """
     stage to change the reconstructed information by a given amount
-    This can be used to esimate the impact of improved recosntruction resolutions for instance
-    Paramaters
+    This can be used to esimate the impact of improved recosntruction
+    resolutions for instance
+
+    Parameters
     ----------
-    energy_improvement : quantity (dimensionless)
-       scale the reco error down by this fraction
-    coszen_improvement : quantity (dimensionless)
-        scale the reco error down by this fraction
-    pid_improvement : quantity (dimensionless)
-        applies a shift to the classification parameter
+    params
+        Expected params .. ::
+
+            energy_improvement : quantity (dimensionless)
+               scale the reco error down by this fraction
+            coszen_improvement : quantity (dimensionless)
+                scale the reco error down by this fraction
+            pid_improvement : quantity (dimensionless)
+                applies a shift to the classification parameter
+
     """
-
-    def __init__(self,
-                 data=None,
-                 params=None,
-                 input_names=None,
-                 output_names=None,
-                 debug_mode=None,
-                 input_specs=None,
-                 calc_specs=None,
-                 output_specs=None,
-                ):
-
-        expected_params = ('energy_improvement',
-                           'coszen_improvement',
-                           'pid_improvement',
-                          )
+    def __init__(
+        self,
+        data=None,
+        params=None,
+        input_names=None,
+        output_names=None,
+        debug_mode=None,
+        input_specs=None,
+        calc_specs=None,
+        output_specs=None,
+    ):
+        expected_params = (
+            'energy_improvement',
+            'coszen_improvement',
+            'pid_improvement',
+        )
         input_names = ()
         output_names = ()
 
         # what are the keys used from the inputs during apply
-        input_calc_keys = (
-                          )
+        input_calc_keys = ()
+
         # what are keys added or altered in the calculation used during apply
-        output_calc_keys = (
-                           )
+        output_calc_keys = ()
+
         # what keys are added or altered for the outputs during apply
-        output_apply_keys = (
-                            )
+        output_apply_keys = ()
 
         # init base class
         super().__init__(
@@ -76,7 +77,6 @@ class resolutions(PiStage):
         assert self.input_mode is not None
         assert self.calc_mode is None
         assert self.output_mode is not None
-
         assert self.input_mode == self.output_mode
 
     def setup_function(self):
