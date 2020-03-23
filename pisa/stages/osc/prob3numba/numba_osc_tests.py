@@ -25,8 +25,8 @@ from pisa.utils.numba_tools import WHERE
 from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import (
     FX,
     CX,
-    propagate_array_vacuum,
-    propagate_array,
+    propagate_array_vacuum_scalar,
+    propagate_array_scalar,
     get_transition_matrix_hostfunc,
     get_transition_matrix_massbasis_hostfunc,
     get_H_vac_hostfunc,
@@ -224,7 +224,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
 
     tc_ = deepcopy(tc)
     test, ref = stability_test(
-        func=propagate_array_vacuum,
+        func=propagate_array_vacuum_scalar,
         func_kw=dict(
             dm=tc_["dm"],
             mix=tc_["pmns"],
@@ -234,7 +234,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             # output:
             probability=np.ones(shape=(3, 3), dtype=FX),
         ),
-        ref_path=join(TEST_DATA_DIR, f"propagate_array_vacuum__{tc_name}.pkl"),
+        ref_path=join(TEST_DATA_DIR, f"propagate_array_vacuum_scalar__{tc_name}.pkl"),
         **st_test_kw,
     )
     logging.debug("\nvac_prob = %s", ary2str(test["probability"]))
@@ -245,7 +245,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
 
     tc_ = deepcopy(tc)
     test, ref = stability_test(
-        func=propagate_array,
+        func=propagate_array_scalar,
         func_kw=dict(
             dm=tc_["dm"],
             mix=tc_["pmns"],
@@ -257,7 +257,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             # output:
             probability=np.ones(shape=(3, 3), dtype=FX),
         ),
-        ref_path=join(TEST_DATA_DIR, f"propagate_array__{tc_name}.pkl"),
+        ref_path=join(TEST_DATA_DIR, f"propagate_array_scalar__{tc_name}.pkl"),
         **st_test_kw,
     )
     logging.debug("\nmat_prob = %s", ary2str(test["probability"]))
