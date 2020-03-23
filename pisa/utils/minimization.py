@@ -14,7 +14,7 @@ import numpy as np
 import scipy.optimize as optimize
 from scipy.optimize import OptimizeResult
 
-from pisa import EPSILON, FTYPE
+from pisa import EPSILON, FTYPE, ureg
 from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging
 from pisa.utils.random_numbers import get_random_state
@@ -253,6 +253,7 @@ def override_min_opt(minimizer_settings, min_opt):
                 val = val_str
         minimizer_settings['options'][opt] = val
 
+# --------------------------------------------------------------------------- #
 
 def minimizer_x0_bounds(free_params, minimizer_settings, padding_factor=1.,
                         randomize_params=None, random_state=None):
@@ -305,7 +306,7 @@ def minimizer_x0_bounds(free_params, minimizer_settings, padding_factor=1.,
         return x0, bounds
     minimizer_method = minimizer_settings['method'].lower()
     if minimizer_method in MINIMIZERS_USING_SYMM_GRAD:
-        logging.warning(
+        logging.info(
             'Local minimizer %s requires artificial boundaries SMALLER than'
             ' the user-specified boundaries (so that numerical gradients do'
             ' not exceed the user-specified boundaries).',
@@ -347,6 +348,68 @@ def minimizer_x0_bounds(free_params, minimizer_settings, padding_factor=1.,
 
     x0 = tuple(clipped_x0)
     return x0, bounds
+
+def test_minimizer_x0_bounds(
+    cfg='settings/minimizer/slsqp_ftol1e-6_eps1e-4_maxiter1000.cfg'
+):
+    """Unit tests of `minimizer_x0_bounds`."""
+    from pisa.core.param import Param, ParamSet
+    from pisa.utils.comparisons import recursiveEquality
+    from pisa.utils.config_parser import parse_minimizer_config
+    p0 = Param(name='physics-y parameter', value=0. * ureg.eV**2, prior=None,
+               range=[-0.7, 0.5] * ureg.eV**2, is_fixed=False, is_discrete=False)
+    p1 = Param(name='very important nuisance', value=0.64, prior=None,
+               range=[0., 2.0], is_fixed=False, is_discrete=False)
+    p2 = Param(name='not-a-nuisance', value=0.0, prior=None,
+               range=[-3., 3.], is_fixed=True, is_discrete=False)
+    param_set = ParamSet(p0, p1, p2)
+    # first test the simplest setting: no minimizer or any other
+    # fancy settings
+    x0, bounds = minimizer_x0_bounds(
+        free_params=param_set.free,
+        minimizer_settings=None
+    )
+    for x0_val, rescaled_val in zip(x0, param_set._rescaled_values):
+        assert recursiveEquality(x0_val, rescaled_val)
+    assert bounds == [(0, 1)] * len(x0)
+
+    randomize_params = [p2.name]
+    try:
+        x0, bounds = minimizer_x0_bounds(
+            free_params=param_set.free,
+            minimizer_settings=None,
+            randomize_params=randomize_params
+        )
+    except KeyError:
+        # the above should fail with a KeyError, since p2 is fixed
+        pass
+    except:
+        print("Unexpected error:", sys.exc_info()[0])
+        raise
+    else:
+        raise RuntimeError("Should have raised a `KeyError`!")
+
+    for randomize_params in [[p0.name], [p1.name], param_set.free.names]:
+        x0, bounds = minimizer_x0_bounds(
+            free_params=param_set.free,
+            minimizer_settings=None,
+            randomize_params=randomize_params
+        )
+        for param, x0_val in zip(param_set.free, x0):
+            if param.name in randomize_params:
+                assert not recursiveEquality(param.value, param.nominal_value)
+                assert recursiveEquality(param._rescaled_value, x0_val)
+
+    # should be handled and warned about
+    p0.value = p0.range[0]
+    p1.value = p1.range[1]
+    x0, bounds = minimizer_x0_bounds(
+        free_params=param_set.free,
+        minimizer_settings=parse_minimizer_config(cfg),
+        randomize_params=False
+    )
+
+# --------------------------------------------------------------------------- #
 
 
 class Bounds(object):
@@ -652,3 +715,7 @@ def display_minimizer_header(free_params, metric):
     hdr += '\n'
 
     sys.stdout.write(hdr)
+
+
+if __name__ == '__main__':
+    test_minimizer_x0_bounds()

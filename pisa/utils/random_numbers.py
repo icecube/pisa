@@ -82,7 +82,7 @@ def get_random_state(random_state, jumpahead=0):
 
     """
     if random_state is None:
-        new_random_state = np.random
+        new_random_state = np.random.RandomState()
 
     elif isinstance(random_state, np.random.RandomState):
         new_random_state = random_state
