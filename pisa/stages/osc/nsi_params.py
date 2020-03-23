@@ -8,7 +8,7 @@ to include NSI changes made by Thomas Ehrhardt on his branch:
 original version can be found in thehrh/pisa nsi_reparameterisation branch
 """
 
-from __future__ import division
+from __future__ import absolute_import, division
 
 import numpy as np
 
@@ -57,7 +57,7 @@ class NSIParams(object):
 
     def __init__(self):
         """Set NSI parameters."""
-        self.eps_matrix = (
+        self._eps_matrix = (
             np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3,3), dtype=FTYPE)
         )
 
@@ -77,7 +77,7 @@ class StdNSIParams(NSIParams):
     """
 
     def __init__(self):
-        super(StdNSIParams, self).__init__()
+        super().__init__()
         self._eps_ee = 0.
         self._eps_emu = 0.
         self._eps_etau = 0.
@@ -93,7 +93,9 @@ class StdNSIParams(NSIParams):
 
     @eps_ee.setter
     def eps_ee(self, value):
-        self.eps_matrix[0, 0] = value + 1.j * self.eps_matrix[0, 0].imag
+        if isinstance(value, complex):
+            raise ValueError("eps_ee must be a real number!")
+        self._eps_matrix[0, 0] = value + 1.j * self._eps_matrix[0, 0].imag
 
     @property
     def eps_emu(self):
@@ -103,8 +105,8 @@ class StdNSIParams(NSIParams):
     @eps_emu.setter
     def eps_emu(self, value):
         magnitude, phase = _set_magnitude_phase(value)
-        self.eps_matrix[0, 1] = magnitude * (np.cos(phase) + 1.j * np.sin(phase))
-        self.eps_matrix[1, 0] = np.conjugate(self.eps_matrix[0, 1])
+        self._eps_matrix[0, 1] = magnitude * (np.cos(phase) + 1.j * np.sin(phase))
+        self._eps_matrix[1, 0] = np.conjugate(self._eps_matrix[0, 1])
 
     @property
     def eps_etau(self):
@@ -114,8 +116,8 @@ class StdNSIParams(NSIParams):
     @eps_etau.setter
     def eps_etau(self, value):
         magnitude, phase = _set_magnitude_phase(value)
-        self.eps_matrix[0, 2] = magnitude * (np.cos(phase) + 1.j * np.sin(phase))
-        self.eps_matrix[2, 0] = np.conjugate(self.eps_matrix[0, 2])
+        self._eps_matrix[0, 2] = magnitude * (np.cos(phase) + 1.j * np.sin(phase))
+        self._eps_matrix[2, 0] = np.conjugate(self._eps_matrix[0, 2])
 
     @property
     def eps_mumu(self):
@@ -124,7 +126,9 @@ class StdNSIParams(NSIParams):
 
     @eps_mumu.setter
     def eps_mumu(self, value):
-        self.eps_matrix[1, 1] = value + 1.j * self.eps_matrix[1, 1].imag
+        if isinstance(value, complex):
+            raise ValueError("eps_mumu must be a real number!")
+        self._eps_matrix[1, 1] = value + 1.j * self._eps_matrix[1, 1].imag
 
     @property
     def eps_mutau(self):
@@ -134,8 +138,8 @@ class StdNSIParams(NSIParams):
     @eps_mutau.setter
     def eps_mutau(self, value):
         magnitude, phase = _set_magnitude_phase(value)
-        self.eps_matrix[1, 2] = magnitude * (np.cos(phase) + 1.j * np.sin(phase))
-        self.eps_matrix[2, 1] = np.conjugate(self.eps_matrix[1, 2])
+        self._eps_matrix[1, 2] = magnitude * (np.cos(phase) + 1.j * np.sin(phase))
+        self._eps_matrix[2, 1] = np.conjugate(self._eps_matrix[1, 2])
 
     @property
     def eps_tautau(self):
@@ -144,7 +148,26 @@ class StdNSIParams(NSIParams):
 
     @eps_tautau.setter
     def eps_tautau(self, value):
-        self.eps_matrix[2, 2] = value + 1.j * self.eps_matrix[2, 2].imag
+        if isinstance(value, complex):
+            raise ValueError("eps_tautau must be a real number!")
+        self._eps_matrix[2, 2] = value + 1.j * self._eps_matrix[2, 2].imag
+
+    @property
+    def eps_matrix(self):
+        nsi_eps = self._eps_matrix
+        # subtract mumu entry from diagonal entries (trace irrelevant)
+        nsi_eps = nsi_eps - nsi_eps[1, 1] * np.eye(3, dtype=FTYPE)
+        # explicitly nullify imaginary parts of diagonal entries which
+        # are only there due to numerical inaccuracies
+        for i in range(3):
+            nsi_eps[i, i] = nsi_eps[i, i].real + 0 * 1.j
+
+        # make sure this is a valid Hermitian potential matrix
+        # before returning anything
+        assert np.all(np.isclose(nsi_eps, nsi_eps.conj().T))
+
+        return nsi_eps
+
 
 class VacuumLikeNSIParams(NSIParams):
     """
@@ -153,7 +176,7 @@ class VacuumLikeNSIParams(NSIParams):
     """
 
     def __init__(self):
-        super(NSIParams, self).__init__()
+        super().__init__()
         self._eps_scale = 1.
         self._eps_prime = 0.
         self._phi12 = 0.
@@ -171,7 +194,8 @@ class VacuumLikeNSIParams(NSIParams):
 
     @eps_scale.setter
     def eps_scale(self, value):
-        assert not isinstance(value, complex)
+        if isinstance(value, complex):
+            raise ValueError("eps_scale must be a real number!")
         self._eps_scale = value
 
     @property
@@ -181,7 +205,8 @@ class VacuumLikeNSIParams(NSIParams):
 
     @eps_prime.setter
     def eps_prime(self, value):
-        assert not isinstance(value, complex)
+        if isinstance(value, complex):
+            raise ValueError("eps_prime must be a real number!")
         self._eps_prime = value
 
     # --- projection phases ---
@@ -193,7 +218,7 @@ class VacuumLikeNSIParams(NSIParams):
 
     @phi12.setter
     def phi12(self, value):
-        assert value >= -np.pi and value <= np.pi
+        assert -np.pi <= value <= np.pi
         self._phi12 = value
 
     # --- phi13 ---
@@ -204,7 +229,7 @@ class VacuumLikeNSIParams(NSIParams):
 
     @phi13.setter
     def phi13(self, value):
-        assert value >= -np.pi and value <= np.pi
+        assert -np.pi <= value <= np.pi
         self._phi13 = value
 
     # --- phi23 ---
@@ -215,7 +240,7 @@ class VacuumLikeNSIParams(NSIParams):
 
     @phi23.setter
     def phi23(self, value):
-        assert value >= -np.pi and value <= np.pi
+        assert -np.pi <= value <= np.pi
         self._phi23 = value
 
     # --- vacuum-matter relative phases ---
@@ -227,7 +252,7 @@ class VacuumLikeNSIParams(NSIParams):
 
     @alpha1.setter
     def alpha1(self, value):
-        assert value >= 0. and value <= 2*np.pi
+        assert 0. <= value <= 2*np.pi
         self._alpha1 = value
 
     # --- alpha2 ---
@@ -238,7 +263,7 @@ class VacuumLikeNSIParams(NSIParams):
 
     @alpha2.setter
     def alpha2(self, value):
-        assert value >= 0. and value <= 2*np.pi
+        assert 0. <= value <= 2*np.pi
         self._alpha2 = value
 
     # --- nsi phase ---
@@ -249,7 +274,7 @@ class VacuumLikeNSIParams(NSIParams):
 
     @deltansi.setter
     def deltansi(self, value):
-        assert value >= 0. and value <= 2*np.pi
+        assert 0. <= value <= 2*np.pi
         self._deltansi = value
 
     # getters for the std. coupling parameters
@@ -474,8 +499,12 @@ class VacuumLikeNSIParams(NSIParams):
 
         return nsi_eps
 
+def test_nsi_params():
+    raise NotImplementedError()
+
 
 def test_nsi_parameterization():
+    """Unit test for Hvac-like NSI parameterization."""
     alpha1, alpha2, deltansi = np.random.rand(3) * 2. * np.pi
     phi12, phi13, phi23 = np.random.rand(3) * 2*np.pi - np.pi
     eps_max_abs = 10.0
@@ -512,15 +541,15 @@ def test_nsi_parameterization():
 
     logging.info('Now checking agreement with sympy calculation...')
 
-    eps_mat_sympy = test_sympy_mat_mult(
-        eps_scale_val = eps_scale,
-        eps_prime_val = eps_prime,
-        phi12_val = phi12,
-        phi13_val = phi13,
-        phi23_val = phi23,
-        alpha1_val = alpha1,
-        alpha2_val = alpha2,
-        deltansi_val = deltansi
+    eps_mat_sympy = nsi_sympy_mat_mult(
+        eps_scale_val=eps_scale,
+        eps_prime_val=eps_prime,
+        phi12_val=phi12,
+        phi13_val=phi13,
+        phi23_val=phi23,
+        alpha1_val=alpha1,
+        alpha2_val=alpha2,
+        deltansi_val=deltansi
     )
     logging.info('Sympy NSI matrix:\n%s' % eps_mat_sympy)
     close = np.isclose(eps_mat_numerical, eps_mat_sympy)
@@ -529,9 +558,8 @@ def test_nsi_parameterization():
             'Sympy and numerical calculations disagree! Elementwise agreement:\n'
             '%s' % close
         )
-    logging.info('<< PASS : test_nsi_parameterization >>')
 
-def test_sympy_mat_mult(
+def nsi_sympy_mat_mult(
         eps_scale_val, eps_prime_val,
         phi12_val, phi13_val, phi23_val,
         alpha1_val, alpha2_val,
@@ -545,7 +573,7 @@ def test_sympy_mat_mult(
         Matrix, eye,
         I, re, im,
         Symbol, symbols,
-        factor, simplify, trigsimp,
+        simplify,
         init_printing
     )
     from sympy.physics.quantum.dagger import Dagger
@@ -611,5 +639,3 @@ if __name__=='__main__':
     assert TARGET == 'cpu', "Cannot test functions on GPU, set PISA_TARGET to 'cpu'"
     set_verbosity(1)
     test_nsi_parameterization()
-
-
