@@ -5,6 +5,7 @@ Maybe it would amke sense to split this up into a separate earth layer stage
 and an osc. stage....todo
 
 """
+
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
@@ -12,7 +13,6 @@ from numba import guvectorize
 
 from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
-from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.stages.osc.nsi_params import StdNSIParams, VacuumLikeNSIParams
 from pisa.stages.osc.pi_osc_params import OscParams
@@ -28,55 +28,74 @@ class pi_prob3(PiStage):
 
     Parameters
     ----------
-    detector_depth : float
-    earth_model : PREM file path
-    prop_height : quantity (dimensionless)
-    YeI : quantity (dimensionless)
-    YeO : quantity (dimensionless)
-    YeM : quantity (dimensionless)
-    theta12 : quantity (angle)
-    theta13 : quantity (angle)
-    theta23 : quantity (angle)
-    deltam21 : quantity (mass^2)
-    deltam31 : quantity (mass^2)
-    deltacp : quantity (angle)
-    eps_scale : quantity(dimensionless)
-    eps_prime : quantity(dimensionless)
-    phi12 : quantity(angle)
-    phi13 : quantity(angle)
-    phi23 : quantity(angle)
-    alpha1 : quantity(angle)
-    alpha2 : quantity(angle)
-    deltansi : quantity(angle)
-    eps_ee : quantity (dimensionless)
-    eps_emu_magn : quantity (dimensionless)
-    eps_emu_phase : quantity (angle)
-    eps_etau_magn : quantity (dimensionless)
-    eps_etau_phase : quantity (angle)
-    eps_mumu : quantity(dimensionless)
-    eps_mutau_magn : quantity (dimensionless)
-    eps_mutau_phase : quantity (angle)
-    eps_tautau : quantity (dimensionless)
+    params
+        Expected params .. ::
 
-    None
+            detector_depth : float
+            earth_model : PREM file path
+            prop_height : quantity (dimensionless)
+            YeI : quantity (dimensionless)
+            YeO : quantity (dimensionless)
+            YeM : quantity (dimensionless)
+            theta12 : quantity (angle)
+            theta13 : quantity (angle)
+            theta23 : quantity (angle)
+            deltam21 : quantity (mass^2)
+            deltam31 : quantity (mass^2)
+            deltacp : quantity (angle)
+            eps_scale : quantity(dimensionless)
+            eps_prime : quantity(dimensionless)
+            phi12 : quantity(angle)
+            phi13 : quantity(angle)
+            phi23 : quantity(angle)
+            alpha1 : quantity(angle)
+            alpha2 : quantity(angle)
+            deltansi : quantity(angle)
+            eps_ee : quantity (dimensionless)
+            eps_emu_magn : quantity (dimensionless)
+            eps_emu_phase : quantity (angle)
+            eps_etau_magn : quantity (dimensionless)
+            eps_etau_phase : quantity (angle)
+            eps_mumu : quantity(dimensionless)
+            eps_mutau_magn : quantity (dimensionless)
+            eps_mutau_phase : quantity (angle)
+            eps_tautau : quantity (dimensionless)
 
-    Notes
+    **kwargs
+        Other kwargs are handled by PiStage
     -----
 
     """
-    def __init__(self,
-                 nsi_type=None,
-                 reparam_mix_matrix=False,
-                 data=None,
-                 params=None,
-                 input_names=None,
-                 output_names=None,
-                 debug_mode=None,
-                 input_specs=None,
-                 calc_specs=None,
-                 output_specs=None,
-                ):
+  
+    def __init__(
+      self,
+      nsi_type=None,
+      reparam_mix_matrix=False,
+      data=None,
+      params=None,
+      input_names=None,
+      output_names=None,
+      debug_mode=None,
+      input_specs=None,
+      calc_specs=None,
+      output_specs=None,
+    ):
 
+        expected_params = (
+          'detector_depth',
+          'earth_model',
+          'prop_height',
+          'YeI',
+          'YeO',
+          'YeM',
+          'theta12',
+          'theta13',
+          'theta23',
+          'deltam21',
+          'deltam31',
+          'deltacp'
+        )
+      
         # Check whether and if so with which NSI parameters we are to work.
         if nsi_type is not None:
             choices = ['standard', 'vacuum-like']
@@ -137,16 +156,13 @@ class pi_prob3(PiStage):
         output_names = ()
 
         # what are the keys used from the inputs during apply
-        input_apply_keys = ('weights',
-                            'nu_flux',
-                           )
+        input_apply_keys = ('weights', 'nu_flux')
+
         # what are keys added or altered in the calculation used during apply
-        output_calc_keys = ('prob_e',
-                            'prob_mu',
-                           )
+        output_calc_keys = ('prob_e', 'prob_mu')
+
         # what keys are added or altered for the outputs during apply
-        output_apply_keys = ('weights',
-                      )
+        output_apply_keys = ('weights',)
 
         # init base class
         super().__init__(
@@ -387,3 +403,4 @@ else:
 @guvectorize([signature], '(d),(),()->()', target=TARGET)
 def apply_probs(flux, prob_e, prob_mu, out):
     out[0] *= (flux[0] * prob_e) + (flux[1] * prob_mu)
+

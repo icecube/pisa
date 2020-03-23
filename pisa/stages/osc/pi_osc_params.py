@@ -14,7 +14,6 @@ from __future__ import division
 import numpy as np
 
 from pisa import FTYPE
-A
 
 __all__ = ['OscParams']
 
