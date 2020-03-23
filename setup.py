@@ -235,6 +235,7 @@ def do_setup():
             'tables',
             'uncertainties',
             'llvmlite<=0.30.0', # 0.31 gave an error "Type of #4 arg mismatch: i1 != i32" in pisa/stages/osc/layers.py", line 91
+            'py-cpuinfo',
         ],
         extras_require={
             'develop': [

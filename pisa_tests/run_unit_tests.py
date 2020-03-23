@@ -9,9 +9,12 @@ Find and run PISA unit test functions
 from __future__ import absolute_import
 
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
-from os import walk
+from os import popen, walk
 from os.path import dirname, isfile, join, relpath
+import platform
 import sys
+
+import cpuinfo
 
 import pisa
 from pisa.utils.fileio import expand, nsort_key_func
@@ -95,6 +98,12 @@ def run_unit_tests(path=PISA_PATH, allow_missing=OPTIONAL_DEPS, verbosity=Levels
         If any import or test fails not in `allow_missing`
 
     """
+    set_verbosity(verbosity)
+    logging.info("%sPlatform information:", PFX)
+    logging.info("%s  OS = %s %s", PFX, platform.system(), platform.release())
+    for key, val in cpuinfo.get_cpu_info().items():
+        logging.info("%s  %s = %s", PFX, key, val)
+
     path = expand(path, absolute=True, resolve_symlinks=True)
     if allow_missing is None:
         allow_missing = []
