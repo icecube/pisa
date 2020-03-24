@@ -12,7 +12,7 @@ from collections import OrderedDict
 from collections.abc import Mapping
 from copy import deepcopy
 from inspect import getmodule, signature
-from os.path import dirname, join
+from os.path import join
 
 import numpy as np
 from numba import SmartArray
@@ -22,6 +22,7 @@ from pisa.utils.comparisons import ALLCLOSE_KW
 from pisa.utils.fileio import expand, from_file, to_file
 from pisa.utils.log import Levels, logging, set_verbosity
 from pisa.utils.numba_tools import WHERE
+from pisa.utils.resources import find_resource
 from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import (
     FX,
     CX,
@@ -37,7 +38,7 @@ from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import (
 )
 
 
-TEST_DATA_DIR = join(expand(dirname(__file__)), "numba_osc_tests_data")
+TEST_DATA_DIR = find_resource("osc/numba_osc_tests_data")
 
 FINFO_FTYPE = np.finfo(FTYPE)
 
@@ -65,9 +66,9 @@ DEFAULTS = dict(
     nubar=1,
     rho=1,  # g/cm^3
     baseline=1,  # km
-    nsi_eps=np.ones(shape=(3, 3), dtype=np.complex128),
+    nsi_eps=np.zeros(shape=(3, 3), dtype=np.complex128),
     layer_distances=np.logspace(0, 2, 10),  # km
-    layer_densities=np.logspace(-1, 3, 10),  # g/cm^3
+    layer_densities=np.linspace(0.5, 3, 10),  # g/cm^3
     # osc params: defaults are nufit 3.2 normal ordering values
     t12=np.deg2rad(33.62),
     t23=np.deg2rad(47.2),
@@ -81,7 +82,6 @@ TEST_CASES = dict(
     nufit32_no=dict(),  # nufit 3.2 normal ordering (also overall) best-fit
     nufit32_no_nubar=dict(nubar=-1),  # NO but anti-neutrinos
     nufit32_no_E1TeV=dict(energy=1e3),  # NO but e=1 TeV
-    nufit32_no_E1PeV=dict(energy=1e6),  # NO but e=1 TeV
     nufit32_no_blearth=dict(
         baseline=6371e3 * 2,
         layer_distances=(
@@ -166,6 +166,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
     logging.info("== TEST CASE : %s ==", tc_name)
 
     st_test_kw = dict(ignore_fails=ignore_fails, define_as_ref=define_as_ref)
+    tf_sfx = f"__{tc_name}__{FX}.pkl"
 
     # Copy contents of test case, so if a function modifies these
     # (accidentally), it doesn't affect the outcome of further tests
@@ -179,7 +180,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             psi=np.ones(shape=3, dtype=CX),
         ),
         ref_path=join(
-            TEST_DATA_DIR, f"convert_from_mass_eigenstate_hostfunc__{tc_name}.pkl"
+            TEST_DATA_DIR, f"convert_from_mass_eigenstate_hostfunc{tf_sfx}"
         ),
         **st_test_kw,
     )
@@ -197,7 +198,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             # output:
             H_vac=np.ones(shape=(3, 3), dtype=CX),
         ),
-        ref_path=join(TEST_DATA_DIR, f"get_H_vac_hostfunc__{tc_name}.pkl"),
+        ref_path=join(TEST_DATA_DIR, f"get_H_vac_hostfunc{tf_sfx}"),
         **st_test_kw,
     )
     logging.debug("\nH_vac = %s", ary2str(test["H_vac"]))
@@ -214,7 +215,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             # output:
             H_mat=np.ones(shape=(3, 3), dtype=CX),
         ),
-        ref_path=join(TEST_DATA_DIR, f"get_H_mat_hostfunc__{tc_name}.pkl"),
+        ref_path=join(TEST_DATA_DIR, f"get_H_mat_hostfunc{tf_sfx}"),
         **st_test_kw,
     )
     logging.debug("\nH_mat = %s", ary2str(test["H_mat"]))
@@ -234,14 +235,24 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             # output:
             probability=np.ones(shape=(3, 3), dtype=FX),
         ),
-        ref_path=join(TEST_DATA_DIR, f"propagate_array_vacuum_scalar__{tc_name}.pkl"),
+        ref_path=join(TEST_DATA_DIR, f"propagate_array_vacuum_scalar{tf_sfx}"),
         **st_test_kw,
     )
     logging.debug("\nvac_prob = %s", ary2str(test["probability"]))
     # check unitarity
     # TODO: << BUG? >> these fail even in double precision!
-    check(test=np.sum(test["probability"], axis=0), ref=np.ones(3), ignore_fails=True)
-    check(test=np.sum(test["probability"], axis=1), ref=np.ones(3), ignore_fails=True)
+    check(
+        test=np.sum(test["probability"], axis=0),
+        ref=np.ones(3),
+        label="sum(vacuum probability), axis=0)",
+        ignore_fails=True,
+    )
+    check(
+        test=np.sum(test["probability"], axis=1),
+        ref=np.ones(3),
+        label="sum(vacuum probability), axis=1)",
+        ignore_fails=True,
+    )
 
     tc_ = deepcopy(tc)
     test, ref = stability_test(
@@ -257,7 +268,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             # output:
             probability=np.ones(shape=(3, 3), dtype=FX),
         ),
-        ref_path=join(TEST_DATA_DIR, f"propagate_array_scalar__{tc_name}.pkl"),
+        ref_path=join(TEST_DATA_DIR, f"propagate_array_scalar{tf_sfx}"),
         **st_test_kw,
     )
     logging.debug("\nmat_prob = %s", ary2str(test["probability"]))
@@ -265,11 +276,13 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
     check(
         test=np.sum(test["probability"], axis=0),
         ref=np.ones(3),
+        label="sum(matter probability), axis=0)",
         ignore_fails=ignore_fails,
     )
     check(
         test=np.sum(test["probability"], axis=1),
         ref=np.ones(3),
+        label="sum(matter probability), axis=1)",
         ignore_fails=ignore_fails,
     )
 
@@ -291,7 +304,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             # output:
             transition_matrix=np.ones(shape=(3, 3), dtype=CX),
         ),
-        ref_path=join(TEST_DATA_DIR, f"get_transition_matrix_hostfunc__{tc_name}.pkl"),
+        ref_path=join(TEST_DATA_DIR, f"get_transition_matrix_hostfunc{tf_sfx}"),
         **st_test_kw,
     )
     logging.debug("\ntransition_matrix = %s", ary2str(test["transition_matrix"]))
@@ -299,11 +312,13 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
     check(
         test=np.sum(np.abs(test["transition_matrix"]) ** 2, axis=0),
         ref=np.ones(3),
+        label="sum(|transition_matrix|^2, axis=0)",
         ignore_fails=ignore_fails,
     )
     check(
         test=np.sum(np.abs(test["transition_matrix"]) ** 2, axis=1),
         ref=np.ones(3),
+        label="sum(|transition_matrix|^2, axis=1)",
         ignore_fails=ignore_fails,
     )
 
@@ -322,7 +337,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             dm_mat_mat=np.ones(shape=(3, 3), dtype=CX),
             dm_mat_vac=np.ones(shape=(3, 3), dtype=CX),
         ),
-        ref_path=join(TEST_DATA_DIR, f"get_dms_hostfunc__{tc_name}.pkl"),
+        ref_path=join(TEST_DATA_DIR, f"get_dms_hostfunc{tf_sfx}"),
         **st_test_kw,
     )
     logging.debug("\ndm_mat_mat = %s", ary2str(test["dm_mat_mat"]))
@@ -355,7 +370,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             transition_matrix=np.ones(shape=(3, 3), dtype=CX),
         ),
         ref_path=join(
-            TEST_DATA_DIR, f"get_transition_matrix_massbasis_hostfunc__{tc_name}.pkl"
+            TEST_DATA_DIR, f"get_transition_matrix_massbasis_hostfunc{tf_sfx}"
         ),
         **st_test_kw,
     )
@@ -363,11 +378,13 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
     check(
         test=np.sum(np.abs(test["transition_matrix"]) ** 2, axis=0),
         ref=np.ones(3),
+        label="sum(|transition_matrix (mass basis)|^2), axis=0)",
         ignore_fails=ignore_fails,
     )
     check(
         test=np.sum(np.abs(test["transition_matrix"]) ** 2, axis=1),
         ref=np.ones(3),
+        label="sum(|transition_matrix (mass basis)|^2), axis=1)",
         ignore_fails=ignore_fails,
     )
 
@@ -382,7 +399,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             # output:
             product=np.ones(shape=(3, 3, 3), dtype=CX),
         ),
-        ref_path=join(TEST_DATA_DIR, f"product_hostfunc__{tc_name}.pkl"),
+        ref_path=join(TEST_DATA_DIR, f"product_hostfunc{tf_sfx}"),
         **st_test_kw,
     )
     logging.debug("\nproduct = %s", ary2str(test["product"]))
@@ -391,7 +408,8 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
 def stability_test(func, func_kw, ref_path, ignore_fails=False, define_as_ref=False):
     """basic stability test of a Numba CPUDispatcher function (i.e., function
     compiled via @jit / @njit)"""
-    logging.info("stability testing `%s`", func.py_func.__name__)
+    func_name = func.py_func.__name__
+    logging.info("stability testing `%s`", func_name)
     ref_path = expand(ref_path)
 
     test = execute_func(func=func, func_kw=func_kw)
@@ -403,7 +421,7 @@ def stability_test(func, func_kw, ref_path, ignore_fails=False, define_as_ref=Fa
     # ensure that doesn't corrupt the values
     ref = from_file(ref_path)
 
-    check(test=test, ref=ref, ignore_fails=ignore_fails)
+    check(test=test, ref=ref, label=func_name, ignore_fails=ignore_fails)
 
     return test, ref
 
@@ -495,6 +513,7 @@ def compare_numeric(test, ref, label=None, ac_kw=deepcopy(AC_KW), ignore_fails=F
         if np.isscalar(test):
             if np.isclose(test, ref, **ac_kw):
                 return True
+
             msg = f"{pfx}test: {test} != ref: {ref}"
             if ignore_fails:
                 logging.warning(msg)
@@ -507,25 +526,29 @@ def compare_numeric(test, ref, label=None, ac_kw=deepcopy(AC_KW), ignore_fails=F
             return True
 
         diff = test - ref
-        nzmask = ref != 0
-        zmask = ref == 0
-        fdiff = np.empty_like(ref)
-        fdiff[nzmask] = diff[nzmask] / ref[nzmask]
-        fdiff[zmask] = np.nan
         msg = (
             f"{pfx}test:"
             f"\n{(test)}\n!= ref:\n{(ref)}"
             f"\ndiff:\n{(diff)}"
-            f"\nfractdiff:\n{(fdiff)}"
         )
+
+        if not np.all(ref == 1):
+            nzmask = ref != 0
+            zmask = ref == 0
+            fdiff = np.empty_like(ref)
+            fdiff[nzmask] = diff[nzmask] / ref[nzmask]
+            fdiff[zmask] = np.nan
+            msg += f"\nfractdiff:\n{(fdiff)}"
+
         if ignore_fails:
             logging.warning(msg)
         else:
             logging.error(msg)
+
         return False
 
 
-def check(test, ref, ac_kw=deepcopy(AC_KW), ignore_fails=False):
+def check(test, ref, label=None, ac_kw=deepcopy(AC_KW), ignore_fails=False):
     """Check that `test` matches `ref` (closely enough).
 
     Parameters
@@ -547,17 +570,22 @@ def check(test, ref, ac_kw=deepcopy(AC_KW), ignore_fails=False):
     same = True
     with np.printoptions(**PRINTOPTS):
         if isinstance(test, Mapping):
+            if not label:
+                label = ""
+            else:
+                label = label + ": "
+
             for key, val in test.items():
                 same &= compare_numeric(
                     test=val,
                     ref=ref[key],
-                    label=f"key: '{key}'",
+                    label=label + f"key: '{key}'",
                     ac_kw=ac_kw,
                     ignore_fails=ignore_fails,
                 )
         else:
             same &= compare_numeric(
-                test=test, ref=ref, ac_kw=ac_kw, ignore_fails=ignore_fails
+                test=test, ref=ref, label=label, ac_kw=ac_kw, ignore_fails=ignore_fails
             )
     if not ignore_fails and not same:
         assert False
