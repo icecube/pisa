@@ -235,6 +235,7 @@ def do_setup():
             'tables',
             'uncertainties',
             'llvmlite<=0.30.0', # 0.31 gave an error "Type of #4 arg mismatch: i1 != i32" in pisa/stages/osc/layers.py", line 91
+            'sympy',
         ],
         extras_require={
             'develop': [
@@ -243,7 +244,6 @@ def do_setup():
                 'sphinx>=1.3',
                 'sphinx_rtd_theme',
                 'versioneer',
-                'sympy',
             ],
             # TODO: get mceq install to work... this is non-trivial since that
             # project isn't exactly cleanly instllable via pip already, plus it
