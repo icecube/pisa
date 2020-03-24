@@ -90,7 +90,7 @@ EQUALITY_SIGFIGS = min(HASH_SIGFIGS, FTYPE_SIGFIGS)
 EQUALITY_PREC = 10**-EQUALITY_SIGFIGS
 """Precision ("rtol") for performing equality comparisons"""
 
-ALLCLOSE_KW = dict(rtol=EQUALITY_PREC, atol=0, equal_nan=True)
+ALLCLOSE_KW = dict(rtol=EQUALITY_PREC, atol=FTYPE_PREC, equal_nan=True)
 """Keyword args to pass to all calls to numpy.allclose"""
 
 # Derive the following number via:
