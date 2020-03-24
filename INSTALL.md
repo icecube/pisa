@@ -114,6 +114,8 @@ Optional dependencies. Some of these must be installed manually prior to install
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [versioneer](https://github.com/warner/python-versioneer) Automatically get versions from git and make these embeddable and usable in code. Note that the install process is unique since it first places `versioneer.py` in the PISA root directory, and then updates source files within the repository to provide static and dynamic version info.
   * Installed alongside PISA if you specify option `['develop']` to `pip`
+* [sympy](https://www.sympy.org/en/) Used for testing `nsi_params.py` 
+  * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [black](https://github.com/ambv/black) Format your Python code, _automatically_, with typically very nice results!
   * Note this only works in Python3
 
