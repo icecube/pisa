@@ -9,7 +9,7 @@ Find and run PISA unit test functions
 from __future__ import absolute_import
 
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
-from os import popen, walk
+from os import walk
 from os.path import dirname, isfile, join, relpath
 import platform
 import sys
@@ -103,6 +103,20 @@ def run_unit_tests(path=PISA_PATH, allow_missing=OPTIONAL_DEPS, verbosity=Levels
     logging.info("%s  OS = %s %s", PFX, platform.system(), platform.release())
     for key, val in cpuinfo.get_cpu_info().items():
         logging.info("%s  %s = %s", PFX, key, val)
+    logging.info(PFX)
+    logging.info("%sModule versions:", PFX)
+    # TODO: get this list automatically (from setup.py?)
+    for lib_name in """pisa pip setuptools numpy decorator kde h5py iminuit
+            line_profiler matplotlib numba numpy pint scipy simplejson tables
+            uncertainties llvmlite cpuinfo""".split():
+        exec(f"import {lib_name}")
+        lib = eval(lib_name)
+        if hasattr(lib, "__version__"):
+            ver = lib.__version__
+        else:
+            ver = "?"
+        logging.info("%s  %s : %s", PFX, lib_name, ver)
+    logging.info(PFX)
 
     path = expand(path, absolute=True, resolve_symlinks=True)
     if allow_missing is None:
