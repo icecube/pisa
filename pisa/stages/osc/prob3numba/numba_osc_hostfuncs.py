@@ -44,9 +44,9 @@ IX = "i4" if ITYPE == np.int32 else "i8"
 
 
 @guvectorize(
-   [f"({FX}[:,:], {CX}[:,:], {IX}, {FX}, {FX}[:], {FX}[:,:])"],
-   "(a,a), (a,a), (), (), (i) -> (a,a)",
-   target=TARGET,
+    [f"({FX}[:,:], {CX}[:,:], {IX}, {FX}, {FX}[:], {FX}[:,:])"],
+    "(a,a), (a,a), (), (), (i) -> (a,a)",
+    target=TARGET,
 )
 def propagate_array_vacuum(dm, mix, nubar, energy, distances, probability):
     """wrapper to run `osc_probs_vacuum_kernel` from host (whether TARGET is
@@ -55,16 +55,16 @@ def propagate_array_vacuum(dm, mix, nubar, energy, distances, probability):
 
 
 @njit([f"({FX}[:,:], {CX}[:,:], {IX}, {FX}, {FX}[:], {FX}[:,:])"], target=TARGET)
-def propagate_array_vacuum_scalar(dm, mix, nubar, energy, distances, probability):
+def propagate_scalar_vacuum(dm, mix, nubar, energy, distances, probability):
     """wrapper to run `osc_probs_vacuum_kernel` from host (whether TARGET is
     "cuda" or "host")"""
     osc_probs_vacuum_kernel(dm, mix, nubar, energy, distances, probability)
 
 
 @guvectorize(
-   [f"({FX}[:,:], {CX}[:,:], {CX}[:,:], {IX}, {FX}, {FX}[:], {FX}[:], {FX}[:,:])"],
-   "(a,a), (a,a), (b,c), (), (), (i), (i) -> (a,a)",
-   target=TARGET,
+    [f"({FX}[:,:], {CX}[:,:], {CX}[:,:], {IX}, {FX}, {FX}[:], {FX}[:], {FX}[:,:])"],
+    "(a,a), (a,a), (b,c), (), (), (i), (i) -> (a,a)",
+    target=TARGET,
 )
 def propagate_array(dm, mix, nsi_eps, nubar, energy, densities, distances, probability):
     """wrapper to run `osc_probs_layers_kernel` from host (whether TARGET
@@ -78,7 +78,9 @@ def propagate_array(dm, mix, nsi_eps, nubar, energy, densities, distances, proba
     [f"({FX}[:,:], {CX}[:,:], {CX}[:,:], {IX}, {FX}, {FX}[:], {FX}[:], {FX}[:,:])"],
     target=TARGET,
 )
-def propagate_array_scalar(dm, mix, nsi_eps, nubar, energy, densities, distances, probability):
+def propagate_scalar(
+    dm, mix, nsi_eps, nubar, energy, densities, distances, probability
+):
     """wrapper to run `osc_probs_layers_kernel` from host (whether TARGET
     is "cuda" or "host")"""
     osc_probs_layers_kernel(

@@ -26,8 +26,8 @@ from pisa.utils.resources import find_resource
 from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import (
     FX,
     CX,
-    propagate_array_vacuum_scalar,
-    propagate_array_scalar,
+    propagate_scalar_vacuum,
+    propagate_scalar,
     get_transition_matrix_hostfunc,
     get_transition_matrix_massbasis_hostfunc,
     get_H_vac_hostfunc,
@@ -179,9 +179,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             # output:
             psi=np.ones(shape=3, dtype=CX),
         ),
-        ref_path=join(
-            TEST_DATA_DIR, f"convert_from_mass_eigenstate_hostfunc{tf_sfx}"
-        ),
+        ref_path=join(TEST_DATA_DIR, f"convert_from_mass_eigenstate_hostfunc{tf_sfx}"),
         **st_test_kw,
     )
     logging.debug("\npsi = %s", ary2str(test["psi"]))
@@ -225,7 +223,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
 
     tc_ = deepcopy(tc)
     test, ref = stability_test(
-        func=propagate_array_vacuum_scalar,
+        func=propagate_scalar_vacuum,
         func_kw=dict(
             dm=tc_["dm"],
             mix=tc_["pmns"],
@@ -235,7 +233,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             # output:
             probability=np.ones(shape=(3, 3), dtype=FX),
         ),
-        ref_path=join(TEST_DATA_DIR, f"propagate_array_vacuum_scalar{tf_sfx}"),
+        ref_path=join(TEST_DATA_DIR, f"propagate_scalar_vacuum{tf_sfx}"),
         **st_test_kw,
     )
     logging.debug("\nvac_prob = %s", ary2str(test["probability"]))
@@ -244,19 +242,23 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
     check(
         test=np.sum(test["probability"], axis=0),
         ref=np.ones(3),
-        label="sum(vacuum probability), axis=0)",
+        label=(
+            f"{tc_name} :: propagate_scalar_vacuum :: sum(vacuum probability, axis=0)"
+        ),
         ignore_fails=True,
     )
     check(
         test=np.sum(test["probability"], axis=1),
         ref=np.ones(3),
-        label="sum(vacuum probability), axis=1)",
+        label=(
+            f"{tc_name} :: propagate_scalar_vacuum :: sum(vacuum probability, axis=1)"
+        ),
         ignore_fails=True,
     )
 
     tc_ = deepcopy(tc)
     test, ref = stability_test(
-        func=propagate_array_scalar,
+        func=propagate_scalar,
         func_kw=dict(
             dm=tc_["dm"],
             mix=tc_["pmns"],
@@ -268,7 +270,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             # output:
             probability=np.ones(shape=(3, 3), dtype=FX),
         ),
-        ref_path=join(TEST_DATA_DIR, f"propagate_array_scalar{tf_sfx}"),
+        ref_path=join(TEST_DATA_DIR, f"propagate_scalar{tf_sfx}"),
         **st_test_kw,
     )
     logging.debug("\nmat_prob = %s", ary2str(test["probability"]))
@@ -276,13 +278,13 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
     check(
         test=np.sum(test["probability"], axis=0),
         ref=np.ones(3),
-        label="sum(matter probability), axis=0)",
+        label=f"{tc_name} :: propagate_scalar:: sum(matter probability, axis=0)",
         ignore_fails=ignore_fails,
     )
     check(
         test=np.sum(test["probability"], axis=1),
         ref=np.ones(3),
-        label="sum(matter probability), axis=1)",
+        label=f"{tc_name} :: propagate_scalar :: sum(matter probability, axis=1)",
         ignore_fails=ignore_fails,
     )
 
@@ -312,13 +314,21 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
     check(
         test=np.sum(np.abs(test["transition_matrix"]) ** 2, axis=0),
         ref=np.ones(3),
-        label="sum(|transition_matrix|^2, axis=0)",
+        label=(
+            f"{tc_name}"
+            " :: get_transition_matrix_hostfunc"
+            ":: sum(|transition_matrix|^2, axis=0)"
+        ),
         ignore_fails=ignore_fails,
     )
     check(
         test=np.sum(np.abs(test["transition_matrix"]) ** 2, axis=1),
         ref=np.ones(3),
-        label="sum(|transition_matrix|^2, axis=1)",
+        label=(
+            f"{tc_name}"
+            " :: get_transition_matrix_hostfunc"
+            " :: sum(|transition_matrix|^2, axis=1)"
+        ),
         ignore_fails=ignore_fails,
     )
 
@@ -378,13 +388,21 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
     check(
         test=np.sum(np.abs(test["transition_matrix"]) ** 2, axis=0),
         ref=np.ones(3),
-        label="sum(|transition_matrix (mass basis)|^2), axis=0)",
+        label=(
+            f"{tc_name}"
+            " :: get_transition_matrix_massbasis_hostfunc"
+            " :: sum(|transition_matrix (mass basis)|^2), axis=0)"
+        ),
         ignore_fails=ignore_fails,
     )
     check(
         test=np.sum(np.abs(test["transition_matrix"]) ** 2, axis=1),
         ref=np.ones(3),
-        label="sum(|transition_matrix (mass basis)|^2), axis=1)",
+        label=(
+            f"{tc_name}"
+            " :: get_transition_matrix_massbasis_hostfunc"
+            " :: sum(|transition_matrix (mass basis)|^2), axis=1)"
+        ),
         ignore_fails=ignore_fails,
     )
 
@@ -434,7 +452,7 @@ def execute_func(func, func_kw):
 
     Parameters
     ----------
-    func : numba CPUDispatcher
+    func : numba CPUDispatcher or CUDADispatcher
     func_kw : OrderedDict
 
     Returns
@@ -447,7 +465,10 @@ def execute_func(func, func_kw):
     py_func = func.py_func
     func_name = ".".join([getmodule(py_func).__name__, py_func.__name__])
     arg_names = list(signature(py_func).parameters.keys())
-    arg_types = func.signatures[0]
+    if hasattr(func, "signatures"):
+        arg_types = func.signatures[0]
+    else:
+        arg_types = func.compiled.argument_types
 
     # Convert types; wrap arrays with SmartArray and place on device (if necessary)
 
@@ -466,7 +487,7 @@ def execute_func(func, func_kw):
         val = func_kw[arg_name]
         if arg_type.name.startswith("array"):
             arg_val = SmartArray(val.astype(arg_type.dtype.key))
-            arg_val = arg_val.get(WHERE)
+            arg_val = arg_val.get("host")
         else:
             arg_val = arg_type(val)
         typed_args[arg_name] = arg_val
@@ -474,9 +495,9 @@ def execute_func(func, func_kw):
     # Call the host function with typed args
 
     try:
-        func(**typed_args)
+        func(*list(typed_args.values()))
     except Exception:
-        logging.error(str(typed_args))
+        logging.error("Failed running `%s` with args %s", func_name, str(typed_args))
         raise
 
     # All arrays converted to Numpy host arrays
@@ -526,11 +547,7 @@ def compare_numeric(test, ref, label=None, ac_kw=deepcopy(AC_KW), ignore_fails=F
             return True
 
         diff = test - ref
-        msg = (
-            f"{pfx}test:"
-            f"\n{(test)}\n!= ref:\n{(ref)}"
-            f"\ndiff:\n{(diff)}"
-        )
+        msg = f"{pfx}test:" f"\n{(test)}\n!= ref:\n{(ref)}" f"\ndiff:\n{(diff)}"
 
         if not np.all(ref == 1):
             nzmask = ref != 0
