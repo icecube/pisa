@@ -597,6 +597,7 @@ def test_nsi_parameterization():
         alpha2_val=alpha2,
         deltansi_val=deltansi
     )
+    logging.trace('Numerical NSI matrix:\n%s' % eps_mat_numerical)
     logging.trace('Sympy NSI matrix:\n%s' % eps_mat_sympy)
     close = np.isclose(eps_mat_numerical, eps_mat_sympy, **ALLCLOSE_KW)
     if not np.all(close):
