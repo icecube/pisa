@@ -56,7 +56,8 @@ __license__ = """Copyright (c) 2020, The IceCube Collaboration
 
 PISA_PATH = expand(dirname(pisa.__file__), absolute=True, resolve_symlinks=True)
 
-OPTIONAL_DEPS = (
+# TODO: get optional & required automatically (e.g., from setup.py?)
+OPTIONAL_MODULES = (
     "pandas",
     "emcee",
     "pycuda",
@@ -68,12 +69,37 @@ OPTIONAL_DEPS = (
 )
 """Okay if imports or test_* functions fail due to these not being import-able"""
 
+REQUIRED_MODULES = (
+    "pisa",
+    "pip",
+    "setuptools",
+    "numpy",
+    "decorator",
+    "kde",
+    "h5py",
+    "iminuit",
+    "line_profiler",
+    "matplotlib",
+    "numba",
+    "numpy",
+    "pint",
+    "scipy",
+    "simplejson",
+    "tables",
+    "uncertainties",
+    "llvmlite",
+    "cpuinfo",
+    "sympy",
+)
+
 PFX = "[T] "
 """Prefix each line output by this script to clearly delineate output from this
 script vs. output from test functions being run"""
 
 
-def run_unit_tests(path=PISA_PATH, allow_missing=OPTIONAL_DEPS, verbosity=Levels.WARN):
+def run_unit_tests(
+    path=PISA_PATH, allow_missing=OPTIONAL_MODULES, verbosity=Levels.WARN
+):
     """Run all tests found at `path` (or recursively below if `path` is a
     directory).
 
@@ -105,17 +131,20 @@ def run_unit_tests(path=PISA_PATH, allow_missing=OPTIONAL_DEPS, verbosity=Levels
         logging.info("%s  %s = %s", PFX, key, val)
     logging.info(PFX)
     logging.info("%sModule versions:", PFX)
-    # TODO: get this list automatically (from setup.py?)
-    for lib_name in """pisa pip setuptools numpy decorator kde h5py iminuit
-            line_profiler matplotlib numba numpy pint scipy simplejson tables
-            uncertainties llvmlite cpuinfo""".split():
-        exec(f"import {lib_name}")
-        lib = eval(lib_name)
-        if hasattr(lib, "__version__"):
-            ver = lib.__version__
+    for module_name in REQUIRED_MODULES + OPTIONAL_MODULES:
+        try:
+            exec(f"import {module_name}")
+        except ImportError:
+            if module_name in REQUIRED_MODULES:
+                raise
+            ver = "optional module not installed or not import-able"
         else:
-            ver = "?"
-        logging.info("%s  %s : %s", PFX, lib_name, ver)
+            lib = eval(module_name)
+            if hasattr(lib, "__version__"):
+                ver = lib.__version__
+            else:
+                ver = "?"
+        logging.info("%s  %s : %s", PFX, module_name, ver)
     logging.info(PFX)
 
     path = expand(path, absolute=True, resolve_symlinks=True)
@@ -407,7 +436,7 @@ def main(description=__doc__):
     parser.add_argument(
         "--allow-missing",
         nargs="+",
-        default=list(OPTIONAL_DEPS),
+        default=list(OPTIONAL_MODULES),
         help="""Allow ImportError (or subclasses) for these modules""",
     )
     parser.add_argument(

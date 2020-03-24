@@ -7,6 +7,30 @@ Tests for prob3numba code
 """
 
 
+from __future__ import absolute_import, print_function, division
+
+
+__all__ = [
+    "TEST_DATA_DIR",
+    "FINFO_FTYPE",
+    "AC_KW",
+    "PRINTOPTS",
+    "A2S_KW",
+    "MAT_DOT_MAT_SUBSCR",
+    "DEFAULTS",
+    "TEST_CASES",
+    "auto_populate_test_case",
+    "test_prob3numba",
+    "run_test_case",
+    "stability_test",
+    "execute_func",
+    "compare_numeric",
+    "check",
+    "ary2str",
+    "main",
+]
+
+
 from argparse import ArgumentParser
 from collections import OrderedDict
 from collections.abc import Mapping
@@ -24,10 +48,12 @@ from pisa.utils.log import Levels, logging, set_verbosity
 from pisa.utils.numba_tools import WHERE
 from pisa.utils.resources import find_resource
 from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import (
-    FX,
     CX,
-    propagate_scalar_vacuum,
+    FX,
+    IX,
+    # propagate_scalar_vacuum,
     propagate_scalar,
+    propagate_array,
     get_transition_matrix_hostfunc,
     get_transition_matrix_massbasis_hostfunc,
     get_H_vac_hostfunc,
@@ -64,9 +90,9 @@ DEFAULTS = dict(
     energy=1,  # GeV
     state=1,
     nubar=1,
-    rho=1,  # g/cm^3
+    rho=1,  # moles of electrons / cm^3
     baseline=1,  # km
-    nsi_eps=np.zeros(shape=(3, 3), dtype=np.complex128),
+    mat_pot=np.diag([1, 0, 0]).astype(np.complex128),
     layer_distances=np.logspace(0, 2, 10),  # km
     layer_densities=np.linspace(0.5, 3, 10),  # g/cm^3
     # osc params: defaults are nufit 3.2 normal ordering values
@@ -155,6 +181,55 @@ def auto_populate_test_case(tc, defaults):
 
 def test_prob3numba(ignore_fails=False, define_as_ref=False):
     """Run all unit test cases for prob3numba code"""
+
+    # Pull first test case to test calling `propagate_array`
+    tc_name, tc = next(iter(TEST_CASES.items()))
+    tc_ = deepcopy(tc)
+    logging.info(
+        "Testing call and return shape of `propagate_array` with test case '%s'",
+        tc_name,
+    )
+
+    # Test simple broadcasting over `nubars` and `energies` where both have
+    # same shape, as this is the "typical" use case
+    input_shape = (4, 5)
+
+    # Without broadcasting, a single probability matrix is 3x3
+    prob_array_shape = (3, 3)
+
+    # Broadcasted shape
+    out_shape = input_shape + prob_array_shape
+
+    nubars = np.full(shape=input_shape, fill_value=tc_["nubar"], dtype=IX)
+    energies = np.full(shape=input_shape, fill_value=tc_["energy"], dtype=FX)
+
+    # Fill with NaN to ensure all elements are assinged a value
+    probabilities = SmartArray(np.full(shape=out_shape, fill_value=np.nan, dtype=FX))
+
+    propagate_array(
+        SmartArray(tc_["dm"].astype(FX)).get(WHERE),
+        SmartArray(tc_["pmns"].astype(CX)).get(WHERE),
+        SmartArray(tc_["mat_pot"].astype(CX)).get(WHERE),
+        SmartArray(nubars).get(WHERE),
+        SmartArray(energies).get(WHERE),
+        SmartArray(tc_["layer_densities"].astype(FX)).get(WHERE),
+        SmartArray(tc_["layer_distances"].astype(FX)).get(WHERE),
+        # output:
+        probabilities.get(WHERE),
+    )
+    probabilities.mark_changed(WHERE)
+    probabilities = probabilities.get("host")
+
+    # Check that all probability matrices have no NaNs and are equal to one
+    # another
+    ref_probs = probabilities[0, 0]
+    for i in range(input_shape[0]):
+        for j in range(input_shape[1]):
+            probs = probabilities[i, j]
+            assert np.all(np.isfinite(probs))
+            assert np.all(probs == ref_probs)
+
+    # Run all test cases
     for tc_name, tc in TEST_CASES.items():
         run_test_case(
             tc_name, tc, ignore_fails=ignore_fails, define_as_ref=define_as_ref
@@ -208,7 +283,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
         func=get_H_mat_hostfunc,
         func_kw=dict(
             rho=tc_["rho"],
-            nsi_eps=tc_["nsi_eps"],
+            mat_pot=tc_["mat_pot"],
             nubar=tc_["nubar"],
             # output:
             H_mat=np.ones(shape=(3, 3), dtype=CX),
@@ -221,40 +296,40 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
     # `get_transition_matrix_massbasis_hostfunc`, `get_product_hostfunc``
     H_mat_ref = ref["H_mat"]
 
-    tc_ = deepcopy(tc)
-    test, ref = stability_test(
-        func=propagate_scalar_vacuum,
-        func_kw=dict(
-            dm=tc_["dm"],
-            mix=tc_["pmns"],
-            nubar=tc_["nubar"],
-            energy=tc_["energy"],
-            distances=tc_["layer_distances"],
-            # output:
-            probability=np.ones(shape=(3, 3), dtype=FX),
-        ),
-        ref_path=join(TEST_DATA_DIR, f"propagate_scalar_vacuum{tf_sfx}"),
-        **st_test_kw,
-    )
-    logging.debug("\nvac_prob = %s", ary2str(test["probability"]))
-    # check unitarity
-    # TODO: << BUG? >> these fail even in double precision!
-    check(
-        test=np.sum(test["probability"], axis=0),
-        ref=np.ones(3),
-        label=(
-            f"{tc_name} :: propagate_scalar_vacuum :: sum(vacuum probability, axis=0)"
-        ),
-        ignore_fails=True,
-    )
-    check(
-        test=np.sum(test["probability"], axis=1),
-        ref=np.ones(3),
-        label=(
-            f"{tc_name} :: propagate_scalar_vacuum :: sum(vacuum probability, axis=1)"
-        ),
-        ignore_fails=True,
-    )
+    # tc_ = deepcopy(tc)
+    # test, ref = stability_test(
+    #     func=propagate_scalar_vacuum,
+    #     func_kw=dict(
+    #         dm=tc_["dm"],
+    #         mix=tc_["pmns"],
+    #         nubar=tc_["nubar"],
+    #         energy=tc_["energy"],
+    #         distances=tc_["layer_distances"],
+    #         # output:
+    #         probability=np.ones(shape=(3, 3), dtype=FX),
+    #     ),
+    #     ref_path=join(TEST_DATA_DIR, f"propagate_scalar_vacuum{tf_sfx}"),
+    #     **st_test_kw,
+    # )
+    # logging.debug("\nvac_prob = %s", ary2str(test["probability"]))
+    # # check unitarity
+    # # TODO: << BUG? >> these fail even in double precision!
+    # check(
+    #     test=np.sum(test["probability"], axis=0),
+    #     ref=np.ones(3),
+    #     label=(
+    #         f"{tc_name} :: propagate_scalar_vacuum :: sum(vacuum probability, axis=0)"
+    #     ),
+    #     ignore_fails=True,
+    # )
+    # check(
+    #     test=np.sum(test["probability"], axis=1),
+    #     ref=np.ones(3),
+    #     label=(
+    #         f"{tc_name} :: propagate_scalar_vacuum :: sum(vacuum probability, axis=1)"
+    #     ),
+    #     ignore_fails=True,
+    # )
 
     tc_ = deepcopy(tc)
     test, ref = stability_test(
@@ -262,7 +337,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
         func_kw=dict(
             dm=tc_["dm"],
             mix=tc_["pmns"],
-            nsi_eps=tc_["nsi_eps"],
+            mat_pot=tc_["mat_pot"],
             nubar=tc_["nubar"],
             energy=tc_["energy"],
             densities=tc_["layer_densities"],
@@ -300,7 +375,7 @@ def run_test_case(tc_name, tc, ignore_fails=False, define_as_ref=False):
             mix_nubar_conj_transp=(
                 tc_["pmns"].conj().T if tc_["nubar"] > 0 else tc_["pmns"]
             ),
-            nsi_eps=tc_["nsi_eps"],
+            mat_pot=tc_["mat_pot"],
             H_vac=H_vac_ref,
             dm=tc_["dm"],
             # output:

@@ -13,7 +13,7 @@ See `numba_osc_tests.py` for unit tests of functions in this module.
 from __future__ import absolute_import, print_function, division
 
 __all__ = [
-    "osc_probs_vacuum_kernel",
+    # "osc_probs_vacuum_kernel",
     "osc_probs_layers_kernel",
     "get_transition_matrix",
 ]
@@ -37,86 +37,89 @@ from pisa.utils.numba_tools import (
 )
 
 
-@myjit
-def osc_probs_vacuum_kernel(dm, mix, nubar, energy, distance_in_layer, osc_probs):
-    """ Calculate vacumm mixing probabilities
+# TODO/FIXME: osc_probs_vacuum_kernel produces non-unitary results. No one
+# should use this until the issue is resolved.
 
-    Parameters
-    ----------
-    dm : real 2d array
-        Mass splitting matrix, eV^2
-
-    mix : complex 2d array
-        PMNS mixing matrix
-
-    nubar : int
-        +1 for neutrinos, -1 for antineutrinos
-
-    energy : float
-        Neutrino energy, GeV
-
-    distance_in_layer : real 1d-array
-        Baselines (will be summed up), km
-
-    osc_probs : real 2d array (empty)
-        Returned oscillation probabilities in the form:
-        osc_prob[i,j] = probability of flavor i to oscillate into flavor j
-        with 0 = electron, 1 = muon, 3 = tau
-
-
-    Notes
-    -----
-    This is largely unvalidated so far
-
-    """
-
-    # no need to conjugate mix matrix, as we anyway only need real part
-    # can this be right?
-
-    clear_matrix(osc_probs)
-    osc_probs_local = cuda.local.array(shape=(3, 3), dtype=ftype)
-
-    # sum up length from all layers
-    baseline = 0.0
-    for i in range(distance_in_layer.shape[0]):
-        baseline += distance_in_layer[i]
-
-    # make more precise 20081003 rvw
-    l_over_e = 1.26693281 * baseline / energy
-    s21 = math.sin(dm[1, 0] * l_over_e)
-    s32 = math.sin(dm[2, 0] * l_over_e)
-    s31 = math.sin((dm[2, 1] + dm[3, 2]) * l_over_e)
-
-    # does anybody understand this loop?
-    # ista = abs(*nutype) - 1
-    for ista in range(3):
-        for iend in range(2):
-            osc_probs_local[ista, iend] = (
-                (mix[ista, 0].real * mix[ista, 1].real * s21) ** 2
-                + (mix[ista, 1].real * mix[ista, 2].real * s32) ** 2
-                + (mix[ista, 2].real * mix[ista, 0].real * s31) ** 2
-            )
-            if iend == ista:
-                osc_probs_local[ista, iend] = 1.0 - 4.0 * osc_probs_local[ista, iend]
-            else:
-                osc_probs_local[ista, iend] = -4.0 * osc_probs_local[ista, iend]
-
-        osc_probs_local[ista, 2] = (
-            1.0 - osc_probs_local[ista, 0] - osc_probs_local[ista, 1]
-        )
-
-    # is this necessary?
-    if nubar > 0:
-        copy_matrix(osc_probs_local, osc_probs)
-    else:
-        for i in range(3):
-            for j in range(3):
-                osc_probs[i, j] = osc_probs_local[j, i]
+# @myjit
+# def osc_probs_vacuum_kernel(dm, mix, nubar, energy, distance_in_layer, osc_probs):
+#     """ Calculate vacumm mixing probabilities
+#
+#     Parameters
+#     ----------
+#     dm : real 2d array
+#         Mass splitting matrix, eV^2
+#
+#     mix : complex 2d array
+#         PMNS mixing matrix
+#
+#     nubar : int
+#         +1 for neutrinos, -1 for antineutrinos
+#
+#     energy : float
+#         Neutrino energy, GeV
+#
+#     distance_in_layer : real 1d-array
+#         Baselines (will be summed up), km
+#
+#     osc_probs : real 2d array (empty)
+#         Returned oscillation probabilities in the form:
+#         osc_prob[i,j] = probability of flavor i to oscillate into flavor j
+#         with 0 = electron, 1 = muon, 3 = tau
+#
+#
+#     Notes
+#     -----
+#     This is largely unvalidated so far
+#
+#     """
+#
+#     # no need to conjugate mix matrix, as we anyway only need real part
+#     # can this be right?
+#
+#     clear_matrix(osc_probs)
+#     osc_probs_local = cuda.local.array(shape=(3, 3), dtype=ftype)
+#
+#     # sum up length from all layers
+#     baseline = 0.0
+#     for i in range(distance_in_layer.shape[0]):
+#         baseline += distance_in_layer[i]
+#
+#     # make more precise 20081003 rvw
+#     l_over_e = 1.26693281 * baseline / energy
+#     s21 = math.sin(dm[1, 0] * l_over_e)
+#     s32 = math.sin(dm[2, 0] * l_over_e)
+#     s31 = math.sin((dm[2, 1] + dm[3, 2]) * l_over_e)
+#
+#     # does anybody understand this loop?
+#     # ista = abs(*nutype) - 1
+#     for ista in range(3):
+#         for iend in range(2):
+#             osc_probs_local[ista, iend] = (
+#                 (mix[ista, 0].real * mix[ista, 1].real * s21) ** 2
+#                 + (mix[ista, 1].real * mix[ista, 2].real * s32) ** 2
+#                 + (mix[ista, 2].real * mix[ista, 0].real * s31) ** 2
+#             )
+#             if iend == ista:
+#                 osc_probs_local[ista, iend] = 1.0 - 4.0 * osc_probs_local[ista, iend]
+#             else:
+#                 osc_probs_local[ista, iend] = -4.0 * osc_probs_local[ista, iend]
+#
+#         osc_probs_local[ista, 2] = (
+#             1.0 - osc_probs_local[ista, 0] - osc_probs_local[ista, 1]
+#         )
+#
+#     # is this necessary?
+#     if nubar > 0:
+#         copy_matrix(osc_probs_local, osc_probs)
+#     else:
+#         for i in range(3):
+#             for j in range(3):
+#                 osc_probs[i, j] = osc_probs_local[j, i]
 
 
 @myjit
 def osc_probs_layers_kernel(
-    dm, mix, nsi_eps, nubar, energy, density_in_layer, distance_in_layer, osc_probs
+    dm, mix, mat_pot, nubar, energy, density_in_layer, distance_in_layer, osc_probs
 ):
     """ Calculate oscillation probabilities
 
@@ -130,22 +133,24 @@ def osc_probs_layers_kernel(
     mix : complex 2d array
         PMNS mixing matrix
 
-    nsi_eps : 2d array
-        Non-standard interactions (set to 3x3 zeros for only standard oscillations)
+    mat_pot : complex 2d array
+        Generalised matter potential matrix without "a" factor (will be
+        multiplied with "a" factor); set to diag([1, 0, 0]) for only standard
+        oscillations
 
-    nubar : int
+    nubar : real int, scalar or Nd array (broadcast dim)
         1 for neutrinos, -1 for antineutrinos
 
-    energy : float
+    energy : real float, scalar or Nd array (broadcast dim)
         Neutrino energy, GeV
 
-    density_in_layer : 1d-array
-        Density per layer, g/cm^2
+    density_in_layer : real 1d array
+        Density of each layer, moles of electrons / cm^2
 
-    distance_in_layer : 1d-array
-        Distance per layer traversed, km
+    distance_in_layer : real 1d array
+        Distance of each layer traversed, km
 
-    osc_probs : 2d array (empty)
+    osc_probs : real (N+2)-d array (empty)
         Returned oscillation probabilities in the form:
         osc_prob[i,j] = probability of flavor i to oscillate into flavor j
         with 0 = electron, 1 = muon, 3 = tau
@@ -235,7 +240,7 @@ def osc_probs_layers_kernel(
                         distance,
                         mix_nubar,
                         mix_nubar_conj_transp,
-                        nsi_eps,
+                        mat_pot,
                         H_vac,
                         dm,
                         transition_matrix,
@@ -283,7 +288,7 @@ def osc_probs_layers_kernel(
                     distance,
                     mix_nubar,
                     mix_nubar_conj_transp,
-                    nsi_eps,
+                    mat_pot,
                     H_vac,
                     dm,
                     transition_matrix,
@@ -323,7 +328,7 @@ def get_transition_matrix(
     baseline,
     mix_nubar,
     mix_nubar_conj_transp,
-    nsi_eps,
+    mat_pot,
     H_vac,
     dm,
     transition_matrix,
@@ -339,7 +344,10 @@ def get_transition_matrix(
         Neutrino energy, GeV
 
     rho : real float
-        Density, g/cm^3
+        Electron number density (in moles/cm^3) (numerically, this is just the
+        product of electron fraction and mass density in g/cm^3, since the
+        number of grams per cm^3 corresponds to the number of moles of nucleons
+        per cm^3)
 
     baseline : real float
         Baseline, km
@@ -350,8 +358,10 @@ def get_transition_matrix(
     mix_nubar_conj_transp : complex conjugate 2d array
         Conjugate transpose of mix_nubar
 
-    nsi_eps : complex 2d array
-        Non-standard interactions (set to 3x3 zeros for only standard oscillations)
+    mat_pot : complex 2d array
+        Generalised matter potential matrix without "a" factor (will be
+        multiplied with "a" factor); set to diag([1, 0, 0]) for only standard
+        oscillations
 
     H_vac : complex 2d array
         Hamiltonian in vacuum, without the 1/2E term
@@ -376,9 +386,9 @@ def get_transition_matrix(
     tmp = cuda.local.array(shape=(3, 3), dtype=ctype)
     H_mat_mass_eigenstate_basis = cuda.local.array(shape=(3, 3), dtype=ctype)
 
-    # Compute the matter potential including possible non-standard interactions
+    # Compute the matter potential including possible generalized interactions
     # in the flavor basis
-    get_H_mat(rho, nsi_eps, nubar, H_mat)
+    get_H_mat(rho, mat_pot, nubar, H_mat)
 
     # Get the full Hamiltonian by adding together matter and vacuum parts
     one_over_two_e = 0.5 / energy
@@ -500,16 +510,21 @@ def get_H_vac(mix_nubar, mix_nubar_conj_transp, dm_vac_vac, H_vac):
 
 
 @myjit
-def get_H_mat(rho, nsi_eps, nubar, H_mat):
+def get_H_mat(rho, mat_pot, nubar, H_mat):
     """ Calculate matter Hamiltonian in flavor basis
 
     Parameters:
     -----------
     rho : real float
-        density, g/cm^3
+        Electron number density (in moles/cm^3) (numerically, this is just the
+        product of electron fraction and mass density in g/cm^3, since the
+        number of grams per cm^3 corresponds to the number of moles of nucleons
+        per cm^3)
 
-    nsi_eps : complex 2d array
-        Non-standard interactions (set to 3x3 zeros for only standard oscillations)
+    mat_pot : complex 2d array
+        Generalised matter potential matrix without "a" factor (will be
+        multiplied with "a" factor); set to diag([1, 0, 0]) for only standard
+        oscillations
 
     nubar : int
         +1 for neutrinos, -1 for antineutrinos
@@ -519,29 +534,30 @@ def get_H_mat(rho, nsi_eps, nubar, H_mat):
 
     Notes
     -----
-    in the following, `a` is just the standard effective matter potential
+    In the following, `a` is just the standard effective matter potential
     induced by charged-current weak interactions with electrons
 
     """
 
-    # 2*sqrt(2)*Gfermi in (eV^2-cm^3)/(mole-GeV)
+    # 2*sqrt(2)*Gfermi in (eV^2 cm^3)/(mole GeV)
     tworttwoGf = 1.52588e-4
     a = 0.5 * rho * tworttwoGf
-    if nubar == -1:
-        a = -a
 
     # standard matter interaction Hamiltonian
     clear_matrix(H_mat)
-    H_mat[0, 0] = a
+
+    # formalism of Hamiltonian: not 1+epsilon_ee^f in [0,0] element but just epsilon...
+    #   changed when fitting in Thomas' NSI branch -EL
 
     # Obtain effective non-standard matter interaction Hamiltonian
-    nsi_rho_scale = (
-        3.0  # // assume 3x electron density for "NSI"-quark (e.g., d) density
-    )
-    fact = nsi_rho_scale * a
+    #   changed when fitting in Thomas' NSI branch -EL
     for i in range(3):
         for j in range(3):
-            H_mat[i, j] += fact * nsi_eps[i, j]
+            # matter potential V -> -V* for anti-neutrinos
+            if nubar == -1:
+                H_mat[i, j] = -a * mat_pot[i, j].conjugate()
+            elif nubar == 1:
+                H_mat[i, j] = a * mat_pot[i, j]
 
 
 @myjit
@@ -573,6 +589,8 @@ def get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac):
 
     """
 
+    # the following is for solving the characteristic polynomial of H_mat:
+    # P(x) = x**3 + c2*x**2 + c1*x + c0
     real_product_a = (H_mat[0, 1] * H_mat[1, 2] * H_mat[2, 0]).real
     real_product_b = (H_mat[0, 0] * H_mat[1, 1] * H_mat[2, 2]).real
 
@@ -580,6 +598,10 @@ def get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac):
     norm_H_e_tau_sq = H_mat[0, 2].real ** 2 + H_mat[0, 2].imag ** 2
     norm_H_mu_tau_sq = H_mat[1, 2].real ** 2 + H_mat[1, 2].imag ** 2
 
+    # c1 = H_{11} * H_{22} + H_{11} * H_{33} + H_{22} * H_{33}
+    #      - |H_{12}|**2 - |H_{13}|**2 - |H_{23}|**2
+    # given Hermiticity of Hamiltonian (real diagonal elements),
+    # this coefficient must be real
     c1 = (
         (H_mat[0, 0].real * (H_mat[1, 1] + H_mat[2, 2])).real
         - (H_mat[0, 0].imag * (H_mat[1, 1] + H_mat[2, 2])).imag
@@ -590,6 +612,9 @@ def get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac):
         - norm_H_e_tau_sq
     )
 
+    # c0 = H_{11} * |H_{23}|**2 + H_{22} * |H_{13}|**2 + H_{33} * |H_{12}|**2
+    #      - H_{11} * H_{22} * H_{33} - 2*Re(H*_{13} * H_{12} * H_{23})
+    # hence, this coefficient is also real
     c0 = (
         H_mat[0, 0].real * norm_H_mu_tau_sq
         + H_mat[1, 1].real * norm_H_e_tau_sq
@@ -598,25 +623,36 @@ def get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac):
         - real_product_b
     )
 
+    # c2 = -H_{11} - H_{22} - H_{33}
+    # hence, this coefficient is also real
     c2 = -H_mat[0, 0].real - H_mat[1, 1].real - H_mat[2, 2].real
 
     one_over_two_e = 0.5 / energy
     one_third = 1.0 / 3.0
     two_third = 2.0 / 3.0
 
+    # we also have to perform the corresponding algebra
+    # for the vacuum case, where the relevant elements of the
+    # hamiltonian are mass differences
     x = dm_vac_vac[1, 0]
     y = dm_vac_vac[2, 0]
 
     c2_v = -one_over_two_e * (x + y)
 
+    # p is real due to reality of c1 and c2
     p = c2 ** 2 - 3.0 * c1
     p_v = one_over_two_e ** 2 * (x ** 2 + y ** 2 - x * y)
     p = max(0.0, p)
 
+    # q is real
     q = -13.5 * c0 - c2 ** 3 + 4.5 * c1 * c2
     q_v = one_over_two_e ** 3 * (x + y) * ((x + y) ** 2 - 4.5 * x * y)
 
-    tmp = p ** 3 - q ** 2
+    # we need the quantity p**3 - q**2 to obtain the eigenvalues,
+    # but let's prevent inaccuracies and instead write
+    tmp = 27 * (0.25 * c1 ** 2 * (p - c1) + c0 * (q + 6.75 * c0))
+    #   changed from p**3 - q**2 when fitting in Thomas' NSI branch -EL
+    # TODO: can we simplify this quantity to reduce numerical inaccuracies?
     tmp_v = p_v ** 3 - q_v ** 2
 
     tmp = max(0.0, tmp)
@@ -628,6 +664,9 @@ def get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac):
     m_mat_v = cuda.local.array(shape=(3), dtype=ftype)
 
     a = two_third * math.pi
+    # intermediate result, needed to calculate the three
+    # mass eigenvalues (theta0, theta1, theta2 are the three
+    # corresponding arguments of the cosine, see m_mat_u)
     res = math.atan2(math.sqrt(tmp), q) * one_third
     theta[0] = res + a
     theta[1] = res - a

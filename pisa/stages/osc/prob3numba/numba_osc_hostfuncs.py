@@ -12,14 +12,14 @@ types as defined in signatures here) from a host, whether TARGET is "host" or
 
 from __future__ import absolute_import, print_function, division
 
-__all__ = ["FX", "CX", "IX", "propagate_array_vacuum", "propagate_array", "fill_probs"]
+__all__ = ["FX", "CX", "IX", "propagate_array", "fill_probs"]
 
 import numpy as np
 from numba import guvectorize, njit
 
 from pisa import FTYPE, ITYPE, TARGET
 from pisa.stages.osc.prob3numba.numba_osc_kernels import (
-    osc_probs_vacuum_kernel,
+    # osc_probs_vacuum_kernel,
     osc_probs_layers_kernel,
     get_transition_matrix,
     get_transition_matrix_massbasis,
@@ -43,22 +43,22 @@ IX = "i4" if ITYPE == np.int32 else "i8"
 """Signed integer string code to use, understood by both Numba and Numpy"""
 
 
-@guvectorize(
-    [f"({FX}[:,:], {CX}[:,:], {IX}, {FX}, {FX}[:], {FX}[:,:])"],
-    "(a,a), (a,a), (), (), (i) -> (a,a)",
-    target=TARGET,
-)
-def propagate_array_vacuum(dm, mix, nubar, energy, distances, probability):
-    """wrapper to run `osc_probs_vacuum_kernel` from host (whether TARGET is
-    "cuda" or "host")"""
-    osc_probs_vacuum_kernel(dm, mix, nubar, energy, distances, probability)
-
-
-@njit([f"({FX}[:,:], {CX}[:,:], {IX}, {FX}, {FX}[:], {FX}[:,:])"], target=TARGET)
-def propagate_scalar_vacuum(dm, mix, nubar, energy, distances, probability):
-    """wrapper to run `osc_probs_vacuum_kernel` from host (whether TARGET is
-    "cuda" or "host")"""
-    osc_probs_vacuum_kernel(dm, mix, nubar, energy, distances, probability)
+# @guvectorize(
+#    [f"({FX}[:,:], {CX}[:,:], {IX}, {FX}, {FX}[:], {FX}[:,:])"],
+#    "(a,a), (a,a), (), (), (i) -> (a,a)",
+#    target=TARGET,
+# )
+# def propagate_array_vacuum(dm, mix, nubar, energy, distances, probability):
+#    """wrapper to run `osc_probs_vacuum_kernel` from host (whether TARGET is
+#    "cuda" or "host")"""
+#    osc_probs_vacuum_kernel(dm, mix, nubar, energy, distances, probability)
+#
+#
+# @njit([f"({FX}[:,:], {CX}[:,:], {IX}, {FX}, {FX}[:], {FX}[:,:])"], target=TARGET)
+# def propagate_scalar_vacuum(dm, mix, nubar, energy, distances, probability):
+#    """wrapper to run `osc_probs_vacuum_kernel` from host (whether TARGET is
+#    "cuda" or "host")"""
+#    osc_probs_vacuum_kernel(dm, mix, nubar, energy, distances, probability)
 
 
 @guvectorize(
@@ -66,11 +66,11 @@ def propagate_scalar_vacuum(dm, mix, nubar, energy, distances, probability):
     "(a,a), (a,a), (b,c), (), (), (i), (i) -> (a,a)",
     target=TARGET,
 )
-def propagate_array(dm, mix, nsi_eps, nubar, energy, densities, distances, probability):
+def propagate_array(dm, mix, mat_pot, nubar, energy, densities, distances, probability):
     """wrapper to run `osc_probs_layers_kernel` from host (whether TARGET
     is "cuda" or "host")"""
     osc_probs_layers_kernel(
-        dm, mix, nsi_eps, nubar, energy, densities, distances, probability
+        dm, mix, mat_pot, nubar, energy, densities, distances, probability
     )
 
 
@@ -79,12 +79,12 @@ def propagate_array(dm, mix, nsi_eps, nubar, energy, densities, distances, proba
     target=TARGET,
 )
 def propagate_scalar(
-    dm, mix, nsi_eps, nubar, energy, densities, distances, probability
+    dm, mix, mat_pot, nubar, energy, densities, distances, probability
 ):
     """wrapper to run `osc_probs_layers_kernel` from host (whether TARGET
     is "cuda" or "host")"""
     osc_probs_layers_kernel(
-        dm, mix, nsi_eps, nubar, energy, densities, distances, probability
+        dm, mix, mat_pot, nubar, energy, densities, distances, probability
     )
 
 
@@ -97,7 +97,7 @@ def propagate_scalar(
         f"{FX}, "  # baseline
         f"{CX}[:,:], "  # mix_nubar
         f"{CX}[:,:], "  # mix_nubar_conj_transp
-        f"{CX}[:,:], "  # nsi_eps
+        f"{CX}[:,:], "  # mat_pot
         f"{CX}[:,:], "  # H_vac
         f"{FX}[:,:], "  # dm
         f"{CX}[:,:], "  # transition_matrix
@@ -112,7 +112,7 @@ def get_transition_matrix_hostfunc(
     baseline,
     mix_nubar,
     mix_nubar_conj_transp,
-    nsi_eps,
+    mat_pot,
     H_vac,
     dm,
     transition_matrix,
@@ -126,7 +126,7 @@ def get_transition_matrix_hostfunc(
         baseline,
         mix_nubar,
         mix_nubar_conj_transp,
-        nsi_eps,
+        mat_pot,
         H_vac,
         dm,
         transition_matrix,
@@ -164,9 +164,9 @@ def get_H_vac_hostfunc(mix_nubar, mix_nubar_conj_transp, dm_vac_vac, H_vac):
 #     [f"({FX}, {CX}[:,:], {IX}, {CX}[:,:])"], "(), (m, m), () -> (m, m)", target=TARGET
 # )
 @njit([f"({FX}, {CX}[:,:], {IX}, {CX}[:,:])"], target=TARGET)
-def get_H_mat_hostfunc(rho, nsi_eps, nubar, H_mat):
+def get_H_mat_hostfunc(rho, mat_pot, nubar, H_mat):
     """wrapper to run `get_H_mat` from host (whether TARGET is "cuda" or "host")"""
-    get_H_mat(rho, nsi_eps, nubar, H_mat)
+    get_H_mat(rho, mat_pot, nubar, H_mat)
 
 
 @njit([f"({FX}, {CX}[:,:], {FX}[:,:], {CX}[:,:], {CX}[:,:])"], target=TARGET)

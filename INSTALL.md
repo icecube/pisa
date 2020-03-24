@@ -94,6 +94,8 @@ Required Python modules that are installed automatically when you use the `pip` 
 * [simplejson](https://github.com/simplejson/simplejson) version >= 3.2.0 required
 * [tables](http://www.pytables.org)
 * [uncertainties](https://pythonhosted.org/uncertainties)
+* [py-cpuinfo](https://pypi.org/project/py-cpuinfo) retrieve detailed CPU and architecture info for documenting in tests / obtaining results
+* [sympy](https://www.sympy.org/en/) Used for testing `nsi_params.py` 
 
 
 ### Optional Dependencies
