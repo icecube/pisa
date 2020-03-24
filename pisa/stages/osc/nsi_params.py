@@ -14,6 +14,7 @@ import numpy as np
 
 from pisa import FTYPE
 from pisa import TARGET
+from pisa.utils.comparisons import ALLCLOSE_KW, isscalar, recursiveEquality
 from pisa.utils.log import set_verbosity, logging
 
 __all__ = ['NSIParams', 'StdNSIParams', 'VacuumLikeNSIParams']
@@ -24,6 +25,10 @@ def _set_magnitude_phase(magn_phase_tuple):
     except:
         raise ValueError(
             'Pass an iterable with two items (magnitude and phase)!'
+        )
+    if not isscalar(magnitude) or not isscalar(phase):
+        raise TypeError(
+            'Only scalar values for magnitude and phase accepted!'
         )
     if magnitude < 0.0 and phase != 0.0:
         raise ValueError(
@@ -93,8 +98,8 @@ class StdNSIParams(NSIParams):
 
     @eps_ee.setter
     def eps_ee(self, value):
-        if isinstance(value, complex):
-            raise ValueError("eps_ee must be a real number!")
+        if isinstance(value, complex) or not isscalar(value):
+            raise TypeError("eps_ee must be a real number!")
         self._eps_matrix[0, 0] = value + 1.j * self._eps_matrix[0, 0].imag
 
     @property
@@ -126,8 +131,8 @@ class StdNSIParams(NSIParams):
 
     @eps_mumu.setter
     def eps_mumu(self, value):
-        if isinstance(value, complex):
-            raise ValueError("eps_mumu must be a real number!")
+        if isinstance(value, complex) or not isscalar(value):
+            raise TypeError("eps_mumu must be a real number!")
         self._eps_matrix[1, 1] = value + 1.j * self._eps_matrix[1, 1].imag
 
     @property
@@ -148,8 +153,8 @@ class StdNSIParams(NSIParams):
 
     @eps_tautau.setter
     def eps_tautau(self, value):
-        if isinstance(value, complex):
-            raise ValueError("eps_tautau must be a real number!")
+        if isinstance(value, complex) or not isscalar(value):
+            raise TypeError("eps_tautau must be a real number!")
         self._eps_matrix[2, 2] = value + 1.j * self._eps_matrix[2, 2].imag
 
     @property
@@ -164,7 +169,7 @@ class StdNSIParams(NSIParams):
 
         # make sure this is a valid Hermitian potential matrix
         # before returning anything
-        assert np.all(np.isclose(nsi_eps, nsi_eps.conj().T))
+        assert np.allclose(nsi_eps, nsi_eps.conj().T, **ALLCLOSE_KW)
 
         return nsi_eps
 
@@ -194,8 +199,8 @@ class VacuumLikeNSIParams(NSIParams):
 
     @eps_scale.setter
     def eps_scale(self, value):
-        if isinstance(value, complex):
-            raise ValueError("eps_scale must be a real number!")
+        if isinstance(value, complex) or not isscalar(value):
+            raise TypeError("eps_scale must be a real number!")
         self._eps_scale = value
 
     @property
@@ -205,8 +210,8 @@ class VacuumLikeNSIParams(NSIParams):
 
     @eps_prime.setter
     def eps_prime(self, value):
-        if isinstance(value, complex):
-            raise ValueError("eps_prime must be a real number!")
+        if isinstance(value, complex) or not isscalar(value):
+            raise TypeError("eps_prime must be a real number!")
         self._eps_prime = value
 
     # --- projection phases ---
@@ -368,7 +373,7 @@ class VacuumLikeNSIParams(NSIParams):
 
         # make sure this is a valid Hermitian potential matrix
         # before returning anything
-        assert np.all(np.isclose(nsi_eps, nsi_eps.conj().T))
+        assert np.allclose(nsi_eps, nsi_eps.conj().T, **ALLCLOSE_KW)
 
         return nsi_eps
 
@@ -495,16 +500,54 @@ class VacuumLikeNSIParams(NSIParams):
         nsi_eps = nsi_eps[:, :, 0] + nsi_eps[:, :, 1] * 1.j
         # make sure this is a valid Hermitian potential matrix
         # before returning anything
-        assert np.all(np.isclose(nsi_eps, nsi_eps.conj().T))
+        assert np.allclose(nsi_eps, nsi_eps.conj().T, **ALLCLOSE_KW)
 
         return nsi_eps
 
 def test_nsi_params():
     """
-    # TODO: implement me!
-    """
-    pass
+    Unit tests for subclasses of `NSIParams`.
 
+    TODO: these have to be extended
+    """
+    std_nsi = StdNSIParams()
+    try:
+        # cannot accept a sequence
+        std_nsi.eps_ee = [np.random.rand()]
+    except TypeError:
+        pass
+    except:
+        raise
+
+    try:
+        # must be real
+        std_nsi.eps_ee = np.random.rand() * 1.j
+    except TypeError:
+        pass
+    except:
+        raise
+
+    try:
+        # unphysical negative magnitude for nonzero phase
+        std_nsi.eps_mutau = ((np.random.rand() - 1.0), 0.1)
+    except ValueError:
+        pass
+    except:
+        raise
+
+    std_nsi.eps_ee = 0.5
+    std_nsi.eps_mumu = 0.5
+    std_nsi.eps_tautau = 0.5
+    if not np.allclose(
+        std_nsi.eps_matrix,
+        np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3,3), dtype=FTYPE),
+        **ALLCLOSE_KW
+    ):
+        raise ValueError("NSI coupling matrix should be identically zero!")
+
+    vac_like_nsi = VacuumLikeNSIParams()
+    vac_like_nsi.eps_scale = np.random.rand() * 10.
+    assert recursiveEquality(vac_like_nsi.eps_ee, vac_like_nsi.eps_scale - 1.0)
 
 def test_nsi_parameterization():
     """Unit test for Hvac-like NSI parameterization."""
@@ -522,15 +565,15 @@ def test_nsi_parameterization():
     nsi_params.alpha2 = alpha2
     nsi_params.deltansi = deltansi
 
-    logging.info('Checking agreement between numerical & analytical NSI matrix...')
+    logging.trace('Checking agreement between numerical & analytical NSI matrix...')
 
     eps_mat_numerical = nsi_params.eps_matrix
     eps_mat_analytical = nsi_params.eps_matrix_analytical
 
-    logging.info("Numerical NSI matrix:\n%s" % eps_mat_numerical)
-    logging.info("Analytical expansion (by hand):\n%s" % eps_mat_analytical)
+    logging.trace("Numerical NSI matrix:\n%s" % eps_mat_numerical)
+    logging.trace("Analytical expansion (by hand):\n%s" % eps_mat_analytical)
     try:
-        close = np.isclose(eps_mat_numerical, eps_mat_analytical)
+        close = np.isclose(eps_mat_numerical, eps_mat_analytical, **ALLCLOSE_KW)
         if not np.all(close):
             raise ValueError(
                 'Evaluating analytical expressions for NSI matrix elements'
@@ -539,10 +582,10 @@ def test_nsi_parameterization():
                 % close
             )
     except ValueError as e:
-        logging.error(str(e) + "...\nThis is expected."
-                      " Going ahead with numerical calculation for now.")
+        logging.warn(str(e) + "...\nThis is expected."
+                     " Going ahead with numerical calculation for now.")
 
-    logging.info('Now checking agreement with sympy calculation...')
+    logging.trace('Now checking agreement with sympy calculation...')
 
     eps_mat_sympy = nsi_sympy_mat_mult(
         eps_scale_val=eps_scale,
@@ -554,8 +597,8 @@ def test_nsi_parameterization():
         alpha2_val=alpha2,
         deltansi_val=deltansi
     )
-    logging.info('Sympy NSI matrix:\n%s' % eps_mat_sympy)
-    close = np.isclose(eps_mat_numerical, eps_mat_sympy)
+    logging.trace('Sympy NSI matrix:\n%s' % eps_mat_sympy)
+    close = np.isclose(eps_mat_numerical, eps_mat_sympy, **ALLCLOSE_KW)
     if not np.all(close):
         raise ValueError(
             'Sympy and numerical calculations disagree! Elementwise agreement:\n'
@@ -641,4 +684,5 @@ def nsi_sympy_mat_mult(
 if __name__=='__main__':
     assert TARGET == 'cpu', "Cannot test functions on GPU, set PISA_TARGET to 'cpu'"
     set_verbosity(1)
+    test_nsi_params()
     test_nsi_parameterization()
