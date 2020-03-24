@@ -102,8 +102,9 @@ def get_H_mat(rho, mat_pot, nubar, H_mat):
         the number of moles of nucleons per cm^3)
 
     mat_pot : complex 2-d array
-        general matter potential flavor structure
+        Generalised matter potential matrix without a factor
         (will be multiplied with "a" factor)
+        set to diag(1, 0, 0) for only standard oscillations
 
     nubar : int
         +1 for neutrinos, -1 for antineutrinos
@@ -123,7 +124,6 @@ def get_H_mat(rho, mat_pot, nubar, H_mat):
 
     # standard matter interaction Hamiltonian
     clear_matrix(H_mat)
-    H_mat[0, 0] = 0 
     #formalism of Hamiltonian: not 1+epsilon_ee^f in [0,0] element but just epsilon...
     #EL changed when fitting in Thomas' NSI branch
 
@@ -492,7 +492,10 @@ def get_transition_matrix(nubar,
     mix_nubar_conj_transp : comjugate 2d-array
         conjugate transpose of mixing matrix
 
-    mat_pot : 2d-array
+    mat_pot : complex 2-d array
+        Generalised matter potential matrix without a factor
+        (will be multiplied with "a" factor)
+        set to diag(1, 0, 0) for only standard oscillations
 
     H_vac : 2d-array
 
@@ -674,9 +677,10 @@ def osc_probs_layers_kernel(dm,
     H_vac : complex 2-d array
         Hamiltonian in vacuum, without the 1/2E term
 
-    mat_pot : 2d-array
+    mat_pot : complex 2-d array
         Generalised matter potential matrix without a factor
-        (set to diag(1, 0, 0) for only standard oscillations)
+        (will be multiplied with "a" factor)
+        set to diag(1, 0, 0) for only standard oscillations
 
     nubar : int
         1 for neutrinos, -1 for antineutrinos
@@ -912,5 +916,3 @@ if __name__=='__main__':
     test_convert_from_mass_eigenstate()
     test_get_transition_matrix()
     test_osc_probs_layers_kernel()
-
-
