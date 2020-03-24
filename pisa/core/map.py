@@ -966,6 +966,14 @@ class Map(object):
                 nan_at = np.isnan(orig_hist)
                 zero_at = orig_hist == 0.
                 valid_mask = ~nan_at
+                if np.any(sigma[valid_mask & ~zero_at] == 0.):
+                    logging.warn(
+                        "Some bins have non-zero counts but no assiciated error! "
+                        "Errors will be set to their Poisson expectation now. "
+                        "To avoid this warning, call `set_poisson_errors()` on the "
+                        "map or set non-zero errors manually."
+                    )
+                    sigma[valid_mask] = np.sqrt(orig_hist[valid_mask])
                 variance_valid = sigma[valid_mask]**2
 
                 if np.allclose(variance_valid, orig_hist[valid_mask], **ALLCLOSE_KW):
