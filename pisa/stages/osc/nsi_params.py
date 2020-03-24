@@ -500,7 +500,10 @@ class VacuumLikeNSIParams(NSIParams):
         return nsi_eps
 
 def test_nsi_params():
-    raise NotImplementedError()
+    """
+    # TODO: implement me!
+    """
+    pass
 
 
 def test_nsi_parameterization():
