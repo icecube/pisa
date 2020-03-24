@@ -1555,16 +1555,16 @@ class Analysis(object):
         self._nit += 1
 
 # --------------------------------------------------------------------------- #
-def test_fit_hypo_local_minimizer(
+def test_fit_hypo_minimizer(
     pipeline_cfg='settings/pipeline/example.cfg',
     local_minimizer_cfg='settings/minimizer/l-bfgs-b_ftol2e-9_gtol1e-5_eps1e-7_maxiter200.cfg',
     fit_cfg='settings/fit/example_basinhopping_lbfgsb.cfg'
 ):
-    """Unit test for local-minimizer fitting routine.
-    """
+    """Unit tests of `Analysis._fit_hypo_minimizer`."""
     from pisa.core.distribution_maker import DistributionMaker
     from pisa.utils.config_parser import parse_minimizer_config
     from pisa.utils.minimization import override_min_opt
+
     d = DistributionMaker(pipeline_cfg)
     data_dist = d.get_outputs(return_sum=True)
     hypo_maker = d
@@ -1600,8 +1600,73 @@ def test_fit_hypo_local_minimizer(
         external_priors_penalty=None
     )
 # --------------------------------------------------------------------------- #
+def test_fit_hypo_pull(
+    param_variations=None,
+    pipeline_cfg='settings/pipeline/example.cfg'
+):
+    """Unit tests of `Analysis._fit_hypo_pull`."""
+    from pisa.core.distribution_maker import DistributionMaker
+
+    data_maker = DistributionMaker(pipelines=pipeline_cfg)
+    hypo_maker = DistributionMaker(pipelines=pipeline_cfg)
+
+    if param_variations is None:
+        param_variations = {
+            'aeff_scale': +0.02*ureg.dimensionless,
+            'nue_numu_ratio': -0.015*ureg.dimensionless
+        }
+    else:
+        for pname in param_variations:
+            assert pname in hypo_maker.params.names
+            hypo_maker.params[pname].is_fixed = False
+
+    for pname, variation in param_variations.items():
+        nominal = data_maker.params[pname].nominal_value
+        data_maker.params[pname].value = nominal + variation.to(nominal.units)
+
+    data_dist = data_maker.get_outputs(return_sum=True)
+
+    # we want to test whether we can get back the parameters
+    # varied away from nominal above
+    for param in hypo_maker.params.free:
+        if not param.name in param_variations:
+            param.is_fixed = True
+
+    pull_settings = {'params': [], 'values': []}
+    for pname in param_variations:
+        pull_settings['params'].append(pname)
+        param = hypo_maker.params[pname]
+        param.is_fixed = False
+        # set sensible ranges over which difference quotients are computed
+        # (don't have to include the true value of the parameter
+        # to fit it back)
+        if param.nominal_value.m > 0:
+            test_vals = [0.95*param.nominal_value, 1.05*param.nominal_value]
+        elif param.nominal_value.m == 0:
+            test_vals = [-0.05*param.nominal_value.units,
+                          0.05*param.nominal_value.units]
+        else:
+            test_vals = [1.05*param.nominal_value, 0.95*param.nominal_value]
+        pull_settings['values'].append(test_vals)
+
+    a = Analysis()
+    fit_info = a._fit_hypo_pull(
+        data_dist=data_dist,
+        hypo_maker=hypo_maker,
+        pull_settings=pull_settings,
+        metric='chi2'
+    )
+
+    msg = 'fit vs. true parameter *pulls*:\n'
+    for pname, variation in param_variations.items():
+        true_pull = variation.to(hypo_maker.params[pname].nominal_value.units).m
+        fit_pull = [fit_info['params'][pname].value - data_maker.params[pname].nominal_value][0]
+        msg += ' '*12
+        msg += '%s: %.5f (fit) vs. %.5f (truth)\n' % (pname, fit_pull, true_pull)
+    logging.info(msg)
+# --------------------------------------------------------------------------- #
 
 if __name__ == "__main__":
     set_verbosity(1)
-    test_fit_hypo_local_minimizer()
-
+    test_fit_hypo_minimizer()
+    test_fit_hypo_pull()

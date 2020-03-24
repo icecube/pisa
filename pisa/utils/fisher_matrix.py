@@ -45,8 +45,8 @@ def build_fisher_matrix(gradient_hist_flat_d, fiducial_hist, fiducial_params):
     # find non-empty bins in flattened map
     fiducial_hist_flat = fiducial_hist.nominal_values['total'].flatten()
     nonempty = np.nonzero(fiducial_hist_flat)
-    logging.info("Using %u non-empty bins of %u" %
-                 (len(nonempty[0]), len(fiducial_hist_flat)))
+    logging.debug("Using %u non-empty bins of %u" %
+                  (len(nonempty[0]), len(fiducial_hist_flat)))
 
     # get gradients as calculated above for non-zero bins
     gradients = np.array(
@@ -54,7 +54,7 @@ def build_fisher_matrix(gradient_hist_flat_d, fiducial_hist, fiducial_params):
     )
 
     # get error estimate from best-fit bin count for non-zero bins
-    # TODO: use propagated uncertainties instead
+    # TODO: these are not variances
     variances = fiducial_hist['total'].std_devs.flatten()[nonempty]
 
     # Loop over all parameters per bin (simple transpose) and calculate Fisher
@@ -68,8 +68,8 @@ def build_fisher_matrix(gradient_hist_flat_d, fiducial_hist, fiducial_params):
     fisher = FisherMatrix(
         matrix=fmatrix,
         parameters=params,  #order is important here!
-        best_fits=fiducial_params.nominal_values, # TODO: fix order
-        priors=None, #FIXME
+        best_fits=fiducial_params.nominal_values, # TODO: fix order (in the sense of making it definite?)
+        priors=None, #FIXME: support priors
     )
 
     return fisher, nonempty
@@ -89,7 +89,7 @@ def get_fisher_matrix(hypo_maker, test_vals, counter):
     gradient_maps = {'total': {}}
 
     for pname in hypo_params.names:
-        logging.debug("Computing binwise gradients for parameter '%s'." % pname)
+        logging.trace("Computing binwise gradients for parameter '%s'." % pname)
         tpm, gm = get_gradients(
             param=pname,
             hypo_maker=hypo_maker,
