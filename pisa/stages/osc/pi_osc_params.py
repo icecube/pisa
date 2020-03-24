@@ -80,7 +80,6 @@ class OscParams(object):
         self.dm21 = 0.
         self.dm31 = 0.
         self.dm41 = 0.
-        self.nsi_eps = np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3,3), dtype=FTYPE)
         self.gamma21 = 0. # TODO Add full 3x3 matrix option, TODO update docs, TODO getters/setters to enforce values ranges?
         self.gamma31 = 0.
         self.gamma32 = 0.
