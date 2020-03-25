@@ -973,14 +973,14 @@ class Map(object):
                 nan_at = np.isnan(orig_hist)
                 valid_mask = ~nan_at
 
-                hist_vals = np.empty_like(orig_hist, dtype=np.float64)
+                hist_vals = np.empty_like(orig_hist)
                 hist_vals[valid_mask] = poisson.rvs(
                     orig_hist[valid_mask],
                     random_state=random_state
                 )
                 hist_vals[nan_at] = np.nan
 
-                error_vals = np.empty_like(orig_hist, dtype=np.float64)
+                error_vals = np.empty_like(orig_hist)
                 error_vals[valid_mask] = np.sqrt(orig_hist[valid_mask])
                 error_vals[nan_at] = np.nan
             return {'hist': unp.uarray(hist_vals, error_vals)}
@@ -1010,7 +1010,7 @@ class Map(object):
                     scale_factor = variance_valid/orig_hist[valid_mask]
                 poisson_lambda = orig_hist[valid_mask]/scale_factor
 
-                hist_vals = np.empty_like(orig_hist, dtype=np.float64)
+                hist_vals = np.empty_like(orig_hist)
                 hist_vals[valid_mask] = poisson.rvs(
                     poisson_lambda,
                     random_state=random_state
