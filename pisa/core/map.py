@@ -943,9 +943,9 @@ class Map(object):
             'gauss+poisson'. Strings are case-insensitive and whitespace is
             removed.
             The 'scaled_poisson' method implements a Scaled Poisson Process, which is 
-            a better approximation to the true distribution when the bin counts are 
-            the result of a Poisson process with weighted events[1] (as is the case in MC
-            maps). The fluctuated maps are guaranteed to have the same mean and standard
+            a better approximation than a normal distribution to the true distribution 
+            of bin counts that are the result of a Poisson process with weighted events[1].
+            The fluctuated maps are guaranteed to have the same mean and standard
             deviation as the original map.
 
         random_state : None or type accepted by utils.random_numbers.get_random_state
