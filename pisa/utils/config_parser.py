@@ -773,21 +773,24 @@ def parse_minimizer_config(config):
 
     Parameters
     ----------
-    config : string or ConfigParser
+    config : str, OrderedDict, or ConfigParser
 
     Returns
     -------
     settings_dict : OrderedDict
 
     """
+    if isinstance(config, OrderedDict):
+        return config
+
     if isinstance(config, str):
         config = from_file(config)
     elif isinstance(config, PISAConfigParser):
         pass
     else:
         raise TypeError(
-            '`config` must either be a string or PISAConfigParser. Got %s '
-            'instead.' % type(config)
+            '`config` must either be a string, PISAConfigParser, or OrderedDict.'
+            ' Got %s instead.' % type(config)
         )
 
     if not config.has_section('method'):
@@ -824,22 +827,25 @@ def parse_fit_config(config):
 
     Parameters
     ----------
-    config : string or ConfigParser
+    config : str, OrderedDict, or ConfigParser
 
     Returns
     -------
     settings_dict : OrderedDict
 
     """
+    if isinstance(config, OrderedDict):
+        return config
+
     from pisa.analysis.analysis import ANALYSIS_METHODS
     if isinstance(config, str):
         config = from_file(config)
-    elif isinstance(config, PISAConfigParser):
+    elif isinstance(config, PISAConfigParser) or isinstance(config, OrderedDict):
         pass
     else:
         raise TypeError(
-            '`config` must either be a string or PISAConfigParser. Got %s '
-            'instead.' % type(config)
+            '`config` must either be a string, PISAConfigParser, or OrderedDict.'
+            ' Got %s instead.' % type(config)
         )
 
     if not config.has_section('fit'):
@@ -1539,12 +1545,15 @@ def test_parse_minimizer_config(
     config0.read(config)
     config0 = parse_minimizer_config(config0)
 
-    config1 = parse_minimizer_config(config)
+    config1 = parse_minimizer_config(config0)
+
+    config2 = parse_minimizer_config(config)
 
     logging.info('Keys and values found in config:')
-    for key, vals in config1.items():
+    for key, vals in config2.items():
         logging.info('%s: %s', key, vals)
         assert vals == config0[key]
+        assert vals == config1[key]
 
 def test_parse_fit_config(
     config='settings/fit/example_basinhopping_lbfgsb.cfg'
@@ -1554,12 +1563,15 @@ def test_parse_fit_config(
     config0.read(config)
     config0 = parse_fit_config(config0)
 
-    config1 = parse_fit_config(config)
+    config1 = parse_fit_config(config0)
+
+    config2 = parse_fit_config(config)
 
     logging.info('Keys and values found in config:')
-    for key, vals in config1.items():
+    for key, vals in config2.items():
         logging.info('%s: %s', key, vals)
         assert vals == config0[key]
+        assert vals == config1[key]
 
 def test_MutableMultiFileIterator():
     """Unit test for class `MutableMultiFileIterator`"""
