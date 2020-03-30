@@ -90,7 +90,7 @@ EQUALITY_SIGFIGS = min(HASH_SIGFIGS, FTYPE_SIGFIGS)
 EQUALITY_PREC = 10**-EQUALITY_SIGFIGS
 """Precision ("rtol") for performing equality comparisons"""
 
-ALLCLOSE_KW = dict(rtol=EQUALITY_PREC, atol=0, equal_nan=True)
+ALLCLOSE_KW = dict(rtol=EQUALITY_PREC, atol=FTYPE_PREC, equal_nan=True)
 """Keyword args to pass to all calls to numpy.allclose"""
 
 # Derive the following number via:
@@ -177,7 +177,7 @@ def isunitless(x):
     return True
 
 
-def recursiveEquality(x, y):
+def recursiveEquality(x, y, allclose_kw=ALLCLOSE_KW):
     """Recursively verify equality between two objects `x` and `y`.
 
     Parameters
@@ -233,8 +233,8 @@ def recursiveEquality(x, y):
         if not isinstance(y, pint.unit._Unit):
             logging.trace('type(x)=%s but type(y)=%s', type(x), type(y))
         if repr(x) != repr(y):
-            logging.trace('x: %s', x)
-            logging.trace('y: %s', y)
+            logging.trace('x:\n%s', x)
+            logging.trace('y:\n%s', y)
             return False
 
     # pint quantities
@@ -266,15 +266,15 @@ def recursiveEquality(x, y):
         if x != y:
             is_eq = False
             try:
-                if np.allclose(x, y, **ALLCLOSE_KW):
+                if np.allclose(x, y, **allclose_kw):
                     is_eq = True
             except TypeError:
                 pass
             if not is_eq:
                 logging.trace('Simple types (type(x)=%s, type(y)=%s) not equal.',
                               type(x), type(y))
-                logging.trace('x: %s', x)
-                logging.trace('y: %s', y)
+                logging.trace('x:\n%s', x)
+                logging.trace('y:\n%s', y)
                 return False
 
     # Numpy types
@@ -292,20 +292,20 @@ def recursiveEquality(x, y):
             first_element = next(iter(y.flat))
 
         if issubclass(dtype, np.floating):
-            if not np.allclose(x, y, **ALLCLOSE_KW):
-                logging.trace('x: %s', x)
-                logging.trace('y: %s', y)
+            if not np.allclose(x, y, **allclose_kw):
+                logging.trace('x:\n%s', x)
+                logging.trace('y:\n%s', y)
                 return False
         elif isinstance(first_element, (AffineScalarFunc, Variable)):
             if not (
-                np.allclose(unp.nominal_values(x), unp.nominal_values(y), **ALLCLOSE_KW)
-                and np.allclose(unp.std_devs(x), unp.std_devs(y), **ALLCLOSE_KW)
+                np.allclose(unp.nominal_values(x), unp.nominal_values(y), **allclose_kw)
+                and np.allclose(unp.std_devs(x), unp.std_devs(y), **allclose_kw)
             ):
                 return False
         else:
             if not np.all(x == y):
-                logging.trace('x: %s', x)
-                logging.trace('y: %s', y)
+                logging.trace('x:\n%s', x)
+                logging.trace('y:\n%s', y)
                 return False
 
     # dict
@@ -314,8 +314,8 @@ def recursiveEquality(x, y):
             return False
         xkeys = sorted(x.keys())
         if xkeys != sorted(y.keys()):
-            logging.trace('xkeys: %s', xkeys)
-            logging.trace('ykeys: %s', sorted(y.keys()))
+            logging.trace('xkeys:\n%s', xkeys)
+            logging.trace('ykeys:\n%s', sorted(y.keys()))
             return False
         else:
             for k in xkeys:
@@ -334,8 +334,8 @@ def recursiveEquality(x, y):
         else:
             for xs, ys in zip(x, y):
                 if not recursiveEquality(xs, ys):
-                    logging.trace('xs: %s', xs)
-                    logging.trace('ys: %s', ys)
+                    logging.trace('xs:\n%s', xs)
+                    logging.trace('ys:\n%s', ys)
                     return False
 
     # Unhandled

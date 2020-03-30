@@ -10,11 +10,14 @@ from __future__ import absolute_import
 
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from os import walk
-from os.path import dirname, expanduser, expandvars, isfile, join, relpath
+from os.path import dirname, isfile, join, relpath
+import platform
 import sys
 
+import cpuinfo
+
 import pisa
-from pisa.utils.fileio import nsort_key_func
+from pisa.utils.fileio import expand, nsort_key_func
 from pisa.utils.log import Levels, logging, set_verbosity
 
 pycuda, nbcuda = None, None  # pylint: disable=invalid-name
@@ -51,8 +54,10 @@ __license__ = """Copyright (c) 2020, The IceCube Collaboration
  limitations under the License."""
 
 
-PISA_PATH = dirname(pisa.__file__)
-OPTIONAL_DEPS = (
+PISA_PATH = expand(dirname(pisa.__file__), absolute=True, resolve_symlinks=True)
+
+# TODO: get optional & required automatically (e.g., from setup.py?)
+OPTIONAL_MODULES = (
     "pandas",
     "emcee",
     "pycuda",
@@ -62,10 +67,39 @@ OPTIONAL_DEPS = (
     "MCEq",
     "nuSQUIDSpy",
 )
+"""Okay if imports or test_* functions fail due to these not being import-able"""
+
+REQUIRED_MODULES = (
+    "pisa",
+    "pip",
+    "setuptools",
+    "numpy",
+    "decorator",
+    "kde",
+    "h5py",
+    "iminuit",
+    "line_profiler",
+    "matplotlib",
+    "numba",
+    "numpy",
+    "pint",
+    "scipy",
+    "simplejson",
+    "tables",
+    "uncertainties",
+    "llvmlite",
+    "cpuinfo",
+    "sympy",
+)
+
 PFX = "[T] "
+"""Prefix each line output by this script to clearly delineate output from this
+script vs. output from test functions being run"""
 
 
-def run_unit_tests(path=PISA_PATH, allow_missing=OPTIONAL_DEPS, verbosity=Levels.WARN):
+def run_unit_tests(
+    path=PISA_PATH, allow_missing=OPTIONAL_MODULES, verbosity=Levels.WARN
+):
     """Run all tests found at `path` (or recursively below if `path` is a
     directory).
 
@@ -90,7 +124,30 @@ def run_unit_tests(path=PISA_PATH, allow_missing=OPTIONAL_DEPS, verbosity=Levels
         If any import or test fails not in `allow_missing`
 
     """
-    path = expanduser(expandvars(path))
+    set_verbosity(verbosity)
+    logging.info("%sPlatform information:", PFX)
+    logging.info("%s  OS = %s %s", PFX, platform.system(), platform.release())
+    for key, val in cpuinfo.get_cpu_info().items():
+        logging.info("%s  %s = %s", PFX, key, val)
+    logging.info(PFX)
+    logging.info("%sModule versions:", PFX)
+    for module_name in REQUIRED_MODULES + OPTIONAL_MODULES:
+        try:
+            exec(f"import {module_name}")
+        except ImportError:
+            if module_name in REQUIRED_MODULES:
+                raise
+            ver = "optional module not installed or not import-able"
+        else:
+            lib = eval(module_name)
+            if hasattr(lib, "__version__"):
+                ver = lib.__version__
+            else:
+                ver = "?"
+        logging.info("%s  %s : %s", PFX, module_name, ver)
+    logging.info(PFX)
+
+    path = expand(path, absolute=True, resolve_symlinks=True)
     if allow_missing is None:
         allow_missing = []
     elif isinstance(allow_missing, str):
@@ -317,7 +374,7 @@ def find_unit_tests(path):
         if no such functions are found)
 
     """
-    path = expanduser(expandvars(path))
+    path = expand(path, absolute=True, resolve_symlinks=True)
 
     tests = {}
     if isfile(path):
@@ -352,6 +409,8 @@ def find_unit_tests_in_file(filepath):
     tests : list of str
 
     """
+    filepath = expand(filepath, absolute=True, resolve_symlinks=True)
+    assert isfile(filepath), str(filepath)
     tests = []
     with open(filepath, "r") as f:
         for line in f.readlines():
@@ -377,7 +436,7 @@ def main(description=__doc__):
     parser.add_argument(
         "--allow-missing",
         nargs="+",
-        default=list(OPTIONAL_DEPS),
+        default=list(OPTIONAL_MODULES),
         help="""Allow ImportError (or subclasses) for these modules""",
     )
     parser.add_argument(

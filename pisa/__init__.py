@@ -66,6 +66,7 @@ __all__ = [
     'TARGET',
     'OMP_NUM_THREADS',
     'FTYPE',
+    'ITYPE',
     'HASH_SIGFIGS',
     'EPSILON',
     'C_FTYPE',
@@ -166,6 +167,7 @@ if 'PISA_FTYPE' in os.environ:
             '--> For double precision set PISA_FTYPE to one of %s\n'
             %(PISA_FTYPE, FLOAT32_STRINGS, FLOAT64_STRINGS)
         )
+ITYPE = np.int32 if FTYPE == np.float32 else np.int64
 del FLOAT32_STRINGS, FLOAT64_STRINGS
 
 # set default target
