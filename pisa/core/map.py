@@ -43,8 +43,8 @@ from pisa.utils.random_numbers import get_random_state
 from pisa.utils import stats
 
 
-__all__ = ['type_error', 'reduceToHist', 'rebin', 'valid_nominal_values',
-           'Map', 'MapSet', 'test_Map', 'test_MapSet']
+__all__ = ['FLUCTUATE_METHODS', 'type_error', 'reduceToHist', 'rebin',
+           'valid_nominal_values', 'Map', 'MapSet', 'test_Map', 'test_MapSet']
 
 __author__ = 'J.L. Lanfranchi'
 
@@ -72,6 +72,8 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 # TODO: CUDA and numba implementations of rebin if these libs are available
 
 # TODO: move these utilities functions to a generic utils module?
+
+FLUCTUATE_METHODS = ['poisson', 'scaled_poisson', 'gauss', 'gauss+poisson']
 
 def type_error(value):
     """Generic formulation of a TypeError that can be called throughout the
@@ -966,6 +968,11 @@ class Map(object):
         """
         orig = method
         method = str(method).strip().lower().replace(' ', '')
+        if not method in FLUCTUATE_METHODS:
+            raise ValueError(
+                'Map fluctuation method "%s" not recognized! Valid choices are:'
+                ' %s.' % (method, FLUCTUATE_METHODS)
+            )
         if method == 'poisson':
             random_state = get_random_state(random_state, jumpahead=jumpahead)
             with np.errstate(invalid='ignore'):
@@ -1066,9 +1073,6 @@ class Map(object):
 
         elif method in ['', 'none']:
             return {}
-
-        else:
-            raise ValueError('unhandled `method` = %s' % orig)
 
     @property
     def shape(self):

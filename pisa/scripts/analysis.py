@@ -11,6 +11,7 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter, ArgumentErro
 from os.path import basename
 import sys
 
+from pisa.core.map import FLUCTUATE_METHODS
 # assign name to analysis wrapper scripts which they should be available by
 from pisa.scripts.discrete_hypo_test import discrete_hypo_test as discrete_hypo # pylint: disable=unused-import
 from pisa.scripts.inj_param_scan import inj_param_scan # pylint: disable=unused-import
@@ -301,7 +302,7 @@ class AnalysisScript(object):
             '--fluctuate-data-method',
             # TODO: define choices centrally to always keep them in sync
             # with the choices `Map` class accepts?
-            type=str, default=None, choices=['poisson', 'gauss', 'gauss+poisson'],
+            type=str, default=None, choices=FLUCTUATE_METHODS,
             help='''Method according to which data distributions are fluctuated.
             No effect if '--fluctuate-data' not selected.'''
         )

@@ -179,7 +179,7 @@ def collect_maker_selections(init_args_d, maker_names):
     maker_names : str or sequence of str
 
     """
-    if not isinstance(maker_names, Sequences) or isinstance(maker_names, str):
+    if not isinstance(maker_names, Sequence) or isinstance(maker_names, str):
         maker_names = [maker_names]
 
     # first ensure acceptable names were given
@@ -586,6 +586,12 @@ class HypoTesting(Analysis):
         # Fit even for cases where we know the best fit a-priori
         # (e.g. for validating minimization)
         self.force_fits = force_fits
+        if self.force_fits:
+            logging.info(
+                'Forcing all implemented fits to be performed, even if '
+                'redundant. Depending on your hypotheses and their naming, '
+                'this could lead to some of your log files being overwritten.'
+            )
 
         # Instantiate h0 distribution maker to ensure it is a valid spec
         if h0_maker is None:
@@ -668,7 +674,7 @@ class HypoTesting(Analysis):
 
         if fluctuate_data and num_data_trials == 0:
             raise ValueError(
-                '`fluctuate_data` is True but `num_data_trials` is set to 0!'
+                'When `fluctuate_data` is True, `num_data_trials` must be > 0!'
             )
 
         # Ensure num_{fid_}data_trials is one if fluctuate_{fid_}data is False
@@ -683,7 +689,7 @@ class HypoTesting(Analysis):
 
         if fluctuate_fid and num_fid_trials == 0:
             raise ValueError(
-                '`fluctuate_fid` is True but `num_fid_trials` is set to 0!'
+                'When `fluctuate_fid` is True, `num_fid_trials` must be > 0!'
             )
 
         if not fluctuate_fid and num_fid_trials > 1:
@@ -827,6 +833,7 @@ class HypoTesting(Analysis):
         self.is_single_hypo_test = (
             self.h1_maker_is_h0_maker and
             self.h0_param_selections == self.h1_param_selections
+            and not self.force_fits
         )
         """Whether we are dealing with a test of a single hypothesis, in which
         case we can ignore h1"""
@@ -1148,7 +1155,7 @@ class HypoTesting(Analysis):
 
         if (not self.data_is_data and self.data_maker_is_h1_maker
                 and self.h1_param_selections == self.data_param_selections
-                and not self.fluctuate_data):
+                and not self.fluctuate_data and not self.force_fits):
             logging.info('Hypo %s will reproduce exactly %s distributions; not'
                          ' running corresponding fit.',
                          self.labels.h1_name, self.labels.data_disp)
@@ -1185,7 +1192,7 @@ class HypoTesting(Analysis):
                 pprint=self.pprint,
                 blind=self.blind,
                 reset_free=self.reset_free,
-                )[0]
+                )
         self.h1_fid_asimov_dist = self.h1_fit_to_data['hypo_asimov_dist']
 
         self.log_fit(fit_info=self.h1_fit_to_data,
@@ -1292,7 +1299,7 @@ class HypoTesting(Analysis):
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free
-                )[0]
+                )
             self.log_fit(fit_info=self.h0_fit_to_h0_fid,
                          dirpath=self.thisdata_dirpath,
                          label=self.labels.h0_fit_to_h0_fid)
@@ -1335,7 +1342,7 @@ class HypoTesting(Analysis):
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free,
-                    )[0]
+                    )
 
             self.log_fit(fit_info=self.h1_fit_to_h1_fid,
                          dirpath=self.thisdata_dirpath,
@@ -1379,7 +1386,7 @@ class HypoTesting(Analysis):
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free,
-                )[0]
+                )
 
             self.log_fit(fit_info=self.h1_fit_to_h0_fid,
                          dirpath=self.thisdata_dirpath,
@@ -1420,12 +1427,13 @@ class HypoTesting(Analysis):
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free,
-                )[0]
+                )
 
             self.log_fit(fit_info=self.h0_fit_to_h1_fid,
                          dirpath=self.thisdata_dirpath,
                          label=self.labels.h0_fit_to_h1_fid)
 
+    # TODO: update docstring
     def setup_logging(self, reset_params=True):
         """
         Should store enough information for the following two purposes:
@@ -1546,6 +1554,7 @@ class HypoTesting(Analysis):
         NOT be reset here. This option should be used with caution.
 
         """
+
         self.h0_maker.select_params(self.h0_param_selections)
         if reset_params:
             self.h0_maker.reset_free()

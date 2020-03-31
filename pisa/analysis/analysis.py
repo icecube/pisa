@@ -1234,13 +1234,14 @@ class Analysis(object):
         )
 
         fit_history = []
-        fit_history.append([metric] + [p.name for p in hypo_maker.params.free])
+        fit_history.append(metric + [p.name for p in hypo_maker.params.free])
 
         if pprint and not blind:
             # display header if desired/allowed
+            # only show the first metric here (only part of info for Detectors analysis)
             display_minimizer_header(
                 free_params=hypo_maker.params.free,
-                metric=metric
+                metric=metric[0]
             )
 
         # reset number of iterations before each minimization

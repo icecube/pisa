@@ -219,6 +219,7 @@ default selection they must be separated by commas.
 from __future__ import absolute_import, division
 
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+from collections.abc import Mapping
 from collections import Counter, OrderedDict
 from io import StringIO
 from os.path import abspath, expanduser, expandvars, isfile, join
@@ -780,7 +781,7 @@ def parse_minimizer_config(config):
     settings_dict : OrderedDict
 
     """
-    if isinstance(config, OrderedDict):
+    if isinstance(config, Mapping):
         return config
 
     if isinstance(config, str):
