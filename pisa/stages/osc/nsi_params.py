@@ -12,12 +12,21 @@ from __future__ import absolute_import, division
 
 import numpy as np
 
-from pisa import FTYPE
-from pisa import TARGET
+from pisa import CTYPE, FTYPE
 from pisa.utils.comparisons import ALLCLOSE_KW, isscalar, recursiveEquality
-from pisa.utils.log import set_verbosity, logging
+from pisa.utils.log import Levels, set_verbosity, logging
 
 __all__ = ['NSIParams', 'StdNSIParams', 'VacuumLikeNSIParams']
+
+
+ARY2STR_KW = dict(
+    precision=np.finfo(FTYPE).precision + 2,
+    floatmode="fixed",
+    sign=" ",
+    max_line_width=200,
+    separator=", ",
+)
+
 
 def _set_magnitude_phase(magn_phase_tuple):
     try:
@@ -62,9 +71,7 @@ class NSIParams(object):
 
     def __init__(self):
         """Set NSI parameters."""
-        self._eps_matrix = (
-            np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3,3), dtype=FTYPE)
-        )
+        self._eps_matrix = np.zeros((3, 3), dtype=CTYPE)
 
 
 class StdNSIParams(NSIParams):
@@ -179,7 +186,7 @@ class VacuumLikeNSIParams(NSIParams):
     NSI parameters using a vacuum Hamiltonian-like parameterization.
 
     """
-
+    # pylint: disable=invalid-name
     def __init__(self):
         super().__init__()
         self._eps_scale = 1.
@@ -505,56 +512,47 @@ class VacuumLikeNSIParams(NSIParams):
         return nsi_eps
 
 def test_nsi_params():
-    """
-    Unit tests for subclasses of `NSIParams`.
-
-    TODO: these have to be extended
-    """
+    """Unit tests for subclasses of `NSIParams`."""
+    # TODO: these have to be extended
+    rand = np.random.RandomState(0)
     std_nsi = StdNSIParams()
     try:
         # cannot accept a sequence
-        std_nsi.eps_ee = [np.random.rand()]
+        std_nsi.eps_ee = [rand.rand()]
     except TypeError:
         pass
-    except:
-        raise
 
     try:
         # must be real
-        std_nsi.eps_ee = np.random.rand() * 1.j
+        std_nsi.eps_ee = rand.rand() * 1.j
     except TypeError:
         pass
-    except:
-        raise
 
     try:
         # unphysical negative magnitude for nonzero phase
-        std_nsi.eps_mutau = ((np.random.rand() - 1.0), 0.1)
+        std_nsi.eps_mutau = ((rand.rand() - 1.0), 0.1)
     except ValueError:
         pass
-    except:
-        raise
 
     std_nsi.eps_ee = 0.5
     std_nsi.eps_mumu = 0.5
     std_nsi.eps_tautau = 0.5
     if not np.allclose(
-        std_nsi.eps_matrix,
-        np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3,3), dtype=FTYPE),
-        **ALLCLOSE_KW
+        std_nsi.eps_matrix, np.zeros((3, 3), dtype=CTYPE), **ALLCLOSE_KW
     ):
         raise ValueError("NSI coupling matrix should be identically zero!")
 
     vac_like_nsi = VacuumLikeNSIParams()
-    vac_like_nsi.eps_scale = np.random.rand() * 10.
+    vac_like_nsi.eps_scale = rand.rand() * 10.
     assert recursiveEquality(vac_like_nsi.eps_ee, vac_like_nsi.eps_scale - 1.0)
 
 def test_nsi_parameterization():
     """Unit test for Hvac-like NSI parameterization."""
-    alpha1, alpha2, deltansi = np.random.rand(3) * 2. * np.pi
-    phi12, phi13, phi23 = np.random.rand(3) * 2*np.pi - np.pi
+    rand = np.random.RandomState(0)
+    alpha1, alpha2, deltansi = rand.rand(3) * 2. * np.pi
+    phi12, phi13, phi23 = rand.rand(3) * 2*np.pi - np.pi
     eps_max_abs = 10.0
-    eps_scale, eps_prime = np.random.rand(2) * 2 * eps_max_abs - eps_max_abs
+    eps_scale, eps_prime = rand.rand(2) * 2 * eps_max_abs - eps_max_abs
     nsi_params = VacuumLikeNSIParams()
     nsi_params.eps_scale = eps_scale
     nsi_params.eps_prime = eps_prime
@@ -570,20 +568,28 @@ def test_nsi_parameterization():
     eps_mat_numerical = nsi_params.eps_matrix
     eps_mat_analytical = nsi_params.eps_matrix_analytical
 
-    logging.trace("Numerical NSI matrix:\n%s" % eps_mat_numerical)
-    logging.trace("Analytical expansion (by hand):\n%s" % eps_mat_analytical)
     try:
         close = np.isclose(eps_mat_numerical, eps_mat_analytical, **ALLCLOSE_KW)
         if not np.all(close):
+            logging.debug(
+                "Numerical NSI matrix:\n%s",
+                np.array2string(eps_mat_numerical, **ARY2STR_KW)
+            )
+            logging.debug(
+                "Analytical expansion (by hand):\n%s",
+                np.array2string(eps_mat_analytical, **ARY2STR_KW)
+            )
             raise ValueError(
                 'Evaluating analytical expressions for NSI matrix elements'
                 ' does not give agreement with numerical calculation!'
                 ' Elementwise agreement:\n%s'
                 % close
             )
-    except ValueError as e:
-        logging.warn(str(e) + "...\nThis is expected."
-                     " Going ahead with numerical calculation for now.")
+    except ValueError as err:
+        logging.warning(
+            "%s\nThis is expected."
+            " Going ahead with numerical calculation for now.", err
+        )
 
     logging.trace('Now checking agreement with sympy calculation...')
 
@@ -597,24 +603,34 @@ def test_nsi_parameterization():
         alpha2_val=alpha2,
         deltansi_val=deltansi
     )
-    logging.trace('Numerical NSI matrix:\n%s' % eps_mat_numerical)
-    logging.trace('Sympy NSI matrix:\n%s' % eps_mat_sympy)
+
+    logging.trace('ALLCLOSE_KW = {}'.format(ALLCLOSE_KW))
     close = np.isclose(eps_mat_numerical, eps_mat_sympy, **ALLCLOSE_KW)
     if not np.all(close):
+        logging.error(
+            'Numerical NSI matrix:\n%s',
+            np.array2string(eps_mat_numerical, **ARY2STR_KW)
+        )
+        logging.error(
+            'Sympy NSI matrix:\n%s', np.array2string(eps_mat_sympy, **ARY2STR_KW)
+        )
         raise ValueError(
             'Sympy and numerical calculations disagree! Elementwise agreement:\n'
             '%s' % close
         )
 
 def nsi_sympy_mat_mult(
-        eps_scale_val, eps_prime_val,
-        phi12_val, phi13_val, phi23_val,
-        alpha1_val, alpha2_val,
-        deltansi_val
-    ):
-    """
-    Sympy calculation of generalised matter Hamiltonian.
-    """
+    eps_scale_val,
+    eps_prime_val,
+    phi12_val,
+    phi13_val,
+    phi23_val,
+    alpha1_val,
+    alpha2_val,
+    deltansi_val,
+):
+    """Sympy calculation of generalised matter Hamiltonian."""
+    # pylint: disable=invalid-name
     from sympy import (
         cos, sin,
         Matrix, eye,
@@ -678,12 +694,12 @@ def nsi_sympy_mat_mult(
     eps_mat_sympy_eval_im = im(eps_mat_sympy_eval)
 
     # complex numpy array
-    return (np.array(eps_mat_sympy_eval_re).astype(FTYPE) +
-            np.array(eps_mat_sympy_eval_im).astype(FTYPE) * 1.j)
+    return (
+        np.array(eps_mat_sympy_eval_re) + np.array(eps_mat_sympy_eval_im) * 1.j
+    ).astype(CTYPE)
 
 
-if __name__=='__main__':
-    assert TARGET == 'cpu', "Cannot test functions on GPU, set PISA_TARGET to 'cpu'"
-    set_verbosity(1)
+if __name__ == '__main__':
+    set_verbosity(Levels.INFO)
     test_nsi_params()
     test_nsi_parameterization()
