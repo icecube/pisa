@@ -1376,8 +1376,8 @@ def parse_args():
         default=Levels.WARN,
         help='Set verbosity level',
     )
-    kwargs = parser.parse_args()
-    set_verbosity(kwargs.pop('verbosity'))
+    kwargs = vars(parser.parse_args())
+    set_verbosity(kwargs.pop('v'))
     return kwargs
 
 
