@@ -33,7 +33,7 @@ from pisa.analysis.analysis import Analysis
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.core.detectors import Detectors
 from pisa.core.map import MapSet
-from pisa.core.prior import get_prior_bounds # TODO: implement
+from pisa.core.prior import get_prior_bounds
 from pisa.utils.comparisons import normQuant
 from pisa.utils.config_parser import parse_fit_config, parse_minimizer_config
 from pisa.utils.fileio import from_file, get_valid_filename, mkdir, to_file
@@ -41,12 +41,14 @@ from pisa.utils.hash import hash_obj
 from pisa.utils.log import logging
 from pisa.utils.random_numbers import get_random_state
 from pisa.utils.resources import find_resource
-from pisa.utils.scripting import normcheckpath # TODO: implement?
+from pisa.utils.scripting import normcheckpath
 from pisa.utils.stats import ALL_METRICS
 from pisa.utils.format import timediff, timestamp
 
 
-__all__ = ['Labels', 'HypoTesting']
+__all__ = ['validate_maker_names', 'setup_makers_from_pipelines',
+           'collect_maker_selections', 'select_maker_params',
+           'Labels', 'HypoTesting']
 
 __author__ = 'J.L. Lanfranchi, P.Eller, S. Wren, T. Ehrhardt'
 
@@ -76,10 +78,13 @@ def validate_maker_names(maker_names, require_all=False):
     Parameters
     ----------
     maker_names : str or sequence of str
+        Names of distribution makers for hypo testing
     require_all : bool
+        Whether all valid distribution maker names for hypo testing have
+        to be present or just some subset
 
     """
-    if isinstance(maker_names, str):
+    if not isinstance(maker_names, Sequence) or isinstance(maker_names, str):
         maker_names = [maker_names]
     # count entry has to disappear exactly
     test = Counter(maker_names)
@@ -96,6 +101,7 @@ def validate_maker_names(maker_names, require_all=False):
             ' Missing distribution maker names: %s.' % missing_some.keys()
         )
 
+# TODO: how to determine whether a `DistributionMaker` or `Detectors` instance is to be instantiated?
 def setup_makers_from_pipelines(init_args_d, ref_maker_names):
     """Either set up all distribution makers from the pipeline settings for
     a single one (reference) or set them all up individually.
@@ -105,14 +111,17 @@ def setup_makers_from_pipelines(init_args_d, ref_maker_names):
     init_args_d : dict
         Dictionary of hypo testing initialisation arguments,
         modified in-place (with initialized distribution makers)
+
     ref_maker_names : str or sequence of str
         names of reference distribution makers
 
     """
-    if isinstance(ref_maker_names, str):
+    if not isinstance(ref_maker_names, Sequence) or isinstance(ref_maker_names, str):
         ref_maker_names = [ref_maker_names]
-    # first ensure acceptable reference name(s) was (were) given
+
+    # first ensure acceptable reference names were given
     validate_maker_names(ref_maker_names, require_all=False)
+
     if len(ref_maker_names) == 1:
         # just assign the "pipeline" to the reference maker and all other makers
         ref_ind = ALL_MAKER_NAMES.index(ref_maker_names[0])
@@ -151,19 +160,13 @@ def setup_makers_from_pipelines(init_args_d, ref_maker_names):
                     'No filenames for "%s". Setting it up with `None`.'
                     % (maker_name + '_maker')
                 )
-                # TODO: there was some reasoning behind this choice, let's see
+                # TODO: document reasoning behind this choice
                 init_args_d[maker_name + '_maker'] = None
-                """
-                raise ValueError(
-                    'Only found "None" pipeline settings for "%s",'
-                    ' so do not know how to setup a corresponding'
-                    ' DistributionMaker.' % maker_name
-                )
-                """
+
 
 def collect_maker_selections(init_args_d, maker_names):
     """Collect and process selections from all of the given maker names. An
-    entry needs to exist for each of the maker names (but it can be None).
+    entry needs to exist for each of the maker names (but it can be `None`).
     If 'data' is among the names and there's no selection, the selection from
     'h0' will be applied.
 
@@ -172,12 +175,16 @@ def collect_maker_selections(init_args_d, maker_names):
     init_args_d : dict
         Dictionary of hypo testing initialisation arguments,
         modified in-place (with parameter selections)
+
     maker_names : str or sequence of str
 
     """
-    if isinstance(maker_names, str):
+    if not isinstance(maker_names, Sequences) or isinstance(maker_names, str):
         maker_names = [maker_names]
+
+    # first ensure acceptable names were given
     validate_maker_names(maker_names, require_all=False)
+
     for maker_name in maker_names:
         ps_name = maker_name + '_param_selections'
         try:
@@ -209,9 +216,12 @@ def select_maker_params(init_args_d, maker_names):
     maker_names : str or sequence of str
     
     """
-    if isinstance(maker_names, str):
+    if not isinstance(maker_names, Sequence) or isinstance(maker_names, str):
         maker_names = [maker_names]
+
+    # first ensure acceptable names were given
     validate_maker_names(maker_names, require_all=False)
+
     for maker_name in maker_names:
         ps_name = maker_name + '_param_selections'
         try:
@@ -223,7 +233,10 @@ def select_maker_params(init_args_d, maker_names):
                            ' `select_params` cannot be called.' % maker_name)
         except:
             raise
-        if isinstance(init_args_d[maker_name+'_maker'], DistributionMaker):
+        if isinstance(
+            init_args_d[maker_name+'_maker'],
+            (DistributionMaker, Detectors)
+        ):
             init_args_d[maker_name+'_maker'].select_params(ps)
         elif init_args_d[maker_name+'_maker'] is None:
             continue
@@ -1656,17 +1669,27 @@ class HypoTesting(Analysis):
         d['git_error'] = self.version_info['error']
         summary['source_provenance'] = d
 
-        d = OrderedDict()
-        # TODO (TE): why was this commented out again?
-        #d['minimizer_name'] = self.minimizer_settings['method']['value']
-        d['minimizer_settings_hash'] = self.minimizer_settings_hash
-        d['check_octant'] = self.check_octant
-        d['metric_optimized'] = self.metric
+        # TODO: unambiguously combine summaries of minimizer and fit settings?
+        if self.minimizer_settings is not None:
+            d = OrderedDict()
+            # these are already parsed
+            d['minimizer_settings'] = self.minimizer_settings
+            d['minimizer_settings_hash'] = self.minimizer_settings_hash
+            d['check_octant'] = self.check_octant
+            d['metric_optimized'] = self.metric
+        else:
+            d = 'None'
         summary['minimizer_info'] = d
 
-        d = OrderedDict()
-        d['fit_settings_hash'] = self.fit_settings_hash
-        #d['metric_optimized'] = self.metric
+        if self.fit_settings is not None:
+            d = OrderedDict()
+            # these are already parsed
+            d['fit_settings'] = self.fit_settings
+            d['fit_settings_hash'] = self.fit_settings_hash
+            d['check_octant'] = self.check_octant
+            d['metric_optimized'] = self.metric
+        else:
+            d = 'None'
         summary['fit_settings'] = d
 
         summary['data_is_data'] = self.data_is_data
@@ -1686,11 +1709,11 @@ class HypoTesting(Analysis):
             summary['data_param_selections'] = ','.join(data_param_selections)
         if isinstance(self.data_maker, Detectors):
             summary['data_params_hash'] = [d.params.hash for d in 
-                                           self.data_maker._distribution_makers]
+                                           self.data_maker._distribution_makers] # pylint: disable=protected-access
             summary['data_params'] = [[str(p) for p in d.params] for d in 
-                                      self.data_maker._distribution_makers]
+                                      self.data_maker._distribution_makers] # pylint: disable=protected-access
             summary['data_pipelines'] = [self.summarize_dist_maker(d) for d in 
-                                         self.data_maker._distribution_makers]
+                                         self.data_maker._distribution_makers] # pylint: disable=protected-access
         else:
             summary['data_params_hash'] = self.data_maker.params.hash
             summary['data_params'] = [str(p) for p in self.data_maker.params]
@@ -1709,11 +1732,11 @@ class HypoTesting(Analysis):
         summary['h0_param_selections'] = ','.join(h0_param_selections)
         if isinstance(self.h0_maker, Detectors):
             summary['h0_params_hash'] = [d.params.hash for d in
-                                         self.h0_maker._distribution_makers]
+                                         self.h0_maker._distribution_makers] # pylint: disable=protected-access
             summary['h0_params'] = [[str(p) for p in d.params] for d in
-                                    self.h0_maker._distribution_makers]
+                                    self.h0_maker._distribution_makers] # pylint: disable=protected-access
             summary['h0_pipelines'] = [self.summarize_dist_maker(d) for d in
-                                       self.h0_maker._distribution_makers]
+                                       self.h0_maker._distribution_makers] # pylint: disable=protected-access
         else:
             summary['h0_params_hash'] = self.h0_maker.params.hash
             summary['h0_params'] = [str(p) for p in self.h0_maker.params]
@@ -1733,11 +1756,11 @@ class HypoTesting(Analysis):
         summary['h1_param_selections'] = ','.join(h1_param_selections)
         if isinstance(self.h1_maker, Detectors):
             summary['h1_params_hash'] = [d.params.hash for d in
-                                         self.h1_maker._distribution_makers]
+                                         self.h1_maker._distribution_makers] # pylint: disable=protected-access
             summary['h1_params'] = [[str(p) for p in d.params] for d in
-                                    self.h1_maker._distribution_makers]
+                                    self.h1_maker._distribution_makers] # pylint: disable=protected-access
             summary['h1_pipelines'] = [self.summarize_dist_maker(d) for d in
-                                       self.h1_maker._distribution_makers]
+                                       self.h1_maker._distribution_makers] # pylint: disable=protected-access
         else:
             summary['h1_params_hash'] = self.h1_maker.params.hash
             summary['h1_params'] = [str(p) for p in self.h1_maker.params]
@@ -1932,6 +1955,7 @@ class HypoTesting(Analysis):
         to_file(info, os.path.join(dirpath, label + '.json.bz2'),
                 sort_keys=False)
 
+    # TODO: do we need this?
     def set_param_ranges(self, selection, test_name, rangetuple, inj_units):
         """Give the parameter in hypo_testing selected by selection
         (if not None) with name test_name a range defined by
@@ -2057,8 +2081,10 @@ class HypoTesting(Analysis):
             such as sin2theta23.
 
         """
+
         # record so we don't keep appending to it
         data_name = self.labels.data_name
+
         # Scan over the injected values. We also loop over the requested vals
         # here in case they are different so that value can be put in labels
         for inj_val, requested_val in zip(inj_vals, requested_vals):
@@ -2124,12 +2150,13 @@ class HypoTesting(Analysis):
         Parameters
         ----------
         data_param : Param
-            The param to be fixed in the test.
+            The name of the parameter to be fixed in the test.
 
         *_name : string
-            Same as they in HypoTesting.
+            Same as in HypoTesting.
 
         """
+
         self.labels = Labels(
             h0_name=h0_name + '_fixed_%s_baseline'%data_param.name,
             h1_name=h1_name + '_fixed_%s_baseline'%data_param.name,
@@ -2334,6 +2361,7 @@ class HypoTesting(Analysis):
             Same as for HypoTesting
 
         """
+
         if do_baseline:
             # Perform the baseline analysis so that the other results can
             # have a comparison line.
@@ -2419,19 +2447,25 @@ class HypoTesting(Analysis):
         ----------
         param_names : str or sequence of str
             Names of parameters to be scanned
+
         scan_vals : sequence of sequences of float
             Values to scan for each parameter
+
         profile : bool
             Whether to profile over parameters that are not scanned
-        nuisance_params : str or sequence of str
+
+        nuisance_params : None, str or sequence of str
             Only include these nuisance parameters
-        fix_params : str or sequence of str
+
+        fix_params : None, str or sequence of str
             Fix these parameters
+
         return_res : bool
             Whether to return the scan results (might require lots of memory,
             in particular if this scan is not split up into smaller jobs)
 
         """
+
         if nuisance_params and not profile:
             raise ValueError(
                 'Nuisance parameters specified, but "profile" is not set!'
@@ -2512,6 +2546,7 @@ class HypoTesting(Analysis):
             for param in self.h0_maker.params.free:
                 if param.name not in nuisance_params:
                     params.fix(param.name)
+
         if fix_params and profile:
             for param_to_fix in fix_params:
                 if not param_to_fix in params.names:
@@ -2530,7 +2565,6 @@ class HypoTesting(Analysis):
 
         # Setup logging and things.
         self.setup_logging()
-        # doesn't seem to work if stages don't define attributes to hash?
         self.write_config_summary()
         self.write_minimizer_settings()
         self.write_fit_settings()
@@ -2575,7 +2609,6 @@ class HypoTesting(Analysis):
                             pos_msg += sep
                         pos_msg += '%s = %s'%(pname, val)
                     else:
-                        # no need to raise an error in the case of blindness
                         raise TypeError(
                             "Value is of type %s which I don't know "
                             "how to deal with in the output "
@@ -2589,8 +2622,7 @@ class HypoTesting(Analysis):
                 self.labels = Labels(
                     h0_name=self.labels.h0_name,
                     h1_name='',
-                    data_name=data_name+'_%s'
-                    %(pos_msg),
+                    data_name=data_name+'_%s' % pos_msg,
                     data_is_data=self.data_is_data,
                     fluctuate_data=self.fluctuate_data,
                     fluctuate_fid=self.fluctuate_fid,
@@ -2614,7 +2646,7 @@ class HypoTesting(Analysis):
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free,
-                )[0]
+                )
 
                 self.log_fit(fit_info=self.h0_fit_to_data,
                              dirpath=self.thisdata_dirpath,
