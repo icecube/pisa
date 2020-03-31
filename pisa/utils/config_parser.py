@@ -781,13 +781,12 @@ def parse_minimizer_config(config):
     settings_dict : OrderedDict
 
     """
-    if isinstance(config, Mapping):
-        return config
-
     if isinstance(config, str):
         config = from_file(config)
     elif isinstance(config, PISAConfigParser):
         pass
+    elif isinstance(config, Mapping):
+        return config
     else:
         raise TypeError(
             '`config` must either be a string, PISAConfigParser, or OrderedDict.'
@@ -835,14 +834,14 @@ def parse_fit_config(config):
     settings_dict : OrderedDict
 
     """
-    if isinstance(config, OrderedDict):
-        return config
 
     from pisa.analysis.analysis import ANALYSIS_METHODS
     if isinstance(config, str):
         config = from_file(config)
-    elif isinstance(config, PISAConfigParser) or isinstance(config, OrderedDict):
+    elif isinstance(config, PISAConfigParser):
         pass
+    elif isinstance(config, Mapping):
+        return config
     else:
         raise TypeError(
             '`config` must either be a string, PISAConfigParser, or OrderedDict.'
@@ -1542,12 +1541,15 @@ def test_parse_minimizer_config(
     config='settings/minimizer/slsqp_ftol1e-6_eps1e-4_maxiter1000.cfg'
 ):
     """Unit test for function `parse_minimizer_config`"""
+    # parse `PISAConfigParser` instance first
     config0 = PISAConfigParser()
     config0.read(config)
     config0 = parse_minimizer_config(config0)
 
+    # parse something that's been through the parser already
     config1 = parse_minimizer_config(config0)
 
+    # pass the config path
     config2 = parse_minimizer_config(config)
 
     logging.info('Keys and values found in config:')
@@ -1560,12 +1562,15 @@ def test_parse_fit_config(
     config='settings/fit/example_basinhopping_lbfgsb.cfg'
 ):
     """Unit test for function `parse_fit_config`"""
+    # parse `PISAConfigParser` instance first
     config0 = PISAConfigParser()
     config0.read(config)
     config0 = parse_fit_config(config0)
 
+    # parse something that's been through the parser already
     config1 = parse_fit_config(config0)
 
+    # pass the config path
     config2 = parse_fit_config(config)
 
     logging.info('Keys and values found in config:')
