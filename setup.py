@@ -234,9 +234,10 @@ def do_setup():
 
         'resources/settings/binning/*.cfg',
         'resources/settings/discrete_sys/*.cfg',
+        'resources/settings/fit/*.cfg',
         'resources/settings/logging/logging.json',
         'resources/settings/mc/*.cfg',
-        'resources/settings/minimizer/*.json*',
+        'resources/settings/minimizer/*.cfg',
         'resources/settings/osc/*.cfg',
         'resources/settings/osc/*.md',
         'resources/settings/pipeline/*.cfg',
