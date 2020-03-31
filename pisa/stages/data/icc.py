@@ -156,10 +156,10 @@ class icc(Stage):
         corridor_doms_over_threshold = l6['corridor_doms_over_threshold']
 
         inverted_corridor_cut = corridor_doms_over_threshold > 1
-        #assert (np.all(inverted_corridor_cut) and
-        #        np.all(l6['santa_direct_doms'] >= 3) and
-        #        np.all(l6['mn_start_contained'] == 1.) and
-        #        np.all(l6['mn_stop_contained'] == 1.))
+        assert (np.all(inverted_corridor_cut) and
+                np.all(l6['santa_direct_doms'] >= 3) and
+                np.all(l6['mn_start_contained'] == 1.) and
+                np.all(l6['mn_stop_contained'] == 1.))
 
         #load events
         if sim_ver == '4digit':
