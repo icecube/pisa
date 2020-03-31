@@ -18,7 +18,7 @@ from pisa.utils.profiler import profile
 from pisa.stages.osc.nsi_params import StdNSIParams, VacuumLikeNSIParams
 from pisa.stages.osc.pi_osc_params import OscParams
 from pisa.stages.osc.layers import Layers
-from pisa.stages.osc.prob3numba.numba_osc import propagate_array, fill_probs
+from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import propagate_array, fill_probs
 from pisa.utils.numba_tools import WHERE
 from pisa.utils.resources import find_resource
 

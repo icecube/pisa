@@ -90,7 +90,7 @@ SIGNED_FSORT_RE = re.compile(
 )
 
 
-def expand(path, exp_user=True, exp_vars=True, absolute=False):
+def expand(path, exp_user=True, exp_vars=True, absolute=False, resolve_symlinks=False):
     """Convenience function for expanding a path
 
     Parameters
@@ -98,17 +98,20 @@ def expand(path, exp_user=True, exp_vars=True, absolute=False):
     path : string
         Path to be expanded.
 
-    exp_user : bool
-        Expand special home dir spec character, tilde: "~".
-
     exp_vars : bool
         Expand the string using environment variables. E.g.
         "$HOME/${vardir}/xyz" will have "$HOME" and "${vardir}$" replaced by
         the values stored in "HOME" and "vardir".
 
+    exp_user : bool
+        Expand special home dir spec character, tilde: "~".
+
     absolute : bool
         Make a relative path (e.g. "../xyz") absolute, referenced from system
         root directory, "/dir/sbudir/xyz".
+
+    resolve_symlinks : bool
+        Resolve symlinks to the paths they refer to
 
     Returns
     -------
@@ -116,12 +119,14 @@ def expand(path, exp_user=True, exp_vars=True, absolute=False):
         Expanded path
 
     """
-    if exp_user:
-        path = os.path.expanduser(path)
     if exp_vars:
         path = os.path.expandvars(path)
+    if exp_user:
+        path = os.path.expanduser(path)
     if absolute:
         path = os.path.abspath(path)
+    if resolve_symlinks:
+        path = os.path.realpath(path)
     return path
 
 
@@ -427,17 +432,20 @@ def from_pickle(fname):
         f = open(fname, 'rb')
 
         # Try standard pickle load
-        try :
+        try:
             return pickle.load(f)
 
-        # Can get encoding errors when using python3 to open pickle files created with python2
-        # Handle this case
-        except UnicodeDecodeError as e :
+        # Can get encoding errors when using python3 to open pickle files
+        # created with python2 Handle this case
+        except UnicodeDecodeError:
             return pickle.load(f, encoding="latin1")
-            
+
     except:
         log.logging.error('Failed to load pickle file, `fname`="%s"', fname)
         raise
+
+    finally:
+        f.close()
 
 
 def to_pickle(obj, fname, overwrite=True, warn=True):

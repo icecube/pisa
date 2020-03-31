@@ -122,32 +122,51 @@ class quadratic_hypersurface_func(object):
                           )
         np.copyto(src=result, dst=out)
 
-
 class exponential_hypersurface_func(object):
     '''
     Exponential hypersurface functional form
 
-    f(p) = a * exp(b*p)
+    f(p) = exp(b*p) - 1
 
-    Caution: This hypersurface function causes a degeneracy with
-    the intercept and you may not recover injected coefficients!
-    To fit hypersurfaces with exponential shapes, it is more robust
-    to use the log-mode.
+    The functional form ensures that it is zero at the nominal point.
+    '''
+
+    def __init__(self):
+        self.nargs = 1
+
+    def __call__(self, p, b, out):
+        result = np.exp(b*p) - 1.
+        np.copyto(src=result, dst=out)
+
+    def grad(self, p, b, out):
+        # because parameters and coefficients both appear, everything is broadcast
+        # automatically
+        result = np.array([p*np.exp(b*p)])[..., np.newaxis]
+        np.copyto(src=result, dst=out)
+
+class scaled_exponential_hypersurface_func(object):
+    '''
+    Exponential hypersurface functional form
+
+    f(p) = (a + 1) * (exp(b*p) - 1)
+
+    The functional form is chosen such that it is zero at the nominal point.
+    If a strong prior is imposed on a, it becomes equivalent to the un-scaled
+    exponential hypersurface function.
     '''
 
     def __init__(self):
         self.nargs = 2
 
     def __call__(self, p, a, b, out):
-        result = a * np.exp(b*p)
+        result = (a + 1.) * (np.exp(b*p) - 1.)
         np.copyto(src=result, dst=out)
 
     def grad(self, p, a, b, out):
         # because parameters and coefficients both appear, everything is broadcast
         # automatically
-        result = np.stack([np.exp(b*p), a*p*np.exp(b*p)], axis=-1)
+        result = np.stack([np.exp(b*p) - 1., (a + 1.)*p*np.exp(b*p)], axis=-1)
         np.copyto(src=result, dst=out)
-
 
 class logarithmic_hypersurface_func(object):
     '''
@@ -170,7 +189,7 @@ class logarithmic_hypersurface_func(object):
     def grad(self, p, m, out):
         # because parameters and coefficients both appear, everything is broadcast
         # automatically
-        result = np.array([p/(1 + m*p)])[:, np.newaxis]
+        result = np.array(p/(1 + m*p))[..., np.newaxis]
         np.copyto(src=result, dst=out)
 
 
@@ -179,6 +198,7 @@ HYPERSURFACE_PARAM_FUNCTIONS = collections.OrderedDict()
 HYPERSURFACE_PARAM_FUNCTIONS["linear"] = linear_hypersurface_func
 HYPERSURFACE_PARAM_FUNCTIONS["quadratic"] = quadratic_hypersurface_func
 HYPERSURFACE_PARAM_FUNCTIONS["exponential"] = exponential_hypersurface_func
+HYPERSURFACE_PARAM_FUNCTIONS["exponential_scaled"] = scaled_exponential_hypersurface_func
 HYPERSURFACE_PARAM_FUNCTIONS["logarithmic"] = logarithmic_hypersurface_func
 
 
@@ -730,10 +750,7 @@ class Hypersurface(object):
                 '...j,...kj->...k', gradient_buffer, self.fit_cov_mat[bin_idx])
             variance = np.einsum(
                 '...j,...j', transformed_jacobian, gradient_buffer)
-            if np.any(variance < 0.):
-                logging.warn(
-                    "Negative variances found in hypersurface, replacing with zeros.")
-                variance[variance < 0.] = 0.
+            assert np.all(variance[np.isfinite(variance)] >= 0.), "invalid covariance"
 
         if return_uncertainty:
             return output_factors, np.sqrt(variance)
@@ -1146,9 +1163,15 @@ class Hypersurface(object):
             # Get the observed value
             observed = self.fit_maps[i_set].nominal_values
             sigma = self.fit_maps[i_set].std_devs
+            # we have to apply the same condition on which values we include
+            # as we did during the fit above
+            valid_idx = sigma > 0.
+            if include_empty:
+                sigma[~valid_idx] = 1.
 
             # Compute chi2
-            chi2 = ((predicted - observed) / sigma) ** 2
+            with np.errstate(divide='ignore'):
+                chi2 = ((predicted - observed) / sigma) ** 2
 
             # Add to container
             self.fit_chi2.append(chi2)
@@ -2351,8 +2374,9 @@ def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None,
 
     # Define a mask for selecting on-axis points only
     on_axis_mask = hypersurface.get_on_axis_mask(param.name)
-    include_mask = np.ones_like(on_axis_mask) if show_zero else (
-        np.asarray(chosen_bin_values) > 0.)
+    with np.errstate(invalid='ignore'):  # empty bins are a regular occurrence
+        include_mask = np.ones_like(on_axis_mask) if show_zero else (
+            np.asarray(chosen_bin_values) > 0.)
 
     # Plot the points from the datasets used for fitting
     x = np.asarray(param.fit_param_values)[on_axis_mask & include_mask]

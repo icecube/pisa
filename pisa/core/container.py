@@ -6,6 +6,7 @@ are provided.
 
 The data lives in SmartArrays on both CPU and GPU
 """
+
 from __future__ import absolute_import, print_function
 
 from collections.abc import Sequence
@@ -19,25 +20,23 @@ from pisa import FTYPE
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.core.map import Map, MapSet
 from pisa.core.translation import histogram, lookup, resample
+from pisa.utils.comparisons import ALLCLOSE_KW
 from pisa.utils.log import logging
 
 
 class ContainerSet(object):
-    '''
+    """
     Class to hold a set of container objects
-
 
     Parameters
     ----------
-    
     name : str
 
     containers : list or None
 
-    data_specs : MultiDimBinning, 'events' or None
+    data_specs : MultiDimBinning, "events" or None
 
-
-    '''
+    """
     def __init__(self, name, containers=None, data_specs=None):
         self.name = name
         self.linked_containers = []
@@ -56,10 +55,8 @@ class ContainerSet(object):
 
     @property
     def data_mode(self):
-        '''
-        The data mode can be 'events', 'binned' or None,
-        depending on the set data_specs
-        '''
+        """The data mode can be 'events', 'binned' or None, depending on the
+        set data_specs"""
         if self.data_specs == 'events':
             return 'events'
         elif isinstance(self.data_specs, MultiDimBinning):
@@ -73,19 +70,16 @@ class ContainerSet(object):
 
     @data_specs.setter
     def data_specs(self, data_specs):
-        '''
-
+        """
         Parameters
         ----------
-
         data_specs : str, MultiDimBinning or None
+            Data specs should be set to retreive the right representation
+            i.e. the representation one is working in at the moment
 
-        Data specs should be set to retreive the right representation
-        i.e. the representation one is working in at the moment
+            This property is meant to be changed while working with a ContainerSet
 
-        This property is meant to be changed while working with a ContainerSet
-
-        '''
+        """
         if not (data_specs == 'events' or isinstance(data_specs, MultiDimBinning) or data_specs is None):
             raise ValueError('cannot understand data_specs %s'%data_specs)
         self._data_specs = data_specs
@@ -97,18 +91,18 @@ class ContainerSet(object):
         return [c.name for c in self.containers]
 
     def link_containers(self, key, names):
-        '''
+        """Link containers together. When containers are linked, they are
+        treated as a single (virtual) container for binned data
+
         Parameters
         ----------
-
         key : str
             name of linked object
 
         names : list
             name of containers to be linked under the given key
 
-        when containers are linked, they are treated as a single (virtual) container for binned data
-        '''
+        """
         containers = [self.__getitem__(name) for name in names]
         logging.debug('Linking containers %s into %s'%(names, key))
         new_container = VirtualContainer(key, containers)
@@ -116,9 +110,7 @@ class ContainerSet(object):
 
 
     def unlink_containers(self):
-        '''
-        unlink all container
-        '''
+        """Unlink all container"""
         logging.debug('Unlinking all containers')
         for c in self.linked_containers:
             c.unlink()
@@ -127,34 +119,38 @@ class ContainerSet(object):
     def __getitem__(self, key):
         if key in self.names:
             return self.containers[self.names.index(key)]
+        raise KeyError(f"No name '{key}' in container")
 
     def __iter__(self):
-        '''
-        iterate over individual non-linked containers and virtual containers for the ones that are linked together
-        '''
-
+        """Iterate over individual non-linked containers and virtual containers
+        for the ones that are linked together
+        """
         containers_to_be_iterated = [c for c in self.containers if not c.linked] + self.linked_containers
         return iter(containers_to_be_iterated)
 
     def get_mapset(self, key, error=None):
-        '''
+        """For a given key, get a PISA MapSet
+
         Parameters
         ----------
-
         key : str
 
         error : None or str
             specify a key that errors are read from
 
-        For a given key, get a PISA MapSet
-        '''
+        Returns
+        -------
+        map_set : MapSet
+
+        """
         maps = []
         for container in self:
             maps.append(container.get_map(key, error=error))
         return MapSet(name=self.name, maps=maps)
 
+
 class VirtualContainer(object):
-    '''
+    """
     Class providing a virtual container for linked individual containers
 
     It should just behave like a normal container
@@ -166,12 +162,11 @@ class VirtualContainer(object):
 
     Parameters
     ----------
-
     name : str
 
     containers : list
 
-    '''
+    """
 
     def __init__(self, name, containers):
         self.name = name
@@ -183,9 +178,7 @@ class VirtualContainer(object):
         self.containers = containers
 
     def unlink(self):
-        '''
-        reset link flag
-        '''
+        """Reset link flag"""
         for container in self:
             container.linked = False
 
@@ -206,15 +199,12 @@ class VirtualContainer(object):
 
     @property
     def size(self):
-        '''
-        size of container
-        '''
+        """size of container"""
         return self.containers[0].size
 
 
-
 class Container(object):
-    '''
+    """
     Class to hold data in the form of event arrays and/or maps
 
     for maps, a binning must be provided set
@@ -232,7 +222,7 @@ class Container(object):
 
     data_specs : str, MultiDimBinning or None
         the representation one is working in at the moment
-    '''
+    """
 
     def __init__(self, name, code=None, data_specs=None):
         self.name = name
@@ -254,9 +244,7 @@ class Container(object):
             return None
 
     def keys(self):
-        '''
-        return list of available keys
-        '''
+        """Return list of available keys"""
         if self.data_mode == 'events':
             return chain(self.array_data.keys(), self.scalar_data.keys())
         elif self.data_mode == 'binned':
@@ -266,9 +254,7 @@ class Container(object):
 
     @ property
     def size(self):
-        '''
-        length of event arrays or number of bins for binned data
-        '''
+        """Length of event arrays or number of bins for binned data"""
         if self.data_mode is None:
             raise ValueError('data_mode needs to be set first')
         if self.data_mode == 'events':
@@ -276,30 +262,27 @@ class Container(object):
         return self.data_specs.size
 
     def add_scalar_data(self, key, data):
-        '''
+        """
         Parameters
         ----------
-
         key : string
             identifier
 
         data : number
 
-        '''
+        """
         self.scalar_data[key] = data
 
     def add_array_data(self, key, data):
-        '''
+        """
         Parameters
         ----------
-
         key : string
             identifier
 
         data : ndarray
 
-        '''
-
+        """
         if isinstance(data, np.ndarray):
             data = SmartArray(data)
         if self.array_length is None:
@@ -308,15 +291,18 @@ class Container(object):
         self.array_data[key] = data
 
     def add_binned_data(self, key, data, flat=True):
-        ''' add data to binned_data
+        """Add data to binned_data
 
+        Parameters
+        ----------
         key : string
 
         data : PISA Map or (array, binning)-tuple
 
         flat : bool
             is the data already flattened (i.e. the binning dimesnions unrolled)
-        '''
+
+        """
         # TODO: logic to not copy back and forth
 
         if isinstance(data, Map):
@@ -335,7 +321,7 @@ class Container(object):
                 assert array.shape[:binning.num_dims] == binning.shape
                 #flat_shape = [-1] + [d for d in array.shape[binning.num_dims-1:-1]]
                 flat_shape = [binning.size, -1]
-                #print(flat_shape)
+                #logging.trace(flat_shape)
                 flat_array = array.reshape(flat_shape)
             if not isinstance(flat_array, SmartArray):
                 flat_array = SmartArray(flat_array.astype(FTYPE))
@@ -343,11 +329,8 @@ class Container(object):
         else:
             raise TypeError('unknown dataformat')
 
-
     def __getitem__(self, key):
-        '''
-        retriev data in the set data_specs
-        '''
+        """Retrieve data in the set data_specs"""
         assert self.data_specs is not None, 'Need to set data_specs to use simple getitem method'
 
         try:
@@ -356,37 +339,31 @@ class Container(object):
             elif isinstance(self.data_specs, MultiDimBinning):
                 return self.get_binned_data(key, self.data_specs)
         except KeyError:
-            try :
+            try:
                 return self.get_scalar_data(key)
             except KeyError:
-                raise KeyError('"%s" not found in container "%s"'%(key,self.name))
+                raise KeyError('"%s" not found in container "%s"'%(key, self.name))
 
     def __setitem__(self, key, value):
-        '''
-        set data in the set data_specs
-        '''
+        """Set data in the set data_specs"""
         if not hasattr(value, '__len__'):
             self.add_scalar_data(key, value)
         else:
-            assert self.data_mode is not None, 'Need to set data_specs to use simple getitem method'
+            assert self.data_mode is not None, 'Need to set data_specs to use simple setitem method'
             if self.data_mode == 'events':
                 self.add_array_data(key, value)
             elif self.data_mode == 'binned':
                 self.add_binned_data(key, (self.data_specs, value))
 
     def __iter__(self):
-        '''
-        iterate over all keys in container
-        '''
+        """iterate over all keys in container"""
         return self.keys()
 
     def array_to_binned(self, key, binning, averaged=True):
-        '''
-        histogram data array into binned data
+        """Histogram data array into binned data
 
         Parameters
         ----------
-
         key : str
 
         binning : MultiDimBinning
@@ -398,11 +375,12 @@ class Container(object):
             per bin
 
 
-        right now CPU only
+        Notes
+        -----
+        right now, CPU-only
 
-        ToDo: make work for n-dim
-
-        '''
+        """
+        # TODO: make work for n-dim
         logging.debug('Transforming %s array to binned data'%(key))
         weights = self.array_data[key]
         sample = [self.array_data[n] for n in binning.names]
@@ -412,35 +390,30 @@ class Container(object):
         self.add_binned_data(key, (binning, hist))
 
     def binned_to_array(self, key):
-        '''
-        augmented binned data to array data
-
-        '''
+        """Augmented binned data to array data"""
         try:
             binning, hist = self.binned_data[key]
         except KeyError:
             if key in self.array_data:
-                logging.debug('No transformation for `%s` array data in container `%s`'%(key,self.name))
+                logging.debug('No transformation for `%s` array data in container `%s`'%(key, self.name))
                 return
             else:
-                raise ValueError('Key `%s` does not exist in container `%s`'%(key,self.name))
+                raise ValueError('Key `%s` does not exist in container `%s`'%(key, self.name))
         logging.debug('Transforming %s binned to array data'%(key))
         sample = [self.array_data[n] for n in binning.names]
         self.add_array_data(key, lookup(sample, hist, binning))
 
     def binned_to_binned(self, key, new_binning):
-        '''
-        resample a binned key into a different binning
+        """Resample a binned key into a different binning
 
         Parameters
         ----------
-
         key : str
 
         new_binning : MultiDimBinning
             the new binning
 
-        '''
+        """
         logging.debug('Resampling %s'%(key))
         old_binning, hist = self.binned_data[key]
         sample = [self.get_binned_data(name, old_binning) for name in old_binning.names]
@@ -468,11 +441,10 @@ class Container(object):
         return self.array_data[key]
 
     def get_binned_data(self, key, out_binning=None):
-        '''
-        get data array from binned data:
-        if the key is a binning dimensions, then unroll te binning
-        otherwise rtuen the corresponding flattened array
-        '''
+        """Get data array from binned data:
+        if the key is a binning dimensions, then unroll the binning
+        otherwise return the corresponding flattened array
+        """
         if out_binning is not None:
             # check if key is binning dimension
             if key in out_binning.names:
@@ -493,9 +465,7 @@ class Container(object):
 
 
     def get_hist(self, key):
-        '''
-        return reshaped data as normal n-dimensional histogram
-        '''
+        """Return reshaped data as normal n-dimensional histogram"""
         if self.data_mode == 'binned':
             binning = self.data_specs
             data = self.get_binned_data(key, binning)
@@ -509,15 +479,11 @@ class Container(object):
         return data.reshape(full_shape), binning
 
     def get_binning(self, key):
-        '''
-        return binning of an entry
-        '''
+        """Return binning of an entry"""
         return self.binned_data[key][0]
 
     def get_map(self, key, error=None):
-        '''
-        return binned data in the form of a PISA map
-        '''
+        """Return binned data in the form of a PISA map"""
         hist, binning = self.get_hist(key)
         if error is not None:
             error_hist = np.abs(self.get_hist(error)[0])
@@ -528,46 +494,60 @@ class Container(object):
         return Map(name=self.name, hist=hist, error_hist=error_hist, binning=binning)
 
 
-
 def test_container():
+    """Unit tests for Container class."""
+
+    # NOTE: Right now the numbers are tuned so that the weights are identical
+    # per bin. If you change binning that's likely not the case anymore and you
+    # inevitably end up with averaged values over bins, which are then not
+    # equal to the individual weights anymore when those are not identical per
+    # bin
+
     n_evts = 10000
-    x = np.arange(n_evts, dtype=FTYPE)
-    y = np.arange(n_evts, dtype=FTYPE)
-    w = np.ones(n_evts, dtype=FTYPE)
-    w *= np.random.rand(n_evts)
+    x = np.linspace(0, 100, n_evts, dtype=FTYPE)
+    y = np.linspace(0, 100, n_evts, dtype=FTYPE)
+    w = np.tile(np.arange(100, dtype=FTYPE) + 0.5, (100, 1)).T.ravel()
 
     container = Container('test')
     container.add_array_data('x', x)
     container.add_array_data('y', y)
     container.add_array_data('w', w)
 
-
-    binning_x = OneDimBinning(name='x', num_bins=10, is_lin=True, domain=[0, 100])
-    binning_y = OneDimBinning(name='y', num_bins=10, is_lin=True, domain=[0, 100])
+    binning_x = OneDimBinning(name='x', num_bins=100, is_lin=True, domain=[0, 100])
+    binning_y = OneDimBinning(name='y', num_bins=100, is_lin=True, domain=[0, 100])
     binning = MultiDimBinning([binning_x, binning_y])
-    #print(binning.names)
-    print(container.get_binned_data('x', binning).get('host'))
-    print(Container.unroll_binning('x', binning).get('host'))
 
-    # array
-    print('original array')
-    print(container.get_array_data('w').get('host'))
+    logging.trace('Testing container and translation methods')
+
+    bx = container.get_binned_data('x', binning).get('host')
+    m = np.meshgrid(binning.midpoints[0].m, binning.midpoints[1].m)[1].ravel()
+    assert np.allclose(bx, m, **ALLCLOSE_KW), f'test:\n{bx}\n!= ref:\n{m}'
+
+    # array repr
+    array_weights = container.get_array_data('w').get('host')
+    assert np.allclose(array_weights, w, **ALLCLOSE_KW), f'test:\n{array_weights}\n!= ref:\n{w}'
+
+    # binned repr
     container.array_to_binned('w', binning)
-    # binned
-    print('binned')
-    print(container.get_binned_data('w').get('host'))
-    print(container.get_hist('w'))
+    diag = np.diag(np.arange(100) + 0.5)
+    bd = container.get_binned_data('w').get('host')
+    h = container.get_hist('w')
 
-    print('augmented again')
-    # augment
+    assert np.allclose(bd, diag.ravel(), **ALLCLOSE_KW), f'test:\n{bd}\n!= ref:\n{diag.ravel()}'
+    assert np.allclose(h[0], diag, **ALLCLOSE_KW), f'test:\n{h[0]}\n!= ref:\n{diag}'
+    assert h[1] == binning, f'test:\n{h[1]}\n!= ref:\n{binning}'
+
+    # augment to array repr again
     container.binned_to_array('w')
-    print(container.get_array_data('w').get('host'))
+    a = container.get_array_data('w').get('host')
+
+    assert np.allclose(a, w, **ALLCLOSE_KW), f'test:\n{a}\n!= ref:\n{w}'
 
 
 def test_container_set():
     container1 = Container('test1')
     container2 = Container('test2')
-    
+
     data = ContainerSet('data', [container1, container2])
 
     try:
@@ -576,6 +556,7 @@ def test_container_set():
         pass
     else:
         raise Exception('identical containers added to a containerset, this should not be possible')
+
 
 if __name__ == '__main__':
     test_container()
