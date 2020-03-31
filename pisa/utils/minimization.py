@@ -98,7 +98,7 @@ def set_minimizer_defaults(minimizer_settings):
         opt_defaults.update(dict(
             maxiter=100, ftol=1e-4, iprint=0, eps=sqrt_ftype_eps
         ))
-    elif method == 'basinhopping': # TODO: ftype check?
+    elif method == 'basinhopping':
         # cf. `scipy.optimize.basinhopping`
         opt_defaults.update(dict(
             niter=100, T=1.0, stepsize=0.5, interval=50
@@ -163,6 +163,7 @@ def validate_minimizer_settings(minimizer_settings):
     eps_gt_msg = '%s minimizer option %s(=%e) is > %e'
     fp64_eps = np.finfo(np.float64).eps
 
+    # TODO: where do the various limits below come from?
     if method == 'l-bfgs-b':
         err_lim, warn_lim = 2, 10
         for s in ['ftol', 'gtol']:
@@ -190,12 +191,18 @@ def validate_minimizer_settings(minimizer_settings):
             logging.warn(eps_gt_msg, method, 'eps', val, warn_lim)
 
         # make sure we only have integers where we can only have integers
-        for s in ('maxcor', 'maxfun', 'maxiter', 'maxls', 'iprint'):
+        for s in ('maxcor', 'maxfun', 'maxiter', 'maxls', 'iprint', 'disp'):
             try:
                 options[s] = int(options[s])
-            except:
+            except KeyError:
                 # if the setting doesn't exist in the first place we don't care
                 pass
+            # we can tolerate a TypeError only for 'disp'
+            except TypeError:
+                if not (s == 'disp' and options[s] is None):
+                    raise
+                else:
+                    pass
 
     if method == 'slsqp':
         err_lim, warn_lim = 2, 10
@@ -213,8 +220,8 @@ def validate_minimizer_settings(minimizer_settings):
             raise ValueError(eps_msg % (method, 'eps', val, 1, 'FP64',
                                         fp64_eps))
         if val < warn_lim * ftype_eps:
-            logging.warn(eps_msg, method, 'eps', val, warn_lim, 'FP64',
-                         fp64_eps)
+            logging.warn(eps_msg, method, 'eps', val, warn_lim, 'FTYPE',
+                         ftype_eps)
 
         err_lim, warn_lim = 0.25, 0.1
         if val > err_lim:
@@ -226,31 +233,70 @@ def validate_minimizer_settings(minimizer_settings):
         for s in ('maxiter', 'iprint'):
             try:
                 options[s] = int(options[s])
-            except:
+            except KeyError:
                 # if the setting doesn't exist in the first place we don't care
                 pass
 
+        if 'disp' in options and not isinstance(options['disp'], bool):
+            # differs from l-bfgs-b
+            raise TypeError('slsqp "disp" option needs to be a boolean!')
+
     if method == 'basinhopping':
+        if 'T' in options:
+            # a value of zero needs to be possible for monotonic basin hopping:
+            # transform every temperature near floating point precision to 0
+            warn_lim = 10
+            val = options['T']
+            if not recursiveEquality(val, 0) and val < warn_lim * ftype_eps:
+                logging.warn(eps_msg, method, 'ftol', val, warn_lim, 'FTYPE',
+                             ftype_eps)
+                logging.warn("Setting T=0 for monotonic basinhopping!")
+                options['T'] = 0
+
+        if 'stepsize' in options:
+            val = options['stepsize']
+            # this is the maximum random displacement -
+            # adopt the lower limits from above
+            err_lim, warn_lim = 1, 10
+            if val < err_lim * fp64_eps:
+                raise ValueError(eps_msg % (method, 'eps', val, 1, 'FP64',
+                                            fp64_eps))
+            if val < warn_lim * ftype_eps:
+                logging.warn(eps_msg, method, 'eps', val, warn_lim, 'FTYPE',
+                             ftype_eps)
+            # TODO: no need to bound stepsize from above, since basinhopping
+            # will ensure not to step out of bounds (I think) - just warn if
+            # the stepsize seems large
+            warn_lim = 1.0
+            if val > warn_lim:
+                logging.warn(eps_gt_msg, method, 'stepsize', val, warn_lim)
+
         for s in ('niter', 'interval', 'niter_success'):
             try:
                 options[s] = int(options[s])
-            except:
+            except KeyError:
                 # if the setting doesn't exist in the first place we don't care
                 pass
 
+        if 'disp' in options and not isinstance(options['disp'], bool):
+            # differs from l-bfgs-b
+            raise TypeError('basinhopping "disp" option needs to be a boolean!')
 
 def override_min_opt(minimizer_settings, min_opt):
     """Override minimizer option:value pair(s) in a minimizer settings dict
     """
     for opt_val_str in min_opt:
         opt, val_str = [s.strip() for s in opt_val_str.split(':')]
-        try:
-            val = int(val_str)
-        except ValueError:
+        if val_str in ('False', 'True'):
+            val = val_str == 'True'
+        else:
             try:
-                val = float(val_str)
-            except ValueError:
-                val = val_str
+                val = int(val_str)
+            except TypeError:
+                try:
+                    val = float(val_str)
+                except TypeError:
+                    val = val_str
         minimizer_settings['options'][opt] = val
 
 # --------------------------------------------------------------------------- #

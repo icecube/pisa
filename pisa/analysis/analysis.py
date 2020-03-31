@@ -1770,12 +1770,11 @@ class Analysis(object):
 
 # --------------------------------------------------------------------------- #
 def test_optimize_discrete_selections(
-    pipeline_cfg='settings/pipeline/example.cfg',
-    local_minimizer_cfg='settings/minimizer/slsqp_ftol2e-11_eps1e-8_maxiter1000.cfg',
+    pipeline_cfg='settings/pipeline/example.cfg'
 ):
     """Unit tests of `Analysis.optimize_discrete_selections`."""
 
-    from pisa.utils.minimization import override_min_opt
+    from pisa.utils.minimization import override_min_opt, set_minimizer_defaults
 
     hypo_maker = DistributionMaker(pipeline_cfg)
     data_dist = hypo_maker.get_outputs(return_sum=True)
@@ -1787,8 +1786,14 @@ def test_optimize_discrete_selections(
         if i > 1:
             param.is_fixed = True
 
-    local_minimizer_cfg = parse_minimizer_config(local_minimizer_cfg)
-    override_min_opt(local_minimizer_cfg, ('disp:0',))
+    # use defaults for the chosen FTYPE
+    local_minimizer_cfg = set_minimizer_defaults(
+        dict(
+            method='slsqp',
+            options=dict()
+        )
+    )
+    override_min_opt(local_minimizer_cfg, ('disp:False', ))
 
     a = Analysis()
     try:
@@ -1797,7 +1802,7 @@ def test_optimize_discrete_selections(
             extra_param_selections=discrete_selections, metric='chi2',
             fit_settings=None, minimizer_settings=local_minimizer_cfg,
             check_octant=True, reset_free=True,
-            randomize_params=hypo_maker.params.free.names, random_state=None,
+            randomize_params=hypo_maker.params.free.names, random_state=18,
             other_metrics=None, blind=False, pprint=False,
             external_priors_penalty=None
         )
@@ -1807,12 +1812,11 @@ def test_optimize_discrete_selections(
 # --------------------------------------------------------------------------- #
 def test_fit_hypo_minimizer(
     pipeline_cfg='settings/pipeline/example.cfg',
-    local_minimizer_cfg='settings/minimizer/l-bfgs-b_ftol2e-9_gtol1e-5_eps1e-7_maxiter200.cfg',
     fit_cfg='settings/fit/example_basinhopping_lbfgsb.cfg'
 ):
     """Unit tests of `Analysis._fit_hypo_minimizer`."""
 
-    from pisa.utils.minimization import override_min_opt
+    from pisa.utils.minimization import override_min_opt, set_minimizer_defaults
 
     hypo_maker = DistributionMaker(pipeline_cfg)
     data_dist = hypo_maker.get_outputs(return_sum=True)
@@ -1822,15 +1826,21 @@ def test_fit_hypo_minimizer(
         if i > 1:
             param.is_fixed = True
 
-    minimizer_settings = parse_minimizer_config(local_minimizer_cfg)
-    override_min_opt(minimizer_settings, ('disp:0',))
+    # use defaults for the chosen FTYPE
+    local_minimizer_cfg = set_minimizer_defaults(
+        dict(
+            method='l-bfgs-b',
+            options=dict()
+        )
+    )
+    override_min_opt(local_minimizer_cfg, ('disp:0',))
 
     a = Analysis()
     try:
         a._fit_hypo_minimizer(
             data_dist=data_dist, hypo_maker=hypo_maker, metric='chi2',
-            minimizer_settings=minimizer_settings,
-            randomize_params=True, random_state=None,
+            minimizer_settings=local_minimizer_cfg,
+            randomize_params=True, random_state=18,
             other_metrics=['mod_chi2'], pprint=False, blind=False,
             external_priors_penalty=None
         )
@@ -1841,7 +1851,7 @@ def test_fit_hypo_minimizer(
     fit_settings = apply_fit_settings(fit_cfg, hypo_maker.params.free)
     minimizer_settings = {
         'global': fit_settings['minimize']['global'],
-        'local': fit_settings['minimize']['local']
+        'local': local_minimizer_cfg
     }
     # ensure the fit finishes up quickly
     override_min_opt(minimizer_settings['global'], ('niter_success:2', 'niter:5'))
@@ -1849,7 +1859,7 @@ def test_fit_hypo_minimizer(
         a._fit_hypo_minimizer( # pylint: disable=protected-access
             data_dist=data_dist, hypo_maker=hypo_maker, metric='chi2',
             minimizer_settings=minimizer_settings,
-            randomize_params=True, random_state=None,
+            randomize_params=True, random_state=18,
             other_metrics=['mod_chi2'], pprint=False, blind=False,
             external_priors_penalty=None
         )
@@ -1868,8 +1878,8 @@ def test_fit_hypo_pull(
 
     if param_variations is None:
         param_variations = {
-            'aeff_scale': (0.05 * np.random.rand()) * ureg.dimensionless,
-            'nue_numu_ratio': (-0.1 * np.random.rand()) * ureg.dimensionless
+            'aeff_scale': 0.05 * ureg.dimensionless,
+            'nue_numu_ratio': -0.1 * ureg.dimensionless
         }
     else:
         for pname in param_variations:
