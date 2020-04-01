@@ -10,7 +10,6 @@ from __future__ import absolute_import
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import OrderedDict
 from collections.abc import Mapping
-from functools import reduce
 import inspect
 from itertools import product
 import os
@@ -203,7 +202,8 @@ class DistributionMaker(object):
         outputs = [pipeline.get_outputs(**kwargs) for pipeline in self] # pylint: disable=redefined-outer-name
         if return_sum:
             if len(outputs) > 1:
-                outputs = reduce(lambda x, y: sum(x) + sum(y), outputs)
+                outputs = sum([sum(x) for x in outputs])
+
             else:
                 outputs = sum(sum(outputs))
             outputs.name = sum_map_name

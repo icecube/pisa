@@ -62,7 +62,10 @@ from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import (
     get_product_hostfunc,
     convert_from_mass_eigenstate_hostfunc,
 )
-
+from pisa.stages.osc.nsi_params import (
+    StdNSIParams,
+    VacuumLikeNSIParams,
+)
 
 TEST_DATA_DIR = find_resource("osc/numba_osc_tests_data")
 
@@ -104,6 +107,22 @@ DEFAULTS = dict(
     dm31=2.494e-3,
 )
 
+# define non-0 NSI parameters for non-vacuum NSI
+# roughly based on best fit params from Thomas Ehrhardts 3y DRAGON analysis
+nsi_params = StdNSIParams()
+nsi_params.eps_emu_magn = 0.07
+nsi_params.eps_emu_phase = np.deg2rad(340)
+nsi_params.eps_etau_magn = 0.06
+nsi_params.eps_etau_phase = np.deg2rad(35)
+nsi_params.eps_mutau_magn = 0.003
+nsi_params.eps_mutau_phase = np.deg2rad(175)
+mat_pot_std_nsi_no = np.diag([1, 0, 0]).astype(np.complex128) + nsi_params.eps_matrix
+
+# Vacuum-like NSI parameters
+nsi_params = VacuumLikeNSIParams()
+nsi_params.eps_prime = 0.1
+mat_pot_vac_nsi_no = np.diag([1, 0, 0]).astype(np.complex128) + nsi_params.eps_matrix
+
 TEST_CASES = dict(
     nufit32_no=dict(),  # nufit 3.2 normal ordering (also overall) best-fit
     nufit32_no_nubar=dict(nubar=-1),  # NO but anti-neutrinos
@@ -124,6 +143,12 @@ TEST_CASES = dict(
         dcp=np.deg2rad(278),
         dm21=7.40e-5,
         dm31=-2.465e-3,
+    ),
+    nufit32_std_nsi_no=dict(  # nufit 3.2 normal ordering with non-0 standard NSI parameters
+        mat_pot=mat_pot_std_nsi_no,
+    ),
+    nufit32_vac_nsi_no=dict(  # nufit 3.2 normal ordering with non-0 vacuum NSI parameters
+        mat_pot=mat_pot_vac_nsi_no,
     ),
 )
 
