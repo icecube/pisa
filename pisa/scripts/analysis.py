@@ -130,7 +130,7 @@ class AnalysisScript(object):
             method=dict(),
             options=dict()
         )
-
+        # the next two are mutually exclusive
         if global_min_settings_from_file is not None:
             global_minimizer_settings = parse_minimizer_config(
                 global_min_settings_from_file
@@ -139,6 +139,7 @@ class AnalysisScript(object):
             global_minimizer_settings['method'] = global_minimizer
 
         if global_min_opt is not None:
+            # this overrides/sets some options
             override_min_opt(global_minimizer_settings, global_min_opt)
 
         if local_min_settings_from_file is not None:
@@ -149,6 +150,7 @@ class AnalysisScript(object):
             local_minimizer_settings['method'] = local_minimizer
 
         if local_min_opt is not None:
+            # this overrides/sets some options
             override_min_opt(local_minimizer_settings, local_min_opt)
 
         if fit_settings is not None:
@@ -680,25 +682,26 @@ class AnalysisScript(object):
         parser = ArgumentParser(
             add_help=False
         )
-        parser.add_argument(
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument(
             '--global-min-settings',
             type=str, metavar='MINIMIZER_CFG', default=None,
             help='''Minimizer settings config file in case global minimization
             is desired.'''
         )
-        parser.add_argument(
+        group.add_argument(
             '--global-min-method',
             type=str, default=None, choices=GLOBAL_MINIMIZERS_WITH_DEFAULTS,
-            help='''Name of global minimizer to use. Note that this takes
-            precedence over the minimizer method specified via the
-            --global-min-settings config file.'''
+            help='''Name of global minimizer to use. Default settings will
+            be employed.'''
         )
         parser.add_argument(
             '--global-min-opt',
             type=str, metavar='OPTION:VALUE', nargs='+', default=None,
             help='''Global minimizer option:value pair(s) (can specify multiple).
             Values specified here override any of the same name in the config
-            file specified by --global-min-settings'''
+            file specified by --global-min-settings or the defaults in case
+            only --global-min-method is set.'''
         )
         self.min_global_parser = parser
 
@@ -707,12 +710,13 @@ class AnalysisScript(object):
         parser = ArgumentParser(
             add_help=False
         )
-        parser.add_argument(
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument(
             '--min-settings',
             type=str, metavar='MINIMIZER_CFG', default=None,
             help='''Minimizer settings config file.'''
         )
-        parser.add_argument(
+        group.add_argument(
             '--min-method',
             type=str, default=None, choices=LOCAL_MINIMIZERS_WITH_DEFAULTS,
             help='''Name of minimizer to use. Note that this takes precedence

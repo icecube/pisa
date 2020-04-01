@@ -969,7 +969,7 @@ class Analysis(object):
         # Decide whether fit for other octant is necessary
         if need_octant_check:
             if ('global' in parsed_minimizer_settings and
-                parsed_minimizer_settings['global'] is not None):
+                parsed_minimizer_settings['global']['method']):
                 logging.info(
                     'Checking other octant of theta23 might not be'
                     ' necessary with a global minimizer. Doing so'

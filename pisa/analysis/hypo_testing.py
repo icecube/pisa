@@ -559,7 +559,7 @@ class HypoTesting(Analysis):
 
     """
     def __init__(self, logdir,
-                 data_is_data, fluctuate_data, fluctuate_fid, metric, 
+                 data_is_data, fluctuate_data, fluctuate_fid, metric,
                  fluctuate_data_method=None, fluctuate_fid_method=None,
                  other_metrics=None, fit_settings=None, minimizer_settings=None,
                  randomize_params=None, randomization_seed=None,

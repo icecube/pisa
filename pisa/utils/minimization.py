@@ -16,7 +16,7 @@ from scipy.optimize import OptimizeResult
 
 from pisa import EPSILON, FTYPE, ureg
 from pisa.utils.comparisons import recursiveEquality
-from pisa.utils.log import logging
+from pisa.utils.log import logging, set_verbosity
 from pisa.utils.random_numbers import get_random_state
 
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD', 'LOCAL_MINIMIZERS_WITH_DEFAULTS',
@@ -47,7 +47,7 @@ MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b', 'slsqp')
 """Minimizers that use symmetrical steps on either side of a point to compute
 gradients. See https://github.com/scipy/scipy/issues/4916"""
 
-LOCAL_MINIMIZERS_WITH_DEFAULTS = ('l-bfgs-b', 'slsqp')
+LOCAL_MINIMIZERS_WITH_DEFAULTS = ('l-bfgs-b', 'slsqp', 'nelder-mead')
 """Local minimizers which can be selected without specifying any configuration
 as defaults will be set automatically."""
 
@@ -55,9 +55,11 @@ GLOBAL_MINIMIZERS_WITH_DEFAULTS = ('basinhopping', )
 """Local minimizers which can be selected without specifying any configuration
 as defaults will be set automatically."""
 
-# TODO: add Nelder-Mead, as it was used previously...
+
+# --------------------------------------------------------------------------- #
 def set_minimizer_defaults(minimizer_settings):
-    """Fill in default values for minimizer settings.
+    """Fill in default values for for options that are not specified in
+    `minimizer_settings`.
 
     Parameters
     ----------
@@ -68,6 +70,7 @@ def set_minimizer_defaults(minimizer_settings):
     new_minimizer_settings : dict
 
     """
+
     new_minimizer_settings = dict(
         method='',
         options=dict()
@@ -76,7 +79,7 @@ def set_minimizer_defaults(minimizer_settings):
 
     sqrt_ftype_eps = np.sqrt(np.finfo(FTYPE).eps)
     opt_defaults = {}
-    method = minimizer_settings['method'].lower()
+    method = new_minimizer_settings['method'].lower()
 
     if method == 'l-bfgs-b' and FTYPE == np.float64:
         # From `scipy.optimize.lbfgsb._minimize_lbfgsb`
@@ -98,24 +101,49 @@ def set_minimizer_defaults(minimizer_settings):
         opt_defaults.update(dict(
             maxiter=100, ftol=1e-4, iprint=0, eps=sqrt_ftype_eps
         ))
+    elif method == 'nelder-mead' and FTYPE == np.float64:
+        opt_defaults.update(dict(
+            maxiter=None, maxfev=None, disp=False, initial_simplex=None,
+            xatol=1e-04, fatol=1e-04, adaptive=False
+        ))
+    elif method == 'nelder-mead' and FTYPE == np.float32:
+        # FP64 defaults seem ok to use with FP32, too
+        opt_defaults.update(dict(
+            maxiter=None, maxfev=None, disp=False, initial_simplex=None,
+            xatol=1e-04, fatol=1e-04, adaptive=False
+        ))
     elif method == 'basinhopping':
         # cf. `scipy.optimize.basinhopping`
         opt_defaults.update(dict(
-            niter=100, T=1.0, stepsize=0.5, interval=50
+            niter=100, T=1.0, stepsize=0.5, interval=5, niter_success=5,
         ))
     else:
         raise ValueError('Unhandled minimizer "%s" / FTYPE=%s'
                          % (method, FTYPE))
 
+    # here we overwrite the defaults (where applicable)
     opt_defaults.update(new_minimizer_settings['options'])
 
+    # set minimizer settings including defaults for unspecified options
     new_minimizer_settings['options'] = opt_defaults
 
     return new_minimizer_settings
 
 
-# TODO: add Nelder-Mead, as it was used previously...
-def validate_minimizer_settings(minimizer_settings):
+def test_set_minimizer_defaults():
+    """Unit tests of `set_minimizer_defaults`."""
+    for method in (LOCAL_MINIMIZERS_WITH_DEFAULTS +
+                   GLOBAL_MINIMIZERS_WITH_DEFAULTS):
+        logging.debug('Setting defaults for minimizer method "%s".' % method)
+        settings_only_method = dict(method=method, options=dict())
+        settings_with_defaults = set_minimizer_defaults(
+            minimizer_settings=settings_only_method
+        )
+        assert len(settings_with_defaults['options'].keys()) >= 1
+
+# --------------------------------------------------------------------------- #
+
+def validate_minimizer_settings(minimizer_settings, only_check_excess=False):
     """Validate minimizer settings.
 
     See source for specific thresholds set.
@@ -123,6 +151,9 @@ def validate_minimizer_settings(minimizer_settings):
     Parameters
     ----------
     minimizer_settings : dict
+    only_check_excess : bool
+        If `True`, will only raise in case of unknown options, and no
+        further validation will be performed.
 
     Raises
     ------
@@ -142,22 +173,26 @@ def validate_minimizer_settings(minimizer_settings):
         must_have = ('maxiter', 'ftol', 'eps')
         may_have = must_have + ('args', 'jac', 'bounds', 'constraints',
                                 'iprint', 'disp', 'callback')
-
+    elif method == 'nelder-mead':
+        must_have = ('maxiter', 'xatol', 'fatol', 'adaptive')
+        may_have = must_have + ('maxfev', 'tol', 'callback', 'return_all',
+                                'initial_simplex', 'disp')
     elif method == 'basinhopping':
-        must_have = ('niter', 'T', 'stepsize')
-        may_have = must_have + ('take_step', 'callback', 'interval',
-                                'disp', 'niter_success', 'seed')
+        must_have = ('niter', 'T', 'stepsize', 'niter_success', 'interval')
+        may_have = must_have + ('take_step', 'callback', 'disp', 'seed')
     else:
         raise ValueError('Cannot validate unhandled minimizer "%s".' % method)
 
     missing = set(must_have).difference(set(options))
     excess = set(options).difference(set(may_have))
-    if missing:
+    if missing and not only_check_excess:
         raise ValueError('Missing the following options for %s minimizer: %s'
                          % (method, missing))
     if excess:
         raise ValueError('Excess options for %s minimizer: %s'
                          % (method, excess))
+    if only_check_excess:
+        return
 
     eps_msg = '%s minimizer option %s(=%e) is < %d * %s_EPS(=%e)'
     eps_gt_msg = '%s minimizer option %s(=%e) is > %e'
@@ -204,7 +239,7 @@ def validate_minimizer_settings(minimizer_settings):
                 else:
                     pass
 
-    if method == 'slsqp':
+    elif method == 'slsqp':
         err_lim, warn_lim = 2, 10
         val = options['ftol']
         if val < err_lim * ftype_eps:
@@ -241,7 +276,11 @@ def validate_minimizer_settings(minimizer_settings):
             # differs from l-bfgs-b
             raise TypeError('slsqp "disp" option needs to be a boolean!')
 
-    if method == 'basinhopping':
+    elif method == 'nelder-mead':
+        # FIXME: validate
+        logging.warn('Currently not validating values of Nelder-Mead options!')
+
+    elif method == 'basinhopping':
         if 'T' in options:
             # a value of zero needs to be possible for monotonic basin hopping:
             # transform every temperature near floating point precision to 0
@@ -283,7 +322,8 @@ def validate_minimizer_settings(minimizer_settings):
             raise TypeError('basinhopping "disp" option needs to be a boolean!')
 
 def override_min_opt(minimizer_settings, min_opt):
-    """Override minimizer option:value pair(s) in a minimizer settings dict
+    """Override minimizer option:value pair(s) in a minimizer settings dict.
+    Also checks whether all of the options are allowed at all.
     """
     for opt_val_str in min_opt:
         opt, val_str = [s.strip() for s in opt_val_str.split(':')]
@@ -292,12 +332,15 @@ def override_min_opt(minimizer_settings, min_opt):
         else:
             try:
                 val = int(val_str)
-            except TypeError:
+            except (TypeError, ValueError):
                 try:
                     val = float(val_str)
-                except TypeError:
+                except (TypeError, ValueError):
                     val = val_str
         minimizer_settings['options'][opt] = val
+
+    if minimizer_settings['method']:
+        validate_minimizer_settings(minimizer_settings, only_check_excess=True)
 
 # --------------------------------------------------------------------------- #
 
@@ -764,4 +807,6 @@ def display_minimizer_header(free_params, metric):
 
 
 if __name__ == '__main__':
+    set_verbosity(2)
     test_minimizer_x0_bounds()
+    test_set_minimizer_defaults()
