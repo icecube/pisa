@@ -873,22 +873,23 @@ class Analysis(object):
         # Select the version of the parameters used for this hypothesis
         hypo_maker.select_params(hypo_param_selections)
 
+        new_fit_settings = deepcopy(fit_settings)
         # only apply fit settings after the param selection has been applied
         if fit_settings is not None:
-            fit_settings = apply_fit_settings(
-                fit_settings=fit_settings,
+            new_fit_settings = apply_fit_settings(
+                fit_settings=new_fit_settings,
                 free_params=hypo_maker.params.free
             )
 
-            minimize_params = fit_settings['minimize']['params']
+            minimize_params = new_fit_settings['minimize']['params']
             if minimize_params:
                 # check if minimizer settings are passed into this method,
                 # fall back to those given in fit settings
                 if minimizer_settings is None:
                     # note: we assume these are parsed already!
-                    minimizer_settings = {
-                        'global': fit_settings['minimize']['global'],
-                        'local': fit_settings['minimize']['local']
+                    parsed_minimizer_settings = {
+                        'global': new_fit_settings['minimize']['global'],
+                        'local': new_fit_settings['minimize']['local']
                     }
                 else:
                     logging.warn(
@@ -896,7 +897,7 @@ class Analysis(object):
                         ' to `fit_hypo` used to override those in'
                         ' the fit settings!'
                     )
-                    minimizer_settings = parse_minimizer_config(minimizer_settings)
+                    parsed_minimizer_settings = parse_minimizer_config(minimizer_settings)
                 if isinstance(randomize_params, Sequence):
                     excess = set(randomize_params).difference(set(minimize_params))
                     for pname in excess:
@@ -926,7 +927,7 @@ class Analysis(object):
                     ' parameters which cannot be minimized over if there are'
                     ' no minimizer settings!'
                 )
-            minimizer_settings = parse_minimizer_config(minimizer_settings)
+            parsed_minimizer_settings = parse_minimizer_config(minimizer_settings)
 
         # Reset free parameters to nominal values
         if reset_free:
@@ -955,8 +956,8 @@ class Analysis(object):
             hypo_maker=hypo_maker,
             data_dist=data_dist,
             metric=metric,
-            fit_settings_inner=fit_settings,
-            minimizer_settings=minimizer_settings,
+            fit_settings_inner=new_fit_settings,
+            minimizer_settings=parsed_minimizer_settings,
             randomize_params=randomize_params,
             random_state=random_state,
             other_metrics=other_metrics,
@@ -967,8 +968,8 @@ class Analysis(object):
 
         # Decide whether fit for other octant is necessary
         if need_octant_check:
-            if ('global' in minimizer_settings and
-                minimizer_settings['global'] is not None):
+            if ('global' in parsed_minimizer_settings and
+                parsed_minimizer_settings['global'] is not None):
                 logging.info(
                     'Checking other octant of theta23 might not be'
                     ' necessary with a global minimizer. Doing so'
@@ -992,7 +993,7 @@ class Analysis(object):
                 data_dist=data_dist,
                 hypo_maker=hypo_maker,
                 metric=metric,
-                minimizer_settings=minimizer_settings,
+                minimizer_settings=parsed_minimizer_settings,
                 other_metrics=other_metrics,
                 pprint=pprint,
                 blind=blind,
@@ -1181,20 +1182,22 @@ class Analysis(object):
             'fit_metadata', 'fit_time', 'fit_history', 'num_distributions_generated'
 
         """
+        # don't modify the original dict
+        new_minimizer_settings = deepcopy(minimizer_settings)
 
-        if set(minimizer_settings.keys()) == set(('local', 'global')):
+        if set(new_minimizer_settings.keys()) == set(('local', 'global')):
             # allow for an entry of `None`
             for minimizer_type in ['local', 'global']:
-                try:
+                if isinstance(new_minimizer_settings[minimizer_type]['method'], str):
                     minimizer_type_settings =\
-                        set_minimizer_defaults(minimizer_settings[minimizer_type])
+                        set_minimizer_defaults(new_minimizer_settings[minimizer_type])
                     validate_minimizer_settings(minimizer_type_settings)
-                except:
+                else:
                     minimizer_type_settings = None
-                minimizer_settings[minimizer_type] = minimizer_type_settings
+                new_minimizer_settings[minimizer_type] = minimizer_type_settings
         else:
             # just try to interpret as "regular" local minimization
-            method = minimizer_settings['method'].lower()
+            method = new_minimizer_settings['method'].lower()
             if not method in LOCAL_MINIMIZERS_WITH_DEFAULTS:
                 raise ValueError(
                     'Minimizer method "%s" could not be identified as'
@@ -1203,13 +1206,12 @@ class Analysis(object):
                     ' config with explicit "global" and "local" keys.'
                     % (method, LOCAL_MINIMIZERS_WITH_DEFAULTS)
                 )
-            minimizer_settings = set_minimizer_defaults(minimizer_settings)
-            validate_minimizer_settings(minimizer_settings)
+            new_minimizer_settings = set_minimizer_defaults(new_minimizer_settings)
+            validate_minimizer_settings(new_minimizer_settings)
             new_minimizer_settings = {
                 'global': None,
-                'local': minimizer_settings
+                'local': new_minimizer_settings
             }
-            minimizer_settings = new_minimizer_settings
 
         # Want to *maximize* e.g. log-likelihood but we're using a minimizer,
         # so flip sign of metric in those cases.
@@ -1230,7 +1232,7 @@ class Analysis(object):
             free_params=hypo_maker.params.free,
             randomize_params=randomize_params,
             random_state=random_state,
-            minimizer_settings=minimizer_settings['local']
+            minimizer_settings=new_minimizer_settings['local']
         )
 
         fit_history = []
@@ -1258,7 +1260,7 @@ class Analysis(object):
             x0=x0,
             bounds=bounds,
             random_state=random_state,
-            minimizer_settings=minimizer_settings,
+            minimizer_settings=new_minimizer_settings,
             minimizer_callback=self._minimizer_callback,
             hypo_maker=hypo_maker,
             data_dist=data_dist,
@@ -1774,7 +1776,7 @@ def test_optimize_discrete_selections(
 ):
     """Unit tests of `Analysis.optimize_discrete_selections`."""
 
-    from pisa.utils.minimization import override_min_opt, set_minimizer_defaults
+    from pisa.utils.minimization import override_min_opt
 
     hypo_maker = DistributionMaker(pipeline_cfg)
     data_dist = hypo_maker.get_outputs(return_sum=True)
@@ -1816,7 +1818,7 @@ def test_fit_hypo_minimizer(
 ):
     """Unit tests of `Analysis._fit_hypo_minimizer`."""
 
-    from pisa.utils.minimization import override_min_opt, set_minimizer_defaults
+    from pisa.utils.minimization import override_min_opt
 
     hypo_maker = DistributionMaker(pipeline_cfg)
     data_dist = hypo_maker.get_outputs(return_sum=True)

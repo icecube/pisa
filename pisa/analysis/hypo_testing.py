@@ -378,8 +378,10 @@ class HypoTesting(Analysis):
         Method according to which fiducial distributions are to be fluctuated.
         Choice needs to be recognized by `Map`'s `fluctuate` method.
 
-    minimizer_settings : string
-        Minimizer settings file or resource path.
+    fit_settings : string, dict, or None
+        Fit settings file or resource path.
+
+    minimizer_settings : string, dict, or None
         Minimizer settings file or resource path. These will be processed
         internally and passed to the appropriate `scipy.optimize` backend.
 
@@ -474,6 +476,8 @@ class HypoTesting(Analysis):
         its current/nominal value (depending on setting of `reset_free`). The
         best overall fit from all of these is recorded.
 
+    fit_octants_separately : bool
+
     metric : string or sequence of strings
         Metric for minimizer to use for comparing distributions. Valid metrics
         are defined by `pisa.utils.stats.ALL_METRICS`.
@@ -565,7 +569,7 @@ class HypoTesting(Analysis):
                  extra_param_selections=None, force_fits=False,
                  num_data_trials=1, num_fid_trials=1,
                  data_start_ind=0, fid_start_ind=0,
-                 check_octant=True,
+                 check_octant=True, fit_octants_separately=False,
                  allow_dirty=False, allow_no_git_info=False,
                  blind=False, store_minimizer_history=True, pprint=False,
                  reset_free=True, shared_params=None):
@@ -820,6 +824,7 @@ class HypoTesting(Analysis):
         self.minimizer_settings = minimizer_settings
         self.fit_settings = fit_settings
         self.check_octant = check_octant
+        self.fit_octants_separately = fit_octants_separately
         self.extra_param_selections = extra_param_selections
         self.randomize_params = randomize_params
         self.randomization_seed = randomization_seed
@@ -1143,6 +1148,7 @@ class HypoTesting(Analysis):
                     other_metrics=self.other_metrics,
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
+                    fit_octants_separately=self.fit_octants_separately,
                     pprint=self.pprint,
                     blind=self.blind,
                     reset_free=self.reset_free
@@ -1187,6 +1193,7 @@ class HypoTesting(Analysis):
                 fit_settings=self.fit_settings,
                 minimizer_settings=self.minimizer_settings,
                 check_octant=self.check_octant,
+                fit_octants_separately=self.fit_octants_separately,
                 randomize_params=self.randomize_params,
                 random_state=self.randomization_seed, #TODO: move this forward?
                 pprint=self.pprint,
@@ -1294,6 +1301,7 @@ class HypoTesting(Analysis):
                     fit_settings=self.fit_settings,
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
+                    fit_octants_separately=self.fit_octants_separately,
                     randomize_params=self.randomize_params,
                     random_state=self.randomization_seed, #TODO: move this forward?
                     pprint=self.pprint,
@@ -1337,6 +1345,7 @@ class HypoTesting(Analysis):
                     fit_settings=self.fit_settings,
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
+                    fit_octants_separately=self.fit_octants_separately,
                     randomize_params=self.randomize_params,
                     random_state=self.randomization_seed, #TODO: move this forward?
                     pprint=self.pprint,
@@ -1381,6 +1390,7 @@ class HypoTesting(Analysis):
                     fit_settings=self.fit_settings,
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
+                    fit_octants_separately=self.fit_octants_separately,
                     randomize_params=self.randomize_params,
                     random_state=self.randomization_seed, #TODO: move this forward?
                     pprint=self.pprint,
@@ -1422,6 +1432,7 @@ class HypoTesting(Analysis):
                     fit_settings=self.fit_settings,
                     minimizer_settings=self.minimizer_settings,
                     check_octant=self.check_octant,
+                    fit_octants_separately=self.fit_octants_separately,
                     randomize_params=self.randomize_params,
                     random_state=self.randomization_seed, #TODO: move this forward?
                     pprint=self.pprint,
@@ -1468,6 +1479,7 @@ class HypoTesting(Analysis):
                 - minimizer_name : str
                 - metric_minimized : str
                 - check_octant : bool
+                - fit_octants_separately : bool
             * data_is_data : bool
             * data_pipelines : list
                 - p0 : list
@@ -1583,7 +1595,14 @@ class HypoTesting(Analysis):
         )
         # also add a string giving random seed in human readable form
         rs = 'rs%d' % self.randomization_seed if self.randomization_seed else ''
-        co = 'co1' if self.check_octant else 'co0'
+        co = 'co'
+        if not self.check_octant:
+            co += '0'
+        else:
+            if not self.fit_octants_separately:
+                co += '1'
+            else:
+                co += '2'
         met = '({})'.format('_'.join(self.metric))
         self.minsettings_flabel = (
             'min_' + '_'.join([

@@ -169,21 +169,27 @@ class AnalysisScript(object):
 
         init_args_d['fit_settings'] = fit_settings
 
+        # the next two are mutually exclusive
         init_args_d['randomize_params'] = init_args_d.pop(
-            'randomize_param', None
-        )
-        if ('randomize_startpoint' in init_args_d and
-            init_args_d['randomize_startpoint']):
-            init_args_d['randomize_params'] = True
-        init_args_d.pop('randomize_startpoint', None)
+            'randomize_param', False
+        ) # either populate with parameter names or set to `False`
+
+        # if no randomization params were given, will have been set to `False`
+        init_args_d['randomize_params'] = init_args_d.pop(
+            'randomize_startpoint', False
+        ) # will become `True` if `randomize_startpoint` was set
 
         init_args_d['randomization_seed'] = init_args_d.pop(
             'randomization_seed', None
         )
 
-        init_args_d['check_octant'] = (
-            not init_args_d.pop('no_octant_check')
-            if 'no_octant_check' in init_args_d else None
+        # make octant check the default
+        init_args_d['check_octant'] = not init_args_d.pop(
+            'no_octant_check', False
+        )
+
+        init_args_d['fit_octants_separately'] = init_args_d.pop(
+            'fit_octants_separately', False
         )
 
         init_args_d['extra_param_selections'] = init_args_d.pop(
@@ -300,8 +306,6 @@ class AnalysisScript(object):
         )
         parser.add_argument(
             '--fluctuate-data-method',
-            # TODO: define choices centrally to always keep them in sync
-            # with the choices `Map` class accepts?
             type=str, default=None, choices=FLUCTUATE_METHODS,
             help='''Method according to which data distributions are fluctuated.
             No effect if '--fluctuate-data' not selected.'''
@@ -406,9 +410,7 @@ class AnalysisScript(object):
         )
         parser.add_argument(
             '--fluctuate-fid-method',
-            # TODO: define choices centrally to always keep them in sync
-            # with the choices `Map` class accepts?
-            type=str, default=None, choices=['poisson', 'gauss', 'gauss+poisson'],
+            type=str, default=None, choices=FLUCTUATE_METHODS,
             help='''Method according to which fiducial distributions are fluctuated.
             No effect if '--fluctuate-fid' not selected.'''
         )
@@ -657,12 +659,19 @@ class AnalysisScript(object):
             help='''Seed for reproducibility of randomization of parameters'
             start values.'''
         )
-        parser.add_argument(
-            '--no-octant-check',
-            action='store_true',
+        # one can either disable octant checking, or fit octants separately,
+        # but not both
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument(
+            '--no-octant-check', action='store_true',
             help='''Disable rerunning fit from theta23 octant opposite from
             outcome of initial fit. Make sure you are aware of what you're doing
             when switching this off.'''
+        )
+        group.add_argument(
+            '--fit-octants-separately', action='store_true',
+            help='''Perform separate fits of the octant of theta23, instead of
+            allowing the minimizer to always explore theta23's whole range.'''
         )
         self.min_parser = parser
 
