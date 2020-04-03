@@ -11,6 +11,7 @@ with protons and neutrons.
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
+import math
 
 from numba import guvectorize
 
@@ -133,7 +134,7 @@ class pi_earth_absorption(PiStage):
                                              'nuebar_nc', 'numubar_nc', 'nutaubar_nc'])
 
         for container in self.data:
-            self.layers.calcLayers(container['true_coszen'].get(WHERE))
+            self.layers.calcLayers(container['true_coszen'].get('host'))
             container['densities'] = self.layers.density.reshape((container.size, self.layers.max_layers))
             container['distances'] = self.layers.distance.reshape((container.size, self.layers.max_layers))
             container['rho_int'] = np.empty((container.size), dtype=FTYPE)
@@ -230,8 +231,10 @@ def calculate_integrated_rho(layer_dists, layer_densities, out):
         Result is stored here
 
     """
-    out[0] = np.dot(layer_dists, layer_densities)*1e5 #distances are converted from km to cm
-
+    out[0] = 0
+    for i in range(len(layer_dists)):
+        out[0] += layer_dists[i]*layer_densities[i]
+    out[0] *= 1e5
 
 @guvectorize(signatures, '(),()->()', target=TARGET)
 def calculate_survivalprob(int_rho, xsection, out):
@@ -254,5 +257,5 @@ def calculate_survivalprob(int_rho, xsection, out):
     # water column, where water has the density of 1 g/cm^3.
     # So the units work out to:
     # int_rho [cm] * 1 [g/cm^3] * xsection [cm^2] * 1 [mol/g] * Na [1/mol] = [ 1 ] (all units cancel)
-    out[0] = np.exp(-int_rho[0]*xsection[0]*Na)
+    out[0] = math.exp(-int_rho[0]*xsection[0]*Na)
 
