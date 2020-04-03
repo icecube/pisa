@@ -249,7 +249,7 @@ def calculate_integrated_rho(layer_dists, layer_densities, out):
     out[0] = 0
     for i in range(len(layer_dists)):
         out[0] += layer_dists[i]*layer_densities[i]
-    out[0] *= 1e5
+    out[0] *= 1e5  # distances are converted from km to cm
 
 @guvectorize(signatures, '(),()->()', target=TARGET)
 def calculate_survivalprob(int_rho, xsection, out):
