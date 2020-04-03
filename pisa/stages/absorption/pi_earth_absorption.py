@@ -202,6 +202,7 @@ class pi_earth_absorption(PiStage):
                                                              container['nubar'],
                                                              container['true_energy'].get(WHERE)
                                                             )
+            container['xsection'].mark_changed(WHERE)
             calculate_survivalprob(container['rho_int'].get(WHERE),
                                    container['xsection'].get(WHERE),
                                    out=container['survival_prob'].get(WHERE)
