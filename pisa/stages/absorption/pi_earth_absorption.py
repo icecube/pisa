@@ -184,6 +184,7 @@ class pi_earth_absorption(PiStage):
                                      container['densities'].get(WHERE),
                                      out=container['rho_int'].get(WHERE)
                                     )
+            container['rho_int'].mark_changed(WHERE)
         # don't forget to un-link everything again
         self.data.unlink_containers()
 
