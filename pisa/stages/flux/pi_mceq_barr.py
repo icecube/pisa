@@ -32,6 +32,7 @@ class pi_mceq_barr(PiStage):
     Parameters
     ----------
     table_file : pickle file containing pre-generated tables from MCEq
+    use_MCEq_nom_flux : True or False, use MCEq for nominal flux calculation
 
     params : ParamSet
         Must exclusively have parameters: .. ::
@@ -65,9 +66,11 @@ class pi_mceq_barr(PiStage):
 
     Notes
     -----
-    The nominal flux is calculated using MCEq, then multiplied with a shift in
-    spectral index, and then modifications due to meson production (barr
-    variables) are added.
+    The nominal flux is calculated either using MCEq or via the pi_honda_ip stage,
+    then multiplied with a shift in spectral index, and then modifications due
+    to meson production (barr variables) are added.
+
+    MCEq splines are used to modify the flux weights relative to the nominal flux.
 
     The MCEq-table has 2 solutions of the cascade equation per Barr variable (12)
     - one solution for meson and one solution for the antimeson production uncertainty.
@@ -80,6 +83,7 @@ class pi_mceq_barr(PiStage):
     def __init__(
         self,
         table_file,
+        use_MCEq_nom_flux,
         data=None,
         params=None,
         input_names=None,
@@ -95,7 +99,10 @@ class pi_mceq_barr(PiStage):
         #
 
         # Define the Barr parameters
-        self.barr_param_names = [  # TODO common code with `create_barr_sys_tables_mceq.py` ?
+        # TODO Barr block definition could change - need to make this more flexible
+        # Perhaps let user define the blocks, and then table is generated on the
+        # fly as a first step? Could take up to 1 hour to produce table though...
+        self.barr_param_names = [
             # pions
             "a",
             "b",
@@ -164,13 +171,25 @@ class pi_mceq_barr(PiStage):
         input_names = ()
         output_names = ()
 
-        # what are the keys used from the inputs during apply
-        input_calc_keys = ()
+        # Decide whether to use nominal flux from MCEq or Honda tables
+        self.use_MCEq_nom_flux = use_MCEq_nom_flux
 
-        # what are keys added or altered in the calculation used during apply
-        output_calc_keys = ("nu_flux_nominal", "nu_flux")
-        # what keys are added or altered for the outputs during apply
-        output_apply_keys = ("nu_flux_nominal", "nu_flux")
+        # what are the keys used from the inputs during apply
+        if self.use_MCEq_nom_flux:
+            print('WARNING: Using MCEq for nominal flux calculation!')
+            input_calc_keys = ()
+            # what are keys added or altered in the calculation used during apply
+            output_calc_keys = ("mceq_flux_nominal", "nu_flux")
+            # what keys are added or altered for the outputs during apply
+            output_apply_keys = ("mceq_flux_nominal", "nu_flux")
+        else:
+            print('WARNING: Make sure pi_honda_ip stage is run first for nominal flux!')
+            # Using Honda for nominal flux. Keys should already exist
+            input_calc_keys = ("nu_flux_nominal", "nubar_flux_nominal")
+            # what are keys added or altered in the calculation used during apply
+            output_calc_keys = ("nu_flux")
+            # what keys are added or altered for the outputs during apply
+            output_apply_keys = ("nu_flux")
 
         # store args
         self.table_file = table_file
@@ -215,8 +234,10 @@ class pi_mceq_barr(PiStage):
             # considered) and for nu+nubar (only needed if nu->nubar
             # oscillations included) for better speed/memory performance
 
-            # [ N events, 3 flavors in flux, nu vs nubar ]
-            flux_container_shape = (container.size, 3)
+            # [ N events, 2 flavors in flux, nu vs nubar ]
+            # SDB - reduced flavours to 2 (nue, numu) since nutau flux not
+            # stored in MCEq splines
+            flux_container_shape = (container.size, 2)
             gradients_shape = tuple(
                 list(flux_container_shape) + list(gradient_params_shape)
             )
@@ -226,9 +247,17 @@ class pi_mceq_barr(PiStage):
             # on the container (e.g. not simultaneously storing nu and nubar)
             # Would rather use multi-dim arrays here but limited by fact that
             # numba only supports 1/2D versions of numpy functions
-            container["nu_flux_nominal"] = np.full(
-                flux_container_shape, np.NaN, dtype=FTYPE
-            )
+            if self.use_MCEq_nom_flux:
+                container["mceq_flux_nominal"] = np.full(
+                    flux_container_shape, np.NaN, dtype=FTYPE
+                )
+            #else:
+                # Is there some way to ensure that the honda_ip stage has already 
+                # been run?
+                #assert "nu_flux_nominal" in container.keys()
+                #assert "nubar_flux_nominal" in container.keys()
+
+
             container["nu_flux"] = np.full(flux_container_shape, np.NaN, dtype=FTYPE)
             container["gradients"] = np.full(gradients_shape, np.NaN, dtype=FTYPE)
 
@@ -271,7 +300,6 @@ class pi_mceq_barr(PiStage):
             # terms of energy, not ln(energy)
             true_log_energy = np.log(container["true_energy"].get("host"))
             true_abs_coszen = np.abs(container["true_coszen"].get("host"))
-            nu_flux_nominal = container["nu_flux_nominal"].get("host")
             gradients = container["gradients"].get("host")
             nubar = container["nubar"]
 
@@ -286,32 +314,56 @@ class pi_mceq_barr(PiStage):
             # Choose an arbitrary one to get the nominal fluxes
             arb_gradient_param_key = self.gradient_param_names[0]
 
-            # nue(bar)
-            self._eval_spline(
-                true_log_energy=true_log_energy,
-                true_abs_coszen=true_abs_coszen,
-                spline=self.spline_tables_dict[arb_gradient_param_key][
-                    "nue" if nubar > 0 else "nuebar"
-                ],
-                out=nu_flux_nominal[:, 0],
-            )
 
-            # numu(bar)
-            self._eval_spline(
-                true_log_energy=true_log_energy,
-                true_abs_coszen=true_abs_coszen,
-                spline=self.spline_tables_dict[arb_gradient_param_key][
-                    "numu" if nubar > 0 else "numubar"
-                ],
-                out=nu_flux_nominal[:, 1],
-            )
+            if self.use_MCEq_nom_flux:
+                nu_flux_nominal = container["mceq_flux_nominal"].get("host")
 
-            # nutau(bar)
-            # Currently setting to 0 #TODO include nutau flux (e.g. prompt) in splines
-            nu_flux_nominal[:, 2].fill(0.0)
+                # nue(bar)
+                self._eval_spline(
+                    true_log_energy=true_log_energy,
+                    true_abs_coszen=true_abs_coszen,
+                    spline=self.spline_tables_dict[arb_gradient_param_key][
+                        "nue" if nubar > 0 else "nuebar"
+                    ],
+                    out=nu_flux_nominal[:, 0],
+                )
+
+                # numu(bar)
+                self._eval_spline(
+                    true_log_energy=true_log_energy,
+                    true_abs_coszen=true_abs_coszen,
+                    spline=self.spline_tables_dict[arb_gradient_param_key][
+                        "numu" if nubar > 0 else "numubar"
+                    ],
+                    out=nu_flux_nominal[:, 1],
+                )
+
+                # nutau(bar)
+                # Currently setting to 0 #TODO include nutau flux (e.g. prompt) in splines
+                # SDB - easier to be compatible with honda stage if we just
+                # remove this additional dimension until we want charm
+                # nu_flux_nominal[:, 2].fill(0.0)
+
+                container["mceq_flux_nominal"].mark_changed("host")
+
+
+            # else:
+            #     # Using the Honda flux, which creates nu_flux_nominal and
+            #     # nubar_flux_nominal, which is unnecessary given containers have
+            #     # nubar indicator as well. Map the nubar flux ot the nu flux array
+            #     # to minimize changes required later in this stage
+            #     # TODO - edit the Honda stage so that it just outputs nu_flux_nominal,
+            #     # making this step obsolete?
+            #     if nubar > 0:
+            #         np.copyto(src=container["nu_flux_nominal"].get('host')[:],
+            #          dst=nu_flux_nominal
+            #         )
+            #     elif nubar < 0:
+            #         np.copyto(src=container["nubar_flux_nominal"].get('host')[:],
+            #          dst=nu_flux_nominal
+            #         )
 
             # Tell the smart arrays we've changed the nominal flux values on the host
-            container["nu_flux_nominal"].mark_changed("host")
 
             #
             # Flux gradients
@@ -348,7 +400,8 @@ class pi_mceq_barr(PiStage):
 
                 # nutau(bar)
                 # TODO include nutau flux in splines
-                gradients[:, 2, gradient_param_idx].fill(0.0)
+                # SDB - there is no nutau flux in splines
+                ## gradients[:, 2, gradient_param_idx].fill(0.0)
 
             # Tell the smart arrays we've changed the flux gradient values on the host
             container["gradients"].mark_changed("host")
@@ -438,12 +491,19 @@ class pi_mceq_barr(PiStage):
             # Apply the systematics to the flux
             #
 
+            if self.use_MCEq_nom_flux:
+                flux_key = "mceq_flux_nominal"
+            else:
+                nubar = container["nubar"]
+                if nubar > 0: flux_key = "nu_flux_nominal"
+                elif nubar < 0: flux_key = "nubar_flux_nominal"
+
             apply_sys_vectorized(
                 container["true_energy"].get(WHERE),
                 container["true_coszen"].get(WHERE),
                 delta_index,
                 energy_pivot,
-                container["nu_flux_nominal"].get(WHERE),
+                container[flux_key].get(WHERE),
                 container["gradients"].get(WHERE),
                 self.gradient_params,
                 out=container["nu_flux"].get(WHERE),
@@ -451,6 +511,8 @@ class pi_mceq_barr(PiStage):
             container["nu_flux"].mark_changed(WHERE)
 
             # Check for negative results from spline
+            # TODO - add more spline error/misusage handling
+            # e.g. if events have energy outside spline range throw ERROR
             negative_mask = container["nu_flux"].get("host") < 0
             if np.sum(negative_mask):
                 container["nu_flux"].get("host")[negative_mask] = 0.0
