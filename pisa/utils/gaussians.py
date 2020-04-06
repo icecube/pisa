@@ -7,6 +7,7 @@ Multiple implementations of sum-of-gaussians for compatibility and speed
 
 from __future__ import absolute_import, division
 
+from argparse import ArgumentParser
 from collections.abc import Iterable
 from collections import OrderedDict
 from math import exp, sqrt
@@ -18,7 +19,7 @@ from scipy import stats
 
 from pisa import FTYPE, OMP_NUM_THREADS, NUMBA_CUDA_AVAIL, numba_jit
 from pisa.utils.comparisons import recursiveEquality
-from pisa.utils.log import logging, set_verbosity, tprofile
+from pisa.utils.log import Levels, logging, set_verbosity, tprofile
 
 
 # TODO: if the Numba CUDA functions are defined, then other CUDA (e.g. pycuda)
@@ -296,10 +297,10 @@ if NUMBA_CUDA_AVAIL:
         outbuf[pt_idx] = tot
 
 
-def test_gaussians():
+def test_gaussians(test_perf=False):
     """Test `gaussians` function"""
-    n_gaus = [1, 10, 100, 1000, 10000]
-    n_eval = int(1e4)
+    n_gaus = [1, 10, 100, 1000, 10000] if test_perf else [1, 100]
+    n_eval = int(1e4) if test_perf else int(1e2)
 
     x = np.linspace(-20, 20, n_eval)
     np.random.seed(0)
@@ -369,6 +370,29 @@ def test_gaussians():
     logging.info('<< PASS : test_gaussians >>')
 
 
+def parse_args():
+    """Parse command line arguments"""
+    parser = ArgumentParser()
+    parser.add_argument(
+        '--test-perf',
+        action='store_true',
+        help="""Instead of unit test, run a performance test""",
+    )
+    parser.add_argument(
+        '-v',
+        action='count',
+        default=Levels.WARN,
+        help="""Set verbosity level. Repeat for increased verbosity.""",
+    )
+    return vars(parser.parse_args())
+
+
+def main():
+    """Script wrapper for calling `test_gaussians`"""
+    kwargs = parse_args()
+    set_verbosity(kwargs.pop('v'))
+    test_gaussians(**kwargs)
+
+
 if __name__ == "__main__":
-    set_verbosity(2)
-    test_gaussians()
+    main()

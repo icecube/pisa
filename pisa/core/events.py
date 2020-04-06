@@ -31,7 +31,7 @@ from pisa.utils import hdf
 from pisa.utils.log import logging, set_verbosity
 
 
-__all__ = ['Events', 'Data', 'test_Events', 'test_Data']
+__all__ = ['Events', 'Data', 'test_Events']
 
 __author__ = 'J.L. Lanfranchi, S. Mandalia'
 
@@ -1142,13 +1142,11 @@ def test_Events():
             continue
         assert np.min(events[fi]['true_energy']) < 30
 
-    logging.info(
-        '<< PASS : test_Events >> (note:'
-        ' "[   ERROR] Events object is in an inconsistent state. Reverting cut'
-        ' for all flavInts." message above **is expected**.)')
+    logging.info('<< PASS : test_Events >>')
 
 
-def test_Data():
+# TODO: requires proprietary data; remove dependence on this
+def todo_test_Data():
     """Unit tests for Data class"""
     # Instantiate from LEESARD file - located in $PISA_RESOURCES
     file_loc = 'LEESARD/PRD_extend_finalLevel/12550.pckl'

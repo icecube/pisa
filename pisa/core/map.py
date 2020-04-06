@@ -31,7 +31,7 @@ from uncertainties import unumpy as unp
 
 from pisa import ureg, HASH_SIGFIGS
 from pisa.core.binning import OneDimBinning, MultiDimBinning
-from pisa.utils.comparisons import normQuant, recursiveEquality
+from pisa.utils.comparisons import normQuant, recursiveEquality, ALLCLOSE_KW
 from pisa.utils.flavInt import NuFlavIntGroup
 from pisa.utils.hash import hash_obj
 from pisa.utils import jsons
@@ -647,9 +647,6 @@ class Map(object):
 
         """
         import matplotlib as mpl
-        if (backend is not None
-                and mpl.get_backend().lower() != backend.lower()):
-            mpl.use(backend)
         import matplotlib.pyplot as plt
 
         cmap_seq = plt.cm.inferno
@@ -942,9 +939,14 @@ class Map(object):
         Parameters
         ----------
         method : None or string
-            Valid strings are '', 'none', 'poisson', 'gauss', or
+            Valid strings are '', 'none', 'poisson', 'scaled_poisson', 'gauss', or
             'gauss+poisson'. Strings are case-insensitive and whitespace is
             removed.
+            The 'scaled_poisson' method implements a Scaled Poisson Process, which is 
+            a better approximation than a normal distribution to the true distribution 
+            of bin counts that are the result of a Poisson process with weighted events[1].
+            The fluctuated maps are guaranteed to have the same mean and standard
+            deviation as the original map.
 
         random_state : None or type accepted by utils.random_numbers.get_random_state
 
@@ -956,7 +958,11 @@ class Map(object):
         -------
         fluctuated_map : Map
             New map with entries fluctuated as compared to this map
-
+        
+        References
+        ----------
+        ..  [1] Bohm & Zech, "Statistics of weighted Poisson events and its applications" (2013),
+            https://arxiv.org/abs/1309.1287
         """
         orig = method
         method = str(method).strip().lower().replace(' ', '')
@@ -967,17 +973,54 @@ class Map(object):
                 nan_at = np.isnan(orig_hist)
                 valid_mask = ~nan_at
 
-                hist_vals = np.empty_like(orig_hist, dtype=np.float64)
+                hist_vals = np.empty_like(orig_hist)
                 hist_vals[valid_mask] = poisson.rvs(
                     orig_hist[valid_mask],
                     random_state=random_state
                 )
                 hist_vals[nan_at] = np.nan
 
-                error_vals = np.empty_like(orig_hist, dtype=np.float64)
+                error_vals = np.empty_like(orig_hist)
                 error_vals[valid_mask] = np.sqrt(orig_hist[valid_mask])
                 error_vals[nan_at] = np.nan
             return {'hist': unp.uarray(hist_vals, error_vals)}
+        
+        if method == 'scaled_poisson':
+            random_state = get_random_state(random_state, jumpahead=jumpahead)
+            with np.errstate(invalid='ignore'):
+                orig_hist = self.nominal_values
+                sigma = self.std_devs
+
+                nan_at = np.isnan(orig_hist)
+                zero_at = orig_hist == 0.
+                valid_mask = ~nan_at
+                if np.any(sigma[valid_mask & ~zero_at] == 0.):
+                    logging.warn(
+                        "Some bins have non-zero counts but no assiciated error! "
+                        "All errors will be set to their Poisson expectation now. "
+                        "To avoid this warning, call `set_poisson_errors()` on the "
+                        "map or set non-zero errors manually."
+                    )
+                    sigma[valid_mask] = np.sqrt(orig_hist[valid_mask])
+                variance_valid = sigma[valid_mask]**2
+
+                if np.allclose(variance_valid, orig_hist[valid_mask], **ALLCLOSE_KW):
+                    scale_factor = 1.
+                else:
+                    scale_factor = variance_valid/orig_hist[valid_mask]
+                poisson_lambda = orig_hist[valid_mask]/scale_factor
+
+                hist_vals = np.empty_like(orig_hist)
+                hist_vals[valid_mask] = poisson.rvs(
+                    poisson_lambda,
+                    random_state=random_state
+                )
+                hist_vals[valid_mask] *= scale_factor
+                hist_vals[nan_at] = np.nan
+                hist_vals[zero_at] = 0.
+                # the standard deviation is unchanged
+                sigma[nan_at] = np.nan
+            return {'hist': unp.uarray(hist_vals, sigma)}
 
         elif method == 'gauss+poisson':
             random_state = get_random_state(random_state, jumpahead=jumpahead)

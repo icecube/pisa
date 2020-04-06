@@ -1,4 +1,5 @@
-# pylint: disable = unsubscriptable-object, too-many-function-args, not-callable, unexpected-keyword-arg, no-value-for-parameter
+# pylint: disable=unsubscriptable-object, too-many-function-args, not-callable, unexpected-keyword-arg, no-value-for-parameter, too-many-boolean-expressions
+
 """
 Module for data representation translation methods
 """
@@ -11,25 +12,31 @@ Module for data representation translation methods
 
 from __future__ import absolute_import, print_function, division
 
+from copy import deepcopy
+
 import numpy as np
 from numba import guvectorize, SmartArray, cuda
 
 from pisa import FTYPE, TARGET
 from pisa.core.binning import OneDimBinning, MultiDimBinning
+from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.numba_tools import myjit, WHERE
 from pisa.utils import vectorizer
 
 __all__ = [
     'resample',
-    'get_hist',
     'histogram',
     'lookup',
     'find_index',
-    'resample',
+    'find_index_unsafe',
+    'find_index_cuda',
     'test_histogram',
     'test_find_index',
 ]
+
+
+FX = 'f4' if FTYPE == np.float32 else 'f8'
 
 
 # --------- resampling ------------
@@ -38,50 +45,56 @@ def resample(weights, old_sample, old_binning, new_sample, new_binning):
     """Resample binned data with a given binning into any arbitrary
     `new_binning`
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     weights : SmartArray
 
     old_sample : list of SmartArrays
 
     old_binning : PISA MultiDimBinning
 
-    inew_sample : list of SmartArrays
+    new_sample : list of SmartArrays
 
     new_binning : PISA MultiDimBinning
 
+    Returns
+    -------
+    new_hist_vals
+
     """
-    # make sure thw two binning have the same dimensions!
-    assert old_binning.names == new_binning.names, 'cannot translate betwen %s and %s'%(old_binning, new_binning)
+    if old_binning.names != new_binning.names:
+        raise ValueError(f'cannot translate betwen {old_binning} and {new_binning}')
 
-    # this is a two step process, first histogram the weights into the new binning:
+    # This is a two step process: first histogram the weights into the new binning
     # and keep the flat_hist_counts
-    if TARGET == 'cuda':
-        flat_hist = get_hist_gpu(old_sample, weights, new_binning, apply_weights=True)
-        flat_hist_counts = get_hist_gpu(old_sample, weights, new_binning, apply_weights=False)
-    else:
-        #print(old_sample[0].get('host'))
-        #print(weights.get('host'))
-        flat_hist = get_hist_np(old_sample, weights, new_binning, apply_weights=True)
-        flat_hist_counts = get_hist_np(old_sample, weights, new_binning, apply_weights=False)
-    vectorizer.divide(flat_hist_counts, flat_hist)
 
-    # now do the inverse, a lookup
-    lookup_flat_hist = lookup(new_sample, weights, old_binning)
+    hist_func = histogram_gpu if TARGET == 'cuda' else histogram_np
+
+    flat_hist = hist_func(old_sample, weights, new_binning, apply_weights=True)
+    flat_hist_counts = hist_func(old_sample, weights, new_binning, apply_weights=False)
+    vectorizer.itruediv(flat_hist_counts, out=flat_hist)
+
+    # now do the inverse, a lookup of hist vals at `new_sample` points
+    new_hist_vals = lookup(new_sample, weights, old_binning)
 
     # Now, for bin we have 1 or less counts, take the lookedup value instead:
-    vectorizer.replace(flat_hist_counts, 1, flat_hist, out=lookup_flat_hist)
+    vectorizer.replace_where_counts_gt(
+        vals=flat_hist,
+        counts=flat_hist_counts,
+        min_count=1,
+        out=new_hist_vals,
+    )
 
-    return lookup_flat_hist
+    return new_hist_vals
 
 
 # --------- histogramming methods ---------------
 
-def get_hist(sample, weights, binning, averaged):
+def histogram(sample, weights, binning, averaged):
     """Histogram `sample` points, weighting by `weights`, according to `binning`.
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     sample : list of SmartArrays
 
     weights : SmartArray
@@ -95,35 +108,28 @@ def get_hist(sample, weights, binning, averaged):
         probability*count per bin
 
     """
-    if TARGET == 'cuda':
-        flat_hist = get_hist_gpu(sample, weights, binning, apply_weights=True)
-        if averaged:
-            flat_hist_counts = get_hist_gpu(sample, weights, binning, apply_weights=False)
-    else:
-        flat_hist = get_hist_np(sample, weights, binning, apply_weights=True)
-        if averaged:
-            flat_hist_counts = get_hist_np(sample, weights, binning, apply_weights=False)
+    hist_func = histogram_gpu if TARGET == 'cuda' else histogram_np
+
+    flat_hist = hist_func(sample, weights, binning, apply_weights=True)
+
     if averaged:
-        #print(flat_hist_counts.get('host').shape)
-        #print(flat_hist.get('host').shape)
-        vectorizer.divide(flat_hist_counts, flat_hist)
+        flat_hist_counts = hist_func(sample, weights, binning, apply_weights=False)
+        vectorizer.itruediv(flat_hist_counts, out=flat_hist)
+
     return flat_hist
 
 
-def histogram(sample, weights, binning, averaged):
-    return get_hist(sample, weights, binning, averaged)
+def histogram_gpu(sample, weights, binning, apply_weights=True):  # pylint: disable=missing-docstring
+    binning = MultiDimBinning(binning)
 
-histogram.__doc__ = get_hist.__doc__
-
-
-def get_hist_gpu(sample, weights, binning, apply_weights=True):
-    # ToDo:
-    # * make for d > 3
+    # TODO: make for d > 3
     if binning.num_dims in [2, 3]:
         bin_edges = [edges.magnitude for edges in binning.bin_edges]
         if len(weights.shape) > 1:
             # so we have arrays
-            flat_hist = SmartArray(np.zeros((binning.size, weights.shape[1]), dtype=FTYPE))
+            flat_hist = SmartArray(
+                np.zeros(shape=(binning.size, weights.shape[1]), dtype=FTYPE)
+            )
             arrays = True
         else:
             flat_hist = SmartArray(np.zeros(binning.size, dtype=FTYPE))
@@ -181,14 +187,16 @@ def get_hist_gpu(sample, weights, binning, apply_weights=True):
         return flat_hist
     else:
         raise NotImplementedError(
-            'Other dimesnions that 2 and 3 on the GPU not supported right now'
+            'Dimensionality other than 2 or 3 not supported on the GPU'
         )
 
-get_hist_gpu.__doc__ = get_hist.__doc__
+histogram_gpu.__doc__ = histogram.__doc__
 
 
-def get_hist_np(sample, weights, binning, apply_weights=True):
-    """helper function for numoy historams"""
+def histogram_np(sample, weights, binning, apply_weights=True):  # pylint: disable=missing-docstring
+    """helper function for numpy historams"""
+    binning = MultiDimBinning(binning)
+
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
     sample = [s.get('host') for s in sample]
     weights = weights.get('host')
@@ -207,109 +215,170 @@ def get_hist_np(sample, weights, binning, apply_weights=True):
     return SmartArray(flat_hist.astype(FTYPE))
 
 
-# TODO: can we do just n-dimensional? And scalars or arbitrary array shapes? This is so ugly :/
-# Furthermore: optimize using shared memory
+# TODO: can we do just n-dimensional? And scalars or arbitrary array shapes?
+# TODO: optimize using shared memory
 @cuda.jit
-def histogram_2d_kernel(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights, apply_weights):
+def histogram_2d_kernel(
+    sample_x,
+    sample_y,
+    flat_hist,
+    bin_edges_x,
+    bin_edges_y,
+    weights,
+    apply_weights,
+):
     i = cuda.grid(1)
     if i < sample_x.size:
-        if (sample_x[i] >= bin_edges_x[0]
-                and sample_x[i] <= bin_edges_x[-1]
-                and sample_y[i] >= bin_edges_y[0]
-                and sample_y[i] <= bin_edges_y[-1]):
-            idx_x = find_index(sample_x[i], bin_edges_x)
-            idx_y = find_index(sample_y[i], bin_edges_y)
+        if (
+            sample_x[i] >= bin_edges_x[0]
+            and sample_x[i] <= bin_edges_x[-1]
+            and sample_y[i] >= bin_edges_y[0]
+            and sample_y[i] <= bin_edges_y[-1]
+        ):
+            idx_x = find_index_unsafe(sample_x[i], bin_edges_x)
+            idx_y = find_index_unsafe(sample_y[i], bin_edges_y)
             idx = idx_x * (bin_edges_y.size - 1) + idx_y
             if apply_weights:
                 cuda.atomic.add(flat_hist, idx, weights[i])
             else:
                 cuda.atomic.add(flat_hist, idx, 1.)
+        # else: outside of binning or nan; nothing to do
 
 
 @cuda.jit
-def histogram_2d_kernel_arrays(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights, apply_weights):
+def histogram_2d_kernel_arrays(
+    sample_x,
+    sample_y,
+    flat_hist,
+    bin_edges_x,
+    bin_edges_y,
+    weights,
+    apply_weights,
+):
     i = cuda.grid(1)
     if i < sample_x.size:
-        if (sample_x[i] >= bin_edges_x[0]
-                and sample_x[i] <= bin_edges_x[-1]
-                and sample_y[i] >= bin_edges_y[0]
-                and sample_y[i] <= bin_edges_y[-1]):
-            idx_x = find_index(sample_x[i], bin_edges_x)
-            idx_y = find_index(sample_y[i], bin_edges_y)
+        if (
+            sample_x[i] >= bin_edges_x[0]
+            and sample_x[i] <= bin_edges_x[-1]
+            and sample_y[i] >= bin_edges_y[0]
+            and sample_y[i] <= bin_edges_y[-1]
+        ):
+            idx_x = find_index_unsafe(sample_x[i], bin_edges_x)
+            idx_y = find_index_unsafe(sample_y[i], bin_edges_y)
             idx = idx_x * (bin_edges_y.size - 1) + idx_y
             for j in range(flat_hist.shape[1]):
                 if apply_weights:
                     cuda.atomic.add(flat_hist, (idx, j), weights[i, j])
                 else:
                     cuda.atomic.add(flat_hist, (idx, j), 1.)
+        # else: outside of binning or nan; nothing to do
 
 
 @cuda.jit
-def histogram_3d_kernel(sample_x, sample_y, sample_z, flat_hist, bin_edges_x, bin_edges_y, bin_edges_z, weights, apply_weights):
+def histogram_3d_kernel(
+    sample_x,
+    sample_y,
+    sample_z,
+    flat_hist,
+    bin_edges_x,
+    bin_edges_y,
+    bin_edges_z,
+    weights,
+    apply_weights,
+):
     i = cuda.grid(1)
     if i < sample_x.size:
-        if (sample_x[i] >= bin_edges_x[0]
-                and sample_x[i] <= bin_edges_x[-1]
-                and sample_y[i] >= bin_edges_y[0]
-                and sample_y[i] <= bin_edges_y[-1]
-                and sample_z[i] >= bin_edges_z[0]
-                and sample_z[i] <= bin_edges_z[-1]):
-            idx_x = find_index(sample_x[i], bin_edges_x)
-            idx_y = find_index(sample_y[i], bin_edges_y)
-            idx_z = find_index(sample_z[i], bin_edges_z)
-            idx = idx_x * (bin_edges_y.size - 1) * (bin_edges_z.size - 1) + idx_y * (bin_edges_z.size - 1) + idx_z
+        if (
+            sample_x[i] >= bin_edges_x[0]
+            and sample_x[i] <= bin_edges_x[-1]
+            and sample_y[i] >= bin_edges_y[0]
+            and sample_y[i] <= bin_edges_y[-1]
+            and sample_z[i] >= bin_edges_z[0]
+            and sample_z[i] <= bin_edges_z[-1]
+        ):
+            idx_x = find_index_unsafe(sample_x[i], bin_edges_x)
+            idx_y = find_index_unsafe(sample_y[i], bin_edges_y)
+            idx_z = find_index_unsafe(sample_z[i], bin_edges_z)
+            idx = (
+                idx_x * (bin_edges_y.size - 1) * (bin_edges_z.size - 1)
+                + idx_y * (bin_edges_z.size - 1)
+                + idx_z
+            )
             if apply_weights:
                 cuda.atomic.add(flat_hist, idx, weights[i])
             else:
                 cuda.atomic.add(flat_hist, idx, 1.)
+        # else: outside of binning or nan; nothing to do
 
 
 @cuda.jit
-def histogram_3d_kernel_arrays(sample_x, sample_y, sample_z, flat_hist, bin_edges_x, bin_edges_y, bin_edges_z, weights, apply_weights):
+def histogram_3d_kernel_arrays(
+    sample_x,
+    sample_y,
+    sample_z,
+    flat_hist,
+    bin_edges_x,
+    bin_edges_y,
+    bin_edges_z,
+    weights,
+    apply_weights,
+):
     i = cuda.grid(1)
     if i < sample_x.size:
-        if (sample_x[i] >= bin_edges_x[0]
-                and sample_x[i] <= bin_edges_x[-1]
-                and sample_y[i] >= bin_edges_y[0]
-                and sample_y[i] <= bin_edges_y[-1]
-                and sample_z[i] >= bin_edges_z[0]
-                and sample_z[i] <= bin_edges_z[-1]):
-            idx_x = find_index(sample_x[i], bin_edges_x)
-            idx_y = find_index(sample_y[i], bin_edges_y)
-            idx_z = find_index(sample_z[i], bin_edges_z)
-            idx = idx_x * (bin_edges_y.size - 1) * (bin_edges_z.size - 1) + idx_y * (bin_edges_z.size - 1) + idx_z
+        if (
+            sample_x[i] >= bin_edges_x[0]
+            and sample_x[i] <= bin_edges_x[-1]
+            and sample_y[i] >= bin_edges_y[0]
+            and sample_y[i] <= bin_edges_y[-1]
+            and sample_z[i] >= bin_edges_z[0]
+            and sample_z[i] <= bin_edges_z[-1]
+        ):
+            idx_x = find_index_unsafe(sample_x[i], bin_edges_x)
+            idx_y = find_index_unsafe(sample_y[i], bin_edges_y)
+            idx_z = find_index_unsafe(sample_z[i], bin_edges_z)
+            idx = (
+                idx_x * (bin_edges_y.size - 1) * (bin_edges_z.size - 1)
+                + idx_y * (bin_edges_z.size - 1)
+                + idx_z
+            )
             for j in range(flat_hist.shape[1]):
                 if apply_weights:
                     cuda.atomic.add(flat_hist, (idx, j), weights[i, j])
                 else:
                     cuda.atomic.add(flat_hist, (idx, j), 1.)
+        # else: outside of binning or nan; nothing to do
 
 
 # ---------- Lookup methods ---------------
 
 def lookup(sample, flat_hist, binning):
-    """The inverse of histograming
+    """The inverse of histograming: Extract the histogram values at `sample`
+    points.
 
-    Paramters
-    --------
-    sample : list of SmartArrays
-
+    Parameters
+    ----------
+    sample : num_dims list of length-num_samples SmartArrays
+        Points at which to find histogram's values
     flat_hist : SmartArray
+        Histogram values
+    binning : num_dims MultiDimBinning
+        Histogram's binning
 
-    binning : PISA MultiDimBinning
+    Returns
+    -------
+    hist_vals : len-num_samples SmartArray
 
     Notes
     -----
-    this is only a 2d method right now
+    Only handles 2d and 3d right now
 
     """
-    #print(binning)
     assert binning.num_dims in [2, 3], 'can only do 2d and 3d at the moment'
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
-    # todo: directly return smart array
+    # TODO: directly return smart array
     if flat_hist.ndim == 1:
         #print 'looking up 1D'
-        array = SmartArray(np.zeros_like(sample[0]))
+        hist_vals = SmartArray(np.zeros_like(sample[0]))
         if binning.num_dims == 2:
             lookup_vectorized_2d(
                 sample[0].get(WHERE),
@@ -317,7 +386,7 @@ def lookup(sample, flat_hist, binning):
                 flat_hist.get(WHERE),
                 bin_edges[0],
                 bin_edges[1],
-                out=array.get(WHERE),
+                out=hist_vals.get(WHERE),
             )
         elif binning.num_dims == 3:
             lookup_vectorized_3d(
@@ -328,11 +397,13 @@ def lookup(sample, flat_hist, binning):
                 bin_edges[0],
                 bin_edges[1],
                 bin_edges[2],
-                out=array.get(WHERE),
+                out=hist_vals.get(WHERE),
             )
     elif flat_hist.ndim == 2:
         #print 'looking up ND'
-        array = SmartArray(np.zeros((sample[0].size, flat_hist.shape[1]), dtype=FTYPE))
+        hist_vals = SmartArray(
+            np.zeros((sample[0].size, flat_hist.shape[1]), dtype=FTYPE)
+        )
         if binning.num_dims == 2:
             lookup_vectorized_2d_arrays(
                 sample[0].get(WHERE),
@@ -340,7 +411,7 @@ def lookup(sample, flat_hist, binning):
                 flat_hist.get(WHERE),
                 bin_edges[0],
                 bin_edges[1],
-                out=array.get(WHERE),
+                out=hist_vals.get(WHERE),
             )
         elif binning.num_dims == 3:
             lookup_vectorized_3d_arrays(
@@ -351,192 +422,447 @@ def lookup(sample, flat_hist, binning):
                 bin_edges[0],
                 bin_edges[1],
                 bin_edges[2],
-                out=array.get(WHERE),
+                out=hist_vals.get(WHERE),
             )
     else:
         raise NotImplementedError()
-    array.mark_changed(WHERE)
-    return array
+
+    hist_vals.mark_changed(WHERE)
+
+    return hist_vals
 
 
 @myjit
-def find_index(x, bin_edges):
-    """simple binary search
+def find_index(val, bin_edges):
+    """Find index in binning for `val`. If `val` is below binning range or is
+    nan, return -1; if `val` is above binning range, return num_bins. Edge
+    inclusivity/exclusivity is defined as .. ::
 
-    direct transformations instead of search
+        [ bin 0 ) [ bin 1 ) ... [ bin num_bins-1 ]
+
+    Using these indices to produce histograms should yield identical results
+    (ignoring underflow and overflow, which `find_index` has) that are
+    equivalent to those produced by ``numpy.histogramdd``.
+
+    Parameters
+    ----------
+    val : scalar
+        Value for which to find bin index
+
+    bin_edges : 1d numpy ndarray of 2 or more scalars
+        Must be monotonically increasing, and all bins are assumed to be
+        adjacent
+
+    Returns
+    -------
+    bin_idx : int in [-1, num_bins]
+        -1 is returned for underflow or if `val` is nan. `num_bins` is returned
+        for overflow. Otherwise, for bin_edges[0] <= `val` <= bin_edges[-1],
+        0 <= `bin_idx` <= num_bins - 1
+
     """
-    # TODO: support lin and log binnings with
+    # TODO: support fast computation for lin and log binnings?
 
-    #
-    # First check: ouside binning
-    #
-    if x < bin_edges[0]:
-        return -1
-    elif x > bin_edges[-1]:
-        return len(bin_edges) - 1
-    else:
-        #
-        # Now handle middle cases
-        #
-        first = 0
-        last = len(bin_edges) - 1
-        while first <= last:
-            i = int((first + last)/2)
-            if x > bin_edges[i]:
+    num_edges = len(bin_edges)
+    num_bins = num_edges - 1
+    assert num_bins >= 1, 'bin_edges must define at least one bin'
 
-                if x <= bin_edges[i+1]:
-                    break
-                else:
-                    first = i + 1
-            else:
-                last = i - 1
+    underflow_idx = -1
+    overflow_idx = num_bins
 
-    return i
+    if val >= bin_edges[0]:
+        if val <= bin_edges[-1]:
+            bin_idx = find_index_unsafe(val, bin_edges)
+            # Paranoia: In case of unforseen numerical issues, force clipping of
+            # returned bin index to [0, num_bins - 1] (any `val` outside of binning
+            # is already handled, so this should be valid)
+            bin_idx = min(max(0, bin_idx), num_bins - 1)
+        else:
+            bin_idx = overflow_idx
+    else:  # either value is below first bin or is NaN
+        bin_idx = underflow_idx
+
+    return bin_idx
 
 
-if FTYPE == np.float32:
-    _SIGNATURE = ['(f4[:], f4[:], f4[:], f4[:], f4[:], f4[:])']
-else:
-    _SIGNATURE = ['(f8[:], f8[:], f8[:], f8[:], f8[:], f8[:])']
+@myjit
+def find_index_unsafe(val, bin_edges):
+    """Find bin index of `val` within binning defined by `bin_edges`.
 
-@guvectorize(_SIGNATURE, '(), (), (j), (k), (l)->()', target=TARGET)
-def lookup_vectorized_2d(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights):
+    Validity of `val` and `bin_edges` is not checked.
+
+    Parameters
+    ----------
+    val : scalar
+        Assumed to be within range of `bin_edges` (including lower and upper
+        bin edges)
+    bin_edges : array
+
+    Returns
+    -------
+    index
+
+    See also
+    --------
+    find_index : includes bounds checking and handling of special cases
+
+    """
+    # Initialize to point to left-most edge
+    left_edge_idx = 0
+
+    # Initialize to point to right-most edge
+    right_edge_idx = len(bin_edges) - 1
+
+    while left_edge_idx < right_edge_idx:
+        # See where value falls w.r.t. an edge ~midway between left and right edges
+        # ``>> 1``: integer division by 2 (i.e., divide w/ truncation)
+        test_edge_idx = (left_edge_idx + right_edge_idx) >> 1
+
+        # ``>=``: bin left edges are inclusive
+        if val >= bin_edges[test_edge_idx]:
+            left_edge_idx = test_edge_idx + 1
+        else:
+            right_edge_idx = test_edge_idx
+
+    # break condition of while loop is that left_edge_idx points to the
+    # right edge of the bin that `val` is inside of; that is one more than
+    # that _bin's_ index
+    return left_edge_idx - 1
+
+
+@cuda.jit
+def find_index_cuda(val, bin_edges, out):
+    """CUDA wrapper of `find_index` kernel e.g. for running tests on GPU
+
+    Parameters
+    ----------
+    val : array
+    bin_edges : array
+    out : array of same size as `val`
+        Results are stored to `out`
+
+    """
+    i = cuda.grid(1)
+    if i < val.size:
+        out[i] = find_index(val[i], bin_edges)
+
+
+@guvectorize(
+    [f'({FX}[:], {FX}[:], {FX}[:], {FX}[:], {FX}[:], {FX}[:])'],
+    '(), (), (j), (k), (l) -> ()',
+    target=TARGET,
+)
+def lookup_vectorized_2d(
+    sample_x,
+    sample_y,
+    flat_hist,
+    bin_edges_x,
+    bin_edges_y,
+    weights,
+):
     """Vectorized gufunc to perform the lookup"""
-    sample_x_ = sample_x[0]
-    sample_y_ = sample_y[0]
-
-    if (sample_x_ >= bin_edges_x[0]
-            and sample_x_ <= bin_edges_x[-1]
-            and sample_y_ >= bin_edges_y[0]
-            and sample_y_ <= bin_edges_y[-1]):
-        idx_x = find_index(sample_x_, bin_edges_x)
-        idx_y = find_index(sample_y_, bin_edges_y)
-        idx = idx_x*(len(bin_edges_y)-1) + idx_y
+    x = sample_x[0]
+    y = sample_y[0]
+    if (
+        x >= bin_edges_x[0]
+        and x <= bin_edges_x[-1]
+        and y >= bin_edges_y[0]
+        and y <= bin_edges_y[-1]
+    ):
+        idx_x = find_index_unsafe(x, bin_edges_x)
+        idx_y = find_index_unsafe(y, bin_edges_y)
+        idx = idx_x * (len(bin_edges_y) - 1) + idx_y
         weights[0] = flat_hist[idx]
-    else:
+    else:  # outside of binning or nan
         weights[0] = 0.
 
 
-if FTYPE == np.float32:
-    _SIGNATURE = ['(f4[:], f4[:], f4[:, :], f4[:], f4[:], f4[:])']
-else:
-    _SIGNATURE = ['(f8[:], f8[:], f8[:, :], f8[:], f8[:], f8[:])']
-
-@guvectorize(_SIGNATURE, '(), (), (j, d), (k), (l)->(d)', target=TARGET)
-def lookup_vectorized_2d_arrays(sample_x, sample_y, flat_hist, bin_edges_x, bin_edges_y, weights):
+@guvectorize(
+    [f'({FX}[:], {FX}[:], {FX}[:, :], {FX}[:], {FX}[:], {FX}[:])'],
+    '(), (), (j, d), (k), (l) -> (d)',
+    target=TARGET,
+)
+def lookup_vectorized_2d_arrays(
+    sample_x,
+    sample_y,
+    flat_hist,
+    bin_edges_x,
+    bin_edges_y,
+    weights,
+):
     """Vectorized gufunc to perform the lookup while flat hist and weights have
     both a second dimension
     """
-    sample_x_ = sample_x[0]
-    sample_y_ = sample_y[0]
-    if (sample_x_ >= bin_edges_x[0]
-            and sample_x_ <= bin_edges_x[-1]
-            and sample_y_ >= bin_edges_y[0]
-            and sample_y_ <= bin_edges_y[-1]):
-        idx_x = find_index(sample_x_, bin_edges_x)
-        idx_y = find_index(sample_y_, bin_edges_y)
-        idx = idx_x*(len(bin_edges_y)-1) + idx_y
+    x = sample_x[0]
+    y = sample_y[0]
+    if (
+        x >= bin_edges_x[0]
+        and x <= bin_edges_x[-1]
+        and y >= bin_edges_y[0]
+        and y <= bin_edges_y[-1]
+    ):
+        idx_x = find_index_unsafe(x, bin_edges_x)
+        idx_y = find_index_unsafe(y, bin_edges_y)
+        idx = idx_x * (len(bin_edges_y) - 1) + idx_y
         for i in range(weights.size):
             weights[i] = flat_hist[idx, i]
-    else:
+    else:  # outside of binning or nan
         for i in range(weights.size):
             weights[i] = 0.
 
 
-if FTYPE == np.float32:
-    _SIGNATURE = ['(f4[:], f4[:], f4[:], f4[:], f4[:], f4[:], f4[:], f4[:])']
-else:
-    _SIGNATURE = ['(f8[:], f8[:], f8[:], f8[:], f8[:], f8[:], f8[:], f8[:])']
-
-@guvectorize(_SIGNATURE, '(), (), (), (j), (k), (l), (m)->()', target=TARGET)
-def lookup_vectorized_3d(sample_x, sample_y, sample_z, flat_hist, bin_edges_x, bin_edges_y, bin_edges_z, weights):
+@guvectorize(
+    [f'({FX}[:], {FX}[:], {FX}[:], {FX}[:], {FX}[:], {FX}[:], {FX}[:], {FX}[:])'],
+    '(), (), (), (j), (k), (l), (m) -> ()',
+    target=TARGET,
+)
+def lookup_vectorized_3d(
+    sample_x,
+    sample_y,
+    sample_z,
+    flat_hist,
+    bin_edges_x,
+    bin_edges_y,
+    bin_edges_z,
+    weights,
+):
     """Vectorized gufunc to perform the lookup"""
-    sample_x_ = sample_x[0]
-    sample_y_ = sample_y[0]
-    sample_z_ = sample_z[0]
-    if (sample_x_ >= bin_edges_x[0]
-            and sample_x_ <= bin_edges_x[-1]
-            and sample_y_ >= bin_edges_y[0]
-            and sample_y_ <= bin_edges_y[-1]
-            and sample_z_ >= bin_edges_z[0]
-            and sample_z_ <= bin_edges_z[-1]):
-        idx_x = find_index(sample_x_, bin_edges_x)
-        idx_y = find_index(sample_y_, bin_edges_y)
-        idx_z = find_index(sample_z_, bin_edges_z)
-        idx = (idx_x*(len(bin_edges_y)-1) + idx_y)*(len(bin_edges_z)-1) + idx_z
+    x = sample_x[0]
+    y = sample_y[0]
+    z = sample_z[0]
+    if (
+        x >= bin_edges_x[0]
+        and x <= bin_edges_x[-1]
+        and y >= bin_edges_y[0]
+        and y <= bin_edges_y[-1]
+        and z >= bin_edges_z[0]
+        and z <= bin_edges_z[-1]
+    ):
+        idx_x = find_index_unsafe(x, bin_edges_x)
+        idx_y = find_index_unsafe(y, bin_edges_y)
+        idx_z = find_index_unsafe(z, bin_edges_z)
+        idx = (idx_x * (len(bin_edges_y) - 1) + idx_y) * (len(bin_edges_z) - 1) + idx_z
         weights[0] = flat_hist[idx]
-    else:
+    else:  # outside of binning or nan
         weights[0] = 0.
 
 
-if FTYPE == np.float32:
-    _SIGNATURE = ['(f4[:], f4[:], f4[:], f4[:, :], f4[:], f4[:], f4[:], f4[:])']
-else:
-    _SIGNATURE = ['(f8[:], f8[:], f8[:], f8[:, :], f8[:], f8[:], f8[:], f8[:])']
-
-@guvectorize(_SIGNATURE, '(), (), (), (j, d), (k), (l), (m)->(d)', target=TARGET)
-def lookup_vectorized_3d_arrays(sample_x, sample_y, sample_z, flat_hist, bin_edges_x, bin_edges_y, bin_edges_z, weights):
+@guvectorize(
+    [f'({FX}[:], {FX}[:], {FX}[:], {FX}[:, :], {FX}[:], {FX}[:], {FX}[:], {FX}[:])'],
+    '(), (), (), (j, d), (k), (l), (m) -> (d)',
+    target=TARGET,
+)
+def lookup_vectorized_3d_arrays(
+    sample_x,
+    sample_y,
+    sample_z,
+    flat_hist,
+    bin_edges_x,
+    bin_edges_y,
+    bin_edges_z,
+    weights,
+):
     """Vectorized gufunc to perform the lookup while flat hist and weights have
     both a second dimension"""
-    sample_x_ = sample_x[0]
-    sample_y_ = sample_y[0]
-    sample_z_ = sample_z[0]
-    if (sample_x_ >= bin_edges_x[0]
-            and sample_x_ <= bin_edges_x[-1]
-            and sample_y_ >= bin_edges_y[0]
-            and sample_y_ <= bin_edges_y[-1]
-            and sample_z_ >= bin_edges_z[0]
-            and sample_z_ <= bin_edges_z[-1]):
-        idx_x = find_index(sample_x_, bin_edges_x)
-        idx_y = find_index(sample_y_, bin_edges_y)
-        idx_z = find_index(sample_z_, bin_edges_z)
-        idx = (idx_x*(len(bin_edges_y)-1) + idx_y)*(len(bin_edges_z)-1) + idx_z
+    x = sample_x[0]
+    y = sample_y[0]
+    z = sample_z[0]
+    if (
+        x >= bin_edges_x[0]
+        and x <= bin_edges_x[-1]
+        and y >= bin_edges_y[0]
+        and y <= bin_edges_y[-1]
+        and z >= bin_edges_z[0]
+        and z <= bin_edges_z[-1]
+    ):
+        idx_x = find_index_unsafe(x, bin_edges_x)
+        idx_y = find_index_unsafe(y, bin_edges_y)
+        idx_z = find_index_unsafe(z, bin_edges_z)
+        idx = (idx_x * (len(bin_edges_y) - 1) + idx_y) * (len(bin_edges_z) - 1) + idx_z
         for i in range(weights.size):
             weights[i] = flat_hist[idx, i]
-    else:
+    else:  # outside of binning or nan
         for i in range(weights.size):
             weights[i] = 0.
 
 
 def test_histogram():
-    """Unit tests for `histogram` function"""
-    n_evts = 100
-    x = np.arange(n_evts, dtype=FTYPE)
-    y = np.arange(n_evts, dtype=FTYPE)
-    w = np.ones(n_evts, dtype=FTYPE)
+    """Unit tests for `histogram` function.
 
-    x = SmartArray(x)
-    y = SmartArray(y)
-    w = SmartArray(w)
+    Correctness is defined as matching the histogram produced by
+    numpy.histogramdd.
+    """
+    all_num_bins = [2, 3, 4]
+    n_evts = 10000
+    rand = np.random.RandomState(seed=0)
 
-    binning_x = OneDimBinning(name='x', num_bins=10, is_lin=True, domain=[0, 100])
-    binning_y = OneDimBinning(name='y', num_bins=10, is_lin=True, domain=[0, 100])
-    binning = MultiDimBinning([binning_x, binning_y])
+    weights = SmartArray(rand.rand(n_evts).astype(FTYPE))
+    binning = []
+    sample = []
+    for num_dims, num_bins in enumerate(all_num_bins, start=1):
+        binning.append(
+            OneDimBinning(
+                name=f'dim{num_dims - 1}',
+                num_bins=num_bins,
+                is_lin=True,
+                domain=[0, num_bins],
+            )
+        )
 
-    histo = histogram(sample=[x, y], weights=w, binning=binning, averaged=False).get()
-    assert np.array_equal(
-        histo.reshape(10, 10),
-        np.diag(np.full(shape=10, fill_value=10))
-    ), str(histo.reshape(10, 10))
+        sample.append(
+            SmartArray(rand.rand(n_evts).astype(FTYPE) * num_bins)
+        )
 
-    histo = histogram(sample=[x, y], weights=w, binning=binning, averaged=True).get()
-    assert np.array_equal(histo.reshape(10, 10), np.diag(np.ones(10))), str(histo.reshape(10, 10))
+        if TARGET == "cuda" and num_dims == 1:
+            continue
+
+        bin_edges = [b.edge_magnitudes for b in binning]
+        test = histogram(sample, weights, binning, averaged=False).get()
+        ref, _ = np.histogramdd(sample=sample, bins=bin_edges, weights=weights)
+        ref = ref.astype(FTYPE).ravel()
+        assert recursiveEquality(test, ref), f'\ntest:\n{test}\n\nref:\n{ref}'
+
+        test_avg = histogram(sample, weights, binning, averaged=True).get()
+        ref_counts, _ = np.histogramdd(sample=sample, bins=bin_edges, weights=None)
+        ref_counts = ref_counts.astype(FTYPE).ravel()
+        ref_avg = (ref / ref_counts).astype(FTYPE)
+        assert recursiveEquality(test_avg, ref_avg), \
+                f'\ntest_avg:\n{test_avg}\n\nref_avg:\n{ref_avg}'
 
     logging.info('<< PASS : test_histogram >>')
 
+
 def test_find_index():
-    """Unit tests for `find_index` function"""
-    #
-    # Testing find_index
-    #
-    bin_edges = np.array([0., 1., 2., 3., 4.])
+    """Unit tests for `find_index` function.
 
-    test_value = np.array([-3., 0., 1., 3.5, 2., 3., 4., 4.5])
+    Correctness is defined as producing the same histogram as numpy.histogramdd
+    by using the output of `find_index` (ignoring underflow and overflow values).
+    Additionally, -1 should be returned if a value is below the range
+    (underflow) or is nan, and num_bins should be returned for a value above
+    the range (overflow).
+    """
+    # Negative, positive, integer, non-integer, binary-unrepresentable (0.1) edges
+    basic_bin_edges = [-1, -0.5, -0.1, 0, 0.1, 0.5, 1, 2, 3, 4]
 
-    expected_indices = np.array([-1, 0, 0, 3, 1, 2, 3, 4])
-    indices = [find_index(x, bin_edges) for x in test_value]
+    failures = 0
+    for basic_bin_edges in [
+        # Negative, positive, integer, non-integer, binary-unrepresentable (0.1) edges
+        [-1, -0.5, -0.1, 0, 0.1, 0.5, 1, 2, 3, 4],
 
-    assert np.array_equal(indices, expected_indices)
+        # A single infinite bin: [-np.inf, np.inf]
+        [],
+
+        # Half-infinite bins (lower or upper edge) & [-inf, .1, +inf]
+        [0.1],
+
+        # Single bin with finite edges & +/-inf-edge(s)-added variants
+        [-0.1, 0.1],
+    ]:
+        # Bin edges from above, w/ and w/o +/-inf as left and/or right edges
+        for le, re in [
+            (None, None),
+            (-np.inf, None),
+            (None, np.inf),
+            (-np.inf, np.inf)
+        ]:
+            bin_edges = deepcopy(basic_bin_edges)
+            if le is not None:
+                bin_edges = [le] + bin_edges
+            if re is not None:
+                bin_edges = bin_edges + [re]
+            if len(bin_edges) < 2:
+                continue
+            logging.debug('bin_edges being tested: %s', bin_edges)
+            bin_edges = SmartArray(np.array(bin_edges, dtype=FTYPE))
+
+            num_bins = len(bin_edges) - 1
+            underflow_idx = -1
+            overflow_idx = num_bins
+
+            #
+            # Construct test values to try out
+            #
+
+            non_finite_vals = [-np.inf, +np.inf, np.nan]
+
+            # Values within bins (i.e., not on edges)
+            inbin_vals = []
+            for idx in range(len(bin_edges) - 1):
+                lower_be = bin_edges[idx]
+                upper_be = bin_edges[idx + 1]
+                if np.isfinite(lower_be):
+                    if np.isfinite(upper_be):
+                        inbin_val = (lower_be + upper_be) / 2
+                    else:
+                        inbin_val = lower_be + 10.5
+                else:
+                    if np.isfinite(upper_be):
+                        inbin_val = upper_be - 10.5
+                    else:
+                        inbin_val = 10.5
+                inbin_vals.append(inbin_val)
+
+            # Values above/below bin edges by one unit of floating point
+            # accuracy
+            eps = np.finfo(FTYPE).eps  # pylint: disable=no-member
+            below_edges_vals = [FTYPE((1 - eps)*be) for be in bin_edges]
+            above_edges_vals = [FTYPE((1 + eps)*be) for be in bin_edges]
+
+            test_vals = np.concatenate(
+                [
+                    non_finite_vals,
+                    bin_edges,
+                    inbin_vals,
+                    below_edges_vals,
+                    above_edges_vals,
+                ]
+            )
+            logging.trace('test_vals = %s', test_vals)
+
+            #
+            # Run tests
+            #
+            for val in test_vals:
+                val = FTYPE(val)
+
+                np_histvals, _ = np.histogramdd([val], np.atleast_2d(bin_edges))
+                nonzero_indices = np.nonzero(np_histvals)[0]  # select first & only dim
+                if np.isnan(val):
+                    assert len(nonzero_indices) == 0, str(len(nonzero_indices))
+                    expected_idx = underflow_idx
+                elif val < bin_edges[0]:
+                    assert len(nonzero_indices) == 0, str(len(nonzero_indices))
+                    expected_idx = underflow_idx
+                elif val > bin_edges[-1]:
+                    assert len(nonzero_indices) == 0, str(len(nonzero_indices))
+                    expected_idx = overflow_idx
+                else:
+                    assert len(nonzero_indices) == 1, str(len(nonzero_indices))
+                    expected_idx = nonzero_indices[0]
+
+                if TARGET == 'cpu':
+                    found_idx = find_index(val, bin_edges)
+                elif TARGET == 'cuda':
+                    found_idx_ary = SmartArray(np.zeros(1, dtype=np.int))
+                    find_index_cuda(
+                        SmartArray(np.array([val], dtype=FTYPE)).get(WHERE),
+                        bin_edges.get(WHERE),
+                        found_idx_ary.get(WHERE),
+                    )
+                    found_idx_ary.mark_changed(WHERE)
+                    found_idx = found_idx_ary.get()[0]
+                else:
+                    raise NotImplementedError(f"TARGET='{TARGET}'")
+
+                if found_idx != expected_idx:
+                    failures += 1
+                    msg = 'val={}, edges={}: Expected idx={}, found idx={}'.format(
+                        val, bin_edges.get(), expected_idx, found_idx
+                    )
+                    logging.error(msg)
+
+    assert failures == 0, f"{failures} failures, inspect ERROR messages above for info"
+
     logging.info('<< PASS : test_find_index >>')
 
 

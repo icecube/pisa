@@ -26,8 +26,12 @@ required, in addition to a ``[binning]`` section:
     #include generic_binning.cfg
 
     binning1.order = axis1, axis2
-    binning1.axis1 = {'num_bins': 40, 'is_log': True, 'domain': [1,80] units.GeV, 'tex': r'A_1'}
-    binning1.axis2 = {'num_bins': 10, 'is_lin': True, 'domain': [1,5], 'tex': r'A_2'}
+    binning1.axis1 = {
+        'num_bins': 40, 'is_log': True, 'domain': [1,80] units.GeV, 'tex': r'A_1'
+        }
+    binning1.axis2 = {
+        'num_bins': 10, 'is_lin': True, 'domain': [1,5], 'tex': r'A_2'
+        }
 
 
     [stageA.serviceA]
@@ -214,6 +218,7 @@ default selection they must be separated by commas.
 
 from __future__ import absolute_import, division
 
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from collections import OrderedDict
 from collections.abc import Sequence
 from io import StringIO
@@ -233,7 +238,7 @@ from pisa import ureg
 from pisa.utils.fileio import from_file
 from pisa.utils.format import split
 from pisa.utils.hash import hash_obj
-from pisa.utils.log import logging, set_verbosity
+from pisa.utils.log import Levels, logging, set_verbosity
 from pisa.utils.resources import find_resource
 
 
@@ -486,8 +491,8 @@ def parse_param(config, section, selector, fullname, pname, value):
         elif prior == 'jeffreys':
             kwargs['prior'] = Prior(
                 kind='jeffreys',
-                A=kwargs['range'][0],
-                B=kwargs['range'][1]
+                A=kwargs['range'][0],  # pylint: disable=unsubscriptable-object
+                B=kwargs['range'][1],  # pylint: disable=unsubscriptable-object
             )
         elif prior == 'spline':
             priorname = pname
@@ -529,15 +534,13 @@ def parse_param(config, section, selector, fullname, pname, value):
     return param
 
 
-def parse_pipeline_config(config, skip_services=None):
+def parse_pipeline_config(config):
     """Parse pipeline config.
 
     Parameters
     ----------
     config : string or ConfigParser
 
-    skip_services: sequence of 2 strings, sequence of these, or None; optional
-        (service, stage) to skip in the parsing 
 
     Returns
     -------
@@ -617,52 +620,7 @@ def parse_pipeline_config(config, skip_services=None):
 
     # Get and parse the order of the stages (and which services implement them)
     order = [split(x, STAGE_SEP) for x in split(config.get(section, 'order'))]
-
-
-    #
-    # If skip_servies is not None, normalize its format
-    #
-    if not (skip_services is None or isinstance(skip_services, Sequence)):
-        raise TypeError(
-            "`skip_services` expected to be None or Sequence, got {}".format(type(skip_services))
-        )
-
-    if skip_services is None:
-        skip_services = []
-    else:
-        if isinstance(skip_services[0],str):
-            skip_services = [skip_services]
-
-        normalized_skip_services = []
-
-        for skip_service in skip_services:
-            if not isinstance(skip_service, Sequence):
-                raise TypeError("expected Sequence, got {}".format(type(skip_service))
-                    )
-
-            if len(skip_service) != 2:
-                raise TypeError(
-                    '(stage, service) sequences be length 2; got "{}", of length {}'.format(
-                        skip_service, len(skip_service)
-                        )
-                    )
-
-            for item, name in zip(skip_service, ["Stage", "Service"]):
-                if not isinstance(item, str):
-                    raise TypeError(
-                        "{} must be specified as a string; got {}".format(name, type(item))
-                        )
-
-            normalized_skip_services.append([skip_service[0], skip_service[1]])
-
-        skip_services = normalized_skip_services
-
-        #
-        # Remove desired services from the order
-        #
-        order = [[x[0],x[1]] for x in order if [x[0],x[1]] not in skip_services]
-        
-
+    
     param_selections = []
     if config.has_option(section, 'param_selections'):
         param_selections = split(config.get(section, 'param_selections'))
@@ -673,7 +631,7 @@ def parse_pipeline_config(config, skip_services=None):
 
     # Parse [stage.<stage_name>] sections and store to stage_dicts
     stage_dicts = OrderedDict()
-    for stage, service in order:
+    for stage, service in order:  # pylint: disable=too-many-nested-blocks
         old_section_header = 'stage%s%s' % (STAGE_SEP, stage)
         new_section_header = '%s%s%s' % (stage, STAGE_SEP, service)
         if config.has_section(old_section_header):
@@ -1005,7 +963,7 @@ class MutableMultiFileIterator(object):
             record['fp'].close()
 
 
-class PISAConfigParser(RawConfigParser):
+class PISAConfigParser(RawConfigParser):  # pylint: disable=too-many-ancestors
     """
     Parses a PISA config file, extending :class:`configparser.RawConfigParser`
     (the backport of RawConfigParser from Python 3.x) by adding the ability to
@@ -1158,6 +1116,8 @@ class PISAConfigParser(RawConfigParser):
     #
     # Also, diff this function with future releases in case something needs
     # modification.
+
+    # pylint: disable=E,W,C,R
     def _read(self, fp, fpname):
         """Parse a sectioned configuration file.
 
@@ -1327,37 +1287,20 @@ class PISAConfigParser(RawConfigParser):
         self._join_multiline_values()
 
 
-def test_parse_pipeline_config():
+def test_parse_pipeline_config(config='settings/pipeline/example.cfg'):
     """Unit test for function `parse_pipeline_config`"""
-    from argparse import ArgumentParser
-
-    parser = ArgumentParser()
-    parser.add_argument(
-        '-p', '--pipeline', metavar='CONFIGFILE',
-        default='settings/pipeline/example.cfg',
-        help='File containing settings for the pipeline.'
-    )
-    parser.add_argument(
-        '-v', action='count', default=0,
-        help='Set verbosity level. Minimum is forced to level 1 (info)'
-    )
-    args = parser.parse_args()
-    args.v = max(1, args.v)
-    set_verbosity(args.v)
-
     # Load via PISAConfigParser
     config0 = PISAConfigParser()
-    config0.read(args.pipeline)
-    _ = parse_pipeline_config(config0)
+    config0.read(config)
+    config0 = parse_pipeline_config(config0)
 
     # Load directly
-    config = parse_pipeline_config(args.pipeline)
+    config1 = parse_pipeline_config(config)
 
-    logging.debug('Keys and values found in config:')
-    for key, vals in config.items():
-        logging.debug('%s: %s', key, vals)
-
-    logging.info('<< PASS : test_parse_pipeline_config >>')
+    logging.info('Keys and values found in config:')
+    for key, vals in config1.items():
+        logging.info('%s: %s', key, vals)
+        assert vals == config0[key]
 
 
 def test_MutableMultiFileIterator():
@@ -1417,8 +1360,28 @@ def test_MutableMultiFileIterator():
     logging.info('<< PASS : test_MutableMultiFileIterator >>')
 
 
+def parse_args():
+    """Parse command line arguments"""
+    parser = ArgumentParser(
+        description='Print contents of a parsed config file',
+        formatter_class=ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        'pipeline', metavar='CONFIGFILE',
+        nargs='?',
+        default='settings/pipeline/example.cfg',
+        help='Pipeline config file to parse',
+    )
+    parser.add_argument(
+        '-v',
+        action='count',
+        default=Levels.WARN,
+        help='Set verbosity level',
+    )
+    kwargs = parser.parse_args()
+    set_verbosity(kwargs.pop('verbosity'))
+    return kwargs
+
+
 if __name__ == '__main__':
-    # Note: put test_parse_pipeline_config first since it reads command line
-    # args and -v option will be used also by subsequent unit tests
-    test_parse_pipeline_config()
-    test_MutableMultiFileIterator()
+    test_parse_pipeline_config(**parse_args())

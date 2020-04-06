@@ -14,6 +14,7 @@ from pisa.utils import vectorizer
 from pisa.utils.profiler import profile
 from pisa.core.container import Container
 from pisa.core.events_pi import EventsPi
+from pisa.utils.format import arg_str_seq_none, split
 
 
 class simple_data_loader(PiStage):
@@ -57,6 +58,7 @@ class simple_data_loader(PiStage):
                  mc_cuts,
                  data_dict,
                  neutrinos=True,
+                 expected_metadata=None,
                  data=None,
                  params=None,
                  input_names=None,
@@ -73,7 +75,13 @@ class simple_data_loader(PiStage):
         self.mc_cuts = mc_cuts
         self.data_dict = data_dict
         self.neutrinos = neutrinos
+        self.expected_metadata = expected_metadata
         self.fraction_events_to_keep = fraction_events_to_keep
+
+        # Handle list inputs
+        self.events_file = split(self.events_file)
+        if self.expected_metadata is not None :
+            self.expected_metadata = split(self.expected_metadata)
 
         # instead of adding params here, consider making them instantiation
         # args so nothing external will inadvertently try to change
@@ -135,7 +143,8 @@ class simple_data_loader(PiStage):
         # Load the event file into the events structure
         self.evts.load_events_file(
             events_file=self.events_file,
-            variable_mapping=self.data_dict
+            variable_mapping=self.data_dict,
+            expected_metadata=self.expected_metadata,
         )
 
         if hasattr(self.evts, "metadata"):
@@ -244,5 +253,4 @@ class simple_data_loader(PiStage):
         self.data.data_specs = self.output_specs
         # reset weights to initial weights prior to downstream stages running
         for container in self.data:
-            vectorizer.set(container['initial_weights'],
-                           out=container['weights'])
+            vectorizer.assign(container['initial_weights'], out=container['weights'])

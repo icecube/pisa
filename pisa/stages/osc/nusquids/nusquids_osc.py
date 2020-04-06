@@ -7,16 +7,26 @@ but the master branch https://github.com/arguelles/nuSQuIDS can
 and should be used if no NSI are needed.
 '''
 from __future__ import absolute_import, print_function, division
+
 import os
+
 import numpy as np
+
+from pisa import CACHE_DIR, FTYPE, OMP_NUM_THREADS, ureg, OrderedDict
+from pisa.core.binning import MultiDimBinning
+from pisa.stages.osc.pi_osc_params import OscParams
+from pisa.utils.fileio import from_file
+from pisa.utils.log import logging
+
 try:
     import nuSQUIDSpy as nsq
-except:
+except ImportError:
     pypath = os.environ.get('PYTHONPATH', 'not set') # pylint: disable=invalid-name
-    raise ImportError(
+    logging.error(
         'Could not import the nuSQuIDS python interface. Your $PYTHONPATH'
-        ' is: %s.' % pypath
+        ' is: %s.', pypath
     )
+    raise
 
 # Check which nuSQuIDS classes are available
 NSI_CLASS = "nuSQUIDSNSIAtm"
@@ -32,12 +42,6 @@ if not NSI_AVAIL and not ATM_AVAIL and not DECOH_AVAIL:
         ' useful classes ("%s", "%s" or "%s").'
         % (NSI_CLASS, DECOH_CLASS, ATM_CLASS)
     )
-
-from pisa import CACHE_DIR, FTYPE, OMP_NUM_THREADS, ureg, OrderedDict
-from pisa.core.binning import MultiDimBinning
-from pisa.stages.osc.pi_osc_params import OscParams
-from pisa.utils.fileio import from_file
-from pisa.utils.log import logging
 
 __all__ = [
     # constants
