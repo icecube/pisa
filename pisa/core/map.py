@@ -2820,8 +2820,8 @@ class MapSet(object):
         random_stae : None, numpy.random.RandomState, or seed spec
 
         """
-        random_state = get_random_state(random_state=random_state,
-                                        jumpahead=jumpahead)
+        #random_state = get_random_state(random_state=random_state,
+        #                                jumpahead=jumpahead)
         new_maps = [m.fluctuate(method=method, random_state=random_state)
                     for m in self]
         return MapSet(maps=new_maps, name=self.name, tex=self.tex, hash=None,

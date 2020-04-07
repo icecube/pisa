@@ -194,7 +194,7 @@ class DistributionMaker(object):
 
 
         **kwargs
-            Passed on to each pipeline's `get_outputs1` method.
+            Passed on to each pipeline's `get_outputs` method.
 
         Returns
         -------
@@ -206,7 +206,6 @@ class DistributionMaker(object):
         if return_sum:
             if len(outputs) > 1:
                 outputs = sum([sum(x) for x in outputs])
-
             else:
                 outputs = sum(sum(outputs))
             outputs.name = sum_map_name

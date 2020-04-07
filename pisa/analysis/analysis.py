@@ -1023,16 +1023,10 @@ class Analysis(object):
         # Set param values from the scaled versions the minimizer works with
         hypo_maker._set_rescaled_free_params(scaled_param_vals) # pylint: disable=protected-access
 
-        # HACKY:
-        hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
-        #print(hypo_asimov_dist)
-        #print(type(hypo_maker.pipelines[0].stages[-1].data))
-        #raise Exception
-
-
         # Get the Asimov map set
         try:
-            hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
+            hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True,output_mode='binned')
+        
         except Exception as e:
             if blind:
                 logging.error('Minimizer failed')
@@ -1053,11 +1047,9 @@ class Analysis(object):
         else: # DistributionMaker object
             assert len(metric) == 1
 
+        #
         # Assess the fit: whether the data came from the hypo_asimov_dist
         #
-        # THIS IS WHERE THE METRIC IS BEING CALLED
-
-        #raise Exception
         try:
             if isinstance(hypo_maker, Detectors):
                 metric_val = 0
@@ -1070,7 +1062,8 @@ class Analysis(object):
             else: # DistributionMaker object
 
                 if 'generalized_poisson_llh' in metric:
-                    metric_val = generalized_poisson_llh(expected_values=hypo_maker,actual_values=data_dist)
+                    expected_values = hypo_maker.get_outputs(return_sum=False,output_mode='events')
+                    metric_val = generalized_poisson_llh(expected_values=expected_values,actual_values=data_dist)
                 else:
                     metric_val = (
                         data_dist.metric_total(expected_values=hypo_asimov_dist,
