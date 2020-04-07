@@ -2730,6 +2730,7 @@ class MultiDimBinning(object):
             for d in self.iterdims():
                 if d.name == index:
                     return d
+            raise ValueError(f"index '{index}' not in {self.names}")
 
         # TODO: implement a "linearization" like np.flatten() to iterate
         # through each bin individually without hassle for the user...

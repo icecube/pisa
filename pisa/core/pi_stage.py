@@ -179,6 +179,7 @@ class PiStage(BaseStage):
 
     @profile
     def compute(self):
+
         if len(self.params) == 0 and len(self.output_calc_keys) == 0:
             return
 
@@ -264,15 +265,22 @@ class PiStage(BaseStage):
         self.apply()
         return None
 
-    def get_outputs(self):
+    def get_outputs(self, output_mode=None):
         """
         Get the outputs of the PISA stage
         Depending on `self.output_mode`, this may be a binned object, or the event container itself
+
+        add option to force an output mode
+
         """
 
+        if output_mode is not None:
+            assert output_mode=='binned' or output_mode=='events','ERROR: user-specified output mode is unrecognized'
+            self.output_mode = output_mode
+        
         if self.output_mode == 'binned' and len(self.output_apply_keys) == 1:
             self.outputs = self.data.get_mapset(self.output_apply_keys[0])
-        elif len(self.output_apply_keys) == 2 and 'errors' in self.output_apply_keys:
+        elif self.output_mode=='binned' and len(self.output_apply_keys) == 2 and 'errors' in self.output_apply_keys:
             other_key = [key for key in self.output_apply_keys if not key == 'errors'][0]
             self.outputs = self.data.get_mapset(other_key, error='errors')
         elif self.output_mode == "events" :

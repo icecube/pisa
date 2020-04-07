@@ -1,56 +1,61 @@
 """
 Stage to generate some random data
 """
+
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
 
 from pisa import FTYPE
-from pisa.core.pi_stage import PiStage
-from pisa.utils.log import logging
-from pisa.utils import vectorizer
 from pisa.core.container import Container
+from pisa.core.pi_stage import PiStage
+from pisa.utils import vectorizer
 
 
 class toy_event_generator(PiStage):
     """
     random toy event generator PISA Pi class
 
-    Paramaters
+    Parameters
     ----------
+    data
+    params
+        Expected params .. ::
 
-    n_events : int
-        Number of events to be generated per output name
+            n_events : int
+                Number of events to be generated per output name
+            random
+            seed : int
+                Seed to be used for random
 
-    seed : int
-        Seed to be used for random
-
-    Notes
-    -----
+    input_names
+    output_names
+    debug_mode
+    input_specs
+    calc_specs
+    output_specs
 
     """
-    def __init__(self,
-                 data=None,
-                 params=None,
-                 input_names=None,
-                 output_names=None,
-                 debug_mode=None,
-                 input_specs=None,
-                 calc_specs=None,
-                 output_specs=None,
-                ):
+    def __init__(
+        self,
+        data=None,
+        params=None,
+        input_names=None,
+        output_names=None,
+        debug_mode=None,
+        input_specs=None,
+        calc_specs=None,
+        output_specs=None,
+    ):
+        expected_params = ('n_events', 'random', 'seed')
 
-        expected_params = ('n_events',
-                           'random',
-                           'seed',
-                           )
-
-        input_apply_keys = ('initial_weights',
-                           'weights',
-                           'weighted_aeff',
-                           'nu_flux_nominal',
-                           'nubar_flux_nominal',
-                           )
+        input_apply_keys = (
+            'initial_weights',
+            'weights',
+            'weighted_aeff',
+            'nu_flux_nominal',
+            'nubar_flux_nominal',
+        )
 
         # init base class
         super().__init__(
@@ -70,7 +75,6 @@ class toy_event_generator(PiStage):
         assert self.calc_mode is None
 
     def setup_function(self):
-
         n_events = int(self.params.n_events.value.m)
         seed = int(self.params.seed.value.m)
         self.random_state = np.random.RandomState(seed)
@@ -86,7 +90,6 @@ class toy_event_generator(PiStage):
                 flav = 1
             if 'tau' in name:
                 flav = 2
-
 
             # Generate some events in the array representation just to have them
             # here we add those explicitly in the array representation
@@ -109,8 +112,8 @@ class toy_event_generator(PiStage):
             # other necessary info
             container.add_scalar_data('nubar', nubar)
             container.add_scalar_data('flav', flav)
-            container['weights'] =  np.ones(size, dtype=FTYPE)
-            container['weighted_aeff'] =  np.ones(size, dtype=FTYPE)
+            container['weights'] = np.ones(size, dtype=FTYPE)
+            container['weighted_aeff'] = np.ones(size, dtype=FTYPE)
 
             flux_nue = np.zeros(size, dtype=FTYPE)
             flux_numu = np.ones(size, dtype=FTYPE)
@@ -121,10 +124,7 @@ class toy_event_generator(PiStage):
 
             self.data.add_container(container)
 
-
     def apply_function(self):
         # reset weights
         for container in self.data:
-            vectorizer.scale(1.,
-                             container['initial_weights'],
-                             out=container['weights'])
+            vectorizer.assign(container['initial_weights'], out=container['weights'])

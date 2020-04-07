@@ -1,65 +1,70 @@
 """
 PISA pi stage to apply effective area weights
 """
+
 from __future__ import absolute_import, print_function, division
 
 from pisa.core.pi_stage import PiStage
-from pisa.utils.log import logging
-from pisa.utils.profiler import profile
 from pisa.utils import vectorizer
+from pisa.utils.profiler import profile
 
 
-class pi_aeff(PiStage):
+class pi_aeff(PiStage):  # pylint: disable=invalid-name
     """
     PISA Pi stage to apply aeff weights.
-    This combines the detector effective area with the flux weights calculated 
+
+    This combines the detector effective area with the flux weights calculated
     in an earlier stage to compute the weights.
-    Various scalings can be applied for particular event classes.
-    The weight is then multiplied by the livetime to get an event count.
 
-    Paramaters
+    Various scalings can be applied for particular event classes. The weight is
+    then multiplied by the livetime to get an event count.
+
+    Parameters
     ----------
+    data
+    params
+        Expected params are .. ::
 
-    livetime : Quantity with time units
+            livetime : Quantity with time units
+            aeff_scale : dimensionless Quantity
+            nutau_cc_norm : dimensionless Quantity
+            nutau_norm : dimensionless Quantity
+            nu_nc_norm : dimensionless Quantity
 
-    aeff_scale : dimensionless Quantity
-
-    nutau_cc_norm : dimensionless Quantity
-
-    nutau_norm : dimensionless Quantity
-
-    nu_nc_norm : dimensionless Quantity
-
-    Notes
-    -----
+    input_names
+    output_names
+    debug_mode
+    input_specs
+    calc_specs
+    output_specs
 
     """
-    def __init__(self,
-                 data=None,
-                 params=None,
-                 input_names=None,
-                 output_names=None,
-                 debug_mode=None,
-                 input_specs=None,
-                 calc_specs=None,
-                 output_specs=None,
-                ):
-
-        expected_params = ('livetime',
-                           'aeff_scale',
-                           'nutau_cc_norm',
-                           'nutau_norm',
-                           'nu_nc_norm',
-                          )
+    def __init__(
+        self,
+        data=None,
+        params=None,
+        input_names=None,
+        output_names=None,
+        debug_mode=None,
+        input_specs=None,
+        calc_specs=None,
+        output_specs=None,
+    ):
+        expected_params = (
+            'livetime',
+            'aeff_scale',
+            'nutau_cc_norm',
+            'nutau_norm',
+            'nu_nc_norm',
+        )
         input_names = ()
         output_names = ()
 
         # what are the keys used from the inputs during apply
-        input_apply_keys = ('weighted_aeff',
-                           )
+        input_apply_keys = ('weighted_aeff',)
+
         # what keys are added or altered for the outputs during apply
-        output_apply_keys = ('weights',
-                            )
+        output_apply_keys = ('weights',)
 
         # init base class
         super().__init__(
@@ -83,7 +88,6 @@ class pi_aeff(PiStage):
         # right now this stage has no calc mode, as it just applies scales
         # but it could if for example some smoothing will be performed!
 
-
     @profile
     def apply_function(self):
 
@@ -102,7 +106,9 @@ class pi_aeff(PiStage):
                 scale *= nutau_norm
             if 'nc' in container.name:
                 scale *= nu_nc_norm
-            vectorizer.multiply_and_scale(scale,
-                                          container['weighted_aeff'],
-                                          out=container['weights'],
-                                         )
+
+            vectorizer.imul_and_scale(
+                vals=container['weighted_aeff'],
+                scale=scale,
+                out=container['weights'],
+            )

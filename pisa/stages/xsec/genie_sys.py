@@ -19,7 +19,7 @@ class genie_sys(PiStage): # pylint: disable=invalid-name
     """
     Stage to apply pre-calculated Genie systematics.
 
-    Paramaters
+    Parameters
     ----------
     data
     params
@@ -37,7 +37,7 @@ class genie_sys(PiStage): # pylint: disable=invalid-name
 
     Notes
     -----
-    Requires the events have the following keys :
+    Requires the events have the following keys ::
 
         linear_fit_maccqe
             Genie CC quasi elastic linear coefficient

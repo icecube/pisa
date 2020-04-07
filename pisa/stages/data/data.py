@@ -1,15 +1,10 @@
-import os
-import sys
 
 import h5py
 import numpy as np
 
-from pisa import ureg, Q_
-from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.core.map import Map, MapSet
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
-from pisa.utils.comparisons import normQuant
 from pisa.utils.resources import find_resource
 
 
@@ -33,25 +28,24 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 class data(Stage):
     """Data loader stage
 
-    Paramaters
+    Parameters
     ----------
-
     params : ParamSet
-        data_file : string
-            path pointing to the hdf5 file containing the events
-        sim_ver: string
-            indicateing the sim version, wither 4digit, 5digit or dima
-        bdt_cut : float
-            futher cut apllied to events for the atm. muon rejections BDT
+        Expected params .. ::
+
+            data_file : string
+                path pointing to the hdf5 file containing the events
+            sim_ver: string
+                indicateing the sim version, wither 4digit, 5digit or dima
+            bdt_cut : float
+                futher cut apllied to events for the atm. muon rejections BDT
 
     Notes
     -----
-
-    The curent versio of this code is a port from pisa v2 nutau branch.
+    The curent version of this code is a port from pisa v2 nutau branch.
     It clearly needs to be cleand up properly at some point.
 
     """
-
     def __init__(self, params, output_binning, disk_cache=None,
                 memcache_deepcopy=True, error_method=None,
                 outputs_cache_depth=20, debug_mode=None):

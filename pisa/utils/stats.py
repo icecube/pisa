@@ -14,7 +14,8 @@ from pisa.utils.comparisons import FTYPE_PREC, isbarenumeric
 from pisa.utils.log import logging
 from pisa.utils import likelihood_functions
 import sys,os
-sys.path.append('/home/bourdeet/NBI/IceCube/PISA/')
+
+sys.path.append('/data/user/bourdeet/PISA/')
 
 
 
@@ -576,7 +577,7 @@ def format_input_to_generalized_poisson(actual_values, expected_values, merge_ne
     import collections
 
     assert isinstance(actual_values,Map),'ERROR: actual_values must be a Map object'
-    assert isinstance(expected_values,DistributionMaker),'ERROR: expected_values must be a DistributionMaker object'
+    assert isinstance(expected_values,list),'ERROR: expected_values must be a list of ContainerSet objects'
 
     #
     # First, handle the experimental data (or pseudo data)
@@ -591,44 +592,56 @@ def format_input_to_generalized_poisson(actual_values, expected_values, merge_ne
     flattened_actual = np.array([x.nominal_value for x in flattened_actual]).astype(float)
 
     #
-    # Next, retrieve the expected data, dividing it into pipeline
+    # Next, retrieve the expected data, and store each container individually
     #
-    assert len(expected_values.pipelines)==2,'ERROR: found more than 2 pipelines in simulation. I expect one from neutrino and one from muons.'
-    neutrino_expectation, muon_expectation = expected_values.pipelines
-    muon_container = muon_expectation.stages[-1].data.containers[0]
+    all_containers  = collections.OrderedDict()
+    for cs in expected_values:
+        for c in cs:
+            all_containers[c.name] = c
 
 
+    #
+    # Merge the neutrino containers together if desired
+    #
     if merge_neutrinos:
-        #
-        # If required, create a new ContainerSet that will merge all
-        # neutrino flavor arrays together
+
+        new_container_list = collections.OrderedDict()
         neutrino_container = Container(name='neutrinos',data_specs=n_bins_multi)
+        new_arrays = collections.OrderedDict()
+        for k,v in all_containers.items():
 
-        all_nu_containers = neutrino_expectation.stages[-1].data
-        for variable in all_nu_containers.containers[0].array_data.keys():
-            new_array = np.concatenate([c.array_data[variable] for c in all_nu_containers])
-            neutrino_container.add_array_data(key=variable, data=new_array)
-        neutrino_container_set = ContainerSet( name='neutrinos', containers=neutrino_container, data_specs=n_bins_multi)
+            if 'nu' not in k:
+                new_container_list[k] = v
+                continue
 
-    else:
-        neutrino_container_set = neutrino_expectation.stages[-1].data 
+            for variable in v.array_data.keys():
+
+                if variable not in new_arrays.keys():
+                    new_arrays[variable] = []
+                new_arrays[variable].append(v.array_data[variable].get('host'))
 
 
-    all_container_sets = ContainerSet(name='sim',containers = [c for c in neutrino_container_set.containers]+[muon_container])
-    dataset_weights = construct_weight_dict(container_set=neutrino_container_set, n_bins=n_bins, binning_spec=n_bins_multi)
+        for variable in new_arrays.keys():
+            neutrino_container.add_array_data(key=variable, data=np.concatenate(new_arrays[variable]))
+
+        new_container_list['neutrinos'] = neutrino_container
+        all_containers = new_container_list
+
+    dataset_weights = construct_weight_dict(container_dict=all_containers, n_bins=n_bins, binning_spec=n_bins_multi)
+
 
     return flattened_actual, dataset_weights
     
 
 
 
-def construct_weight_dict(container_set=None, n_bins=None, binning_spec=None):
+def construct_weight_dict(container_dict=None, n_bins=None, binning_spec=None):
     '''
     Generate the thorstenllh-compatible dictionnary of weights
 
-    container_set: ContainerSet object. Each container in the Set
-                   will result in a separate dict entry in the 
-                   output weight disct
+    container_dict: OrderedDict object. Each item of the dict is a Container
+                    object that will result in a separate dict entry in the 
+                    output weight disct
 
     returns:
     -------
@@ -642,15 +655,15 @@ def construct_weight_dict(container_set=None, n_bins=None, binning_spec=None):
     '''
     from pisa.core.container import ContainerSet,Container
     import collections
-    assert isinstance(container_set,ContainerSet),'ERROR: container_Set must be a ContainerSet instance.'
+    assert isinstance(container_dict, collections.OrderedDict),'ERROR: container_dict must be an OrderedDict instance.'
 
     dataset_weights = collections.OrderedDict()
 
-    for container in container_set:
+    for container_name,container in container_dict.items():
 
         # Create a weight entry if it doesn't exist yet
-        if container.name not in dataset_weights.keys():
-            dataset_weights[container.name] = [None for x in range(n_bins)]
+        if container_name not in dataset_weights.keys():
+            dataset_weights[container_name] = [None for x in range(n_bins)]
 
         # Check if a bin_indices array is present.
         # If not compute it
@@ -661,10 +674,11 @@ def construct_weight_dict(container_set=None, n_bins=None, binning_spec=None):
 
         # Iterate over each analysis bin, picking up weights that are 
         # falling into bin i
+        bin_indices_array = container.array_data['bin_indices'].get('host')
+        all_weights       = container.array_data['weights'].get('host')
         for i in range(n_bins):
-            mask = container.array_data['bin_indices'].get()==i 
-            w =container.array_data['weights'].get()[mask]
-            assert w.shape[0]==sum(mask),'I am not picking the weights right.'
+            mask = bin_indices_array==i
+            w = all_weights[mask]
             dataset_weights[container.name][i] = w
 
     return dataset_weights
@@ -713,21 +727,8 @@ def generalized_poisson_llh(actual_values,expected_values):
     #***************************************************************************************************************
     # default settings (as stated towards the end of the paper): gen2 , empty_bin_strategy=1, mead_adjustment=True
     #
-    '''
-    import pickle
-
-    if os.path.isfile('rearranged_weights.pckl'):
-        flattened_actual,weights_dict = pickle.load(open('rearranged_weights.pckl','rb'))
-    else:
-        flattened_actual, weights_dict = format_input_to_generalized_poisson(actual_values, expected_values)
-        pickle.dump([flattened_actual,weights_dict], open('rearranged_weights.pckl','wb'))
-    '''
     flattened_actual, weights_dict = format_input_to_generalized_poisson(actual_values, expected_values)
-    #print('output has been formatted')
-    #print('Type of actual data: ',type(flattened_actual))
-    #print('Type of weight dict: ',type(weights_dict))
 
-    #print('COMPUTING THE LLH!!')
         
     llh = generic_pdf(data=flattened_actual,
                                dataset_weights=weights_dict,
@@ -738,7 +739,5 @@ def generalized_poisson_llh(actual_values,expected_values):
                                s_factor=1.0,
                                larger_weight_variance=False,
                                log_stirling=None)
-    
-    print('llh value output in stats.py: ',llh)
 
     return llh

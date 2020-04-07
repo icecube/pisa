@@ -22,11 +22,13 @@ _Note that terminal commands below are intended for the bash shell. You'll have 
     `git clone git@github.com:<YOUR GITHUB USER ID HERE>/pisa.git $PISA`
     * Otherwise<br>
     `git clone https://github.com/<YOUR GITHUB USER ID HERE>/pisa.git $PISA`
-1. Install the ***Python 2.7 / 64 bit*** Anaconda or Miniconda python distribution for either Mac or Linux (as your user, _not_ as root), if you don’t have it already
+1. Install the ***Python 3.7 / 64 bit*** Anaconda or Miniconda python distribution for either Mac or Linux (as your user, _not_ as root), if you don’t have it already
     * Anaconda (full-featured Python distribution, ~500 MB)<br>
         https://www.anaconda.com/download
     * Miniconda (just the essentials, ~40 MB)<br>
         https://conda.io/miniconda.html
+1. Create a new conda environment, ideally with a python version compatible with the python requirements below (cf. conda's getting started guide).
+1. Active your new conda environment.
 1. Install PISA including optional packages and development tools (`develop`), if desired<br>
     `pip install -e $PISA[develop] -vvv`
 1. Run a quick test: generate templates in the staged mode<br>
@@ -47,7 +49,7 @@ Although the selection of maintained packages is smaller than if you use the `pi
 The other advantage to these distributions is that they easily install without system administrative privileges (and install in a user directory) and come with the non-Python binary libraries upon which many Python modules rely, making them ideal for setup on e.g. clusters.
 
 * **Note**: Make sure that your `PATH` variable points to e.g. `<anaconda_install_dr>/bin` and *not* your system Python directory. To check this, type: `echo $PATH`; to udpate it, add `export PATH=<anaconda_install_dir>/bin:$PATH` to your .bashrc file.
-* Python 2.7.x can also be found from the Python website [python.org/downloads](https://www.python.org/downloads/) or pre-packaged for almost any OS.
+* Python 3.7.x can also be found from the Python website [python.org/downloads](https://www.python.org/downloads/) or pre-packaged for almost any OS.
 
 
 ### Required Dependencies
@@ -55,26 +57,20 @@ The other advantage to these distributions is that they easily install without s
 To install PISA, you'll need to have the following non-python requirements.
 Note that these are not installed automatically, and you must install them yourself prior to installing PISA.
 Also note that Python, HDF5, and pip support come pre-packaged or as `conda`-installable packages in the Anaconda Python distribution.
-* [python](http://www.python.org) — version 2.7.x required (tested with 2.7.11)
+* [python](http://www.python.org) — version 3.7.x required: numba 0.45, which is required for SmartArray, does not allow python 3.8 or higher
   * Anaconda: built in
-  * Otherwise, if on Linux it will be pre-packaged; in Ubuntu:<br>
-    `sudo apt install python2.7`
 * [pip](https://pip.pypa.io) version >= 1.8 required
   * Anaconda:<br>
     `conda install pip`
-  * In Ubuntu:<br>
-    `sudo apt install python-pip`
 * [git](https://git-scm.com)
   * In Ubuntu,<br>
     `sudo apt install git`
 * [hdf5](http://www.hdfgroup.org/HDF5) — install with `--enable-cxx` option
   * In Ubuntu,<br>
     `sudo apt install libhdf5-10`
-* [llvm](http://llvm.org) Compiler needed by Numba. This is automatically installed in Anaconda alongside `numba`, but must be installed manually on your system otherwise.
+* [llvm](http://llvm.org) Compiler needed by Numba. This is automatically installed in Anaconda alongside `numba`.
   * Anaconda<br>
-    `conda install numba=0.38`
-  * In Ubuntu,<br>
-    `sudo apt install llvm-3.9-dev`
+    `conda install numba=0.45.1`
 
 Required Python modules that are installed automatically when you use the `pip` command detailed later:
 * [decorator](https://pypi.python.org/pypi/decorator)
@@ -88,16 +84,18 @@ Required Python modules that are installed automatically when you use the `pip` 
       `pip install git+https://github.com/icecubeopensource/kde.git#egg=kde`
 * [line_profiler](https://pypi.python.org/pypi/line_profiler): detailed profiling output<br>
   * if automatic pip installation of line_profiler fails, you may want to try `conda install line_profiler` if you are using anaconda
-* [matplotlib](http://matplotlib.org) >= 2.0 required
-* [numba==0.43.1](http://numba.pydata.org) Just-in-time compilation of decorated Python functions to native machine code via LLVM. This package is required to use PISA pi; also in cake it can accelerate certain routines significantly. If not using Anaconda to install, you must have LLVM installed already on your system (see above).
+* [matplotlib>=3.0](http://matplotlib.org) >= 3.0 required
+* [numba==0.45.1](http://numba.pydata.org) Just-in-time compilation of decorated Python functions to native machine code via LLVM. This package is required to use PISA pi; also in cake it can accelerate certain routines significantly. If not using Anaconda to install, you must have LLVM installed already on your system (see above).
 * [numpy](http://www.numpy.org) version >= 1.17 required
-* [pint>=0.8](https://pint.readthedocs.org) >= 0.8 required
+* [pint>=0.8.1](https://pint.readthedocs.org) >= 0.8.1 required
   * if automatic pip installation of pint fails, you may want to try `conda install pint` if you are using anaconda
 * [scipy](http://www.scipy.org) version >= 0.17 required
 * [setuptools](https://setuptools.readthedocs.io) version >= 18.5 required
 * [simplejson](https://github.com/simplejson/simplejson) version >= 3.2.0 required
 * [tables](http://www.pytables.org)
 * [uncertainties](https://pythonhosted.org/uncertainties)
+* [py-cpuinfo](https://pypi.org/project/py-cpuinfo) retrieve detailed CPU and architecture info for documenting in tests / obtaining results
+* [sympy](https://www.sympy.org/en/) Used for testing `nsi_params.py` 
 
 
 ### Optional Dependencies

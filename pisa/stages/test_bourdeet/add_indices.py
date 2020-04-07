@@ -145,13 +145,14 @@ class add_indices(PiStage):
             # to apply we want to multiply the evenet weights by the factors we computed before
             # we can either implement another vectorized function, or just use one that is already available
 
-            #print(container)
-            #print(container.array_data.keys())
-            #print(container.binned_data.keys())
-            #print(dir(container))
-
             new_array = lookup_indices(sample=[container['reco_energy'],container['reco_coszen'],container['pid']],
                                binning=self.calc_specs,
                            )
+            new_array = new_array.get(WHERE).astype(np.int32)
 
-            container.add_array_data('bin_indices',new_array.get(WHERE).astype(np.int32))
+            container.add_array_data('bin_indices',new_array)
+            # Also precompute a mask array for each bin number
+
+            #for i in range(self.calc_specs.tot_num_bins):
+            #    new_mask = new_array==i
+            #    container.add_array_data('bin_index_%i'%(i), new_mask)

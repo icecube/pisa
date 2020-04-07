@@ -21,7 +21,7 @@ from collections.abc import Mapping
 import numpy as np
 import scipy.interpolate as interpolate
 
-from pisa import NUMBA_AVAIL, numba_jit, ureg
+from pisa import numba_jit, ureg
 from pisa.core.map import Map, MapSet
 from pisa.core.stage import Stage
 from pisa.utils.resources import open_resource
@@ -48,20 +48,17 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  limitations under the License.'''
 
 
-if NUMBA_AVAIL:
-    @numba_jit(nopython=True, nogil=True, cache=True)
-    def apply_ratio_scale_2d(h1, h2, ratio_scale, out1, out2):
-        n_i = h1.shape[0]
-        n_j = h1.shape[1]
-        for i in range(n_i):
-            for j in range(n_j):
-                orig_map_sum = h1[i, j] + h2[i, j]
-                orig_map_ratio = h1[i, j] / h2[i, j]
-                out2[i, j] = orig_map_sum / (1 + ratio_scale * orig_map_ratio)
-                out1[i, j] = ratio_scale * orig_map_ratio * out2[i, j]
-        return out1, out2
-else:
-    apply_ratio_scale_2d = None #pylint: disable=invalid-name
+@numba_jit(nopython=True, nogil=True, cache=True)
+def apply_ratio_scale_2d(h1, h2, ratio_scale, out1, out2):
+    n_i = h1.shape[0]
+    n_j = h1.shape[1]
+    for i in range(n_i):
+        for j in range(n_j):
+            orig_map_sum = h1[i, j] + h2[i, j]
+            orig_map_ratio = h1[i, j] / h2[i, j]
+            out2[i, j] = orig_map_sum / (1 + ratio_scale * orig_map_ratio)
+            out1[i, j] = ratio_scale * orig_map_ratio * out2[i, j]
+    return out1, out2
 
 
 # NOTE: the following doesn't speed up the operation, but line_profile
@@ -451,7 +448,7 @@ class honda(Stage): #pylint: disable=invalid-name
             # bisplrep needs this to be transposed.
             # Not exactly sure why, but there you go!
             for key in flux_dict.keys():
-                if key != 'energy' and key != 'coszen':
+                if key not in ('energy', 'coszen'):
                     flux_dict[key] = flux_dict[key].T
 
             # do this in log of energy and log of flux (more stable)
@@ -1013,27 +1010,23 @@ class honda(Stage): #pylint: disable=invalid-name
         scaled_map1, scaled_map2 : re-scaled maps
 
         """
-        if apply_ratio_scale_2d is None:
-            # We require S1/S2 = O1/O2 * R and S1 + S2 = O1 + O2
-            # This trivially tells us S1 = S2*R*O1/O2
-            # The second can then be used to derive the form of S2
-            # S1 + S2 = S2*R*O1/O2 + S2 = S2(1+R*O1/O2) = O1 + O2
-            # Gives S2 = (O1 + O2) / (1+R*O1/O2)
-            orig_map_sum = map1 + map2
-            orig_map_ratio = map1/map2
-            scaled_map2 = orig_map_sum / (1 + ratio_scale * orig_map_ratio)
-            scaled_map1 = ratio_scale * orig_map_ratio * scaled_map2
-        else:
-            out1 = np.empty_like(map1.hist)
-            out2 = np.empty_like(map2.hist)
-            sh1, sh2 = apply_ratio_scale_2d(map1.hist, map2.hist, ratio_scale,
-                                            out1, out2)
-            scaled_map1 = Map(name=map1.name, hist=sh1, binning=map1.binning,
-                              tex=map1.tex,
-                              full_comparison=map1.full_comparison)
-            scaled_map2 = Map(name=map2.name, hist=sh2, binning=map2.binning,
-                              tex=map2.tex,
-                              full_comparison=map2.full_comparison)
+        out1 = np.empty_like(map1.hist)
+        out2 = np.empty_like(map2.hist)
+        sh1, sh2 = apply_ratio_scale_2d(map1.hist, map2.hist, ratio_scale, out1, out2)
+        scaled_map1 = Map(
+            name=map1.name,
+            hist=sh1,
+            binning=map1.binning,
+            tex=map1.tex,
+            full_comparison=map1.full_comparison,
+        )
+        scaled_map2 = Map(
+            name=map2.name,
+            hist=sh2,
+            binning=map2.binning,
+            tex=map2.tex,
+            full_comparison=map2.full_comparison,
+        )
 
         return scaled_map1, scaled_map2
 

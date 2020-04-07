@@ -3,17 +3,15 @@
 Stage to evaluate the Honda flux tables using IP splines
 
 """
+
 from __future__ import absolute_import, print_function, division
 
-import math
 import numpy as np
-from numba import guvectorize, cuda
 
-from pisa import FTYPE, TARGET
+from pisa import FTYPE
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
-from pisa.utils.numba_tools import WHERE, myjit, ftype
 from pisa.utils.flux_weights import load_2d_table, calculate_2d_flux_weights
 
 
@@ -21,45 +19,39 @@ class pi_honda_ip(PiStage):
     """
     stage to generate nominal flux
 
-    Paramaters
+    Parameters
     ----------
+    params
+        Expected params .. ::
 
-    flux_table : str
-
-    Notes
-    -----
+            flux_table : str
 
     """
 
-    def __init__(self,
-                 data=None,
-                 params=None,
-                 input_names=None,
-                 output_names=None,
-                 debug_mode=None,
-                 input_specs=None,
-                 calc_specs=None,
-                 output_specs=None,
-                ):
+    def __init__(
+        self,
+        data=None,
+        params=None,
+        input_names=None,
+        output_names=None,
+        debug_mode=None,
+        input_specs=None,
+        calc_specs=None,
+        output_specs=None,
+    ):
 
-        expected_params = ('flux_table',
-                          )
+        expected_params = ('flux_table',)
         input_names = ()
         output_names = ()
 
         # what are the keys used from the inputs during apply
-        input_calc_keys = (
-                          )
+        input_calc_keys = ()
+
         # what are keys added or altered in the calculation used during apply
-        output_calc_keys = (
-                            'nu_flux_nominal',
-                            'nubar_flux_nominal',
-                           )
+        output_calc_keys = ('nu_flux_nominal', 'nubar_flux_nominal')
+
         # what keys are added or altered for the outputs during apply
-        output_apply_keys = (
-                            'nu_flux_nominal',
-                            'nubar_flux_nominal',
-                            )
+        output_apply_keys = ('nu_flux_nominal', 'nubar_flux_nominal')
 
         # init base class
         super().__init__(
@@ -120,11 +112,11 @@ class pi_honda_ip(PiStage):
         tables = ['nue', 'numu', 'nuebar', 'numubar']
         for container in self.data:
             for out_name, index, table in zip(out_names, indices, tables):
-                logging.info('Calculating nominal %s flux for %s'%(table, container.name))
+                logging.info('Calculating nominal %s flux for %s', table, container.name)
                 calculate_2d_flux_weights(true_energies=container['true_energy'].get('host'),
                                            true_coszens=container['true_coszen'].get('host'),
                                            en_splines=self.flux_table[table],
-                                           out=container[out_name].get('host')[:,index]
+                                           out=container[out_name].get('host')[:, index]
                                           )
             container['nu_flux_nominal'].mark_changed('host')
             container['nubar_flux_nominal'].mark_changed('host')
@@ -142,4 +134,3 @@ class pi_honda_ip(PiStage):
     #     for container in self.data:
     #         np.copyto( src=container["nu%s_flux_nominal"%("" if container["nubar"] > 0 else "bar")].get("host"), dst=container["nu_flux"].get("host") )
     #         container['nu_flux'].mark_changed('host')
-

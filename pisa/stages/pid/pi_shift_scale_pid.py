@@ -89,7 +89,7 @@ class pi_shift_scale_pid(PiStage):
         for container in self.data:
             container['calculated_pid'] = np.empty((container.size), dtype=FTYPE)
             container['original_pid'] = np.empty((container.size), dtype=FTYPE)
-            vectorizer.set(container['pid'], out=container['original_pid'])
+            vectorizer.assign(vals=container['pid'], out=container['original_pid'])
 
     def compute_function(self):
         """Perform computation"""
@@ -108,7 +108,7 @@ class pi_shift_scale_pid(PiStage):
     def apply_function(self):
         for container in self.data:
             # set the pid value to the calculated one
-            vectorizer.set(container['calculated_pid'], out=container['pid'])
+            vectorizer.assign(vals=container['calculated_pid'], out=container['pid'])
 
 signatures = [
     '(f4[:], f4[:], f4[:], f4[:])',

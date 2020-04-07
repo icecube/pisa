@@ -101,7 +101,7 @@ class Analysis(object):
         elif self.pseudodata_method == 'gauss':
             self.pseudodata = self.data.fluctuate('gauss', random_state=data_random_state)
         else:
-            raise Exception('unknown method %s'%method)
+            raise Exception('unknown method %s'%self.pseudodata_method)
         self.N_data = sum([map.nominal_values.sum() for map in [self.pseudodata]])
 
     # TODO: move the complexity of defining a scan into a class with various
@@ -423,7 +423,7 @@ class Analysis(object):
         results = []
         for template_maker in [template_makerA, template_makerB]:
             self.template_maker = template_maker
-            results.append(self.find_best_fit(check_octant=check_octant), pprint=pprint)
+            results.append(self.find_best_fit())
         return results
 
 

@@ -3,7 +3,7 @@
 from __future__ import absolute_import, division, print_function
 
 import argparse
-from collections.abc import Mapping, Iterable
+from collections.abc import Mapping, Iterable, Sequence
 from collections import OrderedDict
 import copy
 
@@ -66,6 +66,25 @@ LEGACY_FLAVKEY_XLATION = dict(
 )
 
 
+
+def append_arrays_dict(key, val, sdict):
+    '''
+    Helper function for appending multiple dicts of arrays (e.g. from 
+    multiple input files) into a single dict of arrays 
+    '''
+    if isinstance(val, Mapping):
+        for key2, val2 in val.items() :
+            if key not in sdict :
+                sdict[key] = OrderedDict()
+            append_arrays_dict(key2, val2, sdict[key])
+    else :
+        assert isinstance(val, np.ndarray), "%s %s : %s" % (k, type(v), v) 
+        if key in sdict :
+            sdict[key] = np.append(sdict[key], val)
+        else :
+            sdict[key] = val
+
+
 class EventsPi(OrderedDict):
     """
     Container for events for use with PISA pi
@@ -118,7 +137,7 @@ class EventsPi(OrderedDict):
             ]
         )
 
-    def load_events_file(self, events_file, variable_mapping=None):
+    def load_events_file(self, events_file, variable_mapping=None, expected_metadata=None):
         """Fill this events container from an input HDF5 file filled with event
         data Optionally can provide a variable mapping so select a subset of
         variables, rename them, etc.
@@ -139,7 +158,7 @@ class EventsPi(OrderedDict):
 
         """
         # Validate `events_file`
-        if not isinstance(events_file, (str, Mapping)):
+        if not isinstance(events_file, (str, Mapping, Sequence)):
             raise TypeError(
                 "`events_file` must be either string or mapping; got (%s)"
                 % type(events_file)
@@ -168,34 +187,95 @@ class EventsPi(OrderedDict):
                         " an iterable of strings"
                     )
 
+        # Validate `expected_metadata`
+        if expected_metadata is not None :
+            assert isinstance(expected_metadata, Sequence)
+            assert all([ isinstance(k, str) for k in expected_metadata ])
+
+
+        #
+        # Loop over files
+        #
+
+        input_data = OrderedDict()
+        metadata = OrderedDict()
+
+        # Handle list of files vs single file
+        events_files_list = []
         if isinstance(events_file, str):
-            input_data = from_file(events_file)
-            if not isinstance(input_data, Mapping):
-                raise TypeError(
-                    'Contents loaded from "%s" must be a mapping; got: %s'
-                    % (events_file, type(input_data))
-                )
-        else:  # isinstance(events_file, Mapping)
-            input_data = events_file
+            events_files_list = [events_file]
+        elif isinstance(events_file, Mapping):
+            events_files_list = [events_file]
+        elif isinstance(events_file, Sequence):
+            events_files_list = events_file
 
-        # Events and EventsPi objects have attr `metadata`
-        metadata = getattr(input_data, 'metadata', None)
+        # Loop over files
+        for i_file, infile in enumerate(events_files_list) :
 
-        # HDF files have attr `attrs` attached, if present (see pisa.utils.hdf)
-        if not metadata:
-            metadata = getattr(input_data, 'attrs', None)
+            #
+            # Parse variables from file
+            #
 
-        if metadata:
-            if not isinstance(metadata, Mapping):
-                raise TypeError(
-                    "metadata or attrs expected to be a Mapping, but got {}".format(
-                        type(metadata)
+            # Read the file
+            # If `variable_mapping` was specified, only load those variables (saves time/memory)
+            if isinstance(infile, str):
+                choose = None if variable_mapping is None else variable_mapping.values()
+                file_input_data = from_file(infile, choose=choose)
+                if not isinstance(file_input_data, Mapping):
+                    raise TypeError(
+                        'Contents loaded from "%s" must be a mapping; got: %s'
+                        % (infile, type(file_input_data))
                     )
-                )
-            # TODO: events.py calls `tolist` method on all values that have
-            # that method (e.g., convert numpy arrays to lists). Why? Is this
-            # necessary? Should we do that here, too?
-            self.metadata.update(metadata)
+                assert len(file_input_data) > 0, "No input data found"
+
+            # File already ready
+            elif isinstance(infile, Mapping) :
+                file_input_data = infile
+
+            # Add to overall container
+            for k, v in file_input_data.items() :
+                append_arrays_dict(k, v, input_data)
+
+
+            #
+            # Parse metadata from file
+            #
+
+            if expected_metadata is not None :
+
+                # Events and EventsPi objects have attr `metadata`
+                file_metadata = getattr(file_input_data, 'metadata', None)
+
+                # HDF files have attr `attrs` attached, if present (see pisa.utils.hdf)
+                if not file_metadata:
+                    file_metadata = getattr(file_input_data, 'attrs', None)
+
+                if file_metadata:
+
+                    # Check format
+                    if not isinstance(file_metadata, Mapping):
+                        raise TypeError(
+                            "metadata or attrs expected to be a Mapping, but got {}".format(
+                                type(file_metadata)
+                            )
+                        )
+
+                    # Loop over expected metadata
+                    for k in expected_metadata :
+
+                        assert k in file_metadata, "Expected metadata '%s' not found" % k
+
+                        # For the special case of livetime, append livetiem from each file
+                        # Otherwise, expect identical value in all cases
+                        if k in self.metadata :
+                            if k == "livetime" :
+                                self.metadata[k] += file_metadata[k]
+                            else :
+                                assert self.metadata[k] == file_metadata[k]
+                        else :
+                            self.metadata[k] = file_metadata[k]
+
+
 
         #
         # Re-format inputs

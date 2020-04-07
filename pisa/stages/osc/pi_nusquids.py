@@ -12,6 +12,7 @@ from __future__ import absolute_import, print_function, division
 import math
 import numpy as np
 from numba import guvectorize
+from scipy.interpolate import RectBivariateSpline
 
 from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
@@ -19,17 +20,14 @@ from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.stages.osc.pi_osc_params import OscParams
 from pisa.stages.osc.layers import Layers
-from pisa.stages.osc.prob3numba.numba_osc import propagate_array, fill_probs
+from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import propagate_array, fill_probs
 from pisa.utils.numba_tools import WHERE
 from pisa.stages.osc.pi_prob3 import apply_probs
 
 from pisa.utils.resources import find_resource
-from pisa.utils import vectorizer
 from pisa.stages.osc.nusquids.nusquids_osc import NSQ_CONST, validate_calc_grid, compute_binning_constants, init_nusquids_prop, evolve_states, osc_probs, earth_model
 from pisa import ureg
 
-
-from scipy.interpolate import RectBivariateSpline
 
 __all__ = ['pi_nusquids']
 

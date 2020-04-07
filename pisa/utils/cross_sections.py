@@ -21,7 +21,7 @@ from pisa.utils.log import logging, set_verbosity
 from pisa.utils.resources import find_resource
 
 
-__all__ = ['CrossSections']
+__all__ = ['CrossSections', 'manual_test_CrossSections']
 
 __author__ = 'J.L. Lanfranchi'
 
@@ -240,7 +240,7 @@ class CrossSections(FlavIntData):
         """Return the cross sections version string"""
         return self._ver
 
-    def save(self, fpath, ver=None, **kwargs):
+    def save(self, fpath, ver=None, **kwargs):  # pylint: disable=arguments-differ
         """Save cross sections (and the energy specification) to a file at
         `fpath`."""
         if ver is None:
@@ -526,8 +526,6 @@ class CrossSections(FlavIntData):
             If a dict, calls pyplot.savefig(**save) (i.e., save contains
             keyword args to savefig)
         """
-        import matplotlib
-        matplotlib.use('pdf')
         import matplotlib.pyplot as plt
 
         if self._ver is None:
@@ -586,15 +584,14 @@ class CrossSections(FlavIntData):
         plt.tight_layout()
 
         if isinstance(save, str):
-            logging.info('Saving cross sections plots to file ' + save)
+            logging.info('Saving cross sections plots to file "%s"', save)
             f.savefig(save)
         elif isinstance(save, dict):
-            logging.info('Saving cross sections plots using figure.save'
-                         ' params %s', (save,))
+            logging.info('Saving cross sections plots via `figure.save(**%s)`', save)
             f.savefig(**save)
 
 
-def test_CrossSections(outdir=None):
+def manual_test_CrossSections(outdir=None):
     """Unit tests for CrossSections class"""
     from shutil import rmtree
     from tempfile import mkdtemp
@@ -611,21 +608,26 @@ def test_CrossSections(outdir=None):
         xs = CrossSections(ver='genie_2.6.4', xsec=pisa_xs_file)
 
         # Location of the root file to use (not included in PISA at the moment)
-        test_dir = expand(os.path.join('/tmp', 'pisa_tests', 'cross_sections'))
+        #test_dir = expand(os.path.join('/tmp', 'pisa_tests', 'cross_sections'))
         #root_xs_file = os.path.join(test_dir, 'genie_2.6.4_simplified.root')
-        root_xs_file = find_resource(os.path.join(
-            #'tests', 'data', 'xsec', 'genie_2.6.4_simplified.root'
-            'cross_sections', 'genie_xsec_H2O.root'
-        ))
+        try:
+            root_xs_file = find_resource(
+                os.path.join(
+                    #'tests', 'data', 'xsec', 'genie_2.6.4_simplified.root'
+                    'cross_sections', 'genie_xsec_H2O.root'
+                )
+            )
+        except Exception:
+            root_xs_file = None
 
         # Make sure that the XS newly-imported from ROOT match those stored in
         # PISA
-        if os.path.isfile(root_xs_file):
-            xs_from_root = CrossSections.new_from_root(root_xs_file,
-                                                       ver='genie_2.6.4')
-            logging.info('Found and loaded ROOT source cross sections file %s',
-                         root_xs_file)
-            #assert xs_from_root.allclose(xs, rtol=1e-7)
+        if root_xs_file:
+            xs_from_root = CrossSections.new_from_root(root_xs_file, ver='genie_2.6.4')
+            logging.info(
+                'Found and loaded ROOT source cross sections file %s', root_xs_file
+            )
+            assert xs_from_root.allclose(xs, rtol=1e-7)
 
         # Check XS ratio for numu_cc to numu_cc + numu_nc (user must inspect)
         kg0 = NuFlavIntGroup('numu_cc')
@@ -669,4 +671,4 @@ def test_CrossSections(outdir=None):
 
 if __name__ == "__main__":
     set_verbosity(1)
-    test_CrossSections()
+    manual_test_CrossSections()
