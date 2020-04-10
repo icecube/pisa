@@ -153,6 +153,10 @@ class pi_earth_absorption(PiStage):
             container['densities'] = self.layers.density.reshape((container.size, self.layers.max_layers))
             container['distances'] = self.layers.distance.reshape((container.size, self.layers.max_layers))
             container['rho_int'] = np.empty((container.size), dtype=FTYPE)
+            
+            container['densities'].mark_changed(WHERE)
+            container['distances'].mark_changed(WHERE)
+            container['rho_int'].mark_changed(WHERE)
         # don't forget to un-link everything again
         self.data.unlink_containers()
 
