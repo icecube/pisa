@@ -300,7 +300,7 @@ class Container(object):
         data : PISA Map or (array, binning)-tuple
 
         flat : bool
-            is the data already flattened (i.e. the binning dimesnions unrolled)
+            is the data already flattened (i.e. the binning dimensions unrolled)
 
         """
         # TODO: logic to not copy back and forth

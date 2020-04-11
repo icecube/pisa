@@ -26,13 +26,11 @@ import numpy as np
 
 from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
-from pisa.utils import vectorizer
 from pisa.utils.log import logging
-from pisa.utils.numba_tools import WHERE
 
 
 # Load the modified index lookup function
-from analysis.sandbox.bourdeet.translation_indices import lookup_indices
+from pisa.core.bin_indexing import lookup_indices
 
 
 
@@ -83,7 +81,7 @@ class add_indices(PiStage):
         # what are keys added or altered in the calculation used during apply
         output_calc_keys = ()
         # what keys are added or altered for the outputs during apply
-        output_apply_keys = ()
+        output_apply_keys = ('weights',)
 
         # init base class
         super(add_indices, self).__init__(data=data,
@@ -139,18 +137,17 @@ class add_indices(PiStage):
     def apply_function(self):
         # this function is called everytime the pipeline is run, so here we can just apply our factors
         # that we calculated before to the event weights
-        #print(self.data.data_specs)
+
 
         for container in self.data:
-            # to apply we want to multiply the evenet weights by the factors we computed before
-            # we can either implement another vectorized function, or just use one that is already available
 
-            new_array = lookup_indices(sample=[container['reco_energy'],container['reco_coszen'],container['pid']],
-                               binning=self.calc_specs,
-                           )
-            new_array = new_array.get(WHERE).astype(np.int32)
+            E = container.array_data['reco_energy']
+            C = container.array_data['reco_coszen']
+            P = container.array_data['pid']
 
-            container.add_array_data('bin_indices',new_array)
+            new_array = lookup_indices(sample=[E,C,P],binning=self.calc_specs)
+            container.add_array_data('bin_indices',new_array.get('host'))
+
             # Also precompute a mask array for each bin number
 
             #for i in range(self.calc_specs.tot_num_bins):

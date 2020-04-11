@@ -746,8 +746,7 @@ class Analysis(object):
             options=minimizer_settings['options']['value'],
             callback=self._minimizer_callback
         )
-        print('HERE?')
-        raise Exception
+        
         end_t = time.time()
         if pprint:
             # clear the line
@@ -815,6 +814,7 @@ class Analysis(object):
             if blind:
                 msg = ''
             else:
+                print(optimize_result.message)
                 msg = ' ' + optimize_result.message
             raise ValueError('Optimization failed.' + msg)
 
@@ -941,6 +941,11 @@ class Analysis(object):
         if detector_name is not None:
             detailed_metric_info['detector_name'] = detector_name
         for m in all_metrics:
+
+            # skip generalized poisson llh info for now
+            if m=='generalized_poisson_llh':
+                continue
+            
             name_vals_d = OrderedDict()
             name_vals_d['maps'] = data_dist.metric_per_map(
                 expected_values=hypo_asimov_dist, metric=m

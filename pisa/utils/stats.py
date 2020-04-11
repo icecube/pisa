@@ -668,14 +668,15 @@ def construct_weight_dict(container_dict=None, n_bins=None, binning_spec=None):
         # Check if a bin_indices array is present.
         # If not compute it
         if 'bin_indices' not in container.array_data.keys():
-            from pisa.core.bin_indexing import lookup_indices
-            indices = lookup_indices(sample=[container.array_data['reco_energy'],container.array_data['reco_coszen'],container.array_data['pid']],binning=binning_spec)
-            container.add_array_data(key='bin_indices',data=indices.get())
+            raise Exception('ERROR: bin_indices stage should have been run')
 
         # Iterate over each analysis bin, picking up weights that are 
         # falling into bin i
         bin_indices_array = container.array_data['bin_indices'].get('host')
         all_weights       = container.array_data['weights'].get('host')
+
+        # Clip weights to zero to avoid negative numbers
+        all_weights = np.clip(all_weights,a_min=0.,a_max=None)
         for i in range(n_bins):
             mask = bin_indices_array==i
             w = all_weights[mask]
@@ -727,6 +728,7 @@ def generalized_poisson_llh(actual_values,expected_values):
     #***************************************************************************************************************
     # default settings (as stated towards the end of the paper): gen2 , empty_bin_strategy=1, mead_adjustment=True
     #
+
     flattened_actual, weights_dict = format_input_to_generalized_poisson(actual_values, expected_values)
 
         

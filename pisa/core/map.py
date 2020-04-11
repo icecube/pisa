@@ -1568,6 +1568,26 @@ class Map(object):
         return np.sum(stats.chi2(actual_values=self.hist,
                                  expected_values=expected_values))
 
+
+    def generalized_poisson_llh(self,actual_values,expected_values,binned=False):
+        '''
+        compute the likelihood of this map's count to originate from
+
+        Note that unlike the other likelihood functions, expected_values
+        is expected to be a ditribution maker
+
+        '''
+        from pisa.core.distribution_maker import DistributionMaker
+        assert isinstance(expected_values,DistributionMaker),'ERROR: expected_values must be a DistributionMaker object'
+
+
+        if binned:
+            raise Exception('ERROR: no binned version of the llh available at this time')
+
+        else:
+            return generalized_poisson_llh(actual_values=self.hist,expected_values=expected_values)
+
+
     def metric_total(self, expected_values, metric):
         # TODO: should this use reduceToHist as in chi2 and llh above?
         if metric in stats.ALL_METRICS:

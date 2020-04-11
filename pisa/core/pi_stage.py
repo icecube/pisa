@@ -273,20 +273,22 @@ class PiStage(BaseStage):
         add option to force an output mode
 
         """
-
-        if output_mode is not None:
+        if output_mode is None:
+            output_mode = self.output_mode
+        else:
             assert output_mode=='binned' or output_mode=='events','ERROR: user-specified output mode is unrecognized'
-            self.output_mode = output_mode
-        
-        if self.output_mode == 'binned' and len(self.output_apply_keys) == 1:
+
+
+        if output_mode == 'binned' and len(self.output_apply_keys) == 1:
             self.outputs = self.data.get_mapset(self.output_apply_keys[0])
-        elif self.output_mode=='binned' and len(self.output_apply_keys) == 2 and 'errors' in self.output_apply_keys:
+
+        elif output_mode=='binned' and len(self.output_apply_keys) == 2 and 'errors' in self.output_apply_keys:
             other_key = [key for key in self.output_apply_keys if not key == 'errors'][0]
             self.outputs = self.data.get_mapset(other_key, error='errors')
-        elif self.output_mode == "events" :
+        elif output_mode == "events" :
             self.outputs = self.data
         else:
             self.outputs = None
-            logging.warning('Cannot create CAKE style output mapset')
+            logging.warning('pi_stage.py: Cannot create CAKE style output mapset')
 
         return self.outputs
