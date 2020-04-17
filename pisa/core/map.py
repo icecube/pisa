@@ -73,6 +73,8 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 
 # TODO: move these utilities functions to a generic utils module?
 
+
+
 def type_error(value):
     """Generic formulation of a TypeError that can be called throughout the
     code"""
@@ -1569,7 +1571,7 @@ class Map(object):
                                  expected_values=expected_values))
 
 
-    def generalized_poisson_llh(self,actual_values,expected_values,binned=False):
+    def generalized_poisson_llh(self,expected_values=None,empty_bins=None, binned=False):
         '''
         compute the likelihood of this map's count to originate from
 
@@ -1577,15 +1579,51 @@ class Map(object):
         is expected to be a ditribution maker
 
         '''
-        from pisa.core.distribution_maker import DistributionMaker
-        assert isinstance(expected_values,DistributionMaker),'ERROR: expected_values must be a DistributionMaker object'
+        from llh_defs.poisson import normal_log_probability, fast_pgmix
 
+        assert isinstance(expected_values,OrderedDict),'ERROR: expected_values must be an OrderedDict of MapSet objects'
+        assert 'weights' in expected_values.keys()    ,'ERROR: expected_values need a key named "weights"'
+        assert 'llh_alphas' in expected_values.keys() ,'ERROR: expected_values need a key named "llh_alphas"'
+        assert 'llh_betas' in expected_values.keys()  ,'ERROR: expected_values need a key named "llh_betas"'
+        assert 'new_sum'   in expected_values.keys()  ,'ERROR: expected_values need a key named "new_sum"'
+
+        N_bins=self.hist.flatten().shape[0]
+        llh_per_bin = np.zeros(N_bins)
+
+        # If no empty bins are specified, we assume that all of them should be included
+        if empty_bins is None:
+            empty_bins = range(N_bins)
+
+        for bin_i in range(N_bins):
+            data_count = self.hist.flatten()[bin_i].nominal_value
+            weight_sum = sum([m.hist.flatten()[bin_i] for m in expected_values['new_sum'].maps])
+
+            for m in expected_values['new_sum'].maps:
+                if m.name=='muon':
+                    weight_muons = m.hist.flatten()[bin_i]
+            #print(bin_i, data_count, weight_sum, weight_muons)
+
+            if data_count>100:
+
+                if weight_sum<0:
+                    print('\nERROR: negative weight sum should not happen...')
+                    raise Exception
+
+                logP = normal_log_probability(k=data_count,weight_sum=weight_sum)
+                llh_per_bin[bin_i] = logP
+
+            else:
+
+                alphas = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_alphas'].maps])
+                betas  = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_betas'].maps])
+
+                llh_of_bin = fast_pgmix(data_count, alphas[np.isfinite(alphas)], betas[np.isfinite(betas)])
+                llh_per_bin[bin_i] = llh_of_bin
 
         if binned:
-            raise Exception('ERROR: no binned version of the llh available at this time')
-
+            return llh_per_bin
         else:
-            return generalized_poisson_llh(actual_values=self.hist,expected_values=expected_values)
+            return sum(llh_per_bin)
 
 
     def metric_total(self, expected_values, metric, metric_kw={}):
@@ -2823,6 +2861,7 @@ class MapSet(object):
                              % (metric, stats.ALL_METRICS))
 
     def metric_total(self, expected_values, metric):
+
         return np.sum(list(self.metric_per_map(expected_values, metric).values()))
 
     def chi2_per_map(self, expected_values):

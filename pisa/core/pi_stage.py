@@ -16,6 +16,8 @@ from pisa.core.container import ContainerSet
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 
+from collections import OrderedDict
+
 
 __all__ = ["PiStage"]
 __version__ = "Pi"
@@ -273,18 +275,32 @@ class PiStage(BaseStage):
         add option to force an output mode
 
         """
+
+        # Figure out if the user has specifiec an output mode
         if output_mode is None:
             output_mode = self.output_mode
         else:
             assert output_mode=='binned' or output_mode=='events','ERROR: user-specified output mode is unrecognized'
 
 
-        if output_mode == 'binned' and len(self.output_apply_keys) == 1:
-            self.outputs = self.data.get_mapset(self.output_apply_keys[0])
+        # Handle the binned case
+        if output_mode == 'binned':
 
-        elif output_mode=='binned' and len(self.output_apply_keys) == 2 and 'errors' in self.output_apply_keys:
-            other_key = [key for key in self.output_apply_keys if not key == 'errors'][0]
-            self.outputs = self.data.get_mapset(other_key, error='errors')
+            # Specific case where we only aske for one output. return a single mapset (compatibility)
+            if len(self.output_apply_keys) == 1:
+                self.outputs = self.data.get_mapset(self.output_apply_keys[0])
+
+            # Very specific case where the output has two keys and one of them is error (compatibility)
+            elif len(self.output_apply_keys) == 2 and 'errors' in self.output_apply_keys:
+                other_key = [key for key in self.output_apply_keys if not key == 'errors'][0]
+                self.outputs = self.data.get_mapset(other_key, error='errors')
+
+            # More generally: produce one map per output key desired, in a dict
+            else:
+                self.outputs  = OrderedDict()
+                for key in self.output_apply_keys:
+                    self.outputs[key] = self.data.get_mapset(key)
+
         elif output_mode == "events" :
             self.outputs = self.data
         else:

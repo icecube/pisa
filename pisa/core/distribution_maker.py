@@ -203,15 +203,28 @@ class DistributionMaker(object):
         """
 
         outputs = [pipeline.get_outputs(**kwargs) for pipeline in self] # pylint: disable=redefined-outer-name
+        
         if return_sum:
-            if len(outputs) > 1:
-                outputs = sum([sum(x) for x in outputs])
-            else:
-                outputs = sum(sum(outputs))
-            outputs.name = sum_map_name
-            outputs.tex = sum_map_tex_name
-            outputs = MapSet(outputs)
 
+            # Case where the output of a pipeline is a mapSet
+            if isinstance(outputs[0],MapSet):
+                outputs = sum([sum(x) for x in outputs]) # This produces a Map
+                outputs.name = sum_map_name
+                outputs.tex = sum_map_tex_name
+                outputs = MapSet(outputs) # final output must be a MapSet
+
+
+            # Case where the output of a pipeline is a dict of different MapSets
+            elif isinstance(outputs[0],OrderedDict):
+                output_dict = OrderedDict()
+                for key in outputs[0].keys():
+
+                    output_dict[key] = sum([sum(A[key]) for A in outputs]) # This produces a Map objects
+                    output_dict[key].name = sum_map_name
+                    output_dict[key].tex = sum_map_tex_name
+                    output_dict[key] = MapSet(output_dict[key])
+
+                outputs = output_dict
 
         return outputs
 

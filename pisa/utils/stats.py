@@ -676,7 +676,7 @@ def construct_weight_dict(container_dict=None, n_bins=None, binning_spec=None):
         all_weights       = container.array_data['weights'].get('host')
 
         # Clip weights to zero to avoid negative numbers
-        all_weights = np.clip(all_weights,a_min=0.,a_max=None)
+        #all_weights = np.clip(all_weights,a_min=0.,a_max=None)
         for i in range(n_bins):
             mask = bin_indices_array==i
             w = all_weights[mask]

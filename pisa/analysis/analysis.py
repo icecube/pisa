@@ -53,6 +53,22 @@ MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b', 'slsqp')
 """Minimizers that use symmetrical steps on either side of a point to compute
 gradients. See https://github.com/scipy/scipy/issues/4916"""
 
+def merge_mapsets_together(mapset_list = None):
+
+    if isinstance(mapset_list[0],OrderedDict):    
+        new_dict = OrderedDict()
+        for S in mapset_list:
+            for k,v in S.items():
+                if k not in new_dict.keys():
+                    new_dict[k] = [m for m in v.maps]
+                else:
+                    new_dict[k]+= [m for m in v.maps]
+
+        for k,v in new_dict.items():
+            new_dict[k] = MapSet(v)
+
+    return new_dict
+
 
 # TODO: add Nelder-Mead, as it was used previously...
 def set_minimizer_defaults(minimizer_settings):
@@ -1030,8 +1046,15 @@ class Analysis(object):
 
         # Get the Asimov map set
         try:
-            hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True,output_mode='binned')
-        
+            if metric[0]=='generalized_poisson_llh':
+                hypo_asimov_dist = hypo_maker.get_outputs(return_sum=False,output_mode='binned')
+                hypo_asimov_dist = merge_mapsets_together(mapset_list=hypo_asimov_dist)
+            else:
+                hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
+                if isinstance(hypo_asimov_dist,OrderedDict):
+                    hypo_asimov_dist = hypo_asimov_dist['weights']
+
+
         except Exception as e:
             if blind:
                 logging.error('Minimizer failed')
@@ -1066,11 +1089,7 @@ class Analysis(object):
                 metric_val += priors
             else: # DistributionMaker object
 
-                if 'generalized_poisson_llh' in metric:
-                    expected_values = hypo_maker.get_outputs(return_sum=False,output_mode='events')
-                    metric_val = generalized_poisson_llh(expected_values=expected_values,actual_values=data_dist)
-                else:
-                    metric_val = (
+                metric_val = (
                         data_dist.metric_total(expected_values=hypo_asimov_dist,
                                                metric=metric[0])
                         + hypo_maker.params.priors_penalty(metric=metric[0])

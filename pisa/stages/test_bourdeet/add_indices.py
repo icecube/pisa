@@ -77,11 +77,11 @@ class add_indices(PiStage):
         # (this may seem a bit abstract right now, but hopefully will become more clear later)
 
         # what are the keys used from the inputs during apply
-        input_apply_keys = ('weights',)
+        input_apply_keys = ()
         # what are keys added or altered in the calculation used during apply
-        output_calc_keys = ()
+        output_calc_keys = ('bin_indices',)
         # what keys are added or altered for the outputs during apply
-        output_apply_keys = ('weights',)
+        output_apply_keys = ()
 
         # init base class
         super(add_indices, self).__init__(data=data,
@@ -105,51 +105,28 @@ class add_indices(PiStage):
 
     def setup_function(self):
         """Setup the stage"""
-        # in case we need to initialize sth, like reading in an external file,
-        # or add variables to the data object that we can later populate
         
-        # do that in the right representation
-        self.data.data_specs = 'events'#self.calc_specs
+        assert self.calc_specs=='events','ERROR: calc specs must be set to "events for this module'
 
-        #for container in self.data:
-            # also notice that PISA uses strict typing for arrays
-            #container['bin_indices'] = np.empty((container.size), dtype=FTYPE)
+        self.data.data_specs = self.calc_specs
+        for container in self.data:
+            # Generate a new container called bin_indices
+            container['bin_indices'] = np.empty((container.size), dtype=FTYPE)
 
-    # def compute_function(self):
-    #     """Perform computation"""
-    #     # this function is called when parameters of this stage are changed (and the first time the
-    #     # pipeline is run). Otherwise it is skipped. We will compute our nonsense scale factors here
-        
-    #     # get our paramater in the desired dimensions
-    #     analysis_binning = self.params.analysis_binning
-        
-    #     for container in self.data:
-    #         # the `.get(WHERE)` statements are necessary for numba to know if these arrays should be read from the host (CPU)
-    #         # or the device (GPU).
-    #         # No worries, this will work without a GPU too
-    #         new_array = lookup(sample=[container['reco_energy'],container['reco_coszen']],
-    #                          flat_hist= container.binned_data['weights'][-1],
-    #                          binning=self.params.binning,
-    #                          )
 
-    #         container.add('bin_indices',new_array.get(WHERE).astype(np.int32))
 
     def apply_function(self):
-        # this function is called everytime the pipeline is run, so here we can just apply our factors
-        # that we calculated before to the event weights
 
-
+        assert self.calc_specs=='events','ERROR: bin_indices need calc_specs set to "events"'
+        
+        # We set the data_specs to event mode
+        self.data.data_specs= 'events'
+        
         for container in self.data:
 
-            E = container.array_data['reco_energy']
-            C = container.array_data['reco_coszen']
-            P = container.array_data['pid']
+            E = container['reco_energy']
+            C = container['reco_coszen']
+            P = container['pid']
 
-            new_array = lookup_indices(sample=[E,C,P],binning=self.calc_specs)
-            container.add_array_data('bin_indices',new_array.get('host'))
-
-            # Also precompute a mask array for each bin number
-
-            #for i in range(self.calc_specs.tot_num_bins):
-            #    new_mask = new_array==i
-            #    container.add_array_data('bin_index_%i'%(i), new_mask)
+            new_array = lookup_indices(sample=[E,C,P],binning=self.output_specs)
+            np.copyto(src=new_array.get('host'), dst=container["bin_indices"].get('host'))
