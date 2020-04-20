@@ -74,7 +74,7 @@ class prepare_generalized_llh_parameters(PiStage):
         # what are keys added or altered in the calculation used during apply
         output_calc_keys = ('weights',)
         # what keys are added or altered for the outputs during apply
-        output_apply_keys = ('weights','llh_alphas','llh_betas','n_mc_events','empty_bins','new_sum')
+        output_apply_keys = ('weights','llh_alphas','llh_betas','n_mc_events','new_sum')
 
         # init base class
         super(prepare_generalized_llh_parameters, self).__init__(data=data,
@@ -113,40 +113,16 @@ class prepare_generalized_llh_parameters(PiStage):
             container['llh_betas']  = np.empty((container.size), dtype=FTYPE)
             container['n_mc_events']= np.empty((container.size), dtype=FTYPE)
             container['new_sum']    = np.empty((container.size), dtype=FTYPE)
-            container['empty_bins'] = np.empty((container.size), dtype=np.int64)
 
 
 
-
-
-
-    #@line_profile
-    def apply_function(self):
-        '''
-        stuff
-
-        '''
-        N_bins = self.output_specs.tot_num_bins
-
-        self.data.data_specs = self.output_specs
-
-        for container in self.data:
 
             #
             # Step 1: assert the number of MC events in each bin,
-            #         the maximum weight of the entire container, and whether 
-            #         there are emtpy bins 
-
-            # for this part we are in events mode
+            #         for each container
             self.data.data_specs = 'events'
-
             nevents_sim = np.zeros(N_bins)
-            empty_bins  = np.zeros(N_bins,dtype=np.int64)
-
-            # Find the maximum weight of an entire MC set
-            max_weight  = np.amax(container['weights'].get('host'))
-            container.add_scalar_data(key='pseudo_weight',data=max_weight)
-
+            
             for index in range(N_bins):
                 index_mask = container['bin_{}_mask'.format(index)].get('host')
                 current_weights = container['weights'].get('host')[index_mask]
@@ -154,34 +130,49 @@ class prepare_generalized_llh_parameters(PiStage):
 
                 # Number of MC events in each bin
                 nevents_sim[index] = n_weights
-                empty_bins[index] = 1 if n_weights<=0 else 0
             
-
-            # For this part we are back in bin mode
             self.data.data_specs = self.output_specs
             np.copyto(src=nevents_sim, dst=container["n_mc_events"].get('host'))
-            np.copyto(src=empty_bins, dst=container['empty_bins'].get('host'))
-        #
-        #  2. Check where there are bins where we need to provide a pseudo MC event count
-        #     This should indicate the bin numbers where at least
-        #     one container is non-empty
-        #
-        N_bins = self.output_specs.tot_num_bins
-        self.data.data_specs = self.output_specs
-        all_empty_bins = [c['empty_bins'].get('host') for c in self.data]
-        bins_we_need_to_fix = np.ones(N_bins,dtype=np.int64)
-        for v in all_empty_bins:
-            bins_we_need_to_fix*=v.astype(np.int64)
 
-        bin_indices_we_need = np.where(bins_we_need_to_fix==0)[0] #TODO: this must be a trans-pipeline object
-        bin_indices_we_need = range(N_bins) # for now, we assume all bins will have at least one mc event
+
+    #@line_profile
+    def apply_function(self):
+        '''
+        Computes the main inputs to the generalized likelihood 
+        function on every iteration of the minimizer
+
+        '''
+        N_bins = self.output_specs.tot_num_bins
+
+
+
+        #
+        # Step 2: Find the maximum weight accross all events 
+        #         of each MC set. The value of that weight defines
+        #         the value of the pseudo-weight that will be included
+        #         in empty bins
+        
+        # for this part we are in events mode
+        for container in self.data:
+
+
+            self.data.data_specs = 'events'
+
+            nevents_sim = np.zeros(N_bins)
+
+            # Find the maximum weight of an entire MC set
+            max_weight  = np.amax(container['weights'].get('host'))
+            container.add_scalar_data(key='pseudo_weight',data=max_weight)
             
+
 
         #
         # 3. Apply the empty bin strategy and mean adjustment
         #    Compute the alphas and betas that go into the 
         #    poisson-gamma mixture of the llh
         #
+        self.data.data_specs = self.output_specs
+
         for container in self.data:
 
             self.data.data_specs = 'events'
@@ -190,18 +181,18 @@ class prepare_generalized_llh_parameters(PiStage):
             var_of_weights = np.zeros(N_bins)
             nevents_sim = np.zeros(N_bins)
 
+            # hypersurface fit result
+            hypersurface = container.binned_data['hs_scales'][1].get('host')
+
             for index in range(N_bins):
 
                 index_mask = container['bin_{}_mask'.format(index)].get('host')
                 current_weights = container['weights'].get('host')[index_mask]
 
                 # If no weights and other datasets have some, include a pseudo weight
+                # Bins with no mc event in all set will be ignore in the likelihood later
                 if current_weights.shape[0]<=0:
-                    if index in bin_indices_we_need:
-                        current_weights = np.array([container.scalar_data['pseudo_weight']]) #TODO: make trans-pipeline aware
-                    else: 
-                        logging.trace('WOOOO! Empty bin common to all sets: {}'.format(index))
-                        current_weights = np.array([0.0])
+                    current_weights = np.array([container.scalar_data['pseudo_weight']])
 
                 # New number
                 n_weights = current_weights.shape[0]
@@ -209,11 +200,13 @@ class prepare_generalized_llh_parameters(PiStage):
                 new_weight_sum[index]+=np.sum(current_weights)
 
                 # Mean of the current weight distribution
-                mean_w = np.mean(current_weights)
+                # ---> scaled by the hypeersurface fit
+                mean_w = np.mean(current_weights)*hypersurface[index]
                 mean_of_weights[index] = mean_w
 
                 # variance of the current weight
-                var_of_weights[index]=((current_weights-mean_w)**2).sum()/(float(n_weights))
+                # ---> scaled by the hypersurface
+                var_of_weights[index]=((current_weights-mean_w)**2).sum()/(float(n_weights))*hypersurface[index]
 
 
             #  Calculate mean adjustment (TODO: save as a container scalar?)

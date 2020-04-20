@@ -293,6 +293,46 @@ class DistributionMaker(object):
     def hash(self):
         return hash_obj([self.source_code_hash] + [p.hash for p in self])
 
+    @property
+    def n_mc_events_per_bin(self):
+        '''
+        returns an array of bin indices where none of the 
+        pipelines have MC events
+
+        assumes that all pipelines have the same binning output specs
+        '''
+        N_bins = self.pipelines[0].stages[-1].output_specs.tot_num_bins
+        self._n_mc_events_per_bin = np.zeros(N_bins)
+
+        for p in self.pipelines:
+
+            for c in p.stages[-1].data:
+
+                # skip data or pseudo-data pipelines
+                if c.name=='data' or c.name=='Total':
+                    continue
+
+                for index in range(N_bins):
+                    index_mask = c.array_data['bin_{}_mask'.format(index)].get('host')
+                    current_weights = c.array_data['weights'].get('host')[index_mask]
+                    n_weights = current_weights.shape[0]
+
+                    self._n_mc_events_per_bin[index]+=n_weights
+
+
+        return self._n_mc_events_per_bin
+    
+
+    @property
+    def get_empty_bins(self):
+        '''
+        Find the bin indices where there are no MC events present
+        '''
+        mc_counts = self.n_mc_events_per_bin
+        indices= np.where(mc_counts==0)[0]
+        return indices
+    
+
     def set_free_params(self, values):
         """Set free parameters' values.
 

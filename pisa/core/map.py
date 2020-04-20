@@ -1578,6 +1578,13 @@ class Map(object):
         Note that unlike the other likelihood functions, expected_values
         is expected to be a ditribution maker
 
+        inputs:
+        ------
+
+            expected_values: OrderedDict of MapSets
+
+            empty_bins: None, list or np.ndarray (list the bin indices that are empty)
+
         '''
         from llh_defs.poisson import normal_log_probability, fast_pgmix
 
@@ -1592,9 +1599,14 @@ class Map(object):
 
         # If no empty bins are specified, we assume that all of them should be included
         if empty_bins is None:
-            empty_bins = range(N_bins)
+            empty_bins = []
 
         for bin_i in range(N_bins):
+
+            # ignore the bin if bin index is part of the empty mc bins
+            if bin_i in empty_bins:
+                continue
+
             data_count = self.hist.flatten()[bin_i].nominal_value
             weight_sum = sum([m.hist.flatten()[bin_i] for m in expected_values['new_sum'].maps])
 
@@ -1626,10 +1638,10 @@ class Map(object):
             return sum(llh_per_bin)
 
 
-    def metric_total(self, expected_values, metric, metric_kw={}):
+    def metric_total(self, expected_values, metric, metric_kwargs={}):
         # TODO: should this use reduceToHist as in chi2 and llh above?
         if metric in stats.ALL_METRICS:
-            return getattr(self, metric)(expected_values,**metric_kw)
+            return getattr(self, metric)(expected_values,**metric_kwargs)
         else:
             raise ValueError('`metric` "%s" not recognized; use one of %s.'
                              % (metric, stats.ALL_METRICS))

@@ -1064,10 +1064,12 @@ class Analysis(object):
                 hypo_asimov_dist = hypo_maker.get_outputs(return_sum=False,output_mode='binned')
                 hypo_asimov_dist = merge_mapsets_together(mapset_list=hypo_asimov_dist)
                 data_dist = data_dist.maps[0] # Extract the map from the MapSet
+                metric_kwargs = {'empty_bins':hypo_maker.get_empty_bins}
             else:
                 hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
                 if isinstance(hypo_asimov_dist,OrderedDict):
                     hypo_asimov_dist = hypo_asimov_dist['weights']
+                metric_kwargs = {}
 
 
         except Exception as e:
@@ -1098,7 +1100,7 @@ class Analysis(object):
                 metric_val = 0
                 for i in range(len(hypo_maker._distribution_makers)):
                     data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],
-                                                  metric=metric[i])
+                                                  metric=metric[i],metric_kwargs=metric_kwargs)
                     metric_val += data
                 priors = hypo_maker.params.priors_penalty(metric=metric[0]) # uses just the "first" metric for prior
                 metric_val += priors
@@ -1106,7 +1108,7 @@ class Analysis(object):
 
                 metric_val = (
                         data_dist.metric_total(expected_values=hypo_asimov_dist,
-                                               metric=metric[0])
+                                               metric=metric[0],metric_kwargs=metric_kwargs)
                         + hypo_maker.params.priors_penalty(metric=metric[0])
                     )
         except Exception as e:
