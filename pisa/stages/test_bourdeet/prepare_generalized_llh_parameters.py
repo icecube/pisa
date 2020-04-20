@@ -19,7 +19,7 @@ from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
 
-
+from pisa.utils.profiler import profile, line_profile
 # Load the modified index lookup function
 from pisa.core.bin_indexing import lookup_indices
 from pisa.core.binning import MultiDimBinning
@@ -99,10 +99,16 @@ class prepare_generalized_llh_parameters(PiStage):
     def setup_function(self):
         """Setup the stage"""
 
+        N_bins = self.output_specs.tot_num_bins
+
         self.data.data_specs = self.output_specs
 
         for container in self.data:
+
+
+            #
             # Generate a new container called bin_indices
+            #
             container['llh_alphas'] = np.empty((container.size), dtype=FTYPE)
             container['llh_betas']  = np.empty((container.size), dtype=FTYPE)
             container['n_mc_events']= np.empty((container.size), dtype=FTYPE)
@@ -111,20 +117,25 @@ class prepare_generalized_llh_parameters(PiStage):
 
 
 
+
+
+
+    #@line_profile
     def apply_function(self):
         '''
         stuff
 
         '''
-
         N_bins = self.output_specs.tot_num_bins
 
-        # Step 1: assert the number of MC events in each bin,
-        #         the maximum weight of the entire container, and whether 
-        #         there are emtpy bins 
+        self.data.data_specs = self.output_specs
 
-        max_weight = OrderedDict()
         for container in self.data:
+
+            #
+            # Step 1: assert the number of MC events in each bin,
+            #         the maximum weight of the entire container, and whether 
+            #         there are emtpy bins 
 
             # for this part we are in events mode
             self.data.data_specs = 'events'
@@ -132,10 +143,12 @@ class prepare_generalized_llh_parameters(PiStage):
             nevents_sim = np.zeros(N_bins)
             empty_bins  = np.zeros(N_bins,dtype=np.int64)
 
-            max_weight[container.name] = max(container['weights']) # TODO: save as a scalar quantity?
+            # Find the maximum weight of an entire MC set
+            max_weight  = np.amax(container['weights'].get('host'))
+            container.add_scalar_data(key='pseudo_weight',data=max_weight)
 
             for index in range(N_bins):
-                index_mask = container['bin_indices'].get('host')==index
+                index_mask = container['bin_{}_mask'.format(index)].get('host')
                 current_weights = container['weights'].get('host')[index_mask]
                 n_weights = current_weights.shape[0]
 
@@ -148,22 +161,20 @@ class prepare_generalized_llh_parameters(PiStage):
             self.data.data_specs = self.output_specs
             np.copyto(src=nevents_sim, dst=container["n_mc_events"].get('host'))
             np.copyto(src=empty_bins, dst=container['empty_bins'].get('host'))
-
-
-
-
         #
         #  2. Check where there are bins where we need to provide a pseudo MC event count
         #     This should indicate the bin numbers where at least
         #     one container is non-empty
         #
+        N_bins = self.output_specs.tot_num_bins
+        self.data.data_specs = self.output_specs
         all_empty_bins = [c['empty_bins'].get('host') for c in self.data]
         bins_we_need_to_fix = np.ones(N_bins,dtype=np.int64)
         for v in all_empty_bins:
             bins_we_need_to_fix*=v.astype(np.int64)
 
         bin_indices_we_need = np.where(bins_we_need_to_fix==0)[0] #TODO: this must be a trans-pipeline object
-        bin_indices_we_need = range(N_bins)
+        bin_indices_we_need = range(N_bins) # for now, we assume all bins will have at least one mc event
             
 
         #
@@ -179,16 +190,15 @@ class prepare_generalized_llh_parameters(PiStage):
             var_of_weights = np.zeros(N_bins)
             nevents_sim = np.zeros(N_bins)
 
-
             for index in range(N_bins):
 
-                index_mask = container['bin_indices'].get('host')==index
+                index_mask = container['bin_{}_mask'.format(index)].get('host')
                 current_weights = container['weights'].get('host')[index_mask]
 
                 # If no weights and other datasets have some, include a pseudo weight
                 if current_weights.shape[0]<=0:
                     if index in bin_indices_we_need:
-                        current_weights = np.array([max_weight[container.name]]) #TODO: make trans-pipeline aware
+                        current_weights = np.array([container.scalar_data['pseudo_weight']]) #TODO: make trans-pipeline aware
                     else: 
                         logging.trace('WOOOO! Empty bin common to all sets: {}'.format(index))
                         current_weights = np.array([0.0])
@@ -196,7 +206,7 @@ class prepare_generalized_llh_parameters(PiStage):
                 # New number
                 n_weights = current_weights.shape[0]
                 nevents_sim[index] = n_weights
-                new_weight_sum[index]+=sum(current_weights)
+                new_weight_sum[index]+=np.sum(current_weights)
 
                 # Mean of the current weight distribution
                 mean_w = np.mean(current_weights)

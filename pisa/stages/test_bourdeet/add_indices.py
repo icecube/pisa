@@ -104,29 +104,23 @@ class add_indices(PiStage):
         assert self.output_mode is not None
 
     def setup_function(self):
-        """Setup the stage"""
         
         assert self.calc_specs=='events','ERROR: calc specs must be set to "events for this module'
 
-        self.data.data_specs = self.calc_specs
+
+        self.data.data_specs = 'events'
         for container in self.data:
             # Generate a new container called bin_indices
             container['bin_indices'] = np.empty((container.size), dtype=FTYPE)
-
-
-
-    def apply_function(self):
-
-        assert self.calc_specs=='events','ERROR: bin_indices need calc_specs set to "events"'
-        
-        # We set the data_specs to event mode
-        self.data.data_specs= 'events'
-        
-        for container in self.data:
-
+  
             E = container['reco_energy']
             C = container['reco_coszen']
             P = container['pid']
 
             new_array = lookup_indices(sample=[E,C,P],binning=self.output_specs)
-            np.copyto(src=new_array.get('host'), dst=container["bin_indices"].get('host'))
+            new_array = new_array.get('host')
+            np.copyto(src=new_array, dst=container["bin_indices"].get('host'))
+
+
+            for bin_i in range(self.output_specs.tot_num_bins):
+                container.add_array_data(key='bin_{}_mask'.format(bin_i), data=new_array==bin_i)

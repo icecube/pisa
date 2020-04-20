@@ -957,30 +957,44 @@ class Analysis(object):
         if detector_name is not None:
             detailed_metric_info['detector_name'] = detector_name
         for m in all_metrics:
-
-            # skip generalized poisson llh info for now
-            if m=='generalized_poisson_llh':
-                continue
-            
             name_vals_d = OrderedDict()
-            name_vals_d['maps'] = data_dist.metric_per_map(
-                expected_values=hypo_asimov_dist, metric=m
-            )
-            metric_hists = data_dist.metric_per_map(
-                expected_values=hypo_asimov_dist, metric='binned_'+m
-            )
-            maps_binned = []
-            for asimov_map, metric_hist in zip(hypo_asimov_dist, metric_hists):
-                map_binned = Map(
-                    name=asimov_map.name,
-                    hist=np.reshape(metric_hists[metric_hist],
-                                    asimov_map.shape),
-                    binning=asimov_map.binning
+
+            # if the metric is not generalized poisson, but the distribution is a dict,
+            # retreive the 'weights' mapset from the distribution output
+            if m=='generalized_poisson_llh':
+                name_vals_d['maps'] = data_dist.maps[0].generalized_poisson_llh(expected_values=hypo_asimov_dist)
+                llh_binned = data_dist.maps[0].generalized_poisson_llh(expected_values=hypo_asimov_dist, binned=True)
+                map_binned = Map(name=metric,
+                                hist=np.reshape(llh_binned,data_dist.maps[0].shape),
+                                binning=data_dist.maps[0].binning
+                    )
+                name_vals_d['maps_binned'] = MapSet(map_binned)
+                name_vals_d['priors'] = params.priors_penalties(metric=metric)
+                detailed_metric_info[m] = name_vals_d
+
+            else:
+                if isinstance(hypo_asimov_dist,OrderedDict):
+                    hypo_asimov_dist = hypo_asimov_dist['weights']
+
+                name_vals_d['maps'] = data_dist.metric_per_map(
+                    expected_values=hypo_asimov_dist, metric=m
                 )
-                maps_binned.append(map_binned)
-            name_vals_d['maps_binned'] = MapSet(maps_binned)
-            name_vals_d['priors'] = params.priors_penalties(metric=metric)
-            detailed_metric_info[m] = name_vals_d
+                metric_hists = data_dist.metric_per_map(
+                    expected_values=hypo_asimov_dist, metric='binned_'+m
+                )
+            
+                maps_binned = []
+                for asimov_map, metric_hist in zip(hypo_asimov_dist, metric_hists):
+                    map_binned = Map(
+                        name=asimov_map.name,
+                        hist=np.reshape(metric_hists[metric_hist],
+                                        asimov_map.shape),
+                        binning=asimov_map.binning
+                    )
+                    maps_binned.append(map_binned)
+                name_vals_d['maps_binned'] = MapSet(maps_binned)
+                name_vals_d['priors'] = params.priors_penalties(metric=metric)
+                detailed_metric_info[m] = name_vals_d
         return detailed_metric_info
 
     def _minimizer_callable(self, scaled_param_vals, hypo_maker, data_dist,
@@ -1049,6 +1063,7 @@ class Analysis(object):
             if metric[0]=='generalized_poisson_llh':
                 hypo_asimov_dist = hypo_maker.get_outputs(return_sum=False,output_mode='binned')
                 hypo_asimov_dist = merge_mapsets_together(mapset_list=hypo_asimov_dist)
+                data_dist = data_dist.maps[0] # Extract the map from the MapSet
             else:
                 hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
                 if isinstance(hypo_asimov_dist,OrderedDict):
