@@ -122,6 +122,7 @@ class pi_kfold(PiStage):
                 kf.get_n_splits(container["weights"]) if self.renormalize else 1.0
             )
             container["fold_weight"][select_idx] = select_weight
+            container["fold_weight"].mark_changed(WHERE)
 
     def apply_function(self):
         for container in self.data:
