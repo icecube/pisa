@@ -13,9 +13,9 @@ classes have many useful methods for working with binning.
 #       takes 10 seconds.
 # TODO: Create non-validated version of OneDimBinning.__init__ to make
 #       iterbins() fast
-# TODO: explicitly set is_bin_spacing_log and is_bin_spacing_lin to FP32
-#       precision (since binning can be defined/saved in FP32 but want code
-#       able to run in FP64
+# TODO: explicitly set is_bin_spacing_log_uniform and
+#       is_bin_spacing_lin_uniform to FP32 precision (since binning can be
+#       defined/saved in FP32 but want code able to run in FP64
 
 
 from __future__ import absolute_import, division
@@ -130,7 +130,11 @@ def _new_obj(original_function):
 
 
 class OneDimBinning(object):
+    # pylint: disable=line-too-long
     """Histogram-oriented binning specialized to a single dimension.
+
+    If neither `is_lin` nor `is_log` is specified, linear behavior
+    is assumed (i.e., `is_lin` is set to True).
 
     Parameters
     ----------
@@ -142,37 +146,41 @@ class OneDimBinning(object):
     tex : str or None
         TeX label for this dimension.
 
-    bin_edges : sequence
-        Numerical values (including Pint units, if there are units) that
-        represent the *edges* of the bins. `bin_edges` needn't be specified if
-        `domain`, `num_bins`, and some combination of `is_lin` and `is_log` are
-        specified. Pint units can be attached to `bin_edges`, but will be
-        converted to `units` if these are specified.
+    bin_edges : sequence of scalars, or None
+        Numerical values (optionally including Pint units) that represent the
+        *edges* of the bins. `bin_edges` needn't be specified if `domain`,
+        `num_bins`, and optionally `is_log` is specified. Pint units can be
+        attached to `bin_edges`, but will be converted to `units` if this
+        argument is specified.
 
-    units : None, Pint unit or object convertible to Pint unit
+    units : Pint unit or object convertible to Pint unit, or None
         If None, units will be read from either `bin_edges` or `domain`, and if
         none of these have units, the binning has unit 'dimensionless'
         attached.
 
-    is_lin : bool
-        If `num_bins` and `domain` are specified,
+    is_lin : bool or None
+        Binning behavior is linear for purposes of resampling, plotting, etc.
+        Mutually exclusive with `is_log`. If neither `is_lin` or `is_log` is
+        True (i.e., both are None), default behavior is linear (`is_lin` is set
+        to True internally).
 
-    is_log : bool
-        Whether bin spacing is to be equal on a log-scale. Specify along with
-        `domain` to generate `bin_edges` on the fly. On the other hand, if
-        `bin_edges` is passed, the nature of the binning will try to be
-        detected. This fails to detect log binning in some cases (e.g. a single
-        bin, which defaults to linear binning), so pass `is_log=True` in such
-        cases to explicitly set the nature of the binning.
+    is_log : bool or None
+        Binning behavior is logarithmic for purposes of resampling, plotting,
+        etc. Mutually exclusive with `is_lin`. If neither `is_lin` or `is_log`
+        is True (i.e., both are None), default behavior is linear (`is_lin` is
+        set to True internally).
 
-    domain : length-2 sequence of numerical
-        Units may be specified.
+    domain : length-2 sequence of scalars, or None
+        Units may be specified. Required along with `num_bins` if `bin_edges`
+        is not specified (optionally specify `is_log=True` to define the
+        `bin_edges` to be log-uniform).
 
-    num_bins : int
-        Number of bins; specify if `domain` and either `is_lin` or `is_log` are
-        specified, but redundant if `bin_edges` is specified.
+    num_bins : int or None
+        Number of bins. Required along with `domain` if `bin_edges` is not
+        specified (optionally specify `is_log=True` to define the `bin_edges`
+        to be log-uniform).
 
-    bin_names : None or sequence of nonzero-length strings
+    bin_names : sequence of nonzero-length strings, or None
         Strings by which each bin can be identified. This is expected to be
         useful when one needs to easily identify bins by name where the actual
         numerical values can be non-obvious e.g. the PID dimension.
@@ -184,15 +192,13 @@ class OneDimBinning(object):
     Consistency is enforced for all redundant parameters passed to the
     constructor.
 
-    Either `domain` or `bin_edges` must be specified, but not both. `is_lin`
-    and `is_log` are mutually exclusive and *must* be specified if `domain` is
-    provided (along with `num_bins`), but these are optional if `bin_edges` is
-    specified.
+    You can avoid passing `bin_edges` if `num_bins` and `domain` are specified.
+    Specify `is_lin=True` or `is_log=True` to define the binning to be linear
+    or logarithmic (but note that if neither is specified as True, linear
+    behavior is the default).
 
-    In the case that `bin_edges` is provided and defines just a single bin, if
-    this bin should be treated logarithmically (e.g. for oversampling),
-    `is_log=True` must be specified (otherwise, `is_lin` will be assumed to be
-    true).
+    Be careful, though, since bin edges will be defined slightly differently
+    depending on the ``pisa.FTYPE`` defined (PISA_FTYPE environment variable).
 
 
     Examples
@@ -216,9 +222,15 @@ class OneDimBinning(object):
     True
 
     """
-    # `is_log` and `is_lin` are required for state alongside bin_edges so that
-    # a sub-sampling down to a single bin that is then resampled to > 1 bin
-    # will retain the log/linear property of the original OneDimBinning.
+    # pylint: enable=line-too-long
+
+    # NOTE: Only one of `is_log` or `is_lin` is technically required for state,
+    #   since it's either one or the other, but these used to imply
+    #   log-_uniform_ and linear-_uniform_ behavior. As nothing fundamnetally
+    #   in the behavior is changed by assuming uniformity, and to keep
+    #   backwards compatibility (including for state / hashes), both are kept
+    #   (for now) as "state" variables. -JLL, April, 2020
+
     _hash_attrs = ('name', 'tex', 'bin_edges', 'is_log', 'is_lin', 'bin_names')
 
     def __init__(self, name, tex=None, bin_edges=None, units=None, domain=None,
@@ -228,7 +240,10 @@ class OneDimBinning(object):
         if not isinstance(name, str):
             raise TypeError('`name` must be a string; got "%s".' %type(name))
         if domain is not None:
-            assert isinstance(domain, Iterable) or (isinstance(domain, ureg.Quantity) and domain.size > 1)
+            assert (
+                isinstance(domain, Iterable)
+                or (isinstance(domain, ureg.Quantity) and domain.size > 1)
+            )
         if bin_names is not None:
             if isinstance(bin_names, str):
                 bin_names = (bin_names,)
@@ -242,11 +257,30 @@ class OneDimBinning(object):
                     ' nonzero-length strings.'
                 )
         if bin_edges is not None:
-            assert isinstance(bin_edges, Iterable) or (isinstance(bin_edges, ureg.Quantity) and bin_edges.size > 1)
-        if is_lin is not None:
-            assert isinstance(is_lin, bool)
-        if is_log is not None:
-            assert isinstance(is_log, bool)
+            assert (
+                isinstance(bin_edges, Iterable)
+                or (isinstance(bin_edges, ureg.Quantity) and bin_edges.size > 1)
+            )
+
+        # Type checking
+        assert is_lin is None or isinstance(is_lin, bool), str(type(is_lin))
+        assert is_log is None or isinstance(is_log, bool), str(type(is_log))
+
+        if is_lin is None and is_log is None:  # neither specified: default to linear
+            is_lin = True
+            is_log = not is_lin
+
+        elif is_lin is not None:  # is_lin is specified but not is_log
+            is_log = not is_lin
+
+        elif is_log is not None:  # is_log is specified but not is_lin
+            is_lin = not is_log
+
+        else:  # both specified: check consistency
+            if is_log == is_lin:
+                raise ValueError(
+                    '`is_log=%s` contradicts `is_lin=%s`' % (is_log, is_lin)
+                )
 
         self._normalize_values = True
         self._name = make_valid_python_name(name)
@@ -356,31 +390,21 @@ class OneDimBinning(object):
         if units is None:
             units = ureg.dimensionless
 
-        # If both `is_log` and `is_lin` are specified, both cannot be true
-        # (but both can be False, in case of irregularly-spaced bins)
-        if is_log and is_lin:
-            raise ValueError('`is_log=%s` contradicts `is_lin=%s`'
-                             % (is_log, is_lin))
-
         if dimensionless_bin_edges is None:
-            if (num_bins is None
-                    or dimensionless_domain is None
-                    or not (is_lin or is_log)):
+            if num_bins is None or dimensionless_domain is None:
                 raise ValueError(
                     'If not specifying bin edges explicitly, `domain` and'
-                    ' `num_bins` must be specified and one of `is_lin` or'
-                    ' `is_log` (but not both) must be `True`.'
+                    ' `num_bins` must be specified (and optionally set'
+                    ' `is_log=True`).'
                 )
             if is_log:
-                is_lin = False
                 dimensionless_bin_edges = np.logspace(
                     np.log10(dimensionless_domain[0]),
                     np.log10(dimensionless_domain[1]),
                     num_bins + 1,
                     dtype=FTYPE,
                 )
-            elif is_lin:
-                is_log = False
+            else:  # is_lin
                 dimensionless_bin_edges = np.linspace(
                     dimensionless_domain[0],
                     dimensionless_domain[1],
@@ -391,12 +415,16 @@ class OneDimBinning(object):
             assert dimensionless_domain[0] == dimensionless_bin_edges[0]
             assert dimensionless_domain[1] == dimensionless_bin_edges[-1]
 
-        if not (is_lin or is_log):  # infer is_log/is_lin from spacing if not set
-            is_lin = self.is_bin_spacing_lin(dimensionless_bin_edges)
-            try:
-                is_log = self.is_bin_spacing_log(dimensionless_bin_edges)
-            except ValueError:
-                is_log = False
+        # TODO: should we warn a user if logarithmically- or linearly-uniform
+        # bin_edges are passed while is_log, is_lin, or the default (is_lin)
+        # "contradict" this?
+
+        # if not (is_lin or is_log):  # infer is_log/is_lin from spacing if not set
+        #     is_lin = self.is_bin_spacing_lin_uniform(dimensionless_bin_edges)
+        #     try:
+        #         is_log = self.is_bin_spacing_log_uniform(dimensionless_bin_edges)
+        #     except ValueError:
+        #         is_log = False
 
         if dimensionless_domain is None:
             dimensionless_domain = (dimensionless_bin_edges[0],
@@ -432,9 +460,9 @@ class OneDimBinning(object):
                    self._bin_names)
             )
 
-        self._is_lin = is_lin
         self._is_log = is_log
-        self._is_irregular = not (self.is_lin or self.is_log)
+        self._is_lin = not self._is_log
+        self._is_irregular = None
 
     def __repr__(self):
         previous_precision = np.get_printoptions()['precision']
@@ -448,42 +476,47 @@ class OneDimBinning(object):
         return r
 
     def __str__(self):
-        domain_str = (
-            'spanning '
-            + '[%s, %s] %s' %(self.bin_edges[0].magnitude,
-                              self.bin_edges[-1].magnitude,
-                              format(self.units, '~'))
-        ).strip()
+        lin_reg = "linearly-regular "
+        log_reg = "logarithmically-regular "
 
-        edge_str = (
-            'with edges at ['
-            + ', '.join(str(e) for e in self.bin_edges.m)
-            + '] '
-            + format(self.bin_edges.u, '~')
-        ).strip()
-
-        if self.num_bins == 1:
-            descr = '1 bin %s' %edge_str
-            if self.is_lin:
-                descr += ' (behavior is linear)'
-            elif self.is_log:
-                descr += ' (behavior is logarithmic)'
-        elif self.is_lin:
-            descr = '%d equally-sized bins %s' %(self.num_bins, domain_str)
-        elif self.is_log:
-            descr = '%d logarithmically-uniform bins %s' %(self.num_bins,
-                                                           domain_str)
+        regularity = None
+        if self.is_irregular:
+            # Test for regularity in the other domain
+            if self.is_lin and self.is_bin_spacing_log_uniform(self.bin_edges):
+                regularity = log_reg
+            elif self.is_log and self.is_bin_spacing_lin_uniform(self.bin_edges):
+                regularity = lin_reg
         else:
-            descr = '%d irregularly-sized bins %s' %(self.num_bins, edge_str)
+            regularity = log_reg if self.is_log else lin_reg
 
-        if self.bin_names is not None:
-            descr += (', bin_names=['
-                      + ', '.join(("'%s'"%n) for n in self.bin_names)
-                      + ']')
+        if regularity is None or self.num_bins == 1:
+            edges = 'with edges at [{}]{}'.format(
+                ', '.join(str(e) for e in self.bin_edges.m),
+                format(self.bin_edges.u, '~'),
+            ).strip()
+        else:
+            edges = 'spanning [{}, {}] {:s}'.format(
+                self.bin_edges[0].magnitude,
+                self.bin_edges[-1].magnitude,
+                format(self.units, '~'),
+            ).strip()
 
-        return (self.__class__.__name__
-                + "('{name:s}', {descr:s}".format(name=self.name, descr=descr)
-                + ")")
+        plural = '' if self.num_bins == 1 else 's'
+        linlog = 'logarithmic' if self.is_log else 'linear'
+
+        if self.bin_names is None:
+            bnames = ""
+        else:
+            bnames = ', bin_names=[{}]'.format(
+                ', '.join(f"'{n:s}'" for n in self.bin_names)
+            )
+
+        descr = (
+            f'{self.num_bins:d} {regularity:s}bin{plural:s} {edges:s}'
+            f' (behavior is {linlog:s}){bnames:s}'
+        )
+
+        return f"{self.__class__.__name__:s}('{self.name:s}', {descr:s})"
 
     def __pretty__(self, p, cycle):
         """Method used by the `pretty` library for formatting"""
@@ -790,17 +823,40 @@ class OneDimBinning(object):
 
     @property
     def is_lin(self):
-        """bool : Whether bin spacing is linearly uniform"""
+        """bool : Whether binning is to be treated in a linear space"""
         return self._is_lin
+
+    @is_lin.setter
+    def is_lin(self, b):
+        """bool"""
+        assert isinstance(b, bool)
+        if b != self._is_lin:
+            self._is_lin, self._is_log, self._is_irregular = (b, not b, None)
 
     @property
     def is_log(self):
-        """bool : Whether bin spacing is logarithmically uniform"""
+        """bool : Whether binning is to be treated in a log space"""
         return self._is_log
+
+    @is_log.setter
+    def is_log(self, b):
+        """bool"""
+        assert isinstance(b, bool)
+        if b != self._is_log:
+            self._is_log, self._is_lin, self._is_irregular = (b, not b, None)
 
     @property
     def is_irregular(self):
-        """bool : True if bin spacing is neither linear nor logarithmic."""
+        """bool : True if bin spacing is not unform in the space defined (i.e.,
+        NOT linearly-uniform if `is_lin` or NOT logarithmically-uniform if
+        `is_log`)."""
+        if self._is_irregular is None:
+            if self.num_bins == 1:
+                self._is_irregular = False
+            elif self.is_log:
+                self._is_irregular = not self.is_bin_spacing_log_uniform(self.bin_edges)
+            else:  # self.is_lin
+                self._is_irregular = not self.is_bin_spacing_lin_uniform(self.bin_edges)
         return self._is_irregular
 
     @property
@@ -945,7 +1001,7 @@ class OneDimBinning(object):
         return {}
 
     @staticmethod
-    def is_bin_spacing_log(bin_edges):
+    def is_bin_spacing_log_uniform(bin_edges):
         """Check if `bin_edges` define a logarithmically-uniform bin spacing.
 
         Parameters
@@ -979,7 +1035,7 @@ class OneDimBinning(object):
         return False
 
     @staticmethod
-    def is_bin_spacing_lin(bin_edges):
+    def is_bin_spacing_lin_uniform(bin_edges):
         """Check if `bin_edges` define a linearly-uniform bin spacing.
 
         Parameters
@@ -1015,17 +1071,14 @@ class OneDimBinning(object):
         return False
 
     @staticmethod
-    def is_binning_ok(bin_edges, is_log):
-        """Check monotonicity and that bin spacing is logarithmically uniform
-        (if `is_log == True`)
+    def is_binning_ok(bin_edges):
+        """Check that there are at least one bin edge, and that they are
+        monotonically increasing.
 
         Parameters
         ----------
         bin_edges : sequence
             Bin edges to check the validity of
-
-        is_log : bool
-            Whether binning is expected to be logarithmically uniform.
 
         Returns
         -------
@@ -1139,7 +1192,7 @@ class OneDimBinning(object):
 
         """
         if factor < 1 or factor != int(factor):
-            raise ValueError('`factor` must be integer >= 0; got %s' %factor)
+            raise ValueError('`factor` must be integer >= 1; got %s' %factor)
 
         factor = int(factor)
 
@@ -1147,24 +1200,25 @@ class OneDimBinning(object):
             return self
 
         if self.is_log:
-            bin_edges = np.logspace(np.log10(self.domain[0].m),
-                                    np.log10(self.domain[-1].m),
-                                    self.num_bins * factor + 1)
-        elif self.is_lin:
-            bin_edges = np.linspace(self.domain[0].m, self.domain[-1].m,
-                                    self.num_bins * factor + 1)
-        else: # irregularly-spaced
-            bin_edges = []
-            for lower, upper in zip(self.edge_magnitudes[:-1],
-                                     self.edge_magnitudes[1:]):
-                this_bin_new_edges = np.linspace(lower, upper, factor+1)
-                # Exclude the last edge, as this will be first edge for the
-                # next divided bin
-                bin_edges.extend(this_bin_new_edges[:-1])
-            # Final bin needs final edge
-            bin_edges.append(this_bin_new_edges[-1])
+            spacing_func = np.logspace
+            old_bin_edges = np.log10(self.edge_magnitudes)
+        else:  # is_lin
+            spacing_func = np.linspace
+            old_bin_edges = self.edge_magnitudes
 
-        return {'bin_edges': np.array(bin_edges)*self.units,
+        new_bin_edges = []
+        for lower, upper in zip(old_bin_edges[:-1], old_bin_edges[1:]):
+            thisbin_new_edges = spacing_func(lower, upper, factor + 1)
+
+            # Omit the upper bin edge, as it is the first bin edge of
+            # the next bin
+            new_bin_edges.extend(thisbin_new_edges[:-1])
+
+        # Include the uppermost bin edge
+        new_bin_edges.append(thisbin_new_edges[-1])
+
+        return {'bin_edges': new_bin_edges,
+                'units': self.units,
                 'bin_names': None}
 
     # TODO: do something cute with bin names, if they exist?
@@ -1377,6 +1431,7 @@ class OneDimBinning(object):
 
 
 class MultiDimBinning(object):
+    # pylint: disable=line-too-long
     """
     Multi-dimensional binning object. This can contain one or more
     OneDimBinning objects, and all subsequent operations (e.g. slicing) will
@@ -1442,6 +1497,7 @@ class MultiDimBinning(object):
                     [ 1.,  1.,  1.]]))
 
     """
+    # pylint: enable=line-too-long
     def __init__(self, dimensions):
         self.__map_class = None
 
@@ -1521,7 +1577,7 @@ class MultiDimBinning(object):
     @property
     def _map_class(self):
         if self.__map_class is None:
-            from pisa.core.map import Map  # pylint: disable=import-outside-toplevel
+            from pisa.core.map import Map  # pylint: disable=wrong-import-position
             self.__map_class = Map
         return self.__map_class
 
@@ -2752,7 +2808,7 @@ class MultiDimBinning(object):
 
 def test_OneDimBinning():
     """Unit tests for OneDimBinning class"""
-    # pylint: disable=line-too-long, import-outside-toplevel
+    # pylint: disable=line-too-long, wrong-import-position
     import pickle
     import os
     import shutil
@@ -2889,7 +2945,7 @@ def test_OneDimBinning():
 
 def test_MultiDimBinning():
     """Unit tests for MultiDimBinning class"""
-    # pylint: disable=import-outside-toplevel
+    # pylint: disable=wrong-import-position
     import pickle
     import os
     import shutil
