@@ -391,17 +391,7 @@ class OneDimBinning(object):
             assert dimensionless_domain[0] == dimensionless_bin_edges[0]
             assert dimensionless_domain[1] == dimensionless_bin_edges[-1]
 
-        if is_lin:
-            if not self.is_bin_spacing_lin(dimensionless_bin_edges):
-                raise ValueError('%s : `is_lin` is True but `bin_edges` are not'
-                                 ' linearly spaced.'%self._name)
-            is_log = False
-        elif is_log:
-            if not self.is_binning_ok(dimensionless_bin_edges, is_log=True):
-                raise ValueError('%s : `is_log` is True but `bin_edges` are not'
-                                 ' logarithmically spaced.'%self._name)
-            is_lin = False
-        else:
+        if not (is_lin or is_log):  # infer is_log/is_lin from spacing if not set
             is_lin = self.is_bin_spacing_lin(dimensionless_bin_edges)
             try:
                 is_log = self.is_bin_spacing_log(dimensionless_bin_edges)
@@ -1048,10 +1038,6 @@ class OneDimBinning(object):
         # Bin edges must be monotonic and strictly increasing
         if np.any(np.diff(bin_edges) <= 0):
             return False
-        # Log binning must have equal widths in log-space (but a single bin
-        # has no "spacing" or stride, so no need to check)
-        if is_log and len(bin_edges) > 2:
-            return OneDimBinning.is_bin_spacing_log(bin_edges)
         return True
 
     # TODO: as of now, only downsampling is allowed. Is this reasonable?
