@@ -206,16 +206,16 @@ class OneDimBinning(object):
     >>> from pisa import ureg
     >>> from pisa.core.binning import OneDimBinning
     >>> ebins = OneDimBinning(name='energy', is_log=True,
-    ...                       num_bins=40, domain=[1, 80]*ureg.GeV)
+    ...                       num_bins=40, domain=[1, 100]*ureg.GeV)
     >>> print(ebins)
-    OneDimBinning('energy', 40 logarithmically-uniform bins spanning [1.0, 80.0] GeV)
+    OneDimBinning('energy', 40 logarithmically-regular bins spanning [1.0, 100.0] GeV (behavior is logarithmic))
     >>> ebins2 = ebins.to('joule')
     >>> print(ebins2)
-    OneDimBinning('energy', 40 logarithmically-uniform bins spanning [1.60217653e-10, 1.281741224e-08] J)
+    OneDimBinning('energy', 40 logarithmically-regular bins spanning [1.6021766339999998e-10, 1.602176634e-08] J (behavior is logarithmic))
     >>> czbins = OneDimBinning(name='coszen',
     ...                        is_lin=True, num_bins=4, domain=[-1, 0])
     >>> print(czbins)
-    OneDimBinning('coszen', 4 equally-sized bins spanning [-1.0, 0.0])
+    OneDimBinning('coszen', 4 linearly-regular bins spanning [-1.0, 0.0] (behavior is linear))
     >>> czbins2 = OneDimBinning(name='coszen',
     ...                         bin_edges=[-1, -0.75, -0.5, -0.25, 0])
     >>> czbins == czbins2
@@ -1460,26 +1460,27 @@ class MultiDimBinning(object):
     >>> from pisa import ureg
     >>> from pisa.core.binning import MultiDimBinning, OneDimBinning
     >>> ebins = OneDimBinning(name='energy', is_log=True,
-    ...                       num_bins=40, domain=[1, 80]*ureg.GeV)
+    ...                       num_bins=40, domain=[1, 100]*ureg.GeV)
     >>> czbins = OneDimBinning(name='coszen',
     ...                        is_lin=True, num_bins=4, domain=[-1, 0])
     >>> mdb = ebins * czbins
     >>> print(mdb)
     MultiDimBinning(
-            OneDimBinning('energy', 40 logarithmically-uniform bins spanning [1.0, 80.0] GeV),
-            OneDimBinning('coszen', 4 equally-sized bins spanning [-1.0, 0.0])
+        OneDimBinning('energy', 40 logarithmically-regular bins spanning [1.0, 100.0] GeV (behavior is logarithmic)),
+        OneDimBinning('coszen', 4 linearly-regular bins spanning [-1.0, 0.0] (behavior is linear))
     )
+
     >>> print(mdb.energy)
-    OneDimBinning(name=OneDimBinning('energy', 40 logarithmically-uniform bins spanning [1.0, 80.0] GeV))
+    OneDimBinning('energy', 40 logarithmically-regular bins spanning [1.0, 100.0] GeV (behavior is logarithmic))
     >>> print(mdb[0, 0])
     MultiDimBinning(
-            OneDimBinning('energy', 1 bin with edges at [1.0, 1.11577660129] GeV (behavior is logarithmic)),
-            OneDimBinning('coszen', 1 bin with edges at [-1.0, -0.75] (behavior is linear))
+        OneDimBinning('energy', 1 logarithmically-regular bin with edges at [1.0, 1.1220184543019633]GeV (behavior is logarithmic)),
+        OneDimBinning('coszen', 1 linearly-regular bin with edges at [-1.0, -0.75] (behavior is linear))
     )
     >>> print(mdb.slice(energy=2))
     MultiDimBinning(
-            OneDimBinning('energy', 1 bin with edges at [1.24495742399, 1.38909436329] GeV (behavior is logarithmic)),
-            OneDimBinning('coszen', 4 equally-sized bins spanning [-1.0, 0.0])
+        OneDimBinning('energy', 1 logarithmically-regular bin with edges at [1.2589254117941673, 1.4125375446227544]GeV (behavior is logarithmic)),
+        OneDimBinning('coszen', 4 linearly-regular bins spanning [-1.0, 0.0] (behavior is linear))
     )
     >>> smaller_binning = mdb[0:2, 0:3]
     >>> map = smaller_binning.ones(name='my_map')
@@ -1490,12 +1491,11 @@ class MultiDimBinning(object):
         hash=None,
         parent_indexer=None,
         binning=MultiDimBinning(
-                OneDimBinning('energy', 2 logarithmically-uniform bins spanning [1.0, 1.24495742399] GeV),
-                OneDimBinning('coszen', 3 equally-sized bins spanning [-1.0, -0.25])
+            OneDimBinning('energy', 2 logarithmically-regular bins spanning [1.0, 1.2589254117941673] GeV (behavior is logarithmic)),
+            OneDimBinning('coszen', 3 linearly-regular bins spanning [-1.0, -0.25] (behavior is linear))
         ),
-        hist=array([[ 1.,  1.,  1.],
-                    [ 1.,  1.,  1.]]))
-
+        hist=array([[1., 1., 1.],
+           [1., 1., 1.]]))
     """
     # pylint: enable=line-too-long
     def __init__(self, dimensions):
@@ -1981,7 +1981,7 @@ class MultiDimBinning(object):
         >>> x = np.random.RandomState(0).uniform(size=mdb.shape)
         >>> indexer = mdb.indexer(energy=slice(0, 5), coszen=1)
         >>> print(x[indexer])
-        [ 0.71518937  0.64589411  0.38344152  0.92559664  0.83261985]
+        [0.71518937 0.64589411 0.38344152 0.92559664 0.83261985]
 
         """
         indexer = []
@@ -2314,27 +2314,28 @@ class MultiDimBinning(object):
 
         >>> print(mdb.oversample(2))
         MultiDimBinning(
-                OneDimBinning('x', 4 equally-sized bins spanning [0.0, 2.0]),
-                OneDimBinning('y', 2 equally-sized bins spanning [0.0, 20.0])
+            OneDimBinning('x', 4 linearly-regular bins spanning [0.0, 2.0] (behavior is linear)),
+            OneDimBinning('y', 2 linearly-regular bins spanning [0.0, 20.0] (behavior is linear))
         )
         >>> print(mdb.oversample(2, 2))
         MultiDimBinning(
-                OneDimBinning('x', 4 equally-sized bins spanning [0.0, 2.0]),
-                OneDimBinning('y', 2 equally-sized bins spanning [0.0, 20.0])
+            OneDimBinning('x', 4 linearly-regular bins spanning [0.0, 2.0] (behavior is linear)),
+            OneDimBinning('y', 2 linearly-regular bins spanning [0.0, 20.0] (behavior is linear))
         )
         >>> print(mdb.oversample(x=2, y=2))
         MultiDimBinning(
-                OneDimBinning('x', 4 equally-sized bins spanning [0.0, 2.0]),
-                OneDimBinning('y', 2 equally-sized bins spanning [0.0, 20.0])
+            OneDimBinning('x', 4 linearly-regular bins spanning [0.0, 2.0] (behavior is linear)),
+            OneDimBinning('y', 2 linearly-regular bins spanning [0.0, 20.0] (behavior is linear))
         )
 
         But with kwargs, you can specify only the dimensions you want to
         oversample, and the other dimension(s) remain unchanged:
 
         >>> print(mdb.oversample(y=5))
-        MultiDimBinning([
-                OneDimBinning('x', 2 equally-sized bins spanning [0, 2])),
-                OneDimBinning('y', 5 equally-sized bins spanning [0.0, 20.0]))])
+        MultiDimBinning(
+            OneDimBinning('x', 2 linearly-regular bins spanning [0.0, 2.0] (behavior is linear)),
+            OneDimBinning('y', 5 linearly-regular bins spanning [0.0, 20.0] (behavior is linear))
+        )
 
         """
         if args:
