@@ -61,10 +61,13 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  limitations under the License.'''
 
 
-NAME_FIXES = ('true', 'truth', 'reco', 'reconstructed')
-NAME_SEPCHARS = r'([_\s-])*'
-NAME_FIXES_REGEXES = tuple(re.compile(p + NAME_SEPCHARS, re.IGNORECASE)
-                           for p in NAME_FIXES)
+NAME_FIXES = ('tru(e|th)', 'reco(nstruct(ed)?)?')
+NAME_SEPCHARS = r'[_\s-]+'
+NAME_FIXES_REGEXES = tuple(
+    [re.compile(NAME_SEPCHARS + p, re.IGNORECASE) for p in NAME_FIXES]
+    + [re.compile(p + NAME_SEPCHARS, re.IGNORECASE) for p in NAME_FIXES]
+    + [re.compile(p, re.IGNORECASE) for p in NAME_FIXES]
+)
 
 
 # TODO: move this to a centralized utils location
@@ -87,11 +90,17 @@ def basename(n):
     Examples
     --------
     >>> print(basename('true_energy'))
-    'energy'
+    energy
     >>> print(basename('Reconstructed coszen'))
-    'coszen'
+    coszen
+    >>> print(basename('coszen  reco'))
+    coszen
     >>> print(basename('energy___truth'))
-    'energy'
+    energy
+    >>> print(basename('trueenergy'))
+    energy
+    >>> print(basename('energytruth'))
+    energy
 
     """
     # Type checkingn and conversion
@@ -103,7 +112,7 @@ def basename(n):
     # Remove all (pre/suf)fixes and any separator chars
     for regex in NAME_FIXES_REGEXES:
         n = regex.sub('', n)
-    return n
+    return n.strip()
 
 
 def is_binning(something):
@@ -1432,7 +1441,7 @@ class OneDimBinning(object):
 
 class MultiDimBinning(object):
     # pylint: disable=line-too-long
-    """
+    r"""
     Multi-dimensional binning object. This can contain one or more
     OneDimBinning objects, and all subsequent operations (e.g. slicing) will
     act on these in the order they are supplied.
@@ -1491,11 +1500,12 @@ class MultiDimBinning(object):
         hash=None,
         parent_indexer=None,
         binning=MultiDimBinning(
-            OneDimBinning('energy', 2 logarithmically-regular bins spanning [1.0, 1.2589254117941673] GeV (behavior is logarithmic)),
-            OneDimBinning('coszen', 3 linearly-regular bins spanning [-1.0, -0.25] (behavior is linear))
-        ),
+        OneDimBinning('energy', 2 logarithmically-regular bins spanning [1.0, 1.2589254117941673] GeV (behavior is logarithmic)),
+        OneDimBinning('coszen', 3 linearly-regular bins spanning [-1.0, -0.25] (behavior is linear))
+    ),
         hist=array([[1., 1., 1.],
            [1., 1., 1.]]))
+
     """
     # pylint: enable=line-too-long
     def __init__(self, dimensions):
