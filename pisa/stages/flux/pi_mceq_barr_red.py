@@ -30,8 +30,8 @@ class pi_mceq_barr_red(PiStage):
     Stage that uses gradients calculated with MCEq to handle flux uncertainties.
     This stage calculates flux variations relative to a nominal flux that must
     be calculated ahead of time. Parameters to control pion and kaon production
-    are reduced from the full Barr scheme, by forcing many of them to be treated
-    as fully correlated.
+    are reduced from the full Barr scheme, by forcing many of them to scale in a
+    fully correlated way.
 
     Parameters
     ----------
@@ -69,17 +69,16 @@ class pi_mceq_barr_red(PiStage):
 
     Notes
     -----
-    The nominal flux is calculated either using MCEq or via the pi_honda_ip stage,
+    The nominal flux is calculated ahead of time using the pi_honda_ip stage,
     then multiplied with a shift in spectral index, and then modifications due
     to meson production (barr variables) are added.
 
-    MCEq splines are used to modify the flux weights relative to the nominal flux.
-
     The MCEq-table has 2 solutions of the cascade equation per Barr variable (12)
     - one solution for meson and one solution for the antimeson production uncertainty.
-    Each solution consists of 8 splines: "numu", "numubar", "nue", and "nuebar"
-    is the nominal flux.
-    "dnumu", "dnumubar", "dnue", and "dnuebar" is the gradient of the Barr modification
+
+    Each solution consists of 4 splines: "dnumu", "dnumubar", "dnue", and
+    "dnuebar". These are the gradients that govern how the neutrino fluxes vary
+    depending on modifications to the Barr params. 
 
     """
 
@@ -457,7 +456,6 @@ def apply_sys_kernel(
     out[...] = (
         nu_flux_nominal * spectral_index_scale(true_energy, energy_pivot, delta_index)
     ) + np.dot(gradients, gradient_params)
-
 
 # vectorized function to apply
 # must be outside class
