@@ -78,7 +78,7 @@ class pi_mceq_barr_red(PiStage):
 
     Each solution consists of 4 splines: "dnumu", "dnumubar", "dnue", and
     "dnuebar". These are the gradients that govern how the neutrino fluxes vary
-    depending on modifications to the Barr params. 
+    depending on modifications to the Barr params.
 
     """
 
@@ -105,7 +105,7 @@ class pi_mceq_barr_red(PiStage):
         # fly as a first step? Could take up to 1 hour to produce table though...
         self.barr_param_names = [
             # pions
-            "a_f",
+            "af",
             "g",
             "h",
             "i",
@@ -125,7 +125,7 @@ class pi_mceq_barr_red(PiStage):
         # TODO
 
         # Get the overall list of params for which we have gradients stored
-        # Define a mapping to index values, will he useful later
+        # Define a mapping to index values, will be useful later
         self.gradient_param_names = [
             n + s for n in self.barr_param_names for s in self.barr_param_signs
         ]
@@ -141,7 +141,7 @@ class pi_mceq_barr_red(PiStage):
         expected_params = (
             # pion
             "pion_ratio",
-            "barr_a_f_Pi",
+            "barr_af_Pi",
             "barr_g_Pi",
             "barr_h_Pi",
             "barr_i_Pi",
@@ -232,18 +232,14 @@ class pi_mceq_barr_red(PiStage):
         # Load MCEq splines
         #
 
-        # Have splined both nominal fluxes and gradients in flux w.r.t.
-        # Barr parameters, using MCEQ.
-
         # Have splines for each Barr parameter, plus +/- versions of each
         # Barr parameter corresponding to mesons/antimesons.
 
         # For a given Barr parameter, an underlying dictionary have the following
-        # keywords:
-        #     "numu", "numubar", "nue", "nuebar"
-        #     derivatives: "dnumu", "dnumubar", "dnue", dnuebar"
+        # keywords: "dnumu", "dnumubar", "dnue", dnuebar"
+
         # Units are changed to m^-2 in creates_splines.., rather than cm^2 which
-        # is the unit of calculation in MCEq
+        # is the unit of calculation in MCEq!!!!
 
         # Note that doing this all on CPUs, since the splines reside on the CPUs
         # The actual `compute_function` computation can be done on GPUs though
@@ -270,7 +266,7 @@ class pi_mceq_barr_red(PiStage):
             #
 
             # Evaluate splines to get the flux graidents w.r.t the Barr parameter values
-            # Once again, need to correctly map nu/nubar and flavor to the output arrays
+            # Need to correctly map nu/nubar and flavor to the output arrays
 
             # Loop over parameters
             for (
@@ -344,7 +340,7 @@ class pi_mceq_barr_red(PiStage):
         # pi- production rates is restricted by the pi-ratio, just as in arXiv:0611266
         # TODO might want dedicated priors for pi- params (but without corresponding free params)
         gradient_params_mapping = collections.OrderedDict()
-        gradient_params_mapping["a_f+"] = self.params.barr_a_f_Pi.value.m_as("dimensionless")
+        gradient_params_mapping["af+"] = self.params.barr_af_Pi.value.m_as("dimensionless")
         gradient_params_mapping["g+"] = self.params.barr_g_Pi.value.m_as("dimensionless")
         gradient_params_mapping["h+"] = self.params.barr_h_Pi.value.m_as("dimensionless")
         gradient_params_mapping["i+"] = self.params.barr_i_Pi.value.m_as("dimensionless")
