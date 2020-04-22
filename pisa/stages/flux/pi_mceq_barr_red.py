@@ -251,7 +251,7 @@ class pi_mceq_barr_red(PiStage):
         self.spline_tables_dict = pickle.load(BZ2File(spline_file), encoding="latin1")
 
         # Ensure that the user is not loading an incompatible spline
-        for bp in self.self.barr_param_names:
+        for bp in self.barr_param_names:
             bp_p = bp+'+' # meson
             bp_m = bp+'-' # antimeson
             assert bp_p in self.spline_tables_dict.keys(), (
