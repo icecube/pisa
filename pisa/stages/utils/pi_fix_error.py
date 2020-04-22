@@ -13,11 +13,11 @@ from pisa import FTYPE
 from pisa.core.pi_stage import PiStage
 from pisa.utils.profiler import profile
 from pisa.utils import vectorizer
-
+from pisa.utils.numba_tools import WHERE
 
 class pi_fix_error(PiStage):  # pylint: disable=invalid-name
     """
-    stage to histogram events
+    stage to fix the error returned by template_maker.
     """
     def __init__(
         self,
@@ -58,7 +58,7 @@ class pi_fix_error(PiStage):  # pylint: disable=invalid-name
             output_apply_keys=output_apply_keys,
         )
 
-        assert self.input_mode is not None
+        assert self.input_mode == "binned"
         assert self.calc_mode == "binned"
         assert self.output_mode == 'binned'
 
@@ -69,10 +69,9 @@ class pi_fix_error(PiStage):  # pylint: disable=invalid-name
     def apply_function(self):
         for container in self.data:
             vectorizer.assign(vals=container['frozen_errors'], out=container['errors'])
-            container['errors'].mark_changed()
-            container['weights_squared'].mark_changed()
-
+            container['errors'].mark_changed(WHERE)
+ 
     def compute_function(self):
         for container in self.data:
             vectorizer.assign(vals=container["errors"], out=container["frozen_errors"])
-            container['frozen_errors'].mark_changed()
+            container['frozen_errors'].mark_changed(WHERE)
