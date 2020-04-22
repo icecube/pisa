@@ -165,9 +165,9 @@ class pi_mceq_barr_red(PiStage):
         # Using Honda for nominal flux. Keys should already exist
         input_calc_keys = ("nu_flux_nominal", "nubar_flux_nominal")
         # what are keys added or altered in the calculation used during apply
-        output_calc_keys = ("nu_flux")
+        output_calc_keys = ("nu_flux", )
         # what keys are added or altered for the outputs during apply
-        output_apply_keys = ("nu_flux")
+        output_apply_keys = ("nu_flux", )
 
         # store args
         self.table_file = table_file
