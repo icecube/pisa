@@ -411,10 +411,10 @@ class pi_mceq_barr_red(PiStage):
             # TODO - add more spline error/misusage handling
             # e.g. if events have energy outside spline range throw ERROR
             negative_mask = container["nu_flux"].get("host") < 0
-            if np.sum(negative_mask):
+            if np.any(negative_mask):
                 container["nu_flux"].get("host")[negative_mask] = 0.0
-            container["nu_flux"].mark_changed("host")
 
+            container["nu_flux"].mark_changed("host")
 
 @myjit
 def spectral_index_scale(true_energy, energy_pivot, delta_index):
