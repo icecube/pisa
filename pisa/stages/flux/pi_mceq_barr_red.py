@@ -203,6 +203,16 @@ class pi_mceq_barr_red(PiStage):
         # Prepare some array shapes
         gradient_params_shape = (len(self.gradient_param_names),)
 
+        if self.calc_mode == 'binned':
+            # speed up calculation by adding links
+            # as nominal flux doesn't depend on the (outgoing) flavour
+            self.data.link_containers('nu', ['nue_cc', 'numu_cc', 'nutau_cc',
+                                             'nue_nc', 'numu_nc', 'nutau_nc'])
+
+            self.data.link_containers('nubar', ['nuebar_cc', 'numubar_cc',
+                                                'nutaubar_cc', 'nuebar_nc',
+                                                'numubar_nc', 'nutaubar_nc'])
+
         # Loop over containers
         for container in self.data:
 
@@ -314,6 +324,9 @@ class pi_mceq_barr_red(PiStage):
             # Tell the smart arrays we've changed the flux gradient values on the host
             container["gradients"].mark_changed("host")
 
+        # don't forget to un-link everything again
+        self.data.unlink_containers()
+
     def _eval_spline(self, true_log_energy, true_abs_coszen, spline, out):
         """
         Evaluate the spline for the full arrays of [ ln(energy), abs(coszen) ] values
@@ -336,6 +349,16 @@ class pi_mceq_barr_red(PiStage):
     def compute_function(self):
 
         self.data.data_specs = self.calc_specs
+
+        if self.calc_mode == 'binned':
+            # speed up calculation by adding links
+            # as nominal flux doesn't depend on the (outgoing) flavour
+            self.data.link_containers('nu', ['nue_cc', 'numu_cc', 'nutau_cc',
+                                             'nue_nc', 'numu_nc', 'nutau_nc'])
+
+            self.data.link_containers('nubar', ['nuebar_cc', 'numubar_cc',
+                                                'nutaubar_cc', 'nuebar_nc',
+                                                'numubar_nc', 'nutaubar_nc'])
 
         #
         # Get params
@@ -415,6 +438,9 @@ class pi_mceq_barr_red(PiStage):
                 container["nu_flux"].get("host")[negative_mask] = 0.0
 
             container["nu_flux"].mark_changed("host")
+
+        # don't forget to un-link everything again
+        self.data.unlink_containers()
 
 @myjit
 def spectral_index_scale(true_energy, energy_pivot, delta_index):
