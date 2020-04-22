@@ -398,8 +398,8 @@ class pi_mceq_barr_red(PiStage):
             apply_sys_vectorized(
                 container["true_energy"].get(WHERE),
                 container["true_coszen"].get(WHERE),
-                delta_index,
-                energy_pivot,
+                FTYPE(delta_index),
+                FTYPE(energy_pivot),
                 container[flux_key].get(WHERE),
                 container["gradients"].get(WHERE),
                 self.gradient_params,
