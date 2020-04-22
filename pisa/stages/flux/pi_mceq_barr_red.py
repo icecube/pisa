@@ -365,9 +365,6 @@ class pi_mceq_barr_red(PiStage):
             gradient_param_name,
             gradient_param_idx,
         ) in self.gradient_param_indices.items():
-            assert gradient_param_name in gradient_params_mapping, (
-                "Gradient parameter '%s' missing from mapping" % gradient_param_name
-            )
             self.gradient_params[gradient_param_idx] = gradient_params_mapping[
                 gradient_param_name
             ]
