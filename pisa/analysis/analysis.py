@@ -59,6 +59,7 @@ def merge_mapsets_together(mapset_list = None):
         new_dict = OrderedDict()
         for S in mapset_list:
             for k,v in S.items():
+
                 if k not in new_dict.keys():
                     new_dict[k] = [m for m in v.maps]
                 else:
@@ -1061,7 +1062,7 @@ class Analysis(object):
         # Get the Asimov map set
         try:
             if metric[0]=='generalized_poisson_llh':
-                hypo_asimov_dist = hypo_maker.get_outputs(return_sum=False,output_mode='binned')
+                hypo_asimov_dist = hypo_maker.get_outputs(return_sum=False, output_mode='binned',force_standard_output=False)
                 hypo_asimov_dist = merge_mapsets_together(mapset_list=hypo_asimov_dist)
                 data_dist = data_dist.maps[0] # Extract the map from the MapSet
                 metric_kwargs = {'empty_bins':hypo_maker.get_empty_bins}

@@ -1603,23 +1603,16 @@ class Map(object):
 
         for bin_i in range(N_bins):
 
+
             # ignore the bin if bin index is part of the empty mc bins
             if bin_i in empty_bins:
                 continue
 
             data_count = self.hist.flatten()[bin_i].nominal_value
             weight_sum = sum([m.hist.flatten()[bin_i] for m in expected_values['new_sum'].maps])
-
-            for m in expected_values['new_sum'].maps:
-                if m.name=='muon':
-                    weight_muons = m.hist.flatten()[bin_i]
-            #print(bin_i, data_count, weight_sum, weight_muons)
+            assert weight_sum>=0,'ERROR: negative weights detected'
 
             if data_count>100:
-
-                if weight_sum<0:
-                    print('\nERROR: negative weight sum should not happen...')
-                    raise Exception
 
                 logP = normal_log_probability(k=data_count,weight_sum=weight_sum)
                 llh_per_bin[bin_i] = logP
@@ -1629,13 +1622,17 @@ class Map(object):
                 alphas = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_alphas'].maps])
                 betas  = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_betas'].maps])
 
-                llh_of_bin = fast_pgmix(data_count, alphas[np.isfinite(alphas)], betas[np.isfinite(betas)])
+                mask = np.isfinite(alphas)*np.isfinite(betas)
+                weight_sum = sum([m.hist.flatten()[bin_i] for m in expected_values['new_sum'].maps])
+
+
+                llh_of_bin = fast_pgmix(data_count, alphas[mask], betas[np.isfinite(mask)])
                 llh_per_bin[bin_i] = llh_of_bin
 
         if binned:
             return llh_per_bin
         else:
-            return sum(llh_per_bin)
+            return np.sum(llh_per_bin)
 
 
     def metric_total(self, expected_values, metric, metric_kwargs={}):
@@ -2872,7 +2869,7 @@ class MapSet(object):
             raise ValueError('`metric` "%s" not recognized; use one of %s.'
                              % (metric, stats.ALL_METRICS))
 
-    def metric_total(self, expected_values, metric):
+    def metric_total(self, expected_values, metric, metric_kwargs={}):
 
         return np.sum(list(self.metric_per_map(expected_values, metric).values()))
 

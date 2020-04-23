@@ -267,12 +267,14 @@ class PiStage(BaseStage):
         self.apply()
         return None
 
-    def get_outputs(self, output_mode=None):
+    def get_outputs(self, output_mode=None, force_standard_output=True):
         """
         Get the outputs of the PISA stage
         Depending on `self.output_mode`, this may be a binned object, or the event container itself
 
         add option to force an output mode
+
+        force_standard_output: in binned mode, force the return of a single mapset
 
         """
 
@@ -286,14 +288,23 @@ class PiStage(BaseStage):
         # Handle the binned case
         if output_mode == 'binned':
 
-            # Specific case where we only aske for one output. return a single mapset (compatibility)
-            if len(self.output_apply_keys) == 1:
-                self.outputs = self.data.get_mapset(self.output_apply_keys[0])
+            if force_standard_output:
 
-            # Very specific case where the output has two keys and one of them is error (compatibility)
-            elif len(self.output_apply_keys) == 2 and 'errors' in self.output_apply_keys:
-                other_key = [key for key in self.output_apply_keys if not key == 'errors'][0]
-                self.outputs = self.data.get_mapset(other_key, error='errors')
+                # Specific case where we only aske for one output. return a single mapset (compatibility)
+                if len(self.output_apply_keys) == 1:
+                    self.outputs = self.data.get_mapset(self.output_apply_keys[0])
+
+                # Very specific case where the output has two keys and one of them is error (compatibility)
+                elif len(self.output_apply_keys) == 2 and 'errors' in self.output_apply_keys:
+                    other_key = [key for key in self.output_apply_keys if not key == 'errors'][0]
+                    self.outputs = self.data.get_mapset(other_key, error='errors')
+
+                else:
+                    if 'errors' in self.output_apply_keys:
+                        self.outputs = self.data.get_mapset(self.output_apply_keys[0], error='errors')
+                    else:
+                        self.outputs = self.data.get_mapset(self.output_apply_keys[0])
+
 
             # More generally: produce one map per output key desired, in a dict
             else:
