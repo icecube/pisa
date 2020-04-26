@@ -1586,7 +1586,7 @@ class Map(object):
             empty_bins: None, list or np.ndarray (list the bin indices that are empty)
 
         '''
-        from llh_defs.poisson import normal_log_probability, fast_pgmix
+        from mc_uncertainty.llh_defs.poisson import normal_log_probability, fast_pgmix
 
         assert isinstance(expected_values,OrderedDict),'ERROR: expected_values must be an OrderedDict of MapSet objects'
         assert 'weights' in expected_values.keys()    ,'ERROR: expected_values need a key named "weights"'
@@ -1608,7 +1608,11 @@ class Map(object):
             if bin_i in empty_bins:
                 continue
 
-            data_count = self.hist.flatten()[bin_i].nominal_value
+            try:
+                data_count = self.hist.flatten()[bin_i].nominal_value
+            except:
+                data_count = self.hist.flatten()[bin_i]
+                   
             weight_sum = sum([m.hist.flatten()[bin_i] for m in expected_values['new_sum'].maps])
             assert weight_sum>=0,'ERROR: negative weights detected'
 

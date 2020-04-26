@@ -180,7 +180,7 @@ class prepare_generalized_llh_parameters(PiStage):
             mean_of_weights= np.zeros(N_bins)
             var_of_weights = np.zeros(N_bins)
             nevents_sim = np.zeros(N_bins)
-
+            '''
             if np.sum(container.array_data['weights'].get('host')<0.)!=0:
                 print('\nERROR: array weights are negative!\n')
                 print(container.array_data['weights'].get('host'))
@@ -192,28 +192,36 @@ class prepare_generalized_llh_parameters(PiStage):
                 print('\nERROR: binned weights are negative!\n')
                 print(container.binned_data['weights'][1].get('host'))
                 print('\n\n')
-                raise Exception
+            '''
 
             # hypersurface fit result
-            #hypersurface = container.binned_data['hs_scales'][1].get('host')
+            hypersurface = container.binned_data['hs_scales'][1].get('host')
 
             for index in range(N_bins):
 
                 index_mask = container['bin_{}_mask'.format(index)].get('host')
-                current_weights = container['weights'].get('host')[index_mask]#*hypersurface[index]
+                current_weights = container['weights'].get('host')[index_mask]*hypersurface[index]
 
 
 
                 # Floor weights to zero
-                current_weights = np.clip(current_weights,0,None,out=current_weights)
-
+                current_weights = np.clip(current_weights,0,None)
                 n_weights = current_weights.shape[0]
 
                 # If no weights and other datasets have some, include a pseudo weight
                 # Bins with no mc event in all set will be ignore in the likelihood later
+                #
+                # make the whole bin treatment here
                 if n_weights<=0 or np.sum(current_weights)<=0:
-                    current_weights = np.array([container.scalar_data['pseudo_weight']])
-                    n_weights = 1.
+                    pseudo_weight = container.scalar_data['pseudo_weight']
+
+                    if pseudo_weight<=0:
+                        print('WARNING: pseudo weight is equal to zero, replacing it to 1,.')
+                        for p in self.params:
+                            print(p.name,p.value)
+                        pseudo_weight = 1.
+                    current_weights = np.array([pseudo_weight])
+
 
 
                 # write the new weight distribution down
@@ -221,23 +229,11 @@ class prepare_generalized_llh_parameters(PiStage):
                 new_weight_sum[index]+=np.sum(current_weights)
 
                 # Mean of the current weight distribution
-                # ---> scaled by the hypeersurface fit
-                mean_w = np.mean(current_weights)#*hypersurface[index]
-                if mean_w<0:
-                    print('\n\n')
-                    print('WARNING: mean weight is negative')
-                    print(current_weights,sum(current_weights),index)
-                    print(container.binned_data['weights'][1].get('host')[index])
-                    print('\n\n')
-                    raise Exception
+                mean_w = np.mean(current_weights)
                 mean_of_weights[index] = mean_w
 
                 # variance of the current weight
-                # ---> scaled by the hypersurface
                 var_of_weights[index]=((current_weights-mean_w)**2).sum()/(float(n_weights))#*hypersurface[index]
-                if var_of_weights[index]<0:
-                    print('WTF IS WRONG WITH THIS!!!!')
-                    raise Exception
 
 
             #  Calculate mean adjustment (TODO: save as a container scalar?)
@@ -249,9 +245,8 @@ class prepare_generalized_llh_parameters(PiStage):
             var_z=(var_of_weights+mean_of_weights**2)
 
             if sum(var_z<=0)!=0:
-                print('error: var_z is equal to zero')
-                print(var_z)
-                raise Exception
+                print('warning: var_z is equal to zero')
+                print(container.name,var_z)
             
             #  alphas and betas
             betas = mean_of_weights/var_z
@@ -263,7 +258,7 @@ class prepare_generalized_llh_parameters(PiStage):
 
             alphas = (nevents_sim+mean_adjustment)*trad_alpha
 
-            if sum((nevents_sim+mean_adjustment)<0)!=0:
+            if sum((alphas)<0)!=0:
                 print('ARRRRGGGGGHHHH')
                 print(nevents_sim,mean_adjustment)
                 raise Exception

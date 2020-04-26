@@ -786,6 +786,8 @@ class Analysis(object):
 
         # Record the Asimov distribution with the optimal param values
         hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
+        gen_poisson_dist = hypo_maker.get_outputs(return_sum=False,force_standard_output=False)
+        gen_poisson_dist = merge_mapsets_together(mapset_list=gen_poisson_dist)
 
         # Get the best-fit metric value
         metric_val = sign * optimize_result.pop('fun')
@@ -814,7 +816,7 @@ class Analysis(object):
             ) for i in range(len(data_dist))]
         else: # DistributionMaker object
             fit_info['detailed_metric_info'] = self.get_detailed_metric_info(
-                data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist,
+                data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist,genpoisson_hypo=gen_poisson_dist,
                 params=hypo_maker.params, metric=metric[0], other_metrics=other_metrics,
                 detector_name=hypo_maker._detector_name
             )
@@ -931,7 +933,7 @@ class Analysis(object):
         return fit_info
 
     @staticmethod
-    def get_detailed_metric_info(data_dist, hypo_asimov_dist, params, metric,
+    def get_detailed_metric_info(data_dist, hypo_asimov_dist, params, metric,genpoisson_hypo=None,
                                  other_metrics=None, detector_name=None):
         """Get detailed fit information, including e.g. maps that yielded the
         metric.
@@ -961,10 +963,11 @@ class Analysis(object):
             name_vals_d = OrderedDict()
 
             # if the metric is not generalized poisson, but the distribution is a dict,
-            # retreive the 'weights' mapset from the distribution output
+            # retrieve the 'weights' mapset from the distribution output
             if m=='generalized_poisson_llh':
-                name_vals_d['maps'] = data_dist.maps[0].generalized_poisson_llh(expected_values=hypo_asimov_dist)
-                llh_binned = data_dist.maps[0].generalized_poisson_llh(expected_values=hypo_asimov_dist, binned=True)
+                print(type(genpoisson_hypo))
+                name_vals_d['maps'] = data_dist.maps[0].generalized_poisson_llh(expected_values=genpoisson_hypo)
+                llh_binned = data_dist.maps[0].generalized_poisson_llh(expected_values=genpoisson_hypo, binned=True)
                 map_binned = Map(name=metric,
                                 hist=np.reshape(llh_binned,data_dist.maps[0].shape),
                                 binning=data_dist.maps[0].binning
