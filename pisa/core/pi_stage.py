@@ -312,8 +312,11 @@ class PiStage(BaseStage):
                 for key in self.output_apply_keys:
                     self.outputs[key] = self.data.get_mapset(key)
 
+        # Handle Events mode
         elif output_mode == "events" :
             self.outputs = self.data
+    
+        # Throw warning that output mode failed
         else:
             self.outputs = None
             logging.warning('pi_stage.py: Cannot create CAKE style output mapset')
