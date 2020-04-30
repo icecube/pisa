@@ -503,6 +503,7 @@ class OneDimBinning(object):
                 ', '.join(str(e) for e in self.bin_edges.m),
                 format(self.bin_edges.u, '~'),
             ).strip()
+            regularity = ""
         else:
             edges = 'spanning [{}, {}] {:s}'.format(
                 self.bin_edges[0].magnitude,
