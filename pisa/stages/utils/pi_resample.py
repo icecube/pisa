@@ -1,10 +1,10 @@
 """
 Stage to transform binned data from one binning to another while also dealing with
-uncertainty estimates in a reasonable way. In particular, this allows up-sampling
-from a more coarse binning to a finer binning.
+uncertainty estimates in a reasonable way. In particular, this allows up-sampling from a
+more coarse binning to a finer binning.
 
-The implementation is similar to that of the pi_hist stage, hence the over-writing
-of the `apply` method.
+The implementation is similar to that of the pi_hist stage, hence the over-writing of
+the `apply` method.
 """
 
 from __future__ import absolute_import, print_function, division
