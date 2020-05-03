@@ -19,6 +19,7 @@ from pisa.utils import vectorizer
 from pisa.core import translation
 from numba import SmartArray
 
+from pisa.utils.log import logging, set_verbosity
 
 class ResampleMode(Enum):
     """Enumerates sampling methods of the `pi_resample` stage."""
@@ -186,3 +187,103 @@ class pi_resample(PiStage):  # pylint: disable=invalid-name
                     vals=container["variances"], out=container["errors"]
                 )
                 container["errors"].mark_changed()
+
+def test_pi_resample():
+    """Unit test for the resampling stage."""
+    from pisa.core.distribution_maker import DistributionMaker
+    from pisa.core.map import Map
+    from pisa.utils.config_parser import parse_pipeline_config
+    from pisa.utils.log import set_verbosity, logging
+    from pisa.utils.comparisons import ALLCLOSE_KW
+    from collections import OrderedDict
+    from copy import deepcopy
+    
+    example_cfg = parse_pipeline_config('settings/pipeline/example.cfg')
+    reco_binning = example_cfg[('utils', 'pi_hist')]['output_specs']
+    coarse_binning = reco_binning.downsample(reco_energy=2, reco_coszen=2)
+    assert coarse_binning.is_compat(reco_binning)
+    
+    # replace binning of output with coarse binning
+    example_cfg[('utils', 'pi_hist')]['output_specs'] = coarse_binning
+    # make another pipeline with an upsampling stage to the original binning
+    upsample_cfg = deepcopy(example_cfg)
+    pi_resample_cfg = OrderedDict()
+    pi_resample_cfg['input_specs'] = coarse_binning
+    pi_resample_cfg['output_specs'] = reco_binning
+    upsample_cfg[('utils', 'pi_resample')] = pi_resample_cfg
+
+    example_maker = DistributionMaker([example_cfg])
+    upsampled_maker = DistributionMaker([upsample_cfg])
+    
+    example_map = example_maker.get_outputs(return_sum=True)[0]
+    example_map_upsampled = upsampled_maker.get_outputs(return_sum=True)[0]
+    
+    # First check: The upsampled map must have the same total count as the original map
+    assert np.isclose(
+        np.sum(example_map.nominal_values),
+        np.sum(example_map_upsampled.nominal_values),
+    )
+    
+    # Check consistency of modified chi-square
+    # ----------------------------------------
+    # When the assumption holds that events are uniformly distributed over the coarse
+    # bins, the modified chi-square should not change from upscaling the maps. We test
+    # this by making a fluctuated coarse map and then upsampling that map according to
+    # the assumption by bin volumes. We should find that the modified chi-square between
+    # the coarse map and the coarse fluctuated map is the same as the upsampled map and
+    # the upsampled fluctuated map.
+    
+    # It doesn't matter precisely how we fluctuate it here, we just want any different
+    # map...
+    random_map_coarse = example_map.fluctuate(method='scaled_poisson', random_state=42)
+    random_map_coarse.set_errors(None)
+    
+    # This bit is an entirely independent implementation of the upsampling. The count
+    # in every bin is scaled according to the reatio of weighted bin volumes.
+    upsampled_hist = np.zeros_like(example_map_upsampled.nominal_values)
+    upsampled_errs = np.zeros_like(example_map_upsampled.nominal_values)
+    up_binning = example_map_upsampled.binning
+
+    coarse_hist = np.array(random_map_coarse.nominal_values)
+    coarse_errors = np.array(random_map_coarse.std_devs)
+    coarse_binning = random_map_coarse.binning
+
+    for bin_idx in np.ndindex(upsampled_hist.shape):
+        one_bin = up_binning[bin_idx]
+        fine_bin_volume = one_bin.weighted_bin_volumes(
+            attach_units=False,
+        ).squeeze().item()
+        # the following is basically an independent implementation of translate.lookup
+        coarse_index = []  # index where the upsampled bin came from
+        for dim in up_binning.names:
+            x = one_bin[dim].weighted_centers[0].m  # middle point of the one bin
+            bins = coarse_binning[dim].bin_edges.m  # coarse bin edges in that dim
+            coarse_index.append(np.digitize(x, bins) - 1)  # index 1 means bin 0
+        coarse_index = tuple(coarse_index)
+        coarse_bin_volume = coarse_binning.weighted_bin_volumes(
+            attach_units=False,
+        )[coarse_index].squeeze().item()
+    
+        upsampled_hist[bin_idx] = coarse_hist[coarse_index]
+        upsampled_hist[bin_idx] *= fine_bin_volume
+        upsampled_hist[bin_idx] /= coarse_bin_volume
+    
+    # done, at last!
+    random_map_upsampled = Map(
+        name="random_upsampled",
+        hist=upsampled_hist,
+        binning=up_binning
+    )
+    random_map_upsampled.set_errors(None)
+    
+    # After ALL THIS, we get the same modified chi-square from the coarse and the
+    # upsampled pair of maps. Neat, huh?
+    assert np.allclose(random_map_coarse.mod_chi2(example_map),
+                       random_map_upsampled.mod_chi2(example_map_upsampled),
+                       **ALLCLOSE_KW,
+                      )
+    logging.info('<< PASS : pi_resample >>')
+
+if __name__ == "__main__":
+    set_verbosity(2)
+    test_pi_resample()
