@@ -169,7 +169,7 @@ class pi_resample(PiStage):  # pylint: disable=invalid-name
                 origin_binvols = translation.lookup(
                     fine_gridpoints, coarse_volumes, self.input_specs
                 )
-                # Finally, we scale the weights and squared weights by the ratio of the
+                # Finally, we scale the weights and variances by the ratio of the
                 # bin volumes in place:
                 vectorizer.imul(upsampled_binvols, container["weights"])
                 vectorizer.itruediv(origin_binvols, container["weights"])
