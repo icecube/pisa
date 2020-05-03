@@ -32,6 +32,7 @@ import numpy as np
 
 from pisa import FTYPE, HASH_SIGFIGS, ureg
 from pisa.utils.comparisons import interpret_quantity, normQuant, recursiveEquality
+from pisa.utils.comparisons import ALLCLOSE_KW
 from pisa.utils.format import (make_valid_python_name, text2tex,
                                strip_outer_dollars)
 from pisa.utils.hash import hash_obj
@@ -129,7 +130,7 @@ def _new_obj(original_function):
         """<< docstring will be inherited from wrapped function >>"""
         new_state = OrderedDict()
         state_updates = original_function(cls, *args, **kwargs)
-        for attr in cls._hash_attrs: # pylint: disable=protected-access
+        for attr in cls._attrs_to_create_new:  # pylint: disable=protected-access
             if attr in state_updates:
                 new_state[attr] = state_updates[attr]
             else:
@@ -240,7 +241,7 @@ class OneDimBinning(object):
     #   backwards compatibility (including for state / hashes), both are kept
     #   (for now) as "state" variables. -JLL, April, 2020
 
-    _hash_attrs = ('name', 'tex', 'bin_edges', 'is_log', 'is_lin', 'bin_names')
+    _attrs_to_create_new = ('name', 'tex', 'bin_edges', 'is_log', 'is_lin', 'bin_names')
 
     def __init__(self, name, tex=None, bin_edges=None, units=None, domain=None,
                  num_bins=None, is_lin=None, is_log=None, bin_names=None):
@@ -306,6 +307,7 @@ class OneDimBinning(object):
         self._weighted_centers = None
         self._edge_magnitudes = None
         self._bin_widths = None
+        self._weighted_bin_widths = None
         self._inbounds_criteria = None
 
         # TODO: define hash based upon conversion of things to base units (such
@@ -841,7 +843,14 @@ class OneDimBinning(object):
         """bool"""
         assert isinstance(b, bool)
         if b != self._is_lin:
-            self._is_lin, self._is_log, self._is_irregular = (b, not b, None)
+            # NOTE: use tuple unpacking to help ensure state is consistent
+            (
+                self._is_lin,
+                self._is_log,
+                self._is_irregular,
+                self._weighted_centers,
+                self._weighted_bin_widths,
+            ) = (b, not b, None, None, None)
 
     @property
     def is_log(self):
@@ -853,7 +862,14 @@ class OneDimBinning(object):
         """bool"""
         assert isinstance(b, bool)
         if b != self._is_log:
-            self._is_log, self._is_lin, self._is_irregular = (b, not b, None)
+            # NOTE: use tuple unpacking to help ensure state is consistent
+            (
+                self._is_log,
+                self._is_lin,
+                self._is_irregular,
+                self._weighted_centers,
+                self._weighted_bin_widths,
+            ) = (b, not b, None, None, None)
 
     @property
     def is_irregular(self):
@@ -958,6 +974,18 @@ class OneDimBinning(object):
         return self._bin_widths
 
     @property
+    def weighted_bin_widths(self):
+        """Absolute widths of bins."""
+        if self._weighted_bin_widths is None:
+            if self.is_log:
+                self._weighted_bin_widths = (
+                    np.log(self.edge_magnitudes[1:] / self.edge_magnitudes[:-1])
+                ) * ureg.dimensionless
+            else:
+                self._weighted_bin_widths = self.bin_widths
+        return self._weighted_bin_widths
+
+    @property
     def inbounds_criteria(self):
         """Return string boolean criteria indicating e.g. an event falls within
         the limits of the defined binning.
@@ -1040,7 +1068,7 @@ class OneDimBinning(object):
                 log_spacing = bin_edges[1:] / bin_edges[:-1]
             except (AssertionError, FloatingPointError, ZeroDivisionError):
                 return False
-        if np.allclose(log_spacing, log_spacing[0]):
+        if np.allclose(log_spacing, log_spacing[0], **ALLCLOSE_KW):
             return True
         return False
 
@@ -1076,13 +1104,13 @@ class OneDimBinning(object):
         if len(bin_edges) == 2:
             return True
         lin_spacing = np.diff(bin_edges)
-        if np.allclose(lin_spacing, lin_spacing[0]):
+        if np.allclose(lin_spacing, lin_spacing[0], **ALLCLOSE_KW):
             return True
         return False
 
     @staticmethod
     def is_binning_ok(bin_edges):
-        """Check that there are at least one bin edge, and that they are
+        """Check that there are 2 or more bin edges, and that they are
         monotonically increasing.
 
         Parameters
@@ -1128,10 +1156,6 @@ class OneDimBinning(object):
 
         if self.units.dimensionality != other.units.dimensionality:
             logging.trace('Incompatible units')
-            return False
-
-        if self.bin_names != other.bin_names:
-            logging.trace('Bin names do not match')
             return False
 
         # TODO: should we force normalization?
@@ -1210,26 +1234,28 @@ class OneDimBinning(object):
             return self
 
         if self.is_log:
-            spacing_func = np.logspace
-            old_bin_edges = np.log10(self.edge_magnitudes)
+            spacing_func = np.geomspace
         else:  # is_lin
             spacing_func = np.linspace
-            old_bin_edges = self.edge_magnitudes
 
+        old_bin_edges = self.edge_magnitudes
         new_bin_edges = []
-        for lower, upper in zip(old_bin_edges[:-1], old_bin_edges[1:]):
-            thisbin_new_edges = spacing_func(lower, upper, factor + 1)
+        for old_lower, old_upper in zip(old_bin_edges[:-1], old_bin_edges[1:]):
+            thisbin_new_edges = spacing_func(old_lower, old_upper, factor + 1)
 
-            # Omit the upper bin edge, as it is the first bin edge of
-            # the next bin
-            new_bin_edges.extend(thisbin_new_edges[:-1])
+            # Use the original lower bin edge to avoid precision issues with
+            # its version created by `spacing_func`
+            new_bin_edges.append(old_lower)
 
-        # Include the uppermost bin edge
-        new_bin_edges.append(thisbin_new_edges[-1])
+            # Add the new bin edges we created in between lower and upper; we
+            # omit the upper bin edge because it is the first bin edge of the
+            # next bin
+            new_bin_edges.extend(thisbin_new_edges[1:-1])
 
-        return {'bin_edges': new_bin_edges,
-                'units': self.units,
-                'bin_names': None}
+        # Include the uppermost bin edge from original binning
+        new_bin_edges.append(old_upper)
+
+        return {'bin_edges': new_bin_edges * self.units, 'bin_names': None}
 
     # TODO: do something cute with bin names, if they exist?
     @_new_obj
@@ -1299,8 +1325,12 @@ class OneDimBinning(object):
 
         # Convert already-defined quantities
         attrs = [
-            '_bin_edges', '_domain', '_midpoints', '_weighted_centers',
-            '_bin_widths', '_edge_magnitudes'
+            '_bin_edges',
+            '_domain',
+            '_midpoints',
+            '_weighted_centers',
+            '_bin_widths',
+            '_edge_magnitudes',
         ]
         for attr in attrs:
             val = getattr(self, attr)
@@ -2515,8 +2545,9 @@ class MultiDimBinning(object):
         Parameters
         ----------
         entity : string
-            One of 'midpoints', 'weighted_centers', 'bin_edges', or
-            'bin_widths'.
+            Can be any attribute of OneDimBinning that returns a 1D array with
+            units. E.g., one of 'midpoints', 'weighted_centers', 'bin_edges',
+            'bin_widths', or 'weighted_bin_widths'
 
         attach_units : bool
             Whether to attach units to the result (can save computation time by
@@ -2534,25 +2565,32 @@ class MultiDimBinning(object):
 
         """
         entity = entity.lower().strip()
-        if entity == 'midpoints':
-            arrays = tuple(d.midpoints.m for d in self.iterdims())
-        elif entity == 'weighted_centers':
-            arrays = tuple(d.weighted_centers.m for d in self.iterdims())
-        elif entity == 'bin_edges':
-            arrays = tuple(d.bin_edges.m for d in self.iterdims())
-        elif entity == 'bin_widths':
-            arrays = tuple(d.bin_widths.m for d in self.iterdims())
-        else:
-            raise ValueError('Unrecognized `entity`: "%s"' % entity)
+
+        arrays = []
+        units = []
+        for dim in self.iterdims():
+            try:
+                quantity_array = getattr(dim, entity)
+            except AttributeError:
+                logging.error(
+                    "Dimension %s does not contain entity '%s'", dim.name, entity
+                )
+                raise
+            if attach_units:
+                units.append(quantity_array.units)
+            arrays.append(quantity_array.magnitude)
 
         # NOTE: numpy versions prior to 1.13.0, meshgrid returned float64 even
         # if inputs are float32 to mesghrid. Use `astype` as a fix. Note that
-        # `astype` creates a copy of the array even if dtype of input is the
-        # same, copy=False is ok in the argument to meshgrid.
+        # since `astype` already creates a copy of the array even if dtype of
+        # input is the same, setting `copy` to False is ok in the argument to
+        # meshgrid; i.e., if a user modifies an element of the returned array,
+        # it should not affect the original `entity` from which the meshgrid
+        # was generated.
         mg = [a.astype(FTYPE) for a in np.meshgrid(*arrays, indexing='ij', copy=False)]
 
         if attach_units:
-            return [m*dim.units for m, dim in zip(mg, self.iterdims())]
+            return [m*u for m, u in zip(mg, units)]
 
         return mg
 
@@ -2573,11 +2611,36 @@ class MultiDimBinning(object):
 
         """
         meshgrid = self.meshgrid(entity='bin_widths', attach_units=False)
-        volumes = reduce(lambda x, y: x*y, meshgrid)
+        volumes = reduce(mul, meshgrid)
         if attach_units:
+            volumes *= reduce(mul, (ureg(str(d.units)) for d in self.iterdims()))
+        return volumes
+
+    def weighted_bin_volumes(self, attach_units=True):
+        """Bin "volumes" defined in `num_dims`-dimensions, but unlike
+        `bin_volumes`, the volume is evaluated in the space of the binning.
+        E.g., logarithmic bins have `weighted_bin_volumes` of equal size in
+        log-space.
+
+        Parameters
+        ----------
+        attach_units : bool
+            Whether to attach pint units to the resulting array
+
+        Returns
+        -------
+        volumes : array
+            Bin volumes
+
+        """
+        meshgrid = self.meshgrid(entity='weighted_bin_widths', attach_units=False)
+        volumes = reduce(mul, meshgrid)
+        if attach_units:
+            # NOTE we use the units from `weighted_bin_widths` because these
+            # can be different from those of the dimension
             volumes *= reduce(
-                lambda x, y: x*y,
-                (ureg(str(d.units)) for d in self.iterdims())
+                mul,
+                (ureg(str(d.weighted_bin_widths.units)) for d in self.iterdims()),
             )
         return volumes
 
@@ -2761,9 +2824,11 @@ class MultiDimBinning(object):
         Parameters
         ----------
         index : str, int, len-N-sequence of ints, or len-N-sequence of slices
-            If str is passed: Return the binning corresponding to the name
+            If str is passed: Return the binning corresponding to the named
+            dimension
+
             If an integer is passed:
-              * If num_dims is 1, `index` indexes into the bins of the sole
+              * If num_dims is 4, `index` indexes into the bins of the sole
                 OneDimBinning. The bin is returned.
               * If num_dims > 1, `index` indexes which contained OneDimBinning
                 object to return.
@@ -2845,7 +2910,49 @@ def test_OneDimBinning():
     assert b1.basename_binning == b1.basename_binning
     assert b1.basename_binning == b3.basename_binning
     assert b1.basename_binning != b2.basename_binning
-
+    
+    # Oversampling/downsampling
+    b1_over = b1.oversample(2)
+    assert b1_over.is_bin_spacing_log_uniform(b1_over.bin_edges)
+    b1_down = b1.downsample(2)
+    assert b1_down.is_bin_spacing_log_uniform(b1_down.bin_edges)
+    assert b1_down.is_compat(b1)
+    assert b1.is_compat(b1_over)
+    assert b1_down.is_compat(b1_over)
+    
+    # Bin width consistency
+    assert np.isclose(
+        np.sum(b1_over.bin_widths.m),
+        np.sum(b1.bin_widths.m),
+        **ALLCLOSE_KW,
+    )
+    assert np.isclose(
+        np.sum(b1_down.bin_widths.m),
+        np.sum(b1.bin_widths.m),
+        **ALLCLOSE_KW,
+    )
+    assert np.isclose(
+        np.sum(b1_over.bin_widths.m),
+        np.sum(b1_down.bin_widths.m),
+        **ALLCLOSE_KW,
+    )
+    # Weighted bin widths must also sum up to the same total width
+    assert np.isclose(
+        np.sum(b1_over.weighted_bin_widths.m),
+        np.sum(b1.weighted_bin_widths.m),
+        **ALLCLOSE_KW,
+    )
+    assert np.isclose(
+        np.sum(b1_down.weighted_bin_widths.m),
+        np.sum(b1.weighted_bin_widths.m),
+        **ALLCLOSE_KW,
+    )
+    assert np.isclose(
+        np.sum(b1_over.weighted_bin_widths.m),
+        np.sum(b1_down.weighted_bin_widths.m),
+        **ALLCLOSE_KW,
+    )
+    
     logging.debug('len(b1): %s', len(b1))
     logging.debug('b1: %s', b1)
     logging.debug('b2: %s', b2)
@@ -2985,6 +3092,25 @@ def test_MultiDimBinning():
     _ = mdb[0:, 0:]
     _ = mdb[0, 0:]
     _ = mdb[-1, -1]
+    # TODO: following should work as in Numpy:
+    # assert mdb[:] == mdb
+    # assert mdb[0] == b1
+    # assert mdb[1] == b2
+    assert mdb[:, :] == mdb
+
+    # Index by dim names
+    assert mdb["energy"] == b1
+    assert mdb["coszen"] == b2
+    try:
+        mdb["nonexistent"]
+    except Exception:
+        pass
+    else:
+        raise Exception('non-existent name should raise exception')
+
+    # Index by dim number
+    assert MultiDimBinning([b1])[0] == MultiDimBinning([b1[0]])
+
     logging.debug('%s', mdb.energy)
     logging.debug('copy(mdb): %s', copy(mdb))
     logging.debug('deepcopy(mdb): %s', deepcopy(mdb))
@@ -3018,10 +3144,12 @@ def test_MultiDimBinning():
 
     assert binning.oversample(10, 1).shape == (400, 20)
     assert binning.oversample(1, 3).shape == (40, 60)
-
+    assert binning.downsample(4, 2).shape == (10, 10)
+    
     assert binning.oversample(coszen=10, energy=2).shape == (80, 200)
     assert binning.oversample(1, 1) == binning
 
+    assert binning.to('MeV', '')['energy'].units == ureg.MeV
     assert binning.to('MeV', '') == binning, 'converted=%s\norig=%s' \
             %(binning.to('MeV', ''), binning)
     assert binning.to('MeV', '').hash == binning.hash
@@ -3029,12 +3157,35 @@ def test_MultiDimBinning():
     _ = binning.meshgrid(entity='bin_edges')
     _ = binning.meshgrid(entity='weighted_centers')
     _ = binning.meshgrid(entity='midpoints')
+    _ = binning.meshgrid(entity='bin_widths')
+    _ = binning.meshgrid(entity='weighted_bin_widths')
     _ = binning.bin_volumes(attach_units=False)
     _ = binning.bin_volumes(attach_units=True)
+    _ = binning.weighted_bin_volumes(attach_units=False)
+    _ = binning.weighted_bin_volumes(attach_units=True)
     binning.to('MeV', None)
     binning.to('MeV', '')
     binning.to(ureg.joule, '')
-
+    
+    oversampled = binning.oversample(10, 3)
+    assert oversampled.shape == (400, 60)
+    downsampled = binning.downsample(4, 2)
+    assert downsampled.shape == (10, 10)
+    
+    over_vols = oversampled.bin_volumes(attach_units=False)
+    down_vols = downsampled.bin_volumes(attach_units=False)
+    norm_vols = binning.bin_volumes(attach_units=False)
+    assert np.isclose(np.sum(over_vols), np.sum(norm_vols), **ALLCLOSE_KW)
+    assert np.isclose(np.sum(down_vols), np.sum(norm_vols), **ALLCLOSE_KW)
+    assert np.isclose(np.sum(down_vols), np.sum(over_vols), **ALLCLOSE_KW)
+    
+    over_vols = oversampled.weighted_bin_volumes(attach_units=False)
+    down_vols = downsampled.weighted_bin_volumes(attach_units=False)
+    norm_vols = binning.weighted_bin_volumes(attach_units=False)
+    assert np.isclose(np.sum(over_vols), np.sum(norm_vols), **ALLCLOSE_KW)
+    assert np.isclose(np.sum(down_vols), np.sum(norm_vols), **ALLCLOSE_KW)
+    assert np.isclose(np.sum(down_vols), np.sum(over_vols), **ALLCLOSE_KW)
+    
     testdir = tempfile.mkdtemp()
     try:
         b_file = os.path.join(testdir, 'multi_dim_binning.json')
