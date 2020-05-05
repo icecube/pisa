@@ -214,12 +214,11 @@ class prepare_generalized_llh_parameters(PiStage):
                 # make the whole bin treatment here
                 if n_weights<=0 or np.sum(current_weights)<=0:
                     pseudo_weight = container.scalar_data['pseudo_weight']
-
-                    if pseudo_weight<=0:
-                        print('WARNING: pseudo weight is equal to zero, replacing it to 1,.')
+                    if pseudo_weight<0:
+                        print('WARNING: pseudo weight is less than zero, replacing it to 0,.')
                         for p in self.params:
                             print(p.name,p.value)
-                        pseudo_weight = 1.
+                        pseudo_weight = 0.
                     current_weights = np.array([pseudo_weight])
 
 
@@ -233,7 +232,7 @@ class prepare_generalized_llh_parameters(PiStage):
                 mean_of_weights[index] = mean_w
 
                 # variance of the current weight
-                var_of_weights[index]=((current_weights-mean_w)**2).sum()/(float(n_weights))#*hypersurface[index]
+                var_of_weights[index]=((current_weights-mean_w)**2).sum()/(float(n_weights))
 
 
             #  Calculate mean adjustment (TODO: save as a container scalar?)
@@ -244,24 +243,16 @@ class prepare_generalized_llh_parameters(PiStage):
             #  Variance of the poisson-gamma distributed variable
             var_z=(var_of_weights+mean_of_weights**2)
 
-            if sum(var_z<=0)!=0:
-                print('warning: var_z is equal to zero')
+            if sum(var_z<0)!=0:
+                print('warning: var_z is less than zero')
                 print(container.name,var_z)
+                raise Exception
             
             #  alphas and betas
             betas = mean_of_weights/var_z
             trad_alpha=(mean_of_weights**2)/var_z
-            if np.sum(trad_alpha<=0)!=0:
-                print('ERROR: alpha should be exclusively positive')
-                print(trad_alpha)
-                raise Exception
-
             alphas = (nevents_sim+mean_adjustment)*trad_alpha
 
-            if sum((alphas)<0)!=0:
-                print('ARRRRGGGGGHHHH')
-                print(nevents_sim,mean_adjustment)
-                raise Exception
 
             # Calculate alphas and betas
             self.data.data_specs = self.output_specs

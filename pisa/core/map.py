@@ -1585,6 +1585,8 @@ class Map(object):
 
             empty_bins: None, list or np.ndarray (list the bin indices that are empty)
 
+            binned: bool (return the bin-by-bin llh or the sum over all bins)
+
         '''
         from mc_uncertainty.llh_defs.poisson import normal_log_probability, fast_pgmix
 
@@ -1603,21 +1605,26 @@ class Map(object):
 
         for bin_i in range(N_bins):
 
-
+                       
             # ignore the bin if bin index is part of the empty mc bins
             if bin_i in empty_bins:
                 continue
 
+            # Make sure that no weight sum is negative. Crash if there are
+            weight_sum = sum([m.hist.flatten()[bin_i] for m in expected_values['new_sum'].maps])
+            assert weight_sum>=0,'ERROR: negative weights detected'
+
+
+            # TODO: sometimes the histogram spits out uncertainty objects, sometimes not. 
+            #       Not sure why.
             try:
                 data_count = self.hist.flatten()[bin_i].nominal_value
             except:
                 data_count = self.hist.flatten()[bin_i]
                    
-            weight_sum = sum([m.hist.flatten()[bin_i] for m in expected_values['new_sum'].maps])
-            assert weight_sum>=0,'ERROR: negative weights detected'
 
+            # If high enough data count, compute a gaussian probability
             if data_count>100:
-
                 logP = normal_log_probability(k=data_count,weight_sum=weight_sum)
                 llh_per_bin[bin_i] = logP
 
@@ -1626,8 +1633,12 @@ class Map(object):
                 alphas = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_alphas'].maps])
                 betas  = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_betas'].maps])
 
+                # Check that the alpha and betas make sense
+                assert np.sum(alphas<=0)==0,'ERROR: detected alpha values <=0'
+                assert np.sum(betas<=0)==0,'ERROR: detected beta values <=0'
+
+                # Remove the NaN's 
                 mask = np.isfinite(alphas)*np.isfinite(betas)
-                weight_sum = sum([m.hist.flatten()[bin_i] for m in expected_values['new_sum'].maps])
 
 
                 llh_of_bin = fast_pgmix(data_count, alphas[mask], betas[np.isfinite(mask)])
