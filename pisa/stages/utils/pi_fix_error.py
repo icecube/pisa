@@ -63,6 +63,7 @@ class pi_fix_error(PiStage):  # pylint: disable=invalid-name
         assert self.output_mode == 'binned'
 
     def setup_function(self):
+        self.data.data_specs = self.input_specs
         for container in self.data:
             container['frozen_errors'] = np.empty((container.size), dtype=FTYPE)
 
