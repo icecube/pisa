@@ -174,11 +174,9 @@ class pi_resample(PiStage):  # pylint: disable=invalid-name
                 # bin volumes in place:
                 vectorizer.imul(upsampled_binvols, container["weights"])
                 vectorizer.itruediv(origin_binvols, container["weights"])
-                container["weights"].mark_changed()
                 if self.scale_errors:
                     vectorizer.imul(upsampled_binvols, container["variances"])
                     vectorizer.itruediv(origin_binvols, container["variances"])
-                    container["variances"].mark_changed()
             elif self.rs_mode == ResampleMode.DOWN:
                 pass  # not yet implemented
 
@@ -186,7 +184,6 @@ class pi_resample(PiStage):  # pylint: disable=invalid-name
                 vectorizer.sqrt(
                     vals=container["variances"], out=container["errors"]
                 )
-                container["errors"].mark_changed()
 
 def test_pi_resample():
     """Unit test for the resampling stage."""
