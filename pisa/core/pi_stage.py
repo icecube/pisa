@@ -284,7 +284,6 @@ class PiStage(BaseStage):
         else:
             assert output_mode=='binned' or output_mode=='events','ERROR: user-specified output mode is unrecognized'
 
-
         # Handle the binned case
         if output_mode == 'binned':
 
