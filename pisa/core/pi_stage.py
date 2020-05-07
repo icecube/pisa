@@ -293,13 +293,30 @@ class PiStage(BaseStage):
         Depending on `self.output_mode`, this may be a binned object, or the
         event container itself
         """
-        assert self.map_output_values is not None, ("Cannot create mapset: output key "
-                                                    "not set")
-        if self.output_mode == 'binned':
-            self.outputs = self.data.get_mapset(
-                self.map_output_key,
-                error=self.map_output_error_key,
+        # new behavior with explicitly defined output keys
+        if self.map_output_key:
+            if self.output_mode == 'binned':
+                self.outputs = self.data.get_mapset(
+                    self.map_output_key,
+                    error=self.map_output_error_key,
+                )
+            elif self.output_mode == "events":
+                self.outputs = self.data
+            else:
+                self.outputs = None
+                logging.warning('Cannot create CAKE style output mapset')
+
+            return self.outputs
+
+        # if no output keys are explicitly defined, fall back to previous behavior
+        if self.output_mode == 'binned' and len(self.output_apply_keys) == 1:
+            self.outputs = self.data.get_mapset(self.output_apply_keys[0])
+        elif len(self.output_apply_keys) == 2 and 'errors' in self.output_apply_keys:
+            other_key = (
+                self.output_apply_keys[0] if self.output_apply_keys[0] != 'errors'
+                else self.output_apply_keys[1]
             )
+            self.outputs = self.data.get_mapset(other_key, error='errors')
         elif self.output_mode == "events":
             self.outputs = self.data
         else:
