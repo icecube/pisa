@@ -453,7 +453,7 @@ class Container(object):
         if out_binning is not None:
             if not binning == out_binning:
                 raise ValueError(
-                    f"Binning of stored data with shape {binning.shape} contradicts "
+                    f"Binning of stored '{key}' with shape {binning.shape} contradicts "
                     f"current output specification with shape {out_binning.shape}!"
                 )
         return data
