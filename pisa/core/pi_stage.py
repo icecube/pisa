@@ -68,7 +68,15 @@ class PiStage(BaseStage):
 
     output_calc_keys : str, iterable thereof, or None
         output keys of the calculation (not intermediate results)
-
+    
+    map_output_key : str or None
+        When producing outputs as a :obj:`Map`, this key is used to set the nominal
+        values. If `None` (default), no :obj:`Map` output can be produced.
+    
+    map_output_error_key : str or None
+        When producing outputs as a :obj:`Map`, this key is used to set the errors
+        (i.e. standard deviations) in the :obj:`Map. If `None` (default), maps will have
+        no errors.
     """
 
     def __init__(
@@ -87,6 +95,8 @@ class PiStage(BaseStage):
         output_apply_keys=None,
         input_calc_keys=None,
         output_calc_keys=None,
+        map_output_key=None,
+        map_output_error_key=None,
     ):
         super().__init__(
             params=params,
@@ -100,6 +110,8 @@ class PiStage(BaseStage):
         self.input_specs = input_specs
         self.calc_specs = calc_specs
         self.output_specs = output_specs
+        self.map_output_key = map_output_key
+        self.map_output_error_key = map_output_error_key
         self.data = data
 
         if isinstance(self.input_specs, MultiDimBinning):
@@ -281,7 +293,22 @@ class PiStage(BaseStage):
         Depending on `self.output_mode`, this may be a binned object, or the
         event container itself
         """
+        # new behavior with explicitly defined output keys
+        if self.map_output_key:
+            if self.output_mode == 'binned':
+                self.outputs = self.data.get_mapset(
+                    self.map_output_key,
+                    error=self.map_output_error_key,
+                )
+            elif self.output_mode == "events":
+                self.outputs = self.data
+            else:
+                self.outputs = None
+                logging.warning('Cannot create CAKE style output mapset')
 
+            return self.outputs
+
+        # if no output keys are explicitly defined, fall back to previous behavior
         if self.output_mode == 'binned' and len(self.output_apply_keys) == 1:
             self.outputs = self.data.get_mapset(self.output_apply_keys[0])
         elif len(self.output_apply_keys) == 2 and 'errors' in self.output_apply_keys:
