@@ -74,9 +74,9 @@ class PiStage(BaseStage):
         values. If `None` (default), no :obj:`Map` output can be produced.
     
     map_output_error_key : str or None
-        When producing outputs as a :obj:`Map`, this key is used to set the errors
-        (i.e. standard deviations) in the :obj:`Map. If `None` (default), maps will have
-        no errors.
+        When producing outputs as a :obj:`Map`, this key is used to set the errors (i.e.
+        standard deviations) in the :obj:`Map`. If `None` (default), maps will have no
+        errors.
     """
 
     def __init__(
