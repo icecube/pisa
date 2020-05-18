@@ -1,5 +1,3 @@
-# Authors
-
 """
 Stage class designed to be inherited by PISA Pi services, such that all basic
 functionality is built-in.
@@ -14,6 +12,7 @@ from pisa.core.base_stage import BaseStage
 from pisa.core.binning import MultiDimBinning
 from pisa.core.container import ContainerSet
 from pisa.utils.log import logging
+from pisa.utils.format import arg_to_tuple
 from pisa.utils.profiler import profile
 
 
@@ -33,31 +32,51 @@ class PiStage(BaseStage):
     data : ContainerSet or None
         object to be passed along
 
-    input_names : None or list of strings
+    params
 
-    output_names : None or list of strings
+    expected_params
 
-    input_specs : binning or 'events' or None
+    input_names : str, iterable thereof, or None
+
+    output_names : str, iterable thereof, or None
+
+    debug_mode : None, bool, or str
+        If ``bool(debug_mode)`` is False, run normally. Otherwise, run in debug
+        mode. See `pisa.core.base_stage.BaseStage` for more information
+
+    error_method : None, bool, or str
+        If ``bool(error_method)`` is False, run without computing errors.
+        Otherwise, specifies a particular method for applying arrors.
+
+    input_specs : pisa.core.binning.MultiDimBinning, str=='events', or None
         Specify the inputs (i.e. what did the last stage output, or None)
 
-    calc_specs : binning or 'events' or None
+    calc_specs : pisa.core.binning.MultiDimBinning, str=='events', or None
         Specify in what to do the calculation
 
-    output_specs : binning or 'events' or None
+    output_specs : pisa.core.binning.MultiDimBinning, str=='events', or None
         Specify how to generate the outputs
 
-    input_cal_keys : tuple of str
-        external keys of data the compute function needs
-
-    output_calc_keys : tuple of str
-        output keys of the calculation (not intermediate results)
-
-    input_apply_keys : tuple of str
+    input_apply_keys : str, iterable thereof, or None
         keys needed by the apply function data (usually 'weights')
 
-    output_apply_keys : tuple of str
+    output_apply_keys : str, iterable thereof, or None
         keys of the output data (usually 'weights')
 
+    input_calc_keys : str, iterable thereof, or None
+        external keys of data the compute function needs
+
+    output_calc_keys : str, iterable thereof, or None
+        output keys of the calculation (not intermediate results)
+    
+    map_output_key : str or None
+        When producing outputs as a :obj:`Map`, this key is used to set the nominal
+        values. If `None` (default), no :obj:`Map` output can be produced.
+    
+    map_output_error_key : str or None
+        When producing outputs as a :obj:`Map`, this key is used to set the errors (i.e.
+        standard deviations) in the :obj:`Map`. If `None` (default), maps will have no
+        errors.
     """
 
     def __init__(
@@ -72,10 +91,12 @@ class PiStage(BaseStage):
         input_specs=None,
         calc_specs=None,
         output_specs=None,
-        input_apply_keys=(),
-        output_apply_keys=(),
-        input_calc_keys=(),
-        output_calc_keys=(),
+        input_apply_keys=None,
+        output_apply_keys=None,
+        input_calc_keys=None,
+        output_calc_keys=None,
+        map_output_key=None,
+        map_output_error_key=None,
     ):
         super().__init__(
             params=params,
@@ -89,6 +110,8 @@ class PiStage(BaseStage):
         self.input_specs = input_specs
         self.calc_specs = calc_specs
         self.output_specs = output_specs
+        self.map_output_key = map_output_key
+        self.map_output_error_key = map_output_error_key
         self.data = data
 
         if isinstance(self.input_specs, MultiDimBinning):
@@ -118,10 +141,10 @@ class PiStage(BaseStage):
         else:
             raise ValueError("Cannot understand `output_specs` %s" % output_specs)
 
-        self.input_calc_keys = input_calc_keys
-        self.output_calc_keys = output_calc_keys
-        self.input_apply_keys = input_apply_keys
-        self.output_apply_keys = output_apply_keys
+        self.input_calc_keys = arg_to_tuple(input_calc_keys)
+        self.output_calc_keys = arg_to_tuple(output_calc_keys)
+        self.input_apply_keys = arg_to_tuple(input_apply_keys)
+        self.output_apply_keys = arg_to_tuple(output_apply_keys)
 
         # make a string of the modes for convenience
         mode = ["N", "N", "N"]
@@ -265,17 +288,36 @@ class PiStage(BaseStage):
         return None
 
     def get_outputs(self):
-        """
-        Get the outputs of the PISA stage
-        Depending on `self.output_mode`, this may be a binned object, or the event container itself
-        """
+        """Get the outputs of the PISA stage
 
+        Depending on `self.output_mode`, this may be a binned object, or the
+        event container itself
+        """
+        # new behavior with explicitly defined output keys
+        if self.map_output_key:
+            if self.output_mode == 'binned':
+                self.outputs = self.data.get_mapset(
+                    self.map_output_key,
+                    error=self.map_output_error_key,
+                )
+            elif self.output_mode == "events":
+                self.outputs = self.data
+            else:
+                self.outputs = None
+                logging.warning('Cannot create CAKE style output mapset')
+
+            return self.outputs
+
+        # if no output keys are explicitly defined, fall back to previous behavior
         if self.output_mode == 'binned' and len(self.output_apply_keys) == 1:
             self.outputs = self.data.get_mapset(self.output_apply_keys[0])
         elif len(self.output_apply_keys) == 2 and 'errors' in self.output_apply_keys:
-            other_key = [key for key in self.output_apply_keys if not key == 'errors'][0]
+            other_key = (
+                self.output_apply_keys[0] if self.output_apply_keys[0] != 'errors'
+                else self.output_apply_keys[1]
+            )
             self.outputs = self.data.get_mapset(other_key, error='errors')
-        elif self.output_mode == "events" :
+        elif self.output_mode == "events":
             self.outputs = self.data
         else:
             self.outputs = None
