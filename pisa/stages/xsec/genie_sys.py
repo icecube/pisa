@@ -132,7 +132,7 @@ class genie_sys(PiStage): # pylint: disable=invalid-name
             # the range of the points used in the interpolation, some 
             # weights become negative. These are floored at 0.
             #
-            container['weights']= np.clip(container['weights'].get(WHERE),a_min=0.,a_max=np.inf)
+            container['weights']= np.clip(container['weights'].get('host'),a_min=0.,a_max=np.inf)
             container['weights'].mark_changed(WHERE)
 
 
