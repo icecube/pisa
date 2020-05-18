@@ -835,6 +835,8 @@ class Analysis(object):
             else:
                 print(optimize_result.message)
                 msg = ' ' + optimize_result.message
+                print(optimize_result)
+                print(metric_val)
             raise ValueError('Optimization failed.' + msg)
 
         return fit_info
@@ -965,7 +967,6 @@ class Analysis(object):
             # if the metric is not generalized poisson, but the distribution is a dict,
             # retrieve the 'weights' mapset from the distribution output
             if m=='generalized_poisson_llh':
-                print(type(genpoisson_hypo))
                 name_vals_d['maps'] = data_dist.maps[0].generalized_poisson_llh(expected_values=genpoisson_hypo)
                 llh_binned = data_dist.maps[0].generalized_poisson_llh(expected_values=genpoisson_hypo, binned=True)
                 map_binned = Map(name=metric,

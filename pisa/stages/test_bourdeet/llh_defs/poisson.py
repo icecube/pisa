@@ -25,149 +25,7 @@ def poisson(k, lambd):
  
     return (-lambd+k*np.log(lambd)-scipy.special.gammaln(k+1)).sum()
 
-################################################################
-### Simple Poisson-Gamma mixture with equal weights (eq. 21 - https://arxiv.org/abs/1712.01293)
-### multi bin expression, one k, one k_mc and one avg_weight item for each bin, all given by an array
-def pg_equal_weights(k,k_mc,avgweights,prior_factor=0.0):
-    
-    return (scipy.special.gammaln((k+k_mc+prior_factor)) -scipy.special.gammaln(k+1.0)-scipy.special.gammaln(k_mc+prior_factor) + (k_mc+prior_factor)* np.log(1.0/avgweights) - (k_mc+k+prior_factor)*np.log(1.0+1.0/avgweights)).sum()
-
-
-#################################################################################
-## Standard poisson-gamma mixture, https://arxiv.org/abs/1712.01293 eq.  ("L_G")
-################################################################################# 
-def pg_log_python(k, weights, alpha_individual=0.0, extra_prior_counter=0.0, extra_prior_weight=1.0):
-    
-    log_deltas=[0.0]
-    log_inner_factors=[]
-    log_weight_prefactors=0.0
-
-    log_weight_prefactors+=-((1.0+alpha_individual)*np.log(1.0+weights)).sum()
-
-    first_fac=1.0+alpha_individual
-    
-    log_first_fac= np.log(first_fac)
-    log_first_var=-np.log(1.0+1.0/weights)
-
-    running_factor_vec=0.0
-
-    if(k>0):
-        
-        for i in (np.arange(k)+1):
-            
-            running_factor_vec+=log_first_var
-            
-            # summing assuming all summands positive .. which is the only well-defined region here
-            
-            res=scipy.special.logsumexp(log_first_fac+running_factor_vec)
-            
-            log_inner_factors.append(res)
-            new_delta=scipy.special.logsumexp( np.array(log_inner_factors[::-1])+np.array(log_deltas))-np.log(i)
-            log_deltas.append(new_delta)
- 
-            #log_inner_factors.append((first_fac*(first_var**i)-second_fac*(second_var**i)).sum())
-            #log_deltas.append( (np.array(inner_factors)*np.array(deltas[::-1])).sum()/float(i))
-            
-    return log_deltas[-1]+log_weight_prefactors
-
-## fast methods that employ c implementations and only fall back to log-python from above when certain accuracy is required 
-def fast_pg_single_bin(k, weights, mean_adjustment=0.0):
-    
-    # alphas array corresponds to alpha/N in paper
-    ## gamma poisson mixture based on gamma-poisson priors - general
-
-
-    betas=1.0/weights
-    alphas=np.ones(len(weights), dtype=float)+mean_adjustment
-    ret=poisson_gamma_mixtures.c_generalized_pg_mixture(k, alphas, betas)
-
-    if(ret>1e-300 and len(weights)>0):
-        return np.log(ret)
-    else:
-        prinnt("calling log")
-        return pg_log_python(k,weights, alpha_individual=mean_adjustment)
-
-################## end standard Poisson mixture ####################
-####################################################################
-
-########################################
-### generalization (1) https://arxiv.org/abs/1902.08831, eq. 35 / eq. 97
-########################################
-
-def pgpg_log_python(k, weights, mean_adjustment):
-    
-    ## fix extra adjustment in standard PG to 0
-    alpha_individual=0.0
-    
-    log_weight_prefactors=-(alpha_individual*np.log(1.0+weights)).sum()
-   
-    Cs=1.0/(2+2*weights)
-
-    log_weight_prefactors+=-((1.0+mean_adjustment)*np.log(2.0-2*Cs)).sum()
-    
-    log_E_s=-np.log(1.+1./weights)
-    #one_minus_c=(1+2*weights)/(2+2*weights)
-    
-    first_fac=1.0+mean_adjustment
-    signs_first=np.where(first_fac>0, 1.0, -1.0)
-    log_first_fac=np.where(signs_first>0, np.log(first_fac), np.log(-first_fac))
-    
-    second_fac=-(1.0+mean_adjustment-alpha_individual)
-    signs_second=np.where(second_fac>0, 1.0, -1.0)
-    log_second_fac=np.where(signs_second>0, np.log(second_fac), np.log(-second_fac))
-
-    log_first_var=log_E_s-np.log(1.0-Cs)
-    log_second_var=log_E_s
-
-    log_deltas=[0.0]
-    log_inner_factors=[]
-    
-    running_factor_vec_first=0.0
-    running_factor_vec_second=0.0
-    
-    if(k>0):
-        
-        for i in (np.arange(k)+1):
-            
-            running_factor_vec_first+=log_first_var
-            running_factor_vec_second+=log_second_var
-            
-            sum1,sign1=scipy.special.logsumexp(log_first_fac+running_factor_vec_first, b=signs_first,return_sign=True)
-            sum2,sign2=scipy.special.logsumexp(log_second_fac+running_factor_vec_second, b=signs_second,return_sign=True)
-            
-            res=scipy.special.logsumexp([sum1, sum2], b=[sign1,sign2])
-            
-            log_inner_factors.append(res)
-            new_delta=scipy.special.logsumexp( np.array(log_inner_factors[::-1])+np.array(log_deltas))-np.log(i)
-            log_deltas.append(new_delta)
- 
-            #log_inner_factors.append((first_fac*(first_var**i)-second_fac*(second_var**i)).sum())
-            #log_deltas.append( (np.array(inner_factors)*np.array(deltas[::-1])).sum()/float(i))
-            
-    
-    return log_deltas[-1]+log_weight_prefactors
-
-def fast_pgpg_single_bin(k, weights, mean_adjustment=0):
-    
-    ## fast calculation in c without logarithm .. if return value is too small, go to 
-    ## more time consuming calculation in log space in python
-    ## gamma poisson mixture based on gamma-poisson priors - general
-
-    gammas=1.0/weights
-    deltas=np.ones(len(weights), dtype=float)+mean_adjustment
-    epsilons=np.ones(len(deltas), dtype=float)
-    
-    ret=poisson_gamma_mixtures.c_generalized_pg_mixture_marginalized(k, gammas, deltas, epsilons)
-
-    if(ret>1e-300 and len(weights)>0):
-        return np.log(ret)
-    else:
-        return pgpg_log_python(k,weights, mean_adjustment=mean_adjustment)
-
-
-####################
-### end generalization (1)
-####################
+#############################################################
 
 
 ##############################################################
@@ -206,12 +64,12 @@ def fast_pgmix(k, alphas=None, betas=None):
     Core function that computes the generalized likelihood 2
 
     '''
-    assert isinstance(k,float),'ERROR: k must be a float'
+    assert isinstance(k,np.int64),'ERROR: k must be an int'
     assert isinstance(alphas,np.ndarray),'ERROR: alphas must be numpy arrays'
     assert isinstance(betas,np.ndarray),'ERROR: betas must be numpy arrays'
 
-    assert sum(alphas<=0)==0, 'ERROR: detected alpha values <=0'
-    assert sum(betas<=0)==0,'ERROR: detected beta values <=0'
+    assert np.sum(alphas<=0)==0, 'ERROR: detected alpha values <=0'
+    assert np.sum(betas<=0)==0,'ERROR: detected beta values <=0'
 
     ret=poisson_gamma_mixtures.c_generalized_pg_mixture(k, alphas, betas)
     #print('k: {0},nweights: {1}, return value : {2}\t alphas {3} \t betas: {4}'.format(k,len(betas),ret,alphas,betas))
@@ -226,9 +84,15 @@ def fast_pgmix(k, alphas=None, betas=None):
 
     if(ret>1e-300):
         return np.log(ret)
+
+    elif ret>=0. and ret<=1e-300:
+        # Replace a probability of exatcly  to a small number
+        # to avoid errors in logarithm
+        return np.log(1e-300)
     else:
-        print('WARNING: running the c-based method failed.')
-        return 1.
+        print('ERROR: running the c-based method failed.')
+        print(k,ret,alphas,betas)
+        raise Exception
 
 def normal_log_probability(k,weight_sum=None):
     '''

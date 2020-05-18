@@ -145,6 +145,11 @@ class prepare_generalized_llh_parameters(PiStage):
         N_bins = self.output_specs.tot_num_bins
 
 
+        #
+        # Repeat step 1 if the bin_indices container has changed
+        #
+
+
 
         #
         # Step 2: Find the maximum weight accross all events 
@@ -155,11 +160,7 @@ class prepare_generalized_llh_parameters(PiStage):
         # for this part we are in events mode
         for container in self.data:
 
-
             self.data.data_specs = 'events'
-
-            nevents_sim = np.zeros(N_bins)
-
             # Find the maximum weight of an entire MC set
             max_weight  = np.amax(container['weights'].get('host'))
             container.add_scalar_data(key='pseudo_weight',data=max_weight)
@@ -180,22 +181,15 @@ class prepare_generalized_llh_parameters(PiStage):
             mean_of_weights= np.zeros(N_bins)
             var_of_weights = np.zeros(N_bins)
             nevents_sim = np.zeros(N_bins)
-            '''
-            if np.sum(container.array_data['weights'].get('host')<0.)!=0:
-                print('\nERROR: array weights are negative!\n')
-                print(container.array_data['weights'].get('host'))
-                print(np.sum(container.array_data['weights'].get('host')<0.),' out of ',container.array_data['weights'].get('host').shape[0])
-                print('\n\n')
 
 
-            if np.sum(container.binned_data['weights'][1].get('host')<0.)!=0:
-                print('\nERROR: binned weights are negative!\n')
-                print(container.binned_data['weights'][1].get('host'))
-                print('\n\n')
-            '''
 
-            # hypersurface fit result
-            hypersurface = container.binned_data['hs_scales'][1].get('host')
+            # hypersurface fit result, if hypersurfaces have been run
+            if 'hs_scales' in container.binned_data:
+                hypersurface = container.binned_data['hs_scales'][1].get('host')
+            else:
+                hypersurface = np.ones(N_bins)
+
 
             for index in range(N_bins):
 
@@ -212,14 +206,13 @@ class prepare_generalized_llh_parameters(PiStage):
                 # Bins with no mc event in all set will be ignore in the likelihood later
                 #
                 # make the whole bin treatment here
-                if n_weights<=0 or np.sum(current_weights)<=0:
+                if n_weights<=0:# or np.sum(current_weights)<=0:
                     pseudo_weight = container.scalar_data['pseudo_weight']
                     if pseudo_weight<0:
                         print('WARNING: pseudo weight is less than zero, replacing it to 0,.')
-                        for p in self.params:
-                            print(p.name,p.value)
                         pseudo_weight = 0.
                     current_weights = np.array([pseudo_weight])
+                    n_weights = 1
 
 
 

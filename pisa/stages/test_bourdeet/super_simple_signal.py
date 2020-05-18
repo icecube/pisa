@@ -131,17 +131,18 @@ class super_simple_signal(PiStage):
         #
         # Create a background container
         #
+        if self.nbkg>0:
 
-        bkg_container   = Container('background')
-        bkg_container.data_specs = 'events'
-        bkg_container.add_array_data('stuff',np.zeros(self.nbkg))
-        bkg_container.add_array_data('weights',np.ones(self.nbkg)*1./stats_factor)
-        bkg_container.add_array_data('bin_indices',np.ones(self.nbkg)*-1)
-        # Add bin indices mask (used in generalized poisson llh)
-        for bin_i in range(self.output_specs.tot_num_bins):
-            bkg_container.add_array_data(key='bin_{}_mask'.format(bin_i), data=np.zeros(self.nbkg,dtype=bool))
+            bkg_container   = Container('background')
+            bkg_container.data_specs = 'events'
+            bkg_container.add_array_data('stuff',np.zeros(self.nbkg))
+            bkg_container.add_array_data('weights',np.ones(self.nbkg)*1./stats_factor)
+            bkg_container.add_array_data('bin_indices',np.ones(self.nbkg)*-1)
+            # Add bin indices mask (used in generalized poisson llh)
+            for bin_i in range(self.output_specs.tot_num_bins):
+                bkg_container.add_array_data(key='bin_{}_mask'.format(bin_i), data=np.zeros(self.nbkg,dtype=bool))
 
-        self.data.add_container(bkg_container)
+            self.data.add_container(bkg_container)
 
         #
         # Bin the weights according to the output specs binning
@@ -173,7 +174,7 @@ class super_simple_signal(PiStage):
                 #
                 # First, generate the signal
                 #
-                signal = np.random.normal(loc=self.params['mu'].value,scale=self.params['sigma'].value,size=self.nsig)
+                signal = np.random.normal(loc=self.params['mu'].value.m,scale=self.params['sigma'].value.m,size=self.nsig)
                 container['stuff'] = signal
 
 
@@ -184,7 +185,9 @@ class super_simple_signal(PiStage):
                 background = np.random.uniform(high=0.,low=40.,size=self.nbkg)
                 container['stuff'] = background
 
-
+            #
+            # Recompute the bin indices associated with each event
+            #
             new_array = lookup_indices(sample=[container['stuff']],binning=self.output_specs)
             new_array = new_array.get('host')
             container["bin_indices"] = new_array
@@ -197,3 +200,22 @@ class super_simple_signal(PiStage):
         #
         for container in self.data:
             container.array_to_binned('weights', binning=self.output_specs, averaged=False)
+
+            #
+            #  Recalculate the number of MC events per bin, if the array already exists
+            #
+            if "n_mc_events" in container.binned_data.keys():
+
+                self.data.data_specs = 'events'
+                nevents_sim = np.zeros(self.output_specs.tot_num_bins)
+                
+                for index in range(self.output_specs.tot_num_bins):
+                    index_mask = container['bin_{}_mask'.format(index)].get('host')
+                    current_weights = container['weights'].get('host')[index_mask]
+                    n_weights = current_weights.shape[0]
+
+                    # Number of MC events in each bin
+                    nevents_sim[index] = n_weights
+                
+                self.data.data_specs = self.output_specs
+                np.copyto(src=nevents_sim, dst=container["n_mc_events"].get('host'))

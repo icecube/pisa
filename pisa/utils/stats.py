@@ -183,11 +183,6 @@ def llh(actual_values, expected_values):
         actual_values = np.ma.masked_invalid(actual_values)
         expected_values = np.ma.masked_invalid(expected_values)
 
-        # Check that new array contains all valid entries
-        if np.any(actual_values < 0):
-            msg = ('`actual_values` must all be >= 0...\n'
-                   + maperror_logmsg(actual_values))
-            raise ValueError(msg)
 
         # TODO: How should we handle nan / masked values in the "data"
         # (actual_values) distribution? How about negative numbers?
@@ -209,9 +204,11 @@ def llh(actual_values, expected_values):
         np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
                 out=expected_values)
 
+    #
+    # natural logarith m of the Poisson probability
+    # (uses Stirling's approximation to estimate ln(k!) ~ kln(k)-k)
+    #
     llh_val = actual_values*np.log(expected_values) - expected_values
-
-    # Do following to center around 0
     llh_val -= actual_values*np.log(actual_values) - actual_values
 
     return llh_val
@@ -247,11 +244,6 @@ def mcllh_mean(actual_values, expected_values):
         actual_values = np.ma.masked_invalid(actual_values)
         expected_values = np.ma.masked_invalid(expected_values)
 
-        # Check that new array contains all valid entries
-        if np.any(actual_values < 0):
-            msg = ('`actual_values` must all be >= 0...\n'
-                   + maperror_logmsg(actual_values))
-            raise ValueError(msg)
 
         # TODO: How should we handle nan / masked values in the "data"
         # (actual_values) distribution? How about negative numbers?
@@ -268,6 +260,13 @@ def mcllh_mean(actual_values, expected_values):
             msg = ('`expected_values` must all be >= 0...\n'
                    + maperror_logmsg(expected_values))
             raise ValueError(msg)
+
+
+        # Replace 0's with small positive numbers to avoid inf in log
+        np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
+                out=expected_values)
+
+
 
     llh_val = likelihood_functions.poisson_gamma(actual_values, expected_values, sigma**2, a=0, b=0)
     return llh_val
@@ -304,11 +303,6 @@ def mcllh_eff(actual_values, expected_values):
         actual_values = np.ma.masked_invalid(actual_values)
         expected_values = np.ma.masked_invalid(expected_values)
 
-        # Check that new array contains all valid entries
-        if np.any(actual_values < 0):
-            msg = ('`actual_values` must all be >= 0...\n'
-                   + maperror_logmsg(actual_values))
-            raise ValueError(msg)
 
         # TODO: How should we handle nan / masked values in the "data"
         # (actual_values) distribution? How about negative numbers?
@@ -325,6 +319,10 @@ def mcllh_eff(actual_values, expected_values):
             msg = ('`expected_values` must all be >= 0...\n'
                    + maperror_logmsg(expected_values))
             raise ValueError(msg)
+
+        # Replace 0's with small positive numbers to avoid inf in log
+        np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
+                out=expected_values)
 
     llh_val = likelihood_functions.poisson_gamma(actual_values, expected_values, sigma**2, a=1, b=0)
     return llh_val
@@ -554,192 +552,88 @@ def mod_chi2(actual_values, expected_values):
     return m_chi2
 
 
-def format_input_to_generalized_poisson(actual_values, expected_values, merge_neutrinos = False):
-    '''
-
-    Format pisa inputs to fit the generalized poisson likelihood structure
-
-    Inputs: 
-    ---------
-
-    actual_values: Map from the data
-
-    expected_values:  DistributionMaker from the Simulation
-
-    merge_neutrinos: If merge, merge all neutrino channels into a single container
-
-    '''
-
-    from pisa.core.container import Container,ContainerSet 
-    from pisa.core.distribution_maker import DistributionMaker
-    from pisa.core.map import MapSet,Map 
-    
-    import collections
-
-    assert isinstance(actual_values,Map),'ERROR: actual_values must be a Map object'
-    assert isinstance(expected_values,list),'ERROR: expected_values must be a list of ContainerSet objects'
-
-    #
-    # First, handle the experimental data (or pseudo data)
-    #
-    # This flattening is done row-major, which is what the inner translation_indices function does
-    # ie:  idx = (idx_x*(len(bin_edges_y)-1) + idx_y)*(len(bin_edges_z)-1) + idx_z
-    # 
-    # Result is a 1Dnumpy array
-    flattened_actual = actual_values.hist.flatten(order='C')
-    n_bins = flattened_actual.shape[0]
-    n_bins_multi = actual_values.binning
-    flattened_actual = np.array([x.nominal_value for x in flattened_actual]).astype(float)
-
-    #
-    # Next, retrieve the expected data, and store each container individually
-    #
-    all_containers  = collections.OrderedDict()
-    for cs in expected_values:
-        for c in cs:
-            all_containers[c.name] = c
-
-
-    #
-    # Merge the neutrino containers together if desired
-    #
-    if merge_neutrinos:
-
-        new_container_list = collections.OrderedDict()
-        neutrino_container = Container(name='neutrinos',data_specs=n_bins_multi)
-        new_arrays = collections.OrderedDict()
-        for k,v in all_containers.items():
-
-            if 'nu' not in k:
-                new_container_list[k] = v
-                continue
-
-            for variable in v.array_data.keys():
-
-                if variable not in new_arrays.keys():
-                    new_arrays[variable] = []
-                new_arrays[variable].append(v.array_data[variable].get('host'))
-
-
-        for variable in new_arrays.keys():
-            neutrino_container.add_array_data(key=variable, data=np.concatenate(new_arrays[variable]))
-
-        new_container_list['neutrinos'] = neutrino_container
-        all_containers = new_container_list
-
-    dataset_weights = construct_weight_dict(container_dict=all_containers, n_bins=n_bins, binning_spec=n_bins_multi)
-
-
-    return flattened_actual, dataset_weights
-    
-
-
-
-def construct_weight_dict(container_dict=None, n_bins=None, binning_spec=None):
-    '''
-    Generate the thorstenllh-compatible dictionnary of weights
-
-    container_dict: OrderedDict object. Each item of the dict is a Container
-                    object that will result in a separate dict entry in the 
-                    output weight disct
-
-    returns:
-    -------
-
-    dataset_weights: A dictionary of lists of numpy arrays. 
-                     Each list corresponds to a dataset and 
-                     contains numpy arrays with weights for 
-                     a given bin. empty bins here mean an 
-                     empty array.
-
-    '''
-    from pisa.core.container import ContainerSet,Container
-    import collections
-    assert isinstance(container_dict, collections.OrderedDict),'ERROR: container_dict must be an OrderedDict instance.'
-
-    dataset_weights = collections.OrderedDict()
-
-    for container_name,container in container_dict.items():
-
-        # Create a weight entry if it doesn't exist yet
-        if container_name not in dataset_weights.keys():
-            dataset_weights[container_name] = [None for x in range(n_bins)]
-
-        # Check if a bin_indices array is present.
-        # If not compute it
-        if 'bin_indices' not in container.array_data.keys():
-            raise Exception('ERROR: bin_indices stage should have been run')
-
-        # Iterate over each analysis bin, picking up weights that are 
-        # falling into bin i
-        bin_indices_array = container.array_data['bin_indices'].get('host')
-        all_weights       = container.array_data['weights'].get('host')
-
-        # Clip weights to zero to avoid negative numbers
-        #all_weights = np.clip(all_weights,a_min=0.,a_max=None)
-        for i in range(n_bins):
-            mask = bin_indices_array==i
-            w = all_weights[mask]
-            dataset_weights[container.name][i] = w
-
-    return dataset_weights
-
-def generalized_poisson_llh(actual_values,expected_values):
+#
+# Generalized Poisson-gamma llh from 1902.08831
+#
+def generalized_poisson_llh(actual_values, expected_values=None,empty_bins=None):
     '''
     Compute the generalized Poisson likelihood as formulated in https://arxiv.org/abs/1902.08831
 
-    Code that computes the likelihood is contained in the 
-    mc_uncertainty repository of github
 
-    Inputs are the following:
+    Note that unlike the other likelihood functions, expected_values
+    is expected to be a ditribution maker
 
-    actual_values: MapSet
+    inputs:
+    ------
 
-    expected_values: DistributionMaker 
+    actual_values: flattened hist of a Map object
+
+    expected_values: OrderedDict of MapSets
+
+    empty_bins: None, list or np.ndarray (list the bin indices that are empty)
+
+    returns:
+    --------
+    llh_per_bin : bin-wise llh values, in a numpy array
 
     '''
-    from mc_uncertainty.llh_defs.poisson import generic_pdf
-    from pisa.core.container import Container,ContainerSet 
-    from pisa.core.distribution_maker import DistributionMaker
-    from pisa.core.map import MapSet,Map 
+    from collections import OrderedDict
+    from pisa.stages.test_bourdeet.llh_defs.poisson import normal_log_probability, fast_pgmix
 
-    assert isinstance(actual_values,Map) or isinstance(actual_values,MapSet),'ERROR: generalized llh only takes in Map or MapSets as inputs'
+    assert isinstance(expected_values,OrderedDict),'ERROR: expected_values must be an OrderedDict of MapSet objects'
+    assert 'weights' in expected_values.keys()    ,'ERROR: expected_values need a key named "weights"'
+    assert 'llh_alphas' in expected_values.keys() ,'ERROR: expected_values need a key named "llh_alphas"'
+    assert 'llh_betas' in expected_values.keys()  ,'ERROR: expected_values need a key named "llh_betas"'
+    assert 'new_sum'   in expected_values.keys()  ,'ERROR: expected_values need a key named "new_sum"'
 
-    if isinstance(actual_values,MapSet):
-        actual_values = actual_values.maps[0]
 
-    # We need to reformat the data to fit the way things are fed into the
-    # generalized likelihood. The latter requires the following inputs:
-    # 
-    # k_list: a numpy array of counts for each bin
-    #
-    # dataset_weights: a dictionary of lists of numpy arrays. Each list corresponds to a dataset and contains numpy arrays with weights for a given bin. empty bins here mean an empty array
-    #
-    # type [basic_pg/gen1/gen2/gen2_effective/gen3] - handles the various formulas from the two papers - (basic_pg (paper 1), all others (paper 2))
-    #
-    # empty_bin_strategy [0/1/2] - no filling, fill up bins which have at least one event from other sources OR fill up all bins
-    #
-    # empty_bin_weight - what weight to use for pseudo counts in empty  bins? "max" , maximum of all weights of dataset (used in paper) .. could be mean etc
-    #
-    # mead_adjustment - apply mean adjustment as implemented in the paper? yes/no
-    #
-    # weight_moments - change to more "unbiased" way of determining weight distribution moments as implemented in the paper
-    #
-    #***************************************************************************************************************
-    # default settings (as stated towards the end of the paper): gen2 , empty_bin_strategy=1, mead_adjustment=True
-    #
+    N_bins=actual_values.flatten().shape[0]
+    llh_per_bin = np.zeros(N_bins)
 
-    flattened_actual, weights_dict = format_input_to_generalized_poisson(actual_values, expected_values)
+    # If no empty bins are specified, we assume that all of them should be included
+    if empty_bins is None:
+        empty_bins = []
 
-        
-    llh = generic_pdf(data=flattened_actual,
-                               dataset_weights=weights_dict,
-                               type="gen2",
-                               empty_bin_strategy=1,
-                               empty_bin_weight="max",
-                               mean_adjustment=True,
-                               s_factor=1.0,
-                               larger_weight_variance=False,
-                               log_stirling=None)
+    for bin_i in range(N_bins):
 
-    return llh
+        # TODO: sometimes the histogram spits out uncertainty objects, sometimes not. 
+        #       Not sure why.
+        data_count = actual_values.flatten().astype(np.int64)[bin_i]
+
+        # Automatically add a huge number if a bin has non zero data count
+        # but completely empty MC
+        if bin_i in empty_bins:
+            if data_count>0:
+                llh_per_bin[bin_i] = np.log(1.e-10)
+            continue
+
+        # Make sure that no weight sum is negative. Crash if there are
+        weight_sum = sum([m.hist.flatten()[bin_i] for m in expected_values['new_sum'].maps])
+        assert weight_sum>=0,'ERROR: negative weights detected'
+
+
+        #
+        # If high enough data count, compute a normal poisson probability
+        #
+        if data_count>100:
+
+            logP = data_count*np.log(weight_sum)-weight_sum-(data_count*np.log(data_count)-data_count)
+            llh_per_bin[bin_i] = logP
+
+        else:
+
+            alphas = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_alphas'].maps])
+            betas  = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_betas'].maps])
+
+            # Remove the NaN's 
+            mask = np.isfinite(alphas)*np.isfinite(betas)
+
+            # Check that the alpha and betas make sense
+            assert np.sum(alphas[mask]<=0)==0,'ERROR: detected alpha values <=0'
+            assert np.sum(betas[mask]<=0)==0,'ERROR: detected beta values <=0'
+
+
+            llh_of_bin = fast_pgmix(data_count, alphas[mask], betas[mask])
+            llh_per_bin[bin_i] = llh_of_bin
+
+    return llh_per_bin
