@@ -11,7 +11,7 @@ from numba import guvectorize
 
 from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
-from pisa.utils.profiler import profile
+from pisa.utils.profiler import profile, line_profile
 from pisa.utils.numba_tools import WHERE
 from pisa.utils.log import logging
 
@@ -111,7 +111,7 @@ class genie_sys(PiStage): # pylint: disable=invalid-name
 
 
 
-    @profile
+    @line_profile
     def apply_function(self):
         genie_ma_qe = self.params.Genie_Ma_QE.m_as('dimensionless')
         genie_ma_res = self.params.Genie_Ma_RES.m_as('dimensionless')
@@ -132,7 +132,6 @@ class genie_sys(PiStage): # pylint: disable=invalid-name
             # the range of the points used in the interpolation, some 
             # weights become negative. These are floored at 0.
             #
-            container['weights']= np.clip(container['weights'].get('host'),a_min=0.,a_max=np.inf)
             container['weights'].mark_changed(WHERE)
 
 
@@ -151,7 +150,7 @@ def apply_genie_sys(
     quad_fit_maccres,
     out,
 ):
-    out[0] *= (
+    out[0] *= max(0, (
         (1. + (linear_fit_maccqe + quad_fit_maccqe * genie_ma_qe) * genie_ma_qe)
         * (1. + (linear_fit_maccres + quad_fit_maccres * genie_ma_res) * genie_ma_res)
-    )
+    ))
