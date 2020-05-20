@@ -24,8 +24,7 @@ from pisa.core.param import ParamSet
 from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging
 from pisa.utils.fileio import to_file
-from pisa.utils.stats import METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE, generalized_poisson_llh
-
+from pisa.utils.stats import METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE
 
 
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD',
@@ -54,6 +53,11 @@ MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b', 'slsqp')
 gradients. See https://github.com/scipy/scipy/issues/4916"""
 
 def merge_mapsets_together(mapset_list = None):
+    '''
+    handle merging of multiple MapSets, when they come in
+    the shape of a dict
+
+    '''
 
     if isinstance(mapset_list[0],OrderedDict):    
         new_dict = OrderedDict()
@@ -67,6 +71,9 @@ def merge_mapsets_together(mapset_list = None):
 
         for k,v in new_dict.items():
             new_dict[k] = MapSet(v)
+
+    else:
+        raise Exception('This function only works when mapsets are provided as dicts')
 
     return new_dict
 
@@ -833,10 +840,7 @@ class Analysis(object):
             if blind:
                 msg = ''
             else:
-                print(optimize_result.message)
                 msg = ' ' + optimize_result.message
-                print(optimize_result)
-                print(metric_val)
             raise ValueError('Optimization failed.' + msg)
 
         return fit_info

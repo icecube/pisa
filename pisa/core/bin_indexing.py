@@ -33,7 +33,6 @@ from pisa.utils.log import logging, set_verbosity
 from pisa.utils.numba_tools import WHERE
 
 
-
 __all__ = ["lookup_indices", "test_lookup_indices"]
 
 
