@@ -8,16 +8,10 @@ from __future__ import absolute_import, division
 import numpy as np
 from scipy.special import gammaln
 from uncertainties import unumpy as unp
-from functools import reduce
 from pisa import FTYPE
 from pisa.utils.comparisons import FTYPE_PREC, isbarenumeric
 from pisa.utils.log import logging
 from pisa.utils import likelihood_functions
-import sys,os
-
-sys.path.append('/data/user/bourdeet/PISA/')
-
-
 
 __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
            'maperror_logmsg',
@@ -637,3 +631,4 @@ def generalized_poisson_llh(actual_values, expected_values=None,empty_bins=None)
             llh_per_bin[bin_i] = llh_of_bin
 
     return llh_per_bin
+    
