@@ -1,3 +1,5 @@
 *.pckl
 *.pdf
 *.sh
+launch_round2.py
+round2_1000_data_pts_50_bins/
