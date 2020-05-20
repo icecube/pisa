@@ -60,6 +60,10 @@ class super_simple_signal(PiStage):
                            'stats_factor',
                            'signal_fraction',
 
+                           # minimum + maximum bkg values
+                           'bkg_min',
+                           'bkg_max',
+
                            # fitted parameters
                            'mu',
                            'sigma')
@@ -182,7 +186,10 @@ class super_simple_signal(PiStage):
                 #
                 # Then the background
                 #
-                background = np.random.uniform(high=0.,low=40.,size=self.nbkg)
+                background = np.random.uniform(low=self.params.bkg_min.value.m,
+                                               high=self.params.bkg_max.value.m,
+                                               size=self.nbkg)
+                
                 container['stuff'] = background
 
             #

@@ -396,15 +396,19 @@ def run_coverage_test(n_trials=100,
 	return results
 
 
-def plot_coverage_test(output_pdf=None, metrics=[], stats_factor=None, output_stem=None, n_trials=None, outname='test_coverage.pdf' ):
+def plot_coverage_test(output_pdf=None, results = None, metrics=[], stats_factor=None, output_stem=None, n_trials=None, outname='test_coverage.pdf' ):
 	'''
 
 	'''
 	from scipy.stats import chi2
 
 	result = collections.OrderedDict()
-	for m in metrics:
-		result[m] = pickle.load(open(output_stem+'_pseudo_exp_llh_%s.pckl'%m,'rb'))
+	if results is None:	
+		for m in metrics:
+			result[m] = pickle.load(open(output_stem+'_pseudo_exp_llh_%s.pckl'%m,'rb'))
+	else:
+		for m in metrics:
+			result[m] = results[m]['coverage']
 
 
 	if output_pdf is None:
@@ -701,19 +705,18 @@ if __name__=='__main__':
 	#
 	if args.run_coverage_test:
 
-		'''
 		results = run_coverage_test(n_trials=args.ntrials,
 										toymc_params = toymc_params, 
 										mc_template=mc_template,
 						  				mc_infinite_stats=mc_template_pseudo_infinite,
-						  				metrics=to_recompute,
+						  				metrics=metrics_to_test,
 						  				results=results,
 						  				output_stem=args.output,
 						  				)
-		'''
 
 		plot_coverage_test(output_pdf=output_pdf,
 						   metrics=metrics_to_test,
+						   results=results,
 						   stats_factor = toymc_params.stats_factor,
 						   output_stem=args.output,
 						   n_trials=args.ntrials)
