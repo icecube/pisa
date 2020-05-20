@@ -68,7 +68,6 @@ class DistributionMaker(object):
         checked for consistency (you should use multiple `Detector`s if you
         have incompatible data sets).
 
-
     Notes
     -----
     Free params with the same name in two pipelines are updated at the same

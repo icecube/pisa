@@ -18,7 +18,6 @@ from pisa.utils.profiler import profile
 
 from collections import OrderedDict
 
-
 __all__ = ["PiStage"]
 __version__ = "Pi"
 __author__ = "Philipp Eller (pde3@psu.edu)"
@@ -181,7 +180,6 @@ class PiStage(BaseStage):
 
     @profile
     def compute(self):
-
         if len(self.params) == 0 and len(self.output_calc_keys) == 0:
             return
 

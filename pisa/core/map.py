@@ -73,8 +73,6 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 
 # TODO: move these utilities functions to a generic utils module?
 
-
-
 def type_error(value):
     """Generic formulation of a TypeError that can be called throughout the
     code"""
