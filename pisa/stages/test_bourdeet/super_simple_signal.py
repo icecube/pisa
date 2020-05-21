@@ -2,11 +2,10 @@
 Stage to generate simple 1D data consisting 
 of a flat background + gaussian peak with a mean and a width
 
-author: Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)
-
 """
-
 from __future__ import absolute_import, print_function, division
+
+__author__ = "Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)"
 
 import numpy as np
 
@@ -15,7 +14,6 @@ from pisa.core.pi_stage import PiStage
 
 # Load the modified index lookup function
 from pisa.core.bin_indexing import lookup_indices
-
 
 
 class super_simple_signal(PiStage):
@@ -42,6 +40,7 @@ class super_simple_signal(PiStage):
     output_specs
 
     """
+
     def __init__(
         self,
         data=None,
@@ -53,19 +52,18 @@ class super_simple_signal(PiStage):
         calc_specs=None,
         output_specs=None,
     ):
-        expected_params = (# parameters fixed during fit
-                           'n_events_data', 
-                           'stats_factor',
-                           'signal_fraction',
+        expected_params = (  # parameters fixed during fit
+            'n_events_data',
+            'stats_factor',
+            'signal_fraction',
 
-                           # minimum + maximum bkg values
-                           'bkg_min',
-                           'bkg_max',
+            # minimum + maximum bkg values
+            'bkg_min',
+            'bkg_max',
 
-                           # fitted parameters
-                           'mu',
-                           'sigma')
-
+            # fitted parameters
+            'mu',
+            'sigma')
 
         # what keys are added or altered for the outputs during apply
         output_apply_keys = ('weights',)
@@ -103,14 +101,15 @@ class super_simple_signal(PiStage):
         stats_factor = float(self.params.stats_factor.value.m)
         signal_fraction = float(self.params.signal_fraction.value.m)
 
-        self.n_mc = int(n_data_events*stats_factor)         # Number of simulated MC events
-        self.nsig = int(self.n_mc*signal_fraction)          # Number of signal MC events
+        # Number of simulated MC events
+        self.n_mc = int(n_data_events*stats_factor)
+        # Number of signal MC events
+        self.nsig = int(self.n_mc*signal_fraction)
         self.nbkg = self.n_mc-self.nsig                     # Number of bkg MC events
 
+        # Go in events mode
+        self.data.data_specs = 'events'
 
-        # Go in events mode 
-        self.data.data_specs='events'
-        
         #
         # Create a signal container, with equal weights
         #
@@ -119,43 +118,43 @@ class super_simple_signal(PiStage):
         # Populate the signal physics quantity
         signal_container.add_array_data('stuff', np.zeros(self.nsig))
         # Populate its MC weight
-        signal_container.add_array_data('weights', np.ones(self.nsig)*1./stats_factor)
+        signal_container.add_array_data(
+            'weights', np.ones(self.nsig)*1./stats_factor)
         # Add empty bin_indices array (used in generalized poisson llh)
         signal_container.add_array_data('bin_indices', np.ones(self.nsig)*-1)
         # Add bin indices mask (used in generalized poisson llh)
         for bin_i in range(self.output_specs.tot_num_bins):
-            signal_container.add_array_data(key='bin_{}_mask'.format(bin_i), data=np.zeros(self.nsig, dtype=bool))
+            signal_container.add_array_data(key='bin_{}_mask'.format(
+                bin_i), data=np.zeros(self.nsig, dtype=bool))
         # Add container to the data
         self.data.add_container(signal_container)
-        
-
 
         #
         # Create a background container
         #
-        if self.nbkg>0:
+        if self.nbkg > 0:
 
-            bkg_container   = Container('background')
+            bkg_container = Container('background')
             bkg_container.data_specs = 'events'
             bkg_container.add_array_data('stuff', np.zeros(self.nbkg))
-            bkg_container.add_array_data('weights', np.ones(self.nbkg)*1./stats_factor)
+            bkg_container.add_array_data(
+                'weights', np.ones(self.nbkg)*1./stats_factor)
             bkg_container.add_array_data('bin_indices', np.ones(self.nbkg)*-1)
             # Add bin indices mask (used in generalized poisson llh)
             for bin_i in range(self.output_specs.tot_num_bins):
-                bkg_container.add_array_data(key='bin_{}_mask'.format(bin_i), data=np.zeros(self.nbkg, dtype=bool))
+                bkg_container.add_array_data(key='bin_{}_mask'.format(
+                    bin_i), data=np.zeros(self.nbkg, dtype=bool))
 
             self.data.add_container(bkg_container)
 
         #
         # Bin the weights according to the output specs binning
         # Provide a binning if non is specified
-        #if self.output_specs is None:
+        # if self.output_specs is None:
         #    self.output_specs = MultiDimBinning([OneDimBinning(name='stuff', bin_edges=np.linspace(0.,40.,21))])
-        
+
         for container in self.data:
             container.array_to_binned('weights', binning=self.output_specs)
-
-
 
     def apply_function(self):
         '''
@@ -168,43 +167,45 @@ class super_simple_signal(PiStage):
         #
         # Make sure we are in events mode
         #
-        self.data.data_specs='events'
+        self.data.data_specs = 'events'
 
         for container in self.data:
 
-            if container.name=='signal':        
+            if container.name == 'signal':
                 #
                 # First, generate the signal
                 #
-                signal = np.random.normal(loc=self.params['mu'].value.m,scale=self.params['sigma'].value.m,size=self.nsig)
+                signal = np.random.normal(
+                    loc=self.params['mu'].value.m, scale=self.params['sigma'].value.m, size=self.nsig)
                 container['stuff'] = signal
 
-
-            elif container.name=='background':
+            elif container.name == 'background':
                 #
                 # Then the background
                 #
                 background = np.random.uniform(low=self.params.bkg_min.value.m,
                                                high=self.params.bkg_max.value.m,
                                                size=self.nbkg)
-                
+
                 container['stuff'] = background
 
             #
             # Recompute the bin indices associated with each event
             #
-            new_array = lookup_indices(sample=[container['stuff']],binning=self.output_specs)
+            new_array = lookup_indices(
+                sample=[container['stuff']], binning=self.output_specs)
             new_array = new_array.get('host')
             container["bin_indices"] = new_array
 
             for bin_i in range(self.output_specs.tot_num_bins):
-                container['bin_{}_mask'.format(bin_i)] =  new_array==bin_i
+                container['bin_{}_mask'.format(bin_i)] = new_array == bin_i
 
         #
         # Re-bin the data
         #
         for container in self.data:
-            container.array_to_binned('weights', binning=self.output_specs, averaged=False)
+            container.array_to_binned(
+                'weights', binning=self.output_specs, averaged=False)
 
             #
             #  Recalculate the number of MC events per bin, if the array already exists
@@ -213,14 +214,17 @@ class super_simple_signal(PiStage):
 
                 self.data.data_specs = 'events'
                 nevents_sim = np.zeros(self.output_specs.tot_num_bins)
-                
+
                 for index in range(self.output_specs.tot_num_bins):
-                    index_mask = container['bin_{}_mask'.format(index)].get('host')
-                    current_weights = container['weights'].get('host')[index_mask]
+                    index_mask = container['bin_{}_mask'.format(
+                        index)].get('host')
+                    current_weights = container['weights'].get('host')[
+                        index_mask]
                     n_weights = current_weights.shape[0]
 
                     # Number of MC events in each bin
                     nevents_sim[index] = n_weights
-                
+
                 self.data.data_specs = self.output_specs
-                np.copyto(src=nevents_sim, dst=container["n_mc_events"].get('host'))
+                np.copyto(src=nevents_sim,
+                          dst=container["n_mc_events"].get('host'))

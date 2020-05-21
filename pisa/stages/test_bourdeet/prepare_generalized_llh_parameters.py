@@ -29,10 +29,10 @@ The stage appends / modifies the following:
     new_sum: Map (Sum of the weights in each bin (ie MC expectation),
              corrected for the empty bin filling and the mean 
              adjustment
-    
-author: Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)
 '''
 from __future__ import absolute_import, print_function, division
+
+__author__ = "Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)"
 
 import numpy as np
 
@@ -74,7 +74,7 @@ class prepare_generalized_llh_parameters(PiStage):
                  input_specs=None,
                  calc_specs=None,
                  output_specs=None,
-                ):
+                 ):
         #
         # A bunch of options we don't need
         #
@@ -82,28 +82,28 @@ class prepare_generalized_llh_parameters(PiStage):
         input_names = ()
         output_names = ()
 
-
         # what are the keys used from the inputs during apply
         input_apply_keys = ('bin_indices',)
         # what are keys added or altered in the calculation used during apply
         output_calc_keys = ('weights',)
         # what keys are added or altered for the outputs during apply
-        output_apply_keys = ('weights', 'llh_alphas', 'llh_betas', 'n_mc_events', 'new_sum')
+        output_apply_keys = ('weights', 'llh_alphas',
+                             'llh_betas', 'n_mc_events', 'new_sum')
 
         # init base class
         super(prepare_generalized_llh_parameters, self).__init__(data=data,
-                                       params=params,
-                                       expected_params=expected_params,
-                                       input_names=input_names,
-                                       output_names=output_names,
-                                       debug_mode=debug_mode,
-                                       input_specs=input_specs,
-                                       calc_specs=calc_specs,
-                                       output_specs=output_specs,
-                                       input_apply_keys=input_apply_keys,
-                                       output_apply_keys=output_apply_keys,
-                                       output_calc_keys=output_calc_keys,
-                                       )
+                                                                 params=params,
+                                                                 expected_params=expected_params,
+                                                                 input_names=input_names,
+                                                                 output_names=output_names,
+                                                                 debug_mode=debug_mode,
+                                                                 input_specs=input_specs,
+                                                                 calc_specs=calc_specs,
+                                                                 output_specs=output_specs,
+                                                                 input_apply_keys=input_apply_keys,
+                                                                 output_apply_keys=output_apply_keys,
+                                                                 output_calc_keys=output_calc_keys,
+                                                                 )
 
     def setup_function(self):
         """
@@ -117,7 +117,6 @@ class prepare_generalized_llh_parameters(PiStage):
 
         for container in self.data:
 
-
             #
             # Generate a new container called bin_indices
             #
@@ -125,7 +124,6 @@ class prepare_generalized_llh_parameters(PiStage):
             container['llh_betas'] = np.empty((container.size), dtype=FTYPE)
             container['n_mc_events'] = np.empty((container.size), dtype=FTYPE)
             container['new_sum'] = np.empty((container.size), dtype=FTYPE)
-
 
             #
             # Step 1: assert the number of MC events in each bin,
@@ -142,10 +140,11 @@ class prepare_generalized_llh_parameters(PiStage):
                 nevents_sim[index] = n_weights
 
             self.data.data_specs = self.output_specs
-            np.copyto(src=nevents_sim, dst=container["n_mc_events"].get('host'))
+            np.copyto(src=nevents_sim,
+                      dst=container["n_mc_events"].get('host'))
 
+    # @line_profile
 
-    #@line_profile
     def apply_function(self):
         '''
         Computes the main inputs to the generalized likelihood 
@@ -154,26 +153,23 @@ class prepare_generalized_llh_parameters(PiStage):
         '''
         N_bins = self.output_specs.tot_num_bins
 
-
         #
-        # Step 2: Find the maximum weight accross all events 
+        # Step 2: Find the maximum weight accross all events
         #         of each MC set. The value of that weight defines
         #         the value of the pseudo-weight that will be included
         #         in empty bins
-        
+
         # for this part we are in events mode
         for container in self.data:
 
             self.data.data_specs = 'events'
             # Find the maximum weight of an entire MC set
-            max_weight  = np.amax(container['weights'].get('host'))
+            max_weight = np.amax(container['weights'].get('host'))
             container.add_scalar_data(key='pseudo_weight', data=max_weight)
-            
-
 
         #
         # 3. Apply the empty bin strategy and mean adjustment
-        #    Compute the alphas and betas that go into the 
+        #    Compute the alphas and betas that go into the
         #    poisson-gamma mixture of the llh
         #
         self.data.data_specs = self.output_specs
@@ -182,23 +178,22 @@ class prepare_generalized_llh_parameters(PiStage):
 
             self.data.data_specs = 'events'
             new_weight_sum = np.zeros(N_bins)
-            mean_of_weights= np.zeros(N_bins)
+            mean_of_weights = np.zeros(N_bins)
             var_of_weights = np.zeros(N_bins)
             nevents_sim = np.zeros(N_bins)
 
-
-
             # hypersurface fit result, if hypersurfaces have been run
             if 'hs_scales' in container.binned_data:
-                hypersurface = container.binned_data['hs_scales'][1].get('host')
+                hypersurface = container.binned_data['hs_scales'][1].get(
+                    'host')
             else:
                 hypersurface = np.ones(N_bins)
-
 
             for index in range(N_bins):
 
                 index_mask = container['bin_{}_mask'.format(index)].get('host')
-                current_weights = container['weights'].get('host')[index_mask]*hypersurface[index]
+                current_weights = container['weights'].get(
+                    'host')[index_mask]*hypersurface[index]
 
                 n_weights = current_weights.shape[0]
 
@@ -208,13 +203,12 @@ class prepare_generalized_llh_parameters(PiStage):
                 # make the whole bin treatment here
                 if n_weights <= 0:
                     pseudo_weight = container.scalar_data['pseudo_weight']
-                    if pseudo_weight <0 :
-                        logging.warn('WARNING: pseudo weight is less than zero, replacing it to 0,.')
+                    if pseudo_weight < 0:
+                        logging.warn(
+                            'WARNING: pseudo weight is less than zero, replacing it to 0,.')
                         pseudo_weight = 0.
                     current_weights = np.array([pseudo_weight])
                     n_weights = 1
-
-
 
                 # write the new weight distribution down
                 nevents_sim[index] = n_weights
@@ -225,30 +219,28 @@ class prepare_generalized_llh_parameters(PiStage):
                 mean_of_weights[index] = mean_w
 
                 # variance of the current weight
-                var_of_weights[index] = ((current_weights-mean_w)**2).sum()/(float(n_weights))
-
+                var_of_weights[index] = (
+                    (current_weights-mean_w)**2).sum()/(float(n_weights))
 
             #  Calculate mean adjustment (TODO: save as a container scalar?)
             mean_number_of_mc_events = np.mean(nevents_sim)
             if mean_number_of_mc_events < 1.0:
-                mean_adjustment = -(1.0-mean_number_of_mc_events) + 1.e-3 
+                mean_adjustment = -(1.0-mean_number_of_mc_events) + 1.e-3
             else:
                 mean_adjustment = 0.0
 
-
             #  Variance of the poisson-gamma distributed variable
-            var_z=(var_of_weights + mean_of_weights**2)
+            var_z = (var_of_weights + mean_of_weights**2)
 
-            if sum(var_z<0) != 0:
+            if sum(var_z < 0) != 0:
                 logging.warn('warning: var_z is less than zero')
                 logging.warn(container.name, var_z)
                 raise Exception
-            
+
             #  alphas and betas
             betas = mean_of_weights/var_z
             trad_alpha = (mean_of_weights**2)/var_z
             alphas = (nevents_sim + mean_adjustment)*trad_alpha
-
 
             # Calculate alphas and betas
             self.data.data_specs = self.output_specs
@@ -256,5 +248,3 @@ class prepare_generalized_llh_parameters(PiStage):
             np.copyto(src=alphas, dst=container['llh_alphas'].get('host'))
             np.copyto(src=betas, dst=container['llh_betas'].get('host'))
             np.copyto(src=new_weight_sum, dst=container['new_sum'].get('host'))
-
-
