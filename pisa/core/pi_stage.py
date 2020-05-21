@@ -7,7 +7,7 @@ functionality is built-in.
 
 
 from __future__ import absolute_import, division
-
+from collections import OrderedDict
 from numba import SmartArray
 
 from pisa.core.base_stage import BaseStage
@@ -16,7 +16,7 @@ from pisa.core.container import ContainerSet
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 
-from collections import OrderedDict
+
 
 __all__ = ["PiStage"]
 __version__ = "Pi"
@@ -148,6 +148,7 @@ class PiStage(BaseStage):
         self.outputs = None
 
     def setup(self):
+        '''setup stuff.'''
 
         # check that data is a ContainerSet (downstream modules assume this)
         if self.data is not None:
@@ -180,6 +181,7 @@ class PiStage(BaseStage):
 
     @profile
     def compute(self):
+        """Compute Stuff"""
         if len(self.params) == 0 and len(self.output_calc_keys) == 0:
             return
 
@@ -280,7 +282,7 @@ class PiStage(BaseStage):
         if output_mode is None:
             output_mode = self.output_mode
         else:
-            assert output_mode=='binned' or output_mode=='events','ERROR: user-specified output mode is unrecognized'
+            assert output_mode == 'binned' or output_mode == 'events', 'ERROR: user-specified output mode is unrecognized'
 
         # Handle the binned case
         if output_mode == 'binned':
@@ -305,12 +307,12 @@ class PiStage(BaseStage):
 
             # More generally: produce one map per output key desired, in a dict
             else:
-                self.outputs  = OrderedDict()
+                self.outputs = OrderedDict()
                 for key in self.output_apply_keys:
                     self.outputs[key] = self.data.get_mapset(key)
 
         # Handle Events mode
-        elif output_mode == "events" :
+        elif output_mode == "events":
             self.outputs = self.data
     
         # Throw warning that output mode failed

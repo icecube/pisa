@@ -202,11 +202,11 @@ class DistributionMaker(object):
         """
 
         outputs = [pipeline.get_outputs(**kwargs) for pipeline in self] # pylint: disable=redefined-outer-name
-        
+
         if return_sum:
 
             # Case where the output of a pipeline is a mapSet
-            if isinstance(outputs[0],MapSet):
+            if isinstance(outputs[0], MapSet):
                 outputs = sum([sum(x) for x in outputs]) # This produces a Map
                 outputs.name = sum_map_name
                 outputs.tex = sum_map_tex_name
@@ -214,7 +214,7 @@ class DistributionMaker(object):
 
 
             # Case where the output of a pipeline is a dict of different MapSets
-            elif isinstance(outputs[0],OrderedDict):
+            elif isinstance(outputs[0], OrderedDict):
                 output_dict = OrderedDict()
                 for key in outputs[0].keys():
 
@@ -308,7 +308,7 @@ class DistributionMaker(object):
             for c in p.stages[-1].data:
 
                 # skip data or pseudo-data pipelines
-                if c.name=='data' or c.name=='Total':
+                if c.name == 'data' or c.name == 'Total':
                     continue
 
                 for index in range(N_bins):
@@ -316,9 +316,7 @@ class DistributionMaker(object):
                     current_weights = c.array_data['weights'].get('host')[index_mask]
                     n_weights = current_weights.shape[0]
 
-                    self._n_mc_events_per_bin[index]+=n_weights
-
-
+                    self._n_mc_events_per_bin[index] += n_weights
         return self._n_mc_events_per_bin
     
 
@@ -328,7 +326,7 @@ class DistributionMaker(object):
         Find the bin indices where there are no MC events present
         '''
         mc_counts = self.n_mc_events_per_bin
-        indices= np.where(mc_counts==0)[0]
+        indices = np.where(mc_counts == 0)[0]
         return indices
     
 

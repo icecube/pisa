@@ -2,6 +2,7 @@
 Stage to generate simple 1D data consisting 
 of a flat background + gaussian peak with a mean and a width
 
+author: Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)
 
 """
 
@@ -9,11 +10,8 @@ from __future__ import absolute_import, print_function, division
 
 import numpy as np
 
-from pisa import FTYPE
 from pisa.core.container import Container
 from pisa.core.pi_stage import PiStage
-from pisa.utils import vectorizer
-from pisa.core.binning import OneDimBinning,MultiDimBinning
 
 # Load the modified index lookup function
 from pisa.core.bin_indexing import lookup_indices
@@ -106,8 +104,8 @@ class super_simple_signal(PiStage):
         signal_fraction = float(self.params.signal_fraction.value.m)
 
         self.n_mc = int(n_data_events*stats_factor)         # Number of simulated MC events
-        self.nsig = int(self.n_mc*signal_fraction)                  # Number of signal MC events
-        self.nbkg = self.n_mc-self.nsig                                  # Number of bkg MC events
+        self.nsig = int(self.n_mc*signal_fraction)          # Number of signal MC events
+        self.nbkg = self.n_mc-self.nsig                     # Number of bkg MC events
 
 
         # Go in events mode 
@@ -119,14 +117,14 @@ class super_simple_signal(PiStage):
         signal_container = Container('signal')
         signal_container.data_specs = 'events'
         # Populate the signal physics quantity
-        signal_container.add_array_data('stuff',np.zeros(self.nsig))
+        signal_container.add_array_data('stuff', np.zeros(self.nsig))
         # Populate its MC weight
-        signal_container.add_array_data('weights',np.ones(self.nsig)*1./stats_factor)
+        signal_container.add_array_data('weights', np.ones(self.nsig)*1./stats_factor)
         # Add empty bin_indices array (used in generalized poisson llh)
-        signal_container.add_array_data('bin_indices',np.ones(self.nsig)*-1)
+        signal_container.add_array_data('bin_indices', np.ones(self.nsig)*-1)
         # Add bin indices mask (used in generalized poisson llh)
         for bin_i in range(self.output_specs.tot_num_bins):
-            signal_container.add_array_data(key='bin_{}_mask'.format(bin_i), data=np.zeros(self.nsig,dtype=bool))
+            signal_container.add_array_data(key='bin_{}_mask'.format(bin_i), data=np.zeros(self.nsig, dtype=bool))
         # Add container to the data
         self.data.add_container(signal_container)
         
@@ -139,12 +137,12 @@ class super_simple_signal(PiStage):
 
             bkg_container   = Container('background')
             bkg_container.data_specs = 'events'
-            bkg_container.add_array_data('stuff',np.zeros(self.nbkg))
-            bkg_container.add_array_data('weights',np.ones(self.nbkg)*1./stats_factor)
-            bkg_container.add_array_data('bin_indices',np.ones(self.nbkg)*-1)
+            bkg_container.add_array_data('stuff', np.zeros(self.nbkg))
+            bkg_container.add_array_data('weights', np.ones(self.nbkg)*1./stats_factor)
+            bkg_container.add_array_data('bin_indices', np.ones(self.nbkg)*-1)
             # Add bin indices mask (used in generalized poisson llh)
             for bin_i in range(self.output_specs.tot_num_bins):
-                bkg_container.add_array_data(key='bin_{}_mask'.format(bin_i), data=np.zeros(self.nbkg,dtype=bool))
+                bkg_container.add_array_data(key='bin_{}_mask'.format(bin_i), data=np.zeros(self.nbkg, dtype=bool))
 
             self.data.add_container(bkg_container)
 

@@ -52,14 +52,14 @@ MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b', 'slsqp')
 """Minimizers that use symmetrical steps on either side of a point to compute
 gradients. See https://github.com/scipy/scipy/issues/4916"""
 
-def merge_mapsets_together(mapset_list = None):
+def merge_mapsets_together(mapset_list=None):
     '''
     handle merging of multiple MapSets, when they come in
     the shape of a dict
 
     '''
 
-    if isinstance(mapset_list[0],OrderedDict):    
+    if isinstance(mapset_list[0], OrderedDict):    
         new_dict = OrderedDict()
         for S in mapset_list:
             for k,v in S.items():
@@ -67,7 +67,7 @@ def merge_mapsets_together(mapset_list = None):
                 if k not in new_dict.keys():
                     new_dict[k] = [m for m in v.maps]
                 else:
-                    new_dict[k]+= [m for m in v.maps]
+                    new_dict[k] += [m for m in v.maps]
 
         for k,v in new_dict.items():
             new_dict[k] = MapSet(v)
@@ -258,7 +258,7 @@ def check_t23_octant(fit_info):
 
 
 
-def get_separate_t23_octant_params(hypo_maker,inflection_point) :
+def get_separate_t23_octant_params(hypo_maker,inflection_point):
     '''
     This function creates versions of the theta23 param that are confined to 
     a single octant. It does this for both octant cases. This is used to allow 
@@ -793,7 +793,7 @@ class Analysis(object):
 
         # Record the Asimov distribution with the optimal param values
         hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
-        gen_poisson_dist = hypo_maker.get_outputs(return_sum=False,force_standard_output=False)
+        gen_poisson_dist = hypo_maker.get_outputs(return_sum=False, force_standard_output=False)
         gen_poisson_dist = merge_mapsets_together(mapset_list=gen_poisson_dist)
 
         # Get the best-fit metric value
@@ -970,11 +970,11 @@ class Analysis(object):
 
             # if the metric is not generalized poisson, but the distribution is a dict,
             # retrieve the 'weights' mapset from the distribution output
-            if m=='generalized_poisson_llh':
+            if m == 'generalized_poisson_llh':
                 name_vals_d['maps'] = data_dist.maps[0].generalized_poisson_llh(expected_values=genpoisson_hypo)
                 llh_binned = data_dist.maps[0].generalized_poisson_llh(expected_values=genpoisson_hypo, binned=True)
                 map_binned = Map(name=metric,
-                                hist=np.reshape(llh_binned,data_dist.maps[0].shape),
+                                hist=np.reshape(llh_binned, data_dist.maps[0].shape),
                                 binning=data_dist.maps[0].binning
                     )
                 name_vals_d['maps_binned'] = MapSet(map_binned)

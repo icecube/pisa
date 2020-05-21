@@ -1569,7 +1569,7 @@ class Map(object):
                                  expected_values=expected_values))
 
 
-    def generalized_poisson_llh(self,expected_values=None,empty_bins=None, binned=False):
+    def generalized_poisson_llh(self, expected_values=None, empty_bins=None, binned=False):
         '''
         compute the likelihood of this map's count to originate from
 
@@ -1588,8 +1588,8 @@ class Map(object):
         '''
 
         llh_per_bin = stats.generalized_poisson_llh(actual_values=self.hist,
-                                                    expected_values = expected_values,
-                                                    empty_bins = empty_bins)
+                                                    expected_values=expected_values,
+                                                    empty_bins=empty_bins)
 
         if binned:
             return llh_per_bin

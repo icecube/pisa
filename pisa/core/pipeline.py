@@ -320,7 +320,13 @@ class Pipeline(object):
             Return list containing outputs from each stage in the pipeline.
 
         output_mode: string
-                     force an output mode to the stage
+            force an output mode to the stage
+
+        force_standard_output: bool
+            if requesting a binned output, object returned will be a list of MapSets
+            if set to False, object returned will be a list of Dict. each Dict item is 
+            a MapSet
+
 
         Returns
         -------
