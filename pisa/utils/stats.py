@@ -572,16 +572,16 @@ def generalized_poisson_llh(actual_values, expected_values=None,empty_bins=None)
 
     '''
     from collections import OrderedDict
-    from pisa.stages.test_bourdeet.llh_defs.poisson import normal_log_probability, fast_pgmix
+    from pisa.stages.test_bourdeet.llh_defs.poisson import fast_pgmix
 
-    assert isinstance(expected_values,OrderedDict),'ERROR: expected_values must be an OrderedDict of MapSet objects'
-    assert 'weights' in expected_values.keys()    ,'ERROR: expected_values need a key named "weights"'
-    assert 'llh_alphas' in expected_values.keys() ,'ERROR: expected_values need a key named "llh_alphas"'
-    assert 'llh_betas' in expected_values.keys()  ,'ERROR: expected_values need a key named "llh_betas"'
-    assert 'new_sum'   in expected_values.keys()  ,'ERROR: expected_values need a key named "new_sum"'
+    assert isinstance(expected_values, OrderedDict), 'ERROR: expected_values must be an OrderedDict of MapSet objects'
+    assert 'weights' in expected_values.keys()    , 'ERROR: expected_values need a key named "weights"'
+    assert 'llh_alphas' in expected_values.keys() , 'ERROR: expected_values need a key named "llh_alphas"'
+    assert 'llh_betas' in expected_values.keys()  , 'ERROR: expected_values need a key named "llh_betas"'
+    assert 'new_sum'   in expected_values.keys()  , 'ERROR: expected_values need a key named "new_sum"'
 
 
-    N_bins=actual_values.flatten().shape[0]
+    N_bins = actual_values.flatten().shape[0]
     llh_per_bin = np.zeros(N_bins)
 
     # If no empty bins are specified, we assume that all of them should be included
@@ -597,13 +597,13 @@ def generalized_poisson_llh(actual_values, expected_values=None,empty_bins=None)
         # Automatically add a huge number if a bin has non zero data count
         # but completely empty MC
         if bin_i in empty_bins:
-            if data_count>0:
+            if data_count > 0:
                 llh_per_bin[bin_i] = np.log(1.e-10)
             continue
 
         # Make sure that no weight sum is negative. Crash if there are
         weight_sum = sum([m.hist.flatten()[bin_i] for m in expected_values['new_sum'].maps])
-        assert weight_sum>=0,'ERROR: negative weights detected'
+        assert weight_sum >= 0,'ERROR: negative weights detected'
 
 
         #
@@ -623,8 +623,8 @@ def generalized_poisson_llh(actual_values, expected_values=None,empty_bins=None)
             mask = np.isfinite(alphas)*np.isfinite(betas)
 
             # Check that the alpha and betas make sense
-            assert np.sum(alphas[mask]<=0)==0,'ERROR: detected alpha values <=0'
-            assert np.sum(betas[mask]<=0)==0,'ERROR: detected beta values <=0'
+            assert np.sum(alphas[mask] <= 0) == 0, 'ERROR: detected alpha values <=0'
+            assert np.sum(betas[mask] <=0 ) == 0, 'ERROR: detected beta values <=0'
 
 
             llh_of_bin = fast_pgmix(data_count, alphas[mask], betas[mask])
