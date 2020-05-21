@@ -6,12 +6,12 @@ This module takes in events containers from the pipeline, and
 introduces an additional array giving the indices where each
 event falls into.
 
-Etienne bourbeau (etienne.bourbeau@icecube.wisc.edu)
-
 module structure imported from bootcamp example
 '''
 
 from __future__ import absolute_import, print_function, division
+
+__author__ = "Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)"
 
 import numpy as np
 
