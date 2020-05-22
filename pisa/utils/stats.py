@@ -8,6 +8,7 @@ from __future__ import absolute_import, division
 import numpy as np
 from scipy.special import gammaln
 from uncertainties import unumpy as unp
+
 from pisa import FTYPE
 from pisa.utils.comparisons import FTYPE_PREC, isbarenumeric
 from pisa.utils.log import logging
