@@ -87,17 +87,14 @@ def append_arrays_dict(key, val, sdict):
     multiple input files) into a single dict of arrays 
     '''
     if isinstance(val, Mapping):
-
         # Handle sub-dict
         for key2, val2 in val.items() :
             if key not in sdict :
                 sdict[key] = OrderedDict()
             append_arrays_dict(key2, val2, sdict[key])
     else :
-
         # Have now reached a variable
         assert isinstance(val, np.ndarray), "'%s' is not an array, is a %s" % (key, type(val)) 
-
         if key in sdict :
             sdict[key] = np.append(sdict[key], val)
         else :
@@ -246,6 +243,7 @@ class EventsPi(OrderedDict):
             # Read the file
             # If `variable_mapping` was specified, only load those variables (saves time/memory)
             if isinstance(infile, str):
+
                 # If user provided a variable mapping, only load the requested variables.
                 # Remember to andle cases where the variable is defined as a list of variables in
                 # the cfg file.
@@ -295,7 +293,9 @@ class EventsPi(OrderedDict):
             #
             # Parse metadata from file
             #
+
             if required_metadata is not None :
+                
                 # Events and EventsPi objects have attr `metadata`
                 file_metadata = getattr(file_input_data, 'metadata', None)
 
