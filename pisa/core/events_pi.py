@@ -295,7 +295,7 @@ class EventsPi(OrderedDict):
             #
 
             if required_metadata is not None :
-                
+
                 # Events and EventsPi objects have attr `metadata`
                 file_metadata = getattr(file_input_data, 'metadata', None)
 
