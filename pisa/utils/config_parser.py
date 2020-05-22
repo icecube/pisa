@@ -220,7 +220,6 @@ from __future__ import absolute_import, division
 
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from collections import OrderedDict
-from collections.abc import Sequence
 from io import StringIO
 from os.path import abspath, expanduser, expandvars, isfile, join
 import re
@@ -619,6 +618,7 @@ def parse_pipeline_config(config):
 
     # Get and parse the order of the stages (and which services implement them)
     order = [split(x, STAGE_SEP) for x in split(config.get(section, 'order'))]
+    
     param_selections = []
     if config.has_option(section, 'param_selections'):
         param_selections = split(config.get(section, 'param_selections'))
