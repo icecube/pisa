@@ -58,7 +58,7 @@ class simple_data_loader(PiStage):
                  mc_cuts,
                  data_dict,
                  neutrinos=True,
-                 expected_metadata=None,
+                 required_metadata=None,
                  data=None,
                  params=None,
                  input_names=None,
@@ -75,13 +75,13 @@ class simple_data_loader(PiStage):
         self.mc_cuts = mc_cuts
         self.data_dict = data_dict
         self.neutrinos = neutrinos
-        self.expected_metadata = expected_metadata
+        self.required_metadata = required_metadata
         self.fraction_events_to_keep = fraction_events_to_keep
 
         # Handle list inputs
         self.events_file = split(self.events_file)
-        if self.expected_metadata is not None :
-            self.expected_metadata = split(self.expected_metadata)
+        if self.required_metadata is not None :
+            self.required_metadata = split(self.required_metadata)
 
         # instead of adding params here, consider making them instantiation
         # args so nothing external will inadvertently try to change
@@ -144,7 +144,7 @@ class simple_data_loader(PiStage):
         self.evts.load_events_file(
             events_file=self.events_file,
             variable_mapping=self.data_dict,
-            expected_metadata=self.expected_metadata,
+            required_metadata=self.required_metadata,
         )
 
         if hasattr(self.evts, "metadata"):

@@ -25,16 +25,13 @@ from pisa.utils.numba_tools import WHERE, myjit
 from pisa.utils.resources import find_resource
 
 
-def antipion_production(barr_var, pion_ratio):
+class pi_mceq_barr_red(PiStage):
     """
-    Combine pi+ param and pi+/pi- ratio to get pi- param
-    """
-    return ((1 + barr_var) / (1 + pion_ratio)) - 1
-
-
-class pi_mceq_barr(PiStage):
-    """
-    Stage to generate nominal flux from MCEq and apply Barr style flux uncertainties.
+    Stage that uses gradients calculated with MCEq to handle flux uncertainties.
+    This stage calculates flux variations relative to a nominal flux that must
+    be calculated ahead of time. Parameters to control pion and kaon production
+    are reduced from the full Barr scheme, by forcing many of them to scale in a
+    fully correlated way.
 
     Parameters
     ----------
@@ -72,22 +69,22 @@ class pi_mceq_barr(PiStage):
 
     Notes
     -----
-    The nominal flux is calculated using MCEq, then multiplied with a shift in
-    spectral index, and then modifications due to meson production (barr
-    variables) are added.
+    The nominal flux is calculated ahead of time using the pi_honda_ip stage,
+    then multiplied with a shift in spectral index, and then modifications due
+    to meson production (barr variables) are added.
 
     The MCEq-table has 2 solutions of the cascade equation per Barr variable (12)
     - one solution for meson and one solution for the antimeson production uncertainty.
-    Each solution consists of 8 splines: "numu", "numubar", "nue", and "nuebar"
-    is the nominal flux.
-    "dnumu", "dnumubar", "dnue", and "dnuebar" is the gradient of the Barr modification
+
+    Each solution consists of 4 splines: "dnumu", "dnumubar", "dnue", and
+    "dnuebar". These are the gradients that govern how the neutrino fluxes vary
+    depending on modifications to the Barr params.
 
     """
 
     def __init__(
         self,
         table_file,
-        include_nutau_flux=False,
         data=None,
         params=None,
         input_names=None,
@@ -103,14 +100,12 @@ class pi_mceq_barr(PiStage):
         #
 
         # Define the Barr parameters
-        self.barr_param_names = [  # TODO common code with `create_barr_sys_tables_mceq.py` ?
+        # TODO Barr block definition could change - need to make this more flexible
+        # Perhaps let user define the blocks, and then table is generated on the
+        # fly as a first step? Could take up to 1 hour to produce table though...
+        self.barr_param_names = [
             # pions
-            "a",
-            "b",
-            "c",
-            "d",
-            "e",
-            "f",
+            "af",
             "g",
             "h",
             "i",
@@ -130,7 +125,7 @@ class pi_mceq_barr(PiStage):
         # TODO
 
         # Get the overall list of params for which we have gradients stored
-        # Define a mapping to index values, will he useful later
+        # Define a mapping to index values, will be useful later
         self.gradient_param_names = [
             n + s for n in self.barr_param_names for s in self.barr_param_signs
         ]
@@ -146,12 +141,7 @@ class pi_mceq_barr(PiStage):
         expected_params = (
             # pion
             "pion_ratio",
-            "barr_a_Pi",
-            "barr_b_Pi",
-            "barr_c_Pi",
-            "barr_d_Pi",
-            "barr_e_Pi",
-            "barr_f_Pi",
+            "barr_af_Pi",
             "barr_g_Pi",
             "barr_h_Pi",
             "barr_i_Pi",
@@ -172,21 +162,18 @@ class pi_mceq_barr(PiStage):
         input_names = ()
         output_names = ()
 
-        # what are the keys used from the inputs during apply
-        input_calc_keys = ()
-
+        # Using Honda for nominal flux. Keys should already exist
+        input_calc_keys = ("nu_flux_nominal", "nubar_flux_nominal")
         # what are keys added or altered in the calculation used during apply
-        output_calc_keys = ("nu_flux_nominal", "nu_flux")
+        output_calc_keys = ("nu_flux", )
         # what keys are added or altered for the outputs during apply
-        output_apply_keys = ("nu_flux_nominal", "nu_flux")
+        output_apply_keys = ("nu_flux", )
 
         # store args
         self.table_file = table_file
-        self.include_nutau_flux = include_nutau_flux
-
 
         # init base class
-        super(pi_mceq_barr, self).__init__(
+        super(pi_mceq_barr_red, self).__init__(
             data=data,
             params=params,
             expected_params=expected_params,
@@ -216,29 +203,33 @@ class pi_mceq_barr(PiStage):
         # Prepare some array shapes
         gradient_params_shape = (len(self.gradient_param_names),)
 
+        if self.calc_mode == 'binned':
+            # speed up calculation by adding links
+            # as nominal flux doesn't depend on the (outgoing) flavour
+            self.data.link_containers('nu', ['nue_cc', 'numu_cc', 'nutau_cc',
+                                             'nue_nc', 'numu_nc', 'nutau_nc'])
+
+            self.data.link_containers('nubar', ['nuebar_cc', 'numubar_cc',
+                                                'nutaubar_cc', 'nuebar_nc',
+                                                'numubar_nc', 'nutaubar_nc'])
+
         # Loop over containers
         for container in self.data:
 
-            #TODO Toggles for including both nu and nubar flux (required for CPT violating oscillations)
+            # Define shapes for containers
 
-            # Flux container shape : [ N events, N flavors in primary flux ]
-            num_events = container.size
-            num_flux_flavs = 3 if self.include_nutau_flux else 2
-            flux_container_shape = (num_events, num_flux_flavs) 
+            # TODO maybe include toggles for nutau (only needed if prompt
+            # considered) and for nu+nubar (only needed if nu->nubar
+            # oscillations included) for better speed/memory performance
 
-            # Gradients container shape
+            # [ N events, 2 flavors in flux, nu vs nubar ]
+            # SDB - reduced flavours to 2 (nue, numu) since nutau flux not
+            # stored in MCEq splines
+            flux_container_shape = (container.size, 2)
             gradients_shape = tuple(
                 list(flux_container_shape) + list(gradient_params_shape)
             )
 
-            # Create arrays that will be populated in the stage
-            # Note that the flux arrays will be chosen as nu or nubar depending
-            # on the container (e.g. not simultaneously storing nu and nubar)
-            # Would rather use multi-dim arrays here but limited by fact that
-            # numba only supports 1/2D versions of numpy functions
-            container["nu_flux_nominal"] = np.full(
-                flux_container_shape, np.NaN, dtype=FTYPE
-            )
             container["nu_flux"] = np.full(flux_container_shape, np.NaN, dtype=FTYPE)
             container["gradients"] = np.full(gradients_shape, np.NaN, dtype=FTYPE)
 
@@ -251,18 +242,14 @@ class pi_mceq_barr(PiStage):
         # Load MCEq splines
         #
 
-        # Have splined both nominal fluxes and gradients in flux w.r.t.
-        # Barr parameters, using MCEQ.
-
         # Have splines for each Barr parameter, plus +/- versions of each
         # Barr parameter corresponding to mesons/antimesons.
 
         # For a given Barr parameter, an underlying dictionary have the following
-        # keywords:
-        #     "numu", "numubar", "nue", "nuebar"
-        #     derivatives: "dnumu", "dnumubar", "dnue", dnuebar"
+        # keywords: "dnumu", "dnumubar", "dnue", dnuebar"
+
         # Units are changed to m^-2 in creates_splines.., rather than cm^2 which
-        # is the unit of calculation in MCEq
+        # is the unit of calculation in MCEq!!!!
 
         # Note that doing this all on CPUs, since the splines reside on the CPUs
         # The actual `compute_function` computation can be done on GPUs though
@@ -273,6 +260,18 @@ class pi_mceq_barr(PiStage):
         # Encoding is to support pickle files created with python v2
         self.spline_tables_dict = pickle.load(BZ2File(spline_file), encoding="latin1")
 
+        # Ensure that the user is not loading an incompatible spline
+        for bp in self.barr_param_names:
+            bp_p = bp+'+' # meson
+            bp_m = bp+'-' # antimeson
+            assert bp_p in self.spline_tables_dict.keys(), (
+                "Gradient parameter '%s' missing from table" % bp_p
+            )
+            assert bp_m in self.spline_tables_dict.keys(), (
+                "Gradient parameter '%s' missing from table" % bp_m
+            )
+
+
         # Loop over containers
         for container in self.data:
 
@@ -281,54 +280,15 @@ class pi_mceq_barr(PiStage):
             # terms of energy, not ln(energy)
             true_log_energy = np.log(container["true_energy"].get("host"))
             true_abs_coszen = np.abs(container["true_coszen"].get("host"))
-            nu_flux_nominal = container["nu_flux_nominal"].get("host")
             gradients = container["gradients"].get("host")
             nubar = container["nubar"]
-
-            #
-            # Nominal flux
-            #
-
-            # Evaluate splines to get nominal flux
-            # Need to correctly map nu/nubar and flavor to the output arrays
-
-            # Note that nominal flux is stored multiple times (once per Barr parameter)
-            # Choose an arbitrary one to get the nominal fluxes
-            arb_gradient_param_key = self.gradient_param_names[0]
-
-            # nue(bar)
-            nu_flux_nominal[:, 0] = self.spline_tables_dict[arb_gradient_param_key]["nue" if nubar > 0 else "nuebar"](
-                true_abs_coszen,
-                true_log_energy,
-                grid=False,
-            )
-
-            # numu(bar)
-            nu_flux_nominal[:, 1] = self.spline_tables_dict[arb_gradient_param_key]["numu" if nubar > 0 else "numubar"](
-                true_abs_coszen,
-                true_log_energy,
-                grid=False,
-            )
-
-            # nutau(bar)
-            # Currently setting to 0 #TODO include nutau flux (e.g. prompt) in splines
-            if self.include_nutau_flux :
-                nu_flux_nominal[:, 2] = self.spline_tables_dict[arb_gradient_param_key]["nutau" if nubar > 0 else "nutaubar"](
-                    true_abs_coszen,
-                    true_log_energy,
-                    grid=False,
-                )
-
-            # Tell the smart arrays we've changed the nominal flux values on the host
-            container["nu_flux_nominal"].mark_changed("host")
-
 
             #
             # Flux gradients
             #
 
             # Evaluate splines to get the flux graidents w.r.t the Barr parameter values
-            # Once again, need to correctly map nu/nubar and flavor to the output arrays
+            # Need to correctly map nu/nubar and flavor to the output arrays
 
             # Loop over parameters
             for (
@@ -337,34 +297,68 @@ class pi_mceq_barr(PiStage):
             ) in self.gradient_param_indices.items():
 
                 # nue(bar)
-                gradients[:, 0, gradient_param_idx] = self.spline_tables_dict[gradient_param_name]["dnue" if nubar > 0 else "dnuebar"](
-                    true_abs_coszen,
-                    true_log_energy,
-                    grid=False,
+                self._eval_spline(
+                    true_log_energy=true_log_energy,
+                    true_abs_coszen=true_abs_coszen,
+                    spline=self.spline_tables_dict[gradient_param_name][
+                        "dnue" if nubar > 0 else "dnuebar"
+                    ],
+                    out=gradients[:, 0, gradient_param_idx],
                 )
 
                 # numu(bar)
-                gradients[:, 1, gradient_param_idx] = self.spline_tables_dict[gradient_param_name]["dnumu" if nubar > 0 else "dnumubar"](
-                    true_abs_coszen,
-                    true_log_energy,
-                    grid=False,
+                self._eval_spline(
+                    true_log_energy=true_log_energy,
+                    true_abs_coszen=true_abs_coszen,
+                    spline=self.spline_tables_dict[gradient_param_name][
+                        "dnumu" if nubar > 0 else "dnumubar"
+                    ],
+                    out=gradients[:, 1, gradient_param_idx],
                 )
 
                 # nutau(bar)
-                if self.include_nutau_flux :
-                    gradients[:, 2, gradient_param_idx] = self.spline_tables_dict[gradient_param_name]["dnutau" if nubar > 0 else "dnutaubar"](
-                        true_abs_coszen,
-                        true_log_energy,
-                        grid=False,
-                    )
+                # TODO include nutau flux in splines
+                # SDB - there is no nutau flux in splines
+                ## gradients[:, 2, gradient_param_idx].fill(0.0)
 
             # Tell the smart arrays we've changed the flux gradient values on the host
             container["gradients"].mark_changed("host")
+
+        # don't forget to un-link everything again
+        self.data.unlink_containers()
+
+    def _eval_spline(self, true_log_energy, true_abs_coszen, spline, out):
+        """
+        Evaluate the spline for the full arrays of [ ln(energy), abs(coszen) ] values
+        """
+
+        # Evalate the spine
+        result = spline(true_abs_coszen, true_log_energy, grid=False)
+
+        # Copy to output array
+        # TODO Can I directly write to the original array, will be faster
+        np.copyto(src=result, dst=out)
+
+    def antipion_production(self, barr_var, pion_ratio):
+        """
+        Combine pi+ param and pi+/pi- ratio to get pi- param
+        """
+        return ((1 + barr_var) / (1 + pion_ratio)) - 1
 
     @profile
     def compute_function(self):
 
         self.data.data_specs = self.calc_specs
+
+        if self.calc_mode == 'binned':
+            # speed up calculation by adding links
+            # as nominal flux doesn't depend on the (outgoing) flavour
+            self.data.link_containers('nu', ['nue_cc', 'numu_cc', 'nutau_cc',
+                                             'nue_nc', 'numu_nc', 'nutau_nc'])
+
+            self.data.link_containers('nubar', ['nuebar_cc', 'numubar_cc',
+                                                'nutaubar_cc', 'nuebar_nc',
+                                                'numubar_nc', 'nutaubar_nc'])
 
         #
         # Get params
@@ -381,17 +375,12 @@ class pi_mceq_barr(PiStage):
         # pi- production rates is restricted by the pi-ratio, just as in arXiv:0611266
         # TODO might want dedicated priors for pi- params (but without corresponding free params)
         gradient_params_mapping = collections.OrderedDict()
-        gradient_params_mapping["a+"] = self.params.barr_a_Pi.value.m_as("dimensionless")
-        gradient_params_mapping["b+"] = self.params.barr_b_Pi.value.m_as("dimensionless")
-        gradient_params_mapping["c+"] = self.params.barr_c_Pi.value.m_as("dimensionless")
-        gradient_params_mapping["d+"] = self.params.barr_d_Pi.value.m_as("dimensionless")
-        gradient_params_mapping["e+"] = self.params.barr_e_Pi.value.m_as("dimensionless")
-        gradient_params_mapping["f+"] = self.params.barr_f_Pi.value.m_as("dimensionless")
+        gradient_params_mapping["af+"] = self.params.barr_af_Pi.value.m_as("dimensionless")
         gradient_params_mapping["g+"] = self.params.barr_g_Pi.value.m_as("dimensionless")
         gradient_params_mapping["h+"] = self.params.barr_h_Pi.value.m_as("dimensionless")
         gradient_params_mapping["i+"] = self.params.barr_i_Pi.value.m_as("dimensionless")
         for k in list(gradient_params_mapping.keys()):
-            gradient_params_mapping[k.replace("+", "-")] = antipion_production(
+            gradient_params_mapping[k.replace("+", "-")] = self.antipion_production(
                 gradient_params_mapping[k], pion_ratio
             )
 
@@ -411,40 +400,55 @@ class pi_mceq_barr(PiStage):
             gradient_param_name,
             gradient_param_idx,
         ) in self.gradient_param_indices.items():
-            assert gradient_param_name in gradient_params_mapping, (
-                "Gradient parameter '%s' missing from mapping" % gradient_param_name
-            )
             self.gradient_params[gradient_param_idx] = gradient_params_mapping[
                 gradient_param_name
             ]
 
         #
-        # Apply the systematics to the flux
+        # Loop over containers
         #
 
         for container in self.data:
 
+            #
+            # Apply the systematics to the flux
+            #
+
+            nubar = container["nubar"]
+            if nubar > 0: flux_key = "nu_flux_nominal"
+            elif nubar < 0: flux_key = "nubar_flux_nominal"
+
             apply_sys_vectorized(
                 container["true_energy"].get(WHERE),
                 container["true_coszen"].get(WHERE),
-                delta_index,
-                energy_pivot,
-                container["nu_flux_nominal"].get(WHERE),
+                FTYPE(delta_index),
+                FTYPE(energy_pivot),
+                container[flux_key].get(WHERE),
                 container["gradients"].get(WHERE),
                 self.gradient_params,
                 out=container["nu_flux"].get(WHERE),
             )
-            
             container["nu_flux"].mark_changed(WHERE)
 
+            # Check for negative results from spline
+            # TODO - add more spline error/misusage handling
+            # e.g. if events have energy outside spline range throw ERROR
+            negative_mask = container["nu_flux"].get("host") < 0
+            if np.any(negative_mask):
+                container["nu_flux"].get("host")[negative_mask] = 0.0
+
+            container["nu_flux"].mark_changed("host")
+
+        # don't forget to un-link everything again
+        self.data.unlink_containers()
 
 @myjit
 def spectral_index_scale(true_energy, energy_pivot, delta_index):
     """
-    Calculate spectral index scale.
-    Adjusts the weights for events in an energy dependent way according to a
-    shift in spectral index, applied about a user-defined energy pivot.
-    """
+      Calculate spectral index scale.
+      Adjusts the weights for events in an energy dependent way according to a
+      shift in spectral index, applied about a user-defined energy pivot.
+      """
     return np.power((true_energy / energy_pivot), delta_index)
 
 
@@ -480,18 +484,9 @@ def apply_sys_kernel(
         C = num gradients
     Not that first dimension (of length A) is vectorized out
     """
-
-    # Nominal flux + spectral index change
-    result = nu_flux_nominal * spectral_index_scale(true_energy, energy_pivot, delta_index)
-
-    # Apply bar params
-    result += np.dot(gradients, gradient_params)
-
-    # Check for negative results from spline (np.clip not supported by vectorization)
-    result[result < 0.0] = 0.0
-
-    out[...] = result
-
+    out[...] = (
+        nu_flux_nominal * spectral_index_scale(true_energy, energy_pivot, delta_index)
+    ) + np.dot(gradients, gradient_params)
 
 # vectorized function to apply
 # must be outside class

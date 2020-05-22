@@ -204,7 +204,7 @@ class DistributionMaker(object):
         outputs = [pipeline.get_outputs(**kwargs) for pipeline in self] # pylint: disable=redefined-outer-name
 
         if return_sum:
-
+            
             # Case where the output of a pipeline is a mapSet
             if isinstance(outputs[0], MapSet):
                 outputs = sum([sum(x) for x in outputs]) # This produces a Map

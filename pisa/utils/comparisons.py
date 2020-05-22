@@ -93,6 +93,11 @@ EQUALITY_PREC = 10**-EQUALITY_SIGFIGS
 ALLCLOSE_KW = dict(rtol=EQUALITY_PREC, atol=FTYPE_PREC, equal_nan=True)
 """Keyword args to pass to all calls to numpy.allclose"""
 
+logging.trace(
+    "HASH_SIGFIGS=%d, FTYPE_SIGFIGS=%d, EQUALITY_PREC=%s, FTYPE_PREC=%s, ALLCLOSE_KW=%s"
+    % (HASH_SIGFIGS, FTYPE_SIGFIGS, EQUALITY_PREC, FTYPE_PREC, ALLCLOSE_KW)
+)
+
 # Derive the following number via:
 # >>> from sympy import log, N
 # >>> str(N(log(2, 10), 40))

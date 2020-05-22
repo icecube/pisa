@@ -24,6 +24,7 @@ from pisa import ureg
 from pisa.core.events import Data
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
+from pisa.core.base_stage import BaseStage
 from pisa.core.stage import Stage
 from pisa.core.pi_stage import PiStage
 from pisa.core.transform import TransformSet
@@ -174,11 +175,12 @@ class Pipeline(object):
                 )
 
                 # Import service's module
-                logging.trace("Importing: pisa.stages.%s.%s", stage_name, service_name)
-                module = import_module("pisa.stages.%s.%s" % (stage_name, service_name))
+                module_path = f"pisa.stages.{stage_name}.{service_name}"
+                logging.trace("Importing service module: %s", module_path)
+                module = import_module(module_path)
 
                 # Get service class from module
-                cls = getattr(module, service_name)
+                service_cls = getattr(module, service_name)
 
                 # Instantiate service
                 logging.trace(
@@ -186,7 +188,7 @@ class Pipeline(object):
                     % (stage_name, service_name, settings)
                 )
                 try:
-                    service = cls(**settings)
+                    service = service_cls(**settings)
                 except Exception:
                     logging.error(
                         "Failed to instantiate stage.service %s.%s with settings %s",
@@ -200,6 +202,10 @@ class Pipeline(object):
                 pi_stage = isinstance(service, PiStage)
 
                 if not (cake_stage or pi_stage):
+                    logging.debug("is BaseStage? %s", isinstance(service, BaseStage))
+                    logging.debug("is Stage (cake)? %s", isinstance(service, Stage))
+                    logging.debug("is PiStage? %s", isinstance(service, PiStage))
+
                     raise TypeError(
                         'Trying to create service "%s" for stage #%d (%s),'
                         " but object %s instantiated from class %s is not a"
@@ -209,7 +215,7 @@ class Pipeline(object):
                             stage_num,
                             stage_name,
                             service,
-                            cls,
+                            service_cls,
                             type(service),
                         )
                     )
@@ -301,7 +307,11 @@ class Pipeline(object):
 
     # TODO: handle other container(s)
     @profile
+<<<<<<< HEAD
     def get_outputs(self, inputs=None, idx=None, return_intermediate=False, output_mode=None, force_standard_output=True):
+=======
+    def get_outputs(self, inputs=None, idx=None, return_intermediate=False, output_mode=None):
+>>>>>>> I3Open_master
         """Run the pipeline to compute its outputs.
 
         Parameters
@@ -319,6 +329,7 @@ class Pipeline(object):
         return_intermediate : bool
             Return list containing outputs from each stage in the pipeline.
 
+<<<<<<< HEAD
         output_mode: string
             force an output mode to the stage
 
@@ -327,6 +338,10 @@ class Pipeline(object):
             if set to False, object returned will be a list of Dict. each Dict item is 
             a MapSet
 
+=======
+        output_mode: None, string
+            Optionally can force the output mode to the stage
+>>>>>>> I3Open_master
 
         Returns
         -------
@@ -361,7 +376,11 @@ class Pipeline(object):
                 outputs = stage.run(inputs=inputs) # pylint: disable=redefined-outer-name
                 if return_intermediate:
                     if outputs is None:  # e.g. for PISA pi
+<<<<<<< HEAD
                         outputs = stage.get_outputs(output_mode=output_mode, force_standard_output=force_standard_output)
+=======
+                        outputs = stage.get_outputs(output_mode=output_mode)
+>>>>>>> I3Open_master
                     intermediate.append(outputs)
                 logging.trace(">>> END  : {}.run(...)".format(name))
             except:
@@ -375,7 +394,11 @@ class Pipeline(object):
             inputs = outputs
 
         if outputs is None:  # e.g. for PISA pi
+<<<<<<< HEAD
             outputs = stage.get_outputs(output_mode=output_mode, force_standard_output=force_standard_output)
+=======
+            outputs = stage.get_outputs(output_mode=output_mode)
+>>>>>>> I3Open_master
 
         if return_intermediate:
             return intermediate
@@ -496,7 +519,7 @@ def test_Pipeline():
     materials = []
 
     t23 = dict(ih=49.5 * ureg.deg, nh=42.3 * ureg.deg)
-    YeO = dict(iron=0.4656, pyrolite=0.4957)
+    #YeO = dict(iron=0.4656, pyrolite=0.4957)
 
     # Instantiate with two pipelines: first has both nh/ih and iron/pyrolite
     # param selectors, while the second only has nh/ih param selectors.

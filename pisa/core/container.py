@@ -452,10 +452,10 @@ class Container(object):
         binning, data = self.binned_data[key]
         if out_binning is not None:
             if not binning == out_binning:
-                logging.warning('Automatically re-beinning data %s'%key)
-                sample = [SmartArray(self.unroll_binning(name, binning)) for name in binning.names]
-                new_sample = [SmartArray(self.unroll_binning(name, out_binning)) for name in out_binning.names]
-                return resample(data, sample, binning, new_sample, out_binning)
+                raise ValueError(
+                    f"Binning of stored '{key}' with shape {binning.shape} contradicts "
+                    f"current output specification with shape {out_binning.shape}!"
+                )
         return data
 
     @staticmethod

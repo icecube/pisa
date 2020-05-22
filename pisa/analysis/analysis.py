@@ -258,7 +258,7 @@ def check_t23_octant(fit_info):
 
 
 
-def get_separate_t23_octant_params(hypo_maker,inflection_point):
+def get_separate_t23_octant_params(hypo_maker, inflection_point) :
     '''
     This function creates versions of the theta23 param that are confined to 
     a single octant. It does this for both octant cases. This is used to allow 
@@ -291,17 +291,22 @@ def get_separate_t23_octant_params(hypo_maker,inflection_point):
 
     # Get the octant definition
     octants = (
-        (theta23.range[0],inflection_point) ,
-        (inflection_point,theta23.range[1])
+        (theta23.range[0], inflection_point) ,
+        (inflection_point, theta23.range[1])
         )
 
-    # If theta23 is very close to maximal (e.g. the transition between octants)
-    # offset it slightly to be clearly in one octant (note that fit can still
-    # move the value back to maximal)
-    tolerance = 1. * ureg.degree
-    if np.isclose(theta23.value.m_as("degree"),45.,atol=tolerance.m_as("degree")) : 
-        theta23.value -= tolerance
+    # If theta23 is maximal (e.g. the transition between octants) or very close 
+    # to it, offset it slightly to be clearly in one octant (note that fit can 
+    # still move the value back to maximal). The reason for this is that 
+    # otherwise checks on the parameter bounds (which include a margin for 
+    # minimizer tolerance) can an throw exception.
+    tolerance = 0.1 * ureg.degree
+    dist_from_inflection = theta23.value - inflection_point 
+    if np.abs(dist_from_inflection) < tolerance :
+        sign = -1. if dist_from_inflection < 0. else +1. # Note this creates +ve shift also for theta == 45 (arbitary)
+        theta23.value = inflection_point + (sign * tolerance)
 
+    # Store the cases
     theta23_case1 = deepcopy(theta23)
     theta23_case2 = deepcopy(theta23)
 
@@ -314,7 +319,7 @@ def get_separate_t23_octant_params(hypo_maker,inflection_point):
     theta23_case2.value = 2*inflection_point - theta23_case2.value
     theta23_case2.range = octants[case2_octant_index]
 
-    return theta23_orig,theta23_case1,theta23_case2
+    return theta23_orig, theta23_case1, theta23_case2
 
 
 # TODO: move this to a central location prob. in utils
@@ -358,7 +363,7 @@ class Analysis(object):
 
     def fit_hypo(self, data_dist, hypo_maker, hypo_param_selections, metric,
                  minimizer_settings, reset_free=True, 
-                 check_octant=True, fit_octants_separately=False,
+                 check_octant=True, fit_octants_separately=True,
                  check_ordering=False, other_metrics=None,
                  blind=False, pprint=True, external_priors_penalty=None):
         """Fitter "outer" loop: If `check_octant` is True, run
@@ -823,7 +828,7 @@ class Analysis(object):
             ) for i in range(len(data_dist))]
         else: # DistributionMaker object
             fit_info['detailed_metric_info'] = self.get_detailed_metric_info(
-                data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist,genpoisson_hypo=gen_poisson_dist,
+                data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist, genpoisson_hypo=gen_poisson_dist,
                 params=hypo_maker.params, metric=metric[0], other_metrics=other_metrics,
                 detector_name=hypo_maker._detector_name
             )
@@ -1109,7 +1114,7 @@ class Analysis(object):
                 metric_val = 0
                 for i in range(len(hypo_maker._distribution_makers)):
                     data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],
-                                                  metric=metric[i],metric_kwargs=metric_kwargs)
+                                                  metric=metric[i], metric_kwargs=metric_kwargs)
                     metric_val += data
                 priors = hypo_maker.params.priors_penalty(metric=metric[0]) # uses just the "first" metric for prior
                 metric_val += priors
@@ -1117,7 +1122,7 @@ class Analysis(object):
 
                 metric_val = (
                         data_dist.metric_total(expected_values=hypo_asimov_dist,
-                                               metric=metric[0],metric_kwargs=metric_kwargs)
+                                               metric=metric[0], metric_kwargs=metric_kwargs)
                         + hypo_maker.params.priors_penalty(metric=metric[0])
                     )
         except Exception as e:

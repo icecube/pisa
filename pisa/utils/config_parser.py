@@ -747,12 +747,15 @@ def parse_pipeline_config(config):
             # this by its full name and try to interpret and instantiate a
             # Python object using the string
             else:
-                try:
-                    value = parse_quantity(value)
-                    value = value.nominal_value * value.units
-                except ValueError:
-                    value = parse_string_literal(value)
-                service_kwargs[fullname] = value
+                if re.search(r'[^a-z_]units\.[a-z]+', value, flags=re.IGNORECASE):
+                    try:
+                        new_value = parse_quantity(value)
+                        new_value = new_value.nominal_value * new_value.units
+                    except ValueError:
+                        new_value = parse_string_literal(value)
+                else:
+                    new_value = parse_string_literal(value)
+                service_kwargs[fullname] = new_value
 
         # If no params actually specified in config, remove 'params' from the
         # service's keyword args
@@ -1376,8 +1379,8 @@ def parse_args():
         default=Levels.WARN,
         help='Set verbosity level',
     )
-    kwargs = parser.parse_args()
-    set_verbosity(kwargs.pop('verbosity'))
+    kwargs = vars(parser.parse_args())
+    set_verbosity(kwargs.pop('v'))
     return kwargs
 
 

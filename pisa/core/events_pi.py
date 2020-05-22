@@ -66,6 +66,20 @@ LEGACY_FLAVKEY_XLATION = dict(
 )
 
 
+# Backwards cmpatiblity fixes
+OPPO_FLUX_LEGACY_FIX_MAPPING_NU = {
+    "nominal_nue_flux" : "neutrino_nue_flux",
+    "nominal_numu_flux" : "neutrino_numu_flux",
+    "nominal_nuebar_flux" : "neutrino_oppo_nue_flux",
+    "nominal_numubar_flux" : "neutrino_oppo_numu_flux",
+}
+
+OPPO_FLUX_LEGACY_FIX_MAPPING_NUBAR = {
+    "nominal_nue_flux" : "neutrino_oppo_nue_flux",
+    "nominal_numu_flux" : "neutrino_oppo_numu_flux",
+    "nominal_nuebar_flux" : "neutrino_nue_flux",
+    "nominal_numubar_flux" : "neutrino_numu_flux",
+}
 
 def append_arrays_dict(key, val, sdict):
     '''
@@ -73,12 +87,17 @@ def append_arrays_dict(key, val, sdict):
     multiple input files) into a single dict of arrays 
     '''
     if isinstance(val, Mapping):
+
+        # Handle sub-dict
         for key2, val2 in val.items() :
             if key not in sdict :
                 sdict[key] = OrderedDict()
             append_arrays_dict(key2, val2, sdict[key])
     else :
-        assert isinstance(val, np.ndarray), "%s %s : %s" % (k, type(v), v) 
+
+        # Have now reached a variable
+        assert isinstance(val, np.ndarray), "'%s' is not an array, is a %s" % (key, type(val)) 
+
         if key in sdict :
             sdict[key] = np.append(sdict[key], val)
         else :
@@ -127,6 +146,7 @@ class EventsPi(OrderedDict):
             assert (self.fraction_events_to_keep >= 0.) and (self.fraction_events_to_keep <= 1.), "`fraction_events_to_keep` must be in range [0.,1.], or None to disable"
 
         # Define some metadata
+        #TODO Is this out of date?
         self.metadata = OrderedDict(
             [
                 ("detector", ""),
@@ -137,7 +157,8 @@ class EventsPi(OrderedDict):
             ]
         )
 
-    def load_events_file(self, events_file, variable_mapping=None, expected_metadata=None):
+
+    def load_events_file(self, events_file, variable_mapping=None, required_metadata=None):
         """Fill this events container from an input HDF5 file filled with event
         data Optionally can provide a variable mapping so select a subset of
         variables, rename them, etc.
@@ -156,7 +177,12 @@ class EventsPi(OrderedDict):
             latter case, each of the specified source variables will become a
             column vector in the destination array.
 
+        required_metadata : None, or list of str
+            Can optionally specify metadata keys to parse from the input file metdata.
+            ONLY metadata specified here will be parsed.
+            Anything specified here MUST exist in the files. 
         """
+
         # Validate `events_file`
         if not isinstance(events_file, (str, Mapping, Sequence)):
             raise TypeError(
@@ -187,10 +213,11 @@ class EventsPi(OrderedDict):
                         " an iterable of strings"
                     )
 
-        # Validate `expected_metadata`
-        if expected_metadata is not None :
-            assert isinstance(expected_metadata, Sequence)
-            assert all([ isinstance(k, str) for k in expected_metadata ])
+
+        # Validate `required_metadata`
+        if required_metadata is not None :
+            assert isinstance(required_metadata, Sequence)
+            assert all([ isinstance(k, str) for k in required_metadata ])
 
 
         #
@@ -219,7 +246,34 @@ class EventsPi(OrderedDict):
             # Read the file
             # If `variable_mapping` was specified, only load those variables (saves time/memory)
             if isinstance(infile, str):
-                choose = None if variable_mapping is None else variable_mapping.values()
+                # If user provided a variable mapping, only load the requested variables.
+                # Remember to andle cases where the variable is defined as a list of variables in
+                # the cfg file.
+                if variable_mapping is None :
+                    choose = None
+                else :
+                    choose = []
+                    for var_name in variable_mapping.values() :
+                        if isinstance(var_name, str) :
+                            choose.append(var_name)
+                        elif isinstance(var_name, Sequence) :
+                            for sub_var_name in var_name :
+                                assert isinstance(sub_var_name, str), "Unknown variable format, must be `str`"
+                                choose.append(sub_var_name)
+                        else :
+                            raise IOError("Unknown variable name format, must be `str` or list of `str`")
+
+                # Handle "oppo" flux backwards compatibility
+                # This means adding the old variable names into the chosen variable list
+                # The actual renaming is done later by `fix_oppo_flux`
+                if variable_mapping is not None :
+                    for var_name in choose :
+                        if var_name in OPPO_FLUX_LEGACY_FIX_MAPPING_NU :
+                            choose.append( OPPO_FLUX_LEGACY_FIX_MAPPING_NU[var_name] )
+                        if var_name in OPPO_FLUX_LEGACY_FIX_MAPPING_NUBAR :
+                            choose.append( OPPO_FLUX_LEGACY_FIX_MAPPING_NUBAR[var_name] )
+
+                # Load the file
                 file_input_data = from_file(infile, choose=choose)
                 if not isinstance(file_input_data, Mapping):
                     raise TypeError(
@@ -228,7 +282,8 @@ class EventsPi(OrderedDict):
                     )
                 assert len(file_input_data) > 0, "No input data found"
 
-            # File already ready
+
+            # File already loaded
             elif isinstance(infile, Mapping) :
                 file_input_data = infile
 
@@ -240,9 +295,7 @@ class EventsPi(OrderedDict):
             #
             # Parse metadata from file
             #
-
-            if expected_metadata is not None :
-
+            if required_metadata is not None :
                 # Events and EventsPi objects have attr `metadata`
                 file_metadata = getattr(file_input_data, 'metadata', None)
 
@@ -261,7 +314,7 @@ class EventsPi(OrderedDict):
                         )
 
                     # Loop over expected metadata
-                    for k in expected_metadata :
+                    for k in required_metadata :
 
                         assert k in file_metadata, "Expected metadata '%s' not found" % k
 
@@ -314,6 +367,7 @@ class EventsPi(OrderedDict):
         if self.neutrinos:
             fix_oppo_flux(input_data)
 
+
         #
         # Load the event data
         #
@@ -343,10 +397,13 @@ class EventsPi(OrderedDict):
             # and check the variable exists in the input data
             for var_dst, var_src in variable_mapping_to_use:
                 # TODO What about non-float data? Use dtype...
+
+                # Prepare for the stacking
                 array_data = None
                 if isinstance(var_src, str):
                     var_src = [var_src]
 
+                # Perform the stacking
                 array_data_to_stack = []
                 for var in var_src:
                     if var in input_data[data_key]:
@@ -591,12 +648,12 @@ def split_nu_events_by_flavor_and_interaction(input_data):
     return output_data
 
 
+
 def fix_oppo_flux(input_data):
     """Fix this `oppo` flux insanity
     someone added this in the nominal flux calculation that
     oppo flux is nue flux if flavour is nuebar, and vice versa
     here we revert that, incase these oppo keys are there
-
     """
     for key, val in input_data.items():
         if "neutrino_oppo_nue_flux" not in val:
@@ -607,15 +664,11 @@ def fix_oppo_flux(input_data):
             key,
         )
         if "bar" in key:
-            val["nominal_nue_flux"] = val.pop("neutrino_oppo_nue_flux")
-            val["nominal_numu_flux"] = val.pop("neutrino_oppo_numu_flux")
-            val["nominal_nuebar_flux"] = val.pop("neutrino_nue_flux")
-            val["nominal_numubar_flux"] = val.pop("neutrino_numu_flux")
+            for new, old in OPPO_FLUX_LEGACY_FIX_MAPPING_NUBAR.items() :
+                val[new] = val.pop(old)
         else:
-            val["nominal_nue_flux"] = val.pop("neutrino_nue_flux")
-            val["nominal_numu_flux"] = val.pop("neutrino_numu_flux")
-            val["nominal_nuebar_flux"] = val.pop("neutrino_oppo_nue_flux")
-            val["nominal_numubar_flux"] = val.pop("neutrino_oppo_numu_flux")
+            for new, old in OPPO_FLUX_LEGACY_FIX_MAPPING_NU.items() :
+                val[new] = val.pop(old)
 
 
 def main():

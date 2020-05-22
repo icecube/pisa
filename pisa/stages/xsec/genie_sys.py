@@ -11,9 +11,9 @@ from numba import guvectorize
 
 from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
-from pisa.utils.profiler import profile
+from pisa.utils.profiler import profile, line_profile
 from pisa.utils.numba_tools import WHERE
-
+from pisa.utils.log import logging
 
 class genie_sys(PiStage): # pylint: disable=invalid-name
     """
@@ -98,7 +98,20 @@ class genie_sys(PiStage): # pylint: disable=invalid-name
         assert self.calc_mode is None
         assert self.output_mode is not None
 
-    @profile
+    def setup_function(self):
+        '''
+        Check the range of the axial masses parameter
+        in the analysis. Send a warning if these are beyond +- 2sigma
+        '''
+        if self.params['Genie_Ma_QE'].range[0]<-2. or self.params['Genie_Ma_QE'].range[1]>2.:
+            logging.warn('Genie_Ma_QE parameter bounds have been set larger than the range used to produce interpolation points ([-2.,2]). This will void the warranty...')
+        if self.params['Genie_Ma_RES'].range[0]<-2. or self.params['Genie_Ma_RES'].range[1]>2.:
+            logging.warn('Genie_Ma_RES parameter bounds have been set larger than the range used to produce interpolation points ([-2.,2]). This will void the warranty...')
+
+
+
+
+    @line_profile
     def apply_function(self):
         genie_ma_qe = self.params.Genie_Ma_QE.m_as('dimensionless')
         genie_ma_res = self.params.Genie_Ma_RES.m_as('dimensionless')
@@ -113,7 +126,14 @@ class genie_sys(PiStage): # pylint: disable=invalid-name
                 container['quad_fit_maccres'].get(WHERE),
                 out=container['weights'].get(WHERE),
             )
+
+            #
+            # In cases where the axial mass is extrapolated outside
+            # the range of the points used in the interpolation, some 
+            # weights become negative. These are floored at 0.
+            #
             container['weights'].mark_changed(WHERE)
+
 
 
 if FTYPE == np.float64:
@@ -130,7 +150,7 @@ def apply_genie_sys(
     quad_fit_maccres,
     out,
 ):
-    out[0] *= (
+    out[0] *= max(0, (
         (1. + (linear_fit_maccqe + quad_fit_maccqe * genie_ma_qe) * genie_ma_qe)
         * (1. + (linear_fit_maccres + quad_fit_maccres * genie_ma_res) * genie_ma_res)
-    )
+    ))
