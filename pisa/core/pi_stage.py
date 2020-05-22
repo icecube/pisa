@@ -16,7 +16,6 @@ from pisa.utils.format import arg_to_tuple
 from pisa.utils.profiler import profile
 
 
-
 __all__ = ["PiStage"]
 __version__ = "Pi"
 __author__ = "Philipp Eller (pde3@psu.edu)"
