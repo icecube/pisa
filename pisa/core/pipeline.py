@@ -307,7 +307,7 @@ class Pipeline(object):
 
     # TODO: handle other container(s)
     @profile
-    def get_outputs(self, inputs=None, idx=None, return_intermediate=False):
+    def get_outputs(self, inputs=None, idx=None, return_intermediate=False, output_mode=None):
         """Run the pipeline to compute its outputs.
 
         Parameters
@@ -324,6 +324,9 @@ class Pipeline(object):
 
         return_intermediate : bool
             Return list containing outputs from each stage in the pipeline.
+
+        output_mode: None, string
+            Optionally can force the output mode to the stage
 
         Returns
         -------
@@ -358,7 +361,7 @@ class Pipeline(object):
                 outputs = stage.run(inputs=inputs) # pylint: disable=redefined-outer-name
                 if return_intermediate:
                     if outputs is None:  # e.g. for PISA pi
-                        outputs = stage.get_outputs()
+                        outputs = stage.get_outputs(output_mode=output_mode)
                     intermediate.append(outputs)
                 logging.trace(">>> END  : {}.run(...)".format(name))
             except:
@@ -372,7 +375,7 @@ class Pipeline(object):
             inputs = outputs
 
         if outputs is None:  # e.g. for PISA pi
-            outputs = stage.get_outputs()
+            outputs = stage.get_outputs(output_mode=output_mode)
 
         if return_intermediate:
             return intermediate

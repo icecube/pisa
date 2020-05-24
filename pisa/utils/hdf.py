@@ -42,7 +42,7 @@ HDF5_EXTS = ['hdf', 'h5', 'hdf5']
 # TODO: convert to allow reading of icetray-produced HDF5 files
 
 
-def from_hdf(val, return_node=None):
+def from_hdf(val, return_node=None, choose=None):
     """Return the contents of an HDF5 file or node as a nested dict; optionally
     return a second dict containing any HDF5 attributes attached to the
     entry-level HDF5 entity.
@@ -58,6 +58,10 @@ def from_hdf(val, return_node=None):
     return_node : None or string
         Not yet implemented
 
+    choose : None or list
+        Optionally can provide a list of variables names to parse (items not in 
+        this list will be skipped, saving time & memory)
+
     Returns
     -------
     data : OrderedDict with additional attr of type OrderedDict named `attrs`
@@ -70,15 +74,17 @@ def from_hdf(val, return_node=None):
     if return_node is not None:
         raise NotImplementedError('`return_node` is not yet implemented.')
 
-    def visit_group(obj, sdict):
+    def visit_group(obj, sdict, choose=None):
         """Iteratively parse `obj` to create the dictionary `sdict`"""
         name = obj.name.split('/')[-1]
+
         if isinstance(obj, h5py.Dataset):
-            sdict[name] = obj[()]
+            if (choose is None) or (name in choose) :
+                sdict[name] = obj[()]
         if isinstance(obj, (h5py.Group, h5py.File)):
             sdict[name] = OrderedDict()
             for sobj in obj.values():
-                visit_group(sobj, sdict[name])
+                visit_group(sobj, sdict[name], choose)
 
     myfile = False
     if isinstance(val, str):
@@ -100,7 +106,7 @@ def from_hdf(val, return_node=None):
             attrs = OrderedDict(root.attrs)
         # Run over the whole dataset
         for obj in root.values():
-            visit_group(obj, data)
+            visit_group(obj, data, choose)
     finally:
         if myfile:
             root.close()

@@ -13,9 +13,9 @@ classes have many useful methods for working with binning.
 #       takes 10 seconds.
 # TODO: Create non-validated version of OneDimBinning.__init__ to make
 #       iterbins() fast
-# TODO: explicitly set is_bin_spacing_log and is_bin_spacing_lin to FP32
-#       precision (since binning can be defined/saved in FP32 but want code
-#       able to run in FP64
+# TODO: explicitly set is_bin_spacing_log_uniform and
+#       is_bin_spacing_lin_uniform to FP32 precision (since binning can be
+#       defined/saved in FP32 but want code able to run in FP64
 
 
 from __future__ import absolute_import, division
@@ -32,6 +32,7 @@ import numpy as np
 
 from pisa import FTYPE, HASH_SIGFIGS, ureg
 from pisa.utils.comparisons import interpret_quantity, normQuant, recursiveEquality
+from pisa.utils.comparisons import ALLCLOSE_KW
 from pisa.utils.format import (make_valid_python_name, text2tex,
                                strip_outer_dollars)
 from pisa.utils.hash import hash_obj
@@ -61,10 +62,13 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  limitations under the License.'''
 
 
-NAME_FIXES = ('true', 'truth', 'reco', 'reconstructed')
-NAME_SEPCHARS = r'([_\s-])*'
-NAME_FIXES_REGEXES = tuple(re.compile(p + NAME_SEPCHARS, re.IGNORECASE)
-                           for p in NAME_FIXES)
+NAME_FIXES = ('tru(e|th)', 'reco(nstruct(ed)?)?')
+NAME_SEPCHARS = r'[_\s-]+'
+NAME_FIXES_REGEXES = tuple(
+    [re.compile(NAME_SEPCHARS + p, re.IGNORECASE) for p in NAME_FIXES]
+    + [re.compile(p + NAME_SEPCHARS, re.IGNORECASE) for p in NAME_FIXES]
+    + [re.compile(p, re.IGNORECASE) for p in NAME_FIXES]
+)
 
 
 # TODO: move this to a centralized utils location
@@ -87,11 +91,17 @@ def basename(n):
     Examples
     --------
     >>> print(basename('true_energy'))
-    'energy'
+    energy
     >>> print(basename('Reconstructed coszen'))
-    'coszen'
+    coszen
+    >>> print(basename('coszen  reco'))
+    coszen
     >>> print(basename('energy___truth'))
-    'energy'
+    energy
+    >>> print(basename('trueenergy'))
+    energy
+    >>> print(basename('energytruth'))
+    energy
 
     """
     # Type checkingn and conversion
@@ -103,7 +113,7 @@ def basename(n):
     # Remove all (pre/suf)fixes and any separator chars
     for regex in NAME_FIXES_REGEXES:
         n = regex.sub('', n)
-    return n
+    return n.strip()
 
 
 def is_binning(something):
@@ -120,7 +130,7 @@ def _new_obj(original_function):
         """<< docstring will be inherited from wrapped function >>"""
         new_state = OrderedDict()
         state_updates = original_function(cls, *args, **kwargs)
-        for attr in cls._hash_attrs: # pylint: disable=protected-access
+        for attr in cls._attrs_to_create_new:  # pylint: disable=protected-access
             if attr in state_updates:
                 new_state[attr] = state_updates[attr]
             else:
@@ -130,7 +140,11 @@ def _new_obj(original_function):
 
 
 class OneDimBinning(object):
+    # pylint: disable=line-too-long
     """Histogram-oriented binning specialized to a single dimension.
+
+    If neither `is_lin` nor `is_log` is specified, linear behavior
+    is assumed (i.e., `is_lin` is set to True).
 
     Parameters
     ----------
@@ -142,37 +156,41 @@ class OneDimBinning(object):
     tex : str or None
         TeX label for this dimension.
 
-    bin_edges : sequence
-        Numerical values (including Pint units, if there are units) that
-        represent the *edges* of the bins. `bin_edges` needn't be specified if
-        `domain`, `num_bins`, and some combination of `is_lin` and `is_log` are
-        specified. Pint units can be attached to `bin_edges`, but will be
-        converted to `units` if these are specified.
+    bin_edges : sequence of scalars, or None
+        Numerical values (optionally including Pint units) that represent the
+        *edges* of the bins. `bin_edges` needn't be specified if `domain`,
+        `num_bins`, and optionally `is_log` is specified. Pint units can be
+        attached to `bin_edges`, but will be converted to `units` if this
+        argument is specified.
 
-    units : None, Pint unit or object convertible to Pint unit
+    units : Pint unit or object convertible to Pint unit, or None
         If None, units will be read from either `bin_edges` or `domain`, and if
         none of these have units, the binning has unit 'dimensionless'
         attached.
 
-    is_lin : bool
-        If `num_bins` and `domain` are specified,
+    is_lin : bool or None
+        Binning behavior is linear for purposes of resampling, plotting, etc.
+        Mutually exclusive with `is_log`. If neither `is_lin` or `is_log` is
+        True (i.e., both are None), default behavior is linear (`is_lin` is set
+        to True internally).
 
-    is_log : bool
-        Whether bin spacing is to be equal on a log-scale. Specify along with
-        `domain` to generate `bin_edges` on the fly. On the other hand, if
-        `bin_edges` is passed, the nature of the binning will try to be
-        detected. This fails to detect log binning in some cases (e.g. a single
-        bin, which defaults to linear binning), so pass `is_log=True` in such
-        cases to explicitly set the nature of the binning.
+    is_log : bool or None
+        Binning behavior is logarithmic for purposes of resampling, plotting,
+        etc. Mutually exclusive with `is_lin`. If neither `is_lin` or `is_log`
+        is True (i.e., both are None), default behavior is linear (`is_lin` is
+        set to True internally).
 
-    domain : length-2 sequence of numerical
-        Units may be specified.
+    domain : length-2 sequence of scalars, or None
+        Units may be specified. Required along with `num_bins` if `bin_edges`
+        is not specified (optionally specify `is_log=True` to define the
+        `bin_edges` to be log-uniform).
 
-    num_bins : int
-        Number of bins; specify if `domain` and either `is_lin` or `is_log` are
-        specified, but redundant if `bin_edges` is specified.
+    num_bins : int or None
+        Number of bins. Required along with `domain` if `bin_edges` is not
+        specified (optionally specify `is_log=True` to define the `bin_edges`
+        to be log-uniform).
 
-    bin_names : None or sequence of nonzero-length strings
+    bin_names : sequence of nonzero-length strings, or None
         Strings by which each bin can be identified. This is expected to be
         useful when one needs to easily identify bins by name where the actual
         numerical values can be non-obvious e.g. the PID dimension.
@@ -184,15 +202,13 @@ class OneDimBinning(object):
     Consistency is enforced for all redundant parameters passed to the
     constructor.
 
-    Either `domain` or `bin_edges` must be specified, but not both. `is_lin`
-    and `is_log` are mutually exclusive and *must* be specified if `domain` is
-    provided (along with `num_bins`), but these are optional if `bin_edges` is
-    specified.
+    You can avoid passing `bin_edges` if `num_bins` and `domain` are specified.
+    Specify `is_lin=True` or `is_log=True` to define the binning to be linear
+    or logarithmic (but note that if neither is specified as True, linear
+    behavior is the default).
 
-    In the case that `bin_edges` is provided and defines just a single bin, if
-    this bin should be treated logarithmically (e.g. for oversampling),
-    `is_log=True` must be specified (otherwise, `is_lin` will be assumed to be
-    true).
+    Be careful, though, since bin edges will be defined slightly differently
+    depending on the ``pisa.FTYPE`` defined (PISA_FTYPE environment variable).
 
 
     Examples
@@ -200,26 +216,32 @@ class OneDimBinning(object):
     >>> from pisa import ureg
     >>> from pisa.core.binning import OneDimBinning
     >>> ebins = OneDimBinning(name='energy', is_log=True,
-    ...                       num_bins=40, domain=[1, 80]*ureg.GeV)
+    ...                       num_bins=40, domain=[1, 100]*ureg.GeV)
     >>> print(ebins)
-    OneDimBinning('energy', 40 logarithmically-uniform bins spanning [1.0, 80.0] GeV)
+    OneDimBinning('energy', 40 logarithmically-regular bins spanning [1.0, 100.0] GeV (behavior is logarithmic))
     >>> ebins2 = ebins.to('joule')
     >>> print(ebins2)
-    OneDimBinning('energy', 40 logarithmically-uniform bins spanning [1.60217653e-10, 1.281741224e-08] J)
+    OneDimBinning('energy', 40 logarithmically-regular bins spanning [1.6021766339999998e-10, 1.602176634e-08] J (behavior is logarithmic))
     >>> czbins = OneDimBinning(name='coszen',
     ...                        is_lin=True, num_bins=4, domain=[-1, 0])
     >>> print(czbins)
-    OneDimBinning('coszen', 4 equally-sized bins spanning [-1.0, 0.0])
+    OneDimBinning('coszen', 4 linearly-regular bins spanning [-1.0, 0.0] (behavior is linear))
     >>> czbins2 = OneDimBinning(name='coszen',
     ...                         bin_edges=[-1, -0.75, -0.5, -0.25, 0])
     >>> czbins == czbins2
     True
 
     """
-    # `is_log` and `is_lin` are required for state alongside bin_edges so that
-    # a sub-sampling down to a single bin that is then resampled to > 1 bin
-    # will retain the log/linear property of the original OneDimBinning.
-    _hash_attrs = ('name', 'tex', 'bin_edges', 'is_log', 'is_lin', 'bin_names')
+    # pylint: enable=line-too-long
+
+    # NOTE: Only one of `is_log` or `is_lin` is technically required for state,
+    #   since it's either one or the other, but these used to imply
+    #   log-_uniform_ and linear-_uniform_ behavior. As nothing fundamnetally
+    #   in the behavior is changed by assuming uniformity, and to keep
+    #   backwards compatibility (including for state / hashes), both are kept
+    #   (for now) as "state" variables. -JLL, April, 2020
+
+    _attrs_to_create_new = ('name', 'tex', 'bin_edges', 'is_log', 'is_lin', 'bin_names')
 
     def __init__(self, name, tex=None, bin_edges=None, units=None, domain=None,
                  num_bins=None, is_lin=None, is_log=None, bin_names=None):
@@ -228,7 +250,10 @@ class OneDimBinning(object):
         if not isinstance(name, str):
             raise TypeError('`name` must be a string; got "%s".' %type(name))
         if domain is not None:
-            assert isinstance(domain, Iterable) or (isinstance(domain, ureg.Quantity) and domain.size > 1)
+            assert (
+                isinstance(domain, Iterable)
+                or (isinstance(domain, ureg.Quantity) and domain.size > 1)
+            )
         if bin_names is not None:
             if isinstance(bin_names, str):
                 bin_names = (bin_names,)
@@ -242,11 +267,30 @@ class OneDimBinning(object):
                     ' nonzero-length strings.'
                 )
         if bin_edges is not None:
-            assert isinstance(bin_edges, Iterable) or (isinstance(bin_edges, ureg.Quantity) and bin_edges.size > 1)
-        if is_lin is not None:
-            assert isinstance(is_lin, bool)
-        if is_log is not None:
-            assert isinstance(is_log, bool)
+            assert (
+                isinstance(bin_edges, Iterable)
+                or (isinstance(bin_edges, ureg.Quantity) and bin_edges.size > 1)
+            )
+
+        # Type checking
+        assert is_lin is None or isinstance(is_lin, bool), str(type(is_lin))
+        assert is_log is None or isinstance(is_log, bool), str(type(is_log))
+
+        if is_lin is None and is_log is None:  # neither specified: default to linear
+            is_lin = True
+            is_log = not is_lin
+
+        elif is_lin is not None:  # is_lin is specified but not is_log
+            is_log = not is_lin
+
+        elif is_log is not None:  # is_log is specified but not is_lin
+            is_lin = not is_log
+
+        else:  # both specified: check consistency
+            if is_log == is_lin:
+                raise ValueError(
+                    '`is_log=%s` contradicts `is_lin=%s`' % (is_log, is_lin)
+                )
 
         self._normalize_values = True
         self._name = make_valid_python_name(name)
@@ -263,6 +307,7 @@ class OneDimBinning(object):
         self._weighted_centers = None
         self._edge_magnitudes = None
         self._bin_widths = None
+        self._weighted_bin_widths = None
         self._inbounds_criteria = None
 
         # TODO: define hash based upon conversion of things to base units (such
@@ -356,31 +401,21 @@ class OneDimBinning(object):
         if units is None:
             units = ureg.dimensionless
 
-        # If both `is_log` and `is_lin` are specified, both cannot be true
-        # (but both can be False, in case of irregularly-spaced bins)
-        if is_log and is_lin:
-            raise ValueError('`is_log=%s` contradicts `is_lin=%s`'
-                             % (is_log, is_lin))
-
         if dimensionless_bin_edges is None:
-            if (num_bins is None
-                    or dimensionless_domain is None
-                    or not (is_lin or is_log)):
+            if num_bins is None or dimensionless_domain is None:
                 raise ValueError(
                     'If not specifying bin edges explicitly, `domain` and'
-                    ' `num_bins` must be specified and one of `is_lin` or'
-                    ' `is_log` (but not both) must be `True`.'
+                    ' `num_bins` must be specified (and optionally set'
+                    ' `is_log=True`).'
                 )
             if is_log:
-                is_lin = False
                 dimensionless_bin_edges = np.logspace(
                     np.log10(dimensionless_domain[0]),
                     np.log10(dimensionless_domain[1]),
                     num_bins + 1,
                     dtype=FTYPE,
                 )
-            elif is_lin:
-                is_log = False
+            else:  # is_lin
                 dimensionless_bin_edges = np.linspace(
                     dimensionless_domain[0],
                     dimensionless_domain[1],
@@ -391,22 +426,16 @@ class OneDimBinning(object):
             assert dimensionless_domain[0] == dimensionless_bin_edges[0]
             assert dimensionless_domain[1] == dimensionless_bin_edges[-1]
 
-        if is_lin:
-            if not self.is_bin_spacing_lin(dimensionless_bin_edges):
-                raise ValueError('%s : `is_lin` is True but `bin_edges` are not'
-                                 ' linearly spaced.'%self._name)
-            is_log = False
-        elif is_log:
-            if not self.is_binning_ok(dimensionless_bin_edges, is_log=True):
-                raise ValueError('%s : `is_log` is True but `bin_edges` are not'
-                                 ' logarithmically spaced.'%self._name)
-            is_lin = False
-        else:
-            is_lin = self.is_bin_spacing_lin(dimensionless_bin_edges)
-            try:
-                is_log = self.is_bin_spacing_log(dimensionless_bin_edges)
-            except ValueError:
-                is_log = False
+        # TODO: should we warn a user if logarithmically- or linearly-uniform
+        # bin_edges are passed while is_log, is_lin, or the default (is_lin)
+        # "contradict" this?
+
+        # if not (is_lin or is_log):  # infer is_log/is_lin from spacing if not set
+        #     is_lin = self.is_bin_spacing_lin_uniform(dimensionless_bin_edges)
+        #     try:
+        #         is_log = self.is_bin_spacing_log_uniform(dimensionless_bin_edges)
+        #     except ValueError:
+        #         is_log = False
 
         if dimensionless_domain is None:
             dimensionless_domain = (dimensionless_bin_edges[0],
@@ -442,9 +471,9 @@ class OneDimBinning(object):
                    self._bin_names)
             )
 
-        self._is_lin = is_lin
         self._is_log = is_log
-        self._is_irregular = not (self.is_lin or self.is_log)
+        self._is_lin = not self._is_log
+        self._is_irregular = None
 
     def __repr__(self):
         previous_precision = np.get_printoptions()['precision']
@@ -458,42 +487,48 @@ class OneDimBinning(object):
         return r
 
     def __str__(self):
-        domain_str = (
-            'spanning '
-            + '[%s, %s] %s' %(self.bin_edges[0].magnitude,
-                              self.bin_edges[-1].magnitude,
-                              format(self.units, '~'))
-        ).strip()
+        lin_reg = "linearly-regular "
+        log_reg = "logarithmically-regular "
 
-        edge_str = (
-            'with edges at ['
-            + ', '.join(str(e) for e in self.bin_edges.m)
-            + '] '
-            + format(self.bin_edges.u, '~')
-        ).strip()
-
-        if self.num_bins == 1:
-            descr = '1 bin %s' %edge_str
-            if self.is_lin:
-                descr += ' (behavior is linear)'
-            elif self.is_log:
-                descr += ' (behavior is logarithmic)'
-        elif self.is_lin:
-            descr = '%d equally-sized bins %s' %(self.num_bins, domain_str)
-        elif self.is_log:
-            descr = '%d logarithmically-uniform bins %s' %(self.num_bins,
-                                                           domain_str)
+        regularity = None
+        if self.is_irregular:
+            # Test for regularity in the other domain
+            if self.is_lin and self.is_bin_spacing_log_uniform(self.bin_edges):
+                regularity = log_reg
+            elif self.is_log and self.is_bin_spacing_lin_uniform(self.bin_edges):
+                regularity = lin_reg
         else:
-            descr = '%d irregularly-sized bins %s' %(self.num_bins, edge_str)
+            regularity = log_reg if self.is_log else lin_reg
 
-        if self.bin_names is not None:
-            descr += (', bin_names=['
-                      + ', '.join(("'%s'"%n) for n in self.bin_names)
-                      + ']')
+        if regularity is None or self.num_bins == 1:
+            edges = 'with edges at [{}]{}'.format(
+                ', '.join(str(e) for e in self.bin_edges.m),
+                format(self.bin_edges.u, '~'),
+            ).strip()
+            regularity = ""
+        else:
+            edges = 'spanning [{}, {}] {:s}'.format(
+                self.bin_edges[0].magnitude,
+                self.bin_edges[-1].magnitude,
+                format(self.units, '~'),
+            ).strip()
 
-        return (self.__class__.__name__
-                + "('{name:s}', {descr:s}".format(name=self.name, descr=descr)
-                + ")")
+        plural = '' if self.num_bins == 1 else 's'
+        linlog = 'logarithmic' if self.is_log else 'linear'
+
+        if self.bin_names is None:
+            bnames = ""
+        else:
+            bnames = ', bin_names=[{}]'.format(
+                ', '.join(f"'{n:s}'" for n in self.bin_names)
+            )
+
+        descr = (
+            f'{self.num_bins:d} {regularity:s}bin{plural:s} {edges:s}'
+            f' (behavior is {linlog:s}){bnames:s}'
+        )
+
+        return f"{self.__class__.__name__:s}('{self.name:s}', {descr:s})"
 
     def __pretty__(self, p, cycle):
         """Method used by the `pretty` library for formatting"""
@@ -800,17 +835,54 @@ class OneDimBinning(object):
 
     @property
     def is_lin(self):
-        """bool : Whether bin spacing is linearly uniform"""
+        """bool : Whether binning is to be treated in a linear space"""
         return self._is_lin
+
+    @is_lin.setter
+    def is_lin(self, b):
+        """bool"""
+        assert isinstance(b, bool)
+        if b != self._is_lin:
+            # NOTE: use tuple unpacking to help ensure state is consistent
+            (
+                self._is_lin,
+                self._is_log,
+                self._is_irregular,
+                self._weighted_centers,
+                self._weighted_bin_widths,
+            ) = (b, not b, None, None, None)
 
     @property
     def is_log(self):
-        """bool : Whether bin spacing is logarithmically uniform"""
+        """bool : Whether binning is to be treated in a log space"""
         return self._is_log
+
+    @is_log.setter
+    def is_log(self, b):
+        """bool"""
+        assert isinstance(b, bool)
+        if b != self._is_log:
+            # NOTE: use tuple unpacking to help ensure state is consistent
+            (
+                self._is_log,
+                self._is_lin,
+                self._is_irregular,
+                self._weighted_centers,
+                self._weighted_bin_widths,
+            ) = (b, not b, None, None, None)
 
     @property
     def is_irregular(self):
-        """bool : True if bin spacing is neither linear nor logarithmic."""
+        """bool : True if bin spacing is not unform in the space defined (i.e.,
+        NOT linearly-uniform if `is_lin` or NOT logarithmically-uniform if
+        `is_log`)."""
+        if self._is_irregular is None:
+            if self.num_bins == 1:
+                self._is_irregular = False
+            elif self.is_log:
+                self._is_irregular = not self.is_bin_spacing_log_uniform(self.bin_edges)
+            else:  # self.is_lin
+                self._is_irregular = not self.is_bin_spacing_lin_uniform(self.bin_edges)
         return self._is_irregular
 
     @property
@@ -902,6 +974,18 @@ class OneDimBinning(object):
         return self._bin_widths
 
     @property
+    def weighted_bin_widths(self):
+        """Absolute widths of bins."""
+        if self._weighted_bin_widths is None:
+            if self.is_log:
+                self._weighted_bin_widths = (
+                    np.log(self.edge_magnitudes[1:] / self.edge_magnitudes[:-1])
+                ) * ureg.dimensionless
+            else:
+                self._weighted_bin_widths = self.bin_widths
+        return self._weighted_bin_widths
+
+    @property
     def inbounds_criteria(self):
         """Return string boolean criteria indicating e.g. an event falls within
         the limits of the defined binning.
@@ -955,7 +1039,7 @@ class OneDimBinning(object):
         return {}
 
     @staticmethod
-    def is_bin_spacing_log(bin_edges):
+    def is_bin_spacing_log_uniform(bin_edges):
         """Check if `bin_edges` define a logarithmically-uniform bin spacing.
 
         Parameters
@@ -984,12 +1068,12 @@ class OneDimBinning(object):
                 log_spacing = bin_edges[1:] / bin_edges[:-1]
             except (AssertionError, FloatingPointError, ZeroDivisionError):
                 return False
-        if np.allclose(log_spacing, log_spacing[0]):
+        if np.allclose(log_spacing, log_spacing[0], **ALLCLOSE_KW):
             return True
         return False
 
     @staticmethod
-    def is_bin_spacing_lin(bin_edges):
+    def is_bin_spacing_lin_uniform(bin_edges):
         """Check if `bin_edges` define a linearly-uniform bin spacing.
 
         Parameters
@@ -1020,22 +1104,19 @@ class OneDimBinning(object):
         if len(bin_edges) == 2:
             return True
         lin_spacing = np.diff(bin_edges)
-        if np.allclose(lin_spacing, lin_spacing[0]):
+        if np.allclose(lin_spacing, lin_spacing[0], **ALLCLOSE_KW):
             return True
         return False
 
     @staticmethod
-    def is_binning_ok(bin_edges, is_log):
-        """Check monotonicity and that bin spacing is logarithmically uniform
-        (if `is_log == True`)
+    def is_binning_ok(bin_edges):
+        """Check that there are 2 or more bin edges, and that they are
+        monotonically increasing.
 
         Parameters
         ----------
         bin_edges : sequence
             Bin edges to check the validity of
-
-        is_log : bool
-            Whether binning is expected to be logarithmically uniform.
 
         Returns
         -------
@@ -1048,10 +1129,6 @@ class OneDimBinning(object):
         # Bin edges must be monotonic and strictly increasing
         if np.any(np.diff(bin_edges) <= 0):
             return False
-        # Log binning must have equal widths in log-space (but a single bin
-        # has no "spacing" or stride, so no need to check)
-        if is_log and len(bin_edges) > 2:
-            return OneDimBinning.is_bin_spacing_log(bin_edges)
         return True
 
     # TODO: as of now, only downsampling is allowed. Is this reasonable?
@@ -1079,10 +1156,6 @@ class OneDimBinning(object):
 
         if self.units.dimensionality != other.units.dimensionality:
             logging.trace('Incompatible units')
-            return False
-
-        if self.bin_names != other.bin_names:
-            logging.trace('Bin names do not match')
             return False
 
         # TODO: should we force normalization?
@@ -1153,7 +1226,7 @@ class OneDimBinning(object):
 
         """
         if factor < 1 or factor != int(factor):
-            raise ValueError('`factor` must be integer >= 0; got %s' %factor)
+            raise ValueError('`factor` must be integer >= 1; got %s' %factor)
 
         factor = int(factor)
 
@@ -1161,25 +1234,28 @@ class OneDimBinning(object):
             return self
 
         if self.is_log:
-            bin_edges = np.logspace(np.log10(self.domain[0].m),
-                                    np.log10(self.domain[-1].m),
-                                    self.num_bins * factor + 1)
-        elif self.is_lin:
-            bin_edges = np.linspace(self.domain[0].m, self.domain[-1].m,
-                                    self.num_bins * factor + 1)
-        else: # irregularly-spaced
-            bin_edges = []
-            for lower, upper in zip(self.edge_magnitudes[:-1],
-                                     self.edge_magnitudes[1:]):
-                this_bin_new_edges = np.linspace(lower, upper, factor+1)
-                # Exclude the last edge, as this will be first edge for the
-                # next divided bin
-                bin_edges.extend(this_bin_new_edges[:-1])
-            # Final bin needs final edge
-            bin_edges.append(this_bin_new_edges[-1])
+            spacing_func = np.geomspace
+        else:  # is_lin
+            spacing_func = np.linspace
 
-        return {'bin_edges': np.array(bin_edges)*self.units,
-                'bin_names': None}
+        old_bin_edges = self.edge_magnitudes
+        new_bin_edges = []
+        for old_lower, old_upper in zip(old_bin_edges[:-1], old_bin_edges[1:]):
+            thisbin_new_edges = spacing_func(old_lower, old_upper, factor + 1)
+
+            # Use the original lower bin edge to avoid precision issues with
+            # its version created by `spacing_func`
+            new_bin_edges.append(old_lower)
+
+            # Add the new bin edges we created in between lower and upper; we
+            # omit the upper bin edge because it is the first bin edge of the
+            # next bin
+            new_bin_edges.extend(thisbin_new_edges[1:-1])
+
+        # Include the uppermost bin edge from original binning
+        new_bin_edges.append(old_upper)
+
+        return {'bin_edges': new_bin_edges * self.units, 'bin_names': None}
 
     # TODO: do something cute with bin names, if they exist?
     @_new_obj
@@ -1249,8 +1325,12 @@ class OneDimBinning(object):
 
         # Convert already-defined quantities
         attrs = [
-            '_bin_edges', '_domain', '_midpoints', '_weighted_centers',
-            '_bin_widths', '_edge_magnitudes'
+            '_bin_edges',
+            '_domain',
+            '_midpoints',
+            '_weighted_centers',
+            '_bin_widths',
+            '_edge_magnitudes',
         ]
         for attr in attrs:
             val = getattr(self, attr)
@@ -1391,7 +1471,8 @@ class OneDimBinning(object):
 
 
 class MultiDimBinning(object):
-    """
+    # pylint: disable=line-too-long
+    r"""
     Multi-dimensional binning object. This can contain one or more
     OneDimBinning objects, and all subsequent operations (e.g. slicing) will
     act on these in the order they are supplied.
@@ -1419,26 +1500,27 @@ class MultiDimBinning(object):
     >>> from pisa import ureg
     >>> from pisa.core.binning import MultiDimBinning, OneDimBinning
     >>> ebins = OneDimBinning(name='energy', is_log=True,
-    ...                       num_bins=40, domain=[1, 80]*ureg.GeV)
+    ...                       num_bins=40, domain=[1, 100]*ureg.GeV)
     >>> czbins = OneDimBinning(name='coszen',
     ...                        is_lin=True, num_bins=4, domain=[-1, 0])
     >>> mdb = ebins * czbins
     >>> print(mdb)
     MultiDimBinning(
-            OneDimBinning('energy', 40 logarithmically-uniform bins spanning [1.0, 80.0] GeV),
-            OneDimBinning('coszen', 4 equally-sized bins spanning [-1.0, 0.0])
+        OneDimBinning('energy', 40 logarithmically-regular bins spanning [1.0, 100.0] GeV (behavior is logarithmic)),
+        OneDimBinning('coszen', 4 linearly-regular bins spanning [-1.0, 0.0] (behavior is linear))
     )
+
     >>> print(mdb.energy)
-    OneDimBinning(name=OneDimBinning('energy', 40 logarithmically-uniform bins spanning [1.0, 80.0] GeV))
+    OneDimBinning('energy', 40 logarithmically-regular bins spanning [1.0, 100.0] GeV (behavior is logarithmic))
     >>> print(mdb[0, 0])
     MultiDimBinning(
-            OneDimBinning('energy', 1 bin with edges at [1.0, 1.11577660129] GeV (behavior is logarithmic)),
-            OneDimBinning('coszen', 1 bin with edges at [-1.0, -0.75] (behavior is linear))
+        OneDimBinning('energy', 1 logarithmically-regular bin with edges at [1.0, 1.1220184543019633]GeV (behavior is logarithmic)),
+        OneDimBinning('coszen', 1 linearly-regular bin with edges at [-1.0, -0.75] (behavior is linear))
     )
     >>> print(mdb.slice(energy=2))
     MultiDimBinning(
-            OneDimBinning('energy', 1 bin with edges at [1.24495742399, 1.38909436329] GeV (behavior is logarithmic)),
-            OneDimBinning('coszen', 4 equally-sized bins spanning [-1.0, 0.0])
+        OneDimBinning('energy', 1 logarithmically-regular bin with edges at [1.2589254117941673, 1.4125375446227544]GeV (behavior is logarithmic)),
+        OneDimBinning('coszen', 4 linearly-regular bins spanning [-1.0, 0.0] (behavior is linear))
     )
     >>> smaller_binning = mdb[0:2, 0:3]
     >>> map = smaller_binning.ones(name='my_map')
@@ -1449,13 +1531,14 @@ class MultiDimBinning(object):
         hash=None,
         parent_indexer=None,
         binning=MultiDimBinning(
-                OneDimBinning('energy', 2 logarithmically-uniform bins spanning [1.0, 1.24495742399] GeV),
-                OneDimBinning('coszen', 3 equally-sized bins spanning [-1.0, -0.25])
-        ),
-        hist=array([[ 1.,  1.,  1.],
-                    [ 1.,  1.,  1.]]))
+        OneDimBinning('energy', 2 logarithmically-regular bins spanning [1.0, 1.2589254117941673] GeV (behavior is logarithmic)),
+        OneDimBinning('coszen', 3 linearly-regular bins spanning [-1.0, -0.25] (behavior is linear))
+    ),
+        hist=array([[1., 1., 1.],
+           [1., 1., 1.]]))
 
     """
+    # pylint: enable=line-too-long
     def __init__(self, dimensions):
         self.__map_class = None
 
@@ -1535,7 +1618,7 @@ class MultiDimBinning(object):
     @property
     def _map_class(self):
         if self.__map_class is None:
-            from pisa.core.map import Map  # pylint: disable=import-outside-toplevel
+            from pisa.core.map import Map  # pylint: disable=wrong-import-position
             self.__map_class = Map
         return self.__map_class
 
@@ -1939,7 +2022,7 @@ class MultiDimBinning(object):
         >>> x = np.random.RandomState(0).uniform(size=mdb.shape)
         >>> indexer = mdb.indexer(energy=slice(0, 5), coszen=1)
         >>> print(x[indexer])
-        [ 0.71518937  0.64589411  0.38344152  0.92559664  0.83261985]
+        [0.71518937 0.64589411 0.38344152 0.92559664 0.83261985]
 
         """
         indexer = []
@@ -2272,27 +2355,28 @@ class MultiDimBinning(object):
 
         >>> print(mdb.oversample(2))
         MultiDimBinning(
-                OneDimBinning('x', 4 equally-sized bins spanning [0.0, 2.0]),
-                OneDimBinning('y', 2 equally-sized bins spanning [0.0, 20.0])
+            OneDimBinning('x', 4 linearly-regular bins spanning [0.0, 2.0] (behavior is linear)),
+            OneDimBinning('y', 2 linearly-regular bins spanning [0.0, 20.0] (behavior is linear))
         )
         >>> print(mdb.oversample(2, 2))
         MultiDimBinning(
-                OneDimBinning('x', 4 equally-sized bins spanning [0.0, 2.0]),
-                OneDimBinning('y', 2 equally-sized bins spanning [0.0, 20.0])
+            OneDimBinning('x', 4 linearly-regular bins spanning [0.0, 2.0] (behavior is linear)),
+            OneDimBinning('y', 2 linearly-regular bins spanning [0.0, 20.0] (behavior is linear))
         )
         >>> print(mdb.oversample(x=2, y=2))
         MultiDimBinning(
-                OneDimBinning('x', 4 equally-sized bins spanning [0.0, 2.0]),
-                OneDimBinning('y', 2 equally-sized bins spanning [0.0, 20.0])
+            OneDimBinning('x', 4 linearly-regular bins spanning [0.0, 2.0] (behavior is linear)),
+            OneDimBinning('y', 2 linearly-regular bins spanning [0.0, 20.0] (behavior is linear))
         )
 
         But with kwargs, you can specify only the dimensions you want to
         oversample, and the other dimension(s) remain unchanged:
 
         >>> print(mdb.oversample(y=5))
-        MultiDimBinning([
-                OneDimBinning('x', 2 equally-sized bins spanning [0, 2])),
-                OneDimBinning('y', 5 equally-sized bins spanning [0.0, 20.0]))])
+        MultiDimBinning(
+            OneDimBinning('x', 2 linearly-regular bins spanning [0.0, 2.0] (behavior is linear)),
+            OneDimBinning('y', 5 linearly-regular bins spanning [0.0, 20.0] (behavior is linear))
+        )
 
         """
         if args:
@@ -2461,8 +2545,9 @@ class MultiDimBinning(object):
         Parameters
         ----------
         entity : string
-            One of 'midpoints', 'weighted_centers', 'bin_edges', or
-            'bin_widths'.
+            Can be any attribute of OneDimBinning that returns a 1D array with
+            units. E.g., one of 'midpoints', 'weighted_centers', 'bin_edges',
+            'bin_widths', or 'weighted_bin_widths'
 
         attach_units : bool
             Whether to attach units to the result (can save computation time by
@@ -2480,25 +2565,32 @@ class MultiDimBinning(object):
 
         """
         entity = entity.lower().strip()
-        if entity == 'midpoints':
-            arrays = tuple(d.midpoints.m for d in self.iterdims())
-        elif entity == 'weighted_centers':
-            arrays = tuple(d.weighted_centers.m for d in self.iterdims())
-        elif entity == 'bin_edges':
-            arrays = tuple(d.bin_edges.m for d in self.iterdims())
-        elif entity == 'bin_widths':
-            arrays = tuple(d.bin_widths.m for d in self.iterdims())
-        else:
-            raise ValueError('Unrecognized `entity`: "%s"' % entity)
+
+        arrays = []
+        units = []
+        for dim in self.iterdims():
+            try:
+                quantity_array = getattr(dim, entity)
+            except AttributeError:
+                logging.error(
+                    "Dimension %s does not contain entity '%s'", dim.name, entity
+                )
+                raise
+            if attach_units:
+                units.append(quantity_array.units)
+            arrays.append(quantity_array.magnitude)
 
         # NOTE: numpy versions prior to 1.13.0, meshgrid returned float64 even
         # if inputs are float32 to mesghrid. Use `astype` as a fix. Note that
-        # `astype` creates a copy of the array even if dtype of input is the
-        # same, copy=False is ok in the argument to meshgrid.
+        # since `astype` already creates a copy of the array even if dtype of
+        # input is the same, setting `copy` to False is ok in the argument to
+        # meshgrid; i.e., if a user modifies an element of the returned array,
+        # it should not affect the original `entity` from which the meshgrid
+        # was generated.
         mg = [a.astype(FTYPE) for a in np.meshgrid(*arrays, indexing='ij', copy=False)]
 
         if attach_units:
-            return [m*dim.units for m, dim in zip(mg, self.iterdims())]
+            return [m*u for m, u in zip(mg, units)]
 
         return mg
 
@@ -2519,11 +2611,36 @@ class MultiDimBinning(object):
 
         """
         meshgrid = self.meshgrid(entity='bin_widths', attach_units=False)
-        volumes = reduce(lambda x, y: x*y, meshgrid)
+        volumes = reduce(mul, meshgrid)
         if attach_units:
+            volumes *= reduce(mul, (ureg(str(d.units)) for d in self.iterdims()))
+        return volumes
+
+    def weighted_bin_volumes(self, attach_units=True):
+        """Bin "volumes" defined in `num_dims`-dimensions, but unlike
+        `bin_volumes`, the volume is evaluated in the space of the binning.
+        E.g., logarithmic bins have `weighted_bin_volumes` of equal size in
+        log-space.
+
+        Parameters
+        ----------
+        attach_units : bool
+            Whether to attach pint units to the resulting array
+
+        Returns
+        -------
+        volumes : array
+            Bin volumes
+
+        """
+        meshgrid = self.meshgrid(entity='weighted_bin_widths', attach_units=False)
+        volumes = reduce(mul, meshgrid)
+        if attach_units:
+            # NOTE we use the units from `weighted_bin_widths` because these
+            # can be different from those of the dimension
             volumes *= reduce(
-                lambda x, y: x*y,
-                (ureg(str(d.units)) for d in self.iterdims())
+                mul,
+                (ureg(str(d.weighted_bin_widths.units)) for d in self.iterdims()),
             )
         return volumes
 
@@ -2707,9 +2824,11 @@ class MultiDimBinning(object):
         Parameters
         ----------
         index : str, int, len-N-sequence of ints, or len-N-sequence of slices
-            If str is passed: Return the binning corresponding to the name
+            If str is passed: Return the binning corresponding to the named
+            dimension
+
             If an integer is passed:
-              * If num_dims is 1, `index` indexes into the bins of the sole
+              * If num_dims is 4, `index` indexes into the bins of the sole
                 OneDimBinning. The bin is returned.
               * If num_dims > 1, `index` indexes which contained OneDimBinning
                 object to return.
@@ -2766,7 +2885,7 @@ class MultiDimBinning(object):
 
 def test_OneDimBinning():
     """Unit tests for OneDimBinning class"""
-    # pylint: disable=line-too-long, import-outside-toplevel
+    # pylint: disable=line-too-long, wrong-import-position
     import pickle
     import os
     import shutil
@@ -2791,7 +2910,49 @@ def test_OneDimBinning():
     assert b1.basename_binning == b1.basename_binning
     assert b1.basename_binning == b3.basename_binning
     assert b1.basename_binning != b2.basename_binning
-
+    
+    # Oversampling/downsampling
+    b1_over = b1.oversample(2)
+    assert b1_over.is_bin_spacing_log_uniform(b1_over.bin_edges)
+    b1_down = b1.downsample(2)
+    assert b1_down.is_bin_spacing_log_uniform(b1_down.bin_edges)
+    assert b1_down.is_compat(b1)
+    assert b1.is_compat(b1_over)
+    assert b1_down.is_compat(b1_over)
+    
+    # Bin width consistency
+    assert np.isclose(
+        np.sum(b1_over.bin_widths.m),
+        np.sum(b1.bin_widths.m),
+        **ALLCLOSE_KW,
+    )
+    assert np.isclose(
+        np.sum(b1_down.bin_widths.m),
+        np.sum(b1.bin_widths.m),
+        **ALLCLOSE_KW,
+    )
+    assert np.isclose(
+        np.sum(b1_over.bin_widths.m),
+        np.sum(b1_down.bin_widths.m),
+        **ALLCLOSE_KW,
+    )
+    # Weighted bin widths must also sum up to the same total width
+    assert np.isclose(
+        np.sum(b1_over.weighted_bin_widths.m),
+        np.sum(b1.weighted_bin_widths.m),
+        **ALLCLOSE_KW,
+    )
+    assert np.isclose(
+        np.sum(b1_down.weighted_bin_widths.m),
+        np.sum(b1.weighted_bin_widths.m),
+        **ALLCLOSE_KW,
+    )
+    assert np.isclose(
+        np.sum(b1_over.weighted_bin_widths.m),
+        np.sum(b1_down.weighted_bin_widths.m),
+        **ALLCLOSE_KW,
+    )
+    
     logging.debug('len(b1): %s', len(b1))
     logging.debug('b1: %s', b1)
     logging.debug('b2: %s', b2)
@@ -2903,7 +3064,7 @@ def test_OneDimBinning():
 
 def test_MultiDimBinning():
     """Unit tests for MultiDimBinning class"""
-    # pylint: disable=import-outside-toplevel
+    # pylint: disable=wrong-import-position
     import pickle
     import os
     import shutil
@@ -2931,6 +3092,25 @@ def test_MultiDimBinning():
     _ = mdb[0:, 0:]
     _ = mdb[0, 0:]
     _ = mdb[-1, -1]
+    # TODO: following should work as in Numpy:
+    # assert mdb[:] == mdb
+    # assert mdb[0] == b1
+    # assert mdb[1] == b2
+    assert mdb[:, :] == mdb
+
+    # Index by dim names
+    assert mdb["energy"] == b1
+    assert mdb["coszen"] == b2
+    try:
+        mdb["nonexistent"]
+    except Exception:
+        pass
+    else:
+        raise Exception('non-existent name should raise exception')
+
+    # Index by dim number
+    assert MultiDimBinning([b1])[0] == MultiDimBinning([b1[0]])
+
     logging.debug('%s', mdb.energy)
     logging.debug('copy(mdb): %s', copy(mdb))
     logging.debug('deepcopy(mdb): %s', deepcopy(mdb))
@@ -2964,10 +3144,12 @@ def test_MultiDimBinning():
 
     assert binning.oversample(10, 1).shape == (400, 20)
     assert binning.oversample(1, 3).shape == (40, 60)
-
+    assert binning.downsample(4, 2).shape == (10, 10)
+    
     assert binning.oversample(coszen=10, energy=2).shape == (80, 200)
     assert binning.oversample(1, 1) == binning
 
+    assert binning.to('MeV', '')['energy'].units == ureg.MeV
     assert binning.to('MeV', '') == binning, 'converted=%s\norig=%s' \
             %(binning.to('MeV', ''), binning)
     assert binning.to('MeV', '').hash == binning.hash
@@ -2975,12 +3157,35 @@ def test_MultiDimBinning():
     _ = binning.meshgrid(entity='bin_edges')
     _ = binning.meshgrid(entity='weighted_centers')
     _ = binning.meshgrid(entity='midpoints')
+    _ = binning.meshgrid(entity='bin_widths')
+    _ = binning.meshgrid(entity='weighted_bin_widths')
     _ = binning.bin_volumes(attach_units=False)
     _ = binning.bin_volumes(attach_units=True)
+    _ = binning.weighted_bin_volumes(attach_units=False)
+    _ = binning.weighted_bin_volumes(attach_units=True)
     binning.to('MeV', None)
     binning.to('MeV', '')
     binning.to(ureg.joule, '')
-
+    
+    oversampled = binning.oversample(10, 3)
+    assert oversampled.shape == (400, 60)
+    downsampled = binning.downsample(4, 2)
+    assert downsampled.shape == (10, 10)
+    
+    over_vols = oversampled.bin_volumes(attach_units=False)
+    down_vols = downsampled.bin_volumes(attach_units=False)
+    norm_vols = binning.bin_volumes(attach_units=False)
+    assert np.isclose(np.sum(over_vols), np.sum(norm_vols), **ALLCLOSE_KW)
+    assert np.isclose(np.sum(down_vols), np.sum(norm_vols), **ALLCLOSE_KW)
+    assert np.isclose(np.sum(down_vols), np.sum(over_vols), **ALLCLOSE_KW)
+    
+    over_vols = oversampled.weighted_bin_volumes(attach_units=False)
+    down_vols = downsampled.weighted_bin_volumes(attach_units=False)
+    norm_vols = binning.weighted_bin_volumes(attach_units=False)
+    assert np.isclose(np.sum(over_vols), np.sum(norm_vols), **ALLCLOSE_KW)
+    assert np.isclose(np.sum(down_vols), np.sum(norm_vols), **ALLCLOSE_KW)
+    assert np.isclose(np.sum(down_vols), np.sum(over_vols), **ALLCLOSE_KW)
+    
     testdir = tempfile.mkdtemp()
     try:
         b_file = os.path.join(testdir, 'multi_dim_binning.json')

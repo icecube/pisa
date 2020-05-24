@@ -107,6 +107,11 @@ def get_separate_t23_octant_params(hypo_maker, inflection_point=45.0*ureg.deg,
 
     inflection_point : quantity
         Point distinguishing between the two octants, e.g. 45 degrees
+        (though it can be used for any arbitrary inflection point)
+
+    target_tolerance : None or quantity
+        Target for deviation of fit starting point from inflection point
+        (e.g., to start clearly in one over the other octant)
 
     Returns
     -------
@@ -150,21 +155,26 @@ def get_separate_t23_octant_params(hypo_maker, inflection_point=45.0*ureg.deg,
 
     # If theta23 is very close to maximal (e.g. the transition between octants)
     # offset it slightly to be clearly in one octant (note that fit can still
-    # move the value back to maximal)
+    # move the value back to maximal).  The reason for this is that
+    # otherwise checks on the parameter bounds (which include a margin for
+    # minimizer tolerance) can throw an exception.
     if target_tolerance is not None:
-        # TODO: is this really necessary?
         if np.isclose(
             theta23.value.m_as("degree"), inflection_point.m_as("degree"),
             atol=target_tolerance.m_as("degree")
         ):
             if theta23.value > inflection_point:
                 tgt_val = inflection_point + target_tolerance
+                # Set the value to the smaller among: target and upper bound.
+                # If upper bound is smaller, use a 1% safety margin.
                 theta23.value = min(
                     (tgt_val).to(theta23.units),
                     max(theta23.range) - 0.01 * (max(theta23.range) - inflection_point.to(theta23.units))
                 )
             else:
                 tgt_val = inflection_point - target_tolerance
+                # Set the value to the larger among: target and lower bound.
+                # If lower bound is larger, use a 1% safety margin.
                 theta23.value = max(
                     (tgt_val).to(theta23.units),
                     min(theta23.range) + 0.01 * (-min(theta23.range) + inflection_point.to(theta23.units))
@@ -1396,7 +1406,6 @@ class Analysis(object):
         pull_counter = Counter()
 
         # main algorithm: calculate fisher matrix and parameter pulls
-        # TODO: check this is indeed generated at the fiducial model
         test_vals = {pname: pull_settings['values'][i] for i, pname in
                      enumerate(pull_settings['params'])}
 

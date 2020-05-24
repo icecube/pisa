@@ -11,6 +11,7 @@ with protons and neutrons.
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
+import math
 
 from numba import guvectorize
 
@@ -23,6 +24,21 @@ from pisa.utils.numba_tools import WHERE
 from pisa.utils import vectorizer
 from pisa.utils.resources import find_resource
 
+__author__ = 'A. Trettin'
+
+__license__ = '''Copyright (c) 2020, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.'''
 
 FLAV_BAR_STR_MAPPING = {
     (0, -1): "e_bar",
@@ -133,10 +149,14 @@ class pi_earth_absorption(PiStage):
                                              'nuebar_nc', 'numubar_nc', 'nutaubar_nc'])
 
         for container in self.data:
-            self.layers.calcLayers(container['true_coszen'].get(WHERE))
+            self.layers.calcLayers(container['true_coszen'].get('host'))
             container['densities'] = self.layers.density.reshape((container.size, self.layers.max_layers))
             container['distances'] = self.layers.distance.reshape((container.size, self.layers.max_layers))
             container['rho_int'] = np.empty((container.size), dtype=FTYPE)
+            
+            container['densities'].mark_changed(WHERE)
+            container['distances'].mark_changed(WHERE)
+            container['rho_int'].mark_changed(WHERE)
         # don't forget to un-link everything again
         self.data.unlink_containers()
 
@@ -168,6 +188,7 @@ class pi_earth_absorption(PiStage):
                                      container['densities'].get(WHERE),
                                      out=container['rho_int'].get(WHERE)
                                     )
+            container['rho_int'].mark_changed(WHERE)
         # don't forget to un-link everything again
         self.data.unlink_containers()
 
@@ -185,6 +206,7 @@ class pi_earth_absorption(PiStage):
                                                              container['nubar'],
                                                              container['true_energy'].get(WHERE)
                                                             )
+            container['xsection'].mark_changed(WHERE)
             calculate_survivalprob(container['rho_int'].get(WHERE),
                                    container['xsection'].get(WHERE),
                                    out=container['survival_prob'].get(WHERE)
@@ -230,8 +252,10 @@ def calculate_integrated_rho(layer_dists, layer_densities, out):
         Result is stored here
 
     """
-    out[0] = np.dot(layer_dists, layer_densities)*1e5 #distances are converted from km to cm
-
+    out[0] = 0
+    for i in range(len(layer_dists)):
+        out[0] += layer_dists[i]*layer_densities[i]
+    out[0] *= 1e5  # distances are converted from km to cm
 
 @guvectorize(signatures, '(),()->()', target=TARGET)
 def calculate_survivalprob(int_rho, xsection, out):
@@ -254,5 +278,5 @@ def calculate_survivalprob(int_rho, xsection, out):
     # water column, where water has the density of 1 g/cm^3.
     # So the units work out to:
     # int_rho [cm] * 1 [g/cm^3] * xsection [cm^2] * 1 [mol/g] * Na [1/mol] = [ 1 ] (all units cancel)
-    out[0] = np.exp(-int_rho[0]*xsection[0]*Na)
+    out[0] = math.exp(-int_rho[0]*xsection[0]*Na)
 
