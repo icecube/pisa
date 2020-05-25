@@ -782,6 +782,21 @@ class AnalysisScript(object):
         parser = ArgumentParser(
             add_help=False
         )
+        # simple fit doesn't use HypoTesting, so explicitly required data and
+        # h0 pipeline settings
+        parser.add_argument(
+            '--data-pipeline',
+            type=str, action='append', required=True, metavar='PIPELINE_CFG',
+            help='''Settings for the generation of "data" distributions; repeat
+            this argument to specify multiple pipelines.'''
+        )
+        parser.add_argument(
+            '--h0-pipeline', required=True,
+            type=str, action='append', metavar='PIPELINE_CFG',
+            help='''Settings for the generation of hypothesis h0
+            distributions; repeat this argument to specify multiple
+            pipelines.'''
+        )
         parser.add_argument(
             '--fit-settings',
             type=str, metavar='FIT_CFG', required=True,
@@ -907,9 +922,8 @@ class AnalysisScript(object):
 
     def command_simple_fit(self):
         parser = ArgumentParser(
-            description='Simple fit',
-            parents=[self.data_pipeline_parser, self.h0_pipeline_parser,
-                     self.min_parser, self.metric_parser, self.simple_fit_parser,
+            description='Simple fit of a hypo pipeline to a data pipeline.',
+            parents=[self.simple_fit_parser, self.metric_parser,
                      self.verbosity_parser]
         )
         return parser

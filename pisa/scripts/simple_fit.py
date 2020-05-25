@@ -43,7 +43,7 @@ units = ureg # pylint: disable=invalid-name
 
 def simple_fit(init_args_d, return_outputs=False):
     """Load the analysis class and use it to do a simple fit of some
-    some hypo parameters to pseudo(sic!)-data
+    some hypo parameters to (pseudo-)data
     """
 
     # only care about h0_maker and data_maker
@@ -59,23 +59,22 @@ def simple_fit(init_args_d, return_outputs=False):
 
     analysis = Analysis()
 
-    fit_res = analysis.fit_hypo(
+    fit_res, _ = analysis.fit_hypo(
         data_dist=data_dist,
         hypo_maker=hypo_maker,
         hypo_param_selections=hypo_param_selections,
         metric=metric,
         other_metrics=other_metrics,
         fit_settings=fit_settings
-    )[0][0]
-
+    )
 
     serialize = ['metric', 'metric_val', 'params', 'fit_time',
-                 'detailed_metric_info', 'fit_metadata', #'fit_history',
-                 'num_distributions_generated', 'hypo_asimov_dist',
+                 'detailed_metric_info', 'num_distributions_generated',
+                 #'fit_metadata', 'fit_history', 'hypo_asimov_dist',
                  ]
 
     fit_info = OrderedDict()
-    for k, v in fit_res.iteritems():
+    for k, v in fit_res.items():
         if k not in serialize:
             continue
         if k == 'params':
@@ -83,13 +82,6 @@ def simple_fit(init_args_d, return_outputs=False):
             for param in v: # record *all* hypo parameter values
                 d[param.name] = str(param.value)
             v = d
-        if k == 'fit_metadata':
-            for k2 in ['hess_inv']:
-                if k2 in v:
-                    try:
-                        v[k2] = v[k2].todense()
-                    except AttributeError:
-                        v[k2] = v[k2]
         if isinstance(v, ureg.Quantity):
             v = str(v)
         fit_info[k] = v
