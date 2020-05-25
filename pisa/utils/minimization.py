@@ -467,7 +467,8 @@ def test_minimizer_x0_bounds(
         x0, bounds = minimizer_x0_bounds(
             free_params=param_set.free,
             minimizer_settings=None,
-            randomize_params=randomize_params
+            randomize_params=randomize_params,
+            random_state=1
         )
     except KeyError:
         # the above should fail with a KeyError, since p2 is fixed
@@ -482,7 +483,8 @@ def test_minimizer_x0_bounds(
         x0, bounds = minimizer_x0_bounds(
             free_params=param_set.free,
             minimizer_settings=None,
-            randomize_params=randomize_params
+            randomize_params=randomize_params,
+            random_state=1
         )
         for param, x0_val in zip(param_set.free, x0):
             if param.name in randomize_params:

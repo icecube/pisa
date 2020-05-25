@@ -2214,10 +2214,12 @@ class HypoTesting(Analysis):
         can allow the minimiser to correct for this by specifying fit_wrong. If
         this is false then the hypothesis maker will be fixed to the baseline
         in this parameter i.e. a systematically wrong hypothesis to what is
-        injected. As with the N-1 test below it is assumed that this function
-        exists inside of a loop over the parameters in the data_maker and this
-        is for the systematic defined in data_param. This function also expects
-        h0_name, h1_name and data_name so that the labels can be redefined to
+        injected (not that the hypothesis is also systematically wrong in
+        case fit_wrong is specified for a parameter with a prior). As with the
+        N-1 test below it is assumed that this function exists inside of a loop
+        over the parameters in the data_maker and this is for the systematic
+        defined in data_param. This function also expects h0_name, h1_name
+        and data_name so that the labels can be redefined to
         make everything unique.
 
         Parameters
@@ -2237,8 +2239,7 @@ class HypoTesting(Analysis):
             Same as for HypoTesting.
 
         """
-        # TODO: should this be here? Don't we have this exact same logic
-        # somewhere else?
+        # TODO: should this perhaps live somewhere else?
         def vary_param(data_param, tgt, direction):
             '''Helper function for setting the value of a parameter taking
             into account its allowed range.
@@ -2327,15 +2328,6 @@ class HypoTesting(Analysis):
                     h1_param.is_fixed = True
         # Set up labels so that each file comes out unique
         if fit_wrong:
-            # remove priors so we can actually reproduce the injected value
-            for h0_param in self.h0_maker.params.free:
-                if h0_param.name == data_param.name:
-                    h0_param.prior = None
-                    logging.warn('Removed prior of "%s" in h0.' % data_param.name)
-            for h1_param in self.h1_maker.params.free:
-                if h1_param.name == data_param.name:
-                    h1_param.prior = None
-                    logging.warn('Removed prior of "%s" in h1.' % data_param.name)
             self.labels = Labels(
                 h0_name=h0_name,
                 h1_name=h1_name,
