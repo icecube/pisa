@@ -33,8 +33,9 @@ from pisa.analysis.analysis import Analysis
 
 # debug tools
 from pisa.utils.log import logging
-#from pisa.utils.log import set_verbosity, Levels
-# set_verbosity(Levels.TRACE)
+from pisa.utils.profiler import line_profile
+from pisa.utils.log import set_verbosity, Levels
+#set_verbosity(Levels.TRACE)
 
 ##################################################################################
 
@@ -261,7 +262,7 @@ def plot_llh_scans(metrics=[], results=None, interactive=False, output_pdf=None)
 
 
 ###################################################################################################
-
+#@line_profile
 def run_coverage_test(n_trials=100,
                       toymc_params=None,
                       mc_template=None,
@@ -332,7 +333,8 @@ def run_coverage_test(n_trials=100,
         to = time.time()
 
         trial_i = 0
-        while trial_i < n_trials:
+        failed_fits = 0
+        while trial_i < n_trials and failed_fits<2*n_trials:
 
             experiment_result = {}
 
@@ -382,17 +384,18 @@ def run_coverage_test(n_trials=100,
             #
             logging.trace('\nhigh stats fit:\n')
             ana = Analysis()
-            try:
-                result_pseudo_truth, _ = ana.fit_hypo(data_trial,
-                                                      mc_infinite_stats,
-                                                      metric=metric,
-                                                      minimizer_settings=minimizer_settings,
-                                                      hypo_param_selections=None,
-                                                      check_octant=False,
-                                                      )
-            except:
-                logging.trace('Failed Fit')
-                continue
+            result_pseudo_truth, _ = ana.fit_hypo(data_trial,
+                                                  mc_infinite_stats,
+                                                  metric=metric,
+                                                  minimizer_settings=minimizer_settings,
+                                                  hypo_param_selections=None,
+                                                  check_octant=False,
+                                                  fit_octants_separately=False,
+                                                  )
+            #except:
+            #    logging.trace('Failed Fit')
+            #    failed_fits += 1
+            #    continue
             experiment_result['infinite_stats_opt'] = {'metric_val': result_pseudo_truth['metric_val'],
                                                        'best_fit_param': result_pseudo_truth['params']['mu']}
 
@@ -408,9 +411,11 @@ def run_coverage_test(n_trials=100,
                                                   minimizer_settings=minimizer_settings,
                                                   hypo_param_selections=None,
                                                   check_octant=False,
+                                                  fit_octants_separately=False,
                                                   )
             except:
                 logging.trace('Failed Fit')
+                failed_fits += 1
                 continue
 
             experiment_result['lowstats_opt'] = {'metric_val': result_lowstats['metric_val'],
@@ -418,6 +423,9 @@ def run_coverage_test(n_trials=100,
 
             results[metric]['coverage'].append(experiment_result)
             trial_i += 1
+
+        if trial_i==0:
+            raise Exception('ERROR: no fit managed to converge after {} attempst'.format(failed_fits))
 
         t1 = time.time()
         logging.trace("Time for ", n_trials, " minimizations: ", t1-to, " s")

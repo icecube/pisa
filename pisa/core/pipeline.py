@@ -307,11 +307,7 @@ class Pipeline(object):
 
     # TODO: handle other container(s)
     @profile
-<<<<<<< HEAD
     def get_outputs(self, inputs=None, idx=None, return_intermediate=False, output_mode=None, force_standard_output=True):
-=======
-    def get_outputs(self, inputs=None, idx=None, return_intermediate=False, output_mode=None):
->>>>>>> I3Open_master
         """Run the pipeline to compute its outputs.
 
         Parameters
@@ -329,7 +325,6 @@ class Pipeline(object):
         return_intermediate : bool
             Return list containing outputs from each stage in the pipeline.
 
-<<<<<<< HEAD
         output_mode: string
             force an output mode to the stage
 
@@ -338,10 +333,6 @@ class Pipeline(object):
             if set to False, object returned will be a list of Dict. each Dict item is 
             a MapSet
 
-=======
-        output_mode: None, string
-            Optionally can force the output mode to the stage
->>>>>>> I3Open_master
 
         Returns
         -------
@@ -376,11 +367,7 @@ class Pipeline(object):
                 outputs = stage.run(inputs=inputs) # pylint: disable=redefined-outer-name
                 if return_intermediate:
                     if outputs is None:  # e.g. for PISA pi
-<<<<<<< HEAD
                         outputs = stage.get_outputs(output_mode=output_mode, force_standard_output=force_standard_output)
-=======
-                        outputs = stage.get_outputs(output_mode=output_mode)
->>>>>>> I3Open_master
                     intermediate.append(outputs)
                 logging.trace(">>> END  : {}.run(...)".format(name))
             except:
@@ -394,11 +381,7 @@ class Pipeline(object):
             inputs = outputs
 
         if outputs is None:  # e.g. for PISA pi
-<<<<<<< HEAD
             outputs = stage.get_outputs(output_mode=output_mode, force_standard_output=force_standard_output)
-=======
-            outputs = stage.get_outputs(output_mode=output_mode)
->>>>>>> I3Open_master
 
         if return_intermediate:
             return intermediate
