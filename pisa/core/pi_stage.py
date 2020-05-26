@@ -311,15 +311,22 @@ class PiStage(BaseStage):
 
             if force_standard_output:
 
-                # Specific case where we only aske for one output. return a single mapset (compatibility)
-                if len(self.output_apply_keys) == 1:
-                    self.outputs = self.data.get_mapset(self.output_apply_keys[0])
+                # If we want the error on the map counts to be specified by something
+                # other than something called "error" use the key specified in map_output_key
+                # (see pi_resample for an example)
+                if self.map_output_key:
+                        self.outputs = self.data.get_mapset(
+                            self.map_output_key,
+                            error=self.map_output_error_key,
+                        )
 
                 # Very specific case where the output has two keys and one of them is error (compatibility)
                 elif len(self.output_apply_keys) == 2 and 'errors' in self.output_apply_keys:
                     other_key = [key for key in self.output_apply_keys if not key == 'errors'][0]
                     self.outputs = self.data.get_mapset(other_key, error='errors')
 
+                # return the first key in output_apply_key as the map output. add errors to the 
+                # map only if "errors" is part of the list of output keys 
                 else:
                     if 'errors' in self.output_apply_keys:
                         self.outputs = self.data.get_mapset(self.output_apply_keys[0], error='errors')

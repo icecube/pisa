@@ -224,6 +224,7 @@ def test_pi_resample():
     pi_resample_cfg = OrderedDict()
     pi_resample_cfg['input_specs'] = coarse_binning
     pi_resample_cfg['output_specs'] = reco_binning
+    pi_resample_cfg['scale_errors'] = True
     upsample_cfg[('utils', 'pi_resample')] = pi_resample_cfg
 
     example_maker = DistributionMaker([example_cfg])
@@ -231,6 +232,7 @@ def test_pi_resample():
     
     example_map = example_maker.get_outputs(return_sum=True)[0]
     example_map_upsampled = upsampled_maker.get_outputs(return_sum=True)[0]
+
     
     # First check: The upsampled map must have the same total count as the original map
     assert np.isclose(
