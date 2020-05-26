@@ -19,9 +19,9 @@ __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
            'chi2', 'llh', 'log_poisson', 'log_smear', 'conv_poisson',
            'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2', 'mcllh_mean', 'mcllh_eff','generalized_poisson_llh']
 
-__author__ = 'P. Eller, T. Ehrhardt, J.L. Lanfranchi'
+__author__ = 'P. Eller, T. Ehrhardt, J.L. Lanfranchi, E. Bourbeau'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
