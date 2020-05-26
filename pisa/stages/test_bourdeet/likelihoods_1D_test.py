@@ -17,11 +17,6 @@ import numpy as np
 
 
 #
-# Fridge plotting tools
-#
-from utils.plotting.standard_modules import Figure
-
-#
 # pisa tools and objects
 #
 from pisa.core.binning import OneDimBinning, MultiDimBinning
@@ -447,6 +442,8 @@ def plot_coverage_test(output_pdf=None,
     '''
     plot the results of the coverage test
     '''
+    from utils.plotting.standard_modules import Figure
+
     assert isinstance(metrics, list), 'ERROR: must specify metrics as a list'
     from scipy.stats import chi2
 
