@@ -127,8 +127,6 @@ def chi2(actual_values, expected_values):
         #       still destroy a minimizer's hopes and dreams...
 
         # Replace 0's with small positive numbers to avoid inf in division
-        np.clip(actual_values, a_min=SMALL_POS, a_max=np.inf,
-                out=actual_values)
         np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
                 out=expected_values)
 
