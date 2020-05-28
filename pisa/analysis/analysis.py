@@ -31,9 +31,9 @@ __all__ = ['MINIMIZERS_USING_SYMM_GRAD',
            'set_minimizer_defaults', 'validate_minimizer_settings',
            'Counter', 'Analysis']
 
-__author__ = 'J.L. Lanfranchi, P. Eller, S. Wren'
+__author__ = 'J.L. Lanfranchi, P. Eller, S. Wren, E. Bourbeau'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -798,8 +798,6 @@ class Analysis(object):
 
         # Record the Asimov distribution with the optimal param values
         hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
-        gen_poisson_dist = hypo_maker.get_outputs(return_sum=False, force_standard_output=False)
-        gen_poisson_dist = merge_mapsets_together(mapset_list=gen_poisson_dist)
 
         # Get the best-fit metric value
         metric_val = sign * optimize_result.pop('fun')
@@ -827,8 +825,15 @@ class Analysis(object):
                 other_metrics=other_metrics, detector_name=hypo_maker.det_names[i]
             ) for i in range(len(data_dist))]
         else: # DistributionMaker object
+
+            if 'generalized_poisson_llh' == metric[0]:
+                generalized_poisson_dist = hypo_maker.get_outputs(return_sum=False, force_standard_output=False)
+                generalized_poisson_dist = merge_mapsets_together(mapset_list=generalized_poisson_dist)
+            else:
+                generalized_poisson_dist = None
+
             fit_info['detailed_metric_info'] = self.get_detailed_metric_info(
-                data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist, genpoisson_hypo=gen_poisson_dist,
+                data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist, generalized_poisson_hypo=gen_poisson_dist,
                 params=hypo_maker.params, metric=metric[0], other_metrics=other_metrics,
                 detector_name=hypo_maker._detector_name
             )
@@ -944,7 +949,7 @@ class Analysis(object):
         return fit_info
 
     @staticmethod
-    def get_detailed_metric_info(data_dist, hypo_asimov_dist, params, metric,genpoisson_hypo=None,
+    def get_detailed_metric_info(data_dist, hypo_asimov_dist, params, metric,generalized_poisson_hypo=None,
                                  other_metrics=None, detector_name=None):
         """Get detailed fit information, including e.g. maps that yielded the
         metric.
@@ -1075,7 +1080,7 @@ class Analysis(object):
         # Get the Asimov map set
         try:
             if metric[0]=='generalized_poisson_llh':
-                hypo_asimov_dist = hypo_maker.get_outputs(return_sum=False, output_mode='binned',force_standard_output=False)
+                hypo_asimov_dist = hypo_maker.get_outputs(return_sum=False, output_mode='binned', force_standard_output=False)
                 hypo_asimov_dist = merge_mapsets_together(mapset_list=hypo_asimov_dist)
                 data_dist = data_dist.maps[0] # Extract the map from the MapSet
                 metric_kwargs = {'empty_bins':hypo_maker.get_empty_bins}

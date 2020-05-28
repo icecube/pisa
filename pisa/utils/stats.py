@@ -17,7 +17,8 @@ from pisa.utils import likelihood_functions
 __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
            'maperror_logmsg',
            'chi2', 'llh', 'log_poisson', 'log_smear', 'conv_poisson',
-           'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2', 'mcllh_mean', 'mcllh_eff','generalized_poisson_llh']
+           'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2', 
+           'mcllh_mean', 'mcllh_eff','generalized_poisson_llh']
 
 __author__ = 'P. Eller, T. Ehrhardt, J.L. Lanfranchi, E. Bourbeau'
 
@@ -42,7 +43,8 @@ SMALL_POS = 1e-10 #if FTYPE == np.float64 else FTYPE_PREC
 CHI2_METRICS = ['chi2', 'mod_chi2']
 """Metrics defined that result in measures of chi squared"""
 
-LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh', 'mcllh_mean', 'mcllh_eff','generalized_poisson_llh']
+LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh', 'mcllh_mean', 
+'mcllh_eff','generalized_poisson_llh']
 """Metrics defined that result in measures of log likelihood"""
 
 ALL_METRICS = LLH_METRICS + CHI2_METRICS
@@ -548,7 +550,7 @@ def mod_chi2(actual_values, expected_values):
 #
 # Generalized Poisson-gamma llh from 1902.08831
 #
-def generalized_poisson_llh(actual_values, expected_values=None,empty_bins=None):
+def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None):
     '''
     Compute the generalized Poisson likelihood as formulated in https://arxiv.org/abs/1902.08831
 
@@ -601,7 +603,7 @@ def generalized_poisson_llh(actual_values, expected_values=None,empty_bins=None)
             continue
 
         # Make sure that no weight sum is negative. Crash if there are
-        weight_sum = [m.hist.flatten()[bin_i] for m in expected_values['new_sum'].maps]
+        weight_sum = np.array([m.hist.flatten()[bin_i] for m in expected_values['new_sum'].maps])
         assert np.all(weight_sum >= 0), 'ERROR: negative weights detected'
 
 
@@ -624,8 +626,8 @@ def generalized_poisson_llh(actual_values, expected_values=None,empty_bins=None)
             mask = np.isfinite(alphas)*np.isfinite(betas)
 
             # Check that the alpha and betas make sense
-            assert np.all(alphas[mask] <= 0), 'ERROR: detected alpha values <=0'
-            assert np.all(betas[mask] <=0 ), 'ERROR: detected beta values <=0'
+            assert np.all(alphas[mask] > 0), 'ERROR: detected alpha values <=0'
+            assert np.all(betas[mask] > 0 ), 'ERROR: detected beta values <=0'
 
 
             llh_of_bin = fast_pgmix(data_count, alphas[mask], betas[mask])

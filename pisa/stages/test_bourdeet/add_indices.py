@@ -131,3 +131,6 @@ class add_indices(PiStage):
             for bin_i in range(self.output_specs.tot_num_bins):
                 container.add_array_data(key='bin_{}_mask'.format(bin_i), 
                                          data=(new_array == bin_i))
+
+
+

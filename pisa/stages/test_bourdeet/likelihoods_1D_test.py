@@ -668,7 +668,7 @@ if __name__ == '__main__':
 
     X = toymc_params.binning.midpoints
 
-    metrics_to_test = ['llh', 'mcllh_eff',
+    metrics_to_test = ['llh', 'mcllh_eff','mod_chi2',
                        'mcllh_mean', 'generalized_poisson_llh']
 
     results = collections.OrderedDict()

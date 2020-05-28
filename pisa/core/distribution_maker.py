@@ -301,7 +301,7 @@ class DistributionMaker(object):
         assumes that all pipelines have the same binning output specs
         '''
         num_bins = self.pipelines[0].stages[-1].output_specs.tot_num_bins
-        self.num_mc_events_per_bin = np.zeros(num_bins)
+        num_mc_events_per_bin = np.zeros(num_bins)
 
         for p in self.pipelines:
 
@@ -316,16 +316,16 @@ class DistributionMaker(object):
                     current_weights = c.array_data['weights'].get('host')[index_mask]
                     n_weights = current_weights.shape[0]
 
-                    self.num_mc_events_per_bin[index] += n_weights
-        return self.num_mc_events_per_bin
+                    num_mc_events_per_bin[index] += n_weights
+        return num_mc_events_per_bin
     
 
     @property
     def get_empty_bins(self):
         '''Find indices where there are no MC events present
         '''
-        mc_counts = self.n_mc_events_per_bin
-        indices = np.where(mc_counts == 0)[0]
+        empty_counts = self.num_mc_events_per_bin == 0
+        indices = np.where(empty_counts)[0]
         return indices
     
 
