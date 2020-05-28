@@ -94,7 +94,7 @@ def t23_octant(fit_info):
 
 
 def get_separate_t23_octant_params(hypo_maker, inflection_point=45.0*ureg.deg,
-                                   target_tolerance=1.0*ureg.deg):
+                                   target_tolerance=0.1*ureg.deg):
     """This function creates versions of the theta23 param that are confined to
     a single octant. It does this for both octant cases. This is used to allow
     fits to be done where only one of the octants is allowed. The fit can then
@@ -126,8 +126,8 @@ def get_separate_t23_octant_params(hypo_maker, inflection_point=45.0*ureg.deg,
 
     """
 
-    # Reset theta23 before starting
-    # TODO: do we want to account for `reset_free`?
+    # Reset theta23 before starting -> the octant in which the nominal value
+    # of theta23 lies is what theta23 is set to first
     theta23 = hypo_maker.params.theta23
     theta23.reset()
 
@@ -172,6 +172,8 @@ def get_separate_t23_octant_params(hypo_maker, inflection_point=45.0*ureg.deg,
                     max(theta23.range) - 0.01 * (max(theta23.range) - inflection_point.to(theta23.units))
                 )
             else:
+                # i.e., if the current value of theta23 is maximal,
+                # we target a seed in the lower octant
                 tgt_val = inflection_point - target_tolerance
                 # Set the value to the larger among: target and lower bound.
                 # If lower bound is larger, use a 1% safety margin.
@@ -189,6 +191,12 @@ def get_separate_t23_octant_params(hypo_maker, inflection_point=45.0*ureg.deg,
         # no need to set value of `theta23_first_octant`
         theta23_second_octant.value = other_octant_value
 
+    logging.debug(
+        "Will probe two discrete theta23 ranges: %s and %s. "
+        " The two corresponding seeds are: %s and %s"
+        % (theta23_first_octant.range, theta23_second_octant.range,
+           theta23_first_octant.value, theta23_second_octant.value)
+    )
     return theta23_orig, theta23_first_octant, theta23_second_octant
 
 
@@ -396,7 +404,7 @@ class Analysis(object):
                             ' parameters!'
                         )
                     hypo_maker.params[pname].value = pval
-            logging.info('Starting fit from point %s.' % hypo_maker.params.free)
+            logging.debug('Starting fit from point %s.' % hypo_maker.params.free)
             irun_fit_info = self.optimize_discrete_selections(
                 data_dist=data_dist,
                 hypo_maker=hypo_maker,
@@ -621,9 +629,50 @@ class Analysis(object):
                              other_metrics, pprint, blind,
                              theta23_orig_and_other_octant=None,
                              external_priors_penalty=None):
-        """Logic for optimizing octant of theta23.
+        """Logic for optimizing octant of theta23, which should not be called
+        externally. The value of `theta23_orig_and_other_octant` determines
+        the behaviour. If it is `None`, the outcome from a previous theta23
+        fit in `best_fit_info` will be mirrored into the other octant to get
+        the seed for the next fit. If the outcome is in the same octant as
+        that in `best_fit_info`, another fit is run, starting even further
+        into the other octant. If, however, `theta23_orig_and_other_octant`
+        is a tuple of two "theta23" parameters, the theta23 fit will use
+        the second parameter in there to run a single fit starting from that
+        parameter's value and taking into account its range. No second fit is
+        performed in this scenario.
 
-        Should not be called externally.
+
+        Parameters
+        ----------
+        best_fit_info : dict
+
+        alternate_fits : dict
+
+        data_dist : MapSet
+
+        hypo_maker : Detectors or DistributionMaker
+
+        metric : string or iterable of strings
+
+        minimizer_settings : dict
+            parsed minimizer configuration
+
+        other_metrics : iterable of strings
+
+        pprint : bool
+
+        blind : bool
+
+        theta23_orig_and_other_octant : 2-param tuple or None
+            Determines how the octant of theta23 is treated
+
+        external_priors_penalty : func
+
+        Returns
+        -------
+        best_fit_info : dict
+            Best fit dictionary across fits performed here and the results in
+            `best_fit_info` passed in.
 
         """
 
@@ -664,19 +713,21 @@ class Analysis(object):
             blind=blind,
             external_priors_penalty=external_priors_penalty
         )
+
+        # ensure that we record the *full* fit history
         previous_history = best_fit_info['fit_history']
         rerun_history = new_fit_info['fit_history'][1:]
         total_history = previous_history + rerun_history
 
         # Check to make sure these two fits were either side of 45
-        # degrees. May not be the case (unless enforced separate
-        # octant fits)
+        # degrees, unless enforced separate octant fits.
+        # If not the case, we run another fit to ensure there's really no
+        # minimum in one of the octants.
         if theta23_orig_and_other_octant is None:
             old_octant = t23_octant(best_fit_info)
             new_octant = t23_octant(new_fit_info)
 
-            # independent of whether the new octant is the same as the
-            # previous one compare fit metrics
+            # compare fit metrics
             if it_got_better(
                 new_metric_val=new_fit_info['metric_val'],
                 old_metric_val=best_fit_info['metric_val'],
@@ -700,21 +751,25 @@ class Analysis(object):
                     ' tried again starting at a point further into the opposite'
                     ' octant.'
                 )
-                if old_octant > 0.0:
+                if old_octant == 0:
                     # either start at 55 deg or close to upper end of range
                     theta23.value = min(
                         (55.0*ureg.deg).to(theta23.units),
                         max(theta23.range) - 0.01 * (max(theta23.range)-min(theta23.range))
                     )
-                else:
+                elif old_octant == 1:
                     # either start at 35 deg or close to lower end of range
                     theta23.value = max(
                         (35.0*ureg.deg).to(theta23.units),
                         min(theta23.range) + 0.01 * (max(theta23.range)-min(theta23.range))
                     )
+                else:
+                    raise ValueError("Octant index of %s unknown!" % old_octant)
                 hypo_maker.update_params(theta23)
 
                 # Re-run minimizer starting at new point
+                # All parameters except for theta23 are at their outcomes
+                # from the previous fit.
                 new_fit_info = self._fit_hypo_inner(
                     hypo_maker=hypo_maker,
                     data_dist=data_dist,
@@ -725,14 +780,47 @@ class Analysis(object):
                     blind=blind,
                     external_priors_penalty=external_priors_penalty
                 )
-                # Make sure the new octant is sensible
+                # Make sure the new octant is sensible, and again add
+                # to the fit history
                 t23_octant(new_fit_info)
                 total_history += new_fit_info['fit_history'][1:]
 
-        # record the correct range for theta23
-        # (we force its value when fitting the octants separately)
+                if it_got_better(
+                    new_metric_val=new_fit_info['metric_val'],
+                    old_metric_val=best_fit_info['metric_val'],
+                    metric=metric
+                ):
+                    # Take the one with the best fit
+                    alternate_fits.append(best_fit_info)
+                    best_fit_info = new_fit_info
+                    if not blind:
+                        logging.debug('Accepting last other-octant fit')
+                else:
+                    alternate_fits.append(new_fit_info)
+                    if not blind:
+                        logging.debug('Sticking to previous best fit')
+
         else:
-            # TODO: not sure why we'd need to deepcopy here
+            # we first need a check on the fit outcome for the separate octant
+            # case
+            if it_got_better(
+                new_metric_val=new_fit_info['metric_val'],
+                old_metric_val=best_fit_info['metric_val'],
+                metric=metric
+            ):
+            # Take the one with the best fit
+                alternate_fits.append(best_fit_info)
+                best_fit_info = new_fit_info
+                if not blind:
+                    logging.debug('Accepting other-octant fit')
+            else:
+                alternate_fits.append(new_fit_info)
+                if not blind:
+                    logging.debug('Accepting initial-octant fit')
+
+            # record the correct range for theta23
+            # (we force its value when fitting the octants separately)
+            # TODO: probably not necessary to deepcopy here?
             best_fit_info['params'].theta23.range = deepcopy(theta23_orig.range)
             new_fit_info['params'].theta23.range = deepcopy(theta23_orig.range)
             # If changed the range of the theta23 param whilst checking octants
@@ -742,21 +830,7 @@ class Analysis(object):
             theta23_orig.value = hypo_maker.params.theta23.value
             hypo_maker.update_params(theta23_orig)
 
-        if it_got_better(
-            new_metric_val=new_fit_info['metric_val'],
-            old_metric_val=best_fit_info['metric_val'],
-            metric=metric
-        ):
-        # Take the one with the best fit
-            alternate_fits.append(best_fit_info)
-            best_fit_info = new_fit_info
-            if not blind:
-                logging.debug('Accepting last other-octant fit')
-        else:
-            alternate_fits.append(new_fit_info)
-            if not blind:
-                logging.debug('Sticking to previous best fit')
-
+        # finally, we make sure we report the full fit history in here
         best_fit_info['fit_history'] = total_history
 
         return best_fit_info
@@ -864,8 +938,7 @@ class Analysis(object):
         """
 
         start_t = time.time()
-        # set up lists for storing the fits
-        best_fits = []
+        # set up list for storing all alternate fit outcomes
         alternate_fits = []
 
         if isinstance(metric, str):
@@ -943,7 +1016,9 @@ class Analysis(object):
         if reset_free:
             hypo_maker.reset_free()
         else:
-            minimizer_start_params = hypo_maker.params
+            # Save the current minimizer start values for the octant check.
+            # deepcopy: mustn't be modified.
+            minimizer_start_params = deepcopy(hypo_maker.params)
 
         # Determine if checking theta23 octant
         need_octant_check = (
@@ -985,13 +1060,53 @@ class Analysis(object):
                     ' necessary with a global minimizer. Doing so'
                     ' anyway right now.'
                 )
-            logging.debug('Checking other octant of theta23.')
+            logging.info('Checking other octant of theta23.')
             if reset_free:
-                hypo_maker.reset_free()
+                # need to distinguish between the two possible cases
+                if fit_octants_separately:
+                    logging.debug(
+                        "Resetting all free parameters to their nominal values"
+                        " except for theta23."
+                    )
+                    # if fitting octants separately, the range of the theta23
+                    # param is currently restricted to the first octant.
+                    # Resetting to nominal is not what we want for theta23,
+                    # but the other free ones we need to reset
+                    hypo_maker.params.fix("theta23")
+                    hypo_maker.reset_free()
+                    hypo_maker.params.unfix("theta23")
+                else:
+                    # here, it's safe to reset theta23 also: the next
+                    # optimization run will ensure to mirror theta23 from its
+                    # value in `best_fit_info` into the other octant
+                    logging.debug(
+                        "Resetting all free parameters to their nominal values."
+                    )
+                    hypo_maker.reset_free()
             else:
-                for param in minimizer_start_params:
-                    hypo_maker.params[param.name].value = param.value
+                # Set all parameters to the values they had at the beginning
+                # of the function. The same comments apply as in the case of
+                # `reset_free` set to `True`.
+                if fit_octants_separately:
+                    logging.debug(
+                        "Resetting all free parameters except for theta23"
+                        " to the values they had when `fit_hypo` was called."
+                    )
+                    for param in minimizer_start_params:
+                        if not "theta23" in param.name:
+                            hypo_maker.params[param.name].value = param.value
+                else:
+                    logging.debug(
+                        "Resetting all free parameters"
+                        " to the values they had when `fit_hypo` was called."
+                    )
+                    for param in minimizer_start_params:
+                        hypo_maker.params[param.name].value = param.value
 
+            # We use this to pass in the original unmodified theta23 param
+            # together with its second octant param (value and range modified)
+            # in the case of separate octant fits, and otherwise we don't need
+            # the two.
             theta23_orig_and_other_octant = (
                 (theta23_orig, theta23_second_octant) if fit_octants_separately
                 else None
@@ -1014,11 +1129,11 @@ class Analysis(object):
         # overall number of distributions generated
         # across the whole fitting process for this point
         best_fit_info['num_distributions_generated'] = self.counter.count
-        # append the best fit for this scan point
-        best_fits.append(best_fit_info)
 
         end_t = time.time()
         fit_t = end_t - start_t
+
+        best_fit_info['fit_time'] = fit_t * ureg.sec
 
         logging.info(
             'Total time to fit hypo: %8.4f s;'
@@ -1248,6 +1363,8 @@ class Analysis(object):
         fit_history = []
         fit_history.append(metric + [p.name for p in hypo_maker.params.free])
 
+        logging.debug('Start minimization at point %s.' % hypo_maker.params.free)
+
         if pprint and not blind:
             # display header if desired/allowed
             # only show the first metric here (only part of info for Detectors analysis)
@@ -1264,7 +1381,6 @@ class Analysis(object):
         # record start time
         start_t = time.time()
 
-        logging.debug('Start minimization at point %s.' % hypo_maker.params.free)
         optimize_result = _run_minimizer(
             fun=self._minimizer_callable,
             x0=x0,
