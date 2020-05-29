@@ -981,8 +981,8 @@ class Analysis(object):
             # if the metric is not generalized poisson, but the distribution is a dict,
             # retrieve the 'weights' mapset from the distribution output
             if m == 'generalized_poisson_llh':
-                name_vals_d['maps'] = data_dist.maps[0].generalized_poisson_llh(expected_values=genpoisson_hypo)
-                llh_binned = data_dist.maps[0].generalized_poisson_llh(expected_values=genpoisson_hypo, binned=True)
+                name_vals_d['maps'] = data_dist.maps[0].generalized_poisson_llh(expected_values=generalized_poisson_hypo)
+                llh_binned = data_dist.maps[0].generalized_poisson_llh(expected_values=generalized_poisson_hypo, binned=True)
                 map_binned = Map(name=metric,
                                 hist=np.reshape(llh_binned, data_dist.maps[0].shape),
                                 binning=data_dist.maps[0].binning
