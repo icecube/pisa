@@ -833,7 +833,7 @@ class Analysis(object):
                 generalized_poisson_dist = None
 
             fit_info['detailed_metric_info'] = self.get_detailed_metric_info(
-                data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist, generalized_poisson_hypo=gen_poisson_dist,
+                data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist, generalized_poisson_hypo=generalized_poisson_dist,
                 params=hypo_maker.params, metric=metric[0], other_metrics=other_metrics,
                 detector_name=hypo_maker._detector_name
             )
