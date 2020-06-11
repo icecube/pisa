@@ -66,7 +66,7 @@ class super_simple_signal(PiStage):
             'sigma')
 
         # what keys are added or altered for the outputs during apply
-        output_apply_keys = ('weights',)
+        output_apply_keys = ('weights','errors')
 
         # init base class
         super().__init__(
@@ -118,8 +118,9 @@ class super_simple_signal(PiStage):
         # Populate the signal physics quantity
         signal_container.add_array_data('stuff', np.zeros(self.nsig))
         # Populate its MC weight
-        signal_container.add_array_data(
-            'weights', np.ones(self.nsig)*1./stats_factor)
+        signal_container.add_array_data('weights', np.ones(self.nsig)*1./stats_factor)
+        # Populate the error on those weights
+        signal_container.add_array_data('errors',(np.ones(self.nsig)*1./stats_factor)**2. )
         # Add empty bin_indices array (used in generalized poisson llh)
         signal_container.add_array_data('bin_indices', np.ones(self.nsig)*-1)
         # Add bin indices mask (used in generalized poisson llh)
@@ -137,8 +138,8 @@ class super_simple_signal(PiStage):
             bkg_container = Container('background')
             bkg_container.data_specs = 'events'
             bkg_container.add_array_data('stuff', np.zeros(self.nbkg))
-            bkg_container.add_array_data(
-                'weights', np.ones(self.nbkg)*1./stats_factor)
+            bkg_container.add_array_data('weights', np.ones(self.nbkg)*1./stats_factor)
+            bkg_container.add_array_data('errors',(np.ones(self.nbkg)*1./stats_factor)**2. )
             bkg_container.add_array_data('bin_indices', np.ones(self.nbkg)*-1)
             # Add bin indices mask (used in generalized poisson llh)
             for bin_i in range(self.output_specs.tot_num_bins):
@@ -154,7 +155,9 @@ class super_simple_signal(PiStage):
         #    self.output_specs = MultiDimBinning([OneDimBinning(name='stuff', bin_edges=np.linspace(0.,40.,21))])
 
         for container in self.data:
-            container.array_to_binned('weights', binning=self.output_specs)
+            container.array_to_binned('weights', binning=self.output_specs, averaged=False)
+            container.array_to_binned('errors', binning=self.output_specs, averaged=False)
+
 
     def apply_function(self):
         '''
@@ -206,6 +209,9 @@ class super_simple_signal(PiStage):
         for container in self.data:
             container.array_to_binned(
                 'weights', binning=self.output_specs, averaged=False)
+            container.array_to_binned(
+                'errors', binning=self.output_specs, averaged=False)
+
 
             #
             #  Recalculate the number of MC events per bin, if the array already exists
@@ -216,10 +222,8 @@ class super_simple_signal(PiStage):
                 nevents_sim = np.zeros(self.output_specs.tot_num_bins)
 
                 for index in range(self.output_specs.tot_num_bins):
-                    index_mask = container['bin_{}_mask'.format(
-                        index)].get('host')
-                    current_weights = container['weights'].get('host')[
-                        index_mask]
+                    index_mask = container['bin_{}_mask'.format(index)].get('host')
+                    current_weights = container['weights'].get('host')[index_mask]
                     n_weights = current_weights.shape[0]
 
                     # Number of MC events in each bin
@@ -228,3 +232,13 @@ class super_simple_signal(PiStage):
                 self.data.data_specs = self.output_specs
                 np.copyto(src=nevents_sim,
                           dst=container["n_mc_events"].get('host'))
+
+                #
+                # Step 2: Re-calculate the mean adjustment for each container
+                #
+                mean_number_of_mc_events = np.mean(nevents_sim)
+                if mean_number_of_mc_events < 1.0:
+                    mean_adjustment = -(1.0-mean_number_of_mc_events) + 1.e-3
+                else:
+                    mean_adjustment = 0.0
+                container.scalar_data['mean_adjustment']=mean_adjustment

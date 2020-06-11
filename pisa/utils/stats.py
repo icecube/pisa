@@ -581,9 +581,9 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
     assert 'llh_betas' in expected_values.keys(), 'ERROR: expected_values need a key named "llh_betas"'
     assert 'new_sum'   in expected_values.keys(), 'ERROR: expected_values need a key named "new_sum"'
 
-
     num_bins = actual_values.flatten().shape[0]
     llh_per_bin = np.zeros(num_bins)
+    actual_values = unp.nominal_values(actual_values).ravel()
 
     # If no empty bins are specified, we assume that all of them should be included
     if empty_bins is None:
@@ -593,17 +593,23 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
 
         # TODO: sometimes the histogram spits out uncertainty objects, sometimes not. 
         #       Not sure why.
-        data_count = actual_values.flatten().astype(np.int64)[bin_i]
+        data_count = actual_values.astype(np.int64)[bin_i]
 
         # Automatically add a huge number if a bin has non zero data count
         # but completely empty MC
         if bin_i in empty_bins:
             if data_count > 0:
-                llh_per_bin[bin_i] = np.log(1.e-10)
+                llh_per_bin[bin_i] = np.log(SMALL_POS)
             continue
 
         # Make sure that no weight sum is negative. Crash if there are
         weight_sum = np.array([m.hist.flatten()[bin_i] for m in expected_values['new_sum'].maps])
+        if (weight_sum<0).sum()>0:
+            print('\n\n\n')
+            print('weights that are causing problem: ')
+            print(weight_sum[weight_sum<0])
+            print((weight_sum<0).sum())
+            print('\n\n\n')
         assert np.all(weight_sum >= 0), 'ERROR: negative weights detected'
 
 
@@ -612,7 +618,7 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
         #
         if data_count>100:
 
-            logP = data_count*np.log(weight_sum)-weight_sum-(data_count*np.log(data_count)-data_count)
+            logP = data_count*np.log(weight_sum.sum())-weight_sum.sum()-(data_count*np.log(data_count)-data_count)
             llh_per_bin[bin_i] = logP
 
         else:
