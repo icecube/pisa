@@ -34,7 +34,7 @@ import subprocess
 import tempfile
 
 from setuptools.command.build_ext import build_ext
-from setuptools import setup, find_packages
+from setuptools import setup, Extension, find_packages
 import versioneer
 
 
