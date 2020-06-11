@@ -208,11 +208,7 @@ def do_setup():
     #    )
 
     # Collect (build-able) external modules and package_data
-    from distutils.core import Extension
-    from Cython.Build import cythonize
-    ext = Extension('poisson_gamma_mixtures', sources = ['poisson_gamma_mixtures.pyx', 'poisson_gamma.c'])
-    cythonized_ext = cythonize([ext])
-    ext_modules = cythonized_ext
+    ext_modules = []
 
     # Include these things in source (and binary?) distributions
     package_data = {}
