@@ -92,6 +92,7 @@ REQUIRED_MODULES = (
     "llvmlite",
     "cpuinfo",
     "sympy",
+    "cython",
 )
 
 PFX = "[T] "

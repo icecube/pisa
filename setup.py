@@ -52,7 +52,7 @@ __all__ = [
 
 __author__ = 'S. Boeser, J.L. Lanfranchi, P. Eller, M. Hieronymus'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -98,6 +98,7 @@ INSTALL_REQUIRES = [
     'llvmlite<=0.30.0', # 0.31 gave an error "Type of #4 arg mismatch: i1 != i32" in pisa/stages/osc/layers.py", line 91
     'py-cpuinfo',
     'sympy',
+    'cython',
 ]
 
 EXTRAS_REQUIRE = {
@@ -207,7 +208,11 @@ def do_setup():
     #    )
 
     # Collect (build-able) external modules and package_data
-    ext_modules = []
+    from distutils.core import Extension
+    from Cython.Build import cythonize
+    ext = Extension('poisson_gamma_mixtures', sources = ['poisson_gamma_mixtures.pyx', 'poisson_gamma.c'])
+    cythonized_ext = cythonize([ext])
+    ext_modules = cythonized_ext
 
     # Include these things in source (and binary?) distributions
     package_data = {}

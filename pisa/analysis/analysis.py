@@ -446,7 +446,6 @@ class Analysis(object):
         alternate_fits : list of `fit_info` from other fits run
 
         """
-
         if isinstance(metric, str):
             metric = [metric]
 
@@ -655,10 +654,8 @@ class Analysis(object):
             'minimizer_metadata'
 
         """
-
         minimizer_settings = set_minimizer_defaults(minimizer_settings)
         validate_minimizer_settings(minimizer_settings)
-
 
         if isinstance(metric, str):
             metric = [metric]
@@ -720,7 +717,6 @@ class Analysis(object):
 
         logging.debug('Running the %s minimizer...', minimizer_method)
 
-
         # Using scipy.optimize.minimize allows a whole host of minimizers to be
         # used.
         counter = Counter()
@@ -760,7 +756,6 @@ class Analysis(object):
         # reset number of iterations before each minimization
         self._nit = 0
 
-
         #
         # From that point on, optimize starts using the metric and 
         # iterates, no matter what you do 
@@ -775,7 +770,6 @@ class Analysis(object):
             options=minimizer_settings['options']['value'],
             callback=self._minimizer_callback
         )
-        
         end_t = time.time()
         if pprint:
             # clear the line
