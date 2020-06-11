@@ -31,8 +31,6 @@ import itertools
 import numpy as np
 import scipy
 from scipy.stats import norm
-import pyximport
-pyximport.install()
 from . import poisson_gamma_mixtures
 
 from pisa.utils.log import logging
