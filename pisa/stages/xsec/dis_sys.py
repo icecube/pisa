@@ -215,4 +215,4 @@ def apply_dis_sys(
     dis_csms,
     out,
 ):
-    out[0] *= (1. + dis_correction_total * dis_csms) * (1. + dis_correction_diff * dis_csms) 
+    out[0] *= max(0, (1. + dis_correction_total * dis_csms) * (1. + dis_correction_diff * dis_csms) )
