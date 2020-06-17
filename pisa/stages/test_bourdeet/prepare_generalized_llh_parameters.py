@@ -200,6 +200,7 @@ class prepare_generalized_llh_parameters(PiStage):
                     'host')
             else:
                 hypersurface = np.ones(N_bins)
+            hypersurface = np.clip(hypersurface, a_min=0., a_max=None)
             assert np.all(hypersurface>=0),'ERROR:hypersurface are below zeros'
 
 
@@ -207,6 +208,7 @@ class prepare_generalized_llh_parameters(PiStage):
 
                 index_mask = container['bin_{}_mask'.format(index)].get('host')
                 current_weights = container['weights'].get('host')[index_mask]*hypersurface[index]
+                assert np.all(current_weights>=0),'SOME WEIGHTS BELOW ZERO'
                 n_weights = current_weights.shape[0]
 
                 # If no weights and other datasets have some, include a pseudo weight
@@ -215,7 +217,6 @@ class prepare_generalized_llh_parameters(PiStage):
                 # make the whole bin treatment here
                 if n_weights <= 0:
                     pseudo_weight = container.scalar_data['pseudo_weight']
-                    assert pseudo_weight > 0, 'ERROR: pseudo_weight is not larger than zero, meaning the maximum weight of your dataset is below or equal to zero!'
                     current_weights = np.array([pseudo_weight])
                     n_weights = 1
 

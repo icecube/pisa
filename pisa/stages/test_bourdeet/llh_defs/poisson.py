@@ -31,7 +31,7 @@ import itertools
 import numpy as np
 import scipy
 from scipy.stats import norm
-from . import poisson_gamma_mixtures
+from pisa.stages.test_bourdeet.llh_defs import poisson_gamma_mixtures
 
 from pisa.utils.log import logging
 ########################################################################################
@@ -82,8 +82,7 @@ def generalized_pg_mixture_2nd(k, alphas, betas):
 
 
 def fast_pgmix(k, alphas=None, betas=None):
-    '''
-    Core function that computes the generalized likelihood 2
+    '''Core function that computes the generalized likelihood 2
 
     '''
     assert isinstance(k, np.int64), 'ERROR: k must be an int'
@@ -99,8 +98,9 @@ def fast_pgmix(k, alphas=None, betas=None):
         return 1.
 
     if not np.isfinite(ret):
+        logging.debug('something fishy is happening to the return value. it is not finite')
         for a,b in zip(alphas,betas):
-            print(a, b, poisson_gamma_mixtures.c_generalized_pg_mixture(k, np.array([a]),np.array([b])))
+            logging.debug(a, b, poisson_gamma_mixtures.c_generalized_pg_mixture(k, np.array([a]),np.array([b])))
 
 
     output_value = np.NaN

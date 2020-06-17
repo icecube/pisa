@@ -91,9 +91,9 @@ def chi2(actual_values, expected_values):
     Notes
     -----
     * Uncertainties are not propagated through this calculation.
-    * Values in each input are clipped to the range [SMALL_POS, inf] prior to
+    * Values in expectation are clipped to the range [SMALL_POS, inf] prior to
       the calculation to avoid infinities due to the divide function.
-
+    * actual_values are allowed to be = 0, since they don't com up in the denominator
     """
     if actual_values.shape != expected_values.shape:
         raise ValueError(
@@ -132,13 +132,12 @@ def chi2(actual_values, expected_values):
         np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
                 out=expected_values)
 
+
         delta = actual_values - expected_values
 
     if np.all(np.abs(delta) < 5*FTYPE_PREC):
         return np.zeros_like(delta, dtype=FTYPE)
 
-    assert np.all(actual_values > 0), str(actual_values)
-    #chi2_val = np.square(delta) / actual_values
     chi2_val = np.square(delta) / expected_values
     assert np.all(chi2_val >= 0), str(chi2_val[chi2_val < 0])
     return chi2_val
