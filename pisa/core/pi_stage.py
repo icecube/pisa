@@ -171,7 +171,6 @@ class PiStage(BaseStage):
         self.outputs = None
 
     def setup(self):
-        '''setup stuff.'''
 
         # check that data is a ContainerSet (downstream modules assume this)
         if self.data is not None:
@@ -204,7 +203,7 @@ class PiStage(BaseStage):
 
     @profile
     def compute(self):
-        """Compute Stuff"""
+        
         if len(self.params) == 0 and len(self.output_calc_keys) == 0:
             return
 
