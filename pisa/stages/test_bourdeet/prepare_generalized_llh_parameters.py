@@ -90,7 +90,7 @@ class prepare_generalized_llh_parameters(PiStage):
         # what are keys added or altered in the calculation used during apply
         output_calc_keys = ('weights',)
         # what keys are added or altered for the outputs during apply
-        output_apply_keys = ('weights', 'errors', 'llh_alphas',
+        output_apply_keys = ('weights', 'errors', 'llh_alphas', 'hs_scales',
                              'llh_betas', 'n_mc_events', 'new_sum')
 
         # init base class
@@ -137,12 +137,15 @@ class prepare_generalized_llh_parameters(PiStage):
 
             for index in range(N_bins):
                 index_mask = container['bin_{}_mask'.format(index)].get('host')
+                if 'kfold_mask' in container:
+                    index_mask*=container['kfold_mask'].get('host')
                 # Number of MC events in each bin
                 nevents_sim[index] = np.sum(index_mask)
 
             self.data.data_specs = self.output_specs
             np.copyto(src=nevents_sim,
                       dst=container["n_mc_events"].get('host'))
+            container['n_mc_events'].mark_changed()
 
             #
             # Step 2: Calculate the mean adjustment for each container
@@ -154,7 +157,6 @@ class prepare_generalized_llh_parameters(PiStage):
                 mean_adjustment = 0.0
             container.add_scalar_data(key='mean_adjustment', data=mean_adjustment)
 
-    @line_profile
     def apply_function(self):
         '''
         Computes the main inputs to the generalized likelihood 
@@ -174,7 +176,7 @@ class prepare_generalized_llh_parameters(PiStage):
 
             self.data.data_specs = 'events'
             # Find the maximum weight of an entire MC set
-            max_weight = np.amax(container['weights'].get('host'))
+            max_weight = 1.0#np.amax(container['weights'].get('host'))
             container.add_scalar_data(key='pseudo_weight', data=max_weight)
 
         #
@@ -194,20 +196,12 @@ class prepare_generalized_llh_parameters(PiStage):
             betas_vector = np.zeros(N_bins)
 
 
-            # hypersurface fit result, if hypersurfaces have been run
-            if 'hs_scales' in container.binned_data:
-                hypersurface = container.binned_data['hs_scales'][1].get(
-                    'host')
-            else:
-                hypersurface = np.ones(N_bins)
-            hypersurface = np.clip(hypersurface, a_min=0., a_max=None)
-            assert np.all(hypersurface>=0),'ERROR:hypersurface are below zeros'
-
-
             for index in range(N_bins):
 
                 index_mask = container['bin_{}_mask'.format(index)].get('host')
-                current_weights = container['weights'].get('host')[index_mask]*hypersurface[index]
+                if 'kfold_mask' in container:
+                    index_mask*=container['kfold_mask'].get('host')
+                current_weights = container['weights'].get('host')[index_mask]
                 assert np.all(current_weights>=0),'SOME WEIGHTS BELOW ZERO'
                 n_weights = current_weights.shape[0]
 
@@ -250,6 +244,9 @@ class prepare_generalized_llh_parameters(PiStage):
             np.copyto(src=alphas_vector, dst=container['llh_alphas'].get('host'))
             np.copyto(src=betas_vector, dst=container['llh_betas'].get('host'))
             np.copyto(src=new_weight_sum, dst=container['new_sum'].get('host'))
+            container['llh_alphas'].mark_changed()
+            container['llh_betas'].mark_changed()
+            container['new_sum'].mark_changed()
 
 
 

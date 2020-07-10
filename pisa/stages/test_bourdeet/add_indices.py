@@ -117,11 +117,11 @@ class add_indices(PiStage):
             # Generate a new container called bin_indices
             container['bin_indices'] = np.empty((container.size), dtype=FTYPE)
   
-            e = container['reco_energy']
-            c = container['reco_coszen']
-            p = container['pid']
+            variables_to_bin = []
+            for bin_name in self.output_specs.names:
+                variables_to_bin.append(container[bin_name])
 
-            new_array = lookup_indices(sample=[e, c, p],
+            new_array = lookup_indices(sample=variables_to_bin,
                                        binning=self.output_specs)
 
             new_array = new_array.get('host')

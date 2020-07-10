@@ -20,6 +20,9 @@ from pisa.utils.log import logging
 from pisa.utils.numba_tools import WHERE
 from pisa.utils import vectorizer
 import pisa.utils.hypersurface as hs
+from pisa.utils.log import set_verbosity, Levels
+from pisa.utils.profiler import line_profile
+#set_verbosity(Levels.DEBUG)
 
 __all__ = ["pi_hypersurfaces",]
 
@@ -160,6 +163,7 @@ class pi_hypersurfaces(PiStage): # pylint: disable=invalid-name
             if self.propagate_uncertainty:
                 container["hs_scales_uncertainty"] = np.empty(container.size, dtype=FTYPE)
 
+
         # Check map names match between data container and hypersurfaces
         for container in self.data:
             assert container.name in self.hypersurfaces, f"No match for map {container.name} found in the hypersurfaces"
@@ -219,28 +223,35 @@ class pi_hypersurfaces(PiStage): # pylint: disable=invalid-name
         # Unlink the containers again
         self.data.unlink_containers()
 
+    @line_profile
     def apply_function(self):
+
         for container in self.data:
-            # update uncertainty first, before the weights are changed
+            # update uncertainty first, before the weights are changed. This step is skipped in event mode
             if self.error_method == "sumw2":
-                if self.propagate_uncertainty:
+
+                # If computing uncertainties in events mode, warn that
+                # hs error propagation will be skipped
+                if self.data.data_specs=='events':
+                    logging.trace('WARNING: running stage in events mode. Hypersurface error propagation will be IGNORED.')
+                
+                elif self.propagate_uncertainty:
                     calc_uncertainty(container["weights"].get(WHERE),
                                      container["hs_scales_uncertainty"].get(WHERE),
                                      container["errors"].get(WHERE),
                                     )
+                    container['errors'].mark_changed()
+
                 else:
                     vectorizer.imul(container["hs_scales"], out=container["errors"])
-                container['errors'].mark_changed()
+                    container['errors'].mark_changed()
+
             # Update weights according to hypersurfaces
-            vectorizer.imul(container["hs_scales"], out=container["weights"])
+            propagate_hs_scales(container["weights"].get(WHERE),
+                                container["hs_scales"].get(WHERE),
+                                container["weights"].get(WHERE))
+
             container['weights'].mark_changed()
-            # Correct negative event counts that can be introduced by hypersurfaces (due to intercept)
-            weights = container["weights"].get('host')
-            neg_mask = weights < 0.
-            if neg_mask.sum() > 0:
-                weights[neg_mask] = 0.
-                np.copyto(src=weights, dst=container["weights"].get('host'))
-                container["weights"].mark_changed()
 
 
 if FTYPE == np.float32:
@@ -251,3 +262,13 @@ else:
 def calc_uncertainty(weight, scale_uncertainty, out):
     '''vectorized error propagation'''
     out[0] = weight[0]*scale_uncertainty[0]
+
+
+if FTYPE == np.float32:
+    _SIGNATURE = ['(f4[:], f4[:], f4[:])']
+else:
+    _SIGNATURE = ['(f8[:], f8[:], f8[:])']
+@guvectorize(_SIGNATURE, '(),()->()', target=TARGET)
+def propagate_hs_scales(weight, hs_scales, out):
+    '''vectorized error propagation'''
+    out[0] = max(0., weight[0]*hs_scales[0])
