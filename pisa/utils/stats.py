@@ -610,7 +610,6 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
             logging.debug('\n\n\n')
         assert np.all(weight_sum >= 0), 'ERROR: negative weights detected'
 
-
         #
         # If the expected MC count is high, compute a normal poisson probability
         # 
@@ -618,13 +617,12 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
 
             #logP = data_count*np.log(weight_sum.sum())-weight_sum.sum()-(data_count*np.log(data_count)-data_count)
             #llh_per_bin[bin_i] = logP
+            
+            alphas = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_alphas'].maps])
+            betas  = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_betas'].maps])
             mask = np.isfinite(alphas)*np.isfinite(betas)
-            print('data_count: ',data_count,' sum of MC: ',weight_sum.sum())
             llh_per_bin[bin_i] = approximate_poisson_normal(data_count=data_count, alphas=alphas[mask], betas=betas[mask])
-
-
-
-
+            
         else:
             
             from pisa.stages.test_bourdeet.llh_defs.poisson import fast_pgmix
@@ -646,7 +644,7 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
     return llh_per_bin
     
 
-def approximate_poisson_normal(data_count, alphas, betas, use_c=False):
+def approximate_poisson_normal(data_count, alphas=None, betas=None, use_c=False):
     '''
     Compute the likelihood of a marginalized poisson-gamma
     function, using a single normal distribution instead of
