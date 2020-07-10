@@ -2869,7 +2869,7 @@ class MapSet(object):
             raise ValueError('`metric` "%s" not recognized; use one of %s.'
                              % (metric, stats.ALL_METRICS))
 
-    def metric_total(self, expected_values, metric, metric_kwargs={}):
+    def metric_total(self, expected_values, metric):
 
         return np.sum(list(self.metric_per_map(expected_values, metric).values()))
 
