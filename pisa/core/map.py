@@ -1607,8 +1607,7 @@ class Map(object):
 
 
     def generalized_poisson_llh(self, expected_values=None, empty_bins=None, binned=False):
-        '''
-        compute the likelihood of this map's count to originate from
+        '''compute the likelihood of this map's count to originate from
 
         Note that unlike the other likelihood functions, expected_values
         is expected to be a ditribution maker
@@ -1634,10 +1633,12 @@ class Map(object):
             return np.sum(llh_per_bin)
 
 
-    def metric_total(self, expected_values, metric, metric_kwargs={}):
+    def metric_total(self, expected_values, metric, metric_kwargs=None):
         # TODO: should this use reduceToHist as in chi2 and llh above?
+        if metric_kwargs is None:
+            metric_kwargs={}
         if metric in stats.ALL_METRICS:
-            return getattr(self, metric)(expected_values,**metric_kwargs)
+            return getattr(self, metric)(expected_values, **metric_kwargs)
         else:
             raise ValueError('`metric` "%s" not recognized; use one of %s.'
                              % (metric, stats.ALL_METRICS))
@@ -2884,11 +2885,11 @@ class MapSet(object):
         Parameters
         ----------
         method : None or string
-        random_stae : None, numpy.random.RandomState, or seed spec
+        random_state : None, numpy.random.RandomState, or seed spec
 
         """
-        #random_state = get_random_state(random_state=random_state,
-        #                                jumpahead=jumpahead)
+        random_state = get_random_state(random_state=random_state,
+                                        jumpahead=jumpahead)
         new_maps = [m.fluctuate(method=method, random_state=random_state)
                     for m in self]
         return MapSet(maps=new_maps, name=self.name, tex=self.tex, hash=None,

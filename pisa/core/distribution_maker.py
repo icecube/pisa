@@ -212,12 +212,10 @@ class DistributionMaker(object):
                 outputs.tex = sum_map_tex_name
                 outputs = MapSet(outputs) # final output must be a MapSet
 
-
             # Case where the output of a pipeline is a dict of different MapSets
             elif isinstance(outputs[0], OrderedDict):
                 output_dict = OrderedDict()
                 for key in outputs[0].keys():
-
                     output_dict[key] = sum([sum(A[key]) for A in outputs]) # This produces a Map objects
                     output_dict[key].name = sum_map_name
                     output_dict[key].tex = sum_map_tex_name
@@ -226,7 +224,6 @@ class DistributionMaker(object):
                 outputs = output_dict
 
         return outputs
-
 
     def update_params(self, params):
         for pipeline in self:
@@ -293,38 +290,36 @@ class DistributionMaker(object):
         return hash_obj([self.source_code_hash] + [p.hash for p in self])
 
     @property
-    def num_mc_events_per_bin(self):
+    def num_events_per_bin(self):
         '''
         returns an array of bin indices where none of the 
         pipelines have MC events
 
         assumes that all pipelines have the same binning output specs
+
+        number of events is taken out of the last stage of the pipeline
         '''
         num_bins = self.pipelines[0].stages[-1].output_specs.tot_num_bins
-        num_mc_events_per_bin = np.zeros(num_bins)
+        num_events_per_bin = np.zeros(num_bins)
 
         for p in self.pipelines:
+            assert p.stages[-1].output_specs.tot_num_bins==num_bins, 'ERROR: different pipelines have different binning'
 
             for c in p.stages[-1].data:
-
-                # skip data or pseudo-data pipelines
-                if c.name == 'data' or c.name == 'Total':
-                    continue
-
                 for index in range(num_bins):
                     index_mask = c.array_data['bin_{}_mask'.format(index)].get('host')
                     current_weights = c.array_data['weights'].get('host')[index_mask]
                     n_weights = current_weights.shape[0]
+                    num_events_per_bin[index] += n_weights
 
-                    num_mc_events_per_bin[index] += n_weights
-        return num_mc_events_per_bin
+        return num_events_per_bin
     
 
     @property
-    def get_empty_bins(self):
-        '''Find indices where there are no MC events present
+    def empty_bin_indices(self):
+        '''Find indices where there are no events present
         '''
-        empty_counts = self.num_mc_events_per_bin == 0
+        empty_counts = self.num_events_per_bin == 0
         indices = np.where(empty_counts)[0]
         return indices
     

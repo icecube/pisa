@@ -115,7 +115,7 @@ class add_indices(PiStage):
 
         for container in self.data:
             # Generate a new container called bin_indices
-            container['bin_indices'] = np.empty((container.size), dtype=FTYPE)
+            container['bin_indices'] = np.empty((container.size), dtype=np.int64)
   
             variables_to_bin = []
             for bin_name in self.output_specs.names:

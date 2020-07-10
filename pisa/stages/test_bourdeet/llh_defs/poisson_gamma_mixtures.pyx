@@ -62,15 +62,3 @@ def c_multi_pgg(int k, np.ndarray[np.float64_t, ndim=1] A,np.ndarray[np.float64_
 
     return res
 
-
-
-
-
-
-
-
-
-
-
-
-

@@ -5,6 +5,7 @@ functionality is built-in.
 
 
 from __future__ import absolute_import, division
+
 from collections import OrderedDict
 from numba import SmartArray
 
@@ -290,8 +291,7 @@ class PiStage(BaseStage):
         return None
 
     def get_outputs(self, output_mode=None, force_standard_output=True):
-        """
-        Get the outputs of the PISA stage
+        """Get the outputs of the PISA stage
         Depending on `self.output_mode`, this may be a binned object, or the event container itself
 
         add option to force an output mode

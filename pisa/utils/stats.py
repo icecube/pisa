@@ -44,7 +44,7 @@ CHI2_METRICS = ['chi2', 'mod_chi2']
 """Metrics defined that result in measures of chi squared"""
 
 LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh', 'mcllh_mean', 
-'mcllh_eff','generalized_poisson_llh']
+'mcllh_eff', 'generalized_poisson_llh']
 """Metrics defined that result in measures of log likelihood"""
 
 ALL_METRICS = LLH_METRICS + CHI2_METRICS
@@ -550,8 +550,7 @@ def mod_chi2(actual_values, expected_values):
 # Generalized Poisson-gamma llh from 1902.08831
 #
 def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None):
-    '''
-    Compute the generalized Poisson likelihood as formulated in https://arxiv.org/abs/1902.08831
+    '''Compute the generalized Poisson likelihood as formulated in https://arxiv.org/abs/1902.08831
 
 
     Note that unlike the other likelihood functions, expected_values
@@ -604,21 +603,27 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
         # Make sure that no weight sum is negative. Crash if there are
         weight_sum = np.array([m.hist.flatten()[bin_i] for m in expected_values['new_sum'].maps])
         if (weight_sum<0).sum()>0:
-            print('\n\n\n')
-            print('weights that are causing problem: ')
-            print(weight_sum[weight_sum<0])
-            print((weight_sum<0).sum())
-            print('\n\n\n')
+            logging.debug('\n\n\n')
+            logging.debug('weights that are causing problem: ')
+            logging.debug(weight_sum[weight_sum<0])
+            logging.debug((weight_sum<0).sum())
+            logging.debug('\n\n\n')
         assert np.all(weight_sum >= 0), 'ERROR: negative weights detected'
 
 
         #
-        # If high enough data count, compute a normal poisson probability
-        #
-        if data_count>100:
+        # If the expected MC count is high, compute a normal poisson probability
+        # 
+        if weight_sum.sum()>100:
 
-            logP = data_count*np.log(weight_sum.sum())-weight_sum.sum()-(data_count*np.log(data_count)-data_count)
-            llh_per_bin[bin_i] = logP
+            #logP = data_count*np.log(weight_sum.sum())-weight_sum.sum()-(data_count*np.log(data_count)-data_count)
+            #llh_per_bin[bin_i] = logP
+            mask = np.isfinite(alphas)*np.isfinite(betas)
+            print('data_count: ',data_count,' sum of MC: ',weight_sum.sum())
+            llh_per_bin[bin_i] = approximate_poisson_normal(data_count=data_count, alphas=alphas[mask], betas=betas[mask])
+
+
+
 
         else:
             
@@ -640,3 +645,71 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
 
     return llh_per_bin
     
+
+def approximate_poisson_normal(data_count, alphas, betas, use_c=False):
+    '''
+    Compute the likelihood of a marginalized poisson-gamma
+    function, using a single normal distribution instead of
+    the convolution of gamma function
+
+    This formula can be used when the MC counts are really
+    high, and where the gamma function throws infinite values
+
+    '''
+    from scipy.integrate import quad
+    import numpy as np
+
+    gamma_mean = np.sum(alphas/betas)
+    gamma_sigma = np.sqrt(np.sum(alphas/betas**2.))
+
+    #
+    # Define integration range as +- 5 sigma
+    #
+    lower = max(0,gamma_mean-5*gamma_sigma)
+    upper = gamma_mean+5*gamma_sigma
+
+    #
+    # integrate over the boundaries
+    #
+    if use_c:
+
+        import os, ctypes
+        import numpy as np
+        from scipy import integrate, LowLevelCallable
+
+        lib = ctypes.CDLL(os.path.abspath('/groups/icecube/bourdeet/pisa/pisa/utils/poisson_normal.so'))
+        lib.approximate_gamma_poisson_integrand.restype = ctypes.c_double
+        lib.approximate_gamma_poisson_integrand.argtypes = (ctypes.c_int, ctypes.POINTER(ctypes.c_double), ctypes.c_void_p)
+
+        # Define the parameters
+        params = (ctypes.c_double*3)()
+
+        k = 1.
+        A = 3.
+        B = 3.
+        params[0] = data_count
+        params[1] = gamma_mean
+        params[2] = gamma_sigma
+
+        user_data = ctypes.cast(params, ctypes.c_void_p)
+        func = LowLevelCallable(lib.approximate_gamma_poisson_integrand, user_data)
+        LH = quad(func, lower, upper)[0]
+        print('lower ',lower,' upper: ',upper,' LH: ',LH)
+    else:
+
+        LH = quad(approximate_poisson_normal_python, lower, upper, args=(data_count, gamma_mean, gamma_sigma))[0]
+        print('lower ',lower,' upper: ',upper,' data_count: ',data_count,' mean: ', gamma_mean, ' sigma: ',gamma_sigma, ' LH: ',LH)
+
+    LH = max(SMALL_POS,LH) 
+    return np.log(LH)
+
+
+
+def approximate_poisson_normal_python(lamb, k, A, B):
+
+    from scipy.stats import norm
+    
+    normal_term = norm.pdf(lamb, loc=A, scale=B)
+    normal_poisson = norm.pdf(k, loc=lamb, scale=np.sqrt(lamb))
+
+    return normal_term*normal_poisson

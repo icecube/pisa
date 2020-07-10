@@ -58,6 +58,7 @@ class pi_kfold(PiStage):
         seed=None,
         renormalize=False,
         shuffle=False,
+        save_mask=False,
         data=None,
         params=None,
         input_names=None,
@@ -107,6 +108,8 @@ class pi_kfold(PiStage):
         self.renormalize = bool(renormalize)
         self.shuffle = bool(shuffle)
 
+        self.save_mask = save_mask
+
     def setup_function(self):
         from sklearn.model_selection import KFold
 
@@ -123,6 +126,12 @@ class pi_kfold(PiStage):
             )
             container["fold_weight"][select_idx] = select_weight
             container["fold_weight"].mark_changed(WHERE)
+
+            if self.save_mask:
+                container['kfold_mask'] = np.zeros((container.size), dtype=np.bool)
+                container['kfold_mask'][select_idx] = 1
+                container['kfold_mask'].mark_changed(WHERE)
+
 
     def apply_function(self):
         for container in self.data:

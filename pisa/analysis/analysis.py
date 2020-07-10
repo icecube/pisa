@@ -7,7 +7,7 @@ Common tools for performing an analysis collected into a single class
 from __future__ import absolute_import, division
 
 from collections.abc import Sequence
-from collections import OrderedDict 
+from collections import OrderedDict, Mapping
 from copy import deepcopy
 from itertools import product
 import re
@@ -59,7 +59,7 @@ def merge_mapsets_together(mapset_list=None):
 
     '''
 
-    if isinstance(mapset_list[0], OrderedDict):    
+    if isinstance(mapset_list[0], Mapping):    
         new_dict = OrderedDict()
         for S in mapset_list:
             for k,v in S.items():
@@ -73,7 +73,7 @@ def merge_mapsets_together(mapset_list=None):
             new_dict[k] = MapSet(v)
 
     else:
-        raise Exception('This function only works when mapsets are provided as dicts')
+        raise TypeError('This function only works when mapsets are provided as dicts')
 
     return new_dict
 
@@ -1073,17 +1073,16 @@ class Analysis(object):
 
         # Get the Asimov map set
         try:
-            if metric[0]=='generalized_poisson_llh':
+            if metric[0] == 'generalized_poisson_llh':
                 hypo_asimov_dist = hypo_maker.get_outputs(return_sum=False, output_mode='binned', force_standard_output=False)
                 hypo_asimov_dist = merge_mapsets_together(mapset_list=hypo_asimov_dist)
                 data_dist = data_dist.maps[0] # Extract the map from the MapSet
-                metric_kwargs = {'empty_bins':hypo_maker.get_empty_bins}
+                metric_kwargs = {'empty_bins':hypo_maker.empty_bin_indices}
             else:
                 hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
-                if isinstance(hypo_asimov_dist,OrderedDict):
+                if isinstance(hypo_asimov_dist, OrderedDict):
                     hypo_asimov_dist = hypo_asimov_dist['weights']
                 metric_kwargs = {}
-
 
         except Exception as e:
             if blind:
@@ -1118,9 +1117,8 @@ class Analysis(object):
                 priors = hypo_maker.params.priors_penalty(metric=metric[0]) # uses just the "first" metric for prior
                 metric_val += priors
             else: # DistributionMaker object
-
                 metric_val = (
-                        data_dist.metric_total(expected_values=hypo_asimov_dist,
+                    data_dist.metric_total(expected_values=hypo_asimov_dist,
                                                metric=metric[0], metric_kwargs=metric_kwargs)
                         + hypo_maker.params.priors_penalty(metric=metric[0])
                     )
