@@ -7,7 +7,7 @@ values.
 
 from __future__ import absolute_import, division
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, MutableSequence, Set, Sequence
 from collections import OrderedDict
 from copy import deepcopy
 from functools import total_ordering
@@ -528,9 +528,21 @@ class Param:
 
 
 # TODO: temporary modification of parameters via "with" syntax?
-class ParamSet(Sequence):
+# TODO: union, |, intersection, &, difference, -, symmetric_difference, ^, copy
+class ParamSet(MutableSequence, Set):
     r"""Container class for a set of parameters. Most methods are passed
     through to contained params.
+
+    Interface is a superset of both `MutableSequence` (i.e., behaves like a
+    Python `list`, so ordering, appending, extending, etc. all work) and `Set`
+    (i.e., behaves like a Python `set`, so no duplicates (tested by name) are
+    allowed, you can test set membership like issuperset, issubset, etc.).
+    See .. ::
+
+        https://docs.python.org/3/library/collections.abc.html
+
+    for the definitions of the `MutableSequence` and `Set` interfaces.
+
 
     Parameters
     ----------
@@ -780,16 +792,25 @@ class ParamSet(Sequence):
         elif extend:
             self._params.append(param)
 
-    def extend(self, obj):
-        """Append param(s) in `obj` to this param set, but ensure params in
-        `obj` that are already in this param set match. Params with same name
+    def insert(self, index, value):
+        """Insert value before index"""
+        if not isinstance(value, Param):
+            raise TypeError(f"`value` must be a Param; got {type(value)} instead")
+        if value.name in self.names:
+            raise ValueError(f"Cannot insert an existing param name: '{value.name}'")
+        idx = self.index(index)
+        self._params.insert(idx, value)
+
+    def extend(self, values):
+        """Append param(s) in `values` to this param set, but ensure params in
+        `values` that are already in this param set match. Params with same name
         attribute are not duplicated.
 
         (Convenience method or calling `update` method with
         existing_must_match=True and extend=True.)
 
         """
-        self.update(obj, existing_must_match=True, extend=True)
+        self.update(values, existing_must_match=True, extend=True)
 
     def update_existing(self, obj):
         """Only existing params in this set are updated by that(those) param(s)
@@ -809,6 +830,10 @@ class ParamSet(Sequence):
             self._params[i].value = val
         elif isinstance(i, str):
             self._by_name[i].value = val
+
+    def __delitem__(self, i):
+        idx = self.index(i)
+        del self._params[idx]
 
     def __deepcopy__(self, memo):
         cls = self.__class__
@@ -891,6 +916,24 @@ class ParamSet(Sequence):
         if not isinstance(other, self.__class__):
             return False
         return recursiveEquality(self.state, other.state)
+
+    def issubset(self, other):
+        return all(param in other for param in self)
+
+    def issuperset(self, other):
+        return all(param in self for param in other)
+
+    def __leq__(self, other):
+        return self.issubset(other)
+
+    def __lt__(self, other):
+        return len(other) > len(self) and self.issubset(other)
+
+    def __geq__(self, other):
+        return self.issuperset(other)
+
+    def __gt__(self, other):
+        return len(self) > len(other) and self.issuperset(other)
 
     def priors_penalty(self, metric):
         """Return the aggregate prior penalty for all params at their current
@@ -1384,15 +1427,90 @@ def test_ParamSet():
     p0 = Param(name='c', value=1.5, prior=None, range=[1, 2],
                is_fixed=False, is_discrete=False, tex=r'\int{\rm c}')
     p1 = Param(name='a', value=2.5, prior=None, range=[1, 5],
-               is_fixed=False, is_discrete=False, tex=r'{\rm a}')
+               is_fixed=True, is_discrete=False, tex=r'{\rm a}')
     p2 = Param(name='b', value=1.5, prior=None, range=[1, 2],
                is_fixed=False, is_discrete=False, tex=r'{\rm b}')
-    param_set = ParamSet(p0, p1, p2)
+    p3 = Param(name='deleteme', value=0.1, prior=None, range=[-1, 1],
+               is_fixed=True, is_discrete=False, tex=r'{\rm dm}')
+
+    proto_param_set = ParamSet(p0, p1, p2)
+
+    # Membership tests
+    assert p0 in proto_param_set
+    assert p1 in proto_param_set
+    assert p2 in proto_param_set
+    p0_mod = deepcopy(p0)
+    p0_mod.value = 1.6
+    assert p0_mod not in proto_param_set
+    assert proto_param_set.issubset(proto_param_set)
+    assert proto_param_set <= proto_param_set
+    assert proto_param_set.issuperset(proto_param_set)
+    assert proto_param_set >= proto_param_set
+    assert not proto_param_set.isdisjoint(proto_param_set)
+
+    param_set = ParamSet(p3, p0, p1, p2)
+    logging.debug(str((param_set.values)))
+    assert param_set >= proto_param_set
+    assert param_set > proto_param_set
+    assert proto_param_set <= param_set
+    assert proto_param_set < param_set
+    assert len(param_set.fixed) == 2
+    del param_set['deleteme']
+    assert param_set == proto_param_set
+    assert param_set[0].value == 1.5
+    assert len(param_set) == 3
+    assert 'deleteme' not in param_set.names
+    assert len(param_set.fixed) == 1
+    logging.debug(str((param_set.values)))
+
+    param_set = ParamSet(p3, p0, p1, p2)
+    assert len(param_set.fixed) == 2
+    logging.debug(str((param_set.values)))
+    del param_set[0]
+    assert param_set == proto_param_set
+    assert param_set[0].value == 1.5
+    assert len(param_set) == 3
+    assert len(param_set.fixed) == 1
+    assert 'deleteme' not in param_set.names
+
+    # Test `remove`, `pop`, and `del` with param in any position
+    for idx in range(0, 4):
+        params = [p0, p1, p2]
+        if idx > len(params) - 1:
+            params.append(p3)
+        else:
+            params.insert(idx, p3)
+
+        param_set = ParamSet(*params)
+        param_set.remove(p3)
+        assert param_set == proto_param_set
+
+        param_set = ParamSet(*params)
+        p = param_set.pop(idx)
+        assert p == p3
+        assert param_set == proto_param_set
+
+        param_set = ParamSet(*params)
+        del param_set[idx]
+        assert param_set == proto_param_set
+
+    # Test `insert`
+    for idx in range(3):
+        params = [p0, p1, p2]
+        param_set = ParamSet(*params)
+
+        params.insert(idx, p3)
+        ref_param_set = ParamSet(*params)
+
+        param_set.insert(idx, p3)
+        assert param_set == ref_param_set
+
     logging.debug(str((param_set.values)))
     logging.debug(str((param_set[0])))
     param_set[0].value = 1
     logging.debug(str((param_set.values)))
 
+    param_set = deepcopy(proto_param_set)
     param_set.values = [1.5, 5, 1]
     logging.debug(str((param_set.values)))
     logging.debug(str((param_set.values[0])))

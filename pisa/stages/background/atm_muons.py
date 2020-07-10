@@ -226,4 +226,4 @@ else:
 
 @guvectorize([signature], '(),()->()', target=TARGET)
 def apply_atm_muon_sys(weight_mod,atm_muon_scale,out):
-    out[0] *= weight_mod * atm_muon_scale
+    out[0] *= max(0, weight_mod * atm_muon_scale)

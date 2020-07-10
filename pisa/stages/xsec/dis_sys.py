@@ -112,10 +112,10 @@ class dis_sys(PiStage): # pylint: disable=invalid-name
         extrap_dict = from_file('cross_sections/tot_xsec_corr_Q2min1_isoscalar.pckl')
 
         # load splines
-        wf_nucc = from_file('cross_sections/dis_csms_splines_flat/NuMu_CC_flat.pckl')
-        wf_nubarcc = from_file('cross_sections/dis_csms_splines_flat/NuMu_Bar_CC_flat.pckl')
-        wf_nunc = from_file('cross_sections/dis_csms_splines_flat/NuMu_NC_flat.pckl')
-        wf_nubarnc = from_file('cross_sections/dis_csms_splines_flat/NuMu_Bar_NC_flat.pckl')
+        wf_nucc = from_file('cross_sections/dis_csms_splines_flat_no_nucl_corr/NuMu_CC_flat.pckl')
+        wf_nubarcc = from_file('cross_sections/dis_csms_splines_flat_no_nucl_corr/NuMu_Bar_CC_flat.pckl')
+        wf_nunc = from_file('cross_sections/dis_csms_splines_flat_no_nucl_corr/NuMu_NC_flat.pckl')
+        wf_nubarnc = from_file('cross_sections/dis_csms_splines_flat_no_nucl_corr/NuMu_Bar_NC_flat.pckl')
 
         # set this to events mode, as we need the per-event info to calculate these weights
         self.data.data_specs = 'events'
@@ -215,4 +215,4 @@ def apply_dis_sys(
     dis_csms,
     out,
 ):
-    out[0] *= (1. + dis_correction_total * dis_csms) * (1. + dis_correction_diff * dis_csms) 
+    out[0] *= max(0, (1. + dis_correction_total * dis_csms) * (1. + dis_correction_diff * dis_csms) )
