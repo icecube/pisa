@@ -53,8 +53,7 @@ MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b', 'slsqp')
 gradients. See https://github.com/scipy/scipy/issues/4916"""
 
 def merge_mapsets_together(mapset_list=None):
-    '''
-    handle merging of multiple MapSets, when they come in
+    '''Handle merging of multiple MapSets, when they come in
     the shape of a dict
 
     '''
