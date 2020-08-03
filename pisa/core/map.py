@@ -1634,6 +1634,24 @@ class Map(object):
 
 
     def metric_total(self, expected_values, metric, metric_kwargs=None):
+        ''' Compute the optimization metric on the bins of a Map
+
+        Inputs
+        -------
+
+        expected_values: Map (the data/pseudo-data binned counts)
+
+        metric: str (name of the optimization metric)
+
+        metric_kwargs: None or Dict (special arguments to pass to
+                                     a special metric - right now just 
+                                     useful for generalized_poisson_llh)
+
+        Returns:
+        ------
+        float (sum of the metric over all bins of expected_values)
+
+        '''
         # TODO: should this use reduceToHist as in chi2 and llh above?
         if metric_kwargs is None:
             metric_kwargs={}
@@ -2869,8 +2887,14 @@ class MapSet(object):
             raise ValueError('`metric` "%s" not recognized; use one of %s.'
                              % (metric, stats.ALL_METRICS))
 
-    def metric_total(self, expected_values, metric):
+    def metric_total(self, expected_values, metric, metric_kwargs=None):
+        '''Compute the binned optimization metric on all maps of a mapset,
+           then sum it up.
 
+           metric_kwargs allows to pass extra arguments to the metric, like 
+                         the number of empty bins for the generalized poisson llh
+                         (Not yet implemented for Mapset) 
+        '''
         return np.sum(list(self.metric_per_map(expected_values, metric).values()))
 
     def chi2_per_map(self, expected_values):

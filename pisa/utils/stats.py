@@ -682,9 +682,6 @@ def approximate_poisson_normal(data_count, alphas=None, betas=None, use_c=False)
         # Define the parameters
         params = (ctypes.c_double*3)()
 
-        k = 1.
-        A = 3.
-        B = 3.
         params[0] = data_count
         params[1] = gamma_mean
         params[2] = gamma_sigma
@@ -692,11 +689,11 @@ def approximate_poisson_normal(data_count, alphas=None, betas=None, use_c=False)
         user_data = ctypes.cast(params, ctypes.c_void_p)
         func = LowLevelCallable(lib.approximate_gamma_poisson_integrand, user_data)
         LH = quad(func, lower, upper)[0]
-        print('lower ',lower,' upper: ',upper,' LH: ',LH)
+        #print('lower ',lower,' upper: ',upper,' LH: ',LH)
     else:
 
         LH = quad(approximate_poisson_normal_python, lower, upper, args=(data_count, gamma_mean, gamma_sigma))[0]
-        print('lower ',lower,' upper: ',upper,' data_count: ',data_count,' mean: ', gamma_mean, ' sigma: ',gamma_sigma, ' LH: ',LH)
+        #print('lower ',lower,' upper: ',upper,' data_count: ',data_count,' mean: ', gamma_mean, ' sigma: ',gamma_sigma, ' LH: ',LH)
 
     LH = max(SMALL_POS,LH) 
     return np.log(LH)

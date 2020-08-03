@@ -801,6 +801,8 @@ class Analysis(object):
         for k in sorted(optimize_result.keys()):
             if blind and k in ['jac', 'hess', 'hess_inv']:
                 continue
+            if k=='hess_inv':
+                continue
             metadata[k] = optimize_result[k]
 
         fit_info = OrderedDict()
