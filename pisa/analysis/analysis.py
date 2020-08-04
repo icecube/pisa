@@ -898,13 +898,27 @@ class Analysis(object):
                 priors = hypo_maker.params.priors_penalty(metric=metric[0]) # uses just the "first" metric for prior
                 metric_val += priors
             else: # DistributionMaker object
+
+                if 'generalized_poisson_llh' == metric[0]:
+
+                    hypo_asimov_dist = hypo_maker.get_outputs(return_sum=False, output_mode='binned', force_standard_output=False)
+                    hypo_asimov_dist = merge_mapsets_together(mapset_list=hypo_asimov_dist)
+                    data_dist = data_dist.maps[0] # Extract the map from the MapSet
+                    metric_kwargs = {'empty_bins':hypo_maker.empty_bin_indices}
+                else:
+                    hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
+                    if isinstance(hypo_asimov_dist, OrderedDict):
+                        hypo_asimov_dist = hypo_asimov_dist['weights']
+                    metric_kwargs = {}
+
                 metric_val = (
                     data_dist.metric_total(expected_values=hypo_asimov_dist,
-                                           metric=metric[0])
+                                           metric=metric[0], metric_kwargs=metric_kwargs)
                     + hypo_maker.params.priors_penalty(metric=metric[0])
                 )
                 if external_priors_penalty is not None:
                     metric_val += external_priors_penalty(hypo_maker=hypo_maker,metric=metric[0])
+                    
         except Exception as e:
             if blind:
                 logging.error('Minimizer failed')
@@ -932,11 +946,19 @@ class Analysis(object):
                 other_metrics=other_metrics, detector_name=hypo_maker.det_names[i]
             ) for i in range(len(data_dist))]
         else: # DistributionMaker object
+
+            if 'generalized_poisson_llh' == metric[0]:
+                generalized_poisson_dist = hypo_maker.get_outputs(return_sum=False, force_standard_output=False)
+                generalized_poisson_dist = merge_mapsets_together(mapset_list=generalized_poisson_dist)
+            else:
+                generalized_poisson_dist = None
+
             fit_info['detailed_metric_info'] = self.get_detailed_metric_info(
-                data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist,
+                data_dist=data_dist, hypo_asimov_dist=hypo_asimov_dist, generalized_poisson_hypo=generalized_poisson_dist,
                 params=hypo_maker.params, metric=metric[0], other_metrics=other_metrics,
                 detector_name=hypo_maker._detector_name
             )
+
         fit_info['minimizer_time'] = 0 * ureg.sec
         fit_info['num_distributions_generated'] = 0
         fit_info['minimizer_metadata'] = OrderedDict()
