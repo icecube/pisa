@@ -428,10 +428,12 @@ class Analysis(object):
         pprint : bool
             Whether to show live-update of minimizer progress.
 
-        blind : bool
-            Whether to carry out a blind analysis. This hides actual parameter
-            values from display and disallows these (as well as Jacobian,
-            Hessian, etc.) from ending up in logfiles.
+        blind : bool or int
+            Whether to carry out a blind analysis. If True or 1, this hides actual
+            parameter values from display and disallows these (as well as Jacobian,
+            Hessian, etc.) from ending up in logfiles. If given an integer > 1, the
+            fitted parameters are also prevented from being stored in fit info
+            dictionaries.
 
         external_priors_penalty : func
             User defined prior penalty function. Adds an extra penalty
@@ -578,7 +580,9 @@ class Analysis(object):
                         check_t23_octant(new_fit_info)
 
                 # record the correct range for theta23 (we force its value when fitting the octants separately)
-                if fit_octants_separately :
+                # If we are at the strictest blindness level 2, no parameters are stored and the 
+                # dict only contains an empty dict. Attempting to set a range would cause an eror.
+                if fit_octants_separately and blind < 2:
                     best_fit_info['params'].theta23.range = deepcopy(theta23_orig.range)
                     new_fit_info['params'].theta23.range = deepcopy(theta23_orig.range)
 
@@ -640,7 +644,7 @@ class Analysis(object):
         pprint : bool
             Whether to show live-update of minimizer progress.
 
-        blind : bool
+        blind : bool or int
 
         external_priors_penalty : func
             User defined prior penalty function
@@ -808,8 +812,10 @@ class Analysis(object):
         fit_info = OrderedDict()
         fit_info['metric'] = metric
         fit_info['metric_val'] = metric_val
-        if blind:
-            hypo_maker.reset_free()
+        if blind > 1:  # only at stricter blindness level
+            # Reset to starting value of the fit, rather than nominal values because
+            # the nominal value might be out of range if this is inside an octant check.
+            hypo_maker._set_rescaled_free_params(x0)
             fit_info['params'] = ParamSet()
         else:
             fit_info['params'] = deepcopy(hypo_maker.params)
