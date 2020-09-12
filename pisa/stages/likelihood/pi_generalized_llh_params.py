@@ -70,15 +70,15 @@ class pi_generalized_llh_params(PiStage):
 
 	# this is the constructor with default arguments
 	def __init__(self,
-				 data=None,
-				 params=None,
-				 input_names=None,
-				 output_names=None,
-				 debug_mode=None,
-				 input_specs=None,
-				 calc_specs=None,
-				 output_specs=None,
-				 ):
+			 data=None,
+			 params=None,
+			 input_names=None,
+			 output_names=None,
+			 debug_mode=None,
+			 input_specs=None,
+			 calc_specs=None,
+			 output_specs=None,
+			 ):
 		#
 		# A bunch of options we don't need
 		#
