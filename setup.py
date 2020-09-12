@@ -208,9 +208,9 @@ def do_setup():
     #    )
 
     # Collect (build-able) external modules and package_data
-    ext_modules = [Extension('pisa.stages.test_bourdeet.llh_defs.poisson_gamma_mixtures', 
-                                sources = ['pisa/stages/test_bourdeet/llh_defs/poisson_gamma_mixtures.pyx',
-                                           'pisa/stages/test_bourdeet/llh_defs/poisson_gamma.c'])
+    ext_modules = [Extension('pisa.stages.likelihood.llh_defs.poisson_gamma_mixtures', 
+                                sources = ['pisa/stages/likelihood/llh_defs/poisson_gamma_mixtures.pyx',
+                                           'pisa/stages/likelihood/llh_defs/poisson_gamma.c'])
                   ]
     # Include these things in source (and binary?) distributions
     package_data = {}

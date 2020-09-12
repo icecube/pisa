@@ -577,7 +577,6 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
     assert 'weights' in expected_values.keys(), 'ERROR: expected_values need a key named "weights"'
     assert 'llh_alphas' in expected_values.keys(), 'ERROR: expected_values need a key named "llh_alphas"'
     assert 'llh_betas' in expected_values.keys(), 'ERROR: expected_values need a key named "llh_betas"'
-    assert 'new_sum'   in expected_values.keys(), 'ERROR: expected_values need a key named "new_sum"'
 
     num_bins = actual_values.flatten().shape[0]
     llh_per_bin = np.zeros(num_bins)
@@ -601,7 +600,7 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
             continue
 
         # Make sure that no weight sum is negative. Crash if there are
-        weight_sum = np.array([m.hist.flatten()[bin_i] for m in expected_values['new_sum'].maps])
+        weight_sum = np.array([m.hist.flatten()[bin_i] for m in expected_values['weights'].maps])
         if (weight_sum<0).sum()>0:
             logging.debug('\n\n\n')
             logging.debug('weights that are causing problem: ')
@@ -615,17 +614,17 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
         # 
         if weight_sum.sum()>100:
 
-            #logP = data_count*np.log(weight_sum.sum())-weight_sum.sum()-(data_count*np.log(data_count)-data_count)
-            #llh_per_bin[bin_i] = logP
+            logP = data_count*np.log(weight_sum.sum())-weight_sum.sum()-(data_count*np.log(data_count)-data_count)
+            llh_per_bin[bin_i] = logP
             
-            alphas = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_alphas'].maps])
-            betas  = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_betas'].maps])
-            mask = np.isfinite(alphas)*np.isfinite(betas)
-            llh_per_bin[bin_i] = approximate_poisson_normal(data_count=data_count, alphas=alphas[mask], betas=betas[mask])
+            #alphas = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_alphas'].maps])
+            #betas  = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_betas'].maps])
+            #mask = np.isfinite(alphas)*np.isfinite(betas)
+            #llh_per_bin[bin_i] = approximate_poisson_normal(data_count=data_count, alphas=alphas[mask], betas=betas[mask])
             
         else:
             
-            from pisa.stages.test_bourdeet.llh_defs.poisson import fast_pgmix
+            from pisa.stages.likelihood.llh_defs.poisson import fast_pgmix
 
             alphas = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_alphas'].maps])
             betas  = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_betas'].maps])

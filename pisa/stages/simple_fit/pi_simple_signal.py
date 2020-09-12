@@ -16,7 +16,7 @@ from pisa.core.pi_stage import PiStage
 from pisa.core.bin_indexing import lookup_indices
 
 
-class super_simple_signal(PiStage):
+class pi_simple_signal(PiStage):
     """
     random toy event generator PISA Pi class
 

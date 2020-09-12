@@ -147,7 +147,7 @@ def create_mc_template(toymc_params, config_file=None, seed=None):
                    prior=None, range=[0, 100], is_fixed=False)
     new_sigma = Param(name='sigma', value=toymc_params.sigma,
                       prior=None, range=None, is_fixed=True)
-    Config[('simple_fit', 'super_simple_signal')]['params'].update(p=ParamSet(
+    Config[('simple_fit', 'pi_simple_signal')]['params'].update(p=ParamSet(
         [new_n_events_data, new_sig_frac, new_stats_factor, new_mu, new_sigma]))
 
     MCtemplate = DistributionMaker(Config)
@@ -191,8 +191,8 @@ def run_llh_scans(metrics=[], mc_template=None, data_mapset=None, results=None):
             new_MC = mc_template.get_outputs(
                 return_sum=False, force_standard_output=False)[0]
             llhval = data_mapset.maps[0].metric_total(new_MC, metric=metric, metric_kwargs={
-                                                      'empty_bins': mc_template.get_empty_bins})
-            logging.trace('empty_bins: ', mc_template.get_empty_bins)
+                                                      'empty_bins': mc_template.empty_bin_indices})
+            logging.trace('empty_bins: ', mc_template.empty_bin_indices)
         else:
             new_MC = mc_template.get_outputs(return_sum=True)
             llhval = data_mapset.metric_total(new_MC, metric=metric)
@@ -216,7 +216,7 @@ def run_llh_scans(metrics=[], mc_template=None, data_mapset=None, results=None):
                 new_MC = mc_template.get_outputs(
                     return_sum=False, force_standard_output=False)[0]
                 llhval = data_mapset.maps[0].metric_total(new_MC, metric=metric, metric_kwargs={
-                                                          'empty_bins': mc_template.get_empty_bins})
+                                                          'empty_bins': mc_template.empty_bin_indices})
             else:
                 new_MC = mc_template.get_outputs(return_sum=True)
                 llhval = data_mapset.metric_total(new_MC, metric=metric)

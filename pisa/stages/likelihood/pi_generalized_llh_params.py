@@ -60,7 +60,7 @@ from pisa.utils.log import set_verbosity, Levels
 #set_verbosity(Levels.DEBUG)
 
 
-class prepare_generalized_llh_parameters(PiStage):
+class pi_generalized_llh_params(PiStage):
 	"""
 	Pisa stage that applies mean adjustment and
 	empty bin filling. Also computes alphas and betas
@@ -95,19 +95,19 @@ class prepare_generalized_llh_parameters(PiStage):
 							 'llh_betas', 'n_mc_events', 'old_sum')
 
 		# init base class
-		super(prepare_generalized_llh_parameters, self).__init__(data=data,
-																 params=params,
-																 expected_params=expected_params,
-																 input_names=input_names,
-																 output_names=output_names,
-																 debug_mode=debug_mode,
-																 input_specs=input_specs,
-																 calc_specs=calc_specs,
-																 output_specs=output_specs,
-																 input_apply_keys=input_apply_keys,
-																 output_apply_keys=output_apply_keys,
-																 output_calc_keys=output_calc_keys,
-																 )
+		super(pi_generalized_llh_params, self).__init__(data=data,
+														 params=params,
+														 expected_params=expected_params,
+														 input_names=input_names,
+														 output_names=output_names,
+														 debug_mode=debug_mode,
+														 input_specs=input_specs,
+														 calc_specs=calc_specs,
+														 output_specs=output_specs,
+														 input_apply_keys=input_apply_keys,
+														 output_apply_keys=output_apply_keys,
+														 output_calc_keys=output_calc_keys,
+														 )
 
 	def setup_function(self):
 		"""
@@ -159,7 +159,14 @@ class prepare_generalized_llh_parameters(PiStage):
 			container.add_scalar_data(key='mean_adjustment', data=mean_adjustment)
 
 
-
+			#
+			# Add hypersurface containers if they don't exist
+			# (to avoid errors in get_outputs, if we want )
+			# these to be returned when you call get_output
+			#
+			if 'hs_scales' not in container.keys():
+				container['hs_scales'] =  np.empty((container.size), dtype=FTYPE)
+				container['errors'] = np.empty((container.size), dtype=FTYPE)
 
 
 	def apply_function(self):

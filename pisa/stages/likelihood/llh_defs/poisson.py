@@ -31,7 +31,7 @@ import itertools
 import numpy as np
 import scipy
 from scipy.stats import norm
-from pisa.stages.test_bourdeet.llh_defs import poisson_gamma_mixtures
+from pisa.stages.likelihood.llh_defs import poisson_gamma_mixtures
 
 from pisa.utils.log import logging
 ########################################################################################
