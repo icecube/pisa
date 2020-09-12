@@ -96,18 +96,18 @@ class pi_generalized_llh_params(PiStage):
 
 		# init base class
 		super(pi_generalized_llh_params, self).__init__(data=data,
-														 params=params,
-														 expected_params=expected_params,
-														 input_names=input_names,
-														 output_names=output_names,
-														 debug_mode=debug_mode,
-														 input_specs=input_specs,
-														 calc_specs=calc_specs,
-														 output_specs=output_specs,
-														 input_apply_keys=input_apply_keys,
-														 output_apply_keys=output_apply_keys,
-														 output_calc_keys=output_calc_keys,
-														 )
+												 params=params,
+												 expected_params=expected_params,
+												 input_names=input_names,
+												 output_names=output_names,
+												 debug_mode=debug_mode,
+												 input_specs=input_specs,
+												 calc_specs=calc_specs,
+												 output_specs=output_specs,
+												 input_apply_keys=input_apply_keys,
+												 output_apply_keys=output_apply_keys,
+												 output_calc_keys=output_calc_keys,
+												 )
 
 	def setup_function(self):
 		"""
