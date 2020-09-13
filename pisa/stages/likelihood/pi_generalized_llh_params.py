@@ -59,6 +59,8 @@ from pisa.utils.profiler import profile, line_profile
 from pisa.utils.log import set_verbosity, Levels
 #set_verbosity(Levels.DEBUG)
 
+PSEUDO_WEIGHT = 0.001
+
 
 class pi_generalized_llh_params(PiStage):
 	"""
@@ -194,7 +196,7 @@ class pi_generalized_llh_params(PiStage):
 
 			# for this part we are in events mode
 			# Find the minimum weight of an entire MC set
-			pseudo_weight = 0.001#np.mean(container['weights'].get('host'))
+			pseudo_weight = 0.001
 			container.add_scalar_data(key='pseudo_weight', data=pseudo_weight)
 
 			old_weight_sum = np.zeros(N_bins)
@@ -245,8 +247,12 @@ class pi_generalized_llh_params(PiStage):
 					logging.warn(container.name, var_z)
 					raise Exception
 
-				beta = mean_w/var_z
-				trad_alpha = (mean_w**2)/var_z
+				# if the weights presents have a mean of zero, 
+				# default to alphas values of PSEUDO_WEIGHT and
+				# of beta = 1.0, which mimicks a narrow PDF
+				# close to 0.0 
+				beta = np.divide(mean_w, var_z, out=np.ones(1), where=var_z!=0)
+				trad_alpha = np.divide(mean_w**2, var_z, out=np.ones(1)*PSEUDO_WEIGHT, where=var_z!=0)
 				alpha = (n_weights + mean_adjustment)*trad_alpha
 
 				alphas_vector[index] = alpha
