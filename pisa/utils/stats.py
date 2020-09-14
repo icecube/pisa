@@ -624,7 +624,7 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
             
         else:
             
-            from pisa.stages.likelihood.llh_defs.poisson import fast_pgmix
+            from pisa.utils.llh_defs.poisson import fast_pgmix
 
             alphas = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_alphas'].maps])
             betas  = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_betas'].maps])

@@ -38,7 +38,7 @@ set_verbosity(Levels.TRACE)
 ##################################################################################
 
 STANDARD_CONFIG = os.environ['PISA'] + \
-    '/pisa/stages/simple_fit/super_simple_pipeline.cfg'
+    '/pisa/stages/data/super_simple_pipeline.cfg'
 TRUE_MU = 20.
 TRUE_SIGMA = 3.1
 NBINS = 51
@@ -147,7 +147,7 @@ def create_mc_template(toymc_params, config_file=None, seed=None):
                    prior=None, range=[0, 100], is_fixed=False)
     new_sigma = Param(name='sigma', value=toymc_params.sigma,
                       prior=None, range=None, is_fixed=True)
-    Config[('simple_fit', 'pi_simple_signal')]['params'].update(p=ParamSet(
+    Config[('data', 'pi_simple_signal')]['params'].update(p=ParamSet(
         [new_n_events_data, new_sig_frac, new_stats_factor, new_mu, new_sigma]))
 
     MCtemplate = DistributionMaker(Config)
@@ -363,7 +363,7 @@ def run_coverage_test(n_trials=100,
                     llhval_true = data_trial.maps[0].metric_total(mc, 
                                                                   metric=metric, 
                                                                   metric_kwargs={
-                                                                  'empty_bins': mc_infinite_stats.get_empty_bins})
+                                                                  'empty_bins': mc_infinite_stats.empty_bin_indices})
                 else:
                     mc = mc_infinite_stats.get_outputs(return_sum=True)
                     llhval_true = data_trial.metric_total(mc, metric=metric)
@@ -380,7 +380,7 @@ def run_coverage_test(n_trials=100,
                     llhval = data_trial.maps[0].metric_total(mc, 
                                                              metric=metric, 
                                                              metric_kwargs={
-                                                             'empty_bins': mc_template.get_empty_bins})
+                                                             'empty_bins': mc_template.empty_bin_indices})
                 else:
                     mc = mc_template.get_outputs(return_sum=True)
                     llhval = data_trial.metric_total(mc,
