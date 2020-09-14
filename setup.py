@@ -208,7 +208,7 @@ def do_setup():
     #    )
 
     # Collect (build-able) external modules and package_data
-    ext_modules = [Extension('pisa.utls.poisson_gamma_mixtures', 
+    ext_modules = [Extension('pisa.utils.poisson_gamma_mixtures', 
                                 sources = ['pisa/utils/llh_defs/poisson_gamma_mixtures.pyx',
                                            'pisa/utils/llh_defs/poisson_gamma.c'])
                   ]
