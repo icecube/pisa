@@ -23,6 +23,18 @@ class pi_adhoc_sys(PiStage):  # pylint: disable=invalid-name
     comparisons. The comparisons are produced somewhere externally and stored as a JSON
     which encodes the binning that was used to make the comparison and the resulting
     scaling factors.
+    
+    Parameters
+    ----------
+    
+    variable_name : str
+        Name of the variable to correct data/MC agreement for. The variable must be
+        loaded in the data loading stage and it must be present in the loaded JSON file.
+    
+    scale_file : str
+        Path to the file which contains the binning and the scale factors. The JSON
+        file must contain a dictionary in which, for each variable, a 1D binning and
+        an array of factors. This file is produced externally from PISA.
     """
     def __init__(
         self,
