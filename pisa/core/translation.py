@@ -370,16 +370,23 @@ def lookup(sample, flat_hist, binning):
 
     Notes
     -----
-    Only handles 2d and 3d right now
+    Handles up to 3D.
 
     """
-    assert binning.num_dims in [2, 3], 'can only do 2d and 3d at the moment'
+    assert binning.num_dims <= 3, 'can only do up to 3D at the moment'
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
     # TODO: directly return smart array
     if flat_hist.ndim == 1:
         #print 'looking up 1D'
         hist_vals = SmartArray(np.zeros_like(sample[0]))
-        if binning.num_dims == 2:
+        if binning.num_dims == 1:
+            lookup_vectorized_1d(
+                sample[0].get(WHERE),
+                flat_hist.get(WHERE),
+                bin_edges[0],
+                out=hist_vals.get(WHERE),
+            )
+        elif binning.num_dims == 2:
             lookup_vectorized_2d(
                 sample[0].get(WHERE),
                 sample[1].get(WHERE),
@@ -404,6 +411,13 @@ def lookup(sample, flat_hist, binning):
         hist_vals = SmartArray(
             np.zeros((sample[0].size, flat_hist.shape[1]), dtype=FTYPE)
         )
+        if binning.num_dims == 1:
+            lookup_vectorized_1d_arrays(
+                sample[0].get(WHERE),
+                flat_hist.get(WHERE),
+                bin_edges[0],
+                out=hist_vals.get(WHERE),
+            )
         if binning.num_dims == 2:
             lookup_vectorized_2d_arrays(
                 sample[0].get(WHERE),
@@ -546,6 +560,45 @@ def find_index_cuda(val, bin_edges, out):
     if i < val.size:
         out[i] = find_index(val[i], bin_edges)
 
+@guvectorize(
+    [f'({FX}[:], {FX}[:], {FX}[:], {FX}[:])'],
+    '(), (j), (k) -> ()',
+    target=TARGET,
+)
+def lookup_vectorized_1d(
+    sample,
+    flat_hist,
+    bin_edges,
+    weights,
+):
+    """Vectorized gufunc to perform the lookup"""
+    x = sample[0]
+    if (bin_edges[0] <= x <= bin_edges[-1]):
+        idx = find_index_unsafe(x, bin_edges)
+        weights[0] = flat_hist[idx]
+    else:  # outside of binning or nan
+        weights[0] = 0.
+
+@guvectorize(
+    [f'({FX}[:], {FX}[:, :], {FX}[:], {FX}[:])'],
+    '(), (j, d), (k) -> (d)',
+    target=TARGET,
+)
+def lookup_vectorized_1d_arrays(
+    sample,
+    flat_hist,
+    bin_edges,
+    weights,
+):
+    """Vectorized gufunc to perform the lookup"""
+    x = sample[0]
+    if (bin_edges[0] <= x <= bin_edges[-1]):
+        idx = find_index_unsafe(x, bin_edges)
+        for i in range(weights.size):
+            weights[i] = flat_hist[idx, i]
+    else:  # outside of binning or nan
+        for i in range(weights.size):
+            weights[i] = 0.
 
 @guvectorize(
     [f'({FX}[:], {FX}[:], {FX}[:], {FX}[:], {FX}[:], {FX}[:])'],
