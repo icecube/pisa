@@ -1588,8 +1588,6 @@ class HypersurfaceParam(object):
         when fitting).
         '''
 
-        # TODO properly use SmartArrays
-
         # Create an array to file with this contorubtion
         this_out = np.full_like(out, np.NaN, dtype=FTYPE)
 
@@ -1759,7 +1757,7 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
     '''
 
     # TODO Current yneed to manually ensure consistency between `combine_regex` here and
-    # the `links` param in `pi_hypersurface` Need to make `pi_hypersurface` directly use
+    # the `links` param in `hypersurface` Need to make `hypersurface` directly use
     # the value of `combine_regex` from the Hypersurface instance
 
     #
@@ -1991,7 +1989,7 @@ def extract_interpolated_hypersurface_params(input_file):
     '''
     Extract the names of the hypersurface parameter names from a file
 
-    This is useful to set up the ``pi_hypersurfaces`` stage to get the correct expected
+    This is useful to set up the ``hypersurfaces`` stage to get the correct expected
     parameters without invoking the long loading process. The PISA stage does not have
     to know about the internal structure of the files.
 

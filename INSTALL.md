@@ -57,7 +57,7 @@ The other advantage to these distributions is that they easily install without s
 To install PISA, you'll need to have the following non-python requirements.
 Note that these are not installed automatically, and you must install them yourself prior to installing PISA.
 Also note that Python, HDF5, and pip support come pre-packaged or as `conda`-installable packages in the Anaconda Python distribution.
-* [python](http://www.python.org) — version 3.7.x required: numba 0.45, which is required for SmartArray, does not allow python 3.8 or higher
+* [python](http://www.python.org) — version 3.x
   * Anaconda: built in
 * [pip](https://pip.pypa.io) version >= 1.8 required
   * Anaconda:<br>

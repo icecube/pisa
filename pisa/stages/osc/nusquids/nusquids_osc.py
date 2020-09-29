@@ -14,7 +14,7 @@ import numpy as np
 
 from pisa import CACHE_DIR, FTYPE, OMP_NUM_THREADS, ureg, OrderedDict
 from pisa.core.binning import MultiDimBinning
-from pisa.stages.osc.pi_osc_params import OscParams
+from pisa.stages.osc.osc_params import OscParams
 from pisa.utils.fileio import from_file
 from pisa.utils.log import logging
 

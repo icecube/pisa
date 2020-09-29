@@ -48,7 +48,7 @@ __all__ = ['FLUCTUATE_METHODS', 'type_error', 'reduceToHist', 'rebin',
 
 __author__ = 'J.L. Lanfranchi'
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -1630,10 +1630,57 @@ class Map(object):
                                           expected_values=expected_values)
 
 
-    def metric_total(self, expected_values, metric):
+    def generalized_poisson_llh(self, expected_values=None, empty_bins=None, binned=False):
+        '''compute the likelihood of this map's count to originate from
+
+        Note that unlike the other likelihood functions, expected_values
+        is expected to be a ditribution maker
+
+        inputs:
+        ------
+
+            expected_values: OrderedDict of MapSets
+
+            empty_bins: None, list or np.ndarray (list the bin indices that are empty)
+
+            binned: bool (return the bin-by-bin llh or the sum over all bins)
+
+        '''
+
+        llh_per_bin = stats.generalized_poisson_llh(actual_values=self.hist,
+                                                    expected_values=expected_values,
+                                                    empty_bins=empty_bins)
+
+        if binned:
+            return llh_per_bin
+        else:
+            return np.sum(llh_per_bin)
+
+
+    def metric_total(self, expected_values, metric, metric_kwargs=None):
+        ''' Compute the optimization metric on the bins of a Map
+
+        Inputs
+        -------
+
+        expected_values: Map (the data/pseudo-data binned counts)
+
+        metric: str (name of the optimization metric)
+
+        metric_kwargs: None or Dict (special arguments to pass to
+                                     a special metric - right now just 
+                                     useful for generalized_poisson_llh)
+
+        Returns:
+        ------
+        float (sum of the metric over all bins of expected_values)
+
+        '''
         # TODO: should this use reduceToHist as in chi2 and llh above?
+        if metric_kwargs is None:
+            metric_kwargs={}
         if metric in stats.ALL_METRICS:
-            return getattr(self, metric)(expected_values)
+            return getattr(self, metric)(expected_values, **metric_kwargs)
         else:
             raise ValueError('`metric` "%s" not recognized; use one of %s.'
                              % (metric, stats.ALL_METRICS))
@@ -2864,7 +2911,14 @@ class MapSet(object):
             raise ValueError('`metric` "%s" not recognized; use one of %s.'
                              % (metric, stats.ALL_METRICS))
 
-    def metric_total(self, expected_values, metric):
+    def metric_total(self, expected_values, metric, metric_kwargs=None):
+        '''Compute the binned optimization metric on all maps of a mapset,
+           then sum it up.
+
+           metric_kwargs allows to pass extra arguments to the metric, like 
+                         the number of empty bins for the generalized poisson llh
+                         (Not yet implemented for Mapset) 
+        '''
         return np.sum(list(self.metric_per_map(expected_values, metric).values()))
 
     def chi2_per_map(self, expected_values):
@@ -2879,7 +2933,7 @@ class MapSet(object):
         Parameters
         ----------
         method : None or string
-        random_stae : None, numpy.random.RandomState, or seed spec
+        random_state : None, numpy.random.RandomState, or seed spec
 
         """
         random_state = get_random_state(random_state=random_state,

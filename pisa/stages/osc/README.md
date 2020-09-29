@@ -3,19 +3,14 @@
 The purpose of this stage is to modify the modelled atmospheric neutrino flux by applying the appropriate oscillation probability in each energy and zenith bin through the earth, for each flavour.
 At the end of the stage, the oscillated neutrino flux for each flavour is given.
 
-## Services
 
-Currently, only Prob3 is supported for calculating neutrino oscillations. This is implemented, though, as two different stages: `prob3cpu` and `prob3gpu`, where the latter is accelerated if the `cuda` dependency is installed (see the Install Guide for more info.)
+### prob3
 
-### prob3cpu
-
-This service calculates the neutrino oscillation probabilities using the `Prob3` code, which at its core, relies on a 3-flavour analytic solution to the neutrino oscillation propagation over constant matter density.
+This service calculates the neutrino oscillation probabilities based on the original `Prob3` code, which at its core, relies on a 3-flavour analytic solution to the neutrino oscillation propagation over constant matter density.
 For a realistic earth model, small enough constant density layers are chosen to accuratly describe the matter density through the earth.
-The `Prob3` code, initially written by the Super-Kamiokande collaboration in C/C++, is publicly available here:
+The `Prob3` code, initially written by the Super-Kamiokande collaboration in C/C++, is publicly available here: http://www.phy.duke.edu/~raw22/public/Prob3++/
 
-http://www.phy.duke.edu/~raw22/public/Prob3++/
-
-and has been given PyBindings as well as a few additional modifications to be optimized for the IceCube detector, and for use in PISA.
+We use a custom re-implementation in python/numba.
 
 To use this service, one must set values for all of the 3-flavour oscillation parameters: `theta12`, `theta13`, `theta23`, `deltam21`, `deltam31` and `deltacp`.
 One can set hierarchy-dependent versions in the settings file by adding `.nh` before the name in the `params` (see `theta23` in the example pipeline settings file for more details).

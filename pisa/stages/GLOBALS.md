@@ -34,7 +34,7 @@ Also note that where a service implements `FTYPE` and relies on C extension code
 | :------------------------: | :-------------------: | :-------------------: | :-------------------: |
 | `aeff.hist`                | :black_square_button: | :black_square_button: | :black_square_button: |
 | `aeff.param`               | :black_square_button: | :black_square_button: | :black_square_button: |
-| `aeff.pi_aeff`             | :heavy_check_mark:    | :black_square_button: | :heavy_check_mark:    |
+| `aeff.aeff`             | :heavy_check_mark:    | :black_square_button: | :heavy_check_mark:    |
 | `aeff.smooth`              | :black_square_button: | :black_square_button: | :black_square_button: |
 | `combine.nutau`            | :black_square_button: | :black_square_button: | :black_square_button: |
 | `data.data`                | :black_square_button: | :black_square_button: | :black_square_button: |
@@ -45,13 +45,13 @@ Also note that where a service implements `FTYPE` and relies on C extension code
 | `data.toy_event_generator` | :heavy_check_mark:    | :black_square_button: | :heavy_check_mark:    |
 | `discr_sys.fit`            | :black_square_button: | :black_square_button: | :black_square_button: |
 | `discr_sys.hyperplane`     | :black_square_button: | :black_square_button: | :black_square_button: |
-| `discr_sys.pi_hyperplanes` | :heavy_check_mark:    | :black_square_button: | :heavy_check_mark:    |
+| `discr_sys.hyperplanes` | :heavy_check_mark:    | :black_square_button: | :heavy_check_mark:    |
 | `discr_sys.polyfits`       | :black_square_button: | :black_square_button: | :black_square_button: |
 | `flux.dummy`               | :black_square_button: | :black_square_button: | :black_square_button: |
 | `flux.honda`               | :black_square_button: | :black_square_button: | :black_square_button: |
 | `flux.mceq`                | :black_square_button: | :black_square_button: | :black_square_button: |
-| `flux.pi_barr_simple`      | :heavy_check_mark:    | :black_square_button: | :heavy_check_mark:    |
-| `osc.pi_prob3`             | :heavy_check_mark:    | :black_square_button: | :heavy_check_mark:    |
+| `flux.barr_simple`      | :heavy_check_mark:    | :black_square_button: | :heavy_check_mark:    |
+| `osc.prob3`             | :heavy_check_mark:    | :black_square_button: | :heavy_check_mark:    |
 | `pid.hist`                 | :black_square_button: | :black_square_button: | :black_square_button: |
 | `pid.param`                | :black_square_button: | :black_square_button: | :black_square_button: |
 | `pid.smooth`               | :black_square_button: | :black_square_button: | :black_square_button: |
@@ -60,6 +60,6 @@ Also note that where a service implements `FTYPE` and relies on C extension code
 | `reco.param`               | :black_square_button: | :black_square_button: | :black_square_button: |
 | `reco.vbwkde`              | :heavy_check_mark:    | :heavy_check_mark:    | :heavy_check_mark:    |
 | `unfold.roounfold`         | :black_square_button: | :black_square_button: | :black_square_button: |
-| `utils.pi_hist`            | :heavy_check_mark:    | :black_square_button: | :heavy_check_mark   : |
+| `utils.hist`            | :heavy_check_mark:    | :black_square_button: | :heavy_check_mark   : |
 | `xsec.genie`               | :black_square_button: | :black_square_button: | :black_square_button: |
 | `xsec.genie_sys`           | :heavy_check_mark:    | :black_square_button: | :heavy_check_mark:    |

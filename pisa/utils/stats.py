@@ -18,9 +18,9 @@ __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
            'maperror_logmsg',
            'chi2', 'llh', 'log_poisson', 'log_smear', 'conv_poisson',
            'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2',
-           'mcllh_mean', 'mcllh_eff', 'signed_sqrt_mod_chi2']
+           'mcllh_mean', 'mcllh_eff', 'signed_sqrt_mod_chi2', 'generalized_poisson_llh']
 
-__author__ = 'P. Eller, T. Ehrhardt, J.L. Lanfranchi'
+__author__ = 'P. Eller, T. Ehrhardt, J.L. Lanfranchi, E. Bourbeau'
 
 __license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
 
@@ -43,7 +43,8 @@ SMALL_POS = 1e-10 #if FTYPE == np.float64 else FTYPE_PREC
 CHI2_METRICS = ['chi2', 'mod_chi2']
 """Metrics defined that result in measures of chi squared"""
 
-LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh', 'mcllh_mean', 'mcllh_eff']
+LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh', 'mcllh_mean', 
+'mcllh_eff', 'generalized_poisson_llh']
 """Metrics defined that result in measures of log likelihood"""
 
 ALL_METRICS = LLH_METRICS + CHI2_METRICS
@@ -110,9 +111,9 @@ def chi2(actual_values, expected_values):
     Notes
     -----
     * Uncertainties are not propagated through this calculation.
-    * Values in each input are clipped to the range [SMALL_POS, inf] prior to
+    * Values in expectation are clipped to the range [SMALL_POS, inf] prior to
       the calculation to avoid infinities due to the divide function.
-
+    * actual_values are allowed to be = 0, since they don't com up in the denominator
     """
     if actual_values.shape != expected_values.shape:
         raise ValueError(
@@ -148,18 +149,15 @@ def chi2(actual_values, expected_values):
         #       still destroy a minimizer's hopes and dreams...
 
         # Replace 0's with small positive numbers to avoid inf in division
-        np.clip(actual_values, a_min=SMALL_POS, a_max=np.inf,
-                out=actual_values)
         np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
                 out=expected_values)
+
 
         delta = actual_values - expected_values
 
     if np.all(np.abs(delta) < 5*FTYPE_PREC):
         return np.zeros_like(delta, dtype=FTYPE)
 
-    assert np.all(actual_values > 0), str(actual_values)
-    #chi2_val = np.square(delta) / actual_values
     chi2_val = np.square(delta) / expected_values
     assert np.all(chi2_val >= 0), str(chi2_val[chi2_val < 0])
     return chi2_val
@@ -199,11 +197,6 @@ def llh(actual_values, expected_values):
         actual_values = np.ma.masked_invalid(actual_values)
         expected_values = np.ma.masked_invalid(expected_values)
 
-        # Check that new array contains all valid entries
-        if np.any(actual_values < 0):
-            msg = ('`actual_values` must all be >= 0...\n'
-                   + maperror_logmsg(actual_values))
-            raise ValueError(msg)
 
         # TODO: How should we handle nan / masked values in the "data"
         # (actual_values) distribution? How about negative numbers?
@@ -225,9 +218,11 @@ def llh(actual_values, expected_values):
         np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
                 out=expected_values)
 
+    #
+    # natural logarith m of the Poisson probability
+    # (uses Stirling's approximation to estimate ln(k!) ~ kln(k)-k)
+    #
     llh_val = actual_values*np.log(expected_values) - expected_values
-
-    # Do following to center around 0
     llh_val -= actual_values*np.log(actual_values) - actual_values
 
     return llh_val
@@ -263,11 +258,6 @@ def mcllh_mean(actual_values, expected_values):
         actual_values = np.ma.masked_invalid(actual_values)
         expected_values = np.ma.masked_invalid(expected_values)
 
-        # Check that new array contains all valid entries
-        if np.any(actual_values < 0):
-            msg = ('`actual_values` must all be >= 0...\n'
-                   + maperror_logmsg(actual_values))
-            raise ValueError(msg)
 
         # TODO: How should we handle nan / masked values in the "data"
         # (actual_values) distribution? How about negative numbers?
@@ -285,9 +275,13 @@ def mcllh_mean(actual_values, expected_values):
                    + maperror_logmsg(expected_values))
             raise ValueError(msg)
 
+        # Replace 0's with small positive numbers to avoid inf in log
+        np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
+                out=expected_values)
+
     llh_val = likelihood_functions.poisson_gamma(
         data=actual_values, sum_w=expected_values, sum_w2=sigma**2, a=0, b=0
-    )
+
     return llh_val
 
 
@@ -322,11 +316,6 @@ def mcllh_eff(actual_values, expected_values):
         actual_values = np.ma.masked_invalid(actual_values)
         expected_values = np.ma.masked_invalid(expected_values)
 
-        # Check that new array contains all valid entries
-        if np.any(actual_values < 0):
-            msg = ('`actual_values` must all be >= 0...\n'
-                   + maperror_logmsg(actual_values))
-            raise ValueError(msg)
 
         # TODO: How should we handle nan / masked values in the "data"
         # (actual_values) distribution? How about negative numbers?
@@ -343,6 +332,10 @@ def mcllh_eff(actual_values, expected_values):
             msg = ('`expected_values` must all be >= 0...\n'
                    + maperror_logmsg(expected_values))
             raise ValueError(msg)
+
+        # Replace 0's with small positive numbers to avoid inf in log
+        np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
+                out=expected_values)
 
     llh_val = likelihood_functions.poisson_gamma(
         data=actual_values, sum_w=expected_values, sum_w2=sigma**2, a=1, b=0
@@ -597,3 +590,165 @@ def signed_sqrt_mod_chi2(actual_values, expected_values):
         (actual_values - expected_values) / np.sqrt(sigma**2 + expected_values)
     )
     return m_pull
+      
+#
+# Generalized Poisson-gamma llh from 1902.08831
+#
+def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None):
+    '''Compute the generalized Poisson likelihood as formulated in https://arxiv.org/abs/1902.08831
+
+
+    Note that unlike the other likelihood functions, expected_values
+    is expected to be a ditribution maker
+
+    inputs:
+    ------
+
+    actual_values: flattened hist of a Map object
+
+    expected_values: OrderedDict of MapSets
+
+    empty_bins: None, list or np.ndarray (list the bin indices that are empty)
+
+    returns:
+    --------
+    llh_per_bin : bin-wise llh values, in a numpy array
+
+    '''
+    from collections import OrderedDict
+
+    
+    assert isinstance(expected_values, OrderedDict), 'ERROR: expected_values must be an OrderedDict of MapSet objects'
+    assert 'weights' in expected_values.keys(), 'ERROR: expected_values need a key named "weights"'
+    assert 'llh_alphas' in expected_values.keys(), 'ERROR: expected_values need a key named "llh_alphas"'
+    assert 'llh_betas' in expected_values.keys(), 'ERROR: expected_values need a key named "llh_betas"'
+
+    num_bins = actual_values.flatten().shape[0]
+    llh_per_bin = np.zeros(num_bins)
+    actual_values = unp.nominal_values(actual_values).ravel()
+
+    # If no empty bins are specified, we assume that all of them should be included
+    if empty_bins is None:
+        empty_bins = []
+
+    for bin_i in range(num_bins):
+
+        # TODO: sometimes the histogram spits out uncertainty objects, sometimes not. 
+        #       Not sure why.
+        data_count = actual_values.astype(np.int64)[bin_i]
+
+        # Automatically add a huge number if a bin has non zero data count
+        # but completely empty MC
+        if bin_i in empty_bins:
+            if data_count > 0:
+                llh_per_bin[bin_i] = np.log(SMALL_POS)
+            continue
+
+        # Make sure that no weight sum is negative. Crash if there are
+        weight_sum = np.array([m.hist.flatten()[bin_i] for m in expected_values['weights'].maps])
+        if (weight_sum<0).sum()>0:
+            logging.debug('\n\n\n')
+            logging.debug('weights that are causing problem: ')
+            logging.debug(weight_sum[weight_sum<0])
+            logging.debug((weight_sum<0).sum())
+            logging.debug('\n\n\n')
+        assert np.all(weight_sum >= 0), 'ERROR: negative weights detected'
+
+        #
+        # If the expected MC count is high, compute a normal poisson probability
+        # 
+        if weight_sum.sum()>100:
+
+            logP = data_count*np.log(weight_sum.sum())-weight_sum.sum()-(data_count*np.log(data_count)-data_count)
+            llh_per_bin[bin_i] = logP
+            
+            #alphas = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_alphas'].maps])
+            #betas  = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_betas'].maps])
+            #mask = np.isfinite(alphas)*np.isfinite(betas)
+            #llh_per_bin[bin_i] = approximate_poisson_normal(data_count=data_count, alphas=alphas[mask], betas=betas[mask])
+            
+        else:
+            
+            from pisa.utils.llh_defs.poisson import fast_pgmix
+
+            alphas = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_alphas'].maps])
+            betas  = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_betas'].maps])
+
+            # Remove the NaN's 
+            mask = np.isfinite(alphas)*np.isfinite(betas)
+
+            # Check that the alpha and betas make sense
+            assert np.all(alphas[mask] > 0), 'ERROR: detected alpha values <=0'
+            assert np.all(betas[mask] > 0 ), 'ERROR: detected beta values <=0'
+
+
+            llh_of_bin = fast_pgmix(data_count, alphas[mask], betas[mask])
+            llh_per_bin[bin_i] = llh_of_bin
+
+    return llh_per_bin
+    
+
+def approximate_poisson_normal(data_count, alphas=None, betas=None, use_c=False):
+    '''
+    Compute the likelihood of a marginalized poisson-gamma
+    function, using a single normal distribution instead of
+    the convolution of gamma function
+
+    This formula can be used when the MC counts are really
+    high, and where the gamma function throws infinite values
+
+    '''
+    from scipy.integrate import quad
+    import numpy as np
+
+    gamma_mean = np.sum(alphas/betas)
+    gamma_sigma = np.sqrt(np.sum(alphas/betas**2.))
+
+    #
+    # Define integration range as +- 5 sigma
+    #
+    lower = max(0,gamma_mean-5*gamma_sigma)
+    upper = gamma_mean+5*gamma_sigma
+
+    #
+    # integrate over the boundaries
+    #
+    if use_c:
+
+        import os, ctypes
+        import numpy as np
+        from scipy import integrate, LowLevelCallable
+
+        lib = ctypes.CDLL(os.path.abspath('/groups/icecube/bourdeet/pisa/pisa/utils/poisson_normal.so'))
+        lib.approximate_gamma_poisson_integrand.restype = ctypes.c_double
+        lib.approximate_gamma_poisson_integrand.argtypes = (ctypes.c_int, ctypes.POINTER(ctypes.c_double), ctypes.c_void_p)
+
+        # Define the parameters
+        params = (ctypes.c_double*3)()
+
+        params[0] = data_count
+        params[1] = gamma_mean
+        params[2] = gamma_sigma
+
+        user_data = ctypes.cast(params, ctypes.c_void_p)
+        func = LowLevelCallable(lib.approximate_gamma_poisson_integrand, user_data)
+        LH = quad(func, lower, upper)[0]
+        #print('lower ',lower,' upper: ',upper,' LH: ',LH)
+    else:
+
+        LH = quad(approximate_poisson_normal_python, lower, upper, args=(data_count, gamma_mean, gamma_sigma))[0]
+        #print('lower ',lower,' upper: ',upper,' data_count: ',data_count,' mean: ', gamma_mean, ' sigma: ',gamma_sigma, ' LH: ',LH)
+
+    LH = max(SMALL_POS,LH) 
+    return np.log(LH)
+
+
+
+def approximate_poisson_normal_python(lamb, k, A, B):
+
+    from scipy.stats import norm
+    
+    normal_term = norm.pdf(lamb, loc=A, scale=B)
+    normal_poisson = norm.pdf(k, loc=lamb, scale=np.sqrt(lamb))
+
+    return normal_term*normal_poisson

@@ -216,7 +216,7 @@ def extCalcLayers(
 class Layers(object):
     """
     Calculate the path through earth for a given layer model with densities
-    (PREM), the electron fractions (Ye) and an array of coszen values
+    (PREM [1]), the electron fractions (Ye) and an array of coszen values
 
     Parameters
     ----------
@@ -231,7 +231,7 @@ class Layers(object):
         the production height of the neutrinos in the atmosphere in km (?)
 
 
-    Attributes:
+    Attributes
     ----------
     max_layers : int
             maximum number of layers (this is important for the shape of the
@@ -246,6 +246,13 @@ class Layers(object):
 
     distance : 1d float array of length (max_layers * len(cz))
             containing distance values and filled up with 0s otherwise
+
+    References
+    ----------
+    [1] A.M. Dziewonski and D.L. Anderson (1981) "Preliminary reference
+        Earth model," Physics of the Earth and Planetary Interiors, 25(4),
+        pp. 297 – 356.
+        http://www.sciencedirect.com/science/article/pii/300031920181900467
 
     """
     def __init__(self, prem_file, detector_depth=1., prop_height=2.):
@@ -282,7 +289,9 @@ class Layers(object):
 
 
     def setElecFrac(self, YeI, YeO, YeM):
-        """
+        """Set electron fractions of inner core, outer core, and mantle.
+        Locations of boundaries between each layer come from PREM.
+
         Parameters
         ----------
         YeI, YeO, YeM : scalars
@@ -295,8 +304,8 @@ class Layers(object):
 
         self.YeFrac = np.array([YeI, YeO, YeM], dtype=FTYPE)
 
-        # TODO: these numbers are just hard coded for some reason...?
-        self.YeOuterRadius = np.array([1121.5, 3480.0, self.r_detector],
+        # NOTE: these numbers are hard coded from PREM paper
+        self.YeOuterRadius = np.array([1221.5, 3480.0, self.r_detector],
                                       dtype=FTYPE)
 
     def computeMinLengthToLayers(self):

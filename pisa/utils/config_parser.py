@@ -20,6 +20,9 @@ required, in addition to a ``[binning]`` section:
 
     order = stageA.serviceA, stageB.serviceB
 
+    output_binning = bining1
+    output_key = ('weights', 'errors')
+
 
     [binning]
 
@@ -614,22 +617,44 @@ def parse_pipeline_config(config):
                     raise
             binning_dict[binning] = MultiDimBinning(bins)
 
+
+    stage_dicts = OrderedDict()
+
     # Pipeline section
     section = 'pipeline'
 
+    stage_dicts[section] = {}
+
     # Get and parse the order of the stages (and which services implement them)
     order = [split(x, STAGE_SEP) for x in split(config.get(section, 'order'))]
+
+    # Name of pipeline
+    stage_dicts[section]['name'] = config.get(section, 'name')
+
+    if config.has_option(section, 'output_binning'):
+        stage_dicts[section]['output_binning'] = binning_dict[config.get(section, 'output_binning')]
+        output_key = split(config.get(section, 'output_key'))
+        if len(output_key) == 1:
+            stage_dicts[section]['output_key'] = output_key[0]
+        elif len(output_key) == 2:
+            stage_dicts[section]['output_key'] = tuple(output_key)
+        else:
+            raise ValueError(f'Output key should be exactly one key, or a tuple (key, error_key), but is {output_key}')
+    else:
+        stage_dicts[section]['output_format'] = None
+        stage_dicts[section]['output_key'] = None
 
     param_selections = []
     if config.has_option(section, 'param_selections'):
         param_selections = split(config.get(section, 'param_selections'))
 
-    detector_name = None
     if config.has_option(section, 'detector_name'):
-        detector_name = config.get(section, 'detector_name')
+        stage_dicts[section]['detector_name'] = config.get(section, 'detector_name')
+    else:
+        stage_dicts[section]['detector_name'] = None
+
 
     # Parse [stage.<stage_name>] sections and store to stage_dicts
-    stage_dicts = OrderedDict()
     for stage, service in order:  # pylint: disable=too-many-nested-blocks
         old_section_header = 'stage%s%s' % (STAGE_SEP, stage)
         new_section_header = '%s%s%s' % (stage, STAGE_SEP, service)
@@ -728,17 +753,17 @@ def parse_pipeline_config(config):
                 service_kwargs[fullname] = binning_dict[value]
 
             # it's gonna be a PI stage
-            elif '_specs' in fullname:
+            elif fullname in ['calc_mode', 'apply_mode', 'output_format']:
                 value = parse_string_literal(value)
                 # is it None?
                 if value is None:
                     service_kwargs[fullname] = value
-                # is it evts?
-                elif value in ['evnts', 'events']:
-                    service_kwargs[fullname] = 'events'
-                # so it gotta be a binning
-                else:
+                # is it a binning?
+                if value in binning_dict.keys():
                     service_kwargs[fullname] = binning_dict[value]
+                # whatever
+                else:
+                    service_kwargs[fullname] = value
 
             # it's a list on in/output names list
             elif fullname.endswith('_names'):
@@ -766,7 +791,6 @@ def parse_pipeline_config(config):
         # Store the service's kwargs to the stage_dicts
         stage_dicts[(stage, service)] = service_kwargs
 
-    stage_dicts['detector_name'] = detector_name
     return stage_dicts
 
 def parse_minimizer_config(config):

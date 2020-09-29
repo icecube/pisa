@@ -1,119 +1,308 @@
+# author: T. Ehrhardt
+# date:   2018
+"""
+OscParams: Characterize neutrino oscillation parameters
+           (mixing angles, Dirac-type CP-violating phase, mass splittings)
+
+changed by Elisa Lohfink (ellohfin; elohfink@icecube.wisc.edu) 
+to include NSI changes made by Thomas Ehrhardt on his branch:  
+original version can be found in thehrh/pisa nsi_reparameterisation branch 
+"""
 
 from __future__ import division
 
 import numpy as np
 
+from pisa import FTYPE
 
-__author__ = 'T. Ehrhardt'
-
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.'''
+__all__ = ['OscParams']
 
 
 class OscParams(object):
-    def __init__(self, dm_solar, dm_atm, x12, x13, x23, deltacp):
-        """
+    """
+    Holds neutrino oscillation parameters, i.e., mixing angles, squared-mass
+    differences, and a Dirac-type CPV phase. The neutrino mixing (PMNS) matrix
+    constructed from these parameters is given in the standard
+    3x3 parameterization. Also holds the generalised matter potential matrix
+    (divided by the matter potential a), i.e. diag(1, 0, 0) for the standard
+    case.
 
-        Expects dm_solar and dm_atm to be in [eV^2], and x_{ij} to be
-        sin^2(theta_{ij})
+    Parameters
+    ----------
+    dm21, dm31, dm41 : float
+        Mass splittings (delta M^2_{21,31,41}) expected to be given in [eV^2]
 
-        params:
-          * xij - sin^2(theta_{ij}) values to use in oscillation calc.
-          * dm_solar - delta M_{21}^2 value [eV^2]
-          * dm_atm - delta M_{32}^2 value [eV^2] if Normal hierarchy, or
-                delta M_{31}^2 value if Inverted Hierarchy (following
-                BargerPropagator class).
-          * deltacp - \delta_{cp} value to use.
-        """
-        assert x12 <= 1
-        assert x13 <= 1
-        assert x23 <= 1
-        self.sin12 = np.sqrt(x12)
-        self.sin13 = np.sqrt(x13)
-        self.sin23 = np.sqrt(x23)
+    sin12, sin13, sin23 : float
+        1-2, 1-3 and 2-3 mixing angles, interpreted as sin(theta_{ij})
 
-        self.deltacp = deltacp
+    deltacp : float
+        Value of CPV phase in [rad]
 
-        # Comment BargerPropagator.cc:
-        # "For the inverted Hierarchy, adjust the input
-        # by the solar mixing (should be positive)
-        # to feed the core libraries the correct value of m32."
-        self.dm_solar = dm_solar
-        if dm_atm < 0.0:
-            self.dm_atm = dm_atm - dm_solar
-        else:
-            self.dm_atm = dm_atm
+
+    Attributes
+    ----------
+    dm21, dm31, dm41 : float
+        Cf. parameters
+
+    sin12, sin13, sin23, sin14 : float
+        Cf. parameters
+
+    theta12, theta13, theta23, theta14 : float
+        Mixing angles (corresponding to sinXY)
+
+    deltacp : float
+        Cf. parameters
+
+    mix_matrix : 3d float array of shape (3, 3, 2)
+        Neutrino mixing (PMNS) matrix in standard parameterization. The third
+        dimension holds the real and imaginary parts of each matrix element.
+
+    mix_matrix_complex : 3d complex array
+
+    mix_matrix_reparam : 3d float array of shape (3, 3, 2)
+        Reparameterized neutrino mixing matrix, such that CPT invariance
+        of vacuum propagation implemented by 3 simultaneous osc. param.
+        transformations.
+
+    mix_matrix_reparam_complex : 3d complex array
+
+    dm_matrix : 2d float array of shape (3, 3)
+        Antisymmetric matrix of squared-mass differences in vacuum
+
+    """
+    def __init__(self):
+
+        self._sin12 = 0.
+        self._sin13 = 0.
+        self._sin23 = 0.
+        self._sin14 = 0.
+        self._deltacp = 0.
+        self.dm21 = 0.
+        self.dm31 = 0.
+        self.dm41 = 0.
+        self.gamma21 = 0. # TODO Add full 3x3 matrix option, TODO update docs, TODO getters/setters to enforce values ranges?
+        self.gamma31 = 0.
+        self.gamma32 = 0.
+
+    # --- theta12 ---
+    @property
+    def sin12(self):
+        """Sine of 1-2 mixing angle"""
+        return self._sin12
+
+    @sin12.setter
+    def sin12(self, value):
+        assert (abs(value) <= 1)
+        self._sin12 = value
 
     @property
-    def M_pmns(self):
+    def theta12(self):
+        return np.arcsin(self.sin12)
 
-        # real part [...,0]
-        # imaginary part [...,1]
-        Mix = np.zeros((3,3,2))
+    @theta12.setter
+    def theta12(self, value):
+        self.sin12 = np.sin(value)
+
+    # --- theta13 ---
+    @property
+    def sin13(self):
+        """Sine of 1-3 mixing angle"""
+        return self._sin13
+
+    @sin13.setter
+    def sin13(self, value):
+        assert (abs(value) <= 1)
+        self._sin13 = value
+
+    @property
+    def theta13(self):
+        return np.arcsin(self.sin13)
+
+    @theta13.setter
+    def theta13(self, value):
+        self.sin13 = np.sin(value)
+
+    # --- theta23 ---
+    @property
+    def sin23(self):
+        """Sine of 2-3 mixing angle"""
+        return self._sin23
+
+    @sin23.setter
+    def sin23(self, value):
+        assert (abs(value) <= 1)
+        self._sin23 = value
+
+    @property
+    def theta23(self):
+        return np.arcsin(self.sin23)
+
+    @theta23.setter
+    def theta23(self, value):
+        self.sin23 = np.sin(value)
+
+    # --- theta14 ---
+    @property
+    def sin14(self):
+        """Sine of 1-4 mixing angle"""
+        return self._sin14
+
+    @sin14.setter
+    def sin14(self, value):
+        assert (abs(value) <= 1)
+        self._sin14 = value
+
+    @property
+    def theta14(self):
+        return np.arcsin(self.sin14)
+
+    @theta14.setter
+    def theta14(self, value):
+        self.sin14 = np.sin(value)
+
+    # --- deltaCP ---
+    @property
+    def deltacp(self):
+        """CPV phase"""
+        return self._deltacp
+
+    @deltacp.setter
+    def deltacp(self, value):
+        assert value >= 0. and value <= 2*np.pi
+        self._deltacp = value
+
+    @property
+    def mix_matrix(self):
+        """Neutrino mixing matrix in its 'standard' form"""
+        mix = np.zeros((3, 3, 2), dtype=FTYPE)
 
         sd = np.sin(self.deltacp)
         cd = np.cos(self.deltacp)
 
-        c12 = np.sqrt(1.0-self.sin12*self.sin12)
-        c23 = np.sqrt(1.0-self.sin23*self.sin23)
-        c13 = np.sqrt(1.0-self.sin13*self.sin13)
+        c12 = np.sqrt(1. - self.sin12**2)
+        c23 = np.sqrt(1. - self.sin23**2)
+        c13 = np.sqrt(1. - self.sin13**2)
 
-        Mix[0][0][0] = c12*c13
-        Mix[0][0][1] = 0.0
-        Mix[0][1][0] = self.sin12*c13
-        Mix[0][1][1] = 0.0
-        Mix[0][2][0] = self.sin13*cd
-        Mix[0][2][1] = -self.sin13*sd
-        Mix[1][0][0] = -self.sin12*c23-c12*self.sin23*self.sin13*cd
-        Mix[1][0][1] = -c12*self.sin23*self.sin13*sd
-        Mix[1][1][0] = c12*c23-self.sin12*self.sin23*self.sin13*cd
-        Mix[1][1][1] = -self.sin12*self.sin23*self.sin13*sd
-        Mix[1][2][0] = self.sin23*c13
-        Mix[1][2][1] = 0.0
-        Mix[2][0][0] = self.sin12*self.sin23-c12*c23*self.sin13*cd
-        Mix[2][0][1] = -c12*c23*self.sin13*sd
-        Mix[2][1][0] = -c12*self.sin23-self.sin12*c23*self.sin13*cd
-        Mix[2][1][1] = -self.sin12*c23*self.sin13*sd
-        Mix[2][2][0] = c23*c13
-        Mix[2][2][1] = 0.0
+        mix[0, 0, 0] = c12 * c13
+        mix[0, 0, 1] = 0.
+        mix[0, 1, 0] = self.sin12 * c13
+        mix[0, 1, 1] = 0.
+        mix[0, 2, 0] = self.sin13 * cd
+        mix[0, 2, 1] = - self.sin13 * sd
+        mix[1, 0, 0] = - self.sin12 * c23 - c12 * self.sin23 * self.sin13 * cd
+        mix[1, 0, 1] = - c12 * self.sin23 * self.sin13 * sd
+        mix[1, 1, 0] = c12 * c23 - self.sin12 * self.sin23 * self.sin13 * cd
+        mix[1, 1, 1] = - self.sin12 * self.sin23 * self.sin13 * sd
+        mix[1, 2, 0] = self.sin23 * c13
+        mix[1, 2, 1] = 0.
+        mix[2, 0, 0] = self.sin12 * self.sin23 - c12 * c23 * self.sin13 * cd
+        mix[2, 0, 1] = - c12 * c23 * self.sin13 * sd
+        mix[2, 1, 0] = - c12 * self.sin23 - self.sin12 * c23 * self.sin13 * cd
+        mix[2, 1, 1] = - self.sin12 * c23 * self.sin13 * sd
+        mix[2, 2, 0] = c23 * c13
+        mix[2, 2, 1] = 0.
 
-        return Mix
+        return mix
 
     @property
-    def M_mass(self):
-        dmVacVac = np.zeros((3,3))
-        mVac = np.zeros(3)
-        delta = 5.0e-9
+    def mix_matrix_complex(self):
+        """Mixing matrix as complex 2-d array"""
+        mix = self.mix_matrix
+        return mix[:, :, 0] + mix[:, :, 1] * 1.j
 
-        mVac[0] = 0.0
-        mVac[1] = self.dm_solar
-        mVac[2] = self.dm_solar+self.dm_atm
+    @property
+    def mix_matrix_reparam(self):
+        """
+        Neutrino mixing matrix reparameterised in a way
+        such that the CPT trafo Hvac -> -Hvac*  is exactly implemented by
+        the simultaneous transformations
+            * deltamsq31 -> -deltamsq32
+            * theta12 -> pi/2 - theta12
+            * deltacp -> pi - deltacp
+
+        which hence leave vacuum propagation invariant.
+
+        This representation follows from the standard form U
+        as diag(exp(i*deltacp), 0, 0) * U * diag(exp(-i*deltacp), 0, 0).
+
+        """
+        mix = np.zeros((3, 3, 2), dtype=FTYPE)
+
+        sd = np.sin(self.deltacp)
+        cd = np.cos(self.deltacp)
+
+        c12 = np.sqrt(1. - self.sin12**2)
+        c23 = np.sqrt(1. - self.sin23**2)
+        c13 = np.sqrt(1. - self.sin13**2)
+
+        mix[0, 0, 0] = c12 * c13
+        mix[0, 0, 1] = 0.
+        mix[0, 1, 0] = self.sin12 * c13 * cd
+        mix[0, 1, 1] = self.sin12 * c13 * sd
+        mix[0, 2, 0] = self.sin13
+        mix[0, 2, 1] = 0.
+        mix[1, 0, 0] = - self.sin12 * c23 * cd - c12 * self.sin23 * self.sin13
+        mix[1, 0, 1] = self.sin12 * c23 * sd
+        mix[1, 1, 0] = c12 * c23 - self.sin12 * self.sin23 * self.sin13 * cd
+        mix[1, 1, 1] = - self.sin12 * self.sin23 * self.sin13 * sd
+        mix[1, 2, 0] = self.sin23 * c13
+        mix[1, 2, 1] = 0.
+        mix[2, 0, 0] = self.sin12 * self.sin23 * cd - c12 * c23 * self.sin13
+        mix[2, 0, 1] = - self.sin12 * self.sin23 * sd
+        mix[2, 1, 0] = - c12 * self.sin23 - self.sin12 * c23 * self.sin13 * cd
+        mix[2, 1, 1] = - self.sin12 * c23 * self.sin13 * sd
+        mix[2, 2, 0] = c23 * c13
+        mix[2, 2, 1] = 0.
+
+        return mix
+
+    @property
+    def mix_matrix_reparam_complex(self):
+        """Reparameterised mixing matrix as complex 2-d array"""
+        mix_reparam = self.mix_matrix_reparam
+        return mix_reparam[:, :, 0] + mix_reparam[:, :, 1] * 1.j
+
+    @property
+    def dm_matrix(self):
+        """Neutrino mass splitting matrix in vacuum"""
+        dmVacVac = np.zeros((3, 3), dtype=FTYPE)
+        mVac = np.zeros(3, dtype=FTYPE)
+        delta = 5.e-9
+
+        mVac[0] = 0.
+        mVac[1] = self.dm21
+        mVac[2] = self.dm31
 
         # Break any degeneracies
-        if self.dm_solar == 0.0:
+        if mVac[1] == 0.:
             mVac[0] -= delta
-        if self.dm_atm == 0.0:
+        if mVac[2] == 0.:
             mVac[2] += delta
 
-        dmVacVac[0][0] = 0.
-        dmVacVac[1][1] = 0.
-        dmVacVac[2][2] = 0.
-        dmVacVac[0][1] = mVac[0]-mVac[1]
-        dmVacVac[1][0] = -dmVacVac[0][1]
-        dmVacVac[0][2] = mVac[0]-mVac[2]
-        dmVacVac[2][0] = -dmVacVac[0][2]
-        dmVacVac[1][2] = mVac[1]-mVac[2]
-        dmVacVac[2][1] = -dmVacVac[1][2]
+        dmVacVac[0, 0] = 0.
+        dmVacVac[1, 1] = 0.
+        dmVacVac[2, 2] = 0.
+        dmVacVac[0, 1] = mVac[0] - mVac[1]
+        dmVacVac[1, 0] = - dmVacVac[0, 1]
+        dmVacVac[0, 2] = mVac[0] - mVac[2]
+        dmVacVac[2, 0] = - dmVacVac[0, 2]
+        dmVacVac[1, 2] = mVac[1] - mVac[2]
+        dmVacVac[2, 1] = - dmVacVac[1, 2]
 
         return dmVacVac
+
+
+def test_osc_params():
+    """
+    # TODO: implement me!
+    """
+    pass
+
+
+if __name__=='__main__':
+    from pisa import TARGET
+    from pisa.utils.log import set_verbosity, logging
+    assert TARGET == 'cpu', "Cannot test functions on GPU, set PISA_TARGET to 'cpu'"
+    set_verbosity(1)
+    test_osc_params()
+

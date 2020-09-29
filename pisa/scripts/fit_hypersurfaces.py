@@ -2,7 +2,7 @@
 
 """
 Fit a hypersurface to discrete systematics datasets -- as specified by a fit config
-file -- and produce a fit file usable by, e.g., the `discr_sys.pi_hypersurfaces` service.
+file -- and produce a fit file usable by, e.g., the `discr_sys.hypersurfaces` service.
 
 For more details, see `pisa/utils/hypersurface.pu`
 
@@ -51,7 +51,7 @@ its name, defines options applied to all systematic sets sections in the file. E
 
   [apply_to_all_sets]
   pipeline_cfg = settings/pipeline/nutau_mc_baseline.cfg
-  remove [discr_sys.pi_hypersurfaces] =
+  remove [discr_sys.hypersurfaces] =
   set [data.simple_data_loader] data_dict = {
       'true_energy': 'true_energy',
       'true_coszen': 'true_coszen',
@@ -62,7 +62,7 @@ its name, defines options applied to all systematic sets sections in the file. E
       'dunkman_L5': 'dunkman_L5',
       }
 
-The above sets "pipeline_cfg" for all discr sets, removes the "discr_sys.pi_hypersurfaces"
+The above sets "pipeline_cfg" for all discr sets, removes the "discr_sys.hypersurfaces"
 service, and redefines the "data_dict" in the "data.simple_data_loader" section. Any
 options defined in the discrete set sections of the config will start with this as their
 configuration. Details of the above syntax are described more below.
