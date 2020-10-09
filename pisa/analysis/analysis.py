@@ -851,7 +851,7 @@ class Analysis(object):
             if blind:
                 msg = ''
             else:
-                msg = ' ' + optimize_result.message
+                msg = ' ' + str(optimize_result.message)
             raise ValueError('Optimization failed.' + msg)
 
         return fit_info
