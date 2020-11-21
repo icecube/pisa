@@ -726,6 +726,10 @@ class Map(object):
                 assert vmax > vmin and vmax == -vmin
                 vmax_ = vmax
             vmin_ = -vmax_
+        elif logz:
+            cmap = cmap_seq if cmap is None else cmap
+            vmin_ = vmin if vmin is not None else hist[hist > 0].min()
+            vmax_ = vmax if vmax is not None else np.nanmax(hist)
         else:
             cmap = cmap_seq if cmap is None else cmap
             vmin_ = vmin if vmin is not None else np.nanmin(hist)
@@ -749,8 +753,9 @@ class Map(object):
         )
         if logz:
             defaults['norm'] = mpl.colors.LogNorm(
-                hist[hist > 0].min(), hist.max(), clip=True
+                vmin_, vmax_, clip=True
             )
+            
         for key, dflt_val in defaults.items():
             if key not in pcolormesh_kw:
                 pcolormesh_kw[key] = dflt_val
