@@ -208,6 +208,8 @@ class pi_simple_signal(PiStage):
                 reweighting/=np.sum(reweighting)
                 reweighting*=(self.nsig/self.stats_factor)
 
+                reweighting[np.isnan(reweighting)] = 0.
+
                 #
                 # New MC errors = MCweights squared
                 #

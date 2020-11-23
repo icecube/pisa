@@ -282,7 +282,7 @@ def run_llh_scans(metrics=[], mc_params=None, config_file=None, data_mapset=None
     return results
 
 
-def plot_llh_scans(metrics=[], results=None, interactive=False, output_pdf=None):
+def plot_llh_scans(metrics=[], results=None, interactive=False, output_pdf=None, prefix='', save_individual_fig=False):
     '''
     Plot Likelihood scans
     '''
@@ -312,6 +312,9 @@ def plot_llh_scans(metrics=[], results=None, interactive=False, output_pdf=None)
 
     if interactive:
         plt.show()
+
+    if save_individual_fig:
+        plt.savefig(prefix+'plot_llh_scan.png')
 
     if output_pdf is None:
         return fig
@@ -519,6 +522,8 @@ def plot_coverage_test(output_pdf=None,
                        stats_factor=None,
                        output_stem=None,
                        n_trials=None,
+                       prefix='',
+                       save_individual_fig=False,
                        outname='test_coverage.pdf'):
     '''
     plot the results of the coverage test
@@ -532,14 +537,13 @@ def plot_coverage_test(output_pdf=None,
     if output_pdf is None:
         output_pdf = PdfPages(outname)
 
-    coverage_fig = Figure(figsize=(10, 10))
+    coverage_fig = Figure(figsize=(7, 7))
 
     #
     # produce an example chi2 distribution with d.o.f =1
     #
     # This will help us compare ts distribution directly
     sample_chi2_distrib = np.random.chisquare(size=n_trials, df=1)
-    ts_binning = np.linspace(0, 50, 31)
 
     for llh_name in metrics:
 
@@ -565,9 +569,7 @@ def plot_coverage_test(output_pdf=None,
         for pseudo_exp in indata:
 
             val_low = pseudo_exp['lowstats_opt']['best_fit_param'].value.m
-            #val_high = pseudo_exp['infinite_stats_opt']['best_fit_param'].value.m
             llh_optimized_low = pseudo_exp['lowstats_opt']['metric_val']
-            #llh_optimized_high = pseudo_exp['infinite_stats_opt']['metric_val']
             llh_truth_low = pseudo_exp['llh_lowstats']
             llh_truth_high = pseudo_exp['llh_infinite_stats']
 
@@ -575,84 +577,71 @@ def plot_coverage_test(output_pdf=None,
             # check that all elements of the comparison are finite
             #
             good_trial = np.isfinite(val_low)
-            #good_trial *= np.isfinite(val_high)
             good_trial *= np.isfinite(llh_optimized_low)
-            #good_trial *= np.isfinite(llh_optimized_high)
             good_trial *= np.isfinite(llh_truth_low)
             good_trial *= np.isfinite(llh_truth_high)
 
             if good_trial:
 
                 container_val_lowstat.append(val_low)
-                #container_val_highstat.append(val_high)
                 container_ts_truth_high.append(llh_truth_high)
                 container_ts_truth_low.append(llh_truth_low)
 
                 ts_low = -2*(llh_optimized_low-llh_truth_low)
-                #ts_high = -2*(llh_optimized_high-llh_truth_high)
 
                 # We take the absolute value here because we want to know how far
                 # we are from the truth, and we can optimize to llh values above and below the truth
                 container_ts_lowstat.append(np.abs(ts_low))
-                #container_ts_highstat.append(np.abs(ts_high))
 
-                #llh_bias.append(-2*(ts_low-ts_high))
                 param_bias.append((val_low-val_truth)/val_truth)
 
             else:
                 continue
 
-        fig = Figure(nx=2, ny=3, figsize=(20, 30), title=LIKELIHOOD_FORMATTING[llh_name]['label'])
-        fig.get_ax(x=0, y=0).set_title(
-            'ts Distribution - 10000 x more MC than data')
-        #fig.get_ax(x=0, y=0).hist(container_ts_highstat, bins=ts_binning,
-        #                         histtype='step', linewidth=2., color='r', label='ts distribution')
-        fig.get_ax(x=0, y=0).hist(sample_chi2_distrib, bins=ts_binning,
-                                  histtype='step', linewidth=2., color='k', label=r'$\chi^{2}_{dof=1}$')
-        fig.get_ax(x=0, y=0).set_xlabel(
-            r'$\left |-2(LLH_{opt}-LLH_{truth}) \right |$ (High statistics case)')
-        fig.get_ax(x=0, y=0).legend()
+        #
+        # First plot: TS distribution
+        #
+        fig_ts_distrib = Figure(figsize=(7,7), title=LIKELIHOOD_FORMATTING[llh_name]['label'])
+        ts_binning = np.linspace(0, 25, 31)
+        c,ts_edges = np.histogram(sample_chi2_distrib, bins=ts_binning)
+        ts_x = ts_edges[:-1]+0.5*(ts_edges[1:]-ts_edges[:-1])
+        fig_ts_distrib.get_ax().errorbar(ts_x, c, yerr=np.sqrt(c), drawstyle='steps-mid',
+                                         linewidth=2., color='k', label=r'$\chi^{2}_{dof=1}$')
 
-        fig.get_ax(x=0, y=1).set_title(
-            'ts Distribution - {} x MC vs. data'.format(stats_factor))
-        _, chi2_bins, _ = fig.get_ax(x=0, y=1).hist(
-            container_ts_lowstat, bins=20, histtype='step', linewidth=2., color='b', label='ts distribution')
-        fig.get_ax(x=0, y=1).hist(sample_chi2_distrib, bins=chi2_bins,
-                                  histtype='step', linewidth=2., color='k', label=r'$\chi^{2}_{dof=1}$')
-        fig.get_ax(x=0, y=1).set_xlabel(
-            r'$\left |-2(LLH_{opt}-LLH_{truth}) \right |$ (Low statistics case)')
-        fig.get_ax(x=0, y=1).legend()
+        fig_ts_distrib.get_ax().set_title('TS Distribution - {} x MC vs. data'.format(stats_factor))
+        cmc, _ = np.histogram(container_ts_lowstat, bins=ts_binning)
+        _, chi2_bins, _ = fig_ts_distrib.get_ax().errorbar(ts_x, cmc, yerr=np.sqrt(cmc), drawstyle='steps-mid', 
+                                        linewidth=2., color='b', label='TS distribution')
 
-        fig.get_ax(x=0, y=1).set_title(
-            'Fitted Parameter Value - 10000 x MC vs. data')
-        #fig.get_ax(x=1, y=0).hist(container_val_highstat, bins=20, histtype='step',
-        #                          linewidth=2., color='r', label=r'Best-fit $\mu_{opt}$')
-        fig.get_ax(x=1, y=0).axvline(x=20, linewidth=2,
+        fig_ts_distrib.get_ax().set_xlabel(r'$\left |-2(LLH_{opt}-LLH_{truth}) \right |$ (Low statistics case)')
+        fig_ts_distrib.get_ax().legend()
+        if save_individual_fig:
+            plt.savefig(prefix+llh_name+'plot_TS_distribution.png')
+
+        #
+        # Second plot: Bias distribution (absolute)
+        #
+        fig_bias = Figure(figsize=(7,7), title=LIKELIHOOD_FORMATTING[llh_name]['label'])
+        fig_bias.get_ax().axvline(x=20, linewidth=2,
                                      color='k', ls='--', label=r'Truth ($\mu = 20$')
-        fig.get_ax(x=1, y=0).set_xlabel(r'value')
-        fig.get_ax(x=1, y=0).legend()
-
-        fig.get_ax(x=0, y=1).set_title(
-            'Fitted Parameter Value - {} x MC vs. data'.format(stats_factor))
-        fig.get_ax(x=1, y=1).hist(container_val_lowstat, bins=20, histtype='step',
+        fig_bias.get_ax().hist(container_val_lowstat, bins=20, histtype='step',
                                   linewidth=2., color='b', label=r'Best-fit $\mu_{opt}$')
-        fig.get_ax(x=1, y=1).axvline(x=20, linewidth=2,
-                                     color='k', ls='--', label=r'Truth ($\mu = 20$')
-        fig.get_ax(x=1, y=1).set_xlabel(r'value')
-        fig.get_ax(x=1, y=1).legend()
 
-        fig.get_ax(x=0, y=2).set_title('LLH Bias')
-        #fig.get_ax(x=0, y=2).hist(llh_bias, bins=20)
-        fig.get_ax(x=0, y=2).set_xlabel(
-            r'llh Bias $-2\left (ts_{low\ stats} -ts_{high\ stats} \right )$')
-        fig.get_ax(x=0, y=2).axvline(x=0., linewidth=2, color='k', ls='--')
+        fig_bias.get_ax().set_xlabel(r'value')
+        fig_bias.get_ax().set_title('Fitted Parameter Value - {} x MC vs. data'.format(stats_factor))
+        if save_individual_fig:
+            plt.savefig(prefix+llh_name+'plot_bias_abs.png')
 
-        fig.get_ax(x=1, y=2).set_title('Parameter Bias in low stats')
-        fig.get_ax(x=1, y=2).hist(param_bias, bins=20)
-        fig.get_ax(x=1, y=2).set_xlabel(
-            r'$\left( \frac{\mu_{opt}-\mu_{true}}{\mu_{true}}\right)$')
-        fig.get_ax(x=1, y=2).axvline(x=0., linewidth=2, color='k', ls='--')
-        output_pdf.savefig(fig.fig)
+        #
+        # Third plot: Bias distribution (relative)
+        #
+        fig_pull = Figure(figsize=(7,7), title=LIKELIHOOD_FORMATTING[llh_name]['label'])
+        fig_pull.get_ax().set_title('Parameter Bias in low stats')
+        fig_pull.get_ax().hist(param_bias, bins=20)
+        fig_pull.get_ax().set_xlabel(r'$\left( \frac{\mu_{opt}-\mu_{true}}{\mu_{true}}\right)$')
+        fig_pull.get_ax().axvline(x=0., linewidth=2, color='k', ls='--')
+        if save_individual_fig:
+            plt.savefig(prefix+llh_name+'plot_bias_rel.png')
 
         #
         # Coverage test
@@ -675,7 +664,13 @@ def plot_coverage_test(output_pdf=None,
     coverage_fig.get_ax().set_xlabel('Expected Wilks coverage')
     coverage_fig.get_ax().set_ylabel('Actual Coverage (low statistics')
     coverage_fig.get_ax().legend()
-    output_pdf.savefig(coverage_fig.fig)
+
+    if output_pdf is not None:
+        output_pdf.savefig(coverage_fig.fig)
+
+    if save_individual_fig:
+        plt.figure(coverage_fig.fig.number)
+        plt.savefig(prefix+'plot_coverage.png')
 
 
 def plot_data_and_mc(data_map=None,
@@ -708,7 +703,6 @@ def plot_data_and_mc(data_map=None,
     print('creating the infinite template')
     infinite_toymc_params = copy.deepcopy(toymc_params)
     infinite_toymc_params.stats_factor = 1000.
-    print(infinite_toymc_params.stats_factor)
     mc_template_pseudo_infinite = create_mc_template(infinite_toymc_params, config_file=config_file, seed=mc_seed)
     mc_map_pseudo_infinite = sum(mc_template_pseudo_infinite.get_outputs(return_sum=True, force_standard_output=False)['old_sum'])
 
@@ -880,6 +874,8 @@ if __name__ == '__main__':
                                 results=results)
 
         plot_llh_scans(metrics=metrics_to_test, results=results,
+                       save_individual_fig=True,
+                       prefix=args.output,
                        interactive=args.interactive, output_pdf=output_pdf)
 
     # ==================================================================
@@ -901,6 +897,8 @@ if __name__ == '__main__':
                            results=results,
                            stats_factor=toymc_params.stats_factor,
                            output_stem=args.output,
+                           save_individual_fig=True,
+                           prefix=args.output,
                            n_trials=args.ntrials)
 
     output_pdf.close()
