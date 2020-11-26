@@ -303,8 +303,10 @@ class pi_nusquids(PiStage):
             self.node_mode = "binned"
         elif self.node_specs == "events":
             self.node_mode = "events"
+        elif self.node_specs is None:
+            self.node_mode = None
         else:
-            raise ValueError("Must pass either MultiDimBinning or 'events'")
+            raise ValueError("Cannot understand `node_specs` %s" % calc_specs)
 
         assert not (self.use_nsi and self.use_decoherence), ("NSI and decoherence not "
             "suported together, must use one or the other")
@@ -313,20 +315,19 @@ class pi_nusquids(PiStage):
         assert self.calc_mode is not None
         assert self.output_mode is not None
         
-        if self.node_mode == "events":
-            assert self.calc_mode == "events"
-        
         self.exact_mode = exact_mode
+            
         if exact_mode:
-            # nuSQuIDS would allow you to interpolate but the result would be different
-            # and in the presence of fast oscillations it could be very wrong! We just
-            # forbid this altogether to avoid mishaps.
-            assert self.node_mode == "events" and self.calc_mode == "events", ("Exact "
-                "mode is only suitable for event-by-event calculations.")
-            assert self.prop_lowpass_cutoff == 0.
-            assert self.prop_lowpass_frac == 0.
-            assert self.evol_lowpass_cutoff == 0.
-            assert self.evol_lowpass_frac == 0.
+            # No interpolation is happening in exact mode so any passed node_specs
+            # will be ignored. Probabilities are calculated at calc_specs.
+            if self.node_mode is not None:
+                logging.warn("nuSQuIDS is configured in exact mode, the passed "
+                    f"`node_specs`\n({self.node_specs})\n will be ignored!")
+            if self.prop_lowpass_cutoff > 0 or self.eval_lowpass_cutoff > 0:
+                logging.warn("nuSQuIDS is configured in exact mode, low-pass filters "
+                    "will be ignored")
+        else:
+            assert self.calc_mode == self.node_mode or self.calc_mode == "events"
 
         self.e_node_specs = None
         self.e_mesh = None
@@ -376,7 +377,7 @@ class pi_nusquids(PiStage):
         # Because we don't want to extrapolate, we check that all points at which we
         # want to evaluate probabilities are fully contained within the node specs. This
         # is of course not necessary in events mode.
-        if self.node_mode == "binned":
+        if self.node_mode == "binned" and not self.exact_mode:
             logging.debug("setting up nuSQuIDS nodes in binned mode")
             # we can prepare the calculator like this only in binned mode, see 
             # compute_function for node_mode == "events"
@@ -473,15 +474,17 @@ class pi_nusquids(PiStage):
 
         for container in self.data:
             self.layers.calcLayers(container["true_coszen"].get("host"))
-            # To project out probabilities we only need the *total* distance
             distances = self.layers.distance.reshape((container.size, self.layers.max_layers))
-            container["tot_distances"] = np.sum(distances, axis=1)
-            # for the binned node_mode we already calculated layers above
-            if self.node_mode == "events":
+            if self.node_mode == "binned" and not self.exact_mode:
+                # To project out probabilities we only need the *total* distance
+                container["tot_distances"] = np.sum(distances, axis=1)
+                # for the binned node_mode we already calculated layers above
+            elif self.node_mode == "events" or self.exact_mode:
+                # in any other mode (events or exact) we store all densities and 
+                # distances in the container in calc_specs
                 densities = self.layers.density.reshape((container.size, self.layers.max_layers))
                 container["densities"] = densities
                 container["distances"] = distances
-            
 
         self.data.unlink_containers()
 
@@ -557,40 +560,55 @@ class pi_nusquids(PiStage):
                     scale,
                 )
         return prob_interp
-        
     
     @profile
-    def compute_function(self):
+    def compute_function_no_interpolation(self):
+        """
+        Version of the compute function that does not use any interpolation between
+        nodes.
+        """
         nsq_units = nsq.Const()
-        if self.node_mode == "events":
-            assert self.calc_mode == "events"  # checked before, but to be safe
-            for container in self.data:
-                nubar = container["nubar"] < 0
-                flav = container["flav"]
-                # electron fraction is already included by multiplying the densities
-                # with them in the Layers module, so we pass 1. to nuSQuIDS (unless
-                # energies are very high, this should be equivalent).
-                ye = np.broadcast_to(np.array([1.]),
-                                     (container.size, self.layers.max_layers))
-                nus_layer = nsq.nuSQUIDSLayers(
-                    container["distances"].get(WHERE) * nsq_units.km,
-                    container["densities"].get(WHERE),
-                    ye,
-                    container["true_energy"].get(WHERE) * nsq_units.GeV,
-                    self.num_neutrinos,
-                    nsq.NeutrinoType.antineutrino if nubar else nsq.NeutrinoType.neutrino,
-                )
-                self.apply_prop_settings(nus_layer)
-                self.set_osc_parameters(nus_layer)
-                container["prob_e"] = self.calc_node_probs(nus_layer, 0, flav,
-                                                           container.size)
-                container["prob_mu"] = self.calc_node_probs(nus_layer, 1, flav,
-                                                            container.size)
-            
-                container["prob_e"].mark_changed(WHERE)
-                container["prob_mu"].mark_changed(WHERE)
-            return
-
+        # it is possible to work in binned calc mode while being in exact mode
+        if self.calc_mode == "binned":
+            self.data.link_containers("nue", ["nue_cc", "nue_nc"])
+            self.data.link_containers("numu", ["numu_cc", "numu_nc"])
+            self.data.link_containers("nutau", ["nutau_cc", "nutau_nc"])
+            self.data.link_containers("nuebar", ["nuebar_cc", "nuebar_nc"])
+            self.data.link_containers("numubar", ["numubar_cc", "numubar_nc"])
+            self.data.link_containers("nutaubar", ["nutaubar_cc", "nutaubar_nc"])
+        for container in self.data:
+            nubar = container["nubar"] < 0
+            flav = container["flav"]
+            # electron fraction is already included by multiplying the densities
+            # with them in the Layers module, so we pass 1. to nuSQuIDS (unless
+            # energies are very high, this should be equivalent).
+            ye = np.broadcast_to(np.array([1.]),
+                                 (container.size, self.layers.max_layers))
+            nus_layer = nsq.nuSQUIDSLayers(
+                container["distances"].get(WHERE) * nsq_units.km,
+                container["densities"].get(WHERE),
+                ye,
+                container["true_energy"].get(WHERE) * nsq_units.GeV,
+                self.num_neutrinos,
+                nsq.NeutrinoType.antineutrino if nubar else nsq.NeutrinoType.neutrino,
+            )
+            self.apply_prop_settings(nus_layer)
+            self.set_osc_parameters(nus_layer)
+            container["prob_e"] = self.calc_node_probs(nus_layer, 0, flav,
+                                                       container.size)
+            container["prob_mu"] = self.calc_node_probs(nus_layer, 1, flav,
+                                                        container.size)
+        
+            container["prob_e"].mark_changed(WHERE)
+            container["prob_mu"].mark_changed(WHERE)
+        self.data.unlink_containers()
+    
+    @profile
+    def compute_function_interpolated(self):
+        """
+        Version of the compute function that does use interpolation between nodes.
+        """
+        nsq_units = nsq.Const()
         # we need to make four evolutions, for neutrinos and antineutrinos and 
         # for initial muon and electron neutrino states
         for nus_layer in [self.nus_layer_nubar, self.nus_layer_nu]:
@@ -646,7 +664,13 @@ class pi_nusquids(PiStage):
             container["prob_e"].mark_changed(WHERE)
             container["prob_mu"].mark_changed(WHERE)
         self.data.unlink_containers()
-        
+
+    @profile
+    def compute_function(self):
+        if self.node_mode == "events" or self.exact_mode:
+            self.compute_function_no_interpolation()
+        else:
+            self.compute_function_interpolated()
 
     @profile
     def apply_function(self):
