@@ -19,7 +19,7 @@ from scipy.interpolate import RectBivariateSpline
 from pisa import FTYPE, TARGET
 from pisa.core.pi_stage import PiStage
 from pisa.utils.log import logging
-from pisa.utils.profiler import profile
+from pisa.utils.profiler import profile, line_profile
 from pisa.stages.osc.layers import Layers
 from pisa.utils.numba_tools import WHERE
 from pisa.core.binning import MultiDimBinning
@@ -465,7 +465,6 @@ class pi_nusquids(PiStage):
 
         # --- calculate the layers ---
         if self.calc_mode == "binned":
-            # speed up calculation by adding links
             # as layers don't care about flavour
             self.data.link_containers("nu", ["nue_cc", "numu_cc", "nutau_cc",
                                              "nue_nc", "numu_nc", "nutau_nc",
@@ -485,11 +484,8 @@ class pi_nusquids(PiStage):
                 densities = self.layers.density.reshape((container.size, self.layers.max_layers))
                 container["densities"] = densities
                 container["distances"] = distances
-
         self.data.unlink_containers()
-
-        # --- setup empty arrays ---
-        # The only simplification is that oscillations don't care about the interaction
+        
         if self.calc_mode == "binned":
             self.data.link_containers("nue", ["nue_cc", "nue_nc"])
             self.data.link_containers("numu", ["numu_cc", "numu_nc"])
@@ -504,6 +500,7 @@ class pi_nusquids(PiStage):
             container["prob_mu"] = np.empty((container.size), dtype=FTYPE)
         self.data.unlink_containers()
     
+    @line_profile
     def calc_node_probs(self, nus_layer, flav_in, flav_out, n_nodes):
         """
         Evaluate oscillation probabilities at nodes. This does not require any
@@ -517,6 +514,7 @@ class pi_nusquids(PiStage):
                                for n in range(n_nodes)])
         return prob_nodes
     
+    @line_profile
     def calc_probs_interp(self, flav_out, evolved_states, nus_layer,
                           out_distances, e_out, cosz_out):
         """
@@ -603,7 +601,7 @@ class pi_nusquids(PiStage):
             container["prob_mu"].mark_changed(WHERE)
         self.data.unlink_containers()
     
-    @profile
+    @line_profile
     def compute_function_interpolated(self):
         """
         Version of the compute function that does use interpolation between nodes.
@@ -637,6 +635,12 @@ class pi_nusquids(PiStage):
         # Now comes the step where we interpolate the interaction picture states
         # and project out oscillation probabilities. This can be done in either events
         # or binned mode.
+        # Performance note: One might think that it would be more efficient to link all
+        # "nu" and "nubar" together as in prob3 because we end up calculating the same
+        # interpolated states three times. However, in this case the bottleneck is the
+        # call to EvalWithStateLowpass which extracts the probability for a single
+        # flavour. It would therefore be slower if we were to link "nu" and "nubar" and
+        # calculate a full probability matrix as it is done in prob3.
         if self.calc_mode == "binned":
             self.data.link_containers("nue", ["nue_cc", "nue_nc"])
             self.data.link_containers("numu", ["numu_cc", "numu_nc"])
@@ -665,14 +669,12 @@ class pi_nusquids(PiStage):
             container["prob_mu"].mark_changed(WHERE)
         self.data.unlink_containers()
 
-    @profile
     def compute_function(self):
         if self.node_mode == "events" or self.exact_mode:
             self.compute_function_no_interpolation()
         else:
             self.compute_function_interpolated()
 
-    @profile
     def apply_function(self):
 
         # update the outputted weights
