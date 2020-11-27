@@ -499,6 +499,26 @@ class pi_nusquids(PiStage):
             container["prob_e"] = np.empty((container.size), dtype=FTYPE)
             container["prob_mu"] = np.empty((container.size), dtype=FTYPE)
         self.data.unlink_containers()
+        
+        if self.exact_mode: return
+        
+        # --- containers for interpolated states ---
+        # This is not needed in exact mode
+        if self.calc_mode == "binned":
+            self.data.link_containers("nu", ["nue_cc", "numu_cc", "nutau_cc",
+                                             "nue_nc", "numu_nc", "nutau_nc"])
+            self.data.link_containers("nubar", ["nuebar_cc", "numubar_cc", "nutaubar_cc",
+                                                "nuebar_nc", "numubar_nc", "nutaubar_nc"])
+        for container in self.data:
+            container["interp_states_e"] = np.empty(
+                (container.size, self.num_neutrinos**2),
+                dtype=FTYPE,
+            )
+            container["interp_states_mu"] = np.empty(
+                (container.size, self.num_neutrinos**2),
+                dtype=FTYPE,
+            )
+        self.data.unlink_containers()
     
     @line_profile
     def calc_node_probs(self, nus_layer, flav_in, flav_out, n_nodes):
@@ -514,12 +534,9 @@ class pi_nusquids(PiStage):
                                for n in range(n_nodes)])
         return prob_nodes
     
-    @line_profile
-    def calc_probs_interp(self, flav_out, evolved_states, nus_layer,
-                          out_distances, e_out, cosz_out):
+    def calc_interpolated_states(self, evolved_states, e_out, cosz_out):
         """
-        Evaluate oscillation probabilities by interpolating interaction picture states
-        between nodes.
+        Calculate interpolated states at the energies and zenith angles requested.
         """
         nsq_units = nsq.Const()
         interp_states = np.zeros((e_out.size, evolved_states.shape[1]))
@@ -542,21 +559,28 @@ class pi_nusquids(PiStage):
                 ky=2,
             )
             interp_states[..., i] = f(np.log10(e_out), cosz_out, grid=False)
+        return interp_states
+
+    def calc_probs_interp(self, flav_out, interp_states, nus_layer,
+                          out_distances, e_out, cosz_out):
+        """
+        Project out probabilities from interpolated interaction picture states.
+        """
+        nsq_units = nsq.Const()
 
         prob_interp = np.zeros(e_out.size)
         scale = self.eval_lowpass_frac * self.eval_lowpass_cutoff / nsq_units.km
         if self.avg_height:
             raise NotImplementedError("Production height avg not yet implemented")
         else:
-            for i in range(e_out.size):
-                prob_interp[i] = nus_layer.EvalWithStateLowpass(
-                    flav_out,
-                    out_distances[i],
-                    e_out[i],
-                    interp_states[i],
-                    self.eval_lowpass_cutoff / nsq_units.km,
-                    scale,
-                )
+            prob_interp = nus_layer.ArrEvalWithStateLowpass(
+                flav_out,
+                out_distances,
+                e_out,
+                interp_states,
+                self.eval_lowpass_cutoff / nsq_units.km,
+                scale,
+            )
         return prob_interp
     
     @profile
@@ -635,12 +659,25 @@ class pi_nusquids(PiStage):
         # Now comes the step where we interpolate the interaction picture states
         # and project out oscillation probabilities. This can be done in either events
         # or binned mode.
-        # Performance note: One might think that it would be more efficient to link all
-        # "nu" and "nubar" together as in prob3 because we end up calculating the same
-        # interpolated states three times. However, in this case the bottleneck is the
-        # call to EvalWithStateLowpass which extracts the probability for a single
-        # flavour. It would therefore be slower if we were to link "nu" and "nubar" and
-        # calculate a full probability matrix as it is done in prob3.
+        if self.calc_mode == "binned":
+            self.data.link_containers("nu", ["nue_cc", "numu_cc", "nutau_cc",
+                                             "nue_nc", "numu_nc", "nutau_nc"])
+            self.data.link_containers("nubar", ["nuebar_cc", "numubar_cc", "nutaubar_cc",
+                                                "nuebar_nc", "numubar_nc", "nutaubar_nc"])
+        for container in self.data:
+            nubar = container["nubar"] < 0
+            container["interp_states_e"] = self.calc_interpolated_states(
+                evolved_states_nuebar if nubar else evolved_states_nue,
+                container["true_energy"].get(WHERE) * nsq_units.GeV,
+                container["true_coszen"].get(WHERE)
+            )
+            container["interp_states_mu"] = self.calc_interpolated_states(
+                evolved_states_numubar if nubar else evolved_states_numu,
+                container["true_energy"].get(WHERE) * nsq_units.GeV,
+                container["true_coszen"].get(WHERE)
+            )
+        self.data.unlink_containers()
+        
         if self.calc_mode == "binned":
             self.data.link_containers("nue", ["nue_cc", "nue_nc"])
             self.data.link_containers("numu", ["numu_cc", "numu_nc"])
@@ -651,16 +688,16 @@ class pi_nusquids(PiStage):
         
         for container in self.data:
             nubar = container["nubar"] < 0
-            flav = container["flav"]
+            flav_out = container["flav"]
             if nubar:
-                evolved_states = [evolved_states_nuebar, evolved_states_numubar]
                 nus_layer = self.nus_layer_nubar
             else:
-                evolved_states = [evolved_states_nue, evolved_states_numu]
                 nus_layer = self.nus_layer_nu
-            for states, key in zip(evolved_states, ["prob_e", "prob_mu"]):
-                container[key] = self.calc_probs_interp(
-                    flav, states, nus_layer,
+            for flav_in in ["e", "mu"]:
+                container["prob_"+flav_in] = self.calc_probs_interp(
+                    flav_out,
+                    container["interp_states_"+flav_in].get(WHERE),
+                    nus_layer,
                     container["tot_distances"].get(WHERE) * nsq_units.km,
                     container["true_energy"].get(WHERE) * nsq_units.GeV,
                     container["true_coszen"].get(WHERE)
@@ -668,7 +705,8 @@ class pi_nusquids(PiStage):
             container["prob_e"].mark_changed(WHERE)
             container["prob_mu"].mark_changed(WHERE)
         self.data.unlink_containers()
-
+    
+    @profile
     def compute_function(self):
         if self.node_mode == "events" or self.exact_mode:
             self.compute_function_no_interpolation()
