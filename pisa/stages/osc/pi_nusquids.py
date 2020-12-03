@@ -82,9 +82,9 @@ class pi_nusquids(PiStage):
         key `prop_height` and take the height from there on a bin-wise or event-wise
         basis depending on `calc_specs`.
     
-    prop_height_max : quantity (distance)
-        Maximum production height (optional). If this value is passed probabilities are
-        averaged between the minimum production height in `prop_height` and this value
+    prop_height_min : quantity (distance)
+        Minimum production height (optional). If this value is passed probabilities are
+        averaged between the maximum production height in `prop_height` and this value
         under the assumption of a uniform production height distribution.
 
     YeI : quantity (dimensionless)
@@ -163,7 +163,7 @@ class pi_nusquids(PiStage):
         earth_model=None,
         detector_depth=None,
         prop_height=None,
-        prop_height_max=None,
+        prop_height_min=None,
         YeI=None,
         YeO=None,
         YeM=None,
@@ -205,10 +205,9 @@ class pi_nusquids(PiStage):
         self.detector_depth = detector_depth.m_as("km")
         self.prop_height = prop_height.m_as("km")
         self.avg_height = False
-        self.prop_height_max = None
-        if prop_height_max is not None:  # this is optional
-            raise NotImplementedError("Prop height averaging not yet implemented.")
-            self.prop_height_max = prop_height_max.m_as("km")
+        self.prop_height_min = None
+        if prop_height_min is not None:  # this is optional
+            self.prop_height_min = prop_height_min.m_as("km")
             self.avg_height = True
         
         self.layers = None
@@ -460,20 +459,37 @@ class pi_nusquids(PiStage):
                                              "nue_nc", "numu_nc", "nutau_nc",
                                              "nuebar_cc", "numubar_cc", "nutaubar_cc",
                                              "nuebar_nc", "numubar_nc", "nutaubar_nc"])
-
+        # calculate the distance difference between minimum and maximum production
+        # height, if applicable
+        if self.avg_height:
+            layers_min = Layers(earth_model, detector_depth, self.prop_height_min)
+            layers_min.setElecFrac(self.YeI, self.YeO, self.YeM)
         for container in self.data:
             self.layers.calcLayers(container["true_coszen"].get("host"))
             distances = self.layers.distance.reshape((container.size, self.layers.max_layers))
+            tot_distances = np.sum(distances, axis=1)
+            if self.avg_height:
+                layers_min.calcLayers(container["true_coszen"].get("host"))
+                dists_min = layers_min.distance.reshape((container.size, self.layers.max_layers))
+                min_tot_dists = np.sum(dists_min, axis=1)
+                # nuSQuIDS assumes the original distance is the longest distance and 
+                # the averaging range is the difference between the minimum and maximum
+                # distance.
+                avg_ranges = tot_distances - min_tot_dists
+                assert np.all(avg_ranges > 0)
             if self.node_mode == "binned" and not self.exact_mode:
                 # To project out probabilities we only need the *total* distance
-                container["tot_distances"] = np.sum(distances, axis=1)
+                container["tot_distances"] = tot_distances
                 # for the binned node_mode we already calculated layers above
+                if self.avg_height:
+                    container["avg_ranges"] = avg_ranges
             elif self.node_mode == "events" or self.exact_mode:
                 # in any other mode (events or exact) we store all densities and 
                 # distances in the container in calc_specs
                 densities = self.layers.density.reshape((container.size, self.layers.max_layers))
                 container["densities"] = densities
                 container["distances"] = distances
+        
         self.data.unlink_containers()
         
         if self.calc_mode == "binned":
@@ -551,7 +567,7 @@ class pi_nusquids(PiStage):
         return interp_states
 
     def calc_probs_interp(self, flav_out, nubar, interp_states, # nus_layer,
-                          out_distances, e_out):
+                          out_distances, e_out, avg_ranges=0):
         """
         Project out probabilities from interpolated interaction picture states.
         """
@@ -559,19 +575,17 @@ class pi_nusquids(PiStage):
 
         prob_interp = np.zeros(e_out.size)
         scale = self.eval_lowpass_frac * self.eval_lowpass_cutoff / nsq_units.km
-        if self.avg_height:
-            raise NotImplementedError("Production height avg not yet implemented")
-        else:
-            prob_interp = self.nus_layer.EvalWithState(
-                flav_out,
-                out_distances,
-                e_out,
-                interp_states,
-                avr_scale=0.,
-                rho=int(nubar),
-                lowpass_cutoff=self.eval_lowpass_cutoff / nsq_units.km,
-                lowpass_scale=scale,
-            )
+        prob_interp = self.nus_layer.EvalWithState(
+            flav_out,
+            out_distances,
+            e_out,
+            interp_states,
+            avr_scale=0.,
+            rho=int(nubar),
+            lowpass_cutoff=self.eval_lowpass_cutoff / nsq_units.km,
+            lowpass_scale=scale,
+            t_range=avg_ranges
+        )
         return prob_interp
     
     def compute_function_no_interpolation(self):
@@ -681,6 +695,7 @@ class pi_nusquids(PiStage):
                     container["interp_states_"+flav_in].get(WHERE),
                     container["tot_distances"].get(WHERE) * nsq_units.km,
                     container["true_energy"].get(WHERE) * nsq_units.GeV,
+                    container["avg_ranges"].get(WHERE) * nsq_units.km if self.avg_height else 0.
                 )
             container["prob_e"].mark_changed(WHERE)
             container["prob_mu"].mark_changed(WHERE)
