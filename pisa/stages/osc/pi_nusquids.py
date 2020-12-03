@@ -186,12 +186,13 @@ class pi_nusquids(PiStage):
         num_neutrinos=3,
         exact_mode=False,
     ):
-        assert num_neutrinos < 5, "currently only supports up to 4 flavor oscillations"
+
         if use_nsi:
             raise NotImplementedError("NSI not implemented")
         if use_decoherence:
             raise NotImplementedError("Decoherence not implemented")
-        self.num_neutrinos = num_neutrinos
+        self.num_neutrinos = int(num_neutrinos)
+        assert self.num_neutrinos < 5, "currently only supports up to 4 flavor oscillations"
         self.use_nsi = use_nsi
         self.use_decoherence = use_decoherence
         self.num_decoherence_gamma = num_decoherence_gamma
@@ -258,7 +259,7 @@ class pi_nusquids(PiStage):
         # We may want to reparametrize this with the difference between deltacp14 and
         # deltacp24, as the absolute value seems to play a small role (see
         # https://arxiv.org/pdf/2010.06321.pdf)
-        if num_neutrinos == 4:
+        if self.num_neutrinos == 4:
             expected_params.extend([
                 "theta14",
                 "theta24",
