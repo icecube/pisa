@@ -229,8 +229,8 @@ class pi_nusquids(PiStage):
         if self.prop_lowpass_frac < 0. or self.eval_lowpass_frac < 0.:
             raise ValueError("lowpass filter fraction cannot be smaller than zero")
 
-        self.nus_layer_nu = None
-        self.nus_layer_nubar = None
+        self.nus_layer = None
+        self.nus_layerbar = None
         
         # Define standard params
         expected_params = [
@@ -437,28 +437,17 @@ class pi_nusquids(PiStage):
             # them in the Layers module, so we pass 1. to nuSQuIDS (unless energies are
             # very high, this should be equivalent).
             ye = np.broadcast_to(np.array([1.]), (len(e_nodes), self.layers.max_layers))
-            # Currently, nuSQUIDSLayers does not support "both" mode, so we need one
-            # calculator for each neutrinos and antineutrinos
-            self.nus_layer_nu = nsq.nuSQUIDSLayers(
+            self.nus_layer = nsq.nuSQUIDSLayers(
                 distances * nsq_units.km,
                 densities,
                 ye,
                 e_nodes * nsq_units.GeV,
                 self.num_neutrinos,
-                nsq.NeutrinoType.neutrino,
+                nsq.NeutrinoType.both,
             )
-            self.nus_layer_nubar = nsq.nuSQUIDSLayers(
-                distances * nsq_units.km,
-                densities,
-                ye,
-                e_nodes * nsq_units.GeV,
-                self.num_neutrinos,
-                nsq.NeutrinoType.antineutrino,
-            )
-            for nus_layer in [self.nus_layer_nu, self.nus_layer_nubar]:
-                self.apply_prop_settings(nus_layer)
+            self.apply_prop_settings(self.nus_layer)
         
-        # Now that we have our nusquids calculators set up on the node grid, we make 
+        # Now that we have our nusquids calculator set up on the node grid, we make 
         # container output space for the probability output which may be on a finer grid
         # than the nodes or even working in events mode.
         self.data.data_specs = self.calc_specs
@@ -530,8 +519,7 @@ class pi_nusquids(PiStage):
         ini_state[flav_in] = 1
         nus_layer.Set_initial_state(ini_state, nsq.Basis.flavor)
         nus_layer.EvolveState()
-        prob_nodes = np.array([nus_layer.EvalFlavorAtNode(flav_out, n)
-                               for n in range(n_nodes)])
+        prob_nodes = nus_layer.EvalFlavorAtNodes(flav_out)
         return prob_nodes
     
     def calc_interpolated_states(self, evolved_states, e_out, cosz_out):
@@ -561,8 +549,8 @@ class pi_nusquids(PiStage):
             interp_states[..., i] = f(np.log10(e_out), cosz_out, grid=False)
         return interp_states
 
-    def calc_probs_interp(self, flav_out, interp_states, nus_layer,
-                          out_distances, e_out, cosz_out):
+    def calc_probs_interp(self, flav_out, nubar, interp_states, # nus_layer,
+                          out_distances, e_out):
         """
         Project out probabilities from interpolated interaction picture states.
         """
@@ -573,17 +561,18 @@ class pi_nusquids(PiStage):
         if self.avg_height:
             raise NotImplementedError("Production height avg not yet implemented")
         else:
-            prob_interp = nus_layer.ArrEvalWithStateLowpass(
+            prob_interp = self.nus_layer.EvalWithState(
                 flav_out,
                 out_distances,
                 e_out,
                 interp_states,
-                self.eval_lowpass_cutoff / nsq_units.km,
-                scale,
+                avr_scale=0.,
+                rho=int(nubar),
+                lowpass_cutoff=self.eval_lowpass_cutoff / nsq_units.km,
+                lowpass_scale=scale,
             )
         return prob_interp
     
-    @profile
     def compute_function_no_interpolation(self):
         """
         Version of the compute function that does not use any interpolation between
@@ -631,30 +620,25 @@ class pi_nusquids(PiStage):
         Version of the compute function that does use interpolation between nodes.
         """
         nsq_units = nsq.Const()
-        # we need to make four evolutions, for neutrinos and antineutrinos and 
-        # for initial muon and electron neutrino states
-        for nus_layer in [self.nus_layer_nubar, self.nus_layer_nu]:
-            self.apply_prop_settings(nus_layer)
-            self.set_osc_parameters(nus_layer)
+        # We need to make two evolutions, one for numu and the other for nue.
+        # These produce neutrino and antineutrino states at the same time thanks to
+        # the "both" neutrino mode of nuSQuIDS.
+        self.apply_prop_settings(self.nus_layer)
+        self.set_osc_parameters(self.nus_layer)
 
         ini_state_nue = np.array([1, 0] + [0] * (self.num_neutrinos - 2))
         ini_state_numu = np.array([0, 1] + [0] * (self.num_neutrinos - 2))
         
-        self.nus_layer_nu.Set_initial_state(ini_state_nue, nsq.Basis.flavor)
-        self.nus_layer_nu.EvolveState()
-        evolved_states_nue = self.nus_layer_nu.GetStates()
+        self.nus_layer.Set_initial_state(ini_state_nue, nsq.Basis.flavor)
+        self.nus_layer.EvolveState()
+        evolved_states_nue = self.nus_layer.GetStates(0)
+        evolved_states_nuebar = self.nus_layer.GetStates(1)
         
-        self.nus_layer_nu.Set_initial_state(ini_state_numu, nsq.Basis.flavor)
-        self.nus_layer_nu.EvolveState()
-        evolved_states_numu = self.nus_layer_nu.GetStates()
-        
-        self.nus_layer_nubar.Set_initial_state(ini_state_nue, nsq.Basis.flavor)
-        self.nus_layer_nubar.EvolveState()
-        evolved_states_nuebar = self.nus_layer_nubar.GetStates()
-        
-        self.nus_layer_nubar.Set_initial_state(ini_state_numu, nsq.Basis.flavor)
-        self.nus_layer_nubar.EvolveState()
-        evolved_states_numubar = self.nus_layer_nubar.GetStates()
+        self.nus_layer.Set_initial_state(ini_state_numu, nsq.Basis.flavor)
+        self.nus_layer.EvolveState()
+        evolved_states_numu = self.nus_layer.GetStates(0)
+        evolved_states_numubar = self.nus_layer.GetStates(1)
+
         
         # Now comes the step where we interpolate the interaction picture states
         # and project out oscillation probabilities. This can be done in either events
@@ -689,18 +673,13 @@ class pi_nusquids(PiStage):
         for container in self.data:
             nubar = container["nubar"] < 0
             flav_out = container["flav"]
-            if nubar:
-                nus_layer = self.nus_layer_nubar
-            else:
-                nus_layer = self.nus_layer_nu
             for flav_in in ["e", "mu"]:
                 container["prob_"+flav_in] = self.calc_probs_interp(
                     flav_out,
+                    nubar,
                     container["interp_states_"+flav_in].get(WHERE),
-                    nus_layer,
                     container["tot_distances"].get(WHERE) * nsq_units.km,
                     container["true_energy"].get(WHERE) * nsq_units.GeV,
-                    container["true_coszen"].get(WHERE)
                 )
             container["prob_e"].mark_changed(WHERE)
             container["prob_mu"].mark_changed(WHERE)
