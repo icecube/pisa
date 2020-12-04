@@ -9,8 +9,6 @@ class `nuSQUIDSLayers` in nuSQuIDS as well as low-pass filtering and range avera
 methods in SQuIDS.
 """
 
-from __future__ import absolute_import, print_function, division
-
 import math
 import numpy as np
 from numba import guvectorize
@@ -191,6 +189,9 @@ class pi_nusquids(PiStage):
             raise NotImplementedError("NSI not implemented")
         if use_decoherence:
             raise NotImplementedError("Decoherence not implemented")
+        if type(prop_height) is not ureg.Quantity:
+            raise NotImplementedError("Getting propagation heights from containers is "
+                "not yet implemented")
         self.num_neutrinos = int(num_neutrinos)
         assert self.num_neutrinos < 5, "currently only supports up to 4 flavor oscillations"
         self.use_nsi = use_nsi
@@ -566,8 +567,8 @@ class pi_nusquids(PiStage):
             interp_states[..., i] = f(np.log10(e_out), cosz_out, grid=False)
         return interp_states
 
-    def calc_probs_interp(self, flav_out, nubar, interp_states, # nus_layer,
-                          out_distances, e_out, avg_ranges=0):
+    def calc_probs_interp(self, flav_out, nubar, interp_states, out_distances,
+                          e_out, avg_ranges=0):
         """
         Project out probabilities from interpolated interaction picture states.
         """
