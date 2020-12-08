@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 Test script to compare the performances of
 the generalized poisson llh with the other 
@@ -14,9 +15,22 @@ __author__ = "Etienne Bourbeau (etienne.bourbeau@icecube.wisc.edu)"
 #
 import os
 import pickle
-import collections
+from collections import OrderedDict
 import copy
 import numpy as np
+
+#
+# Font stuff
+#
+import matplotlib as mpl 
+mpl.use('agg')
+from matplotlib import rcParams
+FONTSIZE=20
+rcParams['font.family'] = 'serif'
+rcParams['font.size'] = 20
+mpl.rc('text', usetex=True)
+#mpl.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
+
 
 
 #
@@ -33,7 +47,7 @@ from pisa.analysis.analysis import Analysis
 from pisa.utils.log import logging
 from pisa.utils.profiler import line_profile
 from pisa.utils.log import set_verbosity, Levels
-set_verbosity(Levels.TRACE)
+#set_verbosity(Levels.TRACE)
 
 ##################################################################################
 
@@ -41,8 +55,31 @@ STANDARD_CONFIG = os.environ['PISA'] + \
     '/pisa/stages/data/super_simple_pipeline.cfg'
 TRUE_MU = 20.
 TRUE_SIGMA = 3.1
-NBINS = 51
+NBINS = 31
 
+#
+# Define formatting properties for all metrics
+#
+import seaborn as sns
+COLORS = sns.color_palette("muted", 8)
+
+LIKELIHOOD_FORMATTING = OrderedDict()
+LIKELIHOOD_FORMATTING['llh'] = {'label':r'Poisson llh',
+                                'marker':'s',
+                                'color': COLORS[0]}
+
+LIKELIHOOD_FORMATTING['mcllh_eff'] = {'label':r'Effective llh',
+                                'color': COLORS[1]}
+
+LIKELIHOOD_FORMATTING['mcllh_mean'] = {'label':r'Mean llh',
+                                       'color': COLORS[2],
+                                       'linestyle': '--'}
+
+LIKELIHOOD_FORMATTING['generalized_poisson_llh'] = {'label':r'Generalized llh',
+                                       'color': COLORS[7]}
+
+LIKELIHOOD_FORMATTING['mod_chi2'] = {'label':r'Mod. $\chi^{2}$',
+                                       'color': COLORS[3]}
 ################################################################################
 
 
@@ -60,8 +97,7 @@ class ToyMCllhParam:
         self.nbackground_low = 0.       # lowest value the background can take
         self.nbackground_high = 40.     # highest value the background can take
         self.stats_factor = 1.          # Statistical factor for the MC
-        # Value of what we consider an infinite MC stats factor
-        self.infinite_stats = 10000
+
 
         #
         # Binning
@@ -100,6 +136,7 @@ def create_pseudo_data(toymc_params, seed=None):
         np.random.seed(seed)
 
     binning = toymc_params.binning
+
     #
     # Gaussian signal peak
     #
@@ -112,11 +149,10 @@ def create_pseudo_data(toymc_params, seed=None):
     background = np.random.uniform(
         high=toymc_params.nbackground_high, low=toymc_params.nbackground_low, size=toymc_params.nbkg)
     total_data = np.concatenate([signal, background])
-    counts_data, _ = np.histogram(total_data, bins=binning.bin_edges.magnitude)
+    counts_data, _ = np.histogram(total_data, bins=binning.bin_edges[0].magnitude)
 
     # Convert data histogram into a pisa map
-    data_map = Map(name='total', binning=MultiDimBinning(
-        [binning]), hist=counts_data)
+    data_map = Map(name='total', binning=binning, hist=counts_data)
 
     # Set the errors as the sqrt of the counts
     data_map.set_errors(error_hist=np.sqrt(counts_data))
@@ -126,7 +162,7 @@ def create_pseudo_data(toymc_params, seed=None):
     return data_as_mapset
 
 
-def create_mc_template(toymc_params, config_file=None, seed=None):
+def create_mc_template(toymc_params, config_file=None, seed=None, keep_same_weight=True):
     '''
     Create MC template out of a pisa pipeline
     '''
@@ -134,6 +170,18 @@ def create_mc_template(toymc_params, config_file=None, seed=None):
         np.random.seed(seed)
 
     Config = parse_pipeline_config(config_file)
+
+    # Change binning
+    Config[('data','pi_simple_signal')]['output_specs'] = toymc_params.binning
+    Config[('likelihood','pi_generalized_llh_params')]['output_specs'] = toymc_params.binning
+
+    # If keep_same_weight is True, turn off the mean adjust and pseudo weight of pi_generalized_llh
+    if keep_same_weight:
+        Config[('likelihood','pi_generalized_llh_params')]['with_mean_adjust'] = False
+        Config[('likelihood','pi_generalized_llh_params')]['with_pseudo_weight'] = False
+    else:
+        Config[('likelihood','pi_generalized_llh_params')]['with_mean_adjust'] = True
+        Config[('likelihood','pi_generalized_llh_params')]['with_pseudo_weight'] = True
 
     new_n_events_data = Param(
         name='n_events_data', value=toymc_params.n_data, prior=None, range=None, is_fixed=True)
@@ -157,7 +205,7 @@ def create_mc_template(toymc_params, config_file=None, seed=None):
 
 ##################################################################################
 
-def run_llh_scans(metrics=[], mc_template=None, data_mapset=None, results=None):
+def run_llh_scans(metrics=[], mc_params=None, config_file=None, data_mapset=None, mc_seed=None, results=None):
     '''
     Perform Likelihood scans fover a range of injected mu values
 
@@ -169,32 +217,39 @@ def run_llh_scans(metrics=[], mc_template=None, data_mapset=None, results=None):
 
     '''
 
-    assert isinstance(results, (dict, collections.OrderedDict)
+    assert isinstance(results, (dict, OrderedDict)
                       ), 'ERROR: results must be a dict'
 
     assert 'toymc_params' in results.keys(), 'ERROR: missing toymc_params'
 
-    toymc_params = results['toymc_params']
+
     for metric in metrics:
         if metric not in results.keys():
-            results[metric] = collections.OrderedDict()
-        results[metric]['llh_scan'] = collections.OrderedDict()
+            results[metric] = OrderedDict()
+        results[metric]['llh_scan'] = OrderedDict()
+
+    #
+    # Create the mc template
+    #
+    mc_template = create_mc_template(mc_params, config_file=config_file, seed=mc_seed)
 
     #
     # Collect the llh value at the Truth
     #
     for metric in metrics:
+        print(metric)
 
         mc_template.params['mu'].value = toymc_params.true_mu
 
+        new_MC = mc_template.get_outputs(return_sum=True, force_standard_output=False)
+
         if metric == 'generalized_poisson_llh':
-            new_MC = mc_template.get_outputs(
-                return_sum=False, force_standard_output=False)[0]
             llhval = data_mapset.maps[0].metric_total(new_MC, metric=metric, metric_kwargs={
                                                       'empty_bins': mc_template.empty_bin_indices})
             logging.trace('empty_bins: ', mc_template.empty_bin_indices)
+
         else:
-            new_MC = mc_template.get_outputs(return_sum=True)
+            new_MC = new_MC['old_sum']
             llhval = data_mapset.metric_total(new_MC, metric=metric)
 
         results[metric]['llh_scan']['llh_at_truth'] = llhval
@@ -211,50 +266,55 @@ def run_llh_scans(metrics=[], mc_template=None, data_mapset=None, results=None):
             # Recompute the MC template with a new value of the mu parameter
             #
             mc_template.params['mu'].value = tested_mu
+            new_MC = mc_template.get_outputs(return_sum=True, force_standard_output=False)
 
             if metric == 'generalized_poisson_llh':
-                new_MC = mc_template.get_outputs(
-                    return_sum=False, force_standard_output=False)[0]
                 llhval = data_mapset.maps[0].metric_total(new_MC, metric=metric, metric_kwargs={
                                                           'empty_bins': mc_template.empty_bin_indices})
             else:
-                new_MC = mc_template.get_outputs(return_sum=True)
+                new_MC = new_MC['old_sum']
                 llhval = data_mapset.metric_total(new_MC, metric=metric)
 
-            if 'chi2' in metric:
-                results[metric]['llh_scan']['scan_values'].append((llhval-results[metric]['llh_scan']['llh_at_truth']))
-            else:
-                results[metric]['llh_scan']['scan_values'].append(-2*(llhval-results[metric]['llh_scan']['llh_at_truth']))
+
+            results[metric]['llh_scan']['scan_values'].append(llhval)
+
 
     return results
 
 
-def plot_llh_scans(metrics=[], results=None, interactive=False, output_pdf=None):
+def plot_llh_scans(metrics=[], results=None, interactive=False, output_pdf=None, prefix='', save_individual_fig=False):
     '''
     Plot Likelihood scans
     '''
 
-    fig, ax = plt.subplots(figsize=(9, 9))
+    fig, ax = plt.subplots(figsize=(7, 7))
     n = 0
     for llh_name in metrics:
 
         llhvals = results[llh_name]['llh_scan']['scan_values']
         tested_mu = results[llh_name]['llh_scan']['tested_mu']
 
-        if llh_name == 'mcllh_eff':
-            ax.plot(tested_mu, llhvals, 'o', color=COLORS[n], label=llh_name)
+        if 'chi2' in llh_name:
+            TS = llhvals-np.amin(llhvals)
         else:
-            ax.plot(tested_mu, llhvals, linewidth=2,
-                    color=COLORS[n], label=llh_name)
+            TS = -2*(llhvals-np.amax(llhvals))
+
+        ax.plot(tested_mu, TS, **LIKELIHOOD_FORMATTING[llh_name])
         n += 1
     ax.set_xlabel(r'injected $\mu$')
-    ax.set_ylabel(r'-2$\log[L_{\mu}/L_{o}]$')
-    ax.set_ylim([0., 5000])
-    ax.set_title('Likelihood scans over mu')
+    ax.set_ylabel(r'Test Statistic(-2$\ln[L_{\mu}/L_{o}]$ or $\chi^{2}$)')
+    ax.set_ylim([-10., 500])
+    ax.plot([15.,25.],[0.,0.],'k')
+    ax.set_title('MC factor = {}'.format(results['toymc_params'].stats_factor))
+    #ax.set_title('Likelihood scans over mu')
     ax.legend()
+    fig.tight_layout()
 
     if interactive:
         plt.show()
+
+    if save_individual_fig:
+        plt.savefig(prefix+'plot_llh_scan.png')
 
     if output_pdf is None:
         return fig
@@ -269,8 +329,8 @@ def plot_llh_scans(metrics=[], results=None, interactive=False, output_pdf=None)
 #@line_profile
 def run_coverage_test(n_trials=100,
                       toymc_params=None,
-                      mc_template=None,
-                      mc_infinite_stats=None,
+                      mc_seed = None,
+                      config_file=None,
                       metrics=None,
                       results=None,
                       output_stem='coverage_test'):
@@ -288,8 +348,6 @@ def run_coverage_test(n_trials=100,
                   of the experiment like signal_fraction and
                   stats_factor)
 
-    mc_template: DistributionMaker 
-                 (MC template made with the level of stats you test)
 
     mc_infinite_Stats: DistributionMaker 
                        (MC template made with an ideal level
@@ -298,15 +356,15 @@ def run_coverage_test(n_trials=100,
     '''
     import time
 
-    assert isinstance(results, (dict, collections.OrderedDict)), 'ERROR: results must be a dict'
+    assert isinstance(results, (dict, OrderedDict)), 'ERROR: results must be a dict'
     assert isinstance(metrics, list), 'ERROR: must specify metrics as a list'
     assert 'toymc_params' in results.keys(), 'ERROR: missing toymc_params'
 
-    toymc_params = results['toymc_params']
 
+    results['toymc_params'] = toymc_params
     for metric in metrics:
         if metric not in results.keys():
-            results[metric] = collections.OrderedDict()
+            results[metric] = OrderedDict()
         results[metric]['coverage'] = []
 
     #
@@ -328,6 +386,19 @@ def run_coverage_test(n_trials=100,
                                       }
                           }
 
+
+    #
+    # Create the mc template
+    #
+    mc_template = create_mc_template(toymc_params, config_file=config_file, seed=mc_seed)
+
+    #
+    # Create a pseudo-infinite statistics template
+    #
+    infinite_toymc_params = copy.deepcopy(toymc_params)
+    infinite_toymc_params.stats_factor = 100.
+    mc_template_pseudo_infinite = create_mc_template(infinite_toymc_params, config_file=config_file, seed=mc_seed)
+
     #
     # Start pseudo trials
     #
@@ -338,7 +409,7 @@ def run_coverage_test(n_trials=100,
 
         else:
 
-            logging.trace('minimizing: ', metric)
+            logging.debug('minimizing: ', metric)
             to = time.time()
 
             trial_i = 0
@@ -350,22 +421,21 @@ def run_coverage_test(n_trials=100,
                 #
                 # Create a pseudo-dataset
                 #
-                data_trial = create_pseudo_data(
-                    toymc_params=toymc_params, seed=None)
+                data_trial = create_pseudo_data(toymc_params=toymc_params, seed=None)
 
                 #
                 # Compute the truth llh value of this pseudo experiment
                 # truth - if the truth comes from infinite stats MC
                 #
                 if metric == 'generalized_poisson_llh':
-                    mc = mc_infinite_stats.get_outputs(
-                        return_sum=False, force_standard_output=False)[0]
+                    mc = mc_template_pseudo_infinite.get_outputs(return_sum=False, force_standard_output=False)[0]
+
                     llhval_true = data_trial.maps[0].metric_total(mc, 
                                                                   metric=metric, 
                                                                   metric_kwargs={
-                                                                  'empty_bins': mc_infinite_stats.empty_bin_indices})
+                                                                  'empty_bins': mc_template_pseudo_infinite.empty_bin_indices})
                 else:
-                    mc = mc_infinite_stats.get_outputs(return_sum=True)
+                    mc = mc_template_pseudo_infinite.get_outputs(return_sum=True)
                     llhval_true = data_trial.metric_total(mc, metric=metric)
 
                 experiment_result['llh_infinite_stats'] = llhval_true
@@ -388,31 +458,32 @@ def run_coverage_test(n_trials=100,
 
                 experiment_result['llh_lowstats'] = llhval
 
-                #
-                # minimized llh (high stats)
-                #
-                logging.trace('\nhigh stats fit:\n')
-                ana = Analysis()
-                result_pseudo_truth, _ = ana.fit_hypo(data_trial,
-                                                      mc_infinite_stats,
-                                                      metric=metric,
-                                                      minimizer_settings=minimizer_settings,
-                                                      hypo_param_selections=None,
-                                                      check_octant=False,
-                                                      fit_octants_separately=False,
-                                                      )
-                #except:
-                #    logging.trace('Failed Fit')
-                #    failed_fits += 1
-                #    continue
-                experiment_result['infinite_stats_opt'] = {'metric_val': result_pseudo_truth['metric_val'],
-                                                           'best_fit_param': result_pseudo_truth['params']['mu']}
+                # #
+                # # minimized llh (high stats)
+                # #
+                # logging.debug('\nhigh stats fit:\n')
+                # ana = Analysis()
+                # result_pseudo_truth, _ = ana.fit_hypo(data_trial,
+                #                                       mc_infinite_stats,
+                #                                       metric=metric,
+                #                                       minimizer_settings=minimizer_settings,
+                #                                       hypo_param_selections=None,
+                #                                       check_octant=False,
+                #                                       fit_octants_separately=False,
+                #                                       )
+                # #except:
+                # #    logging.trace('Failed Fit')
+                # #    failed_fits += 1
+                # #    continue
+                # experiment_result['infinite_stats_opt'] = {'metric_val': result_pseudo_truth['metric_val'],
+                #                                            'best_fit_param': result_pseudo_truth['params']['mu']}
 
                 #
                 # minimized llh (low stats)
                 #
-                logging.trace('\nlow stats fit:\n')
+                logging.debug('\nlow stats fit:\n')
                 ana = Analysis()
+
                 try:
                     result_lowstats, _ = ana.fit_hypo(data_trial,
                                                       mc_template,
@@ -423,7 +494,7 @@ def run_coverage_test(n_trials=100,
                                                       fit_octants_separately=False,
                                                       )
                 except:
-                    logging.trace('Failed Fit')
+                    logging.debug('Failed Fit')
                     failed_fits += 1
                     continue
 
@@ -437,10 +508,10 @@ def run_coverage_test(n_trials=100,
                 raise Exception('ERROR: no fit managed to converge after {} attempst'.format(failed_fits))
 
             t1 = time.time()
-            logging.trace("Time for ", n_trials, " minimizations: ", t1-to, " s")
-            logging.trace("Saving to file...")
+            logging.debug("Time for ", n_trials, " minimizations: ", t1-to, " s")
+            logging.debug("Saving to file...")
             pickle.dump(results[metric]['coverage'], open(filename, 'wb'))
-            logging.trace("Saved.")
+            logging.debug("Saved.")
 
     return results
 
@@ -451,6 +522,8 @@ def plot_coverage_test(output_pdf=None,
                        stats_factor=None,
                        output_stem=None,
                        n_trials=None,
+                       prefix='',
+                       save_individual_fig=False,
                        outname='test_coverage.pdf'):
     '''
     plot the results of the coverage test
@@ -464,14 +537,13 @@ def plot_coverage_test(output_pdf=None,
     if output_pdf is None:
         output_pdf = PdfPages(outname)
 
-    coverage_fig = Figure(figsize=(10, 10))
+    coverage_fig = Figure(figsize=(7, 7))
 
     #
     # produce an example chi2 distribution with d.o.f =1
     #
     # This will help us compare ts distribution directly
     sample_chi2_distrib = np.random.chisquare(size=n_trials, df=1)
-    ts_binning = np.linspace(0, 50, 31)
 
     for llh_name in metrics:
 
@@ -497,9 +569,7 @@ def plot_coverage_test(output_pdf=None,
         for pseudo_exp in indata:
 
             val_low = pseudo_exp['lowstats_opt']['best_fit_param'].value.m
-            val_high = pseudo_exp['infinite_stats_opt']['best_fit_param'].value.m
             llh_optimized_low = pseudo_exp['lowstats_opt']['metric_val']
-            llh_optimized_high = pseudo_exp['infinite_stats_opt']['metric_val']
             llh_truth_low = pseudo_exp['llh_lowstats']
             llh_truth_high = pseudo_exp['llh_infinite_stats']
 
@@ -507,84 +577,71 @@ def plot_coverage_test(output_pdf=None,
             # check that all elements of the comparison are finite
             #
             good_trial = np.isfinite(val_low)
-            good_trial *= np.isfinite(val_high)
             good_trial *= np.isfinite(llh_optimized_low)
-            good_trial *= np.isfinite(llh_optimized_high)
             good_trial *= np.isfinite(llh_truth_low)
             good_trial *= np.isfinite(llh_truth_high)
 
             if good_trial:
 
                 container_val_lowstat.append(val_low)
-                container_val_highstat.append(val_high)
                 container_ts_truth_high.append(llh_truth_high)
                 container_ts_truth_low.append(llh_truth_low)
 
                 ts_low = -2*(llh_optimized_low-llh_truth_low)
-                ts_high = -2*(llh_optimized_high-llh_truth_high)
 
                 # We take the absolute value here because we want to know how far
                 # we are from the truth, and we can optimize to llh values above and below the truth
                 container_ts_lowstat.append(np.abs(ts_low))
-                container_ts_highstat.append(np.abs(ts_high))
 
-                llh_bias.append(-2*(ts_low-ts_high))
                 param_bias.append((val_low-val_truth)/val_truth)
 
             else:
                 continue
 
-        fig = Figure(nx=2, ny=3, figsize=(20, 30), title=llh_name)
-        fig.get_ax(x=0, y=0).set_title(
-            'ts Distribution - 10000 x more MC than data')
-        fig.get_ax(x=0, y=0).hist(container_ts_highstat, bins=ts_binning,
-                                  histtype='step', linewidth=2., color='r', label='ts distribution')
-        fig.get_ax(x=0, y=0).hist(sample_chi2_distrib, bins=ts_binning,
-                                  histtype='step', linewidth=2., color='k', label=r'$\chi^{2}_{dof=1}$')
-        fig.get_ax(x=0, y=0).set_xlabel(
-            r'$\left |-2(LLH_{opt}-LLH_{truth}) \right |$ (High statistics case)')
-        fig.get_ax(x=0, y=0).legend()
+        #
+        # First plot: TS distribution
+        #
+        fig_ts_distrib = Figure(figsize=(7,7), title=LIKELIHOOD_FORMATTING[llh_name]['label'])
+        ts_binning = np.linspace(0, 25, 31)
+        c,ts_edges = np.histogram(sample_chi2_distrib, bins=ts_binning)
+        ts_x = ts_edges[:-1]+0.5*(ts_edges[1:]-ts_edges[:-1])
+        fig_ts_distrib.get_ax().errorbar(ts_x, c, yerr=np.sqrt(c), drawstyle='steps-mid',
+                                         linewidth=2., color='k', label=r'$\chi^{2}_{dof=1}$')
 
-        fig.get_ax(x=0, y=1).set_title(
-            'ts Distribution - {} x MC vs. data'.format(stats_factor))
-        _, chi2_bins, _ = fig.get_ax(x=0, y=1).hist(
-            container_ts_lowstat, bins=20, histtype='step', linewidth=2., color='b', label='ts distribution')
-        fig.get_ax(x=0, y=1).hist(sample_chi2_distrib, bins=chi2_bins,
-                                  histtype='step', linewidth=2., color='k', label=r'$\chi^{2}_{dof=1}$')
-        fig.get_ax(x=0, y=1).set_xlabel(
-            r'$\left |-2(LLH_{opt}-LLH_{truth}) \right |$ (Low statistics case)')
-        fig.get_ax(x=0, y=1).legend()
+        fig_ts_distrib.get_ax().set_title('TS Distribution - {} x MC vs. data'.format(stats_factor))
+        cmc, _ = np.histogram(container_ts_lowstat, bins=ts_binning)
+        _, chi2_bins, _ = fig_ts_distrib.get_ax().errorbar(ts_x, cmc, yerr=np.sqrt(cmc), drawstyle='steps-mid', 
+                                        linewidth=2., color='b', label='TS distribution')
 
-        fig.get_ax(x=0, y=1).set_title(
-            'Fitted Parameter Value - 10000 x MC vs. data')
-        fig.get_ax(x=1, y=0).hist(container_val_highstat, bins=20, histtype='step',
-                                  linewidth=2., color='r', label=r'Best-fit $\mu_{opt}$')
-        fig.get_ax(x=1, y=0).axvline(x=20, linewidth=2,
+        fig_ts_distrib.get_ax().set_xlabel(r'$\left |-2(LLH_{opt}-LLH_{truth}) \right |$ (Low statistics case)')
+        fig_ts_distrib.get_ax().legend()
+        if save_individual_fig:
+            plt.savefig(prefix+llh_name+'plot_TS_distribution.png')
+
+        #
+        # Second plot: Bias distribution (absolute)
+        #
+        fig_bias = Figure(figsize=(7,7), title=LIKELIHOOD_FORMATTING[llh_name]['label'])
+        fig_bias.get_ax().axvline(x=20, linewidth=2,
                                      color='k', ls='--', label=r'Truth ($\mu = 20$')
-        fig.get_ax(x=1, y=0).set_xlabel(r'value')
-        fig.get_ax(x=1, y=0).legend()
-
-        fig.get_ax(x=0, y=1).set_title(
-            'Fitted Parameter Value - {} x MC vs. data'.format(stats_factor))
-        fig.get_ax(x=1, y=1).hist(container_val_lowstat, bins=20, histtype='step',
+        fig_bias.get_ax().hist(container_val_lowstat, bins=20, histtype='step',
                                   linewidth=2., color='b', label=r'Best-fit $\mu_{opt}$')
-        fig.get_ax(x=1, y=1).axvline(x=20, linewidth=2,
-                                     color='k', ls='--', label=r'Truth ($\mu = 20$')
-        fig.get_ax(x=1, y=1).set_xlabel(r'value')
-        fig.get_ax(x=1, y=1).legend()
 
-        fig.get_ax(x=0, y=2).set_title('LLH Bias')
-        fig.get_ax(x=0, y=2).hist(llh_bias, bins=20)
-        fig.get_ax(x=0, y=2).set_xlabel(
-            r'llh Bias $-2\left (ts_{low\ stats} -ts_{high\ stats} \right )$')
-        fig.get_ax(x=0, y=2).axvline(x=0., linewidth=2, color='k', ls='--')
+        fig_bias.get_ax().set_xlabel(r'value')
+        fig_bias.get_ax().set_title('Fitted Parameter Value - {} x MC vs. data'.format(stats_factor))
+        if save_individual_fig:
+            plt.savefig(prefix+llh_name+'plot_bias_abs.png')
 
-        fig.get_ax(x=1, y=2).set_title('Parameter Bias in low stats')
-        fig.get_ax(x=1, y=2).hist(param_bias, bins=20)
-        fig.get_ax(x=1, y=2).set_xlabel(
-            r'$\left( \frac{\mu_{opt}-\mu_{true}}{\mu_{true}}\right)$')
-        fig.get_ax(x=1, y=2).axvline(x=0., linewidth=2, color='k', ls='--')
-        output_pdf.savefig(fig.fig)
+        #
+        # Third plot: Bias distribution (relative)
+        #
+        fig_pull = Figure(figsize=(7,7), title=LIKELIHOOD_FORMATTING[llh_name]['label'])
+        fig_pull.get_ax().set_title('Parameter Bias in low stats')
+        fig_pull.get_ax().hist(param_bias, bins=20)
+        fig_pull.get_ax().set_xlabel(r'$\left( \frac{\mu_{opt}-\mu_{true}}{\mu_{true}}\right)$')
+        fig_pull.get_ax().axvline(x=0., linewidth=2, color='k', ls='--')
+        if save_individual_fig:
+            plt.savefig(prefix+llh_name+'plot_bias_rel.png')
 
         #
         # Coverage test
@@ -594,77 +651,121 @@ def plot_coverage_test(output_pdf=None,
 
         for percent_coverage in coverage_x:
             chi2_ts_value = chi2.ppf(percent_coverage, df=1)
-            actual_coverage = sum(np.array(
-                container_ts_lowstat) <= chi2_ts_value)/float(len(container_ts_lowstat))
+            actual_coverage = sum(np.array(container_ts_lowstat) <= chi2_ts_value)
+
+            if len(container_ts_lowstat)>0:
+                actual_coverage/=float(len(container_ts_lowstat))
+            else:
+                actual_coverage=0.
             coverage_y.append(actual_coverage)
 
-        coverage_fig.get_ax().plot(coverage_x, coverage_y, label=llh_name)
+        coverage_fig.get_ax().plot(coverage_x, coverage_y, **LIKELIHOOD_FORMATTING[llh_name])
 
     coverage_fig.get_ax().set_xlabel('Expected Wilks coverage')
     coverage_fig.get_ax().set_ylabel('Actual Coverage (low statistics')
     coverage_fig.get_ax().legend()
-    output_pdf.savefig(coverage_fig.fig)
+
+    if output_pdf is not None:
+        output_pdf.savefig(coverage_fig.fig)
+
+    if save_individual_fig:
+        plt.figure(coverage_fig.fig.number)
+        plt.savefig(prefix+'plot_coverage.png')
 
 
 def plot_data_and_mc(data_map=None,
-                     mc_map=None,
-                     mc_params=None,
-                     mc_map_pseudo_infinite=None, 
-                     mc_params_pseudo_infinite=None,
+                     config_file=STANDARD_CONFIG,
                      toymc_params=None,
-                     toymc_params_pseudo_infinite=None,
                      interactive=False,
+                     mc_seed=None,
                      output_pdf=None):
     '''
     plot the data, and the mc sets overlaid on top
     '''
-    X = toymc_params.binning.midpoints
+    # ===============================================================
+    #
+    # Generate MC template using a pisa pipeline
+    #
+    # We first need to override the parameter values contained in the config file
+    # before instantiating the pipeline
+    print('Create the first template')
+    mc_template = create_mc_template(toymc_params, config_file=config_file, seed=mc_seed)
+    mc_map = sum(mc_template.get_outputs(return_sum=True, force_standard_output=False)['old_sum']) #old_sum = map without pseudo weights
+    mc_generalized_map = sum(mc_template.get_outputs(return_sum=True, force_standard_output=False)['weights']) #weights = map with pseudo-weight
+    mc_params = mc_template.params
+
+
+    # =================================================================
+    #
+    # Produce a pseudo-infinite MC statistics template
+    # Create a MC set with 10000 times more stats than data. will be used as the truth
+    #
+    print('creating the infinite template')
+    infinite_toymc_params = copy.deepcopy(toymc_params)
+    infinite_toymc_params.stats_factor = 1000.
+    mc_template_pseudo_infinite = create_mc_template(infinite_toymc_params, config_file=config_file, seed=mc_seed)
+    mc_map_pseudo_infinite = sum(mc_template_pseudo_infinite.get_outputs(return_sum=True, force_standard_output=False)['old_sum'])
+
+    X = toymc_params.binning.midpoints[0].magnitude
 
     fig, ax = plt.subplots(figsize=(7, 7))
     ax.errorbar(X, data_map.nominal_values, yerr=np.sqrt(data_map.nominal_values),
      label='data', fmt='-o', drawstyle='steps-mid', color='k')
-    ax.set_xlabel('Some variable')
-    ax.set_ylabel('Some counts')
-    ax.set_title('Pseudo data fed into the likelihoods')
-    ax.text(0.65, 0.9, r'$\mu_{true}$ = '+'{}'.format(TRUE_MU),
-            fontsize=12, transform=ax.transAxes)
+    ax.set_xlabel('Arbitrary variable')
+    ax.set_ylabel('Frequency (A.U.)')
+
+    ax.text(0.65, 0.91, r'$\mu_{true}$ = '+'{}'.format(TRUE_MU),
+            fontsize=20, transform=ax.transAxes)
     ax.text(0.65, 0.85, r'$\sigma_{true}$ = ' +
-            '{}'.format(TRUE_SIGMA), fontsize=12, transform=ax.transAxes)
-    ax.text(0.65, 0.8, r'$N_{signal}$ = '+'{}'.format(toymc_params.nsig),
-            fontsize=12, transform=ax.transAxes)
-    ax.text(0.65, 0.75, r'$N_{bkg}$ = '+'{}'.format(toymc_params.nbkg),
-            fontsize=12, transform=ax.transAxes)
+            '{}'.format(TRUE_SIGMA), fontsize=20, transform=ax.transAxes)
+    ax.text(0.65, 0.79, r'$N_{signal}$ = '+'{}'.format(toymc_params.nsig),
+            fontsize=20, transform=ax.transAxes)
+    ax.text(0.65, 0.73, r'$N_{bkg}$ = '+'{}'.format(toymc_params.nbkg),
+            fontsize=20, transform=ax.transAxes)
     ax.legend(loc='upper left')
+
     if interactive:
         plt.show()
-    output_pdf.savefig(fig)
+    if output_pdf is not None:
+        output_pdf.savefig(fig)
 
     #
     # Update the same plot with the low stats MC
     #
     ax.plot(X, mc_map.nominal_values, '-g', label='MC', drawstyle='steps-mid', zorder=10)
-    ax.text(0.65, 0.7, r'$\mu_{MC}$ = '+'{}'.format(
-        mc_params['mu'].value.m), color='g', fontsize=12, transform=ax.transAxes)
-    ax.text(0.65, 0.65, r'$\sigma_{MC}$ = '+'{}'.format(
-        mc_params['sigma'].value.m), color='g', fontsize=12, transform=ax.transAxes)
-    ax.text(0.65, 0.6, 'MC factor = {}'.format(
-        mc_params['stats_factor'].value.m), color='g', fontsize=12, transform=ax.transAxes)
+    ax.text(0.65, 0.67, r'$\mu_{MC}$ = '+'{}'.format(
+        mc_params['mu'].value.m), color='g', fontsize=20, transform=ax.transAxes)
+    ax.text(0.65, 0.61, r'$\sigma_{MC}$ = '+'{}'.format(
+        mc_params['sigma'].value.m), color='g', fontsize=20, transform=ax.transAxes)
+    ax.legend(loc='upper left')
+
+    ax.set_title('MC factor = {}'.format(mc_params['stats_factor'].value.m))
+    if interactive:
+        plt.show()
+    if output_pdf is not None:
+        output_pdf.savefig(fig)
+
+    #
+    # Update the same plot with the low stats MC modified for the generalized Poisson
+    #
+    ax.plot(X, mc_generalized_map.nominal_values, ':b', label='MC - Generalized', drawstyle='steps-mid', zorder=10)
     ax.legend(loc='upper left')
     if interactive:
         plt.show()
-    output_pdf.savefig(fig)
+    if output_pdf is not None:
+        output_pdf.savefig(fig)
 
     #
     # Update with the pseudo-infinite MC set
     #
     ax.plot(X, mc_map_pseudo_infinite.nominal_values,
             '-r', label='MC (large statistics)', drawstyle='steps-mid', zorder=10)
-    ax.text(0.65, 0.55, 'Inf. MC factor = {}'.format(mc_params_pseudo_infinite['stats_factor'].value.m), 
-            color='r', fontsize=12, transform=ax.transAxes)
     ax.legend(loc='upper left')
+
     if interactive:
         plt.show()
-    output_pdf.savefig(fig)
+    if output_pdf is not None:
+        output_pdf.savefig(fig)
 
 
 ##################################################################################
@@ -705,7 +806,6 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from matplotlib.backends.backend_pdf import PdfPages
     import seaborn as sns
-    COLORS = sns.color_palette("hls", 8)
     output_pdf = PdfPages(args.output+'.pdf')
 
     #
@@ -726,60 +826,37 @@ if __name__ == '__main__':
     toymc_params.sigma = TRUE_SIGMA                  # True width of the signal
     toymc_params.nbackground_low = 0.                # lowest value the background can take
     toymc_params.nbackground_high = 40.              # highest value the background can take
-    toymc_params.binning = OneDimBinning(name='stuff', bin_edges=np.linspace(
-        toymc_params.nbackground_low, toymc_params.nbackground_high, NBINS))
+    toymc_params.binning = MultiDimBinning( OneDimBinning(name='stuff', bin_edges=np.linspace(
+        toymc_params.nbackground_low, toymc_params.nbackground_high, NBINS)))
     # Statistical factor for the MC
     toymc_params.stats_factor = args.stats_factor
-    toymc_params.infinite_stats = 10000
+    toymc_params.infinite_stats = 1000.
 
 
     metrics_to_test = ['llh', 'mcllh_eff','mod_chi2',
                        'mcllh_mean', 'generalized_poisson_llh']
 
-    results = collections.OrderedDict()
+    results = OrderedDict()
     results['toymc_params'] = toymc_params
     for metric in metrics_to_test:
-        results[metric] = collections.OrderedDict()
+        results[metric] = OrderedDict()
 
     # ==============================================================
     #
     # Generate a toy data set
     #
-    data_as_mapset = create_pseudo_data(toymc_params=toymc_params, seed=None)
+    data_as_mapset = create_pseudo_data(toymc_params=toymc_params, seed=564525)
 
-    # ===============================================================
-    #
-    # Generate MC template using a pisa pipeline
-    #
-    # We first need to override the parameter values contained in the config file
-    # before instantiating the pipeline
-    mc_template = create_mc_template(
-        toymc_params, config_file=STANDARD_CONFIG, seed=None)
-    mc_map = mc_template.get_outputs(return_sum=True)
-
-    # =================================================================
-    #
-    # Produce a pseudo-infinite MC statistics template
-    # Create a MC set with 10000 times more stats than data. will be used as the truth
-    #
-    infinite_toymc_params = copy.deepcopy(toymc_params)
-    infinite_toymc_params.stats_factor = toymc_params.infinite_stats
-    mc_template_pseudo_infinite = create_mc_template(
-        infinite_toymc_params, config_file=STANDARD_CONFIG, seed=None)
-    mc_map_pseudo_infinite = mc_template_pseudo_infinite.get_outputs(
-        return_sum=True)
+   
 
     # =================================================================
     #
     # Plot the three graphs
     #
     plot_data_and_mc(data_map=data_as_mapset.maps[0],
-                     mc_map=mc_map.maps[0],
-                     mc_params=mc_template.params,
-                     mc_map_pseudo_infinite=mc_map_pseudo_infinite.maps[0],
-                     mc_params_pseudo_infinite=mc_template_pseudo_infinite.params,
+                     config_file=STANDARD_CONFIG,
                      toymc_params=toymc_params,
-                     toymc_params_pseudo_infinite=infinite_toymc_params,
+                     mc_seed=564525,
                      interactive=args.interactive,
                      output_pdf=output_pdf)
 
@@ -789,9 +866,16 @@ if __name__ == '__main__':
     #
     if args.make_llh_scan:
 
-        results = run_llh_scans(metrics=metrics_to_test, mc_template=mc_template,
-                                data_mapset=data_as_mapset, results=results)
+        results = run_llh_scans(metrics=metrics_to_test,
+                                mc_params=toymc_params,
+                                config_file=STANDARD_CONFIG,
+                                data_mapset=data_as_mapset,
+                                mc_seed=564525,
+                                results=results)
+
         plot_llh_scans(metrics=metrics_to_test, results=results,
+                       save_individual_fig=True,
+                       prefix=args.output,
                        interactive=args.interactive, output_pdf=output_pdf)
 
     # ==================================================================
@@ -802,8 +886,7 @@ if __name__ == '__main__':
 
         results = run_coverage_test(n_trials=args.ntrials,
                                     toymc_params=toymc_params,
-                                    mc_template=mc_template,
-                                    mc_infinite_stats=mc_template_pseudo_infinite,
+                                    config_file=STANDARD_CONFIG,
                                     metrics=metrics_to_test,
                                     results=results,
                                     output_stem=args.output,
@@ -814,6 +897,8 @@ if __name__ == '__main__':
                            results=results,
                            stats_factor=toymc_params.stats_factor,
                            output_stem=args.output,
+                           save_individual_fig=True,
+                           prefix=args.output,
                            n_trials=args.ntrials)
 
     output_pdf.close()

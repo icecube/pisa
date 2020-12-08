@@ -59,7 +59,7 @@ from pisa.utils.profiler import profile, line_profile
 from pisa.utils.log import set_verbosity, Levels
 #set_verbosity(Levels.DEBUG)
 
-PSEUDO_WEIGHT = 0.001
+#PSEUDO_WEIGHT = 0.001
 
 
 class pi_generalized_llh_params(PiStage):
@@ -80,6 +80,9 @@ class pi_generalized_llh_params(PiStage):
 		input_specs=None,
 		calc_specs=None,
 		output_specs=None,
+
+		with_pseudo_weight=None, # turn pseudo-weight on or off
+		with_mean_adjust=None,   # turn mean adjustment on or off
 		):
 		#
 		# A bunch of options we don't need
@@ -96,6 +99,9 @@ class pi_generalized_llh_params(PiStage):
 		output_apply_keys = ('weights', 'errors', 'llh_alphas', 'hs_scales',
 							 'llh_betas', 'n_mc_events', 'old_sum')
 
+		self.with_mean_adjust = with_mean_adjust
+		self.with_pseudo_weight = with_pseudo_weight
+
 		# init base class
 		super(pi_generalized_llh_params, self).__init__(data=data,
 												 params=params,
@@ -109,6 +115,7 @@ class pi_generalized_llh_params(PiStage):
 												 input_apply_keys=input_apply_keys,
 												 output_apply_keys=output_apply_keys,
 												 output_calc_keys=output_calc_keys,
+
 												 )
 
 	def setup_function(self):
@@ -146,19 +153,19 @@ class pi_generalized_llh_params(PiStage):
 				nevents_sim[index] = np.sum(index_mask)
 
 			self.data.data_specs = self.output_specs
-			np.copyto(src=nevents_sim,
-					  dst=container["n_mc_events"].get('host'))
+			np.copyto(src=nevents_sim, dst=container["n_mc_events"].get('host'))
 			container['n_mc_events'].mark_changed()
 
 			#
 			# Step 2: Calculate the mean adjustment for each container
 			#
-			mean_number_of_mc_events = np.mean(nevents_sim)
-			if mean_number_of_mc_events < 1.0:
-				mean_adjustment = -(1.0-mean_number_of_mc_events) + 1.e-3
-			else:
-				mean_adjustment = 0.0
-			container.add_scalar_data(key='mean_adjustment', data=mean_adjustment)
+			if self.with_mean_adjust:
+				mean_number_of_mc_events = np.mean(nevents_sim)
+				if mean_number_of_mc_events < 1.0:
+					mean_adjustment = -(1.0-mean_number_of_mc_events) + 1.e-3
+				else:
+					mean_adjustment = 0.0
+				container.add_scalar_data(key='mean_adjustment', data=mean_adjustment)
 
 
 			#
@@ -168,6 +175,7 @@ class pi_generalized_llh_params(PiStage):
 			#
 			if 'hs_scales' not in container.keys():
 				container['hs_scales'] =  np.empty((container.size), dtype=FTYPE)
+			if 'errors' not in container.keys():
 				container['errors'] = np.empty((container.size), dtype=FTYPE)
 
 
@@ -195,9 +203,19 @@ class pi_generalized_llh_params(PiStage):
 			#         in empty bins
 
 			# for this part we are in events mode
-			# Find the minimum weight of an entire MC set
-			pseudo_weight = 0.001
-			container.add_scalar_data(key='pseudo_weight', data=pseudo_weight)
+			# Find the mean weight of an entire MC set
+			#
+			# We only consider the first 90 percentiles of the weight
+			# values, to avoid the high extreme weights that muongun
+			# often gives 
+			#
+			all_container_weights = container['weights'].get('host')
+
+			if self.with_pseudo_weight:
+				percentile90 = np.percentile(all_container_weights,90)
+				pseudo_weight = np.mean(all_container_weights[all_container_weights<=percentile90])
+				#pseudo_weight = np.amin(all_container_weights[all_container_weights>0])
+				container.add_scalar_data(key='pseudo_weight', data=pseudo_weight)
 
 			old_weight_sum = np.zeros(N_bins)
 			new_weight_sum = np.zeros(N_bins)
@@ -207,15 +225,16 @@ class pi_generalized_llh_params(PiStage):
 			#
 			# Load the pseudo_weight and mean displacement values
 			#
-			mean_adjustment = container.scalar_data['mean_adjustment']
-			pseudo_weight = container.scalar_data['pseudo_weight']
+			if self.with_mean_adjust:
+				mean_adjustment = container.scalar_data['mean_adjustment']
+
 
 			for index in range(N_bins):
 
 				index_mask = container['bin_{}_mask'.format(index)].get('host')
 				if 'kfold_mask' in container:
 					index_mask*=container['kfold_mask'].get('host')
-				current_weights = container['weights'].get('host')[index_mask]
+				current_weights = all_container_weights[index_mask]
 
 				old_weight_sum[index] += np.sum(current_weights)
 
@@ -226,7 +245,7 @@ class pi_generalized_llh_params(PiStage):
 				# Bins with no mc event in all set will be ignore in the likelihood later
 				#
 				# make the whole bin treatment here
-				if n_weights <= 0:
+				if n_weights <= 0 and self.with_pseudo_weight:
 					current_weights = np.array([pseudo_weight])
 					n_weights = 1
 
@@ -252,8 +271,12 @@ class pi_generalized_llh_params(PiStage):
 				# of beta = 1.0, which mimicks a narrow PDF
 				# close to 0.0 
 				beta = np.divide(mean_w, var_z, out=np.ones(1), where=var_z!=0)
-				trad_alpha = np.divide(mean_w**2, var_z, out=np.ones(1)*PSEUDO_WEIGHT, where=var_z!=0)
-				alpha = (n_weights + mean_adjustment)*trad_alpha
+				trad_alpha = np.divide(mean_w**2, var_z, out=np.ones(1)*np.NaN, where=var_z!=0)
+
+				if self.with_mean_adjust:
+					alpha = (n_weights + mean_adjustment)*trad_alpha
+				else:
+					alpha = n_weights*trad_alpha
 
 				alphas_vector[index] = alpha
 				betas_vector[index] = beta
@@ -262,12 +285,17 @@ class pi_generalized_llh_params(PiStage):
 			self.data.data_specs = self.output_specs
 			np.copyto(src=alphas_vector, dst=container['llh_alphas'].get('host'))
 			np.copyto(src=betas_vector, dst=container['llh_betas'].get('host'))
-			np.copyto(src=new_weight_sum, dst=container['weights'].get('host'))
+
+			#only change the weights if they were modified
+			if self.with_pseudo_weight or self.with_mean_adjust:
+				np.copyto(src=new_weight_sum, dst=container['weights'].get('host'))
+				container['weights'].mark_changed()
+		
 			np.copyto(src=old_weight_sum, dst=container['old_sum'].get('host'))
 			container['llh_alphas'].mark_changed()
 			container['llh_betas'].mark_changed()
 			container['old_sum'].mark_changed()
-			container['weights'].mark_changed()
+
 
 
 

@@ -610,20 +610,15 @@ def generalized_poisson_llh(actual_values, expected_values=None, empty_bins=None
         assert np.all(weight_sum >= 0), 'ERROR: negative weights detected'
 
         #
-        # If the expected MC count is high, compute a normal poisson probability
-        # 
-        if weight_sum.sum()>100:
+        # If the number of MC events is high, compute a normal poisson probability
+        #
+        n_mc_events = np.array([m.hist.flatten()[bin_i] for m in expected_values['n_mc_events'].maps])
+        if np.all(n_mc_events>100):
 
             logP = data_count*np.log(weight_sum.sum())-weight_sum.sum()-(data_count*np.log(data_count)-data_count)
             llh_per_bin[bin_i] = logP
             
-            #alphas = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_alphas'].maps])
-            #betas  = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_betas'].maps])
-            #mask = np.isfinite(alphas)*np.isfinite(betas)
-            #llh_per_bin[bin_i] = approximate_poisson_normal(data_count=data_count, alphas=alphas[mask], betas=betas[mask])
-            
         else:
-            
             from pisa.utils.llh_defs.poisson import fast_pgmix
 
             alphas = np.array([m.hist.flatten()[bin_i] for m in expected_values['llh_alphas'].maps])
