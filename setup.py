@@ -85,7 +85,7 @@ INSTALL_REQUIRES = [
     'decorator',
     'kde @ git+https://github.com/icecubeopensource/kde.git',
     'h5py',
-    'iminuit',
+    'iminuit<2',
     'line_profiler',
     'matplotlib>=3.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
     'numba==0.45.1', # >=0.35: fastmath jit flag; >=0.38: issue #439; 0.44 segfaults; 0.46 removes SmartArray
