@@ -54,7 +54,8 @@ def extCalcLayers(cz,
         detector_depth,
         rhos,
         coszen_limit,
-        radii):
+        radii,
+        max_layers):
     """Layer density/distance calculator for each coszen specified.
 
     Accelerated with Numba if present.
@@ -68,6 +69,7 @@ def extCalcLayers(cz,
     rhos           : densities (already weighted by electron fractions) (ndarray)
     radii          : radii defining the Earth's layer (ndarray)
     coszen         : coszen values corresponding to the radii above (ndarray)
+    max_layers     : maximum number of layers it is possible to cross (int)
 
     Returns
     -------
@@ -81,12 +83,12 @@ def extCalcLayers(cz,
     # which is later reshaped into containers of size (# of cz values, max_layers)
     # in the pi_prob3 module
 
-    densities = []
-    distances = []
-    number_of_layers = []
+    densities = np.zeros((len(cz), max_layers))
+    distances = np.zeros((len(cz), max_layers))
+    number_of_layers = np.zeros(len(cz))
 
     # Loop over all CZ values
-    for coszen in cz:
+    for i, coszen in enumerate(cz):
 
         r_prop = r_detector+detector_depth+prop_height
         # Compute the full path length
@@ -104,10 +106,17 @@ def extCalcLayers(cz,
             segments_lengths = np.diff(np.concatenate((np.array([0.], dtype=FTYPE), cumulative_distances[::-1])))
             segments_lengths = segments_lengths[::-1]
             segments_lengths = np.concatenate((segments_lengths, np.zeros(radii.shape[0] - idx, dtype=FTYPE)))
-            rhos *= (segments_lengths > 0.)
-            density = np.concatenate((rhos, np.zeros(radii.shape[0] - idx, dtype=FTYPE)))
 
-            #print('diff with total path', np.sum(segment_distances)-path_len) # CHECKED
+            density = rhos*(segments_lengths > 0.)
+
+            # Pad the density and segment lengths with zero to respect
+            # the max number of layers
+            n_zeros_pads = max_layers - segments_lengths.shape[0]
+
+            segments_lengths = np.concatenate((np.zeros(n_zeros_pads, dtype=FTYPE), segments_lengths))
+            density = np.concatenate((np.zeros(n_zeros_pads, dtype=FTYPE), density))
+
+
 
         else:
             #
@@ -133,6 +142,7 @@ def extCalcLayers(cz,
             # the two large roots of the layers above the detector height
             #
             full_distances = np.concatenate((small_roots, large_roots[::-1]))
+            print(full_distances)
 
             # The above vector gives the cumulative distance travelled
             # after passing each layer, starting from the detector and 
@@ -164,11 +174,11 @@ def extCalcLayers(cz,
 
 
         n_layers = np.sum(segments_lengths > 0.)
-        
+
         # append to the large list
-        densities+=density
-        number_of_layers+=n_layers
-        distances+=segments_lengths
+        densities[i,:] = density
+        number_of_layers[i]=n_layers
+        distances[i,:]=segments_lengths
 
     return number_of_layers, densities, distances
 
@@ -223,18 +233,18 @@ class Layers(object):
 
             # The following radii and densities are extracted in reverse order
             # w.r.t the file. The first elements of the arrays below corresponds
-            # the Earth's surface, and the floowing numbers go deeper toward the 
+            # the Earth's surface, and the following numbers go deeper toward the 
             # planet's core
             self.rhos = prem[..., 1][::-1].astype(FTYPE)
             self.radii = prem[..., 0][::-1].astype(FTYPE)
             r_earth = prem[-1][0]
             self.default_elec_frac = 0.5
-            n_prem = len(self.radii) - 1
-            self.max_layers = 2 * n_prem + 1
 
             # Add an external layer corresponding to the atmosphere / production boundary
             self.radii = np.concatenate((np.array([r_earth+prop_height]), self.radii))
             self.rhos  = np.concatenate((np.ones(1, dtype=FTYPE), self.rhos))
+            self.max_layers = 2 * len(self.radii)
+
 
         else :
             self.using_earth_model = False
@@ -330,7 +340,8 @@ class Layers(object):
             detector_depth=self.detector_depth,
             rhos=self.rhos,
             coszen_limit=self.coszen_limit,
-            radii=self.radii
+            radii=self.radii,
+            max_layers=self.max_layers,
         )
 
     @property
