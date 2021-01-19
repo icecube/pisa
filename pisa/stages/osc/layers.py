@@ -61,7 +61,7 @@ def extCalcLayers(cz,
 
     Parameters
     ----------
-    cz             : coszen value
+    cz             : coszen values (array of float)
     r_detector     : radial position of the detector (float)
     prop_height    : height at which neutrinos are assumed to be produced (float)
     detector_depth : depth at which the detector is buried (float)
@@ -74,8 +74,16 @@ def extCalcLayers(cz,
     n_layers : int number of layers
     density : array of densities, flattened from (cz, max_layers)
     distance : array of distances per layer, flattened from (cz, max_layers)
-
+    
     """
+
+    # The densities, distances and number of layers are appended to one long list
+    # which is later reshaped into containers of size (# of cz values, max_layers)
+    # in the pi_prob3 module
+
+    densities = []
+    distances = []
+    number_of_layers = []
 
     # Loop over all CZ values
     for coszen in cz:
@@ -104,7 +112,7 @@ def extCalcLayers(cz,
         else:
             #
             # Figure out how many layers are crossed twice
-            # (meaning we calculate the negative root for these layers)
+            # (meaning we calculate the negative and positive roots for these layers)
             #
             calculate_small_root = (coszen < coszen_limit) * (coszen_limit <= coszen_limit[idx])
             calculate_large_root = (coszen_limit>coszen)
@@ -149,13 +157,20 @@ def extCalcLayers(cz,
             density*=(segments_lengths > 0.)
             #
             # To respect the order at which layers are crossed, all these array must be flipped
+            # (has neutrinos travel toward the detector, not from the detector)
             #
             segments_lengths = segments_lengths[::-1]
             density = density[::-1]
 
-        n_layers = np.sum(segments_lengths > 0., dtype=np.float64)
 
-    return n_layers, density.ravel(), segments_lengths.ravel()
+        n_layers = np.sum(segments_lengths > 0.)
+        
+        # append to the large list
+        densities+=density
+        number_of_layers+=n_layers
+        distances+=segments_lengths
+
+    return number_of_layers, densities, distances
 
 
 class Layers(object):
@@ -219,7 +234,7 @@ class Layers(object):
 
             # Add an external layer corresponding to the atmosphere / production boundary
             self.radii = np.concatenate((np.array([r_earth+prop_height]), self.radii))
-            self.rhos  = np.concatenate((np.zeros(1, dtype=FTYPE), self.rhos))
+            self.rhos  = np.concatenate((np.ones(1, dtype=FTYPE), self.rhos))
 
         else :
             self.using_earth_model = False
@@ -361,7 +376,7 @@ class Layers(object):
     def weight_density_to_YeFrac(self):
         '''
         Adjust the densities of the provided earth model layers
-        for the different electorn fractions in the inner core,
+        for the different electron fractions in the inner core,
         outer core and mantle.
         '''
 
@@ -406,7 +421,7 @@ def test_layers_1():
     logging.info('coszen = %s' %cz)
     logging.info('pathlengths = %s' %layer.distance)
 
-    logging.info('<< PASS : test_Layers >>')
+    logging.info('<< PASS : test_Layers 1 >>')
 
 def test_layers_2():
     '''
@@ -460,9 +475,9 @@ def test_layers_2():
     assert np.allclose(layer.coszen_limit, ref_cz_crit, **ALLCLOSE_KW), f'test:\n{layer.coszen_limit}\n!= ref:\n{ref_cz_crit}'
 
     #
-    # TEST II: Verify total path length
+    # TEST II: Verify total path length (in vacuum)
     #
-    # The total pathe length is given by:
+    # The total path length is given by:
     #
     # -r_detector*cz + np.sqrt(r_detector**2.*cz**2 - (r_detector**2. - r_prop**2.))
     #
@@ -479,7 +494,9 @@ def test_layers_2():
     computed_length = layer._distance
     logging.debug('Testing full path in vacuum calculations...')
     assert np.allclose(computed_length, correct_length, **ALLCLOSE_KW), f'test:\n{computed_length}\n!= ref:\n{correct_length}'
+    logging.info('<< PASS : test_Layers 2 >>')
 
+def test_layers_3():
     #
     # TEST III: check the individual path distances crossed
     #           for the previous input cosines
@@ -495,8 +512,41 @@ def test_layers_2():
     # sin(alpha) = sin(pi-theta)*D /Rp
     #
     logging.debug('Testing Earth layer segments and density computations...')
+    layer = Layers('osc/PREM_4layer.dat', detector_depth=1., prop_height=20.)
+    logging.info('detector depth = %s km' %layer.detector_depth)
+    logging.info('Detector radius = %s km'%layer.r_detector)
+    logging.info('Neutrino production height = %s km'%layer.prop_height)
+    layer.computeMinLengthToLayers()
+
+    # Define some electron densities
+    # (Normally, these would come from some a config
+    # file in PISA)
+    YeI = 0.4656
+    YeM = 0.4957
+    YeO = 0.4656
+    
+    layer.setElecFrac(YeI, YeO, YeM)
+
+    # Define a couple of key coszen directions
+    # cz = 1 (path above the detector)
+    # cz = 0 (horizontal path)
+    # cz = -0.4461133826191877 (tangent to the first inner layer of PREM4)
+    # cz = -1 (path below the detector)
+    cz_values = np.array([1., 0, -0.4461133826191877, -1.])
+
+    # Run the layer calculation
+    layer.calcLayers(cz=cz_values)
+
+    # Find the number of layers, densities and path segments crossed
+    # Make sure that they match manual calculations
+    # Make sure that the sum of the segments match the calculated 
+    # total path length
+    logging.info("number of layers: {}".format(layer.n_layers))
+    logging.info("Densities crossed: {}".format(layer.density.reshape(4,layer.max_layers)))
+    logging.info("Segment lengths: {}".format(layer.distance.reshape(4,layer.max_layers)))
 
 if __name__ == '__main__':
     set_verbosity(3)
     test_layers_1()
     test_layers_2()
+    test_layers_3()
