@@ -113,8 +113,8 @@ def extCalcLayers(cz,
             # the max number of layers
             n_zeros_pads = max_layers - segments_lengths.shape[0]
 
-            segments_lengths = np.concatenate((np.zeros(n_zeros_pads, dtype=FTYPE), segments_lengths))
-            density = np.concatenate((np.zeros(n_zeros_pads, dtype=FTYPE), density))
+            segments_lengths = np.concatenate((segments_lengths, np.zeros(n_zeros_pads, dtype=FTYPE)))
+            density = np.concatenate((density, np.zeros(n_zeros_pads, dtype=FTYPE)))
 
 
 
@@ -129,48 +129,48 @@ def extCalcLayers(cz,
             small_roots = - r_detector * coszen * calculate_small_root - np.sqrt(r_detector**2 * coszen**2 - r_detector**2 + radii**2) #, where=calculate_small_root, out=np.zeros_like(radii))
             large_roots = - r_detector * coszen * calculate_large_root + np.sqrt(r_detector**2 * coszen**2 - r_detector**2 + radii**2) #, where=calculate_large_root, out=np.zeros_like(radii))
 
-            #
+            # Remove the negative root numbers, and the initial zeros distances
+            small_roots = small_roots[small_roots>0]
+            small_roots = np.concatenate((np.array([0.], dtype=FTYPE), small_roots))
+
+            # Reverse the order of the large roots
+            # That should give the segment distances from the furthest layer to
+            # the middle layer
+            large_roots = large_roots[::-1].astype(FTYPE)
+
             # concatenate large and small roots together
-            # from the detector outward, the first layers
-            # correspond to the small roots, in increasing
-            # layer number (layer 1, layer 2, layer 3...)
-            #
-            # after reaching the deepest layer's small root,
-            # the path crosses the large root values in decreasing
-            # order (ie, path crosses layer N's large root, then
-            # layer (N-1), then layer(N-2)...). This layer ends with
-            # the two large roots of the layers above the detector height
-            #
-            full_distances = np.concatenate((small_roots, large_roots[::-1]))
-            print(full_distances)
+            #  this gives the cumulative distance from the detector outward
+            full_distances = np.concatenate((np.zeros(1,dtype=FTYPE),small_roots[small_roots>0], large_roots[large_roots>0]))
 
-            # The above vector gives the cumulative distance travelled
-            # after passing each layer, starting from the detector and 
-            # moving outward toward the atmosphere. To get the individual
-            # distance segments, we need to get the diff of all
-            # nonzero distances in this array. This requires a couple of
-            # less elegant manipulations
-            #
-            non_zero_indices = np.where(full_distances > 0)[0]
-            segments_lengths = np.zeros_like(full_distances)
-            for i in range(len(non_zero_indices)):
-                if i==0:
-                    segments_lengths[i] = full_distances[i]
-                else:
-                    previous_i = non_zero_indices[i - 1]
-                    segments_lengths[i] = full_distances[i] - full_distances[previous_i]
-
-            #
-            # arange the densities to match the segment array structure
-            #
-            density = np.concatenate((rhos, rhos[::-1]))
-            density*=(segments_lengths > 0.)
-            #
-            # To respect the order at which layers are crossed, all these array must be flipped
-            # (has neutrinos travel toward the detector, not from the detector)
-            #
+            # Diff the distances and reverse the order 
+            # such that the path starts away from the detector
+            segments_lengths = np.diff(full_distances)
             segments_lengths = segments_lengths[::-1]
-            density = density[::-1]
+
+
+            # The last problem is to match back the densities
+            # to the proper array elements. 
+            # Densities coming out of the earth core are inverted w.r.t the
+            # densities of the ones coming in, with the following exception:
+            #
+            # - the middle layer and the atmosphere must be counted only once
+            #
+            # - densities corresponding to layers that are not crossed must be removed
+            #
+            # NOTE: this assumes that the detector is not positioned in the atmosphere
+            #
+            # start by removing the layers not crossed from rhos
+            inner_layer_mask = coszen_limit>coszen
+            density = np.concatenate((rhos[inner_layer_mask],rhos[inner_layer_mask][1:-1][::-1]))
+
+            # Pad with zeros at the end up to max_layers
+            #
+            n_pads = max_layers-len(density)
+            density = np.concatenate((density, np.zeros(n_pads, dtype=FTYPE)))
+            segments_lengths = np.concatenate((segments_lengths, np.zeros(n_pads, dtype=FTYPE)))
+
+            # As an extra precaution, set all densities that are not crossed to zero
+            density*=(segments_lengths>0)
 
 
         n_layers = np.sum(segments_lengths > 0.)
@@ -243,7 +243,7 @@ class Layers(object):
             # Add an external layer corresponding to the atmosphere / production boundary
             self.radii = np.concatenate((np.array([r_earth+prop_height]), self.radii))
             self.rhos  = np.concatenate((np.ones(1, dtype=FTYPE), self.rhos))
-            self.max_layers = 2 * len(self.radii)
+            self.max_layers = 2 * (len(self.radii))
 
 
         else :
@@ -502,7 +502,7 @@ def test_layers_2():
     correct_length = np.array([21., 25.934954968613056, 45.9673929915939, 517.6688130455607,\
                               3376.716060094899, 7343.854310588515, 12567.773643090592, 12761.])
     layer.calcPathLength(input_cz)
-    computed_length = layer._distance
+    computed_length = layer.distance
     logging.debug('Testing full path in vacuum calculations...')
     assert np.allclose(computed_length, correct_length, **ALLCLOSE_KW), f'test:\n{computed_length}\n!= ref:\n{correct_length}'
     logging.info('<< PASS : test_Layers 2 >>')
@@ -522,6 +522,9 @@ def test_layers_3():
     #
     # sin(alpha) = sin(pi-theta)*D /Rp
     #
+    from pisa.utils.comparisons import ALLCLOSE_KW
+    import copy
+
     logging.debug('Testing Earth layer segments and density computations...')
     layer = Layers('osc/PREM_4layer.dat', detector_depth=1., prop_height=20.)
     logging.info('detector depth = %s km' %layer.detector_depth)
@@ -548,13 +551,55 @@ def test_layers_3():
     # Run the layer calculation
     layer.calcLayers(cz=cz_values)
 
-    # Find the number of layers, densities and path segments crossed
-    # Make sure that they match manual calculations
-    # Make sure that the sum of the segments match the calculated 
-    # total path length
-    logging.info("number of layers: {}".format(layer.n_layers))
-    logging.info("Densities crossed: {}".format(layer.density.reshape(4,layer.max_layers)))
-    logging.info("Segment lengths: {}".format(layer.distance.reshape(4,layer.max_layers)))
+    # Save a copy of the segment information, and reshape them as they
+    # are reshaped in pi_prob3
+    layers_crossed = copy.deepcopy(layer.n_layers)
+    distance_segments = copy.deepcopy(layer.distance.reshape(4,layer.max_layers))
+    density_segments  = copy.deepcopy(layer.density.reshape(4,layer.max_layers))
+
+    # Replace the segmented distances by the total path length in vacuum
+    # (like in test #2):
+    layer.calcPathLength(cz_values)
+    vacuum_distances = copy.deepcopy(layer.distance)
+
+
+    # Print out the outcome of the layer calculations
+    # Compare total segmented lengh with total vacuum path length
+    logging.info('Down-going neutrino (coszen = 1):\n-------------')
+    logging.info("number of layers: {}".format(layers_crossed[0]))
+    logging.info("Densities crossed: {}".format(density_segments[0,:]))
+    logging.info("Segment lengths: {}\n".format(distance_segments[0,:]))
+    correct_path = np.array([20., 1.,0,0,0,0,0,0,0,0,0,0])
+    assert np.allclose(distance_segments[0,:], correct_path, **ALLCLOSE_KW), 'ERROR in downgoing neutrino path: {0} vs {1}'.format(distance_segments[0,:],correct_path)
+
+    logging.info('Horizontal neutrino (coszen = 0):\n-------------')
+    logging.info("number of layers: {}".format(layers_crossed[1]))
+    logging.info("Densities crossed: {}".format(density_segments[1,:]))
+    logging.info("Segment lengths: {}\n".format(distance_segments[1,:]))
+    correct_path = np.array([404.79277484435556, 112.87603820120549,0,0,0,0,0,0,0,0,0,0])
+    assert np.allclose(distance_segments[1,:], correct_path, **ALLCLOSE_KW), 'ERROR in horizontal neutrino path: {0} vs {1}'.format(distance_segments[1,:],correct_path)
+
+    logging.info('Neutrino tangeant to the first inner layer (coszen = -0.4461133826191877):\n-------------\n')
+    logging.info("number of layers: {}".format(layer.n_layers[2]))
+    logging.info("Densities crossed: {}".format(density_segments[2,:]))
+    logging.info("Segment lengths: {}\n".format(distance_segments[2,:]))
+    correct_path = np.array([44.525143211129944, 5685.725369597015,0,0,0,0,0,0,0,0,0,0])
+    assert np.allclose(distance_segments[2,:], correct_path, **ALLCLOSE_KW), 'ERROR in tangeant neutrino path: {0} vs {1}'.format(distance_segments[2,:],correct_path)
+
+    logging.info('Up-going neutrino (coszen = -1):\n-------------')
+    logging.info("number of layers: {}".format(layer.n_layers[3]))
+    logging.info("Densities crossed: {}".format(density_segments[3,:]))
+    logging.info("Segment lengths: {}\n".format(distance_segments[3,:]))
+    correct_path = np.array([20., 670., 2221., 2260., 2440., 2260., 2221., 669., 0, 0,0,0], dtype=FTYPE)
+    assert np.allclose(distance_segments[3,:], correct_path, **ALLCLOSE_KW), 'ERROR in upgoing neutrino path: {0} vs {1}'.format(distance_segments[3,:],correct_path)
+
+    logging.info('Comparing the segments sums with the total path in vacuum...')
+    assert np.allclose(np.sum(distance_segments, axis=1), vacuum_distances, **ALLCLOSE_KW), 'ERROR: distance mismatch: {0} vs {1}'.format(np.sum(distance_segments, axis=1), vacuum_distances)
+
+    logging.info('<< PASS : test_Layers 3 >>')
+    
+
+
 
 if __name__ == '__main__':
     set_verbosity(3)
