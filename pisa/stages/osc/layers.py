@@ -83,8 +83,8 @@ def extCalcLayers(cz,
     # which is later reshaped into containers of size (# of cz values, max_layers)
     # in the pi_prob3 module
 
-    densities = np.zeros((len(cz), max_layers))
-    distances = np.zeros((len(cz), max_layers))
+    densities = np.zeros((len(cz), max_layers), dtype=FTYPE)
+    distances = np.zeros((len(cz), max_layers), dtype=FTYPE)
     number_of_layers = np.zeros(len(cz))
 
     # Loop over all CZ values
@@ -131,7 +131,7 @@ def extCalcLayers(cz,
 
             # Remove the negative root numbers, and the initial zeros distances
             small_roots = small_roots[small_roots>0]
-            small_roots = np.concatenate((np.array([0.], dtype=FTYPE), small_roots))
+            small_roots = np.concatenate((np.array([0.], dtype=FTYPE), small_roots.astype(FTYPE)))
 
             # Reverse the order of the large roots
             # That should give the segment distances from the furthest layer to
@@ -481,7 +481,7 @@ def test_layers_2():
     logging.info('Detector radius = %s km'%layer.r_detector)
     logging.info('Neutrino production height = %s km'%layer.prop_height)
     layer.computeMinLengthToLayers()
-    ref_cz_crit = np.array([1., 1., -0.4461133826191877, -0.8375825182106081, -0.9814881717430358,  -1.])
+    ref_cz_crit = np.array([1., 1., -0.4461133826191877, -0.8375825182106081, -0.9814881717430358,  -1.], dtype=FTYPE)
     logging.debug('Asserting Critical coszen values...')
     assert np.allclose(layer.coszen_limit, ref_cz_crit, **ALLCLOSE_KW), f'test:\n{layer.coszen_limit}\n!= ref:\n{ref_cz_crit}'
 
@@ -546,7 +546,7 @@ def test_layers_3():
     # cz = 0 (horizontal path)
     # cz = -0.4461133826191877 (tangent to the first inner layer of PREM4)
     # cz = -1 (path below the detector)
-    cz_values = np.array([1., 0, -0.4461133826191877, -1.])
+    cz_values = np.array([1., 0, -0.4461133826191877, -1.], dtype=FTYPE)
 
     # Run the layer calculation
     layer.calcLayers(cz=cz_values)
