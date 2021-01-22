@@ -126,6 +126,11 @@ def extCalcLayers(cz,
             calculate_small_root = (coszen < coszen_limit) * (coszen_limit <= coszen_limit[idx])
             calculate_large_root = (coszen_limit>coszen)
 
+            logging.info('r_detector: {}'.format(type(r_detector)))
+            logging.info('coszen: {}'.format(type(coszen)))
+            logging.info('radii: {}'.format(type(radii)))
+            logging.info('calculate: {}'.format(type(calculate_small_root)))
+
             small_roots = - r_detector * coszen * calculate_small_root - np.sqrt(r_detector**2 * coszen**2 - r_detector**2 + radii**2) #, where=calculate_small_root, out=np.zeros_like(radii))
             large_roots = - r_detector * coszen * calculate_large_root + np.sqrt(r_detector**2 * coszen**2 - r_detector**2 + radii**2) #, where=calculate_large_root, out=np.zeros_like(radii))
 
