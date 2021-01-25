@@ -103,44 +103,36 @@ def extCalcLayers(cz,
             cumulative_distances = -r_detector * coszen + np.sqrt(r_detector**2. * coszen**2. - r_detector**2. + radii[:idx]**2.)
             # a bit of flippy business is done here to order terms
             # such that numpy diff can work
-            segments_lengths = np.diff(np.concatenate((np.array([0.], dtype=FTYPE), cumulative_distances[::-1])))
+            segments_lengths = np.diff(np.concatenate((np.array([0.]), cumulative_distances[::-1])))
             segments_lengths = segments_lengths[::-1]
-            segments_lengths = np.concatenate((segments_lengths, np.zeros(radii.shape[0] - idx, dtype=FTYPE)))
+            segments_lengths = np.concatenate((segments_lengths, np.zeros(radii.shape[0] - idx)))
 
             density = rhos*(segments_lengths > 0.)
-
-            # Pad the density and segment lengths with zero to respect
-            # the max number of layers
-            n_zeros_pads = max_layers - segments_lengths.shape[0]
-
-            segments_lengths = np.concatenate((segments_lengths, np.zeros(n_zeros_pads, dtype=FTYPE)))
-            density = np.concatenate((density, np.zeros(n_zeros_pads, dtype=FTYPE)))
-
-
 
         else:
             #
             # Figure out how many layers are crossed twice
             # (meaning we calculate the negative and positive roots for these layers)
             #
+            
             calculate_small_root = (coszen < coszen_limit) * (coszen_limit <= coszen_limit[idx])
             calculate_large_root = (coszen_limit>coszen)
 
-            small_roots = - r_detector * coszen * calculate_small_root.astype(FTYPE) - np.sqrt(r_detector**2 * coszen**2 - r_detector**2 + radii.astype(FTYPE)**2) #, where=calculate_small_root, out=np.zeros_like(radii))
-            large_roots = - r_detector * coszen * calculate_large_root.astype(FTYPE) + np.sqrt(r_detector**2 * coszen**2 - r_detector**2 + radii.astype(FTYPE)**2) #, where=calculate_large_root, out=np.zeros_like(radii))
+            small_roots = - r_detector * coszen * calculate_small_root - np.sqrt(r_detector**2 * coszen**2 - r_detector**2 + radii**2) #, where=calculate_small_root, out=np.zeros_like(radii))
+            large_roots = - r_detector * coszen * calculate_large_root + np.sqrt(r_detector**2 * coszen**2 - r_detector**2 + radii**2) #, where=calculate_large_root, out=np.zeros_like(radii))
 
             # Remove the negative root numbers, and the initial zeros distances
             small_roots = small_roots[small_roots>0]
-            small_roots = np.concatenate((np.array([0.], dtype=FTYPE), small_roots.astype(FTYPE)))
+            small_roots = np.concatenate((np.array([0.]), small_roots))
 
             # Reverse the order of the large roots
             # That should give the segment distances from the furthest layer to
             # the middle layer
-            large_roots = large_roots[::-1].astype(FTYPE)
+            large_roots = large_roots[::-1]
 
             # concatenate large and small roots together
             #  this gives the cumulative distance from the detector outward
-            full_distances = np.concatenate((np.zeros(1,dtype=FTYPE),small_roots[small_roots>0], large_roots[large_roots>0]))
+            full_distances = np.concatenate((np.zeros(1),small_roots[small_roots>0], large_roots[large_roots>0]))
 
             # Diff the distances and reverse the order 
             # such that the path starts away from the detector
@@ -163,22 +155,15 @@ def extCalcLayers(cz,
             inner_layer_mask = coszen_limit>coszen
             density = np.concatenate((rhos[inner_layer_mask],rhos[inner_layer_mask][1:-1][::-1]))
 
-            # Pad with zeros at the end up to max_layers
-            #
-            n_pads = max_layers-len(density)
-            density = np.concatenate((density, np.zeros(n_pads, dtype=FTYPE)))
-            segments_lengths = np.concatenate((segments_lengths, np.zeros(n_pads, dtype=FTYPE)))
-
             # As an extra precaution, set all densities that are not crossed to zero
             density*=(segments_lengths>0)
 
-
-        n_layers = np.sum(segments_lengths > 0.)
-
+        number_of_layers[i] = np.sum(segments_lengths > 0.)
         # append to the large list
-        densities[i,:] = density
-        number_of_layers[i]=n_layers
-        distances[i,:]=segments_lengths
+        for j in range(len(density)):
+            # index j may not run all the way to max_layers, unreached indices stay zero
+            densities[i, j] = density[j]
+            distances[i, j] = segments_lengths[j]
 
     return number_of_layers, densities, distances
 
