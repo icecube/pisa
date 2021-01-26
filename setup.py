@@ -88,14 +88,16 @@ INSTALL_REQUIRES = [
     'iminuit<2',
     'line_profiler',
     'matplotlib>=3.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
-    'numba==0.45.1', # >=0.35: fastmath jit flag; >=0.38: issue #439; 0.44 segfaults; 0.46 removes SmartArray
+    'numba>0.44', # >=0.35: fastmath jit flag; >=0.38: issue #439; 0.44 segfaults
     'numpy>=1.17',
     'pint>=0.8.1', # see https://github.com/hgrecco/pint/issues/512
     'scipy>=0.17',
+    'pandas',
     'simplejson>=3.2',
     'tables',
+    'tabulate',
     'uncertainties',
-    'llvmlite<=0.30.0', # 0.31 gave an error "Type of #4 arg mismatch: i1 != i32" in pisa/stages/osc/layers.py", line 91
+    'llvmlite', # 0.31 gave an error "Type of #4 arg mismatch: i1 != i32" in pisa/stages/osc/layers.py", line 91
     'py-cpuinfo',
     'sympy',
     'cython',
@@ -225,6 +227,8 @@ def do_setup():
 
         'resources/events/*.hdf5',
         'resources/events/*.json*',
+        'resources/events/IceCube_3y_oscillations/*.csv',
+        'resources/events/IceCube_3y_oscillations/*.csv.bz2',
 
         'resources/flux/*.d',
         'resources/osc/*.hdf5',
@@ -237,9 +241,10 @@ def do_setup():
 
         'resources/settings/binning/*.cfg',
         'resources/settings/discrete_sys/*.cfg',
+        'resources/settings/fit/*.cfg',
         'resources/settings/logging/logging.json',
         'resources/settings/mc/*.cfg',
-        'resources/settings/minimizer/*.json*',
+        'resources/settings/minimizer/*.cfg',
         'resources/settings/osc/*.cfg',
         'resources/settings/osc/*.md',
         'resources/settings/pipeline/*.cfg',
@@ -263,10 +268,10 @@ def do_setup():
         description='Tools for analyzing and drawing statistical conclusions from experimental data',
         license='Apache 2.0',
         author='The IceCube Collaboration',
-        author_email='jll1062+pisa@phys.psu.edu',
+        author_email='analysis@icecube.wisc.edu',
         url='http://github.com/icecubeopensource/pisa',
         cmdclass=cmdclasses,
-        python_requires='>=3.6, <3.8', # f-strings, kwarg/dict ordering require Py>=3.6; numba doesn't support Python 3.8 until numba 0.47 but we need numba==0.45.1
+        python_requires='>=3.6', # f-strings, kwarg/dict ordering require Py>=3.6
         setup_requires=SETUP_REQUIRES,
         install_requires=INSTALL_REQUIRES,
         extras_require=EXTRAS_REQUIRE,

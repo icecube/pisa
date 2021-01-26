@@ -18,6 +18,10 @@ parameters will **NOT be statistically independent** from one another.
 
 from __future__ import absolute_import, division
 
+# module broken...needs fixing
+import sys
+sys.exit(0)
+
 from argparse import ArgumentParser
 from itertools import product
 import os

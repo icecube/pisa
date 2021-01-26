@@ -43,8 +43,8 @@ from pisa.utils.random_numbers import get_random_state
 from pisa.utils import stats
 
 
-__all__ = ['type_error', 'reduceToHist', 'rebin', 'valid_nominal_values',
-           'Map', 'MapSet', 'test_Map', 'test_MapSet']
+__all__ = ['FLUCTUATE_METHODS', 'type_error', 'reduceToHist', 'rebin',
+           'valid_nominal_values', 'Map', 'MapSet', 'test_Map', 'test_MapSet']
 
 __author__ = 'J.L. Lanfranchi'
 
@@ -72,6 +72,8 @@ __license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
 # TODO: CUDA and numba implementations of rebin if these libs are available
 
 # TODO: move these utilities functions to a generic utils module?
+
+FLUCTUATE_METHODS = ['poisson', 'scaled_poisson', 'gauss', 'gauss+poisson']
 
 def type_error(value):
     """Generic formulation of a TypeError that can be called throughout the
@@ -642,12 +644,12 @@ class Map(object):
         
         binlabel_stripzeros : bool, optional
             Strip zeros from bin labels. Default: `True`
-        
+
         binlabel_colors : :obj:`str` or list of :obj:`str`, optional
             Colors to be used below (index 0) and above (index 1) the
             `binlabel_color_thresh` value. Default: "white" below and "black" above
             threshold. If only one :obj:`str` is given, all labels will have that color.
-        
+
         binlabel_color_thresh : float or :obj:`str`, optional
             Threshold at which to switch color of the bin labels for better contrast. If
             `None` (default), all labels will use the last color given in
@@ -666,8 +668,9 @@ class Map(object):
         """
         import matplotlib as mpl
         import matplotlib.pyplot as plt
+        from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-        cmap_seq = plt.cm.inferno
+        cmap_seq = plt.cm.Spectral_r
         cmap_seq.set_bad(color=(0.0, 0.2, 0.0), alpha=1)
 
         cmap_div = plt.cm.RdBu_r
@@ -702,8 +705,45 @@ class Map(object):
         else:
             fig = ax.figure
 
-        # TODO: allow plotting of N-dimensional arrays: 1D should be simple; >
         # 2D by arraying them as 2D slices in the smallest dimension(s)
+        if len(self.binning) == 3:
+
+            smallest_dim = self.binning.names[np.argmin(self.binning.shape)]
+
+            # we need to set the vmin and vmax now by hand:
+            if vmin is None:
+                vmin = uncertainties.nominal_value(self.hist.min())
+
+            if vmax is None:
+                vmax = uncertainties.nominal_value(self.hist.max())
+
+            if symm:
+                v = np.max([-vmin, vmax])
+                vmin = -v
+                vmax = v
+
+            divider = make_axes_locatable(ax)
+
+            # prepare some smaller axes:
+            small_axes = [ax]
+            for bin_idx in range(1, self.binning[smallest_dim].num_bins):
+                small_axes.append(divider.append_axes("right", size="100%", pad=0.1, sharey=ax))
+                small_axes[-1].yaxis.set_visible(False)
+
+            for bin_idx in range(self.binning[smallest_dim].num_bins):
+                to_plot = self.slice(**{smallest_dim:bin_idx}).squeeze()
+                to_plot.plot(symm=symm, logz=logz, vmin=vmin, vmax=vmax,
+                             ax=small_axes[bin_idx], title=' %s (%s bin %i)'%(title, smallest_dim, bin_idx), 
+                             cmap=cmap, clabel=clabel, clabelsize=clabelsize,
+                             xlabelsize=xlabelsize, ylabelsize=ylabelsize, titlesize=titlesize,
+                             pcolormesh_kw=pcolormesh_kw, colorbar_kw=colorbar_kw,
+                             binlabel_format=binlabel_format, binlabel_colors=["white", "black"],
+                             binlabel_color_thresh=binlabel_color_thresh, binlabel_stripzeros=binlabel_stripzeros,
+                             )
+
+            return None
+
+
         if len(self.binning) == 2:
             to_plot = self
         else:
@@ -814,6 +854,11 @@ class Map(object):
                 logging.debug('>>>> Plot for inspection saved at %s', path)
 
         return fig, ax, pcmesh, colorbar
+
+    @_new_obj
+    def __deepcopy__(self, memo):
+        """ Hook for deepcopy to corrdctly handle hists """
+        return {}
 
     @_new_obj
     def reorder_dimensions(self, order):
@@ -1005,6 +1050,11 @@ class Map(object):
         """
         orig = method
         method = str(method).strip().lower().replace(' ', '')
+        if not method in FLUCTUATE_METHODS:
+            raise ValueError(
+                'Map fluctuation method "%s" not recognized! Valid choices are:'
+                ' %s.' % (method, FLUCTUATE_METHODS)
+            )
         if method == 'poisson':
             random_state = get_random_state(random_state, jumpahead=jumpahead)
             with np.errstate(invalid='ignore'):
@@ -1023,7 +1073,7 @@ class Map(object):
                 error_vals[valid_mask] = np.sqrt(orig_hist[valid_mask])
                 error_vals[nan_at] = np.nan
             return {'hist': unp.uarray(hist_vals, error_vals)}
-        
+
         if method == 'scaled_poisson':
             random_state = get_random_state(random_state, jumpahead=jumpahead)
             with np.errstate(invalid='ignore'):
@@ -1106,9 +1156,6 @@ class Map(object):
 
         elif method in ['', 'none']:
             return {}
-
-        else:
-            raise ValueError('unhandled `method` = %s' % orig)
 
     @property
     def shape(self):
@@ -1609,6 +1656,26 @@ class Map(object):
 
         return np.sum(stats.chi2(actual_values=self.hist,
                                  expected_values=expected_values))
+
+    def signed_sqrt_mod_chi2(self, expected_values):
+        """Calculate the binwise (signed) square-root of the modified chi2 value
+        between this map and the map described by `expected_values`; self is
+        taken to be the "actual values" (or (pseudo)data), and `expected_values`
+        are the expectation values for each bin.
+
+        Parameters
+        ----------
+        expected_values : numpy.ndarray or Map of same dimension as this.
+
+        Returns
+        -------
+        m_pulls : signed_sqrt_mod_chi2
+
+        """
+        expected_values = reduceToHist(expected_values)
+
+        return stats.signed_sqrt_mod_chi2(actual_values=self.hist,
+                                          expected_values=expected_values)
 
 
     def generalized_poisson_llh(self, expected_values=None, empty_bins=None, binned=False):
@@ -2593,6 +2660,10 @@ class MapSet(object):
             raise ValueError('Could not find map name "%s" among maps %s'
                              % (value, self.names))
         return self[idx]
+
+    def plot(self, *args, **kwargs):
+        for m in self.maps:
+            m.plot(*args, **kwargs)
 
     def apply_to_maps(self, attr, *args, **kwargs):
         if len(kwargs) != 0:

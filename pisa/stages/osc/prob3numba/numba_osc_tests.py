@@ -39,7 +39,6 @@ from inspect import getmodule, signature
 from os.path import join
 
 import numpy as np
-from numba import SmartArray
 
 from pisa import FTYPE
 from pisa.utils.comparisons import ALLCLOSE_KW
@@ -229,21 +228,19 @@ def test_prob3numba(ignore_fails=False, define_as_ref=False):
     energies = np.full(shape=input_shape, fill_value=tc_["energy"], dtype=FX)
 
     # Fill with NaN to ensure all elements are assinged a value
-    probabilities = SmartArray(np.full(shape=out_shape, fill_value=np.nan, dtype=FX))
+    probabilities = np.full(shape=out_shape, fill_value=np.nan, dtype=FX)
 
     propagate_array(
-        SmartArray(tc_["dm"].astype(FX)).get(WHERE),
-        SmartArray(tc_["pmns"].astype(CX)).get(WHERE),
-        SmartArray(tc_["mat_pot"].astype(CX)).get(WHERE),
-        SmartArray(nubars).get(WHERE),
-        SmartArray(energies).get(WHERE),
-        SmartArray(tc_["layer_densities"].astype(FX)).get(WHERE),
-        SmartArray(tc_["layer_distances"].astype(FX)).get(WHERE),
+        tc_["dm"].astype(FX),
+        tc_["pmns"].astype(CX),
+        tc_["mat_pot"].astype(CX),
+        nubars,
+        energies,
+        tc_["layer_densities"].astype(FX),
+        tc_["layer_distances"].astype(FX),
         # output:
-        probabilities.get(WHERE),
+        probabilities,
     )
-    probabilities.mark_changed(WHERE)
-    probabilities = probabilities.get("host")
 
     # Check that all probability matrices have no NaNs and are equal to one
     # another
@@ -570,8 +567,6 @@ def execute_func(func, func_kw):
     else:
         arg_types = func.compiled.argument_types
 
-    # Convert types; wrap arrays with SmartArray and place on device (if necessary)
-
     missing = set(arg_names).difference(func_kw.keys())
     excess = set(func_kw.keys()).difference(arg_names)
     if missing or excess:
@@ -586,8 +581,7 @@ def execute_func(func, func_kw):
     for arg_name, arg_type in zip(arg_names, arg_types):
         val = func_kw[arg_name]
         if arg_type.name.startswith("array"):
-            arg_val = SmartArray(val.astype(arg_type.dtype.key))
-            arg_val = arg_val.get("host")
+            arg_val = val.astype(arg_type.dtype.key)
         else:
             arg_val = arg_type(val)
         typed_args[arg_name] = arg_val
@@ -604,9 +598,6 @@ def execute_func(func, func_kw):
 
     ret_dict = OrderedDict()
     for key, val in typed_args.items():
-        if isinstance(val, SmartArray):
-            val.mark_changed(WHERE)
-            val = val.get("host")
         ret_dict[key] = val
 
     return ret_dict

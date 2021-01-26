@@ -8,17 +8,21 @@ import numpy as np
 
 from pisa import FTYPE
 from pisa.core.container import Container
-from pisa.core.pi_stage import PiStage
+from pisa.core.binning import MultiDimBinning
+from pisa.core.stage import Stage
 from pisa.utils import vectorizer
 
 
-class toy_event_generator(PiStage):
+class toy_event_generator(Stage):
     """
     random toy event generator PISA Pi class
 
     Parameters
     ----------
-    data
+
+    output_names : str
+        list of output names
+
     params
         Expected params .. ::
 
@@ -28,61 +32,33 @@ class toy_event_generator(PiStage):
             seed : int
                 Seed to be used for random
 
-    input_names
-    output_names
-    debug_mode
-    input_specs
-    calc_specs
-    output_specs
-
     """
     def __init__(
         self,
-        data=None,
-        params=None,
-        input_names=None,
-        output_names=None,
-        debug_mode=None,
-        input_specs=None,
-        calc_specs=None,
-        output_specs=None,
+        output_names,
+        **std_kwargs,
     ):
+
         expected_params = ('n_events', 'random', 'seed')
 
-        input_apply_keys = (
-            'initial_weights',
-            'weights',
-            'weighted_aeff',
-            'nu_flux_nominal',
-            'nubar_flux_nominal',
-        )
+        self.output_names = output_names
 
         # init base class
         super().__init__(
-            data=data,
-            params=params,
             expected_params=expected_params,
-            input_names=input_names,
-            output_names=output_names,
-            debug_mode=debug_mode,
-            input_specs=input_specs,
-            calc_specs=calc_specs,
-            output_specs=output_specs,
-            input_apply_keys=input_apply_keys,
+            **std_kwargs,
         )
 
-        # doesn't calculate anything
-        assert self.calc_mode is None
-
     def setup_function(self):
+
         n_events = int(self.params.n_events.value.m)
         seed = int(self.params.seed.value.m)
         self.random_state = np.random.RandomState(seed)
 
         for name in self.output_names:
 
-            container = Container(name)
-            container.data_specs = self.input_specs
+            container = Container(name, representation=self.calc_mode)
+
             nubar = -1 if 'bar' in name else 1
             if 'e' in name:
                 flav = 0
@@ -91,17 +67,13 @@ class toy_event_generator(PiStage):
             if 'tau' in name:
                 flav = 2
 
-            # Generate some events in the array representation just to have them
-            # here we add those explicitly in the array representation
-            true_energy = np.power(10, self.random_state.rand(n_events).astype(FTYPE) * 3)
-            true_coszen = self.random_state.rand(n_events).astype(FTYPE) * 2 - 1
-            container.add_array_data('true_energy', true_energy)
-            container.add_array_data('true_coszen', true_coszen)
+            if not isinstance(self.calc_mode, MultiDimBinning):
+                # Generate some events in the array representation just to have them
+                # here we add those explicitly in the array representation
+                container['true_energy'] = np.power(10, self.random_state.rand(n_events).astype(FTYPE) * 3)
+                container['true_coszen'] = self.random_state.rand(n_events).astype(FTYPE) * 2 - 1
 
-            if self.input_mode == 'events':
-                size = n_events
-            elif self.input_mode == 'binned':
-                size = self.input_specs.size
+            size = container.size
 
             # make some initial weights
             if self.params.random.value:
@@ -110,8 +82,8 @@ class toy_event_generator(PiStage):
                 container['initial_weights'] = np.ones(size, dtype=FTYPE)
 
             # other necessary info
-            container.add_scalar_data('nubar', nubar)
-            container.add_scalar_data('flav', flav)
+            container.set_aux_data('nubar', nubar)
+            container.set_aux_data('flav', flav)
             container['weights'] = np.ones(size, dtype=FTYPE)
             container['weighted_aeff'] = np.ones(size, dtype=FTYPE)
 
@@ -127,4 +99,4 @@ class toy_event_generator(PiStage):
     def apply_function(self):
         # reset weights
         for container in self.data:
-            vectorizer.assign(container['initial_weights'], out=container['weights'])
+            container['weights'] = np.copy(container['initial_weights'])

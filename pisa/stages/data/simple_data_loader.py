@@ -9,7 +9,7 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 
 from pisa import FTYPE
-from pisa.core.pi_stage import PiStage
+from pisa.core.stage import Stage
 from pisa.utils import vectorizer
 from pisa.utils.profiler import profile
 from pisa.core.container import Container
@@ -17,7 +17,7 @@ from pisa.core.events_pi import EventsPi
 from pisa.utils.format import arg_str_seq_none, split
 
 
-class simple_data_loader(PiStage):
+class simple_data_loader(Stage):
     """
     HDF5 file loader PISA Pi class
 
@@ -59,15 +59,9 @@ class simple_data_loader(PiStage):
                  data_dict,
                  neutrinos=True,
                  required_metadata=None,
-                 data=None,
-                 params=None,
-                 input_names=None,
-                 output_names=None,
-                 debug_mode=None,
-                 input_specs=None,
-                 calc_specs=None,
-                 output_specs=None,
                  fraction_events_to_keep=None,
+                 output_names=None,
+                 **std_kwargs,
                 ):
 
         # instantiation args that should not change
@@ -77,6 +71,7 @@ class simple_data_loader(PiStage):
         self.neutrinos = neutrinos
         self.required_metadata = required_metadata
         self.fraction_events_to_keep = fraction_events_to_keep
+        self.output_names = output_names
 
         # Handle list inputs
         self.events_file = split(self.events_file)
@@ -87,35 +82,13 @@ class simple_data_loader(PiStage):
         # args so nothing external will inadvertently try to change
         # their values
         expected_params = ()
-        # created as ones if not already present
-        input_apply_keys = (
-            'initial_weights',
-        )
-        # copy of initial weights, to be modified by later stages
-        output_apply_keys = (
-            'weights',
-        )
+
         # init base class
         super().__init__(
-            data=data,
-            params=params,
             expected_params=expected_params,
-            input_names=input_names,
-            output_names=output_names,
-            debug_mode=debug_mode,
-            input_specs=input_specs,
-            calc_specs=calc_specs,
-            output_specs=output_specs,
-            input_apply_keys=input_apply_keys,
-            output_apply_keys=output_apply_keys,
+            **std_kwargs,
         )
 
-        # doesn't calculate anything
-        if self.calc_mode is not None:
-            raise ValueError(
-                'There is nothing to calculate for this event loading service.'
-                ' Hence, `calc_mode` must not be set.'
-            )
         # check output names
         if len(self.output_names) != len(set(self.output_names)):
             raise ValueError(
@@ -173,7 +146,7 @@ class simple_data_loader(PiStage):
 
             # make container
             container = Container(name)
-            container.data_specs = 'events'
+            container.representation = 'events'
             event_groups = self.evts.keys()
             if name not in event_groups:
                 raise ValueError(
@@ -183,7 +156,7 @@ class simple_data_loader(PiStage):
 
             # add the events data to the container
             for key, val in self.evts[name].items():
-                container.add_array_data(key, val)
+                container[key] = val
 
             # create weights arrays:
             # * `initial_weights` as starting point (never modified)
@@ -191,22 +164,16 @@ class simple_data_loader(PiStage):
             #   and modified by the stages
             # * user can also provide `initial_weights` in input file
             #TODO Maybe add this directly into EventsPi
-            if 'weights' in container.array_data:
+            if 'weights' in container.keys:
                 # raise manually to give user some helpful feedback
                 raise KeyError(
                     'Found an existing `weights` array in "%s"'
                     ' which would be overwritten. Consider renaming it'
                     ' to `initial_weights`.' % name
                 )
-            container.add_array_data(
-                'weights',
-                np.ones(container.size, dtype=FTYPE)
-            )
-            if 'initial_weights' not in container.array_data:
-                container.add_array_data(
-                    'initial_weights',
-                    np.ones(container.size, dtype=FTYPE)
-                )
+            container['weights'] = np.ones(container.size, dtype=FTYPE)
+            if 'initial_weights' not in container.keys:
+                container['initial_weights'] = np.ones(container.size, dtype=FTYPE)
 
             # add neutrino flavor information for neutrino events
             #TODO Maybe add this directly into EventsPi
@@ -221,8 +188,8 @@ class simple_data_loader(PiStage):
                     flav = 0
                 else:
                     raise ValueError('Cannot determine flavour of %s'%name)
-                container.add_scalar_data('nubar', nubar)
-                container.add_scalar_data('flav', flav)
+                container.set_aux_data('nubar', nubar)
+                container.set_aux_data('flav', flav)
 
             self.data.add_container(container)
 
@@ -232,25 +199,15 @@ class simple_data_loader(PiStage):
                 'No containers created during data loading for some reason.'
             )
 
-        # test
-        if self.output_mode == 'binned':
-            for container in self.data:
-                container.array_to_binned('weights', self.output_specs)
-
 
     def setup_function(self):
         '''Store event properties from events file at
-        service initialisation. Cf. `PiStage` docs.
+        service initialisation. Cf. `Stage` docs.
         '''
         self.record_event_properties()
 
 
-    @profile
     def apply_function(self):
-        '''Cf. `PiStage` docs.'''
-        # TODO: do we need following line? Isn't this handled universally
-        # by the base class (in PiStage's apply)?
-        self.data.data_specs = self.output_specs
         # reset weights to initial weights prior to downstream stages running
         for container in self.data:
-            vectorizer.assign(container['initial_weights'], out=container['weights'])
+            container['weights'] = np.copy(container['initial_weights'])

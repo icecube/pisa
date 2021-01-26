@@ -16,6 +16,7 @@ from importlib import import_module
 from itertools import product
 from inspect import getsource
 import os
+from tabulate import tabulate
 import traceback
 
 import numpy as np
@@ -24,11 +25,9 @@ from pisa import ureg
 from pisa.core.events import Data
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
-from pisa.core.base_stage import BaseStage
 from pisa.core.stage import Stage
-from pisa.core.pi_stage import PiStage
-from pisa.core.transform import TransformSet
 from pisa.core.container import ContainerSet
+from pisa.core.binning import MultiDimBinning
 from pisa.utils.config_parser import PISAConfigParser, parse_pipeline_config
 from pisa.utils.fileio import mkdir
 from pisa.utils.hash import hash_obj
@@ -83,9 +82,12 @@ class Pipeline(object):
         `config_parser.parse_pipeline_config()` method to get a config
         OrderedDict. If `OrderedDict`, use directly as pipeline configuration.
 
+    profile : bool
+        Perform timings
+
     """
 
-    def __init__(self, config):
+    def __init__(self, config, profile=False):
         if isinstance(config, (str, PISAConfigParser)):
             config = parse_pipeline_config(config=config)
         elif isinstance(config, OrderedDict):
@@ -98,11 +100,50 @@ class Pipeline(object):
 
         self.pisa_version = None
 
+        self.name = config['pipeline']['name']
+        self.data = ContainerSet(self.name)
+        self.detector_name = config['pipeline']['detector_name']
+        self.output_binning = config['pipeline']['output_binning']
+        self.output_key = config['pipeline']['output_key']
+
+        self._profile = profile
+
         self._stages = []
-        self._detector_name = config.pop('detector_name', None)
         self._config = config
         self._init_stages()
         self._source_code_hash = None
+
+    def __repr__(self):
+        return self.tabulate(tablefmt="presto")
+
+    def _repr_html_(self):
+        return self.tabulate(tablefmt="html")
+
+    def tabulate(self, tablefmt="plain"):
+        headers = ['stage number', 'name', 'calc_mode', 'apply_mode', 'has setup', 'has compute', 'has apply', '# fixed params', '# free params']
+        colalign=["right"] + ["center"] * (len(headers) -1 )
+        table = []
+        for i, s in enumerate(self.stages):
+            table.append([i, s.__class__.__name__, s.calc_mode, s.apply_mode])
+            table[-1].append(s.setup_function.__func__.__module__ == s.__class__.__module__)
+            table[-1].append(s.compute_function.__func__.__module__ == s.__class__.__module__)
+            table[-1].append(s.apply_function.__func__.__module__ == s.__class__.__module__)
+            table[-1] += [len(s.params.fixed), len(s.params.free)]
+        return tabulate(table, headers, tablefmt=tablefmt, colalign=colalign)
+
+    def report_profile(self, detailed=False):
+        for stage in self.stages:
+            stage.report_profile(detailed=detailed)
+
+    @property
+    def profile(self):
+        return self._profile
+
+    @profile.setter
+    def profile(self, value):
+        for stage in self.stages:
+            stage.profile = value
+        self._profile = value
 
     def index(self, stage_id):
         """Return the index in the pipeline of `stage_id`.
@@ -165,11 +206,24 @@ class Pipeline(object):
 
         """
         stages = []
-        data = ContainerSet("events")
-        for stage_num, ((stage_name, service_name), settings) in enumerate(
+        for stage_num, item in enumerate(
             self.config.items()
         ):
             try:
+                name, settings = item
+                
+                if isinstance(name, str):
+                    if name == 'pipeline':
+                        continue
+
+                stage_name, service_name = name
+
+                # old cfgs compatibility
+                if service_name.startswith('pi_'):
+                    logging.warning(f"Old stage name `{service_name}` is automatically renamed to `{service_name.replace('pi_', '')}`. " +
+                                    "Please change your config in the future!")
+                service_name = service_name.replace('pi_', '')
+
                 logging.debug(
                     "instantiating stage %s / service %s", stage_name, service_name
                 )
@@ -188,7 +242,7 @@ class Pipeline(object):
                     % (stage_name, service_name, settings)
                 )
                 try:
-                    service = service_cls(**settings)
+                    service = service_cls(**settings, profile=self._profile)
                 except Exception:
                     logging.error(
                         "Failed to instantiate stage.service %s.%s with settings %s",
@@ -198,14 +252,7 @@ class Pipeline(object):
                     )
                     raise
 
-                cake_stage = isinstance(service, Stage)
-                pi_stage = isinstance(service, PiStage)
-
-                if not (cake_stage or pi_stage):
-                    logging.debug("is BaseStage? %s", isinstance(service, BaseStage))
-                    logging.debug("is Stage (cake)? %s", isinstance(service, Stage))
-                    logging.debug("is PiStage? %s", isinstance(service, PiStage))
-
+                if not isinstance(service, Stage):
                     raise TypeError(
                         'Trying to create service "%s" for stage #%d (%s),'
                         " but object %s instantiated from class %s is not a"
@@ -220,29 +267,6 @@ class Pipeline(object):
                         )
                     )
 
-                # first stage can determine type of pipeline
-                if self.pisa_version is None:
-                    self.pisa_version = "cake" if cake_stage else "pi"
-
-                elif self.pisa_version == "cake" and pi_stage:
-                    raise TypeError(
-                        "Trying to use the PISA Pi Stage in " "a PISA cake pipeline."
-                    )
-
-                elif self.pisa_version == "pi" and cake_stage:
-                    raise TypeError(
-                        "Trying to use the PISA cake Stage in " "a PISA Pi pipeline."
-                    )
-
-                # Append service to pipeline
-
-                if self.pisa_version == "pi":
-                    service.data = data
-                # add events object
-
-                # run setup on service
-                service.setup()
-
                 stages.append(service)
 
             except:
@@ -254,141 +278,66 @@ class Pipeline(object):
                 )
                 raise
 
+
+
+        # set parameters with an identical name to the same object
+        # otherwise we get inconsistent behaviour when setting repeated params
+        # See Isues #566 and #648
+        all_parans = self.params
+        self.update_params(all_parans, existing_must_match=True, extend=False)
+
         param_selections = set()
         for service in stages:
             param_selections.update(service.param_selections)
         param_selections = sorted(param_selections)
 
-        previous_stage = None
         for stage in stages:
             stage.select_params(param_selections, error_on_missing=False)
-            if previous_stage is not None:
-                prev_has_binning = (
-                    hasattr(previous_stage, "output_binning")
-                    and previous_stage.output_binning is not None
-                )
-                this_has_binning = (
-                    hasattr(stage, "input_binning") and stage.input_binning is not None
-                )
-                if this_has_binning != prev_has_binning:
-                    raise ValueError(
-                        'hasattr(%s, "output_binning") is %s but'
-                        ' hasattr(%s, "input_binning") is %s.'
-                        % (
-                            previous_stage.stage_name,
-                            prev_has_binning,
-                            stage.stage_name,
-                            this_has_binning,
-                        )
-                    )
-                if this_has_binning:
-                    is_compat = stage.input_binning.is_compat(
-                        previous_stage.output_binning
-                    )
-                    if not is_compat:
-                        logging.error(
-                            "Stage %s output binning: %s",
-                            previous_stage.stage_name,
-                            previous_stage.output_binning,
-                        )
-                        logging.error(
-                            "Stage %s input binning: %s",
-                            stage.stage_name,
-                            stage.input_binning,
-                        )
-                        raise ValueError(
-                            "%s stage's output binning is incompatible with"
-                            " %s stage's input binning."
-                            % (previous_stage.stage_name, stage.stage_name)
-                        )
-            previous_stage = stage
 
         self._stages = stages
 
-    # TODO: handle other container(s)
-    @profile
-    def get_outputs(self, inputs=None, idx=None, return_intermediate=False, output_mode=None, force_standard_output=True):
-        """Run the pipeline to compute its outputs.
+        self.setup()
 
-        Parameters
-        ----------
-        inputs : None or MapSet
-            Optional inputs to send to the first stage of the pipeline.
-
-        idx : None, string, or int
-            Specification of which stage(s) to run. If None is passed, all
-            stages will be run. If a string is passed, all stages are run up to
-            and including the named stage. If int is passed, all stages are run
-            up to and including `idx`. Numbering follows Python
-            conventions (i.e., is 0-indexed).
-
-        return_intermediate : bool
-            Return list containing outputs from each stage in the pipeline.
-
-        output_mode: string
-            force an output mode to the stage
-
-        force_standard_output: bool
-            if requesting a binned output, object returned will be a list of MapSets
-            if set to False, object returned will be a list of Dict. each Dict item is 
-            a MapSet
+    def get_outputs(self, output_binning=None, output_key=None):
+        """Get MapSet output"""
 
 
-        Returns
-        -------
-        outputs : list or pisa.core.map.MapSet
-            If `return_intermediate` is `False`, returns `MapSet` output by
-            final stage. If `return_intermediate` is `True`, returns `list` of
-            `MapSet`s output by each stage.
 
-        """
-        intermediate = []
+        self.run()
 
-        if isinstance(idx, str):
-            idx = self.stage_names.index(idx)
+        if output_binning is None:
+            output_binning = self.output_binning
+            output_key = self.output_key
+        else:
+            assert(isinstance(output_binning, MultiDimBinning))
 
-        if idx is not None:
-            if idx < 0:
-                raise ValueError("Integer `idx` must be >= 0")
-            idx += 1
+        assert output_binning is not None
 
-        if len(self) == 0:
-            raise ValueError("No stages in the pipeline to run")
+        self.data.representation = output_binning
 
-        for stage in self.stages[:idx]:
-            name = "{}.{}".format(stage.stage_name, stage.service_name)
-            logging.debug(
-                '>> Working on stage "%s" service "%s"',
-                stage.stage_name,
-                stage.service_name,
-            )
-            try:
-                logging.trace(">>> BEGIN: {}.run(...)".format(name))
-                outputs = stage.run(inputs=inputs) # pylint: disable=redefined-outer-name
-                if return_intermediate:
-                    if outputs is None:  # e.g. for PISA pi
-                        outputs = stage.get_outputs(output_mode=output_mode, force_standard_output=force_standard_output)
-                    intermediate.append(outputs)
-                logging.trace(">>> END  : {}.run(...)".format(name))
-            except:
-                logging.error(
-                    "Error occurred computing outputs in stage %s /" " service %s ...",
-                    stage.stage_name,
-                    stage.service_name,
-                )
-                raise
-            logging.trace("outputs: %s" % (outputs,))
-            inputs = outputs
-
-        if outputs is None:  # e.g. for PISA pi
-            outputs = stage.get_outputs(output_mode=output_mode, force_standard_output=force_standard_output)
-
-        if return_intermediate:
-            return intermediate
+        if isinstance(output_key, tuple):
+            assert len(output_key) == 2
+            outputs = self.data.get_mapset(output_key[0], error=output_key[1])
+        else:
+            outputs = self.data.get_mapset(output_key)
 
         return outputs
 
-    def update_params(self, params):
+
+    def run(self):
+        """Run the pipeline to compute"""
+        for stage in self.stages:
+            logging.debug(f"Working on stage {stage.stage_name}.{stage.service_name}")
+            stage.run()
+
+    def setup(self):
+        """Setup (reset) all stages"""
+        self.data = ContainerSet(self.name)
+        for stage in self.stages:
+            stage.data = self.data
+            stage.setup()
+
+    def update_params(self, params, existing_must_match=False, extend=False):
         """Update params for the pipeline.
 
         Note that any param in `params` in excess of those that already exist
@@ -399,9 +348,12 @@ class Pipeline(object):
         params : ParamSet
             Parameters to be updated
 
+        existing_must_match : bool
+        extend : bool
+
         """
         for stage in self:
-            stage.params.update_existing(params)
+            stage.params.update(params, existing_must_match=existing_must_match, extend=extend)
 
     def select_params(self, selections, error_on_missing=False):
         """Select a set of alternate param values/specifications.
@@ -566,6 +518,9 @@ def test_Pipeline():
         #current_mat = new_mat
 
 
+
+# ----- Most of this below cang go (?) ---
+
 def parse_args():
     """Parse command line arguments if `pipeline.py` is called as a script."""
     parser = ArgumentParser(
@@ -643,16 +598,6 @@ def parse_args():
         help="""Store all intermediate outputs, not just the final stage's
         outputs.""",
     )
-    parser.add_argument(
-        "--transforms",
-        action="store_true",
-        help="""Store all transforms (for stages that use transforms).""",
-    )
-    # TODO: optionally store the transform sets from each stage
-    # parser.add_argument(
-    #    '-T', '--transform-file', metavar='FILE', type=str,
-    #    help='''File into which to store transform(s) from the pipeline.'''
-    # )
     parser.add_argument("--pdf", action="store_true", help="""Produce pdf plot(s).""")
     parser.add_argument("--png", action="store_true", help="""Produce png plot(s).""")
     parser.add_argument(
@@ -787,8 +732,6 @@ def main(return_outputs=False):
         fbase = os.path.join(args.outdir, stg_svc)
         if args.intermediate or stage == pipeline[indices][-1]:
             stage.outputs.to_json(fbase + "__output.json.bz2")
-        if args.transforms and stage.use_transforms:
-            stage.transforms.to_json(fbase + "__transforms.json.bz2")
 
         # also only plot if args intermediate or last stage
         if args.intermediate or stage == pipeline[indices][-1]:
@@ -809,8 +752,6 @@ def main(return_outputs=False):
                     mapset_name=stg_svc,
                     errors=True,
                 )
-            elif isinstance(stage.outputs, (MapSet, TransformSet)):
-                outputs = stage.outputs
 
             try:
                 for fmt, enabled in formats.items():

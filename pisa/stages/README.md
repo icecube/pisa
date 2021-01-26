@@ -2,17 +2,18 @@
 
 Directories are PISA stages, and within each directory can be found the services implementing the respective stage.
 
+# Anatomy of a Stage
 
-## Directory Listing
+The PISA stage inherits from pisa.core.stage.Stage
 
-* `aeff/` - All stages relating to effective area transforms.
-* `combine/` - A stage for combining maps together and applying appropriate scaling factors. 
-* `data/` - All stages relating to the handling of data.
-* `discr_sys/` - All stages relating to the handling of discrete systematics.
-* `flux/` - All stages relating to the atmospheric neutrino flux.
-* `osc/` - All stages relating to neutrino oscillations. 
-* `pid/` - All stages relating to particle identification.
-* `reco/` - All stages relating to applying reconstruction kernels.
-* `unfold/` - All stages relating to the unfolding of parameters from data.
-* `xsec/` - All stages relating to cross sections.
-* `__init__.py` - File that makes the `stages` directory behave as a Python module.
+There are 4 pasrts to a stage:
+
+## The constructor
+
+Assign here any arguments passed in via the config, define expected parameters, and init the base stage
+
+## The setup function
+
+## The calculation function
+
+## The apply function

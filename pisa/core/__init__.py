@@ -8,5 +8,4 @@ from .map import *
 from .param import *
 from .pipeline import *
 from .prior import *
-from .stage import *
-from .transform import *
+from .detectors import *

@@ -2,11 +2,4 @@
 
 Primary tools for performing analyses in PISA.
 
-
-## Directory Listing
-
-| File/directory    | Description
-| ----------------- | -----------
-| `__init__.py`     | Makes `analysis` directory behave as a Python module
-| `analysis.py`     | Defines `Analysis` class giving generic tools for performing analyses; sub-class this for specialized analyses
-| `hypo_testing.py` | Script and class `HypoTesting` for performing hypothesis tests; the class inherits from `Analysis`
+recent changes in `analysis.py` see https://nbviewer.jupyter.org/urls/seafile.rlp.net/f/c156d1fc084f4bd8af63//%3Fdl%3D1

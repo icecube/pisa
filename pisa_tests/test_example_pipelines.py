@@ -39,9 +39,9 @@ __license__ = """Copyright (c) 2014-2020, The IceCube Collaboration
 
 
 def test_example_pipelines(path="settings/pipeline", verbosity=Levels.WARN):
-    """Run pipelines from any "example_*.cfg" config files found at `path`."""
+    """Run pipelines from any "*.cfg" config files found at `path`."""
     path = find_resource(path)
-    settings_files = glob.glob(path + "/*example*.cfg")
+    settings_files = glob.glob(path + "/*.cfg")
 
     failures = []
     successes = []

@@ -43,6 +43,7 @@ from pisa.utils.jsons import from_json, to_json
 from pisa.core.pipeline import Pipeline
 from pisa.core.binning import OneDimBinning, MultiDimBinning, is_binning
 from pisa.core.map import Map
+from pisa.utils.resources import find_resource
 from pisa.utils.fileio import mkdir
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.comparisons import ALLCLOSE_KW
@@ -1588,8 +1589,6 @@ class HypersurfaceParam(object):
         when fitting).
         '''
 
-        # TODO properly use SmartArrays
-
         # Create an array to file with this contorubtion
         this_out = np.full_like(out, np.NaN, dtype=FTYPE)
 
@@ -1759,7 +1758,7 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
     '''
 
     # TODO Current yneed to manually ensure consistency between `combine_regex` here and
-    # the `links` param in `pi_hypersurface` Need to make `pi_hypersurface` directly use
+    # the `links` param in `hypersurface` Need to make `hypersurface` directly use
     # the value of `combine_regex` from the Hypersurface instance
 
     #
@@ -1991,7 +1990,7 @@ def extract_interpolated_hypersurface_params(input_file):
     '''
     Extract the names of the hypersurface parameter names from a file
 
-    This is useful to set up the ``pi_hypersurfaces`` stage to get the correct expected
+    This is useful to set up the ``hypersurfaces`` stage to get the correct expected
     parameters without invoking the long loading process. The PISA stage does not have
     to know about the internal structure of the files.
 
@@ -2089,7 +2088,7 @@ def load_hypersurfaces(input_file, expected_binning=None):
     # Public data release file
     #
 
-    elif input_file.endswith("csv"):
+    elif input_file.endswith("csv") or input_file.endswith("csv.bz2"):
 
         hypersurfaces = _load_hypersurfaces_data_release(
             input_file, expected_binning)
@@ -2104,7 +2103,9 @@ def load_hypersurfaces(input_file, expected_binning=None):
     # Check binning
     if expected_binning is not None:
         for hypersurface in hypersurfaces.values():
-            assert hypersurface.binning.hash == expected_binning.hash, ""
+            if not hypersurface.binning.hash == expected_binning.hash:
+                for a, b, in zip(hypersurface.binning.dims, expected_binning.dims):
+                    assert a == b, "Incompatible binning dimension %s and %s"%(a, b)
 
     return hypersurfaces
 
@@ -2234,14 +2235,14 @@ def _load_hypersurfaces_data_release(input_file_prototype, binning):
     #
 
     fit_results = {}
-    fit_results['nue_cc+nuebar_cc'] = pd.read_csv(
-        input_file_prototype.replace('*', 'nue_cc'))
-    fit_results['numu_cc+numubar_cc'] = pd.read_csv(
-        input_file_prototype.replace('*', 'numu_cc'))
-    fit_results['nutau_cc+nutaubar_cc'] = pd.read_csv(
-        input_file_prototype.replace('*', 'nutau_cc'))
-    fit_results['nu_nc+nubar_nc'] = pd.read_csv(
-        input_file_prototype.replace('*', 'all_nc'))
+    fit_results['nue_cc+nuebar_cc'] = pd.read_csv(find_resource(
+        input_file_prototype.replace('*', 'nue_cc')))
+    fit_results['numu_cc+numubar_cc'] = pd.read_csv(find_resource(
+        input_file_prototype.replace('*', 'numu_cc')))
+    fit_results['nutau_cc+nutaubar_cc'] = pd.read_csv(find_resource(
+        input_file_prototype.replace('*', 'nutau_cc')))
+    fit_results['nu_nc+nubar_nc'] = pd.read_csv(find_resource(
+        input_file_prototype.replace('*', 'all_nc')))
 
     #
     # Get hyperplane info

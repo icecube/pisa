@@ -13,6 +13,7 @@ from collections.abc import Mapping
 import inspect
 from itertools import product
 import os
+from tabulate import tabulate
 
 import numpy as np
 
@@ -68,6 +69,9 @@ class DistributionMaker(object):
         checked for consistency (you should use multiple `Detector`s if you
         have incompatible data sets).
 
+    profile : bool
+        timing of inidividual pipelines / stages
+
     Notes
     -----
     Free params with the same name in two pipelines are updated at the same
@@ -84,11 +88,13 @@ class DistributionMaker(object):
     intervals are non-physical.
 
     """
-    def __init__(self, pipelines, label=None, set_livetime_from_data=True):
+    def __init__(self, pipelines, label=None, set_livetime_from_data=True, profile=False):
 
         self.label = label
         self._source_code_hash = None
         self.metadata = OrderedDict()
+
+        self._profile = profile
 
         self._pipelines = []
         if isinstance(pipelines, (str, PISAConfigParser, OrderedDict,
@@ -97,7 +103,7 @@ class DistributionMaker(object):
 
         for pipeline in pipelines:
             if not isinstance(pipeline, Pipeline):
-                pipeline = Pipeline(pipeline)
+                pipeline = Pipeline(pipeline, profile=profile)
             self._pipelines.append(pipeline)
 
         data_run_livetime = None
@@ -166,18 +172,59 @@ class DistributionMaker(object):
         #                           error_on_missing=False)
 
         # Make sure that all the pipelines have the same detector name (or None)
-        self._detector_name = 'no_name'
+        self.detector_name = 'no_name'
         for p in self._pipelines:
-            name = p._detector_name
-            if name != self._detector_name and self._detector_name != 'no_name':
+            name = p.detector_name
+            if name != self.detector_name and self.detector_name != 'no_name':
                 raise NameError(
                     'Different detector names in distribution_maker pipelines'
                 )
 
-            self._detector_name = name
+            self.detector_name = name
+
+        # set parameters with an identical name to the same object
+        # otherwise we get inconsistent behaviour when setting repeated params
+        # See Isues #566 and #648
+        all_parans = self.params
+        for pipeline in self:
+            pipeline.update_params(all_parans, existing_must_match=True, extend=False)
+
+    def __repr__(self):
+        return self.tabulate(tablefmt="presto")
+
+    def _repr_html_(self):
+        return self.tabulate(tablefmt="html")
+
+    def tabulate(self, tablefmt="plain"):
+        headers = ['pipeline number', 'name', 'detector name', 'output_binning', 'output_key', 'profile']
+        colalign=["right"] + ["center"] * (len(headers) -1 )
+        table = []
+        for i, p in enumerate(self.pipelines):
+            table.append([i, p.name, p.detector_name, p.output_binning, p.output_key, p.profile])
+        return tabulate(table, headers, tablefmt=tablefmt, colalign=colalign)
 
     def __iter__(self):
         return iter(self._pipelines)
+
+    @property
+    def profile(self):
+        return self._profile
+
+    @profile.setter
+    def profile(self, value):
+        for pipeline in self.pipelines:
+            pipeline.profile = value
+        self._profile = value
+
+
+    def run(self):
+        for pipeline in self:
+            pipeline.run()
+
+    def setup(self):
+        """Setup (reset) all pipelines"""
+        for p in self:
+            p.setup()
 
     def get_outputs(self, return_sum=False, sum_map_name='total',
                     sum_map_tex_name='Total', **kwargs):

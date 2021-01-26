@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 # Calculates the differentials for Jacobian matrix wrt. particle
 # production uncertainty.
 #

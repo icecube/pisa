@@ -15,6 +15,7 @@ from operator import setitem
 from os.path import join
 from shutil import rmtree
 import sys
+from tabulate import tabulate
 import tempfile
 
 import numpy as np
@@ -196,6 +197,10 @@ class Param:
         self.is_discrete = is_discrete
         self.nominal_value = value if nominal_value is None else nominal_value
         self.normalize_values = False
+
+
+    def __repr__(self):
+        return f"{self.name}, value: {self.value}, nominal_value: {self.nominal_value}, range: {self.range}, prior: {self.prior}, is_fixed: {self.is_fixed}"
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -622,7 +627,10 @@ class ParamSet(MutableSequence, Set):
                 'All params must be of type "Param"'
 
         self._params = param_sequence
-        self.normalize_values = False
+
+        # if we do not normalize, then the hash will change upon evaluating unit changes
+        # I think because the changed units are cached in the object (Philipp)
+        self.normalize_values = True
 
     @property
     def serializable_state(self):
@@ -631,6 +639,38 @@ class ParamSet(MutableSequence, Set):
     @property
     def _by_name(self):
         return {obj.name: obj for obj in self._params}
+
+    def __repr__(self):
+        return self.tabulate(tablefmt="presto")
+
+    def _repr_html_(self):
+        return self.tabulate(tablefmt="html")
+
+    def tabulate(self, tablefmt="plain"):
+        headers = ['name', 'value', 'nominal_value', 'range', 'prior', 'units', 'is_fixed']
+        colalign=["right"] + ["center"] * (len(headers) -1 )
+        table = []
+        for p in self:
+            if (p.value is None or isinstance(p.value, (string_types, bool))):
+                table.append([p.name, p.value, p.nominal_value, p.range, p.prior, p.units, p.is_fixed])
+            else:
+                if p.range is not None:
+                    range_fmt = [r.m for r in p.range]
+                else:
+                    range_fmt = None
+                if p.prior is not None:
+                    if p.prior.kind == "gaussian":
+                        prior_fmt = "+/- %s"%p.prior.stddev.m
+                    elif p.prior.kind == "uniform":
+                        prior_fmt = "uniform"
+                    else:
+                        prior_fmt = p.prior
+                else:
+                    prior_fmt = p.prior
+                table.append([p.name, p.value.m, p.nominal_value.m, range_fmt, prior_fmt, p.units, p.is_fixed])
+        if len(table) == 0:
+            return "Emptpy Params"
+        return tabulate(table, headers, tablefmt=tablefmt, colalign=colalign)
 
     def index(self, value):  # pylint: disable=arguments-differ
         """Return an integer index to the Param in this ParamSet indexed by
@@ -774,6 +814,8 @@ class ParamSet(MutableSequence, Set):
             If True, params not in this param set are appended.
 
         """
+        # make sure we're having a new object!
+        #obj = deepcopy(obj)
         if isinstance(obj, (Sequence, ParamSet)):
             for param in obj:
                 self.update(param, existing_must_match=existing_must_match,

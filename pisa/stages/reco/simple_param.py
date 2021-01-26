@@ -14,7 +14,7 @@ import math, fnmatch, collections
 import numpy as np
 
 from pisa import FTYPE, TARGET
-from pisa.core.pi_stage import PiStage
+from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.utils.numba_tools import WHERE, myjit, ftype
@@ -369,7 +369,7 @@ def simple_pid_parameterization(particle_key,true_energy,params,track_pid,cascad
     return pid
 
 
-class simple_param(PiStage):
+class simple_param(Stage):
     """
     Stage to generate reconstructed parameters (energy, coszen, pid) using simple parameterizations.
     These are not fit to any input data, but are simple and easily understandable and require no 
@@ -407,14 +407,7 @@ class simple_param(PiStage):
     """
 
     def __init__(self,
-                 data=None,
-                 params=None,
-                 input_names=None,
-                 output_names=None,
-                 debug_mode=None,
-                 input_specs=None,
-                 calc_specs=None,
-                 output_specs=None,
+                 **std_kwargs,
                 ):
 
         expected_params = ( 
@@ -425,45 +418,17 @@ class simple_param(PiStage):
                         "track_pid",
                         "cascade_pid",
                         )
-        
-        input_names = (
-                    'true_energy',
-                    'true_coszen',
-                    )
-        output_names = ()
-
-        # what keys are added or altered for the outputs during apply
-        output_apply_keys = (
-                            'reco_energy',
-                            'reco_coszen',
-                            'pid',
-                            )
 
         # init base class
         super().__init__(
-            data=data,
-            params=params,
             expected_params=expected_params,
-            input_names=input_names,
-            output_names=output_names,
-            debug_mode=debug_mode,
-            input_specs=input_specs,
-            calc_specs=calc_specs,
-            output_specs=output_specs,
-            output_apply_keys=output_apply_keys,
+            **std_kwargs,
         )
-
-        #TODO Suport other modes
-        assert self.input_mode == "events"
-        assert self.calc_mode is None
-        assert self.output_mode == "events"
-
 
     def setup_function(self):
 
         #TODO Could add a number of discrete cases here that can be selected betweeen, e.g. ICU baseline (LoI?), DeepCore current best, etc...
 
-        self.data.data_specs = self.input_specs
 
         # Get params
         perfect_reco = self.params.perfect_reco.value
@@ -484,17 +449,12 @@ class simple_param(PiStage):
 
             # Get stuff that is used multiples times
             particle_key = container.name
-            true_energy = container["true_energy"].get(WHERE)
-            true_coszen = container["true_coszen"].get(WHERE)
-
-
-            #
-            # Get reco energy
-            #
+            true_energy = container["true_energy"]
+            true_coszen = container["true_coszen"]
 
             # Create container if not already present
             if "reco_energy" not in container :
-                container.add_array_data( "reco_energy", np.full_like(true_energy,np.NaN,dtype=FTYPE) )
+                container['reco_energy'] = np.full_like(true_energy,np.NaN,dtype=FTYPE)
 
             # Create the reco energy variable
             if perfect_reco :
@@ -508,8 +468,8 @@ class simple_param(PiStage):
                 )
 
             # Write to the container
-            np.copyto( src=reco_energy, dst=container["reco_energy"].get("host") )
-            container["reco_energy"].mark_changed()
+            container["reco_energy"][:] = reco_energy
+            container.mark_changed("reco_energy")
 
 
             #
@@ -518,7 +478,7 @@ class simple_param(PiStage):
 
             # Create container if not already present
             if "reco_coszen" not in container :
-                container.add_array_data( "reco_coszen", np.full_like(true_coszen,np.NaN,dtype=FTYPE) )
+                container['reco_coszen'] = np.full_like(true_coszen,np.NaN,dtype=FTYPE)
 
             # Create the reco coszen variable
             if perfect_reco :
@@ -533,8 +493,8 @@ class simple_param(PiStage):
                 )
 
             # Write to the container
-            np.copyto( src=reco_coszen, dst=container["reco_coszen"].get("host") )
-            container["reco_coszen"].mark_changed()
+            container["reco_coszen"][:] = reco_coszen
+            container.mark_changed("reco_coszen")
 
 
             #
@@ -543,7 +503,7 @@ class simple_param(PiStage):
 
             # Create container if not already present
             if "pid" not in container :
-                container.add_array_data( "pid", np.full_like(true_energy,np.NaN,dtype=FTYPE) )
+                container['pid'] = np.full_like(true_energy,np.NaN,dtype=FTYPE)
 
             # Create the PID variable
             if perfect_reco :
@@ -560,8 +520,8 @@ class simple_param(PiStage):
                 )
 
             # Write to the container
-            np.copyto( src=pid, dst=container["pid"].get("host") )
-            container["pid"].mark_changed()
+            container["pid"][:] = pid
+            container.mark_changed("pid")
 
 
 

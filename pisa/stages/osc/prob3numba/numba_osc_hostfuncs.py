@@ -1,14 +1,8 @@
 # pylint: disable = invalid-name
 
-
 """
 Host function wrappers for numba_osc_kernels.
-
-These allow calling any kernel defined there (using SmartArray and approrpiate
-types as defined in signatures here) from a host, whether TARGET is "host" or
-"cuda".
 """
-
 
 from __future__ import absolute_import, print_function, division
 

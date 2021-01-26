@@ -8,13 +8,14 @@ import numpy as np
 import pandas as pd
 
 from pisa import FTYPE
-from pisa.core.pi_stage import PiStage
+from pisa.core.stage import Stage
 from pisa.utils import vectorizer
+from pisa.utils.resources import find_resource
 from pisa.utils.profiler import profile
 from pisa.core.container import Container
 
 
-class csv_loader(PiStage):
+class csv_loader(Stage):
     """
     CSV file loader PISA Pi class
 
@@ -22,62 +23,27 @@ class csv_loader(PiStage):
     ----------
     events_file : csv file path
     **kwargs
-        Passed to PiStage
+        Passed to Stage
 
     """
     def __init__(
         self,
         events_file,
-        data=None,
-        params=None,
-        input_names=None,
-        output_names=None,
-        debug_mode=None,
-        input_specs=None,
-        calc_specs=None,
-        output_specs=None,
+        output_names,
+        **std_kwargs,
     ):
 
         # instantiation args that should not change
-        self.events_file = events_file
-
-        expected_params = ()
-
-        # created as ones if not already present
-        input_apply_keys = ('initial_weights',)
-
-        # copy of initial weights, to be modified by later stages
-        output_apply_keys = ('weights',)
+        self.events_file = find_resource(events_file)
 
         # init base class
         super().__init__(
-            data=data,
-            params=params,
-            expected_params=expected_params,
-            input_names=input_names,
-            output_names=output_names,
-            debug_mode=debug_mode,
-            input_specs=input_specs,
-            calc_specs=calc_specs,
-            output_specs=output_specs,
-            input_apply_keys=input_apply_keys,
-            output_apply_keys=output_apply_keys,
+            expected_params=(),
+            **std_kwargs,
         )
 
-        # doesn't calculate anything
-        if self.calc_mode is not None:
-            raise ValueError(
-                'There is nothing to calculate for this event loading service.'
-                ' Hence, `calc_mode` must not be set.'
-            )
-        # check output names
-        if len(self.output_names) != len(set(self.output_names)):
-            raise ValueError(
-                'Found duplicates in `output_names`, but each name must be'
-                ' unique.'
-            )
+        self.output_names = output_names
 
-        assert self.input_specs == 'events'
 
     def setup_function(self):
 
@@ -88,7 +54,6 @@ class csv_loader(PiStage):
 
             # make container
             container = Container(name)
-            container.data_specs = self.input_specs
             nubar = -1 if 'bar' in name else 1
             if 'e' in name:
                 flav = 0
@@ -109,15 +74,15 @@ class csv_loader(PiStage):
             events = raw_data[mask]
 
             container['weighted_aeff'] = events['weight'].values.astype(FTYPE)
-            container['weights'] = np.ones(container.array_length, dtype=FTYPE)
-            container['initial_weights'] = np.ones(container.array_length, dtype=FTYPE)
+            container['weights'] = np.ones(container.size, dtype=FTYPE)
+            container['initial_weights'] = np.ones(container.size, dtype=FTYPE)
             container['true_energy'] = events['true_energy'].values.astype(FTYPE)
             container['true_coszen'] = events['true_coszen'].values.astype(FTYPE)
             container['reco_energy'] = events['reco_energy'].values.astype(FTYPE)
             container['reco_coszen'] = events['reco_coszen'].values.astype(FTYPE)
             container['pid'] = events['pid'].values.astype(FTYPE)
-            container.add_scalar_data('nubar', nubar)
-            container.add_scalar_data('flav', flav)
+            container.set_aux_data('nubar', nubar)
+            container.set_aux_data('flav', flav)
 
             self.data.add_container(container)
 
@@ -127,12 +92,6 @@ class csv_loader(PiStage):
                 'No containers created during data loading for some reason.'
             )
 
-        # test
-        if self.output_mode == 'binned':
-            for container in self.data:
-                container.array_to_binned('weights', self.output_specs)
-
-    @profile
     def apply_function(self):
         for container in self.data:
-            vectorizer.assign(container['initial_weights'], out=container['weights'])
+            container['weights'] = np.copy(container['initial_weights'])

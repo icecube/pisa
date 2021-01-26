@@ -11,7 +11,6 @@ import sys
 import warnings
 
 from numba import jit as numba_jit
-from numba import NumbaDeprecationWarning
 from numpy import (
     array, inf, nan,
     float32, float64,
@@ -123,9 +122,6 @@ if 'OMP_NUM_THREADS' in os.environ:
     assert OMP_NUM_THREADS >= 1
 
 
-# Get SmartArray DeprecationWarning out of the way silently
-warnings.filterwarnings("ignore", category=NumbaDeprecationWarning)
-
 NUMBA_CUDA_AVAIL = False
 def dummy_func(x):
     """Decorate to to see if Numba actually works"""
@@ -141,8 +137,8 @@ else:
     NUMBA_CUDA_AVAIL = True
 finally:
     if 'cuda' in globals() or 'cuda' in locals():
-        if NUMBA_CUDA_AVAIL:
-            cuda.close()
+        #if NUMBA_CUDA_AVAIL:
+        #    cuda.close()
         del cuda
 del dummy_func
 
@@ -160,7 +156,7 @@ FLOAT32_STRINGS = ['single', 'float32', 'fp32', '32', 'f4']
 FLOAT64_STRINGS = ['double', 'float64', 'fp64', '64', 'f8']
 if 'PISA_FTYPE' in os.environ:
     PISA_FTYPE = os.environ['PISA_FTYPE']
-    ini_msgs.append('PISA_FTYPE env var is defined as: "%s"' % PISA_FTYPE)
+    #ini_msgs.append('PISA_FTYPE env var is defined as: "%s"' % PISA_FTYPE)
     if PISA_FTYPE.strip().lower() in FLOAT32_STRINGS:
         FTYPE = np.float32
         CTYPE = np.complex64
@@ -178,10 +174,7 @@ ITYPE = np.int32 if FTYPE == np.float32 else np.int64
 del FLOAT32_STRINGS, FLOAT64_STRINGS
 
 # set default target
-if NUMBA_CUDA_AVAIL:
-    TARGET = 'cuda'
-else:
-    TARGET = 'cpu'
+TARGET = 'cpu'
 
 cpu_targets = ['cpu', 'numba'] # pylint: disable=invalid-name
 parallel_targets = ['parallel', 'multicore'] # pylint: disable=invalid-name

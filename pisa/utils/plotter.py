@@ -18,7 +18,6 @@ from matplotlib.offsetbox import AnchoredText
 
 from pisa import FTYPE
 from pisa.core.map import Map, MapSet
-from pisa.core.transform import BinnedTensorTransform, TransformSet
 from pisa.utils.format import tex_dollars, text2tex, tex_join
 from pisa.utils.log import logging
 
@@ -62,7 +61,7 @@ def inf2finite(x):
 
 class Plotter(object):
     """
-    Plotting library for PISA `Map`s, `MapSet`s, and `BinnedTensorTransform`s
+    Plotting library for PISA `Map`s and `MapSet`s
 
     Parameters
     ----------
@@ -192,7 +191,7 @@ class Plotter(object):
 
     def plot_2d_array(self, map_set, n_rows=None, n_cols=None, fname=None,
                       **kwargs):
-        """plot all maps or transforms in a single plot"""
+        """plot all maps in a single plot"""
         if fname is None:
             fname = map_set.name
         # if dimensionality is 3, then still define a spli_axis automatically
@@ -296,10 +295,8 @@ class Plotter(object):
             map_set = MapSet([map_set])
         if isinstance(map_set, MapSet):
             n = len(map_set)
-        elif isinstance(map_set, TransformSet):
-            n = len([x for x in map_set])
         else:
-            raise TypeError('Expecting to plot a MapSet or TransformSet but '
+            raise TypeError('Expecting to plot a MapSet but '
                             'got %s'%type(map_set))
         if n_rows is None and n_cols is None:
             # TODO: auto row/cols
@@ -380,14 +377,12 @@ class Plotter(object):
         self.stamp = stamp
 
     def plot_2d_map(self, map, cmap=None, **kwargs):
-        """plot map or transform on current axis in 2d"""
+        """plot map on current axis in 2d"""
         vmin = kwargs.pop('vmin', None)
         vmax = kwargs.pop('vmax', None)
         axis = plt.gca()
 
-        if isinstance(map, BinnedTensorTransform):
-            binning = map.input_binning
-        elif isinstance(map, Map):
+        if isinstance(map, Map):
             binning = map.binning
         else:
             raise TypeError('Unhandled `map` type %s' % map.__class__.__name__)

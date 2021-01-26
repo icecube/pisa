@@ -329,6 +329,7 @@ def fsort(l, signed=True, reverse=False):
     return sorted(l, key=_field_splitter, reverse=reverse)
 
 
+
 def find_files(root, regex=None, fname=None, recurse=True, dir_sorter=nsort,
                file_sorter=nsort):
     """Find files by re or name recursively w/ ordering.
@@ -542,6 +543,10 @@ def to_file(obj, fname, fmt=None, overwrite=True, warn=True, **kwargs):
     else:
         rootname = fname
         ext = fmt.lower()
+
+    dirname = os.path.dirname(fname)
+
+    os.makedirs(dirname, exist_ok=True)
 
     if ext in ZIP_EXTS or ext in XOR_EXTS:
         rootname, inner_ext = os.path.splitext(rootname)

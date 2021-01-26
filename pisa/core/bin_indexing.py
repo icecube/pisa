@@ -24,13 +24,12 @@ First bin is index = 0 and last bin is index = (num_bins - 1)
 from __future__ import absolute_import, print_function, division
 
 import numpy as np
-from numba import guvectorize, SmartArray
+from numba import guvectorize
 
 from pisa import FTYPE, TARGET
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.core.translation import find_index
 from pisa.utils.log import logging, set_verbosity
-from pisa.utils.numba_tools import WHERE
 
 
 __all__ = ["lookup_indices", "test_lookup_indices"]
@@ -107,7 +106,7 @@ def lookup_indices(sample, binning):
 
     Parameters
     ----------
-    sample : length-M_dimensions sequence of length-N_events SmartArrays
+    sample : length-M_dimensions sequence of length-N_events arrays
         All smart arrays must have the same lengths; corresponding elements of
         the arrays are the coordinates of an event in the dimensions each array
         represents.
@@ -118,7 +117,7 @@ def lookup_indices(sample, binning):
 
     Returns
     -------
-    indices : length-N_events SmartArray
+    indices : length-N_events arrays
         One for each event the index of the histogram in which it falls into
 
     Notes
@@ -153,18 +152,16 @@ def lookup_indices(sample, binning):
     lookup_func = lookup_funcs[binning.num_dims]
 
     lookup_func_args = (
-        [a.get(WHERE) for a in sample]
-        + [SmartArray(dim.edge_magnitudes.astype(FTYPE)).get(WHERE) for dim in binning]
+        [a for a in sample]
+        + [dim.edge_magnitudes.astype(FTYPE) for dim in binning]
     )
     logging.trace("lookup_func_args = {}".format(lookup_func_args))
 
     # Create an array to store the results
-    indices = SmartArray(np.empty_like(sample[0], dtype=np.int64))
+    indices = np.empty_like(sample[0], dtype=np.int64)
 
     # Perform the lookup
-    lookup_func(*lookup_func_args, out=indices.get(WHERE))
-
-    indices.mark_changed(WHERE)
+    lookup_func(*lookup_func_args, out=indices)
 
     return indices
 
@@ -184,12 +181,6 @@ def test_lookup_indices():
 
     w = np.ones(n_evts, dtype=FTYPE)
 
-    x = SmartArray(x)
-    y = SmartArray(y)
-    z = SmartArray(z)
-
-    w = SmartArray(w)
-
     binning_x = OneDimBinning(name="x", num_bins=7, is_lin=True, domain=[0, 7])
     binning_y = OneDimBinning(name="y", num_bins=4, is_lin=True, domain=[0, 4])
     binning_z = OneDimBinning(name="z", num_bins=2, is_lin=True, domain=[0, 2])
@@ -204,12 +195,12 @@ def test_lookup_indices():
     #
     logging.trace("TEST 1D:")
     logging.trace("Total number of bins: {}".format(7))
-    logging.trace("array in 1D: {}".format(x.get()))
+    logging.trace("array in 1D: {}".format(x))
     logging.trace("Binning: {}".format(binning_1d.bin_edges[0]))
     indices = lookup_indices([x], binning_1d)
-    logging.trace("indices of each array element: {}".format(indices.get()))
+    logging.trace("indices of each array element: {}".format(indices))
     logging.trace("*********************************")
-    test = indices.get()
+    test = indices
     ref = np.array([-1, 0, 1, 6, 6, 7, 6])
     assert np.array_equal(test, ref), "test={} != ref={}".format(test, ref)
 
@@ -220,12 +211,12 @@ def test_lookup_indices():
     #
     logging.trace("TEST 2D:")
     logging.trace("Total number of bins: {}".format(7 * 4))
-    logging.trace("array in 2D: {}".format(list(zip(x.get(), y.get()))))
+    logging.trace("array in 2D: {}".format(list(zip(x, y))))
     logging.trace("Binning: {}".format(binning_2d.bin_edges))
     indices = lookup_indices([x, y], binning_2d)
-    logging.trace("indices of each array element: {}".format(indices.get()))
+    logging.trace("indices of each array element: {}".format(indices))
     logging.trace("*********************************")
-    test = indices.get()
+    test = indices
     ref = np.array([-1, 0, 5, 25, 27, 28, 26])
     assert np.array_equal(test, ref), "test={} != ref={}".format(test, ref)
 
@@ -236,12 +227,12 @@ def test_lookup_indices():
     #
     logging.trace("TEST 3D:")
     logging.trace("Total number of bins: {}".format(7 * 4 * 2))
-    logging.trace("array in 3D: {}".format(list(zip(x.get(), y.get(), z.get()))))
+    logging.trace("array in 3D: {}".format(list(zip(x, y, z))))
     logging.trace("Binning: {}".format(binning_3d.bin_edges))
     indices = lookup_indices([x, y, z], binning_3d)
-    logging.trace("indices of each array element: {}".format(indices.get()))
+    logging.trace("indices of each array element: {}".format(indices))
     logging.trace("*********************************")
-    test = indices.get()
+    test = indices
     ref = np.array([-1, 0, 11, 51, 54, 56, 52])
     assert np.array_equal(test, ref), "test={} != ref={}".format(test, ref)
 

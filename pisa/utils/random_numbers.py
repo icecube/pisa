@@ -82,6 +82,7 @@ def get_random_state(random_state, jumpahead=0):
 
     """
     if random_state is None:
+        # FIXME: not a `numpy.random.RandomState` object
         new_random_state = np.random
 
     elif isinstance(random_state, np.random.RandomState):

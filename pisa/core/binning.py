@@ -1539,7 +1539,7 @@ class MultiDimBinning(object):
 
     """
     # pylint: enable=line-too-long
-    def __init__(self, dimensions):
+    def __init__(self, dimensions, name=None):
         self.__map_class = None
 
         if isinstance(dimensions, OneDimBinning):
@@ -1573,6 +1573,13 @@ class MultiDimBinning(object):
         self._shape = None
         self._hashable_state = None
         self._coord = None
+        self._name = name
+
+    @property
+    def name(self):
+        """Name of the dimension"""
+        return self._name
+
 
     def __repr__(self):
         previous_precision = np.get_printoptions()['precision']
@@ -1586,9 +1593,8 @@ class MultiDimBinning(object):
         return r
 
     def __str__(self):
-        return (self.__class__.__name__ + '(\n    '
-                + ',\n    '.join(str(dim) for dim in self._dimensions)
-                + '\n)')
+        b = ' x '.join(['%i (%s)'%(dim.num_bins, dim.name) for dim in self._dimensions])
+        return '"%s":\n%s'%(self.name, b)
 
     def __pretty__(self, p, cycle):
         """Method used by the `pretty` library for formatting"""
@@ -1771,7 +1777,9 @@ class MultiDimBinning(object):
             `MultiDimBinning(**state)`
 
         """
-        return OrderedDict({'dimensions': [d.serializable_state for d in self]})
+        d = OrderedDict({'dimensions': [d.serializable_state for d in self]})
+        d['name'] = self.name
+        return d
 
     @property
     def hashable_state(self):
@@ -1792,6 +1800,7 @@ class MultiDimBinning(object):
             #state['dimensions'] = [self[name]._hashable_state
             #                       for name in sorted(self.names)]
             state['dimensions'] = [d.hashable_state for d in self]
+            state['name'] = self.name
             self._hashable_state = state
         return self._hashable_state
 

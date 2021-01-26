@@ -6,19 +6,18 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 
 from pisa import FTYPE
-from pisa.core.pi_stage import PiStage
+from pisa.core.stage import Stage
 from pisa.utils import vectorizer
 from pisa.core.container import Container
 
 
-class grid(PiStage):
+class grid(Stage):
     """
     Create a grid of events
 
     Parameters
     ----------
 
-    input_specs : MultiDimBinning
         Binning object defining the grid to be generated
 
     entity : str
@@ -28,50 +27,29 @@ class grid(PiStage):
     """
     def __init__(
         self,
-        data=None,
-        params=None,
-        input_names=None,
-        output_names=None,
-        debug_mode=None,
-        input_specs=None,
-        calc_specs=None,
-        output_specs=None,
         entity="midpoints",
+        output_names=None,
+        **std_kwargs,
     ):
         expected_params = ()
 
-        input_apply_keys = ('initial_weights', 'weights')
 
         # store args
         self.entity = entity
+        self.output_names = output_names
 
         # init base class
         super(grid, self).__init__(
-            data=data,
-            params=params,
             expected_params=expected_params,
-            input_names=input_names,
-            output_names=output_names,
-            debug_mode=debug_mode,
-            input_specs=input_specs,
-            calc_specs=calc_specs,
-            output_specs=output_specs,
-            input_apply_keys=input_apply_keys,
+            **std_kwargs,
         )
-
-        # definition must be a grid
-        assert self.input_mode == 'binned'
-
-        # doesn't calculate anything
-        assert self.calc_mode is None
 
     def setup_function(self):
 
         for name in self.output_names:
 
             # Create the container
-            container = Container(name)
-            container.data_specs = self.input_specs
+            container = Container(name, self.calc_mode)
 
             # Determine flavor
             nubar = -1 if 'bar' in name else 1
@@ -83,14 +61,14 @@ class grid(PiStage):
                 flav = 2
 
             # Create arrays
-            mesh = self.input_specs.meshgrid(entity=self.entity, attach_units=False)
+            mesh = self.calc_mode.meshgrid(entity=self.entity, attach_units=False)
             size = mesh[0].size
-            for var_name, var_vals in zip(self.input_specs.names, mesh):
-                container.add_array_data(var_name, var_vals.flatten().astype(FTYPE))
+            for var_name, var_vals in zip(self.calc_mode.names, mesh):
+                container[var_name] = var_vals.flatten().astype(FTYPE)
 
             # Add useful info
-            container.add_scalar_data('nubar', nubar)
-            container.add_scalar_data('flav', flav)
+            container.set_aux_data('nubar', nubar)
+            container.set_aux_data('flav', flav)
 
             # Make some initial weights
             container['initial_weights'] = np.ones(size, dtype=FTYPE)
@@ -102,4 +80,4 @@ class grid(PiStage):
     def apply_function(self):
         # reset weights
         for container in self.data:
-            vectorizer.assign(container['initial_weights'], out=container['weights'])
+            container['weights'] = np.copy(container['initial_weights'])

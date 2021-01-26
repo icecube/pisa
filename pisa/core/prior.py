@@ -370,21 +370,21 @@ class Prior(object):
 
 
 def get_prior_bounds(obj, param=None, stddev=1.0):
-    """Obtain confidence regions for CL corresponding to given number of
-    stddevs from parameter prior.
+    """Obtain confidence intervals for given number of
+    standard deviations from parameter prior.
 
     Parameters
     ----------
-    obj : string or Mapping
+    obj : Prior, string, or Mapping
         if str, interpret as path from which to load a dict
         if dict, can be:
-            template settings dict; must supply `param` to choose which to plot
-            params dict; must supply `param` to choose which to plot
+            template settings dict; must supply parameter name via `param`
+            params dict; must supply parameter name via `param`
             prior dict
 
     param : Param
-        Name of param for which to get bounds;
-        necessary if obj is either template settings or params
+        Name of parameter for which to get bounds;
+        necessary if `obj` is either template settings or params
 
     stddev : float or Iterable of floats
         number of stddevs
@@ -406,17 +406,19 @@ def get_prior_bounds(obj, param=None, stddev=1.0):
     for s in stddev:
         bounds[s] = []
 
-    if isinstance(obj, str):
-        obj = from_file(obj)
+    if isinstance(obj, Prior):
+        prior = obj
+    else:
+        if isinstance(obj, str):
+            obj = from_file(obj)
+        if 'params' in obj:
+            obj = obj['params']
+        if param is not None and param in obj:
+            obj = obj[param]
+        if 'prior' in obj:
+            obj = obj['prior']
 
-    if 'params' in obj:
-        obj = obj['params']
-    if param is not None and param in obj:
-        obj = obj[param]
-    if 'prior' in obj:
-        obj = obj['prior']
-
-    prior = Prior(**obj)
+        prior = Prior(**obj)
 
     logging.debug('Getting confidence region from prior: %s', prior)
     x0 = prior.valid_range[0]
