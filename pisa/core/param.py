@@ -337,9 +337,9 @@ class Param:
             raise ValueError('Cannot rescale without a range specified'
                              ' for parameter %s' % self)
         srange = self.range
-        srange0 = srange[0].m
-        srange1 = srange[1].m
-        return (self._value.m - srange0) / (srange1 - srange0)
+        srange0 = srange[0].m_as(self._units)
+        srange1 = srange[1].m_as(self._units)
+        return (self._value.m_as(self._units) - srange0) / (srange1 - srange0)
 
     @_rescaled_value.setter
     def _rescaled_value(self, rval):
@@ -353,8 +353,8 @@ class Param:
                 % (self.name, rval)
             )
         rval = np.min([1., rval])  # make exactly 1. if rounding error occurred
-        srange0 = srange[0].m
-        srange1 = srange[1].m
+        srange0 = srange[0].m_as(self._units)
+        srange1 = srange[1].m_as(self._units)
         self._value = (srange0 + (srange1 - srange0)*rval) * self._units
 
     @property
@@ -1369,9 +1369,15 @@ def test_Param():
         spline = Prior(kind='spline', knots=knots, coeffs=coeffs, deg=deg)
 
         # Param with units, prior with compatible units
-        p0 = Param(name='c', value=1.5*ureg.foot, prior=gaussian,
+        p0 = Param(name='c', value=5000*ureg.foot, prior=gaussian,
                    range=[-1, 2]*ureg.mile, is_fixed=False, is_discrete=False,
                    tex=r'\int{\rm c}')
+        value_prescale = p0.value
+        # calculate rescaled value that is used by the minimizer, make sure 
+        # the original value can be recovered
+        rval = p0._rescaled_value
+        p0._rescaled_value = rval
+        assert p0.value == value_prescale
         check_json(p0, "p0")
 
         # Param with no units, prior with no units
