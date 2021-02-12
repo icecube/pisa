@@ -142,6 +142,7 @@ class Param:
         'range',
         'is_fixed',
         'is_discrete',
+        'scales_as_log',
         'nominal_value',
         'tex',
         '_rescaled_value',
@@ -161,6 +162,7 @@ class Param:
         'range',
         'is_fixed',
         'is_discrete',
+        'scales_as_log',
         'nominal_value',
         'tex',
         'help',
@@ -175,6 +177,7 @@ class Param:
         is_fixed,
         unique_id=None,
         is_discrete=False,
+        scales_as_log=False,
         nominal_value=None,
         tex=None,
         help='',
@@ -187,6 +190,7 @@ class Param:
         self._prior = None
 
         self.value = value
+        self.scales_as_log = scales_as_log
         self.name = name
         self.unique_id = unique_id if unique_id is not None else name
         self.tex = tex
@@ -197,6 +201,10 @@ class Param:
         self.is_discrete = is_discrete
         self.nominal_value = value if nominal_value is None else nominal_value
         self.normalize_values = False
+        
+        if self.scales_as_log and range[0].m * range[1].m <= 0:
+            raise ValueError("A parameter with log-scaling must have a range that is "
+                "either entirely negative or entirely positive.")
 
 
     def __repr__(self):
@@ -233,8 +241,8 @@ class Param:
                         '%s'%(self.name, value, self.range)
                     )
             else:
-                value_not_big_enough = value < min(self.range)
-                value_not_small_enough = value > max(self.range)
+                value_not_big_enough = value.m_as(self._units) < min(self.range).m_as(self._units)
+                value_not_small_enough = value.m_as(self._units) > max(self.range).m_as(self._units)
                 if value_not_big_enough or value_not_small_enough:
                     raise ValueError(
                         'Param %s has a value %s which is not in the range of '
@@ -307,6 +315,10 @@ class Param:
                 )
             )
 
+        if self.scales_as_log and values[0].m * values[1].m <= 0:
+            raise ValueError("A parameter with log-scaling must have a range that is "
+                "either entirely negative or entirely positive.")
+
         new_vals = []
         for val in values:
             val = interpret_quantity(val, expect_sequence=False)
@@ -339,7 +351,16 @@ class Param:
         srange = self.range
         srange0 = srange[0].m_as(self._units)
         srange1 = srange[1].m_as(self._units)
-        return (self._value.m_as(self._units) - srange0) / (srange1 - srange0)
+        value = self._value.m_as(self._units)
+        
+        if self.scales_as_log:
+            if srange0 < 0:  # entire range assumed negative (asserted elsewhere)
+                srange0 *= -1
+                srange1 *= -1
+                value *= -1
+            return (np.log(value) - np.log(srange0)) / (np.log(srange1) - np.log(srange0))
+        else:
+            return (value - srange0) / (srange1 - srange0)
 
     @_rescaled_value.setter
     def _rescaled_value(self, rval):
@@ -355,7 +376,12 @@ class Param:
         rval = np.min([1., rval])  # make exactly 1. if rounding error occurred
         srange0 = srange[0].m_as(self._units)
         srange1 = srange[1].m_as(self._units)
-        self._value = (srange0 + (srange1 - srange0)*rval) * self._units
+        if self.scales_as_log:
+            # it is possible that the entire value range is negative, taking the
+            # absolute value only inside log() produces the correct sign
+            self._value = np.exp(rval*(np.log(np.abs(srange1)) - np.log(np.abs(srange0)))) * srange0 * self._units
+        else:
+            self._value = (srange0 + (srange1 - srange0)*rval) * self._units
 
     @property
     def tex(self):
@@ -1331,7 +1357,8 @@ def test_Param():
     """Unit tests for Param class"""
     # pylint: disable=unused-variable
     from scipy.interpolate import splrep
-
+    from pisa.utils.comparisons import ALLCLOSE_KW
+    
     temp_dir = tempfile.mkdtemp()
 
     counter = [0]
@@ -1353,6 +1380,20 @@ def test_Param():
             logging.error(msg)
             raise ValueError(msg)
 
+    def check_scaling(p0):
+        value_prescale = p0.value
+        # calculate rescaled value that is used by the minimizer, make sure 
+        # the original value can be recovered
+        rval = p0._rescaled_value
+        p0._rescaled_value = rval
+        assert np.isclose(p0.value.m_as(p0.u), value_prescale.m_as(p0.u), **ALLCLOSE_KW)
+        # check nothing breaks when we go to the edges
+        p0.value = p0.range[0]
+        assert p0._rescaled_value == 0.
+        p0.value = p0.range[1]
+        assert p0._rescaled_value == 1.
+        p0.value = value_prescale
+
     try:
         uniform = Prior(kind='uniform', llh_offset=1.5)
         gaussian = Prior(kind='gaussian', mean=10*ureg.meter, stddev=1*ureg.meter)
@@ -1372,12 +1413,23 @@ def test_Param():
         p0 = Param(name='c', value=5000*ureg.foot, prior=gaussian,
                    range=[-1, 2]*ureg.mile, is_fixed=False, is_discrete=False,
                    tex=r'\int{\rm c}')
-        value_prescale = p0.value
-        # calculate rescaled value that is used by the minimizer, make sure 
-        # the original value can be recovered
-        rval = p0._rescaled_value
-        p0._rescaled_value = rval
-        assert p0.value == value_prescale
+        check_scaling(p0)
+        check_json(p0, "p0")
+        
+        # Param with units, prior with compatible units, log-scaling behavior
+        p0 = Param(name='c', value=5000*ureg.foot, prior=gaussian,
+                   # range entirely positive
+                   range=[0.1, 2]*ureg.mile, is_fixed=False, is_discrete=False,
+                   scales_as_log=True, tex=r'\int{\rm c}')
+        check_scaling(p0)
+        check_json(p0, "p0")
+        
+        # range entirely negative
+        p0 = Param(name='c', value=-5000*ureg.foot, prior=gaussian,
+                   # range entirely positive
+                   range=[-0.1, -2]*ureg.mile, is_fixed=False, is_discrete=False,
+                   scales_as_log=True, tex=r'\int{\rm c}')
+        check_scaling(p0)
         check_json(p0, "p0")
 
         # Param with no units, prior with no units
