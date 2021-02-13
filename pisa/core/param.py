@@ -89,6 +89,11 @@ class Param:
 
     is_discrete : bool, optional
         Default is False
+    
+    scales_as_log : bool, optional
+        Rescale the log of the parameter's value between 0 and 1 for minimization,
+        rather than the value itself. This can help optimizing parameters spanning
+        several orders of magnitude.
 
     nominal_value : same type as `value`, optional
         If None (default), set to same as `value`
