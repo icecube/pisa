@@ -470,6 +470,9 @@ def parse_param(config, section, selector, fullname, pname, value):
     # Search for explicit attr specifications
     if config.has_option(section, fullname + '.fixed'):
         kwargs['is_fixed'] = config.getboolean(section, fullname + '.fixed')
+        
+    if config.has_option(section, fullname + '.scales_as_log'):
+        kwargs['scales_as_log'] = config.getboolean(section, fullname + '.scales_as_log')
 
     if config.has_option(section, fullname + '.unique_id'):
         kwargs['unique_id'] = config.get(section, fullname + '.unique_id')
