@@ -21,13 +21,13 @@ import pisa
 from pisa import EPSILON, FTYPE, ureg
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
-from pisa.utils.comparisons import recursiveEquality
+from pisa.utils.comparisons import recursiveEquality, FTYPE_PREC
 from pisa.utils.log import logging
 from pisa.utils.fileio import to_file
 from pisa.utils.stats import METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE
 
 
-__all__ = ['MINIMIZERS_USING_SYMM_GRAD',
+__all__ = ['MINIMIZERS_USING_SYMM_GRAD', 'MINIMIZERS_USING_CONSTRAINTS',
            'set_minimizer_defaults', 'validate_minimizer_settings',
            'Counter', 'Analysis']
 
@@ -51,6 +51,10 @@ __license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
 MINIMIZERS_USING_SYMM_GRAD = ('l-bfgs-b', 'slsqp')
 """Minimizers that use symmetrical steps on either side of a point to compute
 gradients. See https://github.com/scipy/scipy/issues/4916"""
+
+MINIMIZERS_USING_CONSTRAINTS = ('cobyla')
+"""Minimizers that cannot use the 'bounds' argument and instead need bounds to
+be formulated in terms of constraints."""
 
 def merge_mapsets_together(mapset_list=None):
     '''Handle merging of multiple MapSets, when they come in
@@ -120,6 +124,10 @@ def set_minimizer_defaults(minimizer_settings):
         opt_defaults.update(dict(
             maxiter=100, ftol=1e-4, iprint=0, eps=sqrt_ftype_eps
         ))
+    elif method == 'cobyla':
+        opt_defaults.update(dict(
+            rhobeg=0.1, maxiter=1000, tol=1e-4,
+        ))
     else:
         raise ValueError('Unhandled minimizer "%s" / FTYPE=%s'
                          % (method, FTYPE))
@@ -164,6 +172,9 @@ def validate_minimizer_settings(minimizer_settings):
         must_have = ('maxiter', 'ftol', 'eps')
         may_have = must_have + ('args', 'jac', 'bounds', 'constraints',
                                 'iprint', 'disp', 'callback')
+    elif method == 'cobyla':
+        must_have = ('maxiter', 'rhobeg', 'tol')
+        may_have = must_have + ('disp', 'catol')
 
     missing = set(must_have).difference(set(options))
     excess = set(options).difference(set(may_have))
@@ -224,6 +235,12 @@ def validate_minimizer_settings(minimizer_settings):
             raise ValueError(eps_gt_msg % (method, 'eps', val, err_lim))
         if val > warn_lim:
             logging.warning(eps_gt_msg, method, 'eps', val, warn_lim)
+    
+    if method == 'cobyla':
+        if options['rhobeg'] > 0.5:
+            raise ValueError('starting step-size > 0.5 will overstep boundary')
+        if options['rhobeg'] < 1e-2:
+            logging.warning('starting step-size is very low, convergence will be slow')
 
 
 def check_t23_octant(fit_info):
@@ -676,9 +693,18 @@ class Analysis(object):
                 raise ValueError('Defined metrics are not compatible')
 
         # Get starting free parameter values
-        x0 = hypo_maker.params.free._rescaled_values # pylint: disable=protected-access
-
+        x0 = np.array(hypo_maker.params.free._rescaled_values) # pylint: disable=protected-access
+        
+        # Indicate indices where x0 should be reflected around the mid-point at 0.5.
+        # This is only used for the COBYLA minimizer.
+        flip_x0 = np.zeros(len(x0), dtype=bool)
+        # Guard against over-stepping of boundaries by clipping values during
+        # minimization. This is only used for COBYLA because it tolerates some
+        # violation of the constraints. Because COBYLA is gradient-free, the clipping
+        # should not impact the minimization in a detrimental way.
+        guard_bounds = False
         minimizer_method = minimizer_settings['method']['value'].lower()
+        cons = ()
         if minimizer_method in MINIMIZERS_USING_SYMM_GRAD:
             logging.warning(
                 'Minimizer %s requires artificial boundaries SMALLER than the'
@@ -688,6 +714,31 @@ class Analysis(object):
             )
             step_size = minimizer_settings['options']['value']['eps']
             bounds = [(0 + step_size, 1 - step_size)]*len(x0)
+            x0[(0 <= x0) & (x0 < step_size)] = step_size
+            x0[(1 - step_size < x0) & (x0 <= 1)] = 1 - step_size
+
+        elif minimizer_method in MINIMIZERS_USING_CONSTRAINTS:
+            logging.warning(
+                'Minimizer %s requires bounds to be formulated in terms of constraints.'
+                ' Constraining functions are auto-generated now.',
+                minimizer_method
+            )
+            cons = []
+            for idx in range(len(x0)):
+                l = {'type': 'ineq',
+                     'fun': lambda x, i=idx: x[i] - FTYPE_PREC}  # lower bound at zero
+                u = {'type': 'ineq',
+                     'fun': lambda x, i=idx: 1. - x[i]}  # upper bound at 1
+                cons.append(l)
+                cons.append(u)
+            # The minimizer begins with a step of size `rhobeg` in the positive
+            # direction. Flipping around 0.5 ensures that this initial step will not
+            # overstep boundaries if `rhobeg` is 0.5. 
+            flip_x0 = np.array(x0) > 0.5
+            # The minimizer can't handle bounds, but they are still used below to clip
+            # x0 into the valid range if that is necessary.
+            guard_bounds = True
+            bounds = [(0, 1)]*len(x0)
         else:
             bounds = [(0, 1)]*len(x0)
 
@@ -720,7 +771,8 @@ class Analysis(object):
                     param.name, clipped_x0_val
                 )
 
-        x0 = tuple(clipped_x0)
+        x0 = np.array(clipped_x0)
+        x0 = np.where(flip_x0, 1 - x0, x0)
 
         logging.debug('Running the %s minimizer...', minimizer_method)
 
@@ -771,8 +823,9 @@ class Analysis(object):
             fun=self._minimizer_callable,
             x0=x0,
             args=(hypo_maker, data_dist, metric, counter, fit_history, pprint,
-                  blind, external_priors_penalty),
+                  blind, flip_x0, guard_bounds, external_priors_penalty),
             bounds=bounds,
+            constraints=cons,
             method=minimizer_settings['method']['value'],
             options=minimizer_settings['options']['value'],
             callback=self._minimizer_callback
@@ -817,6 +870,8 @@ class Analysis(object):
         fit_info['metric'] = metric
         fit_info['metric_val'] = metric_val
         if blind > 1:  # only at stricter blindness level
+            # undo flip
+            x0 = np.where(flip_x0, 1 - x0, x0)
             # Reset to starting value of the fit, rather than nominal values because
             # the nominal value might be out of range if this is inside an octant check.
             hypo_maker._set_rescaled_free_params(x0)
@@ -1044,7 +1099,8 @@ class Analysis(object):
         return detailed_metric_info
 
     def _minimizer_callable(self, scaled_param_vals, hypo_maker, data_dist,
-                            metric, counter, fit_history, pprint, blind, external_priors_penalty=None):
+                            metric, counter, fit_history, pprint, blind, flip_x0,
+                            guard_bounds, external_priors_penalty=None):
         """Simple callback for use by scipy.optimize minimizers.
 
         This should *not* in general be called by users, as `scaled_param_vals`
@@ -1083,6 +1139,12 @@ class Analysis(object):
             fits the width of your TTY).
 
         blind : bool
+        
+        flip_x0 : ndarray of type bool
+            Indicates which indices of x0 should be flipped around 0.5.
+        
+        guard_bounds : bool
+            Guard against over-stepping of boundaries by clipping x0.
 
         external_priors_penalty : func
             User defined prior penalty function, which takes `hypo_maker` and 
@@ -1105,6 +1167,15 @@ class Analysis(object):
             else:
                 raise ValueError('Defined metrics are not compatible')
 
+        scaled_param_vals = np.where(flip_x0, 1 - scaled_param_vals, scaled_param_vals)
+        if guard_bounds:
+            dist_lb = scaled_param_vals
+            dist_ub = 1 - scaled_param_vals
+            if np.any(dist_lb < 0):
+                logging.warn(f"minimizer stepped under lower bound by {-np.min(dist_lb)}")
+            if np.any(dist_ub < 0):
+                logging.warn(f"minimizer stepped over upper bound by {-np.min(dist_ub)}")
+            scaled_param_vals = np.clip(scaled_param_vals, 0, 1)
         # Set param values from the scaled versions the minimizer works with
         hypo_maker._set_rescaled_free_params(scaled_param_vals) # pylint: disable=protected-access
 
@@ -1183,7 +1254,7 @@ class Analysis(object):
                              for p in hypo_maker.params.free])
 
         if pprint:
-            sys.stdout.write('\r' + msg)
+            sys.stdout.write(msg + '\n')
             sys.stdout.flush()
         else:
             logging.trace(msg)
