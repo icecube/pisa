@@ -20,7 +20,7 @@ from numba import guvectorize
 from pisa import FTYPE, TARGET
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
-from pisa.utils.profiler import profile
+from pisa.utils.profiler import profile, line_profile
 from pisa.utils.numba_tools import WHERE, myjit
 from pisa.utils.resources import find_resource
 
@@ -87,7 +87,6 @@ class mceq_barr_red(Stage):
         table_file,
         **std_kwargs,
     ):
-
         #
         # Define parameterisation
         #
@@ -390,8 +389,8 @@ class mceq_barr_red(Stage):
             nubar = container["nubar"]
             if nubar > 0: flux_key = "nu_flux_nominal"
             elif nubar < 0: flux_key = "nubar_flux_nominal"
-
-            apply_sys_vectorized(
+            
+            apply_sys_loop(
                 container["true_energy"],
                 container["true_coszen"],
                 FTYPE(delta_index),
@@ -424,9 +423,8 @@ def spectral_index_scale(true_energy, energy_pivot, delta_index):
       """
     return np.power((true_energy / energy_pivot), delta_index)
 
-
 @myjit
-def apply_sys_kernel(
+def apply_sys_loop(
     true_energy,
     true_coszen,
     delta_index,
@@ -447,6 +445,7 @@ def apply_sys_kernel(
         true_coszen : [A]
         nubar : scalar integer
         delta_index : scalar float
+        energy_pivot : scalar float
         nu_flux_nominal : [A,B]
         gradients : [A,B,C]
         gradient_params : [C]
@@ -457,35 +456,12 @@ def apply_sys_kernel(
         C = num gradients
     Not that first dimension (of length A) is vectorized out
     """
-    out[...] = (
-        nu_flux_nominal * spectral_index_scale(true_energy, energy_pivot, delta_index)
-    ) + np.dot(gradients, gradient_params)
 
-# vectorized function to apply
-# must be outside class
-SIGNATURE = "(f4, f4, f4, f4, f4[:], f4[:,:], f4[:], f4[:])"
-if FTYPE == np.float64:
-    SIGNATURE = SIGNATURE.replace("f4", "f8")
+    n_evts, n_flavs = nu_flux_nominal.shape
 
-
-@guvectorize([SIGNATURE], "(),(),(),(),(b),(b,c),(c)->(b)", target=TARGET)
-def apply_sys_vectorized(
-    true_energy,
-    true_coszen,
-    delta_index,
-    energy_pivot,
-    nu_flux_nominal,
-    gradients,
-    gradient_params,
-    out,
-):
-    apply_sys_kernel(
-        true_energy=true_energy,
-        true_coszen=true_coszen,
-        delta_index=delta_index,
-        energy_pivot=energy_pivot,
-        nu_flux_nominal=nu_flux_nominal,
-        gradients=gradients,
-        gradient_params=gradient_params,
-        out=out,
-    )
+    for event in range(n_evts):
+        spec_scale = spectral_index_scale(true_energy[event], energy_pivot, delta_index)
+        for flav in range(n_flavs):
+            out[event, flav] = nu_flux_nominal[event, flav] * spec_scale
+            for i in range(len(gradient_params)):
+                out[event, flav] += gradients[event, flav, i] * gradient_params[i]
