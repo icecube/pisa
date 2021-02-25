@@ -1190,8 +1190,12 @@ class Analysis(object):
             fit_history.append(
                 [metric_val] + [v.value.m for v in hypo_maker.params.free]
             )
-            
-        return sign*metric_val
+
+        penalty = 0.
+        if not external_priors_penalty is None:
+            penalty = np.abs(external_priors_penalty(hypo_maker, metric))
+
+        return sign*metric_val + penalty
 
     def _minimizer_callback(self, xk): # pylint: disable=unused-argument
         """Passed as `callback` parameter to `optimize.minimize`, and is called
