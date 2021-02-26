@@ -1192,8 +1192,8 @@ class Analysis(object):
             )
 
         penalty = 0.
-        if not external_priors_penalty is None:
-            penalty = np.abs(external_priors_penalty(hypo_maker, metric))
+        if external_priors_penalty is not None:
+            penalty = external_priors_penalty(hypo_maker, metric)
 
         return sign*metric_val + penalty
 
