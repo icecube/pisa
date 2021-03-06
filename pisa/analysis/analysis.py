@@ -4,8 +4,6 @@ Common tools for performing an analysis collected into a single class
 """
 
 
-from __future__ import absolute_import, division
-
 from collections.abc import Sequence
 from collections import OrderedDict, Mapping
 from copy import deepcopy
@@ -13,6 +11,7 @@ from itertools import product
 import re
 import sys
 import time
+import warnings
 
 import numpy as np
 import scipy.optimize as optimize
@@ -659,7 +658,7 @@ class BasicAnalysis(object):
             it_got_better = (
                 new_fit_info.metric_val < best_fit_info.metric_val
             )
-        
+
         # TODO: Pass alternative fits up the chain
         if it_got_better:
             # alternate_fits.append(best_fit_info)
@@ -675,8 +674,213 @@ class BasicAnalysis(object):
         ang_orig.value = hypo_maker.params[angle_name].value
         hypo_maker.update_params(ang_orig)
         return best_fit_info
+    
+    def _fit_best_of(self, data_dist, hypo_maker, metric,
+                     external_priors_penalty, method_kwargs, local_fit_kwargs):
+        """Run several manually configured fits and take the best one.
         
+        The specialty here is that `local_fit_kwargs` is a list, where each element
+        defines one fit.
+        """
+
+        logging.info(f"running several manually configured fits to choose optimum")
+
+        reset_free = True
+        if "reset_free" in method_kwargs.keys():
+            reset_free = method_kwargs["reset_free"]
         
+        all_fit_results = []
+        for i, fit_kwargs in enumerate(local_fit_kwargs):
+            if reset_free:
+                hypo_maker.reset_free()
+            logging.info(f"Beginning fit {i+1} / {len(local_fit_kwargs)}")
+            new_fit_info = self.fit_recursively(
+                data_dist, hypo_maker, metric, external_priors_penalty,
+                fit_kwargs["method"], fit_kwargs["method_kwargs"],
+                fit_kwargs["local_fit_kwargs"]
+            )
+            all_fit_results.append(new_fit_info)
+        
+        all_fit_metric_vals = [fit_info.metric_val for fit_info in all_fit_results]
+        # Take the one with the best fit
+        if metric[0] in METRICS_TO_MAXIMIZE:
+            best_idx = np.argmax(all_fit_metric_vals)
+        else:
+            best_idx = np.argmin(all_fit_metric_vals)
+        
+        logging.info(f"Found best fit being index {best_idx} with metric "
+                     f"{all_fit_metric_vals[best_idx]}")
+        return all_fit_results[best_idx]
+
+    def _fit_grid_scan(self, data_dist, hypo_maker, metric,
+                       external_priors_penalty, method_kwargs, local_fit_kwargs):
+        """
+        Do a grid scan over starting positions and choose the best fit from the grid.
+        
+        Alternatively, the parameters used for the grid can be fixed in the fit at each 
+        grid point, and only the very best fit is then freed up to be refined.
+        """
+        
+        assert "grid" in method_kwargs.keys()
+        reset_free = True
+        if "reset_free" in method_kwargs.keys():
+            reset_free = method_kwargs["reset_free"]
+        fix_grid_params = False
+        if "fix_grid_params" in method_kwargs.keys():
+            fix_grid_params = method_kwargs["fix_grid_params"]
+        grid_params = list(method_kwargs["grid"].keys())
+        logging.info(f"Starting grid scan over parameters {grid_params}")
+        grid_1d_arrs = []
+        grid_units = []
+        for p in grid_params:
+            d_spec = method_kwargs["grid"][p]
+            logging.info(f"{p}: {d_spec}")
+            grid_1d_arrs.append(d_spec.m)
+            grid_units.append(d_spec.u)
+        scan_mesh = np.meshgrid(*grid_1d_arrs)
+        scan_mesh = [m * u for m, u in zip(scan_mesh, grid_units)]
+        
+        if not fix_grid_params:
+            logging.info("This grid only defines the starting value of each fit, "
+                         "all parameters that are free will stay free.")
+        else:
+            logging.info("The grid parameters will be fixed at each grid point.")
+        
+        do_refined_fit = False
+        if ("refined_fit" in method_kwargs.keys()
+            and method_kwargs["refined_fit"] is not None):
+            do_refined_fit = True
+            logging.info("The best fit on the grid will be refined using "
+                         f"{method_kwargs['refined_fit']['method']}")
+        
+        if reset_free:
+            hypo_maker.reset_free()
+        # when we return from the scan, we want to set all parameters free again that
+        # were free to begin with
+        originally_free = hypo_maker.params.free.names
+        all_fit_results = []
+        grid_shape = scan_mesh[0].shape
+        for grid_idx in np.ndindex(grid_shape):
+            point = {name: mesh[grid_idx] for name, mesh in zip(grid_params, scan_mesh)}
+            logging.info(f"working on grid point {point}")
+            if reset_free:
+                hypo_maker.reset_free()
+            for param, value in point.items():
+                orig_param = deepcopy(hypo_maker.params[param])
+                orig_param.value = value
+                if fix_grid_params:
+                    # it is possible to do a scan over fixed parameters as well as
+                    # free ones; fixed ones always stay fixed, free ones are fixed
+                    # if requested
+                    orig_param.is_fixed = True
+                hypo_maker.update_params(orig_param)
+            new_fit_info = self.fit_recursively(
+                data_dist, hypo_maker, metric, external_priors_penalty,
+                local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
+                local_fit_kwargs["local_fit_kwargs"]
+            )
+            all_fit_results.append(new_fit_info)
+        for param in originally_free:
+            hypo_maker.params[param].is_fixed = False
+
+        all_fit_metric_vals = np.array([fit_info.metric_val for fit_info in all_fit_results])
+        all_fit_metric_vals = all_fit_metric_vals.reshape(grid_shape)
+        if not self.blind:
+            logging.info(f"Grid scan metrics:\n{all_fit_metric_vals}")
+        # Take the one with the best fit
+        if metric[0] in METRICS_TO_MAXIMIZE:
+            best_idx = np.argmax(all_fit_metric_vals)
+            best_idx_grid = np.unravel_index(best_idx, all_fit_metric_vals.shape)
+        else:
+            best_idx = np.argmin(all_fit_metric_vals)
+            best_idx_grid = np.unravel_index(best_idx, all_fit_metric_vals.shape)
+        
+        logging.info(f"Found best fit being index {best_idx_grid} with metric "
+                     f"{all_fit_metric_vals[best_idx_grid]}")
+
+        best_fit_result = all_fit_results[best_idx]
+
+        if do_refined_fit:
+            hypo_maker.update_params(best_fit_result.params)
+            # the params stored in the best fit may come from a grid point where 
+            # parameters were fixed, so we free them up again
+            for param in originally_free:
+                hypo_maker.params[param].is_fixed = False
+            logging.info("Refining best fit result...")
+            # definitely don't want to reset the parameters here, that would defeate
+            # the entire purpose...
+            method_kwargs["refined_fit"]["reset_free"] = False
+            best_fit_result = self.fit_recursively(
+                data_dist, hypo_maker, metric, external_priors_penalty,
+                method_kwargs["refined_fit"]["method"],
+                method_kwargs["refined_fit"]["method_kwargs"],
+                method_kwargs["refined_fit"]["local_fit_kwargs"]
+            )
+        
+        return best_fit_result
+    
+    def _fit_constrained(self, data_dist, hypo_maker, metric,
+                         external_priors_penalty, method_kwargs, local_fit_kwargs):
+            """Run a fit subject to an arbitrary inequality constraint.
+            
+            The constraint is given as a function that must stay positive. The value of
+            this function is scaled by a pre-factor and applied as a penalty to the test
+            statistic, where the initial scaling factor is not too large to avoid
+            minimizer problems. Should the fit converge to a point violating the
+            constraint, the penalty scale is doubled.
+            
+            The constraining function should calculate the distance of the constraint
+            over-stepping in *rescaled* parameter space to make the over-all scale
+            uniform.
+            """
+
+            assert "ineq_func" in method_kwargs.keys()
+            logging.info("entering constrained fit...")
+            def constraint_func(params):
+                value = method_kwargs["ineq_func"](params)
+                # inequality function must stay positive, so there is no penalty if
+                # it is positive, but otherwise we want to return a *positive* penalty
+                return 0. if value > 0. else -value
+            
+            penalty = 1000.
+            if "minimum_penalty" in method_kwargs.keys():
+                penalty = method_kwargs["minimum_penalty"]
+            tol = 1e-4
+            if "constraint_tol" in method_kwargs.keys():
+                tol = method_kwargs["constraint_tol"]
+            penalty_sign = -1 if metric in METRICS_TO_MAXIMIZE else 1
+            # resetting after each doubling of the penalty is probably an inefficient
+            # thing to do...
+            reset_free = False
+            if "reset_free" in method_kwargs.keys():
+                reset_free = method_kwargs["reset_free"]
+            
+            if external_priors_penalty is None:
+                penalty_func = lambda hypo_maker, metric: (
+                    penalty_sign * penalty * constraint_func(params=hypo_maker.params)
+                )
+            else:
+                penalty_func = lambda hypo_maker, metric: (
+                    penalty_sign * penalty * constraint_func(params=hypo_maker.params)
+                    + external_priors_penalty(hypo_maker=hypo_maker, metric=metric)
+                )
+            # emulating do-while loop
+            while True:
+                if reset_free:
+                    hypo_maker.reset_free()
+                fit_result = self.fit_recursively(
+                    data_dist, hypo_maker, metric, penalty_func,
+                    local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
+                    local_fit_kwargs["local_fit_kwargs"]
+                )
+                penalty *= 2
+                if constraint_func(fit_result.params) <= tol:
+                    break
+                elif not self.blind:
+                    logging.info("Fit result violates constraint condition, re-running "
+                        f"with new penalty multiplier: {penalty}")
+            return fit_result
+
     def _fit_local_scipy(self, data_dist, hypo_maker, metric,
                          external_priors_penalty, method_kwargs, local_fit_kwargs):
         """Run an arbitrary scipy minimizer to modify hypo dist maker's free params
@@ -837,10 +1041,14 @@ class BasicAnalysis(object):
             hdr += ('iter'.center(6) + ' ' + 'funcalls'.center(10) + ' ' +
                     metric[0][0:12].center(12) + ' | ')
             hdr += ' '.join([p.name[0:12].center(12) for p in free_p])
+            if external_priors_penalty is not None:
+                hdr += " |   penalty  "
             hdr += '\n'
 
             # Underscores
             hdr += ' '.join(['-'*6, '-'*10, '-'*12, '+'] + ['-'*12]*len(free_p))
+            if external_priors_penalty is not None:
+                hdr += " + -----------"
             hdr += '\n'
 
             sys.stdout.write(hdr)
@@ -889,6 +1097,7 @@ class BasicAnalysis(object):
         # minimized state, so set the values now (also does conversion of
         # values from [0,1] back to physical range)
         rescaled_pvals = optimize_result.pop('x')
+        rescaled_pvals = np.where(flip_x0, 1 - rescaled_pvals, rescaled_pvals)
         hypo_maker._set_rescaled_free_params(rescaled_pvals) # pylint: disable=protected-access
 
         # Get the best-fit metric value
@@ -1065,6 +1274,10 @@ class BasicAnalysis(object):
                 )
                 logging.error(str(e))
             raise
+        
+        penalty = 0
+        if external_priors_penalty is not None:
+            penalty = external_priors_penalty(hypo_maker=hypo_maker,metric=metric)
 
         # Report status of metric & params (except if blinded)
         if self.blind:
@@ -1077,6 +1290,8 @@ class BasicAnalysis(object):
                                   format(metric_val, '0.5e').rjust(12))
             msg += ' '.join([('%0.5e'%p.value.m).rjust(12)
                              for p in hypo_maker.params.free])
+            if external_priors_penalty is not None:
+                msg += f" | {penalty:11.4e}"
 
         if self.pprint:
             sys.stdout.write(msg + '\n')
@@ -1108,7 +1323,13 @@ class BasicAnalysis(object):
         """
         self._nit += 1
 
-    _fit_methods = {"scipy": _fit_local_scipy, "fit_octants": _fit_octants}
+    _fit_methods = {
+        "scipy": _fit_local_scipy,
+        "fit_octants": _fit_octants,
+        "best_of": _fit_best_of,
+        "grid_scan": _fit_grid_scan,
+        "constrained": _fit_constrained,
+    }
     _additional_fit_methods = {}
 
 
@@ -1261,12 +1482,13 @@ class Analysis(BasicAnalysis):
                 method = "fit_octants"
                 method_kwargs = {
                     "angle": "theta23",
-                    "inflection_point": 45 * ureg.deg
+                    "inflection_point": 45 * ureg.deg,
+                    "reset_free": reset_free,
                 }
                 local_fit_kwargs = {
                     "method": "scipy",
                     "method_kwargs": minimizer_settings,
-                    "local_fit_kwargs": None
+                    "local_fit_kwargs": None,
                 }
             else:
                 method = "scipy"
