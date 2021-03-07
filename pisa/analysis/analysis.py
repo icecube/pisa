@@ -880,6 +880,68 @@ class BasicAnalysis(object):
                     logging.info("Fit result violates constraint condition, re-running "
                         f"with new penalty multiplier: {penalty}")
             return fit_result
+    
+    def _fit_ranges(self, data_dist, hypo_maker, metric,
+                    external_priors_penalty, method_kwargs, local_fit_kwargs):
+        """Fit given ranges of a parameter separately."""
+
+        assert "param_name" in method_kwargs.keys()
+        assert "ranges" in method_kwargs.keys()
+        assert method_kwargs["param_name"] in hypo_maker.params.free.names
+
+        logging.info(f"entering fit over separate ranges in {method_kwargs['param_name']}")
+        
+        reset_free = False
+        if "reset_free" in method_kwargs.keys():
+            reset_free = method_kwargs["reset_free"]
+        
+        # this one we store for later so we can reset all ranges when we are done
+        param = deepcopy(hypo_maker.params[method_kwargs["param_name"]])
+        logging.info(f"original parameter:\n{param}")
+        original_range = deepcopy(param.range)
+        # this is the param we play around with
+        mod_param = deepcopy(param)
+        # The way this works is that we change the range and the set the rescaled
+        # value of the parameter to the same number it originally had. This means
+        # that, if the parameter was originally set at the lower end of the original
+        # range, it will now always start at the lower end of each interval to be
+        # fit separately. If it was in the middle, it will start in the middle of
+        # each interval.
+        original_rescaled_value = param._rescaled_value
+        all_fit_results = []
+        for i, interval in enumerate(method_kwargs["ranges"]):
+            mod_param.range = interval
+            mod_param._rescaled_value = original_rescaled_value
+            # to make sure that a `reset_free` command will not try to reset the
+            # parameter to a place outside of the modified range
+            mod_param.nominal_value = mod_param.value
+            logging.info(f"now fitting on interval {i+1}/{len(method_kwargs['ranges'])}")
+            logging.info(f"parameter with modified range:\n{mod_param}")
+            hypo_maker.update_params(mod_param)
+            
+            fit_result = self.fit_recursively(
+                data_dist, hypo_maker, metric, external_priors_penalty,
+                local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
+                local_fit_kwargs["local_fit_kwargs"]
+            )
+            all_fit_results.append(fit_result)
+        all_fit_metric_vals = [fit_info.metric_val for fit_info in all_fit_results]
+        # Take the one with the best fit
+        if metric[0] in METRICS_TO_MAXIMIZE:
+            best_idx = np.argmax(all_fit_metric_vals)
+        else:
+            best_idx = np.argmin(all_fit_metric_vals)
+        
+        logging.info(f"Found best fit being in interval {best_idx+1} with metric "
+                     f"{all_fit_metric_vals[best_idx]}")
+        best_fit_result = all_fit_results[best_idx]
+        # resetting all parameter properties for the param we played with, but setting
+        # the value to the best fit value
+        param.value = best_fit_result.params[param.name].value
+        hypo_maker.update_params(param)
+        best_fit_result.params = hypo_maker.params
+
+        return best_fit_result
 
     def _fit_local_scipy(self, data_dist, hypo_maker, metric,
                          external_priors_penalty, method_kwargs, local_fit_kwargs):
@@ -1329,6 +1391,7 @@ class BasicAnalysis(object):
         "best_of": _fit_best_of,
         "grid_scan": _fit_grid_scan,
         "constrained": _fit_constrained,
+        "fit_ranges": _fit_ranges,
     }
     _additional_fit_methods = {}
 
