@@ -562,19 +562,19 @@ class BasicAnalysis(object):
     }
     ```
     
-    Finally, let's suppose we want to apply a DifferentialEvolution global fit method
+    Finally, let's suppose we want to apply a grid-scan global fit method
     to sterile mixing parameters `theta24` and `deltam41`, but we want to marginalize
     over all other parameters with a usual 3-flavor fit configuration. That could be
     achieved as follows:
     
     ```
-    method = "differential_evolution"
+    method = "grid_scan"
     method_kwargs = {
-        "de_parameters": ["theta24", "deltam41"],
-        "de_kwargs": {
-            "maxiter": 1000,
-            "popsize": 15,
-        }
+        "grid": {
+            "theta24": np.geomspace(1, 20, 3) * ureg.deg,
+            "deltam41": np.geomspace(0.01, 0.5, 4) * ureg["eV^2"],
+        },
+        "fix_grid_params": False,
     }
     local_fit_kwargs = {
         "method": "fit_octants",
