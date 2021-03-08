@@ -7,6 +7,7 @@ Common tools for performing an analysis collected into a single class
 from collections.abc import Sequence
 from collections import OrderedDict, Mapping
 from copy import deepcopy
+from operator import setitem
 from itertools import product
 import re
 import sys
@@ -366,6 +367,11 @@ class Counter(object):
 class HypoFitResult(object):
     """Holds all relevant information about a fit result."""
     
+    _state_attrs = ["metric", "metric_val", "params", "hypo_asimov_dist",
+                    "detailed_metric_info", "minimizer_time",
+                    "num_distributions_generated", "minimizer_metadata", "fit_history"]
+    
+    # TODO: initialize from serialized state
     def __init__(
         self,
         metric,
@@ -412,7 +418,26 @@ class HypoFitResult(object):
                     params=hypo_maker.params, metric=metric[0], other_metrics=other_metrics,
                     detector_name=hypo_maker.detector_name
                 )
-    # TODO: serialization
+    
+    def __getitem__(self, i):
+        if i in self._state_attrs:
+            return getattr(self, i)
+        else:
+            raise ValueError(f"Unknown property {i}")
+    # TODO: Load from serialized state
+    @property
+    def state(self):
+        state = OrderedDict()
+        for attr in self._state_attrs:
+            val = getattr(self, attr)
+            if hasattr(val, 'state'):
+                val = val.state
+            setitem(state, attr, val)
+        return state
+
+    @property
+    def serializable_state(self):
+        return self.state
 
     @staticmethod
     def get_detailed_metric_info(data_dist, hypo_asimov_dist, params, metric,generalized_poisson_hypo=None,
@@ -571,6 +596,7 @@ class BasicAnalysis(object):
         self.pprint = True
         self.blind = False
     
+    # TODO: Defer sub-fits to cluster
     def fit_recursively(
             self, data_dist, hypo_maker, metric, external_priors_penalty,
             method, method_kwargs, local_fit_kwargs
