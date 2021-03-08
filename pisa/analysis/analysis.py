@@ -594,7 +594,7 @@ class BasicAnalysis(object):
     def __init__(self):
         self._nit = 0
         self.pprint = True
-        self.blind = False
+        self.blindness = False
     
     # TODO: Defer sub-fits to cluster
     def fit_recursively(
@@ -620,6 +620,14 @@ class BasicAnalysis(object):
         """
         
         angle_name = method_kwargs["angle"]
+        if angle_name not in hypo_maker.params.free.names:
+            logging.info(f"{angle_name} is not a free parameter, skipping octant check")
+            return self.fit_recursively(
+                data_dist, hypo_maker, metric, external_priors_penalty,
+                local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
+                local_fit_kwargs["local_fit_kwargs"]
+            )
+
         inflection_point = method_kwargs["inflection_point"]
         
         logging.info(f"Entering octant fit for angle {angle_name} with inflection "
@@ -649,7 +657,7 @@ class BasicAnalysis(object):
             local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
             local_fit_kwargs["local_fit_kwargs"]
         )
-        if not self.blind:
+        if not self.blindness:
             logging.info(f"found best fit at angle {best_fit_info.params[angle_name].value}")
         logging.info(f'checking other octant of {angle_name}')
         if reset_free:
@@ -666,12 +674,12 @@ class BasicAnalysis(object):
             local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
             local_fit_kwargs["local_fit_kwargs"]
         )
-        if not self.blind:
+        if not self.blindness:
             logging.info(f"found best fit at angle {new_fit_info.params[angle_name].value}")
         # record the correct range for the angle 
         # If we are at the strictest blindness level 2, no parameters are stored and the 
         # dict only contains an empty dict. Attempting to set a range would cause an eror.
-        if self.blind < 2:
+        if self.blindness < 2:
             best_fit_info.params[angle_name].range = deepcopy(ang_orig.range)
             new_fit_info.params[angle_name].range = deepcopy(ang_orig.range)
 
@@ -689,11 +697,11 @@ class BasicAnalysis(object):
         if it_got_better:
             # alternate_fits.append(best_fit_info)
             best_fit_info = new_fit_info
-            if not self.blind:
+            if not self.blindness:
                 logging.info('Accepting other-octant fit')
         else:
             # alternate_fits.append(new_fit_info)
-            if not self.blind:
+            if not self.blindness:
                 logging.info('Accepting initial-octant fit')
 
         # Reset the range of the parameter but keep the fit value
@@ -811,7 +819,7 @@ class BasicAnalysis(object):
 
         all_fit_metric_vals = np.array([fit_info.metric_val for fit_info in all_fit_results])
         all_fit_metric_vals = all_fit_metric_vals.reshape(grid_shape)
-        if not self.blind:
+        if not self.blindness:
             logging.info(f"Grid scan metrics:\n{all_fit_metric_vals}")
         # Take the one with the best fit
         if metric[0] in METRICS_TO_MAXIMIZE:
@@ -916,7 +924,7 @@ class BasicAnalysis(object):
                 penalty *= 2
                 if constraint_func(fit_result.params) <= tol:
                     break
-                elif not self.blind:
+                elif not self.blindness:
                     logging.info("Fit result violates constraint condition, re-running "
                         f"with new penalty multiplier: {penalty}")
             return fit_result
@@ -1014,7 +1022,7 @@ class BasicAnalysis(object):
             raise ValueError("Scipy is already a local fit method.")
         
         logging.info(f"entering local scipy fit using {method_kwargs['method']['value']}")
-        if not self.blind:
+        if not self.blindness:
             logging.info("free parameters:")
             logging.info(hypo_maker.params.free)
         minimizer_settings = set_minimizer_defaults(method_kwargs)
@@ -1124,7 +1132,7 @@ class BasicAnalysis(object):
 
         start_t = time.time()
 
-        if self.pprint and not self.blind:
+        if self.pprint and not self.blindness:
             free_p = hypo_maker.params.free
 
             # Display any units on top
@@ -1175,7 +1183,7 @@ class BasicAnalysis(object):
         )
         
         if not optimize_result.success:
-            if self.blind:
+            if self.blindness:
                 msg = ''
             else:
                 msg = ' ' + str(optimize_result.message)
@@ -1209,13 +1217,13 @@ class BasicAnalysis(object):
         # not record some attributes if performing blinded analysis)
         metadata = OrderedDict()
         for k in sorted(optimize_result.keys()):
-            if self.blind and k in ['jac', 'hess', 'hess_inv']:
+            if self.blindness and k in ['jac', 'hess', 'hess_inv']:
                 continue
             if k=='hess_inv':
                 continue
             metadata[k] = optimize_result[k]
 
-        if self.blind > 1:  # only at stricter blindness level
+        if self.blindness > 1:  # only at stricter blindness level
             # undo flip
             x0 = np.where(flip_x0, 1 - x0, x0)
             # Reset to starting value of the fit, rather than nominal values because
@@ -1236,7 +1244,7 @@ class BasicAnalysis(object):
             include_detailed_metric_info=True,
         )
         
-        if not self.blind:
+        if not self.blindness:
             logging.info(f"found best fit: {fit_info.params.free}")
         return fit_info
 
@@ -1329,7 +1337,7 @@ class BasicAnalysis(object):
                 metric_kwargs = {}
 
         except Exception as e:
-            if self.blind:
+            if self.blindness:
                 logging.error('Minimizer failed')
             else:
                 logging.error(
@@ -1367,7 +1375,7 @@ class BasicAnalysis(object):
                         + hypo_maker.params.priors_penalty(metric=metric[0])
                     )
         except Exception as e:
-            if self.blind:
+            if self.blindness:
                 logging.error('Minimizer failed')
             else :
                 logging.error(
@@ -1382,7 +1390,7 @@ class BasicAnalysis(object):
             penalty = external_priors_penalty(hypo_maker=hypo_maker,metric=metric)
 
         # Report status of metric & params (except if blinded)
-        if self.blind:
+        if self.blindness:
             msg = ('minimizer iteration: #%6d | function call: #%6d'
                    %(self._nit, counter.count))
         else:
@@ -1403,7 +1411,7 @@ class BasicAnalysis(object):
 
         counter += 1
 
-        if not self.blind:
+        if not self.blindness:
             fit_history.append(
                 [metric_val] + [v.value.m for v in hypo_maker.params.free]
             )
@@ -1451,7 +1459,7 @@ class Analysis(BasicAnalysis):
     def __init__(self):
         self._nit = 0
         self.pprint = True
-        self.blind = False
+        self.blindness = False
 
     def fit_hypo(self, data_dist, hypo_maker, metric, minimizer_settings, 
                  hypo_param_selections=None, reset_free=True, 
@@ -1545,7 +1553,7 @@ class Analysis(BasicAnalysis):
             warnings.warn("fit_octants_separately is deprecated and will be ignored, "
                           "octants are always fit separately now.", DeprecationWarning)
         
-        self.blind = blind
+        self.blindness = blind
         self.pprint = pprint
 
         if hypo_param_selections is None:
@@ -1676,7 +1684,7 @@ class Analysis(BasicAnalysis):
                     metric_val += external_priors_penalty(hypo_maker=hypo_maker,metric=metric[0])
                     
         except Exception as e:
-            if self.blind:
+            if self.blindness:
                 logging.error('Minimizer failed')
             else :
                 logging.error(
@@ -1688,7 +1696,7 @@ class Analysis(BasicAnalysis):
 
         fit_info.metric_val = metric_val
 
-        if self.blind:
+        if self.blindness:
             # Okay, if blind analysis is being performed, reset the values so
             # the user can't find them in the object
             hypo_maker.reset_free()
