@@ -862,8 +862,22 @@ class BasicAnalysis(object):
 
             assert "ineq_func" in method_kwargs.keys()
             logging.info("entering constrained fit...")
+            if type(method_kwargs["ineq_func"]) is str:
+                logging.warn(
+                    "Using eval() is potentially dangerous as it can execute "
+                    "arbitrary code! Do not store your config file in a place"
+                    "where others have writing access!"
+                )
+                ineq_func = eval(method_kwargs["ineq_func"])
+                assert callable(ineq_func), "evaluated object is not a valid function"
+            elif callable(method_kwargs["ineq_func"]):
+                ineq_func = method_kwargs["ineq_func"]
+            else:
+                raise ValueError("Inequality function is neither a callable nor a "
+                                 "string that can be evaluated to a callable.")
+
             def constraint_func(params):
-                value = method_kwargs["ineq_func"](params)
+                value = ineq_func(params)
                 # inequality function must stay positive, so there is no penalty if
                 # it is positive, but otherwise we want to return a *positive* penalty
                 return 0. if value > 0. else -value
