@@ -331,10 +331,13 @@ def get_separate_octant_params(hypo_maker, angle_name, inflection_point) :
     # Get case 1, e.g. the current octant
     case1_octant_index = 0 if angle_case1.value < inflection_point else 1
     angle_case1.range = octants[case1_octant_index]
+    angle_case1.nominal_value = angle_case1.value
 
     # Also get case 2, e.g. the other octant
     case2_octant_index = 0 if case1_octant_index == 1 else 1
     angle_case2.value = 2*inflection_point - angle_case2.value
+    # Also setting nominal value so that `reset_free` won't try to set it out of bounds
+    angle_case2.nominal_value = angle_case2.value
     angle_case2.range = octants[case2_octant_index]
 
     return angle_orig, angle_case1, angle_case2
@@ -720,7 +723,7 @@ class BasicAnalysis(object):
         logging.info(f"running several manually configured fits to choose optimum")
 
         reset_free = True
-        if "reset_free" in method_kwargs.keys():
+        if method_kwargs is not None and "reset_free" in method_kwargs.keys():
             reset_free = method_kwargs["reset_free"]
         
         all_fit_results = []
@@ -745,6 +748,46 @@ class BasicAnalysis(object):
         logging.info(f"Found best fit being index {best_idx} with metric "
                      f"{all_fit_metric_vals[best_idx]}")
         return all_fit_results[best_idx]
+    
+    def _fit_conditionally(self, data_dist, hypo_maker, metric,
+                           external_priors_penalty, method_kwargs, local_fit_kwargs):
+        """Run one fit strategy or the other depending on a condition being true.
+        
+        As in the constrained fit, the condition can be a callable or a string that 
+        can be evaluated to a callable via `eval()`.
+        
+        `local_fit_kwargs` has to be a list of length 2. The first fit runs if the
+        condition is true, the second one runs if the condition is false.
+        """
+        
+        assert "condition_func" in method_kwargs.keys()
+        assert len(local_fit_kwargs) == 2, ("need to fit specs, first runs if True, "
+                                            "second runs if false")
+        if type(method_kwargs["condition_func"]) is str:
+            logging.warn(
+                "Using eval() is potentially dangerous as it can execute "
+                "arbitrary code! Do not store your config file in a place"
+                "where others have writing access!"
+            )
+            condition_func = eval(method_kwargs["condition_func"])
+            assert callable(condition_func), "evaluated object is not a valid function"
+        elif callable(method_kwargs["condition_func"]):
+            condition_func = method_kwargs["condition_func"]
+        else:
+            raise ValueError("Condition function is neither a callable nor a "
+                             "string that can be evaluated to a callable.")
+        
+        if condition_func(hypo_maker):
+            logging.info("condition was TRUE, running first fit")
+            fit_kwargs = local_fit_kwargs[0]
+        else:
+            logging.info("condition was FALSE, running second fit")
+            fit_kwargs = local_fit_kwargs[1]
+        return self.fit_recursively(
+            data_dist, hypo_maker, metric, external_priors_penalty,
+            fit_kwargs["method"], fit_kwargs["method_kwargs"],
+            fit_kwargs["local_fit_kwargs"]
+        )
 
     def _fit_grid_scan(self, data_dist, hypo_maker, metric,
                        external_priors_penalty, method_kwargs, local_fit_kwargs):
@@ -869,6 +912,21 @@ class BasicAnalysis(object):
             """
 
             assert "ineq_func" in method_kwargs.keys()
+            # If certain parameters aren't free, it will be impossible to satisfy the 
+            # constraint and we would end up in an infinite loop! If we detect that 
+            # these parameters aren't free, we just pass through the inner fit without
+            # adding a constraining penalty.
+            assert "necessary_free_params" in method_kwargs.keys()
+            if not set(method_kwargs["necessary_free_params"]).issubset(
+                set(hypo_maker.params.free.names)):
+                logging.info("Necessary parameters to satisfy the constraints aren't "
+                             "free, running inner fit without constraint...")
+                return self.fit_recursively(
+                    data_dist, hypo_maker, metric, external_priors_penalty,
+                    local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
+                    local_fit_kwargs["local_fit_kwargs"]
+                )
+
             logging.info("entering constrained fit...")
             if type(method_kwargs["ineq_func"]) is str:
                 logging.warn(
@@ -1440,6 +1498,7 @@ class BasicAnalysis(object):
         "grid_scan": _fit_grid_scan,
         "constrained": _fit_constrained,
         "fit_ranges": _fit_ranges,
+        "condition": _fit_conditionally,
     }
     _additional_fit_methods = {}
 
