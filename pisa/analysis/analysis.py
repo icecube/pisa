@@ -993,7 +993,14 @@ class BasicAnalysis(object):
 
         assert "param_name" in method_kwargs.keys()
         assert "ranges" in method_kwargs.keys()
-        assert method_kwargs["param_name"] in hypo_maker.params.free.names
+        if not method_kwargs["param_name"] in hypo_maker.params.free.names:
+            logging.info(f"parameter {method_kwargs['param_name']} not free, "
+                          "skipping fit over ranges...")
+            return self.fit_recursively(
+                data_dist, hypo_maker, metric, external_priors_penalty,
+                local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
+                local_fit_kwargs["local_fit_kwargs"]
+            )
 
         logging.info(f"entering fit over separate ranges in {method_kwargs['param_name']}")
         
