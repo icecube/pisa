@@ -1175,8 +1175,9 @@ class BasicAnalysis(object):
             else:
                 msg = f"{0: ^10} {metric_val:12.5e} |"
                 for p in global_fit_pars: msg += f" {hypo_maker.params[p].value.m:12.5e}"
-                if external_priors_penalty is not None:
-                    msg += f" | {penalty:11.4e}"
+                # Bugged, do we want this? Need this? 
+                # if external_priors_penalty is not None:
+                #     msg += f" | {penalty:11.4e}"
                 sys.stdout.write(msg + "\n")
                 sys.stdout.flush()
             return metric_val
