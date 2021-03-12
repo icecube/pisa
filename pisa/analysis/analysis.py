@@ -16,6 +16,8 @@ import warnings
 
 import numpy as np
 import scipy.optimize as optimize
+# this is needed for the take_step option in basinhopping
+from scipy._lib._util import check_random_state
 
 import pisa
 from pisa import EPSILON, FTYPE, ureg
@@ -366,6 +368,31 @@ class Counter(object):
     def count(self):
         """int : Current count"""
         return self._count
+
+class BoundedRandomDisplacement(object):
+    """
+    Add a bounded random displacement of maximum size `stepsize` to each coordinate
+    Calling this updates `x` in-place.
+
+    Parameters
+    ----------
+    stepsize : float, optional
+        Maximum stepsize in any dimension
+    bounds : pair of float or sequence of pairs of float
+        Bounds on x
+    random_gen : {None, `np.random.RandomState`, `np.random.Generator`}
+        The random number generator that generates the displacements
+    """
+    def __init__(self, stepsize=0.5, bounds=(0, 1), random_gen=None):
+        self.stepsize = stepsize
+        self.random_gen = check_random_state(random_gen)
+        self.bounds = np.array(bounds).T
+
+    def __call__(self, x):
+        x += self.random_gen.uniform(-self.stepsize, self.stepsize,
+                                     np.shape(x))
+        x = np.clip(x, *self.bounds)  # bounds are automatically broadcast
+        return x
 
 class HypoFitResult(object):
     """Holds all relevant information about a fit result."""
@@ -1056,8 +1083,8 @@ class BasicAnalysis(object):
 
         return best_fit_result
 
-    def _fit_local_scipy(self, data_dist, hypo_maker, metric,
-                         external_priors_penalty, method_kwargs, local_fit_kwargs):
+    def _fit_scipy(self, data_dist, hypo_maker, metric,
+                   external_priors_penalty, method_kwargs, local_fit_kwargs):
         """Run an arbitrary scipy minimizer to modify hypo dist maker's free params
         until the data_dist is most likely to have come from this hypothesis.
 
@@ -1083,15 +1110,49 @@ class BasicAnalysis(object):
         -------
         fit_info : HypoFitResult
         """
-        if local_fit_kwargs is not None:
-            raise ValueError("Scipy is already a local fit method.")
         
-        logging.info(f"entering local scipy fit using {method_kwargs['method']['value']}")
+        global_scipy_methods = ["differential_evolution", "basinhopping"]
+        methods_using_local_fits = ["basinhopping"]  # also applies to annealing and shgo
+        # TODO: support dual_annealing and shgo
+        
+        global_method = None
+        if "global_method" in method_kwargs.keys():
+            global_method = method_kwargs["global_method"]
+
+        if local_fit_kwargs is not None and global_method not in methods_using_local_fits:
+            logging.warn(f"local_fit_kwargs are ignored by global method {global_method}")
+        
+        if global_method is None:
+            logging.info(f"entering local scipy fit using {method_kwargs['method']['value']}")
+        else:
+            assert global_method in global_scipy_methods, "unsupported global fit method"
+            logging.info(f"entering global scipy fit using {global_method}")
         if not self.blindness:
-            logging.info("free parameters:")
-            logging.info(hypo_maker.params.free)
-        minimizer_settings = set_minimizer_defaults(method_kwargs)
-        validate_minimizer_settings(minimizer_settings)
+            logging.debug("free parameters:")
+            logging.debug(hypo_maker.params.free)
+        
+        if global_method in methods_using_local_fits:
+            minimizer_settings = set_minimizer_defaults(local_fit_kwargs)
+            validate_minimizer_settings(minimizer_settings)
+        elif global_method == "differential_evolution":
+            # Unfortunately we are not allowed to pass these, DE with polish=True always
+            # uses L-BFGS-B with default settings.
+            if ("polish" in method_kwargs["options"].keys()
+                and method_kwargs["options"]["polish"]):
+                logging.info("Differential Evolution result will be polished using L-BFGS-B")
+                # We need to put the method here so that the bounds will be adjusted
+                # below, otherwise the polishing fit can cause crashes if it hits the
+                # bounds.
+                minimizer_settings = {
+                    "method": {"value": "L-BFGS-B"},
+                    "options": {"value": {"eps": 1e-8}}
+                }
+            else:
+                # We put this here such that the checks farther down don't crash
+                minimizer_settings = {"method": {"value": "None"}}
+        else:
+            minimizer_settings = set_minimizer_defaults(method_kwargs)
+            validate_minimizer_settings(minimizer_settings)
 
         if isinstance(metric, str):
             metric = [metric]
@@ -1102,7 +1163,7 @@ class BasicAnalysis(object):
             elif m in METRICS_TO_MINIMIZE and sign != -1:
                 sign = +1
             else:
-                raise ValueError('Defined metrics are not compatible')
+                raise ValueError("Defined metrics are not compatible")
 
         # Get starting free parameter values
         x0 = np.array(hypo_maker.params.free._rescaled_values) # pylint: disable=protected-access
@@ -1115,7 +1176,7 @@ class BasicAnalysis(object):
         # violation of the constraints. Because COBYLA is gradient-free, the clipping
         # should not impact the minimization in a detrimental way.
         guard_bounds = False
-        minimizer_method = minimizer_settings['method']['value'].lower()
+        minimizer_method = minimizer_settings["method"]["value"].lower()
         cons = ()
         if minimizer_method in MINIMIZERS_USING_SYMM_GRAD:
             logging.warning(
@@ -1185,9 +1246,11 @@ class BasicAnalysis(object):
 
         x0 = np.array(clipped_x0)
         x0 = np.where(flip_x0, 1 - x0, x0)
-
-        logging.debug('Running the %s minimizer...', minimizer_method)
-
+        
+        if global_method is None:
+            logging.debug('Running the %s minimizer...', minimizer_method)
+        else:
+            logging.debug(f"Running the {global_method} global fit method...")
         # Using scipy.optimize.minimize allows a whole host of minimizers to be
         # used.
         counter = Counter()
@@ -1235,18 +1298,63 @@ class BasicAnalysis(object):
         # From that point on, optimize starts using the metric and 
         # iterates, no matter what you do 
         #
-        optimize_result = optimize.minimize(
-            fun=self._minimizer_callable,
-            x0=x0,
-            args=(hypo_maker, data_dist, metric, counter, fit_history,
-                  flip_x0, guard_bounds, external_priors_penalty),
-            bounds=bounds,
-            constraints=cons,
-            method=minimizer_settings['method']['value'],
-            options=minimizer_settings['options']['value'],
-            callback=self._minimizer_callback
-        )
-        
+        if global_method is None:
+            optimize_result = optimize.minimize(
+                fun=self._minimizer_callable,
+                x0=x0,
+                args=(hypo_maker, data_dist, metric, counter, fit_history,
+                      flip_x0, guard_bounds, external_priors_penalty),
+                bounds=bounds,
+                constraints=cons,
+                method=minimizer_settings['method']['value'],
+                options=minimizer_settings['options']['value'],
+                callback=self._minimizer_callback
+            )
+        elif global_method == "differential_evolution":
+            optimize_result = optimize.differential_evolution(
+                func=self._minimizer_callable,
+                bounds=bounds,
+                args=(hypo_maker, data_dist, metric, counter, fit_history,
+                      flip_x0, guard_bounds, external_priors_penalty),
+                callback=self._minimizer_callback,
+                **method_kwargs["options"]
+            )
+        elif global_method == "basinhopping":
+            if "seed" in method_kwargs["options"]:
+                seed = method_kwargs["options"]["seed"]
+            else:
+                seed = None
+            rng = check_random_state(seed)
+
+            if "step_size" in method_kwargs["options"]:
+                step_size = method_kwargs["options"]["step_size"]
+            else:
+                step_size = 0.5
+            
+            take_step = BoundedRandomDisplacement(step_size, bounds, rng)
+            minimizer_kwargs = deepcopy(local_fit_kwargs)
+            minimizer_kwargs["args"] = (
+                hypo_maker, data_dist, metric, counter, fit_history,
+                flip_x0, guard_bounds, external_priors_penalty
+            )
+            if "reset_free" in minimizer_kwargs:
+                del minimizer_kwargs["reset_free"]
+            minimizer_kwargs["method"] = local_fit_kwargs["method"]["value"]
+            minimizer_kwargs["options"] = local_fit_kwargs["options"]["value"]
+            minimizer_kwargs["bounds"] = bounds
+            def basinhopping_callback(x, f, accept):
+                self._nit += 1
+            optimize_result = optimize.basinhopping(
+                func=self._minimizer_callable,
+                x0=x0,
+                take_step=take_step,
+                callback=basinhopping_callback,
+                minimizer_kwargs=minimizer_kwargs,
+                **method_kwargs["options"]
+            )
+            optimize_result.success = True  # basinhopping doesn't set this property
+        else:
+            raise ValueError("Unsupported global fit method")
         if not optimize_result.success:
             if self.blindness:
                 msg = ''
@@ -1486,7 +1594,7 @@ class BasicAnalysis(object):
             
         return sign*metric_val
 
-    def _minimizer_callback(self, xk): # pylint: disable=unused-argument
+    def _minimizer_callback(self, xk, **unused_kwargs): # pylint: disable=unused-argument
         """Passed as `callback` parameter to `optimize.minimize`, and is called
         after each iteration. Keeps track of number of iterations.
 
@@ -1499,7 +1607,7 @@ class BasicAnalysis(object):
         self._nit += 1
 
     _fit_methods = {
-        "scipy": _fit_local_scipy,
+        "scipy": _fit_scipy,
         "fit_octants": _fit_octants,
         "best_of": _fit_best_of,
         "grid_scan": _fit_grid_scan,
