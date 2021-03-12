@@ -1111,8 +1111,9 @@ class BasicAnalysis(object):
         fit_info : HypoFitResult
         """
         
-        global_scipy_methods = ["differential_evolution", "basinhopping", "dual_annealing"]
-        methods_using_local_fits = ["basinhopping", "dual_annealing"]
+        global_scipy_methods = ["differential_evolution", "basinhopping",
+                                "dual_annealing", "shgo"]
+        methods_using_local_fits = ["basinhopping", "dual_annealing", "shgo"]
         
         global_method = None
         if "global_method" in method_kwargs.keys():
@@ -1373,6 +1374,25 @@ class BasicAnalysis(object):
                 args=(hypo_maker, data_dist, metric, counter, fit_history,
                       flip_x0, guard_bounds, external_priors_penalty),
                 callback=annealing_callback,
+                **method_kwargs["options"]
+            )
+        elif global_method == "shgo":
+            minimizer_kwargs = deepcopy(local_fit_kwargs)
+            minimizer_kwargs["args"] = (
+                hypo_maker, data_dist, metric, counter, fit_history,
+                flip_x0, guard_bounds, external_priors_penalty
+            )
+            if "reset_free" in minimizer_kwargs:
+                del minimizer_kwargs["reset_free"]
+            minimizer_kwargs["method"] = local_fit_kwargs["method"]["value"]
+            minimizer_kwargs["options"] = local_fit_kwargs["options"]["value"]
+            optimize_result = optimize.shgo(
+                func=self._minimizer_callable,
+                bounds=bounds,
+                args=(hypo_maker, data_dist, metric, counter, fit_history,
+                      flip_x0, guard_bounds, external_priors_penalty),
+                callback=self._minimizer_callback,
+                minimizer_kwargs=minimizer_kwargs,
                 **method_kwargs["options"]
             )
         else:
