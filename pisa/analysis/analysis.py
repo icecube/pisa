@@ -1111,9 +1111,8 @@ class BasicAnalysis(object):
         fit_info : HypoFitResult
         """
         
-        global_scipy_methods = ["differential_evolution", "basinhopping"]
-        methods_using_local_fits = ["basinhopping"]  # also applies to annealing and shgo
-        # TODO: support dual_annealing and shgo
+        global_scipy_methods = ["differential_evolution", "basinhopping", "dual_annealing"]
+        methods_using_local_fits = ["basinhopping", "dual_annealing"]
         
         global_method = None
         if "global_method" in method_kwargs.keys():
@@ -1150,6 +1149,13 @@ class BasicAnalysis(object):
             else:
                 # We put this here such that the checks farther down don't crash
                 minimizer_settings = {"method": {"value": "None"}}
+        elif global_method == "dual_annealing":
+            minimizer_settings = {
+                "method": {"value": "L-BFGS-B"},
+                "options": {"value": {"eps": 1e-8}}
+            }
+            logging.info("Due to a scipy bug, local minimization can only use default"
+                         "L-BFGS-B settings. The given settings are ignored.")
         else:
             minimizer_settings = set_minimizer_defaults(method_kwargs)
             validate_minimizer_settings(minimizer_settings)
@@ -1353,6 +1359,22 @@ class BasicAnalysis(object):
                 **method_kwargs["options"]
             )
             optimize_result.success = True  # basinhopping doesn't set this property
+        elif global_method == "dual_annealing":
+            def annealing_callback(x, f, context):
+                self._nit += 1
+            # TODO: Enable use of custom minimization if scipy is fixed
+            # The scipy implementation is buggy insofar as it doesn't apply bounds to 
+            # the inner minimization and there is no way to pass bounds through that 
+            # doesn't crash. This leads to evaluations outside of the bounds.
+            optimize_result = optimize.dual_annealing(
+                func=self._minimizer_callable,
+                bounds=bounds,
+                x0=x0,
+                args=(hypo_maker, data_dist, metric, counter, fit_history,
+                      flip_x0, guard_bounds, external_priors_penalty),
+                callback=annealing_callback,
+                **method_kwargs["options"]
+            )
         else:
             raise ValueError("Unsupported global fit method")
         if not optimize_result.success:
