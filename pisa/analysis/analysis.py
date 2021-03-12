@@ -175,8 +175,6 @@ def validate_minimizer_settings(minimizer_settings):
     elif method == 'cobyla':
         must_have = ('maxiter', 'rhobeg', 'tol')
         may_have = must_have + ('disp', 'catol')
-    else:
-        raise ValueError(f"unsupported minimizer method {method}")
 
     missing = set(must_have).difference(set(options))
     excess = set(options).difference(set(may_have))
@@ -1057,295 +1055,7 @@ class BasicAnalysis(object):
         best_fit_result.params = hypo_maker.params
 
         return best_fit_result
-    
-    def _fit_global_scipy(self, data_dist, hypo_maker, metric,
-                          external_priors_penalty, method_kwargs, local_fit_kwargs):
-        """Do a global fit using scipy's global fit methods.
-        
-        All global fit methods in scipy's optimization suite described in
-        https://docs.scipy.org/doc/scipy/reference/optimize.html#global-optimization
-        are supported, except "brute".
-        
-        The global search scheme may be applied only to a selected few parameters while
-        marginalizing over all other parameters. In that case, the remaining parameters
-        will be fit as specified in `local_fit_kwargs`. If `refined_fit` is passed in
-        `method_kwargs`, the best fit from the global fit scheme will be polished using
-        the fit specified therein.
-        """
 
-        supported_methods = ["differential_evolution", "shgo",
-                             "dual_annealing", "basinhopping"]
-        assert ("method" in method_kwargs.keys()
-                and method_kwargs["method"] in supported_methods)
-        # these are the kwargs passed to the scipy global fit method like
-        # `popsize`, `strategy`, `tol`...
-        assert "global_fit_kwargs" in method_kwargs.keys()
-        global_fit_kwargs = method_kwargs["global_fit_kwargs"]
-        if method_kwargs["method"] == "differential_evolution":
-            if "polish" in global_fit_kwargs.keys():
-                raise ValueError("polishing is done manually, do not pass as parameter")
-            global_fit_kwargs["polish"] = False
-
-        marginalize = False
-        # parameters to which global fit should be applied
-        global_fit_pars = set(hypo_maker.params.free.names)
-
-        if "param_names" in method_kwargs.keys():
-            hm_free_set = set(hypo_maker.params.free.names)
-            hm_fixed_set = set(hypo_maker.params.fixed.names)
-            # apply Differential Evolution only to parameters that are not fixed
-            global_fit_pars = set(method_kwargs["param_names"]) - hm_fixed_set
-            # marginalize over all parameters that are free in hypo_maker but are not
-            # to be treated with GF
-            margin_params = hm_free_set - global_fit_pars
-            # marginalize only if such parameters exist
-            marginalize = len(margin_params) > 0
-        else:
-            margin_params = set()
-        if len(global_fit_pars) == 0:
-            logging.info("None of the parameters selected for the global fit "
-                         "are free, doing only local marginalization fit.")
-            return self.fit_recursively(
-                data_dist, hypo_maker, metric, external_priors_penalty,
-                local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
-                local_fit_kwargs["local_fit_kwargs"]
-            )
-        logging.info(f"Entering global fit using {method_kwargs['method']}...")
-        
-        def set_parameters_fixed(param_names, fixed):
-            """Set the .is_fixed property for a list of parameter names"""
-            for par in param_names:
-                # cannot change hypo_maker.params directly!
-                for p in hypo_maker.pipelines:
-                    if par in p.params.names: p.params[par].is_fixed = fixed
-
-        fit_history = []
-        if type(metric) is str:
-            metric = [metric]
-        fit_history.append(list(metric) + list(global_fit_pars))
-        
-        def gf_callable(scaled_param_vals):
-            if marginalize:
-                # for safety we set only global fit params free manually
-                set_parameters_fixed(margin_params, True)
-                set_parameters_fixed(global_fit_pars, False)
-                hypo_maker._set_rescaled_free_params(scaled_param_vals)
-                set_parameters_fixed(margin_params, False)
-                set_parameters_fixed(global_fit_pars, True)
-                # This resets only the parameters we are marginalizing over...
-                # It would be better if we could set them closer to where the BFP will
-                # likely be.
-                # TODO: guess better starting value for marginalized parameters
-                hypo_maker.reset_free()
-                pprint = self.pprint
-                self.pprint = False
-                marginalized_fit = self.fit_recursively(
-                    data_dist, hypo_maker, metric, external_priors_penalty,
-                    local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
-                    local_fit_kwargs["local_fit_kwargs"]
-                )
-                self.pprint = pprint
-                set_parameters_fixed(margin_params, True)
-                set_parameters_fixed(global_fit_pars, False)
-                metric_val = marginalized_fit.metric_val
-            else:
-                # These are throw-aways, we set the fit history and count manually
-                inner_fit_history = []
-                inner_counter = Counter()
-                # We never flip, that is only a crutch for COBYLA we carry around...
-                flip_x0 = np.zeros(len(scaled_param_vals), dtype=bool)
-                pprint = self.pprint
-                self.pprint = False
-                metric_val = self._minimizer_callable(
-                    scaled_param_vals, hypo_maker, data_dist,
-                    metric, inner_counter, inner_fit_history, flip_x0,
-                    guard_bounds=False,
-                    external_priors_penalty=external_priors_penalty
-                )
-                self.pprint = pprint
-            if not self.blindness:
-                fit_history.append(
-                    [metric_val] + [hypo_maker.params[p].value.m for p in global_fit_pars]
-                )
-
-            # Report status of metric & params (except if blinded)
-            # TODO: counter doesn't work, fix this
-            if self.blindness:
-                msg = (f"global fit call #{0}")
-            else:
-                msg = f"{0: ^10} {metric_val:12.5e} |"
-                for p in global_fit_pars: msg += f" {hypo_maker.params[p].value.m:12.5e}"
-                # Bugged, do we want this? Need this? 
-                # if external_priors_penalty is not None:
-                #     msg += f" | {penalty:11.4e}"
-                sys.stdout.write(msg + "\n")
-                sys.stdout.flush()
-            return metric_val
-        
-        if self.pprint and not self.blindness:
-            # print units on top
-            hdr = " " * (10 + 1 + 12 + 2)
-            for p in global_fit_pars:
-                unit = str(hypo_maker.params[p].u)
-                if unit == "electron_volt ** 2": unit = "eV ** 2"
-                if len(unit) > 10: unit = unit[:10]
-                hdr += " " * 13 if unit == "dimensionless"[:10] else f" ({unit: ^10})"
-            hdr += "\n"
-            # print parameter names
-            hdr += f"{'iter': ^10} {'metric': ^12} |"
-            for p in global_fit_pars:
-                hdr += f" {hypo_maker.params[p].name[:12]: ^12}"
-            if external_priors_penalty is not None:
-                hdr += " |   penalty  "
-            # print line
-            hdr += "\n" + "-"*(10 + 1 + 12 + 2)
-            for p in global_fit_pars: hdr += "-" * 13
-            if external_priors_penalty is not None:
-                hdr += " + -----------"
-            hdr += "\n"
-
-            sys.stdout.write(hdr)
-
-        set_parameters_fixed(margin_params, True)
-        set_parameters_fixed(global_fit_pars, False)
-        x0 = np.array(hypo_maker.params.free._rescaled_values)
-        bounds = [(0, 1)]*len(x0)
-        
-        start_t = time.time()
-        optimization_func = {
-            "differential_evolution": optimize.differential_evolution,
-            "basinhopping": optimize.basinhopping,
-            "shgo": optimize.shgo,
-            "dual_annealing": optimize.dual_annealing,
-        }[method_kwargs["method"]]
-
-        optimize_result = optimization_func(
-            func=gf_callable,
-            bounds=bounds,
-            args=(),
-            **global_fit_kwargs
-        )
-
-        if not optimize_result.success:
-            if self.blindness:
-                msg = ''
-            else:
-                msg = ' ' + str(optimize_result.message)
-            raise ValueError('Optimization failed.' + msg)
-
-        end_t = time.time()
-        if self.pprint:
-            # clear the line
-            sys.stdout.write('\n\n')
-            sys.stdout.flush()
-
-        minimizer_time = (end_t - start_t) * ureg.sec
-        
-        # counter doesn't work... y tho? 
-        logging.info(
-            'Total time to optimize: %8.4f s', minimizer_time.m_as("seconds")
-        )
-
-        # Will not assume that the minimizer left the hypo maker in the minimized state,
-        # so set the values now (also does conversion of values from [0,1] back to
-        # physical range)
-        rescaled_pvals = optimize_result.pop('x')
-        set_parameters_fixed(margin_params, True)
-        set_parameters_fixed(global_fit_pars, False)
-        hypo_maker._set_rescaled_free_params(rescaled_pvals) # pylint: disable=protected-access
-        # Get the best-fit metric value
-        sign = 0
-        for m in metric:
-            if m in METRICS_TO_MAXIMIZE and sign != +1:
-                sign = -1
-            elif m in METRICS_TO_MINIMIZE and sign != -1:
-                sign = +1
-            else:
-                raise ValueError('Defined metrics are not compatible')
-        # the sign is multiplied to the metric value in the minimizer_callable,
-        # doing the multiplication again will revert the sign flip
-        metric_val = sign * optimize_result.pop('fun')
-
-        # by default global fits don't produce any more relevant metadata
-        metadata = OrderedDict()
-
-        logging.info("Global fit complete!")
-
-        do_refined_fit = ("refined_fit" in method_kwargs.keys()
-                          and method_kwargs["refined_fit"] is not None)
-            
-        if marginalize and not do_refined_fit:
-            logging.info("The fit result of the global fit will NOT be "
-                         "refined, but the marginalized parameters are optimized.")
-            set_parameters_fixed(margin_params, False)
-            set_parameters_fixed(global_fit_pars, True)
-            marginalized_fit = self.fit_recursively(
-                data_dist, hypo_maker, metric, external_priors_penalty,
-                local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
-                local_fit_kwargs["local_fit_kwargs"]
-            )
-            hypo_maker.update_params(marginalized_fit.params)  # just to be sure
-            set_parameters_fixed(margin_params, False)
-            set_parameters_fixed(global_fit_pars, False)
-            metric_val = marginalized_fit.metric_val
-            minimizer_time += marginalized_fit.minimizer_time
-        elif do_refined_fit:
-            logging.info("Starting a free fit at the best fit point to polish the result")
-            set_parameters_fixed(margin_params, False)
-            set_parameters_fixed(global_fit_pars, False)
-            # We are setting the nominal value to the global fit parameters such that a 
-            # `reset_free` command will not reset them away. It would still be better
-            # not to reset to keep the marginalized parameters at their optimum as well.
-            # We store the original nominal values so that we can restore them after 
-            # the fit is done.
-            original_nominal = {p: hypo_maker.params[p].nominal_value for p in global_fit_pars}
-            for p in hypo_maker.pipelines:
-                for par in global_fit_pars:
-                    if par in p.params.names:
-                        p.params[par].nominal_value = p.params[par].value
-            fit_kwargs = method_kwargs["refined_fit"]
-            refined_fit = self.fit_recursively(
-                data_dist, hypo_maker, metric, external_priors_penalty,
-                fit_kwargs["method"], fit_kwargs["method_kwargs"],
-                fit_kwargs["local_fit_kwargs"]
-            )
-            # We reset the nominal value to whatever they were before
-            for p, nval in original_nominal.items():
-                refined_fit.params[p].nominal_value = nval
-            hypo_maker.update_params(refined_fit.params)
-            metric_val = refined_fit.metric_val
-            minimizer_time += refined_fit.minimizer_time
-        else:
-            logging.info("The global fit result is kept as-is.")
-        
-
-        if self.blindness > 1:  # only at stricter blindness level
-            # Reset to starting value of the fit, rather than nominal values because
-            # the nominal value might be out of range if this is inside an octant check.
-            set_parameters_fixed(margin_params, True)
-            set_parameters_fixed(global_fit_pars, False)
-            hypo_maker._set_rescaled_free_params(x0)
-            set_parameters_fixed(margin_params, False)
-        
-        # TODO: other metrics
-        fit_info = HypoFitResult(
-            metric,
-            metric_val,
-            data_dist,
-            hypo_maker,
-            minimizer_time=minimizer_time.m_as("seconds"),
-            minimizer_metadata=metadata,
-            fit_history=fit_history,
-            other_metrics=None,
-            num_distributions_generated=1,  # counter doesn't work
-            include_detailed_metric_info=True,
-        )
-        
-        if not self.blindness:
-            logging.info(f"found best fit: {fit_info.params.free}")
-        return fit_info
-        
-        
     def _fit_local_scipy(self, data_dist, hypo_maker, metric,
                          external_priors_penalty, method_kwargs, local_fit_kwargs):
         """Run an arbitrary scipy minimizer to modify hypo dist maker's free params
@@ -1408,7 +1118,7 @@ class BasicAnalysis(object):
         minimizer_method = minimizer_settings['method']['value'].lower()
         cons = ()
         if minimizer_method in MINIMIZERS_USING_SYMM_GRAD:
-            logging.debug(
+            logging.warning(
                 'Minimizer %s requires artificial boundaries SMALLER than the'
                 ' user-specified boundaries (so that numerical gradients do'
                 ' not exceed the user-specified boundaries).',
@@ -1420,7 +1130,7 @@ class BasicAnalysis(object):
             x0[(1 - step_size < x0) & (x0 <= 1)] = 1 - step_size
 
         elif minimizer_method in MINIMIZERS_USING_CONSTRAINTS:
-            logging.debug(
+            logging.warning(
                 'Minimizer %s requires bounds to be formulated in terms of constraints.'
                 ' Constraining functions are auto-generated now.',
                 minimizer_method
@@ -1796,7 +1506,6 @@ class BasicAnalysis(object):
         "constrained": _fit_constrained,
         "fit_ranges": _fit_ranges,
         "condition": _fit_conditionally,
-        "scipy_global": _fit_global_scipy,
     }
     _additional_fit_methods = {}
 
