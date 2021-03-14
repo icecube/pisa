@@ -43,6 +43,9 @@ class freedom_hdf5_loader(Stage):
         which keys to unpack
     cuts : dict
         cuts to apply when loading the data
+    track_E_cut : float
+        track energy cut for PID.
+        If not set, L7_PIDClassifier_ProbTrack will be used
     **kwargs
         Passed to Stage
 
@@ -56,7 +59,7 @@ class freedom_hdf5_loader(Stage):
         reco,
         keys,
         cuts,
-        livetime=None,
+        track_E_cut=None,
         **std_kwargs,
     ):
 
@@ -71,6 +74,7 @@ class freedom_hdf5_loader(Stage):
         self.output_names = output_names
         self.reco = reco
         self.files_per_flavor = split(files_per_flavor)
+        self.track_E_cut = track_E_cut
         self.keys = split(keys)
         self.cuts = eval(cuts)
 
@@ -122,14 +126,19 @@ class freedom_hdf5_loader(Stage):
             container["weighted_aeff"] = derived_weight.astype(FTYPE)
 
             reco = self.reco
-            reco_total_energy = events[f"{reco}_cascade_energy"] + events[f"{self.reco}_track_energy"]
+            reco_total_energy = (
+                events[f"{reco}_cascade_energy"] + events[f"{reco}_track_energy"]
+            )
             container["reco_energy"] = reco_total_energy.astype(FTYPE)
             container["reco_coszen"] = np.cos(events[f"{reco}_zenith"]).astype(FTYPE)
             container["reco_z"] = events[f"{reco}_z"].astype(FTYPE)
             container["reco_rho"] = events["rho_36"].astype(FTYPE)
 
-            # use existing PID for now
-            container["pid"] = events["L7_PIDClassifier_ProbTrack"].astype(FTYPE)
+            if self.track_E_cut is None:
+                container["pid"] = events["L7_PIDClassifier_ProbTrack"].astype(FTYPE)
+            else:
+                pid = events[f"{reco}_track_energy"] > float(self.track_E_cut)
+                container["pid"] = pid.astype(FTYPE)
 
             container["weights"] = np.ones(container.size, dtype=FTYPE)
             container["initial_weights"] = np.ones(container.size, dtype=FTYPE)
