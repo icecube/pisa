@@ -82,6 +82,8 @@ class freedom_hdf5_loader(Stage):
 
         data = self.load_hdf5_file(self.events_file)
         data = self.calc_rho36(data)
+        if any(key.startswith("unc_est") for key in self.cuts):
+            data = self.calc_uncertainties(data)
         data = self.apply_cuts(data, self.cuts)
 
         for name in self.output_names:
@@ -165,9 +167,16 @@ class freedom_hdf5_loader(Stage):
 
         return data
 
-    def apply_cuts(self, data, cuts):
-        """applies cuts in place"""
+    def calc_uncertainties(self, data, epsilon=1e-15):
+        """add uncertainty estimates to data; return modified data"""
+        for par in FREEDOM_PARNAMES:
+            p2s = np.where(data[f"env_p2_{par}"] > 0, data[f"env_p2_{par}"], epsilon)
+            data[f"unc_est_{par}"] = 1 / np.sqrt(2 * p2s)
 
+        return data
+
+    def apply_cuts(self, data, cuts):
+        """apply cuts in place"""
         cut_mask = np.array([True], dtype=np.bool)
         for cut_key, [cut_low, cut_high] in cuts.items():
             if "{reco}" in cut_key:
@@ -176,7 +185,7 @@ class freedom_hdf5_loader(Stage):
             if cut_low is not None:
                 cut_mask = cut_mask & (data[cut_key] > cut_low)
             if cut_high is not None:
-                cut_mask &= cut_mask & (data[cut_key] < cut_high)
+                cut_mask = cut_mask & (data[cut_key] < cut_high)
 
         for key, val in data.items():
             data[key] = val[cut_mask]
