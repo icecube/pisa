@@ -733,9 +733,11 @@ class BasicAnalysis(object):
             # alternate_fits.append(new_fit_info)
             if not self.blindness:
                 logging.info('Accepting initial-octant fit')
-
-        # Reset the range of the parameter but keep the fit value
-        ang_orig.value = hypo_maker.params[angle_name].value
+        
+        hypo_maker.update_params(best_fit_info.params)
+        # We take the original angle with the original range and nominal value
+        # and only adjust its fit value.
+        ang_orig.value = best_fit_info.params[angle_name].value
         hypo_maker.update_params(ang_orig)
         return best_fit_info
     
