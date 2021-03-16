@@ -1077,12 +1077,8 @@ class BasicAnalysis(object):
         logging.info(f"Found best fit being in interval {best_idx+1} with metric "
                      f"{all_fit_metric_vals[best_idx]}")
         best_fit_result = all_fit_results[best_idx]
-        # resetting all parameter properties for the param we played with, but setting
-        # the value to the best fit value
-        param.value = best_fit_result.params[param.name].value
-        hypo_maker.update_params(param)
-        best_fit_result.params = hypo_maker.params
-
+        # resetting the range of the parameter we played with
+        best_fit_result.params[param.name].range = param.range
         return best_fit_result
 
     def _fit_scipy(self, data_dist, hypo_maker, metric,
