@@ -418,7 +418,8 @@ class HypoFitResult(object):
     ):
         self.metric = metric
         self.metric_val = metric_val
-        self.params = deepcopy(hypo_maker.params)
+        # deepcopy done in setter function
+        self.params = hypo_maker.params
         # Record the distribution with the optimal param values
         self.hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
         self.detailed_metric_info = None
@@ -454,6 +455,30 @@ class HypoFitResult(object):
             return getattr(self, i)
         else:
             raise ValueError(f"Unknown property {i}")
+    
+    def _rehash(self):
+        self._param_hash = self._params.hash
+
+    @property
+    def params(self):
+        # Safety feature: Because we pass this object as a record of the best fit
+        # through several function, we need to make sure the parameters are not 
+        # corrupted on the way.
+        if self._params.hash != self._param_hash:
+            raise RuntimeError("The parameter hash doesn't match, parameters might have"
+                " been changed accidentally. This can happen if the parameters from"
+                " this object have been used to update the params inside a"
+                " DistributionMaker. Do not access private _params unless you are "
+                " certain that you want to change the parameters and then _rehash.")
+        # We MUST ensure that we don't hand out references to the internal params here
+        # because they could otherwise be manipulated inadvertently.
+        return deepcopy(self._params)
+
+    @params.setter
+    def params(self, newpars):
+        self._params = deepcopy(newpars)
+        self._rehash()
+
     # TODO: Load from serialized state
     @property
     def state(self):
@@ -648,7 +673,6 @@ class BasicAnalysis(object):
         """
         A simple global optimization scheme that searches mixing angle octants.
         """
-        
         angle_name = method_kwargs["angle"]
         if angle_name not in hypo_maker.params.free.names:
             logging.info(f"{angle_name} is not a free parameter, skipping octant check")
@@ -710,8 +734,11 @@ class BasicAnalysis(object):
         # If we are at the strictest blindness level 2, no parameters are stored and the 
         # dict only contains an empty dict. Attempting to set a range would cause an eror.
         if self.blindness < 2:
-            best_fit_info.params[angle_name].range = deepcopy(ang_orig.range)
-            new_fit_info.params[angle_name].range = deepcopy(ang_orig.range)
+            # This is one rare instance where we directly manipulate the parameters.
+            best_fit_info._params[angle_name].range = deepcopy(ang_orig.range)
+            best_fit_info._rehash()
+            new_fit_info._params[angle_name].range = deepcopy(ang_orig.range)
+            new_fit_info._rehash()
 
         # Take the one with the best fit
         if metric[0] in METRICS_TO_MAXIMIZE:
@@ -1038,18 +1065,17 @@ class BasicAnalysis(object):
             reset_free = method_kwargs["reset_free"]
         
         # this one we store for later so we can reset all ranges when we are done
-        param = deepcopy(hypo_maker.params[method_kwargs["param_name"]])
-        logging.info(f"original parameter:\n{param}")
-        original_range = deepcopy(param.range)
+        original_param = deepcopy(hypo_maker.params[method_kwargs["param_name"]])
+        logging.info(f"original parameter:\n{original_param}")
         # this is the param we play around with
-        mod_param = deepcopy(param)
+        mod_param = deepcopy(original_param)
         # The way this works is that we change the range and the set the rescaled
         # value of the parameter to the same number it originally had. This means
         # that, if the parameter was originally set at the lower end of the original
         # range, it will now always start at the lower end of each interval to be
         # fit separately. If it was in the middle, it will start in the middle of
         # each interval.
-        original_rescaled_value = param._rescaled_value
+        original_rescaled_value = original_param._rescaled_value
         all_fit_results = []
         for i, interval in enumerate(method_kwargs["ranges"]):
             mod_param.range = interval
@@ -1060,13 +1086,13 @@ class BasicAnalysis(object):
             logging.info(f"now fitting on interval {i+1}/{len(method_kwargs['ranges'])}")
             logging.info(f"parameter with modified range:\n{mod_param}")
             hypo_maker.update_params(mod_param)
-            
             fit_result = self.fit_recursively(
                 data_dist, hypo_maker, metric, external_priors_penalty,
                 local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
                 local_fit_kwargs["local_fit_kwargs"]
             )
             all_fit_results.append(fit_result)
+
         all_fit_metric_vals = [fit_info.metric_val for fit_info in all_fit_results]
         # Take the one with the best fit
         if metric[0] in METRICS_TO_MAXIMIZE:
@@ -1078,7 +1104,12 @@ class BasicAnalysis(object):
                      f"{all_fit_metric_vals[best_idx]}")
         best_fit_result = all_fit_results[best_idx]
         # resetting the range of the parameter we played with
-        best_fit_result.params[param.name].range = param.range
+        # This is one rare instance where we manipulate the parameters of a fit result.
+        best_fit_result._params[original_param.name].range = original_param.range
+        best_fit_result._params[original_param.name].nominal_value = original_param.nominal_value
+        best_fit_result._rehash()
+        original_param.value = best_fit_result.params[original_param.name].value
+        hypo_maker.update_params(original_param)
         return best_fit_result
 
     def _fit_scipy(self, data_dist, hypo_maker, metric,
@@ -1169,7 +1200,6 @@ class BasicAnalysis(object):
                 sign = +1
             else:
                 raise ValueError("Defined metrics are not compatible")
-
         # Get starting free parameter values
         x0 = np.array(hypo_maker.params.free._rescaled_values) # pylint: disable=protected-access
         
