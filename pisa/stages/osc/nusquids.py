@@ -151,6 +151,9 @@ class nusquids(Stage):
 
     concurrent_threads : int
         Numer of parallel threads used for state integration.
+    
+    vacuum : bool
+        Do not include matter effects. Greatly increases evaluation speed.
 
     params : ParamSet or sequence with which to instantiate a ParamSet.
         Expected params .. ::
@@ -202,6 +205,7 @@ class nusquids(Stage):
         num_neutrinos=3,
         exact_mode=False,
         concurrent_threads=1,
+        vacuum=False,
         **std_kwargs,
     ):
 
@@ -218,6 +222,7 @@ class nusquids(Stage):
         self.use_decoherence = use_decoherence
         self.num_decoherence_gamma = num_decoherence_gamma
         self.node_mode = node_mode
+        self.vacuum = vacuum
 
         self.earth_model = earth_model
         self.YeI = YeI.m_as("dimensionless")
@@ -574,7 +579,8 @@ class nusquids(Stage):
         ini_state = np.array([0] * self.num_neutrinos)
         ini_state[flav_in] = 1
         nus_layer.Set_initial_state(ini_state, nsq.Basis.flavor)
-        nus_layer.EvolveState()
+        if not self.vacuum:
+            nus_layer.EvolveState()
         prob_nodes = nus_layer.EvalFlavorAtNodes(flav_out)
         return prob_nodes
 
@@ -688,12 +694,14 @@ class nusquids(Stage):
         ini_state_numu = np.array([0, 1] + [0] * (self.num_neutrinos - 2))
         
         self.nus_layer.Set_initial_state(ini_state_nue, nsq.Basis.flavor)
-        self.nus_layer.EvolveState()
+        if not self.vacuum:
+            self.nus_layer.EvolveState()
         evolved_states_nue = self.nus_layer.GetStates(0)
         evolved_states_nuebar = self.nus_layer.GetStates(1)
         
         self.nus_layer.Set_initial_state(ini_state_numu, nsq.Basis.flavor)
-        self.nus_layer.EvolveState()
+        if not self.vacuum:
+            self.nus_layer.EvolveState()
         evolved_states_numu = self.nus_layer.GetStates(0)
         evolved_states_numubar = self.nus_layer.GetStates(1)
 
