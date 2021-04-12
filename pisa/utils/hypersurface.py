@@ -257,7 +257,7 @@ class HypersurfaceInterpolator(object):
         class used for interpolation with two parameters
     """
 
-    def __init__(self, interp_params, hs_fits, kind='linear'):
+    def __init__(self, interp_params, hs_fits, kind='linear', ignore_nan=True):
         self.ndim = len(interp_params)
         assert self.ndim in [
             1, 2], "can only work in either one or two dimensions"
@@ -341,6 +341,7 @@ class HypersurfaceInterpolator(object):
         # semi definite covariance matrices once for each bin. We store the bin
         # indeces for which the warning has already been issued.
         self.covar_bins_warning_issued = []
+        self.ignore_nan = ignore_nan
 
     def get_hypersurface(self, **param_kw):
         """
@@ -362,13 +363,16 @@ class HypersurfaceInterpolator(object):
         state = copy.deepcopy(self._reference_state)
         # fit covariance matrices are stored directly
         for idx in np.ndindex(state['fit_cov_mat'].shape):
-            state['fit_cov_mat'][idx] = self.covars[idx](
-                *x)  # calls the spline
-            assert np.isfinite(
-                state['fit_cov_mat'][idx]), f"invalid cov matrix element encountered at {param_kw} in loc {idx}"
+            state['fit_cov_mat'][idx] = self.covars[idx](*x)  # calls the spline
+            if self.ignore_nan: continue
+            assert np.isfinite(state['fit_cov_mat'][idx]), ("invalid cov matrix "
+                f"element encountered at {param_kw} in loc {idx}")
         # check covariance matrices for symmetry, positive semi-definiteness
         for bin_idx in np.ndindex(state['fit_cov_mat'].shape[:-2]):
             m = state['fit_cov_mat'][bin_idx]
+            if self.ignore_nan and np.any(~np.isfinite(m)):
+                state['fit_cov_mat'][bin_idx] = np.identity(m.shape[0])
+                m = state['fit_cov_mat'][bin_idx]
             assert np.allclose(
                 m, m.T, rtol=ALLCLOSE_KW['rtol']*10.), f'cov matrix not symmetric in bin {bin_idx}'
             if not matrix.is_psd(m):
@@ -380,10 +384,11 @@ class HypersurfaceInterpolator(object):
         hypersurface = Hypersurface.from_state(state)
         coeffts = np.zeros(self.coefficients.shape)
         for idx in np.ndindex(self.coefficients.shape):
-            coeffts[idx] = self.coefficients[idx](
-                *x)  # calls spline interpolation
-            assert np.isfinite(
-                coeffts[idx]), f"invalid coeff encountered at {param_kw} in loc {idx}"
+            coeffts[idx] = self.coefficients[idx](*x)  # calls spline interpolation
+            if self.ignore_nan and ~np.isfinite(coeffts[idx]):
+                coeffts[idx] = 1 if idx[-1] == 0 else 0  # set intercept to 1, slopes 0
+            assert np.isfinite(coeffts[idx]), ("invalid coeff encountered at "
+                f"{param_kw} in loc {idx}")
         # the setter method defined in the Hypersurface class takes care of
         # putting the coefficients in the right place in their respective parameters
         hypersurface.fit_coeffts = coeffts
