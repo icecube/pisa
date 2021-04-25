@@ -1121,19 +1121,7 @@ class Hypersurface(object):
         # Loop through params in the state
         params_state = state.pop("params")
         for param_name, param_state in list(params_state.items()):
-
-            # Create the param
-            param = HypersurfaceParam(
-                name=param_state.pop("name"),
-                func_name=param_state.pop("func_name"),
-                initial_fit_coeffts=param_state.pop("initial_fit_coeffts"),
-            )
-
-            # Define rest of state
-            for k in list(param_state.keys()):
-                setattr(param, k, param_state.pop(k))
-
-            # Store
+            param = HypersurfaceParam.from_state(param_state)
             params.append(param)
 
         #
@@ -1222,7 +1210,7 @@ class HypersurfaceParam(object):
 
         # Serialization
         self._serializable_state = None
-
+        self.binning_shape = None  # initialized when used in Hypersurface
         #
         # Init the functional form
         #
@@ -1391,7 +1379,21 @@ class HypersurfaceParam(object):
 
         return self._serializable_state
 
+    @classmethod
+    def from_state(cls, state):
+        # Create the param
+        param = cls(
+            name=state.pop("name"),
+            func_name=state.pop("func_name"),
+            initial_fit_coeffts=state.pop("initial_fit_coeffts"),
+        )
 
+        # Define rest of state
+        for k in list(state.keys()):
+            setattr(param, k, state.pop(k))
+        
+        return param
+        
 '''
 Hypersurface fitting and loading helper functions
 '''
