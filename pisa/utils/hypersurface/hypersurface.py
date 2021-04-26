@@ -808,13 +808,14 @@ class Hypersurface(object):
                                            name=coeff_names,
                                            errordef=1)
                 m.migrad()
-                try:
-                    m.hesse()
-                except HesseFailedWarning as e:
-                    raise Exception(
-                        "Hesse failed for bin %s, cannot determine covariance matrix" % (bin_idx,))
+                m.hesse()
+
                 popt = m.np_values()
-                pcov = m.np_matrix()
+                try:
+                    pcov = m.np_matrix()
+                except:
+                    logging.warn(f"HESSE call failed for bin {bin_idx}, covariance matrix unavailable")
+                    pcov = np.full((len(p0), len(p0)), np.nan)
                 if bin_idx == test_bin_idx:
                     logging.debug(m.get_fmin())
                     logging.debug(m.get_param_states())

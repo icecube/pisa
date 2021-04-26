@@ -4,7 +4,7 @@ Classes and methods needed to do hypersurface interpolation over arbitrary param
 
 __all__ = ['HypersurfaceInterpolator', 'run_interpolated_fit', 'prepare_interpolated_fit',
             'assemble_interpolated_fits', 'load_interpolated_hypersurfaces', 'pipeline_cfg_from_states',
-            'serialize_pipeline_cfg']
+            'serialize_pipeline_cfg', 'get_incomplete_job_idx']
 
 __author__ = 'T. Stuttard, A. Trettin'
 
@@ -537,8 +537,9 @@ def assemble_interpolated_fits(fit_directory, output_file):
     hs_fits = []
     grid_shape = tuple(metadata["grid_shape"])
     for job_idx, grid_idx in enumerate(np.ndindex(grid_shape)):
-        gridpoint_data = from_json(
-            os.path.join(fit_directory, f"gridpoint_{job_idx:06d}.json.bz2"))
+        gridpoint_json = os.path.join(fit_directory, f"gridpoint_{job_idx:06d}.json.bz2")
+        logging.info(f"Reading {gridpoint_json}")
+        gridpoint_data = from_json(gridpoint_json)
         assert job_idx == gridpoint_data["job_idx"]
         assert np.all(grid_idx == gridpoint_data["grid_idx"])
         # TODO: Offer to run incomplete fits locally
@@ -550,13 +551,44 @@ def assemble_interpolated_fits(fit_directory, output_file):
     combined_data["hs_fits"] = hs_fits
     to_json(combined_data, output_file)
 
-def run_interpolated_fit(fit_directory, job_idx):
-    """Run the hypersurface fit for a grid point."""
+def get_incomplete_job_idx(fit_directory):
+    """Get job indices of fits that are not flagged as successful."""
     
     assert os.path.isdir(fit_directory), "fit directory does not exist"
-    metadata = from_json(os.path.join(fit_directory, "metadata.json"))
+    
+    failed_idx = []
+    this_idx = 0
+    while True:
+        # Is this a too dumb way to do it? I scream, for I do not know...
+        try:
+            gridpoint_json = os.path.join(fit_directory,
+                                          f"gridpoint_{this_idx:06d}.json.bz2")
+            logging.info(f"Reading {gridpoint_json}")
+            gridpoint_data = from_json(gridpoint_json)
+        except:
+            break
+        if not gridpoint_data["fit_successful"]:
+            failed_idx.append(this_idx)
+        this_idx += 1
+    return failed_idx
+
+def run_interpolated_fit(fit_directory, job_idx, skip_successful=False):
+    """Run the hypersurface fit for a grid point.
+    
+    If `skip_successful` is true, do not run if the `fit_successful` flag is already
+    True.
+    """
+    
+    assert os.path.isdir(fit_directory), "fit directory does not exist"
+    
     gridpoint_json = os.path.join(fit_directory, f"gridpoint_{job_idx:06d}.json.bz2")
     gridpoint_data = from_json(gridpoint_json)
+
+    if skip_successful and gridpoint_data["fit_successful"]:
+        logging.info(f"Fit at job index {job_idx} already successful, skipping...")
+        return
+
+    metadata = from_json(os.path.join(fit_directory, "metadata.json"))
     
     interpolation_param_spec = metadata["interpolation_param_spec"]
     
@@ -831,12 +863,14 @@ def load_interpolated_hypersurfaces(input_file):
     assert isinstance(input_file, str)
 
     if input_file.endswith("json") or input_file.endswith("json.bz2"):
+        logging.info(f"Loading interpolated hypersurfaces from file: {input_file}")
         input_data = from_json(input_file)
         assert set(['interpolation_param_spec', 'hs_fits']).issubset(
             set(input_data.keys())), 'missing keys'
         map_names = None
         # input_data['hs_fits'] is a list of dicts, each dict contains "param_values"
-        # and "hs_fit" 
+        # and "hs_fit"
+        logging.info("Reading file complete, generating hypersurfaces...")
         for hs_fit_dict in input_data['hs_fits']:
             # this is still not the actual Hypersurface, but a dict with the (linked)
             # maps and the HS fit for the map...
