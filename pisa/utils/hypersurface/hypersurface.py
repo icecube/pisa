@@ -46,6 +46,7 @@ from pisa.utils.log import logging, set_verbosity
 from pisa.utils.comparisons import ALLCLOSE_KW
 from uncertainties import ufloat, correlated_values
 from uncertainties import unumpy as unp
+from .hypersurface_plotting import plot_bin_fits, plot_bin_fits_2d
 
 '''
 Hypersurface functional forms
