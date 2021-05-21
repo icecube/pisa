@@ -983,6 +983,11 @@ class BasicAnalysis(object):
                     local_fit_kwargs["local_fit_kwargs"]
                 )
 
+            if "starting_values" in method_kwargs.keys():
+                assert set(
+                        method_kwargs["starting_values"].keys()
+                    ).issubset(set(method_kwargs["necessary_free_params"]))
+
             logging.info("entering constrained fit...")
             if type(method_kwargs["ineq_func"]) is str:
                 logging.warn(
@@ -1030,6 +1035,11 @@ class BasicAnalysis(object):
             while True:
                 if reset_free:
                     hypo_maker.reset_free()
+                if "starting_values" in method_kwargs.keys():
+                    for param, value in method_kwargs["starting_values"].items():
+                        orig_param = deepcopy(hypo_maker.params[param])
+                        orig_param.value = value
+                        hypo_maker.update_params(orig_param)
                 fit_result = self.fit_recursively(
                     data_dist, hypo_maker, metric, penalty_func,
                     local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
