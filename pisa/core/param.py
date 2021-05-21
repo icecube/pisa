@@ -89,7 +89,7 @@ class Param:
 
     is_discrete : bool, optional
         Default is False
-    
+
     scales_as_log : bool, optional
         Rescale the log of the parameter's value between 0 and 1 for minimization,
         rather than the value itself. This can help optimizing parameters spanning
@@ -206,7 +206,7 @@ class Param:
         self.is_discrete = is_discrete
         self.nominal_value = value if nominal_value is None else nominal_value
         self.normalize_values = False
-        
+
         if self.scales_as_log and range[0].m * range[1].m <= 0:
             raise ValueError("A parameter with log-scaling must have a range that is "
                 "either entirely negative or entirely positive.")
@@ -357,7 +357,7 @@ class Param:
         srange0 = srange[0].m_as(self._units)
         srange1 = srange[1].m_as(self._units)
         value = self._value.m_as(self._units)
-        
+
         if self.scales_as_log:
             if srange0 < 0:  # entire range assumed negative (asserted elsewhere)
                 srange0 *= -1
@@ -700,7 +700,7 @@ class ParamSet(MutableSequence, Set):
                     prior_fmt = p.prior
                 table.append([p.name, p.value.m, p.nominal_value.m, range_fmt, prior_fmt, p.units, p.is_fixed])
         if len(table) == 0:
-            return "Emptpy Params"
+            return "Empty Params"
         return tabulate(table, headers, tablefmt=tablefmt, colalign=colalign)
 
     def index(self, value):  # pylint: disable=arguments-differ
@@ -1363,7 +1363,7 @@ def test_Param():
     # pylint: disable=unused-variable
     from scipy.interpolate import splrep
     from pisa.utils.comparisons import ALLCLOSE_KW
-    
+
     temp_dir = tempfile.mkdtemp()
 
     counter = [0]
@@ -1387,7 +1387,7 @@ def test_Param():
 
     def check_scaling(p0):
         value_prescale = p0.value
-        # calculate rescaled value that is used by the minimizer, make sure 
+        # calculate rescaled value that is used by the minimizer, make sure
         # the original value can be recovered
         rval = p0._rescaled_value
         p0._rescaled_value = rval
@@ -1420,7 +1420,7 @@ def test_Param():
                    tex=r'\int{\rm c}')
         check_scaling(p0)
         check_json(p0, "p0")
-        
+
         # Param with units, prior with compatible units, log-scaling behavior
         p0 = Param(name='c', value=5000*ureg.foot, prior=gaussian,
                    # range entirely positive
@@ -1428,7 +1428,7 @@ def test_Param():
                    scales_as_log=True, tex=r'\int{\rm c}')
         check_scaling(p0)
         check_json(p0, "p0")
-        
+
         # range entirely negative
         p0 = Param(name='c', value=-5000*ureg.foot, prior=gaussian,
                    # range entirely positive

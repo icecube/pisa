@@ -59,8 +59,14 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
     params : ParamSet
         Note that the params required to be in `params` are determined from
         those listed in the `fit_results_file`.
-
-    links : ?
+    
+    interpolated : bool
+        If `True`, indicates that the hypersurfaces to be loaded are interpolated.
+    
+    links : dict
+        A dictionary defining how containers should be linked. Keys are the names of
+        the merged containers, values are lists of containers being linked together.
+        Keys must be a sub-set of the loaded hypersurfaces.
 
     """
     def __init__(
@@ -71,46 +77,37 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
         links=None,
         **std_kwargs,
     ):
-
+        # -- Only allowed/implemented modes -- #
+        assert isinstance(std_kwargs['calc_mode'], MultiDimBinning)
         # -- Load hypersurfaces -- #
 
         # Store args
         self.fit_results_file = fit_results_file
         self.propagate_uncertainty = propagate_uncertainty
         self.interpolated = interpolated
-        # expected parameter names depend on the hypersurface and, if applicable,
-        # on the parameters in which the hypersurfaces are interpolated
+        # Expected parameter names depend on the hypersurface and, if applicable,
+        # on the parameters in which the hypersurfaces are interpolated.
+        # For this reason we need to load the hypersurfaces already in the init function
+        self.inter_params = []
         if self.interpolated:
-            hs_params, inter_params = hs.extract_interpolated_hypersurface_params(self.fit_results_file)
-            self.hypersurface_param_names = hs_params
-            self.inter_params = inter_params
-            expected_params = hs_params+inter_params
+            self.hypersurfaces = hs.load_interpolated_hypersurfaces(self.fit_results_file)
+            self.inter_params = list(self.hypersurfaces.values())[0].interpolation_param_names
         else:
-            hypersurfaces = hs.load_hypersurfaces(self.fit_results_file, std_kwargs['calc_mode'])
-            self.hypersurface_param_names = list(hypersurfaces.values())[0].param_names
-            expected_params = self.hypersurface_param_names
+            self.hypersurfaces = hs.load_hypersurfaces(self.fit_results_file, std_kwargs['calc_mode'])
+        self.hypersurface_param_names = list(self.hypersurfaces.values())[0].param_names
 
         # -- Initialize base class -- #
         super().__init__(
-            expected_params=expected_params,
+            expected_params=self.hypersurface_param_names + self.inter_params,
             **std_kwargs,
         )
 
-        # -- Only allowed/implemented modes -- #
-
-        assert isinstance(self.calc_mode, MultiDimBinning)
-
         self.links = ast.literal_eval(links)
         self.warning_issued = False # don't warn more than once about empty bins
-        self.hypersurfaces = None
     # pylint: disable=line-too-long
     def setup_function(self):
         """Load the fit results from the file and make some check compatibility"""
-        # load hypersurfaces
-        if self.interpolated:
-            self.hypersurfaces = hs.load_interpolated_hypersurfaces(self.fit_results_file, self.calc_mode)
-        else:
-            self.hypersurfaces = hs.load_hypersurfaces(self.fit_results_file, self.calc_mode)
+
         self.data.representation = self.calc_mode
 
         if self.links is not None:
