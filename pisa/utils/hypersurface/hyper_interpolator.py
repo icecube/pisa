@@ -257,7 +257,7 @@ class HypersurfaceInterpolator(object):
         hypersurface.fit_coeffts = coeffts
         return hypersurface
     
-    def make_slices(self, *xi):
+    def _make_slices(self, *xi):
         """Make slices of hypersurfaces for plotting.
 
         In some covariance matrices, the spline fits are corrected to make
@@ -317,7 +317,7 @@ class HypersurfaceInterpolator(object):
                 1D slice.
         """
         plot_dim = self.ndim - len(param_kw.keys())
-        assert plot_dim <= 2, "plotting only supported in 1D or 2D"
+        assert plot_dim in [1, 2], "plotting only supported in 1D or 2D"
         import matplotlib.pyplot as plt
         n_coeff = self.coeff_shape[-1]
         hs_param_names = list(self._reference_state['params'].keys())
@@ -366,7 +366,7 @@ class HypersurfaceInterpolator(object):
                     )
                 else:
                     raise ValueError("parameter neither specified nor plotted")
-            coeff_slices, covar_slices = self.make_slices(*slice_args)
+            coeff_slices, covar_slices = self._make_slices(*slice_args)
         else:
             # if we are in 2D, we need to do the same procedure again for the y-variable
             y_unit = self.interp_param_spec[y_name]["values"][0].u
@@ -394,7 +394,7 @@ class HypersurfaceInterpolator(object):
                     )
                 else:
                     raise ValueError("parameter neither specified nor plotted")
-            coeff_slices, covar_slices = self.make_slices(*slice_args)
+            coeff_slices, covar_slices = self._make_slices(*slice_args)
 
         # first column plots fit coefficients
         for i in range(n_coeff):
@@ -565,21 +565,20 @@ def get_incomplete_job_idx(fit_directory):
     """Get job indices of fits that are not flagged as successful."""
     
     assert os.path.isdir(fit_directory), "fit directory does not exist"
-    
+    metadata = from_json(os.path.join(fit_directory, "metadata.json"))
+    grid_shape = tuple(metadata["grid_shape"])
     failed_idx = []
-    this_idx = 0
-    while True:
-        # Is this a too dumb way to do it? I scream, for I do not know...
+    for job_idx, grid_idx in enumerate(np.ndindex(grid_shape)):
         try:
             gridpoint_json = os.path.join(fit_directory,
-                                          f"gridpoint_{this_idx:06d}.json.bz2")
+                                          f"gridpoint_{job_idx:06d}.json.bz2")
             logging.info(f"Reading {gridpoint_json}")
             gridpoint_data = from_json(gridpoint_json)
         except:
             break
         if not gridpoint_data["fit_successful"]:
-            failed_idx.append(this_idx)
-        this_idx += 1
+            failed_idx.append(job_idx)
+        job_idx += 1
     return failed_idx
 
 def run_interpolated_fit(fit_directory, job_idx, skip_successful=False):

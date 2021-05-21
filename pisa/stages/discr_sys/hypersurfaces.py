@@ -59,8 +59,14 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
     params : ParamSet
         Note that the params required to be in `params` are determined from
         those listed in the `fit_results_file`.
-
-    links : ?
+    
+    interpolated : bool
+        If `True`, indicates that the hypersurfaces to be loaded are interpolated.
+    
+    links : dict
+        A dictionary defining how containers should be linked. Keys are the names of
+        the merged containers, values are lists of containers being linked together.
+        Keys must be a sub-set of the loaded hypersurfaces.
 
     """
     def __init__(
@@ -71,7 +77,8 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
         links=None,
         **std_kwargs,
     ):
-
+        # -- Only allowed/implemented modes -- #
+        assert isinstance(std_kwargs['calc_mode'], MultiDimBinning)
         # -- Load hypersurfaces -- #
 
         # Store args
@@ -94,10 +101,6 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
             expected_params=self.hypersurface_param_names + self.inter_params,
             **std_kwargs,
         )
-
-        # -- Only allowed/implemented modes -- #
-
-        assert isinstance(self.calc_mode, MultiDimBinning)
 
         self.links = ast.literal_eval(links)
         self.warning_issued = False # don't warn more than once about empty bins
