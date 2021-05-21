@@ -874,7 +874,8 @@ class Hypersurface(object):
             sigma = self.fit_maps[i_set].std_devs
             # we have to apply the same condition on which values we include
             # as we did during the fit above
-            valid_idx = sigma > 0.
+            with np.errstate(invalid='ignore'):
+                valid_idx = sigma > 0.  # can be NaN
             if include_empty:
                 sigma[~valid_idx] = 1.
 

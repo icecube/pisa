@@ -146,6 +146,8 @@ class HypersurfaceInterpolator(object):
             np.array([val.m for val in val_list["values"]])
             for val_list in self.interp_param_spec.values()
         )
+        self.param_bounds = [(np.min(grid_vals), np.max(grid_vals))
+                             for grid_vals in grid_coords]
         # If a parameter scales as log, we give the log of the parameter to the 
         # interpolator. We must not forget to do this again when we call the
         # interpolator later!
@@ -155,15 +157,14 @@ class HypersurfaceInterpolator(object):
         self.coefficients = interpolate.RegularGridInterpolator(
             grid_coords,
             self._coeff_z,
-            # while we do enable extrapolation, it is not at all reliable... we only
-            # use it to avoid crashes/nans if the minimizer tests extreme values outside
-            # the domain
-            bounds_error=False, fill_value=None
+            # We disable extrapolation, but clip parameter values inside the valid
+            # range.
+            bounds_error=True, fill_value=None
         )
         self.covars = interpolate.RegularGridInterpolator(
             grid_coords,
             self._covar_z,
-            bounds_error=False, fill_value=None
+            bounds_error=True, fill_value=None
         )
         # In order not to spam warnings, we only want to warn about non positive
         # semi definite covariance matrices once for each bin. We store the bin
@@ -203,9 +204,18 @@ class HypersurfaceInterpolator(object):
             # ambiguous here
             for p in self.interp_param_spec.keys()
         ])
+        assert len(x) == len(self.param_bounds)
+        for i, bounds in enumerate(self.param_bounds):
+            x[i] = np.clip(x[i], *bounds)
         # if a parameter scales as log, we have to take the log here again
         for i, param_name in enumerate(self.interpolation_param_names):
             if self.interp_param_spec[param_name]["scales_log"]:
+                # We must be strict with raising errors here, because otherwise 
+                # the Hypersurface will suddenly have NaNs everywhere! This shouldn't
+                # happen because we clip values into the valid parameter range.
+                if x[i] <= 0:
+                    raise RuntimeError("A log-scaling parameter cannot become zero "
+                                       "or negative!")
                 x[i] = np.log10(x[i])
         
         state = copy.deepcopy(self._reference_state)
@@ -759,6 +769,9 @@ def prepare_interpolated_fit(
     for k, v in interpolation_param_spec.items():
         assert set(v.keys()) == {"values", "scales_log"}
         assert isinstance(v["values"], collections.Sequence)
+        if v["scales_log"] and np.min(v["values"]) <= 0:
+            raise ValueError("A log-scaling parameter cannot be equal to or less "
+                "than zero!")
     
     # Check output format and path
     assert os.path.isdir(fit_directory), "fit directory does not exist"
