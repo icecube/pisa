@@ -1435,12 +1435,6 @@ class BasicAnalysis(object):
             )
         else:
             raise ValueError("Unsupported global fit method")
-        if not optimize_result.success:
-            if self.blindness:
-                msg = ''
-            else:
-                msg = ' ' + str(optimize_result.message)
-            raise ValueError('Optimization failed.' + msg)
 
         end_t = time.time()
         if self.pprint:
@@ -1449,6 +1443,27 @@ class BasicAnalysis(object):
             sys.stdout.flush()
 
         minimizer_time = end_t - start_t
+
+        if not optimize_result.success:
+            if self.blindness:
+                msg = ''
+            else:
+                msg = ' ' + str(optimize_result.message)
+            logging.warn('Optimization failed.' + msg)
+            # Instead of crashing completely, return a fit result with an infinite 
+            # test statistic value.
+            return HypoFitResult(
+                metric,
+                sign * np.inf,
+                data_dist,
+                hypo_maker,
+                minimizer_time=minimizer_time,
+                minimizer_metadata=None,
+                fit_history=fit_history,
+                other_metrics=None,
+                num_distributions_generated=counter.count,
+                include_detailed_metric_info=False,
+            )
 
         logging.info(
             'Total time to optimize: %8.4f s; # of dists generated: %6d;'
