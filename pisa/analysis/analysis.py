@@ -404,24 +404,27 @@ class HypoFitResult(object):
     # TODO: initialize from serialized state
     def __init__(
         self,
-        metric,
-        metric_val,
-        data_dist,
-        hypo_maker,
+        metric=None,
+        metric_val=None,
+        data_dist=None,
+        hypo_maker=None,
         minimizer_time=None,
         num_distributions_generated=None,
         minimizer_metadata=None,
         fit_history=None,
         other_metrics=None,
         counter=None,
-        include_detailed_metric_info=True,
+        include_detailed_metric_info=False,
     ):
         self.metric = metric
         self.metric_val = metric_val
         # deepcopy done in setter function
-        self.params = hypo_maker.params
-        # Record the distribution with the optimal param values
-        self.hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
+        self.params = None
+        self.hypo_asimov_dist = None
+        if hypo_maker is not None:
+            self.params = hypo_maker.params
+            # Record the distribution with the optimal param values
+            self.hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
         self.detailed_metric_info = None
         if minimizer_time is not None:
             self.minimizer_time = minimizer_time * ureg.sec
@@ -430,14 +433,19 @@ class HypoFitResult(object):
         self.fit_history = fit_history
         
         if include_detailed_metric_info:
+            msg = "missing input to calculate detailed metric info"
+            assert hypo_maker is not None, msg
+            assert data_dist is not None, msg
+            assert metric is not None, msg
             if hypo_maker.__class__.__name__ == "Detectors":
+                # this passes through the setter method, but it should just pass through
+                # without actually doing anything
                 self.detailed_metric_info = [self.get_detailed_metric_info(
                     data_dist=data_dist[i], hypo_asimov_dist=self.hypo_asimov_dist[i],
                     params=hypo_maker._distribution_makers[i].params, metric=metric[i],
                     other_metrics=other_metrics, detector_name=hypo_maker.det_names[i]
                 ) for i in range(len(data_dist))]
             else: # DistributionMaker object
-
                 if 'generalized_poisson_llh' == metric[0]:
                     generalized_poisson_dist = hypo_maker.get_outputs(return_sum=False, force_standard_output=False)
                     generalized_poisson_dist = merge_mapsets_together(mapset_list=generalized_poisson_dist)
@@ -461,6 +469,8 @@ class HypoFitResult(object):
 
     @property
     def params(self):
+        if self._params is None:
+            return None
         # Safety feature: Because we pass this object as a record of the best fit
         # through several function, we need to make sure the parameters are not 
         # corrupted on the way.
@@ -476,10 +486,51 @@ class HypoFitResult(object):
 
     @params.setter
     def params(self, newpars):
-        self._params = deepcopy(newpars)
+        if newpars is None:
+            self._params = None
+            self._param_hash = None
+            return
+        elif isinstance(newpars, list):
+            # Comparing to `list`, not `Sequence`, because if `newpars` are a `ParamSet`
+            # the test for membership of `Sequence` would return `True`.
+            self._params = ParamSet(newpars)
+        else:
+            # The constructor of ParamSet is *not* a copy-constructor! The parameters
+            # making up the ParamSet are instead taken over by reference only. This is
+            # why we must use `deepcopy` here and can't just use ParamSet(newpars) for
+            # everything.
+            self._params = deepcopy(newpars)
         self._rehash()
+    
+    @property
+    def detailed_metric_info(self):
+        return self._detailed_metric_info
+    
+    @detailed_metric_info.setter
+    def detailed_metric_info(self, new_info):
+        if new_info is None:
+            self._detailed_metric_info = None
+        elif isinstance(new_info, list):
+            self._detailed_metric_info = [
+                self.deserialize_detailed_metric_info(i) for i in new_info
+            ]
+        else:
+            self._detailed_metric_info = self.deserialize_detailed_metric_info(new_info)
+    
+    @property
+    def hypo_asimov_dist(self):
+        return self._hypo_asimov_dist
+    
+    @hypo_asimov_dist.setter
+    def hypo_asimov_dist(self, new_had):
+        if isinstance(new_had, MapSet) or new_had is None:
+            self._hypo_asimov_dist = new_had
+        elif isinstance(new_had, Mapping):
+            # instantiating from serializable state
+            self._hypo_asimov_dist = MapSet(**new_had)
+        else:
+            raise ValueError("invalid format for hypo_asimov_dist")
 
-    # TODO: Load from serialized state
     @property
     def state(self):
         state = OrderedDict()
@@ -494,6 +545,14 @@ class HypoFitResult(object):
     def serializable_state(self):
         return self.state
 
+    @classmethod
+    def from_state(cls, state):
+        assert set(state.keys()) == set(cls._state_attrs), "ill-formed state dict"
+        new_obj = cls()
+        for attr in cls._state_attrs:
+            setattr(new_obj, attr, state[attr])
+        return new_obj
+        
     @staticmethod
     def get_detailed_metric_info(data_dist, hypo_asimov_dist, params, metric,generalized_poisson_hypo=None,
                                  other_metrics=None, detector_name=None):
@@ -560,6 +619,28 @@ class HypoFitResult(object):
                 name_vals_d['maps_binned'] = MapSet(maps_binned)
                 name_vals_d['priors'] = params.priors_penalties(metric=metric)
                 detailed_metric_info[m] = name_vals_d
+        return detailed_metric_info
+    
+    @staticmethod
+    def deserialize_detailed_metric_info(info_dict):
+        """Re-instantiate all PISA objects that used to be in the dictionary."""
+
+        detailed_metric_info = OrderedDict()
+        if "detector_name" in info_dict.keys():
+            detailed_metric_info['detector_name'] = info_dict["detector_name"]
+        all_metrics = sorted(set(info_dict.keys()) - {"detector_name"})
+        for m in all_metrics:
+            name_vals_d = OrderedDict()
+            name_vals_d['maps'] = info_dict[m]["maps"]
+            if isinstance(info_dict[m]["maps_binned"], MapSet):
+                # If this has already been deserialized or never serialized in the 
+                # first place, just pass through.
+                name_vals_d["maps_binned"] = info_dict[m]["maps_binned"]
+            else:
+                # Deserialize if necessary
+                name_vals_d['maps_binned'] = MapSet(**info_dict[m]["maps_binned"])
+            name_vals_d['priors'] = info_dict[m]["priors"]
+            detailed_metric_info[m] = name_vals_d
         return detailed_metric_info
 
 class BasicAnalysis(object):
@@ -1488,6 +1569,12 @@ class BasicAnalysis(object):
             if self.blindness and k in ['jac', 'hess', 'hess_inv']:
                 continue
             if k=='hess_inv':
+                continue
+            if k=="message" and isinstance(optimize_result[k], bytes):
+                # A little fix for deserialization: After serialization and
+                # deserialization, the string would be decoded anyway and then the 
+                # recovered object would look different.
+                metadata[k] = optimize_result[k].decode('utf-8')
                 continue
             metadata[k] = optimize_result[k]
 
