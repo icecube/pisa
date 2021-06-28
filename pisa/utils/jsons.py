@@ -373,84 +373,87 @@ class NumpyDecoder(json.JSONDecoder):
         if len(values) == 0:
             return values, end
 
-        # -- Check for pint quantity -- #
-
-        if (
-            isinstance(values, ureg.Quantity)
-            or any(isinstance(val, ureg.Quantity) for val in values)
-        ):
-            return values, end
-
-        # Quantity tuple (`quantity.to_tuple()`) with a scalar produces from
-        # the raw JSON, e.g.,
-        #
-        #       [9.8, [['meter', 1.0], ['second', -2.0]]]
-        #
-        # or an ndarray (here of shape (2, 3)) produces from the raw JSON,
-        # e.g.,
-        #
-        #       [[[0, 1, 2], [2, 3, 4]], [['meter', 1.0], ['second', -2.0]]]
-        #
-        if (
-            len(values) == 2
-            and isinstance(values[1], Sequence)
-            and all(
-                isinstance(subval, Sequence)
-                and len(subval) == 2
-                and isinstance(subval[0], string_types)
-                and isinstance(subval[1], Number)
-                for subval in values[1]
-            )
-        ):
-            values = ureg.Quantity.from_tuple(values)
-            return values, end
-
-        # Units part of quantity tuple (`quantity.to_tuple()[1]`)
-        # e.g. m / s**2 is represented as .. ::
-        #
-        #       [['meter', 1.0], ['second', -2.0]]
-        #
-        # --> Simply return, don't perform further conversion
-        if (
-            isinstance(values[0], Sequence)
-            and all(
-                len(subval) == 2
-                and isinstance(subval[0], string_types)
-                and isinstance(subval[1], Number)
-                for subval in values
-            )
-        ):
-            return values, end
-
-        # Individual unit (`quantity.to_tuple()[1][0]`)
-        # e.g. s^-2 is represented as .. ::
-        #
-        #     ['second', -2.0]
-        #
-        # --> Simply return, don't perform further conversion
-        if (
-            len(values) == 2
-            and isinstance(values[0], string_types)
-            and isinstance(values[1], Number)
-        ):
-            return values, end
-
         try:
-            ndarray_values = np.asarray(values)
-        except ValueError:
+            # -- Check for pint quantity -- #
+
+            if (
+                isinstance(values, ureg.Quantity)
+                or any(isinstance(val, ureg.Quantity) for val in values)
+            ):
+                return values, end
+
+            # Quantity tuple (`quantity.to_tuple()`) with a scalar produces from
+            # the raw JSON, e.g.,
+            #
+            #       [9.8, [['meter', 1.0], ['second', -2.0]]]
+            #
+            # or an ndarray (here of shape (2, 3)) produces from the raw JSON,
+            # e.g.,
+            #
+            #       [[[0, 1, 2], [2, 3, 4]], [['meter', 1.0], ['second', -2.0]]]
+            #
+            if (
+                len(values) == 2
+                and isinstance(values[1], Sequence)
+                and all(
+                    isinstance(subval, Sequence)
+                    and len(subval) == 2
+                    and isinstance(subval[0], string_types)
+                    and isinstance(subval[1], Number)
+                    for subval in values[1]
+                )
+            ):
+                values = ureg.Quantity.from_tuple(values)
+                return values, end
+
+            # Units part of quantity tuple (`quantity.to_tuple()[1]`)
+            # e.g. m / s**2 is represented as .. ::
+            #
+            #       [['meter', 1.0], ['second', -2.0]]
+            #
+            # --> Simply return, don't perform further conversion
+            if (
+                isinstance(values[0], Sequence)
+                and all(
+                    len(subval) == 2
+                    and isinstance(subval[0], string_types)
+                    and isinstance(subval[1], Number)
+                    for subval in values
+                )
+            ):
+                return values, end
+
+            # Individual unit (`quantity.to_tuple()[1][0]`)
+            # e.g. s^-2 is represented as .. ::
+            #
+            #     ['second', -2.0]
+            #
+            # --> Simply return, don't perform further conversion
+            if (
+                len(values) == 2
+                and isinstance(values[0], string_types)
+                and isinstance(values[1], Number)
+            ):
+                return values, end
+
+            try:
+                ndarray_values = np.asarray(values)
+            except ValueError:
+                return values, end
+
+            # Things like lists of dicts, or mixed types, will result in an
+            # object array; these are handled in PISA as lists, not numpy
+            # arrays, so return the pre-converted (list) version of `values`.
+            #
+            # Similarly, sequences of strings should stay lists of strings, not
+            # become numpy arrays.
+            if issubclass(ndarray_values.dtype.type, (np.object0, np.str0, str)):
+                return values, end
+
+            return ndarray_values, end
+
+        except TypeError:
             return values, end
-
-        # Things like lists of dicts, or mixed types, will result in an
-        # object array; these are handled in PISA as lists, not numpy
-        # arrays, so return the pre-converted (list) version of `values`.
-        #
-        # Similarly, sequences of strings should stay lists of strings, not
-        # become numpy arrays.
-        if issubclass(ndarray_values.dtype.type, (np.object0, np.str0, str)):
-            return values, end
-
-        return ndarray_values, end
-
 
 # TODO: include more basic types in testing (strings, etc.)
 def test_to_json_from_json():
