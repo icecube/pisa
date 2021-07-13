@@ -1304,19 +1304,7 @@ class BasicAnalysis(object):
         guard_bounds = False
         minimizer_method = minimizer_settings["method"]["value"].lower()
         cons = ()
-        if minimizer_method in MINIMIZERS_USING_SYMM_GRAD:
-            logging.warning(
-                'Minimizer %s requires artificial boundaries SMALLER than the'
-                ' user-specified boundaries (so that numerical gradients do'
-                ' not exceed the user-specified boundaries).',
-                minimizer_method
-            )
-            step_size = minimizer_settings['options']['value']['eps']
-            bounds = [(0 + step_size, 1 - step_size)]*len(x0)
-            x0[(0 <= x0) & (x0 < step_size)] = step_size
-            x0[(1 - step_size < x0) & (x0 <= 1)] = 1 - step_size
-
-        elif minimizer_method in MINIMIZERS_USING_CONSTRAINTS:
+        if minimizer_method in MINIMIZERS_USING_CONSTRAINTS:
             logging.warning(
                 'Minimizer %s requires bounds to be formulated in terms of constraints.'
                 ' Constraining functions are auto-generated now.',
@@ -1341,36 +1329,6 @@ class BasicAnalysis(object):
         else:
             bounds = [(0, 1)]*len(x0)
 
-        clipped_x0 = []
-        for param, x0_val, bds in zip(hypo_maker.params.free, x0, bounds):
-            if x0_val < bds[0] - EPSILON:
-                raise ValueError(
-                    'Param %s, initial scaled value %.17e is below lower bound'
-                    ' %.17e.' % (param.name, x0_val, bds[0])
-                )
-            if x0_val > bds[1] + EPSILON:
-                raise ValueError(
-                    'Param %s, initial scaled value %.17e exceeds upper bound'
-                    ' %.17e.' % (param.name, x0_val, bds[1])
-                )
-
-            clipped_x0_val = np.clip(x0_val, a_min=bds[0], a_max=bds[1])
-            clipped_x0.append(clipped_x0_val)
-
-            if recursiveEquality(clipped_x0_val, bds[0]):
-                logging.warning(
-                    'Param %s, initial scaled value %e is at the lower bound;'
-                    ' minimization may fail as a result.',
-                    param.name, clipped_x0_val
-                )
-            if recursiveEquality(clipped_x0_val, bds[1]):
-                logging.warning(
-                    'Param %s, initial scaled value %e is at the upper bound;'
-                    ' minimization may fail as a result.',
-                    param.name, clipped_x0_val
-                )
-
-        x0 = np.array(clipped_x0)
         x0 = np.where(flip_x0, 1 - x0, x0)
         
         if global_method is None:
