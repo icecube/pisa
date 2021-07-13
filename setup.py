@@ -91,7 +91,7 @@ INSTALL_REQUIRES = [
     'numba>0.44', # >=0.35: fastmath jit flag; >=0.38: issue #439; 0.44 segfaults
     'numpy>=1.17',
     'pint>=0.8.1', # see https://github.com/hgrecco/pint/issues/512
-    'scipy>=0.17',
+    'scipy>=1.6',
     'pandas',
     'simplejson>=3.2',
     'tables',
