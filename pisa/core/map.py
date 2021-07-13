@@ -3383,7 +3383,8 @@ def test_MapSet():
     assert ms_copy == ms01
     ms01 += 1.
     # make sure that the copy is indeed decoupled from the original
-    assert not (ms_copy == ms01)
+    ### THIS SHOULD FAIL
+    assert (ms_copy == ms01)
     
     # Test reorder_dimensions (this just tests that it succeeds on the map set;
     # correctness of the reordering is tested in the unit test for Map)
