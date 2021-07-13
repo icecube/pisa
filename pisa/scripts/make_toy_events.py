@@ -20,7 +20,7 @@ from __future__ import absolute_import, division
 
 # module broken...needs fixing
 import sys
-sys.exit(0)
+raise ImportError("This module is known to be broken.")
 
 from argparse import ArgumentParser
 from itertools import product
