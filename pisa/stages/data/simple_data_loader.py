@@ -60,7 +60,7 @@ class simple_data_loader(Stage):
                  neutrinos=True,
                  required_metadata=None,
                  fraction_events_to_keep=None,
-                 keep_inverse=False,
+                 events_subsample_index=0,
                  seed=123456,
                  output_names=None,
                  **std_kwargs,
@@ -73,7 +73,7 @@ class simple_data_loader(Stage):
         self.neutrinos = neutrinos
         self.required_metadata = required_metadata
         self.fraction_events_to_keep = fraction_events_to_keep
-        self.keep_inverse = keep_inverse
+        self.events_subsample_index = int(events_subsample_index)
         self.seed = int(seed)
         self.output_names = output_names
 
@@ -111,7 +111,7 @@ class simple_data_loader(Stage):
             name='Events',
             neutrinos=self.neutrinos,
             fraction_events_to_keep=self.fraction_events_to_keep,
-            keep_inverse=self.keep_inverse,
+            events_subsample_index=self.events_subsample_index,
         )
 
         # If user provided a variable mapping dict, parse it from the input string (if not already done)
@@ -182,10 +182,7 @@ class simple_data_loader(Stage):
 
             if 'initial_weights' not in container.keys:
                 if self.fraction_events_to_keep is not None:
-                    if self.keep_inverse:
-                        container['initial_weights'] = np.full(container.size, 1./(1.-float(self.fraction_events_to_keep)), dtype=FTYPE)
-                    else:
-                        container['initial_weights'] = np.full(container.size, 1./(float(self.fraction_events_to_keep)), dtype=FTYPE)
+                    container['initial_weights'] = np.full(container.size, 1./(1.-float(self.fraction_events_to_keep)), dtype=FTYPE)
                 else:
                     container['initial_weights'] = np.ones(container.size, dtype=FTYPE)
 
