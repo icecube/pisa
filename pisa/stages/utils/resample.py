@@ -17,6 +17,7 @@ from pisa.core.stage import Stage
 from pisa.utils.profiler import profile
 from pisa.utils import vectorizer
 from pisa.core import translation
+from pisa.core.binning import MultiDimBinning
 
 from pisa.utils.log import logging, set_verbosity
 
@@ -31,6 +32,9 @@ class resample(Stage):  # pylint: disable=invalid-name
     """
     Stage to resample weighted MC histograms from one binning to another.
     
+    The origin binning is given as `calc_mode` and the output binning is given in 
+    `apply_mode`.
+    
     Parameters
     ----------
     
@@ -43,22 +47,16 @@ class resample(Stage):  # pylint: disable=invalid-name
         scale_errors=True,
         **std_kwargs,
     ):
-        raise NotImplementedError('Needs some care, broken in pisa4')
 
-        map_output_key = "weights_resampled"
-        map_output_error_key = "errors_resampled"
-        
         # init base class
         super().__init__(
             expected_params=(),
-            map_output_key=map_output_key,
-            map_output_error_key=map_output_error_key,
             **std_kwargs,
         )
 
         # This stage only makes sense when going binned to binned.
-        assert self.input_mode == "binned", "stage only takes binned input"
-        assert self.output_mode == "binned", "stage only produces binned output"
+        assert isinstance(self.apply_mode, MultiDimBinning), "stage only produces binned output"
+        assert isinstance(self.calc_mode, MultiDimBinning), "stage only produces binned output"
         
         self.scale_errors = scale_errors
         
@@ -84,6 +82,7 @@ class resample(Stage):  # pylint: disable=invalid-name
 
     def setup_function(self):
         # Set up a container for intermediate storage of variances in input specs
+        self.data.representation = self.calc_mode
         for container in self.data:
             container["variances"] = np.empty((container.size), dtype=FTYPE)
         # set up containers for the resampled output in the output specs
@@ -102,7 +101,9 @@ class resample(Stage):  # pylint: disable=invalid-name
         # We are overwriting the `apply` method rather than the `apply_function` method
         # because we are manipulating the data binning in a delicate way that doesn't
         # work with automatic rebinning.
-
+        
+        self.data.representation = self.calc_mode
+        
         if self.scale_errors:
             for container in self.data:
                 vectorizer.pow(
@@ -111,14 +112,17 @@ class resample(Stage):  # pylint: disable=invalid-name
                     out=container["variances"],
                 )
 
-        input_binvols = None #?
+        input_binvols = self.calc_mode.weighted_bin_volumes(attach_units=False).ravel()
         output_binvols = self.apply_mode.weighted_bin_volumes(attach_units=False).ravel()
-        
+
         for container in self.data:
+
+            self.data.representation = self.calc_mode
             weights_flat_hist = container["weights"]
             if self.scale_errors:
                 vars_flat_hist = container["variances"]
             self.data.representation = self.apply_mode
+
             if self.rs_mode == ResampleMode.UP:
                 # The `unroll_binning` function returns the midpoints of the bins in the
                 # dimension `name`.
@@ -132,32 +136,34 @@ class resample(Stage):  # pylint: disable=invalid-name
                 container["weights_resampled"] = translation.lookup(
                     fine_gridpoints,
                     weights_flat_hist,
+                    self.calc_mode
                 )
                 if self.scale_errors:
                     container["vars_resampled"] = translation.lookup(
                         fine_gridpoints,
                         vars_flat_hist,
+                        self.calc_mode
                     )
                 # These are the volumes of the bins we sample *from*
                 origin_binvols = translation.lookup(
                     fine_gridpoints,
                     input_binvols,
+                    self.calc_mode
                 )
                 # Finally, we scale the weights and variances by the ratio of the
                 # bin volumes in place:
-                vectorizer.imul(output_binvols, container["weights_resampled"])
-                vectorizer.itruediv(origin_binvols, container["weights_resampled"])
+                container["weights_resampled"] = (
+                    container["weights_resampled"] * output_binvols / origin_binvols
+                )
                 if self.scale_errors:
-                    vectorizer.imul(output_binvols, container["vars_resampled"])
-                    vectorizer.itruediv(origin_binvols, container["vars_resampled"])
+                        container["vars_resampled"] = (
+                        container["vars_resampled"] * output_binvols / origin_binvols
+                    )
             elif self.rs_mode == ResampleMode.DOWN:
                 pass  # not yet implemented
 
             if self.scale_errors:
-                vectorizer.sqrt(
-                    vals=container["vars_resampled"], out=container["errors_resampled"]
-                )
-    
+                container["errors_resampled"] = np.sqrt(container["vars_resampled"])
     
 def test_resample():
     """Unit test for the resampling stage."""
@@ -173,15 +179,23 @@ def test_resample():
     reco_binning = example_cfg[('utils', 'hist')]['apply_mode']
     coarse_binning = reco_binning.downsample(reco_energy=2, reco_coszen=2)
     assert coarse_binning.is_compat(reco_binning)
-    
     # replace binning of output with coarse binning
     example_cfg[('utils', 'hist')]['apply_mode'] = coarse_binning
+    # New in PISA4: We explicitly tell the pipeline which keys and binning to use for 
+    # the output. We must manually set this to the same binning as the output from the
+    # hist stage because otherwise it would attempt to automatically rebin everything.
+    example_cfg['pipeline']['output_key'] = ('weights', 'errors')
+    example_cfg['pipeline']['output_binning'] = coarse_binning
     # make another pipeline with an upsampling stage to the original binning
     upsample_cfg = deepcopy(example_cfg)
     resample_cfg = OrderedDict()
     resample_cfg['apply_mode'] = reco_binning
+    resample_cfg['calc_mode'] = coarse_binning
     resample_cfg['scale_errors'] = True
     upsample_cfg[('utils', 'resample')] = resample_cfg
+    # Here we want to take the resampled output to generate Maps from the pipeline
+    upsample_cfg['pipeline']['output_key'] = ('weights_resampled', 'errors_resampled')
+    upsample_cfg['pipeline']['output_binning'] = reco_binning
 
     example_maker = DistributionMaker([example_cfg])
     upsampled_maker = DistributionMaker([upsample_cfg])
@@ -189,7 +203,6 @@ def test_resample():
     example_map = example_maker.get_outputs(return_sum=True)[0]
     example_map_upsampled = upsampled_maker.get_outputs(return_sum=True)[0]
 
-    
     # First check: The upsampled map must have the same total count as the original map
     assert np.isclose(
         np.sum(example_map.nominal_values),
