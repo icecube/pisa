@@ -221,7 +221,6 @@ def run_unit_tests(
 
         for test_func_name in test_func_names:
             test_pypath = f"{module_pypath}.{test_func_name}"
-
             try:
                 set_verbosity(verbosity)
                 logging.debug(PFX + f"getattr({module}, {test_func_name})")
@@ -249,10 +248,10 @@ def run_unit_tests(
                         + f"{test_pypath} failed because module {err_name} failed to"
                         + f" load, but ok to ignore"
                     )
+                    
                     continue
 
                 test_pypaths_failed.append(test_pypath)
-
                 set_verbosity(verbosity)
                 msg = f"<< FAILURE RUNNING : {test_pypath} >>"
                 logging.error(PFX + "=" * len(msg))
@@ -321,7 +320,7 @@ def run_unit_tests(
         #        pass
 
     # Summarize results
-
+    
     n_import_successes = len(module_pypaths_succeeded)
     n_import_failures = len(module_pypaths_failed)
     n_import_failures_ignored = len(module_pypaths_failed_ignored)
@@ -452,8 +451,15 @@ def main(description=__doc__):
     )
     kwargs = vars(parser.parse_args())
     kwargs["verbosity"] = kwargs.pop("v")
-    run_unit_tests(**kwargs)
-
+    try:
+        run_unit_tests(**kwargs)
+    except Exception as e:
+        if hasattr(e, 'message'):
+            msg = e.message
+        else:
+            msg = str(e)
+        logging.error("\n"+msg)
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

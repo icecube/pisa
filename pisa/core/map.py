@@ -2569,7 +2569,11 @@ class MapSet(object):
 
     def __eq__(self, other):
         return recursiveEquality(self.hashable_state, other.hashable_state)
-
+    
+    def __deepcopy__(self, memo):
+        return MapSet([deepcopy(m, memo) for m in self],
+                      name=self.name, tex=self.tex, hash=self.hash,
+                      collate_by_name=self.collate_by_num)
     @property
     def name(self):
         """string : name of the map (legal Python name)"""
@@ -3375,8 +3379,12 @@ def test_MapSet():
     finally:
         shutil.rmtree(testdir, ignore_errors=True)
 
-    deepcopy(ms01)
-
+    ms_copy = deepcopy(ms01)
+    assert ms_copy == ms01
+    ms01 += 1.
+    # make sure that the copy is indeed decoupled from the original
+    assert not (ms_copy == ms01)
+    
     # Test reorder_dimensions (this just tests that it succeeds on the map set;
     # correctness of the reordering is tested in the unit test for Map)
     for ms in [ms01, ms02, ms1, ms2, ms3, ms4]:
