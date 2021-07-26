@@ -88,7 +88,7 @@ INSTALL_REQUIRES = [
     'iminuit<2',
     'line_profiler',
     'matplotlib>=3.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
-    'numba>0.44', # >=0.35: fastmath jit flag; >=0.38: issue #439; 0.44 segfaults
+    'numba>=0.53', # >=0.35: fastmath jit flag; >=0.38: issue #439; 0.44 segfaults
     'numpy>=1.17',
     'pint>=0.8.1', # see https://github.com/hgrecco/pint/issues/512
     'scipy>=1.6',

@@ -85,7 +85,7 @@ Required Python modules that are installed automatically when you use the `pip` 
 * [line_profiler](https://pypi.python.org/pypi/line_profiler): detailed profiling output<br>
   * if automatic pip installation of line_profiler fails, you may want to try `conda install line_profiler` if you are using anaconda
 * [matplotlib>=3.0](http://matplotlib.org) >= 3.0 required
-* [numba==0.45.1](http://numba.pydata.org) Just-in-time compilation of decorated Python functions to native machine code via LLVM. This package is required to use PISA pi; also in cake it can accelerate certain routines significantly. If not using Anaconda to install, you must have LLVM installed already on your system (see above).
+* [numba==0.53.1](http://numba.pydata.org) Just-in-time compilation of decorated Python functions to native machine code via LLVM. This package is required to use PISA pi; also in cake it can accelerate certain routines significantly. If not using Anaconda to install, you must have LLVM installed already on your system (see above).
 * [numpy](http://www.numpy.org) version >= 1.17 required
 * [pint>=0.8.1](https://pint.readthedocs.org) >= 0.8.1 required
   * if automatic pip installation of pint fails, you may want to try `conda install pint` if you are using anaconda
