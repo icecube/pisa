@@ -26,7 +26,7 @@ from pisa.core.param import ParamSet
 from pisa.utils.comparisons import recursiveEquality, FTYPE_PREC
 from pisa.utils.log import logging
 from pisa.utils.fileio import to_file
-from pisa.utils.stats import METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE, it_got_better
+from pisa.utils.stats import METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE, it_got_better, is_metric_to_maximize
 
 
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD', 'MINIMIZERS_USING_CONSTRAINTS',
@@ -822,10 +822,10 @@ class BasicAnalysis(object):
             new_fit_info._rehash()
 
         # Take the one with the best fit
-        it_got_better = it_got_better(new_fit_info.metric_val, best_fit_info.metric_val, metric)    
-
+        got_better = it_got_better(new_fit_info.metric_val, best_fit_info.metric_val, metric)
+        
         # TODO: Pass alternative fits up the chain
-        if it_got_better:
+        if got_better:
             # alternate_fits.append(best_fit_info)
             best_fit_info = new_fit_info
             if not self.blindness:
@@ -870,11 +870,8 @@ class BasicAnalysis(object):
         
         all_fit_metric_vals = [fit_info.metric_val for fit_info in all_fit_results]
         
-        if isinstance(metric, str):
-            metric = [metric]
-
         # Take the one with the best fit
-        if metric[0] in METRICS_TO_MAXIMIZE:
+        if is_metric_to_maximize(metric):
             best_idx = np.argmax(all_fit_metric_vals)
         else:
             best_idx = np.argmin(all_fit_metric_vals)
@@ -998,11 +995,8 @@ class BasicAnalysis(object):
         all_fit_metric_vals = all_fit_metric_vals.reshape(grid_shape)
         if not self.blindness:
             logging.info(f"Grid scan metrics:\n{all_fit_metric_vals}")
-        
-        if isinstance(metric, str):
-            metric = [metric]
         # Take the one with the best fit
-        if metric[0] in METRICS_TO_MAXIMIZE:
+        if is_metric_to_maximize(metric):
             best_idx = np.argmax(all_fit_metric_vals)
             best_idx_grid = np.unravel_index(best_idx, all_fit_metric_vals.shape)
         else:
@@ -1096,11 +1090,7 @@ class BasicAnalysis(object):
             tol = 1e-4
             if "constraint_tol" in method_kwargs.keys():
                 tol = method_kwargs["constraint_tol"]
-
-            if isinstance(metric, str):
-                metric = [metric]
-
-            penalty_sign = -1 if metric[0] in METRICS_TO_MAXIMIZE else 1
+            penalty_sign = -1 if is_metric_to_maximize(metric) else 1
             # resetting after each doubling of the penalty is probably an inefficient
             # thing to do...
             reset_free = False
@@ -1190,11 +1180,8 @@ class BasicAnalysis(object):
 
         all_fit_metric_vals = [fit_info.metric_val for fit_info in all_fit_results]
         
-        if isinstance(metric, str):
-            metric = [metric]
-
         # Take the one with the best fit
-        if metric[0] in METRICS_TO_MAXIMIZE:
+        if is_metric_to_maximize(metric):
             best_idx = np.argmax(all_fit_metric_vals)
         else:
             best_idx = np.argmin(all_fit_metric_vals)
@@ -1305,10 +1292,26 @@ class BasicAnalysis(object):
         # Indicate indices where x0 should be reflected around the mid-point at 0.5.
         # This is only used for the COBYLA minimizer.
         flip_x0 = np.zeros(len(x0), dtype=bool)
-
+        # Guard against over-stepping of boundaries by clipping values during
+        # minimization. This is only used for COBYLA because it tolerates some
+        # violation of the constraints. Because COBYLA is gradient-free, the clipping
+        # should not impact the minimization in a detrimental way.
+        guard_bounds = False
         minimizer_method = minimizer_settings["method"]["value"].lower()
         cons = ()
-        if minimizer_method in MINIMIZERS_USING_CONSTRAINTS:
+        if minimizer_method in MINIMIZERS_USING_SYMM_GRAD:
+            logging.warning(
+                'Minimizer %s requires artificial boundaries SMALLER than the'
+                ' user-specified boundaries (so that numerical gradients do'
+                ' not exceed the user-specified boundaries).',
+                minimizer_method
+            )
+            step_size = minimizer_settings['options']['value']['eps']
+            bounds = [(0 + step_size, 1 - step_size)]*len(x0)
+            x0[(0 <= x0) & (x0 < step_size)] = step_size
+            x0[(1 - step_size < x0) & (x0 <= 1)] = 1 - step_size
+
+        elif minimizer_method in MINIMIZERS_USING_CONSTRAINTS:
             logging.warning(
                 'Minimizer %s requires bounds to be formulated in terms of constraints.'
                 ' Constraining functions are auto-generated now.',
@@ -1326,12 +1329,43 @@ class BasicAnalysis(object):
             # direction. Flipping around 0.5 ensures that this initial step will not
             # overstep boundaries if `rhobeg` is 0.5. 
             flip_x0 = np.array(x0) > 0.5
-            # The minimizer can't handle bounds, but they still need to be passed for
-            # the interface to be uniform even though they are not used.
+            # The minimizer can't handle bounds, but they are still used below to clip
+            # x0 into the valid range if that is necessary.
+            guard_bounds = True
             bounds = [(0, 1)]*len(x0)
         else:
             bounds = [(0, 1)]*len(x0)
 
+        clipped_x0 = []
+        for param, x0_val, bds in zip(hypo_maker.params.free, x0, bounds):
+            if x0_val < bds[0] - EPSILON:
+                raise ValueError(
+                    'Param %s, initial scaled value %.17e is below lower bound'
+                    ' %.17e.' % (param.name, x0_val, bds[0])
+                )
+            if x0_val > bds[1] + EPSILON:
+                raise ValueError(
+                    'Param %s, initial scaled value %.17e exceeds upper bound'
+                    ' %.17e.' % (param.name, x0_val, bds[1])
+                )
+
+            clipped_x0_val = np.clip(x0_val, a_min=bds[0], a_max=bds[1])
+            clipped_x0.append(clipped_x0_val)
+
+            if recursiveEquality(clipped_x0_val, bds[0]):
+                logging.warning(
+                    'Param %s, initial scaled value %e is at the lower bound;'
+                    ' minimization may fail as a result.',
+                    param.name, clipped_x0_val
+                )
+            if recursiveEquality(clipped_x0_val, bds[1]):
+                logging.warning(
+                    'Param %s, initial scaled value %e is at the upper bound;'
+                    ' minimization may fail as a result.',
+                    param.name, clipped_x0_val
+                )
+
+        x0 = np.array(clipped_x0)
         x0 = np.where(flip_x0, 1 - x0, x0)
         
         if global_method is None:
@@ -1390,7 +1424,7 @@ class BasicAnalysis(object):
                 fun=self._minimizer_callable,
                 x0=x0,
                 args=(hypo_maker, data_dist, metric, counter, fit_history,
-                      flip_x0, external_priors_penalty),
+                      flip_x0, guard_bounds, external_priors_penalty),
                 bounds=bounds,
                 constraints=cons,
                 method=minimizer_settings['method']['value'],
@@ -1402,7 +1436,7 @@ class BasicAnalysis(object):
                 func=self._minimizer_callable,
                 bounds=bounds,
                 args=(hypo_maker, data_dist, metric, counter, fit_history,
-                      flip_x0, external_priors_penalty),
+                      flip_x0, guard_bounds, external_priors_penalty),
                 callback=self._minimizer_callback,
                 **method_kwargs["options"]
             )
@@ -1422,7 +1456,7 @@ class BasicAnalysis(object):
             minimizer_kwargs = deepcopy(local_fit_kwargs)
             minimizer_kwargs["args"] = (
                 hypo_maker, data_dist, metric, counter, fit_history,
-                flip_x0, external_priors_penalty
+                flip_x0, guard_bounds, external_priors_penalty
             )
             if "reset_free" in minimizer_kwargs:
                 del minimizer_kwargs["reset_free"]
@@ -1452,7 +1486,7 @@ class BasicAnalysis(object):
                 bounds=bounds,
                 x0=x0,
                 args=(hypo_maker, data_dist, metric, counter, fit_history,
-                      flip_x0, external_priors_penalty),
+                      flip_x0, guard_bounds, external_priors_penalty),
                 callback=annealing_callback,
                 **method_kwargs["options"]
             )
@@ -1460,7 +1494,7 @@ class BasicAnalysis(object):
             minimizer_kwargs = deepcopy(local_fit_kwargs)
             minimizer_kwargs["args"] = (
                 hypo_maker, data_dist, metric, counter, fit_history,
-                flip_x0, external_priors_penalty
+                flip_x0, guard_bounds, external_priors_penalty
             )
             if "reset_free" in minimizer_kwargs:
                 del minimizer_kwargs["reset_free"]
@@ -1470,7 +1504,7 @@ class BasicAnalysis(object):
                 func=self._minimizer_callable,
                 bounds=bounds,
                 args=(hypo_maker, data_dist, metric, counter, fit_history,
-                      flip_x0, external_priors_penalty),
+                      flip_x0, guard_bounds, external_priors_penalty),
                 callback=self._minimizer_callback,
                 minimizer_kwargs=minimizer_kwargs,
                 **method_kwargs["options"]
@@ -1566,7 +1600,7 @@ class BasicAnalysis(object):
 
     def _minimizer_callable(self, scaled_param_vals, hypo_maker, data_dist,
                             metric, counter, fit_history, flip_x0,
-                            external_priors_penalty=None):
+                            guard_bounds, external_priors_penalty=None):
         """Simple callback for use by scipy.optimize minimizers.
 
         This should *not* in general be called by users, as `scaled_param_vals`
@@ -1602,6 +1636,9 @@ class BasicAnalysis(object):
         
         flip_x0 : ndarray of type bool
             Indicates which indices of x0 should be flipped around 0.5.
+        
+        guard_bounds : bool
+            Guard against over-stepping of boundaries by clipping x0.
 
         external_priors_penalty : func
             User defined prior penalty function, which takes `hypo_maker` and 
@@ -1625,6 +1662,14 @@ class BasicAnalysis(object):
                 raise ValueError('Defined metrics are not compatible')
 
         scaled_param_vals = np.where(flip_x0, 1 - scaled_param_vals, scaled_param_vals)
+        if guard_bounds:
+            dist_lb = scaled_param_vals
+            dist_ub = 1 - scaled_param_vals
+            if np.any(dist_lb < 0):
+                logging.warn(f"minimizer stepped under lower bound by {-np.min(dist_lb)}")
+            if np.any(dist_ub < 0):
+                logging.warn(f"minimizer stepped over upper bound by {-np.min(dist_ub)}")
+            scaled_param_vals = np.clip(scaled_param_vals, 0, 1)
         # Set param values from the scaled versions the minimizer works with
         hypo_maker._set_rescaled_free_params(scaled_param_vals) # pylint: disable=protected-access
 
