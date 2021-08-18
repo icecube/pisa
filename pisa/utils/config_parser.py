@@ -477,6 +477,9 @@ def parse_param(config, section, selector, fullname, pname, value):
     if config.has_option(section, fullname + '.unique_id'):
         kwargs['unique_id'] = config.get(section, fullname + '.unique_id')
 
+    if config.has_option(section, fullname + '.tex'):
+        kwargs['tex'] = config.get(section, fullname + '.tex')
+
     if config.has_option(section, fullname + '.range'):
         range_ = config.get(section, fullname + '.range')
         # Note: `nominal` and `sigma` are called out in the `range_` string
