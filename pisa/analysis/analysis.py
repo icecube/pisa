@@ -245,37 +245,6 @@ def validate_minimizer_settings(minimizer_settings):
             logging.warning('starting step-size is very low, convergence will be slow')
 
 
-def check_t23_octant(fit_info):
-    """Check that theta23 is in the first or second octant.
-
-    Parameters
-    ----------
-    fit_info
-
-    Returns
-    -------
-    octant_index : int
-
-    Raises
-    ------
-    ValueError
-        Raised if the theta23 value is not in first (`octant_index`=0) or
-        second octant (`octant_index`=1)
-
-    """
-    valid_octant_indices = (0, 1)
-
-    theta23 = fit_info.metric_val.theta23.value
-    octant_index = int(
-        ((theta23 % (360 * ureg.deg)) // (45 * ureg.deg)).magnitude
-    )
-    if octant_index not in valid_octant_indices:
-        raise ValueError('Fitted theta23 value is not in the'
-                         ' first or second octant.')
-    return octant_index
-
-
-
 def get_separate_octant_params(hypo_maker, angle_name, inflection_point) :
     '''
     This function creates versions of the angle param that are confined to 
@@ -306,8 +275,12 @@ def get_separate_octant_params(hypo_maker, angle_name, inflection_point) :
     angle = hypo_maker.params[angle_name]
     angle.reset()
 
-    # Store the original theat23 param before we mess with it
-    angle_orig = deepcopy(angle)
+    # Store the original theta23 param before we mess with it
+    # WARNING: Do not copy here, you want the original object (since this relates to the underlying 
+    # ParamSelector from which theta23 is extracted). Otherwise end up with an incosistent state 
+    # later (e.g. after a new call to ParamSelector.select_params, this copied, and potentially
+    # modified param will be overwtiten by the original).
+    angle_orig = angle
 
     # Get the octant definition
     octants = (
@@ -738,7 +711,7 @@ class BasicAnalysis(object):
             method, method_kwargs, local_fit_kwargs
         ):
         """Recursively apply global search strategies with local sub-fits."""
-        
+
         if method in self.__class__._fit_methods.keys():
             fit_function = self.__class__._fit_methods[method]
         elif method in self.__class__._additional_fit_methods.keys():
@@ -846,7 +819,7 @@ class BasicAnalysis(object):
         # We take the original angle with the original range and nominal value
         # and only adjust its fit value.
         ang_orig.value = best_fit_info.params[angle_name].value
-        hypo_maker.update_params(ang_orig)
+        hypo_maker.update_params(ang_orig) # Put it back into the hypo maker
         return best_fit_info
     
     def _fit_best_of(self, data_dist, hypo_maker, metric,
@@ -1944,7 +1917,6 @@ class Analysis(BasicAnalysis):
             # Reset free parameters to nominal values
             if reset_free:
                 hypo_maker.reset_free()
-            
             if check_octant:
                 method = "fit_octants"
                 method_kwargs = {
