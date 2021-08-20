@@ -1841,6 +1841,21 @@ class MultiDimBinning(object):
         """Return a list of the contained dimensions' bin_edges that is
         compatible with the numpy.histogramdd `hist` argument."""
         return [d.bin_edges for d in self]
+    
+    @property
+    def is_irregular(self):
+        """Returns `True` if any of the 1D binnings is irregular."""
+        return np.any([d.is_irregular for d in self])
+    
+    @property
+    def is_lin(self):
+        """Returns `True` iff all dimensions are linear."""
+        return np.all([d.is_lin for d in self])
+    
+    @property
+    def is_log(self):
+        """Returns `True` iff all dimensions are log."""
+        return np.all([d.is_log for d in self])
 
     @property
     def domains(self):
