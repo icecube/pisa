@@ -84,6 +84,7 @@ SETUP_REQUIRES = [
 INSTALL_REQUIRES = [
     'decorator',
     'kde @ git+https://github.com/icecubeopensource/kde.git',
+    'fast-histogram>=0.10',
     'h5py',
     'iminuit<2',
     'line_profiler',
@@ -277,6 +278,7 @@ def do_setup():
         extras_require=EXTRAS_REQUIRE,
         dependency_links=[
             'git+https://github.com/icecubeopensource/kde.git#egg=kde',
+            'git+https://github.com/atrettin/fast-histogram.git#egg=fast-histogram-0.10-beta'
             #'git+https://github.com/afedynitch/MCEq.git#egg=MCEq',
         ],
         packages=find_packages(),
