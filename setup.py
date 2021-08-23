@@ -84,7 +84,7 @@ SETUP_REQUIRES = [
 INSTALL_REQUIRES = [
     'decorator',
     'kde @ git+https://github.com/icecubeopensource/kde.git',
-    'fast-histogram>=0.10',
+    'fast-histogram @ git+https://github.com/atrettin/fast-histogram.git',
     'h5py',
     'iminuit<2',
     'line_profiler',
