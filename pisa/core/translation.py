@@ -109,6 +109,9 @@ def histogram(sample, weights, binning, averaged, apply_weights=True):
         wether to use weights or not
 
     """
+    if not isinstance(binning, MultiDimBinning):
+        raise ValueError("Binning should be a PISA MultiDimBinning")
+
     if binning.is_irregular or not binning.is_lin:
         flat_hist = histogram_np(sample, weights, binning, apply_weights=True)
     else:
@@ -131,7 +134,7 @@ def histogram_fh(sample, weights, binning, apply_weights=True):  # pylint: disab
     
     This requires binnings to be fully regular and linear.
     """
-    binning = MultiDimBinning(binning)
+
     if binning.is_irregular or not binning.is_lin:
         raise ValueError("Binning should be linearly-regular to use the fast_histogram library.")
     ranges = [b.domain.m for b in binning]
@@ -163,7 +166,6 @@ def histogram_fh(sample, weights, binning, apply_weights=True):  # pylint: disab
 
 def histogram_np(sample, weights, binning, apply_weights=True):  # pylint: disable=missing-docstring
     """helper function for numpy historams"""
-    binning = MultiDimBinning(binning)
 
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
     if weights is not None and weights.ndim == 2:
@@ -205,6 +207,10 @@ def lookup(sample, flat_hist, binning):
     Handles up to 3D.
 
     """
+    
+    if not isinstance(binning, MultiDimBinning):
+        raise ValueError("Binning should be a PISA MultiDimBinning")
+
     assert binning.num_dims <= 3, 'can only do up to 3D at the moment'
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
     
@@ -757,12 +763,12 @@ def test_histogram():
         sample.append(s)
 
         bin_edges = [b.edge_magnitudes for b in binning]
-        test = histogram(sample, weights, binning, averaged=False)
+        test = histogram(sample, weights, MultiDimBinning(binning), averaged=False)
         ref, _ = np.histogramdd(sample=sample, bins=bin_edges, weights=weights)
         ref = ref.astype(FTYPE).ravel()
         assert recursiveEquality(test, ref), f'\ntest:\n{test}\n\nref:\n{ref}'
 
-        test_avg = histogram(sample, weights, binning, averaged=True)
+        test_avg = histogram(sample, weights, MultiDimBinning(binning), averaged=True)
         ref_counts, _ = np.histogramdd(sample=sample, bins=bin_edges, weights=None)
         ref_counts = ref_counts.astype(FTYPE).ravel()
         ref_avg = (ref / ref_counts).astype(FTYPE)

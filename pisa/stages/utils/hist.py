@@ -55,73 +55,55 @@ class hist(Stage):  # pylint: disable=invalid-name
                 container['hist_transform'] = transform
 
         elif self.calc_mode == "events":
-            if self.apply_mode.is_irregular:
-                # For dimensions where the binning is irregular, we pre-compute the 
-                # index that each sample falls into and then bin regularly in the index.
-                # For dimensions that are logarithmic, we add a linear binning in 
-                # the logarithm.
-                dimensions = []
-                for dim in self.apply_mode:
-                    if dim.is_irregular:
-                        # create a new axis with digitized variable
-                        varname = dim.name + "__" + self.apply_mode.name + "_idx"
-                        new_dim = OneDimBinning(
-                            varname,
-                            domain=[0, dim.num_bins],
-                            num_bins=dim.num_bins
-                        )
-                        dimensions.append(new_dim)
-                        for container in self.data:
-                            container.representation = "events"
-                            x = container[dim.name]
-                            # Compute the bin index each sample would fall into, and 
-                            # shift by -1 such that samples below the binning range
-                            # get assigned the index -1.
-                            x_idx = np.searchsorted(dim.bin_edges, x, side="right") - 1
-                            # To be consistent with numpy histogramming, we need to
-                            # shift those values that are exactly at the uppermost edge
-                            # down one index such that they are included in the highest
-                            # bin instead of being treated as an outlier.
-                            on_edge = (x == dim.bin_edges[-1])
-                            x_idx[on_edge] -= 1
-                            container[varname] = x_idx
-                    elif dim.is_log:
-                        # We don't compute the log of the variable just yet, this
-                        # will be done later during `apply_function` using the 
-                        # representation mechanism.
-                        new_dim = OneDimBinning(
-                            dim.name,
-                            domain=np.log(dim.domain.m),
-                            num_bins=dim.num_bins
-                        )
-                        dimensions.append(new_dim)
-                    else:
-                        dimensions.append(dim)
-                self.regularized_apply_mode = MultiDimBinning(dimensions)
-                logging.debug("Using regularized binning:\n" + str(self.regularized_apply_mode))
-            else:
-                self.regularized_apply_mode = self.apply_mode
+            # For dimensions where the binning is irregular, we pre-compute the 
+            # index that each sample falls into and then bin regularly in the index.
+            # For dimensions that are logarithmic, we add a linear binning in 
+            # the logarithm.
+            dimensions = []
+            for dim in self.apply_mode:
+                if dim.is_irregular:
+                    # create a new axis with digitized variable
+                    varname = dim.name + "__" + self.apply_mode.name + "_idx"
+                    new_dim = OneDimBinning(
+                        varname,
+                        domain=[0, dim.num_bins],
+                        num_bins=dim.num_bins
+                    )
+                    dimensions.append(new_dim)
+                    for container in self.data:
+                        container.representation = "events"
+                        x = container[dim.name]
+                        # Compute the bin index each sample would fall into, and 
+                        # shift by -1 such that samples below the binning range
+                        # get assigned the index -1.
+                        x_idx = np.searchsorted(dim.bin_edges, x, side="right") - 1
+                        # To be consistent with numpy histogramming, we need to
+                        # shift those values that are exactly at the uppermost edge
+                        # down one index such that they are included in the highest
+                        # bin instead of being treated as an outlier.
+                        on_edge = (x == dim.bin_edges[-1])
+                        x_idx[on_edge] -= 1
+                        container[varname] = x_idx
+                elif dim.is_log:
+                    # We don't compute the log of the variable just yet, this
+                    # will be done later during `apply_function` using the 
+                    # representation mechanism.
+                    new_dim = OneDimBinning(
+                        dim.name,
+                        domain=np.log(dim.domain.m),
+                        num_bins=dim.num_bins
+                    )
+                    dimensions.append(new_dim)
+                else:
+                    dimensions.append(dim)
+            self.regularized_apply_mode = MultiDimBinning(dimensions)
+            logging.debug("Using regularized binning:\n" + str(self.regularized_apply_mode))
         else:
             raise ValueError(f"unknown calc mode: {self.calc_mode}")
     
     @profile
     def apply_function(self):
-
-        #if self.calc_mode == 'binned':
-        #    raise NotImplementedError('Needs some care, broken in pisa4')
-        #    self.data.representation = self.apply_mode
-        #    for container in self.data:
-        #        # calcualte errors
-        #        if self.error_method in ['sumw2']:
-        #            vectorizer.pow(
-        #                vals=container['weights'],
-        #                pwr=2,
-        #                out=container['weights_squared'],
-        #            )
-        #            vectorizer.sqrt(
-        #                vals=container['weights_squared'], out=container['errors']
-        #            )
-
+        
         if isinstance(self.calc_mode, MultiDimBinning):
 
             for container in self.data:
