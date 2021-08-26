@@ -13,7 +13,7 @@ import math
 import numpy as np
 from scipy.interpolate import RectBivariateSpline
 
-from pisa import FTYPE, TARGET
+from pisa import FTYPE, TARGET, PISA_NUM_THREADS
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile, line_profile
@@ -148,9 +148,6 @@ class nusquids(Stage):
         You cannot apply filters in this mode either. Its only recommended use is for
         pseudo-data generation, where you may want an exact event-by-event calculation
         that is allowed to take several minutes.
-
-    concurrent_threads : int
-        Numer of parallel threads used for state integration.
     
     vacuum : bool
         Do not include matter effects. Greatly increases evaluation speed.
@@ -204,7 +201,6 @@ class nusquids(Stage):
         use_nsi=False,
         num_neutrinos=3,
         exact_mode=False,
-        concurrent_threads=1,
         vacuum=False,
         **std_kwargs,
     ):
@@ -231,7 +227,7 @@ class nusquids(Stage):
         self.detector_depth = detector_depth.m_as("km")
         self.prop_height = prop_height.m_as("km")
         self.avg_height = False
-        self.concurrent_threads = int(concurrent_threads)
+        self.concurrent_threads = PISA_NUM_THREADS
         self.prop_height_range = None
         self.apply_height_avg_below_hor = apply_height_avg_below_hor
         if prop_height_range is not None:  # this is optional
@@ -392,8 +388,9 @@ class nusquids(Stage):
             self.data.representation = self.calc_mode
             for container in self.data:
                 for var in ["true_coszen", "true_energy"]:
-                    upper_bound = np.max(self.node_mode[var].bin_edges)
-                    lower_bound = np.min(self.node_mode[var].bin_edges)
+                    unit = "dimensionless" if var == "true_coszen" else "GeV"
+                    upper_bound = np.max(self.node_mode[var].bin_edges.m_as(unit))
+                    lower_bound = np.min(self.node_mode[var].bin_edges.m_as(unit))
                     err_msg = (
                         "The outer edges of the node_mode must encompass "
                         "the entire range of calc_specs to avoid extrapolation"
@@ -678,7 +675,7 @@ class nusquids(Stage):
             container.mark_changed("prob_mu")
         self.data.unlink_containers()
     
-    @line_profile
+    #@line_profile
     def compute_function_interpolated(self):
         """
         Version of the compute function that does use interpolation between nodes.

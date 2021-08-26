@@ -18,12 +18,14 @@ import numpy as np
 from numba import guvectorize
 
 import numba
-
+from numba import njit, prange
 # When binnings are fully regular, we can use this for super speed
 import fast_histogram as fh
 from collections import Iterable
 
-from pisa import FTYPE
+from concurrent.futures import ThreadPoolExecutor
+
+from pisa import FTYPE, TARGET, PISA_NUM_THREADS
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging, set_verbosity
@@ -129,6 +131,32 @@ def histogram(sample, weights, binning, averaged, apply_weights=True):
 
     return flat_hist
 
+def _threaded_fh_histogramdd(sample, weights, bins, bin_range):
+    if not TARGET == "parallel":
+        return fh.histogramdd(sample=sample, weights=weights, bins=bins, range=bin_range)
+
+    splits = PISA_NUM_THREADS
+
+    with ThreadPoolExecutor(max_workers=splits) as pool:
+        chunk = len(sample[0]) // splits
+        chunked_sample = []
+        if weights is not None:
+            chunked_weights = []
+        ndim = len(sample)
+        for i in range(splits):
+            one_chunk = tuple(sample[j][i * chunk:(i+1) * chunk] for j in range(ndim))
+            chunked_sample.append(one_chunk)
+            if weights is not None:
+                chunked_weights.append(weights[i * chunk:(i+1) * chunk])
+        if weights is not None:
+            f = lambda s, w: fh.histogramdd(s, weights=w, bins=bins, range=bin_range)
+            results = pool.map(f, chunked_sample, chunked_weights)
+        else:
+            f = lambda s: fh.histogramdd(s, weights=None, bins=bins, range=bin_range)  
+            results = pool.map(f, chunked_sample)
+        results = sum(results)
+    return results
+
 def histogram_fh(sample, weights, binning, apply_weights=True):  # pylint: disable=missing-docstring
     """Helper function for fast_histogram historams.
     
@@ -155,12 +183,13 @@ def histogram_fh(sample, weights, binning, apply_weights=True):  # pylint: disab
         hists = []
         for i in range(weights.shape[1]):
             w = weights[:, i] if apply_weights else None
-            hist = fh.histogramdd(sample=_sample, weights=w, bins=bins, range=ranges)
+            hist = _threaded_fh_histogramdd(sample=_sample, weights=w, bins=bins, bin_range=ranges)
             hists.append(hist.ravel())
         flat_hist = np.stack(hists, axis=1)
     else:
         w = weights if apply_weights else None
-        hist = fh.histogramdd(sample=_sample, weights=w, bins=bins, range=ranges)
+        
+        hist = _threaded_fh_histogramdd(sample=_sample, weights=w, bins=bins, bin_range=ranges)
         flat_hist = hist.ravel()
     return flat_hist.astype(FTYPE)
 
@@ -374,21 +403,21 @@ def lookup(sample, flat_hist, binning):
     return hist_vals
 
 
-@numba.jit(nopython=True)
+@njit(parallel=True if TARGET == "parallel" else False)
 def lookup_regular_1d(x, flat_hist, xmin, xmax, nx, out):
     normx = nx / (xmax - xmin)
-    for idx in range(len(out)):
+    for idx in prange(len(out)):
         if x[idx] >= xmin and x[idx] < xmax:
             ix = (int)((x[idx] - xmin) * normx)
             out[idx] = flat_hist[ix]
             continue
         out[idx] = 0.
 
-@numba.jit(nopython=True)
+@njit(parallel=True if TARGET == "parallel" else False)
 def lookup_regular_2d(x, y, flat_hist, xmin, xmax, nx, ymin, ymax, ny, out):
     normx = nx / (xmax - xmin)
     normy = ny / (ymax - ymin)
-    for idx in range(len(out)):
+    for idx in prange(len(out)):
         if x[idx] >= xmin and x[idx] < xmax:
             if y[idx] >= ymin and y[idx] < ymax:
                 ix = (int)((x[idx] - xmin) * normx)
@@ -397,13 +426,13 @@ def lookup_regular_2d(x, y, flat_hist, xmin, xmax, nx, ymin, ymax, ny, out):
                 continue
         out[idx] = 0.
 
-@numba.jit(nopython=True)
+@njit(parallel=True if TARGET == "parallel" else False)
 def lookup_regular_3d(x, y, z, flat_hist, xmin, xmax, nx, ymin, ymax, ny,
                             zmin, zmax, nz, out):
     normx = nx / (xmax - xmin)
     normy = ny / (ymax - ymin)
     normz = nz / (zmax - zmin)
-    for idx in range(len(out)):
+    for idx in prange(len(out)):
         if x[idx] >= xmin and x[idx] < xmax:
             if y[idx] >= ymin and y[idx] < ymax:
                 if z[idx] >= zmin and z[idx] < zmax:
@@ -414,10 +443,10 @@ def lookup_regular_3d(x, y, z, flat_hist, xmin, xmax, nx, ymin, ymax, ny,
                     continue
         out[idx] = 0.
 
-@numba.jit(nopython=True)
+@njit(parallel=True if TARGET == "parallel" else False)
 def lookup_regular_1d_array(x, flat_hist, xmin, xmax, nx, out):
     normx = nx / (xmax - xmin)
-    for idx in range(len(out)):
+    for idx in prange(len(out)):
         if x[idx] >= xmin and x[idx] < xmax:
             ix = (int)((x[idx] - xmin) * normx)
             for d in range(flat_hist.shape[1]):
@@ -426,11 +455,11 @@ def lookup_regular_1d_array(x, flat_hist, xmin, xmax, nx, out):
         for d in range(flat_hist.shape[1]):
             out[idx][d] = 0.
 
-@numba.jit(nopython=True)
+@njit(parallel=True if TARGET == "parallel" else False)
 def lookup_regular_2d_array(x, y, flat_hist, xmin, xmax, nx, ymin, ymax, ny, out):
     normx = nx / (xmax - xmin)
     normy = ny / (ymax - ymin)
-    for idx in range(len(out)):
+    for idx in prange(len(out)):
         if x[idx] >= xmin and x[idx] < xmax:
             if y[idx] >= ymin and y[idx] < ymax:
                 ix = (int)((x[idx] - xmin) * normx)
@@ -441,13 +470,13 @@ def lookup_regular_2d_array(x, y, flat_hist, xmin, xmax, nx, ymin, ymax, ny, out
         for d in range(flat_hist.shape[1]):
             out[idx][d] = 0.
 
-@numba.jit(nopython=True)
+@njit(parallel=True if TARGET == "parallel" else False)
 def lookup_regular_3d_array(x, y, z, flat_hist, xmin, xmax, nx, ymin, ymax, ny,
                             zmin, zmax, nz, out):
     normx = nx / (xmax - xmin)
     normy = ny / (ymax - ymin)
     normz = nz / (zmax - zmin)
-    for idx in range(len(out)):
+    for idx in prange(len(out)):
         if x[idx] >= xmin and x[idx] < xmax:
             if y[idx] >= ymin and y[idx] < ymax:
                 if z[idx] >= zmin and z[idx] < zmax:

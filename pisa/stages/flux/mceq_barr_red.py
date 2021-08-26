@@ -15,7 +15,7 @@ import collections
 import pickle
 
 import numpy as np
-from numba import guvectorize
+from numba import njit, prange  # trivially parallelize for-loops
 
 from pisa import FTYPE, TARGET
 from pisa.core.stage import Stage
@@ -414,7 +414,7 @@ class mceq_barr_red(Stage):
         # don't forget to un-link everything again
         self.data.unlink_containers()
 
-@myjit
+@njit
 def spectral_index_scale(true_energy, energy_pivot, delta_index):
     """
       Calculate spectral index scale.
@@ -423,7 +423,7 @@ def spectral_index_scale(true_energy, energy_pivot, delta_index):
       """
     return np.power((true_energy / energy_pivot), delta_index)
 
-@myjit
+@njit(parallel=True if TARGET == "parallel" else False)
 def apply_sys_loop(
     true_energy,
     true_coszen,
@@ -459,7 +459,7 @@ def apply_sys_loop(
 
     n_evts, n_flavs = nu_flux_nominal.shape
 
-    for event in range(n_evts):
+    for event in prange(n_evts):
         spec_scale = spectral_index_scale(true_energy[event], energy_pivot, delta_index)
         for flav in range(n_flavs):
             out[event, flav] = nu_flux_nominal[event, flav] * spec_scale
