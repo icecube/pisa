@@ -756,43 +756,48 @@ class BasicAnalysis(object):
             # check
             minimizer_start_params = hypo_maker.params
 
+        # Get new angle parameters each limited to one octant 
         ang_orig, ang_case1, ang_case2 = get_separate_octant_params(hypo_maker, angle_name, inflection_point)
-        hypo_maker.update_params(ang_case1)
         
-        # Perform the fit
+        # Fit the first octant
+        hypo_maker.update_params(ang_case1)
         best_fit_info = self.fit_recursively(
             data_dist, hypo_maker, metric, external_priors_penalty,
             local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
             local_fit_kwargs["local_fit_kwargs"]
         )
+
         if not self.blindness:
             logging.info(f"found best fit at angle {best_fit_info.params[angle_name].value}")
         logging.info(f'checking other octant of {angle_name}')
+
         if reset_free:
             hypo_maker.reset_free()
         else:
             for param in minimizer_start_params:
                 hypo_maker.params[param.name].value = param.value
 
+        # Fit the second octant
         hypo_maker.update_params(ang_case2)
-
-        # Re-run minimizer starting at new point
         new_fit_info = self.fit_recursively(
             data_dist, hypo_maker, metric, external_priors_penalty,
             local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
             local_fit_kwargs["local_fit_kwargs"]
         )
+
         if not self.blindness:
             logging.info(f"found best fit at angle {new_fit_info.params[angle_name].value}")
+
         # record the correct range for the angle 
         # If we are at the strictest blindness level 2, no parameters are stored and the 
         # dict only contains an empty dict. Attempting to set a range would cause an eror.
-        if self.blindness < 2:
-            # This is one rare instance where we directly manipulate the parameters.
-            best_fit_info._params[angle_name].range = deepcopy(ang_orig.range)
-            best_fit_info._rehash()
-            new_fit_info._params[angle_name].range = deepcopy(ang_orig.range)
-            new_fit_info._rehash()
+        #TODO REMOVE?
+        # if self.blindness < 2:
+        #     # This is one rare instance where we directly manipulate the parameters.
+        #     best_fit_info._params[angle_name].range = deepcopy(ang_orig.range)
+        #     best_fit_info._rehash()
+        #     new_fit_info._params[angle_name].range = deepcopy(ang_orig.range)
+        #     new_fit_info._rehash()
 
         # Take the one with the best fit
         if metric[0] in METRICS_TO_MAXIMIZE:
@@ -815,11 +820,15 @@ class BasicAnalysis(object):
             if not self.blindness:
                 logging.info('Accepting initial-octant fit')
         
-        hypo_maker.update_params(best_fit_info.params)
-        # We take the original angle with the original range and nominal value
-        # and only adjust its fit value.
-        ang_orig.value = best_fit_info.params[angle_name].value
-        hypo_maker.update_params(ang_orig) # Put it back into the hypo maker
+        # Put the original angle parameter back into the hypo maker
+        hypo_maker.update_params(ang_orig)
+
+        # Copy the fitted parameter values from the best fit case into the hypo maker's parameter values
+        # Also reinstate the original parameter range for the angle
+        for best_fit_param in best_fit_info.params.free :
+            hypo_maker.params[best_fit_param.name].value = best_fit_param.value
+        #TODO Any rehashing required?
+
         return best_fit_info
     
     def _fit_best_of(self, data_dist, hypo_maker, metric,
@@ -1498,6 +1507,7 @@ class BasicAnalysis(object):
 
         minimizer_time = end_t - start_t
 
+        # Check for minimization failure
         if not optimize_result.success:
             if self.blindness:
                 msg = ''
@@ -1506,13 +1516,14 @@ class BasicAnalysis(object):
             logging.warn('Optimization failed.' + msg)
             # Instead of crashing completely, return a fit result with an infinite 
             # test statistic value.
+            metadata = {"success":optimize_result.success, "message":optimize_result.message,}
             return HypoFitResult(
                 metric,
                 sign * np.inf,
                 data_dist,
                 hypo_maker,
                 minimizer_time=minimizer_time,
-                minimizer_metadata=None,
+                minimizer_metadata=metadata,
                 fit_history=fit_history,
                 other_metrics=None,
                 num_distributions_generated=counter.count,
