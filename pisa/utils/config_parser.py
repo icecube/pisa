@@ -272,7 +272,7 @@ PARAM_RE = re.compile(
     re.IGNORECASE
 )
 
-PARAM_ATTRS = ['range', 'prior', 'fixed']
+PARAM_ATTRS = ['range', 'prior', 'fixed', 'tex']
 
 STAGE_SEP = '.'
 
