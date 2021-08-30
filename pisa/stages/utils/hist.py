@@ -72,7 +72,7 @@ class hist(Stage):  # pylint: disable=invalid-name
                     dimensions.append(new_dim)
                     for container in self.data:
                         container.representation = "events"
-                        x = container[dim.name]
+                        x = container[dim.name] * dim.units
                         # Compute the bin index each sample would fall into, and 
                         # shift by -1 such that samples below the binning range
                         # get assigned the index -1.
@@ -127,8 +127,9 @@ class hist(Stage):  # pylint: disable=invalid-name
                 container.representation = self.calc_mode
                 sample = []
                 dims_log = [d.is_log for d in self.apply_mode]
-                for dim, is_log in zip(self.regularized_apply_mode, dims_log):
-                    if is_log:
+                dims_ire = [d.is_irregular for d in self.apply_mode]
+                for dim, is_log, is_ire in zip(self.regularized_apply_mode, dims_log, dims_ire):
+                    if is_log and not is_ire:
                         container.representation = "log_events"
                         sample.append(container[dim.name])
                     else:
