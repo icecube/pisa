@@ -10,9 +10,10 @@ import numpy as np
 from pisa import FTYPE
 from pisa.core.stage import Stage
 from pisa.core.translation import histogram
-from pisa.core.binning import MultiDimBinning
-from pisa.utils.profiler import profile
+from pisa.core.binning import MultiDimBinning, OneDimBinning
+from pisa.utils.profiler import profile, line_profile
 from pisa.utils import vectorizer
+from pisa.utils.log import logging
 
 
 class hist(Stage):  # pylint: disable=invalid-name
@@ -30,7 +31,7 @@ class hist(Stage):  # pylint: disable=invalid-name
 
         assert self.calc_mode is not None
         assert self.apply_mode is not None
-
+        self.regularized_apply_mode = None
 
     def setup_function(self):
 
@@ -53,23 +54,56 @@ class hist(Stage):  # pylint: disable=invalid-name
                 self.data.representation = self.calc_mode
                 container['hist_transform'] = transform
 
+        elif self.calc_mode == "events":
+            # For dimensions where the binning is irregular, we pre-compute the 
+            # index that each sample falls into and then bin regularly in the index.
+            # For dimensions that are logarithmic, we add a linear binning in 
+            # the logarithm.
+            dimensions = []
+            for dim in self.apply_mode:
+                if dim.is_irregular:
+                    # create a new axis with digitized variable
+                    varname = dim.name + "__" + self.apply_mode.name + "_idx"
+                    new_dim = OneDimBinning(
+                        varname,
+                        domain=[0, dim.num_bins],
+                        num_bins=dim.num_bins
+                    )
+                    dimensions.append(new_dim)
+                    for container in self.data:
+                        container.representation = "events"
+                        x = container[dim.name]
+                        # Compute the bin index each sample would fall into, and 
+                        # shift by -1 such that samples below the binning range
+                        # get assigned the index -1.
+                        x_idx = np.searchsorted(dim.bin_edges, x, side="right") - 1
+                        # To be consistent with numpy histogramming, we need to
+                        # shift those values that are exactly at the uppermost edge
+                        # down one index such that they are included in the highest
+                        # bin instead of being treated as an outlier.
+                        on_edge = (x == dim.bin_edges[-1])
+                        x_idx[on_edge] -= 1
+                        container[varname] = x_idx
+                elif dim.is_log:
+                    # We don't compute the log of the variable just yet, this
+                    # will be done later during `apply_function` using the 
+                    # representation mechanism.
+                    new_dim = OneDimBinning(
+                        dim.name,
+                        domain=np.log(dim.domain.m),
+                        num_bins=dim.num_bins
+                    )
+                    dimensions.append(new_dim)
+                else:
+                    dimensions.append(dim)
+            self.regularized_apply_mode = MultiDimBinning(dimensions)
+            logging.debug("Using regularized binning:\n" + str(self.regularized_apply_mode))
+        else:
+            raise ValueError(f"unknown calc mode: {self.calc_mode}")
+    
+    @profile
     def apply_function(self):
-
-        #if self.calc_mode == 'binned':
-        #    raise NotImplementedError('Needs some care, broken in pisa4')
-        #    self.data.representation = self.apply_mode
-        #    for container in self.data:
-        #        # calcualte errors
-        #        if self.error_method in ['sumw2']:
-        #            vectorizer.pow(
-        #                vals=container['weights'],
-        #                pwr=2,
-        #                out=container['weights_squared'],
-        #            )
-        #            vectorizer.sqrt(
-        #                vals=container['weights_squared'], out=container['errors']
-        #            )
-
+        
         if isinstance(self.calc_mode, MultiDimBinning):
 
             for container in self.data:
@@ -90,16 +124,24 @@ class hist(Stage):  # pylint: disable=invalid-name
 
         elif self.calc_mode == 'events':
             for container in self.data:
-                # calcualte errors
-
                 container.representation = self.calc_mode
-                sample = [container[name] for name in self.apply_mode.names]
+                sample = []
+                dims_log = [d.is_log for d in self.apply_mode]
+                for dim, is_log in zip(self.regularized_apply_mode, dims_log):
+                    if is_log:
+                        container.representation = "log_events"
+                        sample.append(container[dim.name])
+                    else:
+                        container.representation = "events"
+                        sample.append(container[dim.name])
                 weights = container['weights']
-
-                hist = histogram(sample, weights, self.apply_mode, averaged=False)
+                
+                # The hist is now computed using a binning that is completely linear
+                # and regular
+                hist = histogram(sample, weights, self.regularized_apply_mode, averaged=False)
 
                 if self.error_method == 'sumw2':
-                    sumw2 = histogram(sample, np.square(weights), self.apply_mode, averaged=False)
+                    sumw2 = histogram(sample, np.square(weights), self.regularized_apply_mode, averaged=False)
 
                 container.representation = self.apply_mode
                 

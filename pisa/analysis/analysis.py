@@ -26,7 +26,7 @@ from pisa.core.param import ParamSet
 from pisa.utils.comparisons import recursiveEquality, FTYPE_PREC
 from pisa.utils.log import logging
 from pisa.utils.fileio import to_file
-from pisa.utils.stats import METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE
+from pisa.utils.stats import METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE, it_got_better, is_metric_to_maximize
 
 
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD', 'MINIMIZERS_USING_CONSTRAINTS',
@@ -822,17 +822,10 @@ class BasicAnalysis(object):
             new_fit_info._rehash()
 
         # Take the one with the best fit
-        if metric[0] in METRICS_TO_MAXIMIZE:
-            it_got_better = (
-                new_fit_info.metric_val > best_fit_info.metric_val
-            )
-        else:
-            it_got_better = (
-                new_fit_info.metric_val < best_fit_info.metric_val
-            )
+        got_better = it_got_better(new_fit_info.metric_val, best_fit_info.metric_val, metric)
 
         # TODO: Pass alternative fits up the chain
-        if it_got_better:
+        if got_better:
             # alternate_fits.append(best_fit_info)
             best_fit_info = new_fit_info
             if not self.blindness:
@@ -877,7 +870,7 @@ class BasicAnalysis(object):
         
         all_fit_metric_vals = [fit_info.metric_val for fit_info in all_fit_results]
         # Take the one with the best fit
-        if metric[0] in METRICS_TO_MAXIMIZE:
+        if is_metric_to_maximize(metric):
             best_idx = np.argmax(all_fit_metric_vals)
         else:
             best_idx = np.argmin(all_fit_metric_vals)
@@ -1002,7 +995,7 @@ class BasicAnalysis(object):
         if not self.blindness:
             logging.info(f"Grid scan metrics:\n{all_fit_metric_vals}")
         # Take the one with the best fit
-        if metric[0] in METRICS_TO_MAXIMIZE:
+        if is_metric_to_maximize(metric):
             best_idx = np.argmax(all_fit_metric_vals)
             best_idx_grid = np.unravel_index(best_idx, all_fit_metric_vals.shape)
         else:
@@ -1096,7 +1089,7 @@ class BasicAnalysis(object):
             tol = 1e-4
             if "constraint_tol" in method_kwargs.keys():
                 tol = method_kwargs["constraint_tol"]
-            penalty_sign = -1 if metric in METRICS_TO_MAXIMIZE else 1
+            penalty_sign = -1 if is_metric_to_maximize(metric) else 1
             # resetting after each doubling of the penalty is probably an inefficient
             # thing to do...
             reset_free = False
@@ -1186,7 +1179,7 @@ class BasicAnalysis(object):
 
         all_fit_metric_vals = [fit_info.metric_val for fit_info in all_fit_results]
         # Take the one with the best fit
-        if metric[0] in METRICS_TO_MAXIMIZE:
+        if is_metric_to_maximize(metric):
             best_idx = np.argmax(all_fit_metric_vals)
         else:
             best_idx = np.argmin(all_fit_metric_vals)
