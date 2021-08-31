@@ -442,7 +442,7 @@ class HypoFitResult(object):
                 # without actually doing anything
                 self.detailed_metric_info = [self.get_detailed_metric_info(
                     data_dist=data_dist[i], hypo_asimov_dist=self.hypo_asimov_dist[i],
-                    params=hypo_maker._distribution_makers[i].params, metric=metric[i],
+                    params=hypo_maker.distribution_makers[i].params, metric=metric[i],
                     other_metrics=other_metrics, detector_name=hypo_maker.det_names[i]
                 ) for i in range(len(data_dist))]
             else: # DistributionMaker object
@@ -528,6 +528,9 @@ class HypoFitResult(object):
         elif isinstance(new_had, Mapping):
             # instantiating from serializable state
             self._hypo_asimov_dist = MapSet(**new_had)
+        elif isinstance(new_had, list) and all(isinstance(item, MapSet) for item in new_had):
+            # for detector class output
+            self._hypo_asimov_dist = new_had
         else:
             raise ValueError("invalid format for hypo_asimov_dist")
 
@@ -1637,22 +1640,13 @@ class BasicAnalysis(object):
                 logging.error(str(e))
             raise
 
-        # Check number of used metrics
-        if hypo_maker.__class__.__name__ == "Detectors":
-            if len(metric) == 1: # One metric for all detectors
-                metric = list(metric) * len(hypo_maker._distribution_makers)
-            elif len(metric) != len(hypo_maker._distribution_makers):
-                raise IndexError('Number of defined metrics does not match with number of detectors.')
-        else: # DistributionMaker object
-            assert len(metric) == 1
-
         #
         # Assess the fit: whether the data came from the hypo_asimov_dist
         #
         try:
             if hypo_maker.__class__.__name__ == "Detectors":
                 metric_val = 0
-                for i in range(len(hypo_maker._distribution_makers)):
+                for i in range(len(hypo_maker.distribution_makers)):
                     data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],
                                                   metric=metric[i], metric_kwargs=metric_kwargs)
                     metric_val += data
@@ -1852,6 +1846,14 @@ class Analysis(BasicAnalysis):
 
         if isinstance(metric, str):
             metric = [metric]
+        # Check number of used metrics
+        if hypo_maker.__class__.__name__ == "Detectors":
+            if len(metric) == 1: # One metric for all detectors
+                metric = list(metric) * len(hypo_maker.distribution_makers)
+            elif len(metric) != len(hypo_maker.distribution_makers):
+                raise IndexError('Number of defined metrics does not match with number of detectors.')
+        else: # DistributionMaker object
+            assert len(metric) == 1
 
         if check_ordering:
             if 'nh' in hypo_param_selections or 'ih' in hypo_param_selections:
@@ -1926,29 +1928,29 @@ class Analysis(BasicAnalysis):
 
         """
         fit_info = HypoFitResult()
-        if isinstance(metric, str):
-            metric = [metric]
-        fit_info.metric = metric
 
         # NOTE: Select params but *do not* reset to nominal values to record
         # the current (presumably already optimal) param values
         hypo_maker.select_params(hypo_param_selections)
 
+        if isinstance(metric, str):
+            metric = [metric]
         # Check number of used metrics
         if hypo_maker.__class__.__name__ == "Detectors":
             if len(metric) == 1: # One metric for all detectors
-                metric = list(metric) * len(hypo_maker._distribution_makers)
-            elif len(metric) != len(hypo_maker._distribution_makers):
+                metric = list(metric) * len(hypo_maker.distribution_makers)
+            elif len(metric) != len(hypo_maker.distribution_makers):
                 raise IndexError('Number of defined metrics does not match with number of detectors.')
         else: # DistributionMaker object
             assert len(metric) == 1
+        fit_info.metric = metric
 
         # Assess the fit: whether the data came from the hypo_asimov_dist
         try:
             if hypo_maker.__class__.__name__ == "Detectors":
                 metric_val = 0
-                for i in range(len(hypo_maker._distribution_makers)):
-                    data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],metric=metric[i])
+                for i in range(len(hypo_maker.distribution_makers)):
+                    data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i], metric=metric[i])
                     metric_val += data
                 priors = hypo_maker.params.priors_penalty(metric=metric[0]) # uses just the "first" metric for prior
                 metric_val += priors
@@ -1997,7 +1999,7 @@ class Analysis(BasicAnalysis):
         if hypo_maker.__class__.__name__ == "Detectors":
             fit_info.detailed_metric_info = [self.get_detailed_metric_info(
                 data_dist=data_dist[i], hypo_asimov_dist=hypo_asimov_dist[i],
-                params=hypo_maker._distribution_makers[i].params, metric=metric[i],
+                params=hypo_maker.distribution_makers[i].params, metric=metric[i],
                 other_metrics=other_metrics, detector_name=hypo_maker.det_names[i]
             ) for i in range(len(data_dist))]
         else: # DistributionMaker object
