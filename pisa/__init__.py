@@ -216,14 +216,15 @@ del cpu_targets, gpu_targets, parallel_targets
 PISA_NUM_THREADS = 1
 """Global limit for number of threads"""
 
-# ignore if target is not multicore
-if TARGET == 'parallel':
-    if 'PISA_NUM_THREADS' in os.environ:
-        PISA_NUM_THREADS = int(os.environ['PISA_NUM_THREADS'])
-        assert PISA_NUM_THREADS >= 1
-    else:
-        PISA_NUM_THREADS = numba.config.NUMBA_NUM_THREADS
-    OMP_NUM_THREADS = min(PISA_NUM_THREADS, OMP_NUM_THREADS)
+if 'PISA_NUM_THREADS' in os.environ:
+    PISA_NUM_THREADS = int(os.environ['PISA_NUM_THREADS'])
+    assert PISA_NUM_THREADS >= 1
+else:
+    PISA_NUM_THREADS = numba.config.NUMBA_NUM_THREADS
+OMP_NUM_THREADS = min(PISA_NUM_THREADS, OMP_NUM_THREADS)
+if TARGET == 'cpu' and PISA_NUM_THREADS > 1:
+    sys.stderr.write("[WARNING] PISA_NUM_THREADS > 1 will be ignored when PISA_TARGET "
+                     "is not `parallel`.\n")
 # Define HASH_SIGFIGS to set hashing precision based on FTYPE above; value here
 # is default (i.e. for FTYPE == np.float64)
 HASH_SIGFIGS = 12
