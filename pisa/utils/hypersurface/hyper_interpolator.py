@@ -768,7 +768,13 @@ def prepare_interpolated_fit(
     for k, v in interpolation_param_spec.items():
         assert set(v.keys()) == {"values", "scales_log"}
         assert isinstance(v["values"], collections.Sequence)
-        if v["scales_log"] and np.min(v["values"]) <= 0:
+        # We need to extract the magnitudes from the Quantities to avoid a
+        # UnitStrippedWarning. For some reason, doing `np.min(v["values"])` messes up
+        # the data structure inside the values in a way that can cause a crash when we
+        # try to serialize the values later. Lesson: Stripping units inadvertently can
+        # have strange, unforeseen consequences.
+        mags = [x.m for x in v["values"]]
+        if v["scales_log"] and np.min(mags) <= 0:
             raise ValueError("A log-scaling parameter cannot be equal to or less "
                 "than zero!")
     

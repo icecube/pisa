@@ -15,6 +15,7 @@ from collections import OrderedDict
 import inspect
 from itertools import product
 import os
+from tabulate import tabulate
 from copy import deepcopy
 
 import numpy as np
@@ -47,9 +48,11 @@ class Detectors(object):
     shared_params : Parameter to be treated the same way in all the
         distribution_makers that contain them.
     """
-    def __init__(self, pipelines, label=None, shared_params=None):
+    def __init__(self, pipelines, label=None, set_livetime_from_data=True, profile=False, shared_params=None):
         self.label = label
         self._source_code_hash = None
+        
+        self._profile = profile
         
         if shared_params == None:
             self.shared_params = []
@@ -64,8 +67,8 @@ class Detectors(object):
         for pipeline in pipelines:
             if not isinstance(pipeline, Pipeline):
                 pipeline = Pipeline(pipeline)
-                
-            name = pipeline._detector_name
+            
+            name = pipeline.detector_name
             if name in self.det_names:
                 self._distribution_makers[self.det_names.index(name)].append(pipeline)
             else:
@@ -76,7 +79,10 @@ class Detectors(object):
             raise NameError('At least one of the used pipelines has no detector_name.')
 
         for i, pipelines in enumerate(self._distribution_makers):
-            self._distribution_makers[i] = DistributionMaker(pipelines=pipelines)
+            self._distribution_makers[i] = DistributionMaker(pipelines=pipelines, 
+                                                             set_livetime_from_data=set_livetime_from_data,
+                                                             profile=profile
+                                                            )
             
         for sp in self.shared_params:
             n = 0
@@ -85,9 +91,44 @@ class Detectors(object):
                     n += 1
             if n < 2:
                 raise NameError('Shared param %s only a free param in less than 2 detectors.' % sp)
+                
+    def __repr__(self):
+        return self.tabulate(tablefmt="presto")
+
+    def _repr_html_(self):
+        return self.tabulate(tablefmt="html")
+
+    def tabulate(self, tablefmt="plain"):
+        headers = ['DistributionMaker number', 'detector name', 'output_binning', 'output_key', 'profile']
+        colalign=["right"] + ["center"] * (len(headers) -1 )
+        table = []
+        for i, d in enumerate(self.distribution_makers):
+            p = d.pipelines[0] #assuming binning and key are the same for all pipelines in DistributionMaker
+            table.append([i, d.detector_name, p.output_binning, p.output_key, d.profile])
+        return tabulate(table, headers, tablefmt=tablefmt, colalign=colalign)
             
     def __iter__(self):
         return iter(self._distribution_makers)
+    
+    @property
+    def profile(self):
+        return self._profile
+
+    @profile.setter
+    def profile(self, value):
+        for d in self.distribution_makers:
+            d.profile = value
+        self._profile = value
+
+
+    def run(self):
+        for distribution_maker in self:
+            distribution_maker.run()
+
+    def setup(self):
+        """Setup (reset) all distribution makers"""
+        for d in self:
+            d.setup()
 
     def get_outputs(self, **kwargs):
         """Compute and return the outputs.
@@ -146,12 +187,12 @@ class Detectors(object):
                     
         for distribution_maker in self:
             for param in distribution_maker.params:
-                if param.name in params.names and param.name in self.shared_params:
+                if param.name in self.shared_params:
                     continue # shared param is already in param set, can continue with the next param
                 elif param.name in params.names: # two parameters with the same name but not shared 
                     # add detector name to the parameter name
                     changed_param = deepcopy(param)
-                    changed_param.name = param.name + '_' + distribution_maker._detector_name
+                    changed_param.name = param.name + '_' + distribution_maker.detector_name
                     params.extend(changed_param)
                 else:
                     params.extend(param)
@@ -198,6 +239,32 @@ class Detectors(object):
     @property
     def hash(self):
         return hash_obj([self.source_code_hash] + [d.hash for d in self])
+
+    @property
+    def num_events_per_bin(self):
+        '''
+        returns list of arrays of bin indices where none of the 
+        pipelines in the respective distribution maker have MC events
+        '''
+        num_events_per_bin = []
+        for d in self.distribution_makers:
+            num_events_per_bin.append(d.num_events_per_bin)
+
+        return num_events_per_bin
+    
+
+    @property
+    def empty_bin_indices(self):
+        '''Find indices where there are no events present
+        '''
+        num_events_per_bin = self.num_events_per_bin
+        
+        indices = []
+        for i, d in enumerate(self.distribution_makers):
+            empty_counts = num_events_per_bin[i] == 0
+            indices.append(np.where(empty_counts)[0])
+        return indices
+
 
     def set_free_params(self, values):
         """Set free parameters' values.

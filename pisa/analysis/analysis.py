@@ -26,7 +26,7 @@ from pisa.core.param import ParamSet
 from pisa.utils.comparisons import recursiveEquality, FTYPE_PREC
 from pisa.utils.log import logging
 from pisa.utils.fileio import to_file
-from pisa.utils.stats import METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE
+from pisa.utils.stats import METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE, it_got_better, is_metric_to_maximize
 
 
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD', 'MINIMIZERS_USING_CONSTRAINTS',
@@ -415,7 +415,7 @@ class HypoFitResult(object):
                 # without actually doing anything
                 self.detailed_metric_info = [self.get_detailed_metric_info(
                     data_dist=data_dist[i], hypo_asimov_dist=self.hypo_asimov_dist[i],
-                    params=hypo_maker._distribution_makers[i].params, metric=metric[i],
+                    params=hypo_maker.distribution_makers[i].params, metric=metric[i],
                     other_metrics=other_metrics, detector_name=hypo_maker.det_names[i]
                 ) for i in range(len(data_dist))]
             else: # DistributionMaker object
@@ -501,6 +501,9 @@ class HypoFitResult(object):
         elif isinstance(new_had, Mapping):
             # instantiating from serializable state
             self._hypo_asimov_dist = MapSet(**new_had)
+        elif isinstance(new_had, list) and all(isinstance(item, MapSet) for item in new_had):
+            # for detector class output
+            self._hypo_asimov_dist = new_had
         else:
             raise ValueError("invalid format for hypo_asimov_dist")
 
@@ -800,17 +803,10 @@ class BasicAnalysis(object):
         #     new_fit_info._rehash()
 
         # Take the one with the best fit
-        if metric[0] in METRICS_TO_MAXIMIZE:
-            it_got_better = (
-                new_fit_info.metric_val > best_fit_info.metric_val
-            )
-        else:
-            it_got_better = (
-                new_fit_info.metric_val < best_fit_info.metric_val
-            )
+        got_better = it_got_better(new_fit_info.metric_val, best_fit_info.metric_val, metric)
 
         # TODO: Pass alternative fits up the chain
-        if it_got_better:
+        if got_better:
             # alternate_fits.append(best_fit_info)
             best_fit_info = new_fit_info
             if not self.blindness:
@@ -859,7 +855,7 @@ class BasicAnalysis(object):
         
         all_fit_metric_vals = [fit_info.metric_val for fit_info in all_fit_results]
         # Take the one with the best fit
-        if metric[0] in METRICS_TO_MAXIMIZE:
+        if is_metric_to_maximize(metric):
             best_idx = np.argmax(all_fit_metric_vals)
         else:
             best_idx = np.argmin(all_fit_metric_vals)
@@ -984,7 +980,7 @@ class BasicAnalysis(object):
         if not self.blindness:
             logging.info(f"Grid scan metrics:\n{all_fit_metric_vals}")
         # Take the one with the best fit
-        if metric[0] in METRICS_TO_MAXIMIZE:
+        if is_metric_to_maximize(metric):
             best_idx = np.argmax(all_fit_metric_vals)
             best_idx_grid = np.unravel_index(best_idx, all_fit_metric_vals.shape)
         else:
@@ -1078,7 +1074,7 @@ class BasicAnalysis(object):
             tol = 1e-4
             if "constraint_tol" in method_kwargs.keys():
                 tol = method_kwargs["constraint_tol"]
-            penalty_sign = -1 if metric in METRICS_TO_MAXIMIZE else 1
+            penalty_sign = -1 if is_metric_to_maximize(metric) else 1
             # resetting after each doubling of the penalty is probably an inefficient
             # thing to do...
             reset_free = False
@@ -1168,7 +1164,7 @@ class BasicAnalysis(object):
 
         all_fit_metric_vals = [fit_info.metric_val for fit_info in all_fit_results]
         # Take the one with the best fit
-        if metric[0] in METRICS_TO_MAXIMIZE:
+        if is_metric_to_maximize(metric):
             best_idx = np.argmax(all_fit_metric_vals)
         else:
             best_idx = np.argmin(all_fit_metric_vals)
@@ -1279,26 +1275,10 @@ class BasicAnalysis(object):
         # Indicate indices where x0 should be reflected around the mid-point at 0.5.
         # This is only used for the COBYLA minimizer.
         flip_x0 = np.zeros(len(x0), dtype=bool)
-        # Guard against over-stepping of boundaries by clipping values during
-        # minimization. This is only used for COBYLA because it tolerates some
-        # violation of the constraints. Because COBYLA is gradient-free, the clipping
-        # should not impact the minimization in a detrimental way.
-        guard_bounds = False
+
         minimizer_method = minimizer_settings["method"]["value"].lower()
         cons = ()
-        if minimizer_method in MINIMIZERS_USING_SYMM_GRAD:
-            logging.warning(
-                'Minimizer %s requires artificial boundaries SMALLER than the'
-                ' user-specified boundaries (so that numerical gradients do'
-                ' not exceed the user-specified boundaries).',
-                minimizer_method
-            )
-            step_size = minimizer_settings['options']['value']['eps']
-            bounds = [(0 + step_size, 1 - step_size)]*len(x0)
-            x0[(0 <= x0) & (x0 < step_size)] = step_size
-            x0[(1 - step_size < x0) & (x0 <= 1)] = 1 - step_size
-
-        elif minimizer_method in MINIMIZERS_USING_CONSTRAINTS:
+        if minimizer_method in MINIMIZERS_USING_CONSTRAINTS:
             logging.warning(
                 'Minimizer %s requires bounds to be formulated in terms of constraints.'
                 ' Constraining functions are auto-generated now.',
@@ -1316,43 +1296,12 @@ class BasicAnalysis(object):
             # direction. Flipping around 0.5 ensures that this initial step will not
             # overstep boundaries if `rhobeg` is 0.5. 
             flip_x0 = np.array(x0) > 0.5
-            # The minimizer can't handle bounds, but they are still used below to clip
-            # x0 into the valid range if that is necessary.
-            guard_bounds = True
+            # The minimizer can't handle bounds, but they still need to be passed for
+            # the interface to be uniform even though they are not used.
             bounds = [(0, 1)]*len(x0)
         else:
             bounds = [(0, 1)]*len(x0)
 
-        clipped_x0 = []
-        for param, x0_val, bds in zip(hypo_maker.params.free, x0, bounds):
-            if x0_val < bds[0] - EPSILON:
-                raise ValueError(
-                    'Param %s, initial scaled value %.17e is below lower bound'
-                    ' %.17e.' % (param.name, x0_val, bds[0])
-                )
-            if x0_val > bds[1] + EPSILON:
-                raise ValueError(
-                    'Param %s, initial scaled value %.17e exceeds upper bound'
-                    ' %.17e.' % (param.name, x0_val, bds[1])
-                )
-
-            clipped_x0_val = np.clip(x0_val, a_min=bds[0], a_max=bds[1])
-            clipped_x0.append(clipped_x0_val)
-
-            if recursiveEquality(clipped_x0_val, bds[0]):
-                logging.warning(
-                    'Param %s, initial scaled value %e is at the lower bound;'
-                    ' minimization may fail as a result.',
-                    param.name, clipped_x0_val
-                )
-            if recursiveEquality(clipped_x0_val, bds[1]):
-                logging.warning(
-                    'Param %s, initial scaled value %e is at the upper bound;'
-                    ' minimization may fail as a result.',
-                    param.name, clipped_x0_val
-                )
-
-        x0 = np.array(clipped_x0)
         x0 = np.where(flip_x0, 1 - x0, x0)
         
         if global_method is None:
@@ -1411,7 +1360,7 @@ class BasicAnalysis(object):
                 fun=self._minimizer_callable,
                 x0=x0,
                 args=(hypo_maker, data_dist, metric, counter, fit_history,
-                      flip_x0, guard_bounds, external_priors_penalty),
+                      flip_x0, external_priors_penalty),
                 bounds=bounds,
                 constraints=cons,
                 method=minimizer_settings['method']['value'],
@@ -1423,7 +1372,7 @@ class BasicAnalysis(object):
                 func=self._minimizer_callable,
                 bounds=bounds,
                 args=(hypo_maker, data_dist, metric, counter, fit_history,
-                      flip_x0, guard_bounds, external_priors_penalty),
+                      flip_x0, external_priors_penalty),
                 callback=self._minimizer_callback,
                 **method_kwargs["options"]
             )
@@ -1443,7 +1392,7 @@ class BasicAnalysis(object):
             minimizer_kwargs = deepcopy(local_fit_kwargs)
             minimizer_kwargs["args"] = (
                 hypo_maker, data_dist, metric, counter, fit_history,
-                flip_x0, guard_bounds, external_priors_penalty
+                flip_x0, external_priors_penalty
             )
             if "reset_free" in minimizer_kwargs:
                 del minimizer_kwargs["reset_free"]
@@ -1473,7 +1422,7 @@ class BasicAnalysis(object):
                 bounds=bounds,
                 x0=x0,
                 args=(hypo_maker, data_dist, metric, counter, fit_history,
-                      flip_x0, guard_bounds, external_priors_penalty),
+                      flip_x0, external_priors_penalty),
                 callback=annealing_callback,
                 **method_kwargs["options"]
             )
@@ -1481,7 +1430,7 @@ class BasicAnalysis(object):
             minimizer_kwargs = deepcopy(local_fit_kwargs)
             minimizer_kwargs["args"] = (
                 hypo_maker, data_dist, metric, counter, fit_history,
-                flip_x0, guard_bounds, external_priors_penalty
+                flip_x0, external_priors_penalty
             )
             if "reset_free" in minimizer_kwargs:
                 del minimizer_kwargs["reset_free"]
@@ -1491,7 +1440,7 @@ class BasicAnalysis(object):
                 func=self._minimizer_callable,
                 bounds=bounds,
                 args=(hypo_maker, data_dist, metric, counter, fit_history,
-                      flip_x0, guard_bounds, external_priors_penalty),
+                      flip_x0, external_priors_penalty),
                 callback=self._minimizer_callback,
                 minimizer_kwargs=minimizer_kwargs,
                 **method_kwargs["options"]
@@ -1589,7 +1538,7 @@ class BasicAnalysis(object):
 
     def _minimizer_callable(self, scaled_param_vals, hypo_maker, data_dist,
                             metric, counter, fit_history, flip_x0,
-                            guard_bounds, external_priors_penalty=None):
+                            external_priors_penalty=None):
         """Simple callback for use by scipy.optimize minimizers.
 
         This should *not* in general be called by users, as `scaled_param_vals`
@@ -1625,9 +1574,6 @@ class BasicAnalysis(object):
         
         flip_x0 : ndarray of type bool
             Indicates which indices of x0 should be flipped around 0.5.
-        
-        guard_bounds : bool
-            Guard against over-stepping of boundaries by clipping x0.
 
         external_priors_penalty : func
             User defined prior penalty function, which takes `hypo_maker` and 
@@ -1651,14 +1597,6 @@ class BasicAnalysis(object):
                 raise ValueError('Defined metrics are not compatible')
 
         scaled_param_vals = np.where(flip_x0, 1 - scaled_param_vals, scaled_param_vals)
-        if guard_bounds:
-            dist_lb = scaled_param_vals
-            dist_ub = 1 - scaled_param_vals
-            if np.any(dist_lb < 0):
-                logging.warn(f"minimizer stepped under lower bound by {-np.min(dist_lb)}")
-            if np.any(dist_ub < 0):
-                logging.warn(f"minimizer stepped over upper bound by {-np.min(dist_ub)}")
-            scaled_param_vals = np.clip(scaled_param_vals, 0, 1)
         # Set param values from the scaled versions the minimizer works with
         hypo_maker._set_rescaled_free_params(scaled_param_vals) # pylint: disable=protected-access
 
@@ -1686,22 +1624,13 @@ class BasicAnalysis(object):
                 logging.error(str(e))
             raise
 
-        # Check number of used metrics
-        if hypo_maker.__class__.__name__ == "Detectors":
-            if len(metric) == 1: # One metric for all detectors
-                metric = list(metric) * len(hypo_maker._distribution_makers)
-            elif len(metric) != len(hypo_maker._distribution_makers):
-                raise IndexError('Number of defined metrics does not match with number of detectors.')
-        else: # DistributionMaker object
-            assert len(metric) == 1
-
         #
         # Assess the fit: whether the data came from the hypo_asimov_dist
         #
         try:
             if hypo_maker.__class__.__name__ == "Detectors":
                 metric_val = 0
-                for i in range(len(hypo_maker._distribution_makers)):
+                for i in range(len(hypo_maker.distribution_makers)):
                     data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],
                                                   metric=metric[i], metric_kwargs=metric_kwargs)
                     metric_val += data
@@ -1901,6 +1830,14 @@ class Analysis(BasicAnalysis):
 
         if isinstance(metric, str):
             metric = [metric]
+        # Check number of used metrics
+        if hypo_maker.__class__.__name__ == "Detectors":
+            if len(metric) == 1: # One metric for all detectors
+                metric = list(metric) * len(hypo_maker.distribution_makers)
+            elif len(metric) != len(hypo_maker.distribution_makers):
+                raise IndexError('Number of defined metrics does not match with number of detectors.')
+        else: # DistributionMaker object
+            assert len(metric) == 1
 
         if check_ordering:
             if 'nh' in hypo_param_selections or 'ih' in hypo_param_selections:
@@ -1974,29 +1911,29 @@ class Analysis(BasicAnalysis):
 
         """
         fit_info = HypoFitResult()
-        if isinstance(metric, str):
-            metric = [metric]
-        fit_info.metric = metric
 
         # NOTE: Select params but *do not* reset to nominal values to record
         # the current (presumably already optimal) param values
         hypo_maker.select_params(hypo_param_selections)
 
+        if isinstance(metric, str):
+            metric = [metric]
         # Check number of used metrics
         if hypo_maker.__class__.__name__ == "Detectors":
             if len(metric) == 1: # One metric for all detectors
-                metric = list(metric) * len(hypo_maker._distribution_makers)
-            elif len(metric) != len(hypo_maker._distribution_makers):
+                metric = list(metric) * len(hypo_maker.distribution_makers)
+            elif len(metric) != len(hypo_maker.distribution_makers):
                 raise IndexError('Number of defined metrics does not match with number of detectors.')
         else: # DistributionMaker object
             assert len(metric) == 1
+        fit_info.metric = metric
 
         # Assess the fit: whether the data came from the hypo_asimov_dist
         try:
             if hypo_maker.__class__.__name__ == "Detectors":
                 metric_val = 0
-                for i in range(len(hypo_maker._distribution_makers)):
-                    data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],metric=metric[i])
+                for i in range(len(hypo_maker.distribution_makers)):
+                    data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i], metric=metric[i])
                     metric_val += data
                 priors = hypo_maker.params.priors_penalty(metric=metric[0]) # uses just the "first" metric for prior
                 metric_val += priors
@@ -2045,7 +1982,7 @@ class Analysis(BasicAnalysis):
         if hypo_maker.__class__.__name__ == "Detectors":
             fit_info.detailed_metric_info = [self.get_detailed_metric_info(
                 data_dist=data_dist[i], hypo_asimov_dist=hypo_asimov_dist[i],
-                params=hypo_maker._distribution_makers[i].params, metric=metric[i],
+                params=hypo_maker.distribution_makers[i].params, metric=metric[i],
                 other_metrics=other_metrics, detector_name=hypo_maker.det_names[i]
             ) for i in range(len(data_dist))]
         else: # DistributionMaker object
