@@ -27,7 +27,14 @@ from pisa.utils.resources import find_resource
 
 def antipion_production(barr_var, pion_ratio):
     """
-    Combine pi+ param and pi+/pi- ratio to get pi- param
+    Combine pi+ barr param and pi+/pi- ratio to get pi- barr param
+
+    Definitions: 
+        pion ratio = (1 + barr_var+) / (1 + barr_var-)
+        delta pion ratio = pion ratio - 1  (e.g. deviation from nominal ratio value, which is 1)
+
+    Note that the `pion_ratio` param really represents the "delta pion ratio", so is defined
+    similarly to the barr variables themselves .
     """
     return ((1 + barr_var) / (1 + pion_ratio)) - 1
 
@@ -163,6 +170,8 @@ class mceq_barr(Stage):
             "delta_index",
             "energy_pivot",
         )
+
+        #TODO Consider a pi/K ratio constraint
 
         # store args
         self.table_file = table_file
