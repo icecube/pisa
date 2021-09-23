@@ -1528,20 +1528,20 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
     # Generate MapSets
     #
 
-    # Create the pipelines (using the pipeline configs provided)
-    nominal_dataset["pipeline"] = Pipeline(nominal_dataset["pipeline_cfg"])
-    for sys_dataset in sys_datasets:
-        sys_dataset["pipeline"] = Pipeline(sys_dataset["pipeline_cfg"])
+    # Get maps and param values from nominal pipeline
+    nominal_pipeline = Pipeline(nominal_dataset["pipeline_cfg"])
+    pipeline_param_values = { p.name:p.value for p in nominal_pipeline.params }
+    nominal_dataset["mapset"] = nominal_pipeline.get_outputs()  # return_sum=False)
+    del nominal_pipeline # Save memory
 
-    # Check all pipelines are using the same pipeline param values (only the input file should differ between them)
-    for param_name in nominal_dataset["pipeline"].params.names :
-        for sys_dataset in sys_datasets:
-            assert nominal_dataset["pipeline"].params[param_name].value == sys_dataset["pipeline"].params[param_name].value, "Mismatch in pipeline param '%s' value between nominal and systematic pipelines : %s != %s" % (param_name, nominal_dataset["pipeline"].params[param_name].value == sys_dataset["pipeline"].params[param_name].value)
-
-    # Run the nominal and systematics pipelines to get maps
-    nominal_dataset["mapset"] = nominal_dataset["pipeline"].get_outputs()  # return_sum=False)
+    # Loop over sys datasets and grap the maps from them too
+    # Also make sure the pipeline params match the nominal pipeline (only the input file should differ between them)
     for sys_dataset in sys_datasets:
-        sys_dataset["mapset"] = sys_dataset["pipeline"].get_outputs()  # return_sum=False)
+        sys_pipeline = Pipeline(sys_dataset["pipeline_cfg"])
+        for param in sys_pipeline.params :
+            assert param.value == pipeline_param_values[param.name], "Mismatch in pipeline param '%s' value between nominal and systematic pipelines : %s != %s" % (param.name, param.value, pipeline_param_values[param.name])
+        sys_dataset["mapset"] = sys_pipeline.get_outputs()  # return_sum=False)
+        del sys_pipeline
 
     # Merge maps according to the combine regex, is one was provided
     if combine_regex is not None:
@@ -1599,7 +1599,7 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
 
         # Record the pipeline params used to generate the maps used for 
         # the fits, for data provenance purposes only
-        hypersurface.fit_pipeline_param_values = { p.name:p.value for p in nominal_dataset["pipeline"].params }
+        hypersurface.fit_pipeline_param_values = pipeline_param_values
 
         # Report the results
         logging.debug("\nFitted hypersurface report:\n%s" % hypersurface)
