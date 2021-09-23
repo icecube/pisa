@@ -278,6 +278,13 @@ class Hypersurface(object):
         self.fit_cov_mat = None
         self.fit_method = None
 
+        # Also add option store the pipeline param values used to generate the 
+        # maps that are the inouts to the fits for these hypersurfaces. They are
+        # not actually used in the fit and so this variable is generally `None`,
+        # but a user can set them externally during the fitting process so that
+        # they can be stored for for future reference 
+        self.fit_pipeline_param_values = None  
+
         # Serialization
         self._serializable_state = None
 
@@ -520,7 +527,7 @@ class Hypersurface(object):
         # Check nominal dataset definition
         assert isinstance(nominal_map, Map)
         assert isinstance(nominal_param_values, collections.Mapping)
-        assert set(nominal_param_values.keys()) == set(self.param_names), "Params mismatch : %s != %s" % (list(set(nominal_param_values.keys())) == list(set(self.param_names)))
+        assert set(nominal_param_values.keys()) == set(self.param_names)
         assert all([isinstance(k, str) for k in nominal_param_values.keys()])
         assert all([np.isscalar(v) for v in nominal_param_values.values()])
         # Check systematic dataset definitions
@@ -1081,6 +1088,7 @@ class Hypersurface(object):
             state["fit_chi2"] = self.fit_chi2
             state["fit_cov_mat"] = self.fit_cov_mat
             state["fit_method"] = self.fit_method
+            state["fit_pipeline_param_values"] = self.fit_pipeline_param_values
             state["using_legacy_data"] = self.using_legacy_data
 
             state["params"] = collections.OrderedDict()
@@ -1520,13 +1528,20 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
     # Generate MapSets
     #
 
-    # Create and run the nominal and systematics pipelines (using the pipeline configs
-    # provided) to get maps
-    nominal_dataset["mapset"] = Pipeline(
-        nominal_dataset["pipeline_cfg"]).get_outputs()  # return_sum=False)
+    # Create the pipelines (using the pipeline configs provided)
+    nominal_dataset["pipeline"] = Pipeline(nominal_dataset["pipeline_cfg"])
     for sys_dataset in sys_datasets:
-        sys_dataset["mapset"] = Pipeline(
-            sys_dataset["pipeline_cfg"]).get_outputs()  # return_sum=False)
+        sys_dataset["pipeline"] = Pipeline(sys_dataset["pipeline_cfg"])
+
+    # Check all pipelines are using the same pipeline param values (only the input file should differ between them)
+    for param_name in nominal_dataset["pipeline"].params.names :
+        for sys_dataset in sys_datasets:
+            assert nominal_dataset["pipeline"].params[param_name].value == sys_dataset["pipeline"].params[param_name].value, "Mismatch in pipeline param '%s' value between nominal and systematic pipelines : %s != %s" % (param_name, nominal_dataset["pipeline"].params[param_name].value == sys_dataset["pipeline"].params[param_name].value)
+
+    # Run the nominal and systematics pipelines to get maps
+    nominal_dataset["mapset"] = nominal_dataset["pipeline"].get_outputs()  # return_sum=False)
+    for sys_dataset in sys_datasets:
+        sys_dataset["mapset"] = sys_dataset["pipeline"].get_outputs()  # return_sum=False)
 
     # Merge maps according to the combine regex, is one was provided
     if combine_regex is not None:
@@ -1537,6 +1552,7 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
                 combine_regex)
 
     # TODO check every mapset has the same elements
+
 
     #
     # Loop over maps
@@ -1581,6 +1597,10 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
             **hypersurface_fit_kw
         )
 
+        # Record the pipeline params used to generate the maps used for 
+        # the fits, for data provenance purposes only
+        hypersurface.fit_pipeline_param_values = { p.name:p.value for p in nominal_dataset["pipeline"].params }
+
         # Report the results
         logging.debug("\nFitted hypersurface report:\n%s" % hypersurface)
 
@@ -1603,7 +1623,7 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
 
     logging.info("Fit results written : %s" % output_path)
 
-    return output_path
+    return output_dir
 
 
 def load_hypersurfaces(input_file, expected_binning=None):
