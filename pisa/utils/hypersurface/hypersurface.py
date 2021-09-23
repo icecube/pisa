@@ -527,7 +527,7 @@ class Hypersurface(object):
         # Check nominal dataset definition
         assert isinstance(nominal_map, Map)
         assert isinstance(nominal_param_values, collections.Mapping)
-        assert set(nominal_param_values.keys()) == set(self.param_names)
+        assert set(nominal_param_values.keys()) == set(self.param_names), "Params mismatch : %s != %s" % (list(set(nominal_param_values.keys())) == list(set(self.param_names)))
         assert all([isinstance(k, str) for k in nominal_param_values.keys()])
         assert all([np.isscalar(v) for v in nominal_param_values.values()])
         # Check systematic dataset definitions
@@ -1623,7 +1623,7 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
 
     logging.info("Fit results written : %s" % output_path)
 
-    return output_dir
+    return output_path
 
 
 def load_hypersurfaces(input_file, expected_binning=None):
@@ -1699,7 +1699,7 @@ def load_hypersurfaces(input_file, expected_binning=None):
     #
 
     else:
-        raise Exception("Unknown file format")
+        raise Exception("Unknown file format : %s" % input_file)
 
     # Check binning
     if expected_binning is not None:
