@@ -67,7 +67,8 @@ from pisa import FTYPE, TARGET, PISA_NUM_THREADS
 from pisa.utils.comparisons import ALLCLOSE_KW
 from pisa.utils.log import Levels, logging, set_verbosity
 
-numba.set_num_threads(PISA_NUM_THREADS)
+if TARGET == "parallel":
+    numba.set_num_threads(PISA_NUM_THREADS)
 
 if TARGET is None:
     raise NotImplementedError("Numba not supported.")

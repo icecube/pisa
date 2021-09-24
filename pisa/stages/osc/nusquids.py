@@ -227,7 +227,7 @@ class nusquids(Stage):
         self.detector_depth = detector_depth.m_as("km")
         self.prop_height = prop_height.m_as("km")
         self.avg_height = False
-        self.concurrent_threads = PISA_NUM_THREADS
+        self.concurrent_threads = PISA_NUM_THREADS if TARGET == "parallel" else 1
         self.prop_height_range = None
         self.apply_height_avg_below_hor = apply_height_avg_below_hor
         if prop_height_range is not None:  # this is optional

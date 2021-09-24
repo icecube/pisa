@@ -219,12 +219,20 @@ PISA_NUM_THREADS = 1
 if 'PISA_NUM_THREADS' in os.environ:
     PISA_NUM_THREADS = int(os.environ['PISA_NUM_THREADS'])
     assert PISA_NUM_THREADS >= 1
-else:
+    if TARGET == 'cpu' and PISA_NUM_THREADS > 1:
+        sys.stderr.write("[WARNING] PISA_NUM_THREADS > 1 will be ignored when "
+                         "PISA_TARGET is not `parallel`.\n")
+        PISA_NUM_THREADS = 1
+elif TARGET == 'parallel':
     PISA_NUM_THREADS = numba.config.NUMBA_NUM_THREADS
+
+if TARGET == 'cpu':
+    # making sure that we can definitely rely on the fact that the number of threads
+    # will be 1 if the TARGET is `cpu` (some stages might do that)
+    assert PISA_NUM_THREADS == 1
+
 OMP_NUM_THREADS = min(PISA_NUM_THREADS, OMP_NUM_THREADS)
-if TARGET == 'cpu' and PISA_NUM_THREADS > 1:
-    sys.stderr.write("[WARNING] PISA_NUM_THREADS > 1 will be ignored when PISA_TARGET "
-                     "is not `parallel`.\n")
+
 # Define HASH_SIGFIGS to set hashing precision based on FTYPE above; value here
 # is default (i.e. for FTYPE == np.float64)
 HASH_SIGFIGS = 12
