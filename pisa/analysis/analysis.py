@@ -1093,12 +1093,16 @@ class BasicAnalysis(object):
             if "constraint_tol" in method_kwargs.keys():
                 tol = method_kwargs["constraint_tol"]
             penalty_sign = -1 if is_metric_to_maximize(metric) else 1
-            # resetting after each doubling of the penalty is probably an inefficient
-            # thing to do...
+            # It would be very inefficient to reset all free values each time when 
+            # the penalty is doubled. However, we might still want to reset just once
+            # at the beginning of the constrained fit. We could still, if we wanted
+            # to, reset in the inner loop via the local_fit_kwargs.
             reset_free = False
             if "reset_free" in method_kwargs.keys():
                 reset_free = method_kwargs["reset_free"]
-            
+            if reset_free:
+                hypo_maker.reset_free()
+
             if external_priors_penalty is None:
                 penalty_func = lambda hypo_maker, metric: (
                     penalty_sign * penalty * constraint_func(params=hypo_maker.params)
@@ -1110,8 +1114,6 @@ class BasicAnalysis(object):
                 )
             # emulating do-while loop
             while True:
-                if reset_free:
-                    hypo_maker.reset_free()
                 if "starting_values" in method_kwargs.keys():
                     for param, value in method_kwargs["starting_values"].items():
                         orig_param = deepcopy(hypo_maker.params[param])
