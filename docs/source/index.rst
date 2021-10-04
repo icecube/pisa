@@ -12,12 +12,7 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   readmes/pisa_index
-   readmes/install
-   readmes/stages_index
-   readmes/devel_guide
-   readmes/utils_index
-   Docstrings <modules>
+   API reference <modules>
 
 Index
 -----

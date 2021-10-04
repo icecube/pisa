@@ -70,7 +70,7 @@ def propagate_array(dm, mix, mat_pot, nubar, energy, densities, distances, proba
 
 @njit(
     [f"({FX}[:,:], {CX}[:,:], {CX}[:,:], {IX}, {FX}, {FX}[:], {FX}[:], {FX}[:,:])"],
-    target=TARGET,
+    parallel=TARGET == "parallel"
 )
 def propagate_scalar(
     dm, mix, mat_pot, nubar, energy, densities, distances, probability
@@ -97,7 +97,7 @@ def propagate_scalar(
         f"{CX}[:,:], "  # transition_matrix
         ")"
     ],
-    target=TARGET,
+    parallel=TARGET == "parallel"
 )
 def get_transition_matrix_hostfunc(
     nubar,
@@ -127,7 +127,7 @@ def get_transition_matrix_hostfunc(
     )
 
 
-@njit([f"({FX}, {FX}, {CX}[:,:], {CX}[:,:], {CX}[:,:], {CX}[:,:])"], target=TARGET)
+@njit([f"({FX}, {FX}, {CX}[:,:], {CX}[:,:], {CX}[:,:], {CX}[:,:])"], parallel=TARGET == "parallel")
 def get_transition_matrix_massbasis_hostfunc(
     baseline,
     energy,
@@ -148,28 +148,28 @@ def get_transition_matrix_massbasis_hostfunc(
     )
 
 
-@njit([f"({CX}[:,:], {CX}[:,:], {FX}[:,:], {CX}[:,:])"], target=TARGET)
+@njit([f"({CX}[:,:], {CX}[:,:], {FX}[:,:], {CX}[:,:])"], parallel=TARGET == "parallel")
 def get_H_vac_hostfunc(mix_nubar, mix_nubar_conj_transp, dm_vac_vac, H_vac):
     """wrapper to run `get_H_vac` from host (whether TARGET is "cuda" or "host")"""
     get_H_vac(mix_nubar, mix_nubar_conj_transp, dm_vac_vac, H_vac)
 
 
 # @guvectorize(
-#     [f"({FX}, {CX}[:,:], {IX}, {CX}[:,:])"], "(), (m, m), () -> (m, m)", target=TARGET
+#     [f"({FX}, {CX}[:,:], {IX}, {CX}[:,:])"], "(), (m, m), () -> (m, m)"
 # )
-@njit([f"({FX}, {CX}[:,:], {IX}, {CX}[:,:])"], target=TARGET)
+@njit([f"({FX}, {CX}[:,:], {IX}, {CX}[:,:])"], parallel=TARGET == "parallel")
 def get_H_mat_hostfunc(rho, mat_pot, nubar, H_mat):
     """wrapper to run `get_H_mat` from host (whether TARGET is "cuda" or "host")"""
     get_H_mat(rho, mat_pot, nubar, H_mat)
 
 
-@njit([f"({FX}, {CX}[:,:], {FX}[:,:], {CX}[:,:], {CX}[:,:])"], target=TARGET)
+@njit([f"({FX}, {CX}[:,:], {FX}[:,:], {CX}[:,:], {CX}[:,:])"], parallel=TARGET == "parallel")
 def get_dms_hostfunc(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac):
     """wrapper to run `get_dms` from host (whether TARGET is "cuda" or "host")"""
     get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac)
 
 
-@njit([f"({FX}, {CX}[:,:], {CX}[:,:], {CX}[:,:], {CX}[:,:,:])"], target=TARGET)
+@njit([f"({FX}, {CX}[:,:], {CX}[:,:], {CX}[:,:], {CX}[:,:,:])"], parallel=TARGET == "parallel")
 def get_product_hostfunc(
     energy, dm_mat_vac, dm_mat_mat, H_mat_mass_eigenstate_basis, product
 ):
@@ -177,7 +177,7 @@ def get_product_hostfunc(
     get_product(energy, dm_mat_vac, dm_mat_mat, H_mat_mass_eigenstate_basis, product)
 
 
-@njit([f"({IX}, {CX}[:,:], {CX}[:])"], target=TARGET)
+@njit([f"({IX}, {CX}[:,:], {CX}[:])"], parallel=TARGET == "parallel")
 def convert_from_mass_eigenstate_hostfunc(state, mix_nubar, psi):
     """wrapper to run `convert_from_mass_eigenstate` from host (whether TARGET
     is "cuda" or "host")"""
@@ -185,7 +185,7 @@ def convert_from_mass_eigenstate_hostfunc(state, mix_nubar, psi):
 
 
 @guvectorize(
-    [f"({FX}[:,:], {IX}, {IX}, {FX}[:])"], "(a,b), (), () -> ()", target=TARGET
+    [f"({FX}[:,:], {IX}, {IX}, {FX}[:])"], "(a,b), (), () -> ()"
 )
 def fill_probs(probability, initial_flav, flav, out):
     """Fill `out` with transition probabilities to go from `initial_flav` to

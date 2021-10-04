@@ -10,7 +10,9 @@ import os
 import sys
 import warnings
 
+import numba
 from numba import jit as numba_jit
+
 from numpy import (
     array, inf, nan,
     float32, float64,
@@ -64,6 +66,7 @@ __all__ = [
     'NUMBA_CUDA_AVAIL',
     'TARGET',
     'OMP_NUM_THREADS',
+    'PISA_NUM_THREADS',
     'FTYPE',
     'CTYPE',
     'ITYPE',
@@ -120,7 +123,6 @@ OMP_NUM_THREADS = 1
 if 'OMP_NUM_THREADS' in os.environ:
     OMP_NUM_THREADS = int(os.environ['OMP_NUM_THREADS'])
     assert OMP_NUM_THREADS >= 1
-
 
 NUMBA_CUDA_AVAIL = False
 def dummy_func(x):
@@ -210,6 +212,26 @@ if TARGET is not None and 'PISA_TARGET' in os.environ:
 
 del cpu_targets, gpu_targets, parallel_targets
 
+# Default to single thread, then try to read from env
+PISA_NUM_THREADS = 1
+"""Global limit for number of threads"""
+
+if 'PISA_NUM_THREADS' in os.environ:
+    PISA_NUM_THREADS = int(os.environ['PISA_NUM_THREADS'])
+    assert PISA_NUM_THREADS >= 1
+    if TARGET == 'cpu' and PISA_NUM_THREADS > 1:
+        sys.stderr.write("[WARNING] PISA_NUM_THREADS > 1 will be ignored when "
+                         "PISA_TARGET is not `parallel`.\n")
+        PISA_NUM_THREADS = 1
+elif TARGET == 'parallel':
+    PISA_NUM_THREADS = numba.config.NUMBA_NUM_THREADS
+
+if TARGET == 'cpu':
+    # making sure that we can definitely rely on the fact that the number of threads
+    # will be 1 if the TARGET is `cpu` (some stages might do that)
+    assert PISA_NUM_THREADS == 1
+
+OMP_NUM_THREADS = min(PISA_NUM_THREADS, OMP_NUM_THREADS)
 
 # Define HASH_SIGFIGS to set hashing precision based on FTYPE above; value here
 # is default (i.e. for FTYPE == np.float64)
@@ -263,7 +285,7 @@ if TARGET is None:
 elif TARGET == 'cpu':
     target_msg = 'numba is running on CPU (single core)' # pylint: disable=invalid-name
 elif TARGET == 'parallel':
-    target_msg = 'numba is running on CPU (multicore)' # pylint: disable=invalid-name
+    target_msg = f'numba is running on CPU (multicore) with {PISA_NUM_THREADS} cores' # pylint: disable=invalid-name
 elif TARGET == 'cuda':
     target_msg = 'numba is running on GPU' # pylint: disable=invalid-name
 ini_msgs.append(target_msg)

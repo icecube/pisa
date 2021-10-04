@@ -1,22 +1,21 @@
-pisa\.stages\.absorption package
-================================
+pisa.stages.absorption package
+==============================
 
 Submodules
 ----------
 
-pisa\.stages\.absorption\.pi\_earth\_absorption module
-------------------------------------------------------
+pisa.stages.absorption.earth\_absorption module
+-----------------------------------------------
 
-.. automodule:: pisa.stages.absorption.pi_earth_absorption
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
+.. automodule:: pisa.stages.absorption.earth_absorption
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Module contents
 ---------------
 
 .. automodule:: pisa.stages.absorption
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:

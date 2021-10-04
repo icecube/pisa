@@ -1,7 +1,7 @@
 #!/bin/sh
 
 LOCALDIR=$(dirname "$0")
-HOST=pub1.icecube.wisc.edu
+HOST=pub2.icecube.wisc.edu
 HTML_DIR=~peller/public_html/pisa_docs
 
 echo "Creating remote HTML directory if it doesn't already exist"
