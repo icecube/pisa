@@ -18,6 +18,7 @@ import numpy as np
 import scipy.optimize as optimize
 # this is needed for the take_step option in basinhopping
 from scipy._lib._util import check_random_state
+from iminuit import Minuit
 
 import pisa
 from pisa import EPSILON, FTYPE, ureg
@@ -26,7 +27,9 @@ from pisa.core.param import ParamSet
 from pisa.utils.comparisons import recursiveEquality, FTYPE_PREC
 from pisa.utils.log import logging
 from pisa.utils.fileio import to_file
-from pisa.utils.stats import METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE, it_got_better, is_metric_to_maximize
+from pisa.utils.stats import (METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE,
+                              LLH_METRICS, CHI2_METRICS,
+                              it_got_better, is_metric_to_maximize)
 
 
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD', 'MINIMIZERS_USING_CONSTRAINTS',
@@ -1553,7 +1556,243 @@ class BasicAnalysis(object):
         if not self.blindness:
             logging.info(f"found best fit: {fit_info.params.free}")
         return fit_info
+    
+    def _fit_minuit(self, data_dist, hypo_maker, metric,
+                    external_priors_penalty, method_kwargs, local_fit_kwargs):
+        """Run the Minuit minimizer to modify hypo dist maker's free params
+        until the data_dist is most likely to have come from this hypothesis.
 
+        This function uses only local optimization and does not attempt to find
+        a global optimum among several local optima.
+
+        Parameters
+        ----------
+        data_dist : MapSet or List of MapSets
+            Data distribution(s)
+
+        hypo_maker : Detectors, DistributionMaker or convertible thereto
+
+        metric : string or iterable of strings
+
+        external_priors_penalty : func
+            User defined prior penalty function
+
+        method_kwargs : dict
+            Options passed on for Minuit
+        
+        local_fit_kwargs : dict
+            Ignored since no local fit happens inside this fit
+
+        Returns
+        -------
+        fit_info : HypoFitResult
+        """
+        
+        logging.info("Entering local fit using Minuit")
+        
+        if local_fit_kwargs is not None:
+            logging.warn("Local fit kwargs are ignored by 'fit_minuit'."
+                         "Use 'method_kwargs' to set Minuit options.")
+        
+        if method_kwargs is None:
+            method_kwargs = {}  # use all defaults
+        if not self.blindness:
+            logging.debug("free parameters:")
+            logging.debug(hypo_maker.params.free)
+        
+        if isinstance(metric, str):
+            metric = [metric]
+        sign = 0
+        for m in metric:
+            if m in METRICS_TO_MAXIMIZE and sign != +1:
+                sign = -1
+            elif m in METRICS_TO_MINIMIZE and sign != -1:
+                sign = +1
+            else:
+                raise ValueError("Defined metrics are not compatible")
+        # Get starting free parameter values
+        x0 = np.array(hypo_maker.params.free._rescaled_values) # pylint: disable=protected-access
+
+        bounds = [(0, 1)]*len(x0)
+
+        counter = Counter()
+        
+        fit_history = []
+        fit_history.append(list(metric) + [v.name for v in hypo_maker.params.free])
+
+        start_t = time.time()
+
+        if self.pprint and not self.blindness:
+            free_p = hypo_maker.params.free
+
+            # Display any units on top
+            r = re.compile(r'(^[+0-9.eE-]* )|(^[+0-9.eE-]*$)')
+            hdr = ' '*(6+1+10+1+12+3)
+            unt = []
+            for p in free_p:
+                u = r.sub('', format(p.value, '~')).replace(' ', '')[0:10]
+                if u:
+                    u = '(' + u + ')'
+                unt.append(u.center(12))
+            hdr += ' '.join(unt)
+            hdr += '\n'
+
+            # Header names
+            hdr += ('iter'.center(6) + ' ' + 'funcalls'.center(10) + ' ' +
+                    metric[0][0:12].center(12) + ' | ')
+            hdr += ' '.join([p.name[0:12].center(12) for p in free_p])
+            if external_priors_penalty is not None:
+                hdr += " |   penalty  "
+            hdr += '\n'
+
+            # Underscores
+            hdr += ' '.join(['-'*6, '-'*10, '-'*12, '+'] + ['-'*12]*len(free_p))
+            if external_priors_penalty is not None:
+                hdr += " + -----------"
+            hdr += '\n'
+
+            sys.stdout.write(hdr)
+
+        # reset number of iterations before each minimization
+        self._nit = 0
+        # we never flip in minuit, but we still need to set it
+        flip_x0 = np.zeros(len(x0), dtype=bool)
+        args=(hypo_maker, data_dist, metric, counter, fit_history,
+              flip_x0, external_priors_penalty)
+                
+        def loss_func(x):
+            # In rare circumstances, minuit will try setting one of the parameters
+            # to NaN. Minuit might be able to recover when we return NaN.
+            if np.any(~np.isfinite(x)):
+                logging.warn(f"Minuit tried evaluating at invalid parameters: {x}")
+                return np.nan
+            return self._minimizer_callable(x, *args)
+
+        m = Minuit(loss_func, x0)
+        m.limits = bounds
+        # only initial step size, not very important
+        if "errors" in method_kwargs.keys():
+            m.errors = method_kwargs["errors"]
+        # Precision with which the likelihood is calculated
+        if "precision" in method_kwargs.keys():
+            m.precision = method_kwargs["precision"]
+        else:
+            # Documentation states that this value should be set to "some multiple of
+            # the smallest relative change of a parameter that still changes the
+            # function".
+            m.precision = 5 * FTYPE_PREC
+        if "tol" in method_kwargs.keys():
+            m.tol = method_kwargs["tol"]
+        simplex = False
+        if "run_simplex" in method_kwargs.keys():
+            simplex = method_kwargs["run_simplex"]
+        migrad = True
+        if "run_migrad" in method_kwargs.keys():
+            migrad = method_kwargs["run_migrad"]
+        if not (migrad or simplex):
+            raise ValueError("Must select at least one of MIGRAD or SIMPLEX to run")
+        # Minuit needs to know if the loss function is interpretable as a likelihood
+        # or as a least-squares loss. It influences the stopping condition where the 
+        # estimated uncertainty on parameters is small compared to their covariance.
+        if metric[0] in LLH_METRICS:
+            m.errordef = Minuit.LIKELIHOOD
+        elif metric[0] in CHI2_METRICS:
+            m.errordef = Minuit.LEAST_SQUARES
+        else:
+            raise ValueError("Metric neither LLH or CHI2, unknown error definition.")
+        # Minuit can sometimes try to evaluate at NaN parameters if the liklihood
+        # is badly behaved. We don't want to completely crash in that case.
+        m.throw_nan = False
+        # actually run the minimization!
+        if simplex:
+            logging.info("Running SIMPLEX")
+            m.simplex()
+        
+        if migrad:
+            logging.info("Running MIGRAD")        
+            m.migrad()
+
+        end_t = time.time()
+        if self.pprint:
+            # clear the line
+            sys.stdout.write('\n\n')
+            sys.stdout.flush()
+
+        minimizer_time = end_t - start_t
+        
+        logging.info(
+            'Total time to optimize: %8.4f s; # of dists generated: %6d;'
+            ' avg dist gen time: %10.4f ms',
+            minimizer_time, counter.count, minimizer_time*1000./counter.count
+        )
+        
+        if not m.accurate:
+            logging.warn("Covariance matrix invalid.")
+        if not m.valid:
+            logging.warn("Minimum not valid according to Minuit's criteria.")
+
+        # Will not assume that the minimizer left the hypo maker in the
+        # minimized state, so set the values now (also does conversion of
+        # values from [0,1] back to physical range)
+        rescaled_pvals = np.array(m.values)
+        hypo_maker._set_rescaled_free_params(rescaled_pvals) # pylint: disable=protected-access
+
+        # Get the best-fit metric value
+        metric_val = sign * m.fval
+
+        # Record minimizer metadata (all info besides 'x' and 'fun'; also do
+        # not record some attributes if performing blinded analysis)
+        metadata = OrderedDict()
+        # param names are relevant because they allow one to reconstruct which 
+        # parameter corresponds to which entry in the covariance matrix
+        metadata["param_names"] = hypo_maker.params.free.names
+        # The criteria to deem a minimum "valid" are too strict for our purposes, so 
+        # we accept the value even if m.valid is False.
+        metadata["success"] = np.isfinite(metric_val)
+        metadata["valid"] = m.valid
+        metadata["accurate"] = m.accurate
+        metadata["edm"] = m.fmin.edm
+        metadata["edm_goal"] = m.fmin.edm_goal
+        metadata["has_reached_call_limit"] = m.fmin.has_reached_call_limit
+        metadata["has_parameters_at_limit"] = m.fmin.has_parameters_at_limit
+        metadata["nit"] = m.nfcn
+        metadata["message"] = "Minuit finished."
+        
+        if not self.blindness:
+            if self.blindness < 2:
+                metadata["rescaled_values"] = np.array(m.values)
+            else:
+                metadata["rescaled_values"] = np.full(len(m.values), np.nan)
+            if m.accurate:
+                metadata["hess_inv"] = np.array(m.covariance)
+            else:
+                metadata["hess_inv"] = np.full((len(x0), len(x0)), np.nan)
+
+        if self.blindness > 1:  # only at stricter blindness level
+            # undo flip
+            x0 = np.where(flip_x0, 1 - x0, x0)
+            # Reset to starting value of the fit, rather than nominal values because
+            # the nominal value might be out of range if this is inside an octant check.
+            hypo_maker._set_rescaled_free_params(x0)
+        
+        # TODO: other metrics
+        fit_info = HypoFitResult(
+            metric,
+            metric_val,
+            data_dist,
+            hypo_maker,
+            minimizer_time=minimizer_time,
+            minimizer_metadata=metadata,
+            fit_history=fit_history,
+            other_metrics=None,
+            num_distributions_generated=counter.count,
+            include_detailed_metric_info=True,
+        )
+        
+        if not self.blindness:
+            logging.info(f"found best fit: {fit_info.params.free}")
+        return fit_info
+        
     def _minimizer_callable(self, scaled_param_vals, hypo_maker, data_dist,
                             metric, counter, fit_history, flip_x0,
                             external_priors_penalty=None):
@@ -1727,6 +1966,7 @@ class BasicAnalysis(object):
         "constrained": _fit_constrained,
         "fit_ranges": _fit_ranges,
         "condition": _fit_conditionally,
+        "iminuit": _fit_minuit
     }
     _additional_fit_methods = {}
 

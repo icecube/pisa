@@ -86,7 +86,7 @@ INSTALL_REQUIRES = [
     'kde @ git+https://github.com/icecubeopensource/kde.git',
     'fast-histogram @ git+https://github.com/atrettin/fast-histogram.git',
     'h5py',
-    'iminuit<2',
+    'iminuit>=2',
     'line_profiler',
     'matplotlib>=3.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
     'numba>=0.53', # >=0.35: fastmath jit flag; >=0.38: issue #439; 0.44 segfaults

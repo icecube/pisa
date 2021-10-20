@@ -32,7 +32,6 @@ import copy
 
 import numpy as np
 from iminuit import Minuit
-from iminuit.iminuit_warnings import HesseFailedWarning
 
 from pisa import FTYPE, ureg
 from pisa.utils.jsons import from_json, to_json
@@ -519,17 +518,17 @@ class Hypersurface(object):
 
         # Check nominal dataset definition
         assert isinstance(nominal_map, Map)
-        assert isinstance(nominal_param_values, collections.Mapping)
+        assert isinstance(nominal_param_values, collections.abc.Mapping)
         assert set(nominal_param_values.keys()) == set(self.param_names)
         assert all([isinstance(k, str) for k in nominal_param_values.keys()])
         assert all([np.isscalar(v) for v in nominal_param_values.values()])
         # Check systematic dataset definitions
-        assert isinstance(sys_maps, collections.Sequence)
-        assert isinstance(sys_param_values, collections.Sequence)
+        assert isinstance(sys_maps, collections.abc.Sequence)
+        assert isinstance(sys_param_values, collections.abc.Sequence)
         assert len(sys_maps) == len(sys_param_values)
         for sys_map, sys_param_vals in zip(sys_maps, sys_param_values):
             assert isinstance(sys_map, Map)
-            assert isinstance(sys_param_vals, collections.Mapping)
+            assert isinstance(sys_param_vals, collections.abc.Mapping)
             assert set(sys_param_vals.keys()) == set(self.param_names)
             assert all([isinstance(k, str) for k in sys_param_vals.keys()])
             assert all([np.isscalar(v) for v in sys_param_vals.values()])
@@ -802,18 +801,20 @@ class Hypersurface(object):
 
                 # Perform fit
                 # errordef =1 for least squares fit and 0.5 for nllh fit
-                m = Minuit.from_array_func(loss, p0,
-                                           # only initial step size, not very important
-                                           error=(0.1)*len(p0),
-                                           limit=fit_bounds,
-                                           name=coeff_names,
-                                           errordef=1)
+                m = Minuit(loss, p0,
+                           # only initial step size, not very important
+                           # error=(0.1)*len(p0),
+                           # limit=fit_bounds,
+                           name=coeff_names)
+                m.errors = (0.1) * len(p0)
+                m.limits = fit_bounds
+                m.errordef = Minuit.LEAST_SQUARES
                 m.migrad()
                 m.hesse()
 
-                popt = m.np_values()
+                popt = np.array(m.values)
                 try:
-                    pcov = m.np_matrix()
+                    pcov = np.array(m.covariance)
                 except:
                     logging.warn(f"HESSE call failed for bin {bin_idx}, covariance matrix unavailable")
                     pcov = np.full((len(p0), len(p0)), np.nan)
@@ -1112,7 +1113,7 @@ class Hypersurface(object):
 
         # If it is not already a a state, alternativey try to load it in case a JSON
         # file was passed
-        if not isinstance(state, collections.Mapping):
+        if not isinstance(state, collections.abc.Mapping):
             state = from_json(state)
 
         #
