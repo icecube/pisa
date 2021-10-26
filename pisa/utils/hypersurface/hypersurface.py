@@ -1386,19 +1386,32 @@ class HypersurfaceParam(object):
             state["binning_shape"] = self.binning_shape
             state["nominal_value"] = self.nominal_value
             state["bounds"] = self.bounds
+            state["coeff_prior_sigma"] = self.coeff_prior_sigma
             self._serializable_state = state
 
         return self._serializable_state
 
     @classmethod
     def from_state(cls, state):
-        # Create the param
-        param = cls(
+
+        # Define param init kwargs
+        # Special handling for `coeff_prior_sigma`, which was missing in older 
+        # files (due to a bug in `serializable_state`) so need to handle this 
+        # for backwards compatibility
+        param_init_kw = dict(
             name=state.pop("name"),
             func_name=state.pop("func_name"),
             initial_fit_coeffts=state.pop("initial_fit_coeffts"),
+            bounds=state.pop("bounds"),
         )
+        if "coeff_prior_sigma" in state :
+            param_init_kw["coeff_prior_sigma"] = state.pop("coeff_prior_sigma")
+        else :
+            param_init_kw["coeff_prior_sigma"] = None
 
+        # Create the param
+        param = cls(**param_init_kw)
+        
         # Define rest of state
         for k in list(state.keys()):
             setattr(param, k, state.pop(k))
@@ -1490,6 +1503,7 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
     sys_datasets = copy.deepcopy(sys_datasets)
     params = copy.deepcopy(params)
 
+
     #
     # Check inputs
     #
@@ -1543,7 +1557,7 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
         sys_dataset["mapset"] = sys_pipeline.get_outputs()  # return_sum=False)
         del sys_pipeline
 
-    # Merge maps according to the combine regex, is one was provided
+    # Merge maps according to the combine regex, if one was provided
     if combine_regex is not None:
         nominal_dataset["mapset"] = nominal_dataset["mapset"].combine_re(
             combine_regex)
@@ -1552,6 +1566,7 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
                 combine_regex)
 
     # TODO check every mapset has the same elements
+
 
 
     #
@@ -1582,7 +1597,7 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
 
         # Create the hypersurface
         hypersurface = Hypersurface(
-            params=copy.deepcopy(params),
+            params=copy.deepcopy(params), # Need the deepcopy, as want one set of params per map
             initial_intercept=0. if log else 1.,  # Initial value for intercept
             log=log
         )
@@ -1606,6 +1621,7 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
 
         # Store for later write to disk
         hypersurfaces[map_name] = hypersurface
+
 
     #
     # Store results
