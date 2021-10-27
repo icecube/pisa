@@ -17,7 +17,7 @@ from pisa.utils import likelihood_functions
 __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
            'maperror_logmsg',
            'chi2', 'llh', 'log_poisson', 'log_smear', 'conv_poisson',
-           'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2', 'correct_chi2'
+           'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2', 'correct_chi2',
            'mcllh_mean', 'mcllh_eff', 'signed_sqrt_mod_chi2', 'generalized_poisson_llh']
 
 __author__ = 'P. Eller, T. Ehrhardt, J.L. Lanfranchi, E. Bourbeau'
