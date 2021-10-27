@@ -588,9 +588,9 @@ def correct_chi2(actual_values, expected_values):
     actual_values = unp.nominal_values(actual_values).ravel()
     sigma = unp.std_devs(expected_values).ravel()
     expected_values = unp.nominal_values(expected_values).ravel()
-    mc_variance = sigma**2
+    total_variance = sigma**2 + expected_values
     m_chi2 = (
-        (actual_values - expected_values)**2 / (mc_variance + expected_values) + mc_variance
+        (actual_values - expected_values)**2 / total_variance + np.log(total_variance)
     )
     return m_chi2
 
