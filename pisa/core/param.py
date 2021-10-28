@@ -390,11 +390,7 @@ class Param:
 
     @property
     def tex(self):
-        return self._tex
-
-    @tex.setter
-    def tex(self, t):
-        self._tex = t if t is not None else r'{\rm %s}' % self.name.replace("_", r"\;")
+        return  r'{\rm %s}' % self.name.replace("_", r"\;") if self._tex is None else self._tex
 
     @property
     def nominal_value(self):
