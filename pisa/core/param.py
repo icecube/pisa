@@ -198,7 +198,7 @@ class Param:
         self.scales_as_log = scales_as_log
         self.name = name
         self.unique_id = unique_id if unique_id is not None else name
-        self.tex = tex
+        self._tex = tex
         self.help = help
         self.range = range
         self.prior = prior
