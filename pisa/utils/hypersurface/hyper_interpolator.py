@@ -33,8 +33,9 @@ from .hypersurface import Hypersurface, HypersurfaceParam
 from pisa import FTYPE, ureg
 from pisa.utils import matrix
 from pisa.utils.jsons import from_json, to_json
+from pisa.utils.fileio import from_file, to_file
 from pisa.core.pipeline import Pipeline
-from pisa.core.binning import OneDimBinning, MultiDimBinning, is_binning
+from pisa.core.binning import MultiDimBinning, is_binning
 from pisa.core.map import Map
 from pisa.core.param import Param, ParamSet
 from pisa.utils.resources import find_resource
@@ -43,7 +44,6 @@ from pisa.utils.log import logging, set_verbosity
 from pisa.utils.comparisons import ALLCLOSE_KW
 from uncertainties import ufloat, correlated_values
 from uncertainties import unumpy as unp
-
 
 class HypersurfaceInterpolator(object):
     """Factory for interpolated hypersurfaces.
@@ -179,7 +179,14 @@ class HypersurfaceInterpolator(object):
     @property
     def param_names(self):
         return list(self._reference_state["params"].keys())
-    
+
+    @property
+    def binning(self):
+        binning = self._reference_state["binning"]
+        if not is_binning(binning) :
+            binning = MultiDimBinning(**binning)
+        return binning
+
     @property
     def num_interp_params(self):
         return len(self.interp_param_spec.keys())
@@ -323,10 +330,12 @@ class HypersurfaceInterpolator(object):
         hs_param_names = list(self._reference_state['params'].keys())
         hs_param_labels = ["intercept"] + [f"{p} p{i}" for p in hs_param_names
                                            for i in range(self._reference_state['params'][p]['num_fit_coeffts'])]
+
+        fig = None
         if ax is None:
             fig, ax = plt.subplots(nrows=n_coeff, ncols=n_coeff+1,
                                    squeeze=False, sharex=True,
-                                   figsize=(20, 10))
+                                   figsize=(3+(5*(n_coeff+1)), 2+(3*n_coeff)) )
         # remember whether the plots need log scale or not, by default not
         x_is_log = False
         y_is_log = False
@@ -468,10 +477,14 @@ class HypersurfaceInterpolator(object):
                 ax[i, j].ticklabel_format(style='sci', scilimits=(0, 0), axis="x")
             if not y_is_log:
                 ax[i, j].ticklabel_format(style='sci', scilimits=(0, 0), axis="y")
-        fig.tight_layout()
-        if plot_dim == 2:
-            fig.subplots_adjust(left=0.15, top=0.95)
-        return fig
+
+        if fig is not None :
+            fig.tight_layout()
+            if plot_dim == 2:
+                fig.subplots_adjust(left=0.15, top=0.95)
+            return fig
+        else :
+            return
 
 
 def pipeline_cfg_from_states(state_dict):
@@ -533,7 +546,7 @@ def serialize_pipeline_cfg(pipeline_cfg):
     return serializable_state
     
     
-def assemble_interpolated_fits(fit_directory, output_file):
+def assemble_interpolated_fits(fit_directory, output_file, drop_fit_maps=False):
     """After all of the fits on the cluster are done, assemble the results to one JSON.
     
     The JSON produced by this function is what `load_interpolated_hypersurfaces`
@@ -544,22 +557,39 @@ def assemble_interpolated_fits(fit_directory, output_file):
     
     combined_data = collections.OrderedDict()
     combined_data["interpolation_param_spec"] = metadata["interpolation_param_spec"]
+
+    # Loop over grid points
     hs_fits = []
     grid_shape = tuple(metadata["grid_shape"])
     for job_idx, grid_idx in enumerate(np.ndindex(grid_shape)):
+
+        # Load grid point data
         gridpoint_json = os.path.join(fit_directory, f"gridpoint_{job_idx:06d}.json.bz2")
         logging.info(f"Reading {gridpoint_json}")
         gridpoint_data = from_json(gridpoint_json)
+
+        # Check the loaded data
         assert job_idx == gridpoint_data["job_idx"]
         assert np.all(grid_idx == gridpoint_data["grid_idx"])
         # TODO: Offer to run incomplete fits locally
         assert gridpoint_data["fit_successful"], f"job no. {job_idx} not finished"
+
+        # Drop fit maps if requested (can significantly reduce file size)
+        if drop_fit_maps :
+            for key, hs_state in gridpoint_data["hs_fit"].items() :
+                hs_state["fit_maps_raw"] = None
+                hs_state["fit_maps_norm"] = None
+
+        # Add grid point data to output file
         hs_fits.append(collections.OrderedDict(
             param_values=gridpoint_data["param_values"],
             hs_fit=gridpoint_data["hs_fit"]
         ))
+
+    # Write the output file
     combined_data["hs_fits"] = hs_fits
-    to_json(combined_data, output_file)
+    to_file(combined_data, output_file)
+
 
 def get_incomplete_job_idx(fit_directory):
     """Get job indices of fits that are not flagged as successful."""
@@ -587,6 +617,9 @@ def run_interpolated_fit(fit_directory, job_idx, skip_successful=False):
     If `skip_successful` is true, do not run if the `fit_successful` flag is already
     True.
     """
+
+    #TODO a lot of this is copied from fit_hypersurfaces in hypersurface.py, would be safer to make more OAOO
+    #TODO Copy the param value storage stuff from fit_hypersurfaces across in the meantime
     
     assert os.path.isdir(fit_directory), "fit directory does not exist"
     
@@ -639,7 +672,7 @@ def run_interpolated_fit(fit_directory, job_idx, skip_successful=False):
     hypersurface_params = []
     for param_state in metadata["hypersurface_params"]:
         hypersurface_params.append(HypersurfaceParam.from_state(param_state))
-    
+
     # We create Pipeline objects, get their outputs and then forget about the Pipeline
     # object on purpose! The memory requirement to hold all systematic sets at the same
     # time is just too large, especially on the cluster. The way we do it below we
@@ -880,36 +913,39 @@ def load_interpolated_hypersurfaces(input_file):
     '''
     assert isinstance(input_file, str)
 
-    if input_file.endswith("json") or input_file.endswith("json.bz2"):
-        logging.info(f"Loading interpolated hypersurfaces from file: {input_file}")
-        input_data = from_json(input_file)
-        assert set(['interpolation_param_spec', 'hs_fits']).issubset(
-            set(input_data.keys())), 'missing keys'
-        map_names = None
-        # input_data['hs_fits'] is a list of dicts, each dict contains "param_values"
-        # and "hs_fit"
-        logging.info("Reading file complete, generating hypersurfaces...")
-        for hs_fit_dict in input_data['hs_fits']:
-            # this is still not the actual Hypersurface, but a dict with the (linked)
-            # maps and the HS fit for the map...
-            hs_state_maps = hs_fit_dict["hs_fit"]
-            if map_names is None:
-                map_names = list(hs_state_maps.keys())
-            else:
-                assert set(map_names) == set(hs_state_maps.keys()), "inconsistent maps"
-            # When data is recovered from JSON, the object states are not automatically
-            # converted to the corresponding objects, so we need to do it manually here.
-            for map_name in map_names:
-                hs_state_maps[map_name] = Hypersurface.from_state(hs_state_maps[map_name])
+    logging.info(f"Loading interpolated hypersurfaces from file: {input_file}")
 
-        logging.info(f"Read hypersurface maps: {map_names}")
-        
-        # Now we have a list of dicts where the map names are on the lower level.
-        # We need to convert this into a dict of HypersurfaceInterpolator objects.
-        output = collections.OrderedDict()
-        for m in map_names:
-            hs_fits = [{"param_values": fd["param_values"], "hs_fit": fd['hs_fit'][m]} for fd in input_data['hs_fits']]
-            output[m] = HypersurfaceInterpolator(input_data['interpolation_param_spec'], hs_fits)
-    else:
-        raise Exception("unknown file format")
+    # Load the data from the file
+    input_data = from_file(input_file)
+
+    # check the file contents
+    assert set(['interpolation_param_spec', 'hs_fits']).issubset(
+        set(input_data.keys())), 'missing keys'
+
+    # input_data['hs_fits'] is a list of dicts, each dict contains "param_values"
+    # and "hs_fit"
+    map_names = None
+    logging.info("Reading file complete, generating hypersurfaces...")
+    for hs_fit_dict in input_data['hs_fits']:
+        # this is still not the actual Hypersurface, but a dict with the (linked)
+        # maps and the HS fit for the map...
+        hs_state_maps = hs_fit_dict["hs_fit"]
+        if map_names is None:
+            map_names = list(hs_state_maps.keys())
+        else:
+            assert set(map_names) == set(hs_state_maps.keys()), "inconsistent maps"
+        # When data is recovered from JSON, the object states are not automatically
+        # converted to the corresponding objects, so we need to do it manually here.
+        for map_name in map_names:
+            hs_state_maps[map_name] = Hypersurface.from_state(hs_state_maps[map_name])
+
+    logging.info(f"Read hypersurface maps: {map_names}")
+    
+    # Now we have a list of dicts where the map names are on the lower level.
+    # We need to convert this into a dict of HypersurfaceInterpolator objects.
+    output = collections.OrderedDict()
+    for m in map_names:
+        hs_fits = [{"param_values": fd["param_values"], "hs_fit": fd['hs_fit'][m]} for fd in input_data['hs_fits']]
+        output[m] = HypersurfaceInterpolator(input_data['interpolation_param_spec'], hs_fits)
+
     return output
