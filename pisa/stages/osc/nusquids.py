@@ -205,13 +205,14 @@ class nusquids(Stage):
         **std_kwargs,
     ):
 
+        # Checks
         if use_nsi:
             raise NotImplementedError("NSI not implemented")
-        if use_decoherence:
-            raise NotImplementedError("Decoherence not implemented")
         if type(prop_height) is not ureg.Quantity:
             raise NotImplementedError("Getting propagation heights from containers is "
                 "not yet implemented")
+
+        # Store args
         self.num_neutrinos = int(num_neutrinos)
         assert self.num_neutrinos < 5, "currently only supports up to 4 flavor oscillations"
         self.use_nsi = use_nsi
@@ -257,7 +258,10 @@ class nusquids(Stage):
         
         self.nus_layer = None
         self.nus_layerbar = None
-        
+
+        # Define the layers class        
+        self.nusquids_layers_class = nsq.nuSQUIDSLayers
+
         # Define standard params
         expected_params = [
             "theta12",
@@ -269,17 +273,16 @@ class nusquids(Stage):
         ]
 
         # Add decoherence parameters
-        assert self.num_decoherence_gamma in [1, 3], ("Must choose either 1 or 3 "
-            "decoherence gamma parameters"
-        )
         if self.use_decoherence:
-            if self.num_decoherence_gamma == 1:
-                expected_params.extend(["gamma"])
-            elif self.num_decoherence_gamma == 3:
-                expected_params.extend(["gamma21",
-                                        "gamma31",
-                                        "gamma32"])
-            expected_params.extend(["n_energy"])
+            # Use derived nuSQuIDS classes
+            import nuSQUIDSDecohPy
+            self.nusquids_layers_class = nuSQUIDSDecohPy.nuSQUIDSDecohLayers
+            # Checks
+            assert self.num_neutrinos == 3, "Decoherence only supports 3 neutrinos currently"
+            # Add decoherence params
+            expected_params.extend(["gamma0"])
+            expected_params.extend(["n"])
+            expected_params.extend(["E0"])
         
         # We may want to reparametrize this with the difference between deltacp14 and
         # deltacp24, as the absolute value seems to play a small role (see
@@ -346,6 +349,15 @@ class nusquids(Stage):
     
         nus_layer.Set_CPPhase(0, 2, self.params.deltacp.value.m_as("rad"))
         
+        # set decoherence parameters
+        if self.use_decoherence :
+            nsq_units = nsq.Const() #TODO Once only (make into a member)
+            gamma0 = self.params.gamma0.value.m_as("eV")*nsq_units.eV
+            gamma0_matrix_diagonal = np.array([ 0., gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0 ]) # "State selection" case (see arXiv:2007.00068 eqn 11) #TODO implement other models
+            nus_layer.Set_DecoherenceGammaMatrixDiagonal(gamma0_matrix_diagonal)
+            nus_layer.Set_DecoherenceGammaEnergyDependence(self.params.n.value.m_as("dimensionless"))
+            nus_layer.Set_DecoherenceGammaEnergyScale(self.params.E0.value.m_as("eV")*nsq_units.eV)
+
         if self.num_neutrinos == 3: return
         
         nus_layer.Set_MixingAngle(0, 3, self.params.theta14.value.m_as("rad"))
@@ -451,7 +463,7 @@ class nusquids(Stage):
             ye[densities < 10] = self.YeM
             ye[(densities >= 10) & (densities < 13)] = self.YeO
             ye[densities >= 13] = self.YeI
-            self.nus_layer = nsq.nuSQUIDSLayers(
+            self.nus_layer = self.nusquids_layers_class(
                 distances * nsq_units.km,
                 densities,
                 ye,
@@ -461,6 +473,7 @@ class nusquids(Stage):
             )
             self.apply_prop_settings(self.nus_layer)
         
+
         # Now that we have our nusquids calculator set up on the node grid, we make 
         # container output space for the probability output which may be on a finer grid
         # than the nodes or even working in events mode.
@@ -622,14 +635,14 @@ class nusquids(Stage):
             out_distances,
             e_out,
             interp_states,
+            rho=int(nubar),
             avg_cutoff=0.,
             avg_scale=0.,
-            rho=int(nubar),
             # Range averaging is only computed in the places where t_range > 0, so
             # we don't need to introduce switches for averaged and non-averaged regions.
-            t_range=avg_ranges,
             lowpass_cutoff=lowpass_cutoff,
             lowpass_scale=scale,
+            t_range=avg_ranges,
         )
         return prob_interp
     
@@ -656,7 +669,7 @@ class nusquids(Stage):
             ye[container["densities"] < 10] = self.YeM
             ye[(container["densities"] >= 10) & (container["densities"] < 13)] = self.YeO
             ye[container["densities"] >= 13] = self.YeI
-            nus_layer = nsq.nuSQUIDSLayers(
+            nus_layer = self.nusquids_layers_class(
                 container["distances"] * nsq_units.km,
                 container["densities"],
                 ye,
@@ -738,14 +751,15 @@ class nusquids(Stage):
             flav_out = container["flav"]
             for flav_in in ["e", "mu"]:
                 container["prob_"+flav_in] = self.calc_probs_interp(
-                    flav_out,
-                    nubar,
-                    container["interp_states_"+flav_in],
-                    container["tot_distances"] * nsq_units.km,
-                    container["true_energy"] * nsq_units.GeV,
-                    container["avg_ranges"] * nsq_units.km,
-                    container["lowpass_cutoff"] / nsq_units.km
+                    flav_out=flav_out,
+                    nubar=nubar,
+                    interp_states=container["interp_states_"+flav_in],
+                    out_distances=container["tot_distances"] * nsq_units.km,
+                    e_out=container["true_energy"] * nsq_units.GeV,
+                    avg_ranges=container["avg_ranges"] * nsq_units.km,
+                    lowpass_cutoff=container["lowpass_cutoff"] / nsq_units.km
                 )
+
                 # It is possible to get slightly negative probabilities from imperfect
                 # state interpolation between nodes.
                 # It's impractical to avoid any probability dipping below zero in every
