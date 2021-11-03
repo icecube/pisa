@@ -1376,7 +1376,7 @@ class BasicAnalysis(object):
                 data_dist,
                 hypo_maker,
                 minimizer_time=0.,
-                minimizer_metadata={"success":True, "nit":0, "message":msg, "time_taken":}, # Add some metadata in the format returned by `scipy.optimize.minimize`
+                minimizer_metadata={"success":True, "nit":0, "message":msg}, # Add some metadata in the format returned by `scipy.optimize.minimize`
                 fit_history=None,
                 other_metrics=None,
                 num_distributions_generated=0,
