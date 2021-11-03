@@ -1353,6 +1353,36 @@ class BasicAnalysis(object):
         # reset number of iterations before each minimization
         self._nit = 0
 
+        # Before starting minimization, check if we already have a perfect match between data and template
+        # This can happen if using pseudodata that was generated with the nominal values for parameters
+        # (which will also be the initial values in the fit) and blah...
+        initial_metric_val = self._minimizer_callable(
+            scaled_param_vals=x0,
+            hypo_maker=hypo_maker, 
+            data_dist=data_dist,
+            metric=metric, 
+            counter=Counter(), # Not used/relevant
+            fit_history=[], # Not used/relevant
+            flip_x0=flip_x0,
+            external_priors_penalty=external_priors_penalty,
+        )
+
+        if np.abs(initial_metric_val) < EPSILON :
+            msg = 'Initial hypo matches data, no need for fit : %s = %s (epsilon = %s)' % (metric, initial_metric_val, EPSILON)
+            logging.info(msg)
+            return HypoFitResult( # Return fit results, even though didn't technically fit
+                metric,
+                initial_metric_val,
+                data_dist,
+                hypo_maker,
+                minimizer_time=0.,
+                minimizer_metadata={"success":True, "nit":0, "message":msg, "time_taken":}, # Add some metadata in the format returned by `scipy.optimize.minimize`
+                fit_history=None,
+                other_metrics=None,
+                num_distributions_generated=0,
+                include_detailed_metric_info=True,
+            )
+
         #
         # From that point on, optimize starts using the metric and 
         # iterates, no matter what you do 
