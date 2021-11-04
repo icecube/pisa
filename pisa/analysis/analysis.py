@@ -742,7 +742,7 @@ class BasicAnalysis(object):
     # TODO: Defer sub-fits to cluster
     def fit_recursively(
             self, data_dist, hypo_maker, metric, external_priors_penalty,
-            method, method_kwargs, local_fit_kwargs
+            method, method_kwargs=None, local_fit_kwargs=None
         ):
         """Recursively apply global search strategies with local sub-fits."""
         
