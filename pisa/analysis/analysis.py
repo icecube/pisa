@@ -742,16 +742,17 @@ class BasicAnalysis(object):
     
     NLOPT can be dropped in place of `scipy` and `iminuit` by writing a dictionary with
     ``"method": "nlopt"`` and choosing the algorithm by its name of the form
-    ``NLOPT_{G,L}{N}_XXXX``. PISA supports all of the global
+    ``NLOPT_{G,L}{N}_XXXX``. PISA supports all of the derivative-free global
     (https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#global-optimization) and
     local
     (https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#local-derivative-free-optimization)
-    algorithms. For example, to use the Nelder-Mead algorithm, you would write
+    algorithms. Algorithms requiring gradients such as BFGS are not supported. To use
+    the Nelder-Mead algorithm, for example, the following settings could be used:
     ::
         nlopt_settings = {
             "method": "nlopt",
             "method_kwargs": {
-                "algorithm": "NLOPT_LN_COBYLA",
+                "algorithm": "NLOPT_LN_NELDERMEAD",
                 "ftol_abs": 1e-5,
                 "ftol_rel": 1e-5,
                 # other options that can be set here: 
