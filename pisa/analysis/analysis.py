@@ -35,9 +35,9 @@ from pisa.utils.stats import (METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE,
 
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD', 'MINIMIZERS_USING_CONSTRAINTS',
            'set_minimizer_defaults', 'validate_minimizer_settings',
-           'Counter', 'Analysis']
+           'Counter', 'Analysis', 'BasicAnalysis']
 
-__author__ = 'J.L. Lanfranchi, P. Eller, S. Wren, E. Bourbeau'
+__author__ = 'J.L. Lanfranchi, P. Eller, S. Wren, E. Bourbeau, A. Trettin'
 
 __license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
 
@@ -656,9 +656,16 @@ class BasicAnalysis(object):
     Full analyses with functionality beyond just fitting (doing scans, for example)
     should sub-class this class.
     
-    This basic analysis can be configured to arbitrarily stack global search strategies
-    with local fitting schemes. A sub-class then merely needs to produce the dictionary
-    with the desired fit strategy definition.
+    Every fit is run with the `fit_recursively` method, where the fit strategy is
+    defined by the three arguments `method`, `method_kwargs` and
+    `local_fit_kwargs` (see documentation of :py:meth:`fit_recursively` below for
+    other arguments.) The `method` argument determines which sub-routine should be
+    run, `method_kwargs` is a dictionary with any keyword arguments of that
+    sub-routine, and `local_fit_kwargs` is a dictionary (or list thereof) defining any
+    nested sub-routines that are run within the outer sub-routine. A sub-sub-routine
+    defined in `local_fit_kwargs` should again be a dictionary with the three keywords
+    `method`, `method_kwargs` and `local_fit_kwargs`. In this way, sub-routines
+    can be arbitrarily stacked to define complex fit strategies.
     
     Examples
     --------
@@ -666,72 +673,169 @@ class BasicAnalysis(object):
     A canonical standard oscillation fit fits octants in `theta23` separately and then 
     runs a scipy minimizer to optimize locally in each octant. The arguments that would
     produce that result when passed to `fit_recursively` are:
-    
-    ```
-    method = "fit_octants"
-    method_kwargs = {
-        "angle": "theta23"
-        "inflection_point": 45 * ureg.deg
-    }
-    local_fit_kwargs = {
-        "method": "scipy",
-        "method_kwargs": minimizer_settings,
-        "local_fit_kwargs": None
-    }
-    ```
+    ::
+        method = "fit_octants"
+        method_kwargs = {
+            "angle": "theta23"
+            "inflection_point": 45 * ureg.deg
+        }
+        local_fit_kwargs = {
+            "method": "scipy",
+            "method_kwargs": minimizer_settings,
+            "local_fit_kwargs": None
+        }
 
     Let's say we also have a CP violating phase `deltacp24` that we want to fit
     separately per quadrant split at 90 degrees. We want this done within each 
     quadrant fit for `theta23`, making 4 fits in total. Then we would nest the
     quadrant fit for `deltacp24` inside the octant fit like so:
+    ::
+        method = "fit_octants"
+        method_kwargs = {
+            "angle": "theta23"
+            "inflection_point": 45 * ureg.deg
+        }
+        local_fit_kwargs = {
+            "method": "fit_octants",
+            "method_kwargs": {
+                "angle": "deltacp24",
+                "inflection_point": 90 * ureg.deg,
+            }
+            "local_fit_kwargs": {
+                "method": "scipy",
+                "method_kwargs": minimizer_settings,
+                "local_fit_kwargs": None
+            }
+        }
     
-    ```
-    method = "fit_octants"
-    method_kwargs = {
-        "angle": "theta23"
-        "inflection_point": 45 * ureg.deg
-    }
-    local_fit_kwargs = {
-        "method": "fit_octants",
+    Let's suppose we want to apply a grid-scan global fit method to sterile mixing
+    parameters `theta24` and `deltam41`, but we want to marginalize over all other
+    parameters with a usual 3-flavor fit configuration. That could be achieved as
+    follows:
+    ::
+        method = "grid_scan"
+        method_kwargs = {
+            "grid": {
+                "theta24": np.geomspace(1, 20, 3) * ureg.deg,
+                "deltam41": np.geomspace(0.01, 0.5, 4) * ureg["eV^2"],
+            },
+            "fix_grid_params": False,
+        }
+        local_fit_kwargs = {
+            "method": "fit_octants",
+            "method_kwargs": {
+                "angle": "theta23",
+                "inflection_point": 45 * ureg.deg,
+            }
+            "local_fit_kwargs": {
+                "method": "scipy",
+                "method_kwargs": minimizer_settings,
+                "local_fit_kwargs": None
+            }
+        }
+    
+    Instead of `scipy`, we can also use `iminuit` and `nlopt` for local minimization or
+    global searches by writing a dictionary with ``"method": "iminuit"`` or ``"method":
+    "nlopt"``, respectively.
+    
+    **NLOPT Options**
+    
+    NLOPT can be dropped in place of `scipy` and `iminuit` by writing a dictionary with
+    ``"method": "nlopt"`` and choosing the algorithm by its name of the form
+    ``NLOPT_{G,L}{N}_XXXX``. PISA supports all of the global
+    (https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#global-optimization) and
+    local
+    (https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#local-derivative-free-optimization)
+    algorithms. For example, to use the Nelder-Mead algorithm, you would write
+    ::
+        nlopt_settings = {
+            "method": "nlopt",
+            "method_kwargs": {
+                "algorithm": "NLOPT_LN_COBYLA",
+                "ftol_abs": 1e-5,
+                "ftol_rel": 1e-5,
+                # other options that can be set here: 
+                # xtol_abs, xtol_rel, stopval, maxeval, maxtime
+                # after maxtime seconds, stop and return best result so far
+                "maxtime": 60
+            },
+            "local_fit_kwargs": None  # no further nesting available
+        }
+    
+    and then run the fit with
+    ::
+        best_fit_info = ana.fit_recursively(
+            data_dist,
+            dm,
+            "chi2",
+            None,
+            **nlopt_settings
+        )
+
+    . Of course, you can also nest the `nlopt_settings` dictionary in any of the
+    `fit_octants`, `fit_ranges` and so on by passing it as `local_fit_kwargs`. 
+
+    *Adding constraints*
+    
+    Adding inequality constraints to algorithms that support it is possible by writing a
+    lambda function in a string that expects to get the current parameters as a
+    `ParamSet` and returns a float. The result will satisfy that the passed function
+    stays `negative` (to be consistent with scipy). The string will be passed to
+    `eval` to build the callable function. For example, a silly way to bound
+    `delta_index` > 0.1 would be:
+    ::
         "method_kwargs": {
-            "angle": "deltacp24",
-            "inflection_point": 90 * ureg.deg,
+            "algorithm": "NLOPT_LN_COBYLA",
+            "ftol_abs": 1e-5,
+            "ftol_rel": 1e-5,
+            "maxtime": 30,
+            "ineq_constraints": [
+                # be sure to convert parameters to their magnitude
+                "lambda params: params.delta_index.m - 0.1"
+            ]
         }
-        "local_fit_kwargs": {
-            "method": "scipy",
-            "method_kwargs": minimizer_settings,
-            "local_fit_kwargs": None
-        }
-    }
-    ```
     
-    Finally, let's suppose we want to apply a grid-scan global fit method
-    to sterile mixing parameters `theta24` and `deltam41`, but we want to marginalize
-    over all other parameters with a usual 3-flavor fit configuration. That could be
-    achieved as follows:
-    
-    ```
-    method = "grid_scan"
-    method_kwargs = {
-        "grid": {
-            "theta24": np.geomspace(1, 20, 3) * ureg.deg,
-            "deltam41": np.geomspace(0.01, 0.5, 4) * ureg["eV^2"],
-        },
-        "fix_grid_params": False,
-    }
-    local_fit_kwargs = {
-        "method": "fit_octants",
+    Adding inequality constraints to algorithms that don't support it can be done by
+    either nesting the local fit in the `constrained_fit` method or to use NLOPT's
+    AUGLAG method that adds a penalty for constraint violations internally. For example,
+    we could do this to fulfill the same constraint with the PRAXIS algorithm:
+    ::
         "method_kwargs": {
-            "angle": "theta23",
-            "inflection_point": 45 * ureg.deg,
+            "algorithm": "NLOPT_AUGLAG",
+            "ineq_constraints":[
+                "lambda params: params.delta_index.m - 0.1"
+            ],
+            "local_optimizer": {
+                # supports all the same options as above
+                "algorithm": "NLOPT_LN_PRAXIS",
+                "ftol_abs": 1e-5,
+                "ftol_rel": 1e-5,
+            }
         }
-        "local_fit_kwargs": {
-            "method": "scipy",
-            "method_kwargs": minimizer_settings,
-            "local_fit_kwargs": None
+
+    *Using global searches with local subsidiary minimizers*
+    
+    Some global searches, like evolutionary strategies, use local subsidiary minimizers.
+    These can be defined just as above by passing a dictionary with the settings to the
+    `local_optimizer` keyword. Note that, again, only gradient-free methods are
+    supported. Here is an example for the "Multi-Level single linkage" (MLSL) algorithm,
+    using PRAXIS as the local optimizer:
+    ::
+        "method_kwargs": {
+            "algorithm": "NLOPT_G_MLSL_LDS",
+            "local_optimizer": {
+                "algorithm": "NLOPT_LN_PRAXIS",
+                "ftol_abs": 1e-5,
+                "ftol_rel": 1e-5,
+            }
         }
-    }
-    ```
+    For some evolutionary strategies such as ISRES, the `population` option  can also
+    be set.
+    ::
+        "method_kwargs": {
+            "algorithm": "NLOPT_GN_ISRES",
+            "population": 100,
+        }
     """
 
     def __init__(self):
@@ -744,7 +848,46 @@ class BasicAnalysis(object):
             self, data_dist, hypo_maker, metric, external_priors_penalty,
             method, method_kwargs=None, local_fit_kwargs=None
         ):
-        """Recursively apply global search strategies with local sub-fits."""
+        """Recursively apply global search strategies with local sub-fits.
+        
+        Parameters
+        ----------
+        
+        data_dist : Sequence of MapSets or MapSet
+            Data distribution to be fit. Can be an actual-, Asimov-, or pseudo-data
+            distribution (where the latter two are derived from simulation and so aren't
+            technically "data").
+
+        hypo_maker : Detectors or DistributionMaker
+            Creates the per-bin expectation values per map based on its param values.
+            Free params in the `hypo_maker` are modified by the minimizer to achieve a
+            "best" fit.
+        
+        metric : string or iterable of strings
+            Metric by which to evaluate the fit. See documentation of Map.
+
+        external_priors_penalty : func
+            User defined prior penalty function, which takes `hypo_maker` and
+            `metric` as arguments and returns numerical value of penalty to the metric
+            value. It is expected sign of the penalty is correctly specified inside the
+            `external_priors_penalty` (e.g. negative for llh or positive for chi2).
+        
+        method : str
+            Name of the sub-routine to be run. Currently, the options are `scipy`,
+            `fit_octants`, `best_of`, `grid_scan`, `constrained`,
+            `fit_ranges`, `condition`, `iminuit`, and `nlopt`.
+        
+        method_kwargs : dict
+            Any keyword arguments taken by the sub-routine. May be `None` if the 
+            sub-routine takes no additional arguments.
+        
+        local_fit_kwargs : dict or list thereof
+            A dictionary defining subsidiary sub-routines with the keywords `method`,
+            `method_kwargs` and `local_fit_kwargs`. May be `None` if the
+            sub-routine is itself a local or global fit that runs no further subsidiary
+            fits.
+        
+        """
         
         if method in self.__class__._fit_methods.keys():
             fit_function = self.__class__._fit_methods[method]
