@@ -1357,7 +1357,50 @@ class BasicAnalysis(object):
         original_param.value = best_fit_result.params[original_param.name].value
         hypo_maker.update_params(original_param)
         return best_fit_result
-
+    
+    def _fit_staged(self, data_dist, hypo_maker, metric,
+                    external_priors_penalty, method_kwargs, local_fit_kwargs):
+        """Run a staged fit of one or more sub-fits where later fits start where the
+        earlier fits finished.
+        
+        The subsidiary fits are passed as a list of dicts to `local_fit_kwargs` and 
+        are worked on in order of the list. Internally, the `nominal_values` of the 
+        parameters are set to the best fit values of the previous fit, such that
+        calls to `reset_free` do not destroy the progress of previous stages.
+        """
+        assert local_fit_kwargs is not None
+        assert isinstance(local_fit_kwargs, list) and len(local_fit_kwargs) > 1
+        
+        logging.info("Starting staged fit...")
+        best_fit_params = None
+        best_fit_info = None
+        # storing original nominal values
+        original_nominal_values = dict(
+            [(p.name, p.nominal_value) for p in hypo_maker.params.free]
+        )
+        for i, fit_kwargs in enumerate(local_fit_kwargs):
+            logging.info(f"Beginning fit {i+1} / {len(local_fit_kwargs)}")
+            if best_fit_params is not None:
+                hypo_maker.update_params(best_fit_params)
+            best_fit_info = self.fit_recursively(
+                data_dist, hypo_maker, metric, external_priors_penalty,
+                fit_kwargs["method"], fit_kwargs["method_kwargs"],
+                fit_kwargs["local_fit_kwargs"]
+            )
+            best_fit_params = best_fit_info.params  # makes a deepcopy anyway
+            # We set the nominal values to the best fit values, so that a `reset_free`
+            # call does not destroy the progress of the previous fit.
+            for p in best_fit_params.free:
+                p.nominal_value = p.value
+        # reset the nominal values to their original values as if nothing happened
+        for p in best_fit_info._params.free:
+            p.nominal_value = original_nominal_values[p.name]
+        best_fit_info._rehash()
+        # Make sure that the hypo_maker has its params also at the best fit point
+        # with the original nominal parameter values.
+        hypo_maker.update_params(best_fit_info.params)
+        return best_fit_info        
+        
     def _fit_scipy(self, data_dist, hypo_maker, metric,
                    external_priors_penalty, method_kwargs, local_fit_kwargs):
         """Run an arbitrary scipy minimizer to modify hypo dist maker's free params
@@ -2343,6 +2386,7 @@ class BasicAnalysis(object):
         "grid_scan": _fit_grid_scan,
         "constrained": _fit_constrained,
         "fit_ranges": _fit_ranges,
+        "staged": _fit_staged,
         "condition": _fit_conditionally,
         "iminuit": _fit_minuit,
         "nlopt": _fit_nlopt,
