@@ -7,6 +7,11 @@ to deal with fast oscillations that occur in the presence of eV-scale sterile ne
 It is required that SQuIDS and nuSQuIDS are updated to include the layered Earth model
 class `nuSQUIDSLayers` in nuSQuIDS as well as low-pass filtering and range averaging 
 methods in SQuIDS.
+
+The following forks/branches are comptible with this PISA stage, and their use is
+recommended:
+  SQuIDS   : https://github.com/ts4051/SQuIDS/tree/pisa
+  nuSQuIDS : https://github.com/ts4051/nuSQuIDS/tree/pisa
 """
 
 import math
