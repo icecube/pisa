@@ -25,13 +25,12 @@ import pisa
 from pisa import EPSILON, FTYPE, ureg
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
-from pisa.utils.comparisons import recursiveEquality, FTYPE_PREC
+from pisa.utils.comparisons import recursiveEquality, FTYPE_PREC, ALLCLOSE_KW
 from pisa.utils.log import logging
 from pisa.utils.fileio import to_file
 from pisa.utils.stats import (METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE,
                               LLH_METRICS, CHI2_METRICS,
                               it_got_better, is_metric_to_maximize)
-
 
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD', 'MINIMIZERS_USING_CONSTRAINTS',
            'set_minimizer_defaults', 'validate_minimizer_settings',
@@ -622,6 +621,7 @@ class HypoFitResult(object):
             name_vals_d['priors'] = info_dict[m]["priors"]
             detailed_metric_info[m] = name_vals_d
         return detailed_metric_info
+
 
 class BasicAnalysis(object):
     """A bare-bones analysis that only fits a hypothesis to data.
@@ -1474,24 +1474,29 @@ class BasicAnalysis(object):
         # reset number of iterations before each minimization
         self._nit = 0
 
+
         # Before starting minimization, check if we already have a perfect match between data and template
         # This can happen if using pseudodata that was generated with the nominal values for parameters
         # (which will also be the initial values in the fit) and blah...
-        initial_metric_val = self._minimizer_callable(
-            scaled_param_vals=x0,
-            hypo_maker=hypo_maker, 
-            data_dist=data_dist,
-            metric=metric, 
-            counter=Counter(), # Not used/relevant
-            fit_history=[], # Not used/relevant
-            flip_x0=flip_x0,
-            external_priors_penalty=external_priors_penalty,
-        )
+        # If this is the case, don't both to fit and return results right away. 
 
-        if np.abs(initial_metric_val) < EPSILON :
-            msg = 'Initial hypo matches data, no need for fit : %s = %s (epsilon = %s)' % (metric, initial_metric_val, EPSILON)
+        # Grab the hypo map
+        hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
+        
+        # Check if the hypo matches data
+        if data_dist.allclose(hypo_asimov_dist) :
+
+            msg = 'Initial hypo matches data, no need for fit'
             logging.info(msg)
-            return HypoFitResult( # Return fit results, even though didn't technically fit
+
+            # Get the metric value at this initial point (for the returned data)
+            initial_metric_val = (
+                data_dist.metric_total(expected_values=hypo_asimov_dist, metric=metric[0])
+                + hypo_maker.params.priors_penalty(metric=metric[0])
+            )
+
+            # Return fit results, even though didn't technically fit
+            return HypoFitResult(
                 metric,
                 initial_metric_val,
                 data_dist,
@@ -1503,6 +1508,7 @@ class BasicAnalysis(object):
                 num_distributions_generated=0,
                 include_detailed_metric_info=True,
             )
+
 
         #
         # From that point on, optimize starts using the metric and 
