@@ -181,10 +181,11 @@ class simple_data_loader(Stage):
             container['weights'] = np.ones(container.size, dtype=FTYPE)
 
             if 'initial_weights' not in container.keys:
-                if self.fraction_events_to_keep is not None:
-                    container['initial_weights'] = np.full(container.size, 1./(1.-float(self.fraction_events_to_keep)), dtype=FTYPE)
-                else:
+                if self.fraction_events_to_keep is None:
                     container['initial_weights'] = np.ones(container.size, dtype=FTYPE)
+                else :
+                    # Need to scale weights if using down-sampling
+                    container['initial_weights'] = np.full(container.size, 1. / float(self.fraction_events_to_keep), dtype=FTYPE)
 
             # add neutrino flavor information for neutrino events
             #TODO Maybe add this directly into EventsPi

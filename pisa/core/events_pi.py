@@ -225,6 +225,10 @@ class EventsPi(OrderedDict):
             assert isinstance(required_metadata, Sequence)
             assert all([ isinstance(k, str) for k in required_metadata ])
 
+        # Reporting
+        if self.fraction_events_to_keep is not None :
+            logging.info("Down-sampling events (keeping %0.2g%% of the total). Will take sub-sample %i." % (100.*self.fraction_events_to_keep, self.events_subsample_index))
+
 
         #
         # Loop over files
@@ -402,7 +406,7 @@ class EventsPi(OrderedDict):
             else:
                 variable_mapping_to_use = variable_mapping.items()
 
-            # Init stuff for down-sampling layer
+            # Init stuff for down-sampling later
             chosen_event_indices = None
             rand = np.random.RandomState(seed) # Enforce same sample each time
 
@@ -448,7 +452,7 @@ class EventsPi(OrderedDict):
                 # Only if requested by user
                 if self.fraction_events_to_keep is not None:
 
-                    # Define events to keep only once for each speciess (e.g. same choice for all variables for a given species)
+                    # Define events to keep only once for each species (e.g. same choice for all variables for a given species)
                     if chosen_event_indices is None :
 
                         # Get intitial conditions
@@ -479,6 +483,9 @@ class EventsPi(OrderedDict):
                             current_event_indices = remaining_event_indices
 
                             i += 1
+
+                        # Report
+                        logging.info("Down-sampled %s events : %i -> %i (%0.2g%%)" % ( data_key, array_data.size, chosen_event_indices.size, 100.*(chosen_event_indices.size/array_data.size) ))
 
                     # Extract just the requested events
                     array_data = array_data[chosen_event_indices]
