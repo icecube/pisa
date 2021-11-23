@@ -277,6 +277,13 @@ class Hypersurface(object):
         self.fit_cov_mat = None
         self.fit_method = None
 
+        # Also add option store the pipeline param values used to generate the 
+        # maps that are the inouts to the fits for these hypersurfaces. They are
+        # not actually used in the fit and so this variable is generally `None`,
+        # but a user can set them externally during the fitting process so that
+        # they can be stored for for future reference 
+        self.fit_pipeline_param_values = None  
+
         # Serialization
         self._serializable_state = None
 
@@ -519,7 +526,7 @@ class Hypersurface(object):
         # Check nominal dataset definition
         assert isinstance(nominal_map, Map)
         assert isinstance(nominal_param_values, collections.abc.Mapping)
-        assert set(nominal_param_values.keys()) == set(self.param_names)
+        assert set(nominal_param_values.keys()) == set(self.param_names), "Params mismatch : %s != %s" % (list(set(nominal_param_values.keys())) == list(set(self.param_names)))
         assert all([isinstance(k, str) for k in nominal_param_values.keys()])
         assert all([np.isscalar(v) for v in nominal_param_values.values()])
         # Check systematic dataset definitions
@@ -1082,6 +1089,7 @@ class Hypersurface(object):
             state["fit_chi2"] = self.fit_chi2
             state["fit_cov_mat"] = self.fit_cov_mat
             state["fit_method"] = self.fit_method
+            state["fit_pipeline_param_values"] = self.fit_pipeline_param_values
             state["using_legacy_data"] = self.using_legacy_data
 
             state["params"] = collections.OrderedDict()
@@ -1379,19 +1387,32 @@ class HypersurfaceParam(object):
             state["binning_shape"] = self.binning_shape
             state["nominal_value"] = self.nominal_value
             state["bounds"] = self.bounds
+            state["coeff_prior_sigma"] = self.coeff_prior_sigma
             self._serializable_state = state
 
         return self._serializable_state
 
     @classmethod
     def from_state(cls, state):
-        # Create the param
-        param = cls(
+
+        # Define param init kwargs
+        # Special handling for `coeff_prior_sigma`, which was missing in older 
+        # files (due to a bug in `serializable_state`) so need to handle this 
+        # for backwards compatibility
+        param_init_kw = dict(
             name=state.pop("name"),
             func_name=state.pop("func_name"),
             initial_fit_coeffts=state.pop("initial_fit_coeffts"),
+            bounds=state.pop("bounds"),
         )
+        if "coeff_prior_sigma" in state :
+            param_init_kw["coeff_prior_sigma"] = state.pop("coeff_prior_sigma")
+        else :
+            param_init_kw["coeff_prior_sigma"] = None
 
+        # Create the param
+        param = cls(**param_init_kw)
+        
         # Define rest of state
         for k in list(state.keys()):
             setattr(param, k, state.pop(k))
@@ -1483,6 +1504,7 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
     sys_datasets = copy.deepcopy(sys_datasets)
     params = copy.deepcopy(params)
 
+
     #
     # Check inputs
     #
@@ -1521,15 +1543,22 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
     # Generate MapSets
     #
 
-    # Create and run the nominal and systematics pipelines (using the pipeline configs
-    # provided) to get maps
-    nominal_dataset["mapset"] = Pipeline(
-        nominal_dataset["pipeline_cfg"]).get_outputs()  # return_sum=False)
-    for sys_dataset in sys_datasets:
-        sys_dataset["mapset"] = Pipeline(
-            sys_dataset["pipeline_cfg"]).get_outputs()  # return_sum=False)
+    # Get maps and param values from nominal pipeline
+    nominal_pipeline = Pipeline(nominal_dataset["pipeline_cfg"])
+    pipeline_param_values = { p.name:p.value for p in nominal_pipeline.params }
+    nominal_dataset["mapset"] = nominal_pipeline.get_outputs()  # return_sum=False)
+    del nominal_pipeline # Save memory
 
-    # Merge maps according to the combine regex, is one was provided
+    # Loop over sys datasets and grap the maps from them too
+    # Also make sure the pipeline params match the nominal pipeline (only the input file should differ between them)
+    for sys_dataset in sys_datasets:
+        sys_pipeline = Pipeline(sys_dataset["pipeline_cfg"])
+        for param in sys_pipeline.params :
+            assert param.value == pipeline_param_values[param.name], "Mismatch in pipeline param '%s' value between nominal and systematic pipelines : %s != %s" % (param.name, param.value, pipeline_param_values[param.name])
+        sys_dataset["mapset"] = sys_pipeline.get_outputs()  # return_sum=False)
+        del sys_pipeline
+
+    # Merge maps according to the combine regex, if one was provided
     if combine_regex is not None:
         nominal_dataset["mapset"] = nominal_dataset["mapset"].combine_re(
             combine_regex)
@@ -1538,6 +1567,8 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
                 combine_regex)
 
     # TODO check every mapset has the same elements
+
+
 
     #
     # Loop over maps
@@ -1567,7 +1598,7 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
 
         # Create the hypersurface
         hypersurface = Hypersurface(
-            params=copy.deepcopy(params),
+            params=copy.deepcopy(params), # Need the deepcopy, as want one set of params per map
             initial_intercept=0. if log else 1.,  # Initial value for intercept
             log=log
         )
@@ -1582,11 +1613,16 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
             **hypersurface_fit_kw
         )
 
+        # Record the pipeline params used to generate the maps used for 
+        # the fits, for data provenance purposes only
+        hypersurface.fit_pipeline_param_values = pipeline_param_values
+
         # Report the results
         logging.debug("\nFitted hypersurface report:\n%s" % hypersurface)
 
         # Store for later write to disk
         hypersurfaces[map_name] = hypersurface
+
 
     #
     # Store results
@@ -1604,7 +1640,7 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
 
     logging.info("Fit results written : %s" % output_path)
 
-    return output_dir
+    return output_path
 
 
 def load_hypersurfaces(input_file, expected_binning=None):
@@ -1680,7 +1716,7 @@ def load_hypersurfaces(input_file, expected_binning=None):
     #
 
     else:
-        raise Exception("Unknown file format")
+        raise Exception("Unknown file format : %s" % input_file)
 
     # Check binning
     if expected_binning is not None:
@@ -1688,7 +1724,7 @@ def load_hypersurfaces(input_file, expected_binning=None):
             if not hypersurface.binning.hash == expected_binning.hash:
                 for a, b, in zip(hypersurface.binning.dims, expected_binning.dims):
                     assert a == b, "Incompatible binning dimension %s and %s"%(a, b)
-
+                    
     return hypersurfaces
 
 

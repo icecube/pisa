@@ -25,13 +25,12 @@ import pisa
 from pisa import EPSILON, FTYPE, ureg
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet
-from pisa.utils.comparisons import recursiveEquality, FTYPE_PREC
+from pisa.utils.comparisons import recursiveEquality, FTYPE_PREC, ALLCLOSE_KW
 from pisa.utils.log import logging
 from pisa.utils.fileio import to_file
 from pisa.utils.stats import (METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE,
                               LLH_METRICS, CHI2_METRICS,
                               it_got_better, is_metric_to_maximize)
-
 
 __all__ = ['MINIMIZERS_USING_SYMM_GRAD', 'MINIMIZERS_USING_CONSTRAINTS',
            'set_minimizer_defaults', 'validate_minimizer_settings',
@@ -249,37 +248,6 @@ def validate_minimizer_settings(minimizer_settings):
             logging.warning('starting step-size is very low, convergence will be slow')
 
 
-def check_t23_octant(fit_info):
-    """Check that theta23 is in the first or second octant.
-
-    Parameters
-    ----------
-    fit_info
-
-    Returns
-    -------
-    octant_index : int
-
-    Raises
-    ------
-    ValueError
-        Raised if the theta23 value is not in first (`octant_index`=0) or
-        second octant (`octant_index`=1)
-
-    """
-    valid_octant_indices = (0, 1)
-
-    theta23 = fit_info.metric_val.theta23.value
-    octant_index = int(
-        ((theta23 % (360 * ureg.deg)) // (45 * ureg.deg)).magnitude
-    )
-    if octant_index not in valid_octant_indices:
-        raise ValueError('Fitted theta23 value is not in the'
-                         ' first or second octant.')
-    return octant_index
-
-
-
 def get_separate_octant_params(hypo_maker, angle_name, inflection_point) :
     '''
     This function creates versions of the angle param that are confined to 
@@ -310,8 +278,12 @@ def get_separate_octant_params(hypo_maker, angle_name, inflection_point) :
     angle = hypo_maker.params[angle_name]
     angle.reset()
 
-    # Store the original theat23 param before we mess with it
-    angle_orig = deepcopy(angle)
+    # Store the original theta23 param before we mess with it
+    # WARNING: Do not copy here, you want the original object (since this relates to the underlying 
+    # ParamSelector from which theta23 is extracted). Otherwise end up with an incosistent state 
+    # later (e.g. after a new call to ParamSelector.select_params, this copied, and potentially
+    # modified param will be overwtiten by the original).
+    angle_orig = angle
 
     # Get the octant definition
     octants = (
@@ -650,6 +622,7 @@ class HypoFitResult(object):
             detailed_metric_info[m] = name_vals_d
         return detailed_metric_info
 
+
 class BasicAnalysis(object):
     """A bare-bones analysis that only fits a hypothesis to data.
     
@@ -934,43 +907,48 @@ class BasicAnalysis(object):
             # check
             minimizer_start_params = hypo_maker.params
 
+        # Get new angle parameters each limited to one octant 
         ang_orig, ang_case1, ang_case2 = get_separate_octant_params(hypo_maker, angle_name, inflection_point)
-        hypo_maker.update_params(ang_case1)
         
-        # Perform the fit
+        # Fit the first octant
+        hypo_maker.update_params(ang_case1)
         best_fit_info = self.fit_recursively(
             data_dist, hypo_maker, metric, external_priors_penalty,
             local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
             local_fit_kwargs["local_fit_kwargs"]
         )
+
         if not self.blindness:
             logging.info(f"found best fit at angle {best_fit_info.params[angle_name].value}")
         logging.info(f'checking other octant of {angle_name}')
+
         if reset_free:
             hypo_maker.reset_free()
         else:
             for param in minimizer_start_params:
                 hypo_maker.params[param.name].value = param.value
 
+        # Fit the second octant
         hypo_maker.update_params(ang_case2)
-
-        # Re-run minimizer starting at new point
         new_fit_info = self.fit_recursively(
             data_dist, hypo_maker, metric, external_priors_penalty,
             local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
             local_fit_kwargs["local_fit_kwargs"]
         )
+
         if not self.blindness:
             logging.info(f"found best fit at angle {new_fit_info.params[angle_name].value}")
+
         # record the correct range for the angle 
         # If we are at the strictest blindness level 2, no parameters are stored and the 
         # dict only contains an empty dict. Attempting to set a range would cause an eror.
-        if self.blindness < 2:
-            # This is one rare instance where we directly manipulate the parameters.
-            best_fit_info._params[angle_name].range = deepcopy(ang_orig.range)
-            best_fit_info._rehash()
-            new_fit_info._params[angle_name].range = deepcopy(ang_orig.range)
-            new_fit_info._rehash()
+        #TODO REMOVE?
+        # if self.blindness < 2:
+        #     # This is one rare instance where we directly manipulate the parameters.
+        #     best_fit_info._params[angle_name].range = deepcopy(ang_orig.range)
+        #     best_fit_info._rehash()
+        #     new_fit_info._params[angle_name].range = deepcopy(ang_orig.range)
+        #     new_fit_info._rehash()
 
         # Take the one with the best fit
         got_better = it_got_better(new_fit_info.metric_val, best_fit_info.metric_val, metric)
@@ -986,11 +964,15 @@ class BasicAnalysis(object):
             if not self.blindness:
                 logging.info('Accepting initial-octant fit')
         
-        hypo_maker.update_params(best_fit_info.params)
-        # We take the original angle with the original range and nominal value
-        # and only adjust its fit value.
-        ang_orig.value = best_fit_info.params[angle_name].value
+        # Put the original angle parameter back into the hypo maker
         hypo_maker.update_params(ang_orig)
+
+        # Copy the fitted parameter values from the best fit case into the hypo maker's parameter values
+        # Also reinstate the original parameter range for the angle
+        for best_fit_param in best_fit_info.params.free :
+            hypo_maker.params[best_fit_param.name].value = best_fit_param.value
+        #TODO Any rehashing required?
+
         return best_fit_info
     
     def _fit_best_of(self, data_dist, hypo_maker, metric,
@@ -1492,6 +1474,42 @@ class BasicAnalysis(object):
         # reset number of iterations before each minimization
         self._nit = 0
 
+
+        # Before starting minimization, check if we already have a perfect match between data and template
+        # This can happen if using pseudodata that was generated with the nominal values for parameters
+        # (which will also be the initial values in the fit) and blah...
+        # If this is the case, don't both to fit and return results right away. 
+
+        # Grab the hypo map
+        hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
+        
+        # Check if the hypo matches data
+        if data_dist.allclose(hypo_asimov_dist) :
+
+            msg = 'Initial hypo matches data, no need for fit'
+            logging.info(msg)
+
+            # Get the metric value at this initial point (for the returned data)
+            initial_metric_val = (
+                data_dist.metric_total(expected_values=hypo_asimov_dist, metric=metric[0])
+                + hypo_maker.params.priors_penalty(metric=metric[0])
+            )
+
+            # Return fit results, even though didn't technically fit
+            return HypoFitResult(
+                metric,
+                initial_metric_val,
+                data_dist,
+                hypo_maker,
+                minimizer_time=0.,
+                minimizer_metadata={"success":True, "nit":0, "message":msg}, # Add some metadata in the format returned by `scipy.optimize.minimize`
+                fit_history=None,
+                other_metrics=None,
+                num_distributions_generated=0,
+                include_detailed_metric_info=True,
+            )
+
+
         #
         # From that point on, optimize starts using the metric and 
         # iterates, no matter what you do 
@@ -1597,6 +1615,7 @@ class BasicAnalysis(object):
 
         minimizer_time = end_t - start_t
 
+        # Check for minimization failure
         if not optimize_result.success:
             if self.blindness:
                 msg = ''
@@ -1605,13 +1624,14 @@ class BasicAnalysis(object):
             logging.warn('Optimization failed.' + msg)
             # Instead of crashing completely, return a fit result with an infinite 
             # test statistic value.
+            metadata = {"success":optimize_result.success, "message":optimize_result.message,}
             return HypoFitResult(
                 metric,
                 sign * np.inf,
                 data_dist,
                 hypo_maker,
                 minimizer_time=minimizer_time,
-                minimizer_metadata=None,
+                minimizer_metadata=metadata,
                 fit_history=fit_history,
                 other_metrics=None,
                 num_distributions_generated=counter.count,
@@ -2490,7 +2510,6 @@ class Analysis(BasicAnalysis):
             # Reset free parameters to nominal values
             if reset_free:
                 hypo_maker.reset_free()
-            
             if check_octant:
                 method = "fit_octants"
                 method_kwargs = {
@@ -2913,4 +2932,3 @@ class Analysis(BasicAnalysis):
                 to_file(results, outfile)
 
         return results
-

@@ -38,12 +38,16 @@ class kde(Stage):
                  bw_method='silverman',
                  coszen_name='reco_coszen',
                  oversample=10,
+                 coszen_reflection=0.25,
+                 stack_pid=True,
                  **std_kargs,
                 ):
 
         self.bw_method = bw_method
         self.coszen_name = coszen_name
         self.oversample = int(oversample)
+        self.coszen_reflection = coszen_reflection
+        self.stack_pid = stack_pid
 
         # init base class
         super().__init__(
@@ -70,9 +74,10 @@ class kde(Stage):
                             weights=weights,
                             bw_method=self.bw_method,
                             coszen_name=self.coszen_name,
+                            coszen_reflection=self.coszen_reflection, 
                             oversample=self.oversample,
                             use_cuda=False,
-                            stack_pid=True)
+                            stack_pid=self.stack_pid)
 
             kde_map = np.ascontiguousarray(kde_map.ravel())
 

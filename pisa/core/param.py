@@ -198,7 +198,7 @@ class Param:
         self.scales_as_log = scales_as_log
         self.name = name
         self.unique_id = unique_id if unique_id is not None else name
-        self.tex = tex
+        self._tex = tex
         self.help = help
         self.range = range
         self.prior = prior
@@ -390,11 +390,7 @@ class Param:
 
     @property
     def tex(self):
-        return self._tex
-
-    @tex.setter
-    def tex(self, t):
-        self._tex = t
+        return r'{\rm %s}' % self.name.replace("_", r"\;") if self._tex is None else self._tex
 
     @property
     def nominal_value(self):
