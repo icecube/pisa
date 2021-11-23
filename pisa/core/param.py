@@ -390,7 +390,7 @@ class Param:
 
     @property
     def tex(self):
-        return  r'{\rm %s}' % self.name.replace("_", r"\;") if self._tex is None else self._tex
+        return r'{\rm %s}' % self.name.replace("_", r"\;") if self._tex is None else self._tex
 
     @property
     def nominal_value(self):
