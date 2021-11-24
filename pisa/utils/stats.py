@@ -17,7 +17,7 @@ from pisa.utils import likelihood_functions
 __all__ = ['SMALL_POS', 'CHI2_METRICS', 'LLH_METRICS', 'ALL_METRICS',
            'maperror_logmsg',
            'chi2', 'llh', 'log_poisson', 'log_smear', 'conv_poisson',
-           'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2',
+           'norm_conv_poisson', 'conv_llh', 'barlow_llh', 'mod_chi2', 'correct_chi2',
            'mcllh_mean', 'mcllh_eff', 'signed_sqrt_mod_chi2', 'generalized_poisson_llh']
 
 __author__ = 'P. Eller, T. Ehrhardt, J.L. Lanfranchi, E. Bourbeau'
@@ -40,7 +40,7 @@ __license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
 SMALL_POS = 1e-10 #if FTYPE == np.float64 else FTYPE_PREC
 """A small positive number with which to replace numbers smaller than it"""
 
-CHI2_METRICS = ['chi2', 'mod_chi2']
+CHI2_METRICS = ['chi2', 'mod_chi2', 'correct_chi2']
 """Metrics defined that result in measures of chi squared"""
 
 LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh', 'mcllh_mean', 
@@ -564,6 +564,33 @@ def mod_chi2(actual_values, expected_values):
     expected_values = unp.nominal_values(expected_values).ravel()
     m_chi2 = (
         (actual_values - expected_values)**2 / (sigma**2 + expected_values)
+    )
+    return m_chi2
+
+def correct_chi2(actual_values, expected_values):
+    """Compute the chi-square value taking into account uncertainty terms
+    (incl. e.g. finite stats) and their changes
+
+    Parameters
+    ----------
+    actual_values, expected_values : numpy.ndarrays of same shape
+
+    Returns
+    -------
+    m_chi2 : numpy.ndarray of same shape as inputs
+        Modified chi-squared values corresponding to each pair of elements in
+        the inputs
+
+    """
+    # Replace 0's with small positive numbers to avoid inf in log
+    np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf,
+            out=expected_values)
+    actual_values = unp.nominal_values(actual_values).ravel()
+    sigma = unp.std_devs(expected_values).ravel()
+    expected_values = unp.nominal_values(expected_values).ravel()
+    total_variance = sigma**2 + expected_values
+    m_chi2 = (
+        (actual_values - expected_values)**2 / total_variance + np.log(total_variance)
     )
     return m_chi2
 

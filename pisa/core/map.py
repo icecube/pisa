@@ -1631,6 +1631,32 @@ class Map(object):
         return np.sum(stats.mod_chi2(actual_values=self.hist,
                                      expected_values=expected_values))
 
+    def correct_chi2(self, expected_values, binned=False):
+        """Calculate the total correct chi2 value between this map and the map
+        described by `expected_values`; self is taken to be the "actual values"
+        (or (pseudo)data), and `expected_values` are the expectation values for
+        each bin.
+
+        Parameters
+        ----------
+        expected_values : numpy.ndarray or Map of same dimension as this.
+
+        binned : bool
+
+        Returns
+        -------
+        total_correct_chi2 : float or binned_correct_chi2 if binned=True
+
+        """
+        expected_values = reduceToHist(expected_values)
+
+        if binned:
+            return stats.correct_chi2(actual_values=self.hist,
+                                  expected_values=expected_values)
+
+        return np.sum(stats.correct_chi2(actual_values=self.hist,
+                                     expected_values=expected_values))
+
     def chi2(self, expected_values, binned=False):
         """Calculate the total chi-squared value between this map and the map
         described by `expected_values`; self is taken to be the "actual values"
