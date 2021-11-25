@@ -148,8 +148,10 @@ class EventsPi(OrderedDict):
             assert (self.fraction_events_to_keep >= 0.) and (self.fraction_events_to_keep <= 1.), "`fraction_events_to_keep` must be in range [0.,1.], or None to disable"
 
             # Check `fraction_events_to_keep` and `events_subsample_index` values are compatible
+            assert isinstance(self.events_subsample_index, int), f"`events_subsample_index` must be an integer"
+            assert self.events_subsample_index >= 0, f"`events_subsample_index` = {self.events_subsample_index}, but must be >= 0"
             max_index = int(np.floor( 1. / self.fraction_events_to_keep )) - 1
-            assert self.events_subsample_index <= max_index, "`events_subsample_index` = %i is too large given `fraction_events_to_keep` = %0.3g (max is %i)" % (self.events_subsample_index, self.fraction_events_to_keep, max_index)
+            assert self.events_subsample_index <= max_index, f"`events_subsample_index` = {self.events_subsample_index} is too large given `fraction_events_to_keep` = {self.fraction_events_to_keep} (max is {max_index})"
 
         # Define some metadata
         #TODO Is this out of date?

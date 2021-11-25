@@ -529,7 +529,7 @@ class Hypersurface(object):
         # Check nominal dataset definition
         assert isinstance(nominal_map, Map)
         assert isinstance(nominal_param_values, collections.abc.Mapping)
-        assert set(nominal_param_values.keys()) == set(self.param_names), "Params mismatch : %s != %s" % (list(set(nominal_param_values.keys())) == list(set(self.param_names)))
+        assert set(nominal_param_values.keys()) == set(self.param_names), f"Params mismatch : {set(nominal_param_values.keys())} != {set(self.param_names)}"
         assert all([isinstance(k, str) for k in nominal_param_values.keys()])
         assert all([np.isscalar(v) for v in nominal_param_values.values()])
         # Check systematic dataset definitions

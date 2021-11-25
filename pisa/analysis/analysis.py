@@ -939,17 +939,6 @@ class BasicAnalysis(object):
         if not self.blindness:
             logging.info(f"found best fit at angle {new_fit_info.params[angle_name].value}")
 
-        # record the correct range for the angle 
-        # If we are at the strictest blindness level 2, no parameters are stored and the 
-        # dict only contains an empty dict. Attempting to set a range would cause an eror.
-        #TODO REMOVE?
-        # if self.blindness < 2:
-        #     # This is one rare instance where we directly manipulate the parameters.
-        #     best_fit_info._params[angle_name].range = deepcopy(ang_orig.range)
-        #     best_fit_info._rehash()
-        #     new_fit_info._params[angle_name].range = deepcopy(ang_orig.range)
-        #     new_fit_info._rehash()
-
         # Take the one with the best fit
         got_better = it_got_better(new_fit_info.metric_val, best_fit_info.metric_val, metric)
 
@@ -971,7 +960,6 @@ class BasicAnalysis(object):
         # Also reinstate the original parameter range for the angle
         for best_fit_param in best_fit_info.params.free :
             hypo_maker.params[best_fit_param.name].value = best_fit_param.value
-        #TODO Any rehashing required?
 
         return best_fit_info
     
