@@ -469,7 +469,7 @@ class Hypersurface(object):
 
     def fit(self, nominal_map, nominal_param_values, sys_maps, sys_param_values,
             norm=True, method="L-BFGS-B", fix_intercept=False, intercept_bounds=None,
-            intercept_sigma=None, include_empty=False, keep_maps=True):
+            intercept_sigma=None, include_empty=False, keep_maps=True, ref_bin_idx=None):
         '''
         Fit the hypersurface coefficients (in every bin) to best match the provided
         nominal and systematic datasets.
@@ -517,6 +517,9 @@ class Hypersurface(object):
             Keep maps used to make the fit. If False, maps will be set to None after
             the fit is complete. This helps to reduce the size of JSONS if the 
             Hypersurface is to be stored on disk.
+
+        ref_bin_idx : tuple
+            An index specifying a reference bin that will be used for logging
         '''
 
         #
@@ -788,9 +791,12 @@ class Hypersurface(object):
                 # used by PISA can handle
                 eps = np.finfo(FTYPE).eps
 
+                # If no reference bin index was specified, used the first bin index to be fitted
+                if ref_bin_idx is None :
+                    ref_bin_idx = bin_idx
+
                 # Debug logging
-                test_bin_idx = (0, 0, 0)
-                if bin_idx == test_bin_idx:
+                if bin_idx == ref_bin_idx:
                     msg = ">>>>>>>>>>>>>>>>>>>>>>>\n"
                     msg += "Curve fit inputs to bin %s :\n" % (bin_idx,)
                     msg += "  x           : \n%s\n" % x
@@ -825,9 +831,9 @@ class Hypersurface(object):
                 except:
                     logging.warn(f"HESSE call failed for bin {bin_idx}, covariance matrix unavailable")
                     pcov = np.full((len(p0), len(p0)), np.nan)
-                if bin_idx == test_bin_idx:
-                    logging.debug(m.get_fmin())
-                    logging.debug(m.get_param_states())
+                if bin_idx == ref_bin_idx:
+                    logging.debug(m.fmin)
+                    logging.debug(m.params)
                     logging.debug(m.covariance)
 
             #
