@@ -1324,7 +1324,7 @@ class ParamSelector:
             return False
         return True
 
-    def update(self, p, selector=None):
+    def update(self, p, selector=None, existing_must_match=False, extend=True):
         try:
             p = ParamSet(p)
         except:
@@ -1333,14 +1333,17 @@ class ParamSelector:
             raise
 
         if selector is None:
-            self._regular_params.update(p)
-            self._current_params.update(p)
+            self._regular_params.update(p, existing_must_match=existing_must_match, extend=extend)
+            self._current_params.update(p, existing_must_match=existing_must_match, extend=extend)
+            for selection in self._selections:
+                if selection in self._selector_params.keys():
+                    self._selector_params[selection].update(p, existing_must_match=existing_must_match, extend=extend)
         else:
             assert isinstance(selector, str)
             selector = selector.strip().lower()
             if selector not in self._selector_params:
                 self._selector_params[selector] = ParamSet()
-            self._selector_params[selector].update(p)
+            self._selector_params[selector].update(p, existing_must_match=existing_must_match, extend=extend)
 
             # Re-select current selectiosn in case the update modifies these
             self.select_params(error_on_missing=False)
