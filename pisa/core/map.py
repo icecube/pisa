@@ -730,10 +730,9 @@ class Map(object):
                 small_axes.append(divider.append_axes("right", size="100%", pad=0.1, sharey=ax))
                 small_axes[-1].yaxis.set_visible(False)
 
-            for bin_idx in range(self.binning[smallest_dim].num_bins):
-                to_plot = self.slice(**{smallest_dim:bin_idx}).squeeze()
+            for bin_idx, to_plot in enumerate(self.split(smallest_dim)):
                 to_plot.plot(symm=symm, logz=logz, vmin=vmin, vmax=vmax,
-                             ax=small_axes[bin_idx], title=' %s (%s bin %i)'%(title, smallest_dim, bin_idx), 
+                             ax=small_axes[bin_idx], 
                              cmap=cmap, clabel=clabel, clabelsize=clabelsize,
                              xlabelsize=xlabelsize, ylabelsize=ylabelsize, titlesize=titlesize,
                              pcolormesh_kw=pcolormesh_kw, colorbar_kw=colorbar_kw,
