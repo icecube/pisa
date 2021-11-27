@@ -4,8 +4,8 @@ Common tools for performing an analysis collected into a single class
 """
 
 
-from collections.abc import Sequence
-from collections import OrderedDict, Mapping
+from collections.abc import Sequence, Mapping
+from collections import OrderedDict
 from copy import deepcopy
 from operator import setitem
 from itertools import product
@@ -24,9 +24,9 @@ import nlopt
 import pisa
 from pisa import EPSILON, FTYPE, ureg
 from pisa.core.map import Map, MapSet
-from pisa.core.param import ParamSet
+from pisa.core.param import ParamSet, Param
 from pisa.utils.comparisons import recursiveEquality, FTYPE_PREC, ALLCLOSE_KW
-from pisa.utils.log import logging
+from pisa.utils.log import logging, set_verbosity
 from pisa.utils.fileio import to_file
 from pisa.utils.stats import (METRICS_TO_MAXIMIZE, METRICS_TO_MINIMIZE,
                               LLH_METRICS, CHI2_METRICS,
@@ -320,6 +320,40 @@ def get_separate_octant_params(hypo_maker, angle_name, inflection_point) :
 
     return angle_orig, angle_case1, angle_case2
 
+def update_param_values(
+    hypo_maker,
+    params,
+    update_nominal_values=False,
+    update_range=False,
+    update_is_fixed=False
+):
+    """
+    Update just the values of parameters of a DistributionMaker *without* replacing 
+    the memory references inside.
+    
+    This should be used in place of `hypo_maker.update_params(params)` unless one
+    explicitly wants to replace the memory references to which the parameters in 
+    the DistributionMaker are pointing.
+    """
+    
+    # it is possible that only a single param is given
+    if isinstance(params, Param):
+        params = [params]
+
+    for p in params:
+        if p.name not in hypo_maker.params.names: continue
+        for pipeline in hypo_maker.pipelines:
+            if p.name not in pipeline.params.names: continue
+            # it is crucial that we update the range first because the value
+            # of the parameter in params might lie outside the range of those in
+            # hypo_maker.
+            if update_range:
+                pipeline.params[p.name].range = p.range
+            pipeline.params[p.name].value = p.value
+            if update_nominal_values:
+                pipeline.params[p.name].nominal_value = p.nominal_value 
+            if update_is_fixed:
+                pipeline.params[p.name].is_fixed = p.is_fixed
 
 # TODO: move this to a central location prob. in utils
 class Counter(object):
@@ -947,9 +981,13 @@ class BasicAnalysis(object):
             minimizer_start_params = hypo_maker.params
 
         # Get new angle parameters each limited to one octant 
-        ang_orig, ang_case1, ang_case2 = get_separate_octant_params(hypo_maker, angle_name, inflection_point)
+        ang_orig, ang_case1, ang_case2 = get_separate_octant_params(
+            hypo_maker, angle_name, inflection_point
+        )
         
         # Fit the first octant
+        # In this case it is OK to replace the memory reference, we will reinstate it
+        # later.
         hypo_maker.update_params(ang_case1)
         best_fit_info = self.fit_recursively(
             data_dist, hypo_maker, metric, external_priors_penalty,
@@ -978,6 +1016,16 @@ class BasicAnalysis(object):
         if not self.blindness:
             logging.info(f"found best fit at angle {new_fit_info.params[angle_name].value}")
 
+        # We must not forget to reset the range of the angle to its original value!
+        # Otherwise, the parameter returned by this function will have a different 
+        # range, which can cause failures further down the line!
+        # This is one rare instance where we directly manipulate the parameters, so 
+        # we re-hash.
+        best_fit_info._params[angle_name].range = deepcopy(ang_orig.range)
+        best_fit_info._rehash()
+        new_fit_info._params[angle_name].range = deepcopy(ang_orig.range)
+        new_fit_info._rehash()
+
         # Take the one with the best fit
         got_better = it_got_better(new_fit_info.metric_val, best_fit_info.metric_val, metric)
 
@@ -991,14 +1039,15 @@ class BasicAnalysis(object):
             # alternate_fits.append(new_fit_info)
             if not self.blindness:
                 logging.info('Accepting initial-octant fit')
-        
-        # Put the original angle parameter back into the hypo maker
+
+        # Put the original angle parameter (as in, the actual object from memory)
+        # back into the hypo maker
         hypo_maker.update_params(ang_orig)
 
-        # Copy the fitted parameter values from the best fit case into the hypo maker's parameter values
+        # Copy the fitted parameter values from the best fit case into the hypo maker's
+        # parameter values.
         # Also reinstate the original parameter range for the angle
-        for best_fit_param in best_fit_info.params.free :
-            hypo_maker.params[best_fit_param.name].value = best_fit_param.value
+        update_param_values(hypo_maker, best_fit_info.params.free, update_range=True)
 
         return best_fit_info
     
@@ -1133,14 +1182,16 @@ class BasicAnalysis(object):
             if reset_free:
                 hypo_maker.reset_free()
             for param, value in point.items():
-                orig_param = deepcopy(hypo_maker.params[param])
-                orig_param.value = value
+                mod_param = deepcopy(hypo_maker.params[param])
+                mod_param.value = value
                 if fix_grid_params:
                     # it is possible to do a scan over fixed parameters as well as
                     # free ones; fixed ones always stay fixed, free ones are fixed
                     # if requested
-                    orig_param.is_fixed = True
-                hypo_maker.update_params(orig_param)
+                    mod_param.is_fixed = True
+                # It is important not to use hypo_maker.update_params(mod_param) here
+                # because we don't want to overwrite the memory reference!
+                update_param_values(hypo_maker, mod_param, update_is_fixed=True)
             new_fit_info = self.fit_recursively(
                 data_dist, hypo_maker, metric, external_priors_penalty,
                 local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
@@ -1168,7 +1219,7 @@ class BasicAnalysis(object):
         best_fit_result = all_fit_results[best_idx]
 
         if do_refined_fit:
-            hypo_maker.update_params(best_fit_result.params)
+            update_param_values(hypo_maker, best_fit_result.params.free)
             # the params stored in the best fit may come from a grid point where 
             # parameters were fixed, so we free them up again
             for param in originally_free:
@@ -1273,9 +1324,9 @@ class BasicAnalysis(object):
             while True:
                 if "starting_values" in method_kwargs.keys():
                     for param, value in method_kwargs["starting_values"].items():
-                        orig_param = deepcopy(hypo_maker.params[param])
-                        orig_param.value = value
-                        hypo_maker.update_params(orig_param)
+                        for pipeline in hypo_maker.pipelines:
+                            if param in pipeline.params.names:
+                                pipeline.params[param].value = value
                 fit_result = self.fit_recursively(
                     data_dist, hypo_maker, metric, penalty_func,
                     local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
@@ -1310,10 +1361,11 @@ class BasicAnalysis(object):
         if "reset_free" in method_kwargs.keys():
             reset_free = method_kwargs["reset_free"]
         
-        # this one we store for later so we can reset all ranges when we are done
+        # Store a copy of the original parameter such that we can reset the ranges
+        # and nominal values after the fit is done.
         original_param = deepcopy(hypo_maker.params[method_kwargs["param_name"]])
         logging.info(f"original parameter:\n{original_param}")
-        # this is the param we play around with
+        # this is the param we play around with (NOT same object in memory)
         mod_param = deepcopy(original_param)
         # The way this works is that we change the range and the set the rescaled
         # value of the parameter to the same number it originally had. This means
@@ -1327,11 +1379,16 @@ class BasicAnalysis(object):
             mod_param.range = interval
             mod_param._rescaled_value = original_rescaled_value
             # to make sure that a `reset_free` command will not try to reset the
-            # parameter to a place outside of the modified range
+            # parameter to a place outside of the modified range we also set the 
+            # nominal value
             mod_param.nominal_value = mod_param.value
             logging.info(f"now fitting on interval {i+1}/{len(method_kwargs['ranges'])}")
             logging.info(f"parameter with modified range:\n{mod_param}")
-            hypo_maker.update_params(mod_param)
+            # use update_param_values instead of hypo_maker.update_params so that we
+            # don't overwrite the internal memory reference
+            update_param_values(
+                hypo_maker, mod_param, update_range=True, update_nominal_values=True
+            )
             fit_result = self.fit_recursively(
                 data_dist, hypo_maker, metric, external_priors_penalty,
                 local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
@@ -1354,8 +1411,13 @@ class BasicAnalysis(object):
         best_fit_result._params[original_param.name].range = original_param.range
         best_fit_result._params[original_param.name].nominal_value = original_param.nominal_value
         best_fit_result._rehash()
-        original_param.value = best_fit_result.params[original_param.name].value
-        hypo_maker.update_params(original_param)
+        # set the values of all parameters in the hypo_maker to the best fit values
+        # without overwriting the memory reference.
+        # Also reset ranges and nominal values that we might have changed above!
+        update_param_values(
+            hypo_maker, best_fit_result.params.free,
+            update_range=True, update_nominal_values=True
+        )
         return best_fit_result
     
     def _fit_staged(self, data_dist, hypo_maker, metric,
@@ -1381,7 +1443,9 @@ class BasicAnalysis(object):
         for i, fit_kwargs in enumerate(local_fit_kwargs):
             logging.info(f"Beginning fit {i+1} / {len(local_fit_kwargs)}")
             if best_fit_params is not None:
-                hypo_maker.update_params(best_fit_params)
+                update_param_values(
+                    hypo_maker, best_fit_params.free, update_nominal_values=True
+                )
             best_fit_info = self.fit_recursively(
                 data_dist, hypo_maker, metric, external_priors_penalty,
                 fit_kwargs["method"], fit_kwargs["method_kwargs"],
@@ -1393,12 +1457,18 @@ class BasicAnalysis(object):
             for p in best_fit_params.free:
                 p.nominal_value = p.value
         # reset the nominal values to their original values as if nothing happened
+        # note that we manipulate the internal `_params` object directly, circumventing
+        # the getter method!
         for p in best_fit_info._params.free:
             p.nominal_value = original_nominal_values[p.name]
+        # Because we directly manipulated the internal parameters, we need to update
+        # the hash.
         best_fit_info._rehash()
         # Make sure that the hypo_maker has its params also at the best fit point
         # with the original nominal parameter values.
-        hypo_maker.update_params(best_fit_info.params)
+        update_param_values(
+            hypo_maker, best_fit_info.params.free, update_nominal_values=True
+        )
         return best_fit_info        
         
     def _fit_scipy(self, data_dist, hypo_maker, metric,
@@ -1543,7 +1613,6 @@ class BasicAnalysis(object):
 
         # reset number of iterations before each minimization
         self._nit = 0
-
 
         #
         # From that point on, optimize starts using the metric and 
@@ -2968,3 +3037,205 @@ class Analysis(BasicAnalysis):
                 to_file(results, outfile)
 
         return results
+
+def test_basic_analysis(pprint=False):
+    """Test recursive fit strategies with BasicAnalysis."""
+    
+
+    from pisa.core.distribution_maker import DistributionMaker
+    from pisa.utils.config_parser import parse_pipeline_config
+    
+    ###### Make Pipeline Configuration #########
+    #  We make a configuration of two pipelines where some, but not all, parameters
+    #  are shared between them. This checks for memory inconsistencies.
+    config = parse_pipeline_config('settings/pipeline/fast_example.cfg')
+    config2 = deepcopy(config)
+    # Remove one stage to remove some parameters from only one pipeline
+    del config2[("xsec", "nutau_xsec")]
+
+    dm = DistributionMaker([config, config2])
+    dm.select_params('nh')
+    
+    # make data distribution to fit against
+    data_dist = dm.get_outputs(return_sum=True)
+
+    ana = BasicAnalysis()
+    ana.pprint = pprint
+
+    scipy_settings = {
+      "method": {
+        "value": "L-BFGS-B",
+        "desc": "The string to pass to scipy.optimize.minimize so it knows what to use"
+      },
+      "options":{
+        "value": {
+          "disp"   : 0,
+          "ftol"   : 1.0e-1,
+          "eps"    : 1.0e-6,
+          # we set a very low number of iterations so that this test exits early
+          # WILL CAUSE WARNINGS SAYING THAT THE OPTIMIZATION FAILED, BUT THAT IS OK!
+          #"maxiter": 2
+        },
+        "desc": {
+          "disp"   : "Set to True to print convergence messages",
+          "ftol"   : "Precision goal for the value of f in the stopping criterion",
+          "eps"    : "Step size used for numerical approximation of the jacobian.",
+          "maxiter": "Maximum number of iteration"
+        }
+      },
+    }
+    
+    ###### Fit strategy to test ########
+    # This is a ridiculously complex fit strategy for a simple std. osc. fit
+    # that no one would use in real life, just to test the fit functions.
+    # Staged fit in two stages:
+    # 1. Best of:
+    #     --> local fit using Simplex from NLOPT on a 2x1 grid
+    #     --> local fit using Migrad from Minuit
+    # 2.  --> for each range in deltam31:
+    #         |--> starting from the best fit point found by local fit, shifted to range
+    #             |--> fit with octant reflection, where internal fit is scipy
+    
+    local_simplex = OrderedDict(
+        method="nlopt",
+        method_kwargs={
+            "algorithm": "NLOPT_LN_NELDERMEAD",
+            "ftol_rel": 1e-1,
+            "ftol_abs": 1e-1,
+            "maxeval": 10
+        },
+        local_fit_kwargs=None
+    )
+    
+    grid_scan = OrderedDict(
+        method="grid_scan",
+        method_kwargs={
+            "grid": {
+                "deltam31": np.array([3e-3, 5e-3]) * ureg["eV^2"],
+                "theta23": np.array([30]) * ureg["deg"]
+            },
+            "refined_fit": local_simplex
+        },
+        local_fit_kwargs=local_simplex
+    )
+    
+    local_minuit = OrderedDict(
+        method="iminuit",
+        method_kwargs={
+            "tol": 10,
+        },
+        local_fit_kwargs=None
+    )
+    
+    best_of = OrderedDict(
+        method="best_of",
+        method_kwargs=None,
+        local_fit_kwargs=[
+            local_minuit,
+            grid_scan
+        ]
+    )
+
+    # a standard analysis strategy with an octant flip at 45 deg in theta23
+    standard_analysis = OrderedDict(
+        method="fit_octants",
+        method_kwargs={
+            "angle": "theta23",
+            "inflection_point": 45 * ureg.deg,
+        },
+        local_fit_kwargs={
+            "method": "scipy",
+            "method_kwargs": scipy_settings,
+            "local_fit_kwargs": None
+        }
+    )
+    
+    # fit different ranges in mass splitting, and to the octant fits in each range
+    fit_in_ranges = OrderedDict(
+        method="fit_ranges",
+        method_kwargs={
+            "param_name": "deltam31",
+            "ranges": np.array([[0.001, 0.004], [0.004, 0.007]]) * ureg["eV^2"],
+            "reset_free": True
+        },
+        local_fit_kwargs=standard_analysis
+    )
+    
+    # put together the full fit strategy
+    staged_fit = OrderedDict(
+        method="staged",
+        method_kwargs=None,
+        local_fit_kwargs=[
+            best_of,
+            fit_in_ranges
+        ]
+    )
+    # changing the parameter values in theta23 such that the fits starts offset from
+    # the truth
+    for p in dm.pipelines:
+        p.params.deltam31.is_fixed = False
+        p.params["theta23"].range = (0 * ureg.deg, 90 *ureg.deg)
+        p.params["theta23"].value = 30 * ureg.deg
+        p.params["theta23"].nominal_value = 30 * ureg.deg
+    dm.reset_free()
+
+    # store all the original ranges and nominal values
+    # --> The fits should never return results where these have changed, even though
+    #     they are sometimes changed within them.
+    original_ranges = dict((p.name, p.range) for p in dm.params)
+    original_nom_vals = dict((p.name, p.nominal_value) for p in dm.params)
+    
+    # ACTUALLY RUN THE FIT
+    best_fit_info = ana.fit_recursively(
+        data_dist,
+        dm,
+        "chi2",
+        None,
+        **staged_fit
+    )
+    
+    assert dm.params == best_fit_info.params
+    # there had been problems in the past where the range of the parameter that is 
+    # changed by the octant flip was not reversed properly
+    for p in dm.params:
+        msg = f"mismatch in param {p.name}:\n"
+        msg += f"range is {p.range}, should be {original_ranges[p.name]}\n"
+        msg += f"nom. value is {p.nominal_value}, should be {original_nom_vals[p.name]}"
+        if p.range is not None:
+            assert p.range[0] == original_ranges[p.name][0], msg
+            assert p.range[0] == original_ranges[p.name][0], msg
+        if p.nominal_value is not None:
+            assert p.nominal_value == original_nom_vals[p.name], msg
+    
+    # Here we make sure that making a param selection doesn't overwrite the fitted
+    # parameters. The Analysis should have changed the parameters inside the
+    # ParamSelector.
+    dm.select_params('nh')
+    assert dm.params == best_fit_info.params
+    for p in dm.params:
+        msg = f"mismatch in param {p.name}:\n"
+        msg += f"range is {p.range}, should be {original_ranges[p.name]}\n"
+        msg += f"nom. value is {p.nominal_value}, should be {original_nom_vals[p.name]}"
+        if p.range is not None:
+            assert p.range[0] == original_ranges[p.name][0], msg
+            assert p.range[0] == original_ranges[p.name][0], msg
+        if p.nominal_value is not None:
+            assert p.nominal_value == original_nom_vals[p.name], msg
+
+    dm.select_params('ih')
+    dm.select_params('nh')
+    assert dm.params == best_fit_info.params
+    for p in dm.params:
+        msg = f"mismatch in param {p.name}:\n"
+        msg += f"range is {p.range}, should be {original_ranges[p.name]}\n"
+        msg += f"nom. value is {p.nominal_value}, should be {original_nom_vals[p.name]}"
+        if p.range is not None:
+            assert p.range[0] == original_ranges[p.name][0], msg
+            assert p.range[0] == original_ranges[p.name][0], msg
+        if p.nominal_value is not None:
+            assert p.nominal_value == original_nom_vals[p.name], msg
+    
+if __name__ == "__main__":
+    set_verbosity(1)
+    test_basic_analysis(pprint=True)
+    
