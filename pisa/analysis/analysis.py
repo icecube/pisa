@@ -3051,7 +3051,8 @@ def test_basic_analysis(pprint=False):
     config = parse_pipeline_config('settings/pipeline/fast_example.cfg')
     config2 = deepcopy(config)
     # Remove one stage to remove some parameters from only one pipeline
-    del config2[("xsec", "nutau_xsec")]
+    del config2[("aeff", "aeff")]
+
 
     dm = DistributionMaker([config, config2])
     dm.select_params('nh')
