@@ -25,6 +25,7 @@ import pisa
 from pisa import EPSILON, FTYPE, ureg
 from pisa.core.map import Map, MapSet
 from pisa.core.param import ParamSet, Param
+from pisa.core.pipeline import Pipeline
 from pisa.utils.comparisons import recursiveEquality, FTYPE_PREC, ALLCLOSE_KW
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.fileio import to_file
@@ -339,10 +340,12 @@ def update_param_values(
     # it is possible that only a single param is given
     if isinstance(params, Param):
         params = [params]
+    
+    if isinstance(hypo_maker, Pipeline):
+        hypo_maker = [hypo_maker]
 
     for p in params:
-        if p.name not in hypo_maker.params.names: continue
-        for pipeline in hypo_maker.pipelines:
+        for pipeline in hypo_maker:
             if p.name not in pipeline.params.names: continue
             # it is crucial that we update the range first because the value
             # of the parameter in params might lie outside the range of those in
@@ -3173,12 +3176,32 @@ def test_basic_analysis(pprint=False):
     )
     # changing the parameter values in theta23 such that the fits starts offset from
     # the truth
+    # use this opportunity to test the update_param_values function as well
     for p in dm.pipelines:
         p.params.deltam31.is_fixed = False
-        p.params["theta23"].range = (0 * ureg.deg, 90 *ureg.deg)
-        p.params["theta23"].value = 30 * ureg.deg
-        p.params["theta23"].nominal_value = 30 * ureg.deg
+    mod_th23 = deepcopy(dm.params.theta23)
+    mod_th23.range = (0 * ureg.deg, 90 *ureg.deg)
+    mod_th23.value = 30 * ureg.deg
+    mod_th23.nominal_value = 30 * ureg.deg
+    
+    update_param_values(dm, mod_th23, update_nominal_values=True, update_range=True)
+    # make sure that the parameter values inside the ParamSelector were changed and
+    # will not be overwritten by a call to `select_params`
+    mod_params = deepcopy(dm.params)
+    dm.select_params('nh')
+    assert mod_params == dm.params
+    # test alternative input to `update_param_values` where `hypo_maker` is just a 
+    # single Pipeline
+    for pipeline in dm:
+        update_param_values(pipeline, mod_th23)
+    # the call above should just have no effect at all since we set everything to the 
+    # same value
+    assert mod_params == dm.params
+    
+    # resetting free parameters should now set theta23 to 30 degrees since that is 
+    # the new nominal value    
     dm.reset_free()
+    assert dm.params.theta23.value.m_as("deg") == 30
 
     # store all the original ranges and nominal values
     # --> The fits should never return results where these have changed, even though
