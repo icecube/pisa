@@ -249,7 +249,9 @@ def validate_minimizer_settings(minimizer_settings):
             logging.warning('starting step-size is very low, convergence will be slow')
 
 
-def get_separate_octant_params(hypo_maker, angle_name, inflection_point) :
+def get_separate_octant_params(
+    hypo_maker, angle_name, inflection_point, tolerance=None
+):
     '''
     This function creates versions of the angle param that are confined to 
     a single octant. It does this for both octant cases. This is used to allow 
@@ -264,6 +266,9 @@ def get_separate_octant_params(hypo_maker, angle_name, inflection_point) :
         Name of the angle for which to create separate octant params.
     inflection_point : quantity
         Point distinguishing between the two octants, e.g. 45 degrees
+    tolerance : quantity
+        If the starting value is closer to the inflection point than the value of the
+        tolerance, it is offset away from the inflection point by this amount.
 
     Returns
     -------
@@ -297,7 +302,8 @@ def get_separate_octant_params(hypo_maker, angle_name, inflection_point) :
     # still move the value back to maximal). The reason for this is that 
     # otherwise checks on the parameter bounds (which include a margin for 
     # minimizer tolerance) can an throw exception.
-    tolerance = 0.1 * ureg.degree
+    if tolerance is None:
+        tolerance = 0.1 * ureg.degree
     dist_from_inflection = angle.value - inflection_point 
     if np.abs(dist_from_inflection) < tolerance :
         sign = -1. if dist_from_inflection < 0. else +1. # Note this creates +ve shift also for theta == 45 (arbitary)
@@ -982,10 +988,11 @@ class BasicAnalysis(object):
             # resetting free parameters back to their nominal value after the octant
             # check
             minimizer_start_params = hypo_maker.params
-
+        
+        tolerance = method_kwargs["tolerance"] if "tolerance" in method_kwargs else None
         # Get new angle parameters each limited to one octant 
         ang_orig, ang_case1, ang_case2 = get_separate_octant_params(
-            hypo_maker, angle_name, inflection_point
+            hypo_maker, angle_name, inflection_point, tolerance=tolerance
         )
         
         # Fit the first octant
