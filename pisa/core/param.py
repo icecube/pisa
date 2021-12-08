@@ -396,9 +396,9 @@ class Param:
         # value back to the range if that happens.
         # Using the standard setter method instead of writing to _value so that we
         # auto-convert in case the range is defined in different units.
-        # if self.value > max(srange): self.value = max(srange)
-        # if self.value < min(srange): self.value = min(srange)
-        # self.validate_value(self.value)
+        if self.value > max(srange): self.value = max(srange)
+        if self.value < min(srange): self.value = min(srange)
+        self.validate_value(self.value)
 
     @property
     def tex(self):
@@ -1423,6 +1423,9 @@ def test_Param():
         assert np.isclose(
             p0.value.m_as(p0.u), max(p0.range).m_as(p0.u), **ALLCLOSE_KW
         ), msg
+        # We can afford rounding errors within the range, but we *cannot* afford them
+        # outside of the range, so we test that here explicitly.
+        assert p0.value.m_as(p0.u) <= max(p0.range).m_as(p0.u), msg
         p0._rescaled_value = 0.
         msg = (
             f"value of param {p0.name} after re-scaling is {p0.value}, "
@@ -1431,6 +1434,8 @@ def test_Param():
         assert np.isclose(
             p0.value.m_as(p0.u), min(p0.range).m_as(p0.u), **ALLCLOSE_KW
         ), msg
+        assert p0.value.m_as(p0.u) >= min(p0.range).m_as(p0.u), msg
+
 
     try:
         uniform = Prior(kind='uniform', llh_offset=1.5)
