@@ -562,6 +562,7 @@ class nusquids(Stage):
         for container in self.data:
             container["prob_e"] = np.empty((container.size), dtype=FTYPE)
             container["prob_mu"] = np.empty((container.size), dtype=FTYPE)
+            container["prob_tau"] = np.empty((container.size), dttype=FTYPE)
         self.data.unlink_containers()
         
         if self.exact_mode: return
@@ -579,6 +580,10 @@ class nusquids(Stage):
                 dtype=FTYPE,
             )
             container["interp_states_mu"] = np.empty(
+                (container.size, self.num_neutrinos**2),
+                dtype=FTYPE,
+            )
+            container["interp_states_tau"] = np.empty(
                 (container.size, self.num_neutrinos**2),
                 dtype=FTYPE,
             )
@@ -688,9 +693,12 @@ class nusquids(Stage):
                                                        container.size)
             container["prob_mu"] = self.calc_node_probs(nus_layer, 1, flav,
                                                         container.size)
+            container["prob_tau"] = self.calc_node_probs(nus_layer, 2, flav,
+                                                        container.size)
         
             container.mark_changed("prob_e")
             container.mark_changed("prob_mu")
+            container.mark_changed("prob_tau")
         self.data.unlink_containers()
     
     #@line_profile
@@ -705,8 +713,10 @@ class nusquids(Stage):
         self.apply_prop_settings(self.nus_layer)
         self.set_osc_parameters(self.nus_layer)
 
-        ini_state_nue = np.array([1, 0] + [0] * (self.num_neutrinos - 2))
-        ini_state_numu = np.array([0, 1] + [0] * (self.num_neutrinos - 2))
+        ini_state_nue = np.array([1, 0, 0] + [0] * (self.num_neutrinos - 3))
+        ini_state_numu = np.array([0, 1, 0] + [0] * (self.num_neutrinos - 3))
+        ini_state_nutau = np.array([0, 0, 1] + [0] * (self.num_neutrinos - 3))
+
         
         self.nus_layer.Set_initial_state(ini_state_nue, nsq.Basis.flavor)
         if not self.vacuum:
@@ -720,6 +730,11 @@ class nusquids(Stage):
         evolved_states_numu = self.nus_layer.GetStates(0)
         evolved_states_numubar = self.nus_layer.GetStates(1)
 
+        self.nus_layer.Set_initial_state(ini_state_nutau, nsq.Basis.flavor)
+        if not self.vacuum:
+            self.nus_layer.EvolveState()
+        evolved_states_nutau = self.nus_layer.GetStates(0)
+        evolved_states_nutaubar = self.nus_layer.GetStates(1)
         
         # Now comes the step where we interpolate the interaction picture states
         # and project out oscillation probabilities. This can be done in either events
@@ -741,6 +756,11 @@ class nusquids(Stage):
                 container["true_energy"] * nsq_units.GeV,
                 container["true_coszen"]
             )
+            container["interp_states_tau"] = self.calc_interpolated_states(
+                evolved_states_nutaubar if nubar else evolved_states_nutau,
+                container["true_energy"] * nsq_units.GeV,
+                container["true_coszen"]
+            )
         self.data.unlink_containers()
         
         if isinstance(self.calc_mode, MultiDimBinning):
@@ -754,7 +774,7 @@ class nusquids(Stage):
         for container in self.data:
             nubar = container["nubar"] < 0
             flav_out = container["flav"]
-            for flav_in in ["e", "mu"]:
+            for flav_in in ["e", "mu", "tau"]:
                 container["prob_"+flav_in] = self.calc_probs_interp(
                     flav_out=flav_out,
                     nubar=nubar,
@@ -788,6 +808,7 @@ class nusquids(Stage):
                 container["prob_"+flav_in][container["prob_"+flav_in] < 0] = 0.
             container.mark_changed("prob_e")
             container.mark_changed("prob_mu")
+            container.mark_changed("prob_tau")
         self.data.unlink_containers()
     
 
@@ -800,5 +821,7 @@ class nusquids(Stage):
     @profile
     def apply_function(self):
         for container in self.data:
-            scales = container['nu_flux'][:, 0] * container['prob_e'] + container['nu_flux'][:, 1] * container['prob_mu']
+            scales = container['nu_flux'][:, 0] * container['prob_e'] \
+                            + container['nu_flux'][:, 1] * container['prob_mu']  \
+                            + container["nu_flux"][:, 2] * container["prob_tau"]
             container['weights'] = container["weights"] * scales
