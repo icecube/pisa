@@ -17,9 +17,16 @@ from pisa.utils.log import logging
 
 
 class hist(Stage):  # pylint: disable=invalid-name
-    """stage to histogram events"""
+    """stage to histogram events
+
+    Parameters
+    ----------
+    unweighted : bool, optional
+        Return un-weighted event counts in each bin.
+    """
     def __init__(
         self,
+        unweighted=False,
         **std_kwargs,
         ):
 
@@ -32,6 +39,7 @@ class hist(Stage):  # pylint: disable=invalid-name
         assert self.calc_mode is not None
         assert self.apply_mode is not None
         self.regularized_apply_mode = None
+        self.unweighted = unweighted
 
     def setup_function(self):
 
@@ -55,9 +63,9 @@ class hist(Stage):  # pylint: disable=invalid-name
                 container['hist_transform'] = transform
 
         elif self.calc_mode == "events":
-            # For dimensions where the binning is irregular, we pre-compute the 
+            # For dimensions where the binning is irregular, we pre-compute the
             # index that each sample falls into and then bin regularly in the index.
-            # For dimensions that are logarithmic, we add a linear binning in 
+            # For dimensions that are logarithmic, we add a linear binning in
             # the logarithm.
             dimensions = []
             for dim in self.apply_mode:
@@ -73,7 +81,7 @@ class hist(Stage):  # pylint: disable=invalid-name
                     for container in self.data:
                         container.representation = "events"
                         x = container[dim.name] * dim.units
-                        # Compute the bin index each sample would fall into, and 
+                        # Compute the bin index each sample would fall into, and
                         # shift by -1 such that samples below the binning range
                         # get assigned the index -1.
                         x_idx = np.searchsorted(dim.bin_edges, x, side="right") - 1
@@ -86,7 +94,7 @@ class hist(Stage):  # pylint: disable=invalid-name
                         container[varname] = x_idx
                 elif dim.is_log:
                     # We don't compute the log of the variable just yet, this
-                    # will be done later during `apply_function` using the 
+                    # will be done later during `apply_function` using the
                     # representation mechanism.
                     new_dim = OneDimBinning(
                         dim.name,
@@ -100,12 +108,16 @@ class hist(Stage):  # pylint: disable=invalid-name
             logging.debug("Using regularized binning:\n" + str(self.regularized_apply_mode))
         else:
             raise ValueError(f"unknown calc mode: {self.calc_mode}")
-    
+
     @profile
     def apply_function(self):
-        
+
         if isinstance(self.calc_mode, MultiDimBinning):
 
+            if self.unweighted:
+                raise NotImplementedError(
+                    "Unweighted hist only implemented in event-wise calculation"
+                )
             for container in self.data:
 
                 container.representation = self.calc_mode
@@ -135,8 +147,12 @@ class hist(Stage):  # pylint: disable=invalid-name
                     else:
                         container.representation = "events"
                         sample.append(container[dim.name])
-                weights = container['weights']
-                
+
+                if self.unweighted:
+                    weights = np.ones_like(container["weights"])
+                else:
+                    weights = container['weights']
+
                 # The hist is now computed using a binning that is completely linear
                 # and regular
                 hist = histogram(sample, weights, self.regularized_apply_mode, averaged=False)
@@ -145,7 +161,7 @@ class hist(Stage):  # pylint: disable=invalid-name
                     sumw2 = histogram(sample, np.square(weights), self.regularized_apply_mode, averaged=False)
 
                 container.representation = self.apply_mode
-                
+
                 container['weights'] = hist
 
                 if self.error_method == 'sumw2':
