@@ -44,7 +44,46 @@ class lic_loader_weighter(Stage):
         """
         Load in the lic files, build the weighters, and get all the one-weights. To get the true 
         """
-        pass
+
+        raw_data = None # pd.read_csv(self.events_file)
+
+        # create containers from the events
+        for name in self.output_names:
+
+            # make container
+            container = Container(name)
+            nubar = -1 if 'bar' in name else 1
+            if 'e' in name:
+                flav = 0
+            if 'mu' in name:
+                flav = 1
+            if 'tau' in name:
+                flav = 2
+
+            # cut out right part
+            pdg = nubar * (12 + 2 * flav)
+
+            mask = raw_data['pdg'] == pdg
+            if 'cc' in name:
+                mask = np.logical_and(mask, raw_data['type'] > 0)
+            else:
+                mask = np.logical_and(mask, raw_data['type'] == 0)
+
+            events = raw_data[mask]
+
+            container['weighted_aeff'] = events['weight'].values.astype(FTYPE)
+            container['weights'] = np.ones(container.size, dtype=FTYPE)
+            container['initial_weights'] = np.ones(container.size, dtype=FTYPE)
+            container['astro_weights'] = np.ones(container.size, dtype=FTYPE)
+            container['astro_initial_weights'] = np.ones(container.size, dtype=FTYPE)
+
+            container['true_energy'] = events['true_energy'].values.astype(FTYPE)
+            container['true_coszen'] = events['true_coszen'].values.astype(FTYPE)
+            container['reco_energy'] = events['reco_energy'].values.astype(FTYPE)
+            container['reco_coszen'] = events['reco_coszen'].values.astype(FTYPE)
+            container['pid'] = events['pid'].values.astype(FTYPE)
+            container.set_aux_data('nubar', nubar)
+            container.set_aux_data('flav', flav)
 
     def apply_function(self):
         """
@@ -52,3 +91,4 @@ class lic_loader_weighter(Stage):
         """
         for container in self.data:
             container['weights'] = np.copy(container['initial_weights'])
+            container["astro_weights"] = np.copy(container["initial_astro_weights"])
