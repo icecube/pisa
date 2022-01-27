@@ -151,7 +151,7 @@ def compute_abs_derivatives(mceq_run, pid, barr_param, zenith_list):
     danue = fd_derivative(anue_up, anue_down)
 
     result = collections.OrderedDict()
-    result_type = ["numu", "dnumu", "numubar", "dnumubar", "nue", "dnue", "nuebar", "dnuebar"]
+    result_type = ["numu", "dnumu", "numubar", "dnumubar", "nue", "dnue", "nuebar", "dnuebar", "nutau", "nutaubar", "dnutau", "dnutaubar"]
 
     for dist, sp in zip([numu, dnumu, anumu, danumu, nue, dnue, anue, danue], result_type):
         result[sp] = RectBivariateSpline(cos_theta, np.log(etr), dist)
