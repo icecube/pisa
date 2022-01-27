@@ -109,7 +109,10 @@ class hist(Stage):  # pylint: disable=invalid-name
             for container in self.data:
 
                 container.representation = self.calc_mode
-                weights = container['weights']
+                if "astro_weights" in container:
+                    weights = container['weights'] + container["astro_weights"]
+                else:
+                    weights = container['weights']
                 transform = container['hist_transform']
 
                 hist = weights @ transform
@@ -135,7 +138,10 @@ class hist(Stage):  # pylint: disable=invalid-name
                     else:
                         container.representation = "events"
                         sample.append(container[dim.name])
-                weights = container['weights']
+                if "astro_weights" in container:
+                    weights = container['weights'] + container["astro_weights"]
+                else:
+                    weights = container['weights']
                 
                 # The hist is now computed using a binning that is completely linear
                 # and regular
