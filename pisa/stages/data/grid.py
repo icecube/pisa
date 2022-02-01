@@ -27,14 +27,15 @@ class grid(Stage):
     """
     def __init__(
         self,
+        grid_binning,
         entity="midpoints",
         output_names=None,
         **std_kwargs,
     ):
         expected_params = ()
 
-
         # store args
+        self.grid_binning = grid_binning
         self.entity = entity
         self.output_names = output_names
 
@@ -43,6 +44,8 @@ class grid(Stage):
             expected_params=expected_params,
             **std_kwargs,
         )
+
+        assert self.calc_mode == "events"
 
     def setup_function(self):
 
@@ -61,9 +64,9 @@ class grid(Stage):
                 flav = 2
 
             # Create arrays
-            mesh = self.calc_mode.meshgrid(entity=self.entity, attach_units=False)
+            mesh = self.grid_binning.meshgrid(entity=self.entity, attach_units=False)
             size = mesh[0].size
-            for var_name, var_vals in zip(self.calc_mode.names, mesh):
+            for var_name, var_vals in zip(self.grid_binning.names, mesh):
                 container[var_name] = var_vals.flatten().astype(FTYPE)
 
             # Add useful info

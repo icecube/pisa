@@ -272,7 +272,7 @@ PARAM_RE = re.compile(
     re.IGNORECASE
 )
 
-PARAM_ATTRS = ['range', 'prior', 'fixed']
+PARAM_ATTRS = ['range', 'prior', 'fixed', 'tex']
 
 STAGE_SEP = '.'
 
@@ -476,6 +476,9 @@ def parse_param(config, section, selector, fullname, pname, value):
 
     if config.has_option(section, fullname + '.unique_id'):
         kwargs['unique_id'] = config.get(section, fullname + '.unique_id')
+
+    if config.has_option(section, fullname + '.tex'):
+        kwargs['tex'] = config.get(section, fullname + '.tex')
 
     if config.has_option(section, fullname + '.range'):
         range_ = config.get(section, fullname + '.range')

@@ -730,10 +730,9 @@ class Map(object):
                 small_axes.append(divider.append_axes("right", size="100%", pad=0.1, sharey=ax))
                 small_axes[-1].yaxis.set_visible(False)
 
-            for bin_idx in range(self.binning[smallest_dim].num_bins):
-                to_plot = self.slice(**{smallest_dim:bin_idx}).squeeze()
+            for bin_idx, to_plot in enumerate(self.split(smallest_dim)):
                 to_plot.plot(symm=symm, logz=logz, vmin=vmin, vmax=vmax,
-                             ax=small_axes[bin_idx], title=' %s (%s bin %i)'%(title, smallest_dim, bin_idx), 
+                             ax=small_axes[bin_idx], 
                              cmap=cmap, clabel=clabel, clabelsize=clabelsize,
                              xlabelsize=xlabelsize, ylabelsize=ylabelsize, titlesize=titlesize,
                              pcolormesh_kw=pcolormesh_kw, colorbar_kw=colorbar_kw,
@@ -2125,6 +2124,12 @@ class Map(object):
             type_error(other)
         return state_updates
 
+    def allclose(self, other):
+        '''Check if this map and another have the same (within machine precision) bin counts'''
+        self.assert_compat(other)
+        return np.allclose(self.nominal_values, other.nominal_values, **ALLCLOSE_KW)
+
+
 # TODO: instantiate individual maps from dicts if passed as such, so user
 # doesn't have to instantiate each map. Also, check for name collisions with
 # one another and with attrs (so that __getattr__ can retrieve the map by name)
@@ -3033,6 +3038,10 @@ class MapSet(object):
 
     def set_poisson_errors(self):
         return self.apply_to_maps('set_poisson_errors')
+
+    def allclose(self, other):
+        '''Check if this mapset and another have the same (within machine precision) bin counts'''
+        return np.all( list(self.apply_to_maps('allclose', other).values()) )
 
 ## Now dynamically add all methods from Map to MapSet that don't already exist
 ## in MapSet (and make these methods distribute to contained maps)
