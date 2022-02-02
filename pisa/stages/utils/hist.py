@@ -20,6 +20,7 @@ class hist(Stage):  # pylint: disable=invalid-name
     """stage to histogram events"""
     def __init__(
         self,
+        apply_weights=False,
         **std_kwargs,
         ):
 
@@ -32,6 +33,7 @@ class hist(Stage):  # pylint: disable=invalid-name
         assert self.calc_mode is not None
         assert self.apply_mode is not None
         self.regularized_apply_mode = None
+        self.apply_weights = apply_weights
 
     def setup_function(self):
 
@@ -110,17 +112,23 @@ class hist(Stage):  # pylint: disable=invalid-name
 
                 container.representation = self.calc_mode
                 weights = container['weights']
+                if self.apply_weights:
+                    unc_weights = container['unc_weights']
+                else:
+                    unc_weights = np.ones(weights.shape)
                 transform = container['hist_transform']
 
-                hist = weights @ transform
+                hist = (unc_weights*weights) @ transform
                 if self.error_method == 'sumw2':
-                    sumw2 = np.square(weights) @ transform
+                    sumw2 = np.square(unc_weights*weights) @ transform
+                    bin_unc2 = (np.square(unc_weights)*weights) @ transform
 
                 container.representation = self.apply_mode
                 container['weights'] = hist
 
                 if self.error_method == 'sumw2':
                     container['errors'] = np.sqrt(sumw2)
+                    container['bin_unc2'] = bin_unc2
 
         elif self.calc_mode == 'events':
             for container in self.data:
@@ -136,13 +144,18 @@ class hist(Stage):  # pylint: disable=invalid-name
                         container.representation = "events"
                         sample.append(container[dim.name])
                 weights = container['weights']
+                if self.apply_weights:
+                    unc_weights = container['unc_weights']
+                else:
+                    unc_weights = np.ones(weights.shape)
                 
                 # The hist is now computed using a binning that is completely linear
                 # and regular
-                hist = histogram(sample, weights, self.regularized_apply_mode, averaged=False)
+                hist = histogram(sample, unc_weights*weights, self.regularized_apply_mode, averaged=False)
 
                 if self.error_method == 'sumw2':
-                    sumw2 = histogram(sample, np.square(weights), self.regularized_apply_mode, averaged=False)
+                    sumw2 = histogram(sample, np.square(unc_weights*weights), self.regularized_apply_mode, averaged=False)
+                    bin_unc2 = histogram(sample, np.square(unc_weights)*weights, self.regularized_apply_mode, averaged=False)
 
                 container.representation = self.apply_mode
                 
@@ -150,3 +163,4 @@ class hist(Stage):  # pylint: disable=invalid-name
 
                 if self.error_method == 'sumw2':
                     container['errors'] = np.sqrt(sumw2)
+                    container['bin_unc2'] = bin_unc2

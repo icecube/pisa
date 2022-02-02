@@ -40,7 +40,7 @@ __license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
 SMALL_POS = 1e-10 #if FTYPE == np.float64 else FTYPE_PREC
 """A small positive number with which to replace numbers smaller than it"""
 
-CHI2_METRICS = ['chi2', 'mod_chi2', 'correct_chi2']
+CHI2_METRICS = ['chi2', 'mod_chi2', 'correct_chi2', 'weighted_chi2']
 """Metrics defined that result in measures of chi squared"""
 
 LLH_METRICS = ['llh', 'conv_llh', 'barlow_llh', 'mcllh_mean', 
@@ -591,6 +591,36 @@ def correct_chi2(actual_values, expected_values):
     total_variance = sigma**2 + expected_values
     m_chi2 = (
         (actual_values - expected_values)**2 / total_variance + np.log(total_variance)
+    )
+    return m_chi2
+
+def weighted_chi2(actual_values, expected_values, bin_unc2):
+    """Compute the chi-square value for weighted events taking into account
+    uncertainty terms (incl. e.g. finite stats)
+
+    Parameters
+    ----------
+    actual_values, expected_values, bin_unc2 : numpy.ndarrays of same shape
+
+    Returns
+    -------
+    m_chi2 : numpy.ndarray of same shape as inputs
+        Modified chi-squared values corresponding to each trio of elements in
+        the inputs
+
+    """
+    # Replace 0's with small positive numbers to avoid inf in log
+    np.clip(expected_values, a_min=SMALL_POS, a_max=np.inf, out=expected_values)
+    np.clip(bin_unc2, a_min=SMALL_POS, a_max=np.inf, out=bin_unc2)
+
+    actual_values = unp.nominal_values(actual_values).ravel()
+    sigma = unp.std_devs(expected_values).ravel()
+    expected_values = unp.nominal_values(expected_values).ravel()
+    bin_unc2 = unp.nominal_values(bin_unc2).ravel()
+    total_variance = sigma**2 + bin_unc2
+
+    m_chi2 = (
+        (actual_values - expected_values)**2 / total_variance #+ np.log(total_variance)
     )
     return m_chi2
 
