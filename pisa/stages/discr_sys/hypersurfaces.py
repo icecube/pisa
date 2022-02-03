@@ -197,6 +197,9 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
                 else:
                     container["errors"] *= container["hs_scales"]
                     container.mark_changed('errors')
+                
+                container["bin_unc2"] = np.clip(container["bin_unc2"] * container["hs_scales"], a_min=0, a_max=np.inf)
+                container.mark_changed('bin_unc2')
 
             # Update weights according to hypersurfaces
             container["weights"] = np.clip(container["weights"] * container["hs_scales"], a_min=0, a_max=np.inf)
