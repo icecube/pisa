@@ -353,7 +353,8 @@ class Pipeline(object):
 
         """
         for stage in self:
-            stage.params.update(params, existing_must_match=existing_must_match, extend=extend)
+            stage._param_selector.update(params, existing_must_match=existing_must_match, extend=extend)
+            #stage.params.update(params, existing_must_match=existing_must_match, extend=extend)
 
     def select_params(self, selections, error_on_missing=False):
         """Select a set of alternate param values/specifications.

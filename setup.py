@@ -225,6 +225,7 @@ def do_setup():
     package_data['pisa_examples'] = [
         'resources/aeff/*.json*',
         'resources/cross_sections/*json*',
+        'resources/cross_sections/*.pckl',
         'resources/discr_sys/*.json*',
 
         'resources/events/*.hdf5',

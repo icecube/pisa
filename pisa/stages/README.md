@@ -2,18 +2,92 @@
 
 Directories are PISA stages, and within each directory can be found the services implementing the respective stage.
 
-# Anatomy of a Stage
+## Anatomy of a typical stage
 
-The PISA stage inherits from pisa.core.stage.Stage
+### Constructor
+The constructor of the stage should look like the following:
 
-There are 4 pasrts to a stage:
+```python
+class mystage(Stage):
+  """
+  Docstring (mandatory!)
+  
+  What is the purpose of this stage? Short 1-2 sentence description
+  
+  Parameters:
+  -----------
+  
+  params :
+    Expected params are .. ::
+      a : dimensionless Quantity
+      b : dimensionless Quantity
+  
+  something_else : float
+    Description
+    
+  Notes:
+  ------
+  
+  More info, references, etc...
+  
+  """
+  def __init__(self, something_else, **std_kwargs):
 
-## The constructor
+    expected_params = ('a', 'b')
+    
+    super().__init__(expected_params=expected_params, **std_kwargs)
+    
+    self.foo = something_else
+```
 
-Assign here any arguments passed in via the config, define expected parameters, and init the base stage
+The constructor arguments are passed in via the satage config file, which in this case would need to look something like:
 
-## The setup function
+ ```ini
+ [stage_dir.mystage]
 
-## The calculation function
+calc_mode = ...
+apply_mode = ...
 
-## The apply function
+something_else = 42.
+
+params.a = 13.
+params.b = 27.3 +/- 3.2
+```
+
+The `std_kwargs` can only contain `data, params, debug_mode, error_mode, calc_mode, apply_mode, profile`, of which `data` and `params` will be autmoatically populated.
+
+
+### Methods
+
+The stages can implement three standard methods:
+* `setup_function` : executed upon instantiation (and in the future potentially for more)
+* `compute_function` : executed in a run if parameters changed (and first run)
+* `apply_function` : executed in every run
+
+The data representation is set by default to `calc_mode` for the first two, and `apply_mode` in the latter, but can be changed by the user freely.
+
+An example of such an above function could look like:
+
+```python
+
+def apply_function(self):
+  b_magnitude = self.params.b.m_as('dimensionless')
+  
+  for container in self.data:
+    container['weights'] *= b_magnitude
+```
+**N.B.:** If you use in-place array operations on your containers (e.g. `container['weights'][mask] = 0.0`, you need to mark thses changes via `container.mark_changed('weights')`)
+
+## Directory Listing
+
+* `aeff/` - All stages relating to effective area transforms.
+* `combine/` - A stage for combining maps together and applying appropriate scaling factors. 
+* `data/` - All stages relating to the handling of data.
+* `discr_sys/` - All stages relating to the handling of discrete systematics.
+* `flux/` - All stages relating to the atmospheric neutrino flux.
+* `osc/` - All stages relating to neutrino oscillations. 
+* `pid/` - All stages relating to particle identification.
+* `reco/` - All stages relating to applying reconstruction kernels.
+* `unfold/` - All stages relating to the unfolding of parameters from data.
+* `xsec/` - All stages relating to cross sections.
+* `__init__.py` - File that makes the `stages` directory behave as a Python module.

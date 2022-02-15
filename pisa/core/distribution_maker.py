@@ -185,9 +185,18 @@ class DistributionMaker(object):
         # set parameters with an identical name to the same object
         # otherwise we get inconsistent behaviour when setting repeated params
         # See Isues #566 and #648
-        all_parans = self.params
+        # Also, do this for all selections!
+        original_selection = self.param_selections
+        all_selections = set()
         for pipeline in self:
-            pipeline.update_params(all_parans, existing_must_match=True, extend=False)
+            for stage in pipeline.stages:
+                all_selections.update(stage._param_selector._selector_params.keys())
+        for selection in all_selections:
+            self.select_params(selection)
+            all_params = self.params
+            for pipeline in self:
+                pipeline.update_params(all_params, existing_must_match=True, extend=False)
+        self.select_params(original_selection)
 
     def __repr__(self):
         return self.tabulate(tablefmt="presto")
