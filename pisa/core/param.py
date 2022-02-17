@@ -320,6 +320,10 @@ class Param:
                 )
             )
 
+        if values[1] <= values[0]:
+            raise ValueError(
+                "The second value of the range must be strictly larger than the first."
+            )
         if self.scales_as_log and values[0].m * values[1].m <= 0:
             raise ValueError("A parameter with log-scaling must have a range that is "
                 "either entirely negative or entirely positive.")
@@ -387,6 +391,14 @@ class Param:
             self._value = np.exp(rval*(np.log(np.abs(srange1)) - np.log(np.abs(srange0)))) * srange0 * self._units
         else:
             self._value = (srange0 + (srange1 - srange0)*rval) * self._units
+        # In some rare cases (one case being rval = 1., range = (-0.5, 0.3)), a rounding
+        # error can occur that sets the value outside the allowed range. We clip the
+        # value back to the range if that happens.
+        # Using the standard setter method instead of writing to _value so that we
+        # auto-convert in case the range is defined in different units.
+        if self.value > max(srange): self.value = max(srange)
+        if self.value < min(srange): self.value = min(srange)
+        self.validate_value(self.value)
 
     @property
     def tex(self):
@@ -1390,13 +1402,40 @@ def test_Param():
         # the original value can be recovered
         rval = p0._rescaled_value
         p0._rescaled_value = rval
-        assert np.isclose(p0.value.m_as(p0.u), value_prescale.m_as(p0.u), **ALLCLOSE_KW)
+        msg = (
+            f"value of param {p0.name} after re-scaling is {p0.value}, "
+            f"should be {value_prescale}"
+        )
+        assert np.isclose(
+            p0.value.m_as(p0.u), value_prescale.m_as(p0.u), **ALLCLOSE_KW
+        ), msg
         # check nothing breaks when we go to the edges
         p0.value = p0.range[0]
         assert p0._rescaled_value == 0.
         p0.value = p0.range[1]
         assert p0._rescaled_value == 1.
         p0.value = value_prescale
+        p0._rescaled_value = 1.
+        msg = (
+            f"value of param {p0.name} after re-scaling is {p0.value}, "
+            f"should be {max(p0.range)}"
+        )
+        assert np.isclose(
+            p0.value.m_as(p0.u), max(p0.range).m_as(p0.u), **ALLCLOSE_KW
+        ), msg
+        # We can afford rounding errors within the range, but we *cannot* afford them
+        # outside of the range, so we test that here explicitly.
+        assert p0.value.m_as(p0.u) <= max(p0.range).m_as(p0.u), msg
+        p0._rescaled_value = 0.
+        msg = (
+            f"value of param {p0.name} after re-scaling is {p0.value}, "
+            f"should be {min(p0.range)}"
+        )
+        assert np.isclose(
+            p0.value.m_as(p0.u), min(p0.range).m_as(p0.u), **ALLCLOSE_KW
+        ), msg
+        assert p0.value.m_as(p0.u) >= min(p0.range).m_as(p0.u), msg
+
 
     try:
         uniform = Prior(kind='uniform', llh_offset=1.5)
@@ -1431,8 +1470,16 @@ def test_Param():
         # range entirely negative
         p0 = Param(name='c', value=-5000*ureg.foot, prior=gaussian,
                    # range entirely positive
-                   range=[-0.1, -2]*ureg.mile, is_fixed=False, is_discrete=False,
+                   range=[-2, -0.1]*ureg.mile, is_fixed=False, is_discrete=False,
                    scales_as_log=True, tex=r'\int{\rm c}')
+        check_scaling(p0)
+        check_json(p0, "p0")
+
+        # Test a pathological parameter with a range of (-0.5, 0.3) and try to set the
+        # rescaled value to the upper boundary. This used to cause an error in the past
+        # because (-0.5 + (0.3 -(-0.5)) * 1.) = 0.30000000000000004, which is above 0.3.
+        p0 = Param(name='a', value=0., prior=None, range=[-0.5, 0.3],
+                   is_fixed=False, is_discrete=False)
         check_scaling(p0)
         check_json(p0, "p0")
 
@@ -1793,6 +1840,7 @@ def test_ParamSet():
 def test_ParamSelector():
     """Unit tests for ParamSelector class"""
     # pylint: disable=attribute-defined-outside-init, no-member, invalid-name
+
     p0 = Param(name='a', value=1.5, prior=None, range=[1, 2],
                is_fixed=False, is_discrete=False, tex=r'\int{\rm c}')
     p1 = Param(name='b', value=2.5, prior=None, range=[1, 5],
@@ -1803,13 +1851,13 @@ def test_ParamSelector():
                 is_fixed=False, is_discrete=False, tex=r'{\rm b}')
     p22 = Param(name='c', value=1.0, prior=None, range=[1, 2],
                 is_fixed=False, is_discrete=False, tex=r'{\rm b}')
-    p30 = Param(name='d', value=-1.5, prior=None, range=[-1, -2],
+    p30 = Param(name='d', value=-1.5, prior=None, range=[-2, -1],
                 is_fixed=False, is_discrete=False, tex=r'{\rm b}')
-    p31 = Param(name='d', value=-2.0, prior=None, range=[-1, -2],
+    p31 = Param(name='d', value=-2.0, prior=None, range=[-2, -1],
                 is_fixed=False, is_discrete=False, tex=r'{\rm b}')
-    p40 = Param(name='e', value=-15, prior=None, range=[-10, -20],
+    p40 = Param(name='e', value=-15, prior=None, range=[-20, -10],
                 is_fixed=False, is_discrete=False, tex=r'{\rm b}')
-    p41 = Param(name='e', value=-20, prior=None, range=[-10, -20],
+    p41 = Param(name='e', value=-20, prior=None, range=[-20, -10],
                 is_fixed=False, is_discrete=False, tex=r'{\rm b}')
     ps30_40 = ParamSet(p30, p40)
     param_selector = ParamSelector(
@@ -1898,9 +1946,9 @@ def test_ParamSelector():
 
     # Use update to overwrite existing params...
 
-    p402 = Param(name='e', value=-11, prior=None, range=[0, -20],
+    p402 = Param(name='e', value=-11, prior=None, range=[-20, -0],
                  is_fixed=False, is_discrete=False, tex=r'{\rm b}')
-    p412 = Param(name='e', value=-22, prior=None, range=[0, -100],
+    p412 = Param(name='e', value=-22, prior=None, range=[-100, 0],
                  is_fixed=False, is_discrete=False, tex=r'{\rm b}')
 
     # Update param that exists already and is selected
