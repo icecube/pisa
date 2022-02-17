@@ -40,33 +40,45 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
 
 
 PRIMARIES = ['numu', 'numubar', 'nue', 'nuebar']
+T_MODE_PRIMARIES = ['numu', 'numubar', 'nue', 'nuebar', 'nutau', 'nutaubar']
 TEXPRIMARIES = [r'$\nu_{\mu}$', r'$\bar{\nu}_{\mu}$', r'$\nu_{e}$',
                 r'$\bar{\nu}_{e}$']
 
 
-def load_2d_honda_table(flux_file, enpow=1, return_table=False):
+def load_2d_honda_table(flux_file, enpow=1, return_table=False, hg_taumode=False):
+    """
+    Added "hg_taumode" to load in hillas gaisser h3a tables made with tau neutrino contributions. 
+    """
 
     logging.debug("Loading atmospheric flux table %s", flux_file)
 
     # columns in Honda files are in the same order
-    cols = ['energy'] + PRIMARIES
+    cols = ['energy'] + T_MODE_PRIMARIES if hg_taumode else PRIMARIES
 
     # Load the data table
     table = np.genfromtxt(open_resource(flux_file),
-                          usecols=list(range(len(cols))))
-    mask = np.all(np.isnan(table) | np.equal(table, 0), axis=1)
-    table = table[~mask].T
+                usecols=list(range(len(cols))))
+    if hg_taumode:
+        mask = np.array([all(~np.isnan(table)[i]) for i in range(len(table))])
+        table = table[mask].T
+    else:
+        mask = np.all(np.isnan(table) | np.equal(table, 0), axis=1)
+        table = table[~mask].T
 
     flux_dict = dict(zip(cols, table))
     for key in flux_dict.keys():
         # There are 20 lines per zenith range
-        flux_dict[key] = np.array(np.split(flux_dict[key], 20))
+        flux_dict[key] = np.array(np.split(flux_dict[key], 100 if hg_taumode else 20))
 
     # Set the zenith and energy range as they are in the tables
     # The energy may change, but the zenith should always be
     # 20 bins, full sky.
     flux_dict['energy'] = flux_dict['energy'][0]
-    flux_dict['coszen'] = np.linspace(-0.95, 0.95, 20)
+    if hg_taumode:
+        _edges = np.linspace(-1.0, 1.0, 101)
+        flux_dict['coszen'] = 0.5*(_edges[:-1] + _edges[1:])
+    else:
+        flux_dict['coszen'] = np.linspace(-0.95, 0.95, 20)
 
     # Now get a spline representation of the flux table.
     logging.debug('Make spline representation of flux')
@@ -80,9 +92,13 @@ def load_2d_honda_table(flux_file, enpow=1, return_table=False):
     int_flux_dict = {}
     # Energy and CosZenith bins needed for integral-preserving
     # method must be the edges of those of the normal tables
-    int_flux_dict['logenergy'] = np.linspace(-1.025, 4.025, 102)
-    int_flux_dict['coszen'] = np.linspace(-1, 1, 21)
-    for nutype in PRIMARIES:
+    if hg_taumode:
+        int_flux_dict['logenergy'] = np.linspace(1.0, 6.0, 101)
+        int_flux_dict['coszen'] = np.linspace(-1, 1, 101)
+    else:
+        int_flux_dict['logenergy'] = np.linspace(-1.025, 4.025, 102)
+        int_flux_dict['coszen'] = np.linspace(-1, 1, 21)
+    for nutype in (T_MODE_PRIMARIES if hg_taumode else PRIMARIES):
         # spline_dict now wants to be a set of splines for
         # every table cosZenith value.
         splines = {}
@@ -105,7 +121,7 @@ def load_2d_honda_table(flux_file, enpow=1, return_table=False):
 
         spline_dict[nutype] = splines
 
-    for prim in PRIMARIES:
+    for prim in (T_MODE_PRIMARIES if hg_taumode else PRIMARIES):
         flux_dict[prim] = flux_dict[prim][::-1]
 
     if return_table:
@@ -219,7 +235,7 @@ def load_2d_table(flux_file, enpow=1, return_table=False):
         raise TypeError('Flux file name must be a string')
     if 'aa' not in flux_file:
         raise ValueError('Azimuth-averaged tables are expected')
-    if 'honda' not in flux_file:
+    if ('honda' not in flux_file) and ('hillas' not in flux_file):
         if 'bartol' in flux_file:
             if return_table:
                 spline_dict, flux_dict = load_2d_bartol_table(flux_file,
@@ -231,16 +247,18 @@ def load_2d_table(flux_file, enpow=1, return_table=False):
             spline_dict['name'] = 'bartol'
 
         else:
-            raise ValueError('Flux file must be from the Honda or '
+            raise ValueError('Flux file must be from the Honda, Hillas, or '
                              'Bartol groups')
     else:
         if return_table:
             spline_dict, flux_dict = load_2d_honda_table(flux_file,
                                                          enpow=enpow,
-                                                         return_table=True)
+                                                         return_table=True,
+                                                         hg_taumode="hillas" in flux_file)
         else:
-            spline_dict = load_2d_honda_table(flux_file, enpow=enpow)
-        spline_dict['name'] = 'honda'
+            spline_dict = load_2d_honda_table(flux_file, enpow=enpow,
+                                            hg_taumode="hillas" in flux_file)
+        spline_dict['name'] = 'hillas' if 'hillas' in flux_file else 'honda'
 
     if return_table:
         return spline_dict, flux_dict
