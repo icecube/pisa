@@ -95,8 +95,9 @@ def compute_abs_derivatives(mceq_run, pid, barr_param, zenith_list):
     unit=1e4
 
     # Solving nominal MCEq flux
-    numu, anumu, nue, anue = (np.zeros(dim_res), np.zeros(dim_res),
-                              np.zeros(dim_res), np.zeros(dim_res))
+    numu, anumu, nue, anue, nutau, anutau = (np.zeros(dim_res), np.zeros(dim_res),
+                                             np.zeros(dim_res), np.zeros(dim_res),
+                                             np.zeros(dim_res), np.zeros(dim_res))
 
     for iz, zen_deg in enumerate(zenith_list):
         mceq_run.set_theta_deg(zen_deg)
@@ -105,6 +106,9 @@ def compute_abs_derivatives(mceq_run, pid, barr_param, zenith_list):
         anumu[iz] = gs('total_antinumu', 0)[tr]*unit
         nue[iz] = gs('total_nue', 0)[tr]*unit
         anue[iz] = gs('total_antinue', 0)[tr]*unit
+        nutau[iz] = gs('total_nutau', 0)[tr]*unit
+        anutau[iz] = gs('total_antinutau', 0)[tr]*unit
+
 
     # Solving for plus one sigma
     mceq_run.unset_mod_pprod(dont_fill=True)
@@ -113,8 +117,9 @@ def compute_abs_derivatives(mceq_run, pid, barr_param, zenith_list):
 
     mceq_run.regenerate_matrices(skip_decay_matrix=True)
 
-    numu_up, anumu_up, nue_up, anue_up = (np.zeros(dim_res), np.zeros(dim_res),
-                                          np.zeros(dim_res), np.zeros(dim_res))
+    numu_up, anumu_up, nue_up, anue_up, nutau_up, anutau_up = (np.zeros(dim_res), np.zeros(dim_res),
+                                                               np.zeros(dim_res), np.zeros(dim_res),
+                                                               np.zeros(dim_res), np.zeros(dim_res))
     for iz, zen_deg in enumerate(zenith_list):
         mceq_run.set_theta_deg(zen_deg)
         mceq_run.solve()
@@ -122,6 +127,9 @@ def compute_abs_derivatives(mceq_run, pid, barr_param, zenith_list):
         anumu_up[iz] = gs('total_antinumu', 0)[tr]*unit
         nue_up[iz] = gs('total_nue', 0)[tr]*unit
         anue_up[iz] = gs('total_antinue', 0)[tr]*unit
+        nutau_up[iz] = gs('total_nutau', 0)[tr]*unit
+        anutau_up[iz] = gs('total_antinutau', 0)[tr]*unit
+
 
     # Solving for minus one sigma
     mceq_run.unset_mod_pprod(dont_fill=True)
@@ -130,10 +138,12 @@ def compute_abs_derivatives(mceq_run, pid, barr_param, zenith_list):
 
     mceq_run.regenerate_matrices(skip_decay_matrix=True)
 
-    numu_down, anumu_down, nue_down, anue_down = (np.zeros(dim_res),
-                                                  np.zeros(dim_res),
-                                                  np.zeros(dim_res),
-                                                  np.zeros(dim_res))
+    numu_down, anumu_down, nue_down, anue_down, nutau_down, anutau_down = (np.zeros(dim_res),
+                                                                           np.zeros(dim_res),
+                                                                           np.zeros(dim_res),
+                                                                           np.zeros(dim_res),
+                                                                           np.zeros(dim_res),
+                                                                           np.zeros(dim_res))
     for iz, zen_deg in enumerate(zenith_list):
         mceq_run.set_theta_deg(zen_deg)
         mceq_run.solve()
@@ -141,6 +151,9 @@ def compute_abs_derivatives(mceq_run, pid, barr_param, zenith_list):
         anumu_down[iz] = gs('total_antinumu', 0)[tr]*unit
         nue_down[iz] = gs('total_nue', 0)[tr]*unit
         anue_down[iz] = gs('total_antinue', 0)[tr]*unit
+        nutau_down[iz] = gs('total_nutau', 0)[tr]*unit
+        anutau_down[iz] = gs('total_antinutau', 0)[tr]*unit
+
 
     # calculating derivatives
     fd_derivative = lambda up, down: (up - down) / (2. * delta)
@@ -149,11 +162,13 @@ def compute_abs_derivatives(mceq_run, pid, barr_param, zenith_list):
     danumu = fd_derivative(anumu_up, anumu_down)
     dnue = fd_derivative(nue_up, nue_down)
     danue = fd_derivative(anue_up, anue_down)
+    dnutau = fd_derivative(nutau_up, nutau_down)
+    danutau = fd_derivative(anutau_up, anutau_down)
 
     result = collections.OrderedDict()
     result_type = ["numu", "dnumu", "numubar", "dnumubar", "nue", "dnue", "nuebar", "dnuebar", "nutau", "nutaubar", "dnutau", "dnutaubar"]
 
-    for dist, sp in zip([numu, dnumu, anumu, danumu, nue, dnue, anue, danue], result_type):
+    for dist, sp in zip([numu, dnumu, anumu, danumu, nue, dnue, anue, danue, nutau, dnutau, anutau, danutau], result_type):
         result[sp] = RectBivariateSpline(cos_theta, np.log(etr), dist)
 
     return result
