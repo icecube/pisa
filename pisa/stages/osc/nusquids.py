@@ -27,7 +27,10 @@ from pisa.core.binning import MultiDimBinning
 from pisa.utils.resources import find_resource
 from pisa import ureg
 
-import nuSQUIDSpy as nsq
+try:
+    import nuSQUIDSpy as nsq
+except ImportError:
+    import nuSQuIDS as nsq
 
 __all__ = ["nusquids"]
 
@@ -205,6 +208,7 @@ class nusquids(Stage):
         num_decoherence_gamma=1,
         use_nsi=False,
         num_neutrinos=3,
+        use_taus=False,
         exact_mode=False,
         vacuum=False,
         **std_kwargs,
@@ -215,7 +219,7 @@ class nusquids(Stage):
             raise NotImplementedError("NSI not implemented")
         if type(prop_height) is not ureg.Quantity:
             raise NotImplementedError("Getting propagation heights from containers is "
-                "not yet implemented")
+                "not yet implemented, saw {} type".format(type(prop_height)))
 
         # Store args
         self.num_neutrinos = int(num_neutrinos)
@@ -225,7 +229,7 @@ class nusquids(Stage):
         self.num_decoherence_gamma = num_decoherence_gamma
         self.node_mode = node_mode
         self.vacuum = vacuum
-
+        self.use_taus=use_taus
         self.earth_model = earth_model
         self.YeI = YeI.m_as("dimensionless")
         self.YeO = YeO.m_as("dimensionless")
@@ -562,7 +566,7 @@ class nusquids(Stage):
         for container in self.data:
             container["prob_e"] = np.empty((container.size), dtype=FTYPE)
             container["prob_mu"] = np.empty((container.size), dtype=FTYPE)
-            container["prob_tau"] = np.empty((container.size), dttype=FTYPE)
+            container["prob_tau"] = np.empty((container.size), dtype=FTYPE)
         self.data.unlink_containers()
         
         if self.exact_mode: return
@@ -693,12 +697,12 @@ class nusquids(Stage):
                                                        container.size)
             container["prob_mu"] = self.calc_node_probs(nus_layer, 1, flav,
                                                         container.size)
-            container["prob_tau"] = self.calc_node_probs(nus_layer, 2, flav,
-                                                        container.size)
-        
             container.mark_changed("prob_e")
             container.mark_changed("prob_mu")
-            container.mark_changed("prob_tau")
+            if self.use_taus:
+                container["prob_tau"] = self.calc_node_probs(nus_layer, 2, flav,
+                                                            container.size)
+                container.mark_changed("prob_tau")
         self.data.unlink_containers()
     
     #@line_profile
@@ -730,11 +734,12 @@ class nusquids(Stage):
         evolved_states_numu = self.nus_layer.GetStates(0)
         evolved_states_numubar = self.nus_layer.GetStates(1)
 
-        self.nus_layer.Set_initial_state(ini_state_nutau, nsq.Basis.flavor)
-        if not self.vacuum:
-            self.nus_layer.EvolveState()
-        evolved_states_nutau = self.nus_layer.GetStates(0)
-        evolved_states_nutaubar = self.nus_layer.GetStates(1)
+        if self.use_taus:
+            self.nus_layer.Set_initial_state(ini_state_nutau, nsq.Basis.flavor)
+            if not self.vacuum:
+                self.nus_layer.EvolveState()
+            evolved_states_nutau = self.nus_layer.GetStates(0)
+            evolved_states_nutaubar = self.nus_layer.GetStates(1)
         
         # Now comes the step where we interpolate the interaction picture states
         # and project out oscillation probabilities. This can be done in either events
@@ -756,11 +761,12 @@ class nusquids(Stage):
                 container["true_energy"] * nsq_units.GeV,
                 container["true_coszen"]
             )
-            container["interp_states_tau"] = self.calc_interpolated_states(
-                evolved_states_nutaubar if nubar else evolved_states_nutau,
-                container["true_energy"] * nsq_units.GeV,
-                container["true_coszen"]
-            )
+            if self.use_taus:
+                container["interp_states_tau"] = self.calc_interpolated_states(
+                    evolved_states_nutaubar if nubar else evolved_states_nutau,
+                    container["true_energy"] * nsq_units.GeV,
+                    container["true_coszen"]
+                )
         self.data.unlink_containers()
         
         if isinstance(self.calc_mode, MultiDimBinning):
@@ -823,5 +829,5 @@ class nusquids(Stage):
         for container in self.data:
             scales = container['nu_flux'][:, 0] * container['prob_e'] \
                             + container['nu_flux'][:, 1] * container['prob_mu']  \
-                            + container["nu_flux"][:, 2] * container["prob_tau"]
+                            + (container["nu_flux"][:, 2] * container["prob_tau"]) if self.use_taus else 0.0
             container['weights'] = container["weights"] * scales
