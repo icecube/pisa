@@ -9,8 +9,9 @@ from pisa.core.stage import Stage
 
 from pisa.utils.numba_tools import WHERE, myjit
 
+PIVOT = FTYPE(100.0e3)
 
-class astro_simple(Stage):
+class astrophysical(Stage):
     """
     Stage to apply power law astrophysical fluxes 
 
@@ -24,9 +25,9 @@ class astro_simple(Stage):
     TODO: flavor ratio as a parameter? Save for later. 
     """
 
-    def __init__(self, **std_kwargs):
+    def __init__(self,**std_kwargs):
         self._central_gamma = FTYPE(-2.5)
-        self._pivot = FTYPE(100e3) # GeV
+        self._central_norm = FTYPE(0.787e-18)
         
         self._e_ratio = FTYPE(1.0)
         self._mu_ratio = FTYPE(1.0)
@@ -35,7 +36,7 @@ class astro_simple(Stage):
         expected_params = ("astro_delta",
                            "astro_norm")
 
-        super(astro_simple, self).__init__(
+        super().__init__(
             expected_params=expected_params,
             **std_kwargs,
         )
@@ -46,23 +47,22 @@ class astro_simple(Stage):
         """
         self.data.representation = self.calc_mode
         for container in self.data:
-            container["astro_flux_nominal"] = np.empty((container.size, 2), dtype=FTYPE)
-            container["astro_flux"] = np.empty((container.size, 2), dtype=FTYPE)
+            container["astro_weights"] = np.ones(container.size, dtype=FTYPE)
+            container["astro_flux"] = np.ones(container.size, dtype=FTYPE)
+            container["astro_flux_nominal"] = np.ones(container.size, dtype=FTYPE)
 
         # Loop over containers
         for container in self.data:
 
             # Grab containers here once to save time
-            # TODO make spline generation script store splines directly in
-            # terms of energy, not ln(energy)
             true_energy = container["true_energy"]
-            nu_flux_nominal = container["astro_flux_nominal"]
 
-            _precalc = (true_energy / self._pivot)**self._central_gamma
+            container["astro_flux_nominal"] = self._central_norm*np.power( (true_energy / PIVOT), self._central_gamma)
 
-            nu_flux_nominal[:,0] = _precalc*self._e_ratio
-            nu_flux_nominal[:,1] = _precalc*self._mu_ratio
-            nu_flux_nominal[:,2] = _precalc*self._tau_ratio
+            # TODO split this up so that we can use flavor ratios 
+            #nu_flux_nominal[:,0] = _precalc*self._e_ratio
+            #nu_flux_nominal[:,1] = _precalc*self._mu_ratio
+            #nu_flux_nominal[:,2] = _precalc*self._tau_ratio
 
             container.mark_changed("astro_flux_nominal")
 
@@ -75,7 +75,7 @@ class astro_simple(Stage):
         self.data.representation = self.calc_mode
 
         delta = self.params.astro_delta.value.m_as("dimensionless")
-        norm = self.params.astro_norm.value.m_as("astro_norm")
+        norm = self.params.astro_norm.value
 
         for container in self.data:
             apply_sys_loop(
@@ -91,19 +91,18 @@ class astro_simple(Stage):
     @profile
     def apply_function(self):
         for container in self.data:
-            container['astro_weights'] = container["astro_weights"] * container["astro_flux"]
+            container['astro_weights'] = container["initial_weights"] * container["astro_flux"]
 
-@myjit
+
 def spectral_index_scale(true_energy, delta_index):
     """
     Calculate spectral index scale.
     Adjusts the weights for events in an energy dependent way according to a
     shift in spectral index, applied about a user-defined energy pivot.
     """
-    return np.power((true_energy / 100e3), delta_index)
+    return np.power(true_energy/PIVOT, delta_index)
 
 
-@myjit
 def apply_sys_loop(
     true_energy,
     true_coszen,
@@ -130,10 +129,9 @@ def apply_sys_loop(
         B = num flavors in flux (=3, e.g. e, mu, tau)
     """
 
-    n_evts, n_flavs = astroflux_nominal.shape
+    n_evts = astroflux_nominal.shape[0]
 
     for event in range(n_evts):
-        spec_scale = norm*spectral_index_scale(true_energy[event], delta_index)
-        for flav in range(n_flavs):
-            out[event, flav] = astroflux_nominal[event, flav] * spec_scale
+        spec_scale = spectral_index_scale(true_energy[event], delta_index)
+        out[event] = norm * astroflux_nominal[event] * spec_scale
         

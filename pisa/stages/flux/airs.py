@@ -41,23 +41,31 @@ class airs(Stage):
             "airs_scale",
         ]
 
+
         super().__init__(
             expected_params=expected_params,
             **std_kwargs,
         )
 
     def setup_function(self):
+        """
+        Uses the splines to quickly evaluate the 1-sigma perturbtations at each of the events
+        """
 
-    #consider 'true_coszen" and 'true_energy' containers
-
+        #consider 'true_coszen" and 'true_energy' containers
         for container in self.data:
-            container["airs_1s_perturb"] = self.airs_spline.eval_simple(
-                            np.log10(container["true_energy"]),
-                            container["true_coszen"]
-            )
+            if len(container["true_energy"])==0:
+                container["airs_1s_perturb"] = np.zeros(container.size, dtype=FTYPE)
+            else:
+                container["airs_1s_perturb"] = self.airs_spline.evaluate_simple((\
+                                np.log10(container["true_energy"]),\
+                                container["true_coszen"]))
             container.mark_changed("airs_1s_perturb")
 
     @profile
     def apply_function(self):
+        """
+        Modify the weights according to the new scale parameter! 
+        """
         for container in self.data:
             container["weights"] *= 1.0 + container["airs_1s_perturb"]*self.params.airs_scale.value.m_as("dimensionless")
