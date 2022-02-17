@@ -109,7 +109,7 @@ class hist(Stage):  # pylint: disable=invalid-name
             for container in self.data:
 
                 container.representation = self.calc_mode
-                if "astro_weights" in container:
+                if "astro_weights" in container.keys:
                     weights = container['weights'] + container["astro_weights"]
                 else:
                     weights = container['weights']
@@ -125,7 +125,7 @@ class hist(Stage):  # pylint: disable=invalid-name
                 if self.error_method == 'sumw2':
                     container['errors'] = np.sqrt(sumw2)
 
-        elif self.calc_mode == 'events':
+        elif self.calc_mode == 'events':   
             for container in self.data:
                 container.representation = self.calc_mode
                 sample = []
@@ -138,7 +138,7 @@ class hist(Stage):  # pylint: disable=invalid-name
                     else:
                         container.representation = "events"
                         sample.append(container[dim.name])
-                if "astro_weights" in container:
+                if "astro_weights" in container.keys:
                     weights = container['weights'] + container["astro_weights"]
                 else:
                     weights = container['weights']
