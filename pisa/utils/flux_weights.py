@@ -53,7 +53,8 @@ def load_2d_honda_table(flux_file, enpow=1, return_table=False, hg_taumode=False
     logging.debug("Loading atmospheric flux table %s", flux_file)
 
     # columns in Honda files are in the same order
-    cols = ['energy'] + T_MODE_PRIMARIES if hg_taumode else PRIMARIES
+    cols = ['energy'] 
+    cols += T_MODE_PRIMARIES if hg_taumode else PRIMARIES
 
     # Load the data table
     table = np.genfromtxt(open_resource(flux_file),
