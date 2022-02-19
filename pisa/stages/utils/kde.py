@@ -39,6 +39,7 @@ class kde(Stage):
                  coszen_name='reco_coszen',
                  oversample=10,
                  coszen_reflection=0.25,
+                 alpha=0.1,
                  stack_pid=True,
                  **std_kargs,
                 ):
@@ -46,7 +47,8 @@ class kde(Stage):
         self.bw_method = bw_method
         self.coszen_name = coszen_name
         self.oversample = int(oversample)
-        self.coszen_reflection = coszen_reflection
+        self.coszen_reflection = float(coszen_reflection)
+        self.alpha = float(alpha)
         self.stack_pid = stack_pid
 
         # init base class
@@ -76,6 +78,7 @@ class kde(Stage):
                             coszen_name=self.coszen_name,
                             coszen_reflection=self.coszen_reflection, 
                             oversample=self.oversample,
+                            alpha=self.alpha,
                             use_cuda=False,
                             stack_pid=self.stack_pid)
 
