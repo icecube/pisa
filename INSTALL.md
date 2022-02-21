@@ -102,11 +102,13 @@ Required Python modules that are installed automatically when you use the `pip` 
 
 Optional dependencies. Some of these must be installed manually prior to installing PISA, and some will be installed automatically by pip, and this seems to vary from system to system. Therefore you can first try to run the installation, and just install whatever pip says it needed, or just use apt, pip, and/or conda to install the below before running the PISA installation.
 
+* [LeptonInjector](https://github.com/icecube/leptoninjector) Required for the `data.licloader_weighter` service. 
 * [MCEq](http://github.com/afedynitch/MCEq) Required for `flux.mceq` service.
 * [nuSQuiDS](https://github.com/arguelles/nuSQuIDS) Required for `osc.nusquids` service.
 * [pandas](https://pandas.pydata.org/) Required for datarelease (csv) stages.
 * [OpenMP](http://www.openmp.org) Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.
   * Available from your compiler: gcc supports OpenMP 4.0 and Clang >= 3.8.0 supports OpenMP 3.1. Either version of OpenMP should work, but Clang has yet to be tested for its OpenMP support.
+* [Photospline](https://github.com/icecube/photospline) Required for the `flux.airs` service. 
 * [Pylint](http://www.pylint.org): Static code checker and style analyzer for Python code. Note that our (more or less enforced) coding conventions are codified in the pylintrc file in PISA, which will automatically be found and used by Pylint when running on code within a PISA package.<br>
   * Installed alongside PISA if you specify option `['develop']` to `pip`
 * [recommonmark](http://recommonmark.readthedocs.io/en/latest/) Translator to allow markdown docs/docstrings to be used; plugin for Sphinx. (Required to compile PISA's documentation.)

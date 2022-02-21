@@ -68,6 +68,9 @@ OPTIONAL_MODULES = (
     "libPyROOT",
     "MCEq",
     "nuSQUIDSpy",
+    "nuSQuIDS"
+    "LeptonInjector",
+    "photospline"
 )
 """Okay if imports or test_* functions fail due to these not being import-able"""
 

@@ -18,7 +18,7 @@ from pisa.core.events_pi import EventsPi
 from pisa.utils.resources import find_resource
 
 
-class lic_loader_weighter(Stage):
+class licloader_weighter(Stage):
     """
     LeptonWeighter LIC file reader and LI event weighter. Sets two weight containers
         weights

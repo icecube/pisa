@@ -27,10 +27,7 @@ from pisa.core.binning import MultiDimBinning
 from pisa.utils.resources import find_resource
 from pisa import ureg
 
-try:
-    import nuSQUIDSpy as nsq
-except ImportError:
-    import nuSQuIDS as nsq
+import nuSQUIDSpy as nsq
 
 __all__ = ["nusquids"]
 

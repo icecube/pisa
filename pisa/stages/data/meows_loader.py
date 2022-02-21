@@ -10,8 +10,6 @@ import h5py as h5
 import pandas as pd
 from time import time 
 
-import LeptonWeighter as LW
-
 from pisa import FTYPE
 from pisa.core.stage import Stage
 from pisa.utils import vectorizer
