@@ -68,7 +68,7 @@ OPTIONAL_MODULES = (
     "libPyROOT",
     "MCEq",
     "nuSQUIDSpy",
-    "nuSQuIDS"
+    "nuSQuIDS",
     "LeptonWeighter",
     "photospline"
 )
