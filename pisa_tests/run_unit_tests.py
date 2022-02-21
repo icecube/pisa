@@ -69,7 +69,7 @@ OPTIONAL_MODULES = (
     "MCEq",
     "nuSQUIDSpy",
     "nuSQuIDS"
-    "LeptonInjector",
+    "LeptonWeighter",
     "photospline"
 )
 """Okay if imports or test_* functions fail due to these not being import-able"""

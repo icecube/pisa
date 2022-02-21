@@ -102,7 +102,7 @@ Required Python modules that are installed automatically when you use the `pip` 
 
 Optional dependencies. Some of these must be installed manually prior to installing PISA, and some will be installed automatically by pip, and this seems to vary from system to system. Therefore you can first try to run the installation, and just install whatever pip says it needed, or just use apt, pip, and/or conda to install the below before running the PISA installation.
 
-* [LeptonInjector](https://github.com/icecube/leptoninjector) Required for the `data.licloader_weighter` service. 
+* [LeptonWeighter](https://github.com/icecube/leptonweighter) Required for the `data.licloader_weighter` service. 
 * [MCEq](http://github.com/afedynitch/MCEq) Required for `flux.mceq` service.
 * [nuSQuiDS](https://github.com/arguelles/nuSQuIDS) Required for `osc.nusquids` service.
 * [pandas](https://pandas.pydata.org/) Required for datarelease (csv) stages.
