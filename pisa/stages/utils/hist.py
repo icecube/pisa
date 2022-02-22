@@ -15,10 +15,17 @@ from pisa.utils.log import logging
 
 
 class hist(Stage):  # pylint: disable=invalid-name
-    """stage to histogram events"""
 
+    """stage to histogram events
+
+    Parameters
+    ----------
+    unweighted : bool, optional
+        Return un-weighted event counts in each bin.
+    """
     def __init__(
         self,
+        unweighted=False,
         **std_kwargs,
     ):
 
@@ -31,6 +38,7 @@ class hist(Stage):  # pylint: disable=invalid-name
         assert self.calc_mode is not None
         assert self.apply_mode is not None
         self.regularized_apply_mode = None
+        self.unweighted = unweighted
 
     def setup_function(self):
 
@@ -105,6 +113,10 @@ class hist(Stage):  # pylint: disable=invalid-name
 
         if isinstance(self.calc_mode, MultiDimBinning):
 
+            if self.unweighted:
+                raise NotImplementedError(
+                    "Unweighted hist only implemented in event-wise calculation"
+                )
             for container in self.data:
 
                 container.representation = self.calc_mode
@@ -139,10 +151,17 @@ class hist(Stage):  # pylint: disable=invalid-name
                     else:
                         container.representation = "events"
                         sample.append(container[dim.name])
-                if "astro_weights" in container.keys:
-                    weights = container["weights"] + container["astro_weights"]
+
+                if self.unweighted:
+                    if "astro_weights" in container.keys:
+                        weights = np.ones_like(container["weights"] + container["astro_weights"])
+                    else:
+                        weights = np.ones_like(container["weights"])
                 else:
-                    weights = container["weights"]
+                    if "astro_weights" in container.keys:
+                        weights = container["weights"] + container["astro_weights"]
+                    else:
+                        weights = container["weights"]
 
                 # The hist is now computed using a binning that is completely linear
                 # and regular
