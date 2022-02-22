@@ -48,7 +48,7 @@ class nusquids(Stage):
 
     Uses the standard parameters as required by a PISA pi stage
     (see `pisa/core/stage.py`)
-    
+
     node_mode : MultiDimBinning
         Binning to determine where to place nodes at which the evaluation of interaction
         states occurs. The nodes are places at the _corners_ of the binning to avoid
@@ -69,35 +69,35 @@ class nusquids(Stage):
     num_neutrinos : int
         Number of neutrino flavors to include. This stage supports 3 or 4 flavors, but
         nuSQuIDS allows up to 6 such that this stage could easily be expanded.
-    
+
     earth_model : str
         Path to Earth model (PREM) file.
-    
+
     detector_depth : quantity (distance)
-    
+
     prop_height : quantity (distance) or str
         Height at which neutrinos are produced. If a quantity is given, the height is
         assumed to be the same for all neutrinos. An alternative is to pass
         `from_container`. In that case, the stage will search the input container for a
         key `prop_height` and take the height from there on a bin-wise or event-wise
         basis depending on `calc_specs`.
-    
+
     prop_height_range : quantity (distance)
         Production height is averaged around the mean set by `prop_height` assuming
         a uniform distribution in [mean - range/2, mean + range/2]. The production
         heights are projected onto the direction of the neutrino, such that the
         averaging range is longer for shallow angles above the horizon.
-    
+
     apply_lowpass_above_hor : bool
         Whether to apply the low-pass filter for evaluations above the horizon. If
-        `True` (default), the low-pass filter is applied everywhere. If `False`, the 
+        `True` (default), the low-pass filter is applied everywhere. If `False`, the
         filter is applied only below the horizon. Because propagation distances are
         very short above the horizon, fast oscillations no longer average out and the
         filter might wash out important features.
-    
+
     apply_height_avg_below_hor : bool
         Whether to apply the production height averaging below the horizon. If `True`
-        (default), the production height averaging is applied everywhere if a 
+        (default), the production height averaging is applied everywhere if a
         `prop_height_range` is set. If `False`, the height averaging is only applied
         above the horizon. Since the production height is only a very small fraction
         of the total propagation distance below the horizon, the height averaging is
@@ -106,10 +106,10 @@ class nusquids(Stage):
 
     YeI : quantity (dimensionless)
         Inner electron fraction.
-    
+
     YeO : quantity (dimensionless)
         Outer electron fraction.
-        
+
     YeM : quantity (dimensionless)
         Mantle electron fraction.
 
@@ -118,32 +118,32 @@ class nusquids(Stage):
 
     abs_err : float
         Absolute error of the numerical integration
-    
+
     prop_lowpass_cutoff : quantity (1/distance)
         Frequency cutoff for fast oscillations applied during numerical integration
         of the interaction state. The frequency is passed as oscillations per distance.
         A reasonable order of magnitude would allow ~100 oscillations over 12000 km.
-    
+
     prop_lowpass_frac : quantity (dimensionless)
         This number determines how harsh the cut-off of the low-pass filter is applied
         during numerical integration is. A value of 0.1 would mean that the filter would
         begin to kick in when 90% of the cutoff frequency is reached and linearly
         decrease oscillation amplitudes until the cutoff is reached.
-    
+
     eval_lowpass_cutoff : quantity (1/distance)
-        Same as `prop_lowpass_cutoff`, but applied during evaluation of interpolated 
+        Same as `prop_lowpass_cutoff`, but applied during evaluation of interpolated
         states, not during integration.
-    
+
     eval_lowpass_frac : quantity (1/distance)
-        Same as `prop_lowpass_frac`, but applied during evaluation of interpolated 
+        Same as `prop_lowpass_frac`, but applied during evaluation of interpolated
         states, not during integration.
-    
+
     suppress_interpolation_warning : bool
         Suppress warning about negative probabilities that can indicate insufficient
         nodes in a problematic region of energy and coszen. Set this option only at your
         own risk after you optimized nodes and are sure that remaining negative
         probabilities won't be a problem!
-    
+
     exact_mode : bool
         With this turned on, the probabilities are evaluated using the exact calculation
         for constant densities in every layer without numerical integration. This method
@@ -153,7 +153,7 @@ class nusquids(Stage):
         You cannot apply filters in this mode either. Its only recommended use is for
         pseudo-data generation, where you may want an exact event-by-event calculation
         that is allowed to take several minutes.
-    
+
     vacuum : bool
         Do not include matter effects. Greatly increases evaluation speed.
 
@@ -182,6 +182,7 @@ class nusquids(Stage):
             gamma23 : quantity (energy)
 
     """
+
     def __init__(
         self,
         earth_model=None,
@@ -215,18 +216,22 @@ class nusquids(Stage):
         if use_nsi:
             raise NotImplementedError("NSI not implemented")
         if type(prop_height) is not ureg.Quantity:
-            raise NotImplementedError("Getting propagation heights from containers is "
-                "not yet implemented, saw {} type".format(type(prop_height)))
+            raise NotImplementedError(
+                "Getting propagation heights from containers is "
+                "not yet implemented, saw {} type".format(type(prop_height))
+            )
 
         # Store args
         self.num_neutrinos = int(num_neutrinos)
-        assert self.num_neutrinos < 5, "currently only supports up to 4 flavor oscillations"
+        assert (
+            self.num_neutrinos < 5
+        ), "currently only supports up to 4 flavor oscillations"
         self.use_nsi = use_nsi
         self.use_decoherence = use_decoherence
         self.num_decoherence_gamma = num_decoherence_gamma
         self.node_mode = node_mode
         self.vacuum = vacuum
-        self.use_taus=use_taus
+        self.use_taus = use_taus
         self.earth_model = earth_model
         self.YeI = YeI.m_as("dimensionless")
         self.YeO = YeO.m_as("dimensionless")
@@ -239,33 +244,41 @@ class nusquids(Stage):
         self.apply_height_avg_below_hor = apply_height_avg_below_hor
         if prop_height_range is not None:  # this is optional
             self.prop_height_range = prop_height_range.m_as("km")
-            self.avg_height = True            
-        
+            self.avg_height = True
+
         self.layers = None
-        
+
         self.rel_err = rel_err.m_as("dimensionless") if rel_err is not None else 1.0e-10
         self.abs_err = abs_err.m_as("dimensionless") if abs_err is not None else 1.0e-10
-        self.prop_lowpass_cutoff = (prop_lowpass_cutoff.m_as("1/km")
-                                    if prop_lowpass_cutoff is not None else 0.)
-        self.prop_lowpass_frac = (prop_lowpass_frac.m_as("dimensionless")
-                                  if prop_lowpass_frac is not None else 0.)
-        self.eval_lowpass_cutoff = (eval_lowpass_cutoff.m_as("1/km")
-                                    if eval_lowpass_cutoff is not None else 0.)
-        self.eval_lowpass_frac = (eval_lowpass_frac.m_as("dimensionless")
-                                  if eval_lowpass_frac is not None else 0.)
+        self.prop_lowpass_cutoff = (
+            prop_lowpass_cutoff.m_as("1/km") if prop_lowpass_cutoff is not None else 0.0
+        )
+        self.prop_lowpass_frac = (
+            prop_lowpass_frac.m_as("dimensionless")
+            if prop_lowpass_frac is not None
+            else 0.0
+        )
+        self.eval_lowpass_cutoff = (
+            eval_lowpass_cutoff.m_as("1/km") if eval_lowpass_cutoff is not None else 0.0
+        )
+        self.eval_lowpass_frac = (
+            eval_lowpass_frac.m_as("dimensionless")
+            if eval_lowpass_frac is not None
+            else 0.0
+        )
 
-        if self.prop_lowpass_frac > 1. or self.eval_lowpass_frac > 1.:
+        if self.prop_lowpass_frac > 1.0 or self.eval_lowpass_frac > 1.0:
             raise ValueError("lowpass filter fraction cannot be greater than one")
-        
-        if self.prop_lowpass_frac < 0. or self.eval_lowpass_frac < 0.:
+
+        if self.prop_lowpass_frac < 0.0 or self.eval_lowpass_frac < 0.0:
             raise ValueError("lowpass filter fraction cannot be smaller than zero")
-        
+
         self.apply_lowpass_above_hor = apply_lowpass_above_hor
-        
+
         self.nus_layer = None
         self.nus_layerbar = None
 
-        # Define the layers class        
+        # Define the layers class
         self.nusquids_layers_class = nsq.nuSQUIDSLayers
 
         # Define standard params
@@ -282,33 +295,38 @@ class nusquids(Stage):
         if self.use_decoherence:
             # Use derived nuSQuIDS classes
             import nuSQUIDSDecohPy
+
             self.nusquids_layers_class = nuSQUIDSDecohPy.nuSQUIDSDecohLayers
             # Checks
-            assert self.num_neutrinos == 3, "Decoherence only supports 3 neutrinos currently"
+            assert (
+                self.num_neutrinos == 3
+            ), "Decoherence only supports 3 neutrinos currently"
             # Add decoherence params
             expected_params.extend(["gamma0"])
             expected_params.extend(["n"])
             expected_params.extend(["E0"])
-        
+
         # We may want to reparametrize this with the difference between deltacp14 and
         # deltacp24, as the absolute value seems to play a small role (see
         # https://arxiv.org/pdf/2010.06321.pdf)
         if self.num_neutrinos == 4:
-            expected_params.extend([
-                "theta14",
-                "theta24",
-                "theta34",
-                "deltam41",
-                "deltacp14",
-                "deltacp24",
-            ])
-        
+            expected_params.extend(
+                [
+                    "theta14",
+                    "theta24",
+                    "theta34",
+                    "deltam41",
+                    "deltacp14",
+                    "deltacp24",
+                ]
+            )
+
         # init base class
         super().__init__(
             expected_params=expected_params,
             **std_kwargs,
         )
-        
+
         # This is special: We have an additional "binning" to account for. It is in
         # principle possible to work in event mode even for the nodes, which would mean
         # that the full oscillation problem is solved for all events individually.
@@ -316,56 +334,69 @@ class nusquids(Stage):
         # probabilities in exact mode in a time that is reasonable at least for
         # generating pseudodata.
 
-        assert not (self.use_nsi and self.use_decoherence), ("NSI and decoherence not "
-            "suported together, must use one or the other")
+        assert not (self.use_nsi and self.use_decoherence), (
+            "NSI and decoherence not " "suported together, must use one or the other"
+        )
 
         self.exact_mode = exact_mode
-            
+
         if exact_mode:
             # No interpolation is happening in exact mode so any passed node_mode
             # will be ignored. Probabilities are calculated at calc_specs.
             if self.node_mode is not None:
-                logging.warn("nuSQuIDS is configured in exact mode, the passed "
-                    f"`node_mode`\n({self.node_mode})\n will be ignored!")
+                logging.warn(
+                    "nuSQuIDS is configured in exact mode, the passed "
+                    f"`node_mode`\n({self.node_mode})\n will be ignored!"
+                )
             if self.prop_lowpass_cutoff > 0 or self.eval_lowpass_cutoff > 0:
-                logging.warn("nuSQuIDS is configured in exact mode, low-pass filters "
-                    "will be ignored")
+                logging.warn(
+                    "nuSQuIDS is configured in exact mode, low-pass filters "
+                    "will be ignored"
+                )
         else:
             if isinstance(self.calc_mode, MultiDimBinning):
-                assert isinstance(self.node_mode, MultiDimBinning), ("cannot use "
-                    "event-wise nodes with binned calculation")
+                assert isinstance(self.node_mode, MultiDimBinning), (
+                    "cannot use " "event-wise nodes with binned calculation"
+                )
 
         self.e_node_mode = None
         self.e_mesh = None
         self.coszen_node_mode = None
         self.cosz_mesh = None
-        
+
         # We don't want to spam the user with repeated warnings about the same issue.
         self.interpolation_warning_issued = suppress_interpolation_warning
-    
+
     def set_osc_parameters(self, nus_layer):
         # nuSQuIDS uses zero-index for mixing angles
         nus_layer.Set_MixingAngle(0, 1, self.params.theta12.value.m_as("rad"))
         nus_layer.Set_MixingAngle(0, 2, self.params.theta13.value.m_as("rad"))
         nus_layer.Set_MixingAngle(1, 2, self.params.theta23.value.m_as("rad"))
-        
+
         # mass differences in nuSQuIDS are always w.r.t. m_1
         nus_layer.Set_SquareMassDifference(1, self.params.deltam21.value.m_as("eV**2"))
         nus_layer.Set_SquareMassDifference(2, self.params.deltam31.value.m_as("eV**2"))
-    
-        nus_layer.Set_CPPhase(0, 2, self.params.deltacp.value.m_as("rad"))
-        
-        # set decoherence parameters
-        if self.use_decoherence :
-            nsq_units = nsq.Const() #TODO Once only (make into a member)
-            gamma0 = self.params.gamma0.value.m_as("eV")*nsq_units.eV
-            gamma0_matrix_diagonal = np.array([ 0., gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0 ]) # "State selection" case (see arXiv:2007.00068 eqn 11) #TODO implement other models
-            nus_layer.Set_DecoherenceGammaMatrixDiagonal(gamma0_matrix_diagonal)
-            nus_layer.Set_DecoherenceGammaEnergyDependence(self.params.n.value.m_as("dimensionless"))
-            nus_layer.Set_DecoherenceGammaEnergyScale(self.params.E0.value.m_as("eV")*nsq_units.eV)
 
-        if self.num_neutrinos == 3: return
-        
+        nus_layer.Set_CPPhase(0, 2, self.params.deltacp.value.m_as("rad"))
+
+        # set decoherence parameters
+        if self.use_decoherence:
+            nsq_units = nsq.Const()  # TODO Once only (make into a member)
+            gamma0 = self.params.gamma0.value.m_as("eV") * nsq_units.eV
+            gamma0_matrix_diagonal = np.array(
+                [0.0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0]
+            )  # "State selection" case (see arXiv:2007.00068 eqn 11) #TODO implement other models
+            nus_layer.Set_DecoherenceGammaMatrixDiagonal(gamma0_matrix_diagonal)
+            nus_layer.Set_DecoherenceGammaEnergyDependence(
+                self.params.n.value.m_as("dimensionless")
+            )
+            nus_layer.Set_DecoherenceGammaEnergyScale(
+                self.params.E0.value.m_as("eV") * nsq_units.eV
+            )
+
+        if self.num_neutrinos == 3:
+            return
+
         nus_layer.Set_MixingAngle(0, 3, self.params.theta14.value.m_as("rad"))
         nus_layer.Set_MixingAngle(1, 3, self.params.theta24.value.m_as("rad"))
         nus_layer.Set_MixingAngle(2, 3, self.params.theta34.value.m_as("rad"))
@@ -394,14 +425,14 @@ class nusquids(Stage):
         # We must treat densities and electron fractions correctly here, so we set them
         # to 1 in the Layers module to get unweighted densities.
         self.layers.setElecFrac(1, 1, 1)
-        
+
         nsq_units = nsq.Const()  # natural units for nusquids
         # Because we don't want to extrapolate, we check that all points at which we
         # want to evaluate probabilities are fully contained within the node specs. This
         # is of course not necessary in events mode.
         if isinstance(self.node_mode, MultiDimBinning) and not self.exact_mode:
             logging.debug("setting up nuSQuIDS nodes in binned mode")
-            # we can prepare the calculator like this only in binned mode, see 
+            # we can prepare the calculator like this only in binned mode, see
             # compute_function for node_mode == "events"
             self.data.representation = self.calc_mode
             for container in self.data:
@@ -415,12 +446,16 @@ class nusquids(Stage):
                     )
                     if np.any(container[var] > upper_bound):
                         maxval = np.max(container[var])
-                        raise ValueError(err_msg + f"\nmax input: {maxval}, upper "
-                            f"bound: {upper_bound}")
+                        raise ValueError(
+                            err_msg + f"\nmax input: {maxval}, upper "
+                            f"bound: {upper_bound}"
+                        )
                     if np.any(container[var] < lower_bound):
                         minval = np.max(container[var])
-                        raise ValueError(err_msg + f"\nmin input: {minval}, lower "
-                            f"bound: {lower_bound}")
+                        raise ValueError(
+                            err_msg + f"\nmin input: {minval}, lower "
+                            f"bound: {lower_bound}"
+                        )
 
             # Layers in nuSQuIDS are special: We need all the individual distances and
             # densities for the nodes to solve the interaction picture states, but on
@@ -428,9 +463,11 @@ class nusquids(Stage):
             # distance. Because we are placing nodes at the bin edges rather than the
             # bin middle, this doesn't really fit with how containers store data, so we
             # are making arrays as variables that never go into the container.
-            
+
             # These are stored because we need them later during interpolation
-            self.coszen_node_mode = self.node_mode["true_coszen"].bin_edges.m_as("dimensionless")
+            self.coszen_node_mode = self.node_mode["true_coszen"].bin_edges.m_as(
+                "dimensionless"
+            )
             self.e_node_mode = self.node_mode["true_energy"].bin_edges.m_as("GeV")
             logging.debug(
                 f"Setting up nodes at\n"
@@ -438,10 +475,12 @@ class nusquids(Stage):
                 f"energy = \n{self.e_node_mode}\n"
             )
             # things are getting a bit meshy from here...
-            self.e_mesh, self.cosz_mesh = np.meshgrid(self.e_node_mode, self.coszen_node_mode)
+            self.e_mesh, self.cosz_mesh = np.meshgrid(
+                self.e_node_mode, self.coszen_node_mode
+            )
             e_nodes = self.e_mesh.ravel()
             coszen_nodes = self.cosz_mesh.ravel()
-        
+
             # The lines below should not be necessary because we will always get at
             # least two numbers from the bin edges. However, if either energy or coszen
             # somehow was just a scalar, we would need to broadcast it out to the same
@@ -451,18 +490,22 @@ class nusquids(Stage):
             coszen_nodes = np.atleast_1d(coszen_nodes)
             # broadcast against each other and make a copy
             # (see https://numpy.org/doc/stable/reference/generated/numpy.broadcast_arrays.html)
-            e_nodes, coszen_nodes = [np.array(a) for a in np.broadcast_arrays(e_nodes, coszen_nodes)]
-        
+            e_nodes, coszen_nodes = [
+                np.array(a) for a in np.broadcast_arrays(e_nodes, coszen_nodes)
+            ]
+
             assert len(e_nodes) == len(coszen_nodes)
             assert coszen_nodes.ndim == 1
             assert e_nodes.ndim == 1
-            
+
             self.layers.calcLayers(coszen_nodes)
-            distances = np.reshape(self.layers.distance,
-                                   (len(e_nodes), self.layers.max_layers))
-            densities = np.reshape(self.layers.density,
-                                   (len(e_nodes), self.layers.max_layers))
-            # HACK: We need the correct electron densities for each layer. We can 
+            distances = np.reshape(
+                self.layers.distance, (len(e_nodes), self.layers.max_layers)
+            )
+            densities = np.reshape(
+                self.layers.density, (len(e_nodes), self.layers.max_layers)
+            )
+            # HACK: We need the correct electron densities for each layer. We can
             # determine whether we are in the core or mantle based on the density.
             # Needless to say it isn't optimal to have these numbers hard-coded.
             ye = np.zeros_like(densities)
@@ -478,9 +521,8 @@ class nusquids(Stage):
                 nsq.NeutrinoType.both,
             )
             self.apply_prop_settings(self.nus_layer)
-        
 
-        # Now that we have our nusquids calculator set up on the node grid, we make 
+        # Now that we have our nusquids calculator set up on the node grid, we make
         # container output space for the probability output which may be on a finer grid
         # than the nodes or even working in events mode.
         self.data.representation = self.calc_mode
@@ -488,19 +530,38 @@ class nusquids(Stage):
         # --- calculate the layers ---
         if isinstance(self.calc_mode, MultiDimBinning):
             # as layers don't care about flavour
-            self.data.link_containers("nu", ["nue_cc", "numu_cc", "nutau_cc",
-                                             "nue_nc", "numu_nc", "nutau_nc",
-                                             "nuebar_cc", "numubar_cc", "nutaubar_cc",
-                                             "nuebar_nc", "numubar_nc", "nutaubar_nc"])
+            self.data.link_containers(
+                "nu",
+                [
+                    "nue_cc",
+                    "numu_cc",
+                    "nutau_cc",
+                    "nue_nc",
+                    "numu_nc",
+                    "nutau_nc",
+                    "nuebar_cc",
+                    "numubar_cc",
+                    "nutaubar_cc",
+                    "nuebar_nc",
+                    "numubar_nc",
+                    "nutaubar_nc",
+                ],
+            )
 
         # calculate the distance difference between minimum and maximum production
         # height, if applicable
         if self.avg_height:
-            layers_min = Layers(earth_model, detector_depth,
-                                self.prop_height - self.prop_height_range/2.)
+            layers_min = Layers(
+                earth_model,
+                detector_depth,
+                self.prop_height - self.prop_height_range / 2.0,
+            )
             layers_min.setElecFrac(1, 1, 1)
-            layers_max = Layers(earth_model, detector_depth,
-                                self.prop_height + self.prop_height_range/2.)
+            layers_max = Layers(
+                earth_model,
+                detector_depth,
+                self.prop_height + self.prop_height_range / 2.0,
+            )
             layers_max.setElecFrac(1, 1, 1)
         for container in self.data:
             self.layers.calcLayers(container["true_coszen"])
@@ -510,24 +571,23 @@ class nusquids(Stage):
                 layers_min.calcLayers(container["true_coszen"])
                 dists_min = layers_min.distance.reshape((container.size, -1))
                 min_tot_dists = np.sum(dists_min, axis=1)
-                
+
                 layers_max.calcLayers(container["true_coszen"])
                 dists_max = layers_max.distance.reshape((container.size, -1))
                 max_tot_dists = np.sum(dists_max, axis=1)
-                # nuSQuIDS assumes the original distance is the longest distance and 
+                # nuSQuIDS assumes the original distance is the longest distance and
                 # the averaging range is the difference between the minimum and maximum
                 # distance.
                 avg_ranges = max_tot_dists - min_tot_dists
                 tot_distances = max_tot_dists
                 assert np.all(avg_ranges > 0)
             # If the low-pass cutoff is zero, nusquids will not evaluate the filter.
-            container["lowpass_cutoff"] = (self.eval_lowpass_cutoff
-                                           * np.ones(container.size))
+            container["lowpass_cutoff"] = self.eval_lowpass_cutoff * np.ones(
+                container.size
+            )
             if not self.apply_lowpass_above_hor:
                 container["lowpass_cutoff"] = np.where(
-                    container["true_coszen"] >= 0,
-                    0,
-                    container["lowpass_cutoff"]
+                    container["true_coszen"] >= 0, 0, container["lowpass_cutoff"]
                 )
             if isinstance(self.node_mode, MultiDimBinning) and not self.exact_mode:
                 # To project out probabilities we only need the *total* distance
@@ -538,19 +598,17 @@ class nusquids(Stage):
                     container["avg_ranges"] = np.zeros(container.size, dtype=FTYPE)
                 if not self.apply_height_avg_below_hor:
                     container["avg_ranges"] = np.where(
-                        container["true_coszen"] >= 0,
-                        container["avg_ranges"],
-                        0.
+                        container["true_coszen"] >= 0, container["avg_ranges"], 0.0
                     )
             elif self.node_mode == "events" or self.exact_mode:
-                # in any other mode (events or exact) we store all densities and 
+                # in any other mode (events or exact) we store all densities and
                 # distances in the container in calc_specs
                 densities = self.layers.density.reshape((container.size, -1))
                 container["densities"] = densities
                 container["distances"] = distances
-        
+
         self.data.unlink_containers()
-        
+
         if isinstance(self.calc_mode, MultiDimBinning):
             self.data.link_containers("nue", ["nue_cc", "nue_nc"])
             self.data.link_containers("numu", ["numu_cc", "numu_nc"])
@@ -565,16 +623,27 @@ class nusquids(Stage):
             container["prob_mu"] = np.empty((container.size), dtype=FTYPE)
             container["prob_tau"] = np.empty((container.size), dtype=FTYPE)
         self.data.unlink_containers()
-        
-        if self.exact_mode: return
-        
+
+        if self.exact_mode:
+            return
+
         # --- containers for interpolated states ---
         # This is not needed in exact mode
         if isinstance(self.calc_mode, MultiDimBinning):
-            self.data.link_containers("nu", ["nue_cc", "numu_cc", "nutau_cc",
-                                             "nue_nc", "numu_nc", "nutau_nc"])
-            self.data.link_containers("nubar", ["nuebar_cc", "numubar_cc", "nutaubar_cc",
-                                                "nuebar_nc", "numubar_nc", "nutaubar_nc"])
+            self.data.link_containers(
+                "nu", ["nue_cc", "numu_cc", "nutau_cc", "nue_nc", "numu_nc", "nutau_nc"]
+            )
+            self.data.link_containers(
+                "nubar",
+                [
+                    "nuebar_cc",
+                    "numubar_cc",
+                    "nutaubar_cc",
+                    "nuebar_nc",
+                    "numubar_nc",
+                    "nutaubar_nc",
+                ],
+            )
         for container in self.data:
             container["interp_states_e"] = np.empty(
                 (container.size, self.num_neutrinos**2),
@@ -590,7 +659,7 @@ class nusquids(Stage):
             )
         self.data.unlink_containers()
         self.interpolation_warning_issued = False
-    
+
     # @line_profile
     def calc_node_probs(self, nus_layer, flav_in, flav_out, n_nodes):
         """
@@ -611,7 +680,7 @@ class nusquids(Stage):
         """
         nsq_units = nsq.Const()
         interp_states = np.zeros((e_out.size, evolved_states.shape[1]))
-        
+
         assert np.all(e_out <= np.max(self.e_node_mode * nsq_units.GeV))
         assert np.all(e_out >= np.min(self.e_node_mode * nsq_units.GeV))
         assert np.all(cosz_out <= np.max(self.coszen_node_mode))
@@ -620,7 +689,7 @@ class nusquids(Stage):
         for i in range(evolved_states.shape[1]):
             z = evolved_states[:, i].reshape(self.e_mesh.shape).T
             assert np.all(np.isfinite(z))
-            # RectBivariateSpline takes in the 1D node position and assumes that they 
+            # RectBivariateSpline takes in the 1D node position and assumes that they
             # are on a mesh.
             f = RectBivariateSpline(
                 np.log10(self.e_node_mode * nsq_units.GeV),
@@ -632,8 +701,16 @@ class nusquids(Stage):
             interp_states[..., i] = f(np.log10(e_out), cosz_out, grid=False)
         return interp_states
 
-    def calc_probs_interp(self, flav_out, nubar, interp_states, out_distances,
-                          e_out, avg_ranges=0, lowpass_cutoff=0):
+    def calc_probs_interp(
+        self,
+        flav_out,
+        nubar,
+        interp_states,
+        out_distances,
+        e_out,
+        avg_ranges=0,
+        lowpass_cutoff=0,
+    ):
         """
         Project out probabilities from interpolated interaction picture states.
         """
@@ -647,8 +724,8 @@ class nusquids(Stage):
             e_out,
             interp_states,
             rho=int(nubar),
-            avg_cutoff=0.,
-            avg_scale=0.,
+            avg_cutoff=0.0,
+            avg_scale=0.0,
             # Range averaging is only computed in the places where t_range > 0, so
             # we don't need to introduce switches for averaged and non-averaged regions.
             lowpass_cutoff=lowpass_cutoff,
@@ -656,7 +733,7 @@ class nusquids(Stage):
             t_range=avg_ranges,
         )
         return prob_interp
-    
+
     def compute_function_no_interpolation(self):
         """
         Version of the compute function that does not use any interpolation between
@@ -674,11 +751,13 @@ class nusquids(Stage):
         for container in self.data:
             nubar = container["nubar"] < 0
             flav = container["flav"]
-            # HACK: We need the correct electron densities for each layer. We can 
+            # HACK: We need the correct electron densities for each layer. We can
             # determine whether we are in the core or mantle based on the density.
             ye = np.zeros_like(container["densities"])
             ye[container["densities"] < 10] = self.YeM
-            ye[(container["densities"] >= 10) & (container["densities"] < 13)] = self.YeO
+            ye[
+                (container["densities"] >= 10) & (container["densities"] < 13)
+            ] = self.YeO
             ye[container["densities"] >= 13] = self.YeI
             nus_layer = self.nusquids_layers_class(
                 container["distances"] * nsq_units.km,
@@ -690,19 +769,22 @@ class nusquids(Stage):
             )
             self.apply_prop_settings(nus_layer)
             self.set_osc_parameters(nus_layer)
-            container["prob_e"] = self.calc_node_probs(nus_layer, 0, flav,
-                                                       container.size)
-            container["prob_mu"] = self.calc_node_probs(nus_layer, 1, flav,
-                                                        container.size)
+            container["prob_e"] = self.calc_node_probs(
+                nus_layer, 0, flav, container.size
+            )
+            container["prob_mu"] = self.calc_node_probs(
+                nus_layer, 1, flav, container.size
+            )
             container.mark_changed("prob_e")
             container.mark_changed("prob_mu")
             if self.use_taus:
-                container["prob_tau"] = self.calc_node_probs(nus_layer, 2, flav,
-                                                            container.size)
+                container["prob_tau"] = self.calc_node_probs(
+                    nus_layer, 2, flav, container.size
+                )
                 container.mark_changed("prob_tau")
         self.data.unlink_containers()
-    
-    #@line_profile
+
+    # @line_profile
     def compute_function_interpolated(self):
         """
         Version of the compute function that does use interpolation between nodes.
@@ -718,13 +800,12 @@ class nusquids(Stage):
         ini_state_numu = np.array([0, 1, 0] + [0] * (self.num_neutrinos - 3))
         ini_state_nutau = np.array([0, 0, 1] + [0] * (self.num_neutrinos - 3))
 
-        
         self.nus_layer.Set_initial_state(ini_state_nue, nsq.Basis.flavor)
         if not self.vacuum:
             self.nus_layer.EvolveState()
         evolved_states_nue = self.nus_layer.GetStates(0)
         evolved_states_nuebar = self.nus_layer.GetStates(1)
-        
+
         self.nus_layer.Set_initial_state(ini_state_numu, nsq.Basis.flavor)
         if not self.vacuum:
             self.nus_layer.EvolveState()
@@ -737,35 +818,45 @@ class nusquids(Stage):
                 self.nus_layer.EvolveState()
             evolved_states_nutau = self.nus_layer.GetStates(0)
             evolved_states_nutaubar = self.nus_layer.GetStates(1)
-        
+
         # Now comes the step where we interpolate the interaction picture states
         # and project out oscillation probabilities. This can be done in either events
         # or binned mode.
         if isinstance(self.calc_mode, MultiDimBinning):
-            self.data.link_containers("nu", ["nue_cc", "numu_cc", "nutau_cc",
-                                             "nue_nc", "numu_nc", "nutau_nc"])
-            self.data.link_containers("nubar", ["nuebar_cc", "numubar_cc", "nutaubar_cc",
-                                                "nuebar_nc", "numubar_nc", "nutaubar_nc"])
+            self.data.link_containers(
+                "nu", ["nue_cc", "numu_cc", "nutau_cc", "nue_nc", "numu_nc", "nutau_nc"]
+            )
+            self.data.link_containers(
+                "nubar",
+                [
+                    "nuebar_cc",
+                    "numubar_cc",
+                    "nutaubar_cc",
+                    "nuebar_nc",
+                    "numubar_nc",
+                    "nutaubar_nc",
+                ],
+            )
         for container in self.data:
             nubar = container["nubar"] < 0
             container["interp_states_e"] = self.calc_interpolated_states(
                 evolved_states_nuebar if nubar else evolved_states_nue,
                 container["true_energy"] * nsq_units.GeV,
-                container["true_coszen"]
+                container["true_coszen"],
             )
             container["interp_states_mu"] = self.calc_interpolated_states(
                 evolved_states_numubar if nubar else evolved_states_numu,
                 container["true_energy"] * nsq_units.GeV,
-                container["true_coszen"]
+                container["true_coszen"],
             )
             if self.use_taus:
                 container["interp_states_tau"] = self.calc_interpolated_states(
                     evolved_states_nutaubar if nubar else evolved_states_nutau,
                     container["true_energy"] * nsq_units.GeV,
-                    container["true_coszen"]
+                    container["true_coszen"],
                 )
         self.data.unlink_containers()
-        
+
         if isinstance(self.calc_mode, MultiDimBinning):
             self.data.link_containers("nue", ["nue_cc", "nue_nc"])
             self.data.link_containers("numu", ["numu_cc", "numu_nc"])
@@ -773,19 +864,19 @@ class nusquids(Stage):
             self.data.link_containers("nuebar", ["nuebar_cc", "nuebar_nc"])
             self.data.link_containers("numubar", ["numubar_cc", "numubar_nc"])
             self.data.link_containers("nutaubar", ["nutaubar_cc", "nutaubar_nc"])
-        
+
         for container in self.data:
             nubar = container["nubar"] < 0
             flav_out = container["flav"]
             for flav_in in ["e", "mu", "tau"]:
-                container["prob_"+flav_in] = self.calc_probs_interp(
+                container["prob_" + flav_in] = self.calc_probs_interp(
                     flav_out=flav_out,
                     nubar=nubar,
-                    interp_states=container["interp_states_"+flav_in],
+                    interp_states=container["interp_states_" + flav_in],
                     out_distances=container["tot_distances"] * nsq_units.km,
                     e_out=container["true_energy"] * nsq_units.GeV,
                     avg_ranges=container["avg_ranges"] * nsq_units.km,
-                    lowpass_cutoff=container["lowpass_cutoff"] / nsq_units.km
+                    lowpass_cutoff=container["lowpass_cutoff"] / nsq_units.km,
                 )
 
                 # It is possible to get slightly negative probabilities from imperfect
@@ -796,9 +887,11 @@ class nusquids(Stage):
                 # However, dipping below zero by more than 1% may indicate that nodes
                 # aren't spaced tightly enough to achieve an acceptable accuracy, so we
                 # issue a warning.
-                if (np.any(container["prob_"+flav_in] < -0.01)
-                    and not self.interpolation_warning_issued):
-                    mask = container["prob_"+flav_in] < -0.01
+                if (
+                    np.any(container["prob_" + flav_in] < -0.01)
+                    and not self.interpolation_warning_issued
+                ):
+                    mask = container["prob_" + flav_in] < -0.01
                     en_med = np.median(container["true_energy"][mask])
                     cz_med = np.median(container["true_coszen"][mask])
                     logging.warn(
@@ -808,12 +901,11 @@ class nusquids(Stage):
                         f"coszen: {cz_med}. This warning is only issued once."
                     )
                     self.interpolation_warning_issued = True
-                container["prob_"+flav_in][container["prob_"+flav_in] < 0] = 0.
+                container["prob_" + flav_in][container["prob_" + flav_in] < 0] = 0.0
             container.mark_changed("prob_e")
             container.mark_changed("prob_mu")
             container.mark_changed("prob_tau")
         self.data.unlink_containers()
-    
 
     def compute_function(self):
         if self.node_mode == "events" or self.exact_mode:
@@ -824,7 +916,11 @@ class nusquids(Stage):
     @profile
     def apply_function(self):
         for container in self.data:
-            scales = container['nu_flux'][:, 0] * container['prob_e'] \
-                            + container['nu_flux'][:, 1] * container['prob_mu']  \
-                            + (container["nu_flux"][:, 2] * container["prob_tau"]) if self.use_taus else 0.0
-            container['weights'] = container["weights"] * scales
+            scales = (
+                container["nu_flux"][:, 0] * container["prob_e"]
+                + container["nu_flux"][:, 1] * container["prob_mu"]
+                + (container["nu_flux"][:, 2] * container["prob_tau"])
+                if self.use_taus
+                else 0.0
+            )
+            container["weights"] = container["weights"] * scales

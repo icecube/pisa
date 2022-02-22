@@ -16,9 +16,10 @@ import photospline
 
 import numpy as np
 
+
 class airs(Stage):
     """
-    Parameters 
+    Parameters
     ----------
     airs_spline : spline containing the 1-sigma shifts from AIRS data
 
@@ -26,21 +27,16 @@ class airs(Stage):
         Must exclusively have parameters: .. ::
 
             scale : quantity (dimensionless)
-                the scale by which the weights are perturbed via the airs 1-sigma shift 
+                the scale by which the weights are perturbed via the airs 1-sigma shift
     """
 
-    def __init__(
-        self, 
-        airs_spline,
-        **std_kwargs
-    ):
+    def __init__(self, airs_spline, **std_kwargs):
         _airs_spline_loc = find_resource(airs_spline)
         self.airs_spline = photospline.SplineTable(_airs_spline_loc)
 
         expected_params = [
             "airs_scale",
         ]
-
 
         super().__init__(
             expected_params=expected_params,
@@ -52,20 +48,22 @@ class airs(Stage):
         Uses the splines to quickly evaluate the 1-sigma perturbtations at each of the events
         """
 
-        #consider 'true_coszen" and 'true_energy' containers
+        # consider 'true_coszen" and 'true_energy' containers
         for container in self.data:
-            if len(container["true_energy"])==0:
+            if len(container["true_energy"]) == 0:
                 container["airs_1s_perturb"] = np.zeros(container.size, dtype=FTYPE)
             else:
-                container["airs_1s_perturb"] = self.airs_spline.evaluate_simple((\
-                                np.log10(container["true_energy"]),\
-                                container["true_coszen"]))
+                container["airs_1s_perturb"] = self.airs_spline.evaluate_simple(
+                    (np.log10(container["true_energy"]), container["true_coszen"])
+                )
             container.mark_changed("airs_1s_perturb")
 
     @profile
     def apply_function(self):
         """
-        Modify the weights according to the new scale parameter! 
+        Modify the weights according to the new scale parameter!
         """
         for container in self.data:
-            container["weights"] *= 1.0 + container["airs_1s_perturb"]*self.params.airs_scale.value.m_as("dimensionless")
+            container["weights"] *= 1.0 + container[
+                "airs_1s_perturb"
+            ] * self.params.airs_scale.value.m_as("dimensionless")

@@ -15,13 +15,19 @@ from pisa.utils.log import logging
 from pisa.utils.resources import open_resource
 
 
-__all__ = ['load_2d_honda_table', 'load_2d_bartol_table', 'load_2d_table',
-           'calculate_2d_flux_weights', 'load_3d_honda_table', 'load_3d_table',
-           'calculate_3d_flux_weights', ]
+__all__ = [
+    "load_2d_honda_table",
+    "load_2d_bartol_table",
+    "load_2d_table",
+    "calculate_2d_flux_weights",
+    "load_3d_honda_table",
+    "load_3d_table",
+    "calculate_3d_flux_weights",
+]
 
-__author__ = 'S. Wren'
+__author__ = "S. Wren"
 
-__license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
+__license__ = """Copyright (c) 2014-2017, The IceCube Collaboration
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -33,29 +39,27 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  distributed under the License is distributed on an "AS IS" BASIS,
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
- limitations under the License.'''
+ limitations under the License."""
 
 
-PRIMARIES = ['numu', 'numubar', 'nue', 'nuebar']
-T_MODE_PRIMARIES = ['numu', 'numubar', 'nue', 'nuebar', 'nutau', 'nutaubar']
-TEXPRIMARIES = [r'$\nu_{\mu}$', r'$\bar{\nu}_{\mu}$', r'$\nu_{e}$',
-                r'$\bar{\nu}_{e}$']
+PRIMARIES = ["numu", "numubar", "nue", "nuebar"]
+T_MODE_PRIMARIES = ["numu", "numubar", "nue", "nuebar", "nutau", "nutaubar"]
+TEXPRIMARIES = [r"$\nu_{\mu}$", r"$\bar{\nu}_{\mu}$", r"$\nu_{e}$", r"$\bar{\nu}_{e}$"]
 
 
 def load_2d_honda_table(flux_file, enpow=1, return_table=False, hg_taumode=False):
     """
-    Added "hg_taumode" to load in hillas gaisser h3a tables made with tau neutrino contributions. 
+    Added "hg_taumode" to load in hillas gaisser h3a tables made with tau neutrino contributions.
     """
 
     logging.debug("Loading atmospheric flux table %s", flux_file)
 
     # columns in Honda files are in the same order
-    cols = ['energy'] 
+    cols = ["energy"]
     cols += T_MODE_PRIMARIES if hg_taumode else PRIMARIES
 
     # Load the data table
-    table = np.genfromtxt(open_resource(flux_file),
-                usecols=list(range(len(cols))))
+    table = np.genfromtxt(open_resource(flux_file), usecols=list(range(len(cols))))
     if hg_taumode:
         mask = np.array([all(~np.isnan(table)[i]) for i in range(len(table))])
         table = table[mask].T
@@ -71,16 +75,16 @@ def load_2d_honda_table(flux_file, enpow=1, return_table=False, hg_taumode=False
     # Set the zenith and energy range as they are in the tables
     # The energy may change, but the zenith should always be
     # 20 bins, full sky.
-    flux_dict['energy'] = flux_dict['energy'][0]
+    flux_dict["energy"] = flux_dict["energy"][0]
     if hg_taumode:
         _edges = np.linspace(-1.0, 1.0, 101)
-        flux_dict['coszen'] = 0.5*(_edges[:-1] + _edges[1:])
+        flux_dict["coszen"] = 0.5 * (_edges[:-1] + _edges[1:])
     else:
-        flux_dict['coszen'] = np.linspace(-0.95, 0.95, 20)
+        flux_dict["coszen"] = np.linspace(-0.95, 0.95, 20)
 
     # Now get a spline representation of the flux table.
-    logging.debug('Make spline representation of flux')
-    logging.debug('Doing this integral-preserving.')
+    logging.debug("Make spline representation of flux")
+    logging.debug("Doing this integral-preserving.")
 
     spline_dict = {}
 
@@ -91,12 +95,12 @@ def load_2d_honda_table(flux_file, enpow=1, return_table=False, hg_taumode=False
     # Energy and CosZenith bins needed for integral-preserving
     # method must be the edges of those of the normal tables
     if hg_taumode:
-        int_flux_dict['logenergy'] = np.linspace(1.0, 6.0, 101)
-        int_flux_dict['coszen'] = np.linspace(-1, 1, 101)
+        int_flux_dict["logenergy"] = np.linspace(1.0, 6.0, 101)
+        int_flux_dict["coszen"] = np.linspace(-1, 1, 101)
     else:
-        int_flux_dict['logenergy'] = np.linspace(-1.025, 4.025, 102)
-        int_flux_dict['coszen'] = np.linspace(-1, 1, 21)
-    for nutype in (T_MODE_PRIMARIES if hg_taumode else PRIMARIES):
+        int_flux_dict["logenergy"] = np.linspace(-1.025, 4.025, 102)
+        int_flux_dict["coszen"] = np.linspace(-1, 1, 21)
+    for nutype in T_MODE_PRIMARIES if hg_taumode else PRIMARIES:
         # spline_dict now wants to be a set of splines for
         # every table cosZenith value.
         splines = {}
@@ -105,21 +109,19 @@ def load_2d_honda_table(flux_file, enpow=1, return_table=False, hg_taumode=False
             int_flux = []
             tot_flux = 0.0
             int_flux.append(tot_flux)
-            for energyfluxval, energyval in zip(energyfluxlist,
-                                                flux_dict['energy']):
+            for energyfluxval, energyval in zip(energyfluxlist, flux_dict["energy"]):
                 # Spline works best if you integrate flux * energy
-                tot_flux += energyfluxval*np.power(energyval, enpow)*0.05
+                tot_flux += energyfluxval * np.power(energyval, enpow) * 0.05
                 int_flux.append(tot_flux)
 
-            spline = interpolate.splrep(int_flux_dict['logenergy'],
-                                        int_flux, s=0)
-            cz_value = '%.2f'%(1.05-cz_iter*0.1)
+            spline = interpolate.splrep(int_flux_dict["logenergy"], int_flux, s=0)
+            cz_value = "%.2f" % (1.05 - cz_iter * 0.1)
             splines[cz_value] = spline
             cz_iter += 1
 
         spline_dict[nutype] = splines
 
-    for prim in (T_MODE_PRIMARIES if hg_taumode else PRIMARIES):
+    for prim in T_MODE_PRIMARIES if hg_taumode else PRIMARIES:
         flux_dict[prim] = flux_dict[prim][::-1]
 
     if return_table:
@@ -133,11 +135,10 @@ def load_2d_bartol_table(flux_file, enpow=1, return_table=False):
     logging.debug("Loading atmospheric flux table %s", flux_file)
 
     # Bartol tables have been modified to look like Honda tables
-    cols = ['energy'] + PRIMARIES
+    cols = ["energy"] + PRIMARIES
 
     # Load the data table
-    table = np.genfromtxt(open_resource(flux_file),
-                          usecols=list(range(len(cols))))
+    table = np.genfromtxt(open_resource(flux_file), usecols=list(range(len(cols))))
     mask = np.all(np.isnan(table) | np.equal(table, 0), axis=1)
     table = table[~mask].T
 
@@ -149,12 +150,12 @@ def load_2d_bartol_table(flux_file, enpow=1, return_table=False):
     # Set the zenith and energy range as they are in the tables
     # The energy may change, but the zenith should always be
     # 20 bins, full sky.
-    flux_dict['energy'] = flux_dict['energy'][0]
-    flux_dict['coszen'] = np.linspace(-0.95, 0.95, 20)
+    flux_dict["energy"] = flux_dict["energy"][0]
+    flux_dict["coszen"] = np.linspace(-0.95, 0.95, 20)
 
     # Now get a spline representation of the flux table.
-    logging.debug('Make spline representation of flux')
-    logging.debug('Doing this integral-preserving.')
+    logging.debug("Make spline representation of flux")
+    logging.debug("Doing this integral-preserving.")
 
     spline_dict = {}
 
@@ -166,10 +167,8 @@ def load_2d_bartol_table(flux_file, enpow=1, return_table=False):
     # method must be the edges of those of the normal tables
     low_log_energy = np.linspace(-1, 1, 41)
     high_log_energy = np.linspace(1.1, 4, 30)
-    int_flux_dict['logenergy'] = np.concatenate(
-        [low_log_energy, high_log_energy]
-    )
-    int_flux_dict['coszen'] = np.linspace(-1, 1, 21)
+    int_flux_dict["logenergy"] = np.concatenate([low_log_energy, high_log_energy])
+    int_flux_dict["coszen"] = np.linspace(-1, 1, 21)
     for nutype in PRIMARIES:
         # spline_dict now wants to be a set of splines for
         # every table cosZenith value.
@@ -179,18 +178,16 @@ def load_2d_bartol_table(flux_file, enpow=1, return_table=False):
             int_flux = []
             tot_flux = 0.0
             int_flux.append(tot_flux)
-            for energyfluxval, energyval in zip(energyfluxlist,
-                                                flux_dict['energy']):
+            for energyfluxval, energyval in zip(energyfluxlist, flux_dict["energy"]):
                 # Spline works best if you integrate flux * energy
                 if energyval < 10.0:
-                    tot_flux += energyfluxval*np.power(energyval, enpow)*0.05
+                    tot_flux += energyfluxval * np.power(energyval, enpow) * 0.05
                 else:
-                    tot_flux += energyfluxval*np.power(energyval, enpow)*0.1
+                    tot_flux += energyfluxval * np.power(energyval, enpow) * 0.1
                 int_flux.append(tot_flux)
 
-            spline = interpolate.splrep(int_flux_dict['logenergy'],
-                                        int_flux, s=0)
-            cz_value = '%.2f'%(1.05-cz_iter*0.1)
+            spline = interpolate.splrep(int_flux_dict["logenergy"], int_flux, s=0)
+            cz_value = "%.2f" % (1.05 - cz_iter * 0.1)
             splines[cz_value] = spline
             cz_iter += 1
 
@@ -226,37 +223,40 @@ def load_2d_table(flux_file, enpow=1, return_table=False):
 
     """
     if not isinstance(enpow, int):
-        raise TypeError('Energy power must be an integer')
+        raise TypeError("Energy power must be an integer")
     if not isinstance(return_table, bool):
-        raise TypeError('return_table must be a boolean')
+        raise TypeError("return_table must be a boolean")
     if not isinstance(flux_file, str):
-        raise TypeError('Flux file name must be a string')
-    if 'aa' not in flux_file:
-        raise ValueError('Azimuth-averaged tables are expected')
-    if ('honda' not in flux_file) and ('hillas' not in flux_file):
-        if 'bartol' in flux_file:
+        raise TypeError("Flux file name must be a string")
+    if "aa" not in flux_file:
+        raise ValueError("Azimuth-averaged tables are expected")
+    if ("honda" not in flux_file) and ("hillas" not in flux_file):
+        if "bartol" in flux_file:
             if return_table:
-                spline_dict, flux_dict = load_2d_bartol_table(flux_file,
-                                                              enpow=enpow,
-                                                              return_table=True)
+                spline_dict, flux_dict = load_2d_bartol_table(
+                    flux_file, enpow=enpow, return_table=True
+                )
             else:
-                spline_dict = load_2d_bartol_table(flux_file,
-                                                   enpow=enpow)
-            spline_dict['name'] = 'bartol'
+                spline_dict = load_2d_bartol_table(flux_file, enpow=enpow)
+            spline_dict["name"] = "bartol"
 
         else:
-            raise ValueError('Flux file must be from the Honda, Hillas, or '
-                             'Bartol groups')
+            raise ValueError(
+                "Flux file must be from the Honda, Hillas, or " "Bartol groups"
+            )
     else:
         if return_table:
-            spline_dict, flux_dict = load_2d_honda_table(flux_file,
-                                                         enpow=enpow,
-                                                         return_table=True,
-                                                         hg_taumode="hillas" in flux_file)
+            spline_dict, flux_dict = load_2d_honda_table(
+                flux_file,
+                enpow=enpow,
+                return_table=True,
+                hg_taumode="hillas" in flux_file,
+            )
         else:
-            spline_dict = load_2d_honda_table(flux_file, enpow=enpow,
-                                            hg_taumode="hillas" in flux_file)
-        spline_dict['name'] = 'hillas' if 'hillas' in flux_file else 'honda'
+            spline_dict = load_2d_honda_table(
+                flux_file, enpow=enpow, hg_taumode="hillas" in flux_file
+            )
+        spline_dict["name"] = "hillas" if "hillas" in flux_file else "honda"
 
     if return_table:
         return spline_dict, flux_dict
@@ -264,8 +264,9 @@ def load_2d_table(flux_file, enpow=1, return_table=False):
     return spline_dict
 
 
-def calculate_2d_flux_weights(true_energies, true_coszens, en_splines,
-                              enpow=1, out=None):
+def calculate_2d_flux_weights(
+    true_energies, true_coszens, en_splines, enpow=1, out=None
+):
     """Calculate flux weights for given array of energy and cos(zenith).
     Arrays of true energy and zenith are expected to be for MC events, so
     they are tested to be of the same length.
@@ -308,41 +309,42 @@ def calculate_2d_flux_weights(true_energies, true_coszens, en_splines,
     """
     if not isinstance(true_energies, np.ndarray):
         if not isinstance(true_energies, list):
-            raise TypeError('true_energies must be a list or numpy array')
+            raise TypeError("true_energies must be a list or numpy array")
         else:
             true_energies = np.array(true_energies)
     if not isinstance(true_coszens, np.ndarray):
         if not isinstance(true_coszens, list):
-            raise TypeError('true_coszens must be a list or numpy array')
+            raise TypeError("true_coszens must be a list or numpy array")
         else:
             true_coszens = np.array(true_coszens)
     if not ((true_coszens >= -1.0).all() and (true_coszens <= 1.0).all()):
-        raise ValueError('Not all coszens found between -1 and 1')
+        raise ValueError("Not all coszens found between -1 and 1")
     if not len(true_energies) == len(true_coszens):
-        raise ValueError('length of energy and coszen arrays must match')
+        raise ValueError("length of energy and coszen arrays must match")
     if not isinstance(enpow, int):
-        raise TypeError('Energy power must be an integer')
+        raise TypeError("Energy power must be an integer")
 
     num_cz_points = 20
-    czkeys = ['%.2f'%x for x in np.linspace(-0.95, 0.95, num_cz_points)]
-    cz_spline_points = np.linspace(-1, 1, num_cz_points+1)
+    czkeys = ["%.2f" % x for x in np.linspace(-0.95, 0.95, num_cz_points)]
+    cz_spline_points = np.linspace(-1, 1, num_cz_points + 1)
 
     if out is None:
         out = np.empty_like(true_energies)
 
-    spline_vals = np.zeros(num_cz_points+1)
+    spline_vals = np.zeros(num_cz_points + 1)
     for i in range(len(true_energies)):
         true_log_energy = np.log10(true_energies[i])
         for j in range(num_cz_points):
-            spline_vals[j+1] = interpolate.splev(true_log_energy,
-                                                 en_splines[czkeys[j]],
-                                                 der=1)
+            spline_vals[j + 1] = interpolate.splev(
+                true_log_energy, en_splines[czkeys[j]], der=1
+            )
 
-        int_spline_vals = np.cumsum(spline_vals)*0.1
-        spline = interpolate.splrep(cz_spline_points,
-                                    int_spline_vals, s=0)
+        int_spline_vals = np.cumsum(spline_vals) * 0.1
+        spline = interpolate.splrep(cz_spline_points, int_spline_vals, s=0)
 
-        out[i] = interpolate.splev(true_coszens[i], spline, der=1) / np.power(true_energies[i], enpow)
+        out[i] = interpolate.splev(true_coszens[i], spline, der=1) / np.power(
+            true_energies[i], enpow
+        )
 
     return out
 
@@ -352,11 +354,10 @@ def load_3d_honda_table(flux_file, enpow=1, return_table=False):
     logging.debug("Loading atmospheric flux table %s", flux_file)
 
     # columns in Honda files are in the same order
-    cols = ['energy'] + PRIMARIES
+    cols = ["energy"] + PRIMARIES
 
     # Load the data table
-    table = np.genfromtxt(open_resource(flux_file),
-                          usecols=list(range(len(cols))))
+    table = np.genfromtxt(open_resource(flux_file), usecols=list(range(len(cols))))
     mask = np.all(np.isnan(table) | np.equal(table, 0), axis=1)
     table = table[~mask].T
 
@@ -368,19 +369,19 @@ def load_3d_honda_table(flux_file, enpow=1, return_table=False):
         for coszenith_list in coszenith_lists:
             azimuth_lists.append(np.array(np.split(coszenith_list, 12)).T)
         flux_dict[key] = np.array(azimuth_lists)
-        if not key == 'energy':
+        if not key == "energy":
             flux_dict[key] = flux_dict[key].T
 
     # Set the zenith and energy range as they are in the tables
     # The energy may change, but the zenith should always be
     # 20 bins and the azimuth should always be 12 bins, full sky
-    flux_dict['energy'] = flux_dict['energy'][0].T[0]
-    flux_dict['coszen'] = np.linspace(0.95, -0.95, 20)
-    flux_dict['azimuth'] = np.linspace(15, 345, 12)
+    flux_dict["energy"] = flux_dict["energy"][0].T[0]
+    flux_dict["coszen"] = np.linspace(0.95, -0.95, 20)
+    flux_dict["azimuth"] = np.linspace(15, 345, 12)
 
     # Now get a spline representation of the flux table.
-    logging.debug('Make spline representation of flux')
-    logging.debug('Doing this integral-preserving.')
+    logging.debug("Make spline representation of flux")
+    logging.debug("Doing this integral-preserving.")
 
     spline_dict = {}
 
@@ -390,30 +391,30 @@ def load_3d_honda_table(flux_file, enpow=1, return_table=False):
     int_flux_dict = {}
     # Energy and CosZenith bins needed for integral-preserving
     # method must be the edges of those of the normal tables
-    int_flux_dict['logenergy'] = np.linspace(-1.025, 4.025, 102)
-    int_flux_dict['coszen'] = np.linspace(1, -1, 21)
+    int_flux_dict["logenergy"] = np.linspace(-1.025, 4.025, 102)
+    int_flux_dict["coszen"] = np.linspace(1, -1, 21)
     for nutype in PRIMARIES:
         # spline_dict now wants to be a set of splines for
         # every table cosZenith value.
         # In 3D mode we have a set of these sets for every
         # table azimuth value.
         az_splines = {}
-        for az, f in zip(flux_dict['azimuth'], flux_dict[nutype]):
+        for az, f in zip(flux_dict["azimuth"], flux_dict[nutype]):
             splines = {}
             cz_iter = 1
             for energyfluxlist in f.T:
                 int_flux = []
                 tot_flux = 0.0
                 int_flux.append(tot_flux)
-                for energyfluxval, energyval in zip(energyfluxlist,
-                                                    flux_dict['energy']):
+                for energyfluxval, energyval in zip(
+                    energyfluxlist, flux_dict["energy"]
+                ):
                     # Spline works best if you integrate flux * energy
-                    tot_flux += energyfluxval*np.power(energyval, enpow)*0.05
+                    tot_flux += energyfluxval * np.power(energyval, enpow) * 0.05
                     int_flux.append(tot_flux)
 
-                spline = interpolate.splrep(int_flux_dict['logenergy'],
-                                            int_flux, s=0)
-                cz_value = '%.2f'%(1.05-cz_iter*0.1)
+                spline = interpolate.splrep(int_flux_dict["logenergy"], int_flux, s=0)
+                cz_value = "%.2f" % (1.05 - cz_iter * 0.1)
                 splines[cz_value] = spline
                 cz_iter += 1
 
@@ -447,23 +448,22 @@ def load_3d_table(flux_file, enpow=1, return_table=False):
     """
 
     if not isinstance(enpow, int):
-        raise TypeError('Energy power must be an integer')
+        raise TypeError("Energy power must be an integer")
     if not isinstance(return_table, bool):
-        raise TypeError('return_table must be a boolean')
+        raise TypeError("return_table must be a boolean")
     if not isinstance(flux_file, str):
-        raise ValueError('Flux file name must be a string')
-    if 'aa' in flux_file:
-        raise ValueError('Azimuth-dependent tables are expected')
-    if 'honda' not in flux_file:
-        raise ValueError('Flux file must be from the Honda group')
+        raise ValueError("Flux file name must be a string")
+    if "aa" in flux_file:
+        raise ValueError("Azimuth-dependent tables are expected")
+    if "honda" not in flux_file:
+        raise ValueError("Flux file must be from the Honda group")
     if return_table:
-        spline_dict, flux_dict = load_3d_honda_table(flux_file,
-                                                     enpow=enpow,
-                                                     return_table=True)
+        spline_dict, flux_dict = load_3d_honda_table(
+            flux_file, enpow=enpow, return_table=True
+        )
     else:
-        spline_dict = load_3d_honda_table(flux_file,
-                                          enpow=enpow)
-    spline_dict['name'] = 'honda'
+        spline_dict = load_3d_honda_table(flux_file, enpow=enpow)
+    spline_dict["name"] = "honda"
 
     if return_table:
         return spline_dict, flux_dict
@@ -471,8 +471,9 @@ def load_3d_table(flux_file, enpow=1, return_table=False):
     return spline_dict
 
 
-def calculate_3d_flux_weights(true_energies, true_coszens, true_azimuths,
-                              en_splines, enpow=1, az_linear=True):
+def calculate_3d_flux_weights(
+    true_energies, true_coszens, true_azimuths, en_splines, enpow=1, az_linear=True
+):
     """Calculate flux weights for given array of energy, cos(zenith) and
     azimuth.
 
@@ -524,74 +525,67 @@ def calculate_3d_flux_weights(true_energies, true_coszens, true_azimuths,
 
     if not isinstance(true_energies, np.ndarray):
         if not isinstance(true_energies, list):
-            raise TypeError('true_energies must be a list or numpy array')
+            raise TypeError("true_energies must be a list or numpy array")
         else:
             true_energies = np.array(true_energies)
     if not isinstance(true_coszens, np.ndarray):
         if not isinstance(true_coszens, list):
-            raise TypeError('true_coszens must be a list or numpy array')
+            raise TypeError("true_coszens must be a list or numpy array")
         else:
             true_coszens = np.array(true_coszens)
     if not isinstance(true_azimuths, np.ndarray):
         if not isinstance(true_azimuths, list):
-            raise TypeError('true_azimuths must be a list or numpy array')
+            raise TypeError("true_azimuths must be a list or numpy array")
         else:
             true_azimuths = np.array(true_azimuths)
     if not ((true_coszens >= -1.0).all() and (true_coszens <= 1.0).all()):
-        raise ValueError('Not all coszens found between -1 and 1')
+        raise ValueError("Not all coszens found between -1 and 1")
     ensczs_match = len(true_energies) == len(true_coszens)
     ensazs_match = len(true_energies) == len(true_azimuths)
     if not (ensczs_match and ensazs_match):
-        raise ValueError('length of energy, coszen and azimuth arrays must '
-                         'match')
+        raise ValueError("length of energy, coszen and azimuth arrays must " "match")
     if not (true_azimuths >= 0.0).all():
-        raise ValueError('Azimuths should be given as the angle, so should '
-                         'all be positive')
+        raise ValueError(
+            "Azimuths should be given as the angle, so should " "all be positive"
+        )
 
     azkeys = np.linspace(15.0, 345.0, 12)
     if not az_linear:
         az_spline_points = np.linspace(0.0, 360.0, 13)
     else:
         az_spline_points = np.linspace(15.0, 375.0, 13)
-    czkeys = ['%.2f'%x for x in np.linspace(-0.95, 0.95, 20)]
+    czkeys = ["%.2f" % x for x in np.linspace(-0.95, 0.95, 20)]
     cz_spline_points = np.linspace(-1, 1, 21)
 
     flux_weights = []
-    for true_energy, true_coszen, true_azimuth in zip(true_energies,
-                                                      true_coszens,
-                                                      true_azimuths):
-        true_azimuth *= 180.0/np.pi
+    for true_energy, true_coszen, true_azimuth in zip(
+        true_energies, true_coszens, true_azimuths
+    ):
+        true_azimuth *= 180.0 / np.pi
         true_log_energy = np.log10(true_energy)
         az_spline_vals = []
         for azkey in azkeys:
             cz_spline_vals = [0]
             for czkey in czkeys:
-                spval = interpolate.splev(true_log_energy,
-                                          en_splines[azkey][czkey],
-                                          der=1)
+                spval = interpolate.splev(
+                    true_log_energy, en_splines[azkey][czkey], der=1
+                )
 
                 cz_spline_vals.append(spval)
             cz_spline_vals = np.array(cz_spline_vals)
-            cz_int_spline_vals = np.cumsum(cz_spline_vals)*0.1
-            cz_spline = interpolate.splrep(cz_spline_points,
-                                           cz_int_spline_vals, s=0)
-            az_spline_vals.append(interpolate.splev(true_coszen,
-                                                    cz_spline,
-                                                    der=1))
+            cz_int_spline_vals = np.cumsum(cz_spline_vals) * 0.1
+            cz_spline = interpolate.splrep(cz_spline_points, cz_int_spline_vals, s=0)
+            az_spline_vals.append(interpolate.splev(true_coszen, cz_spline, der=1))
         # Treat the azimuthal dimension in an integral-preserving manner.
         # This is not recommended.
         if not az_linear:
             az_spline_vals = np.array(az_spline_vals)
             az_spline_vals = np.insert(az_spline_vals, 0, 0)
-            az_int_spline_vals = np.cumsum(az_spline_vals)*30.0
-            az_spline = interpolate.splrep(az_spline_points,
-                                           az_int_spline_vals, s=0)
+            az_int_spline_vals = np.cumsum(az_spline_vals) * 30.0
+            az_spline = interpolate.splrep(az_spline_points, az_int_spline_vals, s=0)
             flux_weights.append(
-                interpolate.splev(
-                    true_azimuth,
-                    az_spline,
-                    der=1
-                )/np.power(true_energy, enpow)
+                interpolate.splev(true_azimuth, az_spline, der=1)
+                / np.power(true_energy, enpow)
             )
         # Treat the azimuthal dimension with a linear interpolation.
         # This is the best treatment.
@@ -600,17 +594,10 @@ def calculate_3d_flux_weights(true_energies, true_coszens, true_azimuths,
             az_spline_vals.append(az_spline_vals[0])
             # Account for the energy power that was applied in the first splines
             az_spline_vals /= np.power(true_energy, enpow)
-            az_spline = interpolate.splrep(az_spline_points,
-                                           az_spline_vals, k=1)
+            az_spline = interpolate.splrep(az_spline_points, az_spline_vals, k=1)
             if true_azimuth < 15.0:
                 true_azimuth += 360.0
-            flux_weights.append(
-                interpolate.splev(
-                    true_azimuth,
-                    az_spline,
-                    der=0
-                )
-            )
+            flux_weights.append(interpolate.splev(true_azimuth, az_spline, der=0))
     flux_weights = np.array(flux_weights)
     return flux_weights
 
@@ -624,31 +611,27 @@ def main():
     """
     from matplotlib import pyplot as plt
 
-    spline_dict = load_2d_table('flux/honda-2015-spl-solmax-aa.d')
+    spline_dict = load_2d_table("flux/honda-2015-spl-solmax-aa.d")
     czs = np.linspace(-1, 1, 81)
-    low_ens = 5.0*np.ones_like(czs)
-    high_ens = 20.0*np.ones_like(czs)
+    low_ens = 5.0 * np.ones_like(czs)
+    high_ens = 20.0 * np.ones_like(czs)
 
-    low_en_flux_weights = calculate_2d_flux_weights(low_ens,
-                                                    czs,
-                                                    spline_dict['numu'])
+    low_en_flux_weights = calculate_2d_flux_weights(low_ens, czs, spline_dict["numu"])
 
-    high_en_flux_weights = calculate_2d_flux_weights(high_ens,
-                                                     czs,
-                                                     spline_dict['numu'])
+    high_en_flux_weights = calculate_2d_flux_weights(high_ens, czs, spline_dict["numu"])
 
     plt.plot(czs, low_en_flux_weights)
-    plt.xlabel('cos(zenith)')
-    plt.ylabel('NuMu Flux at 5.0 GeV')
-    plt.savefig('/tmp/fluxweightstest5GeV.pdf')
+    plt.xlabel("cos(zenith)")
+    plt.ylabel("NuMu Flux at 5.0 GeV")
+    plt.savefig("/tmp/fluxweightstest5GeV.pdf")
     plt.close()
 
     plt.plot(czs, high_en_flux_weights)
-    plt.xlabel('cos(zenith)')
-    plt.ylabel('NuMu Flux at 20.0 GeV')
-    plt.savefig('/tmp/fluxweightstest20GeV.pdf')
+    plt.xlabel("cos(zenith)")
+    plt.ylabel("NuMu Flux at 20.0 GeV")
+    plt.savefig("/tmp/fluxweightstest20GeV.pdf")
     plt.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

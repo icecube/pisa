@@ -3,7 +3,7 @@ stage to implement getting the contribution to fluxes from astrophysical neutrin
 """
 import numpy as np
 
-from pisa.utils.profiler import profile 
+from pisa.utils.profiler import profile
 from pisa import FTYPE, TARGET
 from pisa.core.stage import Stage
 
@@ -11,9 +11,10 @@ from pisa.utils.numba_tools import WHERE, myjit
 
 PIVOT = FTYPE(100.0e3)
 
+
 class astrophysical(Stage):
     """
-    Stage to apply power law astrophysical fluxes 
+    Stage to apply power law astrophysical fluxes
 
     Parameters
     ----------
@@ -22,19 +23,18 @@ class astrophysical(Stage):
             astro_delta : quantity (dimensionless)
             astro_norm : quantity (dimensionless)
 
-    TODO: flavor ratio as a parameter? Save for later. 
+    TODO: flavor ratio as a parameter? Save for later.
     """
 
-    def __init__(self,**std_kwargs):
+    def __init__(self, **std_kwargs):
         self._central_gamma = FTYPE(-2.5)
         self._central_norm = FTYPE(0.787e-18)
-        
+
         self._e_ratio = FTYPE(1.0)
         self._mu_ratio = FTYPE(1.0)
         self._tau_ratio = FTYPE(1.0)
 
-        expected_params = ("astro_delta",
-                           "astro_norm")
+        expected_params = ("astro_delta", "astro_norm")
 
         super().__init__(
             expected_params=expected_params,
@@ -57,15 +57,16 @@ class astrophysical(Stage):
             # Grab containers here once to save time
             true_energy = container["true_energy"]
 
-            container["astro_flux_nominal"] = self._central_norm*np.power( (true_energy / PIVOT), self._central_gamma)
+            container["astro_flux_nominal"] = self._central_norm * np.power(
+                (true_energy / PIVOT), self._central_gamma
+            )
 
-            # TODO split this up so that we can use flavor ratios 
-            #nu_flux_nominal[:,0] = _precalc*self._e_ratio
-            #nu_flux_nominal[:,1] = _precalc*self._mu_ratio
-            #nu_flux_nominal[:,2] = _precalc*self._tau_ratio
+            # TODO split this up so that we can use flavor ratios
+            # nu_flux_nominal[:,0] = _precalc*self._e_ratio
+            # nu_flux_nominal[:,1] = _precalc*self._mu_ratio
+            # nu_flux_nominal[:,2] = _precalc*self._tau_ratio
 
             container.mark_changed("astro_flux_nominal")
-
 
     @profile
     def compute_function(self):
@@ -91,7 +92,9 @@ class astrophysical(Stage):
     @profile
     def apply_function(self):
         for container in self.data:
-            container['astro_weights'] = container["initial_weights"] * container["astro_flux"]
+            container["astro_weights"] = (
+                container["initial_weights"] * container["astro_flux"]
+            )
 
 
 def spectral_index_scale(true_energy, delta_index):
@@ -100,7 +103,7 @@ def spectral_index_scale(true_energy, delta_index):
     Adjusts the weights for events in an energy dependent way according to a
     shift in spectral index, applied about a user-defined energy pivot.
     """
-    return np.power(true_energy/PIVOT, delta_index)
+    return np.power(true_energy / PIVOT, delta_index)
 
 
 def apply_sys_loop(
@@ -134,4 +137,3 @@ def apply_sys_loop(
     for event in range(n_evts):
         spec_scale = spectral_index_scale(true_energy[event], delta_index)
         out[event] = norm * astroflux_nominal[event] * spec_scale
-        
