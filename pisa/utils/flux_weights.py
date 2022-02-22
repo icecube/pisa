@@ -8,9 +8,6 @@ this as a stage it makes sense to copy it in to here so somebody can't
 accidentally do the wrong thing with that script.
 """
 
-
-from __future__ import absolute_import, division
-
 import numpy as np
 import scipy.interpolate as interpolate
 

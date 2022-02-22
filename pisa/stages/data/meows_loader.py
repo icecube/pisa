@@ -2,7 +2,6 @@
 A class to load in the MEOWS hdf5 files 
 """
 
-from __future__ import absolute_import, print_function, division
 from curses import raw
 
 import numpy as np

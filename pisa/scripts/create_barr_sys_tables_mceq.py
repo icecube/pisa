@@ -10,8 +10,6 @@
 # See https://github.com/afedynitch/MCEq/blob/master/examples/KPi_demonstration.ipynb for a related example
 #
 
-from __future__ import print_function
-
 import os, sys, gzip, bz2, collections
 import numpy as np
 import pickle

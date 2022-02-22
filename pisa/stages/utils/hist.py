@@ -3,8 +3,6 @@ Stage to transform arrays with weights into actual `histograms`
 that represent event counts
 """
 
-from __future__ import absolute_import, print_function, division
-
 import numpy as np
 
 from pisa import FTYPE

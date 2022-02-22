@@ -3,8 +3,6 @@ Stage to evaluate the Hillas-Gaisser expectations from precalculated fluxes
 
 """
 
-from __future__ import absolute_import, print_function, division
-
 import numpy as np
 
 from pisa import FTYPE
