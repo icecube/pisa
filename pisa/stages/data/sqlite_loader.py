@@ -24,13 +24,13 @@ class sqlite_loader(Stage):
         self,
         database,
         output_names,
-        is_retro = False,
+        post_fix = '_pred',
         **std_kwargs,
     ):
 
         # instantiation args that should not change
         self.database = database
-        self.is_retro = is_retro
+        self.post_fix = post_fix
 
         # init base class
         super().__init__(
@@ -66,7 +66,7 @@ class sqlite_loader(Stage):
             # Get truth
             query = 'SELECT * FROM truth WHERE interaction_type = %s and pid = %s'%(interaction_type, pid)
             truth = pd.read_sql(query,con).sort_values('event_no').reset_index(drop = True)
-            if self.is_retro:
+            if self.post_fix == '_retro':
                 # Get retro reco
                 query = 'SELECT * FROM retro WHERE event_no in %s'%(str(tuple(truth['event_no'])))
                 reco = pd.read_sql(query,con).sort_values('event_no').reset_index(drop = True)
@@ -89,17 +89,13 @@ class sqlite_loader(Stage):
 
     def add_reco(self, container, reco):
         ''' Adds reconstructed quantities to container'''
-        if self.is_retro: # is it retro or dynedge?
-            postfix = '_retro'
-        else:
-            postfix = '_pred'
 
-        container['reco_coszen'] = np.cos(reco['zenith' + postfix]).values.astype(FTYPE)
-        container['reco_' + 'energy'] = reco['energy' + postfix].values.astype(FTYPE)
-        if self.is_retro:
+        container['reco_coszen'] = np.cos(reco['zenith' + self.post_fix]).values.astype(FTYPE)
+        container['reco_' + 'energy'] = reco['energy' + self.post_fix].values.astype(FTYPE)
+        if self.post_fix == '_retro':
             container['pid'] = reco['L7_PIDClassifier_FullSky_ProbTrack'].values.astype(FTYPE)
         else:
-            container['pid'] = reco['track_pred'].values.astype(FTYPE)
+            container['pid'] = reco['track' + self.post_fix].values.astype(FTYPE)
         return container
     
     def add_aeff_weight(self, container, truth, n_files):
