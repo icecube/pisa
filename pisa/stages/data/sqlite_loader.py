@@ -24,14 +24,12 @@ class sqlite_loader(Stage):
         self,
         database,
         output_names,
-        add_these =  ['energy', 'zenith'],
         is_retro = False,
         **std_kwargs,
     ):
 
         # instantiation args that should not change
         self.database = database
-        self.add_these = add_these
         self.is_retro = is_retro
 
         # init base class
@@ -83,12 +81,8 @@ class sqlite_loader(Stage):
 
     def add_truth(self, container, truth, nubar, flavor):
         ''' Adds truth to container'''
-        for variable in self.add_these:
-            if variable == 'zenith':
-                container['true_coszen'] = np.cos(truth[variable]).values.astype(FTYPE)
-            else:
-                container['true_' + variable] = truth[variable].values.astype(FTYPE)
-
+        container['true_coszen'] = np.cos(truth['zenith']).values.astype(FTYPE)
+        container['true_energy'] = truth['energy'].values.astype(FTYPE)
         container.set_aux_data("nubar", nubar) # This sets true nu/nubar
         container.set_aux_data("flav", flavor) # This sets the true flavor
         return container
@@ -99,11 +93,9 @@ class sqlite_loader(Stage):
             postfix = '_retro'
         else:
             postfix = '_pred'
-        for variable in self.add_these:
-            if variable == 'zenith':
-                container['reco_coszen'] = np.cos(reco[variable + postfix]).values.astype(FTYPE)
-            else:
-                container['reco_' + variable] = reco[variable + postfix].values.astype(FTYPE)
+
+        container['reco_coszen'] = np.cos(reco['zenith' + postfix]).values.astype(FTYPE)
+        container['reco_' + 'energy'] = reco['energy' + postfix].values.astype(FTYPE)
         if self.is_retro:
             container['pid'] = reco['L7_PIDClassifier_FullSky_ProbTrack'].values.astype(FTYPE)
         else:
