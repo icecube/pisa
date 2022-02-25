@@ -11,7 +11,7 @@ from pisa.utils.profiler import profile
 from pisa.core.container import Container
 
 
-class csv_loader(Stage):
+class sqlite_loader(Stage):
     """
     SQLite loader PISA Pi class
     Parameters
@@ -42,7 +42,7 @@ class csv_loader(Stage):
 
         self.output_names = output_names
 
-    def get_pid_and_interaction_type(name):
+    def get_pid_and_interaction_type(self,name):
         '''Sorry'''
         if 'bar' in name:
             nubar = -1
@@ -77,37 +77,37 @@ class csv_loader(Stage):
                 query = 'SELECT * FROM reconstruction WHERE event_no in %s'%(str(tuple(truth['event_no'])))
                 reco = pd.read_sql(query,con).sort_values('event_no').reset_index(drop = True)
             # Get number of i3 files with specified PID by counting unique combinations of RunID and SubrunID
-            query = 'SELECT DISTINCT RunID, SubrunID FROM truth WHERE abs(pid) = %s'%pid
+            query = 'SELECT DISTINCT RunID, SubrunID FROM truth WHERE pid = %s'%pid
             n_files = len(pd.read_sql(query,con))
         return truth, reco, n_files
 
-    def add_truth(self, container, truth, add_these, nubar, flavor):
+    def add_truth(self, container, truth, nubar, flavor):
         ''' Adds truth to container'''
-        for variable in add_these:
+        for variable in self.add_these:
             if variable == 'zenith':
-                container['true_coszen'] = np.cos(truth[variable])
+                container['true_coszen'] = np.cos(truth[variable]).values.astype(FTYPE)
             else:
-                container['true_' + variable] = truth[variable]
+                container['true_' + variable] = truth[variable].values.astype(FTYPE)
 
         container.set_aux_data("nubar", nubar) # This sets true nu/nubar
         container.set_aux_data("flav", flavor) # This sets the true flavor
         return container
 
-    def add_reco(self, container, reco, add_these):
+    def add_reco(self, container, reco):
         ''' Adds reconstructed quantities to container'''
         if self.is_retro: # is it retro or dynedge?
             postfix = '_retro'
         else:
             postfix = '_pred'
-        for variable in add_these:
+        for variable in self.add_these:
             if variable == 'zenith':
-                container['reco_coszen'] = np.cos(reco[variable + postfix])
+                container['reco_coszen'] = np.cos(reco[variable + postfix]).values.astype(FTYPE)
             else:
-                container['reco_' + variable] = reco[variable + postfix]
+                container['reco_' + variable] = reco[variable + postfix].values.astype(FTYPE)
         if self.is_retro:
-            container['pid'] = reco['L7_PIDClassifier_FullSky_ProbTrack']
+            container['pid'] = reco['L7_PIDClassifier_FullSky_ProbTrack'].values.astype(FTYPE)
         else:
-            container['pid'] = reco['track_pred']
+            container['pid'] = reco['track_pred'].values.astype(FTYPE)
         return container
     
     def add_aeff_weight(self, container, truth, n_files):
@@ -119,7 +119,7 @@ class csv_loader(Stage):
             / truth["gen_ratio"]
             / truth["NEvents"]
         )
-        container['weighted_aeff'] = weighted_aeff
+        container['weighted_aeff'] = weighted_aeff.values.astype(FTYPE)
         return container
 
     def initialize_weights(self, container):
@@ -134,10 +134,11 @@ class csv_loader(Stage):
             container = Container(name)
             pid, interaction_type, nubar, flavor = self.get_pid_and_interaction_type(name)
             truth, reco,n_i3files_with_flavor =  self.query_database(interaction_type, pid)
-            container = self.initialize_weights(container)
             container = self.add_truth(container,truth, nubar, flavor)
             container = self.add_reco(container,reco)
+            container = self.initialize_weights(container)
             container = self.add_aeff_weight(container, truth, n_i3files_with_flavor)
+
             self.data.add_container(container)
 
         # check created at least one container
