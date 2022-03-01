@@ -177,13 +177,19 @@ class hist(Stage):  # pylint: disable=invalid-name
                 
                 # The hist is now computed using a binning that is completely linear
                 # and regular
-                hist = histogram(sample, unc_weights*weights, self.regularized_apply_mode, averaged=False)
+                hist = histogram(
+                    sample,
+                    unc_weights*weights,
+                    self.regularized_apply_mode,
+                    averaged=False
+                )
 
                 if self.error_method == "sumw2":
                     sumw2 = histogram(sample, np.square(unc_weights*weights), self.regularized_apply_mode, averaged=False)
                     bin_unc2 = histogram(sample, np.square(unc_weights)*weights, self.regularized_apply_mode, averaged=False)
 
                 container.representation = self.apply_mode
+                container["weights"] = hist
 
                 if self.error_method == "sumw2":
                     container["errors"] = np.sqrt(sumw2)
