@@ -849,7 +849,7 @@ class Map(object):
         if fmt is not None:
             for fmt_ in fmt:
                 path = os.path.join(outdir, fname + '.' + fmt_)
-                fig.savefig(os.path.join(*path))
+                fig.savefig(path)
                 logging.debug('>>>> Plot for inspection saved at %s', path)
 
         return fig, ax, pcmesh, colorbar
