@@ -220,6 +220,11 @@ class simple_data_loader(Stage):
 
 
     def apply_function(self):
+
+        # reset data representation to events
+        #TODO This should be fixed more generally at the Pipeline level, see XXX
+        self.data.representation = "events"
+
         # reset weights to initial weights prior to downstream stages running
         for container in self.data:
             container['weights'] = np.copy(container['initial_weights'])
