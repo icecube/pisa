@@ -272,6 +272,7 @@ class Hypersurface(object):
         self.fit_complete = False
         self.fit_info_stored = False
         self.fit_maps_norm = None
+        self.fit_maps_smooth = None
         self.fit_maps_raw = None
         self.fit_chi2 = None
         self.fit_cov_mat = None
@@ -469,7 +470,8 @@ class Hypersurface(object):
 
     def fit(self, nominal_map, nominal_param_values, sys_maps, sys_param_values,
             norm=True, method="L-BFGS-B", fix_intercept=False, intercept_bounds=None,
-            intercept_sigma=None, include_empty=False, keep_maps=True, ref_bin_idx=None):
+            intercept_sigma=None, include_empty=False, keep_maps=True, ref_bin_idx=None,
+            smooth_method=None, smooth_kw=None):
         '''
         Fit the hypersurface coefficients (in every bin) to best match the provided
         nominal and systematic datasets.
@@ -550,8 +552,12 @@ class Hypersurface(object):
         # Format things before getting started
         #
 
-        # Store thr fitting method
+        # Store the fitting method
         self.fit_method = method
+
+        # Store smoothing info
+        self.smooth_method = smooth_method
+        self.smooth_kw = smooth_kw
 
         # Initialise hypersurface using nominal dataset
         self._init(binning=nominal_map.binning,
@@ -563,6 +569,7 @@ class Hypersurface(object):
 
         # Store raw maps
         self.fit_maps_raw = maps
+        self.fit_info_stored = True
 
         # Convert params values from `list of dicts` to `dict of lists`
         param_values_dict = {name: np.array([p[name] for p in param_values])
@@ -579,6 +586,62 @@ class Hypersurface(object):
         # Prepare covariance matrix array
         self.fit_cov_mat = np.full(
             list(self.binning.shape)+[self.num_fit_coeffts, self.num_fit_coeffts], np.NaN)
+
+
+        #
+        # Smoothing
+        #
+
+        self.fit_maps_smooth = None
+
+        if self.smooth_method is not None :
+
+            raise Exception("Hypersurface smoothing needs some fixing")
+
+            fit_maps_smooth = []
+
+            if self.smooth_method == "gaussian_filter" :
+
+                #
+                # Perform Gaussian filtering on the input maps
+                #
+
+
+
+                #TODO REMOVE
+                #TODO REMOVE
+                #TODO REMOVE
+                #TODO REMOVE
+                #TODO REMOVE
+                print(">>>> STARTED gaussian_filter SMOOTHING")
+                #TODO REMOVE
+                #TODO REMOVE
+                #TODO REMOVE
+                #TODO REMOVE
+
+                if self.smooth_kw is None :
+                    self.smooth_kw = {}
+
+                # Treating each PID bin individually as a 2D hist (E, coszen)
+                #TODO Make more general
+                #TODO Can smooth in 3 dims here if desired with gaussian_filter (I think...)
+                split_dim = "pid"
+                assert split_dim in self.binning
+
+                # Loop over maps and apply filter
+                for m in self.fit_maps :
+                    fit_maps_smooth.append( m.gaussian_filter(split_dim=split_dim, **self.smooth_kw) )
+
+            else :
+                raise Exception(f"Unknown smooting method : {self.smooth_method}")
+
+
+            # Store
+            self.fit_maps_smooth = fit_maps_smooth
+
+
+
+
 
         #
         # Normalisation
@@ -597,19 +660,14 @@ class Hypersurface(object):
             # nominal
 
             # Formalise, handling inf values
-            normed_maps = []
-            for m in maps:
+            fit_maps_norm = []
+            for m in self.fit_maps:
                 norm_m = copy.deepcopy(m)
                 norm_m.hist[finite_mask] = norm_m.hist[finite_mask] / \
                     unp.nominal_values(nominal_map.hist[finite_mask])
                 norm_m.hist[~finite_mask] = ufloat(np.NaN, np.NaN)
-                normed_maps.append(norm_m)
-
-            # Store for plotting later
-            self.fit_maps_norm = normed_maps
-
-        # Record that fit info is now stored
-        self.fit_info_stored = True
+                fit_maps_norm.append(norm_m)
+            self.fit_maps_norm = fit_maps_norm
 
         #
         # Some final checks
@@ -617,7 +675,7 @@ class Hypersurface(object):
 
         # Not expecting any bins to have negative values (negative counts doesn't make
         # sense)
-        # TODO hypersurface in general could consider -ve values (no explicitly
+        # TODO hypersurface in general could consider -ve values (not explicitly
         # tied to histograms), so maybe can relax this constraint
         for m in self.fit_maps:
             assert np.all(m.nominal_values[finite_mask]
@@ -904,9 +962,13 @@ class Hypersurface(object):
         # Combine into single array
         self.fit_chi2 = np.stack(self.fit_chi2, axis=-1).astype(FTYPE)
         
+        # Drop input maps if not keeping them
         if not keep_maps:
             self.fit_maps_raw = None
+            self.fit_maps_smooth = None
             self.fit_maps_norm = None
+            self.fit_info_stored = False
+
         # Record some provenance info about the fits
         self.fit_complete = True
 
@@ -1015,7 +1077,19 @@ class Hypersurface(object):
         '''
         assert self.fit_info_stored, "Cannot get fit maps, fit info not stored%s" % (
             " (using legacy data)" if self.using_legacy_data else "")
-        return self.fit_maps_raw if self.fit_maps_norm is None else self.fit_maps_norm
+
+        # Return whatever the final processed map type was during the fitting process
+        if self.fit_maps_norm is not None :
+            return self.fit_maps_norm
+
+        elif self.fit_maps_smooth is not None :
+            return self.fit_maps_smooth 
+
+        elif self.fit_maps_raw is not None :
+            return self.fit_maps_raw
+
+        else : 
+            raise Exception("Cannot find fit maps")
 
     @property
     def num_fit_sets(self):
@@ -1091,6 +1165,7 @@ class Hypersurface(object):
             state["fit_complete"] = self.fit_complete
             state["fit_info_stored"] = self.fit_info_stored
             state["fit_maps_norm"] = self.fit_maps_norm
+            state["fit_maps_smooth"] = self.fit_maps_smooth
             state["fit_maps_raw"] = self.fit_maps_raw
             state["fit_chi2"] = self.fit_chi2
             state["fit_cov_mat"] = self.fit_cov_mat
@@ -1159,15 +1234,60 @@ class Hypersurface(object):
         fit_maps_raw = state.pop("fit_maps_raw")
         hypersurface.fit_maps_raw = None if fit_maps_raw is None else [
             Map(**map_state) for map_state in fit_maps_raw]
+
         fit_maps_norm = state.pop("fit_maps_norm")
         hypersurface.fit_maps_norm = None if fit_maps_norm is None else [
             Map(**map_state) for map_state in fit_maps_norm]
+
+        fit_maps_smooth = state.pop("fit_maps_smooth") if "fit_maps_smooth" in state else None # Backwards compatibility 
+        hypersurface.fit_maps_smooth = None if fit_maps_smooth is None else [
+            Map(**map_state) for map_state in fit_maps_smooth]
 
         # Define rest of state
         for k in list(state.keys()):
             setattr(hypersurface, k, state.pop(k))
 
         return hypersurface
+
+
+    def fluctuate(self, random_state=None) :
+        '''
+        Return a new hypersurface object whose coefficients have been randomly fluctuated according 
+        to the fit covariance matrix.
+
+        Used for testing the impact of statistical uncertainty in the hypersurfaces fits on
+        downstream analyses.
+        '''
+
+        #TODO uncorrelated fluctuation option
+
+        # Init random state
+        if random_state is None :
+            random_state = np.random.RandomState(12345) #TODO use PISA functions for this
+
+        # Create a copy of this instance
+        new_hypersurface = copy.deepcopy(self) #TODO Use serialized state instead?
+
+        # Loop over bins
+        for bin_idx in np.ndindex(self.binning.shape):
+
+            # Skip if this bin has no fits
+            if np.all(np.isfinite(self.fit_coeffts[bin_idx])) :
+
+                # Perform multivariate random sampling from the covariance matrix
+                # This gives new coefficients, which are written to the output hyersurface instance
+                new_fit_coeffts = random_state.multivariate_normal(self.fit_coeffts[bin_idx], self.fit_cov_mat[bin_idx])
+
+                # Set the values in the output hypersurface
+                new_hypersurface.intercept[bin_idx] = new_fit_coeffts[0]
+                n = 1
+                for param in new_hypersurface.params.values():
+                    for i in range(param.num_fit_coeffts):
+                        idx = param.get_fit_coefft_idx(bin_idx=bin_idx, coefft_idx=i)
+                        param.fit_coeffts[idx] = new_fit_coeffts[n]
+                        n += 1
+
+        return new_hypersurface
 
 
 class HypersurfaceParam(object):
