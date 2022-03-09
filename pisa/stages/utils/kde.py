@@ -2,9 +2,9 @@
 Stage to transform arrays with weights into KDE maps
 that represent event counts
 """
-from __future__ import absolute_import, print_function, division
 import numpy as np
 
+from copy import deepcopy
 from pisa import FTYPE, TARGET
 from pisa.core.stage import Stage
 from pisa.core.binning import MultiDimBinning, OneDimBinning
@@ -90,18 +90,25 @@ class kde(Stage):
         # the logarithm.
         dimensions = []
         for dim in self.apply_mode:
-            if dim.is_log and not dim.is_irregular:
-                # We don't compute the log of the variable just yet, this
-                # will be done later during `apply_function` using the
-                # representation mechanism.
+            if dim.is_lin:
+                new_dim = deepcopy(dim)
+            # We don't compute the log of the variable just yet, this
+            # will be done later during `apply_function` using the
+            # representation mechanism.
+            # We replace the logarithmic binning with a linear binning in log-space
+            elif dim.is_irregular:
+                new_dim = OneDimBinning(
+                    dim.name,
+                    bin_edges=np.log(dim.bin_edges.m),
+                )
+            else:
                 new_dim = OneDimBinning(
                     dim.name,
                     domain=np.log(dim.domain.m),
                     num_bins=dim.num_bins
                 )
-                dimensions.append(new_dim)
-            else:
-                dimensions.append(dim)
+            dimensions.append(new_dim)
+
             self.regularized_apply_mode = MultiDimBinning(dimensions)
             logging.debug("Using regularized binning:\n" + repr(self.regularized_apply_mode))
 
