@@ -652,6 +652,10 @@ class Hypersurface(object):
         # this.
         finite_mask = nominal_map.nominal_values != 0
 
+        # Also include any binning mask in the finite mask (since these bin will be NaN)
+        if self.binning.mask is not None :
+            finite_mask = finite_mask & self.binning.mask
+
         # Normalise bin values, if requested
         if norm:
 
@@ -687,212 +691,226 @@ class Hypersurface(object):
 
         for bin_idx in np.ndindex(self.binning.shape):  # TODO grab from input map
 
-            #
-            # Format this bin's data for fitting
-            #
+            # Check if this bin is masked
+            if (self.binning.mask is not None) and (self.binning.mask[bin_idx] == False) :
 
-            # Format the fit `y` values : [ bin value 0, bin_value 1, ... ]
-            # Also get the corresonding uncertainty
-            y = np.asarray([m.nominal_values[bin_idx]
-                            for m in self.fit_maps], dtype=FTYPE)
-            y_sigma = np.asarray([m.std_devs[bin_idx]
-                                  for m in self.fit_maps], dtype=FTYPE)
-
-            # Create a mask for keeping all these points
-            # May remove some points before fitting if find issues
-            scan_point_mask = np.ones(y.shape, dtype=bool)
-
-            # Cases where we have a y_sigma element = 0 (normally because the
-            # corresponding y element = 0) screw up the fits (least squares divides by
-            # sigma, so get infs) By default, we ignore empty bins. If the user wishes
-            # to include them, it can be done with a value of zero and standard
-            # deviation of 1.
-            bad_sigma_mask = y_sigma == 0.
-            if bad_sigma_mask.sum() > 0:
-                if include_empty:
-                    y_sigma[bad_sigma_mask] = 1.
-                else:
-                    scan_point_mask = scan_point_mask & ~bad_sigma_mask
-
-            # Apply the mask to get the values I will actually use
-            x_to_use = np.array([xx[scan_point_mask] for xx in x])
-            y_to_use = y[scan_point_mask]
-            y_sigma_to_use = y_sigma[scan_point_mask]
-
-            # Checks
-            assert x_to_use.shape[0] == len(self.params)
-            assert x_to_use.shape[1] == y_to_use.size
-
-            # Get flat list of the fit param guesses
-            # The param coefficients are ordered as [ param 0 cft 0, ..., param 0 cft N,
-            # ..., param M cft 0, ..., param M cft N ]
-            p0_intercept = self.intercept[bin_idx]
-            p0_param_coeffts = [param.get_fit_coefft(bin_idx=bin_idx, coefft_idx=i_cft)
-                                for param in list(self.params.values())
-                                for i_cft in range(param.num_fit_coeffts)]
-            if fix_intercept:
-                p0 = np.array(p0_param_coeffts, dtype=FTYPE)
-            else:
-                p0 = np.array([p0_intercept] + p0_param_coeffts, dtype=FTYPE)
-
-            #
-            # Check if have valid data in this bin
-            #
-
-            # If have empty bins, cannot fit In particular, if the nominal map has an
-            # empty bin, it cannot be rescaled (x * 0 = 0) If this case, no need to try
-            # fitting
-
-            # Check if have NaNs/Infs
-            if np.any(~np.isfinite(y_to_use)):  # TODO also handle missing sigma
+                logging.debug("Skipping masked bin {bin_idx}")
 
                 # Not fitting, add empty variables
                 popt = np.full_like(p0, np.NaN)
                 pcov = np.NaN
 
-            # Otherwise, fit...
-            else:
+
+            else :
+
+                # Otherwise proceed to fitting...
 
                 #
-                # Fit
+                # Format this bin's data for fitting
                 #
 
-                # Must have at least as many sets as free params in fit or else curve_fit will fail
-                assert y.size >= p0.size, "Number of datasets used for fitting (%i) must be >= num free params (%i)" % (
-                    y.size, p0.size)
+                # Format the fit `y` values : [ bin value 0, bin_value 1, ... ]
+                # Also get the corresonding uncertainty
+                y = np.asarray([m.nominal_values[bin_idx]
+                                for m in self.fit_maps], dtype=FTYPE)
+                y_sigma = np.asarray([m.std_devs[bin_idx]
+                                      for m in self.fit_maps], dtype=FTYPE)
 
-                # Define a callback function for use with `curve_fit`
-                #   x : sys params
-                #   p : func/shape params
-                def callback(x, *p):
+                # Create a mask for keeping all these points
+                # May remove some points before fitting if find issues
+                scan_point_mask = np.ones(y.shape, dtype=bool)
 
-                    # Note that this is using the dynamic variable `bin_idx`, which
-                    # cannot be passed as an arg as `curve_fit` cannot handle fixed
-                    # parameters.
+                # Cases where we have a y_sigma element = 0 (normally because the
+                # corresponding y element = 0) screw up the fits (least squares divides by
+                # sigma, so get infs) By default, we ignore empty bins. If the user wishes
+                # to include them, it can be done with a value of zero and standard
+                # deviation of 1.
+                bad_sigma_mask = y_sigma == 0.
+                if bad_sigma_mask.sum() > 0:
+                    if include_empty:
+                        y_sigma[bad_sigma_mask] = 1.
+                    else:
+                        scan_point_mask = scan_point_mask & ~bad_sigma_mask
+
+                # Apply the mask to get the values I will actually use
+                x_to_use = np.array([xx[scan_point_mask] for xx in x])
+                y_to_use = y[scan_point_mask]
+                y_sigma_to_use = y_sigma[scan_point_mask]
+
+                # Checks
+                assert x_to_use.shape[0] == len(self.params)
+                assert x_to_use.shape[1] == y_to_use.size
+
+                # Get flat list of the fit param guesses
+                # The param coefficients are ordered as [ param 0 cft 0, ..., param 0 cft N,
+                # ..., param M cft 0, ..., param M cft N ]
+                p0_intercept = self.intercept[bin_idx]
+                p0_param_coeffts = [param.get_fit_coefft(bin_idx=bin_idx, coefft_idx=i_cft)
+                                    for param in list(self.params.values())
+                                    for i_cft in range(param.num_fit_coeffts)]
+                if fix_intercept:
+                    p0 = np.array(p0_param_coeffts, dtype=FTYPE)
+                else:
+                    p0 = np.array([p0_intercept] + p0_param_coeffts, dtype=FTYPE)
+
+                #
+                # Check if have valid data in this bin
+                #
+
+                # If have empty bins, cannot fit In particular, if the nominal map has an
+                # empty bin, it cannot be rescaled (x * 0 = 0) If this case, no need to try
+                # fitting
+
+                # Check if have NaNs/Infs
+                if np.any(~np.isfinite(y_to_use)):  # TODO also handle missing sigma
+
+                    # Not fitting, add empty variables
+                    popt = np.full_like(p0, np.NaN)
+                    pcov = np.NaN
+
+                # Otherwise, fit...
+                else:
+
                     #
-                    # Unflatten list of the func/shape params, and write them to the
-                    # hypersurface structure
-                    self.intercept[bin_idx] = self.initial_intercept if fix_intercept else p[0]
-                    i = 0 if fix_intercept else 1
+                    # Fit
+                    #
+
+                    # Must have at least as many sets as free params in fit or else curve_fit will fail
+                    assert y.size >= p0.size, "Number of datasets used for fitting (%i) must be >= num free params (%i)" % (
+                        y.size, p0.size)
+
+                    # Define a callback function for use with `curve_fit`
+                    #   x : sys params
+                    #   p : func/shape params
+                    def callback(x, *p):
+
+                        # Note that this is using the dynamic variable `bin_idx`, which
+                        # cannot be passed as an arg as `curve_fit` cannot handle fixed
+                        # parameters.
+                        #
+                        # Unflatten list of the func/shape params, and write them to the
+                        # hypersurface structure
+                        self.intercept[bin_idx] = self.initial_intercept if fix_intercept else p[0]
+                        i = 0 if fix_intercept else 1
+                        for param in list(self.params.values()):
+                            for j in range(param.num_fit_coeffts):
+                                bin_fit_idx = tuple(list(bin_idx) + [j])
+                                param.fit_coeffts[bin_fit_idx] = p[i]
+                                i += 1
+
+                        # Unflatten sys param values
+                        params_unflattened = collections.OrderedDict()
+                        for i in range(len(self.params)):
+                            param_name = list(self.params.keys())[i]
+                            params_unflattened[param_name] = x[i]
+
+                        return self.evaluate(params_unflattened, bin_idx=bin_idx)
+
+                    inv_param_sigma = []
+                    if intercept_sigma is not None:
+                        inv_param_sigma.append(1./intercept_sigma)
+                    else:
+                        inv_param_sigma.append(0.)
                     for param in list(self.params.values()):
+                        if param.coeff_prior_sigma is not None:
+                            for j in range(param.num_fit_coeffts):
+                                inv_param_sigma.append(
+                                    1./param.coeff_prior_sigma[j])
+                        else:
+                            for j in range(param.num_fit_coeffts):
+                                inv_param_sigma.append(0.)
+                    inv_param_sigma = np.array(inv_param_sigma)
+                    assert np.all(np.isfinite(
+                        inv_param_sigma)), "invalid values found in prior sigma. They must not be zero."
+
+                    # coefficient names to pass to Minuit. Not strictly necessary
+                    coeff_names = [] if fix_intercept else ['intercept']
+                    for name, param in self.params.items():
                         for j in range(param.num_fit_coeffts):
-                            bin_fit_idx = tuple(list(bin_idx) + [j])
-                            param.fit_coeffts[bin_fit_idx] = p[i]
-                            i += 1
+                            coeff_names.append(name + '_p{:d}'.format(j))
 
-                    # Unflatten sys param values
-                    params_unflattened = collections.OrderedDict()
-                    for i in range(len(self.params)):
-                        param_name = list(self.params.keys())[i]
-                        params_unflattened[param_name] = x[i]
+                    def loss(p):
+                        '''
+                        Loss to be minimized during the fit.
+                        '''
+                        fvals = callback(x_to_use, *p)
+                        return np.sum(((fvals - y_to_use)/y_sigma_to_use)**2) + np.sum((inv_param_sigma*p)**2)
 
-                    return self.evaluate(params_unflattened, bin_idx=bin_idx)
-
-                inv_param_sigma = []
-                if intercept_sigma is not None:
-                    inv_param_sigma.append(1./intercept_sigma)
-                else:
-                    inv_param_sigma.append(0.)
-                for param in list(self.params.values()):
-                    if param.coeff_prior_sigma is not None:
-                        for j in range(param.num_fit_coeffts):
-                            inv_param_sigma.append(
-                                1./param.coeff_prior_sigma[j])
+                    # Define fit bounds for `minimize`. Bounds are pairs of (min, max)
+                    # values for each parameter in the fit. Use 'None' in place of min/max
+                    # if there is
+                    # no bound in that direction.
+                    fit_bounds = []
+                    if intercept_bounds is None:
+                        fit_bounds.append(tuple([None, None]))
                     else:
-                        for j in range(param.num_fit_coeffts):
-                            inv_param_sigma.append(0.)
-                inv_param_sigma = np.array(inv_param_sigma)
-                assert np.all(np.isfinite(
-                    inv_param_sigma)), "invalid values found in prior sigma. They must not be zero."
+                        assert (len(intercept_bounds) == 2) and (
+                            np.ndim(intercept_bounds) == 1), "intercept bounds must be given as 2-tuple"
+                        fit_bounds.append(intercept_bounds)
 
-                # coefficient names to pass to Minuit. Not strictly necessary
-                coeff_names = [] if fix_intercept else ['intercept']
-                for name, param in self.params.items():
-                    for j in range(param.num_fit_coeffts):
-                        coeff_names.append(name + '_p{:d}'.format(j))
+                    for param in self.params.values():
+                        if param.bounds is None:
+                            fit_bounds.extend(
+                                ((None, None),)*param.num_fit_coeffts)
+                        else:
+                            if np.ndim(param.bounds) == 1:
+                                assert len(
+                                    param.bounds) == 2, "bounds on single coefficients must be given as 2-tuples"
+                                fit_bounds.append(param.bounds)
+                            elif np.ndim(param.bounds) == 2:
+                                assert np.all([len(t) == 2 for t in param.bounds]
+                                              ), "bounds must be given as a tuple of 2-tuples"
+                                fit_bounds.extend(param.bounds)
 
-                def loss(p):
-                    '''
-                    Loss to be minimized during the fit.
-                    '''
-                    fvals = callback(x_to_use, *p)
-                    return np.sum(((fvals - y_to_use)/y_sigma_to_use)**2) + np.sum((inv_param_sigma*p)**2)
+                    # Define the EPS (step length) used by the fitter Need to take care with
+                    # floating type precision, don't want to go smaller than the FTYPE being
+                    # used by PISA can handle
+                    eps = np.finfo(FTYPE).eps
 
-                # Define fit bounds for `minimize`. Bounds are pairs of (min, max)
-                # values for each parameter in the fit. Use 'None' in place of min/max
-                # if there is
-                # no bound in that direction.
-                fit_bounds = []
-                if intercept_bounds is None:
-                    fit_bounds.append(tuple([None, None]))
-                else:
-                    assert (len(intercept_bounds) == 2) and (
-                        np.ndim(intercept_bounds) == 1), "intercept bounds must be given as 2-tuple"
-                    fit_bounds.append(intercept_bounds)
+                    # If no reference bin index was specified, used the first bin index to be fitted
+                    if ref_bin_idx is None :
+                        ref_bin_idx = bin_idx
 
-                for param in self.params.values():
-                    if param.bounds is None:
-                        fit_bounds.extend(
-                            ((None, None),)*param.num_fit_coeffts)
-                    else:
-                        if np.ndim(param.bounds) == 1:
-                            assert len(
-                                param.bounds) == 2, "bounds on single coefficients must be given as 2-tuples"
-                            fit_bounds.append(param.bounds)
-                        elif np.ndim(param.bounds) == 2:
-                            assert np.all([len(t) == 2 for t in param.bounds]
-                                          ), "bounds must be given as a tuple of 2-tuples"
-                            fit_bounds.extend(param.bounds)
+                    # Debug logging
+                    if bin_idx == ref_bin_idx:
+                        msg = ">>>>>>>>>>>>>>>>>>>>>>>\n"
+                        msg += "Curve fit inputs to bin %s :\n" % (bin_idx,)
+                        msg += "  x           : \n%s\n" % x
+                        msg += "  y           : \n%s\n" % y
+                        msg += "  y sigma     : \n%s\n" % y_sigma
+                        msg += "  x used      : \n%s\n" % x_to_use
+                        msg += "  y used      : \n%s\n" % y_to_use
+                        msg += "  y sigma used: \n%s\n" % y_sigma_to_use
+                        msg += "  p0          : %s\n" % p0
+                        msg += "  bounds      : \n%s\n" % fit_bounds
+                        msg += "  inv sigma   : \n%s\n" % inv_param_sigma
+                        msg += "  fit method  : %s\n" % self.fit_method
+                        msg += "<<<<<<<<<<<<<<<<<<<<<<<"
+                        logging.debug(msg)
 
-                # Define the EPS (step length) used by the fitter Need to take care with
-                # floating type precision, don't want to go smaller than the FTYPE being
-                # used by PISA can handle
-                eps = np.finfo(FTYPE).eps
+                    # Perform fit
+                    # errordef =1 for least squares fit and 0.5 for nllh fit
+                    m = Minuit(loss, p0,
+                               # only initial step size, not very important
+                               # error=(0.1)*len(p0),
+                               # limit=fit_bounds,
+                               name=coeff_names)
+                    m.errors = (0.1) * len(p0)
+                    m.limits = fit_bounds
+                    m.errordef = Minuit.LEAST_SQUARES
+                    m.migrad()
+                    m.hesse()
 
-                # If no reference bin index was specified, used the first bin index to be fitted
-                if ref_bin_idx is None :
-                    ref_bin_idx = bin_idx
-
-                # Debug logging
-                if bin_idx == ref_bin_idx:
-                    msg = ">>>>>>>>>>>>>>>>>>>>>>>\n"
-                    msg += "Curve fit inputs to bin %s :\n" % (bin_idx,)
-                    msg += "  x           : \n%s\n" % x
-                    msg += "  y           : \n%s\n" % y
-                    msg += "  y sigma     : \n%s\n" % y_sigma
-                    msg += "  x used      : \n%s\n" % x_to_use
-                    msg += "  y used      : \n%s\n" % y_to_use
-                    msg += "  y sigma used: \n%s\n" % y_sigma_to_use
-                    msg += "  p0          : %s\n" % p0
-                    msg += "  bounds      : \n%s\n" % fit_bounds
-                    msg += "  inv sigma   : \n%s\n" % inv_param_sigma
-                    msg += "  fit method  : %s\n" % self.fit_method
-                    msg += "<<<<<<<<<<<<<<<<<<<<<<<"
-                    logging.debug(msg)
-
-                # Perform fit
-                # errordef =1 for least squares fit and 0.5 for nllh fit
-                m = Minuit(loss, p0,
-                           # only initial step size, not very important
-                           # error=(0.1)*len(p0),
-                           # limit=fit_bounds,
-                           name=coeff_names)
-                m.errors = (0.1) * len(p0)
-                m.limits = fit_bounds
-                m.errordef = Minuit.LEAST_SQUARES
-                m.migrad()
-                m.hesse()
-
-                popt = np.array(m.values)
-                try:
-                    pcov = np.array(m.covariance)
-                except:
-                    logging.warn(f"HESSE call failed for bin {bin_idx}, covariance matrix unavailable")
-                    pcov = np.full((len(p0), len(p0)), np.nan)
-                if bin_idx == ref_bin_idx:
-                    logging.debug(m.fmin)
-                    logging.debug(m.params)
-                    logging.debug(m.covariance)
+                    popt = np.array(m.values)
+                    try:
+                        pcov = np.array(m.covariance)
+                    except:
+                        logging.warn(f"HESSE call failed for bin {bin_idx}, covariance matrix unavailable")
+                        pcov = np.full((len(p0), len(p0)), np.nan)
+                    if bin_idx == ref_bin_idx:
+                        logging.debug(m.fmin)
+                        logging.debug(m.params)
+                        logging.debug(m.covariance)
 
             #
             # Re-format fit results
@@ -1421,7 +1439,7 @@ class HypersurfaceParam(object):
         when fitting).
         '''
 
-        # Create an array to file with this contorubtion
+        # Create an array to fill with this contribution
         this_out = np.full_like(out, np.NaN, dtype=FTYPE)
 
         # Form the arguments to pass to the functional form
