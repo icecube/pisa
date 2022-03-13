@@ -2961,8 +2961,6 @@ class MultiDimBinning(object):
 
         """
 
-        # assert self.mask is None, "Getting binning subsets not currenty supported when using bin masking" #TODO Commented this because it is being called during the analysis. What by?
-
         # If ellipsis, return everything
         if index is Ellipsis:
             return self
@@ -2973,9 +2971,9 @@ class MultiDimBinning(object):
 
             # Check there is no mask defined (a mask does not make sense on a per dimension basis, 
             # so cannot apply this operation when masking is involved)
-            # assert self.mask is None, "Cannot extract a single binning dimension when a mask is used" #TODO replace? logging?
-            if self.mask is None :
-                raise ValueError("Cannot extract a single binning dimension when a mask is used") #TODO This gets called duign deepcopy with index==__deppcopy__??!?!? If I assert instead of using ValueError theneverything fails. Not sure what is going on here...
+            #TODO Removed for now as causes issues, need to come back to think about this...
+            # if self.mask is not None :
+            #     raise ValueError("Cannot extract a single binning dimension when a mask is used") #TODO This gets called duign deepcopy with index==__deppcopy__??!?!? If I assert instead of using ValueError theneverything fails. Not sure what is going on here...
 
             # Find the dimension
             for d in self.iterdims():
