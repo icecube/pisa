@@ -881,7 +881,7 @@ def prepare_interpolated_fit(
     logging.info(f"Grid fit preparation complete! Total number of jobs: {job_idx+1}")
     return job_idx+1  # zero-indexing
 
-def load_interpolated_hypersurfaces(input_file):
+def load_interpolated_hypersurfaces(input_file, expected_binning=None):
     '''
     Load a set of interpolated hypersurfaces from a file.
 
@@ -913,6 +913,9 @@ def load_interpolated_hypersurfaces(input_file):
     '''
     assert isinstance(input_file, str)
 
+    if expected_binning is not None:
+        assert is_binning(expected_binning)
+
     logging.info(f"Loading interpolated hypersurfaces from file: {input_file}")
 
     # Load the data from the file
@@ -938,9 +941,13 @@ def load_interpolated_hypersurfaces(input_file):
         # converted to the corresponding objects, so we need to do it manually here.
         for map_name in map_names:
             hs_state_maps[map_name] = Hypersurface.from_state(hs_state_maps[map_name])
-
     logging.info(f"Read hypersurface maps: {map_names}")
     
+    # Check binning
+    if expected_binning is not None:
+        for map_name, hypersurface in hs_state_maps.items():
+            assert hypersurface.binning.hash == expected_binning.hash, "Binning of loaded hypersurfaces does not match the expected binning"
+
     # Now we have a list of dicts where the map names are on the lower level.
     # We need to convert this into a dict of HypersurfaceInterpolator objects.
     output = collections.OrderedDict()

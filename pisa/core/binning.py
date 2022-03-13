@@ -1832,7 +1832,7 @@ class MultiDimBinning(object):
         """Hash value based *solely* upon the mask.
         """
         if self._mask_hash is None:
-            self._mask_hash = hash_obj(self.mask) #TODO I this needed, or can I just direcrly hash the array?
+            self._mask_hash = hash_obj(self.mask)
         return self._mask_hash
 
     @property
@@ -1869,14 +1869,20 @@ class MultiDimBinning(object):
 
         """
         if self._hashable_state is None:
+
             state = OrderedDict()
             # TODO: Shouldn't order matter?
             #state['dimensions'] = [self[name]._hashable_state
             #                       for name in sorted(self.names)]
             state['dimensions'] = [d.hashable_state for d in self]
             state['name'] = self.name
-            state['mask_hash'] = self.mask_hash
+
+            mask_hash = self.mask_hash
+            if mask_hash is not None :
+                state['mask_hash'] = mask_hash
+
             self._hashable_state = state
+
         return self._hashable_state
 
     @property

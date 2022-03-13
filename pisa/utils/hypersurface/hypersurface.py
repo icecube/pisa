@@ -1865,9 +1865,7 @@ def load_hypersurfaces(input_file, expected_binning=None):
     # Check binning
     if expected_binning is not None:
         for hypersurface in hypersurfaces.values():
-            if not hypersurface.binning.hash == expected_binning.hash:
-                for a, b, in zip(hypersurface.binning.dims, expected_binning.dims):
-                    assert a == b, "Incompatible binning dimension %s and %s"%(a, b)
+            assert hypersurface.binning.hash == expected_binning.hash, "Binning of loaded hypersurfaces does not match the expected binning"
                     
     return hypersurfaces
 
