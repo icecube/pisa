@@ -92,10 +92,10 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
         # For this reason we need to load the hypersurfaces already in the init function
         self.inter_params = []
         if self.interpolated:
-            self.hypersurfaces = hs.load_interpolated_hypersurfaces(self.fit_results_file)
+            self.hypersurfaces = hs.load_interpolated_hypersurfaces(self.fit_results_file, expected_binning=std_kwargs['calc_mode'])
             self.inter_params = list(self.hypersurfaces.values())[0].interpolation_param_names
         else:
-            self.hypersurfaces = hs.load_hypersurfaces(self.fit_results_file, std_kwargs['calc_mode'])
+            self.hypersurfaces = hs.load_hypersurfaces(self.fit_results_file, expected_binning=std_kwargs['calc_mode'])
         self.hypersurface_param_names = list(self.hypersurfaces.values())[0].param_names
 
         # -- Initialize base class -- #
