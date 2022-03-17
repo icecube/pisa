@@ -912,6 +912,9 @@ class BasicAnalysis(object):
         # (which will also be the initial values in the fit) and blah...
         # If this is the case, don't both to fit and return results right away. 
 
+        if isinstance(metric, str):
+            metric = [metric]
+
         # Grab the hypo map
         hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
         
