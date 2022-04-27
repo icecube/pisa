@@ -385,14 +385,14 @@ class nusquids(Stage):
             gamma0 = self.params.gamma0.value.m_as("eV")*nsq_units.eV
 
             # Set the decoherence matrix appropriately for the chosen decoherence model (see arXiv:2007.00068 eqn 11):
-            if self.params.decoherence_model.value == "randomize_phase":
+            if self.params.decoherence_model.value == "phase_perturbation":
                 gamma0_matrix_diagonal = np.array([ 0., gamma0, gamma0, 0., gamma0, gamma0, gamma0, gamma0, 0. ])
             elif self.params.decoherence_model.value == "randomize_flavor":
                 gamma0_matrix_diagonal = np.array([ 0., gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0 ])
             elif self.params.decoherence_model.value == "neutrino_loss":
                 gamma0_matrix_diagonal = np.array([ gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0 ])
             else:
-                raise ValueError("decoherence_model not recognized. Use randomize_phase, randomize_flavor or neutrino_loss instead")
+                raise ValueError("decoherence_model not recognized. Use phase_perturbation, randomize_flavor or neutrino_loss instead")
 
             nus_layer.Set_DecoherenceGammaMatrixDiagonal(gamma0_matrix_diagonal)
             nus_layer.Set_DecoherenceGammaEnergyDependence(self.params.n.value.m_as("dimensionless"))
