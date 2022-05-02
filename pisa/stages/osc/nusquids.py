@@ -5,7 +5,7 @@ This implementation supports several filtering and interpolation techniques desi
 to deal with fast oscillations that occur in the presence of eV-scale sterile neutrinos.
 
 It is required that SQuIDS and nuSQuIDS are updated to include the layered Earth model
-class `nuSQUIDSLayers` in nuSQuIDS as well as low-pass filtering and range averaging 
+class `nuSQUIDSLayers` in nuSQuIDS as well as low-pass filtering and range averaging
 methods in SQuIDS.
 
 The following forks/branches are comptible with this PISA stage, and their use is
@@ -563,6 +563,7 @@ class nusquids(Stage):
                 self.prop_height + self.prop_height_range / 2.0,
             )
             layers_max.setElecFrac(1, 1, 1)
+
         for container in self.data:
             self.layers.calcLayers(container["true_coszen"])
             distances = self.layers.distance.reshape((container.size, -1))
@@ -621,7 +622,9 @@ class nusquids(Stage):
         for container in self.data:
             container["prob_e"] = np.empty((container.size), dtype=FTYPE)
             container["prob_mu"] = np.empty((container.size), dtype=FTYPE)
-            container["prob_tau"] = np.empty((container.size), dtype=FTYPE)
+            if self.use_taus:
+                container["prob_tau"] = np.empty((container.size), dtype=FTYPE)
+
         self.data.unlink_containers()
 
         if self.exact_mode:
@@ -646,15 +649,15 @@ class nusquids(Stage):
             )
         for container in self.data:
             container["interp_states_e"] = np.empty(
-                (container.size, self.num_neutrinos**2),
+                (container.size, self.num_neutrinos ** 2),
                 dtype=FTYPE,
             )
             container["interp_states_mu"] = np.empty(
-                (container.size, self.num_neutrinos**2),
+                (container.size, self.num_neutrinos ** 2),
                 dtype=FTYPE,
             )
             container["interp_states_tau"] = np.empty(
-                (container.size, self.num_neutrinos**2),
+                (container.size, self.num_neutrinos ** 2),
                 dtype=FTYPE,
             )
         self.data.unlink_containers()
@@ -866,9 +869,12 @@ class nusquids(Stage):
             self.data.link_containers("nutaubar", ["nutaubar_cc", "nutaubar_nc"])
 
         for container in self.data:
+
             nubar = container["nubar"] < 0
             flav_out = container["flav"]
-            for flav_in in ["e", "mu", "tau"]:
+            input_flavs = ["e", "mu", "tau"] if self.use_taus else ["e", "mu"]
+
+            for flav_in in input_flavs:
                 container["prob_" + flav_in] = self.calc_probs_interp(
                     flav_out=flav_out,
                     nubar=nubar,
@@ -904,7 +910,8 @@ class nusquids(Stage):
                 container["prob_" + flav_in][container["prob_" + flav_in] < 0] = 0.0
             container.mark_changed("prob_e")
             container.mark_changed("prob_mu")
-            container.mark_changed("prob_tau")
+            if self.use_taus:
+                container.mark_changed("prob_tau")
         self.data.unlink_containers()
 
     def compute_function(self):
@@ -919,8 +926,7 @@ class nusquids(Stage):
             scales = (
                 container["nu_flux"][:, 0] * container["prob_e"]
                 + container["nu_flux"][:, 1] * container["prob_mu"]
-                + (container["nu_flux"][:, 2] * container["prob_tau"])
-                if self.use_taus
-                else 0.0
             )
+            if self.use_taus:
+                scales += container["nu_flux"][:, 2] * container["prob_tau"]
             container["weights"] = container["weights"] * scales
