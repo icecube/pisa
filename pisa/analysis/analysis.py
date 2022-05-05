@@ -906,6 +906,9 @@ class BasicAnalysis(object):
         
         """
 
+        if isinstance(metric, str):
+            metric = [metric]
+
         # Before starting any fit, check if we already have a perfect match between data and template
         # This can happen if using pseudodata that was generated with the nominal values for parameters
         # (which will also be the initial values in the fit) and blah...
