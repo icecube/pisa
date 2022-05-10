@@ -2105,6 +2105,12 @@ class BasicAnalysis(object):
             return self._minimizer_callable(x, *args)
         
         opt = self._define_nlopt_opt(method_kwargs, loss_func, hypo_maker)
+        
+        # For some stochastic optimization methods such as CRS2, a seed parameter may
+        # be used to make the optimization deterministic. Otherwise, nlopt will use a
+        # random seed based on the current system time.
+        if "seed" in method_kwargs:
+            nlopt.srand(method_kwargs["seed"])
 
         logging.info(f"Starting optimization using {opt.get_algorithm_name()}")
         
@@ -3066,16 +3072,72 @@ def test_basic_analysis(pprint=False):
     # Remove one stage to remove some parameters from only one pipeline
     del config2[("aeff", "aeff")]
 
-
     dm = DistributionMaker([config, config2])
     dm.select_params('nh')
     
     # make data distribution to fit against
-    data_dist = dm.get_outputs(return_sum=True)
+    data_dist = dm.get_outputs(return_sum=True).fluctuate(
+        method="poisson", random_state=0
+    )
 
     ana = BasicAnalysis()
     ana.pprint = pprint
-
+    
+    # Test that global optimization with CRS2 is deterministic as long as a seed
+    # is provided. 
+    
+    fit_nlopt_crs2 = OrderedDict(
+        method="nlopt",
+        method_kwargs={
+            "algorithm": "NLOPT_GN_CRS2_LM",
+            "ftol_rel": 1e-2,
+            "ftol_abs": 1e-2,
+            "population": 5,
+            "seed": 0,
+        },
+        local_fit_kwargs=None,
+    )
+    
+    dm.reset_free()
+    best_fit_info_seed_0 = ana.fit_recursively(
+        data_dist,
+        dm,
+        "chi2",
+        None,
+        **fit_nlopt_crs2
+    )
+    logging.info("Best fit params with seed 0:")
+    logging.info(repr(best_fit_info_seed_0.params.free))
+    
+    fit_nlopt_crs2["method_kwargs"]["seed"] = 1
+    
+    dm.reset_free()
+    best_fit_info_seed_1 = ana.fit_recursively(
+        data_dist,
+        dm,
+        "chi2",
+        None,
+        **fit_nlopt_crs2
+    )
+    logging.info("Best fit params with seed 1:")
+    logging.info(repr(best_fit_info_seed_1.params.free))
+    
+    fit_nlopt_crs2["method_kwargs"]["seed"] = 0
+    
+    dm.reset_free()
+    best_fit_info_seed_0_reprod = ana.fit_recursively(
+        data_dist,
+        dm,
+        "chi2",
+        None,
+        **fit_nlopt_crs2
+    )
+    logging.info("Best fit params with seed 0, reproduced:")
+    logging.info(repr(best_fit_info_seed_0_reprod.params.free))
+    
+    assert best_fit_info_seed_0.params == best_fit_info_seed_0_reprod.params
+    assert not (best_fit_info_seed_0.params == best_fit_info_seed_1.params)
+    
     scipy_settings = {
       "method": {
         "value": "L-BFGS-B",
@@ -3268,7 +3330,9 @@ def test_basic_analysis(pprint=False):
             assert p.range[0] == original_ranges[p.name][0], msg
         if p.nominal_value is not None:
             assert p.nominal_value == original_nom_vals[p.name], msg
-    
+
+    logging.info('<< PASS : test_basic_analysis >>')
+
 if __name__ == "__main__":
     set_verbosity(1)
     test_basic_analysis(pprint=True)
