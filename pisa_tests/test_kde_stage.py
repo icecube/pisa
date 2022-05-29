@@ -5,14 +5,35 @@ the `kde` module and causes an import error.
 """
 
 from copy import deepcopy
-from pisa.utils.log import logging, set_verbosity
+from argparse import ArgumentParser
+from pisa.utils.log import logging, set_verbosity, Levels
 from pisa.core.distribution_maker import DistributionMaker
 from pisa.utils.config_parser import parse_pipeline_config
 from collections import OrderedDict
 
+__all__ = ["test_kde_bootstrapping"]
 
-def test_kde_bootstrapping():
+__author__ = "A. Trettin"
+
+__license__ = """Copyright (c) 2014-2020, The IceCube Collaboration
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License."""
+
+
+def test_kde_bootstrapping(verbosity=Levels.WARN):
     """Unit test for the kde stage."""
+
+    set_verbosity(verbosity)
 
     example_cfg = parse_pipeline_config("settings/pipeline/example.cfg")
 
@@ -67,6 +88,22 @@ def test_kde_bootstrapping():
     logging.info("<< PASS : kde_bootstrapping >>")
 
 
+def parse_args(description=__doc__):
+    """Parse command line arguments"""
+    parser = ArgumentParser(description=description)
+    parser.add_argument(
+        "-v", action="count", default=Levels.WARN, help="set verbosity level"
+    )
+    args = parser.parse_args()
+    return args
+
+
+def main():
+    """Script interface to test_kde_bootstrapping"""
+    args = parse_args()
+    kwargs = vars(args)
+    kwargs["verbosity"] = kwargs.pop("v")
+    test_kde_bootstrapping(**kwargs)
+
 if __name__ == "__main__":
-    set_verbosity(1)
-    test_kde_bootstrapping()
+    main()
