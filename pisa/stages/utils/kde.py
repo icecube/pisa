@@ -54,7 +54,7 @@ class kde(Stage):
         stash_hists=False,
         bootstrap=False,
         bootstrap_niter=10,
-        bootstrap_seed=0,
+        bootstrap_seed=None,
         **std_kargs,
     ):
 
@@ -66,8 +66,11 @@ class kde(Stage):
         self.stash_hists = stash_hists
         self.stash_valid = False
         self.bootstrap = bootstrap
-        self.bootstrap_niter = bootstrap_niter
-        self.bootstrap_seed = bootstrap_seed
+        self.bootstrap_niter = int(bootstrap_niter)
+        if bootstrap_seed is not None:
+            self.bootstrap_seed = int(bootstrap_seed)
+        else:
+            self.bootstrap_seed = None
 
         if stash_hists:
             self.stashed_hists = None
