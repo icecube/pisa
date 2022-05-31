@@ -25,6 +25,30 @@ from pisa.utils.numba_tools import WHERE, myjit
 from pisa.utils.resources import find_resource
 
 
+
+def antipion_production(barr_var, pion_ratio):
+    """
+    Combine pi+ barr param and pi+/pi- ratio to get pi- barr param
+    Definitions: 
+        pion ratio = (1 + barr_var+)x / (1 + barr_var-)
+        delta pion ratio = pion ratio - 1  (e.g. deviation from nominal ratio value, which is 1)
+    Note that the `pion_ratio` param really represents the "delta pion ratio", so is defined
+    similarly to the barr variables themselves .
+    """
+    return ((1 + barr_var) / (1 + pion_ratio)) - 1
+
+
+def antipion_production_v2(barr_var, pion_ratio):
+    """
+    Combine pi+ barr param and pi+/pi- ratio to get pi- barr param
+    Definitions: 
+        pion ratio = (1 + barr_var+) / (1 + barr_var-) -> so is relative to the nominal
+    Note that the `pion_ratio` param really represents the "delta pion ratio", so is defined
+    similarly to the barr variables themselves .
+    """
+    return ( (1 + barr_var) / pion_ratio ) - 1.
+
+
 class mceq_barr(Stage):
     """
     Stage that uses gradients calculated with MCEq to handle flux uncertainties.
@@ -85,16 +109,24 @@ class mceq_barr(Stage):
         table_file,
         include_nutau_flux=False,
         use_honda_nominal_flux=True,
+        use_pion_ratio=True,
         **std_kwargs,
     ):
+
+        # store args
+        self.table_file = table_file
+        self.include_nutau_flux = include_nutau_flux
+        self.use_honda_nominal_flux = use_honda_nominal_flux
+        self.use_pion_ratio = use_pion_ratio
+
 
         #
         # Define parameterisation
         #
 
         # Define the Barr parameters
-        self.barr_param_names = [  # TODO common code with `create_barr_sys_tables_mceq.py` ?
-            # pions
+        # TODO common code with `create_barr_sys_tables_mceq.py` ?
+        self.barr_pion_param_names = [
             "a",
             "b",
             "c",
@@ -104,12 +136,14 @@ class mceq_barr(Stage):
             "g",
             "h",
             "i",
-            # kaons
+        ]
+        self.barr_kaon_param_names = [
             "w",
             "x",
             "y",
             "z",
         ]
+        self.barr_param_names = self.barr_pion_param_names + self.barr_kaon_param_names
 
         # Define signs for Barr params
         # +  -> meson production
@@ -129,40 +163,33 @@ class mceq_barr(Stage):
         )
 
         #
-        # Call stage base class constructor
+        # Define stage parameters
         #
 
-        # Define stage parameters
-        expected_params = (
-            # pion
-            "pion_ratio",
-            "barr_a_Pi",
-            "barr_b_Pi",
-            "barr_c_Pi",
-            "barr_d_Pi",
-            "barr_e_Pi",
-            "barr_f_Pi",
-            "barr_g_Pi",
-            "barr_h_Pi",
-            "barr_i_Pi",
-            # kaon
-            "barr_w_K",
-            "barr_x_K",
-            "barr_y_K",
-            "barr_z_K",
-            "barr_w_antiK",
-            "barr_x_antiK",
-            "barr_y_antiK",
-            "barr_z_antiK",
+        # CR
+        expected_params = [
             # CR
             "delta_index",
             "energy_pivot",
-        )
+        ]
 
-        # store args
-        self.table_file = table_file
-        self.include_nutau_flux = include_nutau_flux
-        self.use_honda_nominal_flux = use_honda_nominal_flux
+        # Pions
+        for n in self.barr_pion_param_names :
+            for suffix in ( ["Pi"] if self.use_pion_ratio else ["Pi", "antiPi"] ) :
+                expected_params.append("barr_%s_%s" % (n, suffix))
+
+        if self.use_pion_ratio : 
+            expected_params.append("pion_ratio")
+
+        # Kaons
+        for n in self.barr_kaon_param_names :
+            for suffix in ["K", "antiK"] :
+                expected_params.append("barr_%s_%s" % (n, suffix))
+
+
+        #
+        # Call stage base class constructor
+        #
 
         # init base class
         super(mceq_barr, self).__init__(
@@ -353,16 +380,6 @@ class mceq_barr(Stage):
         # don't forget to un-link everything again
         self.data.unlink_containers()
 
-    def antipion_production(self, barr_var, pion_ratio):
-        """
-        Combine pi+ barr param and pi+/pi- ratio to get pi- barr param
-        Definitions: 
-            pion ratio = (1 + barr_var+) / (1 + barr_var-)
-            delta pion ratio = pion ratio - 1  (e.g. deviation from nominal ratio value, which is 1)
-        Note that the `pion_ratio` param really represents the "delta pion ratio", so is defined
-        similarly to the barr variables themselves .
-        """
-        return ((1 + barr_var) / (1 + pion_ratio)) - 1
 
     @profile
     def compute_function(self):
@@ -388,7 +405,6 @@ class mceq_barr(Stage):
         energy_pivot = self.params.energy_pivot.value.m_as("GeV")
 
         # Grab the pion ratio
-        pion_ratio = self.params.pion_ratio.value.m_as("dimensionless")
 
         # Map the user parameters into the Barr +/- params
         # pi- production rates is restricted by the pi-ratio, just as in arXiv:0611266
@@ -403,10 +419,24 @@ class mceq_barr(Stage):
         gradient_params_mapping["g+"] = self.params.barr_g_Pi.value.m_as("dimensionless")
         gradient_params_mapping["h+"] = self.params.barr_h_Pi.value.m_as("dimensionless")
         gradient_params_mapping["i+"] = self.params.barr_i_Pi.value.m_as("dimensionless")
-        for k in list(gradient_params_mapping.keys()):
-            gradient_params_mapping[k.replace("+", "-")] = self.antipion_production(
-                gradient_params_mapping[k], pion_ratio
-            )
+
+        # Handling for pion ratio
+        if self.use_pion_ratio :
+            pion_ratio = self.params.pion_ratio.value.m_as("dimensionless")
+            for k in list(gradient_params_mapping.keys()):
+                gradient_params_mapping[k.replace("+", "-")] = antipion_production(
+                    gradient_params_mapping[k], pion_ratio
+                )
+        else :
+            gradient_params_mapping["a-"] = self.params.barr_a_antiPi.value.m_as("dimensionless")
+            gradient_params_mapping["b-"] = self.params.barr_b_antiPi.value.m_as("dimensionless")
+            gradient_params_mapping["c-"] = self.params.barr_c_antiPi.value.m_as("dimensionless")
+            gradient_params_mapping["d-"] = self.params.barr_d_antiPi.value.m_as("dimensionless")
+            gradient_params_mapping["e-"] = self.params.barr_e_antiPi.value.m_as("dimensionless")
+            gradient_params_mapping["f-"] = self.params.barr_f_antiPi.value.m_as("dimensionless")
+            gradient_params_mapping["g-"] = self.params.barr_g_antiPi.value.m_as("dimensionless")
+            gradient_params_mapping["h-"] = self.params.barr_h_antiPi.value.m_as("dimensionless")
+            gradient_params_mapping["i-"] = self.params.barr_i_antiPi.value.m_as("dimensionless")
 
         # kaons
         # as the kaon ratio is unknown, K- production is not restricted
