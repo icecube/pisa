@@ -326,6 +326,11 @@ class Pipeline(object):
 
     def run(self):
         """Run the pipeline to compute"""
+
+        # Reset the data representation
+        #TODO
+
+        # Loop over stage and run each one in sequence
         for stage in self.stages:
             logging.debug(f"Working on stage {stage.stage_name}.{stage.service_name}")
             stage.run()
