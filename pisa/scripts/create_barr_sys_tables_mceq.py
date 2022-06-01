@@ -38,7 +38,8 @@ barr = {
     'g': [(0.0, 0.1, 30.0, 1e11)],
     'h1': [(0.1, 1.0, 30.0, 500.)],
     'h2': [(0.1, 1.0, 500.0, 1e11)],
-    'i': [(0.1, 1.0, 500.0, 1e11)],
+    # 'i': [(0.1, 1.0, 500.0, 1e11)],
+    'i': [(0., 1.0, 500.0, 1e11)], # Table in Barr et al. PRD 74 094009 (2006) makes it look like this cuts off at xlab=0.1, but reading the text makes it clear that is should cover the full xlab range
     'w1': [(0.0, 1.0, 0.00, 8.0)],
     'w2': [(0.0, 1.0, 8.00, 15.0)],
     'w3': [(0.0, 0.1, 15.0, 30.0)],
@@ -48,7 +49,8 @@ barr = {
     'x': [(0.2, 1.0, 15.0, 30.0)],
     'y1': [(0.1, 1.0, 30.0, 500.)],
     'y2': [(0.1, 1.0, 500., 1e11)],
-    'z': [(0.1, 1.0, 500., 1e11)],
+    # 'z': [(0.1, 1.0, 500., 1e11)],
+    'z': [(0., 1.0, 500., 1e11)], # Table in Barr et al. PRD 74 094009 (2006) makes it look like this cuts off at xlab=0.1, but reading the text makes it clear that is should cover the full xlab range
     'ch_a': [(0.0, 0.1, 0., 1e11)],
     'ch_b': [(0.1, 1.0, 0., 1e11)],
     'ch_e': [(0.1, 1.0, 800., 1e11)],
@@ -258,13 +260,16 @@ if __name__ == '__main__':
         #TODO atmosphere
     }
 
-    # Write th output file
+    # Write the output file
     output_file = 'MCEq_flux_gradient_splines_{primary_particle}_{cosmic_ray_model}_{interaction_model}.pckl.bz2'.format( #TODO atm model, prod height, etc
         cosmic_ray_model=args.cosmic_ray_model,
         interaction_model=interaction_model,
         primary_particle=primary_particle,
     )
     output_file = os.path.join( args.output_dir, output_file )
+
+    if not os.path.exists(args.output_dir) :
+        os.mkdir(args.output_dir)
 
     pickle.dump(
         solution,
@@ -274,4 +279,4 @@ if __name__ == '__main__':
 
     #TODO store settings used in pickle file too (and make name more explicit)
 
-    print("\nFinished : Output file is %s\n" % output_file)
+    print("\nFinished : Output file is %s\n" % os.path.abspath(output_file) )
