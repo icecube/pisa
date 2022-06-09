@@ -19,7 +19,7 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.'''
- 
+
 import numpy as np
 
 def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None, hs_label=None, show_nominal=False, show_offaxis=True, show_onaxis=True, show_zero=False, show_uncertainty=True, xlim=None):
@@ -154,6 +154,7 @@ def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None,
     ax.set_xlabel(param.name)
     ax.grid(True)
     ax.legend()
+    ax.set_ylim((-0.1, 4))
 
     # Return the hypersurface
     return_values = [x_plot, y_plot]

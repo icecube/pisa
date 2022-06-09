@@ -51,7 +51,7 @@ class HypersurfaceInterpolator(object):
     After being initialized with a set of hypersurface fits produced at different
     parameters, it uses interpolation to produce a Hypersurface object
     at a given point in parameter space using scipy's `RegularGridInterpolator`.
-    
+
     The interpolation is piecewise-linear between points. All points must lie on a
     rectilinear ND grid.
 
@@ -116,7 +116,7 @@ class HypersurfaceInterpolator(object):
         # The shape of fit_cov_mat is [binning ..., fit coeffts, fit coeffts]
         self.covars_shape = reference_hs.fit_cov_mat.shape
         self.covars = None
-        
+
         # We now need to massage the fit coefficients into the correct shape
         # for interpolation.
         # The dimensions of the interpolation parameters come first, the dimensions
@@ -141,14 +141,14 @@ class HypersurfaceInterpolator(object):
                            for n in self.interp_param_spec.keys()]), msg
             self._coeff_z[idx] = hs_fits[i]["hs_fit"].fit_coeffts
             self._covar_z[idx] = hs_fits[i]["hs_fit"].fit_cov_mat
-        
+
         grid_coords = list(
             np.array([val.m for val in val_list["values"]])
             for val_list in self.interp_param_spec.values()
         )
         self.param_bounds = [(np.min(grid_vals), np.max(grid_vals))
                              for grid_vals in grid_coords]
-        # If a parameter scales as log, we give the log of the parameter to the 
+        # If a parameter scales as log, we give the log of the parameter to the
         # interpolator. We must not forget to do this again when we call the
         # interpolator later!
         for i, param_name in enumerate(self.interpolation_param_names):
@@ -171,11 +171,11 @@ class HypersurfaceInterpolator(object):
         # indeces for which the warning has already been issued.
         self.covar_bins_warning_issued = []
         self.ignore_nan = ignore_nan
-    
+
     @property
     def interpolation_param_names(self):
         return list(self.interp_param_spec.keys())
-    
+
     @property
     def param_names(self):
         return list(self._reference_state["params"].keys())
@@ -190,7 +190,7 @@ class HypersurfaceInterpolator(object):
     @property
     def num_interp_params(self):
         return len(self.interp_param_spec.keys())
-    
+
     def get_hypersurface(self, **param_kw):
         """
         Get a Hypersurface object with interpolated coefficients.
@@ -217,18 +217,18 @@ class HypersurfaceInterpolator(object):
         # if a parameter scales as log, we have to take the log here again
         for i, param_name in enumerate(self.interpolation_param_names):
             if self.interp_param_spec[param_name]["scales_log"]:
-                # We must be strict with raising errors here, because otherwise 
+                # We must be strict with raising errors here, because otherwise
                 # the Hypersurface will suddenly have NaNs everywhere! This shouldn't
                 # happen because we clip values into the valid parameter range.
                 if x[i] <= 0:
                     raise RuntimeError("A log-scaling parameter cannot become zero "
                                        "or negative!")
                 x[i] = np.log10(x[i])
-        
+
         state = copy.deepcopy(self._reference_state)
         # fit covariance matrices are stored directly in the state while fit coeffts
         # must be assigned with the setter method...
-        # need squeeze here because the RegularGridInterpolator always puts another 
+        # need squeeze here because the RegularGridInterpolator always puts another
         # dimension around the output
         state["fit_cov_mat"] = np.squeeze(self.covars(x))
         assert state["fit_cov_mat"].shape == self.covars_shape
@@ -263,7 +263,7 @@ class HypersurfaceInterpolator(object):
         # putting the coefficients in the right place in their respective parameters
         hypersurface.fit_coeffts = coeffts
         return hypersurface
-    
+
     def _make_slices(self, *xi):
         """Make slices of hypersurfaces for plotting.
 
@@ -274,7 +274,7 @@ class HypersurfaceInterpolator(object):
         Parameters
         ----------
         xi : list of ndarray
-            Points at which the hypersurfaces are to be evaluated. The length of the 
+            Points at which the hypersurfaces are to be evaluated. The length of the
             list must equal the number of parameters, each ndarray in the list must have
             the same shape (slice_shape).
 
@@ -318,7 +318,7 @@ class HypersurfaceInterpolator(object):
             n_steps : int, optional
                 number of steps to plot between minimum and maximum
             **param_kw :
-                Parameters to be fixed when producing slices. If the interpolation 
+                Parameters to be fixed when producing slices. If the interpolation
                 is in N-D, then (N-2) parameters need to be fixed to produce 2D plots
                 of the remaining 2 parameters and (N-1) need to be fixed to produce a
                 1D slice.
@@ -339,7 +339,7 @@ class HypersurfaceInterpolator(object):
         # remember whether the plots need log scale or not, by default not
         x_is_log = False
         y_is_log = False
-        
+
         # names of the variables we are plotting
         plot_names = set(self.interpolation_param_names) - set(param_kw.keys())
         if plot_dim == 1:
@@ -367,7 +367,7 @@ class HypersurfaceInterpolator(object):
                 if n == x_name:
                     slice_args.append(x_plot * x_unit)
                 elif n in param_kw.keys():
-                    # again, insure that the same unit is used that went into the 
+                    # again, insure that the same unit is used that went into the
                     # interpolation
                     param_unit = self.interp_param_spec[n]["values"][0].u
                     slice_args.append(
@@ -386,7 +386,7 @@ class HypersurfaceInterpolator(object):
                 y_is_log = True
             else:
                 y_plot = np.linspace(np.min(y_mags), np.max(y_mags), n_steps + 1)
-            
+
             x_mesh, y_mesh = np.meshgrid(x_plot, y_plot)
             slice_args = []
             for n in self.interpolation_param_names:
@@ -395,7 +395,7 @@ class HypersurfaceInterpolator(object):
                 elif n == y_name:
                     slice_args.append(y_mesh * y_unit)
                 elif n in param_kw.keys():
-                    # again, insure that the same unit is used that went into the 
+                    # again, insure that the same unit is used that went into the
                     # interpolation
                     param_unit = self.interp_param_spec[n]["values"][0].u
                     slice_args.append(
@@ -425,7 +425,7 @@ class HypersurfaceInterpolator(object):
                 cbar.ax.ticklabel_format(style='sci', scilimits=(0, 0))
                 ax[i, 0].set_ylabel(y_name)
                 ax[i, 0].set_xlabel(x_name)
-            
+
             # later column plots the elements of the covariance matrix
             for j in range(0, n_coeff):
                 z_slice = covar_slices[bin_idx][i, j]
@@ -443,7 +443,7 @@ class HypersurfaceInterpolator(object):
                     cbar.ax.ticklabel_format(style='sci', scilimits=(0, 0))
                     ax[i, j+1].set_ylabel(y_name)
                     ax[i, j+1].set_xlabel(x_name)
-        
+
         if plot_dim == 1:
             # in the 1D case, labels can be placed on the x and y axes
             for j in range(n_coeff+1):
@@ -471,8 +471,8 @@ class HypersurfaceInterpolator(object):
             ax[i, j].grid()
             if plot_dim == 1:
                 ax[i, j].legend()
-            ax[i, j].relim()
-            ax[i, j].autoscale_view()
+            # ax[i, j].relim()
+            # ax[i, j].autoscale_view()
             if not x_is_log:
                 ax[i, j].ticklabel_format(style='sci', scilimits=(0, 0), axis="x")
             if not y_is_log:
@@ -489,21 +489,21 @@ class HypersurfaceInterpolator(object):
 
 def pipeline_cfg_from_states(state_dict):
     """Recover a pipeline cfg containing PISA objects from a raw state.
-    
-    When a pipeline configuration is stored to JSON, the PISA objects turn into 
+
+    When a pipeline configuration is stored to JSON, the PISA objects turn into
     their serialized states. This function looks through the dictionary returned by
     `from_json` and recovers the PISA objects such as `ParamSet` and `MultiDimBinning`.
-        
+
     It should really become part of PISA file I/O functionality to read and write
     PISA objects inside dictionaries/lists into a JSON and be able to recover
     them...
     """
-    
+
     # TODO: Make this a core functionality of PISA
-    
+
     # This is just a mess... some objects have a `from_state` method, some take the
     # unpacked state dict as input, some take the state...
-    
+
     pipeline_cfg = collections.OrderedDict()
     for stage_key in state_dict.keys():
         # need to check all of this manually... no automatic way to do it :(
@@ -531,7 +531,7 @@ def pipeline_cfg_from_states(state_dict):
 
 def serialize_pipeline_cfg(pipeline_cfg):
     """Turn a pipeline configuration into something we can store to JSON.
-    
+
     It doesn't work by default because tuples are not allowed as keys when storing to
     JSON. All we do is to turn the tuples into strings divided by a double underscore.
     """
@@ -544,17 +544,17 @@ def serialize_pipeline_cfg(pipeline_cfg):
     # this isn't _really_ a serializable state, the objects are still PISA objects...
     # bit it will convert correctly when thrown into `to_json`
     return serializable_state
-    
-    
+
+
 def assemble_interpolated_fits(fit_directory, output_file, drop_fit_maps=False):
     """After all of the fits on the cluster are done, assemble the results to one JSON.
-    
+
     The JSON produced by this function is what `load_interpolated_hypersurfaces`
     expects.
     """
     assert os.path.isdir(fit_directory), "fit directory does not exist"
     metadata = from_json(os.path.join(fit_directory, "metadata.json"))
-    
+
     combined_data = collections.OrderedDict()
     combined_data["interpolation_param_spec"] = metadata["interpolation_param_spec"]
 
@@ -593,7 +593,7 @@ def assemble_interpolated_fits(fit_directory, output_file, drop_fit_maps=False):
 
 def get_incomplete_job_idx(fit_directory):
     """Get job indices of fits that are not flagged as successful."""
-    
+
     assert os.path.isdir(fit_directory), "fit directory does not exist"
     metadata = from_json(os.path.join(fit_directory, "metadata.json"))
     grid_shape = tuple(metadata["grid_shape"])
@@ -613,16 +613,16 @@ def get_incomplete_job_idx(fit_directory):
 
 def run_interpolated_fit(fit_directory, job_idx, skip_successful=False):
     """Run the hypersurface fit for a grid point.
-    
+
     If `skip_successful` is true, do not run if the `fit_successful` flag is already
     True.
     """
 
     #TODO a lot of this is copied from fit_hypersurfaces in hypersurface.py, would be safer to make more OAOO
     #TODO Copy the param value storage stuff from fit_hypersurfaces across in the meantime
-    
+
     assert os.path.isdir(fit_directory), "fit directory does not exist"
-    
+
     gridpoint_json = os.path.join(fit_directory, f"gridpoint_{job_idx:06d}.json.bz2")
     gridpoint_data = from_json(gridpoint_json)
 
@@ -631,9 +631,9 @@ def run_interpolated_fit(fit_directory, job_idx, skip_successful=False):
         return
 
     metadata = from_json(os.path.join(fit_directory, "metadata.json"))
-    
+
     interpolation_param_spec = metadata["interpolation_param_spec"]
-    
+
     # this is a pipeline configuration in the form of an OrderedDict
     nominal_dataset = metadata["nominal_dataset"]
     # Why can we still not load PISA objects from JSON that are inside a dict?! Grrr...
@@ -657,7 +657,7 @@ def run_interpolated_fit(fit_directory, job_idx, skip_successful=False):
     for i, n in enumerate(interpolation_param_names):
         ms = "Inconsistent parameter values at grid point!"
         assert interpolation_param_spec[n]["values"][grid_idx[i]] == param_values[n], ms
-    
+
     # now we need to adjust the values of the parameter in all pipelines for this point
     logging.info(f"updating pipelines with parameter values: {param_values}")
     for dataset in [nominal_dataset] + sys_datasets:
@@ -666,27 +666,55 @@ def run_interpolated_fit(fit_directory, job_idx, skip_successful=False):
             for param in interpolation_param_names:
                 if param in stage_cfg["params"].names:
                     stage_cfg["params"][param].value = param_values[param]
-    
+
     # these are the parameters of the hypersurface, NOT the ones we interpolate them
     # over!
     hypersurface_params = []
     for param_state in metadata["hypersurface_params"]:
         hypersurface_params.append(HypersurfaceParam.from_state(param_state))
 
+    def find_hist_stage(pipeline):
+        """Locate the index of the hist stage in a pipeline."""
+        hist_idx_found = False
+        for i, s in enumerate(pipeline.stages):
+            if s.__class__.__name__ == "hist":
+                hist_idx = i
+                hist_idx_found = True
+                break
+        if not hist_idx_found:
+            raise RuntimeError("Could not find histogram stage in pipeline, aborting.")
+        return hist_idx
+
     # We create Pipeline objects, get their outputs and then forget about the Pipeline
     # object on purpose! The memory requirement to hold all systematic sets at the same
     # time is just too large, especially on the cluster. The way we do it below we
     # only need enough memory for one dataset at a time.
-    nominal_dataset["mapset"] = Pipeline(nominal_dataset["pipeline_cfg"]).get_outputs()
-    for sys_dataset in sys_datasets:
-        sys_dataset["mapset"] = Pipeline(sys_dataset["pipeline_cfg"]).get_outputs()
-    
+
+    for dataset in [nominal_dataset] + sys_datasets:
+        pipeline = Pipeline(dataset["pipeline_cfg"])
+        dataset["mapset"] = pipeline.get_outputs()
+        # get the un-weighted event counts as well so that we can exclude bins
+        # with too little statistics
+        # First, find out which stage is the hist stage
+        hist_idx = find_hist_stage(pipeline)
+        pipeline.stages[hist_idx].unweighted = True
+        dataset["mapset_unweighted"] = pipeline.get_outputs()
+    del pipeline
+
     # Merge maps according to the combine regex, if one was provided
     combine_regex = metadata["combine_regex"]
     if combine_regex is not None:
-        nominal_dataset["mapset"] = nominal_dataset["mapset"].combine_re(combine_regex)
-        for sys_dataset in sys_datasets:
-            sys_dataset["mapset"] = sys_dataset["mapset"].combine_re(combine_regex)
+        for dataset in [nominal_dataset] + sys_datasets:
+            dataset["mapset"] = dataset["mapset"].combine_re(combine_regex)
+            dataset["mapset_unweighted"] = dataset["mapset_unweighted"].combine_re(combine_regex)
+
+    minimum_mc = metadata["minimum_mc"]
+    # Remove bins (i.e. set their count to zero) that have too few MC events
+    for dataset in sys_datasets + [nominal_dataset]:
+        for map_name in dataset["mapset"].names:
+            insuff_mc = dataset["mapset_unweighted"][map_name].nominal_values < minimum_mc
+            # Setting the hist to zero sets both nominal value and std_dev to zero
+            dataset["mapset"][map_name].hist[insuff_mc] = 0.
 
     hypersurface_fit_kw = metadata["hypersurface_fit_kw"]
     hypersurfaces = collections.OrderedDict()
@@ -722,13 +750,13 @@ def run_interpolated_fit(fit_directory, job_idx, skip_successful=False):
 
     gridpoint_data["hs_fit"] = hypersurfaces
     gridpoint_data["fit_successful"] = True
-    
+
     to_json(gridpoint_data, gridpoint_json)
 
 
 def prepare_interpolated_fit(
     nominal_dataset, sys_datasets, params, fit_directory, interpolation_param_spec,
-    combine_regex=None, log=False, **hypersurface_fit_kw
+    combine_regex=None, log=False, minimum_mc=0, **hypersurface_fit_kw
 ):
     '''
     Writes steering files for fitting hypersurfaces on a grid of arbitrary parameters.
@@ -766,7 +794,7 @@ def prepare_interpolated_fit(
         combine similar species. Must be something that can be passed to the
         `MapSet.combine_re` function (see that functions docs for more details). Choose
         `None` is do not want to perform this merging.
-    
+
     interpolation_param_spec : collections.OrderedDict
         Specification of parameter grid that hypersurfaces should be interpolated over.
         The dict should have the following form::
@@ -779,6 +807,9 @@ def prepare_interpolated_fit(
         The hypersurfaces will be fit on an N-dimensional rectilinear grid over
         parameters 1 to N. The flag `scales_log` indicates that the interpolation over
         that parameter should happen in log-space.
+
+    minimum_mc : int, optional
+        Minimum number of un-weighted MC events required in each bin.
 
     hypersurface_fit_kw : kwargs
         kwargs will be passed on to the calls to `Hypersurface.fit`
@@ -794,7 +825,7 @@ def prepare_interpolated_fit(
     assert isinstance(sys_datasets, collections.Sequence)
     assert isinstance(params, collections.Sequence)
     assert isinstance(fit_directory, str)
-    # there must not be any ambiguity between fitting the hypersurfaces and 
+    # there must not be any ambiguity between fitting the hypersurfaces and
     # interpolating them later
     msg = "interpolation params must be specified as a dict with ordered keys"
     assert isinstance(interpolation_param_spec, collections.OrderedDict), msg
@@ -810,10 +841,10 @@ def prepare_interpolated_fit(
         if v["scales_log"] and np.min(mags) <= 0:
             raise ValueError("A log-scaling parameter cannot be equal to or less "
                 "than zero!")
-    
+
     # Check output format and path
     assert os.path.isdir(fit_directory), "fit directory does not exist"
-    
+
     # Check formatting of datasets is as expected
     all_datasets = [nominal_dataset] + sys_datasets
     for dataset in all_datasets:
@@ -822,7 +853,7 @@ def prepare_interpolated_fit(
         assert isinstance(dataset["pipeline_cfg"], (str, collections.Mapping))
         assert "sys_params" in dataset
         assert isinstance(dataset["sys_params"], collections.Mapping)
-        
+
         dataset["pipeline_cfg"] = serialize_pipeline_cfg(dataset["pipeline_cfg"])
 
     # Check params
@@ -855,11 +886,12 @@ def prepare_interpolated_fit(
         hypersurface_params=params,
         combine_regex=combine_regex,
         log=log,
+        minimum_mc=minimum_mc,
         hypersurface_fit_kw=hypersurface_fit_kw
     )
-    
+
     to_json(metadata, os.path.join(fit_directory, "metadata.json"))
-    
+
     # we write on JSON file for each grid point
     for job_idx, grid_idx in enumerate(np.ndindex(grid_shape)):
         # Although this is technically redundant, we store the parameter values

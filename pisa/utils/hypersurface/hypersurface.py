@@ -278,12 +278,12 @@ class Hypersurface(object):
         self.fit_cov_mat = None
         self.fit_method = None
 
-        # Also add option store the pipeline param values used to generate the 
+        # Also add option store the pipeline param values used to generate the
         # maps that are the inouts to the fits for these hypersurfaces. They are
         # not actually used in the fit and so this variable is generally `None`,
         # but a user can set them externally during the fitting process so that
-        # they can be stored for for future reference 
-        self.fit_pipeline_param_values = None  
+        # they can be stored for for future reference
+        self.fit_pipeline_param_values = None
 
         # Serialization
         self._serializable_state = None
@@ -514,10 +514,10 @@ class Hypersurface(object):
             Include empty bins in the fit. If True, empty bins are included with value 0
             and sigma 1.
             Default: False
-        
+
         keep_maps : bool
             Keep maps used to make the fit. If False, maps will be set to None after
-            the fit is complete. This helps to reduce the size of JSONS if the 
+            the fit is complete. This helps to reduce the size of JSONS if the
             Hypersurface is to be stored on disk.
 
         ref_bin_idx : tuple
@@ -541,7 +541,8 @@ class Hypersurface(object):
         for sys_map, sys_param_vals in zip(sys_maps, sys_param_values):
             assert isinstance(sys_map, Map)
             assert isinstance(sys_param_vals, collections.abc.Mapping)
-            assert set(sys_param_vals.keys()) == set(self.param_names)
+            msg = f"self.param_names: {self.param_names}\n sys_param_vals.keys(): {sys_param_vals.keys()}"
+            assert set(sys_param_vals.keys()) == set(self.param_names), msg
             assert all([isinstance(k, str) for k in sys_param_vals.keys()])
             assert all([np.isscalar(v) for v in sys_param_vals.values()])
             assert sys_map.binning == nominal_map.binning
@@ -1540,8 +1541,8 @@ class HypersurfaceParam(object):
     def from_state(cls, state):
 
         # Define param init kwargs
-        # Special handling for `coeff_prior_sigma`, which was missing in older 
-        # files (due to a bug in `serializable_state`) so need to handle this 
+        # Special handling for `coeff_prior_sigma`, which was missing in older
+        # files (due to a bug in `serializable_state`) so need to handle this
         # for backwards compatibility
         param_init_kw = dict(
             name=state.pop("name"),
@@ -1556,13 +1557,13 @@ class HypersurfaceParam(object):
 
         # Create the param
         param = cls(**param_init_kw)
-        
+
         # Define rest of state
         for k in list(state.keys()):
             setattr(param, k, state.pop(k))
-        
+
         return param
-        
+
 '''
 Hypersurface fitting and loading helper functions
 '''
@@ -1582,7 +1583,7 @@ def get_hypersurface_file_name(hypersurface, tag):
 
 
 def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, combine_regex=None,
-                      log=True, **hypersurface_fit_kw):
+                      log=True, minimum_mc=0, minimum_weight=0, **hypersurface_fit_kw):
     '''
     A helper function that a user can use to fit hypersurfaces to a bunch of simulation
     datasets, and save the results to a file. Basically a wrapper of Hypersurface.fit,
@@ -1629,6 +1630,16 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
         combine similar species. Must be something that can be passed to the
         `MapSet.combine_re` function (see that functions docs for more details). Choose
         `None` is do not want to perform this merging.
+
+    minimum_mc : int, optional
+        Minimum number of unweighted MC events required in each bin. If the number
+        of unweighted MC events in a bin in any MC set is less than this number, the
+        value is set to exactly zero and will be excluded from the fit.
+
+    minimum_weight : float, optional
+        Minimum weight per bin. Bins with a total summed weight of less than this
+        number are excluded from the fit. Intended use is to exclude extremely small
+        values from KDE histograms that would pull the fit to zero.
 
     hypersurface_fit_kw : kwargs
         kwargs will be passed on to the calls to `Hypersurface.fit`
@@ -1687,10 +1698,42 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
     # Generate MapSets
     #
 
+    def find_hist_stage(pipeline):
+        """Locate the index of the hist stage in a pipeline."""
+        hist_idx_found = False
+        kde_idx_found = False
+        for i, s in enumerate(pipeline.stages):
+            if s.__class__.__name__ == "hist":
+                hist_idx = i
+                hist_idx_found = True
+                break
+            if s.__class__.__name__ == "kde":
+                hist_idx = i
+                kde_idx_found = True
+                break
+        if not hist_idx_found and not kde_idx_found:
+            raise RuntimeError("Could not find hist or kde stage in pipeline, aborting.")
+        return hist_idx, kde_idx_found
+
     # Get maps and param values from nominal pipeline
     nominal_pipeline = Pipeline(nominal_dataset["pipeline_cfg"])
+    logging.info("Nominal pipeline parameters:\n" + repr(nominal_pipeline.params))
     pipeline_param_values = { p.name:p.value for p in nominal_pipeline.params }
     nominal_dataset["mapset"] = nominal_pipeline.get_outputs()  # return_sum=False)
+    # get the un-weighted event counts as well so that we can exclude bins
+    # with too little statistics
+    # First, find out which stage is the hist stage
+    hist_idx, is_kde = find_hist_stage(nominal_pipeline)
+    # minimum MC is only applicable to hist stage, not to KDE
+    if not is_kde:
+        nominal_pipeline.stages[hist_idx].unweighted = True
+        nominal_dataset["mapset_unweighted"] = nominal_pipeline.get_outputs()
+    else:
+        nominal_dataset["mapset_unweighted"] = None
+        # Bootstrapping is required to calculate errors on the histograms
+        assert nominal_pipeline.stages[hist_idx].bootstrap, (
+            "Hypersurfaces can only be fit to KDE histograms if bootstrapping is enabled."
+        )
     del nominal_pipeline # Save memory
 
     # Loop over sys datasets and grap the maps from them too
@@ -1700,15 +1743,46 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
         for param in sys_pipeline.params :
             assert param.value == pipeline_param_values[param.name], "Mismatch in pipeline param '%s' value between nominal and systematic pipelines : %s != %s" % (param.name, param.value, pipeline_param_values[param.name])
         sys_dataset["mapset"] = sys_pipeline.get_outputs()  # return_sum=False)
+        # get the un-weighted event counts as well so that we can exclude bins
+        # with too little statistics
+        # First, find out which stage is the hist stage
+        hist_idx, is_kde = find_hist_stage(sys_pipeline)
+        if not is_kde:
+            sys_pipeline.stages[hist_idx].unweighted = True
+            sys_dataset["mapset_unweighted"] = sys_pipeline.get_outputs()
+        else:
+            sys_dataset["mapset_unweighted"] = None
+            assert sys_pipeline.stages[hist_idx].bootstrap, (
+                "Hypersurfaces can only be fit to KDE histograms if bootstrapping is "
+                "enabled."
+            )
         del sys_pipeline
 
     # Merge maps according to the combine regex, if one was provided
     if combine_regex is not None:
-        nominal_dataset["mapset"] = nominal_dataset["mapset"].combine_re(
-            combine_regex)
+        nominal_dataset["mapset"] = nominal_dataset["mapset"].combine_re(combine_regex)
+        if nominal_dataset["mapset_unweighted"] is not None:
+            nominal_dataset["mapset_unweighted"] = (
+                nominal_dataset["mapset_unweighted"].combine_re(combine_regex)
+            )
         for sys_dataset in sys_datasets:
-            sys_dataset["mapset"] = sys_dataset["mapset"].combine_re(
-                combine_regex)
+            sys_dataset["mapset"] = sys_dataset["mapset"].combine_re(combine_regex)
+            if sys_dataset["mapset_unweighted"] is None: continue
+            sys_dataset["mapset_unweighted"] = (
+                sys_dataset["mapset_unweighted"].combine_re(combine_regex)
+            )
+
+    # Remove bins (i.e. set their count to zero) that have too few MC events or too little
+    # total weight
+    for dataset in sys_datasets + [nominal_dataset]:
+        for map_name in dataset["mapset"].names:
+            if dataset["mapset_unweighted"] is not None:
+                insuff_mc = dataset["mapset_unweighted"][map_name].nominal_values < minimum_mc
+            else:
+                insuff_mc = np.zeros(dataset["mapset"][map_name].nominal_values.shape, dtype=bool)
+            insuff_weight = dataset["mapset"][map_name].nominal_values < minimum_weight
+            # Setting the hist to zero sets both nominal value and std_dev to zero
+            dataset["mapset"][map_name].hist[insuff_mc | insuff_weight] = 0.
 
     # TODO check every mapset has the same elements
 
@@ -1757,7 +1831,7 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
             **hypersurface_fit_kw
         )
 
-        # Record the pipeline params used to generate the maps used for 
+        # Record the pipeline params used to generate the maps used for
         # the fits, for data provenance purposes only
         hypersurface.fit_pipeline_param_values = pipeline_param_values
 
@@ -1865,8 +1939,10 @@ def load_hypersurfaces(input_file, expected_binning=None):
     # Check binning
     if expected_binning is not None:
         for hypersurface in hypersurfaces.values():
-            assert hypersurface.binning.hash == expected_binning.hash, "Binning of loaded hypersurfaces does not match the expected binning"
-                    
+            if not hypersurface.binning.hash == expected_binning.hash:
+                for a, b, in zip(hypersurface.binning.dims, expected_binning.dims):
+                    assert a == b, "Incompatible binning dimension %s and %s"%(a, b)
+
     return hypersurfaces
 
 

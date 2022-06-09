@@ -272,7 +272,7 @@ PARAM_RE = re.compile(
     re.IGNORECASE
 )
 
-PARAM_ATTRS = ['range', 'prior', 'fixed', 'tex']
+PARAM_ATTRS = ['range', 'prior', 'fixed', 'tex', 'scales_as_log']
 
 STAGE_SEP = '.'
 
@@ -470,7 +470,7 @@ def parse_param(config, section, selector, fullname, pname, value):
     # Search for explicit attr specifications
     if config.has_option(section, fullname + '.fixed'):
         kwargs['is_fixed'] = config.getboolean(section, fullname + '.fixed')
-        
+
     if config.has_option(section, fullname + '.scales_as_log'):
         kwargs['scales_as_log'] = config.getboolean(section, fullname + '.scales_as_log')
 

@@ -859,7 +859,7 @@ class Map(object):
         if fmt is not None:
             for fmt_ in fmt:
                 path = os.path.join(outdir, fname + '.' + fmt_)
-                fig.savefig(os.path.join(*path))
+                fig.savefig(path)
                 logging.debug('>>>> Plot for inspection saved at %s', path)
 
         return fig, ax, pcmesh, colorbar
@@ -3123,7 +3123,29 @@ def test_Map():
     m_rebinned = m1.rebin(m1.binning.downsample(n_ebins, n_czbins))
     assert m_rebinned.hist[0, 0] == np.sum(m1.hist)
 
-
+    # Test fluctuate
+    _ = m1.fluctuate(method="poisson")  # just ensure that None random_state is handled
+    m1_seed0 = m1.fluctuate(method="poisson", random_state=0)
+    m1_seed1 = m1.fluctuate(method="poisson", random_state=1)
+    m1_seed0_reprod = m1.fluctuate(method="poisson", random_state=0)
+    for m in [m1_seed0, m1_seed1, m1_seed0_reprod]:
+        # The full comparison has to be ON for all maps, otherwise we would only
+        # compare the hash value, which doesn't change when maps are fluctuated.
+        # Because the value of full_comparison is included in the comparison, two 
+        # maps will not be considered equal if only one of them has
+        # `full_comparison=True`.
+        # TODO: How does this make sense?
+        m.full_comparison = True
+    logging.debug("Fluctuated map with seed 0:")
+    logging.debug(m1_seed0)
+    logging.debug("Fluctuated map with seed 1:")
+    logging.debug(m1_seed1)
+    logging.debug("Fluctuated map with seed 0, reproduced:")
+    logging.debug(m1_seed0_reprod)
+    
+    assert m1_seed0 == m1_seed0_reprod
+    assert not (m1_seed0 == m1_seed1)
+    
     # Test sum()
     m1 = Map(
         name='x',
@@ -3283,7 +3305,22 @@ def test_MapSet():
     m2 = Map(name='twos', hist=2*np.ones(binning.shape), binning=binning,
              hash='xyz')
     ms01 = MapSet([m1, m2])
+    
+    # Test fluctuate
+    _ = ms01.fluctuate(method="poisson")  # just ensure that None random_state is handled
+    ms01_seed0 = ms01.fluctuate(method="poisson", random_state=0)
+    ms01_seed1 = ms01.fluctuate(method="poisson", random_state=1)
+    ms01_seed0_reprod = ms01.fluctuate(method="poisson", random_state=0)
+    logging.debug("Fluctuated map set with seed 0:")
+    logging.debug(ms01_seed0)
+    logging.debug("Fluctuated map set with seed 1:")
+    logging.debug(ms01_seed1)
+    logging.debug("Fluctuated map set with seed 0, reproduced:")
+    logging.debug(ms01_seed0_reprod)
 
+    assert ms01_seed0 == ms01_seed0_reprod
+    assert not (ms01_seed0 == ms01_seed1)
+    
     # Test rebin
     _ = ms01.rebin(m1.binning.downsample(3))
     ms01_rebinned = ms01.rebin(m1.binning.downsample(6, 3))
