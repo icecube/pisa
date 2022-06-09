@@ -23,6 +23,7 @@ from pisa.utils.log import logging
 from pisa.utils.profiler import profile, line_profile
 from pisa.utils.numba_tools import WHERE, myjit
 from pisa.utils.resources import find_resource
+import copy
 
 
 
