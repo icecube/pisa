@@ -1138,6 +1138,9 @@ class Map(object):
                     loc=orig_hist[valid_mask], scale=sigma[valid_mask],
                     random_state=random_state
                 )
+                if np.any(gauss[valid_mask] < 0.):
+                    logging.warn("Some bins after Gauss fluctuation has negative values, taking absolute for these bins")
+                    gauss[valid_mask]=np.abs(gauss[valid_mask], dtype=np.float64)
 
                 hist_vals = np.empty_like(orig_hist, dtype=np.float64)
                 hist_vals[valid_mask] = poisson.rvs(
