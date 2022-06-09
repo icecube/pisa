@@ -299,19 +299,18 @@ class mceq_barr(Stage):
             true_log_energy = np.log(container["true_energy"])
             true_abs_coszen = np.abs(container["true_coszen"])
             nu_flux_nominal = container["nu_flux_nominal"]
+            nu_flux_mceq = container["nu_flux_mceq"]
             gradients = container["gradients"]
             nubar = container["nubar"]
-            nu_flux_mceq = container["nu_flux_mceq"]
 
             #
             # Nominal flux
             #
 
-
             
-            #if not self.use_honda_nominal_flux :
+            # Evaluate MCEq splines regardless of whether MCEq is used as the nominal model (need them to get relative gradients) :
             if True:
-                # Evaluate splines to get nominal flux
+                # Evaluate splines to get the MCEq flux
                 # Need to correctly map nu/nubar and flavor to the output arrays
 
                 # Note that nominal flux is stored multiple times (once per Barr parameter)
@@ -341,13 +340,13 @@ class mceq_barr(Stage):
                         grid=False,
                     )
 
+            container.mark_changed("nu_flux_mceq")
+
             if not self.use_honda_nominal_flux:
-                nu_flux_nominal = nu_flux_mceq
+                container["nu_flux_nominal"] = copy.deepcopy(nu_flux_mceq)
 
             # Tell the smart arrays we've changed the nominal flux values on the host
             container.mark_changed("nu_flux_nominal")
-            container.mark_changed("nu_flux_mceq")
-
 
             #
             # Flux gradients
