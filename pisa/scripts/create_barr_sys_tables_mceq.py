@@ -59,7 +59,6 @@ barr = {
 
 def barr_unc(xmat, egrid, pname, value):
     """Implementation of hadronic uncertainties as in Barr et al. PRD 74 094009 (2006)
-
     The names of parameters are explained in Fig. 2 and Fig. 3 in the paper."""
 
     # Energy dependence
@@ -185,6 +184,13 @@ if __name__ == '__main__':
         CR_vers = "4-gen"
     else:
         CR_vers = None
+
+    # TK: implementing DPMJET tunes (disabling charm + neutral kaon fix)
+    if interaction_model == 'DPMJETIII191':
+        config.adv_set["fix_dpmjet_neutral_kaons"] = True
+        config.adv_set["disabled_particles"] += [411, 421, 431, -411, -421, -431]
+        config.adv_set["disable_direct_leptons"] = True
+        print('Disabled charm in DPMJETIII191 and applied the fix for neutral kaons.')
 
     mceq_run = MCEqRun(
         #provide the string of the interaction model
