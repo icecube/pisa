@@ -853,6 +853,66 @@ class BasicAnalysis(object):
             "algorithm": "NLOPT_GN_ISRES",
             "population": 100,
         }
+
+    **Custom fitting methods**
+
+    Custom fitting methods are added by subclassing the analysis. The fit function
+    name has to follow the scheme `_fit_{method}` where `method` is the name of the
+    fit method. For instance, the function for `scipy` is called `_fit_scipy` and can
+    be called by setting `"method": "scipy"` in the fit strategy dict.
+
+    The function has to accept the parameters `data_dist`, `hypo_maker`, `metric`,
+    `external_priors_penalty`, `method_kwargs`, and `local_fit_kwargs`. See docstring
+    of `fit_recursively` for descriptions of these arguments. The return value
+    of the function must be a `HypoFitResult` object. As an example, the following
+    sub-class of the BasicAnalysis has a custom fit method that, nonsensically,
+    always sets 42 degrees as the starting value for theta23:
+    ::
+        class SubclassedAnalysis(BasicAnalysis):
+
+            def _fit_nonsense(
+                self, data_dist, hypo_maker, metric,
+                external_priors_penalty, method_kwargs, local_fit_kwargs
+            ):
+                logging.info("Starting nonsense fit (setting theta23 to 42 deg)...")
+
+                for pipeline in hypo_maker:
+                    if "theta23" in pipeline.params.free.names:
+                        pipeline.params.theta23.value = 42 * ureg["deg"]
+
+                best_fit_info = self.fit_recursively(
+                    data_dist, hypo_maker, metric, external_priors_penalty,
+                    local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
+                    local_fit_kwargs["local_fit_kwargs"]
+                )
+
+                return best_fit_info
+
+    Now, the `nonsense` fit method can be used and nested with any other fit method
+    like so:
+    ::
+        ana = SubclassedAnalysis()
+        local_minuit = OrderedDict(
+            method="iminuit",
+            method_kwargs={
+                "tol": 10,
+            },
+            local_fit_kwargs=None
+        )
+
+        local_nonsense_minuit = OrderedDict(
+            method="nonsense",
+            method_kwargs=None,
+            local_fit_kwargs=local_minuit
+        )
+
+        fit_result = ana.fit_recursively(
+            data_dist,
+            distribution_maker,
+            "chi2",
+            None,
+            **local_nonsense_minuit
+        )
     """
 
     def __init__(self):
@@ -3059,7 +3119,35 @@ def test_basic_analysis(pprint=False):
         method="poisson", random_state=0
     )
 
-    ana = BasicAnalysis()
+    #### Test subclassing
+    # It should be trivial to add a fit method to the BasicAnalysis class and use
+    # it by passing its name (without the "_fit_" prefix) to the dictionary.
+    class SubclassedAnalysis(BasicAnalysis):
+
+        def _fit_nonsense(
+            self, data_dist, hypo_maker, metric,
+            external_priors_penalty, method_kwargs, local_fit_kwargs
+        ):
+            """A custom, nonsensical fit method.
+
+            This method does nothing except to set theta23 to 42 deg for no reason.
+            """
+            logging.info("Starting nonsense fit (setting theta23 to 42 deg)...")
+
+            for pipeline in hypo_maker:
+                if "theta23" in pipeline.params.free.names:
+                    pipeline.params.theta23.value = 42 * ureg["deg"]
+
+            best_fit_info = self.fit_recursively(
+                data_dist, hypo_maker, metric, external_priors_penalty,
+                local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
+                local_fit_kwargs["local_fit_kwargs"]
+            )
+
+            return best_fit_info
+
+    ana = SubclassedAnalysis()
+
     ana.pprint = pprint
 
     # Test that global optimization with CRS2 is deterministic as long as a seed
@@ -3069,8 +3157,8 @@ def test_basic_analysis(pprint=False):
         method="nlopt",
         method_kwargs={
             "algorithm": "NLOPT_GN_CRS2_LM",
-            "ftol_rel": 1e-2,
-            "ftol_abs": 1e-2,
+            "ftol_rel": 1e-1,
+            "ftol_abs": 1e-1,
             "population": 5,
             "seed": 0,
         },
@@ -3183,11 +3271,17 @@ def test_basic_analysis(pprint=False):
         local_fit_kwargs=None
     )
 
+    local_nonsense_minuit = OrderedDict(
+        method="nonsense",
+        method_kwargs=None,
+        local_fit_kwargs=local_minuit
+    )
+
     best_of = OrderedDict(
         method="best_of",
         method_kwargs=None,
         local_fit_kwargs=[
-            local_minuit,
+            local_nonsense_minuit,
             grid_scan
         ]
     )
