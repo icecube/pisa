@@ -690,7 +690,7 @@ class BasicAnalysis(object):
     runs a scipy minimizer to optimize locally in each octant. The arguments that would
     produce that result when passed to `fit_recursively` are:
     ::
-        method = "fit_octants"
+        method = "octants"
         method_kwargs = {
             "angle": "theta23"
             "inflection_point": 45 * ureg.deg
@@ -706,13 +706,13 @@ class BasicAnalysis(object):
     quadrant fit for `theta23`, making 4 fits in total. Then we would nest the
     quadrant fit for `deltacp24` inside the octant fit like so:
     ::
-        method = "fit_octants"
+        method = "octants"
         method_kwargs = {
             "angle": "theta23"
             "inflection_point": 45 * ureg.deg
         }
         local_fit_kwargs = {
-            "method": "fit_octants",
+            "method": "octants",
             "method_kwargs": {
                 "angle": "deltacp24",
                 "inflection_point": 90 * ureg.deg,
@@ -738,7 +738,7 @@ class BasicAnalysis(object):
             "fix_grid_params": False,
         }
         local_fit_kwargs = {
-            "method": "fit_octants",
+            "method": "octants",
             "method_kwargs": {
                 "angle": "theta23",
                 "inflection_point": 45 * ureg.deg,
@@ -790,7 +790,7 @@ class BasicAnalysis(object):
         )
 
     . Of course, you can also nest the `nlopt_settings` dictionary in any of the
-    `fit_octants`, `fit_ranges` and so on by passing it as `local_fit_kwargs`.
+    `octants`, `ranges` and so on by passing it as `local_fit_kwargs`.
 
     *Adding constraints*
 
@@ -891,8 +891,8 @@ class BasicAnalysis(object):
 
         method : str
             Name of the sub-routine to be run. Currently, the options are `scipy`,
-            `fit_octants`, `best_of`, `grid_scan`, `constrained`,
-            `fit_ranges`, `condition`, `iminuit`, and `nlopt`.
+            `octants`, `best_of`, `grid_scan`, `constrained`,
+            `ranges`, `condition`, `iminuit`, and `nlopt`.
 
         method_kwargs : dict
             Any keyword arguments taken by the sub-routine. May be `None` if the
@@ -945,17 +945,9 @@ class BasicAnalysis(object):
             )
 
         # If made it here, we have a fit to do...
-
-        # Determine the fit function to use
-        if method in self.__class__._fit_methods.keys():
-            fit_function = self.__class__._fit_methods[method]
-        elif method in self.__class__._additional_fit_methods.keys():
-            fit_function =  self.__class__._additional_fit_methods[method]
-        else:
-            raise ValueError(f"Unknown fit method: {method}")
-
+        fit_function = getattr(self, f"_fit_{method}")
         # Run the fit function
-        return fit_function(self, data_dist, hypo_maker, metric, external_priors_penalty,
+        return fit_function(data_dist, hypo_maker, metric, external_priors_penalty,
                             method_kwargs, local_fit_kwargs)
 
     def _fit_octants(self, data_dist, hypo_maker, metric, external_priors_penalty,
@@ -1101,8 +1093,8 @@ class BasicAnalysis(object):
                      f"{all_fit_metric_vals[best_idx]}")
         return all_fit_results[best_idx]
 
-    def _fit_conditionally(self, data_dist, hypo_maker, metric,
-                           external_priors_penalty, method_kwargs, local_fit_kwargs):
+    def _fit_condition(self, data_dist, hypo_maker, metric,
+                       external_priors_penalty, method_kwargs, local_fit_kwargs):
         """Run one fit strategy or the other depending on a condition being true.
 
         As in the constrained fit, the condition can be a callable or a string that
@@ -1812,8 +1804,8 @@ class BasicAnalysis(object):
             logging.info(f"found best fit: {fit_info.params.free}")
         return fit_info
 
-    def _fit_minuit(self, data_dist, hypo_maker, metric,
-                    external_priors_penalty, method_kwargs, local_fit_kwargs):
+    def _fit_iminuit(self, data_dist, hypo_maker, metric,
+                     external_priors_penalty, method_kwargs, local_fit_kwargs):
         """Run the Minuit minimizer to modify hypo dist maker's free params
         until the data_dist is most likely to have come from this hypothesis.
 
@@ -2469,21 +2461,6 @@ class BasicAnalysis(object):
         """
         self._nit += 1
 
-    _fit_methods = {
-        "scipy": _fit_scipy,
-        "fit_octants": _fit_octants,
-        "best_of": _fit_best_of,
-        "grid_scan": _fit_grid_scan,
-        "constrained": _fit_constrained,
-        "fit_ranges": _fit_ranges,
-        "staged": _fit_staged,
-        "condition": _fit_conditionally,
-        "iminuit": _fit_minuit,
-        "nlopt": _fit_nlopt,
-    }
-    _additional_fit_methods = {}
-
-
 class Analysis(BasicAnalysis):
     """Analysis class for "canonical" IceCube/DeepCore/PINGU analyses.
 
@@ -2637,7 +2614,7 @@ class Analysis(BasicAnalysis):
             if reset_free:
                 hypo_maker.reset_free()
             if check_octant:
-                method = "fit_octants"
+                method = "octants"
                 method_kwargs = {
                     "angle": "theta23",
                     "inflection_point": 45 * ureg.deg,
@@ -3217,7 +3194,7 @@ def test_basic_analysis(pprint=False):
 
     # a standard analysis strategy with an octant flip at 45 deg in theta23
     standard_analysis = OrderedDict(
-        method="fit_octants",
+        method="octants",
         method_kwargs={
             "angle": "theta23",
             "inflection_point": 45 * ureg.deg,
@@ -3231,7 +3208,7 @@ def test_basic_analysis(pprint=False):
 
     # fit different ranges in mass splitting, and to the octant fits in each range
     fit_in_ranges = OrderedDict(
-        method="fit_ranges",
+        method="ranges",
         method_kwargs={
             "param_name": "deltam31",
             "ranges": np.array([[0.001, 0.004], [0.004, 0.007]]) * ureg["eV^2"],
