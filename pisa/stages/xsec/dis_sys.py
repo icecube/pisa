@@ -20,6 +20,7 @@ from pisa.utils.numba_tools import WHERE
 from pisa import ureg
 import itertools
 from pisa.stages.reco.simple_param import logistic_function
+from scipy.interpolate import interp1d
 
 
 class dis_sys(Stage): # pylint: disable=invalid-name
@@ -97,15 +98,14 @@ class dis_sys(Stage): # pylint: disable=invalid-name
             else:
                 raise ValueError('Can not determine whether container with name "%s" is pf type CC or NC based on its name'%container.name)
 
-            print(container.name, container.keys)
             nu = 'NuBar' if 'bar' in container.name else 'Nu'
 
             lgE = np.log10(container['true_energy'])
             bjorken_y = container['bjorken_y']
             dis = container['dis']
 
-            lgE_range = np.linspace(np.min(lgE), np.max(lgE), len(np.unique(lgE)))
-            bjorken_y_range = np.linspace(np.min(bjorken_y), np.max(bjorken_y), len(np.unique(bjorken_y)))
+            lgE_range = np.linspace(0., 3, 1001)
+            bjorken_y_range = np.linspace(0, 1, 51)
 
             w_tot = np.ones_like(lgE)
 
@@ -128,49 +128,23 @@ class dis_sys(Stage): # pylint: disable=invalid-name
                     w_tot[extrapolation_mask] = np.polyval(poly_coef, lgE_min)  # note Numpy broadcasts
                 elif self.extrapolation_type == 'linear':
                     w_tot[extrapolation_mask] = np.polyval(lin_coef, lgE[extrapolation_mask])
-                elif self.extrapolation_type == 'smooth_linear':
-
-                    min_intp_idx = np.argmin(np.abs(lgE_range - 2))
-                    intp_indices = np.arange(min_intp_idx - 5, min_intp_idx + 6, 1)
-                    intp_scales = np.linspace(0, 1, len(intp_indices))
-                    intp_array = np.ones((len(lgE_range), len(intp_scales)))
-                    he_array = intp_scales * intp_array
-                    le_array = intp_scales[::-1] * intp_array
-
-                    new_he_array = np.zeros_like(lgE_range)
-                    new_he_array[np.max(intp_indices) + 1:] = 1.
-                    new_he_array[intp_indices] = he_array[min_intp_idx]
-
-                    new_le_array = np.zeros_like(lgE_range)
-                    new_le_array[:np.min(intp_indices)] = 1.
-                    new_le_array[intp_indices] = le_array[min_intp_idx]
-
-                    w_he = np.polyval(poly_coef, lgE)
-                    w_le = np.ones_like(w_he)
-
-                    w_tot = w_le.reshape(-1, len(bjorken_y_range)) * new_le_array[:, None] + \
-                    w_he.reshape(-1, len(bjorken_y_range)) * new_he_array[:, None]
-
-                    w_tot = w_tot.flatten()
-
+                
                 elif self.extrapolation_type == 'logistic':
 
-                    transition_idx = np.argmin(np.abs(lgE_range - 2))
-                    linspaced_scales = np.linspace(0, 1, len(lgE_range))
-                    intp_scales = logistic_function(1, 50, linspaced_scales[transition_idx], linspaced_scales)
-                    # Renormalizing to 1
-                    intp_scales = intp_scales / np.max(intp_scales)
-                    he_array = intp_scales
-                    le_array = 1 - intp_scales
-
                     w_he = np.polyval(poly_coef, lgE)
                     w_le = np.ones_like(w_he)
 
-                    w_tot = w_le.reshape(-1, len(bjorken_y_range)) * le_array[:, None] + \
-                    w_he.reshape(-1, len(bjorken_y_range)) * he_array[:, None]
+                    sigmoid_renormalize = lambda new_min, new_max, sigmoid: ((new_max - new_min) * (sigmoid - np.min(sigmoid)) / (np.max(sigmoid) - np.min(sigmoid))) + new_min
+                    
+                    # "c" is the log10(halfmax threshold energy) of the logistic function, and "b" is the smoothness parameter
+                    # (smaller b = smoother transition)
+                    smooth_func = logistic_function(a=1, b=5, c=2.0, x=lgE_range)
+                    smooth_func = sigmoid_renormalize(new_min=0, new_max=1, sigmoid=smooth_func)
+                    smooth_interp = interp1d(lgE_range, smooth_func)
 
-                    w_tot = w_tot.flatten()
+                    logistic_weight = smooth_interp(lgE)
 
+                    w_tot = (1 - logistic_weight) * w_le + logistic_weight * w_he
 
                 else:
                     raise ValueError('Unknown extrapolation type "%s"'%self.extrapolation_type)
@@ -207,12 +181,7 @@ class dis_sys(Stage): # pylint: disable=invalid-name
                 w_diff_he = weight_func.ev(lgE, bjorken_y)
                 w_diff_le = np.ones_like(w_diff_he)
 
-                w_diff = w_diff_le.reshape(-1, len(bjorken_y_range)) * le_array[:, None] + \
-                w_diff_he.reshape(-1, len(bjorken_y_range)) * he_array[:, None]
-
-                w_diff = w_diff.flatten()
-
-
+                w_diff = (1 - logistic_weight) * w_diff_le + logistic_weight * w_diff_he
 
             # make centered arround 0, and set to 0 for all non-DIS events
             w_diff = (w_diff - 1) * dis
@@ -226,17 +195,13 @@ class dis_sys(Stage): # pylint: disable=invalid-name
 
         for container in self.data:
 
-            print(type(container['weights']))
-
-            out_arr = np.array(container['weights'])
-
             apply_dis_sys(
                 container['dis_correction_total'],
                 container['dis_correction_diff'],
                 FTYPE(dis_csms),
-                out=out_arr,
+                out=container['weights'],
             )
-            container['weights'] = out_arr
+
             container.mark_changed('weights')
 
 
