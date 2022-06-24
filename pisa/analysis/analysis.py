@@ -1429,7 +1429,8 @@ class BasicAnalysis(object):
         # Store a copy of the original parameter such that we can reset the ranges
         # and nominal values after the fit is done.
         original_param = deepcopy(hypo_maker.params[method_kwargs["param_name"]])
-        logging.info(f"original parameter:\n{original_param}")
+        if not self.blindness:
+            logging.info(f"original parameter:\n{original_param}")
         # this is the param we play around with (NOT same object in memory)
         mod_param = deepcopy(original_param)
         # The way this works is that we change the range and the set the rescaled
@@ -1448,7 +1449,8 @@ class BasicAnalysis(object):
             # nominal value
             mod_param.nominal_value = mod_param.value
             logging.info(f"now fitting on interval {i+1}/{len(method_kwargs['ranges'])}")
-            logging.info(f"parameter with modified range:\n{mod_param}")
+            if not self.blindness:
+                logging.info(f"parameter with modified range:\n{mod_param}")
             # use update_param_values instead of hypo_maker.update_params so that we
             # don't overwrite the internal memory reference
             update_param_values(
@@ -1468,8 +1470,9 @@ class BasicAnalysis(object):
         else:
             best_idx = np.argmin(all_fit_metric_vals)
 
-        logging.info(f"Found best fit being in interval {best_idx+1} with metric "
-                     f"{all_fit_metric_vals[best_idx]}")
+        if not self.blindness:
+            logging.info(f"Found best fit being in interval {best_idx+1} with metric "
+                         f"{all_fit_metric_vals[best_idx]}")
         best_fit_result = all_fit_results[best_idx]
         # resetting the range of the parameter we played with
         # This is one rare instance where we manipulate the parameters of a fit result.
