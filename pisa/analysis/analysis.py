@@ -1004,6 +1004,10 @@ class BasicAnalysis(object):
                 include_detailed_metric_info=True,
             )
 
+        if method in ["fit_octants", "fit_ranges"]:
+            method = method.split("_")[1]
+            logging.warn(f"fit method 'fit_{method}' has been re-named to '{method}'")
+
         # If made it here, we have a fit to do...
         fit_function = getattr(self, f"_fit_{method}")
         # Run the fit function
@@ -3117,6 +3121,7 @@ def test_basic_analysis(pprint=False):
     dm = DistributionMaker([config, config2])
     dm.select_params('nh')
 
+    dm.pipelines[0].params["aeff_scale"].value = 1.5
     # make data distribution to fit against
     data_dist = dm.get_outputs(return_sum=True).fluctuate(
         method="poisson", random_state=0
@@ -3163,6 +3168,7 @@ def test_basic_analysis(pprint=False):
             "ftol_rel": 1e-1,
             "ftol_abs": 1e-1,
             "population": 5,
+            "maxeval": 20,
             "seed": 0,
         },
         local_fit_kwargs=None,
@@ -3291,7 +3297,7 @@ def test_basic_analysis(pprint=False):
 
     # a standard analysis strategy with an octant flip at 45 deg in theta23
     standard_analysis = OrderedDict(
-        method="octants",
+        method="fit_octants",
         method_kwargs={
             "angle": "theta23",
             "inflection_point": 45 * ureg.deg,
@@ -3305,7 +3311,7 @@ def test_basic_analysis(pprint=False):
 
     # fit different ranges in mass splitting, and to the octant fits in each range
     fit_in_ranges = OrderedDict(
-        method="ranges",
+        method="fit_ranges",
         method_kwargs={
             "param_name": "deltam31",
             "ranges": np.array([[0.001, 0.004], [0.004, 0.007]]) * ureg["eV^2"],
