@@ -19,7 +19,7 @@ from pisa.utils.fileio import from_file
 from pisa.utils.numba_tools import WHERE
 from pisa import ureg
 import itertools
-from pisa.stages.reco.simple_param import logistic_function
+from pisa.stages.utils.interpolation import logistic_function
 from scipy.interpolate import interp1d
 
 
