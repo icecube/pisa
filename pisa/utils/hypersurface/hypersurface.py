@@ -697,6 +697,15 @@ class Hypersurface(object):
 
                 logging.debug("Skipping masked bin {bin_idx}")
 
+                p0_intercept = self.intercept[bin_idx]
+                p0_param_coeffts = [param.get_fit_coefft(bin_idx=bin_idx, coefft_idx=i_cft)
+                                    for param in list(self.params.values())
+                                    for i_cft in range(param.num_fit_coeffts)]
+                if fix_intercept:
+                    p0 = np.array(p0_param_coeffts, dtype=FTYPE)
+                else:
+                    p0 = np.array([p0_intercept] + p0_param_coeffts, dtype=FTYPE)
+
                 # Not fitting, add empty variables
                 popt = np.full_like(p0, np.NaN)
                 pcov = np.NaN
