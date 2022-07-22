@@ -35,6 +35,11 @@ class kde(Stage):
         be applied on the histograms after this stage.
     bootstrap : bool
         Use the bootstrapping technique to estimate errors on the KDE histograms.
+    linearize_log_dims : bool
+        If True (default), calculate the KDE for a dimension that is binned
+        logarithmically on the logarithm of the sample values. This generally results
+        in better agreement of the total normalization of the KDE'd histograms to the
+        sum of weights.
 
     Notes
     -----
@@ -55,6 +60,7 @@ class kde(Stage):
         bootstrap=False,
         bootstrap_niter=10,
         bootstrap_seed=None,
+        linearize_log_dims=True,
         **std_kargs,
     ):
 
@@ -65,6 +71,7 @@ class kde(Stage):
         self.stack_pid = stack_pid
         self.stash_hists = stash_hists
         self.stash_valid = False
+        self.linearize_log_dims = linearize_log_dims
         self.bootstrap = bootstrap
         self.bootstrap_niter = int(bootstrap_niter)
         if bootstrap_seed is not None:
@@ -93,7 +100,12 @@ class kde(Stage):
         ), f"KDE stage needs a binning as `apply_mode`, but is {self.apply_mode}"
 
         # For dimensions that are logarithmic, we add a linear binning in
-        # the logarithm.
+        # the logarithm (but only if this feature is enabled)
+
+        if not self.linearize_log_dims:
+            self.regularized_apply_mode = self.apply_mode
+            return
+
         dimensions = []
         for dim in self.apply_mode:
             if dim.is_lin:
@@ -139,7 +151,7 @@ class kde(Stage):
             sample = []
             dims_log = [d.is_log for d in self.apply_mode]
             for dim, is_log in zip(self.regularized_apply_mode, dims_log):
-                if is_log:
+                if is_log and self.linearize_log_dims:
                     container.representation = "log_events"
                     sample.append(container[dim.name])
                 else:

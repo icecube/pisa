@@ -4,6 +4,7 @@ itself, because the import of a class named `kde` directly in the main scope ove
 the `kde` module and causes an import error.
 """
 
+import numpy as np
 from copy import deepcopy
 from argparse import ArgumentParser
 from pisa.utils.log import logging, set_verbosity, Levels
@@ -60,11 +61,26 @@ def test_kde_bootstrapping(verbosity=Levels.WARN):
     # no errors in baseline since there is no bootstrapping enabled
     kde_pipe_cfg["pipeline"]["output_key"] = "weights"
 
-    # get a baseline
+    # get map, but without the linearization
+    kde_pipe_cfg[("utils", "kde")]["linearize_log_dims"] = False
+    dmaker = DistributionMaker([kde_pipe_cfg])
+    map_baseline_no_linearization = dmaker.get_outputs(return_sum=True)[0]
+
+    # get a baseline (with linearization, which we will use from here on out)
+    kde_pipe_cfg[("utils", "kde")]["linearize_log_dims"] = True
     dmaker = DistributionMaker([kde_pipe_cfg])
     map_baseline = dmaker.get_outputs(return_sum=True)[0]
     logging.debug(f"Baseline KDE'd map:\n{map_baseline}")
 
+    # assert that linearization make a difference at all
+    total_no_lin = np.sum(map_baseline_no_linearization.nominal_values)
+    total_with_lin = np.sum(map_baseline.nominal_values)
+    assert not (total_no_lin == total_with_lin)
+    # but also that the difference isn't huge (< 5% difference in total bin count)
+    # --> This will fail if one forgets to *not* take the log when linearization
+    #     is turned off, for example. In that case, most bins will be empty, because
+    #     the binning would be lin while the KDE would be log.
+    assert np.abs(total_no_lin / total_with_lin - 1.0) < 0.05
     # Make sure that different seeds produce different maps, and that the same seed will
     # produce the same map.
     # We enable bootstrapping now, without re-loading everything, to save time.
