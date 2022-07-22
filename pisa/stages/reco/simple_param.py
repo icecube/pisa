@@ -59,7 +59,7 @@ def dict_lookup_wildcard(dict_obj,key) :
         The value found corresponding to the the requested key
     '''
 
-    assert isinstance(dict_obj,collections.Mapping)
+    assert isinstance(dict_obj,collections.abc.Mapping)
     assert isinstance(key,str)
 
     matches = collections.OrderedDict([ (k,v) for k,v in dict_obj.items() if fnmatch.fnmatch(key,k) ])
