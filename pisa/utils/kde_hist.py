@@ -124,7 +124,7 @@ def get_hist(
     # the bin range for reflection
     bin_points = []
     for b in binning:
-        c = unp.nominal_values(b.weighted_centers)
+        c = b.weighted_centers.m
         if b.name == coszen_name:
             # how many bins to add for reflection
             l = int(len(c) * coszen_reflection)
