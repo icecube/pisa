@@ -211,7 +211,7 @@ class Pipeline(object):
         ):
             try:
                 name, settings = item
-                
+
                 if isinstance(name, str):
                     if name == 'pipeline':
                         continue
@@ -229,9 +229,17 @@ class Pipeline(object):
                 )
 
                 # Import service's module
-                module_path = f"pisa.stages.{stage_name}.{service_name}"
-                logging.trace("Importing service module: %s", module_path)
-                module = import_module(module_path)
+                logging.trace(f"Importing service module: {stage_name}.{service_name}")
+                try:
+                    module_path = f"pisa.stages.{stage_name}.{service_name}"
+                    module = import_module(module_path)
+                except:
+                    logging.debug(
+                        f"Module {stage_name}.{service_name} not found in PISA, trying "
+                        "to import from external definition."
+                    )
+                    module_path = f"{stage_name}.{service_name}"
+                    module = import_module(module_path)
 
                 # Get service class from module
                 service_cls = getattr(module, service_name)

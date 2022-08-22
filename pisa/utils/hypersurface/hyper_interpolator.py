@@ -93,7 +93,7 @@ class HypersurfaceInterpolator(object):
         assert isinstance(interpolation_param_spec, collections.OrderedDict), msg
         for k, v in interpolation_param_spec.items():
             assert set(v.keys()) == {"values", "scales_log"}
-            assert isinstance(v["values"], collections.Sequence)
+            assert isinstance(v["values"], collections.abc.Sequence)
         self.interp_param_spec = interpolation_param_spec
         reference_hs = hs_fits[0]["hs_fit"]
         # we are going to produce the hypersurface from a state that is the same
@@ -519,7 +519,7 @@ def pipeline_cfg_from_states(state_dict):
         pipeline_cfg[tuple_key] = copy.deepcopy(state_dict[stage_key])
         for k in ["calc_mode", "apply_mode", "node_mode"]:
             if k in pipeline_cfg[tuple_key]:
-                if isinstance(pipeline_cfg[tuple_key][k], collections.Mapping):
+                if isinstance(pipeline_cfg[tuple_key][k], collections.abc.Mapping):
                     pipeline_cfg[tuple_key][k] = MultiDimBinning(
                         **pipeline_cfg[tuple_key][k])
         if "params" in pipeline_cfg[tuple_key].keys():
@@ -822,8 +822,8 @@ def prepare_interpolated_fit(
     params = copy.deepcopy(params)
 
     # Check types
-    assert isinstance(sys_datasets, collections.Sequence)
-    assert isinstance(params, collections.Sequence)
+    assert isinstance(sys_datasets, collections.abc.Sequence)
+    assert isinstance(params, collections.abc.Sequence)
     assert isinstance(fit_directory, str)
     # there must not be any ambiguity between fitting the hypersurfaces and
     # interpolating them later
@@ -831,7 +831,7 @@ def prepare_interpolated_fit(
     assert isinstance(interpolation_param_spec, collections.OrderedDict), msg
     for k, v in interpolation_param_spec.items():
         assert set(v.keys()) == {"values", "scales_log"}
-        assert isinstance(v["values"], collections.Sequence)
+        assert isinstance(v["values"], collections.abc.Sequence)
         # We need to extract the magnitudes from the Quantities to avoid a
         # UnitStrippedWarning. For some reason, doing `np.min(v["values"])` messes up
         # the data structure inside the values in a way that can cause a crash when we
@@ -848,11 +848,11 @@ def prepare_interpolated_fit(
     # Check formatting of datasets is as expected
     all_datasets = [nominal_dataset] + sys_datasets
     for dataset in all_datasets:
-        assert isinstance(dataset, collections.Mapping)
+        assert isinstance(dataset, collections.abc.Mapping)
         assert "pipeline_cfg" in dataset
-        assert isinstance(dataset["pipeline_cfg"], (str, collections.Mapping))
+        assert isinstance(dataset["pipeline_cfg"], (str, collections.abc.Mapping))
         assert "sys_params" in dataset
-        assert isinstance(dataset["sys_params"], collections.Mapping)
+        assert isinstance(dataset["sys_params"], collections.abc.Mapping)
 
         dataset["pipeline_cfg"] = serialize_pipeline_cfg(dataset["pipeline_cfg"])
 

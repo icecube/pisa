@@ -53,6 +53,16 @@ echo "--------------------------------------------------------------------------
 echo ""
 echo ""
 
+echo "=============================================================================="
+echo "Running test_kde_stage.py"
+echo "=============================================================================="
+python $BASEDIR/test_kde_stage.py -v
+echo "------------------------------------------------------------------------------"
+echo "Finished Running test_kde_stage.py"
+echo "------------------------------------------------------------------------------"
+echo ""
+echo ""
+
 
 # TODO: all files except setup.py and __init__.py that are listed below should
 # have a command-line test defined further down in this script (i.e., these are

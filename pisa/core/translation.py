@@ -21,7 +21,7 @@ import numba
 from numba import njit, prange
 # When binnings are fully regular, we can use this for super speed
 import fast_histogram as fh
-from collections import Iterable
+from collections.abc import Iterable
 
 from concurrent.futures import ThreadPoolExecutor
 

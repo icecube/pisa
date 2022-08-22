@@ -1527,19 +1527,19 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
     #
 
     # Check types
-    assert isinstance(sys_datasets, collections.Sequence)
-    assert isinstance(params, collections.Sequence)
+    assert isinstance(sys_datasets, collections.abc.Sequence)
+    assert isinstance(params, collections.abc.Sequence)
     assert isinstance(output_dir, str)
     assert isinstance(tag, str)
 
     # Check formatting of datasets is as expected
     all_datasets = [nominal_dataset] + sys_datasets
     for dataset in all_datasets:
-        assert isinstance(dataset, collections.Mapping)
+        assert isinstance(dataset, collections.abc.Mapping)
         assert "pipeline_cfg" in dataset
-        assert isinstance(dataset["pipeline_cfg"], (str, collections.Mapping))
+        assert isinstance(dataset["pipeline_cfg"], (str, collections.abc.Mapping))
         assert "sys_params" in dataset
-        assert isinstance(dataset["sys_params"], collections.Mapping)
+        assert isinstance(dataset["sys_params"], collections.abc.Mapping)
 
     # Check params
     assert len(params) >= 1
@@ -1765,7 +1765,7 @@ def load_hypersurfaces(input_file, expected_binning=None):
 
         # Load file
         input_data = from_json(input_file)
-        assert isinstance(input_data, collections.Mapping)
+        assert isinstance(input_data, collections.abc.Mapping)
 
         # Testing various cases to support older files as well as modern ones...
         if "sys_list" in input_data:

@@ -1183,6 +1183,12 @@ class OneDimBinning(object):
                       my_normed_bin_edges.difference(other_normed_bin_edges))
 
         return False
+    
+    def assert_compat(self, other):
+        """Assert that this binning is compatible with `other`."""
+        
+        if not self.is_compat(other):
+            raise AssertionError(f"incompatible {self.name} binning")
 
     @property
     @_new_obj
@@ -3098,6 +3104,7 @@ def test_MultiDimBinning():
     import shutil
     import tempfile
     import time
+    import pytest
     # needed so that eval(repr(mdb)) works
     from numpy import array, float32, float64 # pylint: disable=unused-variable
 
@@ -3334,7 +3341,35 @@ def test_MultiDimBinning():
     _ = [b for b in mdb_3d_reco.iterbins()]
     tprofile.info('Time to iterate over %d bins: %.6f sec',
                   mdb_3d_reco.size, time.time() - t0)
-
+    
+    # Test compatibility test
+    mdb1 = MultiDimBinning([
+        OneDimBinning(name='energy', num_bins=40, is_log=True, domain=[1, 80]*ureg.GeV),
+        OneDimBinning(name='coszen', num_bins=40, is_lin=True, domain=[-1, 1])
+    ])
+    mdb2 = MultiDimBinning([
+        OneDimBinning(name='energy', num_bins=40, is_log=True, domain=[1, 80]*ureg.GeV),
+        OneDimBinning(name='coszen', num_bins=40, is_lin=True, domain=[-1, 1])
+    ])
+    # These should be compatible
+    assert mdb1.is_compat(mdb2)
+    mdb1.assert_compat(mdb2)
+    assert mdb2.is_compat(mdb1)
+    mdb2.assert_compat(mdb1)
+    
+    mdb2 = MultiDimBinning([
+        OneDimBinning(name='energy', num_bins=20, is_log=True, domain=[1, 80]*ureg.GeV),
+        OneDimBinning(name='coszen', num_bins=20, is_lin=True, domain=[-1, 1])
+    ])
+    
+    # In this direction, they should *not* be compatible
+    assert not mdb1.is_compat(mdb2)
+    with pytest.raises(AssertionError) as ae:
+        mdb1.assert_compat(mdb2)
+    # In this direction, they *should* be compatible (downsampling)
+    assert mdb2.is_compat(mdb1)
+    mdb2.assert_compat(mdb1)
+    
     logging.info('<< PASS : test_MultiDimBinning >>')
 
 
