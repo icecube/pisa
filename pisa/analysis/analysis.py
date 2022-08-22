@@ -462,7 +462,7 @@ class HypoFitResult(object):
                 self.detailed_metric_info = [self.get_detailed_metric_info(
                     data_dist=data_dist[i], hypo_asimov_dist=self.hypo_asimov_dist[i],
                     params=hypo_maker.distribution_makers[i].params, metric=metric[i],
-                    other_metrics=other_metrics, detector_name=hypo_maker.det_names[i]
+                    other_metrics=other_metrics, detector_name=hypo_maker.det_names[i], hypo_maker=hypo_maker
                 ) for i in range(len(data_dist))]
             else: # DistributionMaker object
                 if 'generalized_poisson_llh' == metric[0]:
@@ -924,8 +924,19 @@ class BasicAnalysis(object):
         # Grab the hypo map
         hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
         
+        if isinstance(metric, str):
+            metric = [metric]
+        # Check number of used metrics
+        if hypo_maker.__class__.__name__ == "Detectors":
+            if len(metric) == 1: # One metric for all detectors
+                metric = list(metric) * len(hypo_maker.distribution_makers)
+            elif len(metric) != len(hypo_maker.distribution_makers):
+                raise IndexError('Number of defined metrics does not match with number of detectors.')
+        else: # DistributionMaker object
+            assert len(metric) == 1
+        
         # Check if the hypo matches data
-        if data_dist.allclose(hypo_asimov_dist) :
+        if hypo_maker.__class__.__name__ != "Detectors" and data_dist.allclose(hypo_asimov_dist) :
 
             msg = 'Initial hypo matches data, no need for fit'
             logging.info(msg)
@@ -950,7 +961,7 @@ class BasicAnalysis(object):
                 num_distributions_generated=0,
                 include_detailed_metric_info=True,
             )
-
+        
         # If made it here, we have a fit to do...
 
         # Determine the fit function to use
@@ -2396,6 +2407,7 @@ class BasicAnalysis(object):
         #
         try:
             if hypo_maker.__class__.__name__ == "Detectors":
+                hypo_maker.update_params(hypo_maker.params)
                 metric_val = 0
                 for i in range(len(hypo_maker.distribution_makers)):
                     data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],
