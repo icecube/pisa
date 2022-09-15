@@ -1166,6 +1166,10 @@ class Map(object):
                     loc=orig_hist[valid_mask], scale=sigma[valid_mask],
                     random_state=random_state
                 )
+                if np.any(hist_vals[valid_mask] < 0.):
+                    logging.warn("Some bins after Gauss fluctuation has negative values, taking absolute for these bins")
+                    hist_vals[valid_mask] = np.abs(hist_vals[valid_mask], dtype=np.float64)
+
                 hist_vals[nan_at] = np.nan
                 error_vals = np.empty_like(orig_hist, dtype=np.float64)
                 error_vals[valid_mask] = np.sqrt(orig_hist[valid_mask])
