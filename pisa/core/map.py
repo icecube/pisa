@@ -491,7 +491,7 @@ class Map(object):
         self.assert_compat(error_hist)
         super().__setattr__(
             '_hist',
-            unp.uarray(self._hist, np.ascontiguousarray(error_hist))
+            unp.uarray(self.nominal_values, np.ascontiguousarray(error_hist))
         )
 
     # TODO: make this return an OrderedDict to organize all of the returned
@@ -1166,6 +1166,10 @@ class Map(object):
                     loc=orig_hist[valid_mask], scale=sigma[valid_mask],
                     random_state=random_state
                 )
+                if np.any(hist_vals[valid_mask] < 0.):
+                    logging.warn("Some bins after Gauss fluctuation has negative values, taking absolute for these bins")
+                    hist_vals[valid_mask] = np.abs(hist_vals[valid_mask], dtype=np.float64)
+
                 hist_vals[nan_at] = np.nan
                 error_vals = np.empty_like(orig_hist, dtype=np.float64)
                 error_vals[valid_mask] = np.sqrt(orig_hist[valid_mask])
@@ -1511,6 +1515,33 @@ class Map(object):
                              expected_values=expected_values)
 
         return np.sum(stats.llh(actual_values=self.hist,
+                                expected_values=expected_values))
+
+
+    def saturated_llh(self, expected_values, binned=False):
+        """Calculate the total log-likelihood value between this map and the
+        map described by `expected_values`; self is taken to be the "actual
+        values" (or (pseudo)data), and `expected_values` are the expectation
+        values for each bin.
+
+        Parameters
+        ----------
+        expected_values : numpy.ndarray or Map of same dimension as this
+
+        binned : bool
+
+        Returns
+        -------
+        total_llh : float or binned_llh if binned=True
+
+        """
+        expected_values = reduceToHist(expected_values)
+
+        if binned:
+            return stats.saturated_llh(actual_values=self.hist,
+                             expected_values=expected_values)
+
+        return np.sum(stats.saturated_llh(actual_values=self.hist,
                                 expected_values=expected_values))
 
     def mcllh_mean(self, expected_values, binned=False):
@@ -3060,10 +3091,10 @@ class MapSet(object):
         return MapSet(maps=new_maps, name=self.name, tex=self.tex, hash=None,
                       collate_by_name=self.collate_by_name)
 
-    def llh_per_map(self, expected_values):
+    def llh_per_map(self, expected_values):  
         return self.apply_to_maps('llh', expected_values)
 
-    def llh_total(self, expected_values):
+    def llh_total(self, expected_values):   
         return np.sum(self.llh(expected_values))
 
     def set_poisson_errors(self):
