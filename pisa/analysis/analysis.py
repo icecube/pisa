@@ -417,8 +417,8 @@ class BoundedRandomDisplacement(object):
 class HypoFitResult(object):
     """Holds all relevant information about a fit result."""
     
-    _state_attrs = ["metric", "metric_val", "params", "hypo_asimov_dist",
-                    "detailed_metric_info", "minimizer_time",
+    _state_attrs = ["metric", "metric_val", "params", "param_selections", 
+                    "hypo_asimov_dist", "detailed_metric_info", "minimizer_time",
                     "num_distributions_generated", "minimizer_metadata", "fit_history"]
     
     # TODO: initialize from serialized state
@@ -443,6 +443,7 @@ class HypoFitResult(object):
         self.hypo_asimov_dist = None
         if hypo_maker is not None:
             self.params = hypo_maker.params
+            self.param_selections = hypo_maker.param_selections
             # Record the distribution with the optimal param values
             self.hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
         self.detailed_metric_info = None
