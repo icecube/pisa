@@ -773,7 +773,6 @@ class Hypersurface(object):
 
                 # Check if have NaNs/Infs
                 if np.any(~np.isfinite(y_to_use)):  # TODO also handle missing sigma
-
                     # Not fitting, add empty variables
                     popt = np.full_like(p0, np.NaN)
                     pcov = np.NaN
@@ -851,13 +850,15 @@ class Hypersurface(object):
                     # if there is
                     # no bound in that direction.
                     fit_bounds = []
-                    if intercept_bounds is None:
+                    if fix_intercept:
+                        logging.debug("fixed intercept needs no bounds")
+                    elif intercept_bounds is None:
                         fit_bounds.append(tuple([None, None]))
                     else:
                         assert (len(intercept_bounds) == 2) and (
                             np.ndim(intercept_bounds) == 1), "intercept bounds must be given as 2-tuple"
                         fit_bounds.append(intercept_bounds)
-
+                    
                     for param in self.params.values():
                         if param.bounds is None:
                             fit_bounds.extend(
@@ -910,10 +911,11 @@ class Hypersurface(object):
                     m.errordef = Minuit.LEAST_SQUARES
                     m.migrad()
                     m.hesse()
-
                     popt = np.array(m.values)
                     try:
-                        pcov = np.array(m.covariance)
+                        pcov = np.atleast_1d(np.array(m.covariance))
+                        if not m.covariance:
+                            pcov = np.full((pcov.shape), np.nan)
                     except:
                         logging.warn(f"HESSE call failed for bin {bin_idx}, covariance matrix unavailable")
                         pcov = np.full((len(p0), len(p0)), np.nan)
@@ -921,7 +923,6 @@ class Hypersurface(object):
                         logging.debug(m.fmin)
                         logging.debug(m.params)
                         logging.debug(m.covariance)
-
             #
             # Re-format fit results
             #
@@ -952,7 +953,6 @@ class Hypersurface(object):
                 self.fit_cov_mat[bin_idx] = np.pad(pcov, ((1, 0), (1, 0)))
             else:
                 self.fit_cov_mat[bin_idx] = pcov
-
         #
         # chi2
         #
@@ -1908,11 +1908,14 @@ def load_hypersurfaces(input_file, expected_binning=None):
     # PISA hypersurface files
     #
 
+    logging.info(f"Loading non-interpolated hypersurfaces from file: {input_file}")
+    hypersurfaces = None
     if input_file.endswith("json") or input_file.endswith("json.bz2"):
 
         # Load file
         input_data = from_json(input_file)
         assert isinstance(input_data, collections.Mapping)
+        logging.info(f"Reading file complete, generating hypersurfaces...")
 
         # Testing various cases to support older files as well as modern ones...
         if "sys_list" in input_data:
@@ -1951,6 +1954,8 @@ def load_hypersurfaces(input_file, expected_binning=None):
             if not hypersurface.binning.hash == expected_binning.hash:
                 for a, b, in zip(hypersurface.binning.dims, expected_binning.dims):
                     assert a == b, "Incompatible binning dimension %s and %s"%(a, b)
+
+    logging.info(f"Generated hypersurfaces")
 
     return hypersurfaces
 
