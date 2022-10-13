@@ -919,6 +919,13 @@ class Map(object):
         return {'hist': new_hist, 'binning': new_binning}
 
     @_new_obj
+    def round2int(self):
+        binning = self.binning
+        nominal_values = np.rint(self.nominal_values)
+        std_devs = self.std_devs
+        return {'hist': unp.uarray(nominal_values, std_devs)}
+
+    @_new_obj
     def sum(self, axis=None, keepdims=False):
         """Sum over dimensions corresponding to `axis` specification. Similar
         in behavior to `numpy.sum` method.
