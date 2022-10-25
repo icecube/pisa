@@ -482,6 +482,7 @@ def conv_llh(actual_values, expected_values):
         `expected_values`.
 
     """
+    in_array_shape = np.shape(actual_values)
     actual_values = unp.nominal_values(actual_values).ravel()
     sigma = unp.std_devs(expected_values).ravel()
     expected_values = unp.nominal_values(expected_values).ravel()
