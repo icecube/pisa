@@ -18,8 +18,11 @@ from numpy import (
     float32, float64,
     int0, int8, int16, int32, int64,
     uint0, uint8, uint16, uint32, uint64,
-    complex64, complex128, complex256,
+    complex64, complex128
 )
+# The alias only exists on Linux x86_64, see
+# https://numpy.org/devdocs/reference/arrays.scalars.html#numpy.clongdouble
+from numpy import clongdouble as complex256
 import numpy as np
 from pint import UnitRegistry
 
