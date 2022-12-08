@@ -76,8 +76,11 @@ OPTIONAL_MODULES = (
 
 REQUIRED_MODULES = (
     "pisa",
-    "pip",
+    # It is important that setuptools comes *before* pip! If pip is imported before
+    # setuptools, it will trigger an assertion error when the version of setuptools is
+    # >= 60.0.0. This bug is mentioned in https://github.com/pypa/setuptools/issues/3089
     "setuptools",
+    "pip",
     "numpy",
     "decorator",
     "kde",

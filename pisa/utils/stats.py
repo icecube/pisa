@@ -413,6 +413,8 @@ def conv_poisson(k, l, s, nsigma=3, steps=50):
     """
     # Replace 0's with small positive numbers to avoid inf in log
     l = max(SMALL_POS, l)
+    k = max(SMALL_POS,k) #To avoid the zero values and nan values , added on 20/10/2022 
+    s = max(SMALL_POS,s) #To avoid the zero values and nan values , added on 20/10/2022 
     st = 2*(steps + 1)
     conv_x = np.linspace(-nsigma*s, +nsigma*s, st)[:-1]+nsigma*s/(st-1.)
     conv_y = log_smear(conv_x, s)
@@ -475,19 +477,27 @@ def conv_llh(actual_values, expected_values):
 
     Returns
     -------
-    total log of convoluted poisson likelihood
+        conv_llh : numpy.ndarray of same shape as the inputs                       
+        conv_llh corresponding to each pair of elements in `actual_values` and
+        `expected_values`.
 
     """
+    in_array_shape = np.shape(actual_values)
     actual_values = unp.nominal_values(actual_values).ravel()
     sigma = unp.std_devs(expected_values).ravel()
     expected_values = unp.nominal_values(expected_values).ravel()
     triplets = np.array([actual_values, expected_values, sigma]).T
     norm_triplets = np.array([actual_values, actual_values, sigma]).T
     total = 0
+    bin_wise_conv_llh =[]
     for i in range(len(triplets)):
         total += np.log(max(SMALL_POS, norm_conv_poisson(*triplets[i]))) # FIXME? (cf. pylint)
         total -= np.log(max(SMALL_POS, norm_conv_poisson(*norm_triplets[i]))) # FIXME? (cf. pylint)
-    return total
+        bin_wise_conv_llh.append(total)
+        total =0
+    bin_wise_conv_llh_np = np.array(bin_wise_conv_llh) #21/10/2022
+    bin_wise_conv_llh_np = bin_wise_conv_llh_np.reshape(in_array_shape) # reshaping the array to match inputs #21/10/2022
+    return bin_wise_conv_llh_np
 
 def barlow_llh(actual_values, expected_values):
     """Compute the Barlow LLH taking into account finite statistics.
