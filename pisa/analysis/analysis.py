@@ -364,6 +364,28 @@ def update_param_values(
             if update_is_fixed:
                 pipeline.params[p.name].is_fixed = p.is_fixed
 
+def update_param_values_detector(
+    hypo_maker,
+    params,
+    update_nominal_values=False,
+    update_range=False,
+    update_is_fixed=False
+):
+    """
+    Modification of the update_param_values function to use with the Detectors class.
+    """
+    for distribution_maker in hypo_maker:
+        update_param_values(distribution_maker, params)
+
+    if isinstance(params, Param): params = ParamSet(params) # just for the following
+
+    for p in params.names: # now update params with det_names inside
+        for i, det_name in enumerate(hypo_maker.det_names):
+            if det_name in p:
+                cp = deepcopy(params[p])
+                cp.name = cp.name.replace('_'+det_name, "")
+                update_param_values(hypo_maker._distribution_makers[i], cp)
+
 # TODO: move this to a central location prob. in utils
 class Counter(object):
     """Simple counter object for use as a minimizer callback."""
@@ -2477,7 +2499,7 @@ class BasicAnalysis(object):
         #
         try:
             if hypo_maker.__class__.__name__ == "Detectors":
-                hypo_maker.update_params(hypo_maker.params)
+                update_param_values_detector(hypo_maker, hypo_maker.params) #updates values for ALL detectors
                 metric_val = 0
                 for i in range(len(hypo_maker.distribution_makers)):
                     data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],
