@@ -914,8 +914,6 @@ class Hypersurface(object):
                     popt = np.array(m.values)
                     try:
                         pcov = np.atleast_1d(np.array(m.covariance))
-                        if not m.covariance:
-                            pcov = np.full((pcov.shape), np.nan)
                     except:
                         logging.warn(f"HESSE call failed for bin {bin_idx}, covariance matrix unavailable")
                         pcov = np.full((len(p0), len(p0)), np.nan)
