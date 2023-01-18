@@ -1046,7 +1046,7 @@ class BasicAnalysis(object):
             # store so we can reset to the values we currently have rather than
             # resetting free parameters back to their nominal value after the octant
             # check
-            minimizer_start_params = hypo_maker.params
+            minimizer_start_params = deepcopy(hypo_maker.params)
 
         tolerance = method_kwargs["tolerance"] if "tolerance" in method_kwargs else None
         # Get new angle parameters each limited to one octant

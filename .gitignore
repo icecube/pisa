@@ -36,3 +36,4 @@ pisa.egg-info
 
 # IPython notebook backups
 .ipynb_checkpoints
+pisa/utils/llh_defs/poisson_gamma_mixtures.c
