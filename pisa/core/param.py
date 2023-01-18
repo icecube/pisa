@@ -17,6 +17,7 @@ from shutil import rmtree
 import sys
 from tabulate import tabulate
 import tempfile
+from typing import Callable
 
 import numpy as np
 import pint
@@ -571,6 +572,93 @@ class Param:
         state = jsons.from_json(filename=filename)
         return cls(**state)
 
+class DerivedParam(Param):
+    r"""
+    This is a meta-parameter param that implements a param depending on other Params. 
+
+
+    """
+    def __init__(self, 
+            name, 
+            value, 
+            prior, 
+            range, 
+            is_fixed, 
+            unique_id=None, 
+            is_discrete=False, 
+            scales_as_log=False, 
+            nominal_value=None, 
+            tex=None, 
+            help=''):
+        super().__init__(name, value, prior, range, is_fixed, unique_id, is_discrete, scales_as_log, nominal_value, tex, help)
+
+        if not is_fixed:
+            logging.fatal("Cannot set a derived parameter as free")
+
+        self._depends_names = ()
+        self._dependson = ()
+        self._configured = False
+        self._callable = None
+    
+
+
+    @callable.setter
+    def callable(self, what:Callable):
+        """
+            Note - the callable should take a list of Params
+        """
+        self._callable = what
+    @property
+    def callable(self)->Callable:
+        if self._callable is None:
+            logging.fatal("No set callable for DerivedParam {}".format(self.name))
+        return self._callable
+        
+    @property
+    def depends_names(self):
+        return self._depends_names
+    
+    @property
+    def dependson(self)->'tuple[Param]':
+        if not self._configured:
+            logging.fatal("Cannot access unconfigured Derived parameter!")
+        return self._dependson
+
+    def prior_penalty(self, metric):
+        """
+            We don't want to double-count the penalty from derived params
+        """
+        return 0.0
+
+    @dependson.setter
+    def dependson(self, *params):
+        working = []
+        for param in params:
+            if isinstance(param, Mapping):
+                param = Param(**param)
+            if isinstance(param, Param):
+                working.append(param)
+            else:
+                raise TypeError("Unhandled type {}: {}".format(type(param), param))
+        self._configured = True
+        self._dependson = tuple(working)
+        self._depends_names = (param.name for param in working)
+
+    @property 
+    def value(self):
+        """
+            The value of this Derived Parameter is determined by calling the configured 'callable' with the parameters it depends on
+        """
+        return self.callable(*self.dependson)
+
+    @property
+    def _rescaled_value(self):
+        if self.is_discrete:
+            return self.value
+
+    @_rescaled_value.setter
+    def _rescaled_value(self):
+        logging.fatal("Cannot set rescaled value of a derived parameter")
 
 # TODO: temporary modification of parameters via "with" syntax?
 # TODO: union, |, intersection, &, difference, -, symmetric_difference, ^, copy
@@ -743,6 +831,138 @@ class ParamSet(MutableSequence, Set):
         if idx < 0 or idx >= len(self):
             raise ValueError('%s not found in ParamSet' % (value,))
         return idx
+
+    def add_covariance(self, covmat:dict)->None:
+        """
+        Correlates several Params. 
+            It works by taking the existing params, and rotating them into a new, uncorrelated, basis state. 
+            New parameters are added in the new basis, and the old params are replaced with derived params
+            The fits therefore are done in the uncorrelated basis 
+        
+
+        Parameters
+        ----------
+        covmat : dict
+            A two-deep nested dictionary for covariances between Params
+            Note: this is specifically not a 2D array such as to be explicit about which params are used
+
+        ex:
+        { 
+        Param1:{
+            Param1: 0.9,
+            Param2: 0.1 },
+        Param2:{
+            Param1:0.1,
+            Param2:0.8}
+        }
+
+        Raises
+        ------
+        KeyError if given dict has keys not not shared with Parameter names 
+        TypeError if a given entry in covmat is not the proper type
+        NotImplementedError if the means of calculating the mean for a given parameters prior isn't there yet 
+        """
+        dim = len(covmat.keys())
+        cov = np.zeros(shape=(dim,dim))
+        names = self.names
+        for k_i, key in enumerate(covmat.keys()):
+            if key not in names:
+                raise KeyError("Key {} not in Params".format(key))
+            if not isinstance(covmat[key],dict):
+                raise TypeError("Each entry in covmat should be another dict, found {}".format(type(covmat[key])))
+            for k_j, subkey in enumerate(covmat[key].keys()):
+                if subkey not in names:
+                    raise KeyError("Key {} not in Params".format(subkey))
+
+                cov[k_i][k_j] = cov[key][subkey]
+        
+        
+        params = (self[name] for name in covmat.keys())
+
+        # we need the mean values of the paramters
+        means = [0.0 for i in range(len(params))]
+        for i, param in enumerate(params):
+            if param.prior.kind == "gaussian":
+                means[i] = param.prior.mean
+            elif param.prior.kind=="uniform":
+                means[i] = (param.range[1] + param.range[0])*0.5
+            else:
+                raise NotImplementedError()
+
+        # diagonalize covariance matrix
+        evals, inv_t = np.linalg.eig(cov) 
+        new_sigmas = np.sqrt(evals)
+        """
+        Let "x" be in the correlated basis
+        and "v" be in the uncorrelated basis
+
+        T is the matrix from `inv_t`
+
+        v = (x - mu_x) @ T
+        x = v@(T^-1) + mu_x  
+
+        The new Parameters will have Gaussian priors centered at zero! 
+        """
+
+        transformation = np.linalg.inv(inv_t)
+        def xs_from_vs(vs):
+            return np.matmul(vs, transformation) + means
+
+        ranges_x = [param.range for param in params] # ranges in correlated basis
+
+        new_parameters = []
+
+        for i, param in enumerate(params):
+            new_prior = Prior(
+                kind="gaussian",
+                mean = 0.0,
+                stddev = new_sigmas[i]
+            )
+
+            # find max and min for this parameter
+            """
+                This paramter V is a function of \vec{x}=(x1, x2, x3, ...)
+
+                \vec{v}_{i} can be calculated via summing over i 
+                    v_i = inv_t[j][i] x_i
+
+                This is a linear transformation using the eivenvectors of the covariance matrix
+            """
+
+            v_max = 0
+            v_min = 0
+            for j in range(len(ranges_x)): # number of paramters, dimensionality 
+                v_max += inv_t[j][i]*(ranges_x[1] - means[j]) if inv_t[j][i]>0 else inv_t[j][i]*(ranges_x[0] - means[j]) 
+                v_min += inv_t[j][i]*(ranges_x[1] - means[j]) if inv_t[j][i]<0 else inv_t[j][i]*(ranges_x[0] - means[j]) 
+
+            new = Param(
+                name = param.name + "_rotated",
+                value = 0.0, # get the centers. These will be zero since we subtract the mean
+                prior = new_prior,
+                range = (v_min, v_max),
+                is_fixed = False,
+                is_discrete= False,
+                scales_as_log=param.scales_as_log,
+                nominal_value=0.0,
+                tex=param.tex+"'"
+            )
+
+            new_parameters.append(new)
+            self.update(new) # add in this new parameter 
+
+        # now that we have constructed the new parameters, update the old ones to be DerivedParams
+        for i, param in enumerate(params):
+            derived_version = DerivedParam(
+                name = param.name,
+                value = param.value
+            )
+            derived_version.dependson = tuple(new_parameters) # depends on the parameters we've just set up in the uncorrelated basis
+            derived_version.callable = lambda params:xs_from_vs(*params)[i] # use the transformation function we defined earlier 
+
+            self.replace(derived_version)
+
+            
+
 
     def replace(self, new):
         """Replace an existing param with `new` param, where the existing param
@@ -925,7 +1145,7 @@ class ParamSet(MutableSequence, Set):
             setattr(result, k, deepcopy(v, memo))
         return result
 
-    def __getitem__(self, i):
+    def __getitem__(self, i)->Param:
         if isinstance(i, int):
             return self._params[i]
         elif isinstance(i, str):
