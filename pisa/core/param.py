@@ -863,6 +863,9 @@ class ParamSet(MutableSequence, Set):
         NotImplementedError if the means of calculating the mean for a given parameters prior isn't there yet 
         """
         dim = len(covmat.keys())
+        if dim==0:
+            return 
+
         cov = np.zeros(shape=(dim,dim))
         names = self.names
         for k_i, key in enumerate(covmat.keys()):
@@ -875,7 +878,6 @@ class ParamSet(MutableSequence, Set):
                     raise KeyError("Key {} not in Params".format(subkey))
 
                 cov[k_i][k_j] = cov[key][subkey]
-        
         
         params = (self[name] for name in covmat.keys())
 
@@ -931,7 +933,7 @@ class ParamSet(MutableSequence, Set):
 
             v_max = 0
             v_min = 0
-            for j in range(len(ranges_x)): # number of paramters, dimensionality 
+            for j in range(dim): # number of paramters, dimensionality 
                 v_max += inv_t[j][i]*(ranges_x[1] - means[j]) if inv_t[j][i]>0 else inv_t[j][i]*(ranges_x[0] - means[j]) 
                 v_min += inv_t[j][i]*(ranges_x[1] - means[j]) if inv_t[j][i]<0 else inv_t[j][i]*(ranges_x[0] - means[j]) 
 

@@ -24,7 +24,7 @@ import numpy as np
 from pisa import ureg
 from pisa.core.events import Data
 from pisa.core.map import Map, MapSet
-from pisa.core.param import ParamSet
+from pisa.core.param import ParamSet, DerivedParam
 from pisa.core.stage import Stage
 from pisa.core.container import ContainerSet
 from pisa.core.binning import MultiDimBinning
@@ -112,6 +112,8 @@ class Pipeline(object):
         self._config = config
         self._init_stages()
         self._source_code_hash = None
+
+        self._covariance_set = False
 
     def __repr__(self):
         return self.tabulate(tablefmt="presto")
@@ -331,6 +333,56 @@ class Pipeline(object):
 
         return outputs
 
+    def add_covariance(self, covmat):
+        """
+            Incorporates covariance between parameters. 
+            This is done by replacing relevant correlated parameters with "DerivedParams"
+                that depend on new parameters in an uncorrelated basis
+
+            The parameters are all updated, but this doesn't add the new parameters in
+            So we go to the first stage we find that has one of the original parameters and manually add this in 
+            
+        """
+        if self._covariance_set:
+            logging.warn("Tried to add covariance matrix while one is already here.")
+            logging.fatal("Add larger covariance matrix rather than calling this multiple times")
+
+        paramset = self.params
+        paramset.add_covariance(covmat)
+        self._covariance_set = True
+
+        # this should go and replace existing stage parameters with the new ones 
+        self.update_params(paramset)
+        self._add_rotated(paramset)
+
+    def _add_rotated(self, paramset:ParamSet):
+        """
+            Used to manually add in the new, rotated 
+        """
+        # now we need to add in the new, rotated, parameters 
+        # we want to add the new rotated parameters into a stage that had the correlated parameter
+        #   it doesn't really matter where these uncorrelated parameters go, all stages
+        #   that need to are already using those Derived Params 
+        depends = ()
+        derived_name = ""
+        for param in paramset:
+            if isinstance(param, DerivedParam): 
+                derived_name = param.name
+                depends = param.dependson
+                break
+        if len(depends)==0:
+            logging.warn("Added covariance matrix but found no Derived Params")
+            return 
+        
+        # now we find where a derived parameter lives 
+        for stage in self.stages:
+            included = stage._param_selector.params.names
+            if derived_name in included:
+                # TODO incorporate selector !! 
+                # and extend that stage's selections with our new rotated params!  
+                for param in depends:
+                    stage._param_selector.update(param, existing_must_match=False, extend=True)
+                break 
 
     def run(self):
         """Run the pipeline to compute"""
@@ -410,7 +462,7 @@ class Pipeline(object):
         return sorted(selections)
 
     @property
-    def stages(self):
+    def stages(self)->'list[Stage]':
         """list of Stage : stages in the pipeline"""
         return [s for s in self]
 
