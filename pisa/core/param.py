@@ -1019,8 +1019,13 @@ class ParamSet(MutableSequence, Set):
             self.update(new) # add in this new parameter 
 
         def wrapper(**pardict:'Param'):
-            print(pardict.keys())
             return xs_from_vs([pardict[new_parameters[i].name].value for i in range(dim)])
+
+        # some magic 
+        def build_func(index):
+            def funcy(**parpar):
+                return wrapper(**parpar)[index]*ureg(None)
+            return funcy
 
         # now that we have constructed the new parameters, update the old ones to be DerivedParams
         for i, param in enumerate(params):
@@ -1029,7 +1034,11 @@ class ParamSet(MutableSequence, Set):
                 value = param.value
             )
             derived_version.dependson = new_parameters # depends on the parameters we've just set up in the uncorrelated basis
-            derived_version.callable = lambda **parpar:wrapper(**parpar)[i] # use the transformation function we defined earlier 
+
+            # the ultimate sin of naming an anonymous function 
+
+            derived_version.callable = build_func(i)
+            #lambda **parpar:wrapper(**parpar)[i]*ureg(None) # use the transformation function we defined earlier 
 
             self.replace(derived_version)
 
