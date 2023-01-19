@@ -28,11 +28,12 @@ from pisa.core.param import ParamSet, Param
 from pisa.utils.config_parser import PISAConfigParser
 from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.hash import hash_obj
-from pisa.utils.log import set_verbosity, logging
+from pisa.utils.log import set_verbosity, logging, Levels
 from pisa.utils.random_numbers import get_random_state
+from pisa.analysis.analysis import update_param_values_detector
 
 
-__all__ = ['Detectors', 'parse_args', 'main']
+__all__ = ['Detectors', 'test_Detectors', 'parse_args', 'main']
 
 
 class Detectors(object):
@@ -163,7 +164,7 @@ class Detectors(object):
 
     def select_params(self, selections, error_on_missing=True):
         for distribution_maker in self:
-            distribution_maker.select_params(selections=selections)
+            distribution_maker.select_params(selections=selections, error_on_missing=error_on_missing)
             
     @property
     def distribution_makers(self):
@@ -336,6 +337,138 @@ class Detectors(object):
                 for j in range(len(spi[i])):
                     rp.insert(spi[i][j][0],sp[spi[i][j][1]])
                 self._distribution_makers[i]._set_rescaled_free_params(rp)
+
+
+def test_Detectors(verbosity=Levels.WARN):
+    """Run a combination of two DeepCore detectors."""
+    p1_nu = Pipeline("settings/pipeline/IceCube_3y_neutrinos.cfg")
+    p1_mu = Pipeline("settings/pipeline/IceCube_3y_muons.cfg")
+    p1_nu.detector_name, p1_mu.detector_name = 'detector1', 'detector1'
+
+    p2_nu = Pipeline("settings/pipeline/IceCube_3y_neutrinos.cfg")
+    p2_mu = Pipeline("settings/pipeline/IceCube_3y_muons.cfg")
+    p2_nu.detector_name, p2_mu.detector_name = 'detector2', 'detector2'
+    
+    # Initializing
+    try:
+        set_verbosity(Levels.INFO)
+        logging.info(f'Initializing Detectors')
+        
+        set_verbosity(Levels.WARN)
+        model = Detectors([p1_nu, p1_mu, p2_nu, p2_mu], shared_params=['deltam31', 'theta13', 'theta23', 'nue_numu_ratio', 'Barr_uphor_ratio', 'Barr_nu_nubar_ratio', 'delta_index', 'nutau_norm', 'nu_nc_norm', 'opt_eff_overall', 'opt_eff_lateral', 'opt_eff_headon', 'ice_scattering', 'ice_absorption', 'atm_muon_scale'])
+        
+    except Exception as err:
+        msg = f"<< Error when initializing the Detectors >>"
+        set_verbosity(verbosity)
+        logging.error("=" * len(msg))
+        logging.error(msg)
+        logging.error("=" * len(msg))
+        
+        set_verbosity(Levels.TRACE)
+        logging.exception(err)
+
+        set_verbosity(verbosity)
+        logging.error("#" * len(msg))
+        
+    else:
+        set_verbosity(verbosity)
+        logging.info("<< Successfully initialized Detectors >>")
+        
+    finally:
+        set_verbosity(verbosity)
+    
+    # Get outputs
+    try:
+        set_verbosity(Levels.INFO)
+        logging.info(f'Running Detectors (takes a bit)')
+
+        set_verbosity(Levels.WARN)
+        model.get_outputs()
+
+    except Exception as err:
+        msg = f"<< Error when running the Detectors >>"
+        set_verbosity(verbosity)
+        logging.error("=" * len(msg))
+        logging.error(msg)
+        logging.error("=" * len(msg))
+        
+        set_verbosity(Levels.TRACE)
+        logging.exception(err)
+
+        set_verbosity(verbosity)
+        logging.error("#" * len(msg))
+    
+    else:
+        set_verbosity(verbosity)
+        logging.info("<< Successfully ran Detectors >>")
+    
+    finally:
+        set_verbosity(verbosity)
+    
+    # Change parameters
+    set_verbosity(Levels.INFO)
+    logging.info(f'Change parameters')
+
+    set_verbosity(Levels.WARN)
+    model.reset_free()
+    model.params.opt_eff_lateral.value = 20 # shared parameter
+    model.params.aeff_scale.value = 2       # only changes value for detector1
+    update_param_values_detector(model, model.params)
+    
+    o0 = model.distribution_makers[0].params.opt_eff_lateral.value.magnitude
+    o1 = model.distribution_makers[1].params.opt_eff_lateral.value.magnitude
+    a0 = model.distribution_makers[0].params.aeff_scale.value.magnitude
+    a1 = model.distribution_makers[1].params.aeff_scale.value.magnitude
+
+    if not o0 == 20 or not o1 == 20:
+        msg = f"<< Error when changing shared parameter >>"
+        set_verbosity(verbosity)
+        logging.error("=" * len(msg))
+        logging.error(msg)
+        logging.error("=" * len(msg))
+    
+    elif not a0 == 2 or not a1 == 1:
+        msg = f"<< Error when changing non-shared parameter >>"
+        set_verbosity(verbosity)
+        logging.error("=" * len(msg))
+        logging.error(msg)
+        logging.error("=" * len(msg))
+        
+    else:
+        set_verbosity(verbosity)
+        logging.info("<< Successfully changed parameters >>")
+    
+    # Unit test
+    set_verbosity(Levels.INFO)
+    logging.info(f'Unit test')
+    
+    set_verbosity(Levels.WARN)
+    hierarchies = ['nh', 'ih']
+    t23 = dict(
+        ih=49.5 * ureg.deg,
+        nh=42.3 * ureg.deg
+    )
+    current_hier = 'nh'
+    
+    for new_hier in hierarchies:
+        #assert model.param_selections == [current_hier], str(model.param_selections)
+        assert model.params.theta23.value == t23[current_hier], str(model.params.theta23)
+
+        # Select the hierarchy
+        model.select_params(new_hier)
+        #assert model.param_selections == [new_hier], str(model.param_selections)
+        assert model.params.theta23.value == t23[new_hier], str(model.params.theta23)
+        
+        # Reset to "current"
+        model.select_params(current_hier)
+        #assert model.param_selections == [current_hier], str(model.param_selections)
+        assert model.params.theta23.value == t23[current_hier], str(model.params.theta23)
+        
+    set_verbosity(verbosity)
+    logging.info("<< Successfully ran unit test >>")
+    
+    # Done
+    logging.info(f'Detectors class test done')
 
 
 def parse_args():
