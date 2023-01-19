@@ -363,14 +363,13 @@ class Pipeline(object):
         # we want to add the new rotated parameters into a stage that had the correlated parameter
         #   it doesn't really matter where these uncorrelated parameters go, all stages
         #   that need to are already using those Derived Params 
-        depends = ()
         derived_name = ""
         for param in paramset:
             if isinstance(param, DerivedParam): 
                 derived_name = param.name
                 depends = param.dependson
                 break
-        if len(depends)==0:
+        if len(depends.keys())==0:
             logging.warn("Added covariance matrix but found no Derived Params")
             return 
         
@@ -380,7 +379,7 @@ class Pipeline(object):
             if derived_name in included:
                 # TODO incorporate selector !! 
                 # and extend that stage's selections with our new rotated params!  
-                for param in depends:
+                for param in depends.values():
                     stage._param_selector.update(param, existing_must_match=False, extend=True)
                 break 
 

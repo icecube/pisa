@@ -573,53 +573,118 @@ class Param:
         return cls(**state)
 
 class DerivedParam(Param):
-    r"""
-    This is a meta-parameter param that implements a param depending on other Params. 
-
-
     """
+    This is a meta-parameter param that implements a param depending on other Params. 
+    """
+    _slots = (
+        'name',
+        'unique_id',
+        'value',
+        'prior',
+        '_prior',
+        'range',
+        'is_fixed',
+        'is_discrete',
+        'scales_as_log',
+        'nominal_value',
+        'tex',
+        '_rescaled_value',
+        '_nominal_value',
+        '_tex',
+        'help',
+        '_value',
+        '_range',
+        '_units',
+        'normalize_values',
+        '_depends_names',
+        '_dependson',
+        '_configured',
+        '_callable',
+        'dependson',
+        'callable',
+        'depends_names'
+    )
+
+    _state_attrs = (
+        'name',
+        'unique_id',
+        'value',
+        'prior',
+        'range',
+        'is_fixed',
+        'is_discrete',
+        'scales_as_log',
+        'nominal_value',
+        'tex',
+        'help',
+        'dependson',
+        'callable',
+        'depends_names'
+    )
+
     def __init__(self, 
             name, 
             value, 
-            prior, 
-            range, 
-            is_fixed, 
             unique_id=None, 
             is_discrete=False, 
             scales_as_log=False, 
             nominal_value=None, 
             tex=None, 
             help=''):
-        super().__init__(name, value, prior, range, is_fixed, unique_id, is_discrete, scales_as_log, nominal_value, tex, help)
 
-        if not is_fixed:
-            logging.fatal("Cannot set a derived parameter as free")
-
-        self._depends_names = ()
-        self._dependson = ()
+        self._depends_names = tuple([])
+        self._dependson = tuple([])
         self._configured = False
         self._callable = None
+
+        self._range = None
+        self._tex = None
+        self._value = None
+        self._units = None
+        self._nominal_value = None
+        self._prior = None
+
+        self.is_fixed=True
+        self.scales_as_log = scales_as_log
+        self.name = name
+        self.unique_id = unique_id if unique_id is not None else name
+        self._tex = tex
+        self.help = help
+        self.is_discrete = is_discrete
+        self.nominal_value = value if nominal_value is None else nominal_value
+        self.normalize_values = False
+
     
-
-
-    @callable.setter
-    def callable(self, what:Callable):
-        """
-            Note - the callable should take a list of Params
-        """
-        self._callable = what
     @property
     def callable(self)->Callable:
         if self._callable is None:
             logging.fatal("No set callable for DerivedParam {}".format(self.name))
         return self._callable
+
+    @callable.setter
+    def callable(self, what:Callable):
+        """
+            Note - the callable should take dictionary of parameters
+            {
+                paramname:Param,
+                paramname2:Param
+            }
+
+            the names are in principle redundant, but by keeping the mapping we can make the lookup of the dependable names quicker 
+        """
+        self._callable = what
+    
         
     @property
     def depends_names(self):
-        return self._depends_names
+        return self.depends_names
+
+    @depends_names.setter
+    def depends_names(self, *names):
+        self._depends_names = names
     
     @property
-    def dependson(self)->'tuple[Param]':
+    def dependson(self)->'dict[Param]':
         if not self._configured:
             logging.fatal("Cannot access unconfigured Derived parameter!")
         return self._dependson
@@ -631,7 +696,7 @@ class DerivedParam(Param):
         return 0.0
 
     @dependson.setter
-    def dependson(self, *params):
+    def dependson(self, params):
         working = []
         for param in params:
             if isinstance(param, Mapping):
@@ -641,15 +706,16 @@ class DerivedParam(Param):
             else:
                 raise TypeError("Unhandled type {}: {}".format(type(param), param))
         self._configured = True
-        self._dependson = tuple(working)
-        self._depends_names = (param.name for param in working)
+        self._dependson = {param.name:param for param in working}
+        self.depends_names = tuple([param.name for param in working])
+
 
     @property 
     def value(self):
         """
             The value of this Derived Parameter is determined by calling the configured 'callable' with the parameters it depends on
         """
-        return self.callable(*self.dependson)
+        return self.callable(**self.dependson)
 
     @property
     def _rescaled_value(self):
@@ -877,12 +943,12 @@ class ParamSet(MutableSequence, Set):
                 if subkey not in names:
                     raise KeyError("Key {} not in Params".format(subkey))
 
-                cov[k_i][k_j] = cov[key][subkey]
+                cov[k_i][k_j] = covmat[key][subkey]
         
-        params = (self[name] for name in covmat.keys())
+        params = tuple([self[name] for name in covmat.keys()])
 
         # we need the mean values of the paramters
-        means = [0.0 for i in range(len(params))]
+        means = [0.0 for i in range(dim)]
         for i, param in enumerate(params):
             if param.prior.kind == "gaussian":
                 means[i] = param.prior.mean
@@ -934,8 +1000,8 @@ class ParamSet(MutableSequence, Set):
             v_max = 0
             v_min = 0
             for j in range(dim): # number of paramters, dimensionality 
-                v_max += inv_t[j][i]*(ranges_x[1] - means[j]) if inv_t[j][i]>0 else inv_t[j][i]*(ranges_x[0] - means[j]) 
-                v_min += inv_t[j][i]*(ranges_x[1] - means[j]) if inv_t[j][i]<0 else inv_t[j][i]*(ranges_x[0] - means[j]) 
+                v_max += inv_t[j][i]*(ranges_x[j][1] - means[j]) if inv_t[j][i]>0 else inv_t[j][i]*(ranges_x[j][0] - means[j]) 
+                v_min += inv_t[j][i]*(ranges_x[j][1] - means[j]) if inv_t[j][i]<0 else inv_t[j][i]*(ranges_x[j][0] - means[j]) 
 
             new = Param(
                 name = param.name + "_rotated",
@@ -952,14 +1018,18 @@ class ParamSet(MutableSequence, Set):
             new_parameters.append(new)
             self.update(new) # add in this new parameter 
 
+        def wrapper(**pardict:'Param'):
+            print(pardict.keys())
+            return xs_from_vs([pardict[new_parameters[i].name].value for i in range(dim)])
+
         # now that we have constructed the new parameters, update the old ones to be DerivedParams
         for i, param in enumerate(params):
             derived_version = DerivedParam(
                 name = param.name,
                 value = param.value
             )
-            derived_version.dependson = tuple(new_parameters) # depends on the parameters we've just set up in the uncorrelated basis
-            derived_version.callable = lambda params:xs_from_vs(*params)[i] # use the transformation function we defined earlier 
+            derived_version.dependson = new_parameters # depends on the parameters we've just set up in the uncorrelated basis
+            derived_version.callable = lambda **parpar:wrapper(**parpar)[i] # use the transformation function we defined earlier 
 
             self.replace(derived_version)
 
