@@ -17,7 +17,6 @@ from shutil import rmtree
 import sys
 from tabulate import tabulate
 import tempfile
-from typing import Callable
 
 import numpy as np
 import pint
@@ -25,6 +24,7 @@ from six import string_types
 
 from pisa import ureg
 from pisa.core.prior import Prior
+from pisa.utils import callable
 from pisa.utils import jsons
 from pisa.utils.comparisons import (
     interpret_quantity, isbarenumeric, normQuant, recursiveEquality
@@ -656,13 +656,13 @@ class DerivedParam(Param):
 
     
     @property
-    def callable(self)->Callable:
+    def callable(self)->callable.Funct:
         if self._callable is None:
             logging.fatal("No set callable for DerivedParam {}".format(self.name))
         return self._callable
 
     @callable.setter
-    def callable(self, what:Callable):
+    def callable(self, what:callable.Funct):
         """
             Note - the callable should take dictionary of parameters
             {
@@ -960,6 +960,7 @@ class ParamSet(MutableSequence, Set):
         # diagonalize covariance matrix
         evals, inv_t = np.linalg.eig(cov) 
         new_sigmas = np.sqrt(evals)
+
         """
         Let "x" be in the correlated basis
         and "v" be in the uncorrelated basis
@@ -973,11 +974,7 @@ class ParamSet(MutableSequence, Set):
         """
 
         transformation = np.linalg.inv(inv_t)
-        def xs_from_vs(vs):
-            return np.matmul(vs, transformation) + means
-
         ranges_x = [param.range for param in params] # ranges in correlated basis
-
         new_parameters = []
 
         for i, param in enumerate(params):
@@ -1018,14 +1015,17 @@ class ParamSet(MutableSequence, Set):
             new_parameters.append(new)
             self.update(new) # add in this new parameter 
 
-        def wrapper(**pardict:'Param'):
-            return xs_from_vs([pardict[new_parameters[i].name].value for i in range(dim)])
-
-        # some magic 
         def build_func(index):
-            def funcy(**parpar):
-                return wrapper(**parpar)[index]*ureg(None)
-            return funcy
+            all_vars = [ callable.Var(new_par.name) for new_par in new_parameters ]
+
+            function = transformation[0][index]*all_vars[0]
+            for _i in range(dim-1):
+                i = _i + 1
+                function = function + transformation[i][index]*all_vars[i]
+
+            function = function + means[index]
+
+            return function
 
         # now that we have constructed the new parameters, update the old ones to be DerivedParams
         for i, param in enumerate(params):
@@ -1034,11 +1034,7 @@ class ParamSet(MutableSequence, Set):
                 value = param.value
             )
             derived_version.dependson = new_parameters # depends on the parameters we've just set up in the uncorrelated basis
-
-            # the ultimate sin of naming an anonymous function 
-
             derived_version.callable = build_func(i)
-            #lambda **parpar:wrapper(**parpar)[i]*ureg(None) # use the transformation function we defined earlier 
 
             self.replace(derived_version)
 
