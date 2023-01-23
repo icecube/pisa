@@ -630,6 +630,7 @@ class DerivedParam(Param):
             scales_as_log=False, 
             nominal_value=None, 
             tex=None, 
+            range=None,
             help=''):
 
         self._depends_names = tuple([])
@@ -639,7 +640,6 @@ class DerivedParam(Param):
 
         self._range = None
         self._tex = None
-        self._value = None
         self._units = None
         self._nominal_value = None
         self._prior = None
@@ -647,6 +647,8 @@ class DerivedParam(Param):
         self.is_fixed=True
         self.scales_as_log = scales_as_log
         self.name = name
+        self.range = range
+        
         self.unique_id = unique_id if unique_id is not None else name
         self._tex = tex
         self.help = help
@@ -662,7 +664,7 @@ class DerivedParam(Param):
         return self._callable
 
     @callable.setter
-    def callable(self, what:callable.Funct):
+    def callable(self, what:'callable.Funct'):
         """
             Note - the callable should take dictionary of parameters
             {
@@ -674,6 +676,23 @@ class DerivedParam(Param):
         """
         self._callable = what
     
+    def validate_value(self, value):
+        return 
+
+    @property
+    def range(self): 
+        # if this is not re-implemented, the setter gets very confused 
+        if self._range is None:
+            return None
+        else:
+            return tuple(self._range)
+
+    @range.setter
+    def range(self, values):
+        """
+        trust that this is set accurately 
+        """
+        self._range = values
         
     @property
     def depends_names(self):
@@ -711,20 +730,11 @@ class DerivedParam(Param):
 
 
     @property 
-    def value(self):
+    def _value(self):
         """
             The value of this Derived Parameter is determined by calling the configured 'callable' with the parameters it depends on
         """
         return self.callable(**self.dependson)
-
-    @property
-    def _rescaled_value(self):
-        if self.is_discrete:
-            return self.value
-
-    @_rescaled_value.setter
-    def _rescaled_value(self):
-        logging.fatal("Cannot set rescaled value of a derived parameter")
 
 # TODO: temporary modification of parameters via "with" syntax?
 # TODO: union, |, intersection, &, difference, -, symmetric_difference, ^, copy
@@ -1031,7 +1041,8 @@ class ParamSet(MutableSequence, Set):
         for i, param in enumerate(params):
             derived_version = DerivedParam(
                 name = param.name,
-                value = param.value
+                value = param.value,
+                range=param.range
             )
             derived_version.dependson = new_parameters # depends on the parameters we've just set up in the uncorrelated basis
             derived_version.callable = build_func(i)
