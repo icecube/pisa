@@ -75,6 +75,8 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
         propagate_uncertainty=False,
         interpolated=False,
         links=None,
+        fluctuate=False,
+        fluctuate_seed=12345,
         **std_kwargs,
     ):
         # -- Only allowed/implemented modes -- #
@@ -90,10 +92,10 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
         # For this reason we need to load the hypersurfaces already in the init function
         self.inter_params = []
         if self.interpolated:
-            self.hypersurfaces = hs.load_interpolated_hypersurfaces(self.fit_results_file)
+            self.hypersurfaces = hs.load_interpolated_hypersurfaces(self.fit_results_file, expected_binning=std_kwargs['calc_mode'])
             self.inter_params = list(self.hypersurfaces.values())[0].interpolation_param_names
         else:
-            self.hypersurfaces = hs.load_hypersurfaces(self.fit_results_file, std_kwargs['calc_mode'])
+            self.hypersurfaces = hs.load_hypersurfaces(self.fit_results_file, expected_binning=std_kwargs['calc_mode'])
         self.hypersurface_param_names = list(self.hypersurfaces.values())[0].param_names
 
         # -- Initialize base class -- #
@@ -104,6 +106,14 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
 
         self.links = ast.literal_eval(links)
         self.warning_issued = False # don't warn more than once about empty bins
+
+        # Handle fluctuation option
+        self.fluctuate = fluctuate
+        if self.fluctuate :
+            self.fluctuate_seed = fluctuate_seed
+            logging.info(f"User has selected to fluctuate the hypersurface coefficients (seed is {self.fluctuate_seed})")
+            assert self.fluctuate_seed is not None
+
     # pylint: disable=line-too-long
     def setup_function(self):
         """Load the fit results from the file and make some check compatibility"""
@@ -144,14 +154,27 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
                         for sys_param_name in self.hypersurface_param_names}
         if self.interpolated:
             osc_params = {name: self.params[name] for name in self.inter_params}
-        # Evaluate the hypersurfaces
+
+        # If fluctuating, seed the flucutations
+        # Needs to be consistent for each call to this functions
+        if self.fluctuate :
+            fluctuate_random_state = np.random.RandomState(self.fluctuate_seed)
+
+        # Loop over types
         for container in self.data:
+
+            # Get the hypersurfaces
             if self.interpolated:
                 # in the case of interpolated hypersurfaces, the actual hypersurface
                 # must be generated for the given oscillation parameters first
                 container_hs = self.hypersurfaces[container.name].get_hypersurface(**osc_params)
             else:
                 container_hs = self.hypersurfaces[container.name]
+
+            # Fluctute the hypersurfaces, if requested
+            if self.fluctuate :
+                container_hs = container_hs.fluctuate(random_state=fluctuate_random_state) #TODO oncely need to do this once if not interpolating
+
             # Get the hypersurface scale factors (reshape to 1D array)
             if self.propagate_uncertainty:
                 scales, uncertainties = container_hs.evaluate(param_values, return_uncertainty=True)

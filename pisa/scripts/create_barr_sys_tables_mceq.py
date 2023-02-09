@@ -24,38 +24,39 @@ import crflux.models as crf
 # Global Barr parameter table
 # format (x_min, x_max, E_min, E_max) | x is x_lab= E_pi/E, E projectile-air interaction energy
 barr = {
-    "a": [(0.0, 0.5, 0.00, 8.0)],
-    "b1": [(0.5, 1.0, 0.00, 8.0)],
-    "b2": [(0.6, 1.0, 8.00, 15.0)],
-    "c": [(0.2, 0.6, 8.00, 15.0)],
-    "d1": [(0.0, 0.2, 8.00, 15.0)],
-    "d2": [(0.0, 0.1, 15.0, 30.0)],
-    "d3": [(0.1, 0.2, 15.0, 30.0)],
-    "e": [(0.2, 0.6, 15.0, 30.0)],
-    "f": [(0.6, 1.0, 15.0, 30.0)],
-    "g": [(0.0, 0.1, 30.0, 1e11)],
-    "h1": [(0.1, 1.0, 30.0, 500.0)],
-    "h2": [(0.1, 1.0, 500.0, 1e11)],
-    "i": [(0.1, 1.0, 500.0, 1e11)],
-    "w1": [(0.0, 1.0, 0.00, 8.0)],
-    "w2": [(0.0, 1.0, 8.00, 15.0)],
-    "w3": [(0.0, 0.1, 15.0, 30.0)],
-    "w4": [(0.1, 0.2, 15.0, 30.0)],
-    "w5": [(0.0, 0.1, 30.0, 500.0)],
-    "w6": [(0.0, 0.1, 500.0, 1e11)],
-    "x": [(0.2, 1.0, 15.0, 30.0)],
-    "y1": [(0.1, 1.0, 30.0, 500.0)],
-    "y2": [(0.1, 1.0, 500.0, 1e11)],
-    "z": [(0.1, 1.0, 500.0, 1e11)],
-    "ch_a": [(0.0, 0.1, 0.0, 1e11)],
-    "ch_b": [(0.1, 1.0, 0.0, 1e11)],
-    "ch_e": [(0.1, 1.0, 800.0, 1e11)],
+    'a': [(0.0, 0.5, 0.00, 8.0)],
+    'b1': [(0.5, 1.0, 0.00, 8.0)],
+    'b2': [(0.6, 1.0, 8.00, 15.0)],
+    'c': [(0.2, 0.6, 8.00, 15.0)],
+    'd1': [(0.0, 0.2, 8.00, 15.0)],
+    'd2': [(0.0, 0.1, 15.0, 30.0)],
+    'd3': [(0.1, 0.2, 15.0, 30.0)],
+    'e': [(0.2, 0.6, 15.0, 30.0)],
+    'f': [(0.6, 1.0, 15.0, 30.0)],
+    'g': [(0.0, 0.1, 30.0, 1e11)],
+    'h1': [(0.1, 1.0, 30.0, 500.)],
+    'h2': [(0.1, 1.0, 500.0, 1e11)],
+    # 'i': [(0.1, 1.0, 500.0, 1e11)],
+    'i': [(0., 1.0, 500.0, 1e11)], # Table in Barr et al. PRD 74 094009 (2006) makes it look like this cuts off at xlab=0.1, but reading the text makes it clear that is should cover the full xlab range
+    'w1': [(0.0, 1.0, 0.00, 8.0)],
+    'w2': [(0.0, 1.0, 8.00, 15.0)],
+    'w3': [(0.0, 0.1, 15.0, 30.0)],
+    'w4': [(0.1, 0.2, 15.0, 30.0)],
+    'w5': [(0.0, 0.1, 30.0, 500.)],
+    'w6': [(0.0, 0.1, 500., 1e11)],
+    'x': [(0.2, 1.0, 15.0, 30.0)],
+    'y1': [(0.1, 1.0, 30.0, 500.)],
+    'y2': [(0.1, 1.0, 500., 1e11)],
+    # 'z': [(0.1, 1.0, 500., 1e11)],
+    'z': [(0., 1.0, 500., 1e11)], # Table in Barr et al. PRD 74 094009 (2006) makes it look like this cuts off at xlab=0.1, but reading the text makes it clear that is should cover the full xlab range
+    'ch_a': [(0.0, 0.1, 0., 1e11)],
+    'ch_b': [(0.1, 1.0, 0., 1e11)],
+    'ch_e': [(0.1, 1.0, 800., 1e11)],
 }
 
 
 def barr_unc(xmat, egrid, pname, value):
     """Implementation of hadronic uncertainties as in Barr et al. PRD 74 094009 (2006)
-
     The names of parameters are explained in Fig. 2 and Fig. 3 in the paper."""
 
     # Energy dependence
@@ -266,6 +267,13 @@ if __name__ == "__main__":
     else:
         CR_vers = None
 
+    # TK: implementing DPMJET tunes (disabling charm + neutral kaon fix)
+    if interaction_model == 'DPMJETIII191':
+        config.adv_set["fix_dpmjet_neutral_kaons"] = True
+        config.adv_set["disabled_particles"] += [411, 421, 431, -411, -421, -431]
+        config.adv_set["disable_direct_leptons"] = True
+        print('Disabled charm in DPMJETIII191 and applied the fix for neutral kaons.')
+
     mceq_run = MCEqRun(
         # provide the string of the interaction model
         interaction_model=interaction_model,
@@ -340,16 +348,23 @@ if __name__ == "__main__":
         # TODO atmosphere
     }
 
-    # Write th output file
-    output_file = "MCEq_flux_gradient_splines_{primary_particle}_{cosmic_ray_model}_{interaction_model}.pckl.bz2".format(  # TODO atm model, prod height, etc
+    # Write the output file
+    output_file = 'MCEq_flux_gradient_splines_{primary_particle}_{cosmic_ray_model}_{interaction_model}.pckl.bz2'.format( #TODO atm model, prod height, etc
         cosmic_ray_model=args.cosmic_ray_model,
         interaction_model=interaction_model,
         primary_particle=primary_particle,
     )
     output_file = os.path.join(args.output_dir, output_file)
 
-    pickle.dump(solution, bz2.BZ2File(output_file, "wb"), protocol=-1)
+    if not os.path.exists(args.output_dir) :
+        os.mkdir(args.output_dir)
+
+    pickle.dump(
+        solution,
+        bz2.BZ2File(output_file, 'wb'),
+        protocol=-1
+    )
 
     # TODO store settings used in pickle file too (and make name more explicit)
 
-    print("\nFinished : Output file is %s\n" % output_file)
+    print("\nFinished : Output file is %s\n" % os.path.abspath(output_file) )

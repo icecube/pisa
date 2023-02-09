@@ -581,8 +581,10 @@ def parse_pipeline_config(config):
 
     # Create binning objects
     binning_dict = {}
+    # Loop over binning lines
     for name, value in config['binning'].items():
         if name.endswith('.order'):
+            # Found the first line in a new binning, get the individual bin dimension definitions...
             order = split(config.get('binning', name))
             binning, _ = split(name, sep='.')
             bins = []
@@ -621,7 +623,12 @@ def parse_pipeline_config(config):
                         "'%s'\n", bin_name, binning, kwargs
                     )
                     raise
-            binning_dict[binning] = MultiDimBinning(bins, name=binning)
+            # Get the bin mask, if there is ome
+            mask = config['binning'].get(binning + '.mask', None)
+            if mask is not None :
+                mask = eval(mask)
+            # Create the binning object
+            binning_dict[binning] = MultiDimBinning(bins, name=binning, mask=mask)
 
 
     stage_dicts = OrderedDict()

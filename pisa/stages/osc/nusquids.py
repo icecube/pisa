@@ -55,8 +55,13 @@ class nusquids(Stage):
         extrapolation.
 
     use_decoherence : bool
-        set to true to include neutrino decoherence in the oscillation probability
-        calculation
+        set to true to include neutrino-virtual black hole interactions decoherence in 
+        the oscillation probability calculation
+
+    use_lightcone_fluctuations : bool
+        set to true to include lightcone fluctuations decoherence in the oscillation 
+        probability calculation
+
 
     num_decoherence_gamma : int
         number of decoherence gamma parameters to be considered in the decoherence model
@@ -203,6 +208,7 @@ class nusquids(Stage):
         suppress_interpolation_warning=False,
         node_mode=None,
         use_decoherence=False,
+        use_lightcone_fluctuations=False,
         num_decoherence_gamma=1,
         use_nsi=False,
         num_neutrinos=3,
@@ -228,6 +234,7 @@ class nusquids(Stage):
         ), "currently only supports up to 4 flavor oscillations"
         self.use_nsi = use_nsi
         self.use_decoherence = use_decoherence
+        self.use_lightcone_fluctuations = use_lightcone_fluctuations
         self.num_decoherence_gamma = num_decoherence_gamma
         self.node_mode = node_mode
         self.vacuum = vacuum
@@ -305,6 +312,19 @@ class nusquids(Stage):
             expected_params.extend(["gamma0"])
             expected_params.extend(["n"])
             expected_params.extend(["E0"])
+            expected_params.extend(["decoherence_model"])
+
+        if self.use_lightcone_fluctuations:
+            # Use derived nuSQuIDS classes
+            import nuSQUIDSDecohPy
+            self.nusquids_layers_class = nuSQUIDSDecohPy.nuSQUIDSDecohLayers
+            # Checks
+            assert self.num_neutrinos == 3, "Decoherence only supports 3 neutrinos currently"
+            expected_params.extend(["dL0"])
+            expected_params.extend(["L0"])
+            expected_params.extend(["m"])
+            expected_params.extend(["n"])
+            expected_params.extend(["E0"])
 
         # We may want to reparametrize this with the difference between deltacp14 and
         # deltacp24, as the absolute value seems to play a small role (see
@@ -337,6 +357,10 @@ class nusquids(Stage):
         assert not (self.use_nsi and self.use_decoherence), (
             "NSI and decoherence not " "suported together, must use one or the other"
         )
+
+        assert not (self.use_nsi and self.use_lightcone_fluctuations), ("NSI and decoherence not "
+            "suported together, must use one or the other")
+
 
         self.exact_mode = exact_mode
 
@@ -380,12 +404,20 @@ class nusquids(Stage):
         nus_layer.Set_CPPhase(0, 2, self.params.deltacp.value.m_as("rad"))
 
         # set decoherence parameters
-        if self.use_decoherence:
-            nsq_units = nsq.Const()  # TODO Once only (make into a member)
-            gamma0 = self.params.gamma0.value.m_as("eV") * nsq_units.eV
-            gamma0_matrix_diagonal = np.array(
-                [0.0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0]
-            )  # "State selection" case (see arXiv:2007.00068 eqn 11) #TODO implement other models
+        if self.use_decoherence :
+            nsq_units = nsq.Const() #TODO Once only (make into a member)
+            gamma0 = self.params.gamma0.value.m_as("eV")*nsq_units.eV
+
+            # Set the decoherence matrix appropriately for the chosen decoherence model (see arXiv:2007.00068 eqn 11):
+            if self.params.decoherence_model.value == "phase_perturbation":
+                gamma0_matrix_diagonal = np.array([ 0., gamma0, gamma0, 0., gamma0, gamma0, gamma0, gamma0, 0. ])
+            elif self.params.decoherence_model.value == "randomize_flavor":
+                gamma0_matrix_diagonal = np.array([ 0., gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0 ])
+            elif self.params.decoherence_model.value == "neutrino_loss":
+                gamma0_matrix_diagonal = np.array([ gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0, gamma0 ])
+            else:
+                raise ValueError("decoherence_model not recognized. Use phase_perturbation, randomize_flavor or neutrino_loss instead")
+
             nus_layer.Set_DecoherenceGammaMatrixDiagonal(gamma0_matrix_diagonal)
             nus_layer.Set_DecoherenceGammaEnergyDependence(
                 self.params.n.value.m_as("dimensionless")
@@ -397,13 +429,32 @@ class nusquids(Stage):
         if self.num_neutrinos == 3:
             return
 
+        # set lightcone fluctuations parameters (see see arXiv:2103.15313):
+        if self.use_lightcone_fluctuations :
+            nsq_units = nsq.Const() #TODO Once only (make into a member)
+            D_matrix_diagonal = np.array([ 0., 1, 1, 0., 1, 1, 1, 1, 0. ]) # Lightcone fluctuations D[rho] matrix shape (see arXiv:2103.15313 eqn 18)
+            damping_power = 2
+            nus_layer.Set_DecoherenceGammaMatrixDiagonal(D_matrix_diagonal)
+            nus_layer.Set_DecoherenceGammaEnergyDependence(self.params.n.value.m_as("dimensionless"))
+            nus_layer.Set_DecoherenceGammaEnergyScale(self.params.E0.value.m_as("eV")*nsq_units.eV)
+            nus_layer.Set_UseLightconeFluctuations(True)
+            nus_layer.Set_mLengthDependenceIndex(self.params.m.value.m_as("dimensionless"))
+            nus_layer.Set_dL0(self.params.dL0.value.m_as("km")*nsq_units.km) # Is this the correct unit or should it be multiplied by nsq_units.km?
+            nus_layer.Set_L0LengthScale(self.params.L0.value.m_as("km")*nsq_units.km) # Is this the correct unit or should it be multiplied by nsq_units.km?
+            nus_layer.Set_DampingPower(damping_power)
+
+        # TODO: Implement NSI
+
+        # Exit here if only have 3 neutrinis, everything beyond here if for additional sterile states
+        if self.num_neutrinos == 3: return
+        
         nus_layer.Set_MixingAngle(0, 3, self.params.theta14.value.m_as("rad"))
         nus_layer.Set_MixingAngle(1, 3, self.params.theta24.value.m_as("rad"))
         nus_layer.Set_MixingAngle(2, 3, self.params.theta34.value.m_as("rad"))
         nus_layer.Set_SquareMassDifference(3, self.params.deltam41.value.m_as("eV**2"))
         nus_layer.Set_CPPhase(0, 3, self.params.deltacp14.value.m_as("rad"))
         nus_layer.Set_CPPhase(1, 3, self.params.deltacp24.value.m_as("rad"))
-        # TODO: Implement NSI, decoherence
+
 
     def apply_prop_settings(self, nus_layer):
         nsq_units = nsq.Const()

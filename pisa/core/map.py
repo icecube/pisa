@@ -491,7 +491,7 @@ class Map(object):
         self.assert_compat(error_hist)
         super().__setattr__(
             '_hist',
-            unp.uarray(self._hist, np.ascontiguousarray(error_hist))
+            unp.uarray(self.nominal_values, np.ascontiguousarray(error_hist))
         )
 
     # TODO: make this return an OrderedDict to organize all of the returned
@@ -575,7 +575,7 @@ class Map(object):
              xlabelsize=None, ylabelsize=None, titlesize=None, fig_kw=None,
              pcolormesh_kw=None, colorbar_kw=None, outdir=None, fname=None,
              fmt=None, binlabel_format=None, binlabel_colors=["white", "black"],
-             binlabel_color_thresh=None, binlabel_stripzeros=True):
+             binlabel_color_thresh=None, binlabel_stripzeros=True, bad_color=None):
         """Plot a 2D map.
 
         Parameters
@@ -657,6 +657,9 @@ class Map(object):
             number use the first color in `binlabel_colors` and bins with a value above
             the given number use the second color in `binlabel_colors`. If "auto", set
             threshold automatically (basically half way).
+
+        bad_color : string, optional
+            Can choose the color used for "bad" bins (e.g. NaN) 
 
         Returns
         -------
@@ -786,6 +789,13 @@ class Map(object):
                                    np.floor(np.log2(max(y)))+1))
             y = np.log10(y)
 
+        # If user specified a "bad" color, set this
+        # Need a cmap object, so if we just have a string name then get the actual cmap object first
+        if bad_color is not None :
+            if isinstance(cmap, str) : # Need a cmap
+                cmap = plt.get_cmap(cmap) 
+            cmap.set_bad(bad_color)
+
         defaults = dict(
             vmin=vmin_, vmax=vmax_, cmap=cmap,
             shading='flat', edgecolors='face'
@@ -909,6 +919,13 @@ class Map(object):
         return {'hist': new_hist, 'binning': new_binning}
 
     @_new_obj
+    def round2int(self):
+        binning = self.binning
+        nominal_values = np.rint(self.nominal_values)
+        std_devs = self.std_devs
+        return {'hist': unp.uarray(nominal_values, std_devs)}
+
+    @_new_obj
     def sum(self, axis=None, keepdims=False):
         """Sum over dimensions corresponding to `axis` specification. Similar
         in behavior to `numpy.sum` method.
@@ -933,13 +950,16 @@ class Map(object):
             False.
 
         """
+
+        #TODO This function does't work if axis=None, since @_new_obj expects the output to be a map
+
         if axis is None:
             axis = self.binning.names
         if isinstance(axis, (string_types, int)):
             axis = [axis]
         # Note that the tuple is necessary here (I think...)
         sum_indices = tuple([self.binning.index(dim) for dim in axis])
-        new_hist = self.hist.sum(axis=sum_indices, keepdims=keepdims)
+        new_hist = np.nansum(self.hist, axis=sum_indices, keepdims=keepdims)
 
         new_binning = []
         for idx, dim in enumerate(self.binning.dims):
@@ -1000,6 +1020,9 @@ class Map(object):
 
         """
         # TODO: put uncertainties in
+
+        assert self.binning.mask is None, "`rebin` function does not currenty support bin masking"
+
         new_hist = rebin(hist=self.hist, orig_binning=self.binning,
                          new_binning=new_binning)
         return {'hist': new_hist, 'binning': new_binning}
@@ -1122,6 +1145,9 @@ class Map(object):
                     loc=orig_hist[valid_mask], scale=sigma[valid_mask],
                     random_state=random_state
                 )
+                if np.any(gauss[valid_mask] < 0.):
+                    logging.warn("Some bins after Gauss fluctuation has negative values, taking absolute for these bins")
+                    gauss[valid_mask]=np.abs(gauss[valid_mask], dtype=np.float64)
 
                 hist_vals = np.empty_like(orig_hist, dtype=np.float64)
                 hist_vals[valid_mask] = poisson.rvs(
@@ -1147,6 +1173,10 @@ class Map(object):
                     loc=orig_hist[valid_mask], scale=sigma[valid_mask],
                     random_state=random_state
                 )
+                if np.any(hist_vals[valid_mask] < 0.):
+                    logging.warn("Some bins after Gauss fluctuation has negative values, taking absolute for these bins")
+                    hist_vals[valid_mask] = np.abs(hist_vals[valid_mask], dtype=np.float64)
+
                 hist_vals[nan_at] = np.nan
                 error_vals = np.empty_like(orig_hist, dtype=np.float64)
                 error_vals[valid_mask] = np.sqrt(orig_hist[valid_mask])
@@ -1398,6 +1428,7 @@ class Map(object):
             copied into the new map(s).
 
         """
+
         dim_index = self.binning.index(dim, use_basenames=use_basenames)
         spliton_dim = self.binning.dims[dim_index]
 
@@ -1491,6 +1522,33 @@ class Map(object):
                              expected_values=expected_values)
 
         return np.sum(stats.llh(actual_values=self.hist,
+                                expected_values=expected_values))
+
+
+    def saturated_llh(self, expected_values, binned=False):
+        """Calculate the total log-likelihood value between this map and the
+        map described by `expected_values`; self is taken to be the "actual
+        values" (or (pseudo)data), and `expected_values` are the expectation
+        values for each bin.
+
+        Parameters
+        ----------
+        expected_values : numpy.ndarray or Map of same dimension as this
+
+        binned : bool
+
+        Returns
+        -------
+        total_llh : float or binned_llh if binned=True
+
+        """
+        expected_values = reduceToHist(expected_values)
+
+        if binned:
+            return stats.saturated_llh(actual_values=self.hist,
+                             expected_values=expected_values)
+
+        return np.sum(stats.saturated_llh(actual_values=self.hist,
                                 expected_values=expected_values))
 
     def mcllh_mean(self, expected_values, binned=False):
@@ -1800,17 +1858,27 @@ class Map(object):
     @property
     def hist(self):
         """numpy.ndarray : Histogram array underlying the Map"""
-        return self._hist
+
+        # Get the hist
+        hist = self._hist
+
+        # Apply bin mask, if one exists
+        # Set masked off elements to NaN (handling both cases where the hst is either a simple array, or has uncertainties)
+        if self.binning.mask is not None :
+            hist[~self.binning.mask] = ufloat(np.NaN, np.NaN) if isinstance(self._hist[np.unravel_index(0, self._hist.shape)], uncertainties.core.Variable) else np.NaN #TODO Is there a better way to check if this is a uarray?
+
+        # Done
+        return hist
 
     @property
     def nominal_values(self):
         """numpy.ndarray : Bin values stripped of uncertainties"""
-        return unp.nominal_values(self._hist)
+        return unp.nominal_values(self.hist)
 
     @property
     def std_devs(self):
         """numpy.ndarray : Uncertainties (standard deviations) per bin"""
-        return unp.std_devs(self._hist)
+        return unp.std_devs(self.hist)
 
     @property
     def binning(self):
@@ -3030,10 +3098,10 @@ class MapSet(object):
         return MapSet(maps=new_maps, name=self.name, tex=self.tex, hash=None,
                       collate_by_name=self.collate_by_name)
 
-    def llh_per_map(self, expected_values):
+    def llh_per_map(self, expected_values):  
         return self.apply_to_maps('llh', expected_values)
 
-    def llh_total(self, expected_values):
+    def llh_total(self, expected_values):   
         return np.sum(self.llh(expected_values))
 
     def set_poisson_errors(self):

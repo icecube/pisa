@@ -55,6 +55,7 @@ class kde(Stage):
         coszen_name="reco_coszen",
         oversample=10,
         coszen_reflection=0.25,
+        alpha=0.1,
         stack_pid=True,
         stash_hists=False,
         bootstrap=False,
@@ -67,7 +68,8 @@ class kde(Stage):
         self.bw_method = bw_method
         self.coszen_name = coszen_name
         self.oversample = int(oversample)
-        self.coszen_reflection = coszen_reflection
+        self.coszen_reflection = float(coszen_reflection)
+        self.alpha = float(alpha)
         self.stack_pid = stack_pid
         self.stash_hists = stash_hists
         self.stash_valid = False
@@ -172,6 +174,7 @@ class kde(Stage):
                 bw_method=self.bw_method,
                 coszen_name=self.coszen_name,
                 coszen_reflection=self.coszen_reflection,
+                alpha=self.alpha,
                 oversample=self.oversample,
                 use_cuda=False,
                 stack_pid=self.stack_pid,
@@ -255,6 +258,7 @@ class kde(Stage):
             kde_map = np.ascontiguousarray(kde_map.ravel())
 
             self.data.representation = self.apply_mode
+
             container["weights"] = kde_map
             if self.bootstrap:
                 container["errors"] = kde_errors

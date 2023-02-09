@@ -444,7 +444,6 @@ class Container():
             # check if key is binning dimension
             if key in binning.names:
                 return self.unroll_binning(key, binning)
-        
         # check validity
         if not key in self.keys:
             if key in self.all_keys:
@@ -602,7 +601,7 @@ class Container():
         new_hist = resample(weights, sample, src_representation, new_sample, dest_representation)                
         return new_hist      
         
-    def array_to_binned(self, key, src_representation, dest_representation):
+    def array_to_binned(self, key, src_representation, dest_representation, averaged=True):
         """Histogram data array into binned data
         Parameters
         ----------
@@ -648,9 +647,8 @@ class Container():
 
         self.representation = src_representation
         weights = self[key]
-
-        hist = histogram(sample, weights, hist_binning, averaged=True)
-
+        self.representation = dest_representation
+        hist = histogram(sample, weights, hist_binning, averaged=averaged)
         return hist
 
     def binned_to_array(self, key, src_representation, dest_representation):
@@ -684,7 +682,7 @@ class Container():
             self.representation = dest_representation
             sample = [self[name] for name in src_representation.names]
             hist_binning = src_representation
-
+   
         return lookup(sample, weights, hist_binning)
 
 

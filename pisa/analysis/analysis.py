@@ -249,6 +249,7 @@ def validate_minimizer_settings(minimizer_settings):
             logging.warning('starting step-size is very low, convergence will be slow')
 
 
+
 def get_separate_octant_params(
     hypo_maker, angle_name, inflection_point, tolerance=None
 ):
@@ -438,8 +439,8 @@ class BoundedRandomDisplacement(object):
 class HypoFitResult(object):
     """Holds all relevant information about a fit result."""
 
-    _state_attrs = ["metric", "metric_val", "params", "hypo_asimov_dist",
-                    "detailed_metric_info", "minimizer_time",
+    _state_attrs = ["metric", "metric_val", "params", "param_selections", 
+                    "hypo_asimov_dist", "detailed_metric_info", "minimizer_time",
                     "num_distributions_generated", "minimizer_metadata", "fit_history"]
 
     # TODO: initialize from serialized state
@@ -464,6 +465,7 @@ class HypoFitResult(object):
         self.hypo_asimov_dist = None
         if hypo_maker is not None:
             self.params = hypo_maker.params
+            self.param_selections = hypo_maker.param_selections
             # Record the distribution with the optimal param values
             self.hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
         self.detailed_metric_info = None
@@ -1006,6 +1008,9 @@ class BasicAnalysis(object):
         # (which will also be the initial values in the fit) and blah...
         # If this is the case, don't both to fit and return results right away.
 
+        if isinstance(metric, str):
+            metric = [metric]
+
         # Grab the hypo map
         hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
 
@@ -1127,6 +1132,7 @@ class BasicAnalysis(object):
 
         if not self.blindness:
             logging.info(f"found best fit at angle {new_fit_info.params[angle_name].value}")
+
 
         # We must not forget to reset the range of the angle to its original value!
         # Otherwise, the parameter returned by this function will have a different
@@ -1728,6 +1734,42 @@ class BasicAnalysis(object):
 
         # reset number of iterations before each minimization
         self._nit = 0
+
+
+        # Before starting minimization, check if we already have a perfect match between data and template
+        # This can happen if using pseudodata that was generated with the nominal values for parameters
+        # (which will also be the initial values in the fit) and blah...
+        # If this is the case, don't both to fit and return results right away. 
+
+        # Grab the hypo map
+        hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
+        
+        # Check if the hypo matches data
+        if data_dist.allclose(hypo_asimov_dist) :
+
+            msg = 'Initial hypo matches data, no need for fit'
+            logging.info(msg)
+
+            # Get the metric value at this initial point (for the returned data)
+            initial_metric_val = (
+                data_dist.metric_total(expected_values=hypo_asimov_dist, metric=metric[0])
+                + hypo_maker.params.priors_penalty(metric=metric[0])
+            )
+
+            # Return fit results, even though didn't technically fit
+            return HypoFitResult(
+                metric,
+                initial_metric_val,
+                data_dist,
+                hypo_maker,
+                minimizer_time=0.,
+                minimizer_metadata={"success":True, "nit":0, "message":msg}, # Add some metadata in the format returned by `scipy.optimize.minimize`
+                fit_history=None,
+                other_metrics=None,
+                num_distributions_generated=0,
+                include_detailed_metric_info=True,
+            )
+
 
         #
         # From that point on, optimize starts using the metric and
