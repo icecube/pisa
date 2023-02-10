@@ -531,7 +531,6 @@ class Hypersurface(object):
         # Check nominal dataset definition
         assert isinstance(nominal_map, Map)
         assert isinstance(nominal_param_values, collections.abc.Mapping)
-        assert set(nominal_param_values.keys()) == set(self.param_names), f"Params mismatch : {set(nominal_param_values.keys())} != {set(self.param_names)}"
         assert all([isinstance(k, str) for k in nominal_param_values.keys()])
         assert all([np.isscalar(v) for v in nominal_param_values.values()])
         # Check systematic dataset definitions
@@ -541,14 +540,64 @@ class Hypersurface(object):
         for sys_map, sys_param_vals in zip(sys_maps, sys_param_values):
             assert isinstance(sys_map, Map)
             assert isinstance(sys_param_vals, collections.abc.Mapping)
-            msg = f"self.param_names: {self.param_names}\n sys_param_vals.keys(): {sys_param_vals.keys()}"
-            assert set(sys_param_vals.keys()) == set(self.param_names), msg
             assert all([isinstance(k, str) for k in sys_param_vals.keys()])
             assert all([np.isscalar(v) for v in sys_param_vals.values()])
             assert sys_map.binning == nominal_map.binning
 
         assert not (
             include_empty and self.log), "empty bins cannot be included in log mode"
+
+
+        #
+        # Handle param validity
+        #
+
+        # If a param has been dropped for this specific hypersurface (e.g. because it is not valid for this map type), 
+        # then need to remove that dimension from the input fit data also.
+        # This means:
+        #   1) Dropping the param from the specification for each dataset
+        #   2) Removing any off-axis datasets w.r.t. this parameter
+
+        #TODO finish clean up here...
+
+        # Start by taking copies before we modify anything
+        nominal_param_values = copy.deepcopy(nominal_param_values)
+        sys_maps = copy.deepcopy(sys_maps)
+        sys_param_values = copy.deepcopy(sys_param_values)
+
+        # Get a list of all param names
+        all_param_names = copy.copy( list(nominal_param_values.keys()) )
+
+        # Remove the param values for any missing params from nominal specs
+        invalid_param_nominal_values = {}
+        for param_name in all_param_names :
+            if param_name not in self.param_names :
+                invalid_param_nominal_values[param_name] = nominal_param_values.pop(param_name)
+
+        # Remove any datasets that are off-nominal in the dropped params 
+        drop_indices = []
+        for invalid_param_name, invalid_param_nominal_value in invalid_param_nominal_values.items() :
+            for i, (sys_map, sys_param_vals) in enumerate(zip(sys_maps, sys_param_values)):
+                if sys_param_vals[invalid_param_name] != invalid_param_nominal_value :
+                    drop_indices.append(i)
+        drop_indices = list(set(drop_indices))
+        if len(drop_indices) > 0 :
+            sys_param_values = [ s for i, s in enumerate(sys_param_values) if i not in drop_indices ]
+            sys_maps = [ s for i, s in enumerate(sys_maps) if i not in drop_indices ]
+
+        # For the remaining sys sets, remove the dropped params from the specs
+        for param_name in all_param_names :
+            if param_name not in self.param_names :
+                for sys_param_vals in sys_param_values:
+                    sys_param_vals.pop(param_name)
+
+        # Final checks
+        # assert set(nominal_param_values.keys()) == set(self.param_names), f"Params mismatch : {set(nominal_param_values.keys())} != {set(self.param_names)}" #TODO REPLACE
+        for sys_map, sys_param_vals in zip(sys_maps, sys_param_values):
+            msg = f"self.param_names: {self.param_names}\n sys_param_vals.keys(): {sys_param_vals.keys()}"
+            assert set(sys_param_vals.keys()) == set(self.param_names), msg
+
+
         #
         # Format things before getting started
         #
@@ -606,19 +655,6 @@ class Hypersurface(object):
                 #
                 # Perform Gaussian filtering on the input maps
                 #
-
-
-
-                #TODO REMOVE
-                #TODO REMOVE
-                #TODO REMOVE
-                #TODO REMOVE
-                #TODO REMOVE
-                print(">>>> STARTED gaussian_filter SMOOTHING")
-                #TODO REMOVE
-                #TODO REMOVE
-                #TODO REMOVE
-                #TODO REMOVE
 
                 if self.smooth_kw is None :
                     self.smooth_kw = {}
@@ -816,11 +852,13 @@ class Hypersurface(object):
 
                         return self.evaluate(params_unflattened, bin_idx=bin_idx)
 
+                    # Define inverse param sigma data structure
                     inv_param_sigma = []
                     if intercept_sigma is not None:
                         inv_param_sigma.append(1./intercept_sigma)
                     else:
                         inv_param_sigma.append(0.)
+
                     for param in list(self.params.values()):
                         if param.coeff_prior_sigma is not None:
                             for j in range(param.num_fit_coeffts):
@@ -1351,16 +1389,22 @@ class HypersurfaceParam(object):
     coeff_prior_sigma : array, optional
         Prior sigma values for the coefficients. If None (default), no regularization
         will be applied during the fit.
+
+    valid_map_names : list of strings, optional
+        Can choose this parameter to only be applied to specific maps
+        Normally don't want to do this
     '''
 
-    def __init__(self, name, func_name, initial_fit_coeffts=None, bounds=None, coeff_prior_sigma=None):
+    def __init__(self, name, func_name, initial_fit_coeffts=None, bounds=None, coeff_prior_sigma=None, valid_map_names=None):
 
         # Store basic members
         self.name = name
+        self.valid_map_names = valid_map_names
 
         # Handle functional form fit parameters
         self.fit_coeffts = None  # Fit params container, not yet populated
         self.fit_coeffts_sigma = None  # Fit param sigma container, not yet populated
+
         # The initial values for the fit parameters
         self.initial_fit_coeffts = initial_fit_coeffts
         self.bounds = bounds
@@ -1536,6 +1580,7 @@ class HypersurfaceParam(object):
             state["fit_coeffts"] = self.fit_coeffts
             state["fit_coeffts_sigma"] = self.fit_coeffts_sigma
             state["initial_fit_coeffts"] = self.initial_fit_coeffts
+            state["valid_map_names"] = self.valid_map_names
             state["fitted"] = self.fitted
             state["fit_param_values"] = self.fit_param_values
             state["binning_shape"] = self.binning_shape
@@ -1558,6 +1603,7 @@ class HypersurfaceParam(object):
             func_name=state.pop("func_name"),
             initial_fit_coeffts=state.pop("initial_fit_coeffts"),
             bounds=state.pop("bounds"),
+            valid_map_names=state.pop("valid_map_names"), #TODO fix issues with older HS files
         )
         if "coeff_prior_sigma" in state :
             param_init_kw["coeff_prior_sigma"] = state.pop("coeff_prior_sigma")
@@ -1578,17 +1624,36 @@ Hypersurface fitting and loading helper functions
 '''
 
 
-def get_hypersurface_file_name(hypersurface, tag):
+def get_hypersurface_file_name(params, tag):
     '''
     Create a descriptive file name
     '''
 
-    num_dims = len(hypersurface.params)
-    param_str = "_".join(hypersurface.param_names)
+    num_dims = len(params)
+    param_str = "_".join([ p.name for p in params ])
     output_file = "%s__hypersurface_fits__%dd__%s.json" % (
         tag, num_dims, param_str)
 
     return output_file
+
+
+def get_hypersurface_params_superset(hypersurfaces):
+    '''
+    Get a superset of the params in all hypersurfaces.
+    Nnot necessarily the same in each due to the 'valid_map_names' option.
+    '''
+
+    param_names_superset = []
+    param_superset = []
+
+    for hypersurface in hypersurfaces :
+        for param in hypersurface.params.values() :
+            if param.name not in param_names_superset :
+                param_names_superset.append(param.name)
+                param_superset.append(param)
+
+    return param_superset, param_names_superset
+
 
 
 def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, combine_regex=None,
@@ -1819,14 +1884,26 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
         sys_param_values = [sys_dataset["sys_params"]
                             for sys_dataset in sys_datasets]
 
+
+        #
+        # Drop any invalid params
+        #
+
+        # Some parameters are only valid for a some of the map names
+        # So might need to drop some params from the inputs here
+
+        # Some params might only be relevent for specific maps, check this here and remove any that are not relevent
+        params_this_map = [ copy.deepcopy(p) for p in params if ( (p.valid_map_names is None) or (map_name in p.valid_map_names) ) ] # Need the copy, as want one set of params per map
+
+
         #
         # Fit the hypersurface
         #
 
         # Create the hypersurface
         hypersurface = Hypersurface(
-            params=copy.deepcopy(params), # Need the deepcopy, as want one set of params per map
-            initial_intercept=0. if log else 1.,  # Initial value for intercept
+            params=params_this_map,
+            initial_intercept=0. if log else 1., # Initial value for intercept
             log=log
         )
 
@@ -1856,8 +1933,8 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
     #
 
     # Create a file name
-    output_path = os.path.join(output_dir, get_hypersurface_file_name(
-        list(hypersurfaces.values())[0], tag))
+    params_superset, param_names_superset = get_hypersurface_params_superset(hypersurfaces.values())
+    output_path = os.path.join(output_dir, get_hypersurface_file_name(params_superset, tag))
 
     # Create the output directory
     mkdir(output_dir)
@@ -1885,7 +1962,7 @@ def load_hypersurfaces(input_file, expected_binning=None):
     Parameters
     ----------
     input_file : str
-        Path to the file contsaining the hypersurface fits.
+        Path to the file containing the hypersurface fits.
         For the special case of the datareleases these needs to be the path to all
         relevent CSV fles, e.g. "<path/to/datarelease>/hyperplanes_*.csv".
     expected_binning : One/MultiDimBinning

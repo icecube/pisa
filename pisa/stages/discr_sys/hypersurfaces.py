@@ -87,6 +87,7 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
         self.fit_results_file = fit_results_file
         self.propagate_uncertainty = propagate_uncertainty
         self.interpolated = interpolated
+
         # Expected parameter names depend on the hypersurface and, if applicable,
         # on the parameters in which the hypersurfaces are interpolated.
         # For this reason we need to load the hypersurfaces already in the init function
@@ -96,11 +97,17 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
             self.inter_params = list(self.hypersurfaces.values())[0].interpolation_param_names
         else:
             self.hypersurfaces = hs.load_hypersurfaces(self.fit_results_file, expected_binning=std_kwargs['calc_mode'])
-        self.hypersurface_param_names = list(self.hypersurfaces.values())[0].param_names
+
+        # Get the param names for each hypersurface
+        # Not necessarily the same for every hypersurface
+        self.hypersurface_param_names = { k : v.param_names for k, v in self.hypersurfaces.items() }
+
+        # Get the superset of param names, so know what stage params to expect
+        _, hypersurface_param_names_superset = hs.get_hypersurface_params_superset(self.hypersurfaces.values())
 
         # -- Initialize base class -- #
         super().__init__(
-            expected_params=self.hypersurface_param_names + self.inter_params,
+            expected_params=hypersurface_param_names_superset + self.inter_params,
             **std_kwargs,
         )
 
@@ -148,10 +155,7 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
             for key, val in self.links.items():
                 self.data.link_containers(key, val)
 
-        # Format the params dict that will be passed to `Hypersurface.evaluate`
-        #TODO checks on param units
-        param_values = {sys_param_name: self.params[sys_param_name].m
-                        for sys_param_name in self.hypersurface_param_names}
+        # Grab any parameterr which are being used for interpolation, ready to pass to the underlying hypersurface functions
         if self.interpolated:
             osc_params = {name: self.params[name] for name in self.inter_params}
 
@@ -162,6 +166,10 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
 
         # Loop over types
         for container in self.data:
+
+            # Format the params dict that will be passed to `Hypersurface.evaluate`
+            # Can vary for different containers
+            param_values = {sys_param_name: self.params[sys_param_name].m for sys_param_name in self.hypersurface_param_names[container.name]}
 
             # Get the hypersurfaces
             if self.interpolated:
