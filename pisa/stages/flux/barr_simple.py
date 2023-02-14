@@ -57,13 +57,13 @@ class barr_simple(Stage):  # pylint: disable=invalid-name
         )
 
     def setup_function(self):
-        self.data.represenatation = self.calc_mode
+        self.data.representation = self.calc_mode
         for container in self.data:
             container["nu_flux"] = np.empty((container.size, 2), dtype=FTYPE)
 
     @profile
     def compute_function(self):
-        self.data.represenatation = self.calc_mode
+        self.data.representation = self.calc_mode
 
         nue_numu_ratio = self.params.nue_numu_ratio.value.m_as("dimensionless")
         nu_nubar_ratio = self.params.nu_nubar_ratio.value.m_as("dimensionless")
