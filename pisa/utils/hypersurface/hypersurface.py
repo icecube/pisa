@@ -272,6 +272,7 @@ class Hypersurface(object):
         self.fit_complete = False
         self.fit_info_stored = False
         self.fit_maps_norm = None
+        self.fit_maps_smooth = None
         self.fit_maps_raw = None
         self.fit_chi2 = None
         self.fit_cov_mat = None
@@ -469,7 +470,8 @@ class Hypersurface(object):
 
     def fit(self, nominal_map, nominal_param_values, sys_maps, sys_param_values,
             norm=True, method="L-BFGS-B", fix_intercept=False, intercept_bounds=None,
-            intercept_sigma=None, include_empty=False, keep_maps=True, ref_bin_idx=None):
+            intercept_sigma=None, include_empty=False, keep_maps=True, ref_bin_idx=None,
+            smooth_method=None, smooth_kw=None):
         '''
         Fit the hypersurface coefficients (in every bin) to best match the provided
         nominal and systematic datasets.
@@ -529,7 +531,6 @@ class Hypersurface(object):
         # Check nominal dataset definition
         assert isinstance(nominal_map, Map)
         assert isinstance(nominal_param_values, collections.abc.Mapping)
-        assert set(nominal_param_values.keys()) == set(self.param_names), f"Params mismatch : {set(nominal_param_values.keys())} != {set(self.param_names)}"
         assert all([isinstance(k, str) for k in nominal_param_values.keys()])
         assert all([np.isscalar(v) for v in nominal_param_values.values()])
         # Check systematic dataset definitions
@@ -539,20 +540,74 @@ class Hypersurface(object):
         for sys_map, sys_param_vals in zip(sys_maps, sys_param_values):
             assert isinstance(sys_map, Map)
             assert isinstance(sys_param_vals, collections.abc.Mapping)
-            msg = f"self.param_names: {self.param_names}\n sys_param_vals.keys(): {sys_param_vals.keys()}"
-            assert set(sys_param_vals.keys()) == set(self.param_names), msg
             assert all([isinstance(k, str) for k in sys_param_vals.keys()])
             assert all([np.isscalar(v) for v in sys_param_vals.values()])
             assert sys_map.binning == nominal_map.binning
 
         assert not (
             include_empty and self.log), "empty bins cannot be included in log mode"
+
+
+        #
+        # Handle param validity
+        #
+
+        # If a param has been dropped for this specific hypersurface (e.g. because it is not valid for this map type), 
+        # then need to remove that dimension from the input fit data also.
+        # This means:
+        #   1) Dropping the param from the specification for each dataset
+        #   2) Removing any off-axis datasets w.r.t. this parameter
+
+        #TODO finish clean up here...
+
+        # Start by taking copies before we modify anything
+        nominal_param_values = copy.deepcopy(nominal_param_values)
+        sys_maps = copy.deepcopy(sys_maps)
+        sys_param_values = copy.deepcopy(sys_param_values)
+
+        # Get a list of all param names
+        all_param_names = copy.copy( list(nominal_param_values.keys()) )
+
+        # Remove the param values for any missing params from nominal specs
+        invalid_param_nominal_values = {}
+        for param_name in all_param_names :
+            if param_name not in self.param_names :
+                invalid_param_nominal_values[param_name] = nominal_param_values.pop(param_name)
+
+        # Remove any datasets that are off-nominal in the dropped params 
+        drop_indices = []
+        for invalid_param_name, invalid_param_nominal_value in invalid_param_nominal_values.items() :
+            for i, (sys_map, sys_param_vals) in enumerate(zip(sys_maps, sys_param_values)):
+                if sys_param_vals[invalid_param_name] != invalid_param_nominal_value :
+                    drop_indices.append(i)
+        drop_indices = list(set(drop_indices))
+        if len(drop_indices) > 0 :
+            sys_param_values = [ s for i, s in enumerate(sys_param_values) if i not in drop_indices ]
+            sys_maps = [ s for i, s in enumerate(sys_maps) if i not in drop_indices ]
+
+        # For the remaining sys sets, remove the dropped params from the specs
+        for param_name in all_param_names :
+            if param_name not in self.param_names :
+                for sys_param_vals in sys_param_values:
+                    sys_param_vals.pop(param_name)
+
+        # Final checks
+        # assert set(nominal_param_values.keys()) == set(self.param_names), f"Params mismatch : {set(nominal_param_values.keys())} != {set(self.param_names)}" #TODO REPLACE
+        for sys_map, sys_param_vals in zip(sys_maps, sys_param_values):
+            msg = f"self.param_names: {self.param_names}\n sys_param_vals.keys(): {sys_param_vals.keys()}"
+            assert set(sys_param_vals.keys()) == set(self.param_names), msg
+
+
         #
         # Format things before getting started
         #
 
-        # Store thr fitting method
+        # Store the fitting method
         self.fit_method = method
+
+        # Store smoothing info
+        self.smooth_method = smooth_method
+        self.smooth_kw = smooth_kw
 
         # Initialise hypersurface using nominal dataset
         self._init(binning=nominal_map.binning,
@@ -564,6 +619,7 @@ class Hypersurface(object):
 
         # Store raw maps
         self.fit_maps_raw = maps
+        self.fit_info_stored = True
 
         # Convert params values from `list of dicts` to `dict of lists`
         param_values_dict = {name: np.array([p[name] for p in param_values])
@@ -581,6 +637,49 @@ class Hypersurface(object):
         self.fit_cov_mat = np.full(
             list(self.binning.shape)+[self.num_fit_coeffts, self.num_fit_coeffts], np.NaN)
 
+
+        #
+        # Smoothing
+        #
+
+        self.fit_maps_smooth = None
+
+        if self.smooth_method is not None :
+
+            raise Exception("Hypersurface smoothing needs some fixing")
+
+            fit_maps_smooth = []
+
+            if self.smooth_method == "gaussian_filter" :
+
+                #
+                # Perform Gaussian filtering on the input maps
+                #
+
+                if self.smooth_kw is None :
+                    self.smooth_kw = {}
+
+                # Treating each PID bin individually as a 2D hist (E, coszen)
+                #TODO Make more general
+                #TODO Can smooth in 3 dims here if desired with gaussian_filter (I think...)
+                split_dim = "pid"
+                assert split_dim in self.binning
+
+                # Loop over maps and apply filter
+                for m in self.fit_maps :
+                    fit_maps_smooth.append( m.gaussian_filter(split_dim=split_dim, **self.smooth_kw) )
+
+            else :
+                raise Exception(f"Unknown smooting method : {self.smooth_method}")
+
+
+            # Store
+            self.fit_maps_smooth = fit_maps_smooth
+
+
+
+
+
         #
         # Normalisation
         #
@@ -590,6 +689,10 @@ class Hypersurface(object):
         # this.
         finite_mask = nominal_map.nominal_values != 0
 
+        # Also include any binning mask in the finite mask (since these bin will be NaN)
+        if self.binning.mask is not None :
+            finite_mask = finite_mask & self.binning.mask
+
         # Normalise bin values, if requested
         if norm:
 
@@ -598,19 +701,14 @@ class Hypersurface(object):
             # nominal
 
             # Formalise, handling inf values
-            normed_maps = []
-            for m in maps:
+            fit_maps_norm = []
+            for m in self.fit_maps:
                 norm_m = copy.deepcopy(m)
                 norm_m.hist[finite_mask] = norm_m.hist[finite_mask] / \
                     unp.nominal_values(nominal_map.hist[finite_mask])
                 norm_m.hist[~finite_mask] = ufloat(np.NaN, np.NaN)
-                normed_maps.append(norm_m)
-
-            # Store for plotting later
-            self.fit_maps_norm = normed_maps
-
-        # Record that fit info is now stored
-        self.fit_info_stored = True
+                fit_maps_norm.append(norm_m)
+            self.fit_maps_norm = fit_maps_norm
 
         #
         # Some final checks
@@ -618,7 +716,7 @@ class Hypersurface(object):
 
         # Not expecting any bins to have negative values (negative counts doesn't make
         # sense)
-        # TODO hypersurface in general could consider -ve values (no explicitly
+        # TODO hypersurface in general could consider -ve values (not explicitly
         # tied to histograms), so maybe can relax this constraint
         for m in self.fit_maps:
             assert np.all(m.nominal_values[finite_mask]
@@ -630,213 +728,237 @@ class Hypersurface(object):
 
         for bin_idx in np.ndindex(self.binning.shape):  # TODO grab from input map
 
-            #
-            # Format this bin's data for fitting
-            #
+            # Check if this bin is masked
+            if (self.binning.mask is not None) and (self.binning.mask[bin_idx] == False) :
 
-            # Format the fit `y` values : [ bin value 0, bin_value 1, ... ]
-            # Also get the corresonding uncertainty
-            y = np.asarray([m.nominal_values[bin_idx]
-                            for m in self.fit_maps], dtype=FTYPE)
-            y_sigma = np.asarray([m.std_devs[bin_idx]
-                                  for m in self.fit_maps], dtype=FTYPE)
+                logging.debug("Skipping masked bin {bin_idx}")
 
-            # Create a mask for keeping all these points
-            # May remove some points before fitting if find issues
-            scan_point_mask = np.ones(y.shape, dtype=bool)
-
-            # Cases where we have a y_sigma element = 0 (normally because the
-            # corresponding y element = 0) screw up the fits (least squares divides by
-            # sigma, so get infs) By default, we ignore empty bins. If the user wishes
-            # to include them, it can be done with a value of zero and standard
-            # deviation of 1.
-            bad_sigma_mask = y_sigma == 0.
-            if bad_sigma_mask.sum() > 0:
-                if include_empty:
-                    y_sigma[bad_sigma_mask] = 1.
+                p0_intercept = self.intercept[bin_idx]
+                p0_param_coeffts = [param.get_fit_coefft(bin_idx=bin_idx, coefft_idx=i_cft)
+                                    for param in list(self.params.values())
+                                    for i_cft in range(param.num_fit_coeffts)]
+                if fix_intercept:
+                    p0 = np.array(p0_param_coeffts, dtype=FTYPE)
                 else:
-                    scan_point_mask = scan_point_mask & ~bad_sigma_mask
-
-            # Apply the mask to get the values I will actually use
-            x_to_use = np.array([xx[scan_point_mask] for xx in x])
-            y_to_use = y[scan_point_mask]
-            y_sigma_to_use = y_sigma[scan_point_mask]
-
-            # Checks
-            assert x_to_use.shape[0] == len(self.params)
-            assert x_to_use.shape[1] == y_to_use.size
-
-            # Get flat list of the fit param guesses
-            # The param coefficients are ordered as [ param 0 cft 0, ..., param 0 cft N,
-            # ..., param M cft 0, ..., param M cft N ]
-            p0_intercept = self.intercept[bin_idx]
-            p0_param_coeffts = [param.get_fit_coefft(bin_idx=bin_idx, coefft_idx=i_cft)
-                                for param in list(self.params.values())
-                                for i_cft in range(param.num_fit_coeffts)]
-            if fix_intercept:
-                p0 = np.array(p0_param_coeffts, dtype=FTYPE)
-            else:
-                p0 = np.array([p0_intercept] + p0_param_coeffts, dtype=FTYPE)
-
-            #
-            # Check if have valid data in this bin
-            #
-
-            # If have empty bins, cannot fit In particular, if the nominal map has an
-            # empty bin, it cannot be rescaled (x * 0 = 0) If this case, no need to try
-            # fitting
-
-            # Check if have NaNs/Infs
-            if np.any(~np.isfinite(y_to_use)):  # TODO also handle missing sigma
+                    p0 = np.array([p0_intercept] + p0_param_coeffts, dtype=FTYPE)
 
                 # Not fitting, add empty variables
                 popt = np.full_like(p0, np.NaN)
                 pcov = np.NaN
 
-            # Otherwise, fit...
-            else:
+
+            else :
+
+                # Otherwise proceed to fitting...
 
                 #
-                # Fit
+                # Format this bin's data for fitting
                 #
 
-                # Must have at least as many sets as free params in fit or else curve_fit will fail
-                assert y.size >= p0.size, "Number of datasets used for fitting (%i) must be >= num free params (%i)" % (
-                    y.size, p0.size)
+                # Format the fit `y` values : [ bin value 0, bin_value 1, ... ]
+                # Also get the corresonding uncertainty
+                y = np.asarray([m.nominal_values[bin_idx]
+                                for m in self.fit_maps], dtype=FTYPE)
+                y_sigma = np.asarray([m.std_devs[bin_idx]
+                                      for m in self.fit_maps], dtype=FTYPE)
 
-                # Define a callback function for use with `curve_fit`
-                #   x : sys params
-                #   p : func/shape params
-                def callback(x, *p):
+                # Create a mask for keeping all these points
+                # May remove some points before fitting if find issues
+                scan_point_mask = np.ones(y.shape, dtype=bool)
 
-                    # Note that this is using the dynamic variable `bin_idx`, which
-                    # cannot be passed as an arg as `curve_fit` cannot handle fixed
-                    # parameters.
+                # Cases where we have a y_sigma element = 0 (normally because the
+                # corresponding y element = 0) screw up the fits (least squares divides by
+                # sigma, so get infs) By default, we ignore empty bins. If the user wishes
+                # to include them, it can be done with a value of zero and standard
+                # deviation of 1.
+                bad_sigma_mask = y_sigma == 0.
+                if bad_sigma_mask.sum() > 0:
+                    if include_empty:
+                        y_sigma[bad_sigma_mask] = 1.
+                    else:
+                        scan_point_mask = scan_point_mask & ~bad_sigma_mask
+
+                # Apply the mask to get the values I will actually use
+                x_to_use = np.array([xx[scan_point_mask] for xx in x])
+                y_to_use = y[scan_point_mask]
+                y_sigma_to_use = y_sigma[scan_point_mask]
+
+                # Checks
+                assert x_to_use.shape[0] == len(self.params)
+                assert x_to_use.shape[1] == y_to_use.size
+
+                # Get flat list of the fit param guesses
+                # The param coefficients are ordered as [ param 0 cft 0, ..., param 0 cft N,
+                # ..., param M cft 0, ..., param M cft N ]
+                p0_intercept = self.intercept[bin_idx]
+                p0_param_coeffts = [param.get_fit_coefft(bin_idx=bin_idx, coefft_idx=i_cft)
+                                    for param in list(self.params.values())
+                                    for i_cft in range(param.num_fit_coeffts)]
+                if fix_intercept:
+                    p0 = np.array(p0_param_coeffts, dtype=FTYPE)
+                else:
+                    p0 = np.array([p0_intercept] + p0_param_coeffts, dtype=FTYPE)
+
+                #
+                # Check if have valid data in this bin
+                #
+
+                # If have empty bins, cannot fit In particular, if the nominal map has an
+                # empty bin, it cannot be rescaled (x * 0 = 0) If this case, no need to try
+                # fitting
+
+                # Check if have NaNs/Infs
+                if np.any(~np.isfinite(y_to_use)):  # TODO also handle missing sigma
+                    # Not fitting, add empty variables
+                    popt = np.full_like(p0, np.NaN)
+                    pcov = np.NaN
+
+                # Otherwise, fit...
+                else:
+
                     #
-                    # Unflatten list of the func/shape params, and write them to the
-                    # hypersurface structure
-                    self.intercept[bin_idx] = self.initial_intercept if fix_intercept else p[0]
-                    i = 0 if fix_intercept else 1
+                    # Fit
+                    #
+
+                    # Must have at least as many sets as free params in fit or else curve_fit will fail
+                    assert y.size >= p0.size, "Number of datasets used for fitting (%i) must be >= num free params (%i)" % (
+                        y.size, p0.size)
+
+                    # Define a callback function for use with `curve_fit`
+                    #   x : sys params
+                    #   p : func/shape params
+                    def callback(x, *p):
+
+                        # Note that this is using the dynamic variable `bin_idx`, which
+                        # cannot be passed as an arg as `curve_fit` cannot handle fixed
+                        # parameters.
+                        #
+                        # Unflatten list of the func/shape params, and write them to the
+                        # hypersurface structure
+                        self.intercept[bin_idx] = self.initial_intercept if fix_intercept else p[0]
+                        i = 0 if fix_intercept else 1
+                        for param in list(self.params.values()):
+                            for j in range(param.num_fit_coeffts):
+                                bin_fit_idx = tuple(list(bin_idx) + [j])
+                                param.fit_coeffts[bin_fit_idx] = p[i]
+                                i += 1
+
+                        # Unflatten sys param values
+                        params_unflattened = collections.OrderedDict()
+                        for i in range(len(self.params)):
+                            param_name = list(self.params.keys())[i]
+                            params_unflattened[param_name] = x[i]
+
+                        return self.evaluate(params_unflattened, bin_idx=bin_idx)
+
+                    # Define inverse param sigma data structure
+                    inv_param_sigma = []
+                    if intercept_sigma is not None:
+                        inv_param_sigma.append(1./intercept_sigma)
+                    else:
+                        inv_param_sigma.append(0.)
+
                     for param in list(self.params.values()):
+                        if param.coeff_prior_sigma is not None:
+                            for j in range(param.num_fit_coeffts):
+                                inv_param_sigma.append(
+                                    1./param.coeff_prior_sigma[j])
+                        else:
+                            for j in range(param.num_fit_coeffts):
+                                inv_param_sigma.append(0.)
+                    inv_param_sigma = np.array(inv_param_sigma)
+                    assert np.all(np.isfinite(
+                        inv_param_sigma)), "invalid values found in prior sigma. They must not be zero."
+
+                    # coefficient names to pass to Minuit. Not strictly necessary
+                    coeff_names = [] if fix_intercept else ['intercept']
+                    for name, param in self.params.items():
                         for j in range(param.num_fit_coeffts):
-                            bin_fit_idx = tuple(list(bin_idx) + [j])
-                            param.fit_coeffts[bin_fit_idx] = p[i]
-                            i += 1
+                            coeff_names.append(name + '_p{:d}'.format(j))
 
-                    # Unflatten sys param values
-                    params_unflattened = collections.OrderedDict()
-                    for i in range(len(self.params)):
-                        param_name = list(self.params.keys())[i]
-                        params_unflattened[param_name] = x[i]
+                    def loss(p):
+                        '''
+                        Loss to be minimized during the fit.
+                        '''
+                        fvals = callback(x_to_use, *p)
+                        return np.sum(((fvals - y_to_use)/y_sigma_to_use)**2) + np.sum((inv_param_sigma*p)**2)
 
-                    return self.evaluate(params_unflattened, bin_idx=bin_idx)
-
-                inv_param_sigma = []
-                if intercept_sigma is not None:
-                    inv_param_sigma.append(1./intercept_sigma)
-                else:
-                    inv_param_sigma.append(0.)
-                for param in list(self.params.values()):
-                    if param.coeff_prior_sigma is not None:
-                        for j in range(param.num_fit_coeffts):
-                            inv_param_sigma.append(
-                                1./param.coeff_prior_sigma[j])
+                    # Define fit bounds for `minimize`. Bounds are pairs of (min, max)
+                    # values for each parameter in the fit. Use 'None' in place of min/max
+                    # if there is
+                    # no bound in that direction.
+                    fit_bounds = []
+                    if fix_intercept:
+                        logging.debug("fixed intercept needs no bounds")
+                    elif intercept_bounds is None:
+                        fit_bounds.append(tuple([None, None]))
                     else:
-                        for j in range(param.num_fit_coeffts):
-                            inv_param_sigma.append(0.)
-                inv_param_sigma = np.array(inv_param_sigma)
-                assert np.all(np.isfinite(
-                    inv_param_sigma)), "invalid values found in prior sigma. They must not be zero."
+                        assert (len(intercept_bounds) == 2) and (
+                            np.ndim(intercept_bounds) == 1), "intercept bounds must be given as 2-tuple"
+                        fit_bounds.append(intercept_bounds)
+                    
+                    for param in self.params.values():
+                        if param.bounds is None:
+                            fit_bounds.extend(
+                                ((None, None),)*param.num_fit_coeffts)
+                        else:
+                            if np.ndim(param.bounds) == 1:
+                                assert len(
+                                    param.bounds) == 2, "bounds on single coefficients must be given as 2-tuples"
+                                fit_bounds.append(param.bounds)
+                            elif np.ndim(param.bounds) == 2:
+                                assert np.all([len(t) == 2 for t in param.bounds]
+                                              ), "bounds must be given as a tuple of 2-tuples"
+                                fit_bounds.extend(param.bounds)
 
-                # coefficient names to pass to Minuit. Not strictly necessary
-                coeff_names = [] if fix_intercept else ['intercept']
-                for name, param in self.params.items():
-                    for j in range(param.num_fit_coeffts):
-                        coeff_names.append(name + '_p{:d}'.format(j))
+                    # Define the EPS (step length) used by the fitter Need to take care with
+                    # floating type precision, don't want to go smaller than the FTYPE being
+                    # used by PISA can handle
+                    eps = np.finfo(FTYPE).eps
 
-                def loss(p):
-                    '''
-                    Loss to be minimized during the fit.
-                    '''
-                    fvals = callback(x_to_use, *p)
-                    return np.sum(((fvals - y_to_use)/y_sigma_to_use)**2) + np.sum((inv_param_sigma*p)**2)
+                    # If no reference bin index was specified, used the first bin index to be fitted
+                    if ref_bin_idx is None :
+                        ref_bin_idx = bin_idx
 
-                # Define fit bounds for `minimize`. Bounds are pairs of (min, max)
-                # values for each parameter in the fit. Use 'None' in place of min/max
-                # if there is
-                # no bound in that direction.
-                fit_bounds = []
-                if intercept_bounds is None:
-                    fit_bounds.append(tuple([None, None]))
-                else:
-                    assert (len(intercept_bounds) == 2) and (
-                        np.ndim(intercept_bounds) == 1), "intercept bounds must be given as 2-tuple"
-                    fit_bounds.append(intercept_bounds)
+                    # Debug logging
+                    if bin_idx == ref_bin_idx:
+                        msg = ">>>>>>>>>>>>>>>>>>>>>>>\n"
+                        msg += "Curve fit inputs to bin %s :\n" % (bin_idx,)
+                        msg += "  x           : \n%s\n" % x
+                        msg += "  y           : \n%s\n" % y
+                        msg += "  y sigma     : \n%s\n" % y_sigma
+                        msg += "  x used      : \n%s\n" % x_to_use
+                        msg += "  y used      : \n%s\n" % y_to_use
+                        msg += "  y sigma used: \n%s\n" % y_sigma_to_use
+                        msg += "  p0          : %s\n" % p0
+                        msg += "  bounds      : \n%s\n" % fit_bounds
+                        msg += "  inv sigma   : \n%s\n" % inv_param_sigma
+                        msg += "  fit method  : %s\n" % self.fit_method
+                        msg += "<<<<<<<<<<<<<<<<<<<<<<<"
+                        logging.debug(msg)
 
-                for param in self.params.values():
-                    if param.bounds is None:
-                        fit_bounds.extend(
-                            ((None, None),)*param.num_fit_coeffts)
-                    else:
-                        if np.ndim(param.bounds) == 1:
-                            assert len(
-                                param.bounds) == 2, "bounds on single coefficients must be given as 2-tuples"
-                            fit_bounds.append(param.bounds)
-                        elif np.ndim(param.bounds) == 2:
-                            assert np.all([len(t) == 2 for t in param.bounds]
-                                          ), "bounds must be given as a tuple of 2-tuples"
-                            fit_bounds.extend(param.bounds)
-
-                # Define the EPS (step length) used by the fitter Need to take care with
-                # floating type precision, don't want to go smaller than the FTYPE being
-                # used by PISA can handle
-                eps = np.finfo(FTYPE).eps
-
-                # If no reference bin index was specified, used the first bin index to be fitted
-                if ref_bin_idx is None :
-                    ref_bin_idx = bin_idx
-
-                # Debug logging
-                if bin_idx == ref_bin_idx:
-                    msg = ">>>>>>>>>>>>>>>>>>>>>>>\n"
-                    msg += "Curve fit inputs to bin %s :\n" % (bin_idx,)
-                    msg += "  x           : \n%s\n" % x
-                    msg += "  y           : \n%s\n" % y
-                    msg += "  y sigma     : \n%s\n" % y_sigma
-                    msg += "  x used      : \n%s\n" % x_to_use
-                    msg += "  y used      : \n%s\n" % y_to_use
-                    msg += "  y sigma used: \n%s\n" % y_sigma_to_use
-                    msg += "  p0          : %s\n" % p0
-                    msg += "  bounds      : \n%s\n" % fit_bounds
-                    msg += "  inv sigma   : \n%s\n" % inv_param_sigma
-                    msg += "  fit method  : %s\n" % self.fit_method
-                    msg += "<<<<<<<<<<<<<<<<<<<<<<<"
-                    logging.debug(msg)
-
-                # Perform fit
-                # errordef =1 for least squares fit and 0.5 for nllh fit
-                m = Minuit(loss, p0,
-                           # only initial step size, not very important
-                           # error=(0.1)*len(p0),
-                           # limit=fit_bounds,
-                           name=coeff_names)
-                m.errors = (0.1) * len(p0)
-                m.limits = fit_bounds
-                m.errordef = Minuit.LEAST_SQUARES
-                m.migrad()
-                m.hesse()
-
-                popt = np.array(m.values)
-                try:
-                    pcov = np.array(m.covariance)
-                except:
-                    logging.warn(f"HESSE call failed for bin {bin_idx}, covariance matrix unavailable")
-                    pcov = np.full((len(p0), len(p0)), np.nan)
-                if bin_idx == ref_bin_idx:
-                    logging.debug(m.fmin)
-                    logging.debug(m.params)
-                    logging.debug(m.covariance)
-
+                    # Perform fit
+                    # errordef =1 for least squares fit and 0.5 for nllh fit
+                    m = Minuit(loss, p0,
+                               # only initial step size, not very important
+                               # error=(0.1)*len(p0),
+                               # limit=fit_bounds,
+                               name=coeff_names)
+                    m.errors = (0.1) * len(p0)
+                    m.limits = fit_bounds
+                    m.errordef = Minuit.LEAST_SQUARES
+                    m.migrad()
+                    m.hesse()
+                    popt = np.array(m.values)
+                    try:
+                        pcov = np.atleast_1d(np.array(m.covariance))
+                    except:
+                        logging.warn(f"HESSE call failed for bin {bin_idx}, covariance matrix unavailable")
+                        pcov = np.full((len(p0), len(p0)), np.nan)
+                    if bin_idx == ref_bin_idx:
+                        logging.debug(m.fmin)
+                        logging.debug(m.params)
+                        logging.debug(m.covariance)
             #
             # Re-format fit results
             #
@@ -867,7 +989,6 @@ class Hypersurface(object):
                 self.fit_cov_mat[bin_idx] = np.pad(pcov, ((1, 0), (1, 0)))
             else:
                 self.fit_cov_mat[bin_idx] = pcov
-
         #
         # chi2
         #
@@ -904,10 +1025,14 @@ class Hypersurface(object):
 
         # Combine into single array
         self.fit_chi2 = np.stack(self.fit_chi2, axis=-1).astype(FTYPE)
-
+        
+        # Drop input maps if not keeping them
         if not keep_maps:
             self.fit_maps_raw = None
+            self.fit_maps_smooth = None
             self.fit_maps_norm = None
+            self.fit_info_stored = False
+
         # Record some provenance info about the fits
         self.fit_complete = True
 
@@ -1016,7 +1141,19 @@ class Hypersurface(object):
         '''
         assert self.fit_info_stored, "Cannot get fit maps, fit info not stored%s" % (
             " (using legacy data)" if self.using_legacy_data else "")
-        return self.fit_maps_raw if self.fit_maps_norm is None else self.fit_maps_norm
+
+        # Return whatever the final processed map type was during the fitting process
+        if self.fit_maps_norm is not None :
+            return self.fit_maps_norm
+
+        elif self.fit_maps_smooth is not None :
+            return self.fit_maps_smooth 
+
+        elif self.fit_maps_raw is not None :
+            return self.fit_maps_raw
+
+        else : 
+            raise Exception("Cannot find fit maps")
 
     @property
     def num_fit_sets(self):
@@ -1092,6 +1229,7 @@ class Hypersurface(object):
             state["fit_complete"] = self.fit_complete
             state["fit_info_stored"] = self.fit_info_stored
             state["fit_maps_norm"] = self.fit_maps_norm
+            state["fit_maps_smooth"] = self.fit_maps_smooth
             state["fit_maps_raw"] = self.fit_maps_raw
             state["fit_chi2"] = self.fit_chi2
             state["fit_cov_mat"] = self.fit_cov_mat
@@ -1160,15 +1298,60 @@ class Hypersurface(object):
         fit_maps_raw = state.pop("fit_maps_raw")
         hypersurface.fit_maps_raw = None if fit_maps_raw is None else [
             Map(**map_state) for map_state in fit_maps_raw]
+
         fit_maps_norm = state.pop("fit_maps_norm")
         hypersurface.fit_maps_norm = None if fit_maps_norm is None else [
             Map(**map_state) for map_state in fit_maps_norm]
+
+        fit_maps_smooth = state.pop("fit_maps_smooth") if "fit_maps_smooth" in state else None # Backwards compatibility 
+        hypersurface.fit_maps_smooth = None if fit_maps_smooth is None else [
+            Map(**map_state) for map_state in fit_maps_smooth]
 
         # Define rest of state
         for k in list(state.keys()):
             setattr(hypersurface, k, state.pop(k))
 
         return hypersurface
+
+
+    def fluctuate(self, random_state=None) :
+        '''
+        Return a new hypersurface object whose coefficients have been randomly fluctuated according 
+        to the fit covariance matrix.
+
+        Used for testing the impact of statistical uncertainty in the hypersurfaces fits on
+        downstream analyses.
+        '''
+
+        #TODO uncorrelated fluctuation option
+
+        # Init random state
+        if random_state is None :
+            random_state = np.random.RandomState(12345) #TODO use PISA functions for this
+
+        # Create a copy of this instance
+        new_hypersurface = copy.deepcopy(self) #TODO Use serialized state instead?
+
+        # Loop over bins
+        for bin_idx in np.ndindex(self.binning.shape):
+
+            # Skip if this bin has no fits
+            if np.all(np.isfinite(self.fit_coeffts[bin_idx])) :
+
+                # Perform multivariate random sampling from the covariance matrix
+                # This gives new coefficients, which are written to the output hyersurface instance
+                new_fit_coeffts = random_state.multivariate_normal(self.fit_coeffts[bin_idx], self.fit_cov_mat[bin_idx])
+
+                # Set the values in the output hypersurface
+                new_hypersurface.intercept[bin_idx] = new_fit_coeffts[0]
+                n = 1
+                for param in new_hypersurface.params.values():
+                    for i in range(param.num_fit_coeffts):
+                        idx = param.get_fit_coefft_idx(bin_idx=bin_idx, coefft_idx=i)
+                        param.fit_coeffts[idx] = new_fit_coeffts[n]
+                        n += 1
+
+        return new_hypersurface
 
 
 class HypersurfaceParam(object):
@@ -1204,16 +1387,22 @@ class HypersurfaceParam(object):
     coeff_prior_sigma : array, optional
         Prior sigma values for the coefficients. If None (default), no regularization
         will be applied during the fit.
+
+    valid_map_names : list of strings, optional
+        Can choose this parameter to only be applied to specific maps
+        Normally don't want to do this
     '''
 
-    def __init__(self, name, func_name, initial_fit_coeffts=None, bounds=None, coeff_prior_sigma=None):
+    def __init__(self, name, func_name, initial_fit_coeffts=None, bounds=None, coeff_prior_sigma=None, valid_map_names=None):
 
         # Store basic members
         self.name = name
+        self.valid_map_names = valid_map_names
 
         # Handle functional form fit parameters
         self.fit_coeffts = None  # Fit params container, not yet populated
         self.fit_coeffts_sigma = None  # Fit param sigma container, not yet populated
+
         # The initial values for the fit parameters
         self.initial_fit_coeffts = initial_fit_coeffts
         self.bounds = bounds
@@ -1302,7 +1491,7 @@ class HypersurfaceParam(object):
         when fitting).
         '''
 
-        # Create an array to file with this contorubtion
+        # Create an array to fill with this contribution
         this_out = np.full_like(out, np.NaN, dtype=FTYPE)
 
         # Form the arguments to pass to the functional form
@@ -1389,6 +1578,7 @@ class HypersurfaceParam(object):
             state["fit_coeffts"] = self.fit_coeffts
             state["fit_coeffts_sigma"] = self.fit_coeffts_sigma
             state["initial_fit_coeffts"] = self.initial_fit_coeffts
+            state["valid_map_names"] = self.valid_map_names
             state["fitted"] = self.fitted
             state["fit_param_values"] = self.fit_param_values
             state["binning_shape"] = self.binning_shape
@@ -1411,6 +1601,7 @@ class HypersurfaceParam(object):
             func_name=state.pop("func_name"),
             initial_fit_coeffts=state.pop("initial_fit_coeffts"),
             bounds=state.pop("bounds"),
+            valid_map_names=state.pop("valid_map_names"), #TODO fix issues with older HS files
         )
         if "coeff_prior_sigma" in state :
             param_init_kw["coeff_prior_sigma"] = state.pop("coeff_prior_sigma")
@@ -1431,17 +1622,36 @@ Hypersurface fitting and loading helper functions
 '''
 
 
-def get_hypersurface_file_name(hypersurface, tag):
+def get_hypersurface_file_name(params, tag):
     '''
     Create a descriptive file name
     '''
 
-    num_dims = len(hypersurface.params)
-    param_str = "_".join(hypersurface.param_names)
+    num_dims = len(params)
+    param_str = "_".join([ p.name for p in params ])
     output_file = "%s__hypersurface_fits__%dd__%s.json" % (
         tag, num_dims, param_str)
 
     return output_file
+
+
+def get_hypersurface_params_superset(hypersurfaces):
+    '''
+    Get a superset of the params in all hypersurfaces.
+    Nnot necessarily the same in each due to the 'valid_map_names' option.
+    '''
+
+    param_names_superset = []
+    param_superset = []
+
+    for hypersurface in hypersurfaces :
+        for param in hypersurface.params.values() :
+            if param.name not in param_names_superset :
+                param_names_superset.append(param.name)
+                param_superset.append(param)
+
+    return param_superset, param_names_superset
+
 
 
 def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, combine_regex=None,
@@ -1672,14 +1882,26 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
         sys_param_values = [sys_dataset["sys_params"]
                             for sys_dataset in sys_datasets]
 
+
+        #
+        # Drop any invalid params
+        #
+
+        # Some parameters are only valid for a some of the map names
+        # So might need to drop some params from the inputs here
+
+        # Some params might only be relevent for specific maps, check this here and remove any that are not relevent
+        params_this_map = [ copy.deepcopy(p) for p in params if ( (p.valid_map_names is None) or (map_name in p.valid_map_names) ) ] # Need the copy, as want one set of params per map
+
+
         #
         # Fit the hypersurface
         #
 
         # Create the hypersurface
         hypersurface = Hypersurface(
-            params=copy.deepcopy(params), # Need the deepcopy, as want one set of params per map
-            initial_intercept=0. if log else 1.,  # Initial value for intercept
+            params=params_this_map,
+            initial_intercept=0. if log else 1., # Initial value for intercept
             log=log
         )
 
@@ -1709,8 +1931,8 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
     #
 
     # Create a file name
-    output_path = os.path.join(output_dir, get_hypersurface_file_name(
-        list(hypersurfaces.values())[0], tag))
+    params_superset, param_names_superset = get_hypersurface_params_superset(hypersurfaces.values())
+    output_path = os.path.join(output_dir, get_hypersurface_file_name(params_superset, tag))
 
     # Create the output directory
     mkdir(output_dir)
@@ -1738,7 +1960,7 @@ def load_hypersurfaces(input_file, expected_binning=None):
     Parameters
     ----------
     input_file : str
-        Path to the file contsaining the hypersurface fits.
+        Path to the file containing the hypersurface fits.
         For the special case of the datareleases these needs to be the path to all
         relevent CSV fles, e.g. "<path/to/datarelease>/hyperplanes_*.csv".
     expected_binning : One/MultiDimBinning
@@ -1761,11 +1983,14 @@ def load_hypersurfaces(input_file, expected_binning=None):
     # PISA hypersurface files
     #
 
+    logging.info(f"Loading non-interpolated hypersurfaces from file: {input_file}")
+    hypersurfaces = None
     if input_file.endswith("json") or input_file.endswith("json.bz2"):
 
         # Load file
         input_data = from_json(input_file)
         assert isinstance(input_data, collections.abc.Mapping)
+        logging.info(f"Reading file complete, generating hypersurfaces...")
 
         # Testing various cases to support older files as well as modern ones...
         if "sys_list" in input_data:
@@ -1804,6 +2029,8 @@ def load_hypersurfaces(input_file, expected_binning=None):
             if not hypersurface.binning.hash == expected_binning.hash:
                 for a, b, in zip(hypersurface.binning.dims, expected_binning.dims):
                     assert a == b, "Incompatible binning dimension %s and %s"%(a, b)
+
+    logging.info(f"Generated hypersurfaces")
 
     return hypersurfaces
 
