@@ -154,7 +154,7 @@ def plot_bin_fits(ax, hypersurface, bin_idx, param_name, color=None, label=None,
     ax.set_xlabel(param.name)
     ax.grid(True)
     ax.legend()
-    ax.set_ylim((-0.1, 4))
+#    ax.set_ylim((-0.1, 4))
 
     # Return the hypersurface
     return_values = [x_plot, y_plot]
