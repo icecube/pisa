@@ -546,7 +546,7 @@ def serialize_pipeline_cfg(pipeline_cfg):
     return serializable_state
 
 
-def assemble_interpolated_fits(fit_directory, output_file, drop_fit_maps=False):
+def assemble_interpolated_fits(fit_directory, output_file, drop_fit_maps=False, leftout_param=None, leftout_surface=None):
     """After all of the fits on the cluster are done, assemble the results to one JSON.
 
     The JSON produced by this function is what `load_interpolated_hypersurfaces`
@@ -579,6 +579,10 @@ def assemble_interpolated_fits(fit_directory, output_file, drop_fit_maps=False):
             for key, hs_state in gridpoint_data["hs_fit"].items() :
                 hs_state["fit_maps_raw"] = None
                 hs_state["fit_maps_norm"] = None
+        if leftout_param is not None:
+            for surface in leftout_surface:
+                gridpoint_data["hs_fit"][surface]["params"][leftout_param]["fit_coeffts"] *= 0.0 
+                print(gridpoint_data["hs_fit"][surface]["params"][leftout_param]["fit_coeffts"])
 
         # Add grid point data to output file
         hs_fits.append(collections.OrderedDict(
