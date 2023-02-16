@@ -1603,6 +1603,10 @@ class HypersurfaceParam(object):
             bounds=state.pop("bounds"),
             valid_map_names=state.pop("valid_map_names"), #TODO fix issues with older HS files
         )
+
+        if "valid_map_names" in state:
+            param_init_kw["valid_map_names"] = state.pop("valid_map_names")
+
         if "coeff_prior_sigma" in state :
             param_init_kw["coeff_prior_sigma"] = state.pop("coeff_prior_sigma")
         else :
