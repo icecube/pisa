@@ -1601,7 +1601,6 @@ class HypersurfaceParam(object):
             func_name=state.pop("func_name"),
             initial_fit_coeffts=state.pop("initial_fit_coeffts"),
             bounds=state.pop("bounds"),
-            valid_map_names=state.pop("valid_map_names"), #TODO fix issues with older HS files
         )
 
         if "valid_map_names" in state:
