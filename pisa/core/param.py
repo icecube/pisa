@@ -736,6 +736,26 @@ class DerivedParam(Param):
         """
         return self.callable(**self.dependson)
 
+    @property
+    def state(self)->dict:
+        statekind={
+            "callable":self.callable.state,
+            "depends":self.depends_names,
+            "range":self._range
+        }
+        return statekind
+
+    @property
+    def serializable_state(self):
+        return self.state
+
+    @classmethod
+    def from_state(cls, state)->'DerivedParam':
+        raise NotImplementedError("")
+
+    def to_json(self, filename, **kwargs):
+        jsons.to_json(self.serializable_state, filename=filename, **kwargs)
+
 # TODO: temporary modification of parameters via "with" syntax?
 # TODO: union, |, intersection, &, difference, -, symmetric_difference, ^, copy
 class ParamSet(MutableSequence, Set):
