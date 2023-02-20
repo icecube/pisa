@@ -640,7 +640,7 @@ class DerivedParam(Param):
 
         self._range = None
         self._tex = None
-        self._units = None
+        self._units = ureg.dimensionless
         self._nominal_value = None
         self._prior = None
 
@@ -696,7 +696,7 @@ class DerivedParam(Param):
         
     @property
     def depends_names(self):
-        return self.depends_names
+        return self._depends_names
 
     @depends_names.setter
     def depends_names(self, *names):
@@ -955,6 +955,9 @@ class ParamSet(MutableSequence, Set):
 
                 cov[k_i][k_j] = covmat[key][subkey]
         
+        if np.linalg.det(cov)<0:
+            raise ValueError("Covariance matrix *must* be positive definite!")
+
         params = tuple([self[name] for name in covmat.keys()])
 
         # we need the mean values of the paramters
@@ -971,6 +974,9 @@ class ParamSet(MutableSequence, Set):
         evals, inv_t = np.linalg.eig(cov) 
         new_sigmas = np.sqrt(evals)
 
+        if any([abs(sig)<1e-20 for sig in new_sigmas]):
+            raise ValueError("Found zero-width param {} - your parameters might be linearly dependent!".format(new_sigmas))
+        
         """
         Let "x" be in the correlated basis
         and "v" be in the uncorrelated basis
@@ -1012,13 +1018,13 @@ class ParamSet(MutableSequence, Set):
 
             new = Param(
                 name = param.name + "_rotated",
-                value = 0.0, # get the centers. These will be zero since we subtract the mean
+                value = 0.0*ureg.dimensionless, # get the centers. These will be zero since we subtract the mean
                 prior = new_prior,
                 range = (v_min, v_max),
                 is_fixed = False,
                 is_discrete= False,
                 scales_as_log=param.scales_as_log,
-                nominal_value=0.0,
+                nominal_value=0.0*ureg.dimensionless,
                 tex=param.tex+"'"
             )
 

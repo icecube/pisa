@@ -355,9 +355,9 @@ class Pipeline(object):
         self.update_params(paramset)
         self._add_rotated(paramset)
 
-    def _add_rotated(self, paramset:ParamSet):
+    def _add_rotated(self, paramset:ParamSet, suppress_warning=False):
         """
-            Used to manually add in the new, rotated 
+            Used to manually add in the new, rotated parameters
         """
         # now we need to add in the new, rotated, parameters 
         # we want to add the new rotated parameters into a stage that had the correlated parameter
@@ -370,7 +370,8 @@ class Pipeline(object):
                 depends = param.dependson
                 break
         if len(depends.keys())==0:
-            logging.warn("Added covariance matrix but found no Derived Params")
+            if not suppress_warning:
+                logging.warn("Added covariance matrix but found no Derived Params")
             return 
         
         # now we find where a derived parameter lives 
