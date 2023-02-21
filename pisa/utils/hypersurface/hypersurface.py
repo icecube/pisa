@@ -2197,8 +2197,7 @@ def test_hypersurface_uncertainty(plot=False):
                   str(avg_fit_differences))
     logging.debug("Mean pulls per point:\n%s" % str(std_pulls))
     logging.debug("Mean pull: %.3f" % np.mean(std_pulls))
-    assert np.abs(np.mean(std_pulls) -
-                  1.) < 0.1, "avg. pulls too far from expectation"
+    assert np.abs(np.mean(std_pulls) - 1.) < 0.1, "avg. pulls too far from expectation"
 
     if plot:
         plt.figure()
