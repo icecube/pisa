@@ -1601,12 +1601,9 @@ class HypersurfaceParam(object):
             func_name=state.pop("func_name"),
             initial_fit_coeffts=state.pop("initial_fit_coeffts"),
             bounds=state.pop("bounds"),
-            valid_map_names=state.pop("valid_map_names"), #TODO fix issues with older HS files
+            coeff_prior_sigma=state.pop("coeff_prior_sigma", None), # Backwards-compatible with older files where this parasm did not exist
+            valid_map_names=state.pop("valid_map_names", None), # Backwards-compatible with older files where this parasm did not exist
         )
-        if "coeff_prior_sigma" in state :
-            param_init_kw["coeff_prior_sigma"] = state.pop("coeff_prior_sigma")
-        else :
-            param_init_kw["coeff_prior_sigma"] = None
 
         # Create the param
         param = cls(**param_init_kw)
@@ -1621,37 +1618,33 @@ class HypersurfaceParam(object):
 Hypersurface fitting and loading helper functions
 '''
 
-
-def get_hypersurface_file_name(params, tag):
+def get_hypersurface_file_name(param_names, tag):
     '''
     Create a descriptive file name
     '''
 
-    num_dims = len(params)
-    param_str = "_".join([ p.name for p in params ])
+    num_dims = len(param_names)
+    param_str = "_".join(param_names)
     output_file = "%s__hypersurface_fits__%dd__%s.json" % (
         tag, num_dims, param_str)
 
     return output_file
 
 
-def get_hypersurface_params_superset(hypersurfaces):
+def get_hypersurface_param_names_superset(hypersurfaces):
     '''
-    Get a superset of the params in all hypersurfaces.
-    Nnot necessarily the same in each due to the 'valid_map_names' option.
+    Get a superset of the param names in all hypersurfaces (hyperinterpolators).
+    Not necessarily the same in each due to the 'valid_map_names' option.
     '''
 
     param_names_superset = []
-    param_superset = []
 
     for hypersurface in hypersurfaces :
-        for param in hypersurface.params.values() :
-            if param.name not in param_names_superset :
-                param_names_superset.append(param.name)
-                param_superset.append(param)
+        for param_name in hypersurface.param_names :
+            if param_name not in param_names_superset :
+                param_names_superset.append(param_name)
 
-    return param_superset, param_names_superset
-
+    return param_names_superset
 
 
 def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, combine_regex=None,
@@ -1931,8 +1924,10 @@ def fit_hypersurfaces(nominal_dataset, sys_datasets, params, output_dir, tag, co
     #
 
     # Create a file name
-    params_superset, param_names_superset = get_hypersurface_params_superset(hypersurfaces.values())
-    output_path = os.path.join(output_dir, get_hypersurface_file_name(params_superset, tag))
+    param_names_superset = get_hypersurface_param_names_superset(hypersurfaces.values())
+    output_path = os.path.join(output_dir, get_hypersurface_file_name(param_names_superset, tag))
+
+    
 
     # Create the output directory
     mkdir(output_dir)

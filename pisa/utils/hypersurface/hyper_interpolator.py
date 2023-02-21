@@ -552,7 +552,7 @@ def assemble_interpolated_fits(fit_directory, output_file, drop_fit_maps=False):
     The JSON produced by this function is what `load_interpolated_hypersurfaces`
     expects.
     """
-    assert os.path.isdir(fit_directory), "fit directory does not exist"
+    assert os.path.isdir(fit_directory), "fit directory does not exist : %s" % fit_directory
     metadata = from_json(os.path.join(fit_directory, "metadata.json"))
 
     combined_data = collections.OrderedDict()
@@ -726,10 +726,11 @@ def run_interpolated_fit(fit_directory, job_idx, skip_successful=False):
         sys_maps = [sys_dataset["mapset"][map_name] for sys_dataset in sys_datasets]
         sys_param_values = [sys_dataset["sys_params"] for sys_dataset in sys_datasets]
 
+        # Some params might only be relevent for specific maps, check this here and remove any that are not relevent
+        params_this_map = [ copy.deepcopy(p) for p in hypersurface_params if ( (p.valid_map_names is None) or (map_name in p.valid_map_names) ) ] # Need the copy, as want one set of params per map
+
         hypersurface = Hypersurface(
-            # Yes, this MUST be a deepcopy! Otherwise weird memory overwrites happen
-            # and all the numbers get jumbled across the hypersurfaces of different maps
-            params=copy.deepcopy(hypersurface_params),
+            params=params_this_map,
             initial_intercept=0. if log else 1.,  # Initial value for intercept
             log=log
         )
@@ -943,6 +944,7 @@ def load_interpolated_hypersurfaces(input_file, expected_binning=None):
     collections.OrderedDict
         dictionary with a :obj:`HypersurfaceInterpolator` for each map
     '''
+
     assert isinstance(input_file, str)
 
     if expected_binning is not None:

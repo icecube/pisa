@@ -103,7 +103,7 @@ class hypersurfaces(Stage): # pylint: disable=invalid-name
         self.hypersurface_param_names = { k : v.param_names for k, v in self.hypersurfaces.items() }
 
         # Get the superset of param names, so know what stage params to expect
-        _, hypersurface_param_names_superset = hs.get_hypersurface_params_superset(self.hypersurfaces.values())
+        hypersurface_param_names_superset = hs.get_hypersurface_param_names_superset(self.hypersurfaces.values())
 
         # -- Initialize base class -- #
         super().__init__(
