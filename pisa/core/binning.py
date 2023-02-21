@@ -3008,7 +3008,15 @@ class MultiDimBinning(object):
 
         # Turn any inetger indices into an equivalent single element slice
         # This ensures the array dimensionality is maintained
-        index = [ slice(idx, idx+1, None) if isinstance(idx, int) else idx for idx in index  ]
+
+        if isinstance(index, tuple):
+            index = list(index)
+
+        for i, idx in enumerate(index):
+            if isinstance(idx, int) and idx >= 0 : index[i] =  slice(idx, idx+1, None)
+            elif isinstance(idx, int) and idx < 0 : index[i] =  slice(idx+1, idx, None)
+            elif isinstance(idx, slice): index[i] = idx
+            else: raise ValueError('Binning idx is %s, int or slice is needed'%idx)
 
         # Get the new binning, based on the index
         input_dim = len(index)
