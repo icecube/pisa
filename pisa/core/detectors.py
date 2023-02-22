@@ -30,7 +30,7 @@ from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import set_verbosity, logging, Levels
 from pisa.utils.random_numbers import get_random_state
-#from pisa.analysis.analysis import update_param_values_detector
+from pisa.analysis.analysis import update_param_values_detector
 
 
 __all__ = ['Detectors', 'test_Detectors', 'parse_args', 'main']
@@ -414,8 +414,7 @@ def test_Detectors(verbosity=Levels.WARN):
     model.params.opt_eff_lateral.value = 20 # shared parameter
     model.params.aeff_scale.value = 2       # only changes value for detector1
 
-    # take it out for now, importing a function from analysis introduce loop issue here
-    #update_param_values_detector(model, model.params)
+    update_param_values_detector(model, model.params)
     
     o0 = model.distribution_makers[0].params.opt_eff_lateral.value.magnitude
     o1 = model.distribution_makers[1].params.opt_eff_lateral.value.magnitude
