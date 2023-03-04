@@ -30,7 +30,6 @@ from pisa.utils.fileio import expand, mkdir, to_file
 from pisa.utils.hash import hash_obj
 from pisa.utils.log import set_verbosity, logging, Levels
 from pisa.utils.random_numbers import get_random_state
-from pisa.analysis.analysis import update_param_values_detector
 
 
 __all__ = ['Detectors', 'test_Detectors', 'parse_args', 'main']
@@ -340,6 +339,8 @@ class Detectors(object):
 
 
 def test_Detectors(verbosity=Levels.WARN):
+    from pisa.analysis.analysis import update_param_values_detector
+
     """Run a combination of two DeepCore detectors."""
     p1_nu = Pipeline("settings/pipeline/IceCube_3y_neutrinos.cfg")
     p1_mu = Pipeline("settings/pipeline/IceCube_3y_muons.cfg")
