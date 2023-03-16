@@ -675,10 +675,10 @@ class Map(object):
         import matplotlib.pyplot as plt
         from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-        cmap_seq = plt.cm.Spectral_r
+        cmap_seq = mpl.cm.get_cmap("Spectral_r").copy()
         cmap_seq.set_bad(color=(0.0, 0.2, 0.0), alpha=1)
 
-        cmap_div = plt.cm.RdBu_r
+        cmap_div = mpl.cm.get_cmap("RdBu_r").copy()
         cmap_div.set_bad(color=(0.5, 0.9, 0.5), alpha=1)
 
         # TODO: use https://matplotlib.org/users/colormapnorms.html
