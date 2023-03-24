@@ -34,9 +34,12 @@ from pisa.utils.log import logging, set_verbosity
 from pisa.utils.random_numbers import get_random_state
 from pisa.utils.stats import ALL_METRICS, CHI2_METRICS, LLH_METRICS
 from pisa.utils.comparisons import FTYPE_PREC
+from pisa.utils.callable import Funct
+from pisa.utils.resources import find_resource
 
 __all__ = [
     'Param',
+    'DerivedParam'
     'ParamSet',
     'ParamSelector',
     'test_Param',
@@ -631,6 +634,7 @@ class DerivedParam(Param):
             nominal_value=None, 
             tex=None, 
             range=None,
+            function_file="",
             help=''):
 
         self._depends_names = tuple([])
@@ -656,6 +660,8 @@ class DerivedParam(Param):
         self.nominal_value = value if nominal_value is None else nominal_value
         self.normalize_values = False
 
+        if function_file!="":
+            self.callable = Funct.from_json(find_resource(function_file))
     
     @property
     def callable(self)->callable.Funct:
