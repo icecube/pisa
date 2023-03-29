@@ -634,10 +634,11 @@ class DerivedParam(Param):
             nominal_value=None, 
             tex=None, 
             range=None,
+            depends_names="",
             function_file="",
             help=''):
 
-        self._depends_names = tuple([])
+        self._depends_names = depends_names
         self._dependson = tuple([])
         self._configured = False
         self._callable = None
