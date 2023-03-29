@@ -1,5 +1,5 @@
 """
-PISA pi stage to apply effective area weights and HNL specific reweighting
+PISA pi stage to apply HNL specific reweighting
 """
 
 from __future__ import absolute_import, print_function, division
@@ -63,7 +63,7 @@ def re_weight_hnl(
     tau_proper = hbar / (hnl_decay_width * U_tau4_sq)
 
     pdf_inverse = (1.0 / (np.log(tau_max.magnitude) - np.log(tau_min.magnitude))) * (
-        1.0 / tau.m_as('s')
+        1.0 / tau.m_as("s")
     )  # for 1/L sampling of decay length
 
     pdf_exp1 = 1.0 / tau_proper
@@ -76,26 +76,16 @@ def re_weight_hnl(
     return U_tau4_sq.magnitude * weight_lifetime.magnitude
 
 
-class aeff_hnl(Stage):  # pylint: disable=invalid-name
+class weight_hnl(Stage):  # pylint: disable=invalid-name
     """
-    PISA Pi stage to apply aeff weights.
+    PISA pi stage to apply HNL specific reweighting.
 
-    This combines the detector effective area with the flux weights calculated
-    in an earlier stage to compute the weights.
-
-    Various scalings can be applied for particular event classes. The weight is
-    then multiplied by the livetime to get an event count.
+    This re-weights HNL events from sampling 1/L to target exponential.
 
     Parameters
     ----------
     params
         Expected params are .. ::
-
-            livetime : Quantity with time units
-            aeff_scale : dimensionless Quantity
-            nutau_cc_norm : dimensionless Quantity
-            nutau_norm : dimensionless Quantity
-            nu_nc_norm : dimensionless Quantity
             U_tau4_sq : dimensionless Quantity
     """
 
@@ -103,14 +93,7 @@ class aeff_hnl(Stage):  # pylint: disable=invalid-name
         self,
         **std_kwargs,
     ):
-        expected_params = (
-            "livetime",
-            "aeff_scale",
-            "nutau_cc_norm",
-            "nutau_norm",
-            "nu_nc_norm",
-            "U_tau4_sq",
-        )
+        expected_params = ("U_tau4_sq",)
 
         # init base class
         super().__init__(
@@ -120,33 +103,18 @@ class aeff_hnl(Stage):  # pylint: disable=invalid-name
 
     @profile
     def apply_function(self):
-        livetime = self.params.livetime.m_as("sec")
-        aeff_scale = self.params.aeff_scale.m_as("dimensionless")
-        nutau_cc_norm = self.params.nutau_cc_norm.m_as("dimensionless")
-        nutau_norm = self.params.nutau_norm.m_as("dimensionless")
-        nu_nc_norm = self.params.nu_nc_norm.m_as("dimensionless")
         U_tau4_sq = self.params.U_tau4_sq.m_as("dimensionless")
 
         for container in self.data:
-            scale = aeff_scale * livetime
-            if container.name in ["nutau_cc", "nutaubar_cc"]:
-                scale *= nutau_cc_norm
-            if "nutau" in container.name:
-                scale *= nutau_norm
-            if "nc" in container.name:
-                scale *= nu_nc_norm
-
-            hnl_weight_scale = re_weight_hnl(
+            hnl_weight = re_weight_hnl(
                 U_tau4_sq=U_tau4_sq * ureg.dimensionless,
-                mass=container['mHNL'] * ureg.GeV,
-                energy=container['hnl_true_energy'] * ureg.GeV,
-                tau=container['hnl_proper_lifetime'] * ureg.ns,
-                distance_min=container['hnl_distance_min'] * ureg.m,
-                distance_max=container['hnl_distance_max'] * ureg.m,
-                hnl_decay_width=container['hnl_decay_width'] * ureg.GeV,
+                mass=container["mHNL"] * ureg.GeV,
+                energy=container["hnl_true_energy"] * ureg.GeV,
+                tau=container["hnl_proper_lifetime"] * ureg.ns,
+                distance_min=container["hnl_distance_min"] * ureg.m,
+                distance_max=container["hnl_distance_max"] * ureg.m,
+                hnl_decay_width=container["hnl_decay_width"] * ureg.GeV,
             )
 
-            scale *= hnl_weight_scale
-
-            container["weights"] *= container["weighted_aeff"] * scale
+            container["weights"] *= hnl_weight
             container.mark_changed("weights")
