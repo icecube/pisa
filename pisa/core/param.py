@@ -39,7 +39,7 @@ from pisa.utils.resources import find_resource
 
 __all__ = [
     'Param',
-    'DerivedParam'
+    'DerivedParam',
     'ParamSet',
     'ParamSelector',
     'test_Param',
@@ -741,7 +741,7 @@ class DerivedParam(Param):
         """
             The value of this Derived Parameter is determined by calling the configured 'callable' with the parameters it depends on
         """
-        return self.callable(**self.dependson)
+        return self.callable(**self.dependson)*ureg.dimensionless
 
     @property
     def state(self)->dict:
@@ -861,6 +861,14 @@ class ParamSet(MutableSequence, Set):
         # if we do not normalize, then the hash will change upon evaluating unit changes
         # I think because the changed units are cached in the object (Philipp)
         self.normalize_values = True
+
+    @property
+    def has_derived(self)->bool:
+        """
+        Returns whether or not this set contains a derived parameter 
+        """
+        has = False
+        return any(isinstance(par, DerivedParam) for par in self)
 
     @property
     def serializable_state(self):

@@ -493,8 +493,15 @@ def parse_param(config, section, selector, fullname, pname, value):
         # prior from here on out)
         kwargs['range'] = eval(range_).to(value.units) # pylint: disable=eval-used
 
-    if config.has_option(section, fullname+".depends"):
-        depends = config.get(section, fullname+".depends")
+    if config.has_option(section, fullname+".function_file"):
+        kwargs["function_file"] = config.get(section, fullname+".function_file")
+
+    if config.has_option(section, fullname+".depends_names"):
+        # this means this is a derived parameter, so we throw away the default `fixed` and `prior` kwargs
+        del kwargs['is_fixed']
+        del kwargs['prior']
+
+        depends = config.get(section, fullname+".depends_names")
         kwargs["depends_names"] = depends.split(" ")
 
     if config.has_option(section, fullname + '.prior'):
@@ -770,6 +777,7 @@ def parse_pipeline_config(config):
                         value=value
                     )
                     if isinstance(param, DerivedParam):
+                        print("Added Derived param")
                         n_derived_params += 1
 
                 param_selector.update(param, selector=infodict['selector'])
