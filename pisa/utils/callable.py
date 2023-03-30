@@ -49,7 +49,6 @@ class OPS(Enum):
 
     @classmethod 
     def from_state(cls, state):
-        print(state)
         return cls(state["ops"])
 
     def to_json(self, filename, **kwargs):
