@@ -29,7 +29,7 @@ import copy
 
 import numpy as np
 from scipy import interpolate
-from .hypersurface import Hypersurface, HypersurfaceParam
+from .hypersurface import Hypersurface, HypersurfaceParam, load_hypersurfaces
 from pisa import FTYPE, ureg
 from pisa.utils import matrix
 from pisa.utils.jsons import from_json, to_json
@@ -546,7 +546,7 @@ def serialize_pipeline_cfg(pipeline_cfg):
     return serializable_state
 
 
-def assemble_interpolated_fits(fit_directory, output_file, drop_fit_maps=False):
+def assemble_interpolated_fits(fit_directory, output_file, drop_fit_maps=False, leftout_param=None, leftout_surface=None):
     """After all of the fits on the cluster are done, assemble the results to one JSON.
 
     The JSON produced by this function is what `load_interpolated_hypersurfaces`
@@ -579,6 +579,10 @@ def assemble_interpolated_fits(fit_directory, output_file, drop_fit_maps=False):
             for key, hs_state in gridpoint_data["hs_fit"].items() :
                 hs_state["fit_maps_raw"] = None
                 hs_state["fit_maps_norm"] = None
+        if leftout_param is not None:
+            for surface in leftout_surface:
+                gridpoint_data["hs_fit"][surface]["params"][leftout_param]["fit_coeffts"] *= 0.0 
+                print(gridpoint_data["hs_fit"][surface]["params"][leftout_param]["fit_coeffts"])
 
         # Add grid point data to output file
         hs_fits.append(collections.OrderedDict(
@@ -913,7 +917,7 @@ def prepare_interpolated_fit(
     logging.info(f"Grid fit preparation complete! Total number of jobs: {job_idx+1}")
     return job_idx+1  # zero-indexing
 
-def load_interpolated_hypersurfaces(input_file):
+def load_interpolated_hypersurfaces(input_file, expected_binning=None):
     '''
     Load a set of interpolated hypersurfaces from a file.
 
@@ -945,10 +949,53 @@ def load_interpolated_hypersurfaces(input_file):
     '''
     assert isinstance(input_file, str)
 
+    if expected_binning is not None:
+        assert is_binning(expected_binning)
+
     logging.info(f"Loading interpolated hypersurfaces from file: {input_file}")
 
     # Load the data from the file
     input_data = from_file(input_file)
+
+
+    #
+    # Backwards compatibility handling
+    #
+
+    # For older file formats (for example those used in the oscNext verification sample), some handling is
+    # reequired to convert the input data format to match the expectation of this function
+
+    # Check for missing data
+    if "interpolation_param_spec" not in input_data :
+
+        # Confirm the format of what we did find
+        assert "interp_params" in input_data
+        assert "hs_fits" in input_data
+        assert "kind" in input_data
+
+        # The current code only handles linear interpolation
+        assert input_data["kind"] == "linear", f"Only linear interpolation suppored (input file specifies \'{input_data['kind']}\')"
+
+        # Populate the interpolation param spec
+        input_data["interpolation_param_spec"] = collections.OrderedDict()
+        for param_def in input_data["interp_params"] :
+            param_name = param_def["name"]
+            input_data["interpolation_param_spec"][param_name] = {
+                "scales_log" : False,
+                "values" : [ hs_fit_dict["param_values"][param_name] for hs_fit_dict in input_data["hs_fits"] ],
+            }
+
+        # Load the individual HS files to get the HS states (as this code now expects for the contents of `hs_fits`)
+        for hs_fit_dict in input_data["hs_fits"] :
+            hypersurfaces = load_hypersurfaces(hs_fit_dict["file"], expected_binning=expected_binning)
+            hs_fit_dict["hs_fit"] = collections.OrderedDict()
+            for key, hypersurface in hypersurfaces.items() :
+                hs_fit_dict["hs_fit"][key] = hypersurface
+
+
+    #
+    # Load hypersurface interpolator(s)
+    #
 
     # check the file contents
     assert set(['interpolation_param_spec', 'hs_fits']).issubset(
@@ -959,19 +1006,28 @@ def load_interpolated_hypersurfaces(input_file):
     map_names = None
     logging.info("Reading file complete, generating hypersurfaces...")
     for hs_fit_dict in input_data['hs_fits']:
-        # this is still not the actual Hypersurface, but a dict with the (linked)
-        # maps and the HS fit for the map...
+
+        # this might not be the actual Hypersurface, but a dict with the serialized Hypersurface state
         hs_state_maps = hs_fit_dict["hs_fit"]
         if map_names is None:
             map_names = list(hs_state_maps.keys())
         else:
             assert set(map_names) == set(hs_state_maps.keys()), "inconsistent maps"
-        # When data is recovered from JSON, the object states are not automatically
-        # converted to the corresponding objects, so we need to do it manually here.
-        for map_name in map_names:
-            hs_state_maps[map_name] = Hypersurface.from_state(hs_state_maps[map_name])
 
+        # When data is recovered from JSON, the object states are not automatically
+        # converted to the corresponding objects, so we need to do it manually here
+        # (unless what we loaded was already a hypersurface instance).
+        for map_name in map_names:
+            if isinstance(hs_state_maps[map_name], Hypersurface) :
+                hs_state_maps[map_name] = hs_state_maps[map_name]
+            else :
+                hs_state_maps[map_name] = Hypersurface.from_state(hs_state_maps[map_name])
     logging.info(f"Read hypersurface maps: {map_names}")
+    
+    # Check binning
+    if expected_binning is not None:
+        for map_name, hypersurface in hs_state_maps.items():
+            assert hypersurface.binning.hash == expected_binning.hash, "Binning of loaded hypersurfaces does not match the expected binning"
 
     # Now we have a list of dicts where the map names are on the lower level.
     # We need to convert this into a dict of HypersurfaceInterpolator objects.

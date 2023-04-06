@@ -491,7 +491,7 @@ class Map(object):
         self.assert_compat(error_hist)
         super().__setattr__(
             '_hist',
-            unp.uarray(self._hist, np.ascontiguousarray(error_hist))
+            unp.uarray(self.nominal_values, np.ascontiguousarray(error_hist))
         )
 
     # TODO: make this return an OrderedDict to organize all of the returned
@@ -575,7 +575,8 @@ class Map(object):
              xlabelsize=None, ylabelsize=None, titlesize=None, fig_kw=None,
              pcolormesh_kw=None, colorbar_kw=None, outdir=None, fname=None,
              fmt=None, binlabel_format=None, binlabel_colors=["white", "black"],
-             binlabel_color_thresh=None, binlabel_stripzeros=True):
+             binlabel_color_thresh=None, binlabel_stripzeros=True, dpi=300,
+             bad_color=None):
         """Plot a 2D map.
 
         Parameters
@@ -657,6 +658,10 @@ class Map(object):
             number use the first color in `binlabel_colors` and bins with a value above
             the given number use the second color in `binlabel_colors`. If "auto", set
             threshold automatically (basically half way).
+        dpi : int, optional
+            Dots per inch for saved figure. Default: 300
+        bad_color : string, optional
+            Can choose the color used for "bad" bins (e.g. NaN) 
 
         Returns
         -------
@@ -670,10 +675,10 @@ class Map(object):
         import matplotlib.pyplot as plt
         from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-        cmap_seq = plt.cm.Spectral_r
+        cmap_seq = mpl.cm.get_cmap("Spectral_r").copy()
         cmap_seq.set_bad(color=(0.0, 0.2, 0.0), alpha=1)
 
-        cmap_div = plt.cm.RdBu_r
+        cmap_div = mpl.cm.get_cmap("RdBu_r").copy()
         cmap_div.set_bad(color=(0.5, 0.9, 0.5), alpha=1)
 
         # TODO: use https://matplotlib.org/users/colormapnorms.html
@@ -705,7 +710,7 @@ class Map(object):
         else:
             fig = ax.figure
 
-        # 2D by arraying them as 2D slices in the smallest dimension(s)
+        # 2D by arraying them as 1D slices in the smallest dimension(s)
         if len(self.binning) == 3:
 
             smallest_dim = self.binning.names[np.argmin(self.binning.shape)]
@@ -731,16 +736,23 @@ class Map(object):
                 small_axes[-1].yaxis.set_visible(False)
 
             for bin_idx, to_plot in enumerate(self.split(smallest_dim)):
-                to_plot.plot(symm=symm, logz=logz, vmin=vmin, vmax=vmax,
-                             ax=small_axes[bin_idx], 
-                             cmap=cmap, clabel=clabel, clabelsize=clabelsize,
-                             xlabelsize=xlabelsize, ylabelsize=ylabelsize, titlesize=titlesize,
-                             pcolormesh_kw=pcolormesh_kw, colorbar_kw=colorbar_kw,
-                             binlabel_format=binlabel_format, binlabel_colors=["white", "black"],
-                             binlabel_color_thresh=binlabel_color_thresh, binlabel_stripzeros=binlabel_stripzeros,
-                             )
+                _, _, pcmesh, colorbar = to_plot.plot(
+                    symm=symm, logz=logz, vmin=vmin, vmax=vmax,
+                    ax=small_axes[bin_idx], cmap=cmap, clabel=clabel,
+                    clabelsize=clabelsize, xlabelsize=xlabelsize,
+                    ylabelsize=ylabelsize, titlesize=titlesize,
+                    pcolormesh_kw=pcolormesh_kw, colorbar_kw=colorbar_kw,
+                    binlabel_format=binlabel_format, binlabel_colors=["white", "black"],
+                    binlabel_color_thresh=binlabel_color_thresh, binlabel_stripzeros=binlabel_stripzeros,
+                    )
 
-            return None
+            if fmt is not None:
+                for fmt_ in fmt:
+                    path = os.path.join(outdir, fname + '.' + fmt_)
+                    fig.savefig(path, dpi=dpi)
+                    logging.debug('>>>> Plot for inspection saved at %s', path)
+
+            return fig, ax, pcmesh, colorbar
 
 
         if len(self.binning) == 2:
@@ -786,6 +798,13 @@ class Map(object):
                                    np.floor(np.log2(max(y)))+1))
             y = np.log10(y)
 
+        # If user specified a "bad" color, set this
+        # Need a cmap object, so if we just have a string name then get the actual cmap object first
+        if bad_color is not None :
+            if isinstance(cmap, str) : # Need a cmap
+                cmap = plt.get_cmap(cmap) 
+            cmap.set_bad(bad_color)
+
         defaults = dict(
             vmin=vmin_, vmax=vmax_, cmap=cmap,
             shading='flat', edgecolors='face'
@@ -794,7 +813,7 @@ class Map(object):
             defaults['norm'] = mpl.colors.LogNorm(
                 vmin_, vmax_, clip=True
             )
-            
+
         for key, dflt_val in defaults.items():
             if key not in pcolormesh_kw:
                 pcolormesh_kw[key] = dflt_val
@@ -849,14 +868,14 @@ class Map(object):
         if fmt is not None:
             for fmt_ in fmt:
                 path = os.path.join(outdir, fname + '.' + fmt_)
-                fig.savefig(path)
+                fig.savefig(path, dpi=dpi)
                 logging.debug('>>>> Plot for inspection saved at %s', path)
 
         return fig, ax, pcmesh, colorbar
 
     @_new_obj
     def __deepcopy__(self, memo):
-        """ Hook for deepcopy to corrdctly handle hists """
+        """ Hook for deepcopy to correctly handle hists """
         return {}
 
     @_new_obj
@@ -909,6 +928,13 @@ class Map(object):
         return {'hist': new_hist, 'binning': new_binning}
 
     @_new_obj
+    def round2int(self):
+        binning = self.binning
+        nominal_values = np.rint(self.nominal_values)
+        std_devs = self.std_devs
+        return {'hist': unp.uarray(nominal_values, std_devs)}
+
+    @_new_obj
     def sum(self, axis=None, keepdims=False):
         """Sum over dimensions corresponding to `axis` specification. Similar
         in behavior to `numpy.sum` method.
@@ -933,13 +959,16 @@ class Map(object):
             False.
 
         """
+
+        #TODO This function does't work if axis=None, since @_new_obj expects the output to be a map
+
         if axis is None:
             axis = self.binning.names
         if isinstance(axis, (string_types, int)):
             axis = [axis]
         # Note that the tuple is necessary here (I think...)
         sum_indices = tuple([self.binning.index(dim) for dim in axis])
-        new_hist = self.hist.sum(axis=sum_indices, keepdims=keepdims)
+        new_hist = np.nansum(self.hist, axis=sum_indices, keepdims=keepdims)
 
         new_binning = []
         for idx, dim in enumerate(self.binning.dims):
@@ -1000,6 +1029,9 @@ class Map(object):
 
         """
         # TODO: put uncertainties in
+
+        assert self.binning.mask is None, "`rebin` function does not currenty support bin masking"
+
         new_hist = rebin(hist=self.hist, orig_binning=self.binning,
                          new_binning=new_binning)
         return {'hist': new_hist, 'binning': new_binning}
@@ -1147,6 +1179,7 @@ class Map(object):
                     loc=orig_hist[valid_mask], scale=sigma[valid_mask],
                     random_state=random_state
                 )
+
                 hist_vals[nan_at] = np.nan
                 error_vals = np.empty_like(orig_hist, dtype=np.float64)
                 error_vals[valid_mask] = np.sqrt(orig_hist[valid_mask])
@@ -1398,6 +1431,7 @@ class Map(object):
             copied into the new map(s).
 
         """
+
         dim_index = self.binning.index(dim, use_basenames=use_basenames)
         spliton_dim = self.binning.dims[dim_index]
 
@@ -1800,17 +1834,27 @@ class Map(object):
     @property
     def hist(self):
         """numpy.ndarray : Histogram array underlying the Map"""
-        return self._hist
+
+        # Get the hist
+        hist = self._hist
+
+        # Apply bin mask, if one exists
+        # Set masked off elements to NaN (handling both cases where the hst is either a simple array, or has uncertainties)
+        if self.binning.mask is not None :
+            hist[~self.binning.mask] = ufloat(np.NaN, np.NaN) if isinstance(self._hist[np.unravel_index(0, self._hist.shape)], uncertainties.core.Variable) else np.NaN #TODO Is there a better way to check if this is a uarray?
+
+        # Done
+        return hist
 
     @property
     def nominal_values(self):
         """numpy.ndarray : Bin values stripped of uncertainties"""
-        return unp.nominal_values(self._hist)
+        return unp.nominal_values(self.hist)
 
     @property
     def std_devs(self):
         """numpy.ndarray : Uncertainties (standard deviations) per bin"""
-        return unp.std_devs(self._hist)
+        return unp.std_devs(self.hist)
 
     @property
     def binning(self):
@@ -3030,10 +3074,10 @@ class MapSet(object):
         return MapSet(maps=new_maps, name=self.name, tex=self.tex, hash=None,
                       collate_by_name=self.collate_by_name)
 
-    def llh_per_map(self, expected_values):
+    def llh_per_map(self, expected_values):  
         return self.apply_to_maps('llh', expected_values)
 
-    def llh_total(self, expected_values):
+    def llh_total(self, expected_values):   
         return np.sum(self.llh(expected_values))
 
     def set_poisson_errors(self):
@@ -3256,6 +3300,18 @@ def test_Map():
         assert m_orig[0, 0, :].binning[dim] == m_new[:, 0, 0].binning[dim]
 
     deepcopy(m_orig)
+
+    #FIXME: Add unit test for plot function:
+        # - test 3D *and* 2D case
+        # - test saving option works
+        # - test return types
+
+        # start implementing some
+        # test_return = xx.plot()
+        # assert test_return[0] == matplotlib.figure.Figure
+        # assert test_return[1] == matplotlib.axes._subplots.AxesSubplot
+        # assert test_return[2] == matplotlib.collections.QuadMesh
+        # assert test_return[3] == matplotlib.colorbar.Colorbar
 
     logging.info(str(('<< PASS : test_Map >>')))
 

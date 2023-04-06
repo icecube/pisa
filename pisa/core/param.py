@@ -24,6 +24,7 @@ from six import string_types
 
 from pisa import ureg
 from pisa.core.prior import Prior
+from pisa.utils import callable
 from pisa.utils import jsons
 from pisa.utils.comparisons import (
     interpret_quantity, isbarenumeric, normQuant, recursiveEquality
@@ -571,6 +572,189 @@ class Param:
         state = jsons.from_json(filename=filename)
         return cls(**state)
 
+class DerivedParam(Param):
+    """
+    This is a meta-parameter param that implements a param depending on other Params. 
+    """
+    _slots = (
+        'name',
+        'unique_id',
+        'value',
+        'prior',
+        '_prior',
+        'range',
+        'is_fixed',
+        'is_discrete',
+        'scales_as_log',
+        'nominal_value',
+        'tex',
+        '_rescaled_value',
+        '_nominal_value',
+        '_tex',
+        'help',
+        '_value',
+        '_range',
+        '_units',
+        'normalize_values',
+        '_depends_names',
+        '_dependson',
+        '_configured',
+        '_callable',
+        'dependson',
+        'callable',
+        'depends_names'
+    )
+
+    _state_attrs = (
+        'name',
+        'unique_id',
+        'value',
+        'prior',
+        'range',
+        'is_fixed',
+        'is_discrete',
+        'scales_as_log',
+        'nominal_value',
+        'tex',
+        'help',
+        'dependson',
+        'callable',
+        'depends_names'
+    )
+
+    def __init__(self, 
+            name, 
+            value, 
+            unique_id=None, 
+            is_discrete=False, 
+            scales_as_log=False, 
+            nominal_value=None, 
+            tex=None, 
+            range=None,
+            help=''):
+
+        self._depends_names = tuple([])
+        self._dependson = tuple([])
+        self._configured = False
+        self._callable = None
+
+        self._range = None
+        self._tex = None
+        self._units = ureg.dimensionless
+        self._nominal_value = None
+        self._prior = None
+
+        self.is_fixed=True
+        self.scales_as_log = scales_as_log
+        self.name = name
+        self.range = range
+        
+        self.unique_id = unique_id if unique_id is not None else name
+        self._tex = tex
+        self.help = help
+        self.is_discrete = is_discrete
+        self.nominal_value = value if nominal_value is None else nominal_value
+        self.normalize_values = False
+
+    
+    @property
+    def callable(self)->callable.Funct:
+        if self._callable is None:
+            logging.fatal("No set callable for DerivedParam {}".format(self.name))
+        return self._callable
+
+    @callable.setter
+    def callable(self, what:'callable.Funct'):
+        """
+            Note - the callable should take dictionary of parameters
+            {
+                paramname:Param,
+                paramname2:Param
+            }
+
+            the names are in principle redundant, but by keeping the mapping we can make the lookup of the dependable names quicker 
+        """
+        self._callable = what
+    
+    def validate_value(self, value):
+        return 
+
+    @property
+    def range(self): 
+        # if this is not re-implemented, the setter gets very confused 
+        if self._range is None:
+            return None
+        else:
+            return tuple(self._range)
+
+    @range.setter
+    def range(self, values):
+        """
+        trust that this is set accurately 
+        """
+        self._range = values
+        
+    @property
+    def depends_names(self):
+        return self._depends_names
+
+    @depends_names.setter
+    def depends_names(self, *names):
+        self._depends_names = names
+    
+    @property
+    def dependson(self)->'dict[Param]':
+        if not self._configured:
+            logging.fatal("Cannot access unconfigured Derived parameter!")
+        return self._dependson
+
+    def prior_penalty(self, metric):
+        """
+            We don't want to double-count the penalty from derived params
+        """
+        return 0.0
+
+    @dependson.setter
+    def dependson(self, params):
+        working = []
+        for param in params:
+            if isinstance(param, Mapping):
+                param = Param(**param)
+            if isinstance(param, Param):
+                working.append(param)
+            else:
+                raise TypeError("Unhandled type {}: {}".format(type(param), param))
+        self._configured = True
+        self._dependson = {param.name:param for param in working}
+        self.depends_names = tuple([param.name for param in working])
+
+
+    @property 
+    def _value(self):
+        """
+            The value of this Derived Parameter is determined by calling the configured 'callable' with the parameters it depends on
+        """
+        return self.callable(**self.dependson)
+
+    @property
+    def state(self)->dict:
+        statekind={
+            "callable":self.callable.state,
+            "depends":self.depends_names,
+            "range":self._range
+        }
+        return statekind
+
+    @property
+    def serializable_state(self):
+        return self.state
+
+    @classmethod
+    def from_state(cls, state)->'DerivedParam':
+        raise NotImplementedError("")
+
+    def to_json(self, filename, **kwargs):
+        jsons.to_json(self.serializable_state, filename=filename, **kwargs)
 
 # TODO: temporary modification of parameters via "with" syntax?
 # TODO: union, |, intersection, &, difference, -, symmetric_difference, ^, copy
@@ -743,6 +927,156 @@ class ParamSet(MutableSequence, Set):
         if idx < 0 or idx >= len(self):
             raise ValueError('%s not found in ParamSet' % (value,))
         return idx
+
+    def add_covariance(self, covmat:dict)->None:
+        """
+        Correlates several Params. 
+            It works by taking the existing params, and rotating them into a new, uncorrelated, basis state. 
+            New parameters are added in the new basis, and the old params are replaced with derived params
+            The fits therefore are done in the uncorrelated basis 
+        
+
+        Parameters
+        ----------
+        covmat : dict
+            A two-deep nested dictionary for covariances between Params
+            Note: this is specifically not a 2D array such as to be explicit about which params are used
+
+        ex:
+        { 
+        Param1:{
+            Param1: 0.9,
+            Param2: 0.1 },
+        Param2:{
+            Param1:0.1,
+            Param2:0.8}
+        }
+
+        Raises
+        ------
+        KeyError if given dict has keys not not shared with Parameter names 
+        TypeError if a given entry in covmat is not the proper type
+        NotImplementedError if the means of calculating the mean for a given parameters prior isn't there yet 
+        """
+        dim = len(covmat.keys())
+        if dim==0:
+            return 
+
+        cov = np.zeros(shape=(dim,dim))
+        names = self.names
+        for k_i, key in enumerate(covmat.keys()):
+            if key not in names:
+                raise KeyError("Key {} not in Params".format(key))
+            if not isinstance(covmat[key],dict):
+                raise TypeError("Each entry in covmat should be another dict, found {}".format(type(covmat[key])))
+            for k_j, subkey in enumerate(covmat[key].keys()):
+                if subkey not in names:
+                    raise KeyError("Key {} not in Params".format(subkey))
+
+                cov[k_i][k_j] = covmat[key][subkey]
+        
+        if np.linalg.det(cov)<0:
+            raise ValueError("Covariance matrix *must* be positive definite!")
+
+        params = tuple([self[name] for name in covmat.keys()])
+
+        # we need the mean values of the paramters
+        means = [0.0 for i in range(dim)]
+        for i, param in enumerate(params):
+            if param.prior.kind == "gaussian":
+                means[i] = param.prior.mean
+            elif param.prior.kind=="uniform":
+                means[i] = (param.range[1] + param.range[0])*0.5
+            else:
+                raise NotImplementedError()
+
+        # diagonalize covariance matrix
+        evals, inv_t = np.linalg.eig(cov) 
+        new_sigmas = np.sqrt(evals)
+
+        if any([abs(sig)<1e-20 for sig in new_sigmas]):
+            raise ValueError("Found zero-width param {} - your parameters might be linearly dependent!".format(new_sigmas))
+        
+        """
+        Let "x" be in the correlated basis
+        and "v" be in the uncorrelated basis
+
+        T is the matrix from `inv_t`
+
+        v = (x - mu_x) @ T
+        x = v@(T^-1) + mu_x  
+
+        The new Parameters will have Gaussian priors centered at zero! 
+        """
+
+        transformation = np.linalg.inv(inv_t)
+        ranges_x = [param.range for param in params] # ranges in correlated basis
+        new_parameters = []
+
+        for i, param in enumerate(params):
+            new_prior = Prior(
+                kind="gaussian",
+                mean = 0.0,
+                stddev = new_sigmas[i]
+            )
+
+            # find max and min for this parameter
+            """
+                This paramter V is a function of \vec{x}=(x1, x2, x3, ...)
+
+                \vec{v}_{i} can be calculated via summing over i 
+                    v_i = inv_t[j][i] x_i
+
+                This is a linear transformation using the eivenvectors of the covariance matrix
+            """
+
+            v_max = 0
+            v_min = 0
+            for j in range(dim): # number of paramters, dimensionality 
+                v_max += inv_t[j][i]*(ranges_x[j][1] - means[j]) if inv_t[j][i]>0 else inv_t[j][i]*(ranges_x[j][0] - means[j]) 
+                v_min += inv_t[j][i]*(ranges_x[j][1] - means[j]) if inv_t[j][i]<0 else inv_t[j][i]*(ranges_x[j][0] - means[j]) 
+
+            new = Param(
+                name = param.name + "_rotated",
+                value = 0.0*ureg.dimensionless, # get the centers. These will be zero since we subtract the mean
+                prior = new_prior,
+                range = (v_min, v_max),
+                is_fixed = False,
+                is_discrete= False,
+                scales_as_log=param.scales_as_log,
+                nominal_value=0.0*ureg.dimensionless,
+                tex=param.tex+"'"
+            )
+
+            new_parameters.append(new)
+            self.update(new) # add in this new parameter 
+
+        def build_func(index):
+            all_vars = [ callable.Var(new_par.name) for new_par in new_parameters ]
+
+            function = transformation[0][index]*all_vars[0]
+            for _i in range(dim-1):
+                i = _i + 1
+                function = function + transformation[i][index]*all_vars[i]
+
+            function = function + means[index]
+
+            return function
+
+        # now that we have constructed the new parameters, update the old ones to be DerivedParams
+        for i, param in enumerate(params):
+            derived_version = DerivedParam(
+                name = param.name,
+                value = param.value,
+                range=param.range
+            )
+            derived_version.dependson = new_parameters # depends on the parameters we've just set up in the uncorrelated basis
+            derived_version.callable = build_func(i)
+
+            self.replace(derived_version)
+
+            
+
 
     def replace(self, new):
         """Replace an existing param with `new` param, where the existing param
@@ -925,7 +1259,7 @@ class ParamSet(MutableSequence, Set):
             setattr(result, k, deepcopy(v, memo))
         return result
 
-    def __getitem__(self, i):
+    def __getitem__(self, i)->Param:
         if isinstance(i, int):
             return self._params[i]
         elif isinstance(i, str):

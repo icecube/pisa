@@ -312,8 +312,27 @@ class DistributionMaker(object):
                         " This may cause issues.", possible_selections
                     )
 
+    def add_covariance(self,covmat):
+        """
+            Incorporates covariance between parameters. 
+            This is done by replacing relevant correlated parameters with "DerivedParams"
+                that depend on new parameters in an uncorrelated basis
+
+            The parameters are all updated, but this doesn't add the new parameters in
+            So we go to the first stage we find that has one of the original parameters and manually add this in 
+            
+            See the docstring in "pisa.core.param.ParamSet" for more 
+        """
+        paramset = self.params
+        
+        paramset.add_covariance(covmat)
+        self.update_params(paramset)
+
+        for pipeline in self.pipelines:
+            pipeline._add_rotated(paramset, suppress_warning=True)
+
     @property
-    def pipelines(self):
+    def pipelines(self)->'list[Pipeline]':
         return self._pipelines
 
     @property

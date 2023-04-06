@@ -184,8 +184,11 @@ class simple_data_loader(Stage):
                 if self.fraction_events_to_keep is None:
                     container['initial_weights'] = np.ones(container.size, dtype=FTYPE)
                 else :
-                    # Need to scale weights if using down-sampling
-                    container['initial_weights'] = np.full(container.size, 1. / float(self.fraction_events_to_keep), dtype=FTYPE)
+                    if 'nu' in name or 'mu' in name:
+                        # Need to scale weights if using down-sampling
+                        container['initial_weights'] = np.full(container.size, 1. / float(self.fraction_events_to_keep), dtype=FTYPE)
+                    else:
+                        container['initial_weights'] = np.ones(container.size, dtype=FTYPE)
 
             # add neutrino flavor information for neutrino events
             #TODO Maybe add this directly into EventsPi
@@ -220,6 +223,11 @@ class simple_data_loader(Stage):
 
 
     def apply_function(self):
+
+        # reset data representation to events
+        #TODO This should be fixed more generally at the Pipeline level, see XXX
+        self.data.representation = "events"
+
         # reset weights to initial weights prior to downstream stages running
         for container in self.data:
             container['weights'] = np.copy(container['initial_weights'])

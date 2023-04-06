@@ -502,7 +502,7 @@ class Plotter(object):
         if self.log:
             axis.set_yscale('log')
         else:
-            axis.set_ylim(0, np.max(unp.nominal_values(hist))*1.4)
+            axis.set_ylim(0, np.nanmax(unp.nominal_values(hist))*1.4)
         axis.set_xlim(inf2finite(plt_binning.bin_edges.m)[0],
                       inf2finite(plt_binning.bin_edges.m)[-1])
         if self.grid:
