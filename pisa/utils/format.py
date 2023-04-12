@@ -1090,7 +1090,7 @@ def format_num(
 
         # In case `value` is a singleton array
         if isinstance(value, np.ndarray):
-            value = np.asscalar(value)
+            value = value.item()
 
         # Fill in empty strings where None might be passed in to mean the same
         thousands_sep = '' if thousands_sep is None else thousands_sep
