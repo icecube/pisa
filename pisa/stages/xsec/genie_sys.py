@@ -6,6 +6,7 @@ from __future__ import absolute_import, print_function, division
 
 __all__ = ["genie_sys", "apply_genie_sys"] #, "SIGNATURE"
 
+import re
 import numpy as np
 #from numba import guvectorize
 
@@ -38,15 +39,15 @@ class genie_sys(Stage): # pylint: disable=invalid-name
     """
     def __init__(
         self,
-        interactions="Genie_Ma_QE Genie_Ma_RES",
-        names="maccqe maccres",
+        interactions="Genie_Ma_QE, Genie_Ma_RES",
+        names="maccqe, maccres",
         **std_kwargs,
     ):
-        interactions = tuple(interactions.split(' '))
-        names = tuple(names.split(' '))
+        interactions = re.split(r'\W+', interactions)
+        names = re.split(r'\W+', names)
         assert len(interactions) == len(names), 'Specify a name for each interaction'
         
-        expected_params = interactions
+        expected_params = tuple(interactions)
         self.interactions = interactions
         self.names = names
 
