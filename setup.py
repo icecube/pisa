@@ -194,8 +194,15 @@ class CustomBuildExt(build_ext):
 
     """
     def finalize_options(self):
+        # See https://github.com/SciTools/cf-units/pull/153/files
+        def _set_builtin(name, value):
+            if isinstance(__builtins__, dict):
+                __builtins__[name] = value
+            else:
+                setattr(__builtins__, name, value)
+        
         build_ext.finalize_options(self)
-        __builtins__.__NUMPY_SETUP__ = False
+        _set_builtin('__NUMPY_SETUP__', False)
         import numpy  # pylint: disable=import-outside-toplevel
         self.include_dirs.append(numpy.get_include())
 
