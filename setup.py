@@ -36,6 +36,7 @@ import tempfile
 from setuptools.command.build_ext import build_ext
 from setuptools import setup, Extension, find_packages
 import versioneer
+from Cython.Build import cythonize
 
 
 __all__ = [
@@ -224,6 +225,7 @@ def do_setup():
                                 sources = ['pisa/utils/llh_defs/poisson_gamma_mixtures.pyx',
                                            'pisa/utils/llh_defs/poisson_gamma.c'])
                   ]
+    ext_modules = cythonize(ext_modules)
     # Include these things in source (and binary?) distributions
     package_data = {}
 
