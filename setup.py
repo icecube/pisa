@@ -224,8 +224,6 @@ def do_setup():
                                 sources = ['pisa/utils/llh_defs/poisson_gamma_mixtures.pyx',
                                            'pisa/utils/llh_defs/poisson_gamma.c'])
                   ]
-    from Cython.Build import cythonize
-    ext_modules = cythonize(ext_modules)
     # Include these things in source (and binary?) distributions
     package_data = {}
 
