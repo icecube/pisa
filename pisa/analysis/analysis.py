@@ -1746,7 +1746,14 @@ class BasicAnalysis(object):
         hypo_asimov_dist = hypo_maker.get_outputs(return_sum=True)
         
         # Check if the hypo matches data
-        if data_dist.allclose(hypo_asimov_dist) :
+        matches = False
+        if isinstance(data_dist, list):
+            if all( entry.allclose(hypo_asimov_dist[ie]) for ie, entry in enumerate(data_dist) ):
+                matches = True
+        else:
+            if data_dist.allclose(hypo_asimov_dist):
+                matches=True
+        if matches:
 
             msg = 'Initial hypo matches data, no need for fit'
             logging.info(msg)
