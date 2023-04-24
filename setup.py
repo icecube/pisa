@@ -102,7 +102,7 @@ INSTALL_REQUIRES = [
     'llvmlite', # 0.31 gave an error "Type of #4 arg mismatch: i1 != i32" in pisa/stages/osc/layers.py", line 91
     'py-cpuinfo',
     'sympy',
-    'cython',
+    'cython ~= 0.29.0',
 ]
 
 EXTRAS_REQUIRE = {
