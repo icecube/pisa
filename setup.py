@@ -79,6 +79,7 @@ SETUP_REQUIRES = [
     'pip>=1.8',
     'setuptools>18.5', # versioneer requires >18.5
     'numpy>=1.17',
+    'cython~=0.29.0',
 ]
 
 INSTALL_REQUIRES = [
@@ -102,7 +103,6 @@ INSTALL_REQUIRES = [
     'llvmlite', # 0.31 gave an error "Type of #4 arg mismatch: i1 != i32" in pisa/stages/osc/layers.py", line 91
     'py-cpuinfo',
     'sympy',
-    'cython==0.29.33',
 ]
 
 EXTRAS_REQUIRE = {
