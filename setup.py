@@ -96,7 +96,7 @@ INSTALL_REQUIRES = [
     'pint<=0.19', # property pint.quantity._Quantity no longer exists in 0.20
     'scipy>=1.6',
     'pandas',
-    'simplejson>=3.2',
+    'simplejson~=3.18',
     'tables',
     'tabulate',
     'uncertainties',
