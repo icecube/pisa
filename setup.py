@@ -79,6 +79,7 @@ SETUP_REQUIRES = [
     'pip>=1.8',
     'setuptools>18.5', # versioneer requires >18.5
     'numpy>=1.17',
+    'cython~=0.29.0', # needed for the setup and for the install
 ]
 
 INSTALL_REQUIRES = [
@@ -95,14 +96,14 @@ INSTALL_REQUIRES = [
     'pint<=0.19', # property pint.quantity._Quantity no longer exists in 0.20
     'scipy>=1.6',
     'pandas',
-    'simplejson>=3.2',
+    'simplejson==3.18.4',
     'tables',
     'tabulate',
     'uncertainties',
     'llvmlite', # 0.31 gave an error "Type of #4 arg mismatch: i1 != i32" in pisa/stages/osc/layers.py", line 91
     'py-cpuinfo',
     'sympy',
-    'cython',
+    'cython~=0.29.0', # needed for the setup and for the install
 ]
 
 EXTRAS_REQUIRE = {
@@ -194,13 +195,15 @@ class CustomBuildExt(build_ext):
 
     """
     def finalize_options(self):
-        # See https://github.com/SciTools/cf-units/pull/153/files
+        # Applying fix from https://github.com/SciTools/cf-units/pull/153
+
+        # hanlde __builtins__ as dict and module
         def _set_builtin(name, value):
             if isinstance(__builtins__, dict):
                 __builtins__[name] = value
             else:
                 setattr(__builtins__, name, value)
-        
+
         build_ext.finalize_options(self)
         _set_builtin('__NUMPY_SETUP__', False)
         import numpy  # pylint: disable=import-outside-toplevel
