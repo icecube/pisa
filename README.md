@@ -1,5 +1,9 @@
 <img src="images/pisa4.png" width="250">
 
+![Unit Tests](https://img.shields.io/github/actions/workflow/status/icecube/pisa/.github/workflows/pythonpackage.yml?label=unit%20tests)
+![Pull Requests](https://img.shields.io/github/issues-pr/icecube/pisa)
+![Repo Stars](https://img.shields.io/github/stars/icecube/pisa?style=social)
+
 [Introduction](pisa/README.md) |
 [Installation](INSTALL.md) |
 [Documentation](http://icecube.wisc.edu/%7Epeller/pisa_docs/index.html) |
