@@ -60,7 +60,7 @@ After converting all files and setting the appropriate paths in `$FRIDGE_DIR/ana
 **First**: Calculate event-wise probabilities with (assuming we `cd`'d into `$FRIDGE_DIR/analysis/oscnext_ultrasurfaces/knn`)
 
 ```
-python calculate_knn_probs.py {"--verification-sample", "--flercnn-sample", ""} --root-dir /path/to/pisa_feather/ --outfile /path/to/ultrasurface_fits/genie_all_bulkice_pm10pc_knn_200pc.feather --neighbors-per-class 200 --datasets 0000 0001 0002 0003 0004 0100 0101 0102 0103 0104 0105 0106 0107 0109 0151 0500 0501 0502 0503 0504 0505 0506 0507 --jobs 24
+python calculate_knn_probs.py --data-sample {"verification", "flercnn", "retro"} --root-dir /path/to/pisa_feather/ --outfile /path/to/ultrasurface_fits/genie_all_bulkice_pm10pc_knn_200pc.feather --neighbors-per-class 200 --datasets 0000 0001 0002 0003 0004 0100 0101 0102 0103 0104 0105 0106 0107 0109 0151 0500 0501 0502 0503 0504 0505 0506 0507 --jobs 24
 ```
 
 **Second**: Calculate the gradients that best fit the probabilities with:
