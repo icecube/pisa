@@ -84,8 +84,10 @@ SETUP_REQUIRES = [
 INSTALL_REQUIRES = [
     'decorator',
     'kde @ git+https://github.com/icecubeopensource/kde.git',
+    'fast-histogram>=0.10',
+    'nlopt',
     'h5py',
-    'iminuit<2',
+    'iminuit>=2',
     'line_profiler',
     'matplotlib>=3.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
     'numba>=0.53', # >=0.35: fastmath jit flag; >=0.38: issue #439; 0.44 segfaults
@@ -223,6 +225,7 @@ def do_setup():
     package_data['pisa_examples'] = [
         'resources/aeff/*.json*',
         'resources/cross_sections/*json*',
+        'resources/cross_sections/*.pckl',
         'resources/discr_sys/*.json*',
 
         'resources/events/*.hdf5',

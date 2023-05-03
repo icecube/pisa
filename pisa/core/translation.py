@@ -18,13 +18,20 @@ import numpy as np
 from numba import guvectorize
 
 import numba
+from numba import njit, prange
+# When binnings are fully regular, we can use this for super speed
+import fast_histogram as fh
+from collections.abc import Iterable
 
-from pisa import FTYPE
+from concurrent.futures import ThreadPoolExecutor
+
+from pisa import FTYPE, TARGET, PISA_NUM_THREADS
 from pisa.core.binning import OneDimBinning, MultiDimBinning
 from pisa.utils.comparisons import recursiveEquality
 from pisa.utils.log import logging, set_verbosity
 from pisa.utils.numba_tools import myjit
 from pisa.utils import vectorizer
+from pisa.utils.profiler import line_profile, profile
 
 __all__ = [
     'resample',
@@ -104,21 +111,90 @@ def histogram(sample, weights, binning, averaged, apply_weights=True):
         wether to use weights or not
 
     """
-    flat_hist = histogram_np(sample, weights, binning, apply_weights=True)
+    if not isinstance(binning, MultiDimBinning):
+        raise ValueError("Binning should be a PISA MultiDimBinning")
 
+    if binning.is_irregular or not binning.is_lin:
+        flat_hist = histogram_np(sample, weights, binning, apply_weights=True)
+    else:
+        flat_hist = histogram_fh(sample, weights, binning, apply_weights=True)
     if averaged:
-        flat_hist_counts = histogram_np(sample, weights, binning, apply_weights=False)
-
+        if binning.is_irregular or not binning.is_lin:
+            flat_hist_counts = histogram_np(sample, weights, binning,
+                                            apply_weights=False)
+        else:
+            flat_hist_counts = histogram_fh(sample, weights, binning,
+                                            apply_weights=False)
         with np.errstate(divide='ignore', invalid='ignore'):
             flat_hist /= flat_hist_counts
             flat_hist = np.nan_to_num(flat_hist)
 
     return flat_hist
 
+def _threaded_fh_histogramdd(sample, weights, bins, bin_range):
+    if not TARGET == "parallel":
+        return fh.histogramdd(sample=sample, weights=weights, bins=bins, range=bin_range)
+
+    splits = PISA_NUM_THREADS
+
+    with ThreadPoolExecutor(max_workers=splits) as pool:
+        chunk = len(sample[0]) // splits
+        chunked_sample = []
+        if weights is not None:
+            chunked_weights = []
+        ndim = len(sample)
+        for i in range(splits):
+            one_chunk = tuple(sample[j][i * chunk:(i+1) * chunk] for j in range(ndim))
+            chunked_sample.append(one_chunk)
+            if weights is not None:
+                chunked_weights.append(weights[i * chunk:(i+1) * chunk])
+        if weights is not None:
+            f = lambda s, w: fh.histogramdd(s, weights=w, bins=bins, range=bin_range)
+            results = pool.map(f, chunked_sample, chunked_weights)
+        else:
+            f = lambda s: fh.histogramdd(s, weights=None, bins=bins, range=bin_range)  
+            results = pool.map(f, chunked_sample)
+        results = sum(results)
+    return results
+
+def histogram_fh(sample, weights, binning, apply_weights=True):  # pylint: disable=missing-docstring
+    """Helper function for fast_histogram historams.
+    
+    This requires binnings to be fully regular and linear.
+    """
+
+    if binning.is_irregular or not binning.is_lin:
+        raise ValueError("Binning should be linearly-regular to use the fast_histogram library.")
+    ranges = [b.domain.m for b in binning]
+    bins = binning.num_bins
+    if isinstance(sample, np.ndarray):
+        if sample.ndim == 1:
+            _sample = (sample,)
+        else:
+            _sample = tuple(s for s in sample.T)
+    elif isinstance(sample, Iterable):
+        _sample = tuple(s for s in sample)
+    else:
+        raise ValueError("Sample should be either an (N, D) array, or an (N,) array, "
+                         "or a (D, N) array-like.")
+
+    if weights is not None and weights.ndim == 2:
+        # that means it's 1-dim data instead of scalars
+        hists = []
+        for i in range(weights.shape[1]):
+            w = weights[:, i] if apply_weights else None
+            hist = _threaded_fh_histogramdd(sample=_sample, weights=w, bins=bins, bin_range=ranges)
+            hists.append(hist.ravel())
+        flat_hist = np.stack(hists, axis=1)
+    else:
+        w = weights if apply_weights else None
+        
+        hist = _threaded_fh_histogramdd(sample=_sample, weights=w, bins=bins, bin_range=ranges)
+        flat_hist = hist.ravel()
+    return flat_hist.astype(FTYPE)
 
 def histogram_np(sample, weights, binning, apply_weights=True):  # pylint: disable=missing-docstring
     """helper function for numpy historams"""
-    binning = MultiDimBinning(binning)
 
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
     if weights is not None and weights.ndim == 2:
@@ -160,8 +236,103 @@ def lookup(sample, flat_hist, binning):
     Handles up to 3D.
 
     """
+    
+    if not isinstance(binning, MultiDimBinning):
+        raise ValueError("Binning should be a PISA MultiDimBinning")
+
     assert binning.num_dims <= 3, 'can only do up to 3D at the moment'
     bin_edges = [edges.magnitude for edges in binning.bin_edges]
+    
+    if not binning.is_irregular and binning.is_lin:
+        if flat_hist.ndim == 1:
+            hist_vals = np.zeros_like(sample[0])
+            if binning.num_dims == 1:
+                lookup_regular_1d(
+                    sample[0],
+                    flat_hist,
+                    xmin=bin_edges[0][0],
+                    xmax=bin_edges[0][-1],
+                    nx=len(bin_edges[0]) - 1,
+                    out=hist_vals,
+                )
+            elif binning.num_dims == 2:
+                lookup_regular_2d(
+                    sample[0],
+                    sample[1],
+                    flat_hist,
+                    xmin=bin_edges[0][0],
+                    xmax=bin_edges[0][-1],
+                    nx=len(bin_edges[0]) - 1,
+                    ymin=bin_edges[1][0],
+                    ymax=bin_edges[1][-1],
+                    ny=len(bin_edges[1]) - 1,
+                    out=hist_vals,
+                )
+            elif binning.num_dims == 3:
+                lookup_regular_3d(
+                    sample[0],
+                    sample[1],
+                    sample[2],
+                    flat_hist,
+                    xmin=bin_edges[0][0],
+                    xmax=bin_edges[0][-1],
+                    nx=len(bin_edges[0]) - 1,
+                    ymin=bin_edges[1][0],
+                    ymax=bin_edges[1][-1],
+                    ny=len(bin_edges[1]) - 1,
+                    zmin=bin_edges[2][0],
+                    zmax=bin_edges[2][-1],
+                    nz=len(bin_edges[2]) - 1,
+                    out=hist_vals,
+                )
+
+            return hist_vals
+        elif flat_hist.ndim == 2:
+            hist_shape = (sample[0].size, flat_hist.shape[1])
+            hist_vals = np.zeros(hist_shape, dtype=FTYPE)
+            if binning.num_dims == 1:
+                lookup_regular_1d_array(
+                    sample[0],
+                    flat_hist,
+                    xmin=bin_edges[0][0],
+                    xmax=bin_edges[0][-1],
+                    nx=len(bin_edges[0]) - 1,
+                    out=hist_vals,
+                )
+            elif binning.num_dims == 2:
+                lookup_regular_2d_array(
+                    sample[0],
+                    sample[1],
+                    flat_hist,
+                    xmin=bin_edges[0][0],
+                    xmax=bin_edges[0][-1],
+                    nx=len(bin_edges[0]) - 1,
+                    ymin=bin_edges[1][0],
+                    ymax=bin_edges[1][-1],
+                    ny=len(bin_edges[1]) - 1,
+                    out=hist_vals,
+                )
+            elif binning.num_dims == 3:
+                lookup_regular_3d_array(
+                    sample[0],
+                    sample[1],
+                    sample[2],
+                    flat_hist,
+                    xmin=bin_edges[0][0],
+                    xmax=bin_edges[0][-1],
+                    nx=len(bin_edges[0]) - 1,
+                    ymin=bin_edges[1][0],
+                    ymax=bin_edges[1][-1],
+                    ny=len(bin_edges[1]) - 1,
+                    zmin=bin_edges[2][0],
+                    zmax=bin_edges[2][-1],
+                    nz=len(bin_edges[2]) - 1,
+                    out=hist_vals,
+                )
+
+            return hist_vals
+        else:
+            raise NotImplementedError()
 
     if flat_hist.ndim == 1:
         #print 'looking up 1D'
@@ -232,6 +403,92 @@ def lookup(sample, flat_hist, binning):
     return hist_vals
 
 
+@njit(parallel=True if TARGET == "parallel" else False)
+def lookup_regular_1d(x, flat_hist, xmin, xmax, nx, out):
+    normx = nx / (xmax - xmin)
+    for idx in prange(len(out)):
+        if x[idx] >= xmin and x[idx] < xmax:
+            ix = (int)((x[idx] - xmin) * normx)
+            out[idx] = flat_hist[ix]
+            continue
+        out[idx] = 0.
+
+@njit(parallel=True if TARGET == "parallel" else False)
+def lookup_regular_2d(x, y, flat_hist, xmin, xmax, nx, ymin, ymax, ny, out):
+    normx = nx / (xmax - xmin)
+    normy = ny / (ymax - ymin)
+    for idx in prange(len(out)):
+        if x[idx] >= xmin and x[idx] < xmax:
+            if y[idx] >= ymin and y[idx] < ymax:
+                ix = (int)((x[idx] - xmin) * normx)
+                iy = (int)((y[idx] - ymin) * normy)
+                out[idx] = flat_hist[iy + ny*ix]
+                continue
+        out[idx] = 0.
+
+@njit(parallel=True if TARGET == "parallel" else False)
+def lookup_regular_3d(x, y, z, flat_hist, xmin, xmax, nx, ymin, ymax, ny,
+                            zmin, zmax, nz, out):
+    normx = nx / (xmax - xmin)
+    normy = ny / (ymax - ymin)
+    normz = nz / (zmax - zmin)
+    for idx in prange(len(out)):
+        if x[idx] >= xmin and x[idx] < xmax:
+            if y[idx] >= ymin and y[idx] < ymax:
+                if z[idx] >= zmin and z[idx] < zmax:
+                    ix = (int)((x[idx] - xmin) * normx)
+                    iy = (int)((y[idx] - ymin) * normy)
+                    iz = (int)((z[idx] - zmin) * normz)
+                    out[idx] = flat_hist[iz + nz*iy + nz*ny*ix]
+                    continue
+        out[idx] = 0.
+
+@njit(parallel=True if TARGET == "parallel" else False)
+def lookup_regular_1d_array(x, flat_hist, xmin, xmax, nx, out):
+    normx = nx / (xmax - xmin)
+    for idx in prange(len(out)):
+        if x[idx] >= xmin and x[idx] < xmax:
+            ix = (int)((x[idx] - xmin) * normx)
+            for d in range(flat_hist.shape[1]):
+                out[idx][d] = flat_hist[ix][d]
+            continue
+        for d in range(flat_hist.shape[1]):
+            out[idx][d] = 0.
+
+@njit(parallel=True if TARGET == "parallel" else False)
+def lookup_regular_2d_array(x, y, flat_hist, xmin, xmax, nx, ymin, ymax, ny, out):
+    normx = nx / (xmax - xmin)
+    normy = ny / (ymax - ymin)
+    for idx in prange(len(out)):
+        if x[idx] >= xmin and x[idx] < xmax:
+            if y[idx] >= ymin and y[idx] < ymax:
+                ix = (int)((x[idx] - xmin) * normx)
+                iy = (int)((y[idx] - ymin) * normy)
+                for d in range(flat_hist.shape[1]):
+                    out[idx][d] = flat_hist[iy + ny*ix][d]
+                continue
+        for d in range(flat_hist.shape[1]):
+            out[idx][d] = 0.
+
+@njit(parallel=True if TARGET == "parallel" else False)
+def lookup_regular_3d_array(x, y, z, flat_hist, xmin, xmax, nx, ymin, ymax, ny,
+                            zmin, zmax, nz, out):
+    normx = nx / (xmax - xmin)
+    normy = ny / (ymax - ymin)
+    normz = nz / (zmax - zmin)
+    for idx in prange(len(out)):
+        if x[idx] >= xmin and x[idx] < xmax:
+            if y[idx] >= ymin and y[idx] < ymax:
+                if z[idx] >= zmin and z[idx] < zmax:
+                    ix = (int)((x[idx] - xmin) * normx)
+                    iy = (int)((y[idx] - ymin) * normy)
+                    iz = (int)((z[idx] - zmin) * normz)
+                    for d in range(flat_hist.shape[1]):
+                        out[idx][d] = flat_hist[iz + nz*iy + nz*ny*ix][d]
+                    continue
+        for d in range(flat_hist.shape[1]):
+            out[idx][d] = 0.
+
 @myjit
 def find_index(val, bin_edges):
     """Find index in binning for `val`. If `val` is below binning range or is
@@ -261,7 +518,6 @@ def find_index(val, bin_edges):
         0 <= `bin_idx` <= num_bins - 1
 
     """
-    # TODO: support fast computation for lin and log binnings?
 
     num_edges = len(bin_edges)
     num_bins = num_edges - 1
@@ -536,12 +792,12 @@ def test_histogram():
         sample.append(s)
 
         bin_edges = [b.edge_magnitudes for b in binning]
-        test = histogram(sample, weights, binning, averaged=False)
+        test = histogram(sample, weights, MultiDimBinning(binning), averaged=False)
         ref, _ = np.histogramdd(sample=sample, bins=bin_edges, weights=weights)
         ref = ref.astype(FTYPE).ravel()
         assert recursiveEquality(test, ref), f'\ntest:\n{test}\n\nref:\n{ref}'
 
-        test_avg = histogram(sample, weights, binning, averaged=True)
+        test_avg = histogram(sample, weights, MultiDimBinning(binning), averaged=True)
         ref_counts, _ = np.histogramdd(sample=sample, bins=bin_edges, weights=None)
         ref_counts = ref_counts.astype(FTYPE).ravel()
         ref_avg = (ref / ref_counts).astype(FTYPE)

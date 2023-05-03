@@ -174,6 +174,7 @@ def test_resample():
     from pisa.utils.comparisons import ALLCLOSE_KW
     from collections import OrderedDict
     from copy import deepcopy
+    from numpy.testing import assert_allclose
     
     example_cfg = parse_pipeline_config('settings/pipeline/example.cfg')
     reco_binning = example_cfg[('utils', 'hist')]['apply_mode']
@@ -263,10 +264,9 @@ def test_resample():
     
     # After ALL THIS, we get the same modified chi-square from the coarse and the
     # upsampled pair of maps. Neat, huh?
-    assert np.allclose(random_map_coarse.mod_chi2(example_map),
-                       random_map_upsampled.mod_chi2(example_map_upsampled),
-                       **ALLCLOSE_KW,
-                      )
+    assert_allclose(random_map_coarse.mod_chi2(example_map),
+                    random_map_upsampled.mod_chi2(example_map_upsampled),
+                    **ALLCLOSE_KW)
     logging.info('<< PASS : resample >>')
 
 if __name__ == "__main__":

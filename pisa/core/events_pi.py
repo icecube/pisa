@@ -130,6 +130,7 @@ class EventsPi(OrderedDict):
         name=None,
         neutrinos=True,
         fraction_events_to_keep=None,
+        events_subsample_index=0,
         **kwargs
     ):
         super().__init__(*args, **kwargs)
@@ -137,10 +138,20 @@ class EventsPi(OrderedDict):
         self.name = name
         self.neutrinos = neutrinos
         self.fraction_events_to_keep = fraction_events_to_keep
+        self.events_subsample_index = events_subsample_index
 
-        # Check `fraction_events_to_keep` value is required range
+        # Checks for down-sampling inputs
         if self.fraction_events_to_keep is not None:
+
+            # Check `fraction_events_to_keep` value is required range
+            self.fraction_events_to_keep = float(self.fraction_events_to_keep)
             assert (self.fraction_events_to_keep >= 0.) and (self.fraction_events_to_keep <= 1.), "`fraction_events_to_keep` must be in range [0.,1.], or None to disable"
+
+            # Check `fraction_events_to_keep` and `events_subsample_index` values are compatible
+            assert isinstance(self.events_subsample_index, int), f"`events_subsample_index` must be an integer"
+            assert self.events_subsample_index >= 0, f"`events_subsample_index` = {self.events_subsample_index}, but must be >= 0"
+            max_index = int(np.floor( 1. / self.fraction_events_to_keep )) - 1
+            assert self.events_subsample_index <= max_index, f"`events_subsample_index` = {self.events_subsample_index} is too large given `fraction_events_to_keep` = {self.fraction_events_to_keep} (max is {max_index})"
 
         # Define some metadata
         #TODO Is this out of date?
@@ -155,7 +166,7 @@ class EventsPi(OrderedDict):
         )
 
 
-    def load_events_file(self, events_file, variable_mapping=None, required_metadata=None):
+    def load_events_file(self, events_file, variable_mapping=None, required_metadata=None, seed=123456):
         """Fill this events container from an input HDF5 file filled with event
         data Optionally can provide a variable mapping so select a subset of
         variables, rename them, etc.
@@ -215,6 +226,10 @@ class EventsPi(OrderedDict):
         if required_metadata is not None :
             assert isinstance(required_metadata, Sequence)
             assert all([ isinstance(k, str) for k in required_metadata ])
+
+        # Reporting
+        if self.fraction_events_to_keep is not None :
+            logging.info("Down-sampling events (keeping %0.2g%% of the total). Will take sub-sample %i." % (100.*self.fraction_events_to_keep, self.events_subsample_index))
 
 
         #
@@ -393,6 +408,10 @@ class EventsPi(OrderedDict):
             else:
                 variable_mapping_to_use = variable_mapping.items()
 
+            # Init stuff for down-sampling later
+            chosen_event_indices = None
+            rand = np.random.RandomState(seed) # Enforce same sample each time
+
             # Get the array data (stacking if multiple input variables defined)
             # and check the variable exists in the input data
             for var_dst, var_src in variable_mapping_to_use:
@@ -420,22 +439,62 @@ class EventsPi(OrderedDict):
                 # single `src`
                 array_data = np.squeeze(np.stack(array_data_to_stack, axis=1))
 
-                # Add each array to the event
-                # TODO Memory copies?
+                # Check actually have some data
                 if array_data is None:
                     raise ValueError(
                         "Cannot find source variable(s) '%s' for '%s'"
                         % (var_src, data_key)
                     )
-                else:
-                    # Down sample events if required
-                    if self.fraction_events_to_keep is not None:
-                        rand = np.random.RandomState(123456) # Enforce same sample each time
-                        num_events_to_keep = int(np.round(self.fraction_events_to_keep*float(array_data.size)))
-                        array_data = rand.choice(array_data, size=num_events_to_keep, replace=False)
 
-                    # Add to array
-                    self[data_key][var_dst] = array_data
+
+                #
+                # Event down sampling
+                #
+
+                # Only if requested by user
+                if self.fraction_events_to_keep is not None:
+
+                    # Define events to keep only once for each species (e.g. same choice for all variables for a given species)
+                    if chosen_event_indices is None :
+
+                        # Get intitial conditions
+                        initial_num_events = array_data.size
+                        desired_num_events = int( self.fraction_events_to_keep * float(initial_num_events) )
+
+                        # Start with all events as input
+                        current_event_indices = np.array( range(initial_num_events) )
+
+                        # Loop over subsamples (will break out once reach desired subsample)
+                        i = 0
+                        while True :
+
+                            # Get indices for the events to keep for this current sub-sample
+                            assert current_event_indices.size >= desired_num_events, "Not enough events available" # Earlier checks on `fraction_events_to_keep` and `events_subsample_index` should prevent this error ever happening
+                            chosen_event_indices = np.sort( rand.choice(current_event_indices, replace=False, size=desired_num_events) )
+
+                            # If this is the requested sub-sample, done here
+                            if i == self.events_subsample_index :
+                                break
+
+                            # Otherwise have not yet reached our subsample.
+                            # Choose the remaining events as the new input events in the algorithm,
+                            # and on the next iteration of this loop these remaining events will be 
+                            # used for extracting the new sub-sample.
+                            # This will result in statistically independent sub-samples
+                            remaining_event_indices = np.sort( np.setxor1d(current_event_indices, chosen_event_indices) )
+                            current_event_indices = remaining_event_indices
+
+                            i += 1
+
+                        # Report
+                        logging.info("Down-sampled %s events : %i -> %i (%0.2g%%)" % ( data_key, array_data.size, chosen_event_indices.size, 100.*(chosen_event_indices.size/array_data.size) ))
+
+                    # Extract just the requested events
+                    array_data = array_data[chosen_event_indices]
+
+                # Add to array
+                self[data_key][var_dst] = array_data
+
 
     def apply_cut(self, keep_criteria):
         """Apply a cut by specifying criteria for keeping events. The cut must

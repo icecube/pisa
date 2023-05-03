@@ -17,7 +17,6 @@ from pisa.core.binning import MultiDimBinning
 from pisa.core.container import ContainerSet
 from pisa.utils.log import logging
 from pisa.utils.format import arg_to_tuple
-from pisa.utils.profiler import profile
 from pisa.core.param import ParamSelector
 from pisa.utils.format import arg_str_seq_none
 from pisa.utils.hash import hash_obj

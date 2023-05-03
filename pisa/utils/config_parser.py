@@ -272,7 +272,7 @@ PARAM_RE = re.compile(
     re.IGNORECASE
 )
 
-PARAM_ATTRS = ['range', 'prior', 'fixed']
+PARAM_ATTRS = ['range', 'prior', 'fixed', 'tex', 'scales_as_log']
 
 STAGE_SEP = '.'
 
@@ -470,12 +470,15 @@ def parse_param(config, section, selector, fullname, pname, value):
     # Search for explicit attr specifications
     if config.has_option(section, fullname + '.fixed'):
         kwargs['is_fixed'] = config.getboolean(section, fullname + '.fixed')
-        
+
     if config.has_option(section, fullname + '.scales_as_log'):
         kwargs['scales_as_log'] = config.getboolean(section, fullname + '.scales_as_log')
 
     if config.has_option(section, fullname + '.unique_id'):
         kwargs['unique_id'] = config.get(section, fullname + '.unique_id')
+
+    if config.has_option(section, fullname + '.tex'):
+        kwargs['tex'] = config.get(section, fullname + '.tex')
 
     if config.has_option(section, fullname + '.range'):
         range_ = config.get(section, fullname + '.range')
@@ -578,8 +581,10 @@ def parse_pipeline_config(config):
 
     # Create binning objects
     binning_dict = {}
+    # Loop over binning lines
     for name, value in config['binning'].items():
         if name.endswith('.order'):
+            # Found the first line in a new binning, get the individual bin dimension definitions...
             order = split(config.get('binning', name))
             binning, _ = split(name, sep='.')
             bins = []
@@ -618,7 +623,12 @@ def parse_pipeline_config(config):
                         "'%s'\n", bin_name, binning, kwargs
                     )
                     raise
-            binning_dict[binning] = MultiDimBinning(bins, name=binning)
+            # Get the bin mask, if there is ome
+            mask = config['binning'].get(binning + '.mask', None)
+            if mask is not None :
+                mask = eval(mask)
+            # Create the binning object
+            binning_dict[binning] = MultiDimBinning(bins, name=binning, mask=mask)
 
 
     stage_dicts = OrderedDict()

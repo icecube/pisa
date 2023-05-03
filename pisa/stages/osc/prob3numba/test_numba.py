@@ -63,7 +63,7 @@ def main():
     print("took %.5f" % (end_t - start_t))
     out
 
-    print(out.get("host"))
+    print(out)
 
 
 if __name__ == "__main__":

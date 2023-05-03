@@ -50,6 +50,8 @@ class resolutions(Stage):
 
         self.data.representation = self.apply_mode
 
+        #TODO Need to enforce boundaries, e.g. coszen within [-1, +1], E>0, PID within range (e.g. [0,1] for classifier), etc
+
         for container in self.data:
             logging.info('Changing energy resolutions')
             container['reco_energy'] += (container['true_energy'] - container['reco_energy']) * self.params.energy_improvement.m_as('dimensionless')
@@ -58,7 +60,6 @@ class resolutions(Stage):
             logging.info('Changing coszen resolutions')
             container['reco_coszen'] += (container['true_coszen'] - container['reco_coszen']) * self.params.coszen_improvement.m_as('dimensionless')
             container.mark_changed('reco_coszen')
-            # make sure coszen is within -1/1 ?
 
             logging.info('Changing PID resolutions')
             if container.name in ['numu_cc', 'numubar_cc']:

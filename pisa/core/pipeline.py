@@ -326,6 +326,11 @@ class Pipeline(object):
 
     def run(self):
         """Run the pipeline to compute"""
+
+        # Reset the data representation
+        #TODO
+
+        # Loop over stage and run each one in sequence
         for stage in self.stages:
             logging.debug(f"Working on stage {stage.stage_name}.{stage.service_name}")
             stage.run()
@@ -353,7 +358,8 @@ class Pipeline(object):
 
         """
         for stage in self:
-            stage.params.update(params, existing_must_match=existing_must_match, extend=extend)
+            stage._param_selector.update(params, existing_must_match=existing_must_match, extend=extend)
+            #stage.params.update(params, existing_must_match=existing_must_match, extend=extend)
 
     def select_params(self, selections, error_on_missing=False):
         """Select a set of alternate param values/specifications.

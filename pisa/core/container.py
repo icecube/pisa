@@ -20,6 +20,7 @@ from pisa.core.map import Map, MapSet
 from pisa.core.translation import histogram, lookup, resample
 from pisa.utils.comparisons import ALLCLOSE_KW
 from pisa.utils.log import logging
+from pisa.utils.profiler import line_profile, profile
 
 
 class ContainerSet(object):
@@ -232,6 +233,7 @@ class Container():
     
     default_translation_mode = "average"
     translation_modes = ("average", "sum", None)
+    array_representations = ("events", "log_events")
     
     
     def __init__(self, name, representation='events'):
@@ -303,6 +305,9 @@ class Container():
             if isinstance(representation, MultiDimBinning):
                 for name in representation.names:
                     self.validity[name][key] = True
+            elif isinstance(representation, str):
+                if representation not in self.array_representations:
+                    raise ValueError(f"Unknown representation '{representation}'")
             
         self._representation = representation
         self.current_data = self.data[key]
@@ -439,7 +444,6 @@ class Container():
             # check if key is binning dimension
             if key in binning.names:
                 return self.unroll_binning(key, binning)
-        
         # check validity
         if not key in self.keys:
             if key in self.all_keys:
@@ -531,6 +535,19 @@ class Container():
                 self.representation = dest_representation
                 self[key] = out   
                 
+            elif src_representation == "events" and dest_representation == "log_events":
+                self.representation = "events"
+                logging.trace(f"Container `{self.name}`: taking log of {key}")
+                sample = np.log(self[key])
+                self.representation = dest_representation
+                self[key] = sample
+            
+            elif src_representation == "log_events" and dest_representation == "events":
+                self.representation = "log_events"
+                sample = np.exp(self[key])
+                self.representation = dest_representation
+                self[key] = sample
+
             else:
                 raise NotImplementedError(f"translating {src_representation} to {dest_representation}")
                 
@@ -584,7 +601,7 @@ class Container():
         new_hist = resample(weights, sample, src_representation, new_sample, dest_representation)                
         return new_hist      
         
-    def array_to_binned(self, key, src_representation, dest_representation):
+    def array_to_binned(self, key, src_representation, dest_representation, averaged=True):
         """Histogram data array into binned data
         Parameters
         ----------
@@ -603,13 +620,35 @@ class Container():
         # TODO: make work for n-dim
         logging.trace('Transforming %s array to binned data'%(key))
         
+        assert src_representation in self.array_representations
+        assert isinstance(dest_representation, MultiDimBinning)
         
+        if not dest_representation.is_irregular:
+            sample = []
+            dimensions = []
+            for d in dest_representation:
+                if d.is_log:
+                    self.representation = "log_events"
+                    sample.append(self[d.name])
+                    dimensions.append(OneDimBinning(
+                        d.name,
+                        domain=np.log(d.domain.m),
+                        num_bins=d.num_bins
+                    ))
+                else:
+                    self.representation = "events"
+                    sample.append(self[d.name])
+                    dimensions.append(d)
+            hist_binning = MultiDimBinning(dimensions)
+        else:
+            self.representation = src_representation
+            sample = [self[name] for name in dest_representation.names]
+            hist_binning = dest_representation
+
         self.representation = src_representation
-        sample = [self[name] for name in dest_representation.names]
         weights = self[key]
-
-        hist = histogram(sample, weights, dest_representation, averaged=True)
-
+        self.representation = dest_representation
+        hist = histogram(sample, weights, hist_binning, averaged=averaged)
         return hist
 
     def binned_to_array(self, key, src_representation, dest_representation):
@@ -620,11 +659,31 @@ class Container():
         self.representation = src_representation
         weights = self[key]
         
-        self.representation = dest_representation
-        sample = [self[name] for name in src_representation.names]
-
-        
-        return lookup(sample, weights, src_representation)
+        if not src_representation.is_irregular:
+            logging.trace(f"Container `{self.name}`: regularized lookup for {key}")
+            sample = []
+            dimensions = []
+            for d in src_representation:
+                if d.is_log:
+                    self.representation = "log_events"
+                    sample.append(self[d.name])
+                    dimensions.append(OneDimBinning(
+                        d.name,
+                        domain=np.log(d.domain.m),
+                        num_bins=d.num_bins
+                    ))
+                else:
+                    self.representation = "events"
+                    sample.append(self[d.name])
+                    dimensions.append(d)
+            hist_binning = MultiDimBinning(dimensions)
+        else:
+            logging.trace(f"Container `{self.name}`: irregular lookup for {key}")
+            self.representation = dest_representation
+            sample = [self[name] for name in src_representation.names]
+            hist_binning = src_representation
+   
+        return lookup(sample, weights, hist_binning)
 
 
 

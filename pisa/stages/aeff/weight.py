@@ -17,6 +17,7 @@ class weight(Stage):  # pylint: disable=invalid-name
 
     Parameters
     ----------
+
     params : ParamSet or sequence with which to instantiate a ParamSet.
         Expected params are: .. ::
 
@@ -47,3 +48,5 @@ class weight(Stage):  # pylint: disable=invalid-name
 
         for container in self.data:
             container['weights'] *= scale
+            if "errors" in container.keys:
+                container["errors"] *= scale

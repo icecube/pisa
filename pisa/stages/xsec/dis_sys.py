@@ -13,11 +13,14 @@ import numpy as np
 from numba import guvectorize
 
 from pisa import FTYPE, TARGET
-from pisa.core.stage import Stage
+from pisa.core.stage import  Stage
 from pisa.utils.profiler import profile
 from pisa.utils.fileio import from_file
 from pisa.utils.numba_tools import WHERE
 from pisa import ureg
+import itertools
+from pisa.stages.utils.interpolation import logistic_function
+from scipy.interpolate import interp1d
 
 
 class dis_sys(Stage): # pylint: disable=invalid-name
@@ -68,6 +71,7 @@ class dis_sys(Stage): # pylint: disable=invalid-name
         self.extrapolation_type = extrapolation_type
         self.extrapolation_energy_threshold = extrapolation_energy_threshold
 
+
     @profile
     def setup_function(self):
 
@@ -85,7 +89,6 @@ class dis_sys(Stage): # pylint: disable=invalid-name
         lgE_min = np.log10(self.extrapolation_energy_threshold.m_as("GeV"))
 
         for container in self.data:
-
             # creat keys for external dict
 
             if container.name.endswith('_cc'):
@@ -94,11 +97,15 @@ class dis_sys(Stage): # pylint: disable=invalid-name
                 current = 'NC'
             else:
                 raise ValueError('Can not determine whether container with name "%s" is pf type CC or NC based on its name'%container.name)
-            nu = 'Nu' if container['nubar'] > 0 else 'NuBar'
+
+            nu = 'NuBar' if 'bar' in container.name else 'Nu'
 
             lgE = np.log10(container['true_energy'])
             bjorken_y = container['bjorken_y']
             dis = container['dis']
+
+            lgE_range = np.linspace(0., 3, 1001)
+            bjorken_y_range = np.linspace(0, 1, 51)
 
             w_tot = np.ones_like(lgE)
 
@@ -121,12 +128,30 @@ class dis_sys(Stage): # pylint: disable=invalid-name
                     w_tot[extrapolation_mask] = np.polyval(poly_coef, lgE_min)  # note Numpy broadcasts
                 elif self.extrapolation_type == 'linear':
                     w_tot[extrapolation_mask] = np.polyval(lin_coef, lgE[extrapolation_mask])
+                
+                elif self.extrapolation_type == 'logistic':
+
+                    w_he = np.polyval(poly_coef, lgE)
+                    w_le = np.ones_like(w_he)
+
+                    sigmoid_renormalize = lambda new_min, new_max, sigmoid: ((new_max - new_min) * (sigmoid - np.min(sigmoid)) / (np.max(sigmoid) - np.min(sigmoid))) + new_min
+                    
+                    # "c" is the log10(halfmax threshold energy) of the logistic function, and "b" is the smoothness parameter
+                    # (smaller b = smoother transition)
+                    smooth_func = logistic_function(a=1, b=5, c=2.0, x=lgE_range)
+                    smooth_func = sigmoid_renormalize(new_min=0, new_max=1, sigmoid=smooth_func)
+                    smooth_interp = interp1d(lgE_range, smooth_func)
+
+                    logistic_weight = smooth_interp(lgE)
+
+                    w_tot = (1 - logistic_weight) * w_le + logistic_weight * w_he
+
                 else:
                     raise ValueError('Unknown extrapolation type "%s"'%self.extrapolation_type)
 
             # make centered arround 0, and set to 0 for all non-DIS events
             w_tot = (w_tot - 1) * dis
-          
+
             container["dis_correction_total"] = w_tot
             container.mark_changed('dis_correction_total')
 
@@ -136,35 +161,47 @@ class dis_sys(Stage): # pylint: disable=invalid-name
 
             w_diff = np.ones_like(lgE)
 
-            if current == 'CC' and container['nubar'] > 0:
+            if current == 'CC' and nu == 'Nu':
                 weight_func = wf_nucc
-            elif current == 'CC' and container['nubar'] < 0:
+            elif current == 'CC' and nu == 'NuBar':
                 weight_func = wf_nubarcc
-            elif current == 'NC' and container['nubar'] > 0:
+            elif current == 'NC' and nu == 'Nu':
                 weight_func = wf_nunc
-            elif current == 'NC' and container['nubar'] < 0:
+            elif current == 'NC' and nu == 'NuBar':
                 weight_func = wf_nubarnc
 
-            w_diff[valid_mask] = weight_func.ev(lgE[valid_mask], bjorken_y[valid_mask])
-            w_diff[extrapolation_mask] = weight_func.ev(lgE_min, bjorken_y[extrapolation_mask])
+            if self.extrapolation_type != 'logistic':
+
+
+                w_diff[valid_mask] = weight_func.ev(lgE[valid_mask], bjorken_y[valid_mask])
+                w_diff[extrapolation_mask] = weight_func.ev(lgE_min, bjorken_y[extrapolation_mask])
+
+            elif self.extrapolation_type == 'logistic':
+
+                w_diff_he = weight_func.ev(lgE, bjorken_y)
+                w_diff_le = np.ones_like(w_diff_he)
+
+                w_diff = (1 - logistic_weight) * w_diff_le + logistic_weight * w_diff_he
 
             # make centered arround 0, and set to 0 for all non-DIS events
             w_diff = (w_diff - 1) * dis
-            
+
             container["dis_correction_diff"] = w_diff
             container.mark_changed('dis_correction_diff')
-         
+
     @profile
     def apply_function(self):
         dis_csms = self.params.dis_csms.m_as('dimensionless')
 
         for container in self.data:
+
             apply_dis_sys(
                 container['dis_correction_total'],
                 container['dis_correction_diff'],
                 FTYPE(dis_csms),
                 out=container['weights'],
             )
+
             container.mark_changed('weights')
 
 
