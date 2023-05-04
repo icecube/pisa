@@ -177,7 +177,7 @@ class freedom_hdf5_loader(Stage):
 
     def apply_cuts(self, data, cuts):
         """apply cuts in place"""
-        cut_mask = np.array([True], dtype=np.bool)
+        cut_mask = np.array([True], dtype=bool)
         for cut_key, [cut_low, cut_high] in cuts.items():
             if "{reco}" in cut_key:
                 cut_key = cut_key.replace("{reco}", self.reco)

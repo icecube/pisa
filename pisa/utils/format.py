@@ -464,7 +464,7 @@ def _hrgroup2list(hrgroup):
     )
     lst = np.linspace(range_start, range_start + n_steps*step_size, n_steps+1)
     if all_ints:
-        lst = lst.astype(np.int)
+        lst = lst.astype(int)
 
     return lst.tolist()
 

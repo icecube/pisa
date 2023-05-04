@@ -311,8 +311,7 @@ class NumpyEncoder(json.JSONEncoder):
         if isinstance(obj, np.floating):
             return float(obj)
 
-        # NOTE: np.bool_ is *Numpy* bool type, while np.bool is alias for
-        # Python bool type, hence this conversion
+        # NOTE: np.bool_ is *Numpy* scalar bool type
         if isinstance(obj, np.bool_):
             return bool(obj)
 
@@ -471,10 +470,10 @@ def test_to_json_from_json():
     proto_str_array = np.array(['a', 'ab', 'abc', '', ' '], dtype=str)
 
     floating_types = [float] + sorted(
-        set(t for _, t in np.typeDict.items() if issubclass(t, np.floating)), key=str,
+        set(t for _, t in np.sctypeDict.items() if issubclass(t, np.floating)), key=str,
     )
     integer_types = [int] + sorted(
-        set(t for _, t in np.typeDict.items() if issubclass(t, np.integer)), key=str,
+        set(t for _, t in np.sctypeDict.items() if issubclass(t, np.integer)), key=str,
     )
 
     test_info = [
