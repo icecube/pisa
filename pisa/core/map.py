@@ -717,10 +717,10 @@ class Map(object):
 
             # we need to set the vmin and vmax now by hand:
             if vmin is None:
-                vmin = uncertainties.nominal_value(self.hist.min())
+                vmin = np.nanmin(unp.nominal_values(self.hist))
 
             if vmax is None:
-                vmax = uncertainties.nominal_value(self.hist.max())
+                vmax = np.nanmax(unp.nominal_values(self.hist))
 
             if symm:
                 v = np.max([-vmin, vmax])
