@@ -202,7 +202,7 @@ def _new_obj(original_function):
             else:
                 new_state[slot] = deepcopy(getattr(self, slot))
         if len(new_state['binning']) == 0:
-            return np.asscalar(new_state['hist'])
+            return new_state['hist']
         return Map(**new_state)
     return decorate(original_function, new_function)
 
@@ -717,10 +717,10 @@ class Map(object):
 
             # we need to set the vmin and vmax now by hand:
             if vmin is None:
-                vmin = uncertainties.nominal_value(self.hist.min())
+                vmin = np.nanmin(unp.nominal_values(self.hist))
 
             if vmax is None:
-                vmax = uncertainties.nominal_value(self.hist.max())
+                vmax = np.nanmax(unp.nominal_values(self.hist))
 
             if symm:
                 v = np.max([-vmin, vmax])
@@ -1988,7 +1988,7 @@ class Map(object):
         state_updates = {
             #'name': "log(%s)" % self.name,
             #'tex': r"\ln\left( %s \right)" % self.tex,
-            'hist': np.log(self.hist)
+            'hist': unp.log(self.hist)
         }
         return state_updates
 
@@ -2004,7 +2004,7 @@ class Map(object):
         state_updates = {
             #'name': "log10(%s)" % self.name,
             #'tex': r"\log_{10}\left( %s \right)" % self.tex,
-            'hist': np.log10(self.hist)
+            'hist': unp.log10(self.hist)
         }
         return state_updates
 
@@ -2052,20 +2052,20 @@ class Map(object):
             state_updates = {
                 #'name': "%s**%s" % (self.name, other),
                 #'tex': "%s^{%s}" % (self.tex, other),
-                'hist': np.power(self.hist, other)
+                'hist': unp.pow(self.hist, other)
             }
         elif isinstance(other, np.ndarray):
             state_updates = {
                 #'name': "%s**(array)" % self.name,
                 #'tex': r"%s^{X}" % self.tex,
-                'hist': np.power(self.hist, other),
+                'hist': unp.pow(self.hist, other),
             }
         elif isinstance(other, Map):
             state_updates = {
                 #'name': "%s**(%s)" % (self.name,
                 #                      strip_outer_parens(other.name)),
                 #'tex': r"%s^{%s}" % (self.tex, strip_outer_parens(other.tex)),
-                'hist': np.power(self.hist, other.hist),
+                'hist': unp.pow(self.hist, other.hist),
                 'full_comparison': (self.full_comparison or
                                     other.full_comparison),
             }

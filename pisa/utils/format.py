@@ -464,7 +464,7 @@ def _hrgroup2list(hrgroup):
     )
     lst = np.linspace(range_start, range_start + n_steps*step_size, n_steps+1)
     if all_ints:
-        lst = lst.astype(np.int)
+        lst = lst.astype(int)
 
     return lst.tolist()
 
@@ -1090,7 +1090,7 @@ def format_num(
 
         # In case `value` is a singleton array
         if isinstance(value, np.ndarray):
-            value = np.asscalar(value)
+            value = value.item()
 
         # Fill in empty strings where None might be passed in to mean the same
         thousands_sep = '' if thousands_sep is None else thousands_sep

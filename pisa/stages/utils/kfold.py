@@ -99,7 +99,7 @@ class kfold(Stage):
             container.mark_changed("fold_weight")
 
             if self.save_mask:
-                container['kfold_mask'] = np.zeros((container.size), dtype=np.bool)
+                container['kfold_mask'] = np.zeros((container.size), dtype=bool)
                 container['kfold_mask'][select_idx] = 1
                 container.mark_changed('kfold_mask')
 

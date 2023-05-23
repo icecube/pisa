@@ -78,7 +78,7 @@ def get_hist(
     if len(weights) == 0:
         norm = sample.shape[0]
     else:
-        norm = np.sum(weights)
+        norm = np.sum(np.nan_to_num(weights))
 
     binning = binning.oversample(oversample)
 
@@ -107,9 +107,8 @@ def get_hist(
     reflect_upper = binning[coszen_name].bin_edges[-1] == 1
 
     # Get the kernel weights
-
     kde_kwargs = dict(
-        weights=weights,
+        weights=np.nan_to_num(weights),
         bw_method=bw_method,
         adaptive=adaptive,
         alpha=alpha,
@@ -127,7 +126,7 @@ def get_hist(
         c = b.weighted_centers.m
         if b.name == coszen_name:
             # how many bins to add for reflection
-            l = int(len(c) * coszen_reflection)
+            l = int(len(c) * float(coszen_reflection))
             if reflect_lower:
                 c0 = 2 * c[0] - c[1 : l + 1][::-1]
             else:

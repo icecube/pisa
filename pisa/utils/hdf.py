@@ -248,12 +248,12 @@ def to_hdf(data_dict, tgt, attrs=None, overwrite=True, warn=True):
 
             if isinstance(node, string_types):
                 node = np.string_(node)
-            elif isinstance(node, bool):  # includes np.bool
+            elif isinstance(node, bool):
                 node = np.bool_(node)  # same as np.bool8
             elif isinstance(node, np.ndarray):
                 if issubclass(node.dtype.type, string_types):
                     node = node.astype(np.string_)
-                elif node.dtype.type in (bool, np.bool):
+                elif node.dtype.type is bool:
                     node = node.astype(np.bool_)
 
             logging.trace('  creating dataset at path "%s", hash %s',
@@ -330,7 +330,7 @@ def test_hdf():
                 ('thirdlvl23', b"this is another string"),
             ])),
             ('secondlvl3', OrderedDict([
-                ('thirdlvl31', np.array(range(1000)).astype(np.int)),
+                ('thirdlvl31', np.array(range(1000)).astype(int)),
                 ('thirdlvl32', b"this is a string"),
             ])),
             ('secondlvl4', OrderedDict([
