@@ -372,17 +372,18 @@ class Pipeline(object):
         if len(depends.keys())==0:
             if not suppress_warning:
                 logging.warn("Added covariance matrix but found no Derived Params")
-            return 
+            return False
         
+        success = True
         # now we find where a derived parameter lives 
         for stage in self.stages:
             included = stage._param_selector.params.names
             if derived_name in included:
+                success = True
                 # TODO incorporate selector !! 
-                # and extend that stage's selections with our new rotated params!  
-                for param in depends.values():
-                    stage._param_selector.update(param, existing_must_match=False, extend=True)
-                break 
+                stage._param_selector.update(paramset)
+
+        return success
 
     def run(self):
         """Run the pipeline to compute"""

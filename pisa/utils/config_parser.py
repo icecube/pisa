@@ -777,7 +777,6 @@ def parse_pipeline_config(config):
                         value=value
                     )
                     if isinstance(param, DerivedParam):
-                        print("Added Derived param")
                         n_derived_params += 1
 
                 param_selector.update(param, selector=infodict['selector'])

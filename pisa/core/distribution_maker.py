@@ -326,10 +326,16 @@ class DistributionMaker(object):
         paramset = self.params
         
         paramset.add_covariance(covmat)
-        self.update_params(paramset)
 
+        self.update_params(paramset)
+        
+        success = False
         for pipeline in self.pipelines:
-            pipeline._add_rotated(paramset, suppress_warning=True)
+            retval = pipeline._add_rotated(paramset, suppress_warning=True)
+            success = success or retval
+
+        if not success:
+            raise ValueError("unsuccessful?")
 
     @property
     def pipelines(self)->'list[Pipeline]':
