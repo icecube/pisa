@@ -1,5 +1,5 @@
 """
-PISA pi stage to apply HNL specific reweighting
+PISA pi stage to apply HNL specific re-weighting
 """
 
 from __future__ import absolute_import, print_function, division
@@ -53,14 +53,13 @@ def re_weight_hnl(
         Weight to re-weight HNL events
     """
 
-    gamma = (energy + mass) / mass  # (Ekin+E0)/E0
+    gamma = np.sqrt(energy**2 + mass**2) / mass  # Etot/E0
     speed = c * np.sqrt(1 - np.power(1.0 / gamma, 2))  # c * sqrt(1-1/gamma^2)
 
     tau_min = distance_min / (gamma * speed)
     tau_max = distance_max / (gamma * speed)
 
-    # tau = 1e-09 * tau  # convert to seconds
-    tau_proper = hbar / (hnl_decay_width * U_tau4_sq)
+    tau_proper = hbar / (hnl_decay_width * U_tau4_sq)  # this mixing is from the decay vertex
 
     pdf_inverse = (1.0 / (np.log(tau_max.magnitude) - np.log(tau_min.magnitude))) * (
         1.0 / tau.m_as("s")
@@ -73,14 +72,14 @@ def re_weight_hnl(
 
     weight_lifetime = pdf_exp / pdf_inverse
 
-    return U_tau4_sq.magnitude * weight_lifetime.magnitude
+    return U_tau4_sq.magnitude * weight_lifetime.magnitude  # includes overall mixing factor of production vertex
 
 
 class weight_hnl(Stage):  # pylint: disable=invalid-name
     """
-    PISA pi stage to apply HNL specific reweighting.
+    PISA pi stage to apply HNL specific re-weighting.
 
-    This re-weights HNL events from sampling 1/L to target exponential.
+    This re-weights HNL events from sampling 1/L to target exponential and applies .
 
     Parameters
     ----------

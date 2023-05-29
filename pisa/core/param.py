@@ -34,9 +34,12 @@ from pisa.utils.log import logging, set_verbosity
 from pisa.utils.random_numbers import get_random_state
 from pisa.utils.stats import ALL_METRICS, CHI2_METRICS, LLH_METRICS
 from pisa.utils.comparisons import FTYPE_PREC
+from pisa.utils.callable import Funct
+from pisa.utils.resources import find_resource
 
 __all__ = [
     'Param',
+    'DerivedParam',
     'ParamSet',
     'ParamSelector',
     'test_Param',
@@ -631,9 +634,11 @@ class DerivedParam(Param):
             nominal_value=None, 
             tex=None, 
             range=None,
+            depends_names="",
+            function_file="",
             help=''):
 
-        self._depends_names = tuple([])
+        self._depends_names = depends_names
         self._dependson = tuple([])
         self._configured = False
         self._callable = None
@@ -656,6 +661,8 @@ class DerivedParam(Param):
         self.nominal_value = value if nominal_value is None else nominal_value
         self.normalize_values = False
 
+        if function_file!="":
+            self.callable = Funct.from_json(find_resource(function_file))
     
     @property
     def callable(self)->callable.Funct:
@@ -734,7 +741,7 @@ class DerivedParam(Param):
         """
             The value of this Derived Parameter is determined by calling the configured 'callable' with the parameters it depends on
         """
-        return self.callable(**self.dependson)
+        return self.callable(**self.dependson)*ureg.dimensionless
 
     @property
     def state(self)->dict:
@@ -854,6 +861,14 @@ class ParamSet(MutableSequence, Set):
         # if we do not normalize, then the hash will change upon evaluating unit changes
         # I think because the changed units are cached in the object (Philipp)
         self.normalize_values = True
+
+    @property
+    def has_derived(self)->bool:
+        """
+        Returns whether or not this set contains a derived parameter 
+        """
+        has = False
+        return any(isinstance(par, DerivedParam) for par in self)
 
     @property
     def serializable_state(self):
