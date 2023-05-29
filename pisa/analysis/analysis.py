@@ -375,17 +375,21 @@ def update_param_values_detector(
     """
     Modification of the update_param_values function to use with the Detectors class.
     """
+    assert hypo_maker.__class__.__name__ == "Detectors", "hypo_maker is not Detectors class"   
+    
+    if isinstance(params, Param): params = ParamSet(params)
+        
     for distribution_maker in hypo_maker:
-        update_param_values(distribution_maker, params)
-
-    if isinstance(params, Param): params = ParamSet(params) # just for the following
-
-    for p in params.names: # now update params with det_names inside
-        for i, det_name in enumerate(hypo_maker.det_names):
-            if det_name in p:
-                cp = deepcopy(params[p])
-                cp.name = cp.name.replace('_'+det_name, "")
-                update_param_values(hypo_maker._distribution_makers[i], cp)
+        ps = deepcopy(params)
+        for p in ps.names:
+            if distribution_maker.detector_name in p:
+                p_name = p.replace('_'+distribution_maker.detector_name, "")
+                if p_name in ps.names:
+                    ps.remove(p_name)
+                ps[p].name = p_name
+        update_param_values(distribution_maker, ps, 
+                            update_nominal_values, update_range, update_is_fixed)
+    hypo_maker.init_params()
 
 # TODO: move this to a central location prob. in utils
 class Counter(object):
@@ -1166,7 +1170,10 @@ class BasicAnalysis(object):
         # Copy the fitted parameter values from the best fit case into the hypo maker's
         # parameter values.
         # Also reinstate the original parameter range for the angle
-        update_param_values(hypo_maker, best_fit_info.params.free, update_range=True)
+        if hypo_maker.__class__.__name__ == "Detectors":
+            update_param_values_detector(hypo_maker, best_fit_info.params.free, update_range=True)
+        else:
+            update_param_values(hypo_maker, best_fit_info.params.free, update_range=True)
 
         return best_fit_info
 
@@ -1310,7 +1317,10 @@ class BasicAnalysis(object):
                     mod_param.is_fixed = True
                 # It is important not to use hypo_maker.update_params(mod_param) here
                 # because we don't want to overwrite the memory reference!
-                update_param_values(hypo_maker, mod_param, update_is_fixed=True)
+                if hypo_maker.__class__.__name__ == "Detectors":
+                    update_param_values_detector(hypo_maker, mod_param, update_is_fixed=True)
+                else:
+                    update_param_values(hypo_maker, mod_param, update_is_fixed=True)
             new_fit_info = self.fit_recursively(
                 data_dist, hypo_maker, metric, external_priors_penalty,
                 local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
@@ -1338,7 +1348,10 @@ class BasicAnalysis(object):
         best_fit_result = all_fit_results[best_idx]
 
         if do_refined_fit:
-            update_param_values(hypo_maker, best_fit_result.params.free)
+            if hypo_maker.__class__.__name__ == "Detectors":
+                update_param_values_detector(hypo_maker, best_fit_result.params.free)
+            else:
+                update_param_values(hypo_maker, best_fit_result.params.free)
             # the params stored in the best fit may come from a grid point where
             # parameters were fixed, so we free them up again
             for param in originally_free:
@@ -1507,9 +1520,14 @@ class BasicAnalysis(object):
                 logging.info(f"parameter with modified range:\n{mod_param}")
             # use update_param_values instead of hypo_maker.update_params so that we
             # don't overwrite the internal memory reference
-            update_param_values(
-                hypo_maker, mod_param, update_range=True, update_nominal_values=True
-            )
+            if hypo_maker.__class__.__name__ == "Detectors":
+                update_param_values_detector(
+                    hypo_maker, mod_param, update_range=True, update_nominal_values=True
+                )
+            else:
+                update_param_values(
+                    hypo_maker, mod_param, update_range=True, update_nominal_values=True
+                )
             fit_result = self.fit_recursively(
                 data_dist, hypo_maker, metric, external_priors_penalty,
                 local_fit_kwargs["method"], local_fit_kwargs["method_kwargs"],
@@ -1536,10 +1554,16 @@ class BasicAnalysis(object):
         # set the values of all parameters in the hypo_maker to the best fit values
         # without overwriting the memory reference.
         # Also reset ranges and nominal values that we might have changed above!
-        update_param_values(
-            hypo_maker, best_fit_result.params.free,
-            update_range=True, update_nominal_values=True
-        )
+        if hypo_maker.__class__.__name__ == "Detectors":
+            update_param_values_detector(
+                hypo_maker, best_fit_result.params.free,
+                update_range=True, update_nominal_values=True
+            )
+        else:
+            update_param_values(
+                hypo_maker, best_fit_result.params.free,
+                update_range=True, update_nominal_values=True
+            )
         return best_fit_result
 
     def _fit_staged(self, data_dist, hypo_maker, metric,
@@ -1565,9 +1589,14 @@ class BasicAnalysis(object):
         for i, fit_kwargs in enumerate(local_fit_kwargs):
             logging.info(f"Beginning fit {i+1} / {len(local_fit_kwargs)}")
             if best_fit_params is not None:
-                update_param_values(
-                    hypo_maker, best_fit_params.free, update_nominal_values=True
-                )
+                if hypo_maker.__class__.__name__ == "Detectors":
+                    update_param_values_detector(
+                        hypo_maker, best_fit_params.free, update_nominal_values=True
+                    )
+                else:
+                    update_param_values(
+                        hypo_maker, best_fit_params.free, update_nominal_values=True
+                    )
             best_fit_info = self.fit_recursively(
                 data_dist, hypo_maker, metric, external_priors_penalty,
                 fit_kwargs["method"], fit_kwargs["method_kwargs"],
@@ -1588,9 +1617,14 @@ class BasicAnalysis(object):
         best_fit_info._rehash()
         # Make sure that the hypo_maker has its params also at the best fit point
         # with the original nominal parameter values.
-        update_param_values(
-            hypo_maker, best_fit_info.params.free, update_nominal_values=True
-        )
+        if hypo_maker.__class__.__name__ == "Detectors":
+            update_param_values_detector(
+                hypo_maker, best_fit_info.params.free, update_nominal_values=True
+            )
+        else:
+            update_param_values(
+                hypo_maker, best_fit_info.params.free, update_nominal_values=True
+            )
         return best_fit_info
 
     def _fit_scipy(self, data_dist, hypo_maker, metric,
@@ -1912,6 +1946,8 @@ class BasicAnalysis(object):
         rescaled_pvals = optimize_result.pop('x')
         rescaled_pvals = np.where(flip_x0, 1 - rescaled_pvals, rescaled_pvals)
         hypo_maker._set_rescaled_free_params(rescaled_pvals) # pylint: disable=protected-access
+        if hypo_maker.__class__.__name__ == "Detectors":
+            update_param_values_detector(hypo_maker, hypo_maker.params.free) #updates values for ALL detectors
 
         # Get the best-fit metric value
         metric_val = sign * optimize_result.pop('fun')
@@ -1938,6 +1974,8 @@ class BasicAnalysis(object):
             # Reset to starting value of the fit, rather than nominal values because
             # the nominal value might be out of range if this is inside an octant check.
             hypo_maker._set_rescaled_free_params(x0)
+            if hypo_maker.__class__.__name__ == "Detectors":
+                update_param_values_detector(hypo_maker, hypo_maker.params.free) #updates values for ALL detectors
 
         # TODO: other metrics
         fit_info = HypoFitResult(
@@ -2109,6 +2147,8 @@ class BasicAnalysis(object):
         # values from [0,1] back to physical range)
         rescaled_pvals = np.array(m.values)
         hypo_maker._set_rescaled_free_params(rescaled_pvals) # pylint: disable=protected-access
+        if hypo_maker.__class__.__name__ == "Detectors":
+            update_param_values_detector(hypo_maker, hypo_maker.params.free) #updates values for ALL detectors
 
         # Get the best-fit metric value
         metric_val = sign * m.fval
@@ -2147,6 +2187,8 @@ class BasicAnalysis(object):
             # Reset to starting value of the fit, rather than nominal values because
             # the nominal value might be out of range if this is inside an octant check.
             hypo_maker._set_rescaled_free_params(x0)
+            if hypo_maker.__class__.__name__ == "Detectors":
+                update_param_values_detector(hypo_maker, hypo_maker.params.free) #updates values for ALL detectors
 
         # TODO: other metrics
         fit_info = HypoFitResult(
@@ -2280,6 +2322,8 @@ class BasicAnalysis(object):
         # values from [0,1] back to physical range)
         rescaled_pvals = xopt
         hypo_maker._set_rescaled_free_params(rescaled_pvals) # pylint: disable=protected-access
+        if hypo_maker.__class__.__name__ == "Detectors":
+            update_param_values_detector(hypo_maker, hypo_maker.params.free) #updates values for ALL detectors
 
         # Get the best-fit metric value
         metric_val = sign * opt.last_optimum_value()
@@ -2316,6 +2360,8 @@ class BasicAnalysis(object):
 
         if self.blindness > 1:  # only at stricter blindness level
             hypo_maker._set_rescaled_free_params(x0)
+            if hypo_maker.__class__.__name__ == "Detectors":
+                update_param_values_detector(hypo_maker, hypo_maker.params.free) #updates values for ALL detectors
 
         # TODO: other metrics
         fit_info = HypoFitResult(
@@ -2397,6 +2443,8 @@ class BasicAnalysis(object):
                     if grad.size > 0:
                         raise RuntimeError("gradients not supported")
                     hypo_maker._set_rescaled_free_params(x)
+                    if hypo_maker.__class__.__name__ == "Detectors":
+                        update_param_values_detector(hypo_maker, hypo_maker.params.free) #updates values for ALL detectors
                     # In NLOPT, the inequality function must stay negative, while in
                     # scipy, the inequality function must stay positive. We keep with
                     # the scipy convention by flipping the sign.
@@ -2512,6 +2560,8 @@ class BasicAnalysis(object):
         scaled_param_vals = np.where(flip_x0, 1 - scaled_param_vals, scaled_param_vals)
         # Set param values from the scaled versions the minimizer works with
         hypo_maker._set_rescaled_free_params(scaled_param_vals) # pylint: disable=protected-access
+        if hypo_maker.__class__.__name__ == "Detectors":
+            update_param_values_detector(hypo_maker, hypo_maker.params.free) #updates values for ALL detectors
 
         # Get the map set
         try:
@@ -2542,7 +2592,6 @@ class BasicAnalysis(object):
         #
         try:
             if hypo_maker.__class__.__name__ == "Detectors":
-                update_param_values_detector(hypo_maker, hypo_maker.params) #updates values for ALL detectors
                 metric_val = 0
                 for i in range(len(hypo_maker.distribution_makers)):
                     data = data_dist[i].metric_total(expected_values=hypo_asimov_dist[i],
