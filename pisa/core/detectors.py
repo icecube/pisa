@@ -462,11 +462,13 @@ def test_Detectors(verbosity=Levels.WARN):
 
         # Select the hierarchy
         model.select_params(new_hier)
+        model.init_params()
         #assert model.param_selections == [new_hier], str(model.param_selections)
         assert model.params.theta23.value == t23[new_hier], str(model.params.theta23)
         
         # Reset to "current"
         model.select_params(current_hier)
+        model.init_params()
         #assert model.param_selections == [current_hier], str(model.param_selections)
         assert model.params.theta23.value == t23[current_hier], str(model.params.theta23)
         
