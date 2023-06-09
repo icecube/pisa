@@ -66,7 +66,7 @@ python calculate_knn_probs.py --data-sample {"verification", "flercnn", "retro"}
 **Second**: Calculate the gradients that best fit the probabilities with:
 
 ```
-python calculate_grads.py --input /path/to/ultrasurface_fits/genie_all_bulkice_pm10pc_knn_200pc.feather --output /path/to/ultrasurface_grads_vs/genie_all_bulkice_pm10pc_knn_200pc_poly2.feather --include-systematics dom_eff hole_ice_p0 hole_ice_p1 ice_abs ice_scatter --poly-features 2 --jobs 24
+python calculate_grads.py --input /path/to/ultrasurface_fits/genie_all_bulkice_pm10pc_knn_200pc.feather --output /path/to/ultrasurface_grads_vs/genie_all_bulkice_pm10pc_knn_200pc_poly2.feather --include-systematics dom_eff hole_ice_p0 hole_ice_p1 bulk_ice_abs bulk_ice_scatter --poly-features 2 --jobs 24
 ```
 
 ### Usage
