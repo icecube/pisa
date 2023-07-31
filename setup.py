@@ -80,7 +80,7 @@ SETUP_REQUIRES = [
     'setuptools>18.5', # versioneer requires >18.5
     'numpy>=1.17',
     'cython~=0.29.0', # needed for the setup and for the install
-    'scikit-learn',
+    'scikit-learn<=1.1.2',
 ]
 
 INSTALL_REQUIRES = [
@@ -105,8 +105,9 @@ INSTALL_REQUIRES = [
     'py-cpuinfo',
     'sympy',
     'cython~=0.29.0', # needed for the setup and for the install
-    'scikit-learn',
+    'scikit-learn<=1.1.2',
     'pyarrow',
+    'tqdm',
 ]
 
 EXTRAS_REQUIRE = {

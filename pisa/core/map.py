@@ -1048,7 +1048,7 @@ class Map(object):
         return self.rebin(new_binning)
 
     @_new_obj
-    def fluctuate(self, method, random_state=None, jumpahead=0):
+    def fluctuate(self, method, random_state=None, jumpahead=None):
         """Apply fluctuations to the map's values.
 
         Parameters
@@ -1064,10 +1064,6 @@ class Map(object):
             deviation as the original map.
 
         random_state : None or type accepted by utils.random_numbers.get_random_state
-
-        jumpahead : int >= 0
-            After instantiating the random_state object, move `jumpahead`
-            positions forward in the Mersenne twister's finite state machine
 
         Returns
         -------
@@ -3058,7 +3054,7 @@ class MapSet(object):
     def chi2_total(self, expected_values):
         return np.sum(self.chi2_per_map(expected_values))
 
-    def fluctuate(self, method, random_state=None, jumpahead=0):
+    def fluctuate(self, method, random_state=None, jumpahead=None):
         """Add fluctuations to the maps in the set and return as a new MapSet.
 
         Parameters
