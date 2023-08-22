@@ -1,6 +1,86 @@
 ## Installation Guide
 
-### Quickstart
+### Instructions to install PISA on Madison working group servers cobalts (current guide from August 2023):
+
+Assuming you already are in the directory where you want to store fridge/pisa source files and the python virtualenv and build pisa. You also need access to github through your account.
+
+
+#### Clone into the fridge and pisa (ideally your own fork):
+
+```
+git clone git@github.com:icecube/wg-oscillations-fridge.git ./fridge
+
+git clone git@github.com:USERNAME/pisa.git ./pisa
+```
+
+
+#### Load cvmfs environment:
+
+```
+unset OS_ARCH; eval `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/setup.sh`
+```
+
+`which python` should now point to `/cvmfs/icecube.opensciencegrid.org/py3-v4.2.1/RHEL_7_x86_64/bin/python`
+
+**Note:** It's not tested whether this works with a cvmfs version newer than `py3-v4.2.1`.
+
+
+#### Create virtual environment:
+
+```
+python -m venv ./YOUR_PISA_PY3_VENV
+```
+
+
+#### Start the virtual environment and install pisa from source:
+
+```
+source ./YOUR_PISA_PY3_VENV/bin/activate
+```
+
+(should now show that you are in the environment)
+
+```
+pip install -e pisa
+```
+
+
+#### Modify your environment by adding lines to `./YOUR_PISA_PY3_VENV/bin/activate`
+
+Every time you want to use pisa now, you need to activate your virtual environment by running `source ./YOUR_PISA_PY3_VENV/bin/activate`. In order to set some useful environment variables you might want to add the following lines (or more if needed) to the end of the `./YOUR_PISA_PY3_VENV/bin/activate` script:
+
+```
+# PISA source
+export PISA="/data/user/USERNAME/PATH_TO_PISA"
+
+# set some custom environment variables and load fridge
+export PISA_RESOURCES="/data/user/USERNAME/PATH_TO_FRIDGE/analysis/common"
+export PISA_RESOURCES=$PISA_RESOURCES:"/data/user/USERNAME/PATH_TO_FRIDGE/analysis"
+
+source "/data/user/USERNAME/PATH_TO_FRIDGE/setup_fridge.sh"
+
+# Add this project to the python path
+export PYTHONPATH=$FRIDGE_DIR:$PYTHONPATH
+
+# Madison
+export PISA_RESOURCES=/data/ana/LE:$PISA_RESOURCES
+export PISA_RESOURCES=/data/ana/BSM/HNL/:$PISA_RESOURCES
+
+export PISA_RESOURCES=$FRIDGE_DIR:$FRIDGE_DIR/analysis:$FRIDGE_DIR/analysis/YOUR_ANALYSIS/settings:$FRIDGE_DIR/analysis/YOUR_ANALYSIS/analysis:$FRIDGE_DIR/analysis/common:$PISA_RESOURCES
+
+export PISA_CACHE=~/cache/
+export PISA_FTYPE=fp64
+export HDF5_USE_FILE_LOCKING='FALSE'
+```
+
+
+#### Install any additional packages that you might want
+
+`pip install PACKAGE` (for example `jupyter`)
+
+
+
+### Quickstart (old guide)
 
 _Note that terminal commands below are intended for the bash shell. You'll have to translate if you use a different shell._
 
