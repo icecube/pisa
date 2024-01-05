@@ -568,7 +568,7 @@ def mod_chi2(actual_values, expected_values):
         the inputs
 
     """
-
+    in_array_shape = np.shape(actual_values)
     actual_values = unp.nominal_values(actual_values).ravel()
     sigma = unp.std_devs(expected_values).ravel()
     expected_values = unp.nominal_values(expected_values).ravel()
@@ -587,7 +587,8 @@ def mod_chi2(actual_values, expected_values):
         m_chi2 = (
             (actual_values - expected_values)**2 / (sigma**2 + expected_values)
         )
-
+    
+    m_chi2 = m_chi2.reshape(in_array_shape)
     return m_chi2
 
 def correct_chi2(actual_values, expected_values):
