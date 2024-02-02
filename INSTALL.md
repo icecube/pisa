@@ -104,6 +104,7 @@ Optional dependencies. Some of these must be installed manually prior to install
 
 * [LeptonWeighter](https://github.com/icecube/leptonweighter) Required for the `data.licloader_weighter` service. 
 * [MCEq](http://github.com/afedynitch/MCEq) Required for `flux.mceq` service.
+* [daemonflux](https://github.com/mceq-project/daemonflux) Recuired for `flux.daemon_flux` service.
 * [nuSQuiDS](https://github.com/arguelles/nuSQuIDS) Required for `osc.nusquids` service.
 * [pandas](https://pandas.pydata.org/) Required for datarelease (csv) stages.
 * [OpenMP](http://www.openmp.org) Intra-process parallelization to accelerate code on on multi-core/multi-CPU computers.
