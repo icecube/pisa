@@ -2,7 +2,7 @@
 This script contains functions to compute Barlow-Beeston Likelihood, as well as
 an implementation of the Poisson-Gamma mixture.
 
-These likelihood implementations take into account uncertainties due to
+These likelihood implementations (except for poissonLLH) take into account uncertainties due to
 finite Monte Carlo statistics.
 
 The functions are called in stats.py to apply them to histograms.

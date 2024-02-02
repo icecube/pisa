@@ -50,7 +50,7 @@ Once ready, the results are stored in a `.feather` file containing all events of
 
 ### Preparation
 
-The scripts producing the gradients are located in `$FRIDGE_DIR/analysis/oscnext_ultrasurfaces`. To produce the gradient feather file, we first need to convert PISA HDF5 files to `.feather` using the `pisa_to_feather.py` script. We need to pass the input file, the output file, and a flag setting the sample (variable names) to be used (either `--verification-sample`, `--flercnn-sample`, or no additional flag for the Retro sample).
+The scripts producing the gradients are located in `$FRIDGE_DIR/analysis/oscnext_ultrasurfaces`. To produce the gradient feather file, we first need to convert PISA HDF5 files to `.feather` using the `pisa_to_feather.py` script. We need to pass the input file, the output file, and a flag setting the sample (variable names) to be used (either `--verification-sample`, `--flercnn-sample`, `--flercnn-hnl-sample`, `--upgrade-sample`, or no additional flag for the Retro sample).
 
 ```
 python pisa_to_feather.py -i /path/to/pisa_hdf5/oscnext_genie_0151.hdf5 -o /path/to/pisa_hdf5/oscnext_genie_0151.feather {"--verification-sample", "--flercnn-sample", ""}
@@ -59,8 +59,10 @@ After converting all files and setting the appropriate paths in `$FRIDGE_DIR/ana
 
 **First**: Calculate event-wise probabilities with (assuming we `cd`'d into `$FRIDGE_DIR/analysis/oscnext_ultrasurfaces/knn`)
 
+(Note here that this needs to be run with an earlier version of sklearn, due to deprecation of some used functions, e.g. use: `scikit-learn = 1.1.2`)
+
 ```
-python calculate_knn_probs.py --data-sample {"verification", "flercnn", "retro"} --root-dir /path/to/pisa_feather/ --outfile /path/to/ultrasurface_fits/genie_all_bulkice_pm10pc_knn_200pc.feather --neighbors-per-class 200 --datasets 0000 0001 0002 0003 0004 0100 0101 0102 0103 0104 0105 0106 0107 0109 0151 0500 0501 0502 0503 0504 0505 0506 0507 --jobs 24
+python calculate_knn_probs.py --data-sample {"verification", "flercnn", "flercnn_hnl", "retro"} --root-dir /path/to/pisa_feather/ --outfile /path/to/ultrasurface_fits/genie_all_bulkice_pm10pc_knn_200pc.feather --neighbors-per-class 200 --datasets 0000 0001 0002 0003 0004 0100 0101 0102 0103 0104 0105 0106 0107 0109 0151 0500 0501 0502 0503 0504 0505 0506 0507 --jobs 24
 ```
 
 **Second**: Calculate the gradients that best fit the probabilities with:

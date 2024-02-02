@@ -18,8 +18,10 @@ from pisa.stages.osc.prob3numba.numba_osc_kernels import (
     get_transition_matrix,
     get_transition_matrix_massbasis,
     get_H_vac,
+    get_H_decay,
     get_H_mat,
     get_dms,
+    get_dms_numerical,
     get_product,
     convert_from_mass_eigenstate,
 )
@@ -56,29 +58,29 @@ IX = "i4" if ITYPE == np.int32 else "i8"
 
 
 @guvectorize(
-    [f"({FX}[:,:], {CX}[:,:], {CX}[:,:], {IX}, {FX}, {FX}[:], {FX}[:], {FX}[:,:])"],
-    "(a,a), (a,a), (b,c), (), (), (i), (i) -> (a,a)",
+    [f"({FX}[:,:], {CX}[:,:], {CX}[:,:],  {IX}, {CX}[:,:], {IX}, {FX}, {FX}[:], {FX}[:], {FX}[:,:])"],
+    "(a,a), (a,a), (b,c), (), (b,c), (), (), (i), (i) -> (a,a)",
     target=TARGET,
 )
-def propagate_array(dm, mix, mat_pot, nubar, energy, densities, distances, probability):
+def propagate_array(dm, mix, mat_pot, decay_flag, mat_decay, nubar, energy, densities, distances, probability):
     """wrapper to run `osc_probs_layers_kernel` from host (whether TARGET
     is "cuda" or "host")"""
     osc_probs_layers_kernel(
-        dm, mix, mat_pot, nubar, energy, densities, distances, probability
+        dm, mix, mat_pot, decay_flag, mat_decay, nubar, energy, densities, distances, probability
     )
 
 
 @njit(
-    [f"({FX}[:,:], {CX}[:,:], {CX}[:,:], {IX}, {FX}, {FX}[:], {FX}[:], {FX}[:,:])"],
+    [f"({FX}[:,:], {CX}[:,:], {CX}[:,:], {IX}, {CX}[:,:], {IX}, {FX}, {FX}[:], {FX}[:], {FX}[:,:])"],
     parallel=TARGET == "parallel"
 )
 def propagate_scalar(
-    dm, mix, mat_pot, nubar, energy, densities, distances, probability
+    dm, mix, mat_pot, decay_flag, mat_decay, nubar, energy, densities, distances, probability
 ):
     """wrapper to run `osc_probs_layers_kernel` from host (whether TARGET
     is "cuda" or "host")"""
     osc_probs_layers_kernel(
-        dm, mix, mat_pot, nubar, energy, densities, distances, probability
+        dm, mix, mat_pot, decay_flag, mat_decay, nubar, energy, densities, distances, probability
     )
 
 
@@ -93,6 +95,8 @@ def propagate_scalar(
         f"{CX}[:,:], "  # mix_nubar_conj_transp
         f"{CX}[:,:], "  # mat_pot
         f"{CX}[:,:], "  # H_vac
+        f"{IX}, "       # neutrino decay flag
+        f"{CX}[:,:], "  # H_decay
         f"{FX}[:,:], "  # dm
         f"{CX}[:,:], "  # transition_matrix
         ")"
@@ -108,6 +112,8 @@ def get_transition_matrix_hostfunc(
     mix_nubar_conj_transp,
     mat_pot,
     H_vac,
+    decay_flag,
+    H_decay,
     dm,
     transition_matrix,
 ):
@@ -122,6 +128,8 @@ def get_transition_matrix_hostfunc(
         mix_nubar_conj_transp,
         mat_pot,
         H_vac,
+        decay_flag,
+        H_decay,
         dm,
         transition_matrix,
     )
@@ -129,23 +137,23 @@ def get_transition_matrix_hostfunc(
 
 @njit([f"({FX}, {FX}, {CX}[:,:], {CX}[:,:], {CX}[:,:], {CX}[:,:])"], parallel=TARGET == "parallel")
 def get_transition_matrix_massbasis_hostfunc(
-    baseline,
-    energy,
-    dm_mat_vac,
-    dm_mat_mat,
-    H_mat_mass_eigenstate_basis,
-    transition_matrix,
+        baseline,
+        energy,
+        dm_mat,
+        dm_mat_mat,
+        H_full_mass_eigenstate_basis,
+        transition_matrix,
 ):
     """wrapper to run `get_transition_matrix_massbasis` from host (whether
     TARGET is "cuda" or "host")"""
     get_transition_matrix_massbasis(
         baseline,
         energy,
-        dm_mat_vac,
+        dm_mat,
         dm_mat_mat,
-        H_mat_mass_eigenstate_basis,
+        H_full_mass_eigenstate_basis,
         transition_matrix,
-    )
+    )    
 
 
 @njit([f"({CX}[:,:], {CX}[:,:], {FX}[:,:], {CX}[:,:])"], parallel=TARGET == "parallel")
@@ -153,7 +161,11 @@ def get_H_vac_hostfunc(mix_nubar, mix_nubar_conj_transp, dm_vac_vac, H_vac):
     """wrapper to run `get_H_vac` from host (whether TARGET is "cuda" or "host")"""
     get_H_vac(mix_nubar, mix_nubar_conj_transp, dm_vac_vac, H_vac)
 
-
+@njit([f"({CX}[:,:], {CX}[:,:], {FX}[:,:], {CX}[:,:])"], parallel=TARGET == "parallel")
+def get_H_decay_hostfunc(mix_nubar, mix_nubar_conj_transp, mat_decay, H_decay):
+    """wrapper to run `get_H_decay` from host (whether TARGET is "cuda" or "host")"""
+    get_H_decay(mix_nubar, mix_nubar_conj_transp, mat_decay, H_decay)
+        
 # @guvectorize(
 #     [f"({FX}, {CX}[:,:], {IX}, {CX}[:,:])"], "(), (m, m), () -> (m, m)"
 # )
@@ -164,17 +176,21 @@ def get_H_mat_hostfunc(rho, mat_pot, nubar, H_mat):
 
 
 @njit([f"({FX}, {CX}[:,:], {FX}[:,:], {CX}[:,:], {CX}[:,:])"], parallel=TARGET == "parallel")
-def get_dms_hostfunc(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac):
+def get_dms_hostfunc(energy, H_full, dm_vac_vac, dm_mat_mat, dm_mat):
     """wrapper to run `get_dms` from host (whether TARGET is "cuda" or "host")"""
-    get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac)
+    get_dms(energy, H_full, dm_vac_vac, dm_mat_mat, dm_mat)
 
-
+@njit([f"({FX}, {CX}[:,:], {CX}[:,:], {CX}[:,:])"], parallel=TARGET == "parallel")
+def get_dms_numerical_hostfunc(energy, H_full, dm_mat_mat, dm_mat):
+    """wrapper to run `get_dms` from host (whether TARGET is "cuda" or "host")"""
+    get_dms_numerical(energy, H_full, dm_mat_mat, dm_mat)
+    
 @njit([f"({FX}, {CX}[:,:], {CX}[:,:], {CX}[:,:], {CX}[:,:,:])"], parallel=TARGET == "parallel")
 def get_product_hostfunc(
-    energy, dm_mat_vac, dm_mat_mat, H_mat_mass_eigenstate_basis, product
+    energy, dm_mat, dm_mat_mat, H_full_mass_eigenstate_basis, product
 ):
     """wrapper to run `get_product` from host (whether TARGET is "cuda" or "host")"""
-    get_product(energy, dm_mat_vac, dm_mat_mat, H_mat_mass_eigenstate_basis, product)
+    get_product(energy, dm_mat, dm_mat_mat, H_full_mass_eigenstate_basis, product)
 
 
 @njit([f"({IX}, {CX}[:,:], {CX}[:])"], parallel=TARGET == "parallel")

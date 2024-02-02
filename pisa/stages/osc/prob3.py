@@ -11,12 +11,13 @@ from __future__ import absolute_import, print_function, division
 import numpy as np
 from numba import guvectorize
 
-from pisa import FTYPE, TARGET, ureg
+from pisa import FTYPE, CTYPE, TARGET, ureg
 from pisa.core.stage import Stage
 from pisa.utils.log import logging
 from pisa.utils.profiler import profile
 from pisa.stages.osc.nsi_params import StdNSIParams, VacuumLikeNSIParams
 from pisa.stages.osc.osc_params import OscParams
+from pisa.stages.osc.decay_params import DecayParams
 from pisa.stages.osc.layers import Layers
 from pisa.stages.osc.prob3numba.numba_osc_hostfuncs import propagate_array, fill_probs
 from pisa.utils.numba_tools import WHERE
@@ -38,6 +39,7 @@ class prob3(Stage):
             YeI : quantity (dimensionless)
             YeO : quantity (dimensionless)
             YeM : quantity (dimensionless)
+            density_scale : quantity (dimensionless)
             theta12 : quantity (angle)
             theta13 : quantity (angle)
             theta23 : quantity (angle)
@@ -61,6 +63,7 @@ class prob3(Stage):
             eps_mutau_magn : quantity (dimensionless)
             eps_mutau_phase : quantity (angle)
             eps_tautau : quantity (dimensionless)
+            decay_alpha3 : quantity (energy^2)
 
     **kwargs
         Other kwargs are handled by Stage
@@ -72,6 +75,8 @@ class prob3(Stage):
       self,
       nsi_type=None,
       reparam_mix_matrix=False,
+      neutrino_decay=False,
+      scale_density=False,
       **std_kwargs,
     ):
 
@@ -89,6 +94,10 @@ class prob3(Stage):
           'deltam31',
           'deltacp'
         )
+        
+        # Add (matter) density scale as free parameter?
+        if scale_density:
+            expected_params = expected_params + ('density_scale',)
       
         # Check whether and if so with which NSI parameters we are to work.
         if nsi_type is not None:
@@ -107,6 +116,15 @@ class prob3(Stage):
            the standard one by an overall phase matrix
            diag(e^(i*delta_CP), 1, 1). This has no impact on
            oscillation probabilities in the *absence* of NSI."""
+        
+        self.neutrino_decay = neutrino_decay
+                
+        if neutrino_decay:
+            self.decay_flag = 1
+        else :
+            self.decay_flag = -1
+            
+        """Invoke neutrino decay with neutrino oscillation."""
 
         if self.nsi_type is None:
             nsi_params = ()
@@ -131,7 +149,13 @@ class prob3(Stage):
                           'eps_mutau_phase',
                           'eps_tautau'
             )
-        expected_params = expected_params + nsi_params
+            
+        if self.neutrino_decay :
+            decay_params = ('decay_alpha3',)
+        else: 
+            decay_params = ()
+            
+        expected_params = expected_params + nsi_params + decay_params
 
         # init base class
         super().__init__(
@@ -143,6 +167,8 @@ class prob3(Stage):
         self.layers = None
         self.osc_params = None
         self.nsi_params = None
+        self.decay_params = None
+        self.decay_matrix = None
         # Note that the interaction potential (Hamiltonian) just scales with the
         # electron density N_e for propagation through the Earth,
         # even(to very good approx.) in the presence of generalised interactions
@@ -171,6 +197,10 @@ class prob3(Stage):
         elif self.nsi_type == 'standard':
             logging.debug('Working in standard NSI parameterization.')
             self.nsi_params = StdNSIParams()
+            
+        if self.neutrino_decay:
+            logging.debug('Working with neutrino decay')
+            self.decay_params = DecayParams()
 
         # setup the layers
         #if self.params.earth_model.value is not None:
@@ -221,9 +251,17 @@ class prob3(Stage):
             mix_matrix = self.osc_params.mix_matrix_reparam_complex
         else:
             mix_matrix = self.osc_params.mix_matrix_complex
+            
+        logging.debug('mat pot:\n%s'
+                          % self.gen_mat_pot_matrix_complex)
+        logging.debug('decay mat:\n%s'
+                          % self.decay_matix)
+            
         propagate_array(self.osc_params.dm_matrix, # pylint: disable = unexpected-keyword-arg, no-value-for-parameter
                         mix_matrix,
                         self.gen_mat_pot_matrix_complex,
+                        self.decay_flag,
+                        self.decay_matix,
                         nubar,
                         e_array,
                         rho_array,
@@ -251,6 +289,12 @@ class prob3(Stage):
                 self.layers.calcLayers(container['true_coszen'])
                 container['densities'] = self.layers.density.reshape((container.size, self.layers.max_layers))
                 container['distances'] = self.layers.distance.reshape((container.size, self.layers.max_layers))
+                
+        # Matter density scale is a free parameter?
+        if 'density_scale' in self.params.names:
+            density_scale = self.params.density_scale.value.m_as('dimensionless')
+        else:
+            density_scale = 1.
 
         # some safety checks on units
         # trying to avoid issue of angles with no dimension being assumed to be radians
@@ -290,6 +334,9 @@ class prob3(Stage):
                 self.params.eps_mutau_phase.value.m_as('rad'))
             )
             self.nsi_params.eps_tautau = self.params.eps_tautau.value.m_as('dimensionless')
+        
+        if self.neutrino_decay:
+            self.decay_params.decay_alpha3 = self.params.decay_alpha3.value.m_as('eV**2')
 
         # now we can proceed to calculate the generalised matter potential matrix
         std_mat_pot_matrix = np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3, 3), dtype=FTYPE)
@@ -307,11 +354,18 @@ class prob3(Stage):
             self.gen_mat_pot_matrix_complex = std_mat_pot_matrix
             logging.debug('Using standard matter potential:\n%s'
                           % self.gen_mat_pot_matrix_complex)
+            
+        if self.neutrino_decay:
+            self.decay_matix = self.decay_params.decay_matrix
+            logging.debug('Decay matrix:\n%s' % self.decay_params.decay_matrix)
+        else :
+            self.decay_matix = np.zeros((3, 3), dtype=FTYPE) + 1.j * np.zeros((3, 3), dtype=FTYPE)
+            
 
         for container in self.data:
             self.calc_probs(container['nubar'],
                             container['true_energy'],
-                            container['densities'],
+                            container['densities']*density_scale,
                             container['distances'],
                             out=container['probability'],
                            )

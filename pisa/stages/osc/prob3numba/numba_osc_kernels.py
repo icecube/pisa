@@ -22,6 +22,7 @@ __version__ = "0.2"
 
 import cmath
 import math
+import numpy as np
 
 from pisa.utils.numba_tools import (
     myjit,
@@ -119,7 +120,7 @@ from pisa.utils.numba_tools import (
 
 @myjit
 def osc_probs_layers_kernel(
-    dm, mix, mat_pot, nubar, energy, density_in_layer, distance_in_layer, osc_probs
+    dm, mix, mat_pot, decay_flag, mat_decay, nubar, energy, density_in_layer, distance_in_layer, osc_probs
 ):
     """ Calculate oscillation probabilities
 
@@ -137,6 +138,12 @@ def osc_probs_layers_kernel(
         Generalised matter potential matrix without "a" factor (will be
         multiplied with "a" factor); set to diag([1, 0, 0]) for only standard
         oscillations
+        
+    decay_flag: int
+        +1 forstandard oscillations + decay, -1 for standard oscillations
+        
+    mat_decay : complex 2d array
+        decay matrix with -j*alpha3 = [2,2] element
 
     nubar : real int, scalar or Nd array (broadcast dim)
         1 for neutrinos, -1 for antineutrinos
@@ -168,6 +175,7 @@ def osc_probs_layers_kernel(
 
     # 3x3 complex
     H_vac = cuda.local.array(shape=(3, 3), dtype=ctype)
+    H_decay = cuda.local.array(shape=(3, 3), dtype=ctype)
     mix_nubar = cuda.local.array(shape=(3, 3), dtype=ctype)
     mix_nubar_conj_transp = cuda.local.array(shape=(3, 3), dtype=ctype)
     transition_product = cuda.local.array(shape=(3, 3), dtype=ctype)
@@ -175,6 +183,7 @@ def osc_probs_layers_kernel(
     tmp = cuda.local.array(shape=(3, 3), dtype=ctype)
 
     clear_matrix(H_vac)
+    clear_matrix(H_decay)
     clear_matrix(osc_probs)
 
     # 3-vector complex
@@ -201,8 +210,11 @@ def osc_probs_layers_kernel(
         conjugate(mix, mix_nubar)
 
     conjugate_transpose(mix_nubar, mix_nubar_conj_transp)
-
+        
     get_H_vac(mix_nubar, mix_nubar_conj_transp, dm, H_vac)
+    #Compute the decay matrix in the flavor basis
+    get_H_decay(mix_nubar, mix_nubar_conj_transp, mat_decay, H_decay)
+
 
     if cache:
         # allocate array to store all the transition matrices
@@ -242,6 +254,8 @@ def osc_probs_layers_kernel(
                         mix_nubar_conj_transp,
                         mat_pot,
                         H_vac,
+                        decay_flag,
+                        H_decay,
                         dm,
                         transition_matrix,
                     )
@@ -290,6 +304,8 @@ def osc_probs_layers_kernel(
                     mix_nubar_conj_transp,
                     mat_pot,
                     H_vac,
+                    decay_flag,
+                    H_decay,
                     dm,
                     transition_matrix,
                 )
@@ -330,6 +346,8 @@ def get_transition_matrix(
     mix_nubar_conj_transp,
     mat_pot,
     H_vac,
+    decay_flag,
+    H_decay,
     dm,
     transition_matrix,
 ):
@@ -365,6 +383,12 @@ def get_transition_matrix(
 
     H_vac : complex 2d array
         Hamiltonian in vacuum, without the 1/2E term
+        
+    H_decay : complex 2d array
+        Decay matrix, without the 1/2E term
+        
+    decay_flag: int
+        +1 forstandard oscillations + decay, -1 for standard oscillations
 
     dm : real 2d array
         Mass splitting matrix, eV^2
@@ -380,51 +404,64 @@ def get_transition_matrix(
     """
 
     H_mat = cuda.local.array(shape=(3, 3), dtype=ctype)
-    dm_mat_vac = cuda.local.array(shape=(3, 3), dtype=ctype)
+    dm_mat = cuda.local.array(shape=(3, 3), dtype=ctype)
     dm_mat_mat = cuda.local.array(shape=(3, 3), dtype=ctype)
+    #H_decay = cuda.local.array(shape=(3, 3), dtype=ctype)
     H_full = cuda.local.array(shape=(3, 3), dtype=ctype)
     tmp = cuda.local.array(shape=(3, 3), dtype=ctype)
-    H_mat_mass_eigenstate_basis = cuda.local.array(shape=(3, 3), dtype=ctype)
+    H_full_mass_eigenstate_basis = cuda.local.array(shape=(3, 3), dtype=ctype)
 
     # Compute the matter potential including possible generalized interactions
     # in the flavor basis
+    
     get_H_mat(rho, mat_pot, nubar, H_mat)
-
+    
     # Get the full Hamiltonian by adding together matter and vacuum parts
     one_over_two_e = 0.5 / energy
-    for i in range(3):
-        for j in range(3):
-            H_full[i, j] = H_vac[i, j] * one_over_two_e + H_mat[i, j]
+    
+    if (decay_flag == 1):
+        for i in range(3):
+            for j in range(3):
+                H_full[i, j] = (H_vac[i, j] + H_decay[i,j]) * one_over_two_e + H_mat[i, j]
+                
+        # Calculate modified mass eigenvalues in matter from the full Hamiltonian       
+        get_dms_numerical(energy, H_full, dm_mat_mat, dm_mat) 
+        
+    else: 
+        for i in range(3):
+            for j in range(3):
+                H_full[i, j] = H_vac[i, j] * one_over_two_e + H_mat[i, j]
+                
+                
+        # Calculate modified mass eigenvalues in matter from the full Hamiltonian and
+        # the vacuum mass splittings
+        get_dms(energy, H_full, dm, dm_mat_mat, dm_mat)
 
-    # Calculate modified mass eigenvalues in matter from the full Hamiltonian and
-    # the vacuum mass splittings
-    get_dms(energy, H_full, dm, dm_mat_mat, dm_mat_vac)
-
-    # Now we transform the matter (TODO: matter? full?) Hamiltonian back into the
+    # Now we transform the full Hamiltonian back into the
     # mass eigenstate basis so we don't need to compute products of the effective
     # mixing matrix elements explicitly
-    matrix_dot_matrix(H_mat, mix_nubar, tmp)
-    matrix_dot_matrix(mix_nubar_conj_transp, tmp, H_mat_mass_eigenstate_basis)
+    matrix_dot_matrix(H_full, mix_nubar, tmp)
+    matrix_dot_matrix(mix_nubar_conj_transp, tmp, H_full_mass_eigenstate_basis)
 
     # We can now proceed to calculating the transition amplitude from the Hamiltonian
     # in the mass basis and the effective mass splittings
     get_transition_matrix_massbasis(
         baseline,
         energy,
-        dm_mat_vac,
+        dm_mat,
         dm_mat_mat,
-        H_mat_mass_eigenstate_basis,
+        H_full_mass_eigenstate_basis,
         transition_matrix,
     )
-
+    
 
 @myjit
 def get_transition_matrix_massbasis(
     baseline,
     energy,
-    dm_mat_vac,
+    dm_mat,
     dm_mat_mat,
-    H_mat_mass_eigenstate_basis,
+    H_full_mass_eigenstate_basis,
     transition_matrix,
 ):
     """
@@ -438,11 +475,11 @@ def get_transition_matrix_massbasis(
     energy : float
         Neutrino energy, GeV
 
-    dm_mat_vac : complex 2d array
+    dm_mat : complex 2d array
 
     dm_mat_mat : complex 2d array
 
-    H_mat_mass_eigenstate_basis : complex 2d array
+    H_full_mass_eigenstate_basis : complex 2d array
 
     transition_matrix : complex 2d array (empty)
         Transition matrix in mass eigenstate basis
@@ -458,13 +495,13 @@ def get_transition_matrix_massbasis(
 
     clear_matrix(transition_matrix)
 
-    get_product(energy, dm_mat_vac, dm_mat_mat, H_mat_mass_eigenstate_basis, product)
+    get_product(energy, dm_mat, dm_mat_mat, H_full_mass_eigenstate_basis, product)
 
     # (1/2)*(1/(h_bar*c)) in units of GeV/(eV^2 km)
     hbar_c_factor = 2.534
 
     for k in range(3):
-        arg = -dm_mat_vac[k, 0] * (baseline / energy) * hbar_c_factor
+        arg = -dm_mat[k, 0] * (baseline / energy) * hbar_c_factor
         c = cmath.exp(arg * 1.0j)
         for i in range(3):
             for j in range(3):
@@ -508,6 +545,39 @@ def get_H_vac(mix_nubar, mix_nubar_conj_transp, dm_vac_vac, H_vac):
     matrix_dot_matrix(dm_vac_diag, mix_nubar_conj_transp, tmp)
     matrix_dot_matrix(mix_nubar, tmp, H_vac)
 
+@myjit
+def get_H_decay(mix_nubar, mix_nubar_conj_transp, mat_decay, H_decay):
+    """ Calculate decay Hamiltonian in flavor basis for neutrino or antineutrino
+
+    Parameters:
+    -----------
+    mix_nubar : complex 2d array
+        Mixing matrix, already conjugated if antineutrino
+
+    mix_nubar_conj_transp : conjugate 2d array
+        Conjugate transpose of mix_nubar
+
+    H_decay : complex 2d array
+    Hamiltonian for decay, without the 1/2E term
+
+
+    Notes
+    ------
+    The Hailtonian does not contain the energy dependent factor of
+    1/(2 * E), as it will be added later
+
+    """
+
+    #dm_decay_diag = cuda.local.array(shape=(3, 3), dtype=ctype)
+    tmp = cuda.local.array(shape=(3, 3), dtype=ctype)
+
+    clear_matrix(H_decay)
+    
+    #dm_decay_diag[2, 2] = 0. - 1.0j*alpha3
+
+    #matrix_dot_matrix(dm_decay_diag, mix_nubar_conj_transp, tmp)
+    matrix_dot_matrix(mat_decay, mix_nubar_conj_transp, tmp)
+    matrix_dot_matrix(mix_nubar, tmp, H_decay)
 
 @myjit
 def get_H_mat(rho, mat_pot, nubar, H_mat):
@@ -559,9 +629,8 @@ def get_H_mat(rho, mat_pot, nubar, H_mat):
             elif nubar == 1:
                 H_mat[i, j] = a * mat_pot[i, j]
 
-
 @myjit
-def get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac):
+def get_dms_numerical(energy, H_full, dm_mat_mat, dm_mat):
     """Compute the matter-mass vector M, dM = M_i-M_j and dMimj
 
     Parameters
@@ -569,14 +638,46 @@ def get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac):
     energy : float
         Neutrino energy, GeV
 
-    H_mat : complex 2d array
-        matter hamiltonian
+    H_full : complex 2d array
+        full hamiltonian
+
+    dm_mat_mat : complex 2d array (empty)
+
+    dm_mat : complex 2d array (empty)
+
+
+    Notes
+    -----
+    Calculate mass eigenstates in matter
+    neutrino or anti-neutrino (type already taken into account in Hamiltonian)
+    of energy energy.
+    """
+
+
+    m_mat = 2.0 * energy * np.linalg.eigvals(H_full)
+        
+    for i in range(3):
+        for j in range(3):
+            dm_mat_mat[i, j] = m_mat[i] - m_mat[j]
+            dm_mat[i, j] = m_mat[i]
+
+@myjit
+def get_dms(energy, H_full, dm_vac_vac, dm_mat_mat, dm_mat):
+    """Compute the matter-mass vector M, dM = M_i-M_j and dMimj
+
+    Parameters
+    ----------
+    energy : float
+        Neutrino energy, GeV
+
+    H_full : complex 2d array
+        full hamiltonian
 
     dm_vac_vac : 2d array
 
     dm_mat_mat : complex 2d array (empty)
 
-    dm_mat_vac : complex 2d array (empty)
+    dm_mat : complex 2d array (empty)
 
 
     Notes
@@ -589,24 +690,24 @@ def get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac):
 
     """
 
-    # the following is for solving the characteristic polynomial of H_mat:
+    # the following is for solving the characteristic polynomial of H_full:
     # P(x) = x**3 + c2*x**2 + c1*x + c0
-    real_product_a = (H_mat[0, 1] * H_mat[1, 2] * H_mat[2, 0]).real
-    real_product_b = (H_mat[0, 0] * H_mat[1, 1] * H_mat[2, 2]).real
+    real_product_a = (H_full[0, 1] * H_full[1, 2] * H_full[2, 0]).real
+    real_product_b = (H_full[0, 0] * H_full[1, 1] * H_full[2, 2]).real
 
-    norm_H_e_mu_sq = H_mat[0, 1].real ** 2 + H_mat[0, 1].imag ** 2
-    norm_H_e_tau_sq = H_mat[0, 2].real ** 2 + H_mat[0, 2].imag ** 2
-    norm_H_mu_tau_sq = H_mat[1, 2].real ** 2 + H_mat[1, 2].imag ** 2
+    norm_H_e_mu_sq = H_full[0, 1].real ** 2 + H_full[0, 1].imag ** 2
+    norm_H_e_tau_sq = H_full[0, 2].real ** 2 + H_full[0, 2].imag ** 2
+    norm_H_mu_tau_sq = H_full[1, 2].real ** 2 + H_full[1, 2].imag ** 2
 
     # c1 = H_{11} * H_{22} + H_{11} * H_{33} + H_{22} * H_{33}
     #      - |H_{12}|**2 - |H_{13}|**2 - |H_{23}|**2
     # given Hermiticity of Hamiltonian (real diagonal elements),
     # this coefficient must be real
     c1 = (
-        (H_mat[0, 0].real * (H_mat[1, 1] + H_mat[2, 2])).real
-        - (H_mat[0, 0].imag * (H_mat[1, 1] + H_mat[2, 2])).imag
-        + (H_mat[1, 1].real * H_mat[2, 2]).real
-        - (H_mat[1, 1].imag * H_mat[2, 2]).imag
+        (H_full[0, 0].real * (H_full[1, 1] + H_full[2, 2])).real
+        - (H_full[0, 0].imag * (H_full[1, 1] + H_full[2, 2])).imag
+        + (H_full[1, 1].real * H_full[2, 2]).real
+        - (H_full[1, 1].imag * H_full[2, 2]).imag
         - norm_H_e_mu_sq
         - norm_H_mu_tau_sq
         - norm_H_e_tau_sq
@@ -616,16 +717,16 @@ def get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac):
     #      - H_{11} * H_{22} * H_{33} - 2*Re(H*_{13} * H_{12} * H_{23})
     # hence, this coefficient is also real
     c0 = (
-        H_mat[0, 0].real * norm_H_mu_tau_sq
-        + H_mat[1, 1].real * norm_H_e_tau_sq
-        + H_mat[2, 2].real * norm_H_e_mu_sq
+        H_full[0, 0].real * norm_H_mu_tau_sq
+        + H_full[1, 1].real * norm_H_e_tau_sq
+        + H_full[2, 2].real * norm_H_e_mu_sq
         - 2.0 * real_product_a
         - real_product_b
     )
 
     # c2 = -H_{11} - H_{22} - H_{33}
     # hence, this coefficient is also real
-    c2 = -H_mat[0, 0].real - H_mat[1, 1].real - H_mat[2, 2].real
+    c2 = -H_full[0, 0].real - H_full[1, 1].real - H_full[2, 2].real
 
     one_over_two_e = 0.5 / energy
     one_third = 1.0 / 3.0
@@ -703,22 +804,23 @@ def get_dms(energy, H_mat, dm_vac_vac, dm_mat_mat, dm_mat_vac):
     for i in range(3):
         for j in range(3):
             dm_mat_mat[i, j] = m_mat[i] - m_mat[j]
-            dm_mat_vac[i, j] = m_mat[i] - dm_vac_vac[j, 0]
+            dm_mat[i, j] = m_mat[i]
+            #dm_mat_vac[i, j] = m_mat[i] - dm_vac_vac[j, 0]
 
 
 @myjit
-def get_product(energy, dm_mat_vac, dm_mat_mat, H_mat_mass_eigenstate_basis, product):
+def get_product(energy, dm_mat, dm_mat_mat, H_full_mass_eigenstate_basis, product):
     """
     Parameters
     ----------
     energy : float
         Neutrino energy, GeV
 
-    dm_mat_vac : complex 2d array
+    dm_mat : complex 2d array
 
     dm_mat_mat : complex 2d array
 
-    H_mat_mass_eigenstate_basis : complex 2d array
+    H_full_mass_eigenstate_basis : complex 2d array
 
     product : complex 3d-array (empty)
 
@@ -729,9 +831,9 @@ def get_product(energy, dm_mat_vac, dm_mat_mat, H_mat_mass_eigenstate_basis, pro
     for i in range(3):
         for j in range(3):
             for k in range(3):
-                H_minus_M[i, j, k] = 2.0 * energy * H_mat_mass_eigenstate_basis[i, j]
+                H_minus_M[i, j, k] = 2.0 * energy * H_full_mass_eigenstate_basis[i, j]
                 if i == j:
-                    H_minus_M[i, j, k] -= dm_mat_vac[k, j]
+                    H_minus_M[i, j, k] -= dm_mat[k, j]
                 # also, cler product
                 product[i, j, k] = 0.0
 

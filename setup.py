@@ -76,11 +76,11 @@ __license__ = '''Copyright (c) 2014-2020, The IceCube Collaboration
 
 
 SETUP_REQUIRES = [
-    'pip>=1.8',
-    'setuptools>18.5', # versioneer requires >18.5
-    'numpy>=1.17',
+    'pip>=1.8,<21.3',
+    'setuptools>18.5,<60.0', # versioneer requires >18.5
+    'numpy>=1.17,<1.23',
     'cython~=0.29.0', # needed for the setup and for the install
-    'scikit-learn',
+    'scikit-learn<=1.1.2',
 ]
 
 INSTALL_REQUIRES = [
@@ -93,7 +93,7 @@ INSTALL_REQUIRES = [
     'line_profiler',
     'matplotlib>=3.0', # 1.5: inferno colormap; 2.0: 'C0' colorspec
     'numba>=0.53', # >=0.35: fastmath jit flag; >=0.38: issue #439; 0.44 segfaults
-    'numpy>=1.17',
+    'numpy>=1.17,<1.23',
     'pint<=0.19', # property pint.quantity._Quantity no longer exists in 0.20
     'scipy>=1.6',
     'pandas',
@@ -105,7 +105,7 @@ INSTALL_REQUIRES = [
     'py-cpuinfo',
     'sympy',
     'cython~=0.29.0', # needed for the setup and for the install
-    'scikit-learn',
+    'scikit-learn<=1.1.2',
     'pyarrow',
     'tqdm',
     'daemonflux',

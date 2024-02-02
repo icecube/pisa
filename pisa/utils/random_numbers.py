@@ -36,22 +36,17 @@ __license__ = '''Copyright (c) 2014-2017, The IceCube Collaboration
  limitations under the License.'''
 
 
-def get_random_state(random_state, jumpahead=0):
+def get_random_state(random_state, jumpahead=None):
     """Derive a `numpy.random.RandomState` object (usable to generate random
     numbers and distributions) from a flexible specification..
 
     Parameters
     ----------
     random_state : None, RandomState, string, int, state vector, or seq of int
-        Note for all of the below cases, `jumpahead` is applied _after_ the
-        RansomState is initialized using the `random_state` (except for
-        `random_state` indicating a truly-random number, in which case
-        `jumpahead` is ignored).
         * If instantiated RandomState object is passed, it is used directly
         * If string : must be either 'rand' or 'random'; random state is
           instantiated at random from either /dev/urandom or (if that is not
           present) the clock. This creates an irreproducibly-random number.
-          `jumpahead` is ignored.
         * If int or sequence of lenth one: This is used as the `seed` value;
           must be in [0, 2**32).
         * If sequence of two integers: first must be in [0, 32768): 15
@@ -65,14 +60,6 @@ def get_random_state(random_state, jumpahead=0):
           `numpy.random.RandomState.set_state`), set the random state using
           this method.
 
-    jumpahead : int >= 0
-        Starting with the random state specified by `random_state`, produce
-        `jumpahead` random numbers to move this many states forward in the
-        random number generator's finite state machine. Note that this is
-        ignored if `random_state`="random" since jumping ahead any number of
-        states from a truly-random point merely yields another truly-random
-        point, but takes additional computational time.
-
     Returns
     -------
     random_state : numpy.random.RandomState
@@ -81,6 +68,11 @@ def get_random_state(random_state, jumpahead=0):
         state).
 
     """
+    if jumpahead is not None:
+        raise DeprecationWarning(
+            '`jumpahead` is deprecated since it does not result in an independent random sequence, simply use a different seed'
+        )
+
     if random_state is None:
         new_random_state = np.random.RandomState()
 
@@ -96,7 +88,6 @@ def get_random_state(random_state, jumpahead=0):
                 %(random_state, allowed_strings)
             )
         new_random_state = np.random.RandomState()
-        jumpahead = 0
 
     elif isinstance(random_state, int):
         new_random_state = np.random.RandomState(seed=random_state)
@@ -142,9 +133,6 @@ def get_random_state(random_state, jumpahead=0):
             %(type(random_state), random_state)
         )
 
-    if jumpahead > 0:
-        new_random_state.rand(jumpahead)
-
     return new_random_state
 
 
@@ -177,8 +165,8 @@ def test_get_random_state():
 
     # Already generated 1k, so generating 2k more gets us 3k; pick off last 1k
     ref = rstates[ref_id].rand(2000)[1000:]
-    test = get_random_state(random_state=0, jumpahead=2000).rand(1000)
-    assert np.array_equal(test, ref), f'jumpahead=1k: rs != rs{ref_id}[2000:3000]'
+    test = get_random_state(random_state=0).rand(3000)[2000:3000]
+    assert np.array_equal(test, ref), f'rsrand(3000)[2000:3000] != rs{ref_id}rand(2000)[1000:][2000:3000]'
 
     # Test stability of random number generator over time; following were
     # retrieved on 2020-03-19 using numpy 1.18.1 via .. ::
