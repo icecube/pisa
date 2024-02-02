@@ -107,6 +107,7 @@ INSTALL_REQUIRES = [
     'cython~=0.29.0', # needed for the setup and for the install
     'scikit-learn',
     'pyarrow',
+    'tqdm',
     'daemonflux',
 ]
 
