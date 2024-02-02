@@ -107,6 +107,7 @@ INSTALL_REQUIRES = [
     'cython~=0.29.0', # needed for the setup and for the install
     'scikit-learn',
     'pyarrow',
+    'daemonflux',
 ]
 
 EXTRAS_REQUIRE = {
@@ -117,7 +118,6 @@ EXTRAS_REQUIRE = {
         'sphinx_rtd_theme',
         'versioneer',
         'pytest',
-        'daemonflux',
     ],
     # TODO: get mceq install to work... this is non-trivial since that
     # project isn't exactly cleanly instllable via pip already, plus it
