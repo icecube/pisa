@@ -117,6 +117,7 @@ EXTRAS_REQUIRE = {
         'sphinx_rtd_theme',
         'versioneer',
         'pytest',
+        'daemonflux',
     ],
     # TODO: get mceq install to work... this is non-trivial since that
     # project isn't exactly cleanly instllable via pip already, plus it
