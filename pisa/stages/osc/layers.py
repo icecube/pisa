@@ -53,6 +53,7 @@ def extCalcLayers(cz,
         prop_height,
         detector_depth,
         rhos,
+        rhos_neutron_weighted,
         coszen_limit,
         radii,
         max_layers):
@@ -67,6 +68,7 @@ def extCalcLayers(cz,
     prop_height    : height at which neutrinos are assumed to be produced (float)
     detector_depth : depth at which the detector is buried (float)
     rhos           : densities (already weighted by electron fractions) (ndarray)
+    rhos_neutron_weighted  : densities (already weighted by neutron fractions) (ndarray)
     radii          : radii defining the Earth's layer (ndarray)
     coszen         : coszen values corresponding to the radii above (ndarray)
     max_layers     : maximum number of layers it is possible to cross (int)
@@ -74,7 +76,8 @@ def extCalcLayers(cz,
     Returns
     -------
     n_layers : int number of layers
-    density : array of densities, flattened from (cz, max_layers)
+    density : array of electron-weighted densities, flattened from (cz, max_layers)
+    density_neutron_weighted : array of neutron-weighted densities, flattened from (cz, max_layers)
     distance : array of distances per layer, flattened from (cz, max_layers)
     
     """
@@ -84,6 +87,7 @@ def extCalcLayers(cz,
     # in the pi_prob3 module
 
     densities = np.zeros((len(cz), max_layers), dtype=FTYPE)
+    densities_neutron_weighted = np.zeros((len(cz), max_layers), dtype=FTYPE)
     distances = np.zeros((len(cz), max_layers), dtype=FTYPE)
     number_of_layers = np.zeros(len(cz))
 
@@ -108,6 +112,7 @@ def extCalcLayers(cz,
             segments_lengths = np.concatenate((segments_lengths, np.zeros(radii.shape[0] - idx)))
 
             density = rhos*(segments_lengths > 0.)
+            density_neutron_weighted = rhos_neutron_weighted * (segments_lengths > 0.)
 
         else:
             #
@@ -154,18 +159,26 @@ def extCalcLayers(cz,
             # start by removing the layers not crossed from rhos
             inner_layer_mask = coszen_limit>coszen
             density = np.concatenate((rhos[inner_layer_mask],rhos[inner_layer_mask][1:-1][::-1]))
+            density_neutron_weighted = np.concatenate(
+                (
+                    rhos_neutron_weighted[inner_layer_mask],
+                    rhos_neutron_weighted[inner_layer_mask][1:-1][::-1],
+                )
+            )
 
             # As an extra precaution, set all densities that are not crossed to zero
             density*=(segments_lengths>0)
+            density_neutron_weighted *= segments_lengths > 0
 
         number_of_layers[i] = np.sum(segments_lengths > 0.)
         # append to the large list
         for j in range(len(density)):
             # index j may not run all the way to max_layers, unreached indices stay zero
             densities[i, j] = density[j]
+            densities_neutron_weighted[i, j] = density_neutron_weighted[j]
             distances[i, j] = segments_lengths[j]
 
-    return number_of_layers, densities, distances
+    return number_of_layers, densities, densities_neutron_weighted, distances
 
 
 class Layers(object):
@@ -197,7 +210,10 @@ class Layers(object):
             number of layers crossed for every CZ value
 
     density : 1d float array of length (max_layers * len(cz))
-            containing density values and filled up with 0s otherwise
+            containing electron-weighted density values and filled up with 0s otherwise
+
+    density_neutron_weighted : 1d float array of length (max_layers * len(cz))
+            containing neutron-weighted density values and filled up with 0s otherwise
 
     distance : 1d float array of length (max_layers * len(cz))
             containing distance values and filled up with 0s otherwise
@@ -220,7 +236,9 @@ class Layers(object):
             # w.r.t the file. The first elements of the arrays below corresponds
             # the Earth's surface, and the following numbers go deeper toward the 
             # planet's core
+            self.rhos_unweighted = prem[..., 1][::-1].astype(FTYPE)
             self.rhos = prem[..., 1][::-1].astype(FTYPE)
+            self.rhos_neutron_weighted = prem[..., 1][::-1].astype(FTYPE)
             self.radii = prem[..., 0][::-1].astype(FTYPE)
             r_earth = prem[-1][0]
             self.default_elec_frac = 0.5
@@ -228,6 +246,14 @@ class Layers(object):
             # Add an external layer corresponding to the atmosphere / production boundary
             self.radii = np.concatenate((np.array([r_earth+prop_height]), self.radii))
             self.rhos  = np.concatenate((np.ones(1, dtype=FTYPE), self.rhos))
+            self.rhos_unweighted = np.concatenate(
+                (np.ones(1, dtype=FTYPE), self.rhos_unweighted)
+            )
+            self.rhos_neutron_weighted = np.concatenate(
+                (np.ones(1, dtype=FTYPE), self.rhos_neutron_weighted)
+            )
+
+
             self.max_layers = 2 * (len(self.radii))
 
 
@@ -269,9 +295,11 @@ class Layers(object):
             raise ValueError("Cannot set electron fraction when not using an Earth model")
 
         self.YeFrac = np.array([YeI, YeO, YeM], dtype=FTYPE)
+        self.YnFrac = np.array([1 - YeI, 1 - YeO, 1 - YeM], dtype=FTYPE)
 
         # re-weight the layer densities accordingly
         self.weight_density_to_YeFrac()
+        self.weight_density_to_YnFrac()
 
     def computeMinLengthToLayers(self):
         '''
@@ -318,12 +346,13 @@ class Layers(object):
             raise ValueError("Cannot calculate layers when not using an Earth model")
 
         # run external function
-        self._n_layers, self._density, self._distance = extCalcLayers(
+        self._n_layers, self._density, self._density_neutron_weighted, self._distance = extCalcLayers(
             cz=cz,
             r_detector=self.r_detector,
             prop_height=self.prop_height,
             detector_depth=self.detector_depth,
             rhos=self.rhos,
+            rhos_neutron_weighted=self.rhos_neutron_weighted,
             coszen_limit=self.coszen_limit,
             radii=self.radii,
             max_layers=self.max_layers,
@@ -340,6 +369,12 @@ class Layers(object):
         if not self.using_earth_model:
             raise ValueError("Cannot get density when not using an Earth model")
         return self._density
+
+    @property
+    def density_neutron_weighted(self):
+        if not self.using_earth_model:
+            raise ValueError("Cannot get density when not using an Earth model")
+        return self._density_neutron_weighted
 
     @property
     def distance(self):
@@ -396,6 +431,46 @@ class Layers(object):
         weighted_densities = density_inner + density_outer + density_mantle
         
         self.rhos = weighted_densities
+
+    def weight_density_to_YnFrac(self):
+        """
+        Adjust the densities of the provided earth model layers
+        for the different neutron fractions in the inner core,
+        outer core and mantle.
+        """
+
+        # TODO make this generic
+        R_INNER = 1221.5
+        R_OUTER = 3480.0
+        R_MANTLE = 6371.0  # the crust is assumed to have the same electron fraction as the mantle
+
+        assert (
+            isinstance(self.YnFrac, np.ndarray) and self.YnFrac.shape[0] == 3
+        ), "ERROR: YnFrac must be an array of size 3"
+        #
+        # TODO: insert extra radii is the electron density boundaries
+        #       don't match the current layer boundaries
+
+        #
+        # Weight the density properly
+        #
+        density_inner = self.rhos * self.YnFrac[0] * (self.radii <= R_INNER)
+        density_outer = (
+            self.rhos_unweighted
+            * self.YnFrac[1]
+            * (self.radii <= R_OUTER)
+            * (self.radii > R_INNER)
+        )
+        density_mantle = (
+            self.rhos_unweighted
+            * self.YnFrac[2]
+            * (self.radii <= R_MANTLE)
+            * (self.radii > R_OUTER)
+        )
+
+        weighted_densities = density_inner + density_outer + density_mantle
+
+        self.rhos_neutron_weighted = weighted_densities
 
 
 
