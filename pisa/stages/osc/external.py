@@ -1,9 +1,5 @@
 """
 PISA pi stage for the calculation of earth layers and osc. probabilities
-
-Maybe it would amke sense to split this up into a separate earth layer stage
-and an osc. stage....todo
-
 """
 
 from __future__ import absolute_import, print_function, division
@@ -39,7 +35,6 @@ class external(Stage):
     **kwargs
         Other kwargs are handled by Stage
     -----
-
     """
   
     def __init__(
@@ -74,7 +69,6 @@ class external(Stage):
     def setup_function(self):
 
         # setup the layers
-        #if self.params.earth_model.value is not None:
         earth_model = find_resource(self.params.earth_model.value)
         self.YeI = self.params.YeI.value.m_as('dimensionless')
         self.YeO = self.params.YeO.value.m_as('dimensionless')
